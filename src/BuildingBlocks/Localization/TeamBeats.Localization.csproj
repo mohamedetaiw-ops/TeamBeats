@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+  <PropertyGroup><RootNamespace>TeamBeats.Localization</RootNamespace><AssemblyName>TeamBeats.Localization</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Primitives/TeamBeats.Primitives.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="catalogues/*.json" LogicalName="catalogues.%(Filename).json" />
+  </ItemGroup>
+</Project>

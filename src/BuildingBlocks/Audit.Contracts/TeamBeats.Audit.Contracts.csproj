@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><RootNamespace>TeamBeats.Audit.Contracts</RootNamespace><AssemblyName>TeamBeats.Audit.Contracts</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Primitives/TeamBeats.Primitives.csproj" />
+  </ItemGroup>
+</Project>

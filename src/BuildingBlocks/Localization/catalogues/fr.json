@@ -1,0 +1,6 @@
+{
+  "_status": "pending: launch-complete in R2 (spec 007). Missing keys fall back to en.",
+  "problem.authz.denied": "Vous n'avez pas l'autorisation de faire cela",
+  "problem.not_found": "Introuvable",
+  "validation.required": "Ce champ est obligatoire"
+}
