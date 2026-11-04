@@ -72,6 +72,9 @@ jobs:
 
   governance:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read   # gitleaks-action lists the PR's commits to scan
     steps:
       - uses: actions/checkout@v4
         with:
