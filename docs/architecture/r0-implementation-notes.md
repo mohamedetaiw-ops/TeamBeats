@@ -26,5 +26,8 @@ What was built for R0, and where it differs from `r0-solution-structure.md`. Eac
 | Group membership changes audited as their own action | Audited as `authz.role_changed` | Spec 004 does not name a group action. Recorded as a gap. |
 | Audience targeting | Not built | Belongs with the content specs (R1). |
 
+## Licence exceptions
+- `@img/sharp-libvips-*` (LGPL-3.0-or-later): native image library pulled in by Next.js through `sharp`, an optional dependency used for image optimization. It is OSI approved, unmodified and dynamically loaded, so it is excluded from the strict npm allow list in CI. If the owner prefers no LGPL at all, set `images.unoptimized` and drop `sharp` from the production image.
+
 ## Running locally
 See the README quick start.
