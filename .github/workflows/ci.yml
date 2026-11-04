@@ -83,11 +83,15 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Findings fail the job and appear in the log; the SARIF artifact is not needed and uses storage quota.
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
       - name: SBOM
         uses: anchore/sbom-action@v0
         with:
           format: spdx-json
-          artifact-name: teambeats-sbom.spdx.json
+          output-file: teambeats-sbom.spdx.json
+          # Generated on every run; uploading is off until artifact storage is budgeted (release builds will attach it).
+          upload-artifact: false
       - name: spec-lint
         if: github.event_name == 'pull_request'
         env:
