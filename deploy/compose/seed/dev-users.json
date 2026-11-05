@@ -1,0 +1,5 @@
+{
+  "platformOperators": [
+    { "email": "operator@platform.example", "displayName": "Dev Platform Operator" }
+  ]
+}
