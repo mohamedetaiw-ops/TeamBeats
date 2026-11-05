@@ -108,7 +108,7 @@ Compared on 2026-11-05 against two competing products. Product A is a modular in
 | Capability | Seen in | Spec |
 |---|---|---|
 | Microsoft Active Directory | A | 002, 003 |
-| SharePoint | B | 018 planned, 011 (section 12) |
+| SharePoint | B | 011 (US9 connected libraries, US10 import), 006 (Connections area) |
 | Google Docs | A | INT-004, 011 (section 12) |
 | Slack | A | 017 planned |
 | Custom APIs | A | 017 planned |
