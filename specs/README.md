@@ -6,7 +6,7 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 |---|---|---|---|---|
 | [001 Tenant management](001-tenant-management/spec.md) | platform | R0 | Approved | TEN-001, TEN-002, TEN-009, TEN-010, ADM-001 |
 | [002 Organization hierarchy](002-organization-hierarchy/spec.md) | platform | R0, R1 to R2 (AD mapping) | Approved; AD mapping pending approval | TEN-003 to TEN-006, TEN-010, INT-007 (directory) |
-| [003 Identity and authentication](003-identity-and-authentication/spec.md) | platform | R0 to R2 | Approved; AD sign-in and sync, delegated Microsoft Graph access (FR-016) pending approval | IAM-001 to IAM-007, IAM-009, IAM-010, INT-007 (directory) |
+| [003 Identity and authentication](003-identity-and-authentication/spec.md) | platform | R0 to R2 | Approved; AD sign-in and sync pending approval | IAM-001 to IAM-007, IAM-009, IAM-010, INT-007 (directory) |
 | [004 Authorization and permissions](004-authorization-and-permissions/spec.md) | platform | R0, R1 (attribute conditions) | Approved | TEN-007, TEN-008, IAM-007, IAM-008, ADM-001 |
 | [005 Packages and entitlements](005-packages-and-entitlements/spec.md) | platform | R0, R2 | Approved | AI-001, ADM-001, ENT-001 to ENT-008 (new) |
 | [006 Audit and admin shell](006-audit-and-administration/spec.md) | platform | R0, R1 to R2 (Connections area) | Approved (Connections area approved 2026-11-05) | ADM-001 to ADM-003, TEN-010, INT-001 (connection administration), AUD-001 to AUD-007 (new) |
@@ -16,7 +16,7 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [011 Document management and knowledge base](011-document-management/spec.md) | knowledge | R1 to R3 | Proposed | KNO-001, KNO-003, KNO-006, ADM-003, INT-002 (SharePoint documents), DOC-001 to DOC-033 |
 | [013 AI Gateway and model governance](013-ai-gateway/spec.md) | ai | R1 to R3 | Proposed | AI-002 to AI-004, AI-006, AI-011 to AI-013, AIG-001 to AIG-016 |
 | [016 Self services, service catalogue and workflows](016-service-catalogue-and-workflows/spec.md) | workflows | R1, R2 | Proposed | WF-001 to WF-016, UC-08 |
-| [018 Microsoft 365 mail, calendar and rooms](018-microsoft-365-mail-and-calendar/spec.md) | integrations | R2, R3 | Proposed | INT-001, INT-002, INT-009, UC-10 (mail and calendar part), M365-001 to M365-024 (new) |
+| [018 Microsoft 365 mail, calendar and rooms](018-microsoft-365-mail-and-calendar/spec.md) | integrations | R1 (mail and calendar), R2 (rooms), R3 | Approved | INT-001, INT-002, INT-009, UC-10 (mail and calendar part), M365-001 to M365-024 (new) |
 | [020 Agent Hub: registry, templates, studio and marketplace](020-agent-hub/spec.md) | ai | R1 to R3 | Proposed | AI-007 (agent part), AI-008, AGT-001 to AGT-020, UC-07 |
 | [021 Analytics and insights](021-analytics/spec.md) | analytics | R1 to R3 | Proposed | ANL-001 to ANL-022 (ANL-001 and ANL-002 were LOC-005 and LOC-006), AI-013 (shared with 013), CX-MET-001 to CX-MET-008 |
 | [022 Leave, attendance and HR workflows](022-hr-workflows/spec.md) | workflows | R2, R3 | Proposed | INT-007, LVA-001 to LVA-012, HRW-001 to HRW-014 |
@@ -116,7 +116,7 @@ Source: functional review of the current Link Development intranet (Performly "I
 | Training and Udemy requests, HR appointments, resignation | Form services (016); Udemy as linked app; an approved resignation starts the offboarding journey (022) | R1 form, R2 templates |
 | Expenses, purchase request, business cards, transportation, maintenance, travel, parking, referrals | Form services from the starter templates (016); expense claims with policy limits and receipts in 022; ERP hand-off via 017 | R2 |
 | Meeting room booking | Microsoft 365 room mailboxes through 018 | R2 |
-| (not in the current intranet) Outlook mail and calendar on the home page, colleague free and busy | My mail and My calendar components (018, placed by 008) | R2 |
+| (not in the current intranet) Outlook mail and calendar on the home page, colleague free and busy | My mail and My calendar components (018, placed by 008) | R1 |
 | Help Desk, VPN request, Es2alny FAQ | Help Desk as linked app or form service (016); VPN as form service; FAQ answered by the AI assistant (014) | R1 |
 | Announcements, news, condolences, policy notices | 009 | R1 |
 | Handbooks, policies, career paths and job descriptions, learning library | Searchable pages and documents (009, 011, 012) | R1 |

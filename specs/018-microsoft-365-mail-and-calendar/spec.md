@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 018-microsoft-365-mail-and-calendar |
 | Area | integrations |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R2 (Microsoft 365 connection features for mail and calendar, My mail and My calendar home components, unread badge, colleague free and busy, meeting join links, room finder and booking, calendar for the assistant), R3 (reply to invitations from TeamBeats, mail summaries by the assistant, Teams presence, Google Workspace mail and calendar through the same ports) |
+| Target release | R1 (Microsoft 365 connection features for mail and calendar, My mail and My calendar home components, unread badge, meeting join links, colleague free and busy, calendar for the assistant), R2 (room finder and booking), R3 (reply to invitations from TeamBeats, mail summaries by the assistant, Teams presence, Google Workspace mail and calendar through the same ports) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed (release R1 for mail and calendar) |
 | Requirement IDs | INT-001, INT-002, INT-009, UC-10 (mail and calendar part), M365-001 to M365-024 (new) |
 | Use cases | UC-10 (mail and calendar part) |
 | Depends on | 003 (Entra ID sign-in and consent), 004, 005, 006 (admin connections), 007, 008 (home and shell), 010 (people profile), 011 (SharePoint through the same connection), 013, 014 and 020 (assistant and agents), 015 (notifications), 017 (connector framework), 021, 022 (leave and holidays), 026, 027 (agent tools), 032 (component manifests) |
@@ -51,13 +52,13 @@
 | Microsoft 365 administrator (customer side) | Grants admin consent for the delegated permissions in Entra ID, or lets users consent | Outside TeamBeats (Entra ID role) |
 | Page editor | Places My mail and My calendar on pages they edit, within the region rules | `page.edit` (spec 032) |
 | Employee | Sees only their own mail and calendar, connects or disconnects their account, checks colleagues' free and busy, books rooms | Active tenant membership with a Microsoft 365 mailbox; feature on |
-| Assistant and agents | Read the employee's calendar (R2) and mail summaries (R3) only as that employee, after opt-in | Spec 027 tool grant plus the employee's consent |
+| Assistant and agents | Read the employee's calendar (R1) and mail summaries (R3) only as that employee, after opt-in | Spec 027 tool grant plus the employee's consent |
 
 Permission keys follow spec 004 FR-013. No new permission key is needed for employees: access to a mailbox is decided by Microsoft 365 for the signed-in user, never by a TeamBeats role.
 
 ## 4. User scenarios
 
-### User Story 1: Admin turns on mail and calendar for the tenant (Priority: P1, R2)
+### User Story 1: Admin turns on mail and calendar for the tenant (Priority: P1, R1)
 
 Huda, tenant admin for Acme Gulf, opens Admin, Connections, Microsoft 365. Directory sync and SharePoint are already on. She turns on Mail and Calendar. The page lists exactly what each feature asks Microsoft for, as delegated permissions, and a "Grant admin consent" button that opens the Microsoft consent page for the customer's Microsoft 365 admin. After consent, the connection health shows Mail and Calendar as Ready.
 
@@ -74,7 +75,7 @@ Huda, tenant admin for Acme Gulf, opens Admin, Connections, Microsoft 365. Direc
 6. **Given** the tenant does not have `integration.microsoft365`, **Then** the features are not offered, the components are not in the picker, and existing placements show "not available in your plan" to admins only and are hidden for employees. *(M365-019)*
 7. **Given** the admin turns Mail off, **Then** within 1 minute all My mail placements show "Outlook mail is turned off by your administrator", no further Graph mail calls are made, and stored delegated tokens that only served mail are dropped. *(M365-005)*
 
-### User Story 2: My mail on the home page (Priority: P1, R2)
+### User Story 2: My mail on the home page (Priority: P1, R1)
 
 Omar opens TeamBeats in the morning. Next to his tasks he sees "My mail: 7 unread" and his five latest Focused Inbox messages with sender, subject, time, and markers for unread, high importance and attachments. He clicks one and it opens in Outlook on the web in a new tab. He clicks "New message" and Outlook opens a new draft.
 
@@ -93,7 +94,7 @@ Omar opens TeamBeats in the morning. Next to his tasks he sees "My mail: 7 unrea
 8. **Given** conditional access blocks the token (for example an unmanaged device), **Then** the component says "Your organization requires you to open Outlook on a managed device" with a link to Outlook, and does not loop the sign-in. *(M365-012)*
 9. **Given** the employee clicks "Disconnect Outlook" in their settings, **Then** TeamBeats deletes its delegated token for mail and calendar for that membership, the components show a "Connect Outlook" action, and the action is audited. *(M365-013)*
 
-### User Story 3: My calendar on the home page (Priority: P1, R2)
+### User Story 3: My calendar on the home page (Priority: P1, R1)
 
 Mona sees today's appointments: a 09:30 Teams meeting with a Join button that lights up 10 minutes before it starts, a 13:00 room meeting, and below them "Tomorrow" and the next days. The same view shows the company town hall she registered for in TeamBeats and her approved leave next Thursday, each with its source label.
 
@@ -104,14 +105,14 @@ Mona sees today's appointments: a 09:30 Teams meeting with a Join button that li
 **Acceptance scenarios:**
 1. **Given** Calendar is on, **Then** My calendar shows the employee's own events for today and the next days (default 7, placement setting 1 to 14), with recurring series expanded into occurrences, all-day items first, times in the employee's time zone, and the location or "Online". *(M365-014)*
 2. **Given** an online meeting, **Then** a Join action opens the meeting link Microsoft returns; it is the primary action from 10 minutes before the start until the end. *(M365-015)*
-3. **Given** an event, **When** the employee activates it, **Then** it opens in Outlook on the web. Responses to invitations (accept, tentative, decline) are done in Outlook in R2 and from TeamBeats in R3. *(M365-015)*
+3. **Given** an event, **When** the employee activates it, **Then** it opens in Outlook on the web. Responses to invitations (accept, tentative, decline) are done in Outlook in R1 and R2, and from TeamBeats in R3. *(M365-015)*
 4. **Given** events that are cancelled, declined by the employee or marked free, **Then** cancelled and declined events are hidden, and free events are shown with a "free" marker. Tentative events are marked as tentative in text. *(M365-014)*
 5. **Given** a private event in the employee's own calendar, **Then** its subject is shown to the employee, and a placement setting "hide subjects of private events" shows "Private appointment" instead, for screens others can see. *(M365-016)*
 6. **Given** TeamBeats items for the same days, **Then** registered events (spec 009), approved leave and public holidays of the employee's location (spec 022) appear in the same list with a source label; an item that spec 022 already exported to Outlook as an out-of-office event is shown once, as the TeamBeats item. *(M365-017)*
 7. **Given** Arabic, **Then** the view is mirrored, times use the tenant digit setting, and the optional Hijri secondary date of spec 007 applies to day headers. *(M365-014)*
 8. **Given** Microsoft Graph is unavailable, **Then** TeamBeats items still show, the Outlook part shows the degraded state with the age of the last data this session, and the page stays usable. *(M365-011)*
 
-### User Story 4: Check whether a colleague is free (Priority: P2, R2)
+### User Story 4: Check whether a colleague is free (Priority: P2, R1)
 
 Karim opens Sara's profile card to ask a quick question. It shows "Busy until 11:00, free from 11:00 to 12:30" for today, from her Microsoft 365 free and busy. He can open a new Outlook meeting with her from the card.
 
@@ -136,7 +137,7 @@ Ahmed needs a room for six people tomorrow at 14:00 in the Dubai office. He open
 4. **Given** two employees book the same room at once, **Then** the room mailbox decides, and the employee whose booking is declined sees "The room was not available" in My calendar. *(M365-021)*
 5. **Given** a tenant without Microsoft 365 rooms, **Then** the room finder is not offered and spec 031 applies. *(M365-020)*
 
-### User Story 6: Ask the assistant about my day (Priority: P2, R2 calendar, R3 mail)
+### User Story 6: Ask the assistant about my day (Priority: P2, R1 calendar, R3 mail)
 
 Mona asks the assistant "When is my next meeting and what's free this afternoon?" and gets the answer from her own calendar with a link to each event. The daily briefing of the Personal Productivity agent (spec 020 US7) can include her meetings for the day if she opts in.
 
@@ -191,7 +192,7 @@ Mona asks the assistant "When is my next meeting and what's free this afternoon?
 - **FR-021 / M365-021**: Booking MUST create an event in the employee's own calendar with the room as a resource attendee; the room mailbox's own rules decide acceptance, and the result MUST be visible in My calendar.
 
 ### Assistant and agents
-- **FR-022 / M365-022**: The assistant and agents MAY read calendar data (R2) and mail summaries (R3) only through read tools registered under spec 027, only as the employee, only when the tenant allows the tool and, for mail, the employee has opted in. Mail and event text MUST be treated as untrusted content.
+- **FR-022 / M365-022**: The assistant and agents MAY read calendar data (R1) and mail summaries (R3) only through read tools registered under spec 027, only as the employee, only when the tenant allows the tool and, for mail, the employee has opted in. Mail and event text MUST be treated as untrusted content.
 - **FR-023 / M365-023**: Access while the employee is signed out (for example a scheduled briefing) MUST require a separate, revocable employee opt-in. Without it, TeamBeats MUST NOT hold mail or calendar access beyond the employee's session.
 
 ### Ports
@@ -238,11 +239,11 @@ No new capability or permission key. Admin work uses `integration.manage`. The a
 - States for both components: loading skeleton, empty ("No new mail", "Nothing on your calendar"), not connected (with Connect Outlook), admin setup needed, no mailbox, turned off, degraded with data age, conditional access, no permission. All come from the shared state definitions of spec 008 FR-006.
 - Both components are lists for screen readers, with unread, importance, tentative and online markers announced in text.
 - Join and open actions say where they go ("opens Outlook in a new tab").
-- Arabic and English in R2 as in spec 007; dates and times follow the tenant digit setting and the employee's time zone.
+- Arabic and English from R1 as in spec 007; dates and times follow the tenant digit setting and the employee's time zone.
 - Connect Outlook uses the Microsoft sign-in page; TeamBeats never asks for a Microsoft password.
 
 ## 11. AI behavior and data policy
-- Calendar data for the assistant (R2) is Confidential, goes only to providers allowed for Confidential data (spec 013), and is never kept in prompts, logs or evaluation sets beyond the request (constitution IV and spec 034 rules).
+- Calendar data for the assistant (R1) is Confidential, goes only to providers allowed for Confidential data (spec 013), and is never kept in prompts, logs or evaluation sets beyond the request (constitution IV and spec 034 rules).
 - Mail summaries (R3) are off by default at tenant and employee level.
 - No-evidence behavior: if Graph is unavailable, the assistant says it cannot reach the calendar now; it does not guess.
 - Injected instructions in subjects, previews or locations are data, not instructions (spec 027).
@@ -250,7 +251,7 @@ No new capability or permission key. Admin work uses `integration.manage`. The a
 ## 12. Integrations and events
 - Publishes: `OutlookConnected`, `OutlookDisconnected`, `RoomBooked`. Feature, consent and health changes use the shared connection events of spec 006: `ConnectionFeatureChanged`, `ConnectionConsentRevoked`, `ConnectorUnavailable`, `ConnectorRestored`.
 - Consumes: `ConnectionFeatureChanged` and `ConnectionConsentRevoked` (spec 006, to update placements and drop tokens), `UserDeprovisioned` and `SessionRevoked` (spec 003, to delete tokens), `EntitlementsChanged` (spec 005), `LeaveApproved` (spec 022, for the merged view), `EventRegistrationChanged` (spec 009).
-- External system: Microsoft Graph, through the Microsoft 365 adapter of the `Integrations` module and the connector framework (spec 017): retry with backoff on 429 and 5xx, idempotent booking by a client request ID, status and audit.
+- External system: Microsoft Graph, through the Microsoft 365 adapter of the `Integrations` module (in R1 the adapter carries its own retry and status; from R2 it runs on the connector framework of spec 017): retry with backoff on 429 and 5xx, idempotent booking by a client request ID, status and audit.
 
 ## 13. Audit, telemetry and analytics
 
@@ -278,14 +279,14 @@ No new capability or permission key. Admin work uses `integration.manage`. The a
 - Connector-down tests (constitution XXVIII): consent revoked, throttled, Graph unavailable, partial failure (mail works, calendar fails), duplicate booking request.
 
 ## 16. Success criteria
-- **SC-001**: In the R2 pilot, 60% of weekly active employees with a mailbox use My mail or My calendar from the home page at least once a week.
+- **SC-001**: In the R1 pilot, 60% of weekly active employees with a mailbox use My mail or My calendar from the home page at least once a week.
 - **SC-002**: A security review confirms TeamBeats holds no application mail or calendar permission and no stored mail or event content.
 - **SC-003**: With Microsoft Graph unavailable, the home page loads within its normal budget and shows the degraded state in both components.
 - **SC-004**: An employee books a free room in under 60 seconds in usability tests.
 
 ## 17. Open questions
-- [NEEDS CLARIFICATION: should mail and calendar come in R1 instead of R2, since Entra ID sign-in is already in R1?] Default: R2, together with the connector framework (spec 017) and SharePoint (spec 011).
-- [NEEDS CLARIFICATION: should Workplace include Microsoft 365 mail and calendar without the add-on?] Default: add-on, as `integration.microsoft365` is today.
+- Decided 2026-11-05 (Mohamed): mail and calendar ship in R1, using the R1 Microsoft 365 connection of spec 006 and Entra ID sign-in of spec 003; they do not wait for the connector framework (spec 017). Rooms stay in R2 with workplace booking (spec 031).
+- Decided 2026-11-05 (Mohamed): Workplace gets mail and calendar through the `integration.microsoft365` add-on.
 - [NEEDS CLARIFICATION: should Teams presence (available, in a call) be shown on profile cards?] Default: R3, needs `Presence.Read.All`, opt-in by tenant.
 - [NEEDS CLARIFICATION: is on-premises Exchange Server needed for any target customer?] Default: not planned; hybrid through Graph only.
 - [NEEDS CLARIFICATION: should employees see their OneDrive recent files on the home page?] Default: R3, as a further feature of the same connection.
@@ -313,4 +314,4 @@ No new capability or permission key. Admin work uses `integration.manage`. The a
 - [x] Cross-tenant and org boundary cases are listed
 - [x] Entitlement behavior is defined
 - [x] Audit events are defined
-- [ ] No open [NEEDS CLARIFICATION] items that change scope (release and package defaults to confirm)
+- [x] No open [NEEDS CLARIFICATION] items that change scope
