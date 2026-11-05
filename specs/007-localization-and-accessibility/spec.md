@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R0 (framework), R1 (ar and en complete), R2 (fr, ur, hi complete) |
-| Last updated | 2026-11-04 |
+| Last updated | 2026-11-05 |
 | Approved | 2026-11-04 by Mohamed |
 | Requirement IDs | LOC-001, LOC-002, LOC-003, LOC-004, EXP-008 |
 | Use cases | UC-04 (localization part) |
@@ -33,8 +33,8 @@
 - Accessibility baseline and checks.
 
 **Out of scope:**
-- Machine translation of content (AI spec).
-- Multilingual search ranking (search spec), though this spec records the Arabic and Urdu risk.
+- Machine translation of content (spec 009 US5, through the AI Gateway of spec 013).
+- Multilingual search ranking (spec 012), though this spec records the Arabic and Urdu risk.
 
 ## 3. Actors
 Employee (chooses language), tenant admin (enables locales, sets default), content editor (creates variants), developers (use primitives).
@@ -89,12 +89,41 @@ Employee (chooses language), tenant admin (enables locales, sets default), conte
 - **FR-009**: Emails and notifications MUST be rendered in the recipient's resolved locale.
 - **FR-010**: Fonts MUST cover Arabic, Urdu (Nastaliq or Naskh, see open question), Devanagari and Latin, and be self-hostable for on-prem.
 
+## 6. Business and validation rules
+- A locale is "launch-complete" when every UI key has a reviewed translation and native-speaker sign-off (SC-003). FR-004 fails CI on missing keys only for launch-complete locales.
+- The tenant default locale must be one of the tenant's enabled locales (spec 001).
+- Pseudo-localization is available in Development and Test only.
+
 ## 7. Tenant scope
 Tenant-enabled locales and default are tenant settings (spec 001). User preference is per tenant membership.
+
+## 8. Data, ownership and classification
+
+| Entity | System of record | Classification | Personal data? |
+|---|---|---|---|
+| Resource catalogues (UI strings) | Product (source control) | Public | No |
+| User locale preference | Product | Internal | Yes |
+| Content variants | Owning content module (009, 011, 025) | Same as the item | Per item |
+
+## 9. Package entitlements
+All five locales and accessibility are available in every package. No capability key.
 
 ## 10. UX
 - Language switcher in the header and profile.
 - Pseudo-localization locale for testing (long strings, accented characters, forced RTL).
+
+## 11. AI behavior
+Not applicable here. AI answers follow the user's resolved locale (specs 014 and 020).
+
+## 12. Integrations and events
+Publishes `UserLocaleChanged` so notifications (spec 015) and agents pick up the new language.
+
+## 13. Audit
+Tenant locale changes are audited by spec 001 (`tenant.settings_changed`). A user's own language preference is not audited.
+
+## 14. Security and abuse cases
+- Bidirectional control characters (for example U+202E) in names, file names and titles can disguise text ("exe.pdf" shown as "fdp.exe"). User-entered names are rendered with bidi isolation, and file names show their real extension separately.
+- Mixed-script look-alike names used to impersonate people or sites: display names show the account's verified email or unit next to the name in sensitive places (approvals, sharing dialogs).
 
 ## 15. Non-functional requirements
 - Locale switching without full reload where the framework allows.

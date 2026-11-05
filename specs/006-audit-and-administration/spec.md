@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R0 |
-| Last updated | 2026-11-04 |
+| Last updated | 2026-11-05 |
 | Approved | 2026-11-04 by Mohamed |
 | Requirement IDs | ADM-001, ADM-002, ADM-003 (retention part), TEN-010, new AUD-001 to AUD-007 |
 | Use cases | UC-01, UC-13 (audit part) |
@@ -33,8 +33,9 @@
 - User and group administration screens (list, view, disable membership, view roles).
 
 **Out of scope:**
-- SIEM streaming (later; extension point only).
-- Product analytics (separate spec).
+- SIEM streaming (spec 026, R2). This spec provides the extension point only.
+- Product analytics (spec 021).
+- Legal hold management (spec 011). This spec only honours holds during purge.
 
 ## 3. Actors
 
@@ -68,7 +69,7 @@
 **Acceptance scenarios:**
 1. **Given** retention of 365 days, **When** records pass that age, **Then** they are purged by a scheduled job, and the purge is audited with count and range.
 2. Retention cannot be set below the platform minimum. (Decided 2026-11-04: minimum 365 days.)
-3. Records under legal hold are never purged. (Decided 2026-11-04: legal hold is delivered in R2.)
+3. Records under legal hold are never purged. (Decided 2026-11-04: legal hold is delivered in R2, through spec 011.)
 
 ### User Story 4: Admin shell (Priority: P1)
 
@@ -89,6 +90,11 @@
 - **FR-008**: The admin shell MUST show only areas the user is authorized for, with every area enforced by the backend. *(ADM-001)*
 - **FR-009**: User administration MUST allow viewing a user's memberships, roles and sign-in status, and disabling a tenant membership.
 
+## 6. Business and validation rules
+- Audit records are written for the outcome of the action (succeeded, failed, refused). A refused action by an unauthenticated caller is written to the platform stream, not to a tenant stream, unless the tenant is known from the host.
+- Timestamps are stored in UTC and shown in the viewer's time zone.
+- Export date ranges are limited to 1 million records per job; larger ranges are split into several jobs.
+
 ## 7. Tenant and organization scope
 - Audit records are tenant-owned with RLS. Platform-level records (tenant creation, break-glass) live in a separate platform audit stream.
 - Cross-tenant: search, export and integrity check never cross tenants.
@@ -100,9 +106,18 @@
 | Audit record | Product | Confidential | Tenant setting, min 365 days |
 | Audit export file | Product (object storage) | Confidential | 7 days then deleted |
 
+## 9. Package entitlements
+Audit, search, export and the admin shell are part of every package and have no capability key (constitution VI). SIEM streaming is gated by `security.siem` in spec 026.
+
 ## 10. UX
 - Audit table with filters, localized action names, timestamps shown in the user's time zone, RTL-aware.
 - Export button with job status.
+
+## 11. AI behavior
+Not applicable. AI and agent events are written through the same contract by specs 013 and 027.
+
+## 12. Integrations and events
+Publishes `AuditIntegrityCheckFailed` and `AuditExportCompleted`. Exposes a read-only event feed contract that spec 026 uses for SIEM streaming.
 
 ## 13. Audit
 The audit service audits its own sensitive actions: export, retention change, purge, integrity check failure.
@@ -121,7 +136,7 @@ The audit service audits its own sensitive actions: export, retention change, pu
 
 ## 17. Open questions
 - Retention minimum and legal hold timing: Decided 2026-11-04.
-- Decided 2026-11-04: SIEM export comes in a later release, as JSON over HTTPS or syslog.
+- Decided 2026-11-04: SIEM export comes in a later release, as JSON over HTTPS or syslog. It is specified in spec 026 (R2).
 
 ## 18. Traceability
 

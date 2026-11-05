@@ -29,8 +29,19 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 - [ ] T016 [US2] Sign-in, no-access, suspended and IdP-unavailable pages (localized, RTL)
 - [ ] T017 [US2] Open redirect and login CSRF protections with tests
 
-## Phase 6: R2 (not in R0/R1)
+## Phase 6: User Story 6, Entra ID directory sync (P1, R1; after approval of US6)
+- [ ] T020 Migration: `directory_connection`, `directory_user_link`, `directory_group_link`, owner fields on `user` (RLS)
+- [ ] T021 [P] [US6] Tests: test connection reports counts and stores nothing; write permission warning
+- [ ] T022 [P] [US6] Tests: first sync creates users keyed by `oid`; sign-in links with no duplicate even with JIT on; UPN change updates in place
+- [ ] T023 [P] [US6] Tests: disable in directory disables membership and revokes sessions; product admin cannot re-enable; re-enable restores the same user
+- [ ] T024 [P] [US6] Tests: groups kept in step and mapped to roles; product groups untouched; unreachable directory changes nothing and alerts after 3 failures; threshold breach stops the run
+- [ ] T025 [US6] Graph delta reader, sync job on the outbox worker, `IDirectoryReader` contract for specs 002 and 010
+- [ ] T026 [US6] Directory admin page (connections, scope, attribute and group mapping, last runs, sync now)
+
+## Phase 7: R2 (not in R0/R1)
 - [ ] T018 Google OIDC, SAML 2.0, SCIM extension point (IAM-005, IAM-006, IAM-010)
+- [ ] T027 [US5] AD FS sign-in (OIDC and SAML) linked on `objectGUID`; missing claim refused with admin detail; works with no internet access on on-premises installs
+- [ ] T028 [US6] On-premises AD DS sync over LDAPS through the connector framework and outbound sync agent; plain LDAP refused
 
 ## Final phase
-- [ ] T019 Audit events for sign-in outcomes and config changes; OpenAPI; spec evidence
+- [ ] T019 Audit events for sign-in outcomes, config changes, directory connection changes and directory sync outcomes; OpenAPI; spec evidence

@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R0 |
-| Last updated | 2026-11-04 |
+| Last updated | 2026-11-05 |
 | Approved | 2026-11-04 by Mohamed |
 | Requirement IDs | TEN-007, TEN-008, IAM-007, IAM-008, ADM-001 (roles part) |
 | Use cases | UC-02, UC-03 |
@@ -102,12 +102,14 @@ The tenant admin makes Sara a Content Publisher for the "Acme Gulf" subtree.
 - **FR-008**: Permission changes MUST take effect within 60 seconds for grants and revocations (Decided 2026-11-04).
 - **FR-009**: Modules MUST NOT check role names directly. Denials MUST NOT reveal whether a resource exists (return not-found semantics for unreadable resources).
 - **FR-010**: Decisions MUST be explainable for administrators.
-- **FR-011**: Built-in roles MUST include: Tenant Administrator, Organization Administrator, Content Editor, Content Publisher, Workflow Designer, Approver, Integration Administrator, AI Policy Administrator, Security Officer (needed by spec 006), Employee. Platform Operator exists outside tenant roles.
+- **FR-011**: Built-in roles MUST include: Tenant Administrator, Organization Administrator, Content Editor, Content Publisher, Workflow Designer, Approver, Integration Administrator, AI Policy Administrator, Security Officer (spec 006), Employee. Platform Operator exists outside tenant roles. Later specs add these built-in roles, seeded when the spec that defines their permissions is approved, so that tenants without `authz.custom_roles` can still staff each feature: Communications Administrator (009), Records Manager, Knowledge Editor and Brand Manager (011), Service Owner (016), Agent Designer (020), HR Officer and Finance Officer (022), Process Owner and Process Operator (024), Compliance Officer (025, 026).
+- **FR-013**: Permissions MUST be named `<area>.<action>` (for example `content.publish`, `doc.contribute`) and listed in section 3 of the spec that owns the resource. Each permission maps to one of the FR-001 decisions for that resource type. The permission catalogue and the capability catalogue of spec 005 MUST be separate: no key string may appear in both, and an architecture test MUST fail if one does.
 - **FR-012**: Batch evaluation (filter a list of resources to those the user can view) MUST be supported for search, feeds and AI retrieval.
 
 ## 6. Business rules
 - Groups can come from the identity provider (claims), HR sync, or be product-defined.
 - Every tenant member has the Employee role at tenant scope by default. A tenant can remove default Employee access per membership type, for example for contractors (Decided 2026-11-04).
+- Guest memberships (spec 026) never receive the default Employee role. A guest gets access only through explicit shares into a guest space.
 
 ## 7. Tenant and organization scope
 - Cross-tenant: role assigned in tenant A has no effect in tenant B; group IDs from tenant B cannot be referenced in A.
@@ -147,6 +149,8 @@ Publishes `RoleAssignmentChanged`, `ResourcePermissionChanged` so search indexes
 | authz.role_defined / changed | audit |
 | authz.resource_permission_changed | audit |
 | authz.inheritance_rule_changed | audit |
+| authz.group_created / changed / deleted | audit |
+| authz.group_member_added / removed | audit (actor is a user, the identity provider claim mapping, or a directory connection) |
 
 Access denials are telemetry, not audit, unless the resource is classified Confidential or above.
 
@@ -173,4 +177,4 @@ Access denials are telemetry, not audit, unless the resource is classified Confi
 | TEN-008 | FR-004, US1, US2 |
 | IAM-007 | FR-002 |
 | IAM-008 | FR-003, FR-005 |
-| ADM-001 (roles) | FR-011, US5 |
+| ADM-001 (roles) | FR-011, FR-013, US5 |

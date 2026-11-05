@@ -4,7 +4,7 @@ Depends on 001 Phase 1 and 002 Phase 1.
 
 ## Phase 1: Foundations
 - [ ] T001 Migration: `permission`, `role`, `role_permission`, `role_assignment`, `resource_acl`, `inheritance_rule`, `membership_type_policy`, `group`, `group_member` (RLS where tenant-owned)
-- [ ] T002 Seed built-in roles (Tenant Administrator, Organization Administrator, Content Editor, Content Publisher, Workflow Designer, Approver, Integration Administrator, AI Policy Administrator, Security Officer, Employee) and permission catalogue
+- [ ] T002 Seed built-in roles (Tenant Administrator, Organization Administrator, Content Editor, Content Publisher, Workflow Designer, Approver, Integration Administrator, AI Policy Administrator, Security Officer, Employee) and permission catalogue. Roles added by later specs (FR-011) are seeded by those specs' own migrations
 - [ ] T003 `IResourceDescriptorProvider` contract and a test resource type for boundary tests
 
 ## Phase 2: User Stories 1 and 2, scoped roles and no implicit inheritance (P1)
@@ -34,5 +34,6 @@ Depends on 001 Phase 1 and 002 Phase 1.
 - [ ] T017 Role assignment UI with scope picker; explain view
 
 ## Final phase
-- [ ] T018 Membership type policy (remove default Employee role per type) with tests
-- [ ] T019 Audit assertions; architecture test banning role-name checks; OpenAPI; spec evidence
+- [ ] T018 Membership type policy (remove default Employee role per type; never for guest memberships) with tests
+- [ ] T018a Audit events for group create, change, delete and membership add and remove, with tests
+- [ ] T019 Audit assertions; architecture test banning role-name checks; architecture test that no key is in both the permission and capability catalogues (FR-013); OpenAPI; spec evidence

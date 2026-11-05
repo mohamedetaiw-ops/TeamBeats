@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R0 |
-| Last updated | 2026-11-04 |
+| Last updated | 2026-11-05 |
 | Approved | 2026-11-04 by Mohamed |
 | Requirement IDs | TEN-001, TEN-002, TEN-009, TEN-010, ADM-001 (tenant part) |
 | Use cases | UC-01 |
@@ -33,7 +33,7 @@
 
 **Out of scope:**
 - Self-service sign-up and billing.
-- Tenant data export and deletion execution (UC-14, later spec). This spec only defines the Closed status.
+- Tenant data export and deletion execution (UC-14). Legal hold is in spec 011 and the deletion certificate in spec 026 FR-019. This spec only defines the Closed status.
 - Provisioning separate infrastructure for dedicated deployments (deployment tooling, not product behavior).
 - Organization hierarchy (spec 002).
 
@@ -128,7 +128,7 @@ Every tenant must have exactly one active package at creation. Package behavior 
 - All labels and errors localized. Branding preview must show contrast warnings if primary color fails WCAG AA against white or dark backgrounds.
 
 ## 11. AI behavior and data policy
-Not applicable. AI policy settings are stored per tenant here but defined in a later AI governance spec.
+Not applicable. AI policy settings are stored per tenant here; their content is defined in spec 013 (model policy) and spec 027 (agent policy).
 
 ## 12. Integrations and events
 - Publishes: `TenantCreated`, `TenantSuspended`, `TenantReactivated`, `TenantClosed`, `TenantSettingsChanged`.

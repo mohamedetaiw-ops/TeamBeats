@@ -31,5 +31,16 @@ Depends on 001 Phase 1. Tests first.
 - [ ] T016 Org tree admin page (WAI-ARIA tree, keyboard navigation, RTL mirrored), move dialog with affected count
 - [ ] T017 Membership management panel
 
+## Phase 7: User Story 5, directory mapping (P1, R1 Entra ID, R2 on-premises AD; after approval of US5)
+- [ ] T019 Migration: owner columns on `org_unit` and `org_membership`; `directory_mapping`, `directory_sync_run`, `directory_unmapped` with RLS
+- [ ] T020 [P] [US5] Tests: preview for each strategy changes no data; apply stores `external_source` and `external_id`; one primary membership per mapped user
+- [ ] T021 [P] [US5] Tests: directory-owned unit and membership refuse rename, move and end; product-only units never changed by sync
+- [ ] T022 [P] [US5] Tests: mover ends old membership and starts new one with history; disappearing value with children is flagged; case, spacing and alias normalization
+- [ ] T023 [P] [US5] Tests: deletion threshold stops the run before any change; cross-tenant sync isolation; org admin read-only on mapping
+- [ ] T024 [US5] `IDirectoryReader` consumer, diff engine, threshold check and batched apply on the outbox worker
+- [ ] T025 [US5] Mapping page (strategy picker, preview diff, unmapped list, last runs) and "Managed by Active Directory" badge
+- [ ] T026 [US5] HR versus directory hierarchy source setting (FR-014) with tests
+- [ ] T027 [US5] Performance test: first full sync of 20,000 users and 2,000 units under 30 minutes; incremental run of 500 changes under 2 minutes
+
 ## Final phase
-- [ ] T018 Audit assertions; OpenAPI; spec status evidence
+- [ ] T018 Audit assertions (including `org.directory_mapping_changed` and `org.directory_sync_completed / halted`); OpenAPI; spec status evidence
