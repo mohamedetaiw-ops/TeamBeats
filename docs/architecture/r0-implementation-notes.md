@@ -13,7 +13,7 @@ What was built for R0, and where it differs from `r0-solution-structure.md`. Eac
 ## Differences from the planned layout
 | Planned | Built | Why / status |
 |---|---|---|
-| EF Core with interceptors | Npgsql with `IDbSession` and SQL migrations | ADR-0009 (Proposed) |
+| EF Core with interceptors | Npgsql with `IDbSession` and SQL migrations | ADR-0009 (Accepted) |
 | FluentValidation | Small `ValidationErrors` helper with resource keys | Validation rules are few and need resource keys, not messages. Revisit if forms grow. |
 | Five projects per module (Domain, Application, Infrastructure, Api, Contracts) | One project per module plus a Contracts project | Same boundary enforcement (architecture tests check references) with far fewer projects. Split a module when it grows. |
 | Outbox table per module schema | One `messaging.outbox` | Single dispatcher, same transactional guarantee. Listed in `rls-exceptions.md`. |

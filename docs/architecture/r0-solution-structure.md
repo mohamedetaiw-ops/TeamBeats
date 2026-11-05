@@ -15,7 +15,7 @@ Every R0 plan (`specs/001` to `specs/007`) builds on this document. It defines t
   /Workers                     Worker host (outbox dispatcher, audit sealer, scheduled jobs)
   /BuildingBlocks
     /TenantContext             Tenant/org context, transaction-local set_config, RLS helpers
-    /Persistence               EF Core base DbContext, interceptors, migration helpers
+    /Persistence               IDbSession (Npgsql, one transaction per request or message), SQL migration runner (ADR-0009)
     /Messaging                 Outbox, inbox (dedupe), broker abstraction
     /Authorization.Contracts   IAuthorizationService, decision types (no implementation)
     /Entitlements.Contracts    IEntitlementService, capability keys
@@ -56,7 +56,7 @@ Each module follows ADR-0013: `Domain/` (rules, no infrastructure references), `
 ## 3. Tenant context building block
 
 - Resolved once per request from the authenticated session (tenant ID, user ID, membership ID). Never from route, query or body.
-- An EF Core `DbConnectionInterceptor`/transaction interceptor runs `select set_config('app.tenant_id', @tid, true)` at the start of every transaction. All data access runs inside a transaction (enforced by the unit-of-work wrapper; queries outside one throw).
+- `IDbSession` (ADR-0009) runs `select set_config('app.tenant_id', @tid, true)` at the start of every transaction. All data access runs inside a transaction (`IDbSession` is the only way modules reach the database).
 - Workers: each message carries `tenant_id` in headers; the consumer opens a transaction and sets context per message.
 - Missing context means no rows (fail closed), verified by a test.
 
