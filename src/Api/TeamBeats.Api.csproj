@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>TeamBeats.Api</RootNamespace>
+    <AssemblyName>TeamBeats.Api</AssemblyName>
+    <OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+  <!-- Production composition root. It must never reference TeamBeats.Modules.Identity.DevAuth (ADR-0004). -->
+  <ItemGroup>
+    <ProjectReference Include="../BuildingBlocks/Telemetry/TeamBeats.Telemetry.csproj" />
+    <ProjectReference Include="../Modules/Tenancy/TeamBeats.Modules.Tenancy.csproj" />
+    <ProjectReference Include="../Modules/Identity/TeamBeats.Modules.Identity.csproj" />
+    <ProjectReference Include="../Modules/Authorization/TeamBeats.Modules.Authorization.csproj" />
+    <ProjectReference Include="../Modules/Entitlements/TeamBeats.Modules.Entitlements.csproj" />
+    <ProjectReference Include="../Modules/Audit/TeamBeats.Modules.Audit.csproj" />
+    <ProjectReference Include="../Modules/Administration/TeamBeats.Modules.Administration.csproj" />
+  </ItemGroup>
+</Project>

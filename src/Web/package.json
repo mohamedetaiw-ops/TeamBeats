@@ -1,0 +1,33 @@
+{
+  "name": "teambeats-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:css": "stylelint \"**/*.css\"",
+    "check:messages": "node scripts/check-messages.mjs",
+    "verify": "npm run typecheck && npm run lint && npm run lint:css && npm run check:messages"
+  },
+  "dependencies": {
+    "next": "16.4.2",
+    "next-intl": "4.14.9",
+    "react": "19.2.9",
+    "react-dom": "19.2.9"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "eslint": "10.12.0",
+    "eslint-config-next": "16.4.2",
+    "stylelint": "17.16.0",
+    "stylelint-config-standard": "40.0.0",
+    "typescript": "6.0.3"
+  }
+}
