@@ -269,7 +269,7 @@ Security baselines (encryption, TLS, audit, MFA assurance) are never turned off 
 
 ## 15. Non-functional requirements
 - IP rule and session checks add under 2 ms p95 per request.
-- Session revocation within 1 minute of sign out everywhere, within 5 minutes of role change (spec 003 default).
+- Session revocation within 1 minute of sign out everywhere, role and permission changes effective within 60 seconds (spec 004 FR-008).
 - SIEM delivery within 60 seconds p95.
 
 ## 16. Success criteria
