@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Proposed |
+| Status | Accepted (2026-11-05 by Mohamed) |
 | Date | 2026-11-04 |
 | Owners | Mohamed |
 | Related specs | 001 to 007 (all R0 persistence) |
@@ -31,4 +31,4 @@ Option 2. `IDbSession` opens the transaction and sets `app.tenant_id` with `set_
 Tenant context cannot be skipped: `IDbSession` is the only way modules reach the database, and the security suite checks that a connection without context sees no rows and that context does not survive in the pool.
 
 ## Rollout and migration plan
-Already in place for R0. No data migration needed. Merging the R0 pull request is acceptance of this ADR, the same way merging PR #1 accepts ADR-0006 to ADR-0008.
+Already in place for R0. No data migration needed.
