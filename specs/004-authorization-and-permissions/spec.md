@@ -8,7 +8,7 @@
 | Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R0 |
+| Target release | R0, R1 (attribute conditions: FR-014 to FR-016, User Story 7) |
 | Last updated | 2026-11-05 |
 | Approved | 2026-11-04 by Mohamed |
 | Requirement IDs | TEN-007, TEN-008, IAM-007, IAM-008, ADM-001 (roles part) |
@@ -29,6 +29,7 @@
 - Role assignments to users or groups at a scope: tenant, organization unit, organization subtree, or a single resource.
 - Resource-level permissions (ACL entries) on content, documents, workflows and similar.
 - Explicit inheritance rules for organization scope.
+- Attribute conditions on role assignments and resource permissions (R1).
 - Separation of audience targeting from access.
 - Delegated administration with boundaries.
 - An "explain" capability: why was access allowed or denied.
@@ -90,6 +91,18 @@ The tenant admin makes Sara a Content Publisher for the "Acme Gulf" subtree.
 **Acceptance scenarios:**
 1. **Given** a tenant admin, **When** they ask why user X can edit page P, **Then** the system lists the grants that allowed it (role, scope, rule).
 
+### User Story 7: Narrow a grant with attribute conditions (Priority: P2, R1)
+
+The tenant admin gives the Approver role for the "Acme Gulf" subtree only to people with job grade 7 or above, and shares the payroll library with "Finance" only for employees, not contractors.
+
+**Acceptance scenarios:**
+1. **Given** Approver for subtree "Acme Gulf" with condition `job_grade >= 7`, **When** a grade 8 manager approves a request in "Acme Gulf Finance", **Then** it is allowed, and the explanation names the role, the scope and the condition.
+2. **Given** the same assignment, **When** a grade 5 member of "Acme Gulf" tries to approve, **Then** it is denied, and the explanation says the condition was not met.
+3. **Given** a share to group "Finance" with condition `membership_type = employee`, **When** a contractor in "Finance" opens the library, **Then** access is denied with not-found semantics.
+4. **Given** a condition on an attribute the user does not have (for example no job grade synced), **Then** the condition is false and the grant does not apply (fail closed).
+5. **Given** a user has no grant at all, **When** any condition would be true for them, **Then** access is still denied: conditions never create access.
+6. **Given** a user's job grade changes in the directory, **Then** decisions reflect it within the FR-008 window.
+
 ## 5. Functional requirements
 
 - **FR-001**: The system MUST provide one authorization service used by all modules, with decisions CanView, CanEdit, CanPublish, CanApprove, CanManage, CanExecute (extensible per resource type).
@@ -105,11 +118,17 @@ The tenant admin makes Sara a Content Publisher for the "Acme Gulf" subtree.
 - **FR-011**: Built-in roles MUST include: Tenant Administrator, Organization Administrator, Content Editor, Content Publisher, Workflow Designer, Approver, Integration Administrator, AI Policy Administrator, Security Officer (spec 006), Employee. Platform Operator exists outside tenant roles. Later specs add these built-in roles, seeded when the spec that defines their permissions is approved, so that tenants without `authz.custom_roles` can still staff each feature: Communications Administrator (009), Records Manager, Knowledge Editor and Brand Manager (011; spec 033 adds the theme permissions so that Brand Manager is also the design administrator), Page Editor and Page Publisher (032), Service Owner (016), Agent Designer (020), HR Officer and Finance Officer (022), Process Owner and Process Operator (024), Compliance Officer (025, 026).
 - **FR-013**: Permissions MUST be named `<area>.<action>` (for example `content.publish`, `doc.contribute`) and listed in section 3 of the spec that owns the resource. Each permission maps to one of the FR-001 decisions for that resource type. The permission catalogue and the capability catalogue of spec 005 MUST be separate: no key string may appear in both, and an architecture test MUST fail if one does.
 - **FR-012**: Batch evaluation (filter a list of resources to those the user can view) MUST be supported for search, feeds and AI retrieval.
+- **FR-014**: Role assignments and resource permissions MAY carry a condition that must hold for the grant to apply. A condition MUST only narrow its own grant; it MUST NOT create access, and since there is no explicit deny, access remains the union of the grants whose conditions hold. *(constitution III, R1)*
+- **FR-015**: Conditions MUST be built only from the attribute catalogue in section 6 and the operators equals, not equals, in list, not in list, greater or equal and less or equal, combined with AND and OR to a depth of two. Conditions are data validated against a schema; free-form expressions or scripts MUST be rejected. A missing attribute MUST evaluate the condition as false. *(constitution III, XXIX, R1)*
+- **FR-016**: Explanations (FR-010) MUST show each condition with the attribute values used, and batch evaluation (FR-012) MUST apply conditions within its existing performance targets. *(R1)*
 
 ## 6. Business rules
 - Groups can come from the identity provider (claims), HR sync, or be product-defined.
 - Every tenant member has the Employee role at tenant scope by default. A tenant can remove default Employee access per membership type, for example for contractors (Decided 2026-11-04).
 - Guest memberships (spec 026) never receive the default Employee role. A guest gets access only through explicit shares into a guest space.
+- Attribute catalogue for conditions (R1). User attributes: membership type (employee, contractor, guest), job title and office (spec 003 attribute mapping), and employment status, job grade, job function, work country and cost centre once a tenant maps them from its directory or HR integration (planned 019). Resource attributes: classification (constitution XXV), owning organization unit. Request attributes: authentication assurance, meaning MFA performed and step-up freshness (spec 026). An attribute a tenant has not mapped is absent, so conditions on it fail closed. Adding an attribute is a change to this spec.
+- Conditions are a security control, not a premium feature: they are available in every package and need no capability key.
+- Audience targeting rules (FR-006) may use the same user attributes, but they remain separate records and never grant access.
 
 ## 7. Tenant and organization scope
 - Cross-tenant: role assigned in tenant A has no effect in tenant B; group IDs from tenant B cannot be referenced in A.
@@ -123,6 +142,7 @@ The tenant admin makes Sara a Content Publisher for the "Acme Gulf" subtree.
 | Role assignment | Product (or IdP group mapping) | Internal |
 | Resource permission | Product | Internal |
 | Inheritance rule | Product | Internal |
+| Grant condition | Product | Internal |
 
 ## 9. Package entitlements
 | Capability key | Behavior |
@@ -133,7 +153,8 @@ The tenant admin makes Sara a Content Publisher for the "Acme Gulf" subtree.
 ## 10. UX
 - Role assignment screen with scope picker (tenant, unit, subtree).
 - User's "my access" page.
-- Admin "explain access" view.
+- Admin "explain access" view, showing conditions and the attribute values used.
+- Condition editor on role assignment and share screens: pick attribute, operator and values from lists; no free text expressions.
 
 ## 11. AI
 AI retrieval and agent tools MUST call FR-012 batch evaluation before context assembly (constitution VII).
@@ -149,6 +170,7 @@ Publishes `RoleAssignmentChanged`, `ResourcePermissionChanged` so search indexes
 | authz.role_defined / changed | audit |
 | authz.resource_permission_changed | audit |
 | authz.inheritance_rule_changed | audit |
+| authz.condition_changed | audit (on the assignment or permission it narrows) |
 | authz.group_created / changed / deleted | audit |
 | authz.group_member_added / removed | audit (actor is a user, the identity provider claim mapping, or a directory connection) |
 
@@ -158,6 +180,8 @@ Access denials are telemetry, not audit, unless the resource is classified Confi
 - Privilege escalation through delegated admin: covered by US5.
 - IDOR (guessing resource IDs): not-found semantics, tests required.
 - Stale permissions in cache after revocation: bounded by FR-008, test required.
+- Attribute spoofing: user attributes come only from the identity provider, directory or HR sync, never from the user's own profile edits or the request.
+- Condition that widens access by mistake: impossible by construction (FR-014); covered by a property test that adding any condition never adds an allowed decision.
 
 ## 15. Non-functional requirements
 - Single decision p95 under 5 ms from warm cache. Batch filter of 1,000 resources p95 under 50 ms.
@@ -180,3 +204,4 @@ Access denials are telemetry, not audit, unless the resource is classified Confi
 | ADM-001 (roles) | FR-011, FR-013, US5 |
 | CX-GOV-001 (experience roles) | FR-011 (with spec 032 FR-048) |
 | CX-ORG-002 (visual inheritance never grants access) | FR-004, FR-006 (with spec 033 FR-017) |
+| Constitution III (attribute conditions) | FR-014 to FR-016, US7 |
