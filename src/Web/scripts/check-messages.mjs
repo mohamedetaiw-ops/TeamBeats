@@ -47,7 +47,7 @@ for (const file of files) {
 }
 
 // Navigation labels come from the API (admin.nav.{section}).
-for (const section of ["tenant_settings", "organization", "users", "roles", "plan", "identity", "audit"]) {
+for (const section of ["tenant_settings", "organization", "users", "roles", "plan", "identity", "connections", "audit"]) {
   if (!en.has(`admin.nav.${section}`)) errors.push(`missing admin.nav.${section}`);
 }
 

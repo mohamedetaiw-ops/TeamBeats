@@ -31,6 +31,7 @@ public static class AdministrationModule
         ("roles", Permissions.RolesView, "/admin/roles"),
         ("plan", Permissions.EntitlementsView, "/admin/plan"),
         ("identity", Permissions.IdentityConfigManage, "/admin/identity"),
+        ("connections", Permissions.IntegrationManage, "/admin/connections"),
         ("audit", Permissions.AuditView, "/admin/audit"),
     ];
 
