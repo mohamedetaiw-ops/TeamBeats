@@ -10,7 +10,7 @@
 | Approver | Mohamed |
 | Target release | R1 (catalogue, linked apps, request forms, single-step approval, task inbox), R2 (multi-step workflows, escalation, integrations, service templates pack) |
 | Last updated | 2026-11-05 |
-| Requirement IDs | WF-001, WF-002, WF-003, WF-004 to WF-012 (new) |
+| Requirement IDs | WF-001, WF-002, WF-003, WF-004 to WF-016 (new) |
 | Use cases | UC-08 |
 | Depends on | 002 (hierarchy), 003 (directory sync for prefill and manager), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 010 (profile and reporting line), 015 (notifications), 017 (connectors) |
 
@@ -31,6 +31,8 @@
 - Task inbox: one list of everything waiting for the person, with a header badge, from forms and from module services.
 - Delegation while away ("Manage Replacement"): a person hands their approvals to a delegate for a date range.
 - Escalation and reminders when a task waits too long.
+- Workflow automation without code: a visual route designer with approval steps and automatic steps (set a field, notify, call a connector or webhook, wait for a date or an event, branch, start another service), service level targets, and triggers that start a service from an event (for example a new hire synced from AD starts onboarding).
+- Test mode for a draft service: run it with test data and see who each step would go to, before publishing.
 - Fulfilment step: the request goes to a team queue (for example Logistics) that marks it done, or to a connector (spec 017) that creates the item in another system.
 - A starter pack of service templates a tenant can switch on and edit (section 12).
 
@@ -112,12 +114,27 @@ Training request: employee registers, training admin checks the seat, manager ap
 2. **Given** a published service, **When** the owner edits the form, **Then** a new form version is created; submitted requests keep the version they were filled with.
 3. **Given** a service owner scoped to "Acme Gulf", **When** they publish a service, **Then** its audience cannot reach beyond Acme Gulf.
 
+### User Story 8: Automate a new service end to end (Priority: P1, R2; approval-only routes in R1)
+
+The HR service owner creates "New joiner onboarding" with no developer. When AD sync creates a new user, the service starts by itself, opens a laptop task for IT, a business card task for Logistics and an access request for the manager to approve, then emails the new joiner on day one.
+
+**Acceptance scenarios:**
+1. **Given** the route designer, **When** the owner builds a route, **Then** they can place these step types: approval, task for a person or queue, set field, notify (in-app, email, Teams), call connector action, call webhook, wait until a date or for an event, condition branch, parallel split and join, start another service, and end. No step type runs custom code.
+2. **Given** a trigger "user provisioned by directory" on the service, **When** spec 003 publishes `UserProvisioned`, **Then** one request starts for that user, owned by the service's system requester, and appears in the new joiner's and manager's request lists.
+3. **Given** a service level target (for example "complete within 3 working days") and step due times, **When** the target is at risk or missed, **Then** the request shows its status, the queue and service owner are alerted, and the breach is counted for spec 021.
+4. **Given** an auto-approve rule (for example business cards up to 2 boxes), **When** a request matches, **Then** the approval step is completed by the system, marked "auto-approved by rule" in Tracking.
+5. **Given** a webhook or connector step that fails, **When** retries run out, **Then** the request pauses at that step with "automation failed", the service owner is alerted, and an admin can retry, skip with a reason, or cancel.
+6. **Given** a draft route, **When** the owner runs test mode as a sample employee, **Then** the product shows the resolved assignee of every step and the branches taken, sends nothing outside the product, and creates no real tasks.
+7. **Given** a route with a step that can never be reached or a parallel split with no join, **When** the owner tries to publish, **Then** publishing is blocked with the problem shown on the diagram.
+
 ### Edge cases
 - Requester leaves the company (disabled by directory sync): open requests are cancelled with reason "requester left", except services marked "continue after exit" (for example resignation, final settlement).
 - Approver leaves or has no manager: the task goes to the step's fallback (org unit admin or tenant admin queue) and the service owner is alerted.
 - Manager changes during approval: an unclaimed manager step re-resolves to the new manager.
 - Duplicate submission (double click, retry): idempotency key on submit returns the same request.
 - Anonymous services (Speak Up style): the requester identity is not stored on the request and is not visible to reviewers or admins; see spec 023.
+- Trigger loops (service A starts B which starts A): the designer blocks direct cycles, and at run time a request chain deeper than 5 stops with an alert.
+- An event trigger fires twice for the same user: the trigger is idempotent per event ID, so only one request starts.
 
 ## 5. Functional requirements
 
@@ -133,6 +150,10 @@ Training request: employee registers, training admin checks the seat, manager ap
 - **FR-010**: Module services MUST register through a catalogue contract (service ID, names, audience, launch route, task source) and their tasks MUST appear in the same inbox. *(WF-011)*
 - **FR-011**: Workflow steps, reminders, escalations and connector hand-offs MUST run as durable background jobs with retry and idempotency. *(WF-003)*
 - **FR-012**: Request data MUST support reporting (counts, cycle time, rejection reasons, structured reason codes such as resignation reasons) through spec 021 without exporting personal fields by default. *(WF-012)*
+- **FR-013**: Routes MUST be built in a visual designer from the step types listed in US8, with no custom code. Published routes MUST pass validation (reachable steps, matched joins, assignees resolvable). *(WF-013)*
+- **FR-014**: Services MUST support start triggers: manual submit, schedule (for example every quarter), and product events (`UserProvisioned`, `UserDeprovisioned`, `OrganizationMembershipChanged`, `RequestCompleted` of another service). Triggers MUST be idempotent per event. *(WF-014)*
+- **FR-015**: Services MUST support service level targets and step due times in working days, with at-risk and breach alerts, and auto-approve rules on form values. *(WF-015)*
+- **FR-016**: Automatic steps that reach outside the product MUST go through the connector framework (spec 017) or registered outbound webhooks with signed payloads, a tenant allowlist of hosts and secret-manager credentials. Only fields the owner selects are sent. *(WF-016)*
 
 ## 6. Business and validation rules
 - Team requests use the reporting line (spec 010), filled from the directory `manager` attribute or HR. Org unit membership alone never makes someone an approver.
@@ -160,7 +181,8 @@ Training request: employee registers, training admin checks the seat, manager ap
 |---|---|
 | `workflow.catalogue` | All packages (catalogue, linked apps, form services, single-step approval, task inbox, delegation) |
 | `workflow.multi_step` | Workplace Plus and above (parallel steps, conditions, escalation) |
-| `workflow.connector_fulfilment` | Workplace Plus and above |
+| `workflow.connector_fulfilment` | Workplace Plus and above (connector and webhook steps) |
+| `workflow.automation` | Workplace Plus and above (event and schedule triggers, automatic steps, auto-approve rules). Workplace keeps manual submit with approval and task steps |
 | `workflow.max_services` | Quota per package (commercial data) |
 
 ## 10. UX, localization and accessibility
@@ -200,6 +222,7 @@ Starter templates (R2, tenant can switch on and edit). Taken from the current in
 | Event | Type | Key fields |
 |---|---|---|
 | service.created / published / changed / retired | audit | service, version, actor |
+| request.started_by_trigger / auto_approved / automation_failed | audit | request, trigger or rule, step |
 | request.submitted / cancelled | audit | request, service, requester or "anonymous" |
 | task.approved / rejected / returned / reassigned / delegated | audit | task, actor, on behalf of |
 | request.handoff_succeeded / failed | operational and audit | request, connector, external reference |
@@ -209,6 +232,8 @@ Starter templates (R2, tenant can switch on and edit). Taken from the current in
 - Delegation used to approve own request: blocked (FR-008).
 - Linked app URL set to `javascript:` or an unregistered host: rejected (FR-002).
 - Form field used to inject script into an approver's view: all values are encoded on output; rich text is not a field type.
+- Webhook step used to send data to an attacker's server: only hosts on the tenant allowlist, set by a tenant admin, can be called, and every call is audited.
+- Service owner builds an auto-approve rule to skip a required control: auto-approve rules cannot be added to services marked Confidential (for example resignation) without tenant admin sign-off.
 - Anonymous service leaking identity through attachments or metadata: file metadata is stripped and no requester ID is stored.
 
 ## 15. Non-functional requirements
@@ -220,6 +245,7 @@ Starter templates (R2, tenant can switch on and edit). Taken from the current in
 - **SC-001**: Every service of the current intranet is reachable from the TeamBeats catalogue, either inside TeamBeats or as a linked app.
 - **SC-002**: A service owner can publish a new two-step form service in under 30 minutes without developer help.
 - **SC-003**: A manager handles all pending approvals from one inbox.
+- **SC-004**: A service owner can build an onboarding service with an event trigger, three parallel tasks and one connector step, test it and publish it in under 2 hours without developer help.
 
 ## 17. Open questions
 1. Release split: should the catalogue, linked apps, simple form services and task inbox come forward into R1 (as written above) so the pilot can replace the current intranet's menu, or stay in R2 as the roadmap had them? Default as written: R1.
@@ -233,4 +259,5 @@ Starter templates (R2, tenant can switch on and edit). Taken from the current in
 | WF-002 | FR-006, US3, US5 |
 | WF-003 | FR-011, US6 |
 | WF-004 to WF-012 (new) | FR-001, FR-002, FR-004, FR-005, FR-007 to FR-010, FR-012 |
+| WF-013 to WF-016 (new) | FR-013 to FR-016, US8 |
 | UC-08 | US2, US3 |
