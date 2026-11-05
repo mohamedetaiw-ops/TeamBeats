@@ -123,7 +123,7 @@ public sealed class AuthorizationAdmin(
     }
 
     /// <summary>
-    /// Delegation rules (spec 004 US5, FR-007): the assigner must hold <c>authz.roles_assign</c> over the whole target scope,
+    /// Delegation rules (spec 004 US5, FR-007): the assigner must hold <c>authz.role.assign</c> over the whole target scope,
     /// the role must be delegable unless assigned by someone with tenant-wide assign rights, and every permission in
     /// the role must already be held by the assigner over that scope.
     /// </summary>
