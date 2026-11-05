@@ -8,11 +8,11 @@
 | Version | 0.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (news, announcements, pages, targeting, approval, versions, review dates, critical announcements with acknowledgement), R2 (sites, page builder, campaigns across channels, AI translation, content health dashboard), R3 (external sites for guests, advanced campaign automation) |
+| Target release | R1 (news, announcements, pages, targeting, approval, versions, review dates, critical announcements with acknowledgement), R1 also includes content components for the page builder of spec 032; R2 (sites, campaigns across channels, AI translation, content health dashboard), R3 (external sites for guests, advanced campaign automation) |
 | Last updated | 2026-11-05 |
 | Requirement IDs | EXP-002, EXP-003, EXP-004, LOC-004, UC-04, PUB-001 to PUB-020 (new) |
 | Use cases | UC-04 |
-| Depends on | 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 010 (profiles), 011 (documents and assets), 012 (search), 013 (AI Gateway), 015 (notifications), 021 (analytics), 024 (process engine, for approval routes), 025 (policies), 026 (external users) |
+| Depends on | 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 008 (shell, personalization), 032 (page composition), 033 (themes and organization inheritance), 010 (profiles), 011 (documents and assets), 012 (search), 013 (AI Gateway), 015 (notifications), 021 (analytics), 024 (process engine, for approval routes), 025 (policies), 026 (external users) |
 
 ## 1. Problem and outcome
 
@@ -31,8 +31,8 @@
 - Critical announcements: banner, pop-up on next visit, required acknowledgement with a deadline, reminders, escalation to managers, completion report.
 - Governance: content owner and backup owner, approval routes run on the process engine (spec 024), review date and review reminders, expiry, version history with compare and restore, content health dashboard, retention per content type.
 - Sites (microsites): a site per org unit, location, brand or project with its own navigation, theme, editors and approvers. Site templates.
-- Page builder: drag-and-drop layout of sections and widgets (news feed, links, people, documents, events, services, embedded dashboard, video, rich text, call to action), shared with the home widget set of spec 008.
-- Branding and themes: tenant theme (colors, logo, fonts, images) and site themes within tenant guardrails, with automatic contrast checks.
+- Content components for pages: news feed, links, people, documents, events, services, embedded dashboard, video, rich text, call to action. They are registered through component manifests (spec 032) and placed with the page builder of spec 032, on site pages and on the employee home (spec 008).
+- Site branding: a site picks a brand profile or overrides approved brand properties under the tenant's locks (spec 033).
 - Campaigns: group several items and channels (intranet, email, Teams, mobile push, digital signage) into one campaign with a schedule and shared metrics.
 - Social on content: comments, reactions, @mentions, #hashtags, follow a topic or a site, share by link. Moderation settings per site.
 - Personal feed: users follow sites and topics and set language and topic preferences, which shape their feed and recommendations. Mandatory and critical content is never hidden by preferences.
@@ -43,7 +43,7 @@
 - Document check-in and check-out, retention labels and the asset portal (spec 011).
 - Policies with attestation and policy review cycles (spec 025). Policy pages render through this spec's page engine.
 - Communities, discussion rooms, polls, surveys and recognition (spec 023).
-- Home page personalization and the widget catalogue (spec 008). This spec supplies content widgets to it.
+- Home page personalization (spec 008). The page model, templates, layouts, component registry and visual page builder (spec 032). Themes, tokens and brand inheritance (spec 033). This spec supplies content components to them.
 - Notification delivery mechanics (spec 015). This spec decides what to send; 015 delivers it.
 - Public internet websites. Sites in this spec are for signed-in users, including guests from spec 026.
 
@@ -132,20 +132,22 @@ Every page has a content owner and a review date. Thirty days before the review 
 Acme Gulf wants its own intranet site with its own colors, navigation and editors, and only its own staff should be able to edit it. Group content still reaches Acme Gulf staff.
 
 **Acceptance scenarios:**
-1. **Given** a tenant admin, **When** they create a site from a template and link it to an org unit, location or group, **Then** the site has its own home page, navigation, theme, editors, approvers and route.
+1. **Given** a tenant admin, **When** they create a site from a template and link it to an org unit, location or group, **Then** the site has its own home page (a page of spec 032), navigation (spec 008), theme (spec 033), editors, approvers and route.
 2. **Given** a site linked to "Acme Gulf", **Then** its default audience is that subtree, and Acme Gulf staff see the site in their navigation. Staff of a sibling subsidiary do not, unless the site is shared with them.
-3. **Given** a site theme, **When** the site owner picks colors, **Then** the product rejects combinations that fail WCAG 2.2 AA contrast and keeps tenant-locked elements (for example the tenant logo in the header) as set by the tenant admin.
+3. **Given** a site theme, **When** the site owner picks colors, **Then** the product applies the contrast validation of spec 033 and keeps tenant-locked elements (for example the tenant logo in the header) as set by the tenant admin.
 4. **Given** a site owner of Acme Gulf, **Then** they cannot edit any other site, tenant theme or content type.
 5. **Given** a site is archived, **Then** its content is read-only, removed from feeds and navigation, and still found by search for permitted users with an "archived" label.
 
-### User Story 7: Build a page without developers (Priority: P2, R2)
+### User Story 7: Content components on composed pages (Priority: P2, R2)
+
+Page composition itself (templates, layouts, builder, previews, approval of page structure) is specified in spec 032. This story covers what content components must do on those pages.
 
 **Acceptance scenarios:**
-1. **Given** an editor on a page, **When** they drag sections and widgets onto a layout (one, two or three columns, full-width hero), **Then** the page previews at desktop, tablet and phone widths and in left-to-right and right-to-left.
+1. **Given** a site page built in the spec 032 builder, **When** an editor places content components, **Then** each component works in every compatible region of any template, at every reference width and in both directions, without content-specific builder code.
 2. **Given** a widget that shows data (news, documents, people, services, events), **Then** it shows only items the viewing user is permitted to see, each time the page renders.
 3. **Given** an embed widget, **Then** only hosts on the tenant's embed allowlist can be embedded, inside a sandboxed frame.
-4. **Given** a page saved as a template, **Then** editors in permitted sites can start new pages from it.
-5. **Given** a widget from the widget catalogue (spec 008) that the tenant's package does not include, **Then** it is not offered in the builder and the API refuses it.
+4. **Given** a content page (page content type), **Then** its body text follows this spec's lifecycle (draft, route, versions) and its structure follows spec 032; one publish action covers both.
+5. **Given** a content component whose capability the tenant's package does not include, **Then** it is not offered in the builder and the API refuses it.
 
 ### User Story 8: Campaign across channels (Priority: P2, R2)
 
@@ -188,9 +190,9 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 - **FR-009 / PUB-009**: Every save of a published item MUST create a new version. The system MUST support viewing, comparing and restoring versions without deleting history. *(EXP-004)*
 - **FR-010 / PUB-010**: Items MUST support locale variants with fallback, and AI translation drafts that require human approval before publishing. *(LOC-004)*
 - **FR-011 / PUB-011**: AI-assisted authoring MUST go through the AI Gateway, respect the tenant AI policy for the item's classification, label AI-generated text and images until a human edits or approves them, and never publish without a human action. *(constitution VIII, X)*
-- **FR-012 / PUB-012**: The system MUST support sites with their own navigation, theme, editors, approvers, route, moderation and default audience, created from site templates.
-- **FR-013 / PUB-013**: The page builder MUST provide responsive layouts and the widgets listed in section 2, render every data widget with the viewer's permissions, and allow embeds only from the tenant allowlist in a sandboxed frame.
-- **FR-014 / PUB-014**: Theming MUST cover colors, logo, fonts from an approved list, and images at tenant and site level, and MUST block color combinations below WCAG 2.2 AA contrast. *(ADM-001, EXP-008)*
+- **FR-012 / PUB-012**: The system MUST support sites with their own home page, navigation, theme, editors, approvers, route, moderation and default audience, created from site templates. Pages, navigation and theme use specs 032, 008 and 033.
+- **FR-013 / PUB-013**: Content components MUST be registered through spec 032 manifests, render data with the viewer's permissions on every render, and allow embeds only from the tenant allowlist in a sandboxed frame.
+- **FR-014 / PUB-014**: Sites MUST use the brand profiles, overrides, locks and contrast validation of spec 033 at site scope. *(ADM-001, EXP-008)*
 - **FR-015 / PUB-015**: Campaigns MUST group items and channel sends on a schedule with "only those who have not acted" targeting and one dashboard. Delivery MUST go through spec 015.
 - **FR-016 / PUB-016**: Comments, reactions, mentions and hashtags MUST be configurable per site and content type, with moderation, reporting and retention.
 - **FR-017 / PUB-017**: Users MUST be able to follow sites and topics and set feed preferences. Recommendations MUST only use the user's own signals and permitted items, and MUST NOT hide mandatory or critical content.
@@ -232,7 +234,6 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 | `content.critical_ack` (critical announcements with acknowledgement) | on | on | on |
 | `content.multistep_approval` | off | on | on |
 | `content.max_sites` (limit) | 3 | 25 | unlimited |
-| `content.page_builder` (all widgets, templates, custom layouts) | off (one, two and three column layouts with content widgets only) | on | on |
 | `content.campaigns` | off | on | on |
 | `content.ai_translation` | off | on | on |
 | `ai.authoring` (AI drafting and rewrite, counts against AI quota) | on | on | on |
@@ -242,7 +243,6 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 - Editor works fully in right-to-left for Arabic and Urdu, including mixed-direction text, tables and embeds.
 - Pop-up announcements are accessible modals: focus is trapped and returned, the confirm control is labelled, and screen readers announce the title. They never auto-close.
 - Compare view does not rely on color alone; additions and removals also carry text markers.
-- Theme editor previews contrast and shows a failure message per color pair.
 
 ## 11. AI behavior and data policy
 - Drafting, rewriting, summaries, translation and image generation go through the AI Gateway (spec 013) with the item's classification. Restricted content never goes to external providers by default; Confidential needs tenant approval (constitution IX).
@@ -266,7 +266,7 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 | content.acknowledged | audit | item, version, user, channel |
 | content.version_restored | audit | item, from version, actor |
 | content.owner_reassigned | audit | item, from, to, reason |
-| site.created / theme_changed / editors_changed | audit | site, actor |
+| site.created / editors_changed | audit | site, actor (theme and page changes are audited by specs 033 and 032) |
 | content.viewed, content.reacted, content.commented | analytics | item, user (pseudonymous in analytics), channel, dwell bucket |
 | campaign.step_delivered / opened / clicked | analytics | campaign, step, channel |
 

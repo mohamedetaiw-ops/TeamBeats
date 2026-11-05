@@ -160,7 +160,7 @@ When a directory or HR source owns a unit or membership, its source fields are r
 ## 10. UX, localization and accessibility
 - Tree view with keyboard navigation (arrow keys, expand/collapse) following the WAI-ARIA tree pattern.
 - Mirrored tree indentation in RTL.
-- Move action with confirmation showing affected unit count.
+- Move action with confirmation showing affected unit count and the experience impact from spec 033 (brand, locks, templates, navigation and shared pages that change). Units are referenced everywhere by immutable ID, so a rename never breaks saved layouts or personalization. *(CX-ORG-010, CX-ORG-011)*
 - Directory-owned units and memberships show a "Managed by Active Directory" badge and a link to the mapping page.
 - Mapping page: strategy picker, preview diff grouped by create, rename, move and deactivate, unmapped values and users, last run status.
 
@@ -209,4 +209,5 @@ Directory reads use the connection from spec 003: Microsoft Graph for Entra ID, 
 | TEN-005 | FR-003, US1 scenarios 2 and 3 |
 | TEN-006 | FR-005, US3 |
 | TEN-010 | FR-008 |
+| CX-ORG-010, CX-ORG-011 (with spec 033) | Section 10 move confirmation |
 | INT-007 (directory part) | FR-010 to FR-014, US5 |

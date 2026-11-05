@@ -8,11 +8,11 @@
 | Version | 0.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (item-level reach and acknowledgement counts inside specs 009 and 025, adoption basics for tenant admins), R2 (analytics workspace: adoption, content, communications and campaigns, search, knowledge, services and workflows, policy compliance, AI usage, location and unit dashboards, scheduled reports, export, survey and comment sentiment), R3 (connected business KPIs on location dashboards, benchmarks across anonymized tenants with consent, analytics API) |
+| Target release | R1 (item-level reach and acknowledgement counts inside specs 009 and 025, adoption basics for tenant admins), R2 (analytics workspace: adoption, content, communications and campaigns, search, knowledge, services and workflows, policy compliance, AI usage, location and unit dashboards, scheduled reports, export, survey and comment sentiment), R3 (connected business KPIs on location dashboards, benchmarks across anonymized tenants with consent, analytics API, governed experience experiments) |
 | Last updated | 2026-11-05 |
-| Requirement IDs | ANL-001 (was LOC-005), ANL-002 (was LOC-006), ANL-003 to ANL-016 (new), AI-013 (usage visibility, shared with spec 013) |
+| Requirement IDs | ANL-001 (was LOC-005), ANL-002 (was LOC-006), ANL-003 to ANL-022 (new), AI-013 (usage visibility, shared with spec 013), CX-MET-001 to CX-MET-008 |
 | Use cases | UC-04, UC-08, UC-13 (usage figures only) |
-| Depends on | 002 (org units, locations), 004, 005, 006, 009, 011, 012, 014, 016, 022, 023, 024, 025, 026, 013 (AI usage figures) |
+| Depends on | 002 (org units, locations), 004, 005, 006, 008, 009, 011, 012, 014, 016, 022, 023, 024, 025, 026, 032, 033, 013 (AI usage figures) |
 
 ## 1. Problem and outcome
 
@@ -36,11 +36,13 @@
   - Engagement: survey and poll results, recognition counts, community activity (spec 023), sentiment trends on comments and survey free text.
   - AI usage: requests, users, answer rate, citation rate, feedback, quota use (shared with spec 013; governance views are in agent governance spec 027).
   - Security posture trends (spec 026): alerts, guest counts, policy weaker than baseline.
+  - Experience: Core Web Vitals and frontend errors per tenant, org unit, page type, template, theme, device class and release; navigation success; template, layout and template version adoption; personalization enablement against actual use and resets; task completion, drop-off and findability outcomes (specs 008, 032 and 033).
 - Location and unit dashboard: one page per location or unit combining adoption, communications reach, policy compliance, service performance and, in R3, business KPIs from connected systems through spec 017.
 - Filters and drill-down: date range, org unit (with subtree), location, channel, locale, membership type, content type, site.
 - Scheduled reports by email or Teams, as PDF or CSV.
 - Export of aggregated data, and of person-level data only where a module defines a permitted personal report (for example acknowledgement and attestation lists in specs 009 and 025).
 - Privacy controls: minimum group size, individual analytics off by default, purpose labels, retention of raw events.
+- Governed experience experiments (R3): controlled variants of pages or layouts for consenting users, with stable allocation and rollback.
 - AI insights: plain-language summaries of dashboard changes and sentiment classification, through the AI Gateway, on aggregated or de-identified text.
 
 **Out of scope:**
@@ -126,6 +128,22 @@ The general manager of the Jeddah plant opens one page that shows adoption, comm
 2. **Given** anonymous surveys (spec 023), **Then** sentiment never links back to a person, and free text is shown only when at least 5 responses exist for the filter.
 3. **Given** a dashboard, **When** the user asks for a summary, **Then** the AI Gateway produces a short description of notable changes with the figures it used, labelled as AI-generated.
 
+### User Story 9: Experience quality and adoption (Priority: P2, R1 telemetry and frontend errors, R2 dashboards, R3 experiments)
+
+Nadia, the tenant's digital workplace lead, checks which published pages are slow on phones, which templates and versions are in use per subsidiary, and whether employees actually personalize their home after it was enabled.
+
+**Independent test:** emit experience events from two unrelated component packs with no component-specific code; confirm the dashboards break them down by scope, device class, template and release, and that disabling analytics stops nonessential events.
+
+**Acceptance scenarios:**
+1. **Given** pages built from any registered components, **Then** page performance, navigation success, key interactions and UI errors arrive through the shared event schema without feature-specific code. *(CX-MET-001)*
+2. **Given** the tenant turns nonessential analytics off, **Then** nonessential experience events are not collected; essential operational telemetry (errors, performance without user keys) continues as the privacy notice states. *(CX-MET-002)*
+3. **Given** the template adoption report, **Then** it lists current pages per template, layout distribution and template version adoption by scope, and the counts match the page inventory of spec 032. *(CX-MET-003)*
+4. **Given** the personalization report, **Then** it compares where personalization is enabled with actual use and resets, aggregated with the minimum group size. *(CX-MET-004)*
+5. **Given** the performance dashboard, **Then** it shows p75 LCP, INP and CLS by device class, theme, organization, page type and, where the tenant allows, country, and flags published variants that miss the targets of spec 032. *(CX-MET-005)*
+6. **Given** a frontend error, **Then** support sees the release, component version and correlation ID with payloads redacted. *(CX-MET-006)*
+7. **Given** two different task flows (for example "submit a request" and "find a policy"), **Then** both use the same outcome event contract for start, complete and abandon, configured without schema changes. *(CX-MET-007)*
+8. **Given** an approved experiment, **Then** only consenting users in the chosen scope are allocated, allocation is stable per user, and stopping the experiment returns everyone to the control without residue. *(CX-MET-008)*
+
 ### Edge cases and exception flows
 - Org units restructure: historical data is reported under the unit at the time of the event by default, with an option for the current structure.
 - A person moves location: their events count under the location at the time.
@@ -151,6 +169,12 @@ The general manager of the Jeddah plant opens one page that shows adoption, comm
 - **FR-014 / ANL-014**: Raw analytics events MUST be kept for 13 months by default (tenant configurable between 3 and 25 months), and aggregates for the life of the tenant.
 - **FR-015 / ANL-015**: Analytics MUST NOT include keystroke, idle time, screen time or similar productivity monitoring.
 - **FR-016 / ANL-016**: AI usage figures MUST be shared with spec 013 so that one number is shown everywhere. *(AI-013)*
+- **FR-017 / ANL-017**: The shared event schema MUST cover page performance, navigation success, key interactions and UI errors for every registered component, emitted through the component event contract of spec 032 with no component-specific analytics code. *(CX-MET-001)*
+- **FR-018 / ANL-018**: Experience telemetry MUST minimize personal data, follow the tenant's analytics policy and retention (FR-014), and stop nonessential events when the tenant disables them. *(CX-MET-002)*
+- **FR-019 / ANL-019**: Experience dashboards MUST report template usage, layout distribution and template version adoption by scope, and personalization enablement against use and resets, at aggregate level only. *(CX-MET-003, CX-MET-004)*
+- **FR-020 / ANL-020**: Performance dashboards MUST show Core Web Vitals by device class, geography where allowed, theme, organization, page type and release, and flag published variants below target. Frontend error views MUST show redacted client errors, failed component boundaries and release version with correlation IDs. *(CX-MET-005, CX-MET-006, CX-NFR-009)*
+- **FR-021 / ANL-021**: Task completion, drop-off and findability outcomes SHOULD be configurable on one outcome event contract without component-specific schema changes. *(CX-MET-007)*
+- **FR-022 / ANL-022**: Experience experiments COULD be run only when a tenant admin approves them, only for users who consented, with stable, scoped and reversible allocation, never on mandatory or critical content, and never to measure individuals. *(CX-MET-008, R3)*
 
 ## 6. Business and validation rules
 - Reach = unique readers in the audience / audience size at the time of the reading period.
@@ -184,6 +208,8 @@ The general manager of the Jeddah plant opens one page that shows adoption, comm
 | `analytics.export` | off | off | on |
 | `analytics.kpi_tiles` (connected business KPIs) | off | off | on |
 | `analytics.api` | off | off | on |
+| `analytics.experience` (experience quality, template adoption and personalization dashboards) | off | on | on |
+| `analytics.experiments` (R3) | off | off | on |
 
 ## 10. UX, localization and accessibility
 - Every chart has a table view and a text summary for screen readers; color is never the only signal.
@@ -209,6 +235,7 @@ The general manager of the Jeddah plant opens one page that shows adoption, comm
 | analytics.schedule_created / changed | audit | dashboard, recipients, actor |
 | analytics.privacy_setting_changed | audit | setting, before, after, actor |
 | analytics.kpi_tile_configured | audit | source, scope, actor |
+| analytics.experiment_started / stopped | audit | experiment, scope, variants, actor |
 
 ## 14. Security and abuse cases
 - Narrowing filters to identify one person (differencing attacks): minimum group size applies to every filter combination, and complementary suppression hides a second cell when one is suppressed.
@@ -239,6 +266,14 @@ The general manager of the Jeddah plant opens one page that shows adoption, comm
 | WF-012 | FR-008, US4 |
 | UC-04 | US1, US2 |
 | UC-08 | US4 |
+| CX-MET-001 | FR-017, US9 |
+| CX-MET-002 | FR-018, US9 |
+| CX-MET-003 | FR-019, US9 |
+| CX-MET-004 | FR-019, US9 |
+| CX-MET-005 | FR-020, US9 |
+| CX-MET-006 | FR-020, US9 |
+| CX-MET-007 | FR-021, US9 |
+| CX-MET-008 | FR-022, US9 |
 
 ## Review checklist
 - [x] No implementation details

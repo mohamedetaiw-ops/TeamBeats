@@ -10,7 +10,7 @@
 | Approver | Mohamed |
 | Target release | R1 (tenant security policy: IP rules, session rules, MFA assurance check, step-up for sensitive actions; encryption baseline; security alerts; trust documents), R2 (guest users and secure extranet spaces, SIEM streaming, sensitive data detection, compliance projects and control library, data residency choice, ISO 27001:2022 certificate and SOC 2 Type I report in hand by general availability, SOC 2 Type II six months after), R3 (customer-managed encryption keys, four-eyes admin changes, national government certifications, on-prem hardening pack) |
 | Last updated | 2026-11-05 |
-| Requirement IDs | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-020 and CMP-001 to CMP-004 (new); foundation section 14 (Security, Privacy), 14.2, and open business decision 9 (certifications and residency) |
+| Requirement IDs | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-021 and CMP-001 to CMP-004 (new), CX-NFR-010 (shared with spec 032); foundation section 14 (Security, Privacy), 14.2, and open business decision 9 (certifications and residency) |
 | Use cases | UC-01, UC-03, UC-14 |
 | Depends on | 001 (tenants, break-glass), 003 (identity), 004 (authorization), 005 (entitlements), 006 (audit), 009 and 011 (content and documents shared with guests), 015 (notifications), 021 (security dashboards), 025 (policy to control mapping) |
 
@@ -167,6 +167,7 @@ The compliance officer creates a guest space "External audit 2027", shares the p
 - **FR-022 / CMP-002**: Compliance projects MUST support controls with owners, status, due dates, links to policies, documents and audit exports, and evidence tasks.
 - **FR-023 / CMP-003**: Evidence attachments from product exports MUST keep their export reference and content hash.
 - **FR-024 / CMP-004**: Compliance projects and their evidence MUST be shareable read-only to guest auditor spaces.
+- **FR-025 / SEC-021**: Every web surface MUST enforce secure rendering: a content security policy without inline script, server-side sanitization of rich text and configuration fields, integrity checks for third-party scripts and fonts, embeds only from the tenant allowlist in sandboxed frames, and no executable content through any administrator or employee configuration. The page composition rules are in spec 032 FR-035. *(CX-NFR-010)*
 
 ## 6. Business and validation rules
 
@@ -288,6 +289,7 @@ Security baselines (encryption, TLS, audit, MFA assurance) are never turned off 
 | Requirement ID | Covered by |
 |---|---|
 | TEN-009 | FR-001, FR-003 |
+| CX-NFR-010 | FR-025 (with spec 032 FR-035) |
 | IAM-009 | FR-003, US2 |
 | ADM-002 | FR-014, FR-018 |
 | ADM-003 | FR-019 |
