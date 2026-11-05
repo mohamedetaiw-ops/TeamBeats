@@ -13,7 +13,7 @@ Compared on 2026-11-05 against two competing products. Product A is a modular in
 | Targeting by role, location, group and device | A, B | 009 (FR-005) |
 | Sites for each location, brand or franchise | A | 009 (US6) |
 | Campaigns across several channels, with measurement | B | 009 (US8), 015 planned, 021 (US2) |
-| Personal feed and recommendations from user preferences | B | 009 (FR-017), 008 planned |
+| Personal feed and recommendations from user preferences | B | 009 (FR-017), 008 |
 | @mentions, #hashtags, reactions, comments | A, B | 009 (US9), 023 planned |
 | Multilingual content and AI translation into many languages | A, B | 009 (US5), 007 |
 | Events calendar | A | 009 (FR-018) |
@@ -25,7 +25,7 @@ Compared on 2026-11-05 against two competing products. Product A is a modular in
 |---|---|---|
 | Themes for colors, logos, fonts and images | A | 009 (FR-014), 001 |
 | Drag-and-drop page builder with widgets and layouts | A | 009 (US7) |
-| Store of ready-made widgets added without development | B | 008 planned (widget catalogue), 009 (US7) |
+| Store of ready-made widgets added without development | B | 032 (component registry and builder), 008 (personal regions), 009 (content components) |
 | One branded app for desktop and mobile, office and frontline | A, B | 030 planned |
 
 ## Knowledge and documents

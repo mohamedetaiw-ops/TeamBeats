@@ -14,7 +14,7 @@ Set up locale resolution, direction handling, resource catalogues for all five l
 | XXII Dependencies | Yes | `next-intl` (MIT); fonts with OFL licence, self-hosted |
 
 ## Design
-- **Resolution** (server side in Next.js middleware): user preference if tenant-enabled, else tenant default, else `en`. Sets `<html lang dir>`. Backend uses the same resolver for emails and Problem Details messages (`Accept-Language` ignored if not enabled for tenant).
+- **Resolution** (server side in Next.js middleware): user preference if tenant-enabled, else organization default (nearest org unit that sets one; the slot exists from R0 and is filled once spec 033 ships), else tenant default, else `en`. A missing key falls back along the same chain and is logged. Sets `<html lang dir>`. Backend uses the same resolver for emails and Problem Details messages (`Accept-Language` ignored if not enabled for tenant).
 - **Catalogues:** `messages/{locale}.json` (web) and `.resx`-free JSON catalogues for backend (`src/BuildingBlocks/Localization/catalogues/{locale}.json`), same key namespace. `fr`, `ur`, `hi` start as copies with a `pending` marker so missing-key checks only fail for launch-complete locales (`ar`, `en`).
 - **Pseudo-locale** `en-XA` (long strings, accents) and `ar-XB` (forced RTL) available in Development/Test.
 - **Formatting:** `Intl` APIs with `numberingSystem` from tenant setting (`latn` default, `arab` optional); Gregorian calendar; time zone from user, else tenant.
@@ -24,7 +24,7 @@ Set up locale resolution, direction handling, resource catalogues for all five l
 - **Content variant contract** (for spec 009 later): `ContentItem { id, defaultLocale, fallbackAllowed }`, `ContentVariant { locale, status, requiredForPublish }`.
 
 ## Tests
-- Resolution matrix (user pref enabled/disabled, tenant default).
+- Resolution matrix (user pref enabled/disabled, organization default set/unset, tenant default).
 - RTL screenshot tests for admin shell and sign-in in `ar`; mixed bidi fixture.
 - Lint rules fail on a planted literal string and a `margin-left`.
 - Missing `ar` key fails CI; missing `hi` key does not (until R2).

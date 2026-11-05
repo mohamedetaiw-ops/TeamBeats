@@ -10,18 +10,21 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [004 Authorization and permissions](004-authorization-and-permissions/spec.md) | platform | R0 | Approved | TEN-007, TEN-008, IAM-007, IAM-008, ADM-001 |
 | [005 Packages and entitlements](005-packages-and-entitlements/spec.md) | platform | R0, R2 | Approved | AI-001, ADM-001, ENT-001 to ENT-008 (new) |
 | [006 Audit and admin shell](006-audit-and-administration/spec.md) | platform | R0 | Approved | ADM-001 to ADM-003, TEN-010, AUD-001 to AUD-007 (new) |
-| [007 Localization and accessibility](007-localization-and-accessibility/spec.md) | experience | R0 to R2 | Approved | LOC-001 to LOC-004, EXP-008 |
+| [007 Localization and accessibility](007-localization-and-accessibility/spec.md) | experience | R0 to R2 | Approved; composable experience additions pending approval | LOC-001 to LOC-004, EXP-008, CX-ACC-001 to CX-ACC-014, CX-LOC-001 to CX-LOC-005, CX-LOC-007 to CX-LOC-010 |
+| [008 Experience shell, navigation, employee home and personalization](008-experience-shell-and-personalization/spec.md) | experience | R1 to R3 | Proposed | EXP-001, EXP-008, CX-EXP-001 to CX-EXP-010, CX-NAV-001 to CX-NAV-010, CX-PER-001 to CX-PER-015, CX-INT-001 to CX-INT-012 |
 | [009 Content, publishing and governance](009-content-and-publishing/spec.md) | experience | R1 to R3 | Proposed | EXP-002 to EXP-004, LOC-004, PUB-001 to PUB-020 |
 | [011 Document management and knowledge base](011-document-management/spec.md) | knowledge | R1 to R3 | Proposed | KNO-001, KNO-003, KNO-006, ADM-003, DOC-001 to DOC-022 |
 | [013 AI Gateway and model governance](013-ai-gateway/spec.md) | ai | R1 to R3 | Proposed | AI-002 to AI-004, AI-006, AI-011 to AI-013, AIG-001 to AIG-016 |
 | [016 Self services, service catalogue and workflows](016-service-catalogue-and-workflows/spec.md) | workflows | R1, R2 | Proposed | WF-001 to WF-016, UC-08 |
 | [020 Agent Hub: registry, templates, studio and marketplace](020-agent-hub/spec.md) | ai | R1 to R3 | Proposed | AI-007 (agent part), AI-008, AGT-001 to AGT-020, UC-07 |
-| [021 Analytics and insights](021-analytics/spec.md) | analytics | R1 to R3 | Proposed | ANL-001 to ANL-016 (ANL-001 and ANL-002 were LOC-005 and LOC-006), AI-013 (shared with 013) |
+| [021 Analytics and insights](021-analytics/spec.md) | analytics | R1 to R3 | Proposed | ANL-001 to ANL-022 (ANL-001 and ANL-002 were LOC-005 and LOC-006), AI-013 (shared with 013), CX-MET-001 to CX-MET-008 |
 | [022 Leave, attendance and HR workflows](022-hr-workflows/spec.md) | workflows | R2, R3 | Proposed | INT-007, LVA-001 to LVA-012, HRW-001 to HRW-014 |
 | [024 Process engine (BPMN and DMN)](024-process-engine/spec.md) | workflows | R1 to R3 | Proposed | WF-002, WF-003, BPM-001 to BPM-016 |
 | [025 Policy management](025-policy-management/spec.md) | knowledge | R1 to R3 | Proposed | EXP-004, KNO-001, KNO-007, POL-001 to POL-018 |
-| [026 Security controls, compliance and certifications](026-security-and-compliance/spec.md) | platform | R1 to R3 | Proposed | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-020, CMP-001 to CMP-004 |
+| [026 Security controls, compliance and certifications](026-security-and-compliance/spec.md) | platform | R1 to R3 | Proposed | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-021, CMP-001 to CMP-004, CX-NFR-010 |
 | [027 Agent governance, tools and safety](027-agent-governance/spec.md) | ai | R1 to R3 | Proposed | AI-005, AI-009, AI-010, AGV-001 to AGV-024, UC-07, UC-13 |
+| [032 Page composition: layouts, templates, component registry and page builder](032-page-composition/spec.md) | experience | R1 to R3 | Proposed | CX-LAY-001 to CX-LAY-012, CX-TMP-001 to CX-TMP-010, CX-TMP-012, CX-EDT-001 to CX-EDT-015, CX-EXT-001 to CX-EXT-014, CX-GOV-001 to CX-GOV-012, CX-NFR-001 to CX-NFR-012 |
+| [033 Brands, themes, white labeling and multi-organization experience](033-themes-and-white-labeling/spec.md) | experience | R1, R2 | Proposed | CX-BRD-001 to CX-BRD-015, CX-ORG-001 to CX-ORG-011, CX-TMP-011, CX-LOC-006, ADM-001 (branding) |
 
 Open questions across these specs, with defaults: [open-questions.md](open-questions.md). Release plan: [roadmap](../docs/product/roadmap.md).
 
@@ -41,7 +44,6 @@ Each spec folder now has `spec.md` (Approved), `plan.md` and `tasks.md`. Shared 
 
 | Planned spec | Release | Requirement IDs |
 |---|---|---|
-| 008 Employee home and personalization | R1 | EXP-001, EXP-003. Widgets the user can add, remove and reorder; task badge; My services strip; leave calendar widget; tool box (weather, world clock). Widget catalogue that admins switch on without development, shared with the page builder in 009; personal feed driven by follows and preferences from 009 |
 | 010 Employee directory and org chart | R1 | EXP-005, EXP-006, UC-05. Profile fields and reporting line from AD (spec 003), My team, newcomers. Skills and expertise, badges from recognition (023), out of office status from leave (022) |
 | 012 Search and retrieval | R1 | KNO-002 to KNO-006. Type-ahead; indexes people, pages, documents, policies, knowledge articles and services; AI summary of top results; best bets; federated results from connected systems (SharePoint, Google Drive, ticketing) with source permissions; search analytics feed to 021. Sets the KNO-006 synchronization objective that specs 009 and 011 rely on: permission changes and deletions reach search and vector indexes within 5 minutes by default |
 | 014 AI assistant and RAG | R1 | AI-005, AI-007, KNO-007, UC-06. The assistant is the universal entry point and routes requests to agents (spec 020 US7); it holds no tools of its own |
@@ -112,6 +114,30 @@ Source: functional review of the current Link Development intranet (Performly "I
 | Five languages (en, ar, hi, bn, fr) | ar and en in R1; fr, ur, hi in R2. Bengali is not planned | R1, R2 |
 
 Gaps in the current intranet that the specs close: single catalogue page (016), one look for all services (007, 016), policies as searchable pages (009, 012), search that finds services and documents (012), clear cue and SSO for other systems (016), personalizable home (008), one discussion source for widget and list (023), labelled icons and AA contrast (007).
+
+## Composable Intranet Experience coverage
+
+Source: "Composable Intranet Experience Layer" requirements v1.0 (2026-11-05), adopted as mandatory and kept at [docs/product/composable-experience-requirements.md](../docs/product/composable-experience-requirements.md). Its 182 requirements are cited with a `CX-` prefix because EXP, INT and LOC IDs also exist in the foundation. Architecture: ADR-0012. Every requirement maps to a functional requirement: see the [coverage map](../docs/product/composable-experience-coverage.md).
+
+| Group | TeamBeats home |
+|---|---|
+| 5.1 Experience shell (CX-EXP) | 008 |
+| 5.2 Responsive grid and layouts (CX-LAY) | 032 |
+| 5.3 Templates, presets and variants (CX-TMP) | 032; starter wizard CX-TMP-011 in 033 |
+| 5.4 Themes, tokens and white labeling (CX-BRD) | 033 |
+| 5.5 Multi-organization inheritance (CX-ORG) | 033, with 002 for moves |
+| 5.6 Personalization and targeting (CX-PER) | 008 |
+| 5.7 Visual page builder (CX-EDT) | 032 |
+| 5.8 Navigation and wayfinding (CX-NAV) | 008 |
+| 5.9 Interaction rules (CX-INT) | 008 |
+| 5.10 Accessibility (CX-ACC) | 007, applied in 032 and 033 |
+| 5.11 Localization and RTL (CX-LOC) | 007; localized branding CX-LOC-006 in 033 |
+| 5.12 Component contract (CX-EXT) | 032 |
+| 5.13 Experience governance (CX-GOV) | 032, roles in 004 |
+| 5.14 Experience analytics (CX-MET) | 021 |
+| 5.15 Performance and resilience (CX-NFR) | 032; secure rendering also in 026 |
+
+Release rule: every Must and Should is in by R2 GA; the two Could items (template recommendations, experiments) are R3. R1 carries the foundation of the layer (wave 1 of the source) plus home personalization.
 
 ## Competitor feature coverage
 

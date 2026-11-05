@@ -102,7 +102,7 @@ The tenant admin makes Sara a Content Publisher for the "Acme Gulf" subtree.
 - **FR-008**: Permission changes MUST take effect within 60 seconds for grants and revocations (Decided 2026-11-04).
 - **FR-009**: Modules MUST NOT check role names directly. Denials MUST NOT reveal whether a resource exists (return not-found semantics for unreadable resources).
 - **FR-010**: Decisions MUST be explainable for administrators.
-- **FR-011**: Built-in roles MUST include: Tenant Administrator, Organization Administrator, Content Editor, Content Publisher, Workflow Designer, Approver, Integration Administrator, AI Policy Administrator, Security Officer (spec 006), Employee. Platform Operator exists outside tenant roles. Later specs add these built-in roles, seeded when the spec that defines their permissions is approved, so that tenants without `authz.custom_roles` can still staff each feature: Communications Administrator (009), Records Manager, Knowledge Editor and Brand Manager (011), Service Owner (016), Agent Designer (020), HR Officer and Finance Officer (022), Process Owner and Process Operator (024), Compliance Officer (025, 026).
+- **FR-011**: Built-in roles MUST include: Tenant Administrator, Organization Administrator, Content Editor, Content Publisher, Workflow Designer, Approver, Integration Administrator, AI Policy Administrator, Security Officer (spec 006), Employee. Platform Operator exists outside tenant roles. Later specs add these built-in roles, seeded when the spec that defines their permissions is approved, so that tenants without `authz.custom_roles` can still staff each feature: Communications Administrator (009), Records Manager, Knowledge Editor and Brand Manager (011; spec 033 adds the theme permissions so that Brand Manager is also the design administrator), Page Editor and Page Publisher (032), Service Owner (016), Agent Designer (020), HR Officer and Finance Officer (022), Process Owner and Process Operator (024), Compliance Officer (025, 026).
 - **FR-013**: Permissions MUST be named `<area>.<action>` (for example `content.publish`, `doc.contribute`) and listed in section 3 of the spec that owns the resource. Each permission maps to one of the FR-001 decisions for that resource type. The permission catalogue and the capability catalogue of spec 005 MUST be separate: no key string may appear in both, and an architecture test MUST fail if one does.
 - **FR-012**: Batch evaluation (filter a list of resources to those the user can view) MUST be supported for search, feeds and AI retrieval.
 
@@ -178,3 +178,5 @@ Access denials are telemetry, not audit, unless the resource is classified Confi
 | IAM-007 | FR-002 |
 | IAM-008 | FR-003, FR-005 |
 | ADM-001 (roles) | FR-011, FR-013, US5 |
+| CX-GOV-001 (experience roles) | FR-011 (with spec 032 FR-048) |
+| CX-ORG-002 (visual inheritance never grants access) | FR-004, FR-006 (with spec 033 FR-017) |
