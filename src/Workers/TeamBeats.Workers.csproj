@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <RootNamespace>TeamBeats.Workers</RootNamespace>
+    <AssemblyName>TeamBeats.Workers</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Api/TeamBeats.Api.csproj" />
+  </ItemGroup>
+</Project>
