@@ -11,8 +11,11 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [005 Packages and entitlements](005-packages-and-entitlements/spec.md) | platform | R0, R2 | Approved | AI-001, ADM-001, ENT-001 to ENT-008 (new) |
 | [006 Audit and admin shell](006-audit-and-administration/spec.md) | platform | R0 | Approved | ADM-001 to ADM-003, TEN-010, AUD-001 to AUD-007 (new) |
 | [007 Localization and accessibility](007-localization-and-accessibility/spec.md) | experience | R0 to R2 | Approved | LOC-001 to LOC-004, EXP-008 |
+| [013 AI Gateway and model governance](013-ai-gateway/spec.md) | ai | R1 to R3 | Proposed | AI-002 to AI-004, AI-006, AI-011 to AI-013, AIG-001 to AIG-016 |
 | [016 Self services, service catalogue and workflows](016-service-catalogue-and-workflows/spec.md) | workflows | R1, R2 | Proposed | WF-001 to WF-016, UC-08 |
+| [020 Agent Hub: registry, templates, studio and marketplace](020-agent-hub/spec.md) | ai | R1 to R3 | Proposed | AI-007 (agent part), AI-008, AGT-001 to AGT-020, UC-07 |
 | [024 Process engine (BPMN and DMN)](024-process-engine/spec.md) | workflows | R1 to R3 | Proposed | WF-002, WF-003, BPM-001 to BPM-016 |
+| [027 Agent governance, tools and safety](027-agent-governance/spec.md) | ai | R1 to R3 | Proposed | AI-005, AI-009, AI-010, AGV-001 to AGV-024, UC-07, UC-13 |
 
 Open questions across these specs, with defaults: [open-questions.md](open-questions.md). Release plan: [roadmap](../docs/product/roadmap.md).
 
@@ -37,19 +40,39 @@ Each spec folder now has `spec.md` (Approved), `plan.md` and `tasks.md`. Shared 
 | 010 Employee directory and org chart | R1 | EXP-005, EXP-006, UC-05. Profile fields and reporting line from AD (spec 003), My team, newcomers |
 | 011 Document library | R1 | KNO-001 |
 | 012 Search and retrieval | R1 | KNO-002 to KNO-006. Type-ahead; indexes people, pages, documents and services |
-| 013 AI Gateway | R1 | AI-002 to AI-006, AI-011, AI-012 |
-| 014 AI assistant and RAG | R1 | AI-005, AI-007, KNO-007, UC-06 |
+| 014 AI assistant and RAG | R1 | AI-005, AI-007, KNO-007, UC-06. The assistant is the universal entry point and routes requests to agents (spec 020 US7); it holds no tools of its own |
 | 015 Notifications and email | R1 | INT-008 (new NOT- IDs). In-app notification centre replaces the old "Intra mail" inbox |
 | 017 Connector framework | R2 | INT-001, INT-009, INT-010 |
 | 018 Microsoft 365 and SharePoint | R2 | INT-002, INT-003, UC-10 |
 | 019 HR integration | R2 | INT-007, UC-09. Payslip view (read-only, Confidential), HR record prefill; AD covers the directory part (specs 002, 003) |
-| 020 Agents and tools | R3 | AI-008 to AI-010, UC-07 |
 | 021 Analytics | R2 | LOC-005, LOC-006 (rename to ANL-001, ANL-002). Request cycle times, exit reasons, attendance reports |
 | 022 Leave and attendance | R2 | New LVA- IDs. Leave request with live balance, leave types, replacement person, team leave calendar and overlap view, attendance sign in and out, working hours and exceptions, compensation days. Registers its services and tasks in 016. Can read balances from HR (019) instead of keeping them |
 | 023 Communities and engagement | R2 | EXP-007. Discussion channels (public and per department), Speak Up with anonymous option, polls, recognition (team and star of the period), celebrations, photo gallery, points and leaderboard |
 
 ## Requirement coverage
-Every foundation requirement ID is mapped above to a written or planned spec, except these, which belong to later R2 and R3 specs: EXP-009 (PWA), INT-004 to INT-006 (Google, Oracle, SAP packs), AI-013 (usage visibility, likely in 013).
+Every foundation requirement ID is mapped above to a written or planned spec, except these, which belong to later R2 and R3 specs: EXP-009 (PWA), INT-004 to INT-006 (Google, Oracle, SAP packs).
+
+## AI Agent Governance Plan coverage
+
+Source: "AI Agent Governance Plan" (2026-11-05). Each of its 15 product epics maps to a spec. Agent runtime choice: ADR-0011 (in the .NET monolith, not a separate Python and Temporal stack).
+
+| Epic | TeamBeats home |
+|---|---|
+| 1 Agent registry and template library | 020 (registry, 15 templates in section 12) |
+| 2 Agent Studio and configuration | 020 US1, US4, section 12 |
+| 3 Agent marketplace and discovery | 020 US6 |
+| 4 Universal assistant and orchestration | 014 (assistant surface), 020 US7 and US10 (routing, handoffs) |
+| 5 AI model gateway and providers | 013 |
+| 6 Knowledge sources, indexing and RAG | 014, 012, 011 |
+| 7 Connector and tool registry | 027 FR-005, FR-006 (tools), 017 (connectors) |
+| 8 Workflow and human approval engine | 027 US4, 016 (task inbox), 024 (process engine) |
+| 9 Agent identity, authorization and tenant isolation | 027 US2, 004, ADR-0005 |
+| 10 Agent governance and policy | 027 US1, US8, US9 |
+| 11 Execution monitoring and audit | 027 US6, 006 |
+| 12 Evaluation, testing and versioning | 020 US5, 027 US9 |
+| 13 Cost, quota and usage | 013 US4, US5, 005 |
+| 14 Multilingual agent experience | 020 FR-017, 007 |
+| 15 Lifecycle, deployment and rollback | 020 US2, US3, 027 US7 |
 
 ## Current intranet coverage
 

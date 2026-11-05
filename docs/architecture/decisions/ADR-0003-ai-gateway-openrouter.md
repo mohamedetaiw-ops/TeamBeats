@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-11-04 |
 | Owners | Mohamed |
-| Related specs | future AI gateway, assistant and agents specs; 005 |
+| Related specs | 013 (AI Gateway), 014, 020, 027, 005 |
 
 ## Context and constraints
 AI is part of every package. Tenants need control over which models and providers see which data classifications. OpenRouter offers access to many models through one API. Government and regulated customers may require in-country or local inference.

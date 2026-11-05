@@ -193,8 +193,8 @@ The HR service owner creates "New joiner onboarding" with no developer. When AD 
 - Grids have date filters, group by, column choice, row count and export, consistent across every service.
 
 ## 11. AI behavior
-- R1: none required.
-- Later (spec 014 and 020): the assistant can find the right service from a question ("how do I get a VPN?"), prefill a draft request for the user to review, and summarize a request for an approver. It never submits or approves without the user's explicit action.
+- R1 (spec 020 Workflow and Requests agent, autonomy L2): the assistant can find the right service from a question ("how do I get a VPN?"), prefill a draft request for the user to review, and explain where a request is waiting. It never submits or approves without the user's explicit action (spec 027).
+- R2: summarize a request for an approver; agent-requested actions that need approval arrive in the task inbox marked as requested by an AI agent on behalf of the user (spec 027 US4).
 
 ## 12. Integrations, events and starter templates
 
