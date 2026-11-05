@@ -29,7 +29,7 @@
 - Upload (single, multiple, drag and drop, bulk import with metadata file), file type allowlist, size limits, malware scanning, duplicate detection by hash.
 - Versioning: minor versions for drafts and major versions for approved releases, version notes, compare for text formats, restore.
 - Check-out and check-in: exclusive editing lock, check-out by self, discard check-out, forced check-in by library managers with a reason.
-- Editing: download and upload, and editing in the browser for Office formats through the Microsoft 365 connection when connected (R2, FR-010). TeamBeats keeps its own version on check-in.
+- Editing: download and upload, and editing in the browser for Office formats through Microsoft 365 when connected (R2, FR-010, FR-024). TeamBeats keeps its own version on check-in.
 - Controlled documents: document number, owner, approval route before a major version is published (spec 024), effective date, review date, superseded versions kept read-only, "controlled copy" watermark, "uncontrolled when printed" footer.
 - Preview in the browser for common formats (PDF, Office, images, video, text) without download.
 - Knowledge base: articles with templates for SOP, how-to walkthrough, FAQ and troubleshooting, version-controlled, with owners, review dates, related articles and "was this helpful" feedback.
@@ -317,7 +317,7 @@ Connected SharePoint libraries and import from SharePoint need `integration.micr
 - Publishes: `DocumentVersionPublished`, `DocumentSuperseded`, `DocumentDeleted`, `DocumentDisposed`, `LegalHoldApplied`, `LegalHoldReleased`, `DocumentReviewDue`.
 - Consumes: `UserDeprovisioned` (owner reassignment and check-out release to library manager), approval results from spec 024.
 - Publishes `ConnectedLibraryAdded`, `ConnectedLibraryRemoved`. Consumes `ConnectorUnavailable`, `ConnectorRestored` and `ConnectionConsentRevoked` from `Integrations`, and connected item change records from the SharePoint adapter.
-- SharePoint Online (US9, US10): connected libraries and import, configured in the Connections area (spec 006). The connection, consent, allowed sites, Microsoft Graph calls, change subscriptions and throttling live in the `Integrations` module (planned spec 017). Teams, calendar, mail, rooms and OneDrive personal files stay in planned spec 018.
+- SharePoint Online (US9, US10): connected libraries and import, configured in the Connections area (spec 006). The connection, consent, allowed sites, Microsoft Graph calls, change subscriptions and throttling live in the `Integrations` module (planned spec 017). Mail, calendar and rooms are in spec 018; Teams notifications in planned spec 015.
 - Ports and adapters (ADR-0013, ADR-0016): the `Documents` module's `Application` layer defines a document source port (list containers and items, get item and permissions, open content, upload, changes since a cursor). The built-in store implements it inside `Documents`; connected sources implement it through the canonical document repository contract that `Integrations` exposes in its `Contracts` project. The SharePoint adapter, Microsoft Graph DTOs and auth flows stay in `Integrations` (constitution XVII); `Documents` never sees a Graph type. Adding another system later (Google Drive, INT-004) means a new adapter, not a change to `Documents`.
 - Office web editing through Microsoft 365 for TeamBeats libraries (FR-010) uses the same Microsoft 365 connection.
 

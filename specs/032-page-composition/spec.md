@@ -236,6 +236,7 @@ Performance, quality and resilience
 Component interaction
 - **FR-067**: Placements on a page MUST communicate only through a page-scoped event channel, using events and actions declared in their manifests with typed payload schemas. The runtime MUST drop and log undeclared events and payloads that fail validation. A payload MUST NOT carry data the receiving placement could not read itself under the same session. *(constitution XXX)*
 - **FR-068**: A component MUST NOT import, call or read the state of another component. Removing, hiding or failing any placement MUST leave the others working, with subscribers falling back to their unlinked state. An architecture test MUST fail on imports between component packages. *(constitution XXX)*
+- **FR-069**: A manifest MAY declare a connection feature it needs (for example Microsoft 365 Mail in spec 018). The add panel MUST offer such a component only when the feature is on for the tenant and applies to the user, and the runtime MUST render the shared not connected, needs consent, turned off and degraded states (spec 006, spec 008 FR-006) instead of a failure. *(CX-EXT-001, constitution XVII)*
 
 ## 6. Business and validation rules
 - Non-negotiable rule from the source: templates and layouts MAY reference capabilities, regions, placement constraints and metadata, and MUST NOT depend on the existence, identity, internals or code of a particular component.
@@ -409,6 +410,7 @@ No AI in R1 and R2. The R3 template recommendations (FR-023) use only page metad
 | EXP-001 (configurable pages) | FR-001, FR-036 |
 | EXP-008 (responsive) | FR-004, FR-063 |
 | Constitution XXX (component interaction) | FR-067, FR-068, US7 |
+| Constitution XVII (connected components) | FR-069 |
 
 ## Review checklist
 - [x] No implementation details beyond what ADR-0012 records
