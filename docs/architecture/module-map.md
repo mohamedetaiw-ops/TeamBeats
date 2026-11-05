@@ -29,7 +29,7 @@ Planned modules are listed so that specs use the same names before the code exis
 | `Notifications` | planned 015 | Notifications, channel preferences, deliveries | `INotificationSender` | `NotificationDelivered` | R1 |
 | `Services` | 016 | Service catalogue, forms, requests, task inbox, delegations | Task inbox API, request submission | `RequestSubmitted`, `RequestCompleted`, `TaskCompleted` | R1 |
 | `Workflow` | 024 | Process and decision definitions, instances, jobs, timers, incidents | Start process, correlate message, complete task | `ProcessInstanceCompleted`, `UserTaskCreated`, `IncidentRaised` | R1 core, R2 BPMN |
-| `Integrations` | planned 017 to 019 | Connector configurations, sync state, field mappings, external IDs | Canonical connector ports per capability | `ExternalRecordSynced`, `ConnectorUnavailable` | R2 |
+| `Integrations` | 018, planned 017 and 019 | Connector configurations, sync state, field mappings, external IDs | Canonical connector ports per capability | `ExternalRecordSynced`, `ConnectorUnavailable` | R2 |
 | `Hr` | 022 | Leave, attendance, HR journeys, expense claims | Balances, team calendar | `LeaveApproved`, `JourneyStarted`, `ExpenseApproved` | R2 |
 | `Analytics` | 021 | Aggregated metrics and reports (derived from events) | Report queries with minimum group size | none | R1 |
 | `Security` | 026 | Guest access, security controls and settings of spec 026 | Classification lookups, security settings | `SecurityPolicyChanged`, `GuestExpired`, `SecurityAlertRaised` | R1 |
