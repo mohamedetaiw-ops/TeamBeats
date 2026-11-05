@@ -48,6 +48,8 @@
 | Organization administrator | Search audit events for their scope only |
 | Platform operator | See platform-level audit (tenant creation, break-glass) |
 | Integration administrator (role) | Manage connections and their features (`integration.manage`); see connection health and runs |
+
+Permission keys (spec 004 FR-013): `audit.read` (search audit, limited to the holder's scope), `audit.export` (export audit results), `audit.retention_manage` (set audit retention). The tenant administrator and security officer roles hold `audit.read` and `audit.export` at tenant scope by default; only the tenant administrator holds `audit.retention_manage`; the organization administrator holds `audit.read` at its own scope.
 | Modules | Write audit events (system actor) |
 
 ## 4. User scenarios
@@ -72,7 +74,7 @@
 **Acceptance scenarios:**
 1. **Given** retention of 365 days, **When** records pass that age, **Then** they are purged by a scheduled job, and the purge is audited with count and range.
 2. Retention cannot be set below the platform minimum. (Decided 2026-11-04: minimum 365 days.)
-3. Records under legal hold are never purged. (Decided 2026-11-04: legal hold is delivered in R2, through spec 011.)
+3. Records under legal hold are never purged. A spec 011 legal hold selects audit records by custodian (as actor or target) and date range, and the purge job checks the legal hold contract before deleting. (Decided 2026-11-04: legal hold is delivered in R2, through spec 011; decided 2026-11-05: holds cover audit records.)
 
 ### User Story 4: Admin shell (Priority: P1)
 
@@ -129,7 +131,7 @@ Acme's integration administrator, Karim, connects Acme's Microsoft 365 tenant on
 |---|---|---|---|
 | Audit record | Product | Confidential | Tenant setting, min 365 days |
 | Audit export file | Product (object storage) | Confidential | 7 days then deleted |
-| Connection (type, external tenant or endpoint, features, granted permissions, secret reference, status) | Product (secret in secret manager); owned by `Integrations`, directory connections by `Identity` | Confidential | Until deleted, then 90 days of status history |
+| Connection (type, external tenant or endpoint, features, granted permissions, secret reference, status) | Product (secret in secret manager); owned by `Integrations` (including the Microsoft 365 connection), AD DS directory connections and sync state by `Identity` | Confidential | Until deleted, then 90 days of status history |
 
 ## 9. Package entitlements
 Audit, search, export, the admin shell and the Connections area are part of every package and have no capability key (constitution VI). SIEM streaming is gated by `security.siem` in spec 026. Each connection feature is gated by its own key (for example `identity.directory_sync` in spec 003, `integration.microsoft365` in spec 005).
@@ -144,7 +146,7 @@ Not applicable. AI and agent events are written through the same contract by spe
 ## 12. Integrations and events
 Publishes `AuditIntegrityCheckFailed` and `AuditExportCompleted`. Exposes a read-only event feed contract that spec 026 uses for SIEM streaming.
 
-The Connections area is a screen in the `Administration` module, which owns no data. Connection records, consent, credentials, health checks and the adapters for each external system live in `Integrations` (planned spec 017); directory connections of spec 003 live in `Identity` and appear in the same list. Both expose the connection list and actions through their `Contracts` projects (ADR-0013). `Integrations` publishes `ConnectionCreated`, `ConnectionFeatureChanged`, `ConnectionConsentRevoked`, `ConnectorUnavailable`, `ConnectorRestored` and `ConnectionDeleted`; features consume them to switch to and from their degraded state.
+The Connections area is a screen in the `Administration` module, which owns no data. Connection records, consent, credentials, health checks and the adapters for each external system live in `Integrations` (planned spec 017); the Microsoft 365 connection, including its directory sync feature, lives there too. AD DS (LDAPS) directory connections and directory sync state of spec 003 live in `Identity` and appear in the same list. Both expose the connection list and actions through their `Contracts` projects (ADR-0013). `Integrations` publishes `ConnectionCreated`, `ConnectionFeatureChanged`, `ConnectionConsentRevoked`, `ConnectorUnavailable`, `ConnectorRestored` and `ConnectionDeleted`; features consume them to switch to and from their degraded state.
 
 ## 13. Audit
 The audit service audits its own sensitive actions: export, retention change, purge, integrity check failure.
@@ -158,7 +160,7 @@ The audit service audits its own sensitive actions: export, retention change, pu
 | integration.status_changed | connection, from, to |
 
 ## 14. Security
-- Audit search is a data exfiltration path: rate-limited, scoped, and export requires the Tenant Admin or Security Officer role.
+- Audit search is a data exfiltration path: rate-limited, scoped, and export requires `audit.export`, checked by the central authorization service like every other permission.
 - Integrity failures raise an alert to platform operations.
 - Connections are a high-value target: management needs `integration.manage`, credential changes need step-up, and secrets never reach the browser, logs or audit.
 

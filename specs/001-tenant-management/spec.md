@@ -47,6 +47,8 @@
 
 Platform administrators do not automatically get access to tenant content. Seeing tenant content requires the audited break-glass path (constitution principle I).
 
+Permission keys (spec 004 FR-013): `tenant.settings_view`, `tenant.settings_manage` and `tenant.admins_manage`. The built-in tenant administrator role holds all three at tenant scope.
+
 ## 4. User scenarios
 
 ### User Story 1: Create a tenant (Priority: P1)

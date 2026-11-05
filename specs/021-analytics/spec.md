@@ -58,13 +58,13 @@
 | Actor | What they can see | Permission / scope |
 |---|---|---|
 | Tenant administrator | Adoption, AI usage, security trends; all dashboards at tenant scope | `analytics.view` at tenant scope |
-| Communications lead | Content, campaigns, search, adoption | `analytics.view.comms` at site or org scope |
+| Communications lead | Content, campaigns, search, adoption | `analytics.view_comms` at site or org scope |
 | Site owner | Content analytics for their site | `site.manage` |
 | Author | Analytics for their own items | Author of the item |
-| HR officer | HR and service analytics in scope | `analytics.view.hr` at org scope |
+| HR officer | HR and service analytics in scope | `analytics.view_hr` at org scope |
 | Service owner | Their services' analytics | Service owner (spec 016) |
 | Compliance officer | Policy compliance analytics | `policy.manage` |
-| Location or unit head | Location or unit dashboard for their scope | `analytics.view.location` at that location or unit |
+| Location or unit head | Location or unit dashboard for their scope | `analytics.view_location` at that location or unit |
 | Knowledge editor | Search and knowledge analytics | `kb.edit` |
 
 ## 4. User scenarios

@@ -49,8 +49,8 @@
 | Employee | Use agents, confirm or reject prepared actions, stop their own runs | Agent access policy, own permissions |
 | Approver | Approve or reject agent-requested actions routed to them | Assignment in 016 or 024 |
 | Agent owner | See runs and incidents of their agents, suspend their agents | Named owner |
-| AI Policy Administrator | Edit tenant agent policy, tool allowlists, autonomy caps, approval rules; suspend any agent | `ai.policy.manage` |
-| Organization administrator | Restrict agent policy for their unit | `ai.policy.manage` at org scope, restrict only |
+| AI Policy Administrator | Edit tenant agent policy, tool allowlists, autonomy caps, approval rules; suspend any agent | `ai.policy_manage` |
+| Organization administrator | Restrict agent policy for their unit | `ai.policy_manage` at org scope, restrict only |
 | Security officer | Agent Security Center, incidents, run records, emergency controls, evidence export | `agent.security`, `audit.read` |
 | Integration administrator | Register connector tools and MCP servers, disable a connector | `integration.manage` |
 | Platform operator | Platform baseline, global kill switch for a template or tool, security updates | Platform |
@@ -158,7 +158,7 @@ Default approval rules (tenants can make them stricter, not looser):
 |---|---|---|
 | Low | L0 or L1, maximum classification Internal, no write tools | `agent.publish`, evaluation passed |
 | Medium | L2, or Confidential sources, or audience tenant-wide | Second person approval, evaluation passed |
-| High | L3 or L4, any write tool with external effect, financial or HR changes, or Restricted sources | Second person approval by AI Policy Administrator, evaluation passed, security officer notified |
+| High | L3 or L4, any write tool with external effect, financial or HR changes, or Restricted sources | Second person approval by a holder of `ai.policy_manage`, evaluation passed, security officer notified |
 
 **Acceptance scenarios:**
 1. **Given** an agent definition, **When** it is saved, **Then** its risk class is computed from the table and cannot be lowered by hand.
@@ -198,7 +198,7 @@ Default approval rules (tenants can make them stricter, not looser):
 - **AGV-021 / FR-021**: Risk class MUST be computed from the rules in US9 and drive the publishing rules of spec 020.
 - **AGV-022 / FR-022**: The mandatory safety suites in US9 MUST exist, run as critical suites in the spec 034 gate on every agent version before publish, and run nightly for High risk agents.
 - **AGV-023 / FR-023**: The Agent Security Center MUST provide run search, anomaly alerts, incidents, a watch list, and evidence export. *(R2, UC-13)*
-- **AGV-024 / FR-024**: L4 autonomy MUST only run as agent tasks inside a published BPMN process (024) that a process owner and the AI Policy Administrator have both approved for autonomous agent steps. *(R3)*
+- **AGV-024 / FR-024**: L4 autonomy MUST only run as agent tasks inside a published BPMN process (024) that a process owner and a holder of `ai.policy_manage` have both approved for autonomous agent steps. *(R3)*
 
 ## 6. Business and validation rules
 - An agent cannot hold a tool whose approval rule is "block".
@@ -247,7 +247,7 @@ Default approval rules (tenants can make them stricter, not looser):
 - The agent explains a denial in plain words ("I cannot do that because your organization requires approval") without revealing policy internals or hidden resources (spec 004 not-found rule).
 
 ## 12. Integrations and events
-Publishes `AgentSuspended`, `AgentResumed`, `AgentKillSwitchActivated`, `ToolDisabled`, `ToolVersionRegistered`, `AgentRunCompleted`, `AgentActionAwaitingApproval`, `AgentIncidentOpened`. Consumes `ResourcePermissionChanged`, `RoleAssignmentChanged` (004), `UserDeprovisioned` (003), `ConnectorDisabled` (017), `AiPolicyChanged` (013).
+Publishes `AgentSuspended`, `AgentResumed`, `AgentKillSwitchActivated`, `ToolDisabled`, `ToolVersionRegistered`, `AgentRunCompleted`, `AgentActionAwaitingApproval`, `AgentIncidentOpened`. Consumes `ResourcePermissionChanged`, `RoleAssignmentChanged` (004), `UserDeprovisioned` (003), `ConnectionFeatureChanged`, `ConnectionConsentRevoked` and `ConnectorUnavailable` (Integrations, spec 006 section 12), `AiPolicyChanged` (013).
 
 ## 13. Audit
 

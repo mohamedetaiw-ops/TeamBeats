@@ -70,8 +70,8 @@ Permission keys follow spec 004 FR-013 and are separate from the `ai.evals.*` ca
 | Agent owner | Read results and alerts for their agents, request reruns | Named owner of the agent |
 | Evaluation reviewer | Label cases in human review queues and calibration sets, confirm or overturn judge verdicts | `eval.review` (built-in role Evaluation Reviewer) |
 | Agent reviewer / publisher | See gate results at review, approve overrides of blocking (never critical) thresholds | `agent.publish` |
-| AI Policy Administrator | Set tenant evaluation policy, thresholds, judge models, sampling rules; read all results | `eval.policy.manage` at tenant scope (included in AI Policy Administrator) |
-| Organization administrator | Tighten thresholds and add datasets for their unit | `eval.policy.manage` at org scope, restrict only |
+| AI Policy Administrator | Set tenant evaluation policy, thresholds, judge models, sampling rules; read all results | `eval.policy_manage` at tenant scope (included in AI Policy Administrator) |
+| Organization administrator | Tighten thresholds and add datasets for their unit | `eval.policy_manage` at org scope, restrict only |
 | Security officer | Read all results, failures and evidence; export evidence | `eval.view`, `audit.read` |
 | Platform operator | Maintain the platform framework, default policies, platform suites and datasets for templates, platform release gates | Platform |
 

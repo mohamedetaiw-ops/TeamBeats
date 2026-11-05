@@ -45,6 +45,8 @@
 | Tenant administrator | View their package, entitlements and usage |
 | Any module | Ask for entitlement decisions (system actor) |
 
+Permission keys (spec 004 FR-013): `entitlements.view` lets a tenant administrator see the tenant's package, entitlements and usage. Platform package management is a platform role, not a tenant permission.
+
 ## 4. User scenarios
 
 ### User Story 1: Feature gating by capability (Priority: P1, R0)

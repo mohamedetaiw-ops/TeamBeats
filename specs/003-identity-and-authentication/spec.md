@@ -51,6 +51,8 @@
 | Directory (Entra ID or on-premises AD DS) | Source of users, account status, groups and organization attributes |
 | Developer / test automation | Uses dev sign-in in Development and Test only |
 
+Permission keys (spec 004 FR-013): `identity.users_view`, `identity.users_manage` and `identity.config_manage` (identity provider, JIT policy, directory connections and group mapping). The built-in tenant administrator role holds all three at tenant scope.
+
 ## 4. User scenarios
 
 ### User Story 1: Development sign-in (Priority: P1, R0)
@@ -79,7 +81,7 @@ An employee of Acme opens the intranet, is redirected to Entra ID, completes MFA
 
 **Acceptance scenarios:**
 1. **Given** an active session, **When** the user signs out, **Then** the product session ends and the user is offered identity provider sign-out. 
-2. **Given** an active session, **When** an admin disables the user's tenant membership, **Then** the session is rejected on the next request after the invalidation window. *(IAM-009)* (Decided 2026-11-04: immediate for disable, at most 5 minutes for role changes.)
+2. **Given** an active session, **When** an admin disables the user's tenant membership, **Then** the session is rejected on the next request after the invalidation window. *(IAM-009)* (Decided 2026-11-05: immediate for disable; role and permission changes take effect within 60 seconds, spec 004 FR-008.)
 3. **Given** the tenant is suspended, **Then** all its sessions are rejected (spec 001).
 
 ### User Story 4: Google Workspace and SAML (Priority: P2, R2)
@@ -168,7 +170,8 @@ The tenant admin connects Acme's directory once. New hires can sign in on day on
 | `identity.oidc` | All packages |
 | `identity.saml` | All packages (Decided 2026-11-04) |
 | `identity.scim` | Workplace Plus and above, once implemented |
-| `identity.directory_sync` | All packages (one connection); more connections per `org.directory_sync` in spec 002 |
+| `identity.directory_sync` | All packages |
+| `identity.max_directory_connections` | Limit: 1 in Workplace; more in Workplace Plus and above (values are commercial data in the package definition) |
 
 ## 10. UX, localization and accessibility
 - Sign-in page localized, RTL aware, shows tenant branding once the tenant is known.
@@ -211,7 +214,7 @@ Entra ID is read through Microsoft Graph with application permissions limited to
 
 ## 17. Open questions
 1. RESOLVED 2026-11-04 (Mohamed): identities are tenant-scoped. The same issuer and subject in two tenants creates two unrelated users. No global person record exists. Cross-tenant identity linking, if ever needed, requires a new decision and ADR.
-2. Decided 2026-11-04: role changes take effect in sessions within 5 minutes.
+2. Decided 2026-11-05: role and permission changes take effect within 60 seconds for every access check (spec 004 FR-008). Session data cached for display only (menus, name, picture) may refresh within 5 minutes and is never used for an access decision.
 3. Decided 2026-11-04: SAML is available in all packages.
 4. Active Directory sign-in and sync (US5, US6, FR-011 to FR-015) need Mohamed's approval before implementation. Default: AD sign-in is federated only (no LDAP password bind), Entra ID sync in R1, on-premises AD in R2.
 5. Decided 2026-11-05 (Mohamed): delegated Microsoft Graph access for Microsoft 365 features (FR-016, spec 018) is approved for R1, with session-lifetime tokens and a separate employee opt-in for signed-out access.

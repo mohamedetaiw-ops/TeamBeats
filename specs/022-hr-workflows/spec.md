@@ -8,7 +8,7 @@
 | Version | 0.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R2 (leave, holiday and working calendars, team availability, attendance, onboarding and offboarding journeys, employee data change, HR letters, expense claims), R3 (probation and contract milestones with HR write-back, shift rosters, AI receipt reading for all tenants) |
+| Target release | R1 (holiday and working week calendars per country and location, and the working-day contract used by specs 016 and 024), R2 (leave, Ramadan and other reduced hours periods, team availability, attendance, onboarding and offboarding journeys, employee data change, HR letters, expense claims), R3 (probation and contract milestones with HR write-back, shift rosters, AI receipt reading for all tenants) |
 | Last updated | 2026-11-05 |
 | Requirement IDs | INT-007, UC-08, UC-09, LVA-001 to LVA-012 and HRW-001 to HRW-014 (new) |
 | Use cases | UC-08 (service request), UC-09 (HR data) |
@@ -73,12 +73,13 @@ Mona opens Leave, picks Annual leave for 12 to 16 October, sees she has 18 days 
 7. **Given** the employee cancels or shortens approved leave, **Then** the change follows the type's rule (approval required or not) and the balance is restored.
 8. **Given** balances are owned by the HR system (spec 019), **Then** TeamBeats shows the HR balance and sends approved leave to HR; if HR is unreachable the request is accepted and synced later, and the employee sees "balance pending update".
 
-### User Story 2: Calendars and working days (Priority: P1, R2)
+### User Story 2: Calendars and working days (Priority: P1, R1)
 
 **Acceptance scenarios:**
 1. **Given** an HR officer, **When** they set the UAE public holidays for next year and a Monday to Friday working week for the Dubai location and Sunday to Thursday for Riyadh, **Then** leave day counts, spec 016 due times and spec 024 working-day timers use the calendar of the person's location.
-2. **Given** holidays announced late (for example religious holidays confirmed shortly before), **When** HR updates the dates, **Then** leave already approved over those dates is recounted, balances are adjusted, and affected employees are notified.
-3. **Given** Ramadan working hours for a location, **Then** attendance rules use the reduced hours for those dates.
+2. **Given** holidays announced late (for example religious holidays confirmed shortly before), **When** HR updates the dates, **Then** open spec 016 due times and spec 024 timers are recalculated from the next evaluation, and (from R2, with leave) leave already approved over those dates is recounted, balances are adjusted, and affected employees are notified.
+3. **Given** Ramadan working hours for a location, **Then** attendance rules use the reduced hours for those dates. *(R2)*
+4. **Given** a tenant in R1 where no HR officer has set a calendar, **Then** a single tenant working week applies (Monday to Friday until a tenant administrator or HR officer changes it, for example to Sunday to Thursday), with no holidays, and due times still work.
 
 ### User Story 3: Attendance and exceptions (Priority: P2, R2)
 
@@ -153,7 +154,7 @@ Omar's start date is entered in HR. Ten days before, the journey starts: IT gets
 - **FR-004 / LVA-004**: Leave requests MUST support a replacement person with accept or decline, and offer approval delegation (spec 016) for the period.
 - **FR-005 / LVA-005**: Approved, cancelled and shortened leave MUST update balances, the team calendar, profile status and the HR system when connected (spec 019). *(INT-007)*
 - **FR-006 / LVA-006**: When the HR system owns balances, the system MUST read balances from it and queue writes when it is unavailable.
-- **FR-007 / LVA-007**: HR officers MUST manage public holiday and working week calendars per country and location, including reduced hours periods, and these calendars MUST be the working-day source for specs 016 and 024.
+- **FR-007 / LVA-007**: *(R1)* HR officers MUST manage public holiday and working week calendars per country and location (reduced hours periods from R2), and these calendars MUST be the working-day source for specs 016 and 024 through the `Hr` working-day contract (count and add working days for an org unit or location). Calendars are part of every package and have no capability key, because workflow due times depend on them.
 - **FR-008 / LVA-008**: Changes to holidays MUST recount affected approved leave and notify affected people.
 - **FR-009 / LVA-009**: The system MUST provide a team availability view by team and unit with privacy rules on leave types.
 - **FR-010 / LVA-010**: Attendance MUST support web and mobile sign in with optional location check, clock data import, working hours rules, exception detection and correction requests.
@@ -226,7 +227,7 @@ Location data from sign in is collected only if the tenant enables it, shown to 
 - Health documents (Restricted) are never sent to AI.
 
 ## 12. Integrations and events
-- Publishes: `LeaveApproved`, `LeaveCancelled`, `AttendanceCorrected`, `JourneyStarted`, `JourneyStepOverdue`, `JourneyCompleted`, `ExpenseApproved`, `LetterIssued`.
+- Publishes: `WorkingCalendarChanged` (from R1), `LeaveApproved`, `LeaveCancelled`, `AttendanceCorrected`, `JourneyStarted`, `JourneyStepOverdue`, `JourneyCompleted`, `ExpenseApproved`, `LetterIssued`.
 - Consumes: `UserProvisioned`, `UserDeprovisioned`, HR new hire, transfer and termination events (spec 019), resignation approval (spec 016), clock data imports (spec 017).
 - Writes to HR (spec 019): leave, data changes. Writes to ERP (spec 017): expenses.
 - Calendar export of approved leave to Microsoft 365 (spec 018) as out-of-office events, if the tenant enables it.

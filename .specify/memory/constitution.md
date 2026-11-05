@@ -1,11 +1,11 @@
 <!--
 Sync Impact Report
-Version: 1.1.0
+Version: 1.1.1
 Source: AI Intranet Product Foundation v0.1, section 17, plus review findings (docs/review/foundation-v0.1-review.md)
 Source rules C-01..C-20 are all carried over and grouped into Parts A to E.
 Added beyond the source: V development authentication isolation, XI untrusted content, XII AI-native not AI-dependent, XIII AI in every package, XXI backend entitlements, XXII dependency licensing, XXV data classification and privacy
 Templates to keep aligned: .specify/templates/spec-template.md, plan-template.md, tasks-template.md
-Status: RATIFIED by Mohamed (1.0.0 on 2026-11-04, 1.1.0 on 2026-11-05). Binding.
+Status: RATIFIED by Mohamed (1.0.0 on 2026-11-04, 1.1.0 and 1.1.1 on 2026-11-05). Binding.
 -->
 
 # TeamBeats Constitution
@@ -222,7 +222,7 @@ Verified by: licence scan in CI; SBOM generated per release.
 
 - User-facing strings MUST NOT be hard-coded. All strings, emails and validation messages are externalized.
 - Text direction MUST be resolved per rendered locale, not from the tenant default. Arabic and Urdu right-to-left layout MUST be supported by shared design primitives (logical CSS properties, mirrored icons where meaningful).
-- Launch locales: Arabic, English, French, Urdu, Hindi.
+- Supported locales: Arabic, English, French, Urdu, Hindi. Which locales are complete at each release is set in spec 007 (Arabic and English complete from R1).
 
 Verified by: lint rule for literal strings in UI components; pseudo-localization and RTL visual regression tests.
 
@@ -308,4 +308,4 @@ Verified by: frontend lint rules for import boundaries between feature folders a
 - **Compliance.** Every plan has a Constitution Check gate. Every pull request review confirms compliance. Deviations must be listed in the plan's Complexity Tracking table with a justification, or the plan is not approved.
 - **Owners.** Product owner and architecture owner: Mohamed (until named otherwise).
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-04 by Mohamed | **Last amended**: 2026-11-05 by Mohamed
+**Version**: 1.1.1 | **Ratified**: 2026-11-04 by Mohamed | **Last amended**: 2026-11-05 by Mohamed

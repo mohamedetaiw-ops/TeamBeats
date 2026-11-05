@@ -73,7 +73,7 @@ A bank tenant allows TeamBeats only from its office ranges and VPN, except that 
 2. **Given** an admin-area allowlist narrower than the tenant list, **When** an admin opens administration from an address outside it, **Then** admin pages and admin APIs are refused while the rest of the intranet works.
 3. **Given** a tenant admin edits the allowlist, **When** the new list would exclude their current address, **Then** the product warns and requires step-up and typed confirmation; a platform recovery path exists through break-glass (spec 001).
 4. **Given** the client address is behind the customer's proxy, **Then** the product uses only forwarded addresses from proxies the platform trusts, never client-set headers.
-5. **Given** a role-level rule (for example "Finance approvers only from office networks"), **Then** actions that need that role are refused outside the network while read access continues.
+5. **Given** a role-level rule (for example "Finance approvers only from office networks"), **Then** it is stored as a spec 004 condition `network_zone in (office, vpn)` on that role's assignments, actions that need the role are refused outside those networks while access from other grants continues, and the access explainer names the unmet network condition. Named network zones are the IP ranges defined in this policy.
 
 ### User Story 2: Require MFA and step-up for sensitive actions (Priority: P1, R1)
 
@@ -175,13 +175,13 @@ The compliance officer creates a guest space "External audit 2027", shares the p
 
 **Guest sign-in methods (default):** (a) the customer's identity provider business-to-business guest feature (for example Entra ID guests), or (b) federation with the guest's own organization identity provider configured by the tenant admin. [NEEDS CLARIFICATION: allow a one-time email code for guests whose organization has no identity provider?] Default: not until a constitution amendment, because the constitution limits product-side credentials; to be decided before R2.
 
-**Defaults:** MFA required on; step-up window 10 minutes; idle timeout 30 minutes; absolute 12 hours; guest expiry 90 days maximum, 30 days default; access reviews every 90 days for admins and guests.
+**Defaults:** MFA required on once a test sign-in shows the MFA claim (until then off, with a posture warning to the tenant administrator); step-up window 10 minutes; idle timeout 30 minutes; absolute 12 hours; guest expiry 90 days maximum, 30 days default; access reviews every 90 days for admins and guests.
 
 **Certification and assurance roadmap (company program):**
 
 | Item | Scope | Target |
 |---|---|---|
-| ISO/IEC 27001:2022 certificate | SaaS service, development and support | Stage 2 audit before R2 general availability |
+| ISO/IEC 27001:2022 certificate | SaaS service, development and support | Certificate issued before R2 general availability |
 | SOC 2 Type I, then Type II | SaaS service: security, availability, confidentiality | Type I at R1 pilot end; Type II report covering 6 months by R2 GA plus 6 months |
 | ISO/IEC 27701 | Privacy extension to 27001 | After 27001, R3 |
 | ISO/IEC 27017 and 27018 | Cloud controls and cloud personal data | With the first 27001 surveillance audit |
@@ -199,7 +199,7 @@ For customer-hosted installs, certifications cover our development and support p
 
 ## 7. Tenant and organization scope
 - Tenant-owned data: security policy, IP rules, guest identities and spaces, alerts, SIEM settings, detection patterns, compliance projects, evidence.
-- Organization scoping: guest spaces can be owned by an org unit; compliance projects can be scoped to a subtree; security policy is tenant-wide, with role-level IP rules.
+- Organization scoping: guest spaces can be owned by an org unit; compliance projects can be scoped to a subtree; security policy is tenant-wide; role-level network rules are spec 004 conditions on role assignments, so they can be scoped like any assignment.
 - Cross-tenant denial cases: a guest of tenant A invited to tenant B gets two separate identities (ADR-0005); SIEM streams carry only one tenant's events; key revocation affects only its tenant.
 - Sibling, parent and child boundary cases: a sponsor in "Acme Gulf" cannot share "Acme Egypt" content into their space; a scoped compliance officer sees only their subtree's projects.
 
@@ -269,7 +269,7 @@ Security baselines (encryption, TLS, audit, MFA assurance) are never turned off 
 
 ## 15. Non-functional requirements
 - IP rule and session checks add under 2 ms p95 per request.
-- Session revocation within 1 minute of sign out everywhere, within 5 minutes of role change (spec 003 default).
+- Session revocation within 1 minute of sign out everywhere, role and permission changes effective within 60 seconds (spec 004 FR-008).
 - SIEM delivery within 60 seconds p95.
 
 ## 16. Success criteria

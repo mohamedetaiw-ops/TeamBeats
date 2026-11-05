@@ -15,7 +15,7 @@ An `Authorization` module that owns roles, permissions, assignments, resource AC
 | XIV | Yes | Hierarchy read via `IOrganizationHierarchy`; resources registered by owning modules through a contract |
 
 ## Data model (schema `authz`)
-- `permission` (platform catalogue): `key` such as `content.page.publish`, `resource_type`, `action`.
+- `permission` (platform catalogue): `key` such as `content.publish`, `resource_type`, `action`.
 - `role`: `tenant_id null` (null = built-in), `id`, `key`, `is_delegable`, `is_custom`.
 - `role_permission`: role to permission keys.
 - `role_assignment`: `tenant_id`, `id`, `subject_type (user, group)`, `subject_id`, `role_id`, `scope_type (tenant, org_unit, org_subtree, resource)`, `scope_id`, `granted_by`.

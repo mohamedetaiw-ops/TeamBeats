@@ -56,7 +56,7 @@ Three rules apply from day one:
 | Agent designer | Create, clone and edit draft agents, run tests, submit for review | `agent.design` on an org scope (built-in role Agent Designer) |
 | Agent owner | Business owner named on each agent; answers access requests, receives feedback and alerts | Named on the agent, needs `agent.design` on its scope |
 | Agent reviewer / publisher | Review, approve and publish agent versions, roll back | `agent.publish` (held by the AI Policy Administrator by default) |
-| AI Policy Administrator | Set tenant agent policy (spec 027), see all agents, suspend and retire | `ai.policy.manage` |
+| AI Policy Administrator | Set tenant agent policy (spec 027), see all agents, suspend and retire | `ai.policy_manage` |
 | Security officer | View registry, versions, evaluation results and audit | `agent.view`, `audit.read` |
 | Platform operator | Publish platform templates and template updates, force a security update | Platform |
 
@@ -186,7 +186,7 @@ Evaluation is defined in spec 034. This story covers what the Agent Hub shows an
 ## 6. Business and validation rules
 - An agent must always have an owner and an owning org unit.
 - Agent names must be unique per tenant per locale.
-- The audience of an agent cannot be wider than the owner's org scope unless the AI Policy Administrator approves a tenant-wide audience.
+- The audience of an agent cannot be wider than the owner's org scope unless a holder of `ai.policy_manage` approves a tenant-wide audience.
 - An agent with write tools must name at least one escalation contact (person or service).
 - A retired agent cannot be restored; it can be cloned into a new draft.
 
@@ -269,12 +269,12 @@ All templates run on the common runtime. They are configurations and capability 
 | 7 | Employee Onboarding | R2 | `ai.agents.department` | L2 | Onboarding journeys, checklists, FAQs, service requests | 016, 019 |
 | 8 | People Directory and Expertise | R2 | `ai.agents.department` | L0 | Directory, skills, org chart (010) | 010 |
 | 9 | Learning and Development | R2 | `ai.agents.department` | L1 | Learning library, training requests; LMS through connector | 016, 017 |
-| 10 | Procurement | R2 | `ai.agents.department` | L3 | Procurement policy, purchase requests, supplier onboarding, status from ERP | 016, 017, 024 |
+| 10 | Procurement | R2 | `ai.agents.department` | L3 (needs `ai.agents.write_tools`) | Procurement policy, purchase requests, supplier onboarding, status from ERP | 016, 017, 024 |
 | 11 | Finance and Expenses | R2 | `ai.agents.department` | L2 | Expense policy, claim preparation, reimbursement status | 016, 017 |
 | 12 | Internal Communications | R2 | `ai.agents.department` | L1; L3 for publishing, with communications owner approval (needs `ai.agents.write_tools`) | Draft announcements, propose audiences, summarize feedback, multilingual versions | 009, 023 |
 | 13 | Legal and Compliance | R3 | `ai.agents.advanced` | L0 | Policy interpretation, contract review help, compliance evidence retrieval | 011, 025, 026 |
 | 14 | Executive Intelligence | R3 | `ai.agents.advanced` | L0 | Department KPIs, risks, activities, executive briefings | 021 |
-| 15 | Process Automation | R3 | `ai.agents.advanced` | L4 within approved processes | Multi-step workflows across applications, run as BPMN processes (024) | 017, 024 |
+| 15 | Process Automation | R3 | `ai.agents.advanced` | L4 within approved processes (needs `ai.agents.autonomous`) | Multi-step workflows across applications, run as BPMN processes (024) | 017, 024 |
 
 ## 13. Audit
 

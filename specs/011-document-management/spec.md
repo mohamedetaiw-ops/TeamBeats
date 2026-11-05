@@ -29,7 +29,7 @@
 - Upload (single, multiple, drag and drop, bulk import with metadata file), file type allowlist, size limits, malware scanning, duplicate detection by hash.
 - Versioning: minor versions for drafts and major versions for approved releases, version notes, compare for text formats, restore.
 - Check-out and check-in: exclusive editing lock, check-out by self, discard check-out, forced check-in by library managers with a reason.
-- Editing: download and upload, and editing in the browser for Office formats through Microsoft 365 when connected (FR-010, FR-024). TeamBeats keeps its own version on check-in.
+- Editing: download and upload, and editing in the browser for Office formats through Microsoft 365 when connected (R2, FR-010, FR-024). TeamBeats keeps its own version on check-in.
 - Controlled documents: document number, owner, approval route before a major version is published (spec 024), effective date, review date, superseded versions kept read-only, "controlled copy" watermark, "uncontrolled when printed" footer.
 - Preview in the browser for common formats (PDF, Office, images, video, text) without download.
 - Knowledge base: articles with templates for SOP, how-to walkthrough, FAQ and troubleshooting, version-controlled, with owners, review dates, related articles and "was this helpful" feedback.
@@ -147,6 +147,7 @@ The Health and Safety manager revises the "Working at height" procedure. The new
 2. **Given** a held document, **When** anyone (including retention jobs, recycle bin purge, tenant closure jobs in spec 001 and tenant data deletion requests in UC-14) tries to delete it, **Then** deletion is refused and the attempt is audited.
 3. **Given** the hold is released, **Then** normal retention resumes, and documents whose period has passed enter disposition review rather than being deleted at once.
 4. **Given** a hold, **Then** holders and the hold reason are visible only to records managers.
+5. **Given** a hold that also selects audit records (by custodian as actor or target, and a date range), **When** the spec 006 audit purge runs, **Then** those audit records are kept until the hold is released. The `Audit` module learns which records are held through the `Documents` legal hold contract, never by reading its tables.
 
 ### User Story 8: Restrict download and share with guests (Priority: P2, R2)
 
@@ -209,12 +210,12 @@ Acme already keeps its finance and project files in SharePoint Online. The integ
 - **FR-007 / DOC-007**: Controlled document types MUST support document numbering schemes, owner, approval route on spec 024, effective date, superseded state, review date with review tasks, and print and PDF footer with control details. Authors MUST NOT approve their own revision.
 - **FR-008 / DOC-008**: Controlled document types MUST be able to require read confirmation on each new major version, using the acknowledgement record of spec 009.
 - **FR-009 / DOC-009**: The system MUST preview PDF, Office, image, video and text formats in the browser without download.
-- **FR-010 / DOC-010**: When Microsoft 365 is connected (FR-024), contributors MUST be able to edit Office documents in the browser; TeamBeats MUST store the result as its own version on check-in.
+- **FR-010 / DOC-010**: *(R2)* When Microsoft 365 is connected (FR-024), contributors MUST be able to edit Office documents in the browser; TeamBeats MUST store the result as its own version on check-in.
 - **FR-011 / DOC-011**: The knowledge base MUST support article templates (SOP, how-to, FAQ, troubleshooting), the lifecycle and versioning of spec 009, related articles, helpfulness feedback and per-question indexing for FAQ articles.
 - **FR-012 / DOC-012**: The brand asset portal MUST support collections, usage rights with expiry, automatic renditions, access requests and download tracking.
 - **FR-013 / DOC-013**: Records managers MUST be able to define retention labels with period, trigger (created, modified, effective, superseded, custom date field) and action (delete, review, archive), and apply them by library, document type or manually. *(ADM-003)*
 - **FR-014 / DOC-014**: Disposition MUST keep a content-free disposition record and propagate deletion to search and vector indexes within the KNO-006 objective (5 minutes by default, owned by spec 012). *(KNO-006)*
-- **FR-015 / DOC-015**: Legal holds by custodian, location, query or item MUST block every deletion path in the product, including retention, purge, user deletion and tenant closure, until released.
+- **FR-015 / DOC-015**: Legal holds by custodian, location, query or item MUST block every deletion path in the product, including retention, purge, user deletion and tenant closure, until released. A hold MAY also select audit records by custodian (as actor or target) and date range; spec 006 audit purge MUST skip them until release. The legal hold contract MUST expose these selections to the `Audit` module.
 - **FR-016 / DOC-016**: Libraries MUST support view-only mode with dynamic watermark and no download, enforced in the API as well as the UI.
 - **FR-017 / DOC-017**: Libraries MUST support sharing with guest spaces (spec 026) with expiry, read-only by default, never for Restricted classification.
 - **FR-018 / DOC-018**: Deleted items MUST go to a recycle bin for 93 days by default (tenant configurable between 30 and 180), restorable by the deleter or library manager, unless a retention label forbids deletion.

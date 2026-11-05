@@ -228,7 +228,7 @@ Ahmed asks the assistant "Can I accept a gift from a supplier?". The assistant a
 | policy.viewed, policy.qa_asked, policy.qa_no_answer | analytics | policy, unit (aggregated) |
 
 ## 14. Security and abuse cases
-- Forging attestations: records are written only by the attesting user's own session, never by API on behalf of another user, never by delegates or admins. Bulk "mark as attested" does not exist; offline attestations are imported with source "paper" and the importer recorded.
+- Forging attestations: records are written only by the attesting user's own session, never by API on behalf of another user, never by delegates or admins. The only exception is the paper import (R2): offline attestations are imported with source "paper", the importer recorded and the scanned evidence attached, and they are reported apart from online attestations. Bulk "mark as attested" does not exist.
 - Reading comprehension answers to embarrass staff: restricted to compliance officers, access audited.
 - The assistant leaking restricted policy names: retrieval is permission filtered before generation.
 

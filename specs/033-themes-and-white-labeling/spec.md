@@ -48,11 +48,11 @@ Source: [Composable Intranet Experience requirements](../../docs/product/composa
 | Actor | What they can do in this feature | Permission / scope required |
 |---|---|---|
 | Platform operator | Maintain platform default tokens and the token schema; register fonts | Platform role |
-| Tenant administrator | Create brand profiles, assign them to scopes, set locks, delegate experience administration, configure domains | `theme.edit`, `theme.publish`, `experience.lock`, `domain.manage` at tenant scope |
+| Tenant administrator | Create brand profiles, assign them to scopes, set locks, delegate experience administration, configure domains | `theme.edit`, `theme.publish`, `config_lock.manage`, `domain.manage` at tenant scope |
 | Brand manager (design administrator) | Edit tokens, assets and variants within allowed scope; preview; submit | `theme.edit` at tenant, org or site scope |
 | Organization administrator | Apply and override approved brand properties for their scope; manage their scope's pages and navigation | `theme.edit`, `theme.publish` at org or subtree scope, if delegated |
 | Approver | Approve theme and shared configuration releases | Assigned by route (spec 024) |
-| Security officer, compliance officer | Read theme and configuration history | `experience.history_view` |
+| Security officer, compliance officer | Read theme and configuration history | `config_history.view` |
 | Employee | Choose mode and density where allowed (spec 008) | Tenant membership |
 
 A brand manager has no automatic right to change business permissions (source section 3). `theme.*` grants nothing outside visual configuration.
@@ -172,6 +172,7 @@ Acme Group's tenant admin creates two brand profiles, "Acme Gulf" (teal, Latin a
 - A tenant has at most `experience.max_brands` brand profiles.
 - Theme approval is required for tenant-scope themes by default; organization-scope themes publish with one approval step.
 - Asset rules from spec 001 apply (PNG, JPEG, sanitized SVG, max 1 MB).
+- The logo and colors in spec 001 tenant settings seed the tenant's default brand profile when this feature is first enabled. From then on the theme resolver reads only brand profiles, and the spec 001 tenant settings page links to the brand manager instead of editing the values, so there is one source of truth.
 
 ## 7. Tenant and organization scope
 - Tenant-owned data: brand profiles, tokens, assets, assignments, locks, delegations, domains, theme releases.

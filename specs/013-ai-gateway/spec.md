@@ -46,9 +46,9 @@
 |---|---|---|
 | Platform operator | Maintain the model catalogue and provider adapters, set platform baseline rules, block a model for all tenants | Platform |
 | Tenant administrator | Enable providers, set tenant credentials where allowed, assign the AI Policy Administrator role | Tenant |
-| AI Policy Administrator | Edit the tenant model policy, routing rules, budgets and logging policy; view usage and cost | `ai.policy.manage` at tenant scope |
-| Organization administrator | Restrict the model policy and set budgets for their unit and below | `ai.policy.manage` at org scope, restrict only |
-| Security officer | View policy, denied calls and usage; export evidence | `ai.policy.view`, `audit.read` |
+| AI Policy Administrator | Edit the tenant model policy, routing rules, budgets and logging policy; view usage and cost | `ai.policy_manage` at tenant scope |
+| Organization administrator | Restrict the model policy and set budgets for their unit and below | `ai.policy_manage` at org scope, restrict only |
+| Security officer | View policy, denied calls and usage; export evidence | `ai.policy_view`, `audit.read` |
 | Module or agent runtime | Send model requests with tenant, user, use case, classification and agent context | System, through the gateway contract only |
 
 ## 4. User scenarios

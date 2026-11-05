@@ -47,6 +47,8 @@
 | Content owner | Manage resource permissions on resources they own |
 | Employee | Receives permissions; can view own effective roles |
 
+Permission keys (FR-013): `authz.roles_view`, `authz.roles_manage` (define custom roles), `authz.roles_assign` (assign roles within the holder's scope), `authz.explain` (use the access explainer) and `authz.rules_manage` (inheritance rules).
+
 ## 4. User scenarios
 
 ### User Story 1: Scoped role assignment (Priority: P1)
@@ -126,7 +128,7 @@ The tenant admin gives the Approver role for the "Acme Gulf" subtree only to peo
 - Groups can come from the identity provider (claims), HR sync, or be product-defined.
 - Every tenant member has the Employee role at tenant scope by default. A tenant can remove default Employee access per membership type, for example for contractors (Decided 2026-11-04).
 - Guest memberships (spec 026) never receive the default Employee role. A guest gets access only through explicit shares into a guest space.
-- Attribute catalogue for conditions (R1). User attributes: membership type (employee, contractor, guest), job title and office (spec 003 attribute mapping), and employment status, job grade, job function, work country and cost centre once a tenant maps them from its directory or HR integration (planned 019). Resource attributes: classification (constitution XXV), owning organization unit. Request attributes: authentication assurance, meaning MFA performed and step-up freshness (spec 026). An attribute a tenant has not mapped is absent, so conditions on it fail closed. Adding an attribute is a change to this spec.
+- Attribute catalogue for conditions (R1). User attributes: membership type (employee, contractor, guest), job title and office (spec 003 attribute mapping), and employment status, job grade, job function, work country and cost centre once a tenant maps them from its directory or HR integration (planned 019). Resource attributes: classification (constitution XXV), owning organization unit. Request attributes: authentication assurance, meaning MFA performed and step-up freshness (spec 026), and network zone, meaning the named IP ranges of the tenant security policy that the request comes from (spec 026). A request from no named range has no network zone, so a condition on it fails closed. An attribute a tenant has not mapped is absent, so conditions on it fail closed. Adding an attribute is a change to this spec.
 - Conditions are a security control, not a premium feature: they are available in every package and need no capability key.
 - Audience targeting rules (FR-006) may use the same user attributes, but they remain separate records and never grant access.
 

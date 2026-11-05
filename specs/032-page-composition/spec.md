@@ -46,12 +46,12 @@ Source: [Composable Intranet Experience requirements](../../docs/product/composa
 | Actor | What they can do in this feature | Permission / scope required |
 |---|---|---|
 | Platform operator | Register platform components and baseline templates and layouts; set platform defaults | Platform role (outside tenant roles) |
-| Tenant administrator | Enable components and templates for the tenant, distribute templates, set tenant page policy and feature controls | `component.enable`, `template.distribute`, `experience.feature_control` at tenant scope |
+| Tenant administrator | Enable components and templates for the tenant, distribute templates, set tenant page policy and feature controls | `component.enable`, `template.distribute`, `feature_control.manage` at tenant scope |
 | Organization administrator | Manage pages, templates and global page areas for their scope | `page.edit`, `page.publish`, `template.edit` at org or subtree scope |
 | Page editor (new built-in role) | Compose and edit drafts, preview, request publication | `page.edit`, `placement.add`, `placement.remove` at site or org scope |
 | Page publisher (new built-in role) | Approve, schedule, publish and roll back pages | `page.publish` (and `page.approve` where a route asks for it) at site or org scope |
 | Template designer | Create and release templates, set region locks | `template.edit` at the template's scope |
-| Security officer, compliance officer | Read configuration history and publication audit | `experience.history_view` |
+| Security officer, compliance officer | Read configuration history and publication audit | `config_history.view` |
 | Employee | View pages they are permitted to see; personalize delegated regions (spec 008) | Tenant membership and the page's view permission |
 
 Permission keys follow spec 004 FR-013. They are scoped to tenant, org unit, subtree, site or page and evaluated by the central authorization service. Placement visibility rules are targeting, not access (spec 004 US4).

@@ -45,6 +45,8 @@
 | Organization administrator | Manage units and memberships within their assigned unit or subtree | Assigned unit or subtree |
 | Employee | View the units they are allowed to see | Per spec 004 |
 
+Permission keys (spec 004 FR-013): `org.view` (see units), `org.manage` (create, rename, move and deactivate units) and `org.membership_manage` (change memberships). The organization administrator holds them at its assigned unit or subtree.
+
 ## 4. User scenarios
 
 ### User Story 1: Build the hierarchy (Priority: P1)
@@ -155,7 +157,7 @@ When a directory or HR source owns a unit or membership, its source fields are r
 | `org.hierarchy` | All packages |
 | `org.delegated_admin` | Workplace Plus and above (organization administrators). Workplace: tenant admins only. |
 | `org.max_units` | Quota per package. Values are commercial data, set in the package definition (open commercial item C3). |
-| `org.directory_sync` | All packages for one directory connection. Workplace Plus and above for more than one connection. |
+| `identity.max_directory_connections` | Limit on directory connections (spec 003): 1 in Workplace, more in Workplace Plus and above. Directory sync itself is gated by `identity.directory_sync` (spec 003). |
 
 ## 10. UX, localization and accessibility
 - Tree view with keyboard navigation (arrow keys, expand/collapse) following the WAI-ARIA tree pattern.
