@@ -101,14 +101,14 @@ public sealed class OrgHierarchyTests(TenantWorld world)
         // The Gulf-subtree publisher cannot see the unit under Africa, then can after it moves under Gulf.
         var publisher = world.A["publisher"];
         var before = await admin.GetFromJsonAsync<JsonElement>(
-            $"/api/v1/authz/explain?userId={publisher.Id}&permission=content.page.publish&orgUnitId={unit}");
+            $"/api/v1/authz/explain?userId={publisher.Id}&permission=content.publish&orgUnitId={unit}");
         Assert.False(before.GetProperty("allowed").GetBoolean());
 
         (await admin.PostAsJsonAsync($"/api/v1/org/units/{unit}:move", new { newParentId = world.A.Unit("Gulf") })).EnsureSuccessStatusCode();
         await world.Database.AssertAuditedAsync(world.A.Id, AuditActions.OrgUnitMoved, unit.ToString());
 
         var after = await admin.GetFromJsonAsync<JsonElement>(
-            $"/api/v1/authz/explain?userId={publisher.Id}&permission=content.page.publish&orgUnitId={unit}");
+            $"/api/v1/authz/explain?userId={publisher.Id}&permission=content.publish&orgUnitId={unit}");
         Assert.True(after.GetProperty("allowed").GetBoolean());
     }
 
