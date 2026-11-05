@@ -1,0 +1,102 @@
+# R0 CI gates (docs/architecture/r0-solution-structure.md section 8).
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: ci_only_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      TEAMBEATS_TEST_PG_ADMIN: Host=localhost;Port=5432;Username=postgres;Password=ci_only_password
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - run: dotnet restore TeamBeats.slnx
+      - run: dotnet build TeamBeats.slnx --no-restore -c Release
+      - name: Unit tests
+        run: dotnet test tests/Unit --no-build -c Release
+      - name: Architecture tests
+        run: dotnet test tests/Architecture --no-build -c Release
+      - name: Integration tests (includes OpenAPI diff)
+        run: dotnet test tests/Integration --no-build -c Release
+      - name: Security tests (RLS and cross-tenant suite)
+        run: dotnet test tests/Security --no-build -c Release
+      - name: Production artifact check (ADR-0004)
+        run: |
+          dotnet publish src/Api/TeamBeats.Api.csproj -c Release -o out/api
+          dotnet publish src/Workers/TeamBeats.Workers.csproj -c Release -o out/workers
+          if ls out/api out/workers | grep -q "Identity.DevAuth"; then
+            echo "Development sign-in assembly found in a production artifact." >&2
+            exit 1
+          fi
+      - name: Vulnerable or deprecated packages
+        run: |
+          dotnet list TeamBeats.slnx package --vulnerable --include-transitive | tee vuln.txt
+          ! grep -q "has the following vulnerable packages" vuln.txt
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/Web/package-lock.json
+      - run: npm ci
+      - name: Typecheck, literal-string lint, logical-CSS lint, missing-key gate
+        run: npm run verify
+      - run: npm run build
+      # Exception: @img/sharp-libvips-* (LGPL-3.0-or-later, OSI approved) is the native image library that Next.js
+      # installs as an optional dependency of sharp. It is dynamically loaded and unmodified. Recorded in
+      # docs/architecture/r0-implementation-notes.md for the owner's decision.
+      - name: Licence allow list (constitution XXII)
+        run: npx --yes license-checker-rseidelsohn@4.4.2 --production --excludePrivatePackages --excludePackagesStartingWith "@img/sharp-libvips" --onlyAllow "MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;0BSD;BlueOak-1.0.0;CC0-1.0;MPL-2.0;Python-2.0;Unlicense;CC-BY-4.0"
+
+  governance:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read   # gitleaks-action lists the PR's commits to scan
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Findings fail the job and appear in the log; the SARIF artifact is not needed and uses storage quota.
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+      - name: SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          format: spdx-json
+          output-file: teambeats-sbom.spdx.json
+          # Generated on every run; uploading is off until artifact storage is budgeted (release builds will attach it).
+          upload-artifact: false
+      - name: spec-lint
+        if: github.event_name == 'pull_request'
+        env:
+          PR_TEXT: ${{ github.event.pull_request.title }} ${{ github.event.pull_request.body }}
+        run: tools/spec-lint.sh "origin/${{ github.base_ref }}" "$PR_TEXT"

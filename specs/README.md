@@ -9,11 +9,11 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [003 Identity and authentication](003-identity-and-authentication/spec.md) | platform | R0 to R2 | Approved; AD sign-in and sync, delegated Microsoft Graph access (FR-016) pending approval | IAM-001 to IAM-007, IAM-009, IAM-010, INT-007 (directory) |
 | [004 Authorization and permissions](004-authorization-and-permissions/spec.md) | platform | R0, R1 (attribute conditions) | Approved | TEN-007, TEN-008, IAM-007, IAM-008, ADM-001 |
 | [005 Packages and entitlements](005-packages-and-entitlements/spec.md) | platform | R0, R2 | Approved | AI-001, ADM-001, ENT-001 to ENT-008 (new) |
-| [006 Audit and admin shell](006-audit-and-administration/spec.md) | platform | R0 | Approved | ADM-001 to ADM-003, TEN-010, AUD-001 to AUD-007 (new) |
+| [006 Audit and admin shell](006-audit-and-administration/spec.md) | platform | R0, R1 to R2 (Connections area) | Approved (Connections area approved 2026-11-05) | ADM-001 to ADM-003, TEN-010, INT-001 (connection administration), AUD-001 to AUD-007 (new) |
 | [007 Localization and accessibility](007-localization-and-accessibility/spec.md) | experience | R0 to R2 | Approved; composable experience additions pending approval | LOC-001 to LOC-004, EXP-008, CX-ACC-001 to CX-ACC-014, CX-LOC-001 to CX-LOC-005, CX-LOC-007 to CX-LOC-010 |
 | [008 Experience shell, navigation, employee home and personalization](008-experience-shell-and-personalization/spec.md) | experience | R1 to R3 | Proposed | EXP-001, EXP-008, CX-EXP-001 to CX-EXP-010, CX-NAV-001 to CX-NAV-010, CX-PER-001 to CX-PER-015, CX-INT-001 to CX-INT-012 |
 | [009 Content, publishing and governance](009-content-and-publishing/spec.md) | experience | R1 to R3 | Proposed | EXP-002 to EXP-004, LOC-004, PUB-001 to PUB-020 |
-| [011 Document management and knowledge base](011-document-management/spec.md) | knowledge | R1 to R3 | Proposed | KNO-001, KNO-003, KNO-006, ADM-003, DOC-001 to DOC-022 |
+| [011 Document management and knowledge base](011-document-management/spec.md) | knowledge | R1 to R3 | Proposed | KNO-001, KNO-003, KNO-006, ADM-003, INT-002 (SharePoint documents), DOC-001 to DOC-033 |
 | [013 AI Gateway and model governance](013-ai-gateway/spec.md) | ai | R1 to R3 | Proposed | AI-002 to AI-004, AI-006, AI-011 to AI-013, AIG-001 to AIG-016 |
 | [016 Self services, service catalogue and workflows](016-service-catalogue-and-workflows/spec.md) | workflows | R1, R2 | Proposed | WF-001 to WF-016, UC-08 |
 | [018 Microsoft 365 mail, calendar and rooms](018-microsoft-365-mail-and-calendar/spec.md) | integrations | R2, R3 | Proposed | INT-001, INT-002, INT-009, UC-10 (mail and calendar part), M365-001 to M365-024 (new) |
@@ -26,6 +26,7 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [027 Agent governance, tools and safety](027-agent-governance/spec.md) | ai | R1 to R3 | Proposed | AI-005, AI-009, AI-010, AGV-001 to AGV-024, UC-07, UC-13 |
 | [032 Page composition: layouts, templates, component registry and page builder](032-page-composition/spec.md) | experience | R1 to R3 | Proposed | CX-LAY-001 to CX-LAY-012, CX-TMP-001 to CX-TMP-010, CX-TMP-012, CX-EDT-001 to CX-EDT-015, CX-EXT-001 to CX-EXT-014, CX-GOV-001 to CX-GOV-012, CX-NFR-001 to CX-NFR-012 |
 | [033 Brands, themes, white labeling and multi-organization experience](033-themes-and-white-labeling/spec.md) | experience | R1, R2 | Proposed | CX-BRD-001 to CX-BRD-015, CX-ORG-001 to CX-ORG-011, CX-TMP-011, CX-LOC-006, ADM-001 (branding) |
+| [034 AI Evaluation Layer](034-ai-evaluation/spec.md) | ai | R1 to R3 | Proposed | EVL-001 to EVL-030, AI-008 (quality part), AI-010 (evidence part), UC-07, UC-13 |
 
 Open questions across these specs, with defaults: [open-questions.md](open-questions.md). Release plan: [roadmap](../docs/product/roadmap.md).
 
@@ -46,10 +47,10 @@ Each spec folder now has `spec.md` (Approved), `plan.md` and `tasks.md`. Shared 
 | Planned spec | Release | Requirement IDs |
 |---|---|---|
 | 010 Employee directory and org chart | R1 | EXP-005, EXP-006, UC-05. Profile fields and reporting line from AD (spec 003), My team, newcomers. Skills and expertise, badges from recognition (023), out of office status from leave (022) |
-| 012 Search and retrieval | R1 | KNO-002 to KNO-006. Type-ahead; indexes people, pages, documents, policies, knowledge articles and services; AI summary of top results; best bets; federated results from connected systems (SharePoint, Google Drive, ticketing) with source permissions; search analytics feed to 021. Sets the KNO-006 synchronization objective that specs 009 and 011 rely on: permission changes and deletions reach search and vector indexes within 5 minutes by default |
-| 014 AI assistant and RAG | R1 | AI-005, AI-007, KNO-007, UC-06. The assistant is the universal entry point and routes requests to agents (spec 020 US7); it holds no tools of its own |
+| 012 Search and retrieval | R1 | KNO-002 to KNO-006. Type-ahead; indexes people, pages, documents, policies, knowledge articles and services; AI summary of top results; best bets; federated results from connected systems (SharePoint, Google Drive, ticketing) with source permissions; search analytics feed to 021; search relevance measured with judged query sets (021 ANL-023) and retrieval changes used by AI pass the 034 gate. Sets the KNO-006 synchronization objective that specs 009 and 011 rely on: permission changes and deletions reach search and vector indexes within 5 minutes by default |
+| 014 AI assistant and RAG | R1 | AI-005, AI-007, KNO-007, UC-06. The assistant is the universal entry point and routes requests to agents (spec 020 US7); it holds no tools of its own. Assistant routing and RAG configuration (chunking, embedding model, retrieval parameters) have suites in 034 and changes pass its release gate |
 | 015 Notifications and email | R1 (in-app and email), R2 (Teams, mobile push, digital signage) | INT-008, INT-003 (Teams path) (new NOT- IDs). In-app notification centre replaces the old "Intra mail" inbox. Channels: in-app, email, Teams, mobile push, digital signage feed; user channel preferences with mandatory messages exempt; used by campaigns in 009 |
-| 017 Connector framework | R2 | INT-001, INT-009, INT-010. Custom REST API connectors; Slack as a notification and share channel; clock data and ERP hand-off used by 022; KPI tiles used by 021 |
+| 017 Connector framework | R2 | INT-001, INT-009, INT-010. `Integrations` module behind the Connections area of 006 (FR-010 to FR-015) and the document repository contract of ADR-0016; custom REST API connectors; Slack as a notification and share channel; clock data and ERP hand-off used by 022; KPI tiles used by 021 |
 | 019 HR integration | R2 | INT-007, UC-09. Payslip view (read-only, Confidential), HR record prefill; AD covers the directory part (specs 002, 003) |
 | 023 Communities and engagement | R2 | EXP-007. Discussion channels (public and per department), Speak Up with anonymous option, polls, recognition (team and star of the period), celebrations, photo gallery, points and leaderboard. Anonymous surveys with results thresholds, custom badges, site-wide thank-you shout-outs, discussion rooms, in-product messaging |
 | 028 Learning and mandatory training | R2 | New LRN- IDs. Courses and learning paths, mandatory training assignments with due dates (onboarding in 022, policy linked training in 025), completion tracking, external LMS connector as an alternative |
@@ -77,10 +78,27 @@ Source: "AI Agent Governance Plan" (2026-11-05). Each of its 15 product epics ma
 | 9 Agent identity, authorization and tenant isolation | 027 US2, 004, ADR-0005 |
 | 10 Agent governance and policy | 027 US1, US8, US9 |
 | 11 Execution monitoring and audit | 027 US6, 006 |
-| 12 Evaluation, testing and versioning | 020 US5, 027 US9 |
+| 12 Evaluation, testing and versioning | 034, with the gate shown in 020 US5 and safety suites in 027 US9 |
 | 13 Cost, quota and usage | 013 US4, US5, 005 |
 | 14 Multilingual agent experience | 020 FR-017, 007 |
 | 15 Lifecycle, deployment and rollback | 020 US2, US3, 027 US7 |
+
+## AI Evaluation Layer coverage
+
+Source: Mohamed's AI Evaluation Layer recommendation (2026-11-05). Evaluation is a core platform capability in every package and is built first among the AI work; product experience evaluation follows.
+
+| Recommendation | TeamBeats home |
+|---|---|
+| Evaluation as its own bounded context with control plane, execution plane and evidence store | 034 EVL-001, EVL-002, ADR-0015 |
+| Async evaluation, inline safety checks stay in the request path | 034 EVL-003, 027 section 11, 013 |
+| Ten evaluation dimensions (answer quality to user satisfaction) | 034 section 12 |
+| Golden datasets (ar and en in R1; fr, ur, hi in R2), model as judge, trajectory, production evaluation, release gates | 034 US2 to US8 |
+| Multi-tenant levels: platform, tenant, organization, agent, agent version | 034 US10 |
+| Build the management capability, integrate DeepEval, Ragas, Langfuse and OpenTelemetry through adapters | ADR-0015, 034 EVL-028, EVL-029, 013 AIG-018 |
+| First release: registry, datasets, engine, scoring and thresholds, dashboard, release gates | 034 R1 |
+| Later: production sampling, review queues, drift, A/B comparisons, business outcomes | 034 R2 |
+| Product experience evaluation (search, personalization, recommendations, journeys) | 021 US10, ANL-023, ANL-024 |
+| Core layer in every package, advanced analytics by package | 034 section 9, 005 |
 
 ## Current intranet coverage
 

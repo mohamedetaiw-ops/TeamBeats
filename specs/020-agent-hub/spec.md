@@ -8,11 +8,11 @@
 | Version | 0.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (registry, common runtime, six launch templates, basic configuration, lifecycle with review, routing from the assistant, contextual actions), R2 (Agent Studio no-code, customer-created agents, marketplace, evaluation suites in Studio, persistent memory, proactive briefings, department templates), R3 (multi-agent orchestration, advanced templates, extensibility) |
+| Target release | R1 (registry, common runtime, six launch templates, basic configuration, lifecycle with review and the evaluation gate of spec 034, routing from the assistant, contextual actions), R2 (Agent Studio no-code, customer-created agents, marketplace, evaluation of customer-created agents in Studio, persistent memory, proactive briefings, department templates), R3 (multi-agent orchestration, advanced templates, extensibility) |
 | Last updated | 2026-11-05 |
 | Requirement IDs | AI-007 (agent part), AI-008, UC-07, AGT-001 to AGT-020 (new) |
 | Use cases | UC-06, UC-07 |
-| Depends on | ADR-0011 (agent runtime), 013 (AI Gateway), 014 (assistant and RAG), 027 (agent governance, tools and approvals), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 015 (notifications), 016 (services and task inbox), 017 (connectors), 021 (analytics) |
+| Depends on | ADR-0011 (agent runtime), 013 (AI Gateway), 014 (assistant and RAG), 027 (agent governance, tools and approvals), 034 (AI evaluation and release gates), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 015 (notifications), 016 (services and task inbox), 017 (connectors), 021 (analytics) |
 
 ## 1. Problem and outcome
 
@@ -33,7 +33,7 @@ Three rules apply from day one:
 - Platform template library and the 15 standard templates in section 12.
 - Agent Studio: create, clone, configure, test, version, submit for review, publish, roll back.
 - Agent lifecycle states and publishing rules.
-- Evaluation suites as a publishing gate.
+- The publishing gate, which uses the evaluation results of spec 034.
 - Agent marketplace: discover, request access, favourite, rate, launch.
 - Ways employees meet agents: universal assistant routing, marketplace, contextual actions, agent-prepared tasks, proactive briefings.
 - Agent memory (session and opt-in persistent).
@@ -43,6 +43,7 @@ Three rules apply from day one:
 **Out of scope:**
 - Policy, autonomy levels, agent identity, tool registry and gateway, approvals, monitoring, emergency controls and safety tests (spec 027).
 - Model routing, budgets and providers (spec 013).
+- Evaluation suites, golden datasets, scoring, thresholds, production evaluation and the evaluation dashboard (spec 034).
 - Retrieval, indexing, citations and the assistant chat surface (spec 014).
 - Connectors to other systems (spec 017 and the packs in 018, 019).
 - A separate runtime, database or deployment per agent (ADR-0011).
@@ -100,13 +101,15 @@ Omar in Procurement builds a "Supplier onboarding helper" from a blank definitio
 3. **Given** the limit is reached, **When** he tries to create another, **Then** he is told the limit and who can raise it.
 4. **Given** an existing agent, **When** he clones it, **Then** a new draft is created with a new identity and no published history; access, tools and memory are not copied unless he confirms each.
 
-### User Story 5: Test with an evaluation suite (Priority: P1, R1 platform suites, R2 tenant suites)
+### User Story 5: Pass the evaluation gate before publishing (Priority: P1, R1)
+
+Evaluation is defined in spec 034. This story covers what the Agent Hub shows and enforces.
 
 **Acceptance scenarios:**
-1. **Given** a draft, **When** evaluation runs, **Then** the mandatory suites from spec 027 run (permission isolation, prompt injection, unsafe action, data classification) plus the agent's own test set, in Arabic and English (and French, Urdu, Hindi from R2 for tenants with those locales).
-2. **Given** an agent test set of questions with expected sources or expected answers, **When** it runs, **Then** each case shows pass or fail, groundedness, citation correctness, tool behavior and the model used, and the overall score is stored with the version.
-3. **Given** a score below the tenant threshold (default 85% for the agent test set, 100% for mandatory safety suites), **When** someone tries to publish, **Then** it is blocked.
-4. **Given** a published agent, **When** the model behind its use case changes in spec 013, **Then** its evaluation reruns automatically and the owner is alerted if it no longer passes.
+1. **Given** a template install, **When** the agent is created, **Then** it inherits the template's platform suites and the mandatory safety suites of spec 027, plus an agent suite the designer can add cases to, in Arabic and English (and French, Urdu, Hindi from R2 for tenants with those locales).
+2. **Given** the test panel in Draft, **When** the designer runs the agent's suites, **Then** each case shows pass or fail, groundedness, citation correctness, tool behavior and the model used, from spec 034, and no write action is executed.
+3. **Given** a version submitted for review, **When** the gate of spec 034 reports a critical failure, or a blocking failure that has not been overridden as spec 034 US5 allows, **Then** publishing is blocked with the failing cases listed.
+4. **Given** a published agent, **When** the model behind its use case, a tool it holds, or its retrieval configuration changes, **Then** the gate of spec 034 runs before the change applies to it, and the owner is alerted if it no longer passes.
 
 ### User Story 6: Find and launch agents in the marketplace (Priority: P1, R2)
 
@@ -167,7 +170,7 @@ Omar in Procurement builds a "Supplier onboarding helper" from a blank definitio
 - **AGT-006 / FR-006**: Lifecycle states MUST be Draft, In review, Published, Suspended and Retired, with a test panel available in Draft. Published versions MUST be immutable.
 - **AGT-007 / FR-007**: Publishing MUST require `agent.publish`, passing mandatory evaluation suites, and for Medium and High risk agents an approver different from the last editor.
 - **AGT-008 / FR-008**: Rollback MUST make a previous version current after an automatic policy check, without a new review if the check passes.
-- **AGT-009 / FR-009**: Evaluation MUST support agent test sets with expected sources or answers, run the mandatory suites of spec 027, report per-case results and a score per locale, store results with the version, and rerun when the model for the agent's use case changes.
+- **AGT-009 / FR-009**: Every agent version MUST have the suites required by spec 034, and publishing and changes to its model route, tools or retrieval configuration MUST wait for the spec 034 gate result. Rollback MUST NOT wait for evaluation, so that it stays an emergency control (spec 027 US7); when the restored version's gate result is stale, the gate runs right after rollback and a critical failure alerts the owner and the AI Policy Administrator. The review page MUST show that result and the score differences against the published version.
 - **AGT-010 / FR-010**: The marketplace MUST list agents by access policy with search, categories, favourites, ratings, request access through the task inbox, and launch. *(R2)*
 - **AGT-011 / FR-011**: The universal assistant MUST route each request to at most one agent at a time from those the user can use, show which agent answers, allow switching, and record the routing decision. *(spec 014)*
 - **AGT-012 / FR-012**: Contextual actions MUST be configurable per content type and MUST pass the item as context under the item's permissions.
@@ -176,7 +179,7 @@ Omar in Procurement builds a "Supplier onboarding helper" from a blank definitio
 - **AGT-015 / FR-015**: Persistent memory MUST be off by default, opt-in per agent and per user, viewable and deletable by the user, classified, never Restricted, and deleted on leaver and after retention. *(R2)*
 - **AGT-016 / FR-016**: Handoffs between agents MUST be declared in the definition, limited to depth 3, and each agent MUST act with its own tools and the user's permissions. *(R3)*
 - **AGT-017 / FR-017**: Agents MUST answer in the user's interface language when the agent supports it, with instructions and test sets kept per locale. Arabic and English MUST be supported for all launch templates in R1. *(spec 007)*
-- **AGT-018 / FR-018**: Agent analytics MUST show active users, conversations, task success (resolved without escalation), user ratings, escalations, tool success and failure, and cost from spec 013, per agent and version. *(R1 basic, R2 detailed through spec 021)*
+- **AGT-018 / FR-018**: Agent analytics MUST show active users, conversations, task success (resolved without escalation), user ratings, escalations, tool success and failure, cost from spec 013, and quality scores from spec 034, per agent and version. *(R1 basic, R2 detailed through spec 021)*
 - **AGT-019 / FR-019**: The number of published agents and of customer-created agents MUST be limited by entitlements (`ai.agents.max_published`, `ai.agents.max_custom`).
 - **AGT-020 / FR-020**: Templates MUST declare their required capability key, required connectors and minimum autonomy needed, so the library can show which ones the tenant can use.
 
@@ -188,7 +191,7 @@ Omar in Procurement builds a "Supplier onboarding helper" from a blank definitio
 - A retired agent cannot be restored; it can be cloned into a new draft.
 
 ## 7. Tenant and organization scope
-- Agents, versions, test sets, evaluation results, ratings, memory and analytics are tenant-owned with RLS. Templates are platform-level.
+- Agents, versions, ratings, memory and analytics are tenant-owned with RLS. Suites, datasets and evaluation results are tenant-owned in spec 034. Templates are platform-level.
 - Cross-tenant: a tenant agent cannot be shared to another tenant. Platform templates contain no tenant data.
 - Org boundary: designers and owners work within their scope; an agent owned by Acme Gulf cannot use knowledge sources or tools outside Acme Gulf unless granted by the tenant (spec 027 cross-organization rule).
 
@@ -198,7 +201,7 @@ Omar in Procurement builds a "Supplier onboarding helper" from a blank definitio
 |---|---|---|---|---|
 | Template | Product (platform) | Internal | Versions kept | No |
 | Agent definition and versions | Product | Internal | Life of tenant, versions kept | Owner names |
-| Test sets and evaluation results | Product | Highest classification of their sources | Life of agent | Possibly |
+| Suites, datasets and evaluation results | Spec 034 | Spec 034 | Spec 034 | Possibly |
 | Ratings and comments | Product | Internal | 2 years | Yes |
 | Persistent memory items | Product | Per item, never Restricted | Agent retention, default 90 days unused | Yes |
 | Conversations | Spec 014 | Per content | Spec 014 | Yes |
@@ -257,7 +260,7 @@ All templates run on the common runtime. They are configurations and capability 
 
 | # | Template | Release | Capability key | Default autonomy | Sources and tools | Needs |
 |---|---|---|---|---|---|---|
-| 1 | Enterprise Knowledge | R1 | `ai.agents.basic` | L0 | Pages, policies, documents, FAQs (009, 011, 012, 014); SharePoint from R2 (018) | 014 |
+| 1 | Enterprise Knowledge | R1 | `ai.agents.basic` | L0 | Pages, policies, documents, FAQs (009, 011, 012, 014); SharePoint connected libraries from R2 (011 US9) | 014 |
 | 2 | HR Assistant | R1 | `ai.agents.basic` | L2 | HR policies, HR form services (016); HR record and balances from R2 (019, 022) | 016 |
 | 3 | IT Service Desk | R1 | `ai.agents.basic` | L2 | IT knowledge base, Help Desk form service (016); ITSM ticket create and status from R2 (017) | 016 |
 | 4 | Content and Writing | R1 | `ai.agents.basic` | L1 | Writing guidelines, templates, documents the user can read; summarize, translate, draft, rewrite | 014 |
@@ -281,7 +284,6 @@ All templates run on the common runtime. They are configurations and capability 
 | agent.version_submitted / approved / rejected / published | audit | agent, version, actor, risk class, evaluation score |
 | agent.rolled_back / suspended / resumed / retired | audit | agent, from and to version, actor, reason |
 | agent.owner_changed / audience_changed | audit | agent, old and new, actor |
-| agent.evaluation_run | operational | agent, version, suite, score |
 | agent.access_requested / granted / denied | audit | agent, requester, decider |
 | agent.memory_deleted | audit | agent, user, actor (user or system) |
 
@@ -289,7 +291,7 @@ All templates run on the common runtime. They are configurations and capability 
 - Designer smuggles a tool or wider scope through instructions: instructions have no effect on tools, scope or approvals (FR-004); policy check at save and publish.
 - Self-approval of a risky agent: separation of editor and approver for Medium and High risk (FR-007).
 - Malicious template update: platform templates are signed and versioned; forced updates are audited and announced.
-- Knowledge source poisoning to change agent behavior: retrieved content is untrusted data (spec 027); evaluation reruns detect drift.
+- Knowledge source poisoning to change agent behavior: retrieved content is untrusted data (spec 027); nightly reruns and production evaluation in spec 034 detect drift.
 - Rating comments used to harass owners: comments are private and can be reported.
 - Memory as a covert data store across users: memory is per user per agent, never shared, never Restricted.
 
@@ -297,7 +299,7 @@ All templates run on the common runtime. They are configurations and capability 
 - Publishing a version takes effect within 60 seconds.
 - The registry supports 500 agents and 5,000 versions per tenant.
 - Routing adds under 300 ms at p95 to the first token in the assistant.
-- Evaluation of a 100-case test set completes in under 15 minutes.
+- The evaluation gate timings are set in spec 034.
 
 ## 16. Success criteria
 - **SC-001**: A tenant can install, adapt, review and publish the six launch templates in one working day without developer help.
