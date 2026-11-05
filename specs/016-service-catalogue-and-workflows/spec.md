@@ -8,11 +8,11 @@
 | Version | 0.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (catalogue, linked apps, request forms, single-step approval, task inbox), R2 (BPMN engine core, DMN, automation, monitoring, service templates pack), R3 (compensation, instance migration, BPMN import, external engine adapter) |
+| Target release | R1 (catalogue, linked apps, request forms, single-step approval, task inbox), R2 (multi-step routes, automation, triggers, service templates pack). Process engine releases are in spec 024 |
 | Last updated | 2026-11-05 |
-| Requirement IDs | WF-001, WF-002, WF-003, WF-004 to WF-022 (new) |
+| Requirement IDs | WF-001, WF-002, WF-003, WF-004 to WF-016 (new) |
 | Use cases | UC-08 |
-| Depends on | ADR-0010 (workflow engine), 002 (hierarchy), 003 (directory sync for prefill and manager), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 010 (profile and reporting line), 015 (notifications), 017 (connectors) |
+| Depends on | 024 (process engine), 002 (hierarchy), 003 (directory sync for prefill and manager), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 010 (profile and reporting line), 015 (notifications), 017 (connectors) |
 
 ## 1. Problem and outcome
 
@@ -33,8 +33,7 @@
 - Escalation and reminders when a task waits too long.
 - Workflow automation without code: a visual route designer with approval steps and automatic steps (set a field, notify, call a connector or webhook, wait for a date or an event, branch, start another service), service level targets, and triggers that start a service from an event (for example a new hire synced from AD starts onboarding).
 - Test mode for a draft service: run it with test data and see who each step would go to, before publishing.
-- Process engine at the level of Camunda-class products for the BPMN 2.0 and DMN subset in section 12: decision tables, timers, message correlation, error and compensation handling, incidents with retry, process monitoring, version migration, and import and export of BPMN files (ADR-0010).
-- Adapter for an external BPMN engine (for example Camunda) already run by the customer, so its user tasks appear in the TeamBeats task inbox (R3).
+- Routes built in the simple designer compile to BPMN and run on the process engine (spec 024). Owners who need the full BPMN modeler, DMN tables, message waits, incidents or monitoring use spec 024 directly, and the result is still a service in this catalogue.
 - Fulfilment step: the request goes to a team queue (for example Logistics) that marks it done, or to a connector (spec 017) that creates the item in another system.
 - A starter pack of service templates a tenant can switch on and edit (section 12).
 
@@ -53,7 +52,6 @@
 | Line manager | See Team requests for direct and indirect reports, approve or return | Reporting line from spec 010 |
 | Fulfilment agent | Work a service queue, complete or reject | Member of the service's queue group |
 | Service owner | Design forms and routes for services in their area | `service.manage` on the service category or org scope |
-| Process operator | Watch running instances, resolve incidents, retry or skip steps, migrate instances | `workflow.operate` on the service category or org scope |
 | Tenant administrator | Manage catalogue, categories, templates, linked apps, global settings | Tenant |
 
 ## 4. User scenarios
@@ -130,21 +128,6 @@ The HR service owner creates "New joiner onboarding" with no developer. When AD 
 6. **Given** a draft route, **When** the owner runs test mode as a sample employee, **Then** the product shows the resolved assignee of every step and the branches taken, sends nothing outside the product, and creates no real tasks.
 7. **Given** a route with a step that can never be reached or a parallel split with no join, **When** the owner tries to publish, **Then** publishing is blocked with the problem shown on the diagram.
 
-### User Story 9: Run complex processes like a BPMN engine (Priority: P2, R2 core, R3 advanced)
-
-The finance team models "Purchase to pay": a decision table picks the approval chain by amount and category, the process waits for the supplier invoice message from the ERP, pays after three way matching, and if the order is cancelled after payment it runs a refund step to undo it.
-
-**Acceptance scenarios:**
-1. **Given** the modeler, **When** an owner draws a process, **Then** it is stored as BPMN 2.0 XML using only the supported elements (section 12), and can be exported as a .bpmn file. Importing a .bpmn file from another tool works if it uses only supported elements; otherwise the import lists every unsupported element and creates nothing.
-2. **Given** a DMN decision table with hit policy "first" or "collect", **When** a business rule task runs, **Then** the outputs are written to process variables and the matched rule is shown in Tracking. Owners can edit the table and publish a new version without changing the process.
-3. **Given** a receive task waiting for message "InvoiceReceived" with correlation key = PO number, **When** the connector or a signed webhook delivers that message, **Then** exactly the matching instance continues; a message with no match is kept for the configured time-to-live and then logged as unmatched.
-4. **Given** a timer boundary event of 5 working days on a user task, **When** it fires, **Then** the escalation path runs. Interrupting and non-interrupting timers are both supported, as are cycle timers (for example a reminder every 2 days).
-5. **Given** a service task that fails after its retries, **When** retries run out, **Then** an incident is raised with the error, the instance waits, and an operator can fix variables, retry, or skip with a reason. A BPMN error event caught on the task routes the instance down the error path instead.
-6. **Given** completed steps with compensation handlers, **When** a compensation event is thrown, **Then** the handlers run in reverse order of completion and Tracking shows each undo step.
-7. **Given** a published version 2 of a process, **When** an operator runs a migration plan that maps each active step of version 1 to version 2, **Then** selected instances move to version 2 with their variables, and instances on a step with no mapping are refused with a reason.
-8. **Given** the monitoring view, **When** an operator opens a process, **Then** they see running, completed and incident counts, a heatmap of instances and average time per step on the diagram, and can filter by version, org unit and date.
-9. **Given** a tenant that runs Camunda, **When** the external engine adapter is configured (R3), **Then** user tasks from Camunda appear in the TeamBeats inbox, completing one completes it in Camunda, and TeamBeats never stores Camunda process state.
-
 ### Edge cases
 - Requester leaves the company (disabled by directory sync): open requests are cancelled with reason "requester left", except services marked "continue after exit" (for example resignation, final settlement).
 - Approver leaves or has no manager: the task goes to the step's fallback (org unit admin or tenant admin queue) and the service owner is alerted.
@@ -153,9 +136,6 @@ The finance team models "Purchase to pay": a decision table picks the approval c
 - Anonymous services (Speak Up style): the requester identity is not stored on the request and is not visible to reviewers or admins; see spec 023.
 - Trigger loops (service A starts B which starts A): the designer blocks direct cycles, and at run time a request chain deeper than 5 stops with an alert.
 - An event trigger fires twice for the same user: the trigger is idempotent per event ID, so only one request starts.
-- The same message arrives twice: correlation is idempotent per message ID.
-- A timer due during a worker outage fires once when workers return, never twice.
-- Two operators act on the same incident: the second action is refused because the incident is already resolved.
 
 ## 5. Functional requirements
 
@@ -169,18 +149,12 @@ The finance team models "Purchase to pay": a decision table picks the approval c
 - **FR-008**: Users MUST be able to set a delegate for a date range. Nobody may approve their own request, directly or as delegate. *(WF-009)*
 - **FR-009**: Form and route changes MUST be versioned; open requests finish on their starting version. *(WF-010)*
 - **FR-010**: Module services MUST register through a catalogue contract (service ID, names, audience, launch route, task source) and their tasks MUST appear in the same inbox. *(WF-011)*
-- **FR-011**: Workflow steps, reminders, escalations and connector hand-offs MUST run as durable background jobs with retry and idempotency. *(WF-003)*
+- **FR-011**: Workflow steps, reminders, escalations and connector hand-offs MUST run on the process engine (spec 024) as durable background jobs with retry and idempotency. *(WF-003)*
 - **FR-012**: Request data MUST support reporting (counts, cycle time, rejection reasons, structured reason codes such as resignation reasons) through spec 021 without exporting personal fields by default. *(WF-012)*
 - **FR-013**: Routes MUST be built in a visual designer from the step types listed in US8, with no custom code. Published routes MUST pass validation (reachable steps, matched joins, assignees resolvable). *(WF-013)*
 - **FR-014**: Services MUST support start triggers: manual submit, schedule (for example every quarter), and product events (`UserProvisioned`, `UserDeprovisioned`, `OrganizationMembershipChanged`, `RequestCompleted` of another service). Triggers MUST be idempotent per event. *(WF-014)*
 - **FR-015**: Services MUST support service level targets and step due times in working days, with at-risk and breach alerts, and auto-approve rules on form values. *(WF-015)*
 - **FR-016**: Automatic steps that reach outside the product MUST go through the connector framework (spec 017) or registered outbound webhooks with signed payloads, a tenant allowlist of hosts and secret-manager credentials. Only fields the owner selects are sent. *(WF-016)*
-- **FR-017**: Processes MUST be modeled and stored as BPMN 2.0 within the supported subset in section 12, with .bpmn import and export. Unsupported elements MUST be rejected on import and in the modeler. Script tasks and inline code MUST NOT be supported. *(WF-017)*
-- **FR-018**: The engine MUST evaluate DMN 1.x decision tables (hit policies unique, first, any, collect, rule order) with the FEEL subset for comparisons, ranges and lists, versioned separately from processes. *(WF-018)*
-- **FR-019**: The engine MUST support message correlation by message name and correlation key, with idempotency per message ID and a time-to-live for unmatched messages. *(WF-019)*
-- **FR-020**: Failed jobs MUST become incidents after their retry policy. Operators MUST be able to inspect, edit variables, retry or skip with a reason; all actions are audited. *(WF-020)*
-- **FR-021**: The product MUST provide process monitoring (instance search, diagram heatmap, step durations, incident list) and instance migration between versions with an explicit step mapping. *(WF-021)*
-- **FR-022**: An external BPMN engine MUST be connectable through the connector framework, surfacing its user tasks in the task inbox without copying its process state. *(WF-022)*
 
 ## 6. Business and validation rules
 - Team requests use the reporting line (spec 010), filled from the directory `manager` attribute or HR. Org unit membership alone never makes someone an approver.
@@ -209,8 +183,6 @@ The finance team models "Purchase to pay": a decision table picks the approval c
 | `workflow.catalogue` | All packages (catalogue, linked apps, form services, single-step approval, task inbox, delegation) |
 | `workflow.multi_step` | Workplace Plus and above (parallel steps, conditions, escalation) |
 | `workflow.connector_fulfilment` | Workplace Plus and above (connector and webhook steps) |
-| `workflow.bpmn` | Workplace Plus and above (BPMN modeler, DMN, messages, timers, incidents, monitoring) |
-| `workflow.advanced_process` | Enterprise & Government (compensation, instance migration, BPMN import, external engine adapter) |
 | `workflow.automation` | Workplace Plus and above (event and schedule triggers, automatic steps, auto-approve rules). Workplace keeps manual submit with approval and task steps |
 | `workflow.max_services` | Quota per package (commercial data) |
 
@@ -227,16 +199,6 @@ The finance team models "Purchase to pay": a decision table picks the approval c
 ## 12. Integrations, events and starter templates
 
 Publishes `RequestSubmitted`, `RequestStepAssigned`, `RequestApproved`, `RequestRejected`, `RequestCompleted`, `TaskCreated`, `TaskCompleted`.
-
-Supported BPMN 2.0 subset (ADR-0010):
-
-| Group | Elements |
-|---|---|
-| Tasks | User task, service task (connector or webhook only), business rule task (DMN), send task, receive task, manual task |
-| Gateways | Exclusive, parallel, inclusive, event-based |
-| Events | Start (none, timer, message), end (none, error, terminate, escalation, compensation), intermediate timer, message catch and throw, boundary timer, message, error, escalation and compensation (interrupting and non-interrupting where BPMN allows) |
-| Structure | Embedded sub-process, event sub-process, call activity (another TeamBeats process), multi-instance (sequential and parallel) on tasks and sub-processes |
-| Not supported | Script task, complex gateway, conditional and signal events, transactions, choreography and conversation diagrams |
 
 Starter templates (R2, tenant can switch on and edit). Taken from the current intranet review of 2026-11-05:
 
@@ -262,7 +224,6 @@ Starter templates (R2, tenant can switch on and edit). Taken from the current in
 |---|---|---|
 | service.created / published / changed / retired | audit | service, version, actor |
 | request.started_by_trigger / auto_approved / automation_failed | audit | request, trigger or rule, step |
-| process.incident_raised / retried / skipped, process.instances_migrated, decision.published | audit | process, version, instance count, actor |
 | request.submitted / cancelled | audit | request, service, requester or "anonymous" |
 | task.approved / rejected / returned / reassigned / delegated | audit | task, actor, on behalf of |
 | request.handoff_succeeded / failed | operational and audit | request, connector, external reference |
@@ -279,8 +240,7 @@ Starter templates (R2, tenant can switch on and edit). Taken from the current in
 ## 15. Non-functional requirements
 - Catalogue and task inbox load p95 under 1 second for a user with 500 open tasks.
 - A step assignment is visible in the assignee's inbox within 10 seconds of the previous action.
-- Design-to scale: 200 services and 5,000 requests per day per tenant; 50,000 active process instances and 1,000 timers firing per minute per installation.
-- A DMN decision with 200 rules evaluates in under 20 ms at p95.
+- Design-to scale: 200 services and 5,000 requests per day per tenant. Engine scale is in spec 024.
 
 ## 16. Success criteria
 - **SC-001**: Every service of the current intranet is reachable from the TeamBeats catalogue, either inside TeamBeats or as a linked app.
@@ -301,5 +261,4 @@ Starter templates (R2, tenant can switch on and edit). Taken from the current in
 | WF-003 | FR-011, US6 |
 | WF-004 to WF-012 (new) | FR-001, FR-002, FR-004, FR-005, FR-007 to FR-010, FR-012 |
 | WF-013 to WF-016 (new) | FR-013 to FR-016, US8 |
-| WF-017 to WF-022 (new) | FR-017 to FR-022, US9, ADR-0010 |
 | UC-08 | US2, US3 |

@@ -5,7 +5,7 @@
 | Status | Proposed |
 | Date | 2026-11-05 |
 | Owners | Mohamed |
-| Related specs | 016, 017, 021 |
+| Related specs | 016, 017, 021, 024 |
 
 ## Context and constraints
 Spec 016 needs a workflow engine that reaches the level of Camunda-class products: BPMN 2.0 models, DMN decision tables, timers, message correlation, error and compensation handling, incidents with retry, process monitoring and version migration. It must also respect the constitution: one modular monolith with workers (ADR-0001), PostgreSQL with row level security per tenant (ADR-0002), the in-house outbox on RabbitMQ (ADR-0006), explicit SQL with Npgsql (ADR-0009), central authorization, audit and entitlements, no non-OSI licence without an ADR, and the same code line on SaaS, private cloud and air-gapped on-premises installs.
@@ -18,7 +18,7 @@ Spec 016 needs a workflow engine that reaches the level of Camunda-class product
 5. **Option 4 plus an external engine adapter.** Customers who already run Camunda or another BPMN engine connect it through the connector framework (spec 017). Its user tasks appear in the TeamBeats task inbox and completing them calls back into that engine.
 
 ## Decision
-Option 5. Own engine for the BPMN 2.0 and DMN subset listed in spec 016, built in stages (R2 core, R3 advanced). External engines are integrated, not embedded, so enterprises that standardized on Camunda keep it as the system of record for their processes.
+Option 5. Own engine for the BPMN 2.0 and DMN subset listed in spec 024, built in stages (R2 core, R3 advanced). External engines are integrated, not embedded, so enterprises that standardized on Camunda keep it as the system of record for their processes.
 
 ## Consequences and risks
 - Highest build effort of the options. Mitigated by a fixed, documented BPMN subset, conformance tests against sample models, and no custom script tasks.
