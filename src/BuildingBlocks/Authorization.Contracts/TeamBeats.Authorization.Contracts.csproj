@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+  <PropertyGroup><RootNamespace>TeamBeats.Authorization.Contracts</RootNamespace><AssemblyName>TeamBeats.Authorization.Contracts</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../TenantContext/TeamBeats.TenantContext.csproj" />
+  </ItemGroup>
+</Project>

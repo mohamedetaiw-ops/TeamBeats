@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+  <PropertyGroup><RootNamespace>TeamBeats.Modules.Identity.Contracts</RootNamespace><AssemblyName>TeamBeats.Modules.Identity.Contracts</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlocks/Primitives/TeamBeats.Primitives.csproj" />
+  </ItemGroup>
+</Project>

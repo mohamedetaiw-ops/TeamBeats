@@ -1,0 +1,51 @@
+{
+  "app": {
+    "name": "TeamBeats",
+    "skipToContent": "Skip to main content"
+  },
+  "home": {
+    "title": "Welcome, {name}",
+    "subtitle": "You are signed in to {tenant}.",
+    "openAdmin": "Open administration"
+  },
+  "signin": {
+    "title": "Sign in",
+    "devNotice": "Development sign-in. Choose a seeded test account by email. This page does not exist in production.",
+    "email": "Work email",
+    "submit": "Sign in",
+    "ssoPending": "Single sign-on is configured by your administrator.",
+    "failed": "Sign-in was refused. Check the email and try again.",
+    "unavailable": "This workspace is not available right now."
+  },
+  "admin": {
+    "title": "Administration",
+    "navLabel": "Administration sections",
+    "overview": "Choose a section to manage your workspace.",
+    "sectionPending": "This section is available through the API in R0. Its screens arrive with the next slice.",
+    "wholeTenant": "Whole organization",
+    "scoped": "Limited to your units",
+    "nav": {
+      "tenant_settings": "Workspace settings",
+      "organization": "Organization",
+      "users": "People",
+      "roles": "Roles and access",
+      "plan": "Plan",
+      "identity": "Sign-in settings",
+      "audit": "Audit log"
+    }
+  },
+  "header": {
+    "language": "Language",
+    "signOut": "Sign out"
+  },
+  "locale": {
+    "ar": "العربية",
+    "en": "English",
+    "fr": "Français",
+    "ur": "اردو",
+    "hi": "हिन्दी"
+  },
+  "errors": {
+    "generic": "Something went wrong. Try again in a moment."
+  }
+}

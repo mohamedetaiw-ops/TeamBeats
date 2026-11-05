@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>TeamBeats.Testing</RootNamespace>
+    <AssemblyName>TeamBeats.Testing</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Api/TeamBeats.Api.csproj" />
+    <ProjectReference Include="../../src/Api.DevHost/TeamBeats.Api.DevHost.csproj" />
+  </ItemGroup>
+</Project>
