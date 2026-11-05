@@ -110,6 +110,8 @@
 | `analytics.export` | flag | off | off | on |
 | `deployment.on_prem` | flag | off | off | on |
 
+Feature specs add their own keys in their section 9 (for example `content.*`, `docs.*`, `records.*`, `policy.*`, `hr.*`, `security.*`, `compliance.*` and more `analytics.*` keys in specs 009, 011, 021, 022, 025 and 026). Those keys join this seed data when their spec is approved.
+
 Commercial note: values and quota numbers still need commercial confirmation (foundation open decision 1, open items C1 and C2). They are data in package definitions, so they do not block implementation. This table is the seed data for R0.
 
 ## 7. Tenant scope
