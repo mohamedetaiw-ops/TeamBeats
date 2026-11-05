@@ -56,7 +56,7 @@ Three rules apply from day one:
 | Agent designer | Create, clone and edit draft agents, run tests, submit for review | `agent.design` on an org scope (built-in role Agent Designer) |
 | Agent owner | Business owner named on each agent; answers access requests, receives feedback and alerts | Named on the agent, needs `agent.design` on its scope |
 | Agent reviewer / publisher | Review, approve and publish agent versions, roll back | `agent.publish` (held by the AI Policy Administrator by default) |
-| AI Policy Administrator | Set tenant agent policy (spec 027), see all agents, suspend and retire | `ai.policy.manage` |
+| AI Policy Administrator | Set tenant agent policy (spec 027), see all agents, suspend and retire | `ai.policy_manage` |
 | Security officer | View registry, versions, evaluation results and audit | `agent.view`, `audit.read` |
 | Platform operator | Publish platform templates and template updates, force a security update | Platform |
 
@@ -186,7 +186,7 @@ Evaluation is defined in spec 034. This story covers what the Agent Hub shows an
 ## 6. Business and validation rules
 - An agent must always have an owner and an owning org unit.
 - Agent names must be unique per tenant per locale.
-- The audience of an agent cannot be wider than the owner's org scope unless a holder of `ai.policy.manage` approves a tenant-wide audience.
+- The audience of an agent cannot be wider than the owner's org scope unless a holder of `ai.policy_manage` approves a tenant-wide audience.
 - An agent with write tools must name at least one escalation contact (person or service).
 - A retired agent cannot be restored; it can be cloned into a new draft.
 

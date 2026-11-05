@@ -74,7 +74,7 @@ Permission keys (spec 004 FR-013): `audit.read` (search audit, limited to the ho
 **Acceptance scenarios:**
 1. **Given** retention of 365 days, **When** records pass that age, **Then** they are purged by a scheduled job, and the purge is audited with count and range.
 2. Retention cannot be set below the platform minimum. (Decided 2026-11-04: minimum 365 days.)
-3. Records under legal hold are never purged. (Decided 2026-11-04: legal hold is delivered in R2, through spec 011.)
+3. Records under legal hold are never purged. A spec 011 legal hold selects audit records by custodian (as actor or target) and date range, and the purge job checks the legal hold contract before deleting. (Decided 2026-11-04: legal hold is delivered in R2, through spec 011; decided 2026-11-05: holds cover audit records.)
 
 ### User Story 4: Admin shell (Priority: P1)
 

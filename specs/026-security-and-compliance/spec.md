@@ -73,7 +73,7 @@ A bank tenant allows TeamBeats only from its office ranges and VPN, except that 
 2. **Given** an admin-area allowlist narrower than the tenant list, **When** an admin opens administration from an address outside it, **Then** admin pages and admin APIs are refused while the rest of the intranet works.
 3. **Given** a tenant admin edits the allowlist, **When** the new list would exclude their current address, **Then** the product warns and requires step-up and typed confirmation; a platform recovery path exists through break-glass (spec 001).
 4. **Given** the client address is behind the customer's proxy, **Then** the product uses only forwarded addresses from proxies the platform trusts, never client-set headers.
-5. **Given** a role-level rule (for example "Finance approvers only from office networks"), **Then** actions that need that role are refused outside the network while read access continues.
+5. **Given** a role-level rule (for example "Finance approvers only from office networks"), **Then** it is stored as a spec 004 condition `network_zone in (office, vpn)` on that role's assignments, actions that need the role are refused outside those networks while access from other grants continues, and the access explainer names the unmet network condition. Named network zones are the IP ranges defined in this policy.
 
 ### User Story 2: Require MFA and step-up for sensitive actions (Priority: P1, R1)
 
@@ -199,7 +199,7 @@ For customer-hosted installs, certifications cover our development and support p
 
 ## 7. Tenant and organization scope
 - Tenant-owned data: security policy, IP rules, guest identities and spaces, alerts, SIEM settings, detection patterns, compliance projects, evidence.
-- Organization scoping: guest spaces can be owned by an org unit; compliance projects can be scoped to a subtree; security policy is tenant-wide, with role-level IP rules.
+- Organization scoping: guest spaces can be owned by an org unit; compliance projects can be scoped to a subtree; security policy is tenant-wide; role-level network rules are spec 004 conditions on role assignments, so they can be scoped like any assignment.
 - Cross-tenant denial cases: a guest of tenant A invited to tenant B gets two separate identities (ADR-0005); SIEM streams carry only one tenant's events; key revocation affects only its tenant.
 - Sibling, parent and child boundary cases: a sponsor in "Acme Gulf" cannot share "Acme Egypt" content into their space; a scoped compliance officer sees only their subtree's projects.
 

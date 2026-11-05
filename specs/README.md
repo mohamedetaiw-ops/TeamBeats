@@ -18,7 +18,7 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [016 Self services, service catalogue and workflows](016-service-catalogue-and-workflows/spec.md) | workflows | R1, R2 | Proposed | WF-001 to WF-016, UC-08 |
 | [020 Agent Hub: registry, templates, studio and marketplace](020-agent-hub/spec.md) | ai | R1 to R3 | Proposed | AI-007 (agent part), AI-008, AGT-001 to AGT-020, UC-07 |
 | [021 Analytics and insights](021-analytics/spec.md) | analytics | R1 to R3 | Proposed | ANL-001 to ANL-024 (ANL-001 and ANL-002 were LOC-005 and LOC-006), AI-013 (shared with 013), CX-MET-001 to CX-MET-008 |
-| [022 Leave, attendance and HR workflows](022-hr-workflows/spec.md) | workflows | R2, R3 | Proposed | INT-007, LVA-001 to LVA-012, HRW-001 to HRW-014 |
+| [022 Leave, attendance and HR workflows](022-hr-workflows/spec.md) | workflows | R1 to R3 | Proposed | INT-007, LVA-001 to LVA-012, HRW-001 to HRW-014 |
 | [024 Process engine (BPMN and DMN)](024-process-engine/spec.md) | workflows | R1 to R3 | Proposed | WF-002, WF-003, BPM-001 to BPM-016 |
 | [025 Policy management](025-policy-management/spec.md) | knowledge | R1 to R3 | Proposed | EXP-004, KNO-001, KNO-007, POL-001 to POL-018 |
 | [026 Security controls, compliance and certifications](026-security-and-compliance/spec.md) | platform | R1 to R3 | Proposed | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-021, CMP-001 to CMP-004, CX-NFR-010 |

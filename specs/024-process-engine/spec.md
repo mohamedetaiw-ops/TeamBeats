@@ -23,7 +23,7 @@
 ## 2. Scope
 
 **In scope:**
-- Process modeler in the browser for the BPMN 2.0 subset in section 12, with properties panels for TeamBeats settings (assignment, forms, retries, timers, connectors).
+- Process modeler in the browser for the BPMN 2.0 subset in section 12, built on MIT licensed libraries (ADR-0017), with properties panels for TeamBeats settings (assignment, forms, retries, timers, connectors).
 - Model validation, test run, publish, versioning, .bpmn import and export.
 - Execution of the subset: tokens, gateways, sub-processes, call activities, multi-instance, variables and expressions.
 - DMN 1.x decision tables with a FEEL subset, versioned on their own and called from business rule tasks or from service rules in spec 016.
@@ -244,7 +244,7 @@ DMN: decision tables only (no decision requirement graphs with literal expressio
 - **SC-003**: Operators resolve 90% of incidents from the operator view without engineering support.
 
 ## 17. Open questions
-1. Which modeler editor to build on (for example bpmn-js and dmn-js). Their licence must pass the CI licence gate; if not, an ADR is needed (ADR-0010).
+1. Decided 2026-11-05: the modeler is built on MIT licensed libraries (React Flow, bpmn-moddle, dmn-moddle), not bpmn-js or dmn-js, whose bpmn.io licence is not OSI approved and requires a visible watermark (ADR-0017).
 2. Is Camunda 8 the first external engine for the adapter, or does a design partner use another engine? Default: Camunda 8.
 
 ## 18. Traceability

@@ -54,6 +54,8 @@
 | Service owner | Design forms and routes for services in their area | `service.manage` on the service category or org scope |
 | Tenant administrator | Manage catalogue, categories, templates, linked apps, global settings | Tenant |
 
+Approving or returning a workflow task requires `workflow.approve` on the task's scope, in addition to the assignment rule. A line manager holds it for their reporting line by default.
+
 ## 4. User scenarios
 
 ### User Story 1: Find any service in one place (Priority: P1, R1)

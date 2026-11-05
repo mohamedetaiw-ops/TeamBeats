@@ -51,6 +51,8 @@
 | Directory (Entra ID or on-premises AD DS) | Source of users, account status, groups and organization attributes |
 | Developer / test automation | Uses dev sign-in in Development and Test only |
 
+Permission keys (spec 004 FR-013): `identity.users_view`, `identity.users_manage` and `identity.config_manage` (identity provider, JIT policy, directory connections and group mapping). The built-in tenant administrator role holds all three at tenant scope.
+
 ## 4. User scenarios
 
 ### User Story 1: Development sign-in (Priority: P1, R0)

@@ -25,7 +25,7 @@ Option 5. Own engine for the BPMN 2.0 and DMN subset listed in spec 024, built i
 - Highest build effort of the options. Mitigated by a fixed, documented BPMN subset, conformance tests against sample models, and no custom script tasks.
 - Models outside the subset are rejected on import with a list of the unsupported elements, so nothing runs half-understood.
 - We do not compete with Camunda on every edge of BPMN. The target is employee services and back-office approvals, not high-throughput straight-through processing.
-- The modeler editor licence must pass the CI licence gate. If it does not, a separate ADR is needed before it is used.
+- The modeler editor licence must pass the CI licence gate. ADR-0017 picks MIT licensed libraries for it and rules out bpmn.io licensed packages.
 
 ## Security and multi-tenancy implications
 Process definitions, instances, jobs, incidents and history are tenant-owned with RLS. Service tasks only call connectors or allowlisted webhooks, never arbitrary code or scripts. Every user task goes through the central authorization service and the audit writer.

@@ -45,6 +45,8 @@
 | Organization administrator | Manage units and memberships within their assigned unit or subtree | Assigned unit or subtree |
 | Employee | View the units they are allowed to see | Per spec 004 |
 
+Permission keys (spec 004 FR-013): `org.view` (see units), `org.manage` (create, rename, move and deactivate units) and `org.membership_manage` (change memberships). The organization administrator holds them at its assigned unit or subtree.
+
 ## 4. User scenarios
 
 ### User Story 1: Build the hierarchy (Priority: P1)

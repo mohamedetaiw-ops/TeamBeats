@@ -63,6 +63,8 @@
 
 Targeting is not access. A user outside the audience can still open a page they are permitted to read by link, and a user in the audience who is not permitted gets nothing (constitution II).
 
+Permission keys used by R0 and later: `content.view`, `content.edit` (author), `content.publish`, `content.publish_critical` and `content.admin`. Reading a published item also passes through the resource permissions of the site and item.
+
 ## 4. User scenarios
 
 ### User Story 1: Publish targeted news with approval (Priority: P1, R1)
