@@ -137,7 +137,7 @@ Source: "Composable Intranet Experience Layer" requirements v1.0 (2026-11-05), a
 | 5.14 Experience analytics (CX-MET) | 021 |
 | 5.15 Performance and resilience (CX-NFR) | 032; secure rendering also in 026 |
 
-Release rule: every Must and Should is in by R2 GA; the two Could items (template recommendations, experiments) are R3. R1 carries the foundation of the layer (wave 1 of the source) plus home personalization.
+Release rule: every Must and Should is in by R2 GA; the two Could items (template recommendations, experiments) are R3. R1 carries the foundation of the layer (wave 1 of the source), the 12 templates and the visual page builder (decided by Mohamed 2026-11-05), plus home personalization.
 
 ## Competitor feature coverage
 

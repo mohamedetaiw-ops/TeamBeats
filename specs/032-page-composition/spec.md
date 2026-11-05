@@ -8,7 +8,7 @@
 | Version | 0.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (page definition model, effective configuration resolver, responsive layout engine with the 10 layouts, component manifest registry, error isolation, publish and rollback of page definitions, performance and isolation baseline), R2 (12 page templates with visual variants, visual page builder, previews by device, direction and persona, approval routes, impact reports, fragments, import and export, scheduled releases, feature controls, independent component deployment), R3 (tenant-built components in a sandbox, template recommendations) |
+| Target release | R1 (page definition model, effective configuration resolver, responsive layout engine with the 10 layouts, the 12 page templates with visual variants, template preview, locks, distribution and lifecycle, component manifest registry, visual page builder with keyboard composition, autosave, undo and history, previews by device, direction and persona, accessibility and translation checks, error isolation, publish and rollback, performance and isolation baseline), R2 (approval routes, impact reports, fragments, import and export, scheduled releases, feature controls, resizable regions, independent component deployment), R3 (tenant-built components in a sandbox, template recommendations) |
 | Last updated | 2026-11-05 |
 | Requirement IDs | CX-LAY-001 to CX-LAY-012, CX-TMP-001 to CX-TMP-010, CX-TMP-012, CX-EDT-001 to CX-EDT-015, CX-EXT-001 to CX-EXT-014, CX-GOV-001 to CX-GOV-012, CX-NFR-001 to CX-NFR-012, EXP-001, EXP-008 |
 | Use cases | UC-04 (page part) |
@@ -58,7 +58,7 @@ Permission keys follow spec 004 FR-013. They are scoped to tenant, org unit, sub
 
 ## 4. User scenarios
 
-### User Story 1: Compose a page from any registered components (Priority: P1, R1 model and renderer, R2 builder)
+### User Story 1: Compose a page from any registered components (Priority: P1, R1)
 
 Sara, a page editor for Acme Gulf, creates a "Plant safety" page from the T04 Overview template with the L06 hero and grid layout. She adds a hero banner, a document list and a KPI tile from the picker into compatible regions, fills their properties in forms generated from each component's manifest, previews the page as a plant operator on a phone in Arabic, fixes a missing image description the checker found, and submits it. Her publisher approves and it goes live.
 
@@ -74,7 +74,7 @@ Sara, a page editor for Acme Gulf, creates a "Plant safety" page from the T04 Ov
 5. **Given** a placement in a region whose policy does not allow its category, **When** the editor or the API tries to add it, **Then** it is refused with a reason naming the region rule. *(CX-LAY-011, CX-EDT-011)*
 6. **Given** a draft, **When** an employee opens the page, **Then** they see the last published version only. *(CX-GOV-003)*
 
-### User Story 2: Keyboard and single-pointer composition (Priority: P1, R2)
+### User Story 2: Keyboard and single-pointer composition (Priority: P1, R1)
 
 Omar uses a keyboard and a screen reader. He builds a page and reorders placements without dragging.
 
@@ -105,7 +105,7 @@ Omar uses a keyboard and a screen reader. He builds a page and reorders placemen
 2. **Given** a component that is unregistered or discontinued, **Then** its placements render a "no longer available" state to viewers, editors see a replacement prompt, and publishing new pages with it is blocked. *(CX-NFR-012)*
 3. **Given** invalid theme tokens from spec 033, **Then** the renderer falls back to the last valid resolved theme and records the issue. *(CX-NFR-012)*
 
-### User Story 5: Templates as governed, distributable assets (Priority: P1, R2)
+### User Story 5: Templates as governed, distributable assets (Priority: P1, R1)
 
 **Acceptance scenarios:**
 1. **Given** the 12 templates, **Then** an admin can create a functional page from each without code, and switch between at least three visual variants (spacious, balanced, compact) that change presentation only. *(CX-TMP-002, CX-TMP-004)*
@@ -319,7 +319,7 @@ No AI in R1 and R2. The R3 template recommendations (FR-023) use only page metad
 - **SC-005**: p75 LCP, INP and CLS targets met on reference profiles for every reference template (S10).
 
 ## 17. Open questions
-- [NEEDS CLARIFICATION: when do the visual builder and full template catalogue ship?] Default: R2 GA, as the roadmap already places "sites and page builder" in R2. R1 gets the model, renderer, 10 layouts and admin page setup with a form instead of the visual canvas.
+- RESOLVED 2026-11-05 (Mohamed): the visual page builder and all 12 templates ship in R1 pilot.
 - [NEEDS CLARIFICATION: will tenants be allowed to upload their own component code?] Default: not before R3, Enterprise & Government only, sandboxed per ADR-0012.
 
 ## 18. Traceability

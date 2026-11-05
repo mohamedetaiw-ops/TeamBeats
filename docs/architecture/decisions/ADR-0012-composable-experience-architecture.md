@@ -49,7 +49,7 @@ The frame is already set: Next.js 16 frontend and ASP.NET Core .NET 10 modular m
 - Locks and protected regions are enforced by the API, not only the builder.
 
 ## Rollout and migration plan
-- R1: Experience module, resolver, 10 layouts, component registry for platform components, shell, navigation, home personalization, tokens with tenant and organization brands, rollback.
-- R2: 12 templates with variants, visual builder, previews, approval routes, impact reports, fragments, theme lifecycle, custom domains, experience analytics.
+- R1: Experience module, resolver, 10 layouts, 12 templates with variants, visual builder and previews, component registry for platform components, shell, navigation, home personalization, tokens with tenant and organization brands, rollback.
+- R2: approval routes, impact reports, fragments, theme lifecycle, custom domains, experience analytics.
 - R3: sandboxed tenant components, template recommendations, experiments.
 - Existing tenant branding from spec 001 (logo, primary color) migrates into the tenant's first brand profile.

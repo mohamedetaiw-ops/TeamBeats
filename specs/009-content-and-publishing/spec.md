@@ -8,7 +8,7 @@
 | Version | 0.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (news, announcements, pages, targeting, approval, versions, review dates, critical announcements with acknowledgement), R2 (sites, content components for the page builder of spec 032, campaigns across channels, AI translation, content health dashboard), R3 (external sites for guests, advanced campaign automation) |
+| Target release | R1 (news, announcements, pages, targeting, approval, versions, review dates, critical announcements with acknowledgement), R1 also includes content components for the page builder of spec 032; R2 (sites, campaigns across channels, AI translation, content health dashboard), R3 (external sites for guests, advanced campaign automation) |
 | Last updated | 2026-11-05 |
 | Requirement IDs | EXP-002, EXP-003, EXP-004, LOC-004, UC-04, PUB-001 to PUB-020 (new) |
 | Use cases | UC-04 |
