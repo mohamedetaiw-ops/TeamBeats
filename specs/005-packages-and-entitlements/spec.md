@@ -98,9 +98,21 @@
 |---|---|---|---|---|
 | `ai.assistant` | flag | on | on | on |
 | `ai.assistant.monthly_requests` | limit | [TBD] | [TBD] | [TBD] |
-| `ai.agents.basic` | flag | on (starter) | on | on |
-| `ai.agents.write_tools` | flag | off | on | on |
+| `ai.agents.basic` | flag | on (six launch templates, autonomy L0 to L2) | on | on |
+| `ai.agents.department` | flag | off | on | on |
+| `ai.agents.advanced` | flag | off | off | on |
+| `ai.agents.custom` | flag | off | on | on |
+| `ai.agents.max_custom` | limit | 0 | [TBD] | [TBD] |
+| `ai.agents.max_published` | limit | [TBD] | [TBD] | [TBD] |
+| `ai.agents.marketplace` | flag | on | on | on |
+| `ai.agents.orchestration` | flag | off | on (platform-defined handoffs) | on |
+| `ai.agents.write_tools` | flag | off | on (autonomy L3) | on |
+| `ai.agents.autonomous` | flag | off | off | on (autonomy L4) |
+| `ai.agents.mcp` | flag | off | off | on |
+| `ai.governance.advanced` | flag | off | on (enhanced) | on (full) |
 | `ai.model_choice` | flag | off | on | on |
+| `ai.models.private_endpoint` | flag | off | on | on |
+| `ai.budgets` | flag | on (tenant budget) | on | on |
 | `org.delegated_admin` | flag | off | on | on |
 | `workflow.advanced` | flag | off | on | on |
 | `integration.microsoft365` | flag | off | on | on |

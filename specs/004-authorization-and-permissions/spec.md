@@ -102,7 +102,7 @@ The tenant admin makes Sara a Content Publisher for the "Acme Gulf" subtree.
 - **FR-008**: Permission changes MUST take effect within 60 seconds for grants and revocations (Decided 2026-11-04).
 - **FR-009**: Modules MUST NOT check role names directly. Denials MUST NOT reveal whether a resource exists (return not-found semantics for unreadable resources).
 - **FR-010**: Decisions MUST be explainable for administrators.
-- **FR-011**: Built-in roles MUST include: Tenant Administrator, Organization Administrator, Content Editor, Content Publisher, Workflow Designer, Approver, Integration Administrator, AI Policy Administrator, Security Officer (needed by spec 006), Employee. Platform Operator exists outside tenant roles.
+- **FR-011**: Built-in roles MUST include: Tenant Administrator, Organization Administrator, Content Editor, Content Publisher, Workflow Designer, Approver, Integration Administrator, AI Policy Administrator, Agent Designer (spec 020), Security Officer (needed by spec 006), Employee. Platform Operator exists outside tenant roles.
 - **FR-012**: Batch evaluation (filter a list of resources to those the user can view) MUST be supported for search, feeds and AI retrieval.
 
 ## 6. Business rules
