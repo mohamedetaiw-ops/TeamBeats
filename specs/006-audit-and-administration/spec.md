@@ -8,12 +8,12 @@
 | Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R0 |
+| Target release | R0 (audit, admin shell), R1 (Connections area with Microsoft 365 connection for directory sync), R2 (connection features for SharePoint documents, mail and calendar, and other connectors from spec 017) |
 | Last updated | 2026-11-05 |
 | Approved | 2026-11-04 by Mohamed |
-| Requirement IDs | ADM-001, ADM-002, ADM-003 (retention part), TEN-010, new AUD-001 to AUD-007 |
-| Use cases | UC-01, UC-13 (audit part) |
-| Depends on | 001, 004 |
+| Requirement IDs | ADM-001, ADM-002, ADM-003 (retention part), TEN-010, INT-001 (connection administration part), new AUD-001 to AUD-007 |
+| Use cases | UC-01, UC-10 and UC-11 (connection setup part), UC-13 (audit part) |
+| Depends on | 001, 004, 005, 026 (step-up for connection credentials) |
 
 ## 1. Problem and outcome
 
@@ -31,11 +31,13 @@
 - Retention configuration per tenant.
 - Admin shell: navigation frame, scope switcher, landing dashboard with links to settings areas.
 - User and group administration screens (list, view, disable membership, view roles).
+- Connections area: one place where integration administrators create, consent, test, monitor, disable and delete the tenant's connections to external systems, and turn individual features of a connection on or off.
 
 **Out of scope:**
 - SIEM streaming (spec 026, R2). This spec provides the extension point only.
 - Product analytics (spec 021).
 - Legal hold management (spec 011). This spec only honours holds during purge.
+- What each connected feature does with a connection (directory sync in 003, SharePoint documents in 011, mail and calendar in 008 and 032, connector packs in 017 to 019). This spec owns the shared connection model and screens only.
 
 ## 3. Actors
 
@@ -45,6 +47,7 @@
 | Security officer (role) | Search and export audit; cannot change settings |
 | Organization administrator | Search audit events for their scope only |
 | Platform operator | See platform-level audit (tenant creation, break-glass) |
+| Integration administrator (role) | Manage connections and their features (`integration.manage`); see connection health and runs |
 | Modules | Write audit events (system actor) |
 
 ## 4. User scenarios
@@ -74,9 +77,24 @@
 ### User Story 4: Admin shell (Priority: P1)
 
 **Acceptance scenarios:**
-1. **Given** a tenant admin, **When** they open administration, **Then** they see Tenant settings, Organization, Users and groups, Roles, Plan and usage, Identity, Audit.
+1. **Given** a tenant admin, **When** they open administration, **Then** they see Tenant settings, Organization, Users and groups, Roles, Plan and usage, Identity, Connections, Audit. An integration administrator who is not a tenant admin sees Connections only.
 2. **Given** an org admin, **Then** they see only Organization (their scope), Users (their scope), Roles (delegable) and Audit (their scope).
 3. **Given** an employee, **When** they open an admin URL directly, **Then** they get a no-access page and the API denies the data.
+
+### User Story 5: Manage connections (Priority: P1, R1)
+
+Acme's integration administrator, Karim, connects Acme's Microsoft 365 tenant once. He turns on directory sync for R1, and later SharePoint documents. Each feature asks only for the Microsoft permissions it needs, and he can see at a glance whether each connection is healthy.
+
+**Acceptance scenarios:**
+1. **Given** an integration administrator, **When** they open Connections, **Then** they see each connection with its type (for example Microsoft 365, AD DS over LDAPS, a REST connector from spec 017), the external tenant or endpoint, the features turned on, status (healthy, degraded, needs consent, credential expiring, disabled), last successful run, and the owner.
+2. **Given** they choose "Add connection" and Microsoft 365, **When** they enter the Entra tenant ID and choose the features to turn on, **Then** before consent they see, per feature, the Microsoft permissions it needs, whether each is application or delegated, and why. Features not included in the tenant's package are shown with the package needed and cannot be turned on.
+3. **Given** the permissions are shown, **When** they grant admin consent in Microsoft, or register the customer's own app with a certificate or secret stored as a secret manager reference, **Then** TeamBeats records the consent, never shows the secret again, and asks for step-up re-authentication (spec 026) before saving the credential.
+4. **Given** a saved connection, **When** they run "test connection", **Then** each turned-on feature is checked separately and the result lists what works, what is missing, and any permissions broader than needed.
+5. **Given** a healthy Microsoft 365 connection used for directory sync, **When** they turn on another feature (for example SharePoint documents), **Then** only the added permissions are requested through a new consent; the existing features keep working while consent is pending.
+6. **Given** consent is revoked in Microsoft, a credential expires or the external system fails health checks, **Then** the connection shows the matching status, the integration administrator gets an alert (credential expiry also 30, 14 and 3 days before), and features using it go to their degraded state (constitution XVII).
+7. **Given** they disable a connection or a single feature, **Then** dependent features stop calling the external system within 1 minute and show their degraded or unavailable state; enabling it again resumes them without new setup.
+8. **Given** they delete a connection, **Then** they first see what depends on it (for example 12 connected libraries, directory sync of 3,400 users), must confirm, and the owning features remove their derived data as their specs define. Deleting a directory connection does not delete users; spec 003 rules apply.
+9. **Given** an organization administrator or an employee, **When** they call the connections API, **Then** it is denied.
 
 ## 5. Functional requirements
 
@@ -89,6 +107,12 @@
 - **AUD-007 / FR-007**: Audit export MUST be asynchronous, tenant-scoped and itself audited.
 - **FR-008**: The admin shell MUST show only areas the user is authorized for, with every area enforced by the backend. *(ADM-001)*
 - **FR-009**: User administration MUST allow viewing a user's memberships, roles and sign-in status, and disabling a tenant membership.
+- **FR-010**: The admin shell MUST provide a Connections area listing every connection of the tenant with type, external tenant or endpoint, features, status, last successful run and owner, available to holders of `integration.manage`. *(INT-001)*
+- **FR-011**: A connection MUST be one tenant-owned record per external system instance (for example one Microsoft 365 connection per Entra tenant) with a set of features that are turned on separately. Each feature MUST declare the external permissions it needs, and the screen MUST show them before consent. Features MUST be gated by the capability keys of their own specs (for example `integration.microsoft365` in spec 005). *(INT-001, INT-002)*
+- **FR-012**: Credentials MUST be stored as secret manager references, never shown after saving, and saving or replacing one MUST require step-up re-authentication (spec 026). Admin consent and the permissions granted MUST be recorded.
+- **FR-013**: Test connection MUST check each turned-on feature separately and MUST warn when granted permissions are broader than the features need.
+- **FR-014**: Connection status MUST be one of healthy, degraded, needs consent, credential expiring, disabled. Status changes and credential expiry MUST alert integration administrators, and features using the connection MUST show their degraded state (constitution XVII).
+- **FR-015**: Disabling a connection or a feature MUST stop external calls within 1 minute. Deleting a connection MUST show its dependents and require confirmation; each owning spec defines what happens to its derived data.
 
 ## 6. Business and validation rules
 - Audit records are written for the outcome of the action (succeeded, failed, refused). A refused action by an unauthenticated caller is written to the platform stream, not to a tenant stream, unless the tenant is known from the host.
@@ -105,9 +129,10 @@
 |---|---|---|---|
 | Audit record | Product | Confidential | Tenant setting, min 365 days |
 | Audit export file | Product (object storage) | Confidential | 7 days then deleted |
+| Connection (type, external tenant or endpoint, features, granted permissions, secret reference, status) | Product (secret in secret manager); owned by `Integrations`, directory connections by `Identity` | Confidential | Until deleted, then 90 days of status history |
 
 ## 9. Package entitlements
-Audit, search, export and the admin shell are part of every package and have no capability key (constitution VI). SIEM streaming is gated by `security.siem` in spec 026.
+Audit, search, export, the admin shell and the Connections area are part of every package and have no capability key (constitution VI). SIEM streaming is gated by `security.siem` in spec 026. Each connection feature is gated by its own key (for example `identity.directory_sync` in spec 003, `integration.microsoft365` in spec 005).
 
 ## 10. UX
 - Audit table with filters, localized action names, timestamps shown in the user's time zone, RTL-aware.
@@ -119,12 +144,23 @@ Not applicable. AI and agent events are written through the same contract by spe
 ## 12. Integrations and events
 Publishes `AuditIntegrityCheckFailed` and `AuditExportCompleted`. Exposes a read-only event feed contract that spec 026 uses for SIEM streaming.
 
+The Connections area is a screen in the `Administration` module, which owns no data. Connection records, consent, credentials, health checks and the adapters for each external system live in `Integrations` (planned spec 017); directory connections of spec 003 live in `Identity` and appear in the same list. Both expose the connection list and actions through their `Contracts` projects (ADR-0013). `Integrations` publishes `ConnectionCreated`, `ConnectionFeatureChanged`, `ConnectionConsentRevoked`, `ConnectorUnavailable`, `ConnectorRestored` and `ConnectionDeleted`; features consume them to switch to and from their degraded state.
+
 ## 13. Audit
 The audit service audits its own sensitive actions: export, retention change, purge, integrity check failure.
+
+| Event | Key fields |
+|---|---|
+| integration.connection_created / deleted | connection, type, external tenant, actor |
+| integration.feature_enabled / disabled | connection, feature, actor |
+| integration.consent_granted / revoked_detected | connection, feature, permissions granted |
+| integration.credential_saved / replaced | connection, secret reference ID (no value), actor |
+| integration.status_changed | connection, from, to |
 
 ## 14. Security
 - Audit search is a data exfiltration path: rate-limited, scoped, and export requires the Tenant Admin or Security Officer role.
 - Integrity failures raise an alert to platform operations.
+- Connections are a high-value target: management needs `integration.manage`, credential changes need step-up, and secrets never reach the browser, logs or audit.
 
 ## 15. Non-functional requirements
 - Audit write adds under 5 ms p95 to the originating operation.
@@ -146,3 +182,4 @@ The audit service audits its own sensitive actions: export, retention change, pu
 | ADM-002 | AUD-001 to AUD-005 |
 | ADM-003 (retention) | AUD-006 |
 | TEN-010 | AUD-001 |
+| INT-001 (connection administration) | FR-010 to FR-015, US5 |
