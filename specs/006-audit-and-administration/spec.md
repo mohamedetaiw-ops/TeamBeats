@@ -8,7 +8,7 @@
 | Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R0 (audit, admin shell), R1 (Connections area with Microsoft 365 connection for directory sync), R2 (connection features for SharePoint documents, mail and calendar, and other connectors from spec 017) |
+| Target release | R0 (audit, admin shell), R1 (Connections area with Microsoft 365 connection for directory sync), R2 (connection features for SharePoint documents, mail, calendar and rooms, and other connectors from spec 017) |
 | Last updated | 2026-11-05 |
 | Approved | 2026-11-04 by Mohamed |
 | Requirement IDs | ADM-001, ADM-002, ADM-003 (retention part), TEN-010, INT-001 (connection administration part), new AUD-001 to AUD-007 |
@@ -37,7 +37,7 @@
 - SIEM streaming (spec 026, R2). This spec provides the extension point only.
 - Product analytics (spec 021).
 - Legal hold management (spec 011). This spec only honours holds during purge.
-- What each connected feature does with a connection (directory sync in 003, SharePoint documents in 011, mail and calendar in 008 and 032, connector packs in 017 to 019). This spec owns the shared connection model and screens only.
+- What each connected feature does with a connection (directory sync in 003, SharePoint documents in 011, mail, calendar and rooms in 018, connector packs in 017 to 019). This spec owns the shared connection model and screens only.
 
 ## 3. Actors
 
