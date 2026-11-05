@@ -115,6 +115,11 @@ public static class AdministrationModule
         await authz.DemandAsync(Permissions.UsersManage, AuthzTarget.Tenant, ct);
         _ = await users.GetAsync(id, ct) ?? throw AppException.NotFound();
 
+        if (status == MembershipStatus.Active && await users.IsDisabledByDirectoryAsync(id, ct))
+        {
+            // The directory still has the account disabled (spec 003 FR-013).
+            throw AppException.Conflict("conflict.user.disabled_by_directory");
+        }
         if (status == MembershipStatus.Disabled)
         {
             if (id == context.ActorId)

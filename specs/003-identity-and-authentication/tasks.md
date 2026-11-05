@@ -30,11 +30,11 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 - [x] T017 [US2] Open redirect and login CSRF protections with tests
 
 ## Phase 6: User Story 6, Entra ID directory sync (P1, R1; after approval of US6)
-- [ ] T020 Migration: `directory_connection`, `directory_user_link`, `directory_group_link`, owner fields on `user` (RLS)
-- [ ] T021 [P] [US6] Tests: test connection reports counts and stores nothing; write permission warning
-- [ ] T022 [P] [US6] Tests: first sync creates users keyed by `oid`; sign-in links with no duplicate even with JIT on; UPN change updates in place
-- [ ] T023 [P] [US6] Tests: disable in directory disables membership and revokes sessions; product admin cannot re-enable; re-enable restores the same user
-- [ ] T024 [P] [US6] Tests: groups kept in step and mapped to roles; product groups untouched; unreachable directory changes nothing and alerts after 3 failures; threshold breach stops the run
+- [x] T020 Migration: `directory_connection`, `directory_user_link`, `directory_group_link`, owner fields on `user` (RLS)
+- [x] T021 [P] [US6] Tests: test connection reports counts and stores nothing; write permission warning
+- [x] T022 [P] [US6] Tests: first sync creates users keyed by `oid`; sign-in links with no duplicate even with JIT on; UPN change updates in place
+- [x] T023 [P] [US6] Tests: disable in directory disables membership and revokes sessions; product admin cannot re-enable; re-enable restores the same user
+- [x] T024 [P] [US6] Tests: groups kept in step and mapped to roles; product groups untouched; unreachable directory changes nothing and alerts after 3 failures; threshold breach stops the run
 - [ ] T025 [US6] Graph delta reader, sync job on the outbox worker, `IDirectoryReader` contract for specs 002 and 010
 - [ ] T026 [US6] Directory admin page (connections, scope, attribute and group mapping, last runs, sync now)
 

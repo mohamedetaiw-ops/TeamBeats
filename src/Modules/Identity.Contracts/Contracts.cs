@@ -11,6 +11,9 @@ public interface IUserDirectory
     Task<UserInfo?> FindByEmailAsync(string email, CancellationToken ct = default);
 
     Task<IReadOnlyList<UserInfo>> ListAsync(string? search, int limit, CancellationToken ct = default);
+
+    /// <summary>True while the directory has the account disabled; product admins cannot re-enable it (spec 003 FR-013).</summary>
+    Task<bool> IsDisabledByDirectoryAsync(Guid userId, CancellationToken ct = default);
 }
 
 public interface ISessionRevocation
@@ -22,4 +25,6 @@ public interface ISessionRevocation
 
 public sealed record UserSignedIn(Guid UserId, string Method) : IIntegrationEvent;
 public sealed record UserProvisioned(Guid UserId, string Via) : IIntegrationEvent;
+public sealed record UserDeprovisioned(Guid UserId, string Reason) : IIntegrationEvent;
+public sealed record UserProfileSynced(Guid UserId, IReadOnlyList<string> ChangedFields) : IIntegrationEvent;
 public sealed record SessionRevoked(Guid UserId, int Count, string Reason) : IIntegrationEvent;

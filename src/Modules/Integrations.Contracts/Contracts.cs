@@ -52,3 +52,41 @@ public sealed record ConnectionFeatureChanged(Guid ConnectionId, string Feature,
 public sealed record ConnectorUnavailable(Guid ConnectionId, string Status) : IIntegrationEvent;
 public sealed record ConnectorRestored(Guid ConnectionId) : IIntegrationEvent;
 public sealed record ConnectionDeleted(Guid ConnectionId, string Kind) : IIntegrationEvent;
+
+/// <summary>
+/// A directory account in canonical form (constitution XVII: no external DTOs leave Integrations). On an incremental
+/// read a null value means "not reported", so the previous value is kept.
+/// </summary>
+public sealed record DirectoryUserRecord(
+    string ExternalId,
+    bool Removed,
+    bool? AccountEnabled,
+    string? DisplayName,
+    string? Email,
+    string? UserPrincipalName,
+    string? JobTitle,
+    string? Office,
+    string? Phone,
+    string? EmployeeId,
+    string? PreferredLanguage);
+
+/// <summary>A directory group and the member changes since the last read.</summary>
+public sealed record DirectoryGroupRecord(string ExternalId, bool Removed, string? DisplayName, IReadOnlyList<string> MembersAdded, IReadOnlyList<string> MembersRemoved);
+
+/// <summary>Changes since the cursors (a full read when they are null), and the cursors for the next read.</summary>
+public sealed record DirectoryChanges(IReadOnlyList<DirectoryUserRecord> Users, IReadOnlyList<DirectoryGroupRecord> Groups, string UsersCursor, string GroupsCursor);
+
+public sealed class DirectoryUnavailableException(string reason) : Exception(reason)
+{
+    /// <summary>Short reason for the run log and audit, for example <c>unreachable</c> or <c>consent_missing</c>.</summary>
+    public string Reason { get; } = reason;
+}
+
+/// <summary>Reads a connected directory for directory sync (spec 003 User Story 6). Read only.</summary>
+public interface IDirectorySource
+{
+    /// <summary>The OIDC issuer of the connected directory, so synced and signed-in identities meet (spec 003 FR-003).</summary>
+    string IssuerFor(string externalTenantId);
+
+    Task<DirectoryChanges> ReadChangesAsync(Guid connectionId, string? usersCursor, string? groupsCursor, CancellationToken ct = default);
+}

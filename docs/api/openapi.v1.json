@@ -720,6 +720,50 @@
         }
       }
     },
+    "/api/v1/tenant/directory": {
+      "get": {
+        "tags": [
+          "Tenant: identity"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Tenant: identity"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DirectorySettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/tenant/directory/sync": {
+      "post": {
+        "tags": [
+          "Tenant: identity"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me": {
       "get": {
         "tags": [
@@ -2062,6 +2106,54 @@
           }
         }
       },
+      "DirectorySettingsRequest": {
+        "required": [
+          "userScope",
+          "syncGroups",
+          "scheduleMinutes",
+          "deletionThresholdPct"
+        ],
+        "type": "object",
+        "properties": {
+          "userScope": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/UserScope"
+              }
+            ]
+          },
+          "syncGroups": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "scheduleMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "deletionThresholdPct": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "ExportRequest": {
         "required": [
           "format",
@@ -2420,6 +2512,24 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "UserScope": {
+        "required": [
+          "mode",
+          "groups"
+        ],
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }
