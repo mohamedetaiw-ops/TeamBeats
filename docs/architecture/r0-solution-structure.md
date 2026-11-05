@@ -43,7 +43,7 @@ Every R0 plan (`specs/001` to `specs/007`) builds on this document. It defines t
   /spec-lint                   Checks spec headers, status and traceability tables
 ```
 
-Each module has `Api/` (endpoints), `Application/` (use cases), `Domain/`, `Infrastructure/` (its own DbContext and schema), and `Contracts/` (the only project other modules may reference).
+Each module follows ADR-0013: `Domain/` (rules, no infrastructure references), `Application/` (use cases and the ports they need), `Adapters/` (endpoints, Npgsql persistence in its own schema, outbox publishing, external clients), and `Contracts/` (the only project other modules may reference). Module names and ownership come from `docs/architecture/module-map.md`. R0 modules were built flat and are converted when next changed.
 
 ## 2. Database conventions
 
@@ -80,6 +80,7 @@ Each module has `Api/` (endpoints), `Application/` (use cases), `Domain/`, `Infr
 - Styling with logical CSS properties only; a stylelint rule bans `left/right` physical properties and `margin-left` style declarations.
 - ESLint rule banning literal JSX text (with allow list for punctuation).
 - Design system primitives in `src/Web/components/ui` are the only place direction-specific icons are handled.
+- From R1, the web app follows ADR-0014: `features/`, `components/ui` on Radix UI, `components/placements`, a single API client in `lib/api`, TanStack Query for interactive server state with tenant-keyed caches, Zustand only in the builder and personalization feature stores, and Tailwind only with token-bound themes and logical utilities.
 
 ## 7. Test harness (shared)
 

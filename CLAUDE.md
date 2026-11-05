@@ -24,6 +24,9 @@ You are contributing to a spec-driven enterprise product (TeamBeats, working nam
 7. Write tests for all changed behavior, including cross-tenant denial, org boundary, entitlement and failure cases. Never skip or disable a test to get green.
 8. No user-facing literal strings; use resource keys. Layouts must work RTL.
 9. Never put secrets, tokens or real customer data in code, prompts, logs, fixtures or commits.
+10. Inside a module, keep domain code free of infrastructure: use cases reach databases, messaging, other modules and external systems only through ports (ADR-0013). Name modules as in `docs/architecture/module-map.md`.
+11. Keep the frontend thin: no business rules, role or package checks in React code; components never import each other and talk only through declared events; client caches are keyed by tenant and scope (constitution XXX, ADR-0014).
+12. Tenant-configurable behavior is versioned, schema-validated configuration, never code per customer (constitution XXIX).
 
 ## Report at the end of each task
 - **Specification:** IDs and files reviewed and changed

@@ -1,0 +1,8 @@
+# Development-only credentials for the local compose stack and the CI test database are deliberate and
+# labelled "_dev_only" / "ci_only". Real secrets come from the environment or a secret store.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Labelled development and CI placeholders"
+regexes = ['''[a-z_]*_dev_only''', '''ci_only_password''', '''Password=postgres''', '''tb_(app|owner)_test_only''']

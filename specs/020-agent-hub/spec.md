@@ -260,7 +260,7 @@ All templates run on the common runtime. They are configurations and capability 
 
 | # | Template | Release | Capability key | Default autonomy | Sources and tools | Needs |
 |---|---|---|---|---|---|---|
-| 1 | Enterprise Knowledge | R1 | `ai.agents.basic` | L0 | Pages, policies, documents, FAQs (009, 011, 012, 014); SharePoint from R2 (018) | 014 |
+| 1 | Enterprise Knowledge | R1 | `ai.agents.basic` | L0 | Pages, policies, documents, FAQs (009, 011, 012, 014); SharePoint connected libraries from R2 (011 US9) | 014 |
 | 2 | HR Assistant | R1 | `ai.agents.basic` | L2 | HR policies, HR form services (016); HR record and balances from R2 (019, 022) | 016 |
 | 3 | IT Service Desk | R1 | `ai.agents.basic` | L2 | IT knowledge base, Help Desk form service (016); ITSM ticket create and status from R2 (017) | 016 |
 | 4 | Content and Writing | R1 | `ai.agents.basic` | L1 | Writing guidelines, templates, documents the user can read; summarize, translate, draft, rewrite | 014 |

@@ -1,0 +1,14 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "property-disallowed-list": [
+      ["/^margin-(left|right)$/", "/^padding-(left|right)$/", "/^border-(left|right)/", "left", "right", "/^border-(top|bottom)-(left|right)-radius$/"],
+      { "message": "Use logical properties (inline-start/inline-end) so layouts work in right-to-left languages." }
+    ],
+    "declaration-property-value-disallowed-list": [
+      { "text-align": ["left", "right"], "float": ["left", "right"], "clear": ["left", "right"] },
+      { "message": "Use start/end or inline-start/inline-end so layouts work in right-to-left languages." }
+    ],
+    "selector-class-pattern": null
+  }
+}

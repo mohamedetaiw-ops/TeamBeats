@@ -1,11 +1,11 @@
 <!--
 Sync Impact Report
-Version: 0.0.0 -> 1.0.0 (initial ratification)
+Version: 1.1.0
 Source: AI Intranet Product Foundation v0.1, section 17, plus review findings (docs/review/foundation-v0.1-review.md)
 Source rules C-01..C-20 are all carried over and grouped into Parts A to E.
 Added beyond the source: V development authentication isolation, XI untrusted content, XII AI-native not AI-dependent, XIII AI in every package, XXI backend entitlements, XXII dependency licensing, XXV data classification and privacy
 Templates to keep aligned: .specify/templates/spec-template.md, plan-template.md, tasks-template.md
-Status: RATIFIED 2026-11-04 by Mohamed. Binding.
+Status: RATIFIED by Mohamed (1.0.0 on 2026-11-04, 1.1.0 on 2026-11-05). Binding.
 -->
 
 # TeamBeats Constitution
@@ -50,17 +50,21 @@ Verified by: mandatory cross-tenant negative tests for every new data access pat
 - Access MUST NOT be inherited from a parent organization unit to its children (or the reverse) unless a permission rule explicitly grants subtree scope.
 - The "active organization" chosen in the UI is a convenience, never proof of authorization.
 - Audience targeting (who a thing is shown to) and access control (who may read it) are separate concepts and MUST be modeled separately.
+- Events, background jobs, cache keys and search or vector records about organization-owned data MUST carry the owning organization unit ID next to the tenant ID, so that consumers apply the same boundary as the API.
 
 Why: subsidiaries inside one tenant often must not see each other's data.
-Verified by: sibling, parent and child boundary tests in every organization-scoped spec.
+Verified by: sibling, parent and child boundary tests in every organization-scoped spec; event contract tests that reject organization-owned events without an org unit ID.
 
 ### III. Central authorization
 
 - Authorization decisions MUST go through the central policy service (CanView, CanEdit, CanPublish, CanApprove, CanManage, CanExecute or their successors).
 - Controllers, UI components and jobs MUST NOT check role names directly.
 - Hiding a UI control is never authorization. Every protected action MUST be enforced by the backend.
+- Decisions combine roles at a scope (RBAC) with conditions on attributes (ABAC). Conditions MUST use only attributes from the catalogue published by the authorization spec, MUST only narrow a grant, never widen it, and MUST appear in the decision explanation.
+- Authorization policies are data, validated against a schema. Tenants MUST NOT supply code, scripts or free-form expressions that the policy service executes.
 
-Verified by: architecture test banning role-name string checks outside the authorization module; API tests calling protected endpoints directly without UI.
+Why: a single, explainable decision point is the only way to keep dozens of modules, agents and components consistent.
+Verified by: architecture test banning role-name string checks outside the authorization module; API tests calling protected endpoints directly without UI; condition tests showing a condition can deny a grant but never allow without one.
 
 ### IV. Secrets
 
@@ -150,8 +154,10 @@ Verified by: entitlement tests that every package definition includes `ai.assist
 - The backend is one deployable ASP.NET Core application plus worker processes from the same repository, organized into domain modules.
 - A module MUST access only its own persistence. Other modules use its published contracts or events. No module MAY query another module's tables.
 - Shared code is limited to cross-cutting primitives (tenant context, IDs, clock, result types, telemetry, authorization contracts). A large shared "Common" project is not allowed.
+- Each module is a bounded context listed in `docs/architecture/module-map.md` with the data it owns, the contracts it exposes and the events it publishes. A new module, or a move of data between modules, MUST update the map in the same change.
+- Inside a module, dependencies point inward (ports and adapters). Domain code MUST NOT reference ASP.NET Core, Npgsql, RabbitMQ, HTTP clients, provider SDKs or other infrastructure. Application code reaches persistence, messaging, other modules and external systems only through ports it defines; adapters implement them. Layering serves testability, not ceremony: no generic repositories, mediator libraries or mapping libraries are required.
 
-Verified by: architecture tests on project references and namespace dependencies; per-module database schemas with grants limited to the owning module where practical.
+Verified by: architecture tests on project references and namespace dependencies, including the inward-only rule inside each module; per-module database schemas with grants limited to the owning module where practical; a CI check that every module project appears in the module map.
 
 ### XV. No speculative complexity
 
@@ -170,8 +176,9 @@ Verified by: OpenAPI diff check in CI that fails on unannounced breaking changes
 
 - External system DTOs, auth flows and quirks MUST stay inside connector adapters. Product modules use canonical internal contracts.
 - Every synchronized entity MUST document its system of record, sync direction, field ownership, conflict rule and delete behavior.
+- Product features MUST stay usable when a connector is unavailable: they show a clear degraded state and the last synchronized data with its age, never a broken page.
 
-Verified by: architecture test; spec template section on source of truth.
+Verified by: architecture test; spec template section on source of truth; connector-down tests for every feature that reads connected data.
 
 ### XVIII. Durable, observable background work
 
@@ -268,6 +275,32 @@ Approved acceptance criteria pass; required tests exist and pass (including tena
 
 ---
 
+## Part F. Configuration and composition
+
+### XXIX. Configuration over code, under versioned contracts
+
+- Tenant and organization specific behavior MUST be expressed as configuration records (pages, templates, layouts, fragments, themes, navigation, forms, service definitions, process models, decision tables, agent definitions, policies), never as code changes.
+- Every configuration record type MUST have a published schema with a version. Saves and imports MUST be validated against it on the server. Fields are typed; executable content (script, markup event handlers, free CSS, arbitrary expressions) MUST be rejected unless a spec defines a sandboxed evaluator for it.
+- Published configuration MUST be immutable and versioned, so any release can be compared, explained and rolled back.
+- Extension contracts (component manifests, event schemas, tool definitions, connector contracts, external runtime contracts, public APIs) MUST be versioned. Within a major version changes are additive only; a breaking change needs a new major version, a migration path and a deprecation period stated in the owning spec.
+- Administrative customization is bounded by the schema and by platform limits. A tenant can lower a platform limit, never raise it.
+
+Why: configuration is how one code line serves every customer (XX), and unbounded or unversioned configuration becomes an untested programming language.
+Verified by: schema validation tests per record type including rejected executable content; contract compatibility tests in CI that fail on a breaking change without a major version; rollback tests per publishable record type.
+
+### XXX. Thin, composable frontend
+
+- Business rules, authorization, entitlement checks and data access MUST run in backend modules. The frontend renders, collects input and holds view state. It MAY hide or disable a control for usability, never as the decision (III, XXI).
+- Components and widgets MUST get data only through the API contracts of the owning module, through the backend-for-frontend. They MUST NOT import other feature components; placements communicate only through events and actions declared in their manifest.
+- Client state is scoped to a feature or a page. Server data cached in the client MUST be keyed by tenant, scope and security context. A single global store of business data is not allowed.
+- Every placement MUST fail on its own and the page MUST stay usable when an optional component, connector or AI feature is unavailable (progressive enhancement).
+- Templates, layouts, the renderer and the builder MUST NOT reference a concrete component.
+
+Why: the experience layer must accept components from many teams and survive any one of them failing, without moving product rules into the browser where they cannot be trusted.
+Verified by: frontend lint rules for import boundaries between feature folders and against direct fetches outside the API client; architecture test that templates and the builder name no component ID; the two-pack component swap test of spec 032; failure injection tests per placement.
+
+---
+
 ## Governance
 
 - **Amendments.** Anyone may propose an amendment with the rules affected and the reason. The product owner and architecture owner assess impact. Architecture-changing amendments need an ADR. On approval, the version is bumped, affected specs and templates are updated, and CI checks are added where the rule can be automated.
@@ -275,4 +308,4 @@ Approved acceptance criteria pass; required tests exist and pass (including tena
 - **Compliance.** Every plan has a Constitution Check gate. Every pull request review confirms compliance. Deviations must be listed in the plan's Complexity Tracking table with a justification, or the plan is not approved.
 - **Owners.** Product owner and architecture owner: Mohamed (until named otherwise).
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-04 by Mohamed | **Last amended**: 2026-11-04
+**Version**: 1.1.0 | **Ratified**: 2026-11-04 by Mohamed | **Last amended**: 2026-11-05 by Mohamed

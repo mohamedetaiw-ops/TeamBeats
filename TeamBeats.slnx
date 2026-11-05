@@ -1,0 +1,84 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Api.DevHost/">
+    <Project Path="src/Api.DevHost/TeamBeats.Api.DevHost.csproj" />
+  </Folder>
+  <Folder Name="/src/Api/">
+    <Project Path="src/Api/TeamBeats.Api.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/" />
+  <Folder Name="/src/BuildingBlocks/Audit.Contracts/">
+    <Project Path="src/BuildingBlocks/Audit.Contracts/TeamBeats.Audit.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Authorization.Contracts/">
+    <Project Path="src/BuildingBlocks/Authorization.Contracts/TeamBeats.Authorization.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Entitlements.Contracts/">
+    <Project Path="src/BuildingBlocks/Entitlements.Contracts/TeamBeats.Entitlements.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Localization/">
+    <Project Path="src/BuildingBlocks/Localization/TeamBeats.Localization.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Messaging/">
+    <Project Path="src/BuildingBlocks/Messaging/TeamBeats.Messaging.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Persistence/">
+    <Project Path="src/BuildingBlocks/Persistence/TeamBeats.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Primitives/">
+    <Project Path="src/BuildingBlocks/Primitives/TeamBeats.Primitives.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/Telemetry/">
+    <Project Path="src/BuildingBlocks/Telemetry/TeamBeats.Telemetry.csproj" />
+  </Folder>
+  <Folder Name="/src/BuildingBlocks/TenantContext/">
+    <Project Path="src/BuildingBlocks/TenantContext/TeamBeats.TenantContext.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Administration/">
+    <Project Path="src/Modules/Administration/TeamBeats.Modules.Administration.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Audit/">
+    <Project Path="src/Modules/Audit/TeamBeats.Modules.Audit.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Authorization/">
+    <Project Path="src/Modules/Authorization/TeamBeats.Modules.Authorization.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Entitlements/">
+    <Project Path="src/Modules/Entitlements/TeamBeats.Modules.Entitlements.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity.Contracts/">
+    <Project Path="src/Modules/Identity.Contracts/TeamBeats.Modules.Identity.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity.DevAuth/">
+    <Project Path="src/Modules/Identity.DevAuth/TeamBeats.Modules.Identity.DevAuth.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/TeamBeats.Modules.Identity.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Tenancy.Contracts/">
+    <Project Path="src/Modules/Tenancy.Contracts/TeamBeats.Modules.Tenancy.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Tenancy/">
+    <Project Path="src/Modules/Tenancy/TeamBeats.Modules.Tenancy.csproj" />
+  </Folder>
+  <Folder Name="/src/Workers/">
+    <Project Path="src/Workers/TeamBeats.Workers.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Architecture/">
+    <Project Path="tests/Architecture/TeamBeats.Architecture.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Integration/">
+    <Project Path="tests/Integration/TeamBeats.Integration.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Security/">
+    <Project Path="tests/Security/TeamBeats.Security.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Testing/">
+    <Project Path="tests/Testing/TeamBeats.Testing.csproj" />
+  </Folder>
+  <Folder Name="/tests/Unit/">
+    <Project Path="tests/Unit/TeamBeats.Unit.Tests.csproj" />
+  </Folder>
+</Solution>
