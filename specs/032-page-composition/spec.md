@@ -133,6 +133,7 @@ Omar uses a keyboard and a screen reader. He builds a page and reorders placemen
 2. **Given** an upgrade outside the declared compatibility range, **Then** it is blocked with the reason. **Given** a supported upgrade, **Then** the manifest migration hook converts existing placement configuration and pages that do not use the component are untouched. *(CX-EXT-009, CX-EXT-012)*
 3. **Given** a component asks for a context value it did not declare (for example the user's email), **Then** the runtime does not supply it. *(CX-EXT-007)*
 4. **Given** a page layout change, **Then** the component's service endpoints and permissions are unchanged. *(CX-EXT-006)*
+5. **Given** a people filter placement that publishes `filterChanged` and a directory list placement that subscribes to it, **When** the filter is removed from the page, **Then** the list still renders unfiltered; **Given** a placement that emits an event it did not declare, **Then** no subscriber receives it. *(FR-067, FR-068)*
 
 ### User Story 8: Cross-tenant isolation through the experience layer (Priority: P1, R1)
 
@@ -182,7 +183,7 @@ Templates
 - **FR-023**: The system COULD recommend templates from site purpose, viewport and content density. Recommendations MUST be ignorable and MUST NEVER auto-publish or change permissions. *(CX-TMP-012, R3)*
 
 Component registry and contract
-- **FR-024**: Components MUST be registered through a versioned manifest independent of page and template source, carrying the fields of source section 7.2: identity and version, display metadata, configuration schema, placement capabilities, responsive behavior, context dependencies, theme contract, localization and accessibility metadata, error and lifecycle modes, permission and entitlement declaration, trust tier and telemetry hooks. *(CX-EXT-001, CX-EXT-003)*
+- **FR-024**: Components MUST be registered through a versioned manifest independent of page and template source, carrying the fields of source section 7.2: identity and version, display metadata, configuration schema, placement capabilities, responsive behavior, context dependencies, theme contract, localization and accessibility metadata, error and lifecycle modes, permission and entitlement declaration, trust tier and telemetry hooks, plus the events it publishes and subscribes to, the actions it accepts, and its data contract (the module endpoints it reads). *(CX-EXT-001, CX-EXT-003)*
 - **FR-025**: Placement properties MUST come from the manifest's typed schema with defaults, validation and migration hooks; the builder MUST render property inputs from the schema without component-specific builder code. *(CX-EXT-004, CX-EDT-004)*
 - **FR-026**: Components MUST style themselves only through the public semantic token contract of spec 033 and MUST NOT rely on private brand assumptions. *(CX-EXT-005)*
 - **FR-027**: Data retrieval and action authorization MUST stay inside the owning module's service contracts. Moving, hiding or reconfiguring a placement MUST NOT change any data, endpoint or permission. *(CX-EXT-006, CX-EDT-012)*
@@ -231,6 +232,10 @@ Performance, quality and resilience
 - **FR-064**: Frontend performance and failure events MUST be correlated with tenant, org unit, release and a non-identifying page ID, without user content. *(CX-NFR-009, CX-MET-006 with spec 021)*
 - **FR-065**: Cache keys and offline stores MUST include tenant, org scope and the security context where content depends on them. *(CX-NFR-011)*
 - **FR-066**: The renderer MUST recover from missing manifests, discontinued components, invalid tokens and network failures with a safe fallback and a usable shell. *(CX-NFR-012)*
+
+Component interaction
+- **FR-067**: Placements on a page MUST communicate only through a page-scoped event channel, using events and actions declared in their manifests with typed payload schemas. The runtime MUST drop and log undeclared events and payloads that fail validation. A payload MUST NOT carry data the receiving placement could not read itself under the same session. *(constitution XXX)*
+- **FR-068**: A component MUST NOT import, call or read the state of another component. Removing, hiding or failing any placement MUST leave the others working, with subscribers falling back to their unlinked state. An architecture test MUST fail on imports between component packages. *(constitution XXX)*
 
 ## 6. Business and validation rules
 - Non-negotiable rule from the source: templates and layouts MAY reference capabilities, regions, placement constraints and metadata, and MUST NOT depend on the existence, identity, internals or code of a particular component.
@@ -403,6 +408,7 @@ No AI in R1 and R2. The R3 template recommendations (FR-023) use only page metad
 | CX-NFR-012 | FR-066, US4 |
 | EXP-001 (configurable pages) | FR-001, FR-036 |
 | EXP-008 (responsive) | FR-004, FR-063 |
+| Constitution XXX (component interaction) | FR-067, FR-068, US7 |
 
 ## Review checklist
 - [x] No implementation details beyond what ADR-0012 records
