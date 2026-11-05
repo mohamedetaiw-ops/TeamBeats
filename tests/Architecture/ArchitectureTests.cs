@@ -151,6 +151,25 @@ public sealed partial class ArchitectureTests
         Assert.Equal(Permissions.All.Order(), seeded.Order());
     }
 
+    [Fact]
+    public void Permission_keys_follow_area_dot_action()
+    {
+        var bad = Permissions.All.Where(k => !Regex.IsMatch(k, "^[a-z][a-z_]*\\.[a-z][a-z_]*$")).ToList();
+        Assert.True(bad.Count == 0, "Permission keys must be <area>.<action> (spec 004 FR-013): " + string.Join(", ", bad));
+    }
+
+    [Fact]
+    public void Permission_and_capability_catalogues_do_not_share_keys()
+    {
+        var capabilities = typeof(TeamBeats.Entitlements.Contracts.Capabilities)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(f => f.IsLiteral && f.FieldType == typeof(string))
+            .Select(f => (string)f.GetRawConstantValue()!)
+            .ToHashSet();
+        var shared = Permissions.All.Where(capabilities.Contains).ToList();
+        Assert.True(shared.Count == 0, "Keys in both catalogues (spec 004 FR-013, spec 005 FR-010): " + string.Join(", ", shared));
+    }
+
     private static Dictionary<string, string> Catalogue(string locale) =>
         JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Path.Combine(Root, $"src/BuildingBlocks/Localization/catalogues/{locale}.json")))!;
 

@@ -8,14 +8,14 @@ create table authz.permission (
 );
 grant select on authz.permission to tb_app;
 insert into authz.permission (key) values
-  ('tenant.settings.view'), ('tenant.settings.manage'), ('tenant.admins.manage'),
-  ('org.unit.view'), ('org.unit.manage'), ('org.membership.manage'),
-  ('authz.role.view'), ('authz.role.manage'), ('authz.role.assign'), ('authz.access.explain'), ('authz.rule.manage'),
-  ('identity.user.view'), ('identity.user.manage'), ('identity.config.manage'),
-  ('entitlements.plan.view'),
-  ('audit.event.view'), ('audit.event.export'), ('audit.retention.manage'),
-  ('content.page.view'), ('content.page.edit'), ('content.page.publish'),
-  ('workflow.definition.manage'), ('workflow.task.approve'), ('integration.connector.manage'), ('ai.policy.manage');
+  ('tenant.settings_view'), ('tenant.settings_manage'), ('tenant.admins_manage'),
+  ('org.view'), ('org.manage'), ('org.membership_manage'),
+  ('authz.roles_view'), ('authz.roles_manage'), ('authz.roles_assign'), ('authz.explain'), ('authz.rules_manage'),
+  ('identity.users_view'), ('identity.users_manage'), ('identity.config_manage'),
+  ('entitlements.view'),
+  ('audit.read'), ('audit.export'), ('audit.retention_manage'),
+  ('content.view'), ('content.edit'), ('content.publish'),
+  ('process.design'), ('workflow.approve'), ('integration.manage'), ('ai.policy_manage');
 
 create table authz.role (
   tenant_id uuid not null,
