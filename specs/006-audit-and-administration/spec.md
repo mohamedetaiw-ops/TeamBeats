@@ -10,7 +10,7 @@
 | Approver | Mohamed |
 | Target release | R0 (audit, admin shell), R1 (Connections area with Microsoft 365 connection for directory sync), R2 (connection features for SharePoint documents, mail, calendar and rooms, and other connectors from spec 017) |
 | Last updated | 2026-11-05 |
-| Approved | 2026-11-04 by Mohamed |
+| Approved | 2026-11-04 by Mohamed; Connections area (US5, FR-010 to FR-015) 2026-11-05 by Mohamed |
 | Requirement IDs | ADM-001, ADM-002, ADM-003 (retention part), TEN-010, INT-001 (connection administration part), new AUD-001 to AUD-007 |
 | Use cases | UC-01, UC-10 and UC-11 (connection setup part), UC-13 (audit part) |
 | Depends on | 001, 004, 005, 026 (step-up for connection credentials) |

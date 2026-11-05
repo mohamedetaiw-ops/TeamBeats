@@ -58,7 +58,7 @@ A tenant can use TeamBeats libraries only, connected SharePoint libraries only (
 - Electronic signatures with legal standing. Approval in the route is a recorded decision, not a qualified e-signature. [NEEDS CLARIFICATION: is a qualified e-signature integration needed for government customers?] Default: integration through spec 017 in R3.
 - Syncing a desktop folder (no sync client).
 - Using SharePoint as the storage behind a TeamBeats library (TeamBeats metadata and controlled document features over files stored in SharePoint). Controlled documents, retention and legal hold need TeamBeats to own the versions (ADR-0016).
-- SharePoint Server and SharePoint Subscription Edition on premises. [NEEDS CLARIFICATION: do government customers on premises need it?] Default: not planned; the same port can take an adapter later through the connector framework (spec 017).
+- SharePoint Server and SharePoint Subscription Edition on premises. Decided 2026-11-05 (Mohamed): not planned; the same port can take an adapter later through the connector framework (spec 017).
 - Other document management systems (Google Drive in INT-004, Box, OpenText and similar). They use the same document source port when their connector is specified.
 
 ## 3. Actors and permissions
@@ -371,8 +371,9 @@ Connected SharePoint libraries and import from SharePoint need `integration.micr
 ## 17. Open questions
 - [NEEDS CLARIFICATION: qualified e-signature for government customers?] Default: connector in R3.
 - [NEEDS CLARIFICATION: can a tenant that uses SharePoint hide TeamBeats libraries from employees?] Default: yes; TeamBeats libraries stay available for controlled documents and policies (spec 025) even when hidden from the main navigation.
-- [NEEDS CLARIFICATION: is upload to connected SharePoint libraries needed in R2, or is read only enough at first?] Default: in R2, off by default per library.
-- [NEEDS CLARIFICATION: should SharePoint Online move to R1 for pilot tenants that already use it?] Default: R2, with the Microsoft 365 pack in the roadmap.
+- Decided 2026-11-05 (Mohamed): upload to connected SharePoint libraries is in R2, off by default per library.
+- Decided 2026-11-05 (Mohamed): SharePoint Online connected libraries ship in R2, with the Microsoft 365 pack in the roadmap.
+- Decided 2026-11-05 (Mohamed): SharePoint Server on premises is not planned (section 2).
 - [NEEDS CLARIFICATION: default storage quota per package] Default: set commercially (C1 in open questions).
 
 ## 18. Traceability
