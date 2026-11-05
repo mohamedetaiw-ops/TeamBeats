@@ -250,7 +250,7 @@ Starter templates (R2, tenant can switch on and edit). Taken from the current in
 - **SC-004**: A service owner can build an onboarding service with an event trigger, three parallel tasks and one connector step, test it and publish it in under 2 hours without developer help.
 
 ## 17. Open questions
-1. Release split: should the catalogue, linked apps, simple form services and task inbox come forward into R1 (as written above) so the pilot can replace the current intranet's menu, or stay in R2 as the roadmap had them? Default as written: R1.
+1. Decided 2026-11-05 (Mohamed): the catalogue, linked apps, simple form services and task inbox are in R1 so the pilot can replace the current intranet's menu. Leave, attendance and service templates stay in R2.
 2. Retention for request data: default 3 years after closure, configurable per service.
 
 ## 18. Traceability
