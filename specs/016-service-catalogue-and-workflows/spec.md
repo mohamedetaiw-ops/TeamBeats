@@ -174,13 +174,13 @@ The finance team models "Purchase to pay": a decision table picks the approval c
 - **FR-013**: Routes MUST be built in a visual designer from the step types listed in US8, with no custom code. Published routes MUST pass validation (reachable steps, matched joins, assignees resolvable). *(WF-013)*
 - **FR-014**: Services MUST support start triggers: manual submit, schedule (for example every quarter), and product events (`UserProvisioned`, `UserDeprovisioned`, `OrganizationMembershipChanged`, `RequestCompleted` of another service). Triggers MUST be idempotent per event. *(WF-014)*
 - **FR-015**: Services MUST support service level targets and step due times in working days, with at-risk and breach alerts, and auto-approve rules on form values. *(WF-015)*
+- **FR-016**: Automatic steps that reach outside the product MUST go through the connector framework (spec 017) or registered outbound webhooks with signed payloads, a tenant allowlist of hosts and secret-manager credentials. Only fields the owner selects are sent. *(WF-016)*
 - **FR-017**: Processes MUST be modeled and stored as BPMN 2.0 within the supported subset in section 12, with .bpmn import and export. Unsupported elements MUST be rejected on import and in the modeler. Script tasks and inline code MUST NOT be supported. *(WF-017)*
 - **FR-018**: The engine MUST evaluate DMN 1.x decision tables (hit policies unique, first, any, collect, rule order) with the FEEL subset for comparisons, ranges and lists, versioned separately from processes. *(WF-018)*
 - **FR-019**: The engine MUST support message correlation by message name and correlation key, with idempotency per message ID and a time-to-live for unmatched messages. *(WF-019)*
 - **FR-020**: Failed jobs MUST become incidents after their retry policy. Operators MUST be able to inspect, edit variables, retry or skip with a reason; all actions are audited. *(WF-020)*
 - **FR-021**: The product MUST provide process monitoring (instance search, diagram heatmap, step durations, incident list) and instance migration between versions with an explicit step mapping. *(WF-021)*
 - **FR-022**: An external BPMN engine MUST be connectable through the connector framework, surfacing its user tasks in the task inbox without copying its process state. *(WF-022)*
-- **FR-016**: Automatic steps that reach outside the product MUST go through the connector framework (spec 017) or registered outbound webhooks with signed payloads, a tenant allowlist of hosts and secret-manager credentials. Only fields the owner selects are sent. *(WF-016)*
 
 ## 6. Business and validation rules
 - Team requests use the reporting line (spec 010), filled from the directory `manager` attribute or HR. Org unit membership alone never makes someone an approver.
