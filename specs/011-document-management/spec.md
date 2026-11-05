@@ -29,7 +29,7 @@
 - Upload (single, multiple, drag and drop, bulk import with metadata file), file type allowlist, size limits, malware scanning, duplicate detection by hash.
 - Versioning: minor versions for drafts and major versions for approved releases, version notes, compare for text formats, restore.
 - Check-out and check-in: exclusive editing lock, check-out by self, discard check-out, forced check-in by library managers with a reason.
-- Editing: download and upload, and editing in the browser for Office formats through Microsoft 365 when connected (spec 018). TeamBeats keeps its own version on check-in.
+- Editing: download and upload, and editing in the browser for Office formats through the Microsoft 365 connection when connected (R2, FR-010). TeamBeats keeps its own version on check-in.
 - Controlled documents: document number, owner, approval route before a major version is published (spec 024), effective date, review date, superseded versions kept read-only, "controlled copy" watermark, "uncontrolled when printed" footer.
 - Preview in the browser for common formats (PDF, Office, images, video, text) without download.
 - Knowledge base: articles with templates for SOP, how-to walkthrough, FAQ and troubleshooting, version-controlled, with owners, review dates, related articles and "was this helpful" feedback.
@@ -209,7 +209,7 @@ Acme already keeps its finance and project files in SharePoint Online. The integ
 - **FR-007 / DOC-007**: Controlled document types MUST support document numbering schemes, owner, approval route on spec 024, effective date, superseded state, review date with review tasks, and print and PDF footer with control details. Authors MUST NOT approve their own revision.
 - **FR-008 / DOC-008**: Controlled document types MUST be able to require read confirmation on each new major version, using the acknowledgement record of spec 009.
 - **FR-009 / DOC-009**: The system MUST preview PDF, Office, image, video and text formats in the browser without download.
-- **FR-010 / DOC-010**: When Microsoft 365 is connected (FR-024), contributors MUST be able to edit Office documents in the browser; TeamBeats MUST store the result as its own version on check-in.
+- **FR-010 / DOC-010**: *(R2)* When Microsoft 365 is connected (FR-024), contributors MUST be able to edit Office documents in the browser; TeamBeats MUST store the result as its own version on check-in.
 - **FR-011 / DOC-011**: The knowledge base MUST support article templates (SOP, how-to, FAQ, troubleshooting), the lifecycle and versioning of spec 009, related articles, helpfulness feedback and per-question indexing for FAQ articles.
 - **FR-012 / DOC-012**: The brand asset portal MUST support collections, usage rights with expiry, automatic renditions, access requests and download tracking.
 - **FR-013 / DOC-013**: Records managers MUST be able to define retention labels with period, trigger (created, modified, effective, superseded, custom date field) and action (delete, review, archive), and apply them by library, document type or manually. *(ADM-003)*

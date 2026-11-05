@@ -175,13 +175,13 @@ The compliance officer creates a guest space "External audit 2027", shares the p
 
 **Guest sign-in methods (default):** (a) the customer's identity provider business-to-business guest feature (for example Entra ID guests), or (b) federation with the guest's own organization identity provider configured by the tenant admin. [NEEDS CLARIFICATION: allow a one-time email code for guests whose organization has no identity provider?] Default: not until a constitution amendment, because the constitution limits product-side credentials; to be decided before R2.
 
-**Defaults:** MFA required on; step-up window 10 minutes; idle timeout 30 minutes; absolute 12 hours; guest expiry 90 days maximum, 30 days default; access reviews every 90 days for admins and guests.
+**Defaults:** MFA required on once a test sign-in shows the MFA claim (until then off, with a posture warning to the tenant administrator); step-up window 10 minutes; idle timeout 30 minutes; absolute 12 hours; guest expiry 90 days maximum, 30 days default; access reviews every 90 days for admins and guests.
 
 **Certification and assurance roadmap (company program):**
 
 | Item | Scope | Target |
 |---|---|---|
-| ISO/IEC 27001:2022 certificate | SaaS service, development and support | Stage 2 audit before R2 general availability |
+| ISO/IEC 27001:2022 certificate | SaaS service, development and support | Certificate issued before R2 general availability |
 | SOC 2 Type I, then Type II | SaaS service: security, availability, confidentiality | Type I at R1 pilot end; Type II report covering 6 months by R2 GA plus 6 months |
 | ISO/IEC 27701 | Privacy extension to 27001 | After 27001, R3 |
 | ISO/IEC 27017 and 27018 | Cloud controls and cloud personal data | With the first 27001 surveillance audit |

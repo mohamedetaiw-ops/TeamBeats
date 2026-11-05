@@ -58,7 +58,7 @@
 | Publisher | Publish, unpublish, pin, send critical announcements | `content.publish` at site scope; `content.publish_critical` for critical |
 | Content owner | Answer for accuracy, receive review reminders, approve changes to owned items | Named on the item |
 | Site owner | Manage site settings, navigation, theme, editors, moderation | `site.manage` at site scope |
-| Communications admin | Manage content types, templates, tenant theme, campaign channels, retention defaults | `content.admin` at tenant scope |
+| Communications admin | Manage content types, templates, campaign channels, retention defaults | `content.admin` at tenant scope |
 | Guest (spec 026) | Read content on sites shared with their guest space; no comments unless allowed | Guest membership and site share |
 
 Targeting is not access. A user outside the audience can still open a page they are permitted to read by link, and a user in the audience who is not permitted gets nothing (constitution II).
@@ -135,10 +135,10 @@ Acme Gulf wants its own intranet site with its own colors, navigation and editor
 1. **Given** a tenant admin, **When** they create a site from a template and link it to an org unit, location or group, **Then** the site has its own home page (a page of spec 032), navigation (spec 008), theme (spec 033), editors, approvers and route.
 2. **Given** a site linked to "Acme Gulf", **Then** its default audience is that subtree, and Acme Gulf staff see the site in their navigation. Staff of a sibling subsidiary do not, unless the site is shared with them.
 3. **Given** a site theme, **When** the site owner picks colors, **Then** the product applies the contrast validation of spec 033 and keeps tenant-locked elements (for example the tenant logo in the header) as set by the tenant admin.
-4. **Given** a site owner of Acme Gulf, **Then** they cannot edit any other site, tenant theme or content type.
+4. **Given** a site owner of Acme Gulf, **Then** they cannot edit any other site or content type, and cannot change the tenant theme (spec 033).
 5. **Given** a site is archived, **Then** its content is read-only, removed from feeds and navigation, and still found by search for permitted users with an "archived" label.
 
-### User Story 7: Content components on composed pages (Priority: P2, R2)
+### User Story 7: Content components on composed pages (Priority: P2, R1)
 
 Page composition itself (templates, layouts, builder, previews, approval of page structure) is specified in spec 032. This story covers what content components must do on those pages.
 
@@ -252,9 +252,9 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 - AI sentiment on comments is in spec 021 and works on aggregates only.
 
 ## 12. Integrations and events
-- Publishes: `ContentPublished`, `ContentUnpublished`, `ContentExpired`, `ContentAcknowledged`, `ContentReviewDue`, `CampaignStepSent`.
+- Publishes: `ContentPublished`, `ContentUnpublished`, `ContentExpired`, `ContentAcknowledged`, `ContentReviewDue`, `CampaignStepSent`, `EventRegistrationChanged` (registered, waitlisted, cancelled; consumed by spec 018 for the merged calendar).
 - Consumes: `UserDeprovisioned` (owner reassignment), `OrganizationMembershipChanged` (audience and acknowledgement lists), approval results from spec 024.
-- Channels through spec 015: email, Microsoft Teams (spec 018), mobile push, digital signage feed (read-only signed URL per screen).
+- Channels through spec 015: email, Microsoft Teams, mobile push, digital signage feed (read-only signed URL per screen).
 - Share to external social networks only for items marked public, through share links, with no tokens stored for user social accounts.
 
 ## 13. Audit, telemetry and analytics

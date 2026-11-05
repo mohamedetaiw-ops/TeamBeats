@@ -47,7 +47,7 @@ Source: [Composable Intranet Experience requirements](../../docs/product/composa
 | Organization administrator | Configure navigation, home page and personalization policy for their scope | `navigation.edit`, `personalization.policy` at org or subtree scope; `page.edit` (spec 032) |
 | Tenant administrator | Configure shell layout, global navigation, tenant personalization policy, consent policy, help and tours | `shell.edit`, `navigation.edit`, `personalization.policy` at tenant scope |
 | Communications administrator | Configure in-context help, tours and global announcements | `help.edit` at tenant or org scope; announcements per spec 009 |
-| Security officer | Read configuration history | `experience.history_view` |
+| Security officer | Read configuration history | `config_history.view` |
 
 Permission keys follow spec 004 FR-013. Preferences are never an authorization input (source section 1.3).
 
@@ -241,7 +241,7 @@ The shell, shared states, navigation, quick navigation, favorites, home personal
 
 ## 12. Integrations and events
 - Publishes: `ShellPublished`, `NavigationPublished`, `PreferencesChanged`, `PersonalLayoutReset`.
-- Consumes: `UserLocaleChanged` (spec 007), `OrganizationMembershipChanged` (spec 002), `EntitlementsChanged` (spec 005), `ComponentRetired` (spec 032), `PermissionsChanged` (spec 004, to prune favorites).
+- Consumes: `UserLocaleChanged` (spec 007), `OrganizationMembershipChanged` (spec 002), `EntitlementsChanged` (spec 005), `ComponentRetired` (spec 032), `RoleAssignmentChanged` and `ResourcePermissionChanged` (spec 004, to prune favorites).
 
 ## 13. Audit, telemetry and analytics
 

@@ -155,7 +155,7 @@ When a directory or HR source owns a unit or membership, its source fields are r
 | `org.hierarchy` | All packages |
 | `org.delegated_admin` | Workplace Plus and above (organization administrators). Workplace: tenant admins only. |
 | `org.max_units` | Quota per package. Values are commercial data, set in the package definition (open commercial item C3). |
-| `org.directory_sync` | All packages for one directory connection. Workplace Plus and above for more than one connection. |
+| `identity.max_directory_connections` | Limit on directory connections (spec 003): 1 in Workplace, more in Workplace Plus and above. Directory sync itself is gated by `identity.directory_sync` (spec 003). |
 
 ## 10. UX, localization and accessibility
 - Tree view with keyboard navigation (arrow keys, expand/collapse) following the WAI-ARIA tree pattern.

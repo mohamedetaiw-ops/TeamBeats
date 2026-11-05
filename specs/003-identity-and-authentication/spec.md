@@ -167,7 +167,8 @@ The tenant admin connects Acme's directory once. New hires can sign in on day on
 | `identity.oidc` | All packages |
 | `identity.saml` | All packages (Decided 2026-11-04) |
 | `identity.scim` | Workplace Plus and above, once implemented |
-| `identity.directory_sync` | All packages (one connection); more connections per `org.directory_sync` in spec 002 |
+| `identity.directory_sync` | All packages |
+| `identity.max_directory_connections` | Limit: 1 in Workplace; more in Workplace Plus and above (values are commercial data in the package definition) |
 
 ## 10. UX, localization and accessibility
 - Sign-in page localized, RTL aware, shows tenant branding once the tenant is known.

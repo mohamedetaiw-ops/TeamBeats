@@ -50,7 +50,7 @@ Employee (chooses language), tenant admin (enables locales, sets default), conte
 **Acceptance scenarios:**
 1. **Given** tenant default `ar` and the user has no preference, **When** they open the home page, **Then** UI is Arabic, `dir="rtl"` and `lang="ar"` are set, and navigation is mirrored.
 2. **When** the user switches to English, **Then** the UI is English LTR and the preference is saved to their profile.
-3. **Given** a user preference of `fr` that the tenant has not enabled, **Then** the tenant default is used.
+3. **Given** a user preference of `fr` that the tenant has not enabled, **Then** the organization default is used, or the tenant default when no organization sets one.
 4. Resolution order: user preference (if enabled) > organization default (nearest org unit that sets one, spec 033) > tenant default > `en`. *(CX-LOC-003)*
 5. **Given** Arabic and then Urdu after English, **Then** RTL layout, correct numerals and URLs and keyboard order hold in every reference template (source scenario S05). *(CX-LOC-002)*
 
