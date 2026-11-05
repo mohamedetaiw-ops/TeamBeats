@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 021-analytics |
 | Area | analytics |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (item-level reach and acknowledgement counts inside specs 009 and 025, adoption basics for tenant admins), R2 (analytics workspace: adoption, content, communications and campaigns, search, knowledge, services and workflows, policy compliance, AI usage, location and unit dashboards, scheduled reports, export, survey and comment sentiment, search relevance evaluation), R3 (connected business KPIs on location dashboards, benchmarks across anonymized tenants with consent, analytics API, governed experience experiments, personalization and recommendation evaluation) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | ANL-001 (was LOC-005), ANL-002 (was LOC-006), ANL-003 to ANL-024 (new), AI-013 (usage visibility, shared with spec 013), CX-MET-001 to CX-MET-008 |
 | Use cases | UC-04, UC-08, UC-13 (usage figures only) |
 | Depends on | 002 (org units, locations), 004, 005, 006, 008, 009, 011, 012, 014, 016, 022, 023, 024, 025, 026, 032, 033, 013 (AI usage figures), 034 (AI quality figures, shared evaluation services) |

@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 024-process-engine |
 | Area | workflows |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (engine core for approval routes), R2 (modeler, BPMN subset, DMN, messages, timers, incidents, monitoring), R3 (compensation, instance migration, BPMN import from other tools, external engine adapter) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | WF-002, WF-003, BPM-001 to BPM-016 (new) |
 | Use cases | UC-08 |
 | Depends on | ADR-0010 (workflow engine), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 015 (notifications), 016 (services and task inbox), 017 (connectors), 021 (analytics) |

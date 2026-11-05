@@ -11,22 +11,22 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [005 Packages and entitlements](005-packages-and-entitlements/spec.md) | platform | R0, R2 | Approved | AI-001, ADM-001, ENT-001 to ENT-008 (new) |
 | [006 Audit and admin shell](006-audit-and-administration/spec.md) | platform | R0, R1 to R2 (Connections area) | Approved (Connections area approved 2026-11-05) | ADM-001 to ADM-003, TEN-010, INT-001 (connection administration), AUD-001 to AUD-007 (new) |
 | [007 Localization and accessibility](007-localization-and-accessibility/spec.md) | experience | R0 to R2 | Approved; composable experience additions pending approval | LOC-001 to LOC-004, EXP-008, CX-ACC-001 to CX-ACC-014, CX-LOC-001 to CX-LOC-005, CX-LOC-007 to CX-LOC-010 |
-| [008 Experience shell, navigation, employee home and personalization](008-experience-shell-and-personalization/spec.md) | experience | R1 to R3 | Proposed | EXP-001, EXP-008, CX-EXP-001 to CX-EXP-010, CX-NAV-001 to CX-NAV-010, CX-PER-001 to CX-PER-015, CX-INT-001 to CX-INT-012 |
-| [009 Content, publishing and governance](009-content-and-publishing/spec.md) | experience | R1 to R3 | Proposed | EXP-002 to EXP-004, LOC-004, PUB-001 to PUB-020 |
-| [011 Document management and knowledge base](011-document-management/spec.md) | knowledge | R1 to R3 | Proposed | KNO-001, KNO-003, KNO-006, ADM-003, INT-002 (SharePoint documents), DOC-001 to DOC-033 |
-| [013 AI Gateway and model governance](013-ai-gateway/spec.md) | ai | R1 to R3 | Proposed | AI-002 to AI-004, AI-006, AI-011 to AI-013, AIG-001 to AIG-019 |
-| [016 Self services, service catalogue and workflows](016-service-catalogue-and-workflows/spec.md) | workflows | R1, R2 | Proposed | WF-001 to WF-016, UC-08 |
+| [008 Experience shell, navigation, employee home and personalization](008-experience-shell-and-personalization/spec.md) | experience | R1 to R3 | Approved | EXP-001, EXP-008, CX-EXP-001 to CX-EXP-010, CX-NAV-001 to CX-NAV-010, CX-PER-001 to CX-PER-015, CX-INT-001 to CX-INT-012 |
+| [009 Content, publishing and governance](009-content-and-publishing/spec.md) | experience | R1 to R3 | Approved | EXP-002 to EXP-004, LOC-004, PUB-001 to PUB-020 |
+| [011 Document management and knowledge base](011-document-management/spec.md) | knowledge | R1 to R3 | Approved | KNO-001, KNO-003, KNO-006, ADM-003, INT-002 (SharePoint documents), DOC-001 to DOC-033 |
+| [013 AI Gateway and model governance](013-ai-gateway/spec.md) | ai | R1 to R3 | Approved | AI-002 to AI-004, AI-006, AI-011 to AI-013, AIG-001 to AIG-019 |
+| [016 Self services, service catalogue and workflows](016-service-catalogue-and-workflows/spec.md) | workflows | R1, R2 | Approved | WF-001 to WF-016, UC-08 |
 | [018 Microsoft 365 mail, calendar and rooms](018-microsoft-365-mail-and-calendar/spec.md) | integrations | R1 (mail and calendar), R2 (rooms), R3 | Approved | INT-001, INT-002, INT-009, UC-10 (mail and calendar part), M365-001 to M365-024 (new) |
-| [020 Agent Hub: registry, templates, studio and marketplace](020-agent-hub/spec.md) | ai | R1 to R3 | Proposed | AI-007 (agent part), AI-008, AGT-001 to AGT-020, UC-07 |
-| [021 Analytics and insights](021-analytics/spec.md) | analytics | R1 to R3 | Proposed | ANL-001 to ANL-024 (ANL-001 and ANL-002 were LOC-005 and LOC-006), AI-013 (shared with 013), CX-MET-001 to CX-MET-008 |
-| [022 Leave, attendance and HR workflows](022-hr-workflows/spec.md) | workflows | R1 to R3 | Proposed | INT-007, LVA-001 to LVA-012, HRW-001 to HRW-014 |
-| [024 Process engine (BPMN and DMN)](024-process-engine/spec.md) | workflows | R1 to R3 | Proposed | WF-002, WF-003, BPM-001 to BPM-016 |
-| [025 Policy management](025-policy-management/spec.md) | knowledge | R1 to R3 | Proposed | EXP-004, KNO-001, KNO-007, POL-001 to POL-018 |
-| [026 Security controls, compliance and certifications](026-security-and-compliance/spec.md) | platform | R1 to R3 | Proposed | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-021, CMP-001 to CMP-004, CX-NFR-010 |
-| [027 Agent governance, tools and safety](027-agent-governance/spec.md) | ai | R1 to R3 | Proposed | AI-005, AI-009, AI-010, AGV-001 to AGV-024, UC-07, UC-13 |
-| [032 Page composition: layouts, templates, component registry and page builder](032-page-composition/spec.md) | experience | R1 to R3 | Proposed | CX-LAY-001 to CX-LAY-012, CX-TMP-001 to CX-TMP-010, CX-TMP-012, CX-EDT-001 to CX-EDT-015, CX-EXT-001 to CX-EXT-014, CX-GOV-001 to CX-GOV-012, CX-NFR-001 to CX-NFR-012 |
-| [033 Brands, themes, white labeling and multi-organization experience](033-themes-and-white-labeling/spec.md) | experience | R1, R2 | Proposed | CX-BRD-001 to CX-BRD-015, CX-ORG-001 to CX-ORG-011, CX-TMP-011, CX-LOC-006, ADM-001 (branding) |
-| [034 AI Evaluation Layer](034-ai-evaluation/spec.md) | ai | R1 to R3 | Proposed | EVL-001 to EVL-030, AI-008 (quality part), AI-010 (evidence part), UC-07, UC-13 |
+| [020 Agent Hub: registry, templates, studio and marketplace](020-agent-hub/spec.md) | ai | R1 to R3 | Approved | AI-007 (agent part), AI-008, AGT-001 to AGT-020, UC-07 |
+| [021 Analytics and insights](021-analytics/spec.md) | analytics | R1 to R3 | Approved | ANL-001 to ANL-024 (ANL-001 and ANL-002 were LOC-005 and LOC-006), AI-013 (shared with 013), CX-MET-001 to CX-MET-008 |
+| [022 Leave, attendance and HR workflows](022-hr-workflows/spec.md) | workflows | R1 to R3 | Approved | INT-007, LVA-001 to LVA-012, HRW-001 to HRW-014 |
+| [024 Process engine (BPMN and DMN)](024-process-engine/spec.md) | workflows | R1 to R3 | Approved | WF-002, WF-003, BPM-001 to BPM-016 |
+| [025 Policy management](025-policy-management/spec.md) | knowledge | R1 to R3 | Approved | EXP-004, KNO-001, KNO-007, POL-001 to POL-018 |
+| [026 Security controls, compliance and certifications](026-security-and-compliance/spec.md) | platform | R1 to R3 | Approved | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-021, CMP-001 to CMP-004, CX-NFR-010 |
+| [027 Agent governance, tools and safety](027-agent-governance/spec.md) | ai | R1 to R3 | Approved | AI-005, AI-009, AI-010, AGV-001 to AGV-024, UC-07, UC-13 |
+| [032 Page composition: layouts, templates, component registry and page builder](032-page-composition/spec.md) | experience | R1 to R3 | Approved | CX-LAY-001 to CX-LAY-012, CX-TMP-001 to CX-TMP-010, CX-TMP-012, CX-EDT-001 to CX-EDT-015, CX-EXT-001 to CX-EXT-014, CX-GOV-001 to CX-GOV-012, CX-NFR-001 to CX-NFR-012 |
+| [033 Brands, themes, white labeling and multi-organization experience](033-themes-and-white-labeling/spec.md) | experience | R1, R2 | Approved | CX-BRD-001 to CX-BRD-015, CX-ORG-001 to CX-ORG-011, CX-TMP-011, CX-LOC-006, ADM-001 (branding) |
+| [034 AI Evaluation Layer](034-ai-evaluation/spec.md) | ai | R1 to R3 | Approved | EVL-001 to EVL-030, AI-008 (quality part), AI-010 (evidence part), UC-07, UC-13 |
 
 Open questions across these specs, with defaults: [open-questions.md](open-questions.md). Release plan: [roadmap](../docs/product/roadmap.md).
 

@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 016-service-catalogue-and-workflows |
 | Area | workflows |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (catalogue, linked apps, request forms, single-step approval, task inbox), R2 (multi-step routes, automation, triggers, service templates pack). Process engine releases are in spec 024 |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | WF-001, WF-002, WF-003, WF-004 to WF-016 (new) |
 | Use cases | UC-08 |
 | Depends on | 024 (process engine), 002 (hierarchy), 003 (directory sync for prefill and manager), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 010 (profile and reporting line), 015 (notifications), 017 (connectors) |
