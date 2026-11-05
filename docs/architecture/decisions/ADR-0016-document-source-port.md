@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Proposed |
+| Status | Accepted (2026-11-05 by Mohamed) |
 | Date | 2026-11-05 |
 | Owners | Mohamed |
 | Related specs | 011 (US9, US10, FR-023 to FR-033), 006 (US5, FR-010 to FR-015), planned 017 and 018; constitution VII, XVII, XXVII; ADR-0013 |
