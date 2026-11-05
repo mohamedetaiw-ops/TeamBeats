@@ -8,12 +8,12 @@
 | Version | 0.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (gateway pipeline, OpenRouter adapter, tenant model policy, classification routing, fallback, metering, usage view), R2 (budgets and alerts, org unit policies, private model endpoint adapter, cost analytics), R3 (air-gapped model hosting, per-tenant provider keys for dedicated installs) |
+| Target release | R1 (gateway pipeline, OpenRouter adapter, tenant model policy, classification routing, fallback, metering, usage view, `evaluation` use case and release gate on model route changes), R2 (budgets and alerts, org unit policies, private model endpoint adapter, cost analytics, evaluator worker facade), R3 (air-gapped model hosting, per-tenant provider keys for dedicated installs) |
 | Last updated | 2026-11-05 |
-| Requirement IDs | AI-002, AI-003, AI-004, AI-006, AI-011, AI-012, AI-013, AIG-001 to AIG-016 (new) |
+| Requirement IDs | AI-002, AI-003, AI-004, AI-006, AI-011, AI-012, AI-013, AIG-001 to AIG-019 (new) |
 | Use cases | UC-06, UC-07, UC-12, UC-13 |
-| Depends on | ADR-0003 (AI Gateway), 004 (authorization), 005 (entitlements), 006 (audit), 002 (hierarchy, for org unit policies), 021 (analytics) |
-| Used by | 014 (assistant and RAG), 020 (Agent Hub), 027 (agent governance), every module that calls a model |
+| Depends on | ADR-0003 (AI Gateway), 004 (authorization), 005 (entitlements), 006 (audit), 002 (hierarchy, for org unit policies), 021 (analytics), 034 (release gates for model route changes) |
+| Used by | 014 (assistant and RAG), 020 (Agent Hub), 027 (agent governance), 034 (AI evaluation judge calls), every module that calls a model |
 
 ## 1. Problem and outcome
 
@@ -37,6 +37,7 @@
 - Retrieval, indexing and citations (spec 014).
 - Agent definitions, tools and approvals (specs 020 and 027). Agents call models only through this gateway.
 - Training or fine-tuning models.
+- Measuring model and agent quality (spec 034). The gateway serves judge calls for it and waits for its gate before a model route change applies.
 - Hosting model weights in the TeamBeats cluster. Customers host their own inference; the gateway connects to it.
 
 ## 3. Actors and permissions
@@ -61,9 +62,10 @@ Layla, AI Policy Administrator at Acme, allows two models through OpenRouter for
 **Acceptance scenarios:**
 1. **Given** the platform catalogue, **When** Layla opens Model policy, **Then** she sees each model with provider, regions, retention terms, the highest classification the platform allows for it, and price per million tokens.
 2. **Given** an allowlist of two models, **When** a module requests a model outside it, **Then** the gateway denies the call with reason `model_not_allowed` and nothing is sent to a provider.
-3. **Given** default models per use case (assistant, summarize, translate, draft, embed, agent), **When** a module sends a request without naming a model, **Then** the use case default is used.
+3. **Given** default models per use case (assistant, summarize, translate, draft, embed, agent, evaluation), **When** a module sends a request without naming a model, **Then** the use case default is used.
 4. **Given** a package without `ai.model_choice`, **When** Layla opens Model policy, **Then** she can view the platform default model set but cannot change it, and the page says why.
 5. **Given** a policy change, **When** she saves it, **Then** it applies to new calls within 60 seconds and an audit event records old and new values.
+6. **Given** a change that alters the model or fallback chain behind a use case used by published agents or the assistant, **When** she saves it, **Then** it is held as proposed while the release gate of spec 034 runs, and applies within 60 seconds of a gate with no critical failure; blocking failures are listed and she can apply with a reason. Changes that only restrict (removing a model from the allowlist for a use case that has another eligible model) also run the gate, because the fallback model changes.
 
 ### User Story 2: Route by data classification (Priority: P1, R1)
 
@@ -123,7 +125,7 @@ A government tenant runs its own inference servers and must never send Confident
 3. **Given** Restricted content, **When** any logging setting is on, **Then** the full text is never stored.
 
 ### Edge cases
-- A model is removed from the catalogue or deprecated by the provider: tenants using it get a warning 30 days before, and calls move to the next model in the fallback chain on the removal date.
+- A model is removed from the catalogue or deprecated by the provider: tenants using it get a warning 30 days before, the release gate of spec 034 runs on the next model in the fallback chain during that period, and calls move to it on the removal date.
 - Provider changes its retention terms: the platform operator updates the catalogue entry, which immediately re-evaluates which classifications may use it.
 - Streaming response cut off mid-way: the caller gets a partial flag and usage is metered for the tokens received.
 - Clock or currency: cost is estimated in USD from catalogue prices; tenants can display another currency at a fixed rate they set.
@@ -148,6 +150,9 @@ A government tenant runs its own inference servers and must never send Confident
 - **AIG-014 / FR-014**: Provider credentials MUST live in the secret manager and MUST NOT appear in configuration screens after saving, logs, prompts or exports. *(constitution IV)*
 - **AIG-015 / FR-015**: The gateway MUST keep a circuit breaker per provider and adapter, and expose provider health to operators.
 - **AIG-016 / FR-016**: Callers MUST receive a typed result that distinguishes `not_in_package`, `quota_exhausted`, `budget_exhausted`, `classification_blocked`, `model_not_allowed`, `region_blocked`, `provider_unavailable`, `context_too_large`, so each feature can show the right degraded state.
+- **AIG-017 / FR-017**: The gateway MUST support the use case `evaluation` for judge calls from spec 034, with no tools, a tenant default judge model per classification, and a check that the judge differs from the model under test named in the request. Calls MUST be metered as evaluation, charged to the platform for platform and mandatory suites run by a release gate, and to the tenant otherwise.
+- **AIG-018 / FR-018**: The gateway MUST offer an internal OpenAI-compatible facade for sandboxed evaluator workers (ADR-0015), reachable only inside the deployment, accepting only short-lived tokens scoped to one tenant and the `evaluation` use case, and applying the full pipeline of FR-002. *(R2)*
+- **AIG-019 / FR-019**: Changes to the model or fallback chain behind a use case MUST publish `AiModelRouteChangeProposed` and apply only after `EvaluationGateDecided` from spec 034 reports no critical failure, or after an audited override for blocking failures. Catalogue removals and provider deprecations MUST run the same gate before the removal date.
 
 ## 6. Business and validation rules
 - Platform baseline rules (Restricted never to shared providers, metadata-only logging default, classification required) cannot be changed by any tenant.
@@ -190,7 +195,7 @@ A government tenant runs its own inference servers and must never send Confident
 The gateway is the policy point for all AI behavior. It does not decide what context to send (callers do, after authorization per constitution VII); it decides whether and where that context may go.
 
 ## 12. Integrations and events
-Publishes `AiPolicyChanged`, `AiBudgetThresholdReached`, `AiProviderCircuitOpened`, `AiProviderCircuitClosed`. Consumes `EntitlementsChanged` (spec 005). The gateway never retrieves content, so it does not consume permission events.
+Publishes `AiPolicyChanged`, `AiModelRouteChangeProposed`, `AiBudgetThresholdReached`, `AiProviderCircuitOpened`, `AiProviderCircuitClosed`. Consumes `EntitlementsChanged` (spec 005) and `EvaluationGateDecided` (spec 034). The gateway never retrieves content, so it does not consume permission events.
 
 ## 13. Audit
 
@@ -237,3 +242,4 @@ Publishes `AiPolicyChanged`, `AiBudgetThresholdReached`, `AiProviderCircuitOpene
 | AI-013 | AIG-013, US4 |
 | UC-12 | AIG-002, US5 |
 | UC-13 | US4, section 13 |
+| Spec 034 release gates and judge calls | AIG-017 to AIG-019, US1 scenario 6 |

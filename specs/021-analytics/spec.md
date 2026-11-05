@@ -8,11 +8,11 @@
 | Version | 0.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (item-level reach and acknowledgement counts inside specs 009 and 025, adoption basics for tenant admins), R2 (analytics workspace: adoption, content, communications and campaigns, search, knowledge, services and workflows, policy compliance, AI usage, location and unit dashboards, scheduled reports, export, survey and comment sentiment), R3 (connected business KPIs on location dashboards, benchmarks across anonymized tenants with consent, analytics API, governed experience experiments) |
+| Target release | R1 (item-level reach and acknowledgement counts inside specs 009 and 025, adoption basics for tenant admins), R2 (analytics workspace: adoption, content, communications and campaigns, search, knowledge, services and workflows, policy compliance, AI usage, location and unit dashboards, scheduled reports, export, survey and comment sentiment, search relevance evaluation), R3 (connected business KPIs on location dashboards, benchmarks across anonymized tenants with consent, analytics API, governed experience experiments, personalization and recommendation evaluation) |
 | Last updated | 2026-11-05 |
-| Requirement IDs | ANL-001 (was LOC-005), ANL-002 (was LOC-006), ANL-003 to ANL-022 (new), AI-013 (usage visibility, shared with spec 013), CX-MET-001 to CX-MET-008 |
+| Requirement IDs | ANL-001 (was LOC-005), ANL-002 (was LOC-006), ANL-003 to ANL-024 (new), AI-013 (usage visibility, shared with spec 013), CX-MET-001 to CX-MET-008 |
 | Use cases | UC-04, UC-08, UC-13 (usage figures only) |
-| Depends on | 002 (org units, locations), 004, 005, 006, 008, 009, 011, 012, 014, 016, 022, 023, 024, 025, 026, 032, 033, 013 (AI usage figures) |
+| Depends on | 002 (org units, locations), 004, 005, 006, 008, 009, 011, 012, 014, 016, 022, 023, 024, 025, 026, 032, 033, 013 (AI usage figures), 034 (AI quality figures, shared evaluation services) |
 
 ## 1. Problem and outcome
 
@@ -34,7 +34,7 @@
   - HR: leave patterns, attendance exceptions, onboarding step completion, exit reasons (spec 022), all aggregated.
   - Policy compliance: attestation rate per policy, unit and location, overdue counts, time to attest, exemptions (spec 025).
   - Engagement: survey and poll results, recognition counts, community activity (spec 023), sentiment trends on comments and survey free text.
-  - AI usage: requests, users, answer rate, citation rate, feedback, quota use (shared with spec 013; governance views are in agent governance spec 027).
+  - AI usage: requests, users, answer rate, citation rate, feedback, quota use (shared with spec 013), and headline AI quality scores per agent (shared with spec 034). Governance views are in spec 027 and evaluation detail in spec 034.
   - Security posture trends (spec 026): alerts, guest counts, policy weaker than baseline.
   - Experience: Core Web Vitals and frontend errors per tenant, org unit, page type, template, theme, device class and release; navigation success; template, layout and template version adoption; personalization enablement against actual use and resets; task completion, drop-off and findability outcomes (specs 008, 032 and 033).
 - Location and unit dashboard: one page per location or unit combining adoption, communications reach, policy compliance, service performance and, in R3, business KPIs from connected systems through spec 017.
@@ -42,6 +42,7 @@
 - Scheduled reports by email or Teams, as PDF or CSV.
 - Export of aggregated data, and of person-level data only where a module defines a permitted personal report (for example acknowledgement and attestation lists in specs 009 and 025).
 - Privacy controls: minimum group size, individual analytics off by default, purpose labels, retention of raw events.
+- Product experience evaluation: whether search ranking, personalization, recommendations and employee journeys deliver useful results, measured with judged query sets and outcome metrics, reusing the dataset, run and scoring services of spec 034 (R2 search, R3 personalization and recommendations).
 - Governed experience experiments (R3): controlled variants of pages or layouts for consenting users, with stable allocation and rollback.
 - AI insights: plain-language summaries of dashboard changes and sentiment classification, through the AI Gateway, on aggregated or de-identified text.
 
@@ -50,6 +51,7 @@
 - Productivity monitoring of individuals (keystrokes, screen time, idle time). Not planned.
 - Process engine monitoring for operators (instance-level views in spec 024). This spec shows aggregates exported by spec 024.
 - AI agent governance dashboards (spec 027).
+- AI evaluation suites, release gates and the evaluation dashboard (spec 034).
 
 ## 3. Actors and permissions
 
@@ -144,6 +146,18 @@ Nadia, the tenant's digital workplace lead, checks which published pages are slo
 7. **Given** two different task flows (for example "submit a request" and "find a policy"), **Then** both use the same outcome event contract for start, complete and abandon, configured without schema changes. *(CX-MET-007)*
 8. **Given** an approved experiment, **Then** only consenting users in the chosen scope are allocated, allocation is stable per user, and stopping the experiment returns everyone to the control without residue. *(CX-MET-008)*
 
+### User Story 10: Product experience evaluation (Priority: P2, R2 search, R3 personalization and recommendations)
+
+Nadia wants to know whether search actually finds the right policy, and later whether home recommendations are useful, not only whether people click.
+
+**Independent test:** create a judged query set for search, run it against two ranking configurations, and compare the scores and the changed queries.
+
+**Acceptance scenarios:**
+1. **Given** a judged query set (queries per locale with the items that should rank first, labelled by knowledge editors), **When** it runs against the search configuration of planned spec 012, **Then** the dashboard shows precision@K, recall@K and the rank of the first relevant result per locale, using the dataset and run services of spec 034, with queries run as test personas with real permissions.
+2. **Given** a proposed ranking change (best bets rules, boosts, a new embedding model), **When** it is evaluated, **Then** the scores are compared with the current configuration before it is promoted; retrieval changes used by AI answers also pass the spec 034 gate.
+3. **Given** personalization or recommendations in R3, **When** they are evaluated, **Then** usefulness is measured from outcome events (opened, completed, dismissed, reset) and judged samples, aggregated with the minimum group size, and never scores an individual employee.
+4. **Given** an employee journey defined on the outcome event contract (FR-021), **When** it is evaluated, **Then** completion, drop-off step and time to complete are compared between periods or releases.
+
 ### Edge cases and exception flows
 - Org units restructure: historical data is reported under the unit at the time of the event by default, with an option for the current structure.
 - A person moves location: their events count under the location at the time.
@@ -168,13 +182,15 @@ Nadia, the tenant's digital workplace lead, checks which published pages are slo
 - **FR-013 / ANL-013**: Sentiment analysis MUST work only on aggregated or de-identified text, follow the tenant AI policy, and never link anonymous responses to a person.
 - **FR-014 / ANL-014**: Raw analytics events MUST be kept for 13 months by default (tenant configurable between 3 and 25 months), and aggregates for the life of the tenant.
 - **FR-015 / ANL-015**: Analytics MUST NOT include keystroke, idle time, screen time or similar productivity monitoring.
-- **FR-016 / ANL-016**: AI usage figures MUST be shared with spec 013 so that one number is shown everywhere. *(AI-013)*
+- **FR-016 / ANL-016**: AI usage figures MUST be shared with spec 013 and AI quality figures with spec 034, so that one number is shown everywhere. *(AI-013)*
 - **FR-017 / ANL-017**: The shared event schema MUST cover page performance, navigation success, key interactions and UI errors for every registered component, emitted through the component event contract of spec 032 with no component-specific analytics code. *(CX-MET-001)*
 - **FR-018 / ANL-018**: Experience telemetry MUST minimize personal data, follow the tenant's analytics policy and retention (FR-014), and stop nonessential events when the tenant disables them. *(CX-MET-002)*
 - **FR-019 / ANL-019**: Experience dashboards MUST report template usage, layout distribution and template version adoption by scope, and personalization enablement against use and resets, at aggregate level only. *(CX-MET-003, CX-MET-004)*
 - **FR-020 / ANL-020**: Performance dashboards MUST show Core Web Vitals by device class, geography where allowed, theme, organization, page type and release, and flag published variants below target. Frontend error views MUST show redacted client errors, failed component boundaries and release version with correlation IDs. *(CX-MET-005, CX-MET-006, CX-NFR-009)*
 - **FR-021 / ANL-021**: Task completion, drop-off and findability outcomes SHOULD be configurable on one outcome event contract without component-specific schema changes. *(CX-MET-007)*
 - **FR-022 / ANL-022**: Experience experiments COULD be run only when a tenant admin approves them, only for users who consented, with stable, scoped and reversible allocation, never on mandatory or critical content, and never to measure individuals. *(CX-MET-008, R3)*
+- **FR-023 / ANL-023**: Search relevance MUST be measurable with judged query sets per locale (precision@K, recall@K, rank of first relevant result), run as test personas with real permissions on the dataset and run services of spec 034, and compared between search configurations before a change is promoted. *(R2)*
+- **FR-024 / ANL-024**: Personalization, recommendations and employee journeys SHOULD be evaluated for usefulness from outcome events and judged samples, aggregated with the minimum group size, without scoring individuals. *(R3 for personalization and recommendations, R2 for journeys)*
 
 ## 6. Business and validation rules
 - Reach = unique readers in the audience / audience size at the time of the reading period.
@@ -208,7 +224,7 @@ Nadia, the tenant's digital workplace lead, checks which published pages are slo
 | `analytics.export` | off | off | on |
 | `analytics.kpi_tiles` (connected business KPIs) | off | off | on |
 | `analytics.api` | off | off | on |
-| `analytics.experience` (experience quality, template adoption and personalization dashboards) | off | on | on |
+| `analytics.experience` (experience quality, template adoption and personalization dashboards, product experience evaluation) | off | on | on |
 | `analytics.experiments` (R3) | off | off | on |
 
 ## 10. UX, localization and accessibility
@@ -274,6 +290,7 @@ Nadia, the tenant's digital workplace lead, checks which published pages are slo
 | CX-MET-006 | FR-020, US9 |
 | CX-MET-007 | FR-021, US9 |
 | CX-MET-008 | FR-022, US9 |
+| Product experience evaluation (new) | FR-023, FR-024, US10 |
 
 ## Review checklist
 - [x] No implementation details
