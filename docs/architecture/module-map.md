@@ -1,6 +1,6 @@
 # Module map: bounded contexts
 
-Status: Proposed (with ADR-0013)
+Status: Accepted (with ADR-0013)
 Date: 2026-11-05
 
 This is the authoritative list of backend modules (constitution XIV). Each module is one bounded context: it owns its data in its own PostgreSQL schema, exposes a `Contracts` project for synchronous calls, and publishes events through the outbox. No module reads another module's tables. A new module, or moving data between modules, updates this file in the same change.

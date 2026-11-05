@@ -5,7 +5,7 @@ Source: AI Intranet Product Foundation v0.1, section 17, plus review findings (d
 Source rules C-01..C-20 are all carried over and grouped into Parts A to E.
 Added beyond the source: V development authentication isolation, XI untrusted content, XII AI-native not AI-dependent, XIII AI in every package, XXI backend entitlements, XXII dependency licensing, XXV data classification and privacy
 Templates to keep aligned: .specify/templates/spec-template.md, plan-template.md, tasks-template.md
-Status: RATIFIED 2026-11-04 by Mohamed. Binding. Version 1.1.0 (Part F, and expansions of II, III, XIV, XVII) is proposed and binding once Mohamed approves it.
+Status: RATIFIED by Mohamed (1.0.0 on 2026-11-04, 1.1.0 on 2026-11-05). Binding.
 -->
 
 # TeamBeats Constitution
@@ -308,4 +308,4 @@ Verified by: frontend lint rules for import boundaries between feature folders a
 - **Compliance.** Every plan has a Constitution Check gate. Every pull request review confirms compliance. Deviations must be listed in the plan's Complexity Tracking table with a justification, or the plan is not approved.
 - **Owners.** Product owner and architecture owner: Mohamed (until named otherwise).
 
-**Version**: 1.1.0 (proposed) | **Ratified**: 2026-11-04 by Mohamed | **Last amended**: 2026-11-05, pending Mohamed's approval
+**Version**: 1.1.0 | **Ratified**: 2026-11-04 by Mohamed | **Last amended**: 2026-11-05 by Mohamed

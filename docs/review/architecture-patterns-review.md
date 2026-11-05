@@ -116,9 +116,9 @@ Every row agrees with the constitution. "Business logic inside React components"
 | Agents under scoped identities, tool permissions, auditable execution | X, 027. |
 | Module boundaries enforced by structure and architecture tests | XIV, extended to layering inside modules and to the frontend (XXX). |
 
-## 3. Constitution amendments (need Mohamed's approval)
+## 3. Constitution amendments (approved by Mohamed 2026-11-05)
 
-Proposed version 1.1.0 (MINOR: two principles added, three expanded, none removed or redefined). Merging the pull request that carries them is the approval, as with earlier ADRs.
+Version 1.1.0 (MINOR: two principles added, four expanded, none removed or redefined).
 
 1. **II Organization scope** expanded: events, jobs and cache keys about organization-owned data carry the org unit ID.
 2. **III Central authorization** expanded: roles and scopes may carry conditions over a fixed attribute catalogue, conditions only narrow, policies are data, never tenant code.

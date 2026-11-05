@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Proposed |
+| Status | Accepted (2026-11-05 by Mohamed) |
 | Date | 2026-11-05 |
 | Owners | Mohamed |
 | Related specs | all backend specs; constitution XIV, XXIX |
