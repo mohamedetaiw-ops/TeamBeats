@@ -8,12 +8,12 @@
 | Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R0 (dev auth), R1 (Entra ID sign-in and Entra ID directory sync), R2 (Google, SAML, AD FS sign-in, on-premises AD sync) |
+| Target release | R0 (dev auth), R1 (Entra ID sign-in, Entra ID directory sync, delegated Microsoft Graph access for mail and calendar), R2 (Google, SAML, AD FS sign-in, on-premises AD sync) |
 | Last updated | 2026-11-05 |
-| Approved | 2026-11-04 by Mohamed |
+| Approved | 2026-11-04 by Mohamed; FR-016 2026-11-05 by Mohamed |
 | Requirement IDs | IAM-001 to IAM-007, IAM-009, IAM-010, INT-007 (directory part) |
 | Use cases | UC-03, UC-09 (directory part) |
-| Depends on | 001, 002, 004, 017 (connector framework, for on-premises AD) |
+| Depends on | 001, 002, 004, 017 (connector framework, for on-premises AD), 018 (delegated Microsoft Graph access) |
 
 ## 1. Problem and outcome
 
@@ -136,6 +136,7 @@ The tenant admin connects Acme's directory once. New hires can sign in on day on
 - **FR-013**: Disabling or removing an account in the directory MUST disable the tenant membership and revoke sessions at the next sync. A user disabled by the directory MUST NOT be re-enabled by a product admin while the directory still has the account disabled.
 - **FR-014**: Directory-owned user fields and groups MUST be read-only in the product. Product-owned fields and groups MUST never be changed by sync.
 - **FR-015**: The product MUST NOT accept AD passwords. Active Directory sign-in MUST go through a federated provider (Entra ID or AD FS).
+- **FR-016**: When a Microsoft 365 connection feature needs delegated Microsoft Graph access as the signed-in employee (mail, calendar and rooms in spec 018), the Entra ID sign-in MUST obtain it by incremental consent for only that feature's permissions, without a second sign-in. Delegated tokens MUST be held server side, encrypted, per tenant membership, never sent to the browser or logged, and deleted at sign-out, session revocation, membership disable or employee disconnect, unless the employee opted in to signed-out access (spec 018 FR-023).
 
 ## 6. Business rules
 - Tenant discovery: user enters work email or uses the tenant's URL. The email domain maps to a tenant's configured identity provider. Domain-to-tenant mapping must be unique in a shared installation.
@@ -213,6 +214,7 @@ Entra ID is read through Microsoft Graph with application permissions limited to
 2. Decided 2026-11-04: role changes take effect in sessions within 5 minutes.
 3. Decided 2026-11-04: SAML is available in all packages.
 4. Active Directory sign-in and sync (US5, US6, FR-011 to FR-015) need Mohamed's approval before implementation. Default: AD sign-in is federated only (no LDAP password bind), Entra ID sync in R1, on-premises AD in R2.
+5. Decided 2026-11-05 (Mohamed): delegated Microsoft Graph access for Microsoft 365 features (FR-016, spec 018) is approved for R1, with session-lifetime tokens and a separate employee opt-in for signed-out access.
 
 ## 18. Traceability
 
@@ -226,3 +228,4 @@ Entra ID is read through Microsoft Graph with application permissions limited to
 | IAM-010 | FR-008 |
 | INT-007 (directory part) | FR-011 to FR-014, US6 |
 | IAM-006 (AD FS) | US5, FR-015 |
+| INT-002 (delegated Graph access) | FR-016 |

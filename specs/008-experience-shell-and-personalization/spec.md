@@ -29,7 +29,7 @@ Source: [Composable Intranet Experience requirements](../../docs/product/composa
 - Shared experience states and messaging: loading, success, empty, error, permission denied, offline, unsupported; announcements, confirmations, toasts and dialogs with priority and dismissal rules.
 - Interaction standards every component inherits: action hierarchy, validation, feedback timing, destructive actions, input parity, copy rules, density, motion, skeletons, assistance, touch targets, selection and bulk actions.
 - Navigation: global, organization, section and contextual menus configured independently; information architecture (labels, hierarchy, slugs); breadcrumbs from the IA; cross-scope indicator; favorites and recents; dead-end recovery; in-context help and guided tours.
-- Employee home page: a page from spec 032 with protected regions (mandatory and critical items) and delegated personal regions. Home components owned by other modules include My services strip (016), task inbox summary (016), news and announcements (009), leave calendar (022), people and newcomers (010) and tool box utilities (weather, world clock, time zone converter, owned here).
+- Employee home page: a page from spec 032 with protected regions (mandatory and critical items) and delegated personal regions. Home components owned by other modules include My services strip (016), task inbox summary (016), news and announcements (009), leave calendar (022), My mail and My calendar from the employee's Outlook (018), people and newcomers (010) and tool box utilities (weather, world clock, time zone converter, owned here).
 - Personalization: preference profile, admin personalization policy per page, region, setting and audience; add, hide, remove, reorder and resize personal placements; presets; undo and reset; device-specific choices; export; safe suggestions; behavioral personalization only with explicit policy and consent.
 - Audience targeting of pages and placements, with rule preview and default fallback.
 
@@ -192,6 +192,7 @@ Interaction standards
 Employee home
 - **FR-049**: The employee home MUST be a page of spec 032 with at least one protected region for mandatory and critical items and at least one delegated personal region by default. *(EXP-001)*
 - **FR-050**: The tool box utilities (weather, world clock, time zone converter) MUST be registered as platform components through spec 032 manifests; other home components belong to their modules. *(EXP-001)*
+- **FR-051**: When the tenant turns on Microsoft 365 Mail and Calendar (spec 018), the default home template MUST include My calendar and My mail in the personal region for employees with a mailbox, and the shell MAY show an unread mail badge in a utility region. Employees can remove, reorder or re-add them like any personal placement. *(EXP-001, INT-002)*
 
 ## 6. Business and validation rules
 - Preferences never grant access, never hide mandatory or critical content, and never change entitlements.
@@ -327,7 +328,8 @@ The shell, shared states, navigation, quick navigation, favorites, home personal
 | CX-INT-010 | FR-046 |
 | CX-INT-011 | FR-047 |
 | CX-INT-012 | FR-048, US5 |
-| EXP-001 | FR-001, FR-049, FR-050 |
+| EXP-001 | FR-001, FR-049, FR-050, FR-051 |
+| INT-002 (home components) | FR-051, spec 018 |
 | EXP-008 | FR-012, FR-018 (with spec 007) |
 
 ## Review checklist
