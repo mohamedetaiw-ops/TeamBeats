@@ -12,7 +12,7 @@
 | Last updated | 2026-11-05 |
 | Requirement IDs | AI-005, AI-009, AI-010, UC-07, UC-13, AGV-001 to AGV-024 (new) |
 | Use cases | UC-07, UC-13 |
-| Depends on | ADR-0011 (agent runtime), 013 (AI Gateway), 020 (Agent Hub), 004 (authorization), 005 (entitlements), 006 (audit), 002 (hierarchy), 016 (task inbox), 024 (process engine), 017 (connectors), 015 (notifications) |
+| Depends on | ADR-0011 (agent runtime), 013 (AI Gateway), 020 (Agent Hub), 034 (AI evaluation), 004 (authorization), 005 (entitlements), 006 (audit), 002 (hierarchy), 016 (task inbox), 024 (process engine), 017 (connectors), 015 (notifications) |
 
 ## 1. Problem and outcome
 
@@ -33,10 +33,11 @@
 - Execution records, monitoring and audit.
 - Agent Security Center and incidents.
 - Emergency controls.
-- Risk classes and mandatory safety suites used by the publishing gate in spec 020.
+- Risk classes, and the content of the mandatory safety suites that the evaluation gate of spec 034 runs for spec 020 publishing.
 
 **Out of scope:**
-- Agent definitions, Studio, templates, marketplace and evaluation workflow (spec 020).
+- Agent definitions, Studio, templates and marketplace (spec 020).
+- Evaluation engine, datasets, scoring, release gates and production evaluation (spec 034). Governance decides what an agent may do; evaluation measures whether it behaves correctly; execution records here and traces show what happened.
 - Model routing, budgets and provider rules (spec 013).
 - Connector authentication and sync (spec 017).
 - General audit storage and sealing (spec 006, ADR-0008). This spec defines the agent events written to it.
@@ -161,7 +162,7 @@ Default approval rules (tenants can make them stricter, not looser):
 
 **Acceptance scenarios:**
 1. **Given** an agent definition, **When** it is saved, **Then** its risk class is computed from the table and cannot be lowered by hand.
-2. **Given** a version submitted for review, **When** evaluation runs, **Then** these suites are mandatory and must pass 100%: permission isolation (cross-tenant and cross-org probes, revoked permission), prompt injection (the constitution fixtures plus tenant-added cases), unsafe actions (blocked operations in US4), data classification (Confidential and Restricted fixtures never reach disallowed models), and tool parameter validation.
+2. **Given** a version submitted for review, **When** the release gate of spec 034 runs, **Then** these suites run as critical suites and must pass 100%: permission isolation (cross-tenant and cross-org probes, revoked permission), prompt injection (the constitution fixtures plus tenant-added cases), unsafe actions (blocked operations in US4), data classification (Confidential and Restricted fixtures never reach disallowed models), and tool parameter validation.
 3. **Given** a High risk agent, **When** it is published, **Then** the security officer is notified and the agent appears on the Security Center watch list for 30 days.
 
 ### Edge cases
@@ -189,13 +190,13 @@ Default approval rules (tenants can make them stricter, not looser):
 - **AGV-013 / FR-013**: Retrieved content, connector responses, tool outputs, uploads and web content MUST be passed to the model as marked untrusted data, after the platform, tenant and agent instructions, and MUST NOT be able to change instructions, tools, scope or approval rules. *(constitution XI)*
 - **AGV-014 / FR-014**: Output rendering MUST NOT load external images or active content from model output, and MUST show links outside the tenant allowlist as plain text.
 - **AGV-015 / FR-015**: The runtime MUST enforce per-run limits on tool calls (default 20), steps (default 40), duration (default 5 minutes for interactive, 60 minutes for L4), and cost (spec 013 budget), and per-agent daily limits.
-- **AGV-016 / FR-016**: Every run MUST produce an execution record with the fields in US6, linked by correlation ID to gateway calls (013) and audit events (006). *(AI-010)*
+- **AGV-016 / FR-016**: Every run MUST produce an execution record with the fields in US6, linked by correlation ID to gateway calls (013) and audit events (006), and MUST record the ordered steps (tool calls, parameters as masked, approvals, confirmations, retries, handoffs, denials) that spec 034 uses for trajectory evaluation. Evaluation runs MUST be marked as such. *(AI-010)*
 - **AGV-017 / FR-017**: Agent data classification MUST be capped per agent; sources above the cap MUST be excluded at retrieval, and model calls MUST follow spec 013 routing. *(constitution IX, XXV)*
 - **AGV-018 / FR-018**: The tenant agent policy MUST cover the settings in US8, with org unit policies that only restrict, and automatic suspension of published agents that break a new policy.
 - **AGV-019 / FR-019**: The mandatory platform baseline (US8 scenario 2) MUST be present in every package and MUST NOT be configurable. *(constitution XIII)*
 - **AGV-020 / FR-020**: Emergency controls MUST include: suspend agent, tenant kill switch, disable tool, disable connector, revoke agent tokens, stop a run, roll back version, and a platform switch for a template or tool, with the timings in US7.
 - **AGV-021 / FR-021**: Risk class MUST be computed from the rules in US9 and drive the publishing rules of spec 020.
-- **AGV-022 / FR-022**: The mandatory safety suites in US9 MUST exist, run on every agent version before publish, and run nightly for High risk agents.
+- **AGV-022 / FR-022**: The mandatory safety suites in US9 MUST exist, run as critical suites in the spec 034 gate on every agent version before publish, and run nightly for High risk agents.
 - **AGV-023 / FR-023**: The Agent Security Center MUST provide run search, anomaly alerts, incidents, a watch list, and evidence export. *(R2, UC-13)*
 - **AGV-024 / FR-024**: L4 autonomy MUST only run as agent tasks inside a published BPMN process (024) that a process owner and the AI Policy Administrator have both approved for autonomous agent steps. *(R3)*
 
@@ -242,10 +243,11 @@ Default approval rules (tenants can make them stricter, not looser):
 
 ## 11. AI behavior
 - Platform safety instructions are fixed text maintained by the platform, versioned and tested; tenants cannot edit them.
+- The controls in this spec run inline on every request. Quality evaluation in spec 034 runs asynchronously and never replaces them.
 - The agent explains a denial in plain words ("I cannot do that because your organization requires approval") without revealing policy internals or hidden resources (spec 004 not-found rule).
 
 ## 12. Integrations and events
-Publishes `AgentSuspended`, `AgentResumed`, `AgentKillSwitchActivated`, `ToolDisabled`, `AgentRunCompleted`, `AgentActionAwaitingApproval`, `AgentIncidentOpened`. Consumes `ResourcePermissionChanged`, `RoleAssignmentChanged` (004), `UserDeprovisioned` (003), `ConnectorDisabled` (017), `AiPolicyChanged` (013).
+Publishes `AgentSuspended`, `AgentResumed`, `AgentKillSwitchActivated`, `ToolDisabled`, `ToolVersionRegistered`, `AgentRunCompleted`, `AgentActionAwaitingApproval`, `AgentIncidentOpened`. Consumes `ResourcePermissionChanged`, `RoleAssignmentChanged` (004), `UserDeprovisioned` (003), `ConnectorDisabled` (017), `AiPolicyChanged` (013).
 
 ## 13. Audit
 
@@ -298,4 +300,4 @@ These cases follow the OWASP agentic AI threat list and the NIST Generative AI p
 | UC-07 | US1 to US4 |
 | UC-13 | US6, FR-023 |
 | Governance plan epics 7, 8, 9, 10, 11 | FR-005 to FR-024 |
-| Governance plan essentials 1 to 10 | 1 FR-002, FR-004; 2 FR-002; 3 FR-017; 4 FR-005, FR-007; 5 FR-010, FR-011; 6 FR-016; 7 spec 013 US6; 8 FR-013, FR-014; 9 FR-022, spec 020 FR-009; 10 FR-020 |
+| Governance plan essentials 1 to 10 | 1 FR-002, FR-004; 2 FR-002; 3 FR-017; 4 FR-005, FR-007; 5 FR-010, FR-011; 6 FR-016; 7 spec 013 US6; 8 FR-013, FR-014; 9 FR-022, spec 020 FR-009, spec 034 EVL-018; 10 FR-020 |

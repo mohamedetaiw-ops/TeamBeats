@@ -112,6 +112,11 @@
 | `ai.agents.mcp` | flag | off | off | on |
 | `ai.governance.advanced` | flag | off | on (org unit agent policies, anomaly alerts) | on |
 | `ai.governance.security_center` | flag | off | off | on (incidents, watch list, evidence export) |
+| `ai.evals.advanced` | flag | off | on (custom rubrics, weighted scores, organization datasets, cross-model comparisons) | on |
+| `ai.evals.production` | flag | off | on (production evaluation, drift alerts, review queues; R2) | on |
+| `ai.evals.business_outcomes` | flag | off | on (R2) | on |
+| `ai.evals.experiments` | flag | off | off | on (A/B and champion and challenger comparisons; R2) |
+| `ai.evals.trace_export` | flag | off | off | on (R2) |
 | `ai.model_choice` | flag | off | on | on |
 | `ai.models.private_endpoint` | flag | off | on | on |
 | `ai.budgets` | flag | on (tenant budget) | on | on |
@@ -125,7 +130,7 @@
 | `analytics.export` | flag | off | off | on |
 | `deployment.on_prem` | flag | off | off | on |
 
-Feature specs add their own keys in their section 9: `org.*` (002), `identity.*` (003), `authz.*` (004), `content.*` (009), `experience.*` (008, 032, 033), `docs.*` and `records.*` (011), more `ai.*` keys (013, 020, 027), `workflow.*` (016, 024), more `analytics.*` keys (021), `hr.*` (022), `policy.*` (025), `security.*`, `compliance.*` and `deployment.region_choice` (026). Those keys join this seed data when their spec is approved. `workflow.advanced` in this table is the multi-step workflow key used by spec 016.
+Feature specs add their own keys in their section 9: `org.*` (002), `identity.*` (003), `authz.*` (004), `content.*` (009), `experience.*` (008, 032, 033), `docs.*` and `records.*` (011), more `ai.*` keys (013, 020, 027, 034), `workflow.*` (016, 024), more `analytics.*` keys (021), `hr.*` (022), `policy.*` (025), `security.*`, `compliance.*` and `deployment.region_choice` (026). Those keys join this seed data when their spec is approved. `workflow.advanced` in this table is the multi-step workflow key used by spec 016.
 
 Commercial note: values and quota numbers still need commercial confirmation (foundation open decision 1, open items C1 and C2). They are data in package definitions, so they do not block implementation. This table is the seed data for R0.
 
