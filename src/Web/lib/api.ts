@@ -42,3 +42,5 @@ export type Me = {
 };
 
 export type NavigationSection = { key: string; labelKey: string; path: string; wholeTenant: boolean };
+
+export type SignInOptions = { sso: boolean; kind: string | null; displayName: string | null };
