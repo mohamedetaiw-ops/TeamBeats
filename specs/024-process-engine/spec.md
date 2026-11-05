@@ -182,7 +182,7 @@ Mona in procurement draws "Purchase to pay" in the modeler: a user task for the 
 |---|---|
 | `workflow.engine_core` | All packages: engine running approval routes compiled by spec 016 |
 | `workflow.bpmn` | Workplace Plus and above: modeler, full subset except R3 items, DMN, messages, timers, incidents, monitoring |
-| `workflow.advanced_process` | Enterprise & Government: compensation, instance migration, BPMN import from other tools, external engine adapter |
+| `workflow.bpmn_advanced` | Enterprise & Government: compensation, instance migration, BPMN import from other tools, external engine adapter |
 | `workflow.max_active_instances` | Quota per package (commercial data) |
 
 ## 10. UX, localization and accessibility

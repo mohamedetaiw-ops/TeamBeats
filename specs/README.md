@@ -43,9 +43,9 @@ Each spec folder now has `spec.md` (Approved), `plan.md` and `tasks.md`. Shared 
 |---|---|---|
 | 008 Employee home and personalization | R1 | EXP-001, EXP-003. Widgets the user can add, remove and reorder; task badge; My services strip; leave calendar widget; tool box (weather, world clock). Widget catalogue that admins switch on without development, shared with the page builder in 009; personal feed driven by follows and preferences from 009 |
 | 010 Employee directory and org chart | R1 | EXP-005, EXP-006, UC-05. Profile fields and reporting line from AD (spec 003), My team, newcomers. Skills and expertise, badges from recognition (023), out of office status from leave (022) |
-| 012 Search and retrieval | R1 | KNO-002 to KNO-006. Type-ahead; indexes people, pages, documents, policies, knowledge articles and services; AI summary of top results; best bets; federated results from connected systems (SharePoint, Google Drive, ticketing) with source permissions; search analytics feed to 021 |
+| 012 Search and retrieval | R1 | KNO-002 to KNO-006. Type-ahead; indexes people, pages, documents, policies, knowledge articles and services; AI summary of top results; best bets; federated results from connected systems (SharePoint, Google Drive, ticketing) with source permissions; search analytics feed to 021. Sets the KNO-006 synchronization objective that specs 009 and 011 rely on: permission changes and deletions reach search and vector indexes within 5 minutes by default |
 | 014 AI assistant and RAG | R1 | AI-005, AI-007, KNO-007, UC-06. The assistant is the universal entry point and routes requests to agents (spec 020 US7); it holds no tools of its own |
-| 015 Notifications and email | R1 | INT-008 (new NOT- IDs). In-app notification centre replaces the old "Intra mail" inbox. Channels: in-app, email, Teams, mobile push, digital signage feed; user channel preferences with mandatory messages exempt; used by campaigns in 009 |
+| 015 Notifications and email | R1 (in-app and email), R2 (Teams, mobile push, digital signage) | INT-008 (new NOT- IDs). In-app notification centre replaces the old "Intra mail" inbox. Channels: in-app, email, Teams, mobile push, digital signage feed; user channel preferences with mandatory messages exempt; used by campaigns in 009 |
 | 017 Connector framework | R2 | INT-001, INT-009, INT-010. Custom REST API connectors; Slack as a notification and share channel; clock data and ERP hand-off used by 022; KPI tiles used by 021 |
 | 018 Microsoft 365 and SharePoint | R2 | INT-002, INT-003, UC-10 |
 | 019 HR integration | R2 | INT-007, UC-09. Payslip view (read-only, Confidential), HR record prefill; AD covers the directory part (specs 002, 003) |
@@ -93,8 +93,8 @@ Source: functional review of the current Link Development intranet (Performly "I
 | Pending tasks, subordinates' tasks | Task inbox (016) | R1 |
 | Manage replacement (delegate while away) | Delegation (016) | R1 |
 | Payslip | 019 (read from payroll or HR) | R2 |
-| Training and Udemy requests, HR appointments, resignation | Form services (016); Udemy as linked app | R1 form, R2 templates |
-| Expenses, purchase request, business cards, transportation, maintenance, travel, parking, referrals | Form services from the starter templates (016); ERP hand-off via 017 | R2 |
+| Training and Udemy requests, HR appointments, resignation | Form services (016); Udemy as linked app; an approved resignation starts the offboarding journey (022) | R1 form, R2 templates |
+| Expenses, purchase request, business cards, transportation, maintenance, travel, parking, referrals | Form services from the starter templates (016); expense claims with policy limits and receipts in 022; ERP hand-off via 017 | R2 |
 | Meeting room booking | Microsoft 365 room mailboxes through 018 | R2 |
 | Help Desk, VPN request, Es2alny FAQ | Help Desk as linked app or form service (016); VPN as form service; FAQ answered by the AI assistant (014) | R1 |
 | Announcements, news, condolences, policy notices | 009 | R1 |

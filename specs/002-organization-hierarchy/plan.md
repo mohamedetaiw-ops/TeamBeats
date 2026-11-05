@@ -49,3 +49,13 @@ Cross-tenant IDs return 404 (indistinguishable from not found).
 - Org admin scope: move inside scope ok, into sibling denied, out of scope source denied.
 - Membership: primary uniqueness, membership requires tenant membership, ended membership not active.
 - Warning (not error) for unusual type placement.
+
+## Directory mapping (R1 Entra ID, R2 on-premises AD; starts after US5 and FR-010 to FR-014 are approved)
+- Owner: `Tenancy` module. Directory reads come from the `Identity` module's directory connection (spec 003) through a published contract `IDirectoryReader` (units, attribute values, group lists, deltas). Tenancy never calls Microsoft Graph or LDAPS itself (constitution XVII).
+- Data model additions (schema `tenancy`): `org_unit.owner (product, directory, hr)` and `owner_connection_id`; `org_membership.owner` and `owner_connection_id`; `directory_mapping` (`tenant_id`, `connection_id`, `strategy (ou_path, attributes, admin_units, groups)`, `base_dn`, `attributes jsonb`, `alias_rules jsonb`, `deletion_threshold_pct`, `schedule_minutes`); `directory_sync_run` (`tenant_id`, `id`, `connection_id`, `mode (preview, apply)`, `started_at`, `finished_at`, `outcome`, `counts jsonb`, `warnings jsonb`, `delta_token_ref`); `directory_unmapped` (users and values the mapping could not place).
+- Sync job: one message per tenant and connection on the outbox, with tenant context set by the worker. Steps: read delta from `IDirectoryReader`, compute the diff against directory-owned rows, check the deletion threshold, then apply in one transaction per batch of 500 changes. Preview runs the same diff and stores it without applying.
+- Normalization for attribute strategy: trim, collapse spaces, case-fold, Unicode NFKC, then alias rules. The normalized path is the `external_id`.
+- Ownership guard: rename, move and end endpoints refuse rows whose `owner` is not `product` (409 with the owning source in the body).
+- HR versus directory: a tenant setting `hierarchy_source (product, directory:<connection>, hr)`; only that source may create or move units (FR-014).
+- Events: `DirectorySyncCompleted` with counts; reuse `OrganizationUnitMoved` and `OrganizationMembershipChanged` for each applied change.
+- Tests: each strategy on a fixture directory (3 companies, 12 departments, 200 users); rename and move picked up by delta; case and alias normalization; disappearing value with children is flagged, not deactivated; threshold breach stops the run with nothing applied; directory-owned rows refuse product edits; product-only units untouched; two connections with the same OU names do not collide; a sync for tenant A never writes tenant B rows; org admin can read but not change the mapping.

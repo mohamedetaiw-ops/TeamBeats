@@ -195,7 +195,7 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 - **FR-016 / PUB-016**: Comments, reactions, mentions and hashtags MUST be configurable per site and content type, with moderation, reporting and retention.
 - **FR-017 / PUB-017**: Users MUST be able to follow sites and topics and set feed preferences. Recommendations MUST only use the user's own signals and permitted items, and MUST NOT hide mandatory or critical content.
 - **FR-018 / PUB-018**: Event items MUST support date and time with time zone, location or online link, capacity, registration, waitlist and calendar file download.
-- **FR-019 / PUB-019**: All published items MUST be indexed for search (spec 012) with their audience, permissions, locale, version and classification, and removed from the index within the KNO-006 objective when unpublished or restricted.
+- **FR-019 / PUB-019**: All published items MUST be indexed for search (spec 012) with their audience, permissions, locale, version and classification, and removed from the index within the KNO-006 objective (5 minutes by default, owned by spec 012) when unpublished or restricted.
 - **FR-020 / PUB-020**: Retention MUST be configurable per content type: keep versions for a period, then delete old versions or the whole item, with legal hold (spec 011) taking precedence. *(ADM-003)*
 
 ## 6. Business and validation rules
@@ -231,8 +231,8 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 | `content.core` (news, pages, targeting, versions, one-step approval) | on | on | on |
 | `content.critical_ack` (critical announcements with acknowledgement) | on | on | on |
 | `content.multistep_approval` | off | on | on |
-| `content.sites` (max sites) | 3 | 25 | unlimited |
-| `content.page_builder` | basic layouts | full | full |
+| `content.max_sites` (limit) | 3 | 25 | unlimited |
+| `content.page_builder` (all widgets, templates, custom layouts) | off (one, two and three column layouts with content widgets only) | on | on |
 | `content.campaigns` | off | on | on |
 | `content.ai_translation` | off | on | on |
 | `ai.authoring` (AI drafting and rewrite, counts against AI quota) | on | on | on |

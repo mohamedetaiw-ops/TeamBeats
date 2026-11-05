@@ -215,9 +215,9 @@ Package names map to the editions in the governance plan: Workplace (Essential),
 | `ai.agents.advanced` | No | No | Advanced templates (13 to 15) |
 | `ai.agents.custom` | No | Yes, limited by `ai.agents.max_custom` | Yes |
 | `ai.agents.marketplace` | Yes | Yes | Yes |
-| `ai.agents.orchestration` | No | Platform-defined handoffs only | Yes |
+| `ai.agents.orchestration` | No | Handoffs declared in platform templates only | Yes, also in customer-built agents |
 | `ai.agents.max_published` | Quota (commercial data) | Quota | Quota |
-| `analytics.advanced` | Basic agent analytics | Detailed | Advanced |
+| `analytics.advanced` | No (basic agent analytics from `analytics.core`) | Yes (detailed agent analytics) | Yes |
 
 Governance features in spec 027 have a mandatory baseline in every package.
 
@@ -268,7 +268,7 @@ All templates run on the common runtime. They are configurations and capability 
 | 9 | Learning and Development | R2 | `ai.agents.department` | L1 | Learning library, training requests; LMS through connector | 016, 017 |
 | 10 | Procurement | R2 | `ai.agents.department` | L3 | Procurement policy, purchase requests, supplier onboarding, status from ERP | 016, 017, 024 |
 | 11 | Finance and Expenses | R2 | `ai.agents.department` | L2 | Expense policy, claim preparation, reimbursement status | 016, 017 |
-| 12 | Internal Communications | R2 | `ai.agents.department` | L1 (publishing needs owner approval) | Draft announcements, propose audiences, summarize feedback, multilingual versions | 009, 023 |
+| 12 | Internal Communications | R2 | `ai.agents.department` | L1; L3 for publishing, with communications owner approval (needs `ai.agents.write_tools`) | Draft announcements, propose audiences, summarize feedback, multilingual versions | 009, 023 |
 | 13 | Legal and Compliance | R3 | `ai.agents.advanced` | L0 | Policy interpretation, contract review help, compliance evidence retrieval | 011, 025, 026 |
 | 14 | Executive Intelligence | R3 | `ai.agents.advanced` | L0 | Department KPIs, risks, activities, executive briefings | 021 |
 | 15 | Process Automation | R3 | `ai.agents.advanced` | L4 within approved processes | Multi-step workflows across applications, run as BPMN processes (024) | 017, 024 |

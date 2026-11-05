@@ -8,9 +8,9 @@
 | Version | 0.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (tenant security policy: IP rules, session rules, MFA assurance check, step-up for sensitive actions; encryption baseline; security alerts; trust documents), R2 (guest users and secure extranet spaces, SIEM streaming, sensitive data detection, compliance projects and control library, data residency choice, SOC 2 Type II and ISO 27001:2022 certificates in hand), R3 (customer-managed encryption keys, four-eyes admin changes, national government certifications, on-prem hardening pack) |
+| Target release | R1 (tenant security policy: IP rules, session rules, MFA assurance check, step-up for sensitive actions; encryption baseline; security alerts; trust documents), R2 (guest users and secure extranet spaces, SIEM streaming, sensitive data detection, compliance projects and control library, data residency choice, ISO 27001:2022 certificate and SOC 2 Type I report in hand by general availability, SOC 2 Type II six months after), R3 (customer-managed encryption keys, four-eyes admin changes, national government certifications, on-prem hardening pack) |
 | Last updated | 2026-11-05 |
-| Requirement IDs | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-020 and CMP-001 to CMP-010 (new); foundation section 14 (Security, Privacy), 14.2, and open business decision 9 (certifications and residency) |
+| Requirement IDs | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-020 and CMP-001 to CMP-004 (new); foundation section 14 (Security, Privacy), 14.2, and open business decision 9 (certifications and residency) |
 | Use cases | UC-01, UC-03, UC-14 |
 | Depends on | 001 (tenants, break-glass), 003 (identity), 004 (authorization), 005 (entitlements), 006 (audit), 009 and 011 (content and documents shared with guests), 015 (notifications), 021 (security dashboards), 025 (policy to control mapping) |
 
@@ -18,7 +18,7 @@
 
 **Problem:** Enterprise, banking, healthcare and government buyers do not shortlist an intranet without a security questionnaire, certificates and specific controls: IP restrictions, strong authentication, encryption with their own keys, audit logs, data residency, and a safe way to give auditors and contractors limited access. Our specs already cover tenant isolation, SSO, central authorization and audit, but they do not say how a tenant admin sets security policy, how external people get in, what evidence we hand to a customer's auditor, or which certifications we commit to and when.
 
-**Outcome:** Each tenant has a security policy it controls: network rules, session rules, authentication assurance, step-up for sensitive actions, guest access and data handling. External people (auditors, contractors, partners, customers) get guest access to secure spaces with read-only defaults, sponsors and expiry. Security events reach the customer's SIEM. Compliance officers run audit-readiness projects inside TeamBeats against a control library. We hold ISO 27001:2022 and SOC 2 Type II for the SaaS service by general availability, and we publish a trust pack that answers most questionnaires without a call.
+**Outcome:** Each tenant has a security policy it controls: network rules, session rules, authentication assurance, step-up for sensitive actions, guest access and data handling. External people (auditors, contractors, partners, customers) get guest access to secure spaces with read-only defaults, sponsors and expiry. Security events reach the customer's SIEM. Compliance officers run audit-readiness projects inside TeamBeats against a control library. We hold ISO 27001:2022 and a SOC 2 Type I report for the SaaS service by general availability, a SOC 2 Type II report six months later, and we publish a trust pack that answers most questionnaires without a call.
 
 ## 2. Scope
 
@@ -151,7 +151,7 @@ The compliance officer creates a guest space "External audit 2027", shares the p
 - **FR-006 / SEC-006**: All traffic MUST use TLS 1.2 or later; data at rest in databases, object storage, indexes, queues that persist and backups MUST be encrypted; tenant data MUST use per-tenant data keys.
 - **FR-007 / SEC-007**: Enterprise and Government tenants MUST be able to use customer-managed keys with revocation and rotation (R3).
 - **FR-008 / SEC-008**: Shared SaaS tenants MUST choose a hosting region at creation; data at rest, backups and indexes MUST stay in that region.
-- **FR-009 / SEC-009**: The product MUST support guest identities and guest spaces with sponsors, expiry, read-only default, contribution option, watermarking and no access to anything not shared into the space.
+- **FR-009 / SEC-009**: The product MUST support guest identities and guest spaces with sponsors, expiry, read-only default, contribution option, watermarking and no access to anything not shared into the space. Guest memberships MUST NOT receive the default Employee role (spec 004).
 - **FR-010 / SEC-010**: Guests MUST sign in only through the methods allowed in section 6. No product-held passwords (constitution V).
 - **FR-011 / SEC-011**: Restricted content MUST NOT be shareable to guest spaces.
 - **FR-012 / SEC-012**: The product MUST run periodic access reviews for admin role holders and guests, with automatic removal when not confirmed.
@@ -219,14 +219,15 @@ For customer-hosted installs, certifications cover our development and support p
 | `security.ip_rules` (tenant-wide) | on | on | on |
 | `security.ip_rules_scoped` (admin area and per role) | off | on | on |
 | `security.session_policy` and MFA assurance | on | on | on |
-| `security.alerts` | basic | full | full |
-| `security.guests` (max guest spaces) | off | 5 | unlimited |
+| `security.alerts` (download volume, blocked network, alert handling) | on | on | on |
+| `security.alerts_advanced` (privilege grants out of hours, guest access to Confidential items, tenant thresholds) | off | on | on |
+| `security.max_guest_spaces` (limit; 0 turns guest access off) | 0 | 5 | unlimited |
 | `security.siem` | off | on | on |
 | `security.data_detection` | off | on | on |
 | `security.customer_keys` | off | off | on |
 | `security.four_eyes` | off | off | on |
 | `compliance.projects` | off | off | on |
-| `deployment.region_choice` | default region | choice | choice |
+| `deployment.region_choice` | off (platform default region) | on | on |
 
 Security baselines (encryption, TLS, audit, MFA assurance) are never turned off by package.
 

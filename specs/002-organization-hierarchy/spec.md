@@ -11,7 +11,7 @@
 | Target release | R0 (manual hierarchy), R1 (Entra ID directory mapping), R2 (on-premises Active Directory mapping) |
 | Last updated | 2026-11-05 |
 | Approved | 2026-11-04 by Mohamed |
-| Requirement IDs | TEN-003, TEN-004, TEN-005, TEN-006, TEN-010 |
+| Requirement IDs | TEN-003, TEN-004, TEN-005, TEN-006, TEN-010, INT-007 (directory part) |
 | Use cases | UC-02 |
 | Depends on | 001, 003 (directory connection), 004 (scoped admin roles), 006 (audit), 017 (connector framework, for on-premises AD) |
 

@@ -11,7 +11,7 @@
 | Target release | R0 (dev auth), R1 (Entra ID sign-in and Entra ID directory sync), R2 (Google, SAML, AD FS sign-in, on-premises AD sync) |
 | Last updated | 2026-11-05 |
 | Approved | 2026-11-04 by Mohamed |
-| Requirement IDs | IAM-001 to IAM-007, IAM-009, IAM-010 |
+| Requirement IDs | IAM-001 to IAM-007, IAM-009, IAM-010, INT-007 (directory part) |
 | Use cases | UC-03, UC-09 (directory part) |
 | Depends on | 001, 002, 004, 017 (connector framework, for on-premises AD) |
 
@@ -37,7 +37,7 @@
 **Out of scope:**
 - Authorization rules (spec 004).
 - SCIM provisioning implementation (extension point only, IAM-010).
-- HR-driven joiner/mover/leaver (integration spec).
+- HR-driven joiner/mover/leaver (spec 019). Directory-driven joiner, mover and leaver is in scope (US6).
 - Password reset, registration or any local credential store in production.
 - Sign-in by sending an AD username and password to the product for an LDAP bind. The constitution allows local username and password sign-in only in Development and Test, and an LDAP bind form would put AD passwords through the product. AD sign-in is always federated (Entra ID or AD FS).
 
@@ -117,8 +117,7 @@ The tenant admin connects Acme's directory once. New hires can sign in on day on
 - User changes email at the identity provider: identity is keyed on issuer and subject, not email, so access continues.
 - Entra ID `sub` is different for each app registration, while directory sync sees the `oid`. For Entra ID the link key is issuer plus `oid` so synced and signed-in identities meet. For AD FS it is issuer plus `objectGUID`.
 - UPN or email changes in AD: the immutable ID does not change, so the user record updates in place.
-- Same account in two TeamBeats tenants (two subsidiaries contracted separately): two unrelated users, one per tenant, as decided on 2026-11-04.
-- Same human in two tenants: two unrelated user records, one per tenant (decided 2026-11-04).
+- Same account or same human in two TeamBeats tenants (for example two subsidiaries contracted separately): two unrelated user records, one per tenant (decided 2026-11-04, ADR-0005).
 
 ## 5. Functional requirements
 

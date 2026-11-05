@@ -163,7 +163,7 @@ The Health and Safety manager revises the "Working at height" procedure. The new
 - **FR-011 / DOC-011**: The knowledge base MUST support article templates (SOP, how-to, FAQ, troubleshooting), the lifecycle and versioning of spec 009, related articles, helpfulness feedback and per-question indexing for FAQ articles.
 - **FR-012 / DOC-012**: The brand asset portal MUST support collections, usage rights with expiry, automatic renditions, access requests and download tracking.
 - **FR-013 / DOC-013**: Records managers MUST be able to define retention labels with period, trigger (created, modified, effective, superseded, custom date field) and action (delete, review, archive), and apply them by library, document type or manually. *(ADM-003)*
-- **FR-014 / DOC-014**: Disposition MUST keep a content-free disposition record and propagate deletion to search and vector indexes within the KNO-006 objective. *(KNO-006)*
+- **FR-014 / DOC-014**: Disposition MUST keep a content-free disposition record and propagate deletion to search and vector indexes within the KNO-006 objective (5 minutes by default, owned by spec 012). *(KNO-006)*
 - **FR-015 / DOC-015**: Legal holds by custodian, location, query or item MUST block every deletion path in the product, including retention, purge, user deletion and tenant closure, until released.
 - **FR-016 / DOC-016**: Libraries MUST support view-only mode with dynamic watermark and no download, enforced in the API as well as the UI.
 - **FR-017 / DOC-017**: Libraries MUST support sharing with guest spaces (spec 026) with expiry, read-only by default, never for Restricted classification.

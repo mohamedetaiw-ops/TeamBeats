@@ -16,7 +16,7 @@ R0 delivers: tenant-scoped user and external identity model, server-side session
 | Others | Yes | |
 
 ## Data model (schema `identity`)
-- `user`: `tenant_id`, `id`, `display_name`, `email`, `status`, `preferred_locale`, `created_via (jit, admin, scim)`.
+- `user`: `tenant_id`, `id`, `display_name`, `email`, `status`, `preferred_locale`, `created_via (jit, admin, scim, directory)`.
 - `external_identity`: `tenant_id`, `idp_config_id`, `issuer`, `subject`, `user_id`. Unique `(tenant_id, issuer, subject)`.
 - `tenant_membership` lives in Tenancy (spec 001/002); Identity references it through contract. [Implementation note: membership status is read per request from a cached contract call.]
 - `idp_config`: `tenant_id`, `id`, `protocol (oidc, saml)`, `kind (entra, google, generic)`, `issuer`, `client_id`, `secret_ref`, `jit_enabled`, `jit_domains text[]`, `group_role_map jsonb`.
@@ -44,3 +44,12 @@ R0 delivers: tenant-scoped user and external identity model, server-side session
 - Tenant isolation: same issuer+subject in tenant A and B creates two users; session cookie from A rejected on B's host.
 - Disable membership: next request rejected; role change effective within 5 minutes.
 - Open redirect and login CSRF.
+
+## Directory connection and sync (R1 Entra ID, R2 on-premises AD and AD FS; starts after US5, US6 and FR-011 to FR-015 are approved)
+- Data model additions (schema `identity`): `directory_connection` (`tenant_id`, `id`, `kind (entra, adds)`, `entra_tenant_id` or `ldaps_endpoint` and `base_dn`, `secret_ref`, `user_scope jsonb`, `group_scope jsonb`, `attribute_map jsonb`, `schedule_minutes`, `deletion_threshold_pct`, `status`); `directory_user_link` (`tenant_id`, `connection_id`, `directory_id` (Entra `oid` or AD `objectGUID`), `user_id`, `disabled_by_directory`); `directory_group_link` (`tenant_id`, `connection_id`, `directory_id`, `group_id`); `user.owner_fields text[]` for directory-owned fields.
+- Entra ID: Microsoft Graph with application permissions `User.Read.All`, `Group.Read.All`, `AdministrativeUnit.Read.All` only; delta queries with the delta token stored as a reference per connection. The OIDC link key becomes issuer plus `oid` for Entra ID, so a synced user and a signed-in user meet on the same `external_identity` row (`subject = oid`).
+- On-premises AD DS: LDAPS only (plain LDAP refused at save), `uSNChanged` incremental reads, through the connector framework (spec 017). SaaS tenants use an outbound-only sync agent; on-premises installs may connect directly. AD FS sign-in is an `idp_config` of kind `adfs` with subject `objectGUID`.
+- Sync job on the outbox worker with tenant context; idempotent per directory ID; threshold check before applying disables; failures leave data unchanged and alert after 3 consecutive failures.
+- Leaver: `disabled_by_directory = true` disables the tenant membership, revokes sessions through the existing revocation path and publishes `UserDeprovisioned`. Product admins cannot re-enable while the flag is set (FR-013).
+- `IDirectoryReader` contract is published for spec 002 organization mapping and spec 010 profile attributes.
+- Tests: create, rename, disable, re-enable, scope change; first sign-in links to the synced user with JIT on; no duplicate users; LDAP without TLS refused; write permission detected at test connection gives a warning; threshold breach stops the run; directory IDs from one connection never link identities from another; AD FS token without `objectGUID` refused; a sync for tenant A never writes tenant B rows.

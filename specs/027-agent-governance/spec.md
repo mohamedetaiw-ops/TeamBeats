@@ -231,7 +231,8 @@ Default approval rules (tenants can make them stricter, not looser):
 | `ai.agents.write_tools` (L3, connector write tools) | No | Yes | Yes |
 | `ai.agents.autonomous` (L4) | No | No | Yes |
 | `ai.agents.mcp` | No | No | Yes |
-| `ai.governance.advanced` (org unit policies, anomaly rules, incidents, watch list, evidence export) | No | Enhanced: org unit policies and alerts | Full |
+| `ai.governance.advanced` (org unit agent policies, anomaly alerts) | No | Yes | Yes |
+| `ai.governance.security_center` (incidents, watch list, evidence export) | No | No | Yes |
 
 ## 10. UX, localization and accessibility
 - Pages: Agent policy, Tool registry, Agent Security Center (runs, alerts, incidents, watch list), Emergency controls.

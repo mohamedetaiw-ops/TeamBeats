@@ -261,7 +261,7 @@ Location data from sign in is collected only if the tenant enables it, shown to 
 ## 16. Success criteria
 - **SC-001**: An employee submits a leave request with balance and overlap shown in under 1 minute on mobile.
 - **SC-002**: In a pilot tenant, 95% of new joiners have every day-one IT and facilities task done before day one.
-- **SC-003**: For leavers, TeamBeats access ends within 15 minutes of the directory disabling the account, and every connected system's access removal is confirmed within 1 working day.
+- **SC-003**: For leavers, TeamBeats access ends within one directory sync interval plus processing of the directory disabling the account (35 minutes with the default 30 minute schedule, spec 003 SC-003), or at once when HR or a tenant admin disables the membership in TeamBeats, and every connected system's access removal is confirmed within 1 working day.
 - **SC-004**: A salary certificate without approval is issued in under 2 minutes.
 
 ## 17. Open questions

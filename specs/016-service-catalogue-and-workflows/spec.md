@@ -38,7 +38,7 @@
 - A starter pack of service templates a tenant can switch on and edit (section 12).
 
 **Out of scope:**
-- Leave, attendance, compensation days and team calendars: spec 022, which registers module services here.
+- Leave, attendance, compensation days, team calendars, HR journeys with anchor dates (onboarding, offboarding, transfer), employee data change, HR letters and policy-checked expense claims: spec 022, which registers them here as module services and runs them on spec 024.
 - Payslip and other payroll data: read from the HR or payroll system through spec 019.
 - A full IT service management tool. IT tickets can be a form service, or a linked app to the customer's helpdesk.
 - Native mobile apps. Mobile use is through the responsive web and PWA (EXP-009).
@@ -117,7 +117,7 @@ Training request: employee registers, training admin checks the seat, manager ap
 
 ### User Story 8: Automate a new service end to end (Priority: P1, R2; approval-only routes in R1)
 
-The HR service owner creates "New joiner onboarding" with no developer. When AD sync creates a new user, the service starts by itself, opens a laptop task for IT, a business card task for Logistics and an access request for the manager to approve, then emails the new joiner on day one.
+The facilities service owner creates "New joiner equipment" with no developer. (Tenants with `hr.journeys` use the full onboarding journey of spec 022 instead; this story shows the generic designer.) When AD sync creates a new user, the service starts by itself, opens a laptop task for IT, a business card task for Logistics and an access request for the manager to approve, then emails the new joiner on day one.
 
 **Acceptance scenarios:**
 1. **Given** the route designer, **When** the owner builds a route, **Then** they can place these step types: approval, task for a person or queue, set field, notify (in-app, email, Teams), call connector action, call webhook, wait until a date or for an event, condition branch, parallel split and join, start another service, and end. No step type runs custom code.
@@ -181,7 +181,7 @@ The HR service owner creates "New joiner onboarding" with no developer. When AD 
 | Capability key | Behavior |
 |---|---|
 | `workflow.catalogue` | All packages (catalogue, linked apps, form services, single-step approval, task inbox, delegation) |
-| `workflow.multi_step` | Workplace Plus and above (parallel steps, conditions, escalation) |
+| `workflow.advanced` | Workplace Plus and above (multi-step routes: parallel steps, conditions, escalation). Seeded in spec 005 |
 | `workflow.connector_fulfilment` | Workplace Plus and above (connector and webhook steps) |
 | `workflow.automation` | Workplace Plus and above (event and schedule triggers, automatic steps, auto-approve rules). Workplace keeps manual submit with approval and task steps |
 | `workflow.max_services` | Quota per package (commercial data) |
@@ -208,11 +208,11 @@ Starter templates (R2, tenant can switch on and edit). Taken from the current in
 | Company transportation | Pickup and drop-off from a tenant lookup list of areas |
 | Device maintenance | Brand, part number, problem, accessories, serial number |
 | Purchase request | Optional hand-off to ERP through a connector |
-| Expense claim | Expense type, provider, period, subsidiary, department, country, currency, unit price, quantity, payment method |
+| Expense claim | Simple form for tenants without `hr.expenses`: expense type, provider, period, subsidiary, department, country, currency, unit price, quantity, payment method. Tenants with `hr.expenses` use the expense module of spec 022 |
 | Travel request | Business trip with dates, destination, advance |
 | Training request | Registration, training admin, manager approval; on behalf of option |
 | VPN or system access | IT queue fulfilment |
-| Resignation | 60 day notice rule, structured reason list for exit analytics, continues after exit |
+| Resignation | 60 day notice rule, structured reason list for exit analytics, continues after exit; approval starts the offboarding journey of spec 022 when `hr.journeys` is on |
 | HR appointment | Pick a slot with HR |
 | Parking waiting list | Queue position shown to the requester |
 | Referral (candidate or business) | New and My referrals |
@@ -226,6 +226,7 @@ Starter templates (R2, tenant can switch on and edit). Taken from the current in
 | request.started_by_trigger / auto_approved / automation_failed | audit | request, trigger or rule, step |
 | request.submitted / cancelled | audit | request, service, requester or "anonymous" |
 | task.approved / rejected / returned / reassigned / delegated | audit | task, actor, on behalf of |
+| delegation.set / changed / ended | audit | delegator, delegate, date range, actor |
 | request.handoff_succeeded / failed | operational and audit | request, connector, external reference |
 
 ## 14. Security and abuse cases

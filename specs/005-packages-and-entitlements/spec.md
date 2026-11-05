@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R0 (core check and seeded packages), R2 (quotas, add-ons, overrides UI) |
-| Last updated | 2026-11-04 |
+| Last updated | 2026-11-05 |
 | Approved | 2026-11-04 by Mohamed |
 | Requirement IDs | AI-001, ADM-001 (entitlements part), new ENT-001 to ENT-008 |
 | Use cases | UC-12 |
@@ -91,6 +91,7 @@
 - **ENT-007 / FR-007**: Denials MUST return a machine-readable reason (not_in_package, quota_exhausted, expired) distinct from authorization denials.
 - **ENT-008 / FR-008**: All package, subscription, add-on and override changes MUST be audited.
 - **FR-009**: Deployment topology (on-prem, dedicated) is a commercial entitlement, not a code branch.
+- **FR-010**: Capability keys MUST NOT reuse a permission key from spec 004 (FR-013). A limit key is named with a `max_` or unit suffix (for example `content.max_sites`, `docs.storage_gb`) so that flags and limits are told apart by name.
 
 ## 6. Initial capability catalogue (draft)
 
@@ -105,14 +106,16 @@
 | `ai.agents.max_custom` | limit | 0 | [TBD] | [TBD] |
 | `ai.agents.max_published` | limit | [TBD] | [TBD] | [TBD] |
 | `ai.agents.marketplace` | flag | on | on | on |
-| `ai.agents.orchestration` | flag | off | on (platform-defined handoffs) | on |
+| `ai.agents.orchestration` | flag | off | on (handoffs declared in platform templates) | on (also in customer-built agents) |
 | `ai.agents.write_tools` | flag | off | on (autonomy L3) | on |
 | `ai.agents.autonomous` | flag | off | off | on (autonomy L4) |
 | `ai.agents.mcp` | flag | off | off | on |
-| `ai.governance.advanced` | flag | off | on (enhanced) | on (full) |
+| `ai.governance.advanced` | flag | off | on (org unit agent policies, anomaly alerts) | on |
+| `ai.governance.security_center` | flag | off | off | on (incidents, watch list, evidence export) |
 | `ai.model_choice` | flag | off | on | on |
 | `ai.models.private_endpoint` | flag | off | on | on |
 | `ai.budgets` | flag | on (tenant budget) | on | on |
+| `ai.budgets.scoped` | flag | off | on (org unit, agent and user budgets) | on |
 | `org.delegated_admin` | flag | off | on | on |
 | `workflow.advanced` | flag | off | on | on |
 | `integration.microsoft365` | flag | off | on | on |
@@ -122,7 +125,7 @@
 | `analytics.export` | flag | off | off | on |
 | `deployment.on_prem` | flag | off | off | on |
 
-Feature specs add their own keys in their section 9 (for example `content.*`, `docs.*`, `records.*`, `policy.*`, `hr.*`, `security.*`, `compliance.*` and more `analytics.*` keys in specs 009, 011, 021, 022, 025 and 026). Those keys join this seed data when their spec is approved.
+Feature specs add their own keys in their section 9: `org.*` (002), `identity.*` (003), `authz.*` (004), `content.*` (009), `docs.*` and `records.*` (011), more `ai.*` keys (013, 020, 027), `workflow.*` (016, 024), more `analytics.*` keys (021), `hr.*` (022), `policy.*` (025), `security.*`, `compliance.*` and `deployment.region_choice` (026). Those keys join this seed data when their spec is approved. `workflow.advanced` in this table is the multi-step workflow key used by spec 016.
 
 Commercial note: values and quota numbers still need commercial confirmation (foundation open decision 1, open items C1 and C2). They are data in package definitions, so they do not block implementation. This table is the seed data for R0.
 
@@ -138,12 +141,18 @@ Commercial note: values and quota numbers still need commercial confirmation (fo
 | Subscription, add-on, override | Product (platform, per tenant) | Confidential (commercial) |
 | Usage counters | Product | Internal |
 
+## 9. Package entitlements
+This spec defines the catalogue itself. It is not gated: the entitlement service runs for every tenant.
+
 ## 10. UX
 - Tenant admin "Plan and usage" page (R2): package, add-ons, usage bars per quota, renewal date.
 - Gated UI shows an informative "not in your plan" state instead of hiding entire navigation, configurable per tenant.
 
 ## 11. AI
 AI Gateway MUST check `ai.*` entitlements and meter usage before calling any provider.
+
+## 12. Integrations and events
+Publishes `EntitlementsChanged` (tenant ID, changed keys) whenever a subscription, add-on, override or package version change alters a tenant's effective entitlements, so that caches, the AI Gateway (spec 013) and gated modules refresh. Publishes `QuotaExhausted` once per tenant, capability and period.
 
 ## 13. Audit
 

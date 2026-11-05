@@ -47,7 +47,7 @@ Compared on 2026-11-05 against two competing products. Product A is a modular in
 | AI search across pages, documents, policies and processes, with summaries | A, B | 012 planned, 014 planned |
 | Search that respects permissions | A | constitution VII, 012 planned |
 | Unified search across other platforms | B | 012 planned (federated results) |
-| AI assistant for questions and tech support | A, B | 014 planned; agents in 020 and agent governance in 027 (other thread) |
+| AI assistant for questions and tech support | A, B | 014 planned; agents in 020 and agent governance in 027 |
 | Q&A assistants for documents and policies | A | 011 (section 11), 025 (US4) |
 | AI sentiment on audience engagement | B | 021 (US8) |
 | A layer that turns information into action (no detail published) | B | Task inbox (016), process engine (024), agents (020) |

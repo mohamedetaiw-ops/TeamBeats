@@ -113,7 +113,7 @@ A government tenant runs its own inference servers and must never send Confident
 **Acceptance scenarios:**
 1. **Given** the tenant allows models A, B and C, **When** the Acme Gulf administrator restricts their unit to A, **Then** requests from users acting in Acme Gulf can use only A.
 2. **Given** a child unit policy, **When** its administrator tries to add a model the parent does not allow, or allow a classification the parent blocks, **Then** the save is rejected with the parent rule named.
-3. **Given** a user who belongs to two units with different policies, **When** they make a request, **Then** the policy of the unit they are acting in is used (spec 002 acting context), and if none is chosen the stricter one applies.
+3. **Given** a user who belongs to two units with different policies, **When** they make a request, **Then** the acting unit is resolved on the server: the unit that owns the resource or service the request is about, else the user's primary membership (spec 002). The unit picked in the UI is never trusted on its own (constitution II). If the request concerns resources of several units, the strictest of their policies applies.
 
 ### User Story 8: Control prompt and response logging (Priority: P2, R1)
 
@@ -134,7 +134,7 @@ A government tenant runs its own inference servers and must never send Confident
 
 - **AIG-001 / FR-001**: Every model and embedding call in the product MUST go through the gateway contract. Provider SDKs and DTOs MUST stay inside adapter projects. *(AI-002, constitution VIII)*
 - **AIG-002 / FR-002**: The gateway MUST apply, in this order: entitlement and quota check, budget check, classification policy, provider and model allowlist, region and egress rules, redaction and context limits, routing and fallback, provider call, output checks, metering and telemetry. A failed step MUST stop the call with a machine-readable reason. *(ADR-0003)*
-- **AIG-003 / FR-003**: Each request MUST carry tenant, acting org unit, user or service identity, use case, agent and agent version (if any), classification and correlation ID. Tenant and classification MUST come from server context, never from model output or the client. *(constitution I)*
+- **AIG-003 / FR-003**: Each request MUST carry tenant, acting org unit (resolved as in US7 scenario 3), user or service identity, use case, agent and agent version (if any), classification and correlation ID. Tenant and classification MUST come from server context, never from model output or the client. *(constitution I)*
 - **AIG-004 / FR-004**: The OpenRouter adapter MUST be available in R1, and the adapter contract MUST support a private OpenAI-compatible endpoint without changes to calling modules. *(AI-003, AI-011)*
 - **AIG-005 / FR-005**: The platform MUST keep a model catalogue with capabilities (chat, tools, structured output, vision, embeddings), context size, regions, retention and training terms, maximum classification and price.
 - **AIG-006 / FR-006**: Tenants MUST be able to set an allowlist, a default model per use case, a fallback chain and inference parameter limits (maximum output tokens, temperature range). *(AI-004)*
@@ -178,7 +178,8 @@ A government tenant runs its own inference servers and must never send Confident
 | `ai.assistant.monthly_requests` | Quota per package (commercial data) |
 | `ai.model_choice` | Workplace Plus and above: tenant can change allowlist, defaults and fallback. Workplace uses the platform default set |
 | `ai.models.private_endpoint` | Workplace Plus and above: register private model endpoints and sovereign routing |
-| `ai.budgets` | All packages: tenant budget. Workplace Plus and above: org unit, agent and user budgets |
+| `ai.budgets` | All packages: tenant budget |
+| `ai.budgets.scoped` | Workplace Plus and above: org unit, agent and user budgets |
 
 ## 10. UX, localization and accessibility
 - Pages: Model policy, Routing rules, Private endpoints, Budgets, AI usage. All under the tenant admin shell (spec 006).
