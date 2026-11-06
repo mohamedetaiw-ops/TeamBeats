@@ -28,7 +28,8 @@ public sealed class OpenApiContractTests(TenantWorld world)
         var json = await world.Factory.TenantClient(world.A.Key).GetStringAsync("/openapi/v1.json");
         var node = JsonNode.Parse(json)!;
         node["servers"]?.AsArray().Clear();
-        var normalized = node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }) + "\n";
+        // WriteIndented uses the platform line ending; the snapshot is always LF.
+        var normalized = node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).ReplaceLineEndings("\n") + "\n";
         var path = SnapshotPath();
 
         if (Environment.GetEnvironmentVariable("TEAMBEATS_UPDATE_OPENAPI") == "1")
