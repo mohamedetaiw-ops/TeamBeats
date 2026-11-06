@@ -348,5 +348,22 @@
     "loading": "Loading",
     "conflict": "Your layout changed in another window, so the latest version is shown. Try your change again.",
     "failed": "Your change could not be saved. Try again."
+  },
+  "toolbox": {
+    "clock": {
+      "title": "World clock"
+    },
+    "converter": {
+      "title": "Time zone converter",
+      "when": "Date and time",
+      "from": "From time zone",
+      "to": "To time zone",
+      "result": "That is {time}",
+      "empty": "Choose a date and time to convert"
+    },
+    "weather": {
+      "title": "Weather",
+      "unsupported": "Weather is not available yet"
+    }
   }
 }

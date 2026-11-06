@@ -6,6 +6,7 @@ using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Localization;
 using TeamBeats.Modules.Experience.Catalogue;
 using TeamBeats.Modules.Experience.Components;
+using TeamBeats.Modules.Experience.Contracts;
 using TeamBeats.Modules.Experience.Pages;
 using TeamBeats.Modules.Experience.Personalization;
 using TeamBeats.Modules.Experience.Shell;
@@ -25,6 +26,7 @@ public static class ExperienceModule
     {
         services.AddMemoryCache();
         services.AddSingleton<PlatformCatalogue>();
+        services.AddSingleton<IComponentRegistration, PlatformComponents>();
         services.AddSingleton<ComponentRegistry>();
         services.AddScoped<ComponentEnablement>();
         services.AddScoped<ComponentAvailability>();

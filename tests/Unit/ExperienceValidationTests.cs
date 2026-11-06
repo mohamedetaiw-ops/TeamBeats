@@ -132,4 +132,23 @@ public sealed class ExperienceValidationTests
         }
         Assert.All(catalogue.Layouts.Values, l => Assert.All(l.Regions, r => Assert.InRange(r.Span, 1, 12)));
     }
+
+    [Fact]
+    public void Tool_box_utilities_register_as_platform_components_needing_no_capability_and_addable_with_defaults()
+    {
+        var registry = new ComponentRegistry([new PlatformComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        Assert.Empty(registry.Rejected);
+        Assert.Equal(["toolbox.time_converter@1", "toolbox.weather@1", "toolbox.world_clock@1"], registry.All.Select(m => m.Reference));
+        Assert.All(registry.All, m =>
+        {
+            Assert.Equal("utility", m.Display.Category);
+            Assert.Empty(m.Requires.Capabilities);
+            Assert.Empty(m.Data);
+            Assert.Empty(PropertyValidator.Validate(m.Properties, null));
+        });
+        var clock = registry.Find("toolbox.world_clock@1")!;
+        var tooMany = JsonSerializer.SerializeToElement(new { zones = Enumerable.Repeat("Asia/Dubai", PlatformComponents.MaxClockZones + 1) });
+        Assert.NotEmpty(PropertyValidator.Validate(clock.Properties, tooMany));
+        Assert.Empty(PropertyValidator.Validate(clock.Properties, JsonSerializer.SerializeToElement(new { zones = new[] { "Asia/Dubai", "Europe/London" } })));
+    }
 }

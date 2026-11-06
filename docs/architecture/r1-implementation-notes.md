@@ -310,3 +310,15 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | My mail and My calendar | FR-051 needs the spec 018 components (018 T016). Once they exist the home shows them in the personal area when Mail and Calendar are on; T013 stays open until then. |
 | Default home page | A tenant gets the template, not a page: an administrator creates a page from `H01` and sets it as home. |
 | Hidden items | A hidden item returns through undo or reset; there is no list of hidden items in R1. |
+
+## Tool box utilities (spec 008 T014)
+- `Components/PlatformComponents` registers three platform manifests through the same `IComponentRegistration` as any module: `toolbox.world_clock@1`, `toolbox.time_converter@1` and `toolbox.weather@1`, category `utility`, no package capability, no data contract, and every property has a default, so they can be added from the personal add panel.
+- The world clock shows up to six IANA zones (default: the viewer's own zone and UTC) with localized zone names and digits, ticks once a minute after hydration, and leaves out a zone the browser does not know. The converter turns a date and time in one zone into another in the browser, checking the offset twice so daylight saving edges land right. Neither sends anything to the server.
+- Weather renders the shared unsupported state. When a provider is chosen it reads through a backend connector port and declares that endpoint in its manifest.
+- Playwright `toolbox.spec.ts` in English and Arabic with axe; unit and integration tests cover the manifests and adding the clock to the home.
+
+### Differences and follow-ups
+| Item | Note |
+|---|---|
+| Weather provider | Open decision; the component stays in the unsupported state until then. |
+| Shell utilities | The shell keys `world_clock`, `time_converter` and `weather` exist; placing the components in the shell's utilities region comes with the utilities slot rendering. |

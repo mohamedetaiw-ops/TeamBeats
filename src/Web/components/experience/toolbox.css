@@ -1,0 +1,54 @@
+/* Tool box utilities (spec 008 FR-050). Tokens only, logical properties only, so RTL and themes need nothing extra. */
+.toolbox {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.toolbox-title {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.toolbox-clocks {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toolbox-clock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tb-space-sm);
+}
+
+.toolbox-clock-time {
+  font-size: var(--tb-font-size-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.toolbox-clock-zone {
+  font-size: var(--tb-font-size-sm);
+}
+
+.toolbox-form {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.toolbox-form input,
+.toolbox-form select {
+  min-block-size: 2.75rem;
+  max-inline-size: 100%;
+  font: inherit;
+}
+
+.toolbox-result {
+  margin: 0;
+}
