@@ -30,6 +30,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public TestSecrets Secrets { get; } = new();
 
+    public FakeMicrosoftGraph Graph { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Test");
@@ -37,12 +39,15 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         builder.UseSetting("Tenancy:Hosts:BaseDomain", BaseDomain);
         builder.UseSetting("Storage:Root", StorageRoot);
         builder.UseSetting("Messaging:Transport", "InMemory");
+        builder.UseSetting("Integrations:Microsoft365:ClientId", FakeMicrosoftGraph.ClientId);
+        builder.UseSetting("Integrations:Microsoft365:ClientSecret", FakeMicrosoftGraph.ClientSecret);
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton(Documents);
             services.AddScoped<IResourceDescriptorProvider, TestDocumentProvider>();
             services.AddSingleton<ISecretStore>(Secrets);
             services.AddHttpClient(HttpOidcProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => Idp);
+            services.AddHttpClient(TeamBeats.Modules.Integrations.Microsoft365.HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => Graph);
         });
     }
 

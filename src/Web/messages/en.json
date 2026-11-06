@@ -32,7 +32,8 @@
       "roles": "Roles and access",
       "plan": "Plan",
       "identity": "Sign-in settings",
-      "audit": "Audit log"
+      "audit": "Audit log",
+      "connections": "Connections"
     }
   },
   "header": {
