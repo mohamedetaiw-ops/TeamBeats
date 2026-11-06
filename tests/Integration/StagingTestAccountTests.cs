@@ -30,6 +30,8 @@ public sealed class StagingTestAccountTests(TenantWorld world) : IAsyncLifetime
         // Tests reach tenants by subdomain; the deployed staging host uses dedicated mode from appsettings.Staging.json.
         ["Tenancy:Hosts:Mode"] = "Shared",
         ["Dev:MigrateOnStart"] = "false",
+        // The in-host sync scheduler would also sync other test tenants on the shared database; tests sync explicitly.
+        ["Dev:Fakes:RunDirectorySync"] = "false",
     };
 
     public Task InitializeAsync()

@@ -4,7 +4,7 @@ using System.Text.Json;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Testing;
 using Xunit;
-using static TeamBeats.Testing.FakeMicrosoftGraph;
+using static TeamBeats.DevFakes.FakeMicrosoftGraph;
 
 namespace TeamBeats.Integration.Tests;
 
@@ -82,7 +82,7 @@ public sealed class MailCalendarTests(TenantWorld world)
 
     private FakeMailbox SeedMail(TestTenant t, string user = "employee")
     {
-        var box = Graph.Mailbox(t[user].Email);
+        var box = Graph.MailboxFor(t[user].Email);
         var now = DateTimeOffset.UtcNow;
         box.UnreadCount = 7;
         for (var i = 0; i < 12; i++)
@@ -147,7 +147,7 @@ public sealed class MailCalendarTests(TenantWorld world)
         var s = await SetupAsync(["mail", "calendar"]);
         Assert.Equal("not_connected", State(await GetAsync(s.Tenant, "/api/v1/me/mail")));
         Assert.Equal("not_connected", State(await GetAsync(s.Tenant, "/api/v1/me/calendar")));
-        Graph.Mailbox(s.Tenant["employee"].Email).Exists = false;
+        Graph.MailboxFor(s.Tenant["employee"].Email).Exists = false;
         await ConnectAsync(s.Tenant);
         Assert.Equal("no_mailbox", State(await GetAsync(s.Tenant, "/api/v1/me/mail")));
         Assert.Equal("no_mailbox", State(await GetAsync(s.Tenant, "/api/v1/me/calendar")));
@@ -194,14 +194,14 @@ public sealed class MailCalendarTests(TenantWorld world)
     {
         var s = await SetupAsync(["mail"], users: "colleague");
         SeedMail(s.Tenant);
-        Graph.Mailbox(s.Tenant["colleague"].Email).UnreadCount = 2;
+        Graph.MailboxFor(s.Tenant["colleague"].Email).UnreadCount = 2;
         await ConnectAsync(s.Tenant);
         await ConnectAsync(s.Tenant, "colleague");
 
         int Calls() => Graph.DelegatedCalls.Count;
         await GetAsync(s.Tenant, "/api/v1/me/mail");
         var before = Calls();
-        Graph.Mailbox(s.Tenant["employee"].Email).UnreadCount = 9;
+        Graph.MailboxFor(s.Tenant["employee"].Email).UnreadCount = 9;
         Assert.Equal(7, (await GetAsync(s.Tenant, "/api/v1/me/mail")).GetProperty("unreadCount").GetInt32());
         Assert.Equal(before, Calls());
 
@@ -213,7 +213,7 @@ public sealed class MailCalendarTests(TenantWorld world)
         {
             await GetAsync(s.Tenant, "/api/v1/me/mail?refresh=true");
         }
-        Graph.Mailbox(s.Tenant["employee"].Email).UnreadCount = 11;
+        Graph.MailboxFor(s.Tenant["employee"].Email).UnreadCount = 11;
         Assert.Equal(9, (await GetAsync(s.Tenant, "/api/v1/me/mail?refresh=true")).GetProperty("unreadCount").GetInt32());
     }
 
@@ -223,7 +223,7 @@ public sealed class MailCalendarTests(TenantWorld world)
         var s = await SetupAsync(["calendar"]);
         var today = TodayDubai();
         var tomorrow = today.AddDays(1);
-        var box = Graph.Mailbox(s.Tenant["employee"].Email);
+        var box = Graph.MailboxFor(s.Tenant["employee"].Email);
         var tomorrowDate = TimeZoneInfo.ConvertTime(tomorrow, Dubai).Date;
         box.Events.AddRange(
         [

@@ -59,6 +59,8 @@ public sealed partial class ArchitectureTests
     public void Production_api_does_not_contain_development_sign_in()
     {
         Assert.DoesNotContain("TeamBeats.Modules.Identity.DevAuth", ProjectReferences(Path.Combine(Root, "src/Api/TeamBeats.Api.csproj")));
+        Assert.DoesNotContain("TeamBeats.DevFakes", ProjectReferences(Path.Combine(Root, "src/Api/TeamBeats.Api.csproj")));
+        Assert.DoesNotContain("TeamBeats.DevFakes", ProjectReferences(Path.Combine(Root, "src/Workers/TeamBeats.Workers.csproj")));
 
         var seen = new HashSet<string>();
         var queue = new Queue<AssemblyName>([typeof(ApiProgram).Assembly.GetName()]);
@@ -70,6 +72,7 @@ public sealed partial class ArchitectureTests
                 continue;
             }
             Assert.NotEqual("TeamBeats.Modules.Identity.DevAuth", name.Name);
+            Assert.NotEqual("TeamBeats.DevFakes", name.Name);
             foreach (var r in Assembly.Load(name).GetReferencedAssemblies())
             {
                 queue.Enqueue(r);
@@ -248,6 +251,36 @@ public sealed partial class ArchitectureTests
             Assert.DoesNotContain("ASPNETCORE_ENVIRONMENT=Staging", text, StringComparison.Ordinal);
         }
     }
+
+    [Fact]
+    public void Fakes_are_referenced_only_by_the_development_host_and_tests()
+    {
+        // Fake external systems (docs/testing/fake-systems.md) never reach a production composition (ADR-0004).
+        var offenders = SourceFiles("src", "*.csproj")
+            .Where(f => !Rel(f).StartsWith("src/Api.DevHost/", StringComparison.Ordinal) && !Rel(f).StartsWith("src/DevFakes/", StringComparison.Ordinal))
+            .Where(f => ProjectReferences(f).Contains("TeamBeats.DevFakes"))
+            .Select(Rel)
+            .ToList();
+        Assert.Empty(offenders);
+        var fakes = ProjectReferences(Path.Combine(Root, "src/DevFakes/TeamBeats.DevFakes.csproj")).ToList();
+        Assert.Empty(fakes);
+    }
+
+    [Fact]
+    public void Fake_scenarios_hold_only_reserved_example_addresses()
+    {
+        // CLAUDE.md rule 9: no real customer data. Every address in a scenario is on a reserved example domain.
+        foreach (var file in SourceFiles("src/Api.DevHost/scenarios", "*.json"))
+        {
+            var text = File.ReadAllText(file);
+            var addresses = EmailAddress().Matches(text).Select(m => m.Value).ToList();
+            Assert.NotEmpty(addresses);
+            Assert.All(addresses, a => Assert.True(a.EndsWith(".example", StringComparison.OrdinalIgnoreCase), $"{Rel(file)}: {a}"));
+        }
+    }
+
+    [GeneratedRegex("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")]
+    private static partial Regex EmailAddress();
 
     [GeneratedRegex("\"(workplace|workplace_plus|enterprise_government)\"")]
     private static partial Regex PackageLiteral();

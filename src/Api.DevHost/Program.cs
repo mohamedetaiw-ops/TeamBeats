@@ -22,8 +22,10 @@ public sealed class DevHostProgram
         builder.AddTeamBeatsApi();
         builder.Services.AddDevAuth(builder.Configuration, builder.Environment);
         builder.Services.AddScoped<TestTenantSeeder>();
+        builder.AddFakeExternalSystems();
         var app = builder.Build();
         app.UseTeamBeatsApi(endpoints => endpoints.MapDevAuthEndpoints(app.Configuration));
+        app.UseFakeExternalSystems();
 
         if (app.Configuration.GetConnectionString("Owner") is { } owner && app.Configuration.GetValue<bool>("Dev:MigrateOnStart"))
         {
@@ -32,14 +34,22 @@ public sealed class DevHostProgram
 
         if (app.Configuration.GetValue<bool>(DevAuthModule.EnabledKey))
         {
-            await using var scope = app.Services.CreateAsyncScope();
+            // Each seeder commits, and a database session is one transaction, so each gets its own scope.
             if (app.Configuration["Dev:SeedFile"] is { } seed)
             {
+                await using var scope = app.Services.CreateAsyncScope();
                 await scope.ServiceProvider.GetRequiredService<DevSeeder>().SeedAsync(seed, CancellationToken.None);
             }
             if (app.Configuration.GetSection(TestTenantSeeder.Section).Get<CreateTenantRequest>() is { Key.Length: > 0 } tenant)
             {
-                await scope.ServiceProvider.GetRequiredService<TestTenantSeeder>().SeedAsync(tenant, CancellationToken.None);
+                await using (var scope = app.Services.CreateAsyncScope())
+                {
+                    await scope.ServiceProvider.GetRequiredService<TestTenantSeeder>().SeedAsync(tenant, CancellationToken.None);
+                }
+                if (FakeSystemsSetup.Enabled(app.Configuration))
+                {
+                    await app.Services.GetRequiredService<ScenarioSeeder>().SeedAsync(tenant.Key, CancellationToken.None);
+                }
             }
         }
 

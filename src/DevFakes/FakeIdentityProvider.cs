@@ -6,9 +6,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using TeamBeats.Primitives;
 
-namespace TeamBeats.Testing;
+namespace TeamBeats.DevFakes;
 
 /// <summary>What the fake Entra ID puts in (or leaves out of) the ID token for one authorization code.</summary>
 public sealed record FakeUser(string ObjectId, string Email, string Name)
@@ -33,8 +32,12 @@ public sealed class FakeIdentityProvider : HttpMessageHandler
 {
     public const string Authority = "https://login.microsoftonline.com";
 
-    private readonly RsaSecurityKey _key = new(RSA.Create(2048)) { KeyId = "fake-key-1" };
-    private readonly RsaSecurityKey _foreignKey = new(RSA.Create(2048)) { KeyId = "fake-key-1" };
+    // Shared by every instance: the production OIDC adapter caches discovery and keys per issuer for the whole process,
+    // so two hosts in one process (tests run several) must sign with the same key for the same fake directory.
+    private static readonly RsaSecurityKey SharedKey = new(RSA.Create(2048)) { KeyId = "fake-key-1" };
+    private static readonly RsaSecurityKey SharedForeignKey = new(RSA.Create(2048)) { KeyId = "fake-key-1" };
+    private readonly RsaSecurityKey _key = SharedKey;
+    private readonly RsaSecurityKey _foreignKey = SharedForeignKey;
     private readonly ConcurrentDictionary<string, IssuedCode> _codes = new(StringComparer.Ordinal);
 
     public bool Unavailable { get; set; }
@@ -151,15 +154,4 @@ public sealed class FakeIdentityProvider : HttpMessageHandler
             .ToDictionary(p => Uri.UnescapeDataString(p[0].Replace('+', ' ')), p => p.Length > 1 ? Uri.UnescapeDataString(p[1].Replace('+', ' ')) : string.Empty);
 
     private sealed record IssuedCode(FakeUser User, string Issuer, string ClientId, string ClientSecret, string RedirectUri, string CodeChallenge, string Nonce);
-}
-
-/// <summary>In-memory secret store for tests. Values are fictional.</summary>
-public sealed class TestSecrets : ISecretStore
-{
-    private readonly ConcurrentDictionary<string, string> _values = new(StringComparer.Ordinal);
-
-    public void Set(string reference, string value) => _values[reference] = value;
-
-    public Task<string?> GetTenantSecretAsync(Guid tenantId, string reference, CancellationToken ct = default) =>
-        Task.FromResult(SecretReferences.NameFor(tenantId, reference) is null ? null : _values.GetValueOrDefault(reference));
 }

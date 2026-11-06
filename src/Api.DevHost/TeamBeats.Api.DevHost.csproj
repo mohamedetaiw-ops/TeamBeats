@@ -3,9 +3,14 @@
     <RootNamespace>TeamBeats.Api.DevHost</RootNamespace>
     <AssemblyName>TeamBeats.Api.DevHost</AssemblyName>
   </PropertyGroup>
-  <!-- Development/Test composition: the production API plus development sign-in (ADR-0004). -->
+  <!-- Development/Test composition: the production API plus development sign-in and fake external systems (ADR-0004). -->
   <ItemGroup>
     <ProjectReference Include="../Api/TeamBeats.Api.csproj" />
     <ProjectReference Include="../Modules/Identity.DevAuth/TeamBeats.Modules.Identity.DevAuth.csproj" />
+    <ProjectReference Include="../DevFakes/TeamBeats.DevFakes.csproj" />
+  </ItemGroup>
+  <!-- Fictional scenarios for the fake external systems (docs/testing/fake-systems.md). -->
+  <ItemGroup>
+    <Content Update="scenarios/*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
