@@ -57,6 +57,10 @@ public static class AuditActions
     public const string SignInRefused = "auth.sign_in_refused";
     public const string SessionRevoked = "auth.session_revoked";
     public const string IdpConfigChanged = "auth.idp_config_changed";
+    public const string DirectoryConnectionChanged = "identity.directory_connection_changed";
+    public const string UserSynced = "identity.user_synced";
+    public const string DisabledByDirectory = "identity.disabled_by_directory";
+    public const string ReenabledByDirectory = "identity.reenabled_by_directory";
 
     // 004
     public const string RoleAssigned = "authz.role_assigned";
@@ -80,6 +84,15 @@ public static class AuditActions
     public const string AuditIntegrityFailed = "audit.integrity_failed";
     public const string MembershipDisabled = "identity.membership_disabled";
 
+    // 006 Connections area (R1)
+    public const string ConnectionCreated = "integration.connection_created";
+    public const string ConnectionDeleted = "integration.connection_deleted";
+    public const string ConnectionFeatureEnabled = "integration.feature_enabled";
+    public const string ConnectionFeatureDisabled = "integration.feature_disabled";
+    public const string ConnectionConsentGranted = "integration.consent_granted";
+    public const string ConnectionConsentRevokedDetected = "integration.consent_revoked_detected";
+    public const string ConnectionStatusChanged = "integration.status_changed";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -92,8 +105,16 @@ public static class AuditActions
         AuditExported, AuditRetentionChanged, AuditPurged, MembershipDisabled,
     ];
 
+    /// <summary>Events added in R1 that must be emitted and tested.</summary>
+    public static readonly IReadOnlyList<string> RequiredInR1 =
+    [
+        SignInFailed, IdpConfigChanged, DirectoryConnectionChanged, UserSynced, DisabledByDirectory, ReenabledByDirectory,
+        ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
+        ConnectionConsentRevokedDetected, ConnectionStatusChanged,
+    ];
+
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =
     [
-        SignInFailed, IdpConfigChanged, RoleChanged, AddonChanged, OverrideChanged, QuotaExhausted, AuditIntegrityFailed,
+        RoleChanged, AddonChanged, OverrideChanged, QuotaExhausted, AuditIntegrityFailed,
     ];
 }

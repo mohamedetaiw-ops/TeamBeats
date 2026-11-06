@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Proposed |
+| Status | Accepted (2026-11-05 by Mohamed) |
 | Date | 2026-11-04 |
 | Owners | Mohamed |
 | Related specs | 003, 001 (suspension), 006 (disable membership) |

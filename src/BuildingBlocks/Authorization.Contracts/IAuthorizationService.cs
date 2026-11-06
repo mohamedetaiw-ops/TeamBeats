@@ -85,7 +85,26 @@ public interface IAuthorizationProvisioning
 {
     Task SeedTenantRolesAsync(CancellationToken ct = default);
 
-    Task AssignBuiltInRoleAsync(Guid userId, string builtInRoleKey, ScopeType scopeType, Guid? scopeId, Guid? grantedBy, CancellationToken ct = default);
+    /// <summary>Assigns a built-in role if the user does not hold it at that scope yet; returns the active assignment's ID.</summary>
+    Task<Guid> AssignBuiltInRoleAsync(Guid userId, string builtInRoleKey, ScopeType scopeType, Guid? scopeId, Guid? grantedBy, CancellationToken ct = default);
+
+    /// <summary>
+    /// Creates or updates a group owned by the identity provider directory (source <c>idp</c>, spec 003 US6 scenario 6)
+    /// and sets its members exactly. Returns the group ID. Product groups are never changed by this call.
+    /// </summary>
+    Task<Guid> SyncDirectoryGroupAsync(string key, string name, IReadOnlyCollection<Guid> memberUserIds, CancellationToken ct = default);
+
+    /// <summary>Gives a directory group a built-in role at a scope if it does not hold it yet (group-to-role mapping).</summary>
+    Task AssignBuiltInRoleToGroupAsync(Guid groupId, string builtInRoleKey, ScopeType scopeType, Guid? scopeId, CancellationToken ct = default);
+
+    /// <summary>Whether a key names a built-in role seeded in this tenant (for validating configuration that maps to roles).</summary>
+    Task<bool> IsBuiltInRoleKeyAsync(string roleKey, CancellationToken ct = default);
+
+    /// <summary>
+    /// Revokes an assignment made by the system (for example from an identity provider group). Returns false and
+    /// leaves the assignment in place when it is the tenant's last tenant administrator assignment (spec 001 section 6).
+    /// </summary>
+    Task<bool> RevokeSystemAssignmentAsync(Guid assignmentId, string reason, CancellationToken ct = default);
 
     Task<IReadOnlyList<RoleAssignmentSummary>> GetUserAssignmentsAsync(Guid userId, CancellationToken ct = default);
 

@@ -10,7 +10,7 @@
 | Approver | Mohamed |
 | Target release | R0 (dev auth, staging test account), R1 (Entra ID sign-in, Entra ID directory sync, delegated Microsoft Graph access for mail and calendar), R2 (Google, SAML, AD FS sign-in, on-premises AD sync) |
 | Last updated | 2026-11-06 |
-| Approved | 2026-11-04 by Mohamed; FR-016 2026-11-05 by Mohamed; US7 and FR-017 2026-11-06 by Mohamed |
+| Approved | 2026-11-04 by Mohamed; FR-016 2026-11-05 by Mohamed; AD sign-in and sync 2026-11-06 by Mohamed; US7 and FR-017 2026-11-06 by Mohamed |
 | Requirement IDs | IAM-001 to IAM-007, IAM-009, IAM-010, INT-007 (directory part) |
 | Use cases | UC-03, UC-09 (directory part) |
 | Depends on | 001, 002, 004, 017 (connector framework, for on-premises AD), 018 (delegated Microsoft Graph access) |
@@ -236,7 +236,7 @@ Entra ID is read through Microsoft Graph with application permissions limited to
 1. RESOLVED 2026-11-04 (Mohamed): identities are tenant-scoped. The same issuer and subject in two tenants creates two unrelated users. No global person record exists. Cross-tenant identity linking, if ever needed, requires a new decision and ADR.
 2. Decided 2026-11-05: role and permission changes take effect within 60 seconds for every access check (spec 004 FR-008). Session data cached for display only (menus, name, picture) may refresh within 5 minutes and is never used for an access decision.
 3. Decided 2026-11-04: SAML is available in all packages.
-4. Active Directory sign-in and sync (US5, US6, FR-011 to FR-015) need Mohamed's approval before implementation. Default: AD sign-in is federated only (no LDAP password bind), Entra ID sync in R1, on-premises AD in R2.
+4. Decided 2026-11-06 (Mohamed): Active Directory sign-in and sync (US5, US6, FR-011 to FR-015) are approved. AD sign-in is federated only (no LDAP password bind), Entra ID sync is in R1 and on-premises AD in R2.
 5. Decided 2026-11-05 (Mohamed): delegated Microsoft Graph access for Microsoft 365 features (FR-016, spec 018) is approved for R1, with session-lifetime tokens and a separate employee opt-in for signed-out access.
 
 ## 18. Traceability

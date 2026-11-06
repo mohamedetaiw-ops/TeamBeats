@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 008-experience-shell-and-personalization |
 | Area | experience |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (global shell, shared experience states, messaging rules, multi-level navigation, quick navigation, employee home with add, hide, reorder and reset in delegated regions, preference profile, audience targeting with fallback, interaction standards), R2 (resize, personal layout presets, device-specific choices, preference export, favorites and recents, command entry point, focus mode, in-context help and tours, safe suggestions), R3 (behavioral personalization if the tenant enables it) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | EXP-001, EXP-008, CX-EXP-001 to CX-EXP-010, CX-NAV-001 to CX-NAV-010, CX-PER-001 to CX-PER-015, CX-INT-001 to CX-INT-012 |
 | Use cases | UC-02 (employee home) |
 | Depends on | 003 (sessions), 004 (authorization, targeting is not access), 005 (entitlements), 006 (audit), 007 (localization and accessibility), 012 (search), 015 (notifications), 016 (services and task inbox), 021 (analytics), 032 (page composition), 033 (themes and scopes) |

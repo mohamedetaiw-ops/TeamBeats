@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 020-agent-hub |
 | Area | ai |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (registry, common runtime, six launch templates, basic configuration, lifecycle with review and the evaluation gate of spec 034, routing from the assistant, contextual actions), R2 (Agent Studio no-code, customer-created agents, marketplace, evaluation of customer-created agents in Studio, persistent memory, proactive briefings, department templates), R3 (multi-agent orchestration, advanced templates, extensibility) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | AI-007 (agent part), AI-008, UC-07, AGT-001 to AGT-020 (new) |
 | Use cases | UC-06, UC-07 |
 | Depends on | ADR-0011 (agent runtime), 013 (AI Gateway), 014 (assistant and RAG), 027 (agent governance, tools and approvals), 034 (AI evaluation and release gates), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 015 (notifications), 016 (services and task inbox), 017 (connectors), 021 (analytics) |

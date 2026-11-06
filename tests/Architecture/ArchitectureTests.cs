@@ -83,7 +83,7 @@ public sealed partial class ArchitectureTests
         var schemas = new Dictionary<string, string>
         {
             ["Tenancy"] = "tenancy", ["Identity"] = "identity", ["Authorization"] = "authz",
-            ["Entitlements"] = "entitlements", ["Audit"] = "audit",
+            ["Entitlements"] = "entitlements", ["Audit"] = "audit", ["Integrations"] = "integrations",
         };
         var violations = new List<string>();
         foreach (var (module, own) in schemas)
@@ -209,7 +209,7 @@ public sealed partial class ArchitectureTests
         var tests = string.Concat(SourceFiles("tests").Select(File.ReadAllText));
         var fields = typeof(AuditActions).GetFields(BindingFlags.Public | BindingFlags.Static).Where(f => f.IsLiteral)
             .ToDictionary(f => (string)f.GetValue(null)!, f => f.Name);
-        var missing = AuditActions.RequiredInR0
+        var missing = AuditActions.RequiredInR0.Concat(AuditActions.RequiredInR1)
             .Where(a => !tests.Contains($"AuditActions.{fields[a]}", StringComparison.Ordinal))
             .ToList();
         Assert.True(missing.Count == 0, "Audit actions without a test: " + string.Join(", ", missing));

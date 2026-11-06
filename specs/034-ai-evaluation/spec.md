@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 034-ai-evaluation |
 | Area | ai |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (evaluation registry, golden datasets in Arabic and English, evaluation engine with deterministic, judge and trajectory checks, scoring and thresholds, evaluation dashboard, release gates), R2 (continuous production evaluation, human review queues, drift detection, A/B and champion and challenger comparisons, business outcome scoring, French, Urdu and Hindi datasets, external evaluator adapters), R3 (cross-version trend benchmarks across a tenant's whole agent estate, evaluation of L4 process runs end to end) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | EVL-001 to EVL-030 (new), AI-008 (quality part), AI-010 (evidence part), UC-07, UC-13 |
 | Use cases | UC-06, UC-07, UC-13 |
 | Depends on | ADR-0015 (evaluation architecture), ADR-0011 (agent runtime), 013 (AI Gateway), 014 (assistant and RAG), 020 (Agent Hub), 027 (agent governance), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 016 (task inbox), 021 (analytics), 026 (residency) |

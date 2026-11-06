@@ -63,4 +63,5 @@ public static class BuiltInRoles
     public const string AiPolicyAdministrator = "ai_policy_administrator";
     public const string SecurityOfficer = "security_officer";
     public const string Employee = "employee";
+
 }

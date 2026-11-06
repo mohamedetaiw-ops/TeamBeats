@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 027-agent-governance |
 | Area | ai |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (autonomy L0 to L2, agent identity, tool registry and gateway for product tools, confirmation, risk classes, execution records, emergency controls, mandatory safety suites), R2 (L3 governed execution with approvals, connector tools, policy inheritance to org units, Agent Security Center, incidents, anomaly alerts), R3 (L4 bounded autonomy, MCP tools, SIEM export of agent events) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | AI-005, AI-009, AI-010, UC-07, UC-13, AGV-001 to AGV-024 (new) |
 | Use cases | UC-07, UC-13 |
 | Depends on | ADR-0011 (agent runtime), 013 (AI Gateway), 020 (Agent Hub), 034 (AI evaluation), 004 (authorization), 005 (entitlements), 006 (audit), 002 (hierarchy), 016 (task inbox), 024 (process engine), 017 (connectors), 015 (notifications) |
