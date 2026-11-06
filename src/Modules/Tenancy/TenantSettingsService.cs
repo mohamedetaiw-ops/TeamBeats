@@ -58,6 +58,12 @@ public sealed class TenantSettingsService(
         return new TenantLocaleSettings(s.DefaultLocale, s.EnabledLocales, s.TimeZone, s.NumberingSystem);
     }
 
+    public async Task<TenantBranding> GetBrandingAsync(CancellationToken ct = default)
+    {
+        var s = await GetAsync(ct);
+        return new TenantBranding(s.PrimaryColor, s.HasLogo);
+    }
+
     public async Task<TenantSettingsView> UpdateAsync(UpdateTenantSettingsRequest request, CancellationToken ct)
     {
         var current = await GetAsync(ct);

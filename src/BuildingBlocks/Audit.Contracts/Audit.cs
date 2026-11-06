@@ -106,6 +106,12 @@ public static class AuditActions
     public const string ComponentEnabled = "component.enabled";
     public const string ComponentDisabled = "component.disabled";
 
+    // 033
+    public const string ThemePublished = "theme.published";
+    public const string BrandAssigned = "brand.assigned";
+    public const string BrandUnassigned = "brand.unassigned";
+    public const string ExperienceLockChanged = "experience.lock_changed";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -126,6 +132,7 @@ public static class AuditActions
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
         ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, OutlookConnected, OutlookDisconnected,
         PageCreated, PagePublished, PageRolledBack, ComponentEnabled, ComponentDisabled,
+        ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

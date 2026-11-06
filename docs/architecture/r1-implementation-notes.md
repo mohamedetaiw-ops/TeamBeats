@@ -170,3 +170,25 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Manifest migration hooks (part of T012) | Not built. Only one version of each reference component exists. |
 | Theme tokens in manifests | Token names are checked once the spec 033 token schema exists. |
 | Denied publish outside scope | Recorded as `page.published` or `page.rolled_back` with outcome `denied`, then answered as not found. |
+
+## Brands, tokens and the theme resolver (spec 033 backend)
+
+### Built
+- Token schema in `Experience/Themes/Tokens.cs`: semantic `color.*`, `font.*`, `space.*`, `radius.*`, `border.*`, `shadow.*`, `motion.*` and `state.*` tokens with platform defaults for light and dark mode and comfortable and compact density. Values are typed (color, dimension, approved font family per script, font weight, number, duration, named easing, shadow, alias). `url()`, expressions, free CSS and unknown fonts are refused with the token name. Stored as `$value` with `$modes` for the values that differ.
+- Brand profiles (`brand`, `brand_version`). R1 publishes on save: every update is a new version, and the application role can only insert and read versions. `experience.max_brands` limits the count (1, 5, unlimited).
+- Assignments and overrides per scope (`brand_assignment`), tenant or org unit by immutable ID, and locks (`experience_lock`). Resolution runs platform, tenant brand and overrides, then each unit from the root down. A child override of a value locked by a parent is refused at the API, and ignored by the resolver if older data holds one; the trace says so.
+- Contrast checks on every save: normal text 4.5:1, large text and UI cues 3:1, focus indicators 3:1, body text at least 14 px. Shell and navigation pairs block, accent pairs warn unless the brand is strict. Findings name the token pair, mode, ratio and required ratio.
+- `GET /api/v1/experience/theme?scope=` gives the effective tokens per mode and density, the locks, the brand assets and CSS URLs; provenance only for `config_history.view`. `GET /api/v1/experience/theme.css` serves `--tb-*` custom properties, private and immutable when the URL carries the content hash. The body font follows the document language (Arabic, Urdu, Devanagari stacks with fallbacks).
+- First use seeds a default brand from the spec 001 primary color and logo, assigned at tenant scope with the default lock set (legal footer, security banner, accessibility minimums, sign-in presentation). The security banner and accessibility locks cannot be removed.
+- Permissions `theme.edit`, `theme.publish`, `config_lock.manage`, role `brand_manager`, capabilities `experience.max_brands`, `experience.org_branding`, `experience.custom_domain`, `experience.token_extensions`. Audit `theme.published`, `brand.assigned`, `brand.unassigned`, `experience.lock_changed`; events `ThemePublished`, `BrandAssignmentChanged`, `ExperienceLockChanged`.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Who publishes in R1 | Without drafts and approval (R2), brands are a tenant library: `theme.edit` at tenant scope creates and edits them, and editing a brand that is in use also needs `theme.publish`. Applying a brand or overriding tokens at a scope needs `theme.publish` there, locks need `config_lock.manage`. |
+| Contrast policy | Spec section 6 lets a tenant make accent pairs block. R1 holds this per brand (`strictContrast`), which is the smallest place to store it. |
+| Cache invalidation | The theme cache key carries a per-tenant `theme_state` version, bumped on every brand, assignment and lock change, and the org hierarchy version, so moves and changes show on the next request without event consumers. |
+| Invalid older values | A value that fails its type at render time is skipped, so the inherited value stays, and `theme.invalid_token` is counted and logged. |
+| Tenant settings reader | `ITenantSettingsReader` gained `GetBrandingAsync` (primary color and whether a logo exists) for seeding. The plan said the contract gains nothing; reading the color needs one method. |
+| Brand asset upload | Brands hold asset references (`tenant:logo` or `asset:{id}`). Upload with the spec 001 validator comes with the brand manager page (T011). |
+| Experience impact on unit moves (US5) | The resolver follows the new parent once the move is saved. The impact preview before confirming is not built. |
