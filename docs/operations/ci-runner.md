@@ -10,7 +10,7 @@ All GitHub Actions jobs run on one self-hosted Windows runner, because the repos
 
 ## How it differs from a hosted runner
 - Windows runners cannot use `services:` or `container:`. Start what a job needs in a step, and stop it in an `if: always()` step.
-- Scripts run in Git Bash (`defaults.run.shell: bash`). Every job needs `./.github/actions/windows-shell` right after checkout, or `bash` means the WSL launcher in `System32`. Use `shell: powershell` only where a step needs Windows tools.
+- Scripts run in Git Bash (`defaults.run.shell: bash`). Every job needs `./.github/actions/windows-shell` right after checkout, or `bash` means the WSL launcher in `System32` and some actions cannot unpack their downloads. Use `shell: powershell` only where a step needs Windows tools.
 - `PSExecutionPolicyPreference: Bypass` is set in each workflow, because Windows blocks PowerShell scripts for the service account.
 - `gitleaks-action` cannot install on Windows, so the governance job installs gitleaks itself.
 - Tools are installed once into the runner tool cache (`_work/_tool`) with pinned versions and checksums. To change PostgreSQL, jq or gitleaks, update the version and checksum in the action or workflow.
