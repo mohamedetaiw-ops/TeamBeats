@@ -66,6 +66,13 @@ public sealed class ReferencePacks : IComponentRegistration
         Manifest("reference.beta.restricted", "utility", [], requires: new ComponentRequirements([], [Authorization.Contracts.Permissions.ContentPublish])),
         Manifest("reference.beta.legacy", "content", [], state: ComponentStates.Retired),
         Manifest("reference.beta.old", "content", [], state: ComponentStates.Deprecated),
+        // Fault injection for the renderer tests (spec 032 T017): throws, or loads slowly, as its mode says.
+        Manifest("reference.alpha.fault", "utility", new()
+        {
+            ["mode"] = new PropertySchema("enum", Default: J("throw"), Enum: ["throw", "slow"]),
+        }),
+        // Registered here with no web component, so the renderer meets a component whose code is missing.
+        Manifest("reference.beta.missing", "content", []),
         // Invalid on purpose: asks for a context value outside the approved list (FR-028), so it is never registered.
         Manifest("reference.beta.invalid", "content", [], context: ["userEmail"]),
     ];

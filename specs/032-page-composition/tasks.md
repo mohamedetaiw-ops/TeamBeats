@@ -27,9 +27,9 @@ Depends on 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit)
 - [x] T014 Architecture test: no template, layout or page file names a concrete component ID (the import rule between placement packages comes with T015)
 
 ## Phase 6: Renderer (with spec 008 shared states)
-- [ ] T015 `lib/experience`: render client, registry with lazy placements, placement decorator (error boundary, placeholder, visibility, telemetry), event channel with declared events only, context provider
-- [ ] T016 The 10 layouts with CSS grid, container queries, logical properties and fallbacks; section modes
-- [ ] T017 [P] [US3] [US4] Tests: both reference packs on all 12 templates; widths 320, 375, 768, 1024, 1440, 1920 in LTR and RTL with no horizontal scroll; a throwing, slow and missing component leaves the rest working; axe in `ar` and `en`
+- [x] T015 `lib/experience`: render client, registry with lazy placements, placement decorator (error boundary, placeholder, visibility, telemetry), event channel with declared events only, context provider
+- [x] T016 The 10 layouts with CSS grid, container queries, logical properties and fallbacks; section modes
+- [x] T017 [P] [US3] [US4] Tests: both reference packs on all 12 templates; widths 320, 375, 768, 1024, 1440, 1920 in LTR and RTL with no horizontal scroll; a throwing, slow and missing component leaves the rest working; axe in `ar` and `en`
 
 ## Phase 7: User Story 2, builder (P1)
 - [ ] T018 Builder feature: template chooser with previews and text descriptions, picker, schema-driven property forms, action menu and shortcuts for every placement operation, command stack for undo and redo, autosave states, previews by device and direction

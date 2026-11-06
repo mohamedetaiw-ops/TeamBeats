@@ -39,8 +39,9 @@ public sealed record RenderedRegion(string Id, int Span, string Section, IReadOn
 
 public sealed record Provenance(string Template, string Layout, int Release, Guid PublishedBy, DateTimeOffset PublishedAt);
 
+/// <param name="ThemeScope">The scope whose effective theme the page uses (spec 033): <c>tenant</c> or the owning org unit.</param>
 public sealed record RenderedPage(Guid PageId, int Release, string Template, string Layout, string Variant, string Fallback,
-    IReadOnlyList<RenderedRegion> Regions, Provenance? Provenance);
+    IReadOnlyList<RenderedRegion> Regions, Provenance? Provenance, string ThemeScope);
 
 /// <summary>
 /// Page lifecycle (spec 032 US1, US5, US6, US8): create from a template, save drafts with optimistic concurrency, validate,
@@ -280,7 +281,8 @@ public sealed partial class PageService(
         var provenance = (await authz.CheckAsync(Permissions.ConfigHistoryView, Target(page.OrgUnitId), ct)).Allowed
             ? new Provenance($"{template.Id}@{template.Version}", $"{layout.Id}@{layout.Version}", current, snapshot.PublishedBy, snapshot.PublishedAt)
             : null;
-        return new RenderedPage(page.Id, current, template.Id, layout.Id, snapshot.Definition.Variant, layout.Fallback, regions, provenance);
+        return new RenderedPage(page.Id, current, template.Id, layout.Id, snapshot.Definition.Variant, layout.Fallback, regions, provenance,
+            page.OrgUnitId?.ToString() ?? "tenant");
     }
 
     private sealed record Snapshot(PageDefinition Definition, Guid PublishedBy, DateTimeOffset PublishedAt);

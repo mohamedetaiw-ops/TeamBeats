@@ -61,6 +61,8 @@ export default defineConfig({
           env: {
             TEAMBEATS_API_ORIGIN: stack.apiOrigin,
             TEAMBEATS_DEV_SIGNIN: "true",
+            // The reference component packs of spec 032 are only built into the web app for these tests.
+            NEXT_PUBLIC_TB_REFERENCE_PACKS: "true",
             NEXT_TELEMETRY_DISABLED: "1",
           },
         },
