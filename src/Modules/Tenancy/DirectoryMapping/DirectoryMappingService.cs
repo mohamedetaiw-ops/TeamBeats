@@ -371,8 +371,15 @@ public sealed partial class DirectoryMappingService(
         var target = new Dictionary<Guid, string>();
         var unmapped = new List<UnmappedUser>();
 
+        var spellings = new Dictionary<string, Dictionary<string, int>>(StringComparer.Ordinal);
+
         Desired Add(string key, string? parentKey, string name, string typeKey, int depth)
         {
+            if (!spellings.TryGetValue(key, out var seen))
+            {
+                spellings[key] = seen = new Dictionary<string, int>(StringComparer.Ordinal);
+            }
+            seen[name] = seen.GetValueOrDefault(name) + 1;
             if (!desired.TryGetValue(key, out var d))
             {
                 d = new Desired(key, parentKey, parentKey is null ? settings.ParentUnitId : null, name, typeKey, depth,
@@ -444,6 +451,14 @@ public sealed partial class DirectoryMappingService(
                     }
                 }
                 break;
+        }
+
+        // Values that normalize to one unit may be spelled differently. The name does not depend on the order the
+        // directory returns people: the most common spelling wins, ties go to the ordinal first.
+        foreach (var (key, seen) in spellings)
+        {
+            var name = seen.OrderByDescending(x => x.Value).ThenBy(x => x.Key, StringComparer.Ordinal).First().Key;
+            desired[key] = desired[key] with { Name = name };
         }
 
         // A value mapped to a product unit uses that unit and is never created.
