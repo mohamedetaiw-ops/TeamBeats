@@ -13,4 +13,7 @@
     <ProjectReference Include="../../src/Api/TeamBeats.Api.csproj" />
     <ProjectReference Include="../../src/Api.DevHost/TeamBeats.Api.DevHost.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Using Include="TeamBeats.DevFakes" />
+  </ItemGroup>
 </Project>

@@ -13,4 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="../Testing/TeamBeats.Testing.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Using Include="TeamBeats.DevFakes" />
+  </ItemGroup>
 </Project>

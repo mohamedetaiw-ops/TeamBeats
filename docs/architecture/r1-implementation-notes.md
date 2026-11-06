@@ -103,3 +103,11 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 - FR-015 says a missing attribute evaluates "the condition" as false. This build reads that as the whole condition: if any attribute it names is missing, the grant does not apply, even when another branch of an `any` group would hold. This is the stricter of the two readings. Per-comparison evaluation would also be safe, since there is no negation, and is a small change if preferred.
 - A stored condition that no longer validates (for example after an attribute is removed from the catalogue) never holds.
 - Not built yet: the condition editor in the role assignment and sharing UI (spec 004 T017), and request attribute sources (spec 026).
+
+## Fake external systems for development, tests and staging
+- `src/DevFakes` holds in-process fakes of Microsoft Entra ID, Microsoft Graph (directory, consent, mail, calendar, free/busy, rooms) and OpenRouter. The test fakes `FakeIdentityProvider` and `FakeMicrosoftGraph` moved there from `tests/Testing`, so tests, local development and staging share one implementation.
+- The development host points the adapters' named HTTP clients (`oidc`, `msgraph`, `openrouter`) at the fakes and rewrites redirects to `login.microsoftonline.com` to fake pages under `/dev/fake/entra`. The production adapters are unchanged.
+- Staging must run with fakes on; production refuses any `Dev:Fakes` setting and never contains the assembly. Details, the `staging-demo` scenario and the control API are in `docs/testing/fake-systems.md`.
+- New setting `Workers:DirectorySync:Enabled` (default true). Staging workers set it to false, because the fake directory lives in the staging API host, which runs the sync itself.
+- Fixed in passing: the development host seeded the platform operator and the test tenant in one database session, which fails when both are configured (a session is one transaction). Each seeder now gets its own scope.
+

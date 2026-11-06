@@ -26,7 +26,8 @@ The layout follows GitHub spec-kit conventions so `/specify`, `/clarify`, `/plan
 | Path | What it is |
 |---|---|
 | `src/Api` | Production API host (no development sign-in) |
-| `src/Api.DevHost` | Development and Test host with development sign-in (ADR-0004) |
+| `src/Api.DevHost` | Development, Test and Staging host with development sign-in (ADR-0004) and fake external systems |
+| `src/DevFakes` | Fake Microsoft Entra ID, Microsoft Graph and OpenRouter, plus fictional scenarios (`docs/testing/fake-systems.md`) |
 | `src/Workers` | Outbox dispatch, consumers, audit sealing and retention; `migrate` command |
 | `src/BuildingBlocks` | Tenant context, persistence, messaging, localization, telemetry, cross-module contracts |
 | `src/Modules` | Tenancy, Identity, Authorization, Entitlements, Audit, Administration |
@@ -46,6 +47,8 @@ cd src/Web && npm ci && TEAMBEATS_DEV_SIGNIN=true npm run dev  # http://<tenant>
 ```
 
 The development host migrates the database and seeds a fictional platform operator (`operator@platform.example`). Sign in on `platform.teambeats.localhost` with `POST /dev/platform/signin`, create a tenant with `POST /api/v1/platform/tenants`, then sign in on `<key>.teambeats.localhost` as the appointed administrator. `*.localhost` resolves to your machine in modern browsers.
+
+The host also seeds a fictional `demo` tenant (admin `admin@demo.example`) connected to a fake Microsoft 365 directory with 23 people in Arabic and English, groups, offices, rooms, mail and meetings. No real Microsoft or AI account is used anywhere outside production; see `docs/testing/fake-systems.md`.
 
 ## Tests
 ```bash

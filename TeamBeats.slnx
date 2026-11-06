@@ -6,6 +6,9 @@
   <Folder Name="/src/Api/">
     <Project Path="src/Api/TeamBeats.Api.csproj" />
   </Folder>
+  <Folder Name="/src/DevFakes/">
+    <Project Path="src/DevFakes/TeamBeats.DevFakes.csproj" />
+  </Folder>
   <Folder Name="/src/BuildingBlocks/" />
   <Folder Name="/src/BuildingBlocks/Audit.Contracts/">
     <Project Path="src/BuildingBlocks/Audit.Contracts/TeamBeats.Audit.Contracts.csproj" />

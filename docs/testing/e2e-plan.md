@@ -38,7 +38,7 @@ A rule that the API enforces is tested in the integration or security suite. A P
 4. **Accessibility gate.** `expectAccessible` on every new screen and on dialogs once opened. Zero critical axe violations blocks the build (spec 007 US5). Serious findings are attached to the report; the gate moves to zero serious once the R1 design-system primitives land (spec 007 T012).
 5. **Keyboard.** Each interactive component pattern (tree, table, dialog, menu, builder canvas) gets one keyboard-only walkthrough.
 6. **Visual checks.** Screenshot comparisons (`toHaveScreenshot`) for the shell, sign-in and each page template in `ar` and `en`, light and dark (spec 007 T014, spec 033). Baselines are generated in the CI Linux image and updated only through a reviewed PR.
-7. **No external systems.** Microsoft Entra ID, Microsoft Graph and OpenRouter are replaced by fakes behind the same connector adapters and AI Gateway ports (CLAUDE.md rule 4). Tests never call real tenants, mailboxes or models.
+7. **No external systems.** Microsoft Entra ID, Microsoft Graph and OpenRouter are replaced by fakes behind the same connector adapters and AI Gateway ports (CLAUDE.md rule 4). Tests never call real tenants, mailboxes or models. The fakes and the fictional `staging-demo` scenario are described in `docs/testing/fake-systems.md`.
 8. **Data.** Fictional names and `*.example` addresses only. No secrets in tests or fixtures.
 9. **Traceability.** Each spec file names the spec IDs and user stories it covers in its header comment.
 
@@ -47,8 +47,8 @@ Each row is added in the same PR as the feature, by the build thread, so a story
 
 | Area | Specs | Journeys (each in `ar` and `en`) | Needs |
 |---|---|---|---|
-| Entra ID sign-in | 003 US2 | Sign in through the identity provider, return to the page asked for; refused account; suspended tenant page; sign-out ends the server session | Fake OIDC provider the browser can reach (build on `FakeIdentityProvider` in `tests/Testing`) |
-| Directory sync and org mapping | 003 US6, 002 US5, 006 | Admin connects Microsoft 365, runs a sync, sees mapped users and units; failure state shown | Fake Graph directory |
+| Entra ID sign-in | 003 US2 | Sign in through the identity provider, return to the page asked for; refused account; suspended tenant page; sign-out ends the server session | Fake Entra ID pages in the development host (`docs/testing/fake-systems.md`) |
+| Directory sync and org mapping | 003 US6, 002 US5, 006 | Admin connects Microsoft 365, runs a sync, sees mapped users and units; failure state shown | Fake Graph directory and consent page, `staging-demo` scenario |
 | Tenancy and org boundary | 001, 002, 004 | Scoped admin sees only their units; opening another unit by URL shows the denied state; cross-tenant replay refused | Seeded org tree helper |
 | Entitlements | 005 | A capability outside the package shows the not-in-package state with no data | Second package fixture |
 | Shell and navigation | 008 | Global shell, navigation, quick navigation, shared empty, loading and error states | none |

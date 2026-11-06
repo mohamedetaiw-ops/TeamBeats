@@ -1,0 +1,887 @@
+{
+  "$comment": "Fictional scenario for the fake external systems (docs/testing/fake-systems.md). Every name, address, phone number and ID is invented. Addresses use the reserved .example domain. Generated once by hand; edit in place.",
+  "name": "staging-demo",
+  "directories": [
+    {
+      "id": "5a7e0c3d-1f2b-4c6d-9e8f-0a1b2c3d4e5f",
+      "displayName": "TeamBeats Demo Group (fake Entra ID)",
+      "utcOffset": "+04:00",
+      "consented": true,
+      "grantedRoles": [
+        "User.Read.All",
+        "Group.Read.All",
+        "AdministrativeUnit.Read.All"
+      ],
+      "ssoApp": {
+        "clientId": "7c1d2e3f-4a5b-4c6d-8e9f-a0b1c2d3e4f5",
+        "secretName": "fake-entra-sso",
+        "clientSecret": "fictional-sso-client-secret"
+      },
+      "users": [
+        {
+          "id": "00000000-0000-4000-8000-000000000001",
+          "displayName": "Layla Haddad",
+          "givenName": "Layla",
+          "surname": "Haddad",
+          "mail": "layla.haddad@staging.example",
+          "jobTitle": "Chief People Officer",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Human Resources",
+          "division": "Corporate",
+          "officeLocation": "Dubai HQ, Floor 12",
+          "mobilePhone": "+971 50 000 0001",
+          "employeeId": "E1001",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000001",
+            "10000000-0000-4000-8000-000000000002",
+            "10000000-0000-4000-8000-000000000007",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000002",
+          "displayName": "عمر الفارسي",
+          "givenName": "عمر",
+          "surname": "الفارسي",
+          "mail": "omar.alfarsi@staging.example",
+          "jobTitle": "مدير تقنية المعلومات",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Information Technology",
+          "division": "Shared Services",
+          "officeLocation": "Dubai HQ, Floor 9",
+          "mobilePhone": "+971 50 000 0002",
+          "employeeId": "E1002",
+          "preferredLanguage": "ar-AE",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000004",
+            "10000000-0000-4000-8000-000000000007",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000003",
+          "displayName": "Sarah Mitchell",
+          "givenName": "Sarah",
+          "surname": "Mitchell",
+          "mail": "sarah.mitchell@staging.example",
+          "jobTitle": "Head of Internal Communications",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Corporate Communications",
+          "division": "Corporate",
+          "officeLocation": "Dubai HQ, Floor 11",
+          "mobilePhone": "+971 50 000 0003",
+          "employeeId": "E1003",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000003",
+            "10000000-0000-4000-8000-000000000007",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000004",
+          "displayName": "نورة القحطاني",
+          "givenName": "نورة",
+          "surname": "القحطاني",
+          "mail": "noura.alqahtani@staging.example",
+          "jobTitle": "أخصائية موارد بشرية",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Human Resources",
+          "division": "Corporate",
+          "officeLocation": "Riyadh Office",
+          "mobilePhone": "+971 50 000 0004",
+          "employeeId": "E1004",
+          "preferredLanguage": "ar-SA",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000002",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000003"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000005",
+          "displayName": "Ahmed Mansour",
+          "givenName": "Ahmed",
+          "surname": "Mansour",
+          "mail": "ahmed.mansour@staging.example",
+          "jobTitle": "Finance Manager",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Finance",
+          "division": "Shared Services",
+          "officeLocation": "Cairo Office",
+          "mobilePhone": "+971 50 000 0005",
+          "employeeId": "E1005",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000005",
+            "10000000-0000-4000-8000-000000000007",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000002"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000006",
+          "displayName": "فاطمة الزهراء",
+          "givenName": "فاطمة",
+          "surname": "الزهراء",
+          "mail": "fatima.alzahraa@staging.example",
+          "jobTitle": "محاسبة",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Finance",
+          "division": "Shared Services",
+          "officeLocation": "Cairo Office",
+          "mobilePhone": "+971 50 000 0006",
+          "employeeId": "E1006",
+          "preferredLanguage": "ar-EG",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000005",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000002"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000007",
+          "displayName": "Daniel Okafor",
+          "givenName": "Daniel",
+          "surname": "Okafor",
+          "mail": "daniel.okafor@staging.example",
+          "jobTitle": "Cloud Engineer",
+          "companyName": "TeamBeats Demo Services",
+          "department": "Information Technology",
+          "division": "Shared Services",
+          "officeLocation": "Dubai HQ, Floor 9",
+          "mobilePhone": "+971 50 000 0007",
+          "employeeId": "E1007",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000004",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000008",
+          "displayName": "مريم العبدالله",
+          "givenName": "مريم",
+          "surname": "العبدالله",
+          "mail": "maryam.alabdullah@staging.example",
+          "jobTitle": "محررة محتوى",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Corporate Communications",
+          "division": "Corporate",
+          "officeLocation": "Dubai HQ, Floor 11",
+          "mobilePhone": "+971 50 000 0008",
+          "employeeId": "E1008",
+          "preferredLanguage": "ar-AE",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000003",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000009",
+          "displayName": "Youssef Khalil",
+          "givenName": "Youssef",
+          "surname": "Khalil",
+          "mail": "youssef.khalil@staging.example",
+          "jobTitle": "Legal Counsel",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Legal Affairs",
+          "division": "Corporate",
+          "officeLocation": "Dubai HQ, Floor 12",
+          "mobilePhone": "+971 50 000 0009",
+          "employeeId": "E1009",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000010",
+          "displayName": "خالد الشمري",
+          "givenName": "خالد",
+          "surname": "الشمري",
+          "mail": "khalid.alshammari@staging.example",
+          "jobTitle": "مدير العمليات",
+          "companyName": "TeamBeats Demo Services",
+          "department": "Operations",
+          "division": "Field Services",
+          "officeLocation": "Riyadh Office",
+          "mobilePhone": "+971 50 000 0010",
+          "employeeId": "E1010",
+          "preferredLanguage": "ar-SA",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000007",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000003"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000011",
+          "displayName": "Priya Raman",
+          "givenName": "Priya",
+          "surname": "Raman",
+          "mail": "priya.raman@staging.example",
+          "jobTitle": "Operations Analyst",
+          "companyName": "TeamBeats Demo Services",
+          "department": "Operations",
+          "division": "Field Services",
+          "officeLocation": "Dubai HQ, Floor 7",
+          "mobilePhone": "+971 50 000 0011",
+          "employeeId": "E1011",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000012",
+          "displayName": "هدى منصور",
+          "givenName": "هدى",
+          "surname": "منصور",
+          "mail": "huda.mansour@staging.example",
+          "jobTitle": "منسقة فعاليات",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Corporate Communications",
+          "division": "Corporate",
+          "officeLocation": "Cairo Office",
+          "mobilePhone": "+971 50 000 0012",
+          "employeeId": "E1012",
+          "preferredLanguage": "ar-EG",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000003",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000002"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000013",
+          "displayName": "Tariq Aziz",
+          "givenName": "Tariq",
+          "surname": "Aziz",
+          "mail": "tariq.aziz@staging.example",
+          "jobTitle": "Service Desk Lead",
+          "companyName": "TeamBeats Demo Services",
+          "department": "Information Technology",
+          "division": "Shared Services",
+          "officeLocation": "Cairo Office",
+          "mobilePhone": "+971 50 000 0013",
+          "employeeId": "E1013",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000004",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000002"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000014",
+          "displayName": "ريم الحسيني",
+          "givenName": "ريم",
+          "surname": "الحسيني",
+          "mail": "reem.alhusseini@staging.example",
+          "jobTitle": "مسؤولة رواتب",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "HR",
+          "division": "Corporate",
+          "officeLocation": "Dubai HQ, Floor 12",
+          "mobilePhone": "+971 50 000 0014",
+          "employeeId": "E1014",
+          "preferredLanguage": "ar-AE",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000002",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000015",
+          "displayName": "James Carter",
+          "givenName": "James",
+          "surname": "Carter",
+          "mail": "james.carter@staging.example",
+          "jobTitle": "Procurement Officer",
+          "companyName": "TeamBeats Demo Services",
+          "department": "Operations",
+          "division": "Field Services",
+          "officeLocation": "Dubai HQ, Floor 7",
+          "mobilePhone": "+971 50 000 0015",
+          "employeeId": "E1015",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000016",
+          "displayName": "سلمى يوسف",
+          "givenName": "سلمى",
+          "surname": "يوسف",
+          "mail": "salma.youssef@staging.example",
+          "jobTitle": "مستشارة قانونية",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Legal Affairs",
+          "division": "Corporate",
+          "officeLocation": "Cairo Office",
+          "mobilePhone": "+971 50 000 0016",
+          "employeeId": "E1016",
+          "preferredLanguage": "ar-EG",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000002"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000017",
+          "displayName": "Hassan Ibrahim",
+          "givenName": "Hassan",
+          "surname": "Ibrahim",
+          "mail": "hassan.ibrahim@staging.example",
+          "jobTitle": "Chief Executive Officer",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Executive Office",
+          "division": "Corporate",
+          "officeLocation": "Dubai HQ, Floor 14",
+          "mobilePhone": "+971 50 000 0017",
+          "employeeId": "E1017",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000007",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000018",
+          "displayName": "لينا الخطيب",
+          "givenName": "لينا",
+          "surname": "الخطيب",
+          "mail": "lina.alkhatib@staging.example",
+          "jobTitle": "مساعدة تنفيذية",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Executive Office",
+          "division": "Corporate",
+          "officeLocation": "Dubai HQ, Floor 14",
+          "mobilePhone": "+971 50 000 0018",
+          "employeeId": "E1018",
+          "preferredLanguage": "ar-AE",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000019",
+          "displayName": "Marco Rossi",
+          "givenName": "Marco",
+          "surname": "Rossi",
+          "mail": "marco.rossi@staging.example",
+          "jobTitle": "Field Technician",
+          "companyName": "TeamBeats Demo Services",
+          "department": "Operations",
+          "division": "Field Services",
+          "officeLocation": "Riyadh Office",
+          "mobilePhone": "+971 50 000 0019",
+          "employeeId": "E1019",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000003"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000020",
+          "displayName": "عبدالرحمن صالح",
+          "givenName": "عبدالرحمن",
+          "surname": "صالح",
+          "mail": "abdulrahman.saleh@staging.example",
+          "jobTitle": "مهندس شبكات",
+          "companyName": "TeamBeats Demo Services",
+          "department": "Information Technology",
+          "division": "Shared Services",
+          "officeLocation": "Riyadh Office",
+          "mobilePhone": "+971 50 000 0020",
+          "employeeId": "E1020",
+          "preferredLanguage": "ar-SA",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000004",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000003"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000021",
+          "displayName": "Emily Chen",
+          "givenName": "Emily",
+          "surname": "Chen",
+          "mail": "emily.chen@staging.example",
+          "jobTitle": "Talent Acquisition Partner",
+          "companyName": "TeamBeats Demo Holding",
+          "department": "Human Resources",
+          "division": "Corporate",
+          "officeLocation": "Dubai HQ, Floor 12",
+          "mobilePhone": "+971 50 000 0021",
+          "employeeId": "E1021",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000002",
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000022",
+          "displayName": "Former Employee",
+          "givenName": "Former",
+          "surname": "Employee",
+          "mail": "former.employee@staging.example",
+          "jobTitle": "Analyst",
+          "companyName": "TeamBeats Demo Services",
+          "department": "Operations",
+          "division": "Field Services",
+          "officeLocation": "Dubai HQ, Floor 7",
+          "mobilePhone": "+971 50 000 0022",
+          "employeeId": "E1022",
+          "preferredLanguage": "en-US",
+          "enabled": false,
+          "groups": [
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": [
+            "20000000-0000-4000-8000-000000000001"
+          ]
+        },
+        {
+          "id": "00000000-0000-4000-8000-000000000023",
+          "displayName": "New Joiner",
+          "givenName": "New",
+          "surname": "Joiner",
+          "mail": "new.joiner@staging.example",
+          "mobilePhone": "+971 50 000 0023",
+          "employeeId": "E1023",
+          "preferredLanguage": "en-US",
+          "enabled": true,
+          "groups": [
+            "10000000-0000-4000-8000-000000000006"
+          ],
+          "adminUnits": []
+        }
+      ],
+      "groups": [
+        {
+          "id": "10000000-0000-4000-8000-000000000001",
+          "displayName": "TeamBeats Administrators"
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000002",
+          "displayName": "HR Team"
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000003",
+          "displayName": "Communications Editors"
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000004",
+          "displayName": "IT Support"
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000005",
+          "displayName": "Finance Team"
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000006",
+          "displayName": "All Staff"
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000007",
+          "displayName": "People Managers"
+        }
+      ],
+      "adminUnits": [
+        {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "displayName": "Dubai Office"
+        },
+        {
+          "id": "20000000-0000-4000-8000-000000000002",
+          "displayName": "Cairo Office"
+        },
+        {
+          "id": "20000000-0000-4000-8000-000000000003",
+          "displayName": "Riyadh Office"
+        }
+      ],
+      "rooms": [
+        {
+          "id": "30000000-0000-4000-8000-000000000001",
+          "displayName": "Al Noor Boardroom",
+          "emailAddress": "room.alnoor@staging.example",
+          "capacity": 16,
+          "building": "Dubai HQ",
+          "floorLabel": "14"
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000002",
+          "displayName": "Majlis Room",
+          "emailAddress": "room.majlis@staging.example",
+          "capacity": 8,
+          "building": "Dubai HQ",
+          "floorLabel": "12"
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000003",
+          "displayName": "Focus Room 9A",
+          "emailAddress": "room.focus9a@staging.example",
+          "capacity": 4,
+          "building": "Dubai HQ",
+          "floorLabel": "9"
+        },
+        {
+          "id": "30000000-0000-4000-8000-000000000004",
+          "displayName": "Nile Meeting Room",
+          "emailAddress": "room.nile@staging.example",
+          "capacity": 10,
+          "building": "Cairo Office",
+          "floorLabel": "3"
+        }
+      ],
+      "messages": [
+        {
+          "to": "layla.haddad@staging.example",
+          "from": "hassan.ibrahim@staging.example",
+          "subject": "Quarterly people review",
+          "preview": "Please share the headcount summary before Thursday's leadership meeting.",
+          "hoursAgo": 2,
+          "isRead": false,
+          "importance": "high"
+        },
+        {
+          "to": "layla.haddad@staging.example",
+          "from": "noura.alqahtani@staging.example",
+          "subject": "طلب إجازة سنوية",
+          "preview": "أرجو الموافقة على إجازتي السنوية من ١٥ إلى ٢٢ من الشهر القادم.",
+          "hoursAgo": 5,
+          "isRead": false,
+          "importance": "normal"
+        },
+        {
+          "to": "layla.haddad@staging.example",
+          "from": "emily.chen@staging.example",
+          "subject": "Offer letter for the cloud engineer role",
+          "preview": "The candidate accepted verbally. Can you approve the offer letter today?",
+          "hoursAgo": 9,
+          "isRead": true,
+          "importance": "normal"
+        },
+        {
+          "to": "layla.haddad@staging.example",
+          "from": "sarah.mitchell@staging.example",
+          "subject": "Town hall agenda draft",
+          "preview": "Attached the draft agenda for the town hall. Comments welcome by Monday.",
+          "hoursAgo": 26,
+          "isRead": true,
+          "importance": "normal"
+        },
+        {
+          "to": "omar.alfarsi@staging.example",
+          "from": "daniel.okafor@staging.example",
+          "subject": "Planned maintenance window",
+          "preview": "Storage maintenance is planned for Friday 22:00 to 23:00. No user impact expected.",
+          "hoursAgo": 1,
+          "isRead": false,
+          "importance": "normal"
+        },
+        {
+          "to": "omar.alfarsi@staging.example",
+          "from": "tariq.aziz@staging.example",
+          "subject": "تقرير مكتب الخدمة الأسبوعي",
+          "preview": "تم إغلاق ٤٢ طلبا هذا الأسبوع، ومتوسط زمن الحل ٣ ساعات.",
+          "hoursAgo": 20,
+          "isRead": true,
+          "importance": "normal"
+        },
+        {
+          "to": "omar.alfarsi@staging.example",
+          "from": "hassan.ibrahim@staging.example",
+          "subject": "Digital workplace update",
+          "preview": "Thanks for the update. Let us review the intranet rollout plan next week.",
+          "hoursAgo": 30,
+          "isRead": false,
+          "importance": "normal"
+        },
+        {
+          "to": "sarah.mitchell@staging.example",
+          "from": "maryam.alabdullah@staging.example",
+          "subject": "مسودة خبر الأسبوع",
+          "preview": "أرسلت مسودة خبر افتتاح مكتب الرياض للمراجعة قبل النشر.",
+          "hoursAgo": 3,
+          "isRead": false,
+          "importance": "normal"
+        },
+        {
+          "to": "sarah.mitchell@staging.example",
+          "from": "huda.mansour@staging.example",
+          "subject": "Event photos",
+          "preview": "Photos from the Cairo community day are in the shared folder.",
+          "hoursAgo": 28,
+          "isRead": true,
+          "importance": "normal"
+        },
+        {
+          "to": "ahmed.mansour@staging.example",
+          "from": "fatima.alzahraa@staging.example",
+          "subject": "إقفال الشهر",
+          "preview": "تمت مطابقة الحسابات، وتبقى ثلاث فواتير بانتظار الاعتماد.",
+          "hoursAgo": 4,
+          "isRead": false,
+          "importance": "normal"
+        },
+        {
+          "to": "ahmed.mansour@staging.example",
+          "from": "james.carter@staging.example",
+          "subject": "Purchase order approval",
+          "preview": "PO for the new laptops is ready for your approval.",
+          "hoursAgo": 7,
+          "isRead": false,
+          "importance": "high"
+        }
+      ],
+      "events": [
+        {
+          "id": "ev-0001",
+          "subject": "Leadership weekly",
+          "organizer": "hassan.ibrahim@staging.example",
+          "attendees": [
+            "layla.haddad@staging.example",
+            "omar.alfarsi@staging.example",
+            "sarah.mitchell@staging.example",
+            "ahmed.mansour@staging.example",
+            "khalid.alshammari@staging.example"
+          ],
+          "dayOffset": 0,
+          "start": "09:00",
+          "minutes": 60,
+          "location": "Al Noor Boardroom",
+          "online": false
+        },
+        {
+          "id": "ev-0002",
+          "subject": "IT stand-up",
+          "organizer": "omar.alfarsi@staging.example",
+          "attendees": [
+            "daniel.okafor@staging.example",
+            "tariq.aziz@staging.example",
+            "abdulrahman.saleh@staging.example"
+          ],
+          "dayOffset": 0,
+          "start": "10:30",
+          "minutes": 15,
+          "online": true
+        },
+        {
+          "id": "ev-0003",
+          "subject": "اجتماع فريق الموارد البشرية",
+          "organizer": "layla.haddad@staging.example",
+          "attendees": [
+            "noura.alqahtani@staging.example",
+            "reem.alhusseini@staging.example",
+            "emily.chen@staging.example"
+          ],
+          "dayOffset": 0,
+          "start": "13:00",
+          "minutes": 45,
+          "location": "Majlis Room",
+          "online": false
+        },
+        {
+          "id": "ev-0004",
+          "subject": "1:1 Layla and Emily",
+          "organizer": "layla.haddad@staging.example",
+          "attendees": [
+            "emily.chen@staging.example"
+          ],
+          "dayOffset": 1,
+          "start": "11:00",
+          "minutes": 30,
+          "online": true
+        },
+        {
+          "id": "ev-0005",
+          "subject": "لقاء الموظفين الشهري",
+          "organizer": "sarah.mitchell@staging.example",
+          "attendees": [
+            "layla.haddad@staging.example",
+            "omar.alfarsi@staging.example",
+            "sarah.mitchell@staging.example",
+            "noura.alqahtani@staging.example",
+            "ahmed.mansour@staging.example",
+            "fatima.alzahraa@staging.example",
+            "daniel.okafor@staging.example",
+            "maryam.alabdullah@staging.example",
+            "youssef.khalil@staging.example",
+            "khalid.alshammari@staging.example",
+            "priya.raman@staging.example",
+            "huda.mansour@staging.example",
+            "tariq.aziz@staging.example",
+            "reem.alhusseini@staging.example",
+            "james.carter@staging.example",
+            "salma.youssef@staging.example",
+            "hassan.ibrahim@staging.example",
+            "lina.alkhatib@staging.example",
+            "marco.rossi@staging.example",
+            "abdulrahman.saleh@staging.example"
+          ],
+          "dayOffset": 2,
+          "start": "15:00",
+          "minutes": 60,
+          "location": "Al Noor Boardroom",
+          "online": true
+        },
+        {
+          "id": "ev-0006",
+          "subject": "Budget review",
+          "organizer": "ahmed.mansour@staging.example",
+          "attendees": [
+            "fatima.alzahraa@staging.example",
+            "hassan.ibrahim@staging.example",
+            "layla.haddad@staging.example"
+          ],
+          "dayOffset": 3,
+          "start": "10:00",
+          "minutes": 90,
+          "location": "Nile Meeting Room",
+          "online": false
+        },
+        {
+          "id": "ev-0007",
+          "subject": "Intranet content planning",
+          "organizer": "sarah.mitchell@staging.example",
+          "attendees": [
+            "maryam.alabdullah@staging.example",
+            "huda.mansour@staging.example"
+          ],
+          "dayOffset": 1,
+          "start": "14:00",
+          "minutes": 60,
+          "location": "Focus Room 9A",
+          "online": false
+        },
+        {
+          "id": "ev-0008",
+          "subject": "Out of office",
+          "organizer": "omar.alfarsi@staging.example",
+          "attendees": [],
+          "dayOffset": 4,
+          "start": "08:00",
+          "minutes": 540,
+          "online": false,
+          "showAs": "oof"
+        },
+        {
+          "id": "ev-0009",
+          "subject": "Vendor call",
+          "organizer": "khalid.alshammari@staging.example",
+          "attendees": [
+            "priya.raman@staging.example",
+            "james.carter@staging.example"
+          ],
+          "dayOffset": -1,
+          "start": "16:00",
+          "minutes": 30,
+          "online": true
+        }
+      ]
+    }
+  ],
+  "tenant": {
+    "directory": "5a7e0c3d-1f2b-4c6d-9e8f-0a1b2c3d4e5f",
+    "connectionName": "TeamBeats Demo Microsoft 365 (fake)",
+    "features": [
+      "directory_sync",
+      "mail",
+      "calendar",
+      "free_busy"
+    ],
+    "configureSso": true,
+    "ssoDisplayName": "TeamBeats Demo Group",
+    "jitDomains": [],
+    "groupRoles": {
+      "10000000-0000-4000-8000-000000000001": "tenant_administrator",
+      "10000000-0000-4000-8000-000000000003": "content_editor",
+      "10000000-0000-4000-8000-000000000004": "integration_administrator"
+    },
+    "runInitialSync": true,
+    "deletionThresholdPct": 100
+  }
+}
