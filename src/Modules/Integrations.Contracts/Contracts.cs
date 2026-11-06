@@ -55,7 +55,7 @@ public sealed record ConnectionDeleted(Guid ConnectionId, string Kind) : IIntegr
 
 /// <summary>
 /// A directory account in canonical form (constitution XVII: no external DTOs leave Integrations). On an incremental
-/// read a null value means "not reported", so the previous value is kept.
+/// read a null value means "not reported", so the previous value is kept; an empty string means the directory cleared it.
 /// </summary>
 public sealed record DirectoryUserRecord(
     string ExternalId,
@@ -68,13 +68,25 @@ public sealed record DirectoryUserRecord(
     string? Office,
     string? Phone,
     string? EmployeeId,
-    string? PreferredLanguage);
+    string? PreferredLanguage,
+    string? CompanyName = null,
+    string? Department = null,
+    string? Division = null);
 
 /// <summary>A directory group and the member changes since the last read.</summary>
 public sealed record DirectoryGroupRecord(string ExternalId, bool Removed, string? DisplayName, IReadOnlyList<string> MembersAdded, IReadOnlyList<string> MembersRemoved);
 
-/// <summary>Changes since the cursors (a full read when they are null), and the cursors for the next read.</summary>
-public sealed record DirectoryChanges(IReadOnlyList<DirectoryUserRecord> Users, IReadOnlyList<DirectoryGroupRecord> Groups, string UsersCursor, string GroupsCursor);
+/// <summary>
+/// Changes since the cursors (a full read when they are null), and the cursors for the next read. Administrative units
+/// (Entra ID) are read like groups, for the organization mapping in spec 002 US5.
+/// </summary>
+public sealed record DirectoryChanges(
+    IReadOnlyList<DirectoryUserRecord> Users,
+    IReadOnlyList<DirectoryGroupRecord> Groups,
+    string UsersCursor,
+    string GroupsCursor,
+    IReadOnlyList<DirectoryGroupRecord>? AdminUnits = null,
+    string? AdminUnitsCursor = null);
 
 public sealed class DirectoryUnavailableException(string reason) : Exception(reason)
 {
@@ -88,5 +100,5 @@ public interface IDirectorySource
     /// <summary>The OIDC issuer of the connected directory, so synced and signed-in identities meet (spec 003 FR-003).</summary>
     string IssuerFor(string externalTenantId);
 
-    Task<DirectoryChanges> ReadChangesAsync(Guid connectionId, string? usersCursor, string? groupsCursor, CancellationToken ct = default);
+    Task<DirectoryChanges> ReadChangesAsync(Guid connectionId, string? usersCursor, string? groupsCursor, string? adminUnitsCursor = null, CancellationToken ct = default);
 }

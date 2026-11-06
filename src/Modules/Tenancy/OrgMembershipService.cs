@@ -68,6 +68,13 @@ public sealed class OrgMembershipService(
             throw AppException.Conflict("conflict.membership.exists");
         }
 
+        return await AddCoreAsync(unitId, request.UserId, request.Type!, request.ValidFrom, null, ct);
+    }
+
+    /// <summary>Adds a membership after the caller has authorized and validated it. A directory membership is always primary.</summary>
+    internal async Task<OrgMembershipView> AddCoreAsync(Guid unitId, Guid userId, string type, DateTimeOffset? from, Guid? directoryConnectionId, CancellationToken ct)
+    {
+        var request = new AddMembershipRequest(userId, type, from);
         var hasActive = await session.ScalarAsync<bool>(
             "select exists (select 1 from tenancy.org_membership where user_id = @u and valid_to is null)", new { u = request.UserId }, ct);
         var makePrimary = request.Type == "primary" || !hasActive;
@@ -80,10 +87,14 @@ public sealed class OrgMembershipService(
         var validFrom = request.ValidFrom ?? clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into tenancy.org_membership (tenant_id, id, user_id, org_unit_id, type, is_primary, valid_from)
-            values (@t, @id, @u, @unit, @type, @primary, @from)
+            insert into tenancy.org_membership (tenant_id, id, user_id, org_unit_id, type, is_primary, valid_from, owner, owner_connection_id)
+            values (@t, @id, @u, @unit, @type, @primary, @from, @owner, @conn)
             """,
-            new { t = context.RequireTenant(), id, u = request.UserId, unit = unitId, type = makePrimary ? "primary" : request.Type, primary = makePrimary, from = validFrom }, ct);
+            new
+            {
+                t = context.RequireTenant(), id, u = request.UserId, unit = unitId, type = makePrimary ? "primary" : request.Type, primary = makePrimary, from = validFrom,
+                owner = directoryConnectionId is null ? OrgOwners.Product : OrgOwners.Directory, conn = directoryConnectionId,
+            }, ct);
         if (makePrimary)
         {
             await session.ExecAsync(
@@ -93,7 +104,7 @@ public sealed class OrgMembershipService(
         await hierarchy.BumpVersionAsync(ct);
 
         await audit.WriteAsync(new AuditEntry(AuditActions.OrgMembershipAdded, "org_membership", id.ToString(), TargetOrgUnitId: unitId,
-            Changes: new { userId = request.UserId, type = request.Type, isPrimary = makePrimary }), ct);
+            Changes: new { userId = request.UserId, type = request.Type, isPrimary = makePrimary, owner = directoryConnectionId is null ? OrgOwners.Product : OrgOwners.Directory }), ct);
         if (makePrimary && hasActive)
         {
             await audit.WriteAsync(new AuditEntry(AuditActions.OrgMembershipPrimaryChanged, "org_membership", id.ToString(), TargetOrgUnitId: unitId,
@@ -113,7 +124,24 @@ public sealed class OrgMembershipService(
         {
             return;
         }
+        var owner = await session.ScalarAsync<string>("select owner from tenancy.org_membership where id = @id", new { id = membershipId }, ct);
+        if (owner == OrgOwners.Directory)
+        {
+            throw AppException.Conflict("conflict.org.directory_owned");
+        }
         await EndInternalAsync(m, ct);
+    }
+
+    /// <summary>Ends a directory-owned membership; history is kept (spec 002 US5 scenario 5).</summary>
+    internal async Task EndFromDirectoryAsync(Guid membershipId, CancellationToken ct)
+    {
+        var m = await session.QuerySingleOrDefaultAsync(
+            "select id, user_id, org_unit_id, type, is_primary, valid_from, valid_to from tenancy.org_membership where id = @id",
+            new { id = membershipId }, Map, ct);
+        if (m is { ValidTo: null })
+        {
+            await EndInternalAsync(m, ct);
+        }
     }
 
     internal async Task HandleDeactivationAsync(IReadOnlyList<Guid> units, string action, Guid? moveTo, CancellationToken ct)

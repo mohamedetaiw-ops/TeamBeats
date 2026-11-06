@@ -620,6 +620,62 @@
         }
       }
     },
+    "/api/v1/org/directory-mapping": {
+      "get": {
+        "tags": [
+          "Organization"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Organization"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrgMappingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/org/directory-mapping:preview": {
+      "post": {
+        "tags": [
+          "Organization"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/org/directory-mapping:approve": {
+      "post": {
+        "tags": [
+          "Organization"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/auth/signin/options": {
       "get": {
         "tags": [
@@ -1826,6 +1882,21 @@
           }
         }
       },
+      "AliasRule": {
+        "required": [
+          "from",
+          "to"
+        ],
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        }
+      },
       "AppointAdminRequest": {
         "required": [
           "email"
@@ -2367,6 +2438,78 @@
           }
         }
       },
+      "OrgMappingRequest": {
+        "required": [
+          "strategy",
+          "levels",
+          "groups",
+          "aliases",
+          "valueMap",
+          "parentUnitId",
+          "deletionThresholdPct"
+        ],
+        "type": "object",
+        "properties": {
+          "strategy": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "levels": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "groups": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "aliases": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AliasRule"
+            }
+          },
+          "valueMap": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ValueMapping"
+            }
+          },
+          "parentUnitId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "deletionThresholdPct": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "PackageVersionRequest": {
         "required": [
           "capabilities"
@@ -2530,6 +2673,22 @@
             "items": {
               "type": "string"
             }
+          }
+        }
+      },
+      "ValueMapping": {
+        "required": [
+          "key",
+          "unitId"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "unitId": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       }

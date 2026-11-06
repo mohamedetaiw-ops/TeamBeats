@@ -11,12 +11,12 @@ namespace TeamBeats.Modules.Integrations.Microsoft365;
 /// </summary>
 public sealed class MicrosoftDirectorySource(IDbSession session, IMicrosoftGraph graph, IHttpClientFactory httpClients) : IDirectorySource
 {
-    private const string UserSelect = "id,displayName,mail,userPrincipalName,jobTitle,officeLocation,mobilePhone,businessPhones,employeeId,preferredLanguage,accountEnabled";
+    private const string UserSelect = "id,displayName,mail,userPrincipalName,jobTitle,officeLocation,mobilePhone,businessPhones,employeeId,preferredLanguage,accountEnabled,companyName,department,employeeOrgData";
     private const int MaxPages = 10_000;
 
     public string IssuerFor(string externalTenantId) => $"{HttpMicrosoftGraph.LoginAuthority}/{externalTenantId}/v2.0";
 
-    public async Task<DirectoryChanges> ReadChangesAsync(Guid connectionId, string? usersCursor, string? groupsCursor, CancellationToken ct = default)
+    public async Task<DirectoryChanges> ReadChangesAsync(Guid connectionId, string? usersCursor, string? groupsCursor, string? adminUnitsCursor = null, CancellationToken ct = default)
     {
         var connection = await session.QuerySingleOrDefaultAsync(
             """
@@ -45,7 +45,10 @@ public sealed class MicrosoftDirectorySource(IDbSession session, IMicrosoftGraph
         var groups = new List<DirectoryGroupRecord>();
         var nextGroups = await ReadDeltaAsync(token, Start(groupsCursor, $"{HttpMicrosoftGraph.GraphBase}/groups/delta?$select=id,displayName,members"),
             item => groups.Add(MapGroup(item)), ct);
-        return new DirectoryChanges(users, MergeGroups(groups), nextUsers, nextGroups);
+        var units = new List<DirectoryGroupRecord>();
+        var nextUnits = await ReadDeltaAsync(token, Start(adminUnitsCursor, $"{HttpMicrosoftGraph.GraphBase}/directory/administrativeUnits/delta?$select=id,displayName,members"),
+            item => units.Add(MapGroup(item)), ct);
+        return new DirectoryChanges(users, MergeGroups(groups), nextUsers, nextGroups, MergeGroups(units), nextUnits);
     }
 
     /// <summary>Cursors are Graph delta links this adapter stored; anything else starts a full read.</summary>
@@ -102,12 +105,17 @@ public sealed class MicrosoftDirectorySource(IDbSession session, IMicrosoftGraph
     private static DirectoryUserRecord MapUser(JsonElement u)
     {
         var removed = u.TryGetProperty("@removed", out _);
-        string? Text(string name) => u.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+        // Absent means "not reported" (incremental reads may omit it); an explicit null means "cleared" and maps to "".
+        string? Text(string name) => !u.TryGetProperty(name, out var v) ? null
+            : v.ValueKind == JsonValueKind.String ? v.GetString() : v.ValueKind == JsonValueKind.Null ? string.Empty : null;
         var phone = Text("mobilePhone")
             ?? (u.TryGetProperty("businessPhones", out var phones) && phones.ValueKind == JsonValueKind.Array && phones.GetArrayLength() > 0 ? phones[0].GetString() : null);
         bool? enabled = u.TryGetProperty("accountEnabled", out var e) && e.ValueKind is JsonValueKind.True or JsonValueKind.False ? e.GetBoolean() : null;
         return new DirectoryUserRecord(u.GetProperty("id").GetString()!.ToLowerInvariant(), removed, enabled, Text("displayName"), Text("mail"),
-            Text("userPrincipalName"), Text("jobTitle"), Text("officeLocation"), phone, Text("employeeId"), Text("preferredLanguage"));
+            Text("userPrincipalName"), Text("jobTitle"), Text("officeLocation"), phone, Text("employeeId"), Text("preferredLanguage"),
+            Text("companyName"), Text("department"),
+            !u.TryGetProperty("employeeOrgData", out var org) ? null
+                : org.ValueKind == JsonValueKind.Object && org.TryGetProperty("division", out var div) && div.ValueKind == JsonValueKind.String ? div.GetString() : string.Empty);
     }
 
     private static DirectoryGroupRecord MapGroup(JsonElement g)

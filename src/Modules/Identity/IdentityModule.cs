@@ -34,6 +34,7 @@ public static class IdentityModule
         services.AddScoped<RequestLocale>();
         services.AddMessageHandler<TenantSuspended, RevokeSessionsOnSuspension>("identity.revoke_on_suspend");
         services.AddScoped<Directory.DirectorySyncService>();
+        services.AddScoped<IDirectoryReader, Directory.DirectoryReader>();
         services.AddScoped<Integrations.Contracts.IConnectionDependents, Directory.DirectoryConnectionDependents>();
         services.AddMessageHandler<Directory.DirectorySyncRequested, Directory.RunRequestedDirectorySync>("identity.directory_sync_now");
         services.AddMessageHandler<Integrations.Contracts.ConnectionDeleted, Directory.RemoveDirectoryOnConnectionDeleted>("identity.directory_connection_deleted");

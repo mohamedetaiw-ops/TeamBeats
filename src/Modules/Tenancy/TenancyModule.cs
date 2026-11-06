@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Messaging;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -25,6 +26,9 @@ public static class TenancyModule
         services.AddScoped<ITenantSettingsReader>(sp => sp.GetRequiredService<TenantSettingsService>());
         services.AddScoped<OrgHierarchyService>();
         services.AddScoped<OrgMembershipService>();
+        services.AddScoped<DirectoryMapping.DirectoryMappingService>();
+        services.AddMessageHandler<TeamBeats.Modules.Identity.Contracts.DirectorySynced, DirectoryMapping.ApplyMappingAfterDirectorySync>("tenancy.directory_mapping_apply");
+        services.AddMessageHandler<TeamBeats.Modules.Integrations.Contracts.ConnectionDeleted, DirectoryMapping.ReleaseMappingOnConnectionDeleted>("tenancy.directory_mapping_release");
         services.AddScoped<TenancyContracts>();
         services.AddScoped<IOrganizationHierarchy>(sp => sp.GetRequiredService<TenancyContracts>());
         services.AddScoped<ITenantMemberships>(sp => sp.GetRequiredService<TenancyContracts>());
@@ -165,6 +169,7 @@ public static class TenancyModule
     private static void MapOrganization(IEndpointRouteBuilder app)
     {
         var org = app.MapGroup("/api/v1/org").RequireTenantUser().WithTags("Organization");
+        DirectoryMapping.DirectoryMappingEndpoints.MapDirectoryMappingEndpoints(app);
 
         org.MapGet("/units", async (Guid? parentId, int? depth, OrgHierarchyService service, CancellationToken ct) =>
             Results.Ok(await service.ListAsync(parentId, depth, ct)));
