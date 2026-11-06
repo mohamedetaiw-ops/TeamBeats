@@ -38,7 +38,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
     private readonly ConcurrentDictionary<string, Mailbox> _mailboxes = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, List<Room>> _rooms = new(StringComparer.Ordinal);
 
-    private sealed record DelegatedCode(string Directory, string UserId, string ClientId, string RedirectUri, string? CodeChallenge, string Scope);
+    private sealed record DelegatedCode(string Directory, string UserId, string ClientId, string RedirectUri, string? CodeChallenge, string Scope, string? Upn = null);
 
     /// <summary>A message as Graph returns it to Mail.ReadBasic: no body, only the preview.</summary>
     public sealed record Message(string Id, string Subject, string FromName, string FromAddress, DateTimeOffset Received, string Preview, bool IsRead, string Importance = "normal");
@@ -57,6 +57,39 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
 
     /// <summary>The mailbox and calendar of one directory user (by object ID).</summary>
     public Mailbox MailboxOf(Guid directoryId, string userId) => _mailboxes.GetOrAdd($"{directoryId:D}/{userId}", _ => new Mailbox());
+
+    // Mailboxes keyed by the signed-in user's UPN (the login hint), for tests that seed users without a fake directory
+    // entry (spec 018 MailCalendarTests). A token whose user is not in the fake directory reads these instead.
+
+    public sealed record FakeMessage(string Id, string FromName, string FromAddress, string Subject, DateTimeOffset Received, bool IsRead = false,
+        string Importance = "normal", bool HasAttachments = false, string Preview = "", bool Focused = true);
+
+    public sealed record FakeEvent(string Id, string Subject, DateTimeOffset Start, DateTimeOffset End, bool AllDay = false, string ShowAs = "busy",
+        string Sensitivity = "normal", bool Cancelled = false, string Response = "accepted", string? Location = null, string? JoinUrl = null);
+
+    public sealed record FakeScheduleItem(string Status, DateTimeOffset Start, DateTimeOffset End);
+
+    public sealed class FakeMailbox
+    {
+        public List<FakeMessage> Messages { get; } = [];
+        public List<FakeEvent> Events { get; } = [];
+        public int UnreadCount { get; set; }
+        public bool Exists { get; set; } = true;
+    }
+
+    private readonly ConcurrentDictionary<string, FakeMailbox> _upnMailboxes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, List<FakeScheduleItem>> _schedules = new(StringComparer.OrdinalIgnoreCase);
+
+    public FakeMailbox MailboxFor(string upn) => _upnMailboxes.GetOrAdd(upn, _ => new FakeMailbox());
+
+    /// <summary>Free and busy that the colleague shares; a colleague without an entry does not share.</summary>
+    public void Schedule(string upn, params FakeScheduleItem[] items) => _schedules[upn] = [.. items];
+
+    /// <summary>Status codes the next delegated Graph calls answer with, one per call (429 carries Retry-After: 0).</summary>
+    public ConcurrentQueue<int> DelegatedFaults { get; } = new();
+
+    /// <summary>Delegated Graph calls received, by path.</summary>
+    public ConcurrentBag<string> DelegatedCalls { get; } = [];
 
     public void AddRoom(Guid directoryId, Room room) => _rooms.GetOrAdd(directoryId.ToString("D"), _ => []).Add(room);
 
@@ -121,7 +154,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             ? Data(directoryId).CurrentUsers().FirstOrDefault(u => string.Equals(u.Properties.GetValueOrDefault("mail") as string, hint, StringComparison.OrdinalIgnoreCase)).Id
             : null;
         var code = "code-" + Guid.NewGuid().ToString("N");
-        _delegatedCodes[code] = new DelegatedCode(directory, user ?? "unknown-user", ClientId, q["redirect_uri"], q["code_challenge"], q["scope"]);
+        _delegatedCodes[code] = new DelegatedCode(directory, user ?? "unknown-user", ClientId, q["redirect_uri"], q["code_challenge"], q["scope"], hint);
         return $"?code={code}&state={state}";
     }
 
@@ -396,7 +429,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         var scopes = issued.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries)
             .Select(x => x.StartsWith("https://graph.microsoft.com/", StringComparison.Ordinal) ? x["https://graph.microsoft.com/".Length..] : x)
             .Where(x => x is not ("openid" or "profile" or "email" or "offline_access")).ToArray();
-        var payload = Base64Url(JsonSerializer.Serialize(new { tid = directory, oid = issued.UserId, scp = string.Join(' ', scopes) }));
+        var payload = Base64Url(JsonSerializer.Serialize(new { tid = directory, oid = issued.UserId, scp = string.Join(' ', scopes), upn = issued.Upn }));
         var token = $"{Base64Url("{\"alg\":\"none\"}")}.{payload}.sig-{directory}~{issued.UserId}~{string.Join(',', scopes)}";
         IssuedDelegatedTokens.Add(token);
         return Json(new { access_token = token, token_type = "Bearer", expires_in = 3600, scope = string.Join(' ', scopes.Append("openid").Append("profile")) });
@@ -404,6 +437,16 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
 
     private async Task<HttpResponseMessage> DelegatedAsync(HttpRequestMessage request, Uri uri, CancellationToken ct)
     {
+        DelegatedCalls.Add(uri.AbsolutePath);
+        if (DelegatedFaults.TryDequeue(out var fault))
+        {
+            var failed = new HttpResponseMessage((HttpStatusCode)fault) { Content = new StringContent("{\"error\":{\"code\":\"fault\"}}") };
+            if (fault == 429)
+            {
+                failed.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.Zero);
+            }
+            return failed;
+        }
         var bearer = request.Headers.Authorization?.Parameter ?? string.Empty;
         var parts = (bearer.Split(".sig-").ElementAtOrDefault(1) ?? string.Empty).Split('~');
         var directory = parts[0];
@@ -428,6 +471,10 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         var scopes = parts[2].Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
         var data = Data(directoryId);
         var me = data.CurrentUsers().FirstOrDefault(u => u.Id == userId);
+        if (me.Id is null && IssuedDelegatedTokens.Contains(bearer) && UpnOf(bearer) is { Length: > 0 } upn)
+        {
+            return await UpnMailboxAsync(request, uri, scopes, upn, ct);
+        }
         if (me.Id is null || me.Properties.GetValueOrDefault("accountEnabled") is false)
         {
             return new HttpResponseMessage(HttpStatusCode.Unauthorized);
@@ -439,6 +486,14 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         if (path == "/v1.0/me")
         {
             return Json(new Dictionary<string, object?>(me.Properties) { ["id"] = userId });
+        }
+        if (path == "/v1.0/me/mailFolders/inbox")
+        {
+            if (!scopes.Overlaps(["Mail.ReadBasic", "Mail.Read"]))
+            {
+                return new HttpResponseMessage(HttpStatusCode.Forbidden);
+            }
+            return Json(new { unreadItemCount = mailbox.Messages.Count(m => !m.IsRead) });
         }
         if (path is "/v1.0/me/messages" or "/v1.0/me/mailFolders/inbox/messages")
         {
@@ -512,6 +567,99 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
                 };
             });
             return Json(new { value });
+        }
+        return new HttpResponseMessage(HttpStatusCode.NotFound);
+    }
+
+    private static string? UpnOf(string bearer)
+    {
+        var part = bearer.Split('.').ElementAtOrDefault(1);
+        if (string.IsNullOrEmpty(part))
+        {
+            return null;
+        }
+        var b64 = part.Replace('-', '+').Replace('_', '/');
+        b64 = b64.PadRight(b64.Length + ((4 - (b64.Length % 4)) % 4), '=');
+        using var doc = JsonDocument.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(b64)));
+        return doc.RootElement.TryGetProperty("upn", out var upn) && upn.ValueKind == JsonValueKind.String ? upn.GetString() : null;
+    }
+
+    /// <summary>The UPN-keyed mailbox path: Inbox count and messages, calendar view and getSchedule, with scope checks.</summary>
+    private async Task<HttpResponseMessage> UpnMailboxAsync(HttpRequestMessage request, Uri uri, IReadOnlySet<string> scopes, string upn, CancellationToken ct)
+    {
+        var mailbox = MailboxFor(upn);
+        var path = uri.AbsolutePath["/v1.0/me/".Length..];
+        var query = FakeIdentityProvider.ParseQuery(uri.Query);
+        static string Time(DateTimeOffset t) => t.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss.fffffff", System.Globalization.CultureInfo.InvariantCulture);
+        var forbidden = new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = new StringContent("{\"error\":{\"code\":\"ErrorAccessDenied\"}}") };
+        var noMailbox = new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{\"error\":{\"code\":\"MailboxNotEnabledForRESTAPI\"}}") };
+
+        if (path.StartsWith("mailFolders/inbox", StringComparison.Ordinal))
+        {
+            var select = query.GetValueOrDefault("$select") ?? string.Empty;
+            if ((!scopes.Contains("Mail.ReadBasic") && !scopes.Contains("Mail.Read")) || (select.Contains("bodyPreview", StringComparison.Ordinal) && !scopes.Contains("Mail.Read")))
+            {
+                return forbidden;
+            }
+            if (!mailbox.Exists)
+            {
+                return noMailbox;
+            }
+            if (path == "mailFolders/inbox")
+            {
+                return Json(new { unreadItemCount = mailbox.UnreadCount });
+            }
+            var focused = (query.GetValueOrDefault("$filter") ?? string.Empty).Contains("focused", StringComparison.Ordinal);
+            var top = int.Parse(query.GetValueOrDefault("$top") ?? "10", System.Globalization.CultureInfo.InvariantCulture);
+            var items = mailbox.Messages.Where(m => !focused || m.Focused).OrderByDescending(m => m.Received).Take(top)
+                .Select(m =>
+                {
+                    var item = new Dictionary<string, object?>
+                    {
+                        ["id"] = m.Id, ["subject"] = m.Subject, ["from"] = new { emailAddress = new { name = m.FromName, address = m.FromAddress } },
+                        ["receivedDateTime"] = m.Received.ToString("o", System.Globalization.CultureInfo.InvariantCulture), ["isRead"] = m.IsRead,
+                        ["importance"] = m.Importance, ["hasAttachments"] = m.HasAttachments, ["webLink"] = $"https://outlook.office365.com/owa/?ItemID={m.Id}",
+                    };
+                    if (select.Contains("bodyPreview", StringComparison.Ordinal))
+                    {
+                        item["bodyPreview"] = m.Preview;
+                    }
+                    return item;
+                }).ToList();
+            return Json(new { value = items });
+        }
+        if (path == "calendarView")
+        {
+            if (!scopes.Contains("Calendars.ReadBasic"))
+            {
+                return forbidden;
+            }
+            if (!mailbox.Exists)
+            {
+                return noMailbox;
+            }
+            var from = DateTimeOffset.Parse(query["startDateTime"], System.Globalization.CultureInfo.InvariantCulture);
+            var to = DateTimeOffset.Parse(query["endDateTime"], System.Globalization.CultureInfo.InvariantCulture);
+            var items = mailbox.Events.Where(e => e.End > from && e.Start < to).OrderBy(e => e.Start).Select(e => new Dictionary<string, object?>
+            {
+                ["id"] = e.Id, ["subject"] = e.Subject, ["start"] = new { dateTime = Time(e.Start), timeZone = "UTC" }, ["end"] = new { dateTime = Time(e.End), timeZone = "UTC" },
+                ["isAllDay"] = e.AllDay, ["showAs"] = e.ShowAs, ["sensitivity"] = e.Sensitivity, ["isCancelled"] = e.Cancelled,
+                ["responseStatus"] = new { response = e.Response }, ["location"] = new { displayName = e.Location ?? string.Empty },
+                ["onlineMeeting"] = e.JoinUrl is null ? null : new { joinUrl = e.JoinUrl }, ["webLink"] = $"https://outlook.office365.com/owa/?itemid={e.Id}&path=/calendar/item",
+            }).ToList();
+            return Json(new { value = items });
+        }
+        if (path == "calendar/getSchedule" && request.Method == HttpMethod.Post)
+        {
+            if (!scopes.Contains("Calendars.ReadBasic"))
+            {
+                return forbidden;
+            }
+            using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct));
+            var values = body.RootElement.GetProperty("schedules").EnumerateArray().Select(x => x.GetString()!).Select(address => _schedules.TryGetValue(address, out var items)
+                ? (object)new { scheduleId = address, scheduleItems = items.Select(i => new { status = i.Status, start = new { dateTime = Time(i.Start), timeZone = "UTC" }, end = new { dateTime = Time(i.End), timeZone = "UTC" } }) }
+                : new { scheduleId = address, error = new { message = "Not shared", responseCode = "ErrorNoFreeBusyAccess" } }).ToList();
+            return Json(new { value = values });
         }
         return new HttpResponseMessage(HttpStatusCode.NotFound);
     }

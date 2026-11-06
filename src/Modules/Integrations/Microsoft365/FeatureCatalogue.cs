@@ -69,9 +69,9 @@ public static class FeatureCatalogue
 
 /// <summary>
 /// Admin options of a connection feature (spec 018 plan "Data model"): Mail <c>previewLine</c> and <c>maxMessages</c>
-/// (1 to 10, default 5), Calendar <c>maxDays</c> (1 to 14, default 7). Other features take no options.
+/// (the most a placement may show, 1 to 10, default 10), Calendar <c>maxDays</c> (the longest range, 1 to 14, default 14). Other features take no options.
 /// </summary>
-public sealed record FeatureOptions(bool PreviewLine = false, int MaxMessages = 5, int MaxDays = 7)
+public sealed record FeatureOptions(bool PreviewLine = false, int MaxMessages = 10, int MaxDays = 14)
 {
     public static readonly FeatureOptions Default = new();
 

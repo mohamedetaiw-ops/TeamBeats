@@ -113,7 +113,7 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 - Connect is an authorization code flow with PKCE against the TeamBeats application in the connection's directory, with `login_hint` set to the employee's email, the scopes of the features that are on and consented, no `offline_access`, and `prompt=none` for the silent reconnect. The callback is `/api/v1/integrations/outlook/callback` and is routed from the platform host to the tenant host as for admin consent. Only the same user, session and browser that started the connect can finish it.
 - States: `ok`, `not_connected`, `reconnect` (token expired, or a feature turned on after connecting), `admin_setup` (feature not consented, or Microsoft answered `consent_required` or AADSTS65001), `conditional_access` (AADSTS53xxx, 50076, 50079), `turned_off`, `degraded` (Microsoft unreachable or no token key configured). A refusal is remembered for the session, so the employee is not sent back to a consent prompt.
 - Clean-up, each audited as `integration.outlook_disconnected` with a reason and published as `OutlookDisconnected`: employee disconnect (all sessions of the membership), sign-out (new Identity event `SessionEnded`, that session), session revocation and membership disable (all sessions), a feature turned off or an option change that leaves a token with scopes no feature needs, connection disabled, and connection delete (foreign key cascade).
-- Feature options: `PUT /api/v1/integrations/connections/{id}/features/{feature}/options` with `previewLine` and `maxMessages` (1 to 10) for Mail and `maxDays` (1 to 14) for Calendar, audited as `integration.feature_options_changed`. Preview line on swaps `Mail.ReadBasic` for `Mail.Read`, so the Mail feature goes back to pending admin consent.
+- Feature options: `PUT /api/v1/integrations/connections/{id}/features/{feature}/options` with `previewLine` and `maxMessages` (1 to 10, default 10) for Mail and `maxDays` (1 to 14, default 14) for Calendar, audited as `integration.feature_options_changed`. Preview line on swaps `Mail.ReadBasic` for `Mail.Read`, so the Mail feature goes back to pending admin consent.
 
 ### Differences and follow-ups
 | Item | Status |
@@ -122,7 +122,6 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Two Microsoft 365 connections in one tenant | The oldest connection with a delegated feature on serves every employee. Choosing the connection by the issuer the employee signed in with (spec 018 edge case) needs the sign-in issuer on the session and comes with the merger case. |
 | Tenant-wide session revocation | Revoking every session of a tenant publishes no per-user event. Those tokens cannot be used, because every use goes through a live session, and they are deleted after expiry by the next connect in the tenant. |
 | Token key on staging | Until `Integrations__Microsoft365__TokenKey` is set as a Fly secret, connect answers `degraded`. |
-| Mail, calendar and free and busy reads | Next slice (tasks T009 to T015). |
 
 ## Fake external systems for development, tests and staging
 - `src/DevFakes` holds in-process fakes of Microsoft Entra ID, Microsoft Graph (directory, consent, mail, calendar, free/busy, rooms) and OpenRouter. The test fakes `FakeIdentityProvider` and `FakeMicrosoftGraph` moved there from `tests/Testing`, so tests, local development and staging share one implementation.
@@ -130,3 +129,22 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 - Staging must run with fakes on; production refuses any `Dev:Fakes` setting and never contains the assembly. Details, the `staging-demo` scenario and the control API are in `docs/testing/fake-systems.md`.
 - New setting `Workers:DirectorySync:Enabled` (default true). Staging workers set it to false, because the fake directory lives in the staging API host, which runs the sync itself.
 - Fixed in passing: the development host seeded the platform operator and the test tenant in one database session, which fails when both are configured (a session is one transaction). Each seeder now gets its own scope.
+
+## My mail, My calendar and free and busy (spec 018 User Stories 2 to 4)
+
+### Built
+- Canonical ports in `Integrations.Contracts`: `IMailbox`, `ICalendar`, `IAvailability` and `M365States`. The Microsoft 365 adapters (`GraphMailbox`, `GraphCalendar`, `GraphAvailability`) are the only code that sees Graph JSON. They run as the session's membership with the token from `DelegatedAccessService.AcquireAsync`.
+- `GET /api/v1/me/mail?view=focused|all&top=1..10&refresh=`: Inbox unread count and the latest messages, with sender, subject, received time, read, importance, attachments and the web link Microsoft returns, plus a compose link. Focused uses the Focused Inbox filter. `top` is capped by the admin maximum. The preview line is requested only when the option is on and the token holds `Mail.Read`. It is returned as plain text, without control characters, at most 200 characters.
+- `GET /api/v1/me/calendar?days=1..14&hidePrivate=&refresh=`: Graph `calendarView` from the start of today in the tenant time zone, so series come expanded. Cancelled and declined items are hidden, free and tentative are marked, all-day items come first in each day, the join link and location are included, and private subjects are hidden when the placement asks. The range is capped by the admin maximum. Every item has source `outlook`.
+- `GET /api/v1/people/{userId}/availability`: `getSchedule` as the viewer, for the rest of today. It returns status blocks only (busy, tentative, oof, working_elsewhere), merged and clipped to the day. A colleague who does not share gets `shared: false` and no blocks.
+- Caching in memory only, keyed by tenant, user, session, feature and query: mail 2 minutes, calendar and free and busy 5 minutes. The last good answer of the session is kept for an hour and returned with its `asOf` time when Graph fails (`degraded`). A forced refresh is limited to 6 per employee per minute; beyond that the cache answers.
+- Graph 429 and 5xx are retried up to 3 times as `Retry-After` asks, within a 3 second budget, then `degraded`. 401 maps to `reconnect`, 403 to `admin_setup`, and a mailbox Microsoft does not serve to `no_mailbox`.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Merged calendar (FR-017, T013) | Waits for the modules of specs 009 and 022. The calendar answers Outlook items only. |
+| Who may see a colleague's availability | Until the people profile module (spec 010) exists, any active member of the same tenant. A user of another tenant is not found. |
+| Calendar paging | One page of up to 250 occurrences, which covers 14 days for R1 calendars. |
+| All-day items | Placed on the date Microsoft gives them, not shifted by the tenant time zone. |
+| Telemetry `integration.graph_call` and OpenAPI examples (T018) | Not built yet. |

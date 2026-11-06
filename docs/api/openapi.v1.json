@@ -66,6 +66,29 @@
         }
       }
     },
+    "/api/v1/people/{userId}/availability": {
+      "get": {
+        "tags": [
+          "Integrations: mail and calendar"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/platform/tenants": {
       "post": {
         "tags": [
@@ -1937,6 +1960,86 @@
           }
         }
       }
+    },
+    "/api/v1/me/mail": {
+      "get": {
+        "tags": [
+          "Integrations: mail and calendar"
+        ],
+        "parameters": [
+          {
+            "name": "view",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "top",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/calendar": {
+      "get": {
+        "tags": [
+          "Integrations: mail and calendar"
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "hidePrivate",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2848,6 +2951,9 @@
     },
     {
       "name": "Integrations: Outlook"
+    },
+    {
+      "name": "Integrations: mail and calendar"
     },
     {
       "name": "Platform: tenants"

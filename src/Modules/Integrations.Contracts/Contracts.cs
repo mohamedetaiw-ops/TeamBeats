@@ -125,3 +125,68 @@ public static class M365States
     public const string Degraded = "degraded";
     public const string NotInPlan = "not_in_plan";
 }
+
+// Canonical mail, calendar and free and busy ports (spec 018 FR-024). They act as the session's membership only and take
+// no user ID for mail and calendar. Provider types stay inside each adapter, so another provider can be added later.
+
+/// <summary>What to read from the Inbox. <see cref="View"/> is <c>focused</c> or <c>all</c>.</summary>
+public sealed record MailQuery(string View, int Top, bool Refresh);
+
+public sealed record MailMessage(
+    string Id,
+    string Sender,
+    string? SenderAddress,
+    string Subject,
+    DateTimeOffset ReceivedAt,
+    bool IsRead,
+    string Importance,
+    bool HasAttachments,
+    string? Preview,
+    string WebLink);
+
+/// <summary>The Inbox summary. <see cref="AsOf"/> is when the data was read from the provider (older when degraded).</summary>
+public sealed record MailSummary(string State, DateTimeOffset? AsOf, int? UnreadCount, IReadOnlyList<MailMessage> Messages, string? ComposeLink);
+
+public interface IMailbox
+{
+    Task<MailSummary> GetInboxAsync(MailQuery query, CancellationToken ct = default);
+}
+
+/// <summary>
+/// One occurrence (series are expanded). <see cref="ShowAs"/> is free, tentative, busy, oof, working_elsewhere or unknown;
+/// <see cref="Response"/> is none, organizer, accepted, tentative, declined or not_responded.
+/// </summary>
+public sealed record CalendarOccurrence(
+    string Id,
+    string? Subject,
+    DateTimeOffset Start,
+    DateTimeOffset End,
+    bool IsAllDay,
+    string ShowAs,
+    bool IsPrivate,
+    bool IsCancelled,
+    string Response,
+    string? Location,
+    string? OnlineJoinUrl,
+    string WebLink);
+
+public sealed record CalendarQuery(DateTimeOffset From, DateTimeOffset To, bool Refresh);
+
+public sealed record CalendarResult(string State, DateTimeOffset? AsOf, IReadOnlyList<CalendarOccurrence> Occurrences);
+
+public interface ICalendar
+{
+    Task<CalendarResult> GetEventsAsync(CalendarQuery query, CancellationToken ct = default);
+}
+
+/// <summary>A status block only: free, busy, tentative, oof or working_elsewhere. Never a subject, location or attendee.</summary>
+public sealed record AvailabilityBlock(string Status, DateTimeOffset Start, DateTimeOffset End);
+
+/// <summary><see cref="Shared"/> is false when the colleague's mailbox does not share free and busy with the viewer.</summary>
+public sealed record AvailabilityResult(string State, bool Shared, IReadOnlyList<AvailabilityBlock> Blocks);
+
+public interface IAvailability
+{
+    /// <summary>Free and busy of one colleague, read as the signed-in employee, so never more than Outlook shows them.</summary>
+    Task<AvailabilityResult> GetAsync(string colleagueAddress, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
+}
