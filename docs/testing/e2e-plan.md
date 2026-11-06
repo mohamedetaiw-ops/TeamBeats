@@ -79,7 +79,7 @@ Each row is added in the same PR as the feature, by the build thread, so a story
 | 6 | Before the first design-partner tenant | Full R1 journey set green in `ar` and `en` as an R1 exit check |
 
 ## 6. Open decisions
-1. **Sign-in on staging.** Staging should run the production API, which has no development sign-in (ADR-0004). Options: (a) a dedicated Entra ID test tenant with fictional test accounts whose credentials live as GitHub secrets, or (b) deploy the fake OIDC provider to staging only. Default proposed: (a), since it also tests the real Entra integration.
+1. **Sign-in on staging.** PR #20 (pending) runs the development host on staging with a dedicated tenant `staging-demo` and a password test account. When it merges, the remote smoke run signs in with `POST /dev/signin` and `{"username":"admin","password":...}`, reading the password from the `TEAMBEATS_E2E_PASSWORD` secret, never from code. Longer term, a staging that runs the production API needs either a dedicated Entra ID test tenant with fictional accounts or a fake OIDC provider deployed to staging only.
 2. **Production build in CI.** The suite runs `next dev` because development sign-in renders only outside production builds. Once step 2 lands, switch CI to `next build` and `next start` so tests see what users get.
 3. **Browsers.** Chromium only on PRs is proposed. Confirm whether Safari (WebKit) and Firefox are required for R1 pilot browsers.
 4. **Definition of done.** Proposed addition for every user-facing story: one Playwright journey in `ar` and `en` with an axe check. This would be a constitution or `tasks-template.md` change and goes in its own PR if accepted.
