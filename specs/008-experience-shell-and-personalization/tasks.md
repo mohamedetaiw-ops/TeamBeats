@@ -13,10 +13,10 @@ Depends on 032 (`Experience` module, pages, renderer), 033 (tokens), 003, 004, 0
 - [x] T006 [US1] [US4] Shell, menus, IA, resolve, breadcrumbs and quick navigation endpoints; audit and `ShellPublished`, `NavigationPublished`
 
 ## Phase 3: Preferences and personal layouts (P1, US2, US3)
-- [ ] T007 Migration: `personalization_policy`, `preference_profile`, `personal_layout`, `audience_rule` with forced RLS; permissions `personalization.policy`, `personal_layout.edit`; capability keys of section 9; default home policy for new tenants
-- [ ] T008 [P] [US2] Tests: add only in delegated regions with eligible components; protected placement hide or remove refused through the API (S04); coworkers unaffected (S03); region maximum; reset one and reset all keep other preferences; skipped operations reported, not deleted; another user's layout not found
-- [ ] T009 [P] [US3] Tests: default variant when no audience matches; hidden placement does not change the component API's answer; precedence collisions for user choice, admin default, audience rule, parent lock and legal constraint
-- [ ] T010 [US2] [US3] Preference, layout, add panel, policy, audience rule and targeting preview endpoints
+- [x] T007 Migration: `personalization_policy`, `preference_profile`, `personal_layout`, `audience_rule` with forced RLS; permissions `personalization.policy`, `personal_layout.edit`; capability keys of section 9; default home policy for new tenants
+- [x] T008 [P] [US2] Tests: add only in delegated regions with eligible components; protected placement hide or remove refused through the API (S04); coworkers unaffected (S03); region maximum; reset one and reset all keep other preferences; skipped operations reported, not deleted; another user's layout not found
+- [x] T009 [P] [US3] Tests: default variant when no audience matches; hidden placement does not change the component API's answer; precedence collisions for user choice, admin default, audience rule, parent lock and legal constraint
+- [x] T010 [US2] [US3] Preference, layout, add panel, policy, audience rule and targeting preview endpoints
 
 ## Phase 4: Shell and home frontend (P1)
 - [ ] T011 [US1] [US4] Shell frame, accessible menus, mobile navigation, organization indicator, breadcrumbs and settings panel in English and Arabic, RTL

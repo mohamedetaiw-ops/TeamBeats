@@ -51,6 +51,8 @@ public static class Permissions
     public const string ShellEdit = "shell.edit";
     public const string NavigationEdit = "navigation.edit";
     public const string HelpEdit = "help.edit";
+    public const string PersonalizationPolicy = "personalization.policy";
+    public const string PersonalLayoutEdit = "personal_layout.edit";
 
     public static readonly IReadOnlyList<string> All =
     [
@@ -63,7 +65,7 @@ public static class Permissions
         ContentView, ContentEdit, ContentPublish, WorkflowDesign, WorkflowApprove, IntegrationManage, AiPolicyManage,
         PageView, PageEdit, PagePublish, TemplateEdit, TemplateDistribute, ComponentEnable, ConfigHistoryView,
         ThemeEdit, ThemePublish, ConfigLockManage,
-        ShellEdit, NavigationEdit, HelpEdit,
+        ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
     ];
 }
 

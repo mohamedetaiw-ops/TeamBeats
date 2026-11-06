@@ -264,3 +264,23 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Quick navigation over search | Matches IA labels and slugs and published page slugs until search (spec 012) takes over. |
 | Help content | `help.edit` exists; editing contextual help content is not built yet. |
 | Organization switching | The shell answers the caller's organizations and whether switching applies; the switcher comes with the shell frontend. |
+
+## Preferences and personal layouts (spec 008 T007 to T010)
+- Tables in the Experience module with forced RLS: `personalization_policy` (per page and region: rights, an optional audience rule, the personal placement limit), `preference_profile`, `personal_layout` (the user's operations per page with a revision) and `audience_rule`.
+- New permissions `personalization.policy` (tenant administrator; organization administrator in their subtree) and `personal_layout.edit` (tenant administrator and the default Employee role). New capability keys `experience.personalization`, `experience.audience_variants`, `experience.guided_tours` and `experience.behavioral_personalization` with the values of spec 008 section 9.
+- Default policy: with no policy row, a region that the template marks personal is delegated to everyone with every right and a limit of 12, and any other region is not personalizable. The default home template (T013) carries the personal region, so new tenants get home personalization without a stored row. Locked regions (protected or mandatory) can never be delegated, and regions that are not personal need `experience.personalization`.
+- Endpoints:
+  - `GET` and `PUT /api/v1/me/preference-profile` (mode, density, motion, text scale; only schema keys and values; all cross-device in R1). Language stays on `PUT /api/v1/me/preferences` of the user account, which other modules already read.
+  - `GET`, `PUT` (with `If-Match`) and `DELETE /api/v1/me/pages/{pageId}/layout`, `DELETE /api/v1/me/layouts`, `GET /api/v1/me/pages/{pageId}/add-panel?region=`.
+  - `GET` and `PUT /api/v1/experience/pages/{pageId}/personalization-policy`, `GET /api/v1/experience/audience-rules`, `PUT /api/v1/experience/audience-rules/{id}`, `POST /api/v1/experience/audience-rules/preview`.
+- Personal layouts are operations (`add`, `hide`, `remove`, `move`) over the latest release. A save replays them against the viewer's rights and the spec 032 component checks and refuses the whole save with 422 and the reasons when any fails. At render, operations that no longer apply are skipped and listed in `skipped`, not deleted. Personal placement IDs start with `my-`.
+- Precedence (FR-031), covered by tests: locks and package or legal constraints (a disabled component is unavailable wherever it is placed), then audience rules (a placement outside the viewer's audience cannot be reached by an operation), then the published arrangement, then the user's operations where the policy allows them.
+- Audience rules: org units (with their subtrees), membership types, languages and user attributes from the spec 004 catalogue. Targeting never grants or removes access. A region with targeted placements must keep at least one untargeted placement as the default (blocking finding `audience_default_missing`). Visibility rules need `experience.audience_variants`. The targeting preview takes synthetic personas and reads no real user's data.
+- Rendered pages now carry `personal` on placements, `rights` on regions and `skipped` on the page.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Groups and roles in audience rules | There is no group contract yet, and role names are never checked, so R1 rules use org units, membership types, languages and attributes. |
+| Preference endpoint path | Appearance preferences use `/me/preference-profile` because `/me/preferences` already holds the language on the user account. |
+| Undo | The command stack of the last 20 changes is kept by the frontend (T012). |

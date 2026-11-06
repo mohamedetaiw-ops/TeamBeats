@@ -33,15 +33,19 @@ public sealed record PickerItem(string ComponentRef, string Version, string Name
 
 /// <summary>A placement as the renderer receives it: only declared context values, defaults applied (FR-025, FR-028).</summary>
 public sealed record RenderedPlacement(string Id, string ComponentRef, string State, int Span, IReadOnlyDictionary<string, JsonElement> Props,
-    IReadOnlyDictionary<string, string> Context, IReadOnlyList<string> Publishes, IReadOnlyList<string> Subscribes);
+    IReadOnlyDictionary<string, string> Context, IReadOnlyList<string> Publishes, IReadOnlyList<string> Subscribes, bool Personal = false);
 
-public sealed record RenderedRegion(string Id, int Span, string Section, IReadOnlyList<RenderedPlacement> Placements);
+/// <param name="Rights">What the viewer may change here in personalization mode (spec 008); empty when nothing.</param>
+public sealed record RenderedRegion(string Id, int Span, string Section, IReadOnlyList<RenderedPlacement> Placements, IReadOnlyList<string>? Rights = null);
 
 public sealed record Provenance(string Template, string Layout, int Release, Guid PublishedBy, DateTimeOffset PublishedAt);
 
 /// <param name="ThemeScope">The scope whose effective theme the page uses (spec 033): <c>tenant</c> or the owning org unit.</param>
 public sealed record RenderedPage(Guid PageId, int Release, string Template, string Layout, string Variant, string Fallback,
-    IReadOnlyList<RenderedRegion> Regions, Provenance? Provenance, string ThemeScope);
+    IReadOnlyList<RenderedRegion> Regions, Provenance? Provenance, string ThemeScope, IReadOnlyList<Personalization.SkippedOperation>? Skipped = null);
+
+/// <summary>A page's identity and the definition a personalization call works on.</summary>
+public sealed record PageContext(Guid Id, Guid? OrgUnitId, string TemplateId, int? CurrentRelease, PageDefinition Definition);
 
 /// <summary>
 /// Page lifecycle (spec 032 US1, US5, US6, US8): create from a template, save drafts with optimistic concurrency, validate,
@@ -56,7 +60,9 @@ public sealed partial class PageService(
     IOrganizationHierarchy hierarchy,
     PlatformCatalogue catalogue,
     ComponentRegistry registry,
-    ComponentEnablement enablement,
+    ComponentAvailability availability,
+    Personalization.LayoutEngine layouts,
+    Personalization.AudienceEvaluator audiences,
     IAuditWriter audit,
     IOutbox outbox,
     IMemoryCache cache,
@@ -259,30 +265,61 @@ public sealed partial class PageService(
             known["orgUnitId"] = unit.ToString();
         }
 
+        // Spec 008 precedence: audience rules, then the published arrangement, then the viewer's own operations where allowed.
+        var rules = await audiences.RulesAsync(ct);
+        var viewer = await audiences.ViewerAsync(ct);
+        var targeted = Personalization.LayoutEngine.ForAudience(snapshot.Definition.Regions, rules, viewer);
+        var canPersonalize = (await authz.CheckAsync(Permissions.PersonalLayoutEdit, Target(page.OrgUnitId), ct)).Allowed;
+        var rights = await layouts.RightsAsync(page.Id, template, viewer, rules, canPersonalize, ct);
+        var (_, operations) = await layouts.OperationsAsync(context.RequireUser(), page.Id, ct);
+        var personal = Personalization.LayoutEngine.Apply(layout.Regions.Select(lr => targeted.FirstOrDefault(r => r.Id == lr.Id) ?? new PageRegion(lr.Id, [])).ToList(),
+            operations, rights);
+
         var regions = layout.Regions.Select(lr =>
         {
-            var placements = snapshot.Definition.Regions.FirstOrDefault(r => r.Id == lr.Id)?.Placements ?? [];
-            return new RenderedRegion(lr.Id, lr.Span, lr.Section, placements.Select(p =>
+            var placements = personal.Regions.TryGetValue(lr.Id, out var list) ? list : [];
+            return new RenderedRegion(lr.Id, lr.Span, lr.Section, placements.Select(item =>
             {
+                var p = item.Placement;
                 var manifest = registry.Find(p.ComponentRef);
                 if (manifest is null || manifest.State == ComponentStates.Retired || availability(manifest) != Availability.Available)
                 {
                     // Viewers see "no longer available"; nothing about the component's configuration leaves the server.
                     return new RenderedPlacement(p.Id, p.ComponentRef, "unavailable", p.Span ?? lr.Span,
-                        new Dictionary<string, JsonElement>(), new Dictionary<string, string>(), [], []);
+                        new Dictionary<string, JsonElement>(), new Dictionary<string, string>(), [], [], item.Personal);
                 }
                 return new RenderedPlacement(p.Id, p.ComponentRef, "ready", p.Span ?? Math.Min(lr.Span, manifest.Placement.MaxSpan),
                     PropertyValidator.WithDefaults(manifest.Properties, p.Props),
                     manifest.Context.Where(known.ContainsKey).ToDictionary(k => k, k => known[k], StringComparer.Ordinal),
-                    manifest.Events.Publishes.Select(e => e.Name).ToList(), manifest.Events.Subscribes.Select(e => e.Name).ToList());
-            }).ToList());
+                    manifest.Events.Publishes.Select(e => e.Name).ToList(), manifest.Events.Subscribes.Select(e => e.Name).ToList(), item.Personal);
+            }).ToList(), rights.TryGetValue(lr.Id, out var r) ? r.Rights : []);
         }).ToList();
 
         var provenance = (await authz.CheckAsync(Permissions.ConfigHistoryView, Target(page.OrgUnitId), ct)).Allowed
             ? new Provenance($"{template.Id}@{template.Version}", $"{layout.Id}@{layout.Version}", current, snapshot.PublishedBy, snapshot.PublishedAt)
             : null;
         return new RenderedPage(page.Id, current, template.Id, layout.Id, snapshot.Definition.Variant, layout.Fallback, regions, provenance,
-            page.OrgUnitId?.ToString() ?? "tenant");
+            page.OrgUnitId?.ToString() ?? "tenant", personal.Skipped);
+    }
+
+    /// <summary>The latest release of a page the caller may view; anything else is not found (spec 008 personal layouts).</summary>
+    public async Task<PageContext> PublishedForViewerAsync(Guid id, CancellationToken ct)
+    {
+        var page = await session.QuerySingleOrDefaultAsync(PageSelect + " where id = @id", new { id }, MapPage, ct);
+        if (page?.CurrentRelease is not { } current || !(await authz.CheckAsync(Permissions.PageView, Target(page.OrgUnitId), ct)).Allowed)
+        {
+            throw AppException.NotFound();
+        }
+        var snapshot = await ReleaseAsync(page.Id, current, ct);
+        return new PageContext(page.Id, page.OrgUnitId, snapshot.Definition.Template.Id, current, snapshot.Definition);
+    }
+
+    /// <summary>The draft, or the latest release when there is one, for a caller holding <paramref name="permission"/> at the page's scope.</summary>
+    public async Task<PageContext> ForEditorAsync(Guid id, string permission, CancellationToken ct)
+    {
+        var page = await EditableAsync(id, permission, ct);
+        var (_, draft) = await DraftAsync(page.Id, ct);
+        return new PageContext(page.Id, page.OrgUnitId, page.TemplateId, page.CurrentRelease, draft);
     }
 
     private sealed record Snapshot(PageDefinition Definition, Guid PublishedBy, DateTimeOffset PublishedAt);
@@ -327,39 +364,13 @@ public sealed partial class PageService(
     private async Task<List<Finding>> ValidateAsync(PageRow page, PageDefinition definition, ValidationMode mode, CancellationToken ct)
     {
         var availability = await AvailabilityAsync(page.OrgUnitId, ct);
-        return PageValidator.Validate(definition, page.TemplateId, catalogue, registry, availability, mode);
+        var rules = (await audiences.RulesAsync(ct)).Keys.Select(k => k.ToString()).ToHashSet(StringComparer.Ordinal);
+        return PageValidator.Validate(definition, page.TemplateId, catalogue, registry, availability, mode, rules,
+            await entitlements.IsEnabledAsync(Capabilities.ExperienceAudienceVariants, ct));
     }
 
-    /// <summary>
-    /// Whether each component can be used: enabled by the tenant, its capabilities in the package, and (for editors) the
-    /// permissions it declares held at the page's scope. Viewers are not checked for the component's permissions here: the
-    /// component's own API authorizes every call (FR-027).
-    /// </summary>
-    private async Task<Func<ComponentManifest, Availability>> AvailabilityAsync(Guid? orgUnitId, CancellationToken ct, bool viewer = false)
-    {
-        var disabled = await enablement.DisabledAsync(ct);
-        var capabilities = new Dictionary<string, bool>(StringComparer.Ordinal);
-        var permissions = new Dictionary<string, bool>(StringComparer.Ordinal);
-        foreach (var m in registry.All)
-        {
-            foreach (var c in m.Requires.Capabilities.Where(c => !capabilities.ContainsKey(c)))
-            {
-                capabilities[c] = await entitlements.IsEnabledAsync(c, ct);
-            }
-            if (!viewer)
-            {
-                foreach (var p in m.Requires.Permissions.Where(p => !permissions.ContainsKey(p)))
-                {
-                    permissions[p] = (await authz.CheckAsync(p, Target(orgUnitId), ct)).Allowed;
-                }
-            }
-        }
-        return m =>
-            disabled.Contains(m.Id) ? Availability.Disabled
-            : m.Requires.Capabilities.Any(c => !capabilities[c]) ? Availability.NotEntitled
-            : !viewer && m.Requires.Permissions.Any(p => !permissions[p]) ? Availability.NotPermitted
-            : Availability.Available;
-    }
+    private Task<Func<ComponentManifest, Availability>> AvailabilityAsync(Guid? orgUnitId, CancellationToken ct, bool viewer = false) =>
+        availability.ForScopeAsync(orgUnitId, ct, viewer);
 
     private async Task<PageRow> EditableAsync(Guid id, string permission, CancellationToken ct, bool audited = false)
     {

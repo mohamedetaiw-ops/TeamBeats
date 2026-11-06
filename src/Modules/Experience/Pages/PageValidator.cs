@@ -50,7 +50,8 @@ public static partial class PageValidator
     public const int MaxPlacementsPerPage = 40;
 
     public static List<Finding> Validate(PageDefinition page, string templateId, PlatformCatalogue catalogue, ComponentRegistry registry,
-        Func<ComponentManifest, Availability> availability, ValidationMode mode)
+        Func<ComponentManifest, Availability> availability, ValidationMode mode, IReadOnlySet<string>? audienceRules = null,
+        bool audiencesEntitled = false)
     {
         var findings = new List<Finding>();
         void Block(string code, string? region = null, string? placement = null, string? property = null) =>
@@ -121,6 +122,11 @@ public static partial class PageValidator
                     Warn("too_few_placements", region.Id);
                 }
             }
+            if (placements.Any(p => p.VisibilityRuleRef is not null) && placements.All(p => p.VisibilityRuleRef is not null))
+            {
+                // Spec 008 FR-030: people who match no audience still see this region's default.
+                Block("audience_default_missing", region.Id);
+            }
             foreach (var p in placements)
             {
                 if (p.Id is null || !PlacementId().IsMatch(p.Id))
@@ -166,8 +172,15 @@ public static partial class PageValidator
                 }
                 if (p.VisibilityRuleRef is not null)
                 {
-                    // Audience rules come with spec 008; until then no rule exists, so a reference cannot resolve.
-                    Block("visibility_rule_unknown", region.Id, p.Id);
+                    // Audience rules of spec 008 target placements; they need the package capability and an existing rule.
+                    if (!audiencesEntitled)
+                    {
+                        Block("visibility_rule_not_entitled", region.Id, p.Id);
+                    }
+                    else if (audienceRules?.Contains(p.VisibilityRuleRef) != true)
+                    {
+                        Block("visibility_rule_unknown", region.Id, p.Id);
+                    }
                 }
             }
         }
