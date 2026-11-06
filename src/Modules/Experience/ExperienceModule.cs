@@ -7,6 +7,7 @@ using TeamBeats.Localization;
 using TeamBeats.Modules.Experience.Catalogue;
 using TeamBeats.Modules.Experience.Components;
 using TeamBeats.Modules.Experience.Pages;
+using TeamBeats.Modules.Experience.Shell;
 using TeamBeats.Modules.Experience.Themes;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -27,6 +28,7 @@ public static class ExperienceModule
         services.AddScoped<ComponentEnablement>();
         services.AddScoped<PageService>();
         services.AddScoped<ThemeService>();
+        services.AddScoped<ShellService>();
         return services;
     }
 
@@ -105,6 +107,7 @@ public static class ExperienceModule
         });
 
         MapThemeEndpoints(app);
+        MapShellEndpoints(app);
         return app;
     }
 
@@ -229,6 +232,76 @@ public static class ExperienceModule
             response.Headers.CacheControl = v == hash ? "private, max-age=31536000, immutable" : "private, max-age=60";
             response.Headers.ETag = $"\"{hash}\"";
             return Results.Text(css, "text/css; charset=utf-8");
+        });
+    }
+
+    /// <summary>Shell, menus, information architecture, resolve and quick navigation (spec 008 T004 to T006). Every call commits.</summary>
+    private static void MapShellEndpoints(IEndpointRouteBuilder app)
+    {
+        var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: shell and navigation");
+
+        x.MapGet("/shell", async (ShellService shell, RequestLocale locale, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await shell.GetShellAsync(locale.Locale, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapGet("/shell/definition", async (ShellService shell, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await shell.GetShellAdminAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapPut("/shell/definition", async (ShellDefinition request, ShellService shell, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await shell.PublishShellAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapGet("/menus", async (ShellService shell, IDbSession session, CancellationToken ct) =>
+        {
+            var menus = await shell.ListMenusAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(menus);
+        });
+
+        x.MapPut("/menus/{kind}/{scope}", async (string kind, string scope, MenuRequest request, ShellService shell, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var menu = await shell.PublishMenuAsync(kind, scope, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(menu);
+        });
+
+        x.MapGet("/ia", async (ShellService shell, IDbSession session, CancellationToken ct) =>
+        {
+            var nodes = await shell.ListNodesAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(nodes);
+        });
+
+        x.MapPut("/ia/{id:guid}", async (Guid id, NodeRequest request, ShellService shell, IDbSession session, CancellationToken ct) =>
+        {
+            var node = await shell.SaveNodeAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(node);
+        });
+
+        x.MapGet("/resolve", async (string? path, ShellService shell, RequestLocale locale, IDbSession session, CancellationToken ct) =>
+        {
+            var result = await shell.ResolveAsync(path, locale.Locale, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(result);
+        });
+
+        x.MapGet("/quick-nav", async (string? q, ShellService shell, RequestLocale locale, IDbSession session, CancellationToken ct) =>
+        {
+            var items = await shell.QuickNavAsync(q, locale.Locale, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(items);
         });
     }
 }

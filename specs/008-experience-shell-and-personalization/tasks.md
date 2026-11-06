@@ -8,9 +8,9 @@ Depends on 032 (`Experience` module, pages, renderer), 033 (tokens), 003, 004, 0
 - [x] T003 [P] [US5] Tests: one primary action per context, destructive look, errors linked and announced with values kept, both densities at 200% zoom, reduced motion stops nonessential animation
 
 ## Phase 2: Shell and navigation (P1, US1, US4)
-- [ ] T004 Migration: `shell_config`, `nav_menu`, `ia_node`, `slug_redirect` with forced RLS; permissions `shell.edit`, `navigation.edit`, `help.edit`
-- [ ] T005 [P] [US1] [US4] Tests: shell publish changes no page; each menu publishes alone; menus and quick navigation list only permitted pages; same recovery answer for missing, unpublished and not permitted; old slugs redirect; breadcrumbs follow the IA; sibling org admin cannot change another org's menu
-- [ ] T006 [US1] [US4] Shell, menus, IA, resolve, breadcrumbs and quick navigation endpoints; audit and `ShellPublished`, `NavigationPublished`
+- [x] T004 Migration: `shell_config`, `nav_menu`, `ia_node`, `slug_redirect` with forced RLS; permissions `shell.edit`, `navigation.edit`, `help.edit`
+- [x] T005 [P] [US1] [US4] Tests: shell publish changes no page; each menu publishes alone; menus and quick navigation list only permitted pages; same recovery answer for missing, unpublished and not permitted; old slugs redirect; breadcrumbs follow the IA; sibling org admin cannot change another org's menu
+- [x] T006 [US1] [US4] Shell, menus, IA, resolve, breadcrumbs and quick navigation endpoints; audit and `ShellPublished`, `NavigationPublished`
 
 ## Phase 3: Preferences and personal layouts (P1, US2, US3)
 - [ ] T007 Migration: `personalization_policy`, `preference_profile`, `personal_layout`, `audience_rule` with forced RLS; permissions `personalization.policy`, `personal_layout.edit`; capability keys of section 9; default home policy for new tenants

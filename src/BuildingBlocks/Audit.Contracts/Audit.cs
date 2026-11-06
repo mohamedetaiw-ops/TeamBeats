@@ -113,6 +113,11 @@ public static class AuditActions
     public const string ExperienceLockChanged = "experience.lock_changed";
     public const string BrandAssetUploaded = "brand.asset_uploaded";
 
+    // 008
+    public const string ShellPublished = "shell.published";
+    public const string NavigationPublished = "navigation.published";
+    public const string NavigationNodeChanged = "navigation.node_changed";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [

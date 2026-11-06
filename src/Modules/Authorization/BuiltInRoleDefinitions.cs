@@ -15,7 +15,7 @@ public static class BuiltInRoleDefinitions
         [
             P.OrgUnitView, P.OrgUnitManage, P.OrgMembershipManage, P.RolesView, P.RolesAssign, P.UsersView, P.AuditView,
             P.ContentView, P.ContentEdit, P.ContentPublish, P.PageView, P.PageEdit, P.PagePublish, P.TemplateEdit,
-            P.ThemeEdit, P.ThemePublish,
+            P.ThemeEdit, P.ThemePublish, P.NavigationEdit,
         ]),
         new(BuiltInRoles.ContentEditor, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ContentView, P.ContentEdit]),
         new(BuiltInRoles.ContentPublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ContentView, P.ContentEdit, P.ContentPublish]),
