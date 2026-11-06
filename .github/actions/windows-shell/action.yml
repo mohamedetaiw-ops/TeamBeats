@@ -1,0 +1,9 @@
+name: Git Bash on the Windows runner
+description: >-
+  Puts Git Bash first on PATH for the rest of the job. Without this, `shell: bash` finds the WSL launcher in
+  C:\Windows\System32. Use it as the first step after actions/checkout.
+runs:
+  using: composite
+  steps:
+    - shell: powershell
+      run: Add-Content $env:GITHUB_PATH 'C:\Program Files\Git\bin'

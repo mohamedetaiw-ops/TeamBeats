@@ -30,6 +30,8 @@ defaults:
     shell: bash
 
 env:
+  # Windows blocks PowerShell scripts for the runner's service account by default.
+  PSExecutionPolicyPreference: Bypass
   FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
   FLY_ORG: ${{ vars.FLY_ORG || 'personal' }}
   PREFIX: ${{ vars.FLY_APP_PREFIX || 'teambeats-staging' }}
@@ -40,6 +42,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/windows-shell
 
       - name: Check the Fly token is present
         run: |

@@ -14,6 +14,10 @@ defaults:
   run:
     shell: bash
 
+# Windows blocks PowerShell scripts for the runner's service account by default.
+env:
+  PSExecutionPolicyPreference: Bypass
+
 jobs:
   backend:
     # Never run code from a fork on the self-hosted runner. Same condition on every job.
@@ -24,6 +28,7 @@ jobs:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/windows-shell
       - uses: actions/setup-dotnet@v4
         env:
           DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
@@ -67,6 +72,7 @@ jobs:
         working-directory: src/Web
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/windows-shell
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -93,6 +99,7 @@ jobs:
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/actions/windows-shell
       - uses: actions/setup-dotnet@v4
         env:
           DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
@@ -153,12 +160,37 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - uses: ./.github/actions/windows-shell
+      - name: Install gitleaks
+        # gitleaks-action cannot install on Windows: it asks for a .tar.gz, and the Windows release is a .zip.
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = '8.24.3'
+          $sha256 = '3f1a35578631dbfe633cc5b49e6c906e55ff14a4bfd7336a10fb27fe33b6dcd2'
+          $dir = Join-Path $env:RUNNER_TOOL_CACHE "gitleaks\$version"
+          if (-not (Test-Path "$dir\gitleaks.exe")) {
+            [Net.ServicePointManager]::SecurityProtocol = 'Tls12'
+            $zip = Join-Path $env:RUNNER_TEMP 'gitleaks.zip'
+            Invoke-WebRequest "https://github.com/gitleaks/gitleaks/releases/download/v$version/gitleaks_${version}_windows_x64.zip" -OutFile $zip -UseBasicParsing
+            if ((Get-FileHash $zip -Algorithm SHA256).Hash.ToLower() -ne $sha256) { throw 'gitleaks download failed its checksum' }
+            Expand-Archive $zip -DestinationPath $dir -Force
+            Remove-Item $zip
+          }
+          Add-Content $env:GITHUB_PATH $dir
       - name: Secret scan
-        uses: gitleaks/gitleaks-action@v2
+        # Scans the commits of the pull request or push. Findings fail the job and appear in the log.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Findings fail the job and appear in the log; the SARIF artifact is not needed and uses storage quota.
-          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            range="origin/$GITHUB_BASE_REF..HEAD"
+          elif [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            range="$BEFORE..$GITHUB_SHA"
+          else
+            range="$GITHUB_SHA"
+          fi
+          gitleaks git --config .gitleaks.toml --redact --verbose --log-opts="$range" .
       - name: SBOM
         uses: anchore/sbom-action@v0
         with:
