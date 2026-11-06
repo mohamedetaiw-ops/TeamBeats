@@ -39,6 +39,7 @@ public static class TeamBeatsModules
             ?? throw new InvalidOperationException("ConnectionStrings:App is required.");
         services.AddTeamBeatsPersistence(appConnection);
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<ISecretStore, ConfigurationSecretStore>();
         services.AddSingleton<ILocalizer, JsonCatalogueLocalizer>();
         services.AddScoped<RequestLocale>();
         services.Configure<HostResolutionOptions>(configuration.GetSection(HostResolutionOptions.Section));

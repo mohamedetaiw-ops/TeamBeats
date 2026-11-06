@@ -23,6 +23,9 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
     [
         "POST /api/v1/auth/signout",
         "GET /api/v1/tenant/branding/logo",
+        "GET /api/v1/auth/signin/options",
+        "GET /api/v1/auth/signin/sso",
+        "GET /api/v1/auth/signin/sso/callback",
     ];
 
     private IReadOnlyList<(string Method, string Pattern)> TenantRoutes() =>

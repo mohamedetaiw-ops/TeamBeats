@@ -7,7 +7,7 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Authorization;
 
 /// <summary>Seeding and system assignments used by tenant creation and first sign-in.</summary>
-public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext context, AssignmentStore store, IAuditWriter audit)
+public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext context, AssignmentStore store, IAuditWriter audit, Messaging.IOutbox outbox)
     : IAuthorizationProvisioning
 {
     public async Task SeedTenantRolesAsync(CancellationToken ct = default)
@@ -28,18 +28,19 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
         await session.ExecAsync("insert into authz.grants_version (tenant_id, version) values (@t, 1) on conflict do nothing", new { t = tenantId }, ct);
     }
 
-    public async Task AssignBuiltInRoleAsync(Guid userId, string builtInRoleKey, ScopeType scopeType, Guid? scopeId, Guid? grantedBy, CancellationToken ct = default)
+    public async Task<Guid> AssignBuiltInRoleAsync(Guid userId, string builtInRoleKey, ScopeType scopeType, Guid? scopeId, Guid? grantedBy, CancellationToken ct = default)
     {
         var roleId = await session.ScalarAsync<Guid?>("select id from authz.role where key = @k and is_builtin", new { k = builtInRoleKey }, ct)
             ?? throw new InvalidOperationException($"Built-in role {builtInRoleKey} is not seeded.");
-        var exists = await session.ScalarAsync<bool>(
+        var existing = await session.ScalarAsync<Guid?>(
             """
-            select exists (select 1 from authz.role_assignment where subject_type = 'user' and subject_id = @u and role_id = @r
-                           and scope_type = @s and scope_id is not distinct from @sid and revoked_at is null)
+            select id from authz.role_assignment where subject_type = 'user' and subject_id = @u and role_id = @r
+              and scope_type = @s and scope_id is not distinct from @sid and revoked_at is null
+            limit 1
             """, new { u = userId, r = roleId, s = scopeType, sid = scopeId }, ct);
-        if (exists)
+        if (existing is { } found)
         {
-            return;
+            return found;
         }
 
         var id = Ids.New();
@@ -47,6 +48,45 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
         await audit.WriteAsync(new AuditEntry(AuditActions.RoleAssigned, "role_assignment", id.ToString(),
             TargetOrgUnitId: scopeType is ScopeType.OrgUnit or ScopeType.OrgSubtree ? scopeId : null,
             Changes: new { subjectType = "user", subjectId = userId, role = builtInRoleKey, scopeType = Sql.ToSnake(scopeType.ToString()), scopeId, system = grantedBy is null }), ct);
+        await outbox.EnqueueAsync(new RoleAssignmentChanged(id, userId, builtInRoleKey, "assigned"), ct);
+        return id;
+    }
+
+    public Task<bool> IsBuiltInRoleKeyAsync(string roleKey, CancellationToken ct = default) =>
+        session.ScalarAsync<bool>("select exists (select 1 from authz.role where key = @k and is_builtin)", new { k = roleKey }, ct);
+
+    public async Task<bool> RevokeSystemAssignmentAsync(Guid assignmentId, string reason, CancellationToken ct = default)
+    {
+        var a = await session.QuerySingleOrDefaultAsync(
+            """
+            select a.subject_id, r.key, a.scope_type, a.scope_id
+            from authz.role_assignment a join authz.role r on r.id = a.role_id where a.id = @id and a.revoked_at is null
+            """, new { id = assignmentId },
+            r => (SubjectId: r.GetGuid(0), Role: r.GetString(1), Scope: Sql.ParseEnum<ScopeType>(r.GetString(2)), ScopeId: r.Get<Guid?>("scope_id")), ct);
+        if (a == default)
+        {
+            return true;
+        }
+        if (a.Role == BuiltInRoles.TenantAdministrator && a.Scope == ScopeType.Tenant)
+        {
+            var remaining = await session.ScalarAsync<long>(
+                """
+                select count(*) from authz.role_assignment x join authz.role r on r.id = x.role_id
+                where r.key = @k and x.scope_type = 'tenant' and x.revoked_at is null and x.id <> @id
+                """, new { k = BuiltInRoles.TenantAdministrator, id = assignmentId }, ct);
+            if (remaining == 0)
+            {
+                return false;
+            }
+        }
+
+        await session.ExecAsync("update authz.role_assignment set revoked_at = now() where id = @id", new { id = assignmentId }, ct);
+        await store.BumpAsync(ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.RoleRevoked, "role_assignment", assignmentId.ToString(),
+            TargetOrgUnitId: a.Scope is ScopeType.OrgUnit or ScopeType.OrgSubtree ? a.ScopeId : null,
+            Changes: new { subjectType = "user", subjectId = a.SubjectId, role = a.Role, scopeType = Sql.ToSnake(a.Scope.ToString()), a.ScopeId, system = true, reason }), ct);
+        await outbox.EnqueueAsync(new RoleAssignmentChanged(assignmentId, a.SubjectId, a.Role, "revoked"), ct);
+        return true;
     }
 
     public async Task<IReadOnlyList<RoleAssignmentSummary>> GetUserAssignmentsAsync(Guid userId, CancellationToken ct = default) =>

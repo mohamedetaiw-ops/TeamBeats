@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Localization;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Identity.Sso;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -23,6 +24,11 @@ public static class IdentityModule
         services.AddScoped<SessionService>();
         services.AddScoped<ISessionRevocation>(sp => sp.GetRequiredService<SessionService>());
         services.AddScoped<SignInService>();
+        services.AddHttpClient(Sso.HttpOidcProvider.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
+        services.AddSingleton<Sso.IOidcProvider, Sso.HttpOidcProvider>();
+        services.AddScoped<Sso.IdentityProviderStore>();
+        services.AddScoped<Sso.GroupRoleSync>();
+        services.AddScoped<Sso.SsoService>();
         services.AddScoped<UserDirectory>();
         services.AddScoped<IUserDirectory>(sp => sp.GetRequiredService<UserDirectory>());
         services.AddScoped<RequestLocale>();
@@ -39,6 +45,8 @@ public static class IdentityModule
             sessions.ClearCookie(response);
             return Results.NoContent();
         }).WithTags("Auth");
+
+        app.MapSsoEndpoints();
 
         var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me");
 

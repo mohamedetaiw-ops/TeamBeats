@@ -22,12 +22,12 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 - [ ] T011 IdP configuration admin API and screen (secret stored as secret-manager reference)
 
 ## Phase 5: User Story 2, Entra ID (P1, R1)
-- [ ] T012 [P] [US2] Tests: wrong issuer, wrong audience, expired, bad signature, missing nonce, replay
-- [ ] T013 [P] [US2] Tests: disabled membership shows no-access and audits; JIT allowed domain creates membership; JIT disabled refuses
-- [ ] T014 [P] [US2] Tests: group-to-role mapping applied; unknown groups ignored
+- [x] T012 [P] [US2] Tests: wrong issuer, wrong audience, expired, bad signature, missing nonce, replay
+- [x] T013 [P] [US2] Tests: disabled membership shows no-access and audits; JIT allowed domain creates membership; JIT disabled refuses
+- [x] T014 [P] [US2] Tests: group-to-role mapping applied; unknown groups ignored
 - [ ] T015 [US2] Dynamic per-tenant OIDC handler; tenant discovery by host then email domain
-- [ ] T016 [US2] Sign-in, no-access, suspended and IdP-unavailable pages (localized, RTL)
-- [ ] T017 [US2] Open redirect and login CSRF protections with tests
+- [x] T016 [US2] Sign-in, no-access, suspended and IdP-unavailable pages (localized, RTL)
+- [x] T017 [US2] Open redirect and login CSRF protections with tests
 
 ## Phase 6: User Story 6, Entra ID directory sync (P1, R1; after approval of US6)
 - [ ] T020 Migration: `directory_connection`, `directory_user_link`, `directory_group_link`, owner fields on `user` (RLS)

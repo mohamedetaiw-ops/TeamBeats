@@ -15,7 +15,8 @@
     "submit": "Sign in",
     "ssoPending": "Single sign-on is configured by your administrator.",
     "failed": "Sign-in was refused. Check the email and try again.",
-    "unavailable": "This workspace is not available right now."
+    "unavailable": "This workspace is not available right now.",
+    "ssoMicrosoft": "Sign in with Microsoft"
   },
   "admin": {
     "title": "Administration",
@@ -47,5 +48,28 @@
   },
   "errors": {
     "generic": "Something went wrong. Try again in a moment."
+  },
+  "signin_problem": {
+    "no_access": {
+      "title": "You do not have access",
+      "body": "You signed in, but this workspace has no active account for you. Ask your administrator for access."
+    },
+    "tenant_suspended": {
+      "title": "This workspace is not available",
+      "body": "This workspace is suspended. Contact your administrator."
+    },
+    "idp_unavailable": {
+      "title": "Sign-in service is not responding",
+      "body": "Your organization's sign-in service could not be reached. Try again in a few minutes."
+    },
+    "not_configured": {
+      "title": "Single sign-on is not set up",
+      "body": "Your administrator has not set up single sign-on for this workspace yet."
+    },
+    "failed": {
+      "title": "Sign-in did not complete",
+      "body": "The sign-in could not be verified. Start again from the sign-in page."
+    },
+    "retry": "Sign in again"
   }
 }
