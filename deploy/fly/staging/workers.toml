@@ -1,0 +1,20 @@
+# Staging workers: outbox dispatch, audit sealing and retention (deploy/docker/workers.Dockerfile, the production image).
+# Private network only. Secret set by the workflow: ConnectionStrings__App.
+primary_region = "fra"
+
+
+[env]
+  ASPNETCORE_ENVIRONMENT = "Staging"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+[checks]
+  [checks.live]
+    type = "http"
+    port = 8080
+    path = "/health/live"
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "60s"

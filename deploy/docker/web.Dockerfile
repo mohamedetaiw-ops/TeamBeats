@@ -3,6 +3,9 @@ WORKDIR /web
 COPY src/Web/package.json src/Web/package-lock.json ./
 RUN npm ci
 COPY src/Web/ .
+# next.config.ts reads the API origin at build time for the /api and /dev rewrites; deployments pass their private API address.
+ARG TEAMBEATS_API_ORIGIN=http://localhost:5080
+ENV TEAMBEATS_API_ORIGIN=$TEAMBEATS_API_ORIGIN
 RUN npm run build
 
 FROM node:22-alpine
