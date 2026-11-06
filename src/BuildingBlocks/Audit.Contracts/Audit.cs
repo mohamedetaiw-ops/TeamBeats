@@ -95,6 +95,9 @@ public static class AuditActions
     public const string ConnectionConsentGranted = "integration.consent_granted";
     public const string ConnectionConsentRevokedDetected = "integration.consent_revoked_detected";
     public const string ConnectionStatusChanged = "integration.status_changed";
+    public const string ConnectionFeatureOptionsChanged = "integration.feature_options_changed";
+    public const string OutlookConnected = "integration.outlook_connected";
+    public const string OutlookDisconnected = "integration.outlook_disconnected";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -114,7 +117,7 @@ public static class AuditActions
         OrgDirectoryMappingChanged, OrgDirectoryMappingApproved, OrgDirectoryMappingApplied,
         SignInFailed, IdpConfigChanged, DirectoryConnectionChanged, UserSynced, DisabledByDirectory, ReenabledByDirectory,
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
-        ConnectionConsentRevokedDetected, ConnectionStatusChanged,
+        ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, OutlookConnected, OutlookDisconnected,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

@@ -103,3 +103,23 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 - FR-015 says a missing attribute evaluates "the condition" as false. This build reads that as the whole condition: if any attribute it names is missing, the grant does not apply, even when another branch of an `any` group would hold. This is the stricter of the two readings. Per-comparison evaluation would also be safe, since there is no negation, and is a small change if preferred.
 - A stored condition that no longer validates (for example after an attribute is removed from the catalogue) never holds.
 - Not built yet: the condition editor in the role assignment and sharing UI (spec 004 T017), and request attribute sources (spec 026).
+
+## Connect Outlook and delegated access (spec 018 Phases 1 to 3, spec 003 FR-016)
+
+### Built
+- `integrations.delegated_token` (one row per tenant, user and session, RLS, cascade on connection delete) and `integrations.outlook_connect_request` (single-use state and browser binding as hashes, PKCE verifier cleared on use, refusal outcome). `connection_feature.options` holds feature options.
+- `TokenProtector`: AES-GCM from the .NET base library, key `Integrations:Microsoft365:TokenKey` (base64, 32 bytes) from the platform secret store. The associated data is tenant, user and session, so a copied row does not decrypt. Tests use a random key per run.
+- Employee API: `GET /api/v1/me/outlook` (state, features served, connected and expiry times; never the token), `GET /api/v1/me/outlook/connect?silent=&returnTo=` and `DELETE /api/v1/me/outlook`. Every endpoint needs `integration.microsoft365`. No TeamBeats permission is checked, because Microsoft 365 decides mailbox access for the signed-in user.
+- Connect is an authorization code flow with PKCE against the TeamBeats application in the connection's directory, with `login_hint` set to the employee's email, the scopes of the features that are on and consented, no `offline_access`, and `prompt=none` for the silent reconnect. The callback is `/api/v1/integrations/outlook/callback` and is routed from the platform host to the tenant host as for admin consent. Only the same user, session and browser that started the connect can finish it.
+- States: `ok`, `not_connected`, `reconnect` (token expired, or a feature turned on after connecting), `admin_setup` (feature not consented, or Microsoft answered `consent_required` or AADSTS65001), `conditional_access` (AADSTS53xxx, 50076, 50079), `turned_off`, `degraded` (Microsoft unreachable or no token key configured). A refusal is remembered for the session, so the employee is not sent back to a consent prompt.
+- Clean-up, each audited as `integration.outlook_disconnected` with a reason and published as `OutlookDisconnected`: employee disconnect (all sessions of the membership), sign-out (new Identity event `SessionEnded`, that session), session revocation and membership disable (all sessions), a feature turned off or an option change that leaves a token with scopes no feature needs, connection disabled, and connection delete (foreign key cascade).
+- Feature options: `PUT /api/v1/integrations/connections/{id}/features/{feature}/options` with `previewLine` and `maxMessages` (1 to 10) for Mail and `maxDays` (1 to 14) for Calendar, audited as `integration.feature_options_changed`. Preview line on swaps `Mail.ReadBasic` for `Mail.Read`, so the Mail feature goes back to pending admin consent.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Login hint | The employee's TeamBeats email, which directory sync keeps equal to the Entra mail or UPN. A UPN that differs from the mail is not read yet. |
+| Two Microsoft 365 connections in one tenant | The oldest connection with a delegated feature on serves every employee. Choosing the connection by the issuer the employee signed in with (spec 018 edge case) needs the sign-in issuer on the session and comes with the merger case. |
+| Tenant-wide session revocation | Revoking every session of a tenant publishes no per-user event. Those tokens cannot be used, because every use goes through a live session, and they are deleted after expiry by the next connect in the tenant. |
+| Token key on staging | Until `Integrations__Microsoft365__TokenKey` is set as a Fly secret, connect answers `degraded`. |
+| Mail, calendar and free and busy reads | Next slice (tasks T009 to T015). |

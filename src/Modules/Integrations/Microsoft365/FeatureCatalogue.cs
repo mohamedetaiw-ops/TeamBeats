@@ -1,3 +1,4 @@
+using System.Text.Json;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Integrations.Contracts;
 
@@ -49,10 +50,51 @@ public static class FeatureCatalogue
 
     public static FeatureDefinition? Find(string key) => All.FirstOrDefault(f => f.Key == key);
 
+    /// <summary>Mail with the preview line on reads <c>Mail.Read</c> instead of <c>Mail.ReadBasic</c> (spec 018 FR-002).</summary>
+    public static readonly GraphPermission MailRead = new("Mail.Read", PermissionType.Delegated, "integrations.permission.mail_read");
+
+    /// <summary>The permissions a feature needs with its current options.</summary>
+    public static IReadOnlyList<GraphPermission> PermissionsFor(FeatureDefinition feature, FeatureOptions options) =>
+        feature.Key == Microsoft365Features.Mail && options.PreviewLine
+            ? [.. feature.Permissions.Where(p => p.Name != "Mail.ReadBasic"), MailRead]
+            : feature.Permissions;
+
     /// <summary>Application permissions that are broader than any feature needs (spec 006 FR-013, spec 018 FR-003).</summary>
     public static bool IsBroaderThanNeeded(string role) =>
         role.StartsWith("Mail.", StringComparison.Ordinal)
         || role.StartsWith("Calendars.", StringComparison.Ordinal)
         || role.EndsWith(".ReadWrite.All", StringComparison.Ordinal)
         || role is "Directory.Read.All" or "Directory.ReadWrite.All" or "Files.Read.All" or "Sites.Read.All";
+}
+
+/// <summary>
+/// Admin options of a connection feature (spec 018 plan "Data model"): Mail <c>previewLine</c> and <c>maxMessages</c>
+/// (1 to 10, default 5), Calendar <c>maxDays</c> (1 to 14, default 7). Other features take no options.
+/// </summary>
+public sealed record FeatureOptions(bool PreviewLine = false, int MaxMessages = 5, int MaxDays = 7)
+{
+    public static readonly FeatureOptions Default = new();
+
+    /// <summary>Reads stored options; anything missing or out of range takes its default.</summary>
+    public static FeatureOptions FromStored(string? json)
+    {
+        if (string.IsNullOrEmpty(json))
+        {
+            return Default;
+        }
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        return new FeatureOptions(
+            root.TryGetProperty("previewLine", out var p) && p.ValueKind == JsonValueKind.True,
+            root.TryGetProperty("maxMessages", out var m) && m.TryGetInt32(out var mv) && mv is >= 1 and <= 10 ? mv : Default.MaxMessages,
+            root.TryGetProperty("maxDays", out var d) && d.TryGetInt32(out var dv) && dv is >= 1 and <= 14 ? dv : Default.MaxDays);
+    }
+
+    /// <summary>The stored form for one feature: only the options that feature takes.</summary>
+    public object ToStored(string feature) => feature switch
+    {
+        Microsoft365Features.Mail => new { previewLine = PreviewLine, maxMessages = MaxMessages },
+        Microsoft365Features.Calendar => new { maxDays = MaxDays },
+        _ => new { },
+    };
 }

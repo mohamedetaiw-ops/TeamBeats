@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
@@ -29,6 +30,44 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         _directories[directoryId.ToString("D")] = new Directory(roles, users, groups);
 
     public void Revoke(Guid directoryId) => _directories.TryRemove(directoryId.ToString("D"), out _);
+
+    private readonly ConcurrentDictionary<string, HashSet<string>> _delegated = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, (string Directory, string Challenge, string RedirectUri, string[] Scopes)> _codes = new(StringComparer.Ordinal);
+
+    /// <summary>Delegated permissions consented for the TeamBeats application in a directory (plain names such as Mail.ReadBasic).</summary>
+    public void ConsentDelegated(Guid directoryId, params string[] scopes) =>
+        _delegated[directoryId.ToString("D")] = new HashSet<string>(scopes, StringComparer.Ordinal);
+
+    /// <summary>The next authorize answers with this error instead of a code (for example consent or conditional access).</summary>
+    public (string Error, string Description)? NextAuthorizeError { get; set; }
+
+    /// <summary>The next authorization code redemption fails with this error code.</summary>
+    public string? NextTokenError { get; set; }
+
+    /// <summary>Delegated access tokens issued, so tests can check they never leave the server.</summary>
+    public ConcurrentBag<string> IssuedDelegatedTokens { get; } = [];
+
+    /// <summary>Plays Microsoft's authorize page: returns the query Microsoft appends to the redirect URI.</summary>
+    public string Authorize(Uri authorizeUrl)
+    {
+        var q = FakeIdentityProvider.ParseQuery(authorizeUrl.Query);
+        var directory = authorizeUrl.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries)[0];
+        var state = Uri.EscapeDataString(q["state"]);
+        if (NextAuthorizeError is { } e)
+        {
+            NextAuthorizeError = null;
+            return $"?error={e.Error}&error_description={Uri.EscapeDataString(e.Description)}&state={state}";
+        }
+        var scopes = q["scope"].Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(s => s.Replace("https://graph.microsoft.com/", string.Empty, StringComparison.Ordinal)).ToArray();
+        if (q.GetValueOrDefault("client_id") != ClientId || q.GetValueOrDefault("code_challenge_method") != "S256"
+            || !_delegated.TryGetValue(directory, out var consented) || !scopes.All(consented.Contains))
+        {
+            return $"?error=consent_required&error_description={Uri.EscapeDataString("AADSTS65001: The user or administrator has not consented.")}&state={state}";
+        }
+        var code = "code-" + Guid.NewGuid().ToString("N");
+        _codes[code] = (directory, q["code_challenge"], q["redirect_uri"], scopes);
+        return $"?code={code}&state={state}";
+    }
 
     /// <summary>Directory content for delta queries. Every change gets a version, and a delta link returns changes after its version.</summary>
     public DirectoryData Data(Guid directoryId) => _data.GetOrAdd(directoryId.ToString("D"), _ => new DirectoryData());
@@ -186,6 +225,10 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         {
             var directory = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries)[0];
             var form = FakeIdentityProvider.ParseQuery("?" + await request.Content!.ReadAsStringAsync(cancellationToken));
+            if (form.GetValueOrDefault("grant_type") == "authorization_code")
+            {
+                return RedeemCode(directory, form);
+            }
             if (form.GetValueOrDefault("client_id") != ClientId || form.GetValueOrDefault("client_secret") != ClientSecret
                 || form.GetValueOrDefault("grant_type") != "client_credentials" || !_directories.TryGetValue(directory, out var d))
             {
@@ -236,6 +279,27 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             return Json(body);
         }
         return new HttpResponseMessage(HttpStatusCode.NotFound);
+    }
+
+    private HttpResponseMessage RedeemCode(string directory, IReadOnlyDictionary<string, string> form)
+    {
+        if (NextTokenError is { } error)
+        {
+            NextTokenError = null;
+            return new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent($"{{\"error\":\"{error}\"}}") };
+        }
+        var verifier = form.GetValueOrDefault("code_verifier") ?? string.Empty;
+        var challenge = Convert.ToBase64String(SHA256.HashData(Encoding.ASCII.GetBytes(verifier))).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        if (form.GetValueOrDefault("client_id") != ClientId || form.GetValueOrDefault("client_secret") != ClientSecret
+            || !_codes.TryRemove(form.GetValueOrDefault("code") ?? string.Empty, out var issued) || issued.Directory != directory
+            || issued.Challenge != challenge || issued.RedirectUri != form.GetValueOrDefault("redirect_uri"))
+        {
+            return new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("{\"error\":\"invalid_grant\"}") };
+        }
+        var payload = Base64Url(JsonSerializer.Serialize(new { tid = directory, scp = string.Join(' ', issued.Scopes) }));
+        var token = $"{Base64Url("{\"alg\":\"none\"}")}.{payload}.sig-{directory}";
+        IssuedDelegatedTokens.Add(token);
+        return Json(new { access_token = token, token_type = "Bearer", expires_in = 3600, scope = string.Join(' ', issued.Scopes.Append("openid").Append("profile")) });
     }
 
     private static string Base64Url(string text) =>

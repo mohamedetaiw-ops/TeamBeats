@@ -102,3 +102,26 @@ public interface IDirectorySource
 
     Task<DirectoryChanges> ReadChangesAsync(Guid connectionId, string? usersCursor, string? groupsCursor, string? adminUnitsCursor = null, CancellationToken ct = default);
 }
+
+/// <summary>An employee connected Outlook for this session (spec 018 section 12). No token content.</summary>
+public sealed record OutlookConnected(Guid UserId, IReadOnlyList<string> Features) : IIntegrationEvent;
+
+/// <summary>An employee disconnected Outlook, or TeamBeats dropped the delegated access (spec 018 FR-013).</summary>
+public sealed record OutlookDisconnected(Guid UserId, string Reason) : IIntegrationEvent;
+
+/// <summary>
+/// The state that comes with every mail, calendar and free and busy answer (spec 018 plan "Ports"). Components map each
+/// one to a shared state of spec 008 FR-006.
+/// </summary>
+public static class M365States
+{
+    public const string Ok = "ok";
+    public const string NotConnected = "not_connected";
+    public const string Reconnect = "reconnect";
+    public const string AdminSetup = "admin_setup";
+    public const string NoMailbox = "no_mailbox";
+    public const string TurnedOff = "turned_off";
+    public const string ConditionalAccess = "conditional_access";
+    public const string Degraded = "degraded";
+    public const string NotInPlan = "not_in_plan";
+}

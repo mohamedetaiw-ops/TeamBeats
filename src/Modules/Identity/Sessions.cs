@@ -81,6 +81,10 @@ public sealed class SessionService(IDbSession session, ITenantContext context, I
         await session.ExecAsync("update identity.user_session set revoked_at = now(), revoked_reason = 'sign_out' where id = @id and revoked_at is null",
             new { id = sid }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.SessionRevoked, "user", context.ActorId.ToString(), Changes: new { reason = "sign_out", count = 1 }), ct);
+        if (context.ActorId is { } userId)
+        {
+            await outbox.EnqueueAsync(new SessionEnded(userId, sid), ct);
+        }
     }
 
     public async Task<int> RevokeUserSessionsAsync(Guid userId, string reason, CancellationToken ct = default)

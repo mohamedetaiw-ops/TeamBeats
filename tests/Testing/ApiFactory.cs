@@ -18,6 +18,9 @@ namespace TeamBeats.Testing;
 /// </summary>
 public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<ApiProgram>
 {
+    /// <summary>A fresh delegated token key per test run; never a fixed value in code.</summary>
+    public static readonly string TokenKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+
     public const string BaseDomain = "teambeats.test";
 
     public TestDatabase Database { get; } = database;
@@ -43,6 +46,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         builder.UseSetting("Messaging:Transport", "InMemory");
         builder.UseSetting("Integrations:Microsoft365:ClientId", FakeMicrosoftGraph.ClientId);
         builder.UseSetting("Integrations:Microsoft365:ClientSecret", FakeMicrosoftGraph.ClientSecret);
+        builder.UseSetting(TeamBeats.Modules.Integrations.Microsoft365.TokenProtector.KeySetting, TokenKey);
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton(Documents);
