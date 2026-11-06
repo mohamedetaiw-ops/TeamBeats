@@ -94,3 +94,10 @@ public interface IComponentRegistration
 public sealed record PagePublished(Guid PageId, int Release) : IIntegrationEvent;
 
 public sealed record PageRolledBack(Guid PageId, int Release, int RestoredRelease) : IIntegrationEvent;
+
+// Spec 033 section 12. A null scope means the tenant.
+public sealed record ThemePublished(Guid BrandId, int Version) : IIntegrationEvent;
+
+public sealed record BrandAssignmentChanged(Guid? ScopeOrgUnitId, Guid? BrandId) : IIntegrationEvent;
+
+public sealed record ExperienceLockChanged(Guid? ScopeOrgUnitId, IReadOnlyList<string> Settings) : IIntegrationEvent;

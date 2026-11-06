@@ -15,6 +15,7 @@ public static class BuiltInRoleDefinitions
         [
             P.OrgUnitView, P.OrgUnitManage, P.OrgMembershipManage, P.RolesView, P.RolesAssign, P.UsersView, P.AuditView,
             P.ContentView, P.ContentEdit, P.ContentPublish, P.PageView, P.PageEdit, P.PagePublish, P.TemplateEdit,
+            P.ThemeEdit, P.ThemePublish,
         ]),
         new(BuiltInRoles.ContentEditor, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ContentView, P.ContentEdit]),
         new(BuiltInRoles.ContentPublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ContentView, P.ContentEdit, P.ContentPublish]),
@@ -27,5 +28,6 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.Employee, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView]),
         new(BuiltInRoles.PageEditor, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit]),
         new(BuiltInRoles.PagePublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit, P.PagePublish]),
+        new(BuiltInRoles.BrandManager, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ThemeEdit]),
     ];
 }

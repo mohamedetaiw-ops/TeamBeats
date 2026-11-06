@@ -7,6 +7,7 @@ using TeamBeats.Localization;
 using TeamBeats.Modules.Experience.Catalogue;
 using TeamBeats.Modules.Experience.Components;
 using TeamBeats.Modules.Experience.Pages;
+using TeamBeats.Modules.Experience.Themes;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
@@ -24,6 +25,7 @@ public static class ExperienceModule
         services.AddSingleton<ComponentRegistry>();
         services.AddScoped<ComponentEnablement>();
         services.AddScoped<PageService>();
+        services.AddScoped<ThemeService>();
         return services;
     }
 
@@ -101,6 +103,91 @@ public static class ExperienceModule
             return Results.Ok(view);
         });
 
+        MapThemeEndpoints(app);
         return app;
+    }
+
+    /// <summary>Brands, assignments, locks and the effective theme (spec 033 R1). Every call commits, so first-use seeding is kept.</summary>
+    private static void MapThemeEndpoints(IEndpointRouteBuilder app)
+    {
+        var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: themes");
+
+        x.MapGet("/brands", async (ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var brands = await themes.ListBrandsAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(brands);
+        });
+
+        x.MapPost("/brands", async (BrandRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var brand = await themes.CreateBrandAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/experience/brands/{brand.Id}", brand);
+        });
+
+        x.MapGet("/brands/{id:guid}", async (Guid id, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var brand = await themes.GetBrandAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(brand);
+        });
+
+        x.MapPut("/brands/{id:guid}", async (Guid id, BrandRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var brand = await themes.UpdateBrandAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(brand);
+        });
+
+        x.MapPost("/brands/{id:guid}/check", async (Guid id, BrandRequest request, ThemeService themes, CancellationToken ct) =>
+            Results.Ok(new { findings = await themes.CheckBrandAsync(id, request, ct) }));
+
+        x.MapGet("/brand-assignments/{scope}", async (string scope, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await themes.GetAssignmentAsync(scope, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapPut("/brand-assignments/{scope}", async (string scope, AssignmentRequest request, ThemeService themes, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await themes.SetAssignmentAsync(scope, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        x.MapGet("/locks/{scope}", async (string scope, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var locks = await themes.GetLocksAsync(scope, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(locks);
+        });
+
+        x.MapPut("/locks/{scope}", async (string scope, LockRequest request, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var locks = await themes.SetLocksAsync(scope, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(locks);
+        });
+
+        x.MapGet("/theme", async (string? scope, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var theme = await themes.ThemeAsync(scope, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(theme);
+        });
+
+        // The tenant comes from the session, never from the URL; v is the content hash, so a matching URL can be cached for a year.
+        x.MapGet("/theme.css", async (string? scope, string? mode, string? density, string? v, HttpResponse response, ThemeService themes,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var (css, hash) = await themes.CssAsync(scope, mode, density, ct);
+            await session.CommitAsync(ct);
+            response.Headers.CacheControl = v == hash ? "private, max-age=31536000, immutable" : "private, max-age=60";
+            response.Headers.ETag = $"\"{hash}\"";
+            return Results.Text(css, "text/css; charset=utf-8");
+        });
     }
 }

@@ -45,6 +45,9 @@ public static class Permissions
     public const string TemplateDistribute = "template.distribute";
     public const string ComponentEnable = "component.enable";
     public const string ConfigHistoryView = "config_history.view";
+    public const string ThemeEdit = "theme.edit";
+    public const string ThemePublish = "theme.publish";
+    public const string ConfigLockManage = "config_lock.manage";
 
     public static readonly IReadOnlyList<string> All =
     [
@@ -56,6 +59,7 @@ public static class Permissions
         AuditView, AuditExport, AuditRetentionManage,
         ContentView, ContentEdit, ContentPublish, WorkflowDesign, WorkflowApprove, IntegrationManage, AiPolicyManage,
         PageView, PageEdit, PagePublish, TemplateEdit, TemplateDistribute, ComponentEnable, ConfigHistoryView,
+        ThemeEdit, ThemePublish, ConfigLockManage,
     ];
 }
 
@@ -74,5 +78,6 @@ public static class BuiltInRoles
     public const string Employee = "employee";
     public const string PageEditor = "page_editor";
     public const string PagePublisher = "page_publisher";
+    public const string BrandManager = "brand_manager";
 
 }

@@ -1,0 +1,309 @@
+using System.Globalization;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using TeamBeats.Primitives;
+
+namespace TeamBeats.Modules.Experience.Themes;
+
+/// <summary>Token value types (spec 033 plan, token model). Anything outside these types is refused, so free CSS cannot enter.</summary>
+public static class TokenTypes
+{
+    public const string Color = "color";
+    public const string Dimension = "dimension";
+    public const string FontFamily = "font_family";
+    public const string FontWeight = "font_weight";
+    public const string Number = "number";
+    public const string Duration = "duration";
+    public const string Easing = "easing";
+    public const string Shadow = "shadow";
+}
+
+/// <summary>
+/// One token value as stored and sent: <c>$value</c> applies to every mode and density, <c>$modes</c> holds the values that
+/// differ (<c>dark</c> for colors and shadows, <c>compact</c> for spacing and type sizes). Close to DTCG 2025.10 so the R2
+/// export is a projection.
+/// </summary>
+public sealed record TokenValue(
+    [property: JsonPropertyName("$value")] string? Value,
+    [property: JsonPropertyName("$modes")] IReadOnlyDictionary<string, string>? Modes = null);
+
+public sealed record TokenDefinition(string Name, string Type, string Light, string? Dark = null, string? Compact = null, string? Script = null)
+{
+    /// <summary>CSS custom property name, <c>--tb-</c> plus the token name with dots and underscores as hyphens.</summary>
+    public string CssName => "--tb-" + Name.Replace('.', '-').Replace('_', '-');
+
+    public bool AllowsDark => Type is TokenTypes.Color or TokenTypes.Shadow;
+
+    public bool AllowsCompact => Name.StartsWith("space.", StringComparison.Ordinal) || Name.StartsWith("font.size.", StringComparison.Ordinal);
+}
+
+public static class ThemeModes
+{
+    public const string Light = "light";
+    public const string Dark = "dark";
+    public const string Comfortable = "comfortable";
+    public const string Compact = "compact";
+
+    public static readonly IReadOnlyList<string> Modes = [Light, Dark];
+    public static readonly IReadOnlyList<string> Densities = [Comfortable, Compact];
+}
+
+/// <summary>
+/// The platform token schema and default values (spec 033 FR-003, FR-006, FR-007). Platform defaults are complete, so a
+/// partial brand never leaves a token unset. Fonts come only from the approved list per writing system.
+/// </summary>
+public static partial class TokenSchema
+{
+    public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> ApprovedFonts = new Dictionary<string, IReadOnlyList<string>>
+    {
+        ["latin"] = ["Inter", "IBM Plex Sans", "Noto Sans", "Source Sans 3", "Roboto"],
+        ["arabic"] = ["Noto Sans Arabic", "IBM Plex Sans Arabic", "Alexandria", "Cairo", "Tajawal"],
+        ["urdu"] = ["Noto Nastaliq Urdu", "Noto Sans Arabic"],
+        ["devanagari"] = ["Noto Sans Devanagari", "Hind"],
+    };
+
+    /// <summary>Fallbacks appended to every family so a missing font never leaves glyphs missing (US3 scenario 2).</summary>
+    public static readonly IReadOnlyDictionary<string, string> FontFallbacks = new Dictionary<string, string>
+    {
+        ["latin"] = "\"Noto Sans\", system-ui, sans-serif",
+        ["arabic"] = "\"Noto Sans Arabic\", \"Noto Sans\", system-ui, sans-serif",
+        ["urdu"] = "\"Noto Nastaliq Urdu\", \"Noto Sans Arabic\", system-ui, serif",
+        ["devanagari"] = "\"Noto Sans Devanagari\", \"Noto Sans\", system-ui, sans-serif",
+    };
+
+    public static readonly IReadOnlyDictionary<string, string> Easings = new Dictionary<string, string>
+    {
+        ["standard"] = "cubic-bezier(0.2, 0, 0, 1)",
+        ["emphasized"] = "cubic-bezier(0.3, 0, 0, 1)",
+        ["decelerate"] = "cubic-bezier(0, 0, 0, 1)",
+        ["accelerate"] = "cubic-bezier(0.3, 0, 1, 1)",
+        ["linear"] = "linear",
+    };
+
+    private static TokenDefinition C(string name, string light, string dark) => new(name, TokenTypes.Color, light, dark);
+
+    private static TokenDefinition D(string name, string value, string? compact = null) => new(name, TokenTypes.Dimension, value, Compact: compact);
+
+    public static readonly IReadOnlyList<TokenDefinition> All =
+    [
+        C("color.surface.base", "#ffffff", "#111827"),
+        C("color.surface.raised", "#f8fafc", "#1f2937"),
+        C("color.surface.sunken", "#f1f5f9", "#0b1220"),
+        C("color.shell.background", "#312e81", "#1e1b4b"),
+        C("color.shell.text", "#ffffff", "#f8fafc"),
+        C("color.nav.background", "#ffffff", "#111827"),
+        C("color.nav.text", "#1f2937", "#e5e7eb"),
+        C("color.nav.active", "#4338ca", "#a5b4fc"),
+        C("color.text.primary", "#111827", "#f9fafb"),
+        C("color.text.secondary", "#4b5563", "#d1d5db"),
+        C("color.text.inverse", "#ffffff", "#111827"),
+        C("color.accent.base", "#4338ca", "#a5b4fc"),
+        C("color.accent.text", "#ffffff", "#111827"),
+        C("color.accent.subtle", "#e0e7ff", "#312e81"),
+        C("color.highlight.base", "#b45309", "#fbbf24"),
+        C("color.link", "#3730a3", "#c7d2fe"),
+        C("color.border.default", "#e5e7eb", "#374151"),
+        C("color.border.strong", "#6b7280", "#9ca3af"),
+        C("color.state.success", "#15803d", "#4ade80"),
+        C("color.state.warning", "#b45309", "#fbbf24"),
+        C("color.state.danger", "#b91c1c", "#f87171"),
+        C("color.state.info", "#1d4ed8", "#93c5fd"),
+        C("color.focus.ring", "#4338ca", "#fbbf24"),
+        C("color.focus.ring_inverse", "#fbbf24", "#fbbf24"),
+        new("font.family.latin", TokenTypes.FontFamily, "Inter", Script: "latin"),
+        new("font.family.arabic", TokenTypes.FontFamily, "Noto Sans Arabic", Script: "arabic"),
+        new("font.family.urdu", TokenTypes.FontFamily, "Noto Nastaliq Urdu", Script: "urdu"),
+        new("font.family.devanagari", TokenTypes.FontFamily, "Noto Sans Devanagari", Script: "devanagari"),
+        D("font.size.xs", "12px", "11px"),
+        D("font.size.sm", "14px", "13px"),
+        D("font.size.md", "16px", "14px"),
+        D("font.size.lg", "18px", "16px"),
+        D("font.size.xl", "24px", "20px"),
+        D("font.size.xxl", "32px", "28px"),
+        new("font.weight.regular", TokenTypes.FontWeight, "400"),
+        new("font.weight.medium", TokenTypes.FontWeight, "500"),
+        new("font.weight.bold", TokenTypes.FontWeight, "700"),
+        new("font.line_height.body", TokenTypes.Number, "1.5"),
+        new("font.line_height.heading", TokenTypes.Number, "1.25"),
+        D("space.xs", "4px", "2px"),
+        D("space.sm", "8px", "4px"),
+        D("space.md", "16px", "12px"),
+        D("space.lg", "24px", "16px"),
+        D("space.xl", "32px", "24px"),
+        D("space.xxl", "48px", "32px"),
+        D("radius.sm", "4px"),
+        D("radius.md", "8px"),
+        D("radius.lg", "16px"),
+        D("radius.full", "999px"),
+        D("border.width.thin", "1px"),
+        D("border.width.thick", "2px"),
+        D("border.width.focus", "2px"),
+        new("shadow.sm", TokenTypes.Shadow, "0px 1px 2px 0px #0000001f", "0px 1px 2px 0px #00000066"),
+        new("shadow.md", TokenTypes.Shadow, "0px 4px 12px 0px #00000024", "0px 4px 12px 0px #00000080"),
+        new("motion.duration.fast", TokenTypes.Duration, "100ms"),
+        new("motion.duration.normal", TokenTypes.Duration, "200ms"),
+        new("motion.duration.slow", TokenTypes.Duration, "300ms"),
+        new("motion.easing.standard", TokenTypes.Easing, "standard"),
+        new("motion.easing.emphasized", TokenTypes.Easing, "emphasized"),
+        new("state.hover.opacity", TokenTypes.Number, "0.08"),
+        new("state.pressed.opacity", TokenTypes.Number, "0.12"),
+        new("state.disabled.opacity", TokenTypes.Number, "0.38"),
+    ];
+
+    public static readonly IReadOnlyDictionary<string, TokenDefinition> ByName = All.ToDictionary(t => t.Name);
+
+    /// <summary>Shell settings that can be locked besides tokens (FR-019).</summary>
+    public static readonly IReadOnlyList<string> ShellSettings =
+        ["shell_layout", "navigation", "legal_footer", "security_banner", "accessibility_minimums", "sign_in_presentation"];
+
+    /// <summary>Default lock set for new tenants (spec 033 section 6).</summary>
+    public static readonly IReadOnlyList<string> DefaultLocks = ["legal_footer", "security_banner", "accessibility_minimums", "sign_in_presentation"];
+
+    /// <summary>Security and accessibility requirements cannot be unlocked by any tenant setting (section 6).</summary>
+    public static readonly IReadOnlyList<string> PermanentLocks = ["security_banner", "accessibility_minimums"];
+
+    public static bool IsLockable(string setting) => ByName.ContainsKey(setting) || ShellSettings.Contains(setting);
+
+    /// <summary>Checks one raw value against the token's type. Returns a resource key, or null when valid.</summary>
+    public static string? Check(TokenDefinition token, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value) || value.Length > 100)
+        {
+            return "validation.theme.token_value_invalid";
+        }
+        if (AliasPattern().Match(value) is { Success: true } alias)
+        {
+            return ByName.TryGetValue(alias.Groups[1].Value, out var target) && target.Type == token.Type
+                ? null
+                : "validation.theme.alias_invalid";
+        }
+        return token.Type switch
+        {
+            TokenTypes.Color => ParseColor(value) is null ? "validation.theme.color_invalid" : null,
+            TokenTypes.Dimension => DimensionOk(value) ? null : "validation.theme.dimension_invalid",
+            TokenTypes.FontFamily => ApprovedFonts[token.Script!].Contains(value) ? null : "validation.theme.font_not_approved",
+            TokenTypes.FontWeight => int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var w) && w is >= 100 and <= 900 && w % 100 == 0
+                ? null : "validation.theme.number_invalid",
+            TokenTypes.Number => decimal.TryParse(value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var n) && n is >= 0 and <= 10
+                ? null : "validation.theme.number_invalid",
+            TokenTypes.Duration => DurationPattern().Match(value) is { Success: true } d && int.Parse(d.Groups[1].Value, CultureInfo.InvariantCulture) <= 2000
+                ? null : "validation.theme.duration_invalid",
+            TokenTypes.Easing => Easings.ContainsKey(value) ? null : "validation.theme.easing_invalid",
+            TokenTypes.Shadow => ShadowOk(value) ? null : "validation.theme.shadow_invalid",
+            _ => "validation.theme.token_value_invalid",
+        };
+    }
+
+    /// <summary>Validates a set of token values from a brand or an override. Errors are keyed by token name.</summary>
+    public static void Validate(IReadOnlyDictionary<string, TokenValue>? tokens, ValidationErrors errors, string prefix = "tokens")
+    {
+        if (tokens is null)
+        {
+            return;
+        }
+        if (tokens.Count > All.Count)
+        {
+            errors.Add(prefix, "validation.theme.too_many_tokens");
+            return;
+        }
+        foreach (var (name, value) in tokens)
+        {
+            var field = $"{prefix}.{name}";
+            if (!ByName.TryGetValue(name, out var token))
+            {
+                errors.Add(field, "validation.theme.token_unknown");
+                continue;
+            }
+            var valueError = value is null ? "validation.theme.token_value_invalid" : Check(token, value.Value);
+            if (valueError is not null)
+            {
+                errors.Add(field, valueError);
+                continue;
+            }
+            foreach (var (mode, modeValue) in value!.Modes ?? new Dictionary<string, string>())
+            {
+                var allowed = (mode == ThemeModes.Dark && token.AllowsDark) || (mode == ThemeModes.Compact && token.AllowsCompact);
+                if (!allowed)
+                {
+                    errors.Add($"{field}.{mode}", "validation.theme.mode_not_allowed");
+                }
+                else if (Check(token, modeValue) is { } modeError)
+                {
+                    errors.Add($"{field}.{mode}", modeError);
+                }
+            }
+        }
+    }
+
+    public static bool IsAlias(string value, out string target)
+    {
+        var m = AliasPattern().Match(value);
+        target = m.Success ? m.Groups[1].Value : "";
+        return m.Success;
+    }
+
+    /// <summary>Parses <c>#rgb</c>, <c>#rrggbb</c>, <c>#rrggbbaa</c> (shadows only use alpha) or <c>rgb(r, g, b)</c>.</summary>
+    public static (int R, int G, int B)? ParseColor(string value)
+    {
+        var hex = HexColor().Match(value);
+        if (hex.Success)
+        {
+            var h = hex.Groups[1].Value;
+            if (h.Length == 3)
+            {
+                h = string.Concat(h.Select(c => $"{c}{c}"));
+            }
+            return (Convert.ToInt32(h[..2], 16), Convert.ToInt32(h[2..4], 16), Convert.ToInt32(h[4..6], 16));
+        }
+        var rgb = RgbColor().Match(value);
+        if (rgb.Success)
+        {
+            var parts = new[] { rgb.Groups[1], rgb.Groups[2], rgb.Groups[3] }.Select(g => int.Parse(g.Value, CultureInfo.InvariantCulture)).ToArray();
+            return parts.All(p => p <= 255) ? (parts[0], parts[1], parts[2]) : null;
+        }
+        return null;
+    }
+
+    private static bool DimensionOk(string value)
+    {
+        var m = DimensionPattern().Match(value);
+        if (!m.Success)
+        {
+            return false;
+        }
+        var n = decimal.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture);
+        return m.Groups[2].Value == "px" ? n <= 999 : n <= 64;
+    }
+
+    private static bool ShadowOk(string value)
+    {
+        if (value == "none")
+        {
+            return true;
+        }
+        var parts = value.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 5 && parts[..4].All(p => DimensionPattern().IsMatch(p) || SignedPx().IsMatch(p))
+            && HexAlpha().IsMatch(parts[4]);
+    }
+
+    [GeneratedRegex(@"^\{([a-z0-9_.]+)\}$")]
+    private static partial Regex AliasPattern();
+
+    [GeneratedRegex("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")]
+    private static partial Regex HexColor();
+
+    [GeneratedRegex("^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$")]
+    private static partial Regex HexAlpha();
+
+    [GeneratedRegex(@"^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$")]
+    private static partial Regex RgbColor();
+
+    [GeneratedRegex(@"^(\d{1,3}(?:\.\d{1,3})?)(px|rem)$")]
+    private static partial Regex DimensionPattern();
+
+    [GeneratedRegex(@"^-\d{1,3}px$")]
+    private static partial Regex SignedPx();
+
+    [GeneratedRegex(@"^(\d{1,4})ms$")]
+    private static partial Regex DurationPattern();
+}

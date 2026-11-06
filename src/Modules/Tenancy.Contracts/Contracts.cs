@@ -62,9 +62,14 @@ public interface ITenantMemberships
     Task<IReadOnlyDictionary<string, bool>> GetMembershipTypePoliciesAsync(CancellationToken ct = default);
 }
 
+public sealed record TenantBranding(string? PrimaryColor, bool HasLogo);
+
 public interface ITenantSettingsReader
 {
     Task<TenantLocaleSettings> GetLocaleSettingsAsync(CancellationToken ct = default);
+
+    /// <summary>Spec 001 logo and primary color, read once to seed the default brand (spec 033 section 6).</summary>
+    Task<TenantBranding> GetBrandingAsync(CancellationToken ct = default);
 }
 
 // Events (spec 001 section 12, spec 002 section 12)
