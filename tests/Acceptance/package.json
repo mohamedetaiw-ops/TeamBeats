@@ -1,0 +1,24 @@
+{
+  "name": "teambeats-acceptance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.19.2",
+    "typescript": "6.0.3"
+  },
+  "overrides": {
+    "playwright-core": "1.63.0"
+  }
+}

@@ -21,7 +21,7 @@ What was built for R0, and where it differs from `r0-solution-structure.md`. Eac
 | S3-compatible object storage | File-system adapter behind `IObjectStorage`, tenant prefix enforced by `TenantObjectStorage` | S3 adapter with MinIO in compose arrives in R1. |
 | Audit table partitioning | Not partitioned | Add monthly partitions before volumes grow (R1). |
 | Session cache | Every request reads the session row | Makes revocation immediate (ADR-0007). Add a short cache only if load needs it. |
-| Playwright + axe, RTL screenshots | Not yet | Follow-up for spec 007 T013 and T014. Lint gates for literal strings and physical CSS are in place. |
+| Playwright + axe, RTL screenshots | Playwright suite in `tests/Acceptance` with axe on sign-in, home and admin shell in `ar` and `en`, keyboard walkthrough, `e2e` CI job | RTL screenshot baselines (spec 007 T014) follow with the R1 experience layer. Plan in `docs/testing/e2e-plan.md`. |
 | Self-hosted fonts (spec 007 T003) | System font stacks | Follow-up. |
 | Group membership changes audited as their own action | Audited as `authz.role_changed` | Spec 004 does not name a group action. Recorded as a gap. |
 | Audience targeting | Not built | Belongs with the content specs (R1). |
