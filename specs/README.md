@@ -5,8 +5,8 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | Spec | Area | Release | Status | Requirement IDs |
 |---|---|---|---|---|
 | [001 Tenant management](001-tenant-management/spec.md) | platform | R0 | Approved | TEN-001, TEN-002, TEN-009, TEN-010, ADM-001 |
-| [002 Organization hierarchy](002-organization-hierarchy/spec.md) | platform | R0, R1 to R2 (AD mapping) | Approved; AD mapping pending approval | TEN-003 to TEN-006, TEN-010, INT-007 (directory) |
-| [003 Identity and authentication](003-identity-and-authentication/spec.md) | platform | R0 to R2 | Approved; AD sign-in and sync pending approval | IAM-001 to IAM-007, IAM-009, IAM-010, INT-007 (directory) |
+| [002 Organization hierarchy](002-organization-hierarchy/spec.md) | platform | R0, R1 to R2 (AD mapping) | Approved | TEN-003 to TEN-006, TEN-010, INT-007 (directory) |
+| [003 Identity and authentication](003-identity-and-authentication/spec.md) | platform | R0 to R2 | Approved | IAM-001 to IAM-007, IAM-009, IAM-010, INT-007 (directory) |
 | [004 Authorization and permissions](004-authorization-and-permissions/spec.md) | platform | R0, R1 (attribute conditions) | Approved | TEN-007, TEN-008, IAM-007, IAM-008, ADM-001 |
 | [005 Packages and entitlements](005-packages-and-entitlements/spec.md) | platform | R0, R2 | Approved | AI-001, ADM-001, ENT-001 to ENT-008 (new) |
 | [006 Audit and admin shell](006-audit-and-administration/spec.md) | platform | R0, R1 to R2 (Connections area) | Approved (Connections area approved 2026-11-05) | ADM-001 to ADM-003, TEN-010, INT-001 (connection administration), AUD-001 to AUD-007 (new) |
