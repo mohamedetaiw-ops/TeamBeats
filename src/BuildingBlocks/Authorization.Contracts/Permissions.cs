@@ -38,6 +38,14 @@ public static class Permissions
     public const string IntegrationManage = "integration.manage";
     public const string AiPolicyManage = "ai.policy_manage";
 
+    public const string PageView = "page.view";
+    public const string PageEdit = "page.edit";
+    public const string PagePublish = "page.publish";
+    public const string TemplateEdit = "template.edit";
+    public const string TemplateDistribute = "template.distribute";
+    public const string ComponentEnable = "component.enable";
+    public const string ConfigHistoryView = "config_history.view";
+
     public static readonly IReadOnlyList<string> All =
     [
         TenantSettingsView, TenantSettingsManage, TenantAdminsManage,
@@ -47,6 +55,7 @@ public static class Permissions
         EntitlementsView,
         AuditView, AuditExport, AuditRetentionManage,
         ContentView, ContentEdit, ContentPublish, WorkflowDesign, WorkflowApprove, IntegrationManage, AiPolicyManage,
+        PageView, PageEdit, PagePublish, TemplateEdit, TemplateDistribute, ComponentEnable, ConfigHistoryView,
     ];
 }
 
@@ -63,5 +72,7 @@ public static class BuiltInRoles
     public const string AiPolicyAdministrator = "ai_policy_administrator";
     public const string SecurityOfficer = "security_officer";
     public const string Employee = "employee";
+    public const string PageEditor = "page_editor";
+    public const string PagePublisher = "page_publisher";
 
 }

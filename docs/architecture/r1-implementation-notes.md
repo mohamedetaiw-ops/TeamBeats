@@ -148,3 +148,25 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Calendar paging | One page of up to 250 occurrences, which covers 14 days for R1 calendars. |
 | All-day items | Placed on the date Microsoft gives them, not shifted by the tenant time zone. |
 | Telemetry `integration.graph_call` and OpenAPI examples (T018) | Not built yet. |
+
+## Pages, templates and the component registry (spec 032 backend foundation)
+
+### Built
+- New `Experience` module and `Experience.Contracts` (schema `experience`). The 10 layouts and 12 templates are platform data in `Catalogue/catalogue.json`. Each template names its layout and gives every region a policy (allowed categories, minimum and maximum placements, protection, personal). No template or layout names a component, and an architecture test enforces this.
+- Component registry built in memory at start from every `IComponentRegistration`. Manifests are validated for identity, platform compatibility (`^1`), trust tier (platform only), category, resource keys in English and Arabic, property schema, placement spans, approved context keys, known capabilities and permissions, events and data contract. A failed manifest is not registered and the reason is logged. The newest version of each major wins.
+- Placement properties use a typed subset of JSON Schema (`string`, `text` as localized plain text, `number`, `integer`, `boolean`, `enum`, `url` limited to https and site-relative paths, `image` as an asset reference, `color_token`, `list`). No type accepts HTML. Markup tags and event handler attributes are refused in every text, and script schemes in URLs.
+- Pages: create from a template, draft save with `If-Match` (409 with the stored version on conflict), validate, publish and roll back. Releases live in `page_release`, where the application role can only insert and read. Rollback copies an earlier release into a new one. Every save and publish runs the validator, and each finding names its region and placement.
+- `GET /api/v1/experience/render?slug=` serves the latest release to viewers with `page.view`. Release snapshots are cached by tenant, page and release. Placements get only the context keys their manifest declares, with schema defaults applied. A component that is retired, turned off or not in the plan renders as `unavailable`, with no configuration. Provenance is included only for `config_history.view`.
+- Permissions `page.view`, `page.edit`, `page.publish`, `template.edit`, `template.distribute`, `component.enable` and `config_history.view`. New built-in roles `page_editor` and `page_publisher`, added to existing tenants by migration. Employee gets `page.view`. Capability keys from section 9; `experience.max_custom_templates` is 5, 50 and unlimited.
+- Two reference packs (`reference.alpha.*`, `reference.beta.*`) in the development host and tests only.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Manifest validation without a JSON Schema library | ADR-0012 point 3 says manifests are validated by a JSON Schema. The module validates a typed subset itself instead, to avoid a new dependency (CLAUDE.md rule 6). The manifest format stays JSON-compatible, so a schema can be published later. |
+| Visibility rules | Audience rules come with spec 008. Until then a placement with `visibilityRuleRef` is refused, so no page can depend on a rule that does not exist. |
+| Overlap, nesting and breakpoint order checks | Placements flow in region order with spans, so cells cannot collide yet. Sections, nesting and per-breakpoint order arrive with the renderer (T016). |
+| Tenant templates, distribution and layout change (T010, T011) | Not built. Pages use the platform templates only. |
+| Manifest migration hooks (part of T012) | Not built. Only one version of each reference component exists. |
+| Theme tokens in manifests | Token names are checked once the spec 033 token schema exists. |
+| Denied publish outside scope | Recorded as `page.published` or `page.rolled_back` with outcome `denied`, then answered as not found. |

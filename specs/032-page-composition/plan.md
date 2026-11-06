@@ -25,13 +25,14 @@ Approval routes, impact reports (FR-044 and FR-054 beyond the affected page list
 | XXX thin frontend | Yes | Region rules, protection and validation live in the API; the builder only shows what the API returns |
 
 ## Module and data model (schema `experience`)
-- `Experience` module with `Experience.Contracts` (component registration, effective configuration reader, events). Migrations `0001_experience.sql` onward.
+- `Experience` module with `Experience.Contracts` (component registration, effective configuration reader, events). Migrations `0001_experience.sql` onward. Region policy is read from the template version the page records, so a page editor cannot loosen it.
 - Platform catalogue, shipped in code as embedded JSON and loaded at start: layouts L01 to L10 and templates T01 to T12, each with an ID, a version and regions. Platform data is read-only and has no `tenant_id`, which is listed in the RLS exemption list.
-- `component_manifest` (platform): `component_id`, `version`, `manifest jsonb`, `state` (active, deprecated, retired), registered at start from the manifests that platform modules contribute through `IComponentRegistration`. Platform only until R3 (FR-031).
-- `component_enablement` (tenant): `tenant_id`, `component_id`, `enabled`, `changed_by`, `changed_at`. New tenants get every active platform component enabled.
-- `page` (tenant): `tenant_id`, `page_id`, `org_unit_id` (scope, immutable ID per spec 033 FR-026), `slug`, `owner_id`, `template_id`, `template_version`, `current_release`, `draft_etag`, `created_at`.
-- `page_version` (tenant): `tenant_id`, `page_id`, `version` (monotonic), `kind` (`draft` or `release`), `release_number`, `definition jsonb`, `created_by`, `created_at`, `reason`, `rollback_of`. A release row is never updated (FR-050, FR-052). There is one draft row per page, replaced on save with an `etag` check.
-- `template` (tenant, for tenant templates, R1 only as copies of platform templates with locks): `tenant_id`, `template_id`, `version`, `state`, `definition jsonb`, `distribution uuid[]` (org units). Limited by `experience.max_custom_templates`.
+- Component manifests are platform data too: the registry is built in memory at start from the manifests that modules contribute through `IComponentRegistration`, validated, and never stored per tenant. Platform only until R3 (FR-031).
+- `component_enablement` (tenant): `tenant_id`, `component_id`, `enabled`, `changed_by`, `changed_at`. Only tenant choices are stored, so a component with no row is enabled.
+- `page` (tenant): `tenant_id`, `id`, `org_unit_id` (scope, immutable ID per spec 033 FR-026), `slug`, `owner_id`, `template_id`, `template_version`, `current_release`, `created_at`.
+- `page_draft` (tenant): one working draft per page, `revision` as the optimistic concurrency token (sent as the `ETag`), replaced on save.
+- `page_release` (tenant): `tenant_id`, `page_id`, `release`, `definition jsonb`, `published_by`, `published_at`, `reason`, `rollback_of`. The application role may only insert and read, so a release can never change (FR-050, FR-052).
+- `template` (tenant, added with T011, for tenant copies of platform templates with locks): `tenant_id`, `template_id`, `version`, `state`, `definition jsonb`, `distribution uuid[]` (org units). Limited by `experience.max_custom_templates`.
 
 Page definition (JSON, stored in `page_version.definition`): `templateRef`, `layoutRef`, `variant` (`spacious`, `balanced`, `compact`), `sections[]` with `mode` (`contained`, `full_bleed`, `fixed`, `fluid`), and `regions[]` each with `id`, `policy` (allowed categories, min and max placements, protection, personalization), `order` per breakpoint and `placements[]` with `id`, `componentRef` (`id@major`), `props`, `visibilityRuleRef`. It holds no business data, secrets or user data (FR-003).
 

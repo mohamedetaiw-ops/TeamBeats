@@ -87,6 +87,7 @@ public sealed partial class ArchitectureTests
         {
             ["Tenancy"] = "tenancy", ["Identity"] = "identity", ["Authorization"] = "authz",
             ["Entitlements"] = "entitlements", ["Audit"] = "audit", ["Integrations"] = "integrations",
+            ["Experience"] = "experience",
         };
         var violations = new List<string>();
         foreach (var (module, own) in schemas)
@@ -101,6 +102,29 @@ public sealed partial class ArchitectureTests
                         violations.Add($"{Rel(file)} touches {other}.*");
                     }
                 }
+            }
+        }
+        Assert.True(violations.Count == 0, string.Join("\n", violations));
+    }
+
+    /// <summary>
+    /// Spec 032 FR-014 and the source's non-negotiable rule: templates, layouts and page code never depend on a concrete
+    /// component. Only the registry knows components, and only through manifests registered by their owners.
+    /// </summary>
+    [Fact]
+    public void Templates_layouts_and_page_code_never_name_a_concrete_component()
+    {
+        var ids = new TeamBeats.Api.DevHost.ReferencePacks().Manifests().Select(m => m.Id).ToList();
+        var files = SourceFiles("src/Modules/Experience").Where(f => !Rel(f).StartsWith("src/Modules/Experience/Components/", StringComparison.Ordinal))
+            .Concat(Directory.GetFiles(Path.Combine(Root, "src/Modules/Experience/Catalogue"), "*.json"));
+        var violations = new List<string>();
+        foreach (var file in files)
+        {
+            var text = File.ReadAllText(file);
+            violations.AddRange(ids.Where(id => text.Contains(id, StringComparison.Ordinal)).Select(id => $"{Rel(file)} names {id}"));
+            if (text.Contains("componentRef", StringComparison.Ordinal) && Rel(file).EndsWith(".json", StringComparison.Ordinal))
+            {
+                violations.Add($"{Rel(file)} holds a placement");
             }
         }
         Assert.True(violations.Count == 0, string.Join("\n", violations));
@@ -147,10 +171,20 @@ public sealed partial class ArchitectureTests
     [Fact]
     public void Permission_catalogue_matches_database_seed()
     {
-        var sql = File.ReadAllText(Path.Combine(Root, "src/Modules/Authorization/Migrations/0001_authz.sql"));
-        var seedBlock = sql[sql.IndexOf("insert into authz.permission", StringComparison.Ordinal)..];
-        seedBlock = seedBlock[..seedBlock.IndexOf(';')];
-        var seeded = Regex.Matches(seedBlock, @"\('([a-z._]+)'\)").Select(m => m.Groups[1].Value).ToHashSet();
+        // Every authorization migration may add permissions to the catalogue; together they must equal the code catalogue.
+        var seeded = new HashSet<string>();
+        foreach (var file in Directory.GetFiles(Path.Combine(Root, "src/Modules/Authorization/Migrations"), "*.sql"))
+        {
+            var sql = File.ReadAllText(file);
+            var start = sql.IndexOf("insert into authz.permission", StringComparison.Ordinal);
+            if (start < 0)
+            {
+                continue;
+            }
+            var seedBlock = sql[start..];
+            seedBlock = seedBlock[..seedBlock.IndexOf(';')];
+            seeded.UnionWith(Regex.Matches(seedBlock, @"\('([a-z._]+)'\)").Select(m => m.Groups[1].Value));
+        }
         Assert.Equal(Permissions.All.Order(), seeded.Order());
     }
 

@@ -9,6 +9,7 @@ using TeamBeats.Modules.Administration;
 using TeamBeats.Modules.Audit;
 using TeamBeats.Modules.Authorization;
 using TeamBeats.Modules.Entitlements;
+using TeamBeats.Modules.Experience;
 using TeamBeats.Modules.Identity;
 using TeamBeats.Modules.Integrations;
 using TeamBeats.Modules.Tenancy;
@@ -33,6 +34,7 @@ public static class TeamBeatsModules
         EntitlementsModule.Migrations,
         AuditModule.Migrations,
         IntegrationsModule.Migrations,
+        ExperienceModule.Migrations,
     ];
 
     public static IServiceCollection AddTeamBeatsCore(this IServiceCollection services, IConfiguration configuration)
@@ -60,6 +62,7 @@ public static class TeamBeatsModules
         services.AddAuditModule();
         services.AddAdministrationModule();
         services.AddIntegrationsModule();
+        services.AddExperienceModule();
         return services;
     }
 }
@@ -121,6 +124,7 @@ public static class ApiComposition
         app.MapAuditEndpoints();
         app.MapAdministrationEndpoints();
         app.MapIntegrationsEndpoints();
+        app.MapExperienceEndpoints();
         extraEndpoints?.Invoke(app);
         return app;
     }
