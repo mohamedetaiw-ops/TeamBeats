@@ -47,6 +47,9 @@ public static class AuditActions
     public const string OrgUnitRenamed = "org.unit_renamed";
     public const string OrgUnitMoved = "org.unit_moved";
     public const string OrgUnitDeactivated = "org.unit_deactivated";
+    public const string OrgDirectoryMappingChanged = "org.directory_mapping_changed";
+    public const string OrgDirectoryMappingApproved = "org.directory_mapping_approved";
+    public const string OrgDirectoryMappingApplied = "org.directory_mapping_applied";
     public const string OrgMembershipAdded = "org.membership_added";
     public const string OrgMembershipEnded = "org.membership_ended";
     public const string OrgMembershipPrimaryChanged = "org.membership_primary_changed";
@@ -108,6 +111,7 @@ public static class AuditActions
     /// <summary>Events added in R1 that must be emitted and tested.</summary>
     public static readonly IReadOnlyList<string> RequiredInR1 =
     [
+        OrgDirectoryMappingChanged, OrgDirectoryMappingApproved, OrgDirectoryMappingApplied,
         SignInFailed, IdpConfigChanged, DirectoryConnectionChanged, UserSynced, DisabledByDirectory, ReenabledByDirectory,
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
         ConnectionConsentRevokedDetected, ConnectionStatusChanged,
