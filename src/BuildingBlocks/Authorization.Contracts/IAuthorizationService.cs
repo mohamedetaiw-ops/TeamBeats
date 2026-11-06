@@ -18,7 +18,8 @@ public enum ResourceVisibility
 }
 
 /// <summary>Describes a resource for a decision. Supplied by the owning module, so authorization never reads its tables.</summary>
-public sealed record ResourceDescriptor(string ResourceType, Guid ResourceId, Guid? OwningOrgUnitId, ResourceVisibility Visibility);
+/// <remarks><paramref name="Classification"/> is one of <see cref="ConditionAttributes.Classifications"/>, or null when the type has none.</remarks>
+public sealed record ResourceDescriptor(string ResourceType, Guid ResourceId, Guid? OwningOrgUnitId, ResourceVisibility Visibility, string? Classification = null);
 
 /// <summary>What a decision is about.</summary>
 public abstract record AuthzTarget
@@ -36,11 +37,16 @@ public sealed record OrgUnitTarget(Guid UnitId) : AuthzTarget;
 
 public sealed record ResourceTarget(ResourceDescriptor Descriptor) : AuthzTarget;
 
-public sealed record DecisionReason(string Kind, string? RoleKey = null, ScopeType? ScopeType = null, Guid? ScopeId = null, string? Rule = null, string? Subject = null);
+/// <summary>A grant that applies (or, in <see cref="Decision.NotApplied"/>, one whose condition did not hold).</summary>
+public sealed record DecisionReason(string Kind, string? RoleKey = null, ScopeType? ScopeType = null, Guid? ScopeId = null, string? Rule = null,
+    string? Subject = null, ConditionTrace? Condition = null);
 
 public sealed record Decision(bool Allowed, IReadOnlyList<DecisionReason> Reasons)
 {
     public static readonly Decision Deny = new(false, []);
+
+    /// <summary>Grants that would cover the target but whose condition was not met (spec 004 US7, FR-016).</summary>
+    public IReadOnlyList<DecisionReason> NotApplied { get; init; } = [];
 }
 
 /// <summary>Set of org units where a permission applies, or the whole tenant.</summary>
