@@ -15,15 +15,73 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Identity.DevAuth;
 
 /// <summary>
-/// Development-only sign-in (spec 003 US1, ADR-0004). This assembly is referenced only by <c>Api.DevHost</c>.
-/// There is no password: a developer picks a seeded, fictional account. Never present in the production artifact.
+/// Development-only sign-in (spec 003 US1 and US7, ADR-0004). This assembly is referenced only by <c>Api.DevHost</c>
+/// and is never present in the production artifact. Two modes:
+/// <list type="bullet">
+/// <item><c>Open</c> (Development, Test): a developer picks a seeded, fictional account by email. No password.</item>
+/// <item><c>TestAccount</c> (Staging, and allowed in Development and Test): only the configured test accounts can sign in,
+/// by username with one click and no password. Nothing else, including any other email, can sign in.</item>
+/// </list>
 /// </summary>
 public static class DevAuthModule
 {
     public const string Issuer = "urn:teambeats:dev";
     public const string EnabledKey = "Auth:DevSignIn:Enabled";
+    public const string ModeKey = "Auth:DevSignIn:Mode";
+    public const string AccountsKey = "Auth:DevSignIn:TestAccounts";
 
-    public static bool IsAllowed(IHostEnvironment env) => env.IsDevelopment() || env.IsEnvironment("Test");
+    /// <summary>The shared staging deployment is a Test environment (constitution V, spec 003 US7).</summary>
+    public const string StagingEnvironment = "Staging";
+
+    public static bool IsAllowed(IHostEnvironment env) =>
+        env.IsDevelopment() || env.IsEnvironment("Test") || env.IsEnvironment(StagingEnvironment);
+
+    public static DevSignInMode ReadMode(IConfiguration configuration) =>
+        string.Equals(configuration[ModeKey], nameof(DevSignInMode.TestAccount), StringComparison.OrdinalIgnoreCase)
+            ? DevSignInMode.TestAccount
+            : DevSignInMode.Open;
+
+    public static IReadOnlyList<TestAccount> ReadAccounts(IConfiguration configuration) =>
+        configuration.GetSection(AccountsKey).Get<List<TestAccount>>() ?? [];
+
+    /// <summary>
+    /// Fails startup on any unsafe combination. Staging must use test account mode, and every test account needs a
+    /// username and an email.
+    /// </summary>
+    public static void Validate(IConfiguration configuration, IHostEnvironment env)
+    {
+        if (!IsAllowed(env))
+        {
+            // Second guard, in case this assembly is ever composed into a non-test host.
+            throw new InvalidOperationException("Development sign-in cannot run outside Development, Test or Staging.");
+        }
+        var mode = ReadMode(configuration);
+        if (env.IsEnvironment(StagingEnvironment) && mode != DevSignInMode.TestAccount)
+        {
+            throw new InvalidOperationException(
+                $"{ModeKey} must be TestAccount in Staging. Open sign-in would let anyone choose any account.");
+        }
+        if (mode != DevSignInMode.TestAccount)
+        {
+            return;
+        }
+        var accounts = ReadAccounts(configuration);
+        if (accounts.Count == 0)
+        {
+            throw new InvalidOperationException($"{ModeKey} is TestAccount but no test accounts are configured under {AccountsKey}.");
+        }
+        foreach (var account in accounts)
+        {
+            if (string.IsNullOrWhiteSpace(account.Username) || string.IsNullOrWhiteSpace(account.Email))
+            {
+                throw new InvalidOperationException("Every test account needs a username and an email.");
+            }
+        }
+        if (accounts.Select(a => a.Username.Trim().ToLowerInvariant()).Distinct().Count() != accounts.Count)
+        {
+            throw new InvalidOperationException("Test account usernames must be unique.");
+        }
+    }
 
     public static IServiceCollection AddDevAuth(this IServiceCollection services, IConfiguration configuration, IHostEnvironment env)
     {
@@ -31,13 +89,16 @@ public static class DevAuthModule
         {
             return services;
         }
-        if (!IsAllowed(env))
-        {
-            // Second guard, in case this assembly is ever composed into a non-development host.
-            throw new InvalidOperationException("Development sign-in cannot run outside Development or Test.");
-        }
+        Validate(configuration, env);
         services.AddScoped<DevSeeder>();
         return services;
+    }
+
+    /// <summary>Finds the configured test account for a username (not case sensitive).</summary>
+    public static TestAccount? MatchAccount(IReadOnlyList<TestAccount> accounts, string? username)
+    {
+        var name = (username ?? string.Empty).Trim();
+        return accounts.FirstOrDefault(a => string.Equals(a.Username.Trim(), name, StringComparison.OrdinalIgnoreCase));
     }
 
     public static IEndpointRouteBuilder MapDevAuthEndpoints(this IEndpointRouteBuilder app, IConfiguration configuration)
@@ -47,17 +108,41 @@ public static class DevAuthModule
             return app;
         }
 
+        var mode = ReadMode(configuration);
+        var accounts = ReadAccounts(configuration);
         var dev = app.MapGroup("/dev").WithTags("Development only").ExcludeFromDescription();
 
         dev.MapPost("/signin", async (DevSignInRequest request, HttpResponse response, ITenantContext context, SignInService signIn,
-            SessionService sessions, IDbSession session, CancellationToken ct) =>
+            SessionService sessions, IDbSession session, TenantContextAccessor accessor, IAuditWriter audit, CancellationToken ct) =>
         {
             if (context.Host.Kind != HostScopeKind.Tenant || context.Host.Tenant is not { } tenant)
             {
                 throw AppException.NotFound();
             }
-            var email = (request.Email ?? string.Empty).Trim().ToLowerInvariant();
-            var result = await signIn.SignInAsync(tenant, Issuer, email, email, request.DisplayName ?? email, "dev", "dev", ct);
+
+            string email;
+            string displayName;
+            if (mode == DevSignInMode.TestAccount)
+            {
+                if (MatchAccount(accounts, request.Username) is not { } account)
+                {
+                    accessor.SetTenant(tenant.Id);
+                    accessor.SetActor(ActorType.Anonymous, null);
+                    await audit.WriteAsync(new AuditEntry(AuditActions.SignInRefused, "user", null, AuditOutcome.Denied,
+                        Changes: new { reason = "unknown_test_account", issuer = Issuer }), ct);
+                    await session.CommitAsync(ct);
+                    throw new AppException(ProblemCodes.SignInRefused, 403);
+                }
+                email = account.Email.Trim().ToLowerInvariant();
+                displayName = string.IsNullOrWhiteSpace(account.DisplayName) ? account.Username : account.DisplayName;
+            }
+            else
+            {
+                email = (request.Email ?? string.Empty).Trim().ToLowerInvariant();
+                displayName = request.DisplayName ?? email;
+            }
+
+            var result = await signIn.SignInAsync(tenant, Issuer, email, email, displayName, "dev", "dev", ct);
             await session.CommitAsync(ct);
             return result.Outcome switch
             {
@@ -71,7 +156,8 @@ public static class DevAuthModule
         dev.MapPost("/platform/signin", async (DevSignInRequest request, HttpResponse response, ITenantContext context,
             SessionService sessions, IDbSession session, CancellationToken ct) =>
         {
-            if (context.Host.Kind != HostScopeKind.Platform)
+            // Platform dev sign-in exists only in open mode. Test account mode (staging) has no platform console sign-in.
+            if (mode == DevSignInMode.TestAccount || context.Host.Kind != HostScopeKind.Platform)
             {
                 throw AppException.NotFound();
             }
@@ -95,16 +181,40 @@ public static class DevAuthModule
     }
 }
 
-public sealed record DevSignInRequest(string? Email, string? DisplayName);
+public enum DevSignInMode
+{
+    Open,
+    TestAccount,
+}
+
+public sealed record DevSignInRequest(string? Email, string? DisplayName, string? Username = null);
+
+/// <summary>A configured test account for test account mode. Fictional data only, no password.</summary>
+public sealed class TestAccount
+{
+    public string Username { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? DisplayName { get; set; }
+}
 
 /// <summary>Seed file format (deploy/compose/seed/dev-users.json). Fictional data only.</summary>
 public sealed record DevSeed(IReadOnlyList<DevPlatformOperator> PlatformOperators);
 
 public sealed record DevPlatformOperator(string Email, string DisplayName);
 
-/// <summary>Seeds fictional platform operators for local development.</summary>
+/// <summary>Seeds fictional platform operators for local development and staging.</summary>
 public sealed class DevSeeder(IDbSession session)
 {
+    /// <summary>Creates the platform operator if missing and returns its id. Does not commit.</summary>
+    public async Task<Guid> EnsurePlatformOperatorAsync(string email, string displayName, CancellationToken ct)
+    {
+        var normalized = email.Trim().ToLowerInvariant();
+        await session.ExecAsync(
+            "insert into identity.platform_operator (id, email, display_name, status) values (@id, @e, @n, 'active') on conflict (email) do nothing",
+            new { id = Ids.New(), e = normalized, n = displayName }, ct);
+        return await session.ScalarAsync<Guid>("select id from identity.platform_operator where email = @e", new { e = normalized }, ct);
+    }
+
     public async Task SeedAsync(string seedFile, CancellationToken ct)
     {
         if (!File.Exists(seedFile))

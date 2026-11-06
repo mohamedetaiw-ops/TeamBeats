@@ -11,7 +11,7 @@ Every R0 plan (`specs/001` to `specs/007`) builds on this document. It defines t
 /src
   /Web                         Next.js 16 app (employee portal + admin shell)
   /Api                         ASP.NET Core host (production composition root)
-  /Api.DevHost                 Development/Test host: references Api + Identity.DevAuth (ADR-0004)
+  /Api.DevHost                 Development/Test/Staging host: references Api + Identity.DevAuth (ADR-0004, spec 003 US7)
   /Workers                     Worker host (outbox dispatcher, audit sealer, scheduled jobs)
   /BuildingBlocks
     /TenantContext             Tenant/org context, transaction-local set_config, RLS helpers
