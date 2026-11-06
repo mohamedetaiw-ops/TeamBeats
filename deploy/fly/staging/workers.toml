@@ -6,6 +6,10 @@ primary_region = "fra"
 [env]
   ASPNETCORE_ENVIRONMENT = "Staging"
 
+# Workers stop the host when a background job fails (for example before the API has applied migrations); always restart.
+[[restart]]
+  policy = "always"
+
 [[vm]]
   size = "shared-cpu-1x"
   memory = "512mb"

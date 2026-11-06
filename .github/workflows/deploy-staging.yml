@@ -98,11 +98,30 @@ jobs:
           --dockerfile deploy/docker/api-staging.Dockerfile
           --remote-only --ha=false --wait-timeout 10m
 
+      - name: Start and wait for the API
+        run: |
+          # flyctl deploy updates a stopped machine without starting it (for example after it hit its restart limit).
+          flyctl machines list --app "$API_APP" --json | jq -r '.[] | select(.state != "started") | .id' \
+            | xargs -r -n1 flyctl machine start --app "$API_APP"
+          for i in $(seq 1 36); do
+            states=$(flyctl machines list --app "$API_APP" --json | jq -r '[.[] | .checks[]? | .status] | unique | join(",")')
+            echo "API checks: ${states:-none}"
+            [ "$states" = "passing" ] && exit 0
+            sleep 5
+          done
+          echo "::error::API did not become healthy"
+          exit 1
+
       - name: Deploy workers
         run: >-
           flyctl deploy . --app "$WORKERS_APP" --config deploy/fly/staging/workers.toml
           --dockerfile deploy/docker/workers.Dockerfile
           --remote-only --ha=false --wait-timeout 5m
+
+      - name: Start workers if stopped
+        run: |
+          flyctl machines list --app "$WORKERS_APP" --json | jq -r '.[] | select(.state != "started") | .id' \
+            | xargs -r -n1 flyctl machine start --app "$WORKERS_APP"
 
       - name: Deploy web
         run: >-
@@ -123,7 +142,11 @@ jobs:
           done
           [ "$code" = 200 ] || { echo "::error::$base/signin answered $code"; exit 1; }
           echo "Sign-in page: 200"
-          code=$(curl -s -o /dev/null -w '%{http_code}' "$base/api/v1/me")
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$base/api/v1/me")
+            [ "$code" = 401 ] && break
+            sleep 5
+          done
           [ "$code" = 401 ] || { echo "::error::/api/v1/me signed out answered $code, expected 401"; exit 1; }
           echo "API through web, signed out: 401"
           jar=$(mktemp)
