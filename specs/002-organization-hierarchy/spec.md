@@ -10,7 +10,7 @@
 | Approver | Mohamed |
 | Target release | R0 (manual hierarchy), R1 (Entra ID directory mapping), R2 (on-premises Active Directory mapping) |
 | Last updated | 2026-11-05 |
-| Approved | 2026-11-04 by Mohamed |
+| Approved | 2026-11-04 by Mohamed; AD mapping 2026-11-06 by Mohamed |
 | Requirement IDs | TEN-003, TEN-004, TEN-005, TEN-006, TEN-010, INT-007 (directory part) |
 | Use cases | UC-02 |
 | Depends on | 001, 003 (directory connection), 004 (scoped admin roles), 006 (audit), 017 (connector framework, for on-premises AD) |
@@ -200,7 +200,7 @@ Directory reads use the connection from spec 003: Microsoft Graph for Entra ID, 
 - **SC-003**: A tenant admin with an Entra ID tenant can map their AD structure and see it in TeamBeats in under one hour, with no CSV.
 
 ## 17. Open questions
-- The Active Directory mapping (US5, FR-010 to FR-014) needs Mohamed's approval before implementation. Defaults used: 30 minute schedule, 10% deletion threshold, one strategy per connection.
+- Decided 2026-11-06 (Mohamed): the Active Directory mapping (US5, FR-010 to FR-014) is approved with a 30 minute schedule, a 10% deletion threshold and one strategy per connection. Entra ID mapping is in R1 and on-premises AD in R2.
 
 ## 18. Traceability
 

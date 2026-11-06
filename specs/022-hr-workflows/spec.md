@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 022-hr-workflows |
 | Area | workflows |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (holiday and working week calendars per country and location, and the working-day contract used by specs 016 and 024), R2 (leave, Ramadan and other reduced hours periods, team availability, attendance, onboarding and offboarding journeys, employee data change, HR letters, expense claims), R3 (probation and contract milestones with HR write-back, shift rosters, AI receipt reading for all tenants) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | INT-007, UC-08, UC-09, LVA-001 to LVA-012 and HRW-001 to HRW-014 (new) |
 | Use cases | UC-08 (service request), UC-09 (HR data) |
 | Depends on | 002, 003 (`UserProvisioned`, `UserDeprovisioned`), 004, 005, 006, 007, 010 (profile and reporting line), 011 (documents), 015 (notifications), 016 (service catalogue, task inbox, delegation), 017 (connectors), 019 (HR integration), 021 (analytics), 024 (process engine), 025 (onboarding policy attestations), 026 (classification), planned 028 (learning assignments) |

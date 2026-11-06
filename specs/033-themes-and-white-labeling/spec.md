@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 033-themes-and-white-labeling |
 | Area | experience |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (semantic token engine and theme resolver, tenant brand profiles, organization brand overrides, brand assets, light and dark modes, typography by script, contrast validation, scope model, locks, effective configuration trace, stable IDs), R2 (theme draft, approval, schedule and rollback, high contrast mode, impact analysis, preview as organization, starter wizard, delegated experience administration, cross-organization journeys, custom domains, token export, drift report, localized branding, reviewed token extensions) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | CX-BRD-001 to CX-BRD-015, CX-ORG-001 to CX-ORG-011, CX-TMP-011, CX-LOC-006, ADM-001 (branding) |
 | Use cases | UC-01 (tenant setup, branding part) |
 | Depends on | 001 (tenant settings), 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization and accessibility), 011 (brand asset portal), 024 (approval routes), 032 (page composition) |

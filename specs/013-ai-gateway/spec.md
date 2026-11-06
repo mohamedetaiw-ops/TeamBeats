@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 013-ai-gateway |
 | Area | ai |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (gateway pipeline, OpenRouter adapter, tenant model policy, classification routing, fallback, metering, usage view, `evaluation` use case and release gate on model route changes), R2 (budgets and alerts, org unit policies, private model endpoint adapter, cost analytics, evaluator worker facade), R3 (air-gapped model hosting, per-tenant provider keys for dedicated installs) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | AI-002, AI-003, AI-004, AI-006, AI-011, AI-012, AI-013, AIG-001 to AIG-019 (new) |
 | Use cases | UC-06, UC-07, UC-12, UC-13 |
 | Depends on | ADR-0003 (AI Gateway), 004 (authorization), 005 (entitlements), 006 (audit), 002 (hierarchy, for org unit policies), 021 (analytics), 034 (release gates for model route changes) |

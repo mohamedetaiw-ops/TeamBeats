@@ -10,7 +10,7 @@
 | Approver | Mohamed |
 | Target release | R0 (dev auth, staging test account), R1 (Entra ID sign-in, Entra ID directory sync, delegated Microsoft Graph access for mail and calendar), R2 (Google, SAML, AD FS sign-in, on-premises AD sync) |
 | Last updated | 2026-11-06 |
-| Approved | 2026-11-04 by Mohamed; FR-016 2026-11-05 by Mohamed; US7 and FR-017 2026-11-06 by Mohamed |
+| Approved | 2026-11-04 by Mohamed; FR-016 2026-11-05 by Mohamed; AD sign-in and sync 2026-11-06 by Mohamed; US7 and FR-017 2026-11-06 by Mohamed |
 | Requirement IDs | IAM-001 to IAM-007, IAM-009, IAM-010, INT-007 (directory part) |
 | Use cases | UC-03, UC-09 (directory part) |
 | Depends on | 001, 002, 004, 017 (connector framework, for on-premises AD), 018 (delegated Microsoft Graph access) |
@@ -25,7 +25,7 @@
 
 **In scope:**
 - Development-only local sign-in, its isolation and its decommission gate.
-- A staging test account (username and password) for testing the deployed staging platform, and the guarantee that it never exists in production.
+- A one-click staging test account (no password) for testing the deployed staging platform, and the guarantee that it never exists in production.
 - Per-tenant identity provider configuration (OIDC first).
 - Microsoft Entra ID via OIDC (R1). Google Workspace via OIDC and SAML 2.0 (R2).
 - On-premises Active Directory sign-in through AD FS, using OIDC or SAML 2.0 (R2). Hybrid AD that is already synced to Entra ID uses the Entra ID path.
@@ -116,19 +116,19 @@ The tenant admin connects Acme's directory once. New hires can sign in on day on
 
 ### User Story 7: Staging test account (Priority: P1, R0)
 
-A tester opens the deployed staging platform and signs in with the test account `admin` and its password, without an identity provider. The same account is used by end-to-end tests. The account never exists in production.
+A tester opens the deployed staging platform and, instead of signing in through Entra ID, clicks "Sign in as test admin" on the sign-in page. No password or secret is involved. End-to-end tests use the same sign-in. The option never exists in production.
 
 The staging deployment is a Test environment in the sense of constitution V. It runs the development host composition (ADR-0004) with the environment name `Staging`, never the production composition.
 
 **Acceptance scenarios:**
 1. **Given** the staging deployment, **When** it starts, **Then** the fictional test tenant from configuration exists (created once, through the tenancy use case, and audited) with the test account's email appointed as tenant administrator.
-2. **Given** the staging deployment, **When** a tester signs in with username `admin` and the configured password, **Then** a session is created for the test tenant and the account has the tenant administrator role. The username is not case sensitive; the password is.
-3. **Given** a wrong password or unknown username, **When** sign-in is attempted, **Then** it is refused, no session is created, and an `auth.sign_in_refused` audit event is written without the password.
-4. **Given** staging, **When** a request uses the Development email-only sign-in or the platform operator dev sign-in, **Then** it is refused or not found. Only configured test accounts with a password can sign in.
-5. **Given** the staging configuration, **When** the password secret is missing or the sign-in mode is not password, **Then** startup fails with an explicit error.
+2. **Given** the staging sign-in page, **When** a tester clicks "Sign in as test admin", **Then** a session is created for the test tenant and the account has the tenant administrator role.
+3. **Given** staging, **When** a sign-in names a username that is not a configured test account, **Then** it is refused, no session is created, and an `auth.sign_in_refused` audit event is written.
+4. **Given** staging, **When** a request uses the Development email sign-in or the platform operator dev sign-in, **Then** it is refused or not found. Only configured test accounts can sign in.
+5. **Given** the staging configuration, **When** the sign-in mode is not test account mode or no test account is configured, **Then** startup fails with an explicit error.
 6. **Given** the production artifact, **When** it starts with a test account or a test tenant configured, **Then** startup fails with an explicit error; the production artifact has no `/dev` routes at all (US1 scenarios 2 and 3).
 7. **Given** a production deployment file, **When** CI runs, **Then** it fails if the file references the development host, the staging image, development sign-in settings, test accounts or a non-production environment name.
-8. **Given** the test account of tenant A, **When** it is used on another tenant's host, **Then** sign-in is refused and its session is rejected there.
+8. **Given** the test account, **When** it is used on another tenant's host, **Then** sign-in is refused and its session is rejected there.
 
 ### Edge cases
 - Clock skew between product and identity provider: tolerate up to 5 minutes.
@@ -156,7 +156,7 @@ The staging deployment is a Test environment in the sense of constitution V. It 
 - **FR-014**: Directory-owned user fields and groups MUST be read-only in the product. Product-owned fields and groups MUST never be changed by sync.
 - **FR-015**: The product MUST NOT accept AD passwords. Active Directory sign-in MUST go through a federated provider (Entra ID or AD FS).
 - **FR-016**: When a Microsoft 365 connection feature needs delegated Microsoft Graph access as the signed-in employee (mail, calendar and rooms in spec 018), the Entra ID sign-in MUST obtain it by incremental consent for only that feature's permissions, without a second sign-in. Delegated tokens MUST be held server side, encrypted, per tenant membership, never sent to the browser or logged, and deleted at sign-out, session revocation, membership disable or employee disconnect, unless the employee opted in to signed-out access (spec 018 FR-023).
-- **FR-017**: A staging test account MAY exist only in the development host composition running as `Staging`, `Development` or `Test`. In `Staging` the development sign-in MUST run in password mode, where only configured test accounts can sign in with username and password. Test account passwords MUST come from a deployment secret, never from source control. The test account MUST use fictional data and belong to a fictional test tenant. The production host MUST refuse to start if test accounts or a seeded test tenant are configured, and CI MUST lint production deployment files for any reference to the development host or test setup. *(IAM-001, IAM-002, IAM-003)*
+- **FR-017**: A staging test account MAY exist only in the development host composition running as `Staging`, `Development` or `Test`. In `Staging` the development sign-in MUST run in test account mode, where only configured test accounts can sign in, by username with one click and no password; email sign-in and platform dev sign-in are off. The test account MUST use fictional data and belong to a fictional test tenant. The production host MUST refuse to start if test accounts or a seeded test tenant are configured, and CI MUST lint production deployment files for any reference to the development host or test setup. *(IAM-001, IAM-002, IAM-003)*
 
 ## 6. Business rules
 - Tenant discovery: user enters work email or uses the tenant's URL. The email domain maps to a tenant's configured identity provider. Domain-to-tenant mapping must be unique in a shared installation.
@@ -220,7 +220,7 @@ Entra ID is read through Microsoft Graph with application permissions limited to
 - Login CSRF: state parameter validated.
 - Dev sign-in reachable in production: prevented by FR-001 (test required).
 - Staging test account reachable in production: prevented by FR-001 and FR-017 (startup guard, artifact check and deployment manifest lint, tests required).
-- Weak or guessed staging password: the staging deployment holds fictional data only, the password is a secret that can be changed without a code change, and every refused attempt is audited. Real customer data MUST NOT be loaded into staging (constitution V).
+- Anyone who can open the staging URL can sign in as the test administrator: accepted by Mohamed (2026-11-06) for testing. Staging MUST hold fictional data only and MUST NOT be connected to a real customer identity provider, directory or Microsoft 365 tenant (constitution V). Every test sign-in is audited.
 - Over-privileged directory account: the product asks only for read permissions and the test connection warns if write permissions are detected.
 - Spoofed AD FS or Entra tenant: the issuer must match the tenant's configured connection, and directory IDs from one connection never link to identities from another.
 
@@ -236,7 +236,7 @@ Entra ID is read through Microsoft Graph with application permissions limited to
 1. RESOLVED 2026-11-04 (Mohamed): identities are tenant-scoped. The same issuer and subject in two tenants creates two unrelated users. No global person record exists. Cross-tenant identity linking, if ever needed, requires a new decision and ADR.
 2. Decided 2026-11-05: role and permission changes take effect within 60 seconds for every access check (spec 004 FR-008). Session data cached for display only (menus, name, picture) may refresh within 5 minutes and is never used for an access decision.
 3. Decided 2026-11-04: SAML is available in all packages.
-4. Active Directory sign-in and sync (US5, US6, FR-011 to FR-015) need Mohamed's approval before implementation. Default: AD sign-in is federated only (no LDAP password bind), Entra ID sync in R1, on-premises AD in R2.
+4. Decided 2026-11-06 (Mohamed): Active Directory sign-in and sync (US5, US6, FR-011 to FR-015) are approved. AD sign-in is federated only (no LDAP password bind), Entra ID sync is in R1 and on-premises AD in R2.
 5. Decided 2026-11-05 (Mohamed): delegated Microsoft Graph access for Microsoft 365 features (FR-016, spec 018) is approved for R1, with session-lifetime tokens and a separate employee opt-in for signed-out access.
 
 ## 18. Traceability

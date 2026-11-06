@@ -10,6 +10,7 @@ using TeamBeats.Modules.Audit;
 using TeamBeats.Modules.Authorization;
 using TeamBeats.Modules.Entitlements;
 using TeamBeats.Modules.Identity;
+using TeamBeats.Modules.Integrations;
 using TeamBeats.Modules.Tenancy;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -31,6 +32,7 @@ public static class TeamBeatsModules
         AuthorizationModule.Migrations,
         EntitlementsModule.Migrations,
         AuditModule.Migrations,
+        IntegrationsModule.Migrations,
     ];
 
     public static IServiceCollection AddTeamBeatsCore(this IServiceCollection services, IConfiguration configuration)
@@ -39,6 +41,7 @@ public static class TeamBeatsModules
             ?? throw new InvalidOperationException("ConnectionStrings:App is required.");
         services.AddTeamBeatsPersistence(appConnection);
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<ISecretStore, ConfigurationSecretStore>();
         services.AddSingleton<ILocalizer, JsonCatalogueLocalizer>();
         services.AddScoped<RequestLocale>();
         services.Configure<HostResolutionOptions>(configuration.GetSection(HostResolutionOptions.Section));
@@ -56,6 +59,7 @@ public static class TeamBeatsModules
         services.AddEntitlementsModule();
         services.AddAuditModule();
         services.AddAdministrationModule();
+        services.AddIntegrationsModule();
         return services;
     }
 }
@@ -116,6 +120,7 @@ public static class ApiComposition
         app.MapEntitlementsEndpoints();
         app.MapAuditEndpoints();
         app.MapAdministrationEndpoints();
+        app.MapIntegrationsEndpoints();
         extraEndpoints?.Invoke(app);
         return app;
     }

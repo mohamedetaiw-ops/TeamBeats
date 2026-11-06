@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -21,8 +19,8 @@ namespace TeamBeats.Modules.Identity.DevAuth;
 /// and is never present in the production artifact. Two modes:
 /// <list type="bullet">
 /// <item><c>Open</c> (Development, Test): a developer picks a seeded, fictional account by email. No password.</item>
-/// <item><c>Password</c> (Staging, and allowed in Development and Test): only the configured test accounts can sign in,
-/// with their username and password. The password comes from a deployment secret, never from source control.</item>
+/// <item><c>TestAccount</c> (Staging, and allowed in Development and Test): only the configured test accounts can sign in,
+/// by username with one click and no password. Nothing else, including any other email, can sign in.</item>
 /// </list>
 /// </summary>
 public static class DevAuthModule
@@ -39,16 +37,16 @@ public static class DevAuthModule
         env.IsDevelopment() || env.IsEnvironment("Test") || env.IsEnvironment(StagingEnvironment);
 
     public static DevSignInMode ReadMode(IConfiguration configuration) =>
-        string.Equals(configuration[ModeKey], nameof(DevSignInMode.Password), StringComparison.OrdinalIgnoreCase)
-            ? DevSignInMode.Password
+        string.Equals(configuration[ModeKey], nameof(DevSignInMode.TestAccount), StringComparison.OrdinalIgnoreCase)
+            ? DevSignInMode.TestAccount
             : DevSignInMode.Open;
 
     public static IReadOnlyList<TestAccount> ReadAccounts(IConfiguration configuration) =>
         configuration.GetSection(AccountsKey).Get<List<TestAccount>>() ?? [];
 
     /// <summary>
-    /// Fails startup on any unsafe combination. Staging must use password mode, and every test account in password mode
-    /// needs a username, an email and a non-empty password.
+    /// Fails startup on any unsafe combination. Staging must use test account mode, and every test account needs a
+    /// username and an email.
     /// </summary>
     public static void Validate(IConfiguration configuration, IHostEnvironment env)
     {
@@ -58,30 +56,25 @@ public static class DevAuthModule
             throw new InvalidOperationException("Development sign-in cannot run outside Development, Test or Staging.");
         }
         var mode = ReadMode(configuration);
-        if (env.IsEnvironment(StagingEnvironment) && mode != DevSignInMode.Password)
+        if (env.IsEnvironment(StagingEnvironment) && mode != DevSignInMode.TestAccount)
         {
             throw new InvalidOperationException(
-                $"{ModeKey} must be Password in Staging. Open sign-in would let anyone choose any account.");
+                $"{ModeKey} must be TestAccount in Staging. Open sign-in would let anyone choose any account.");
         }
-        if (mode != DevSignInMode.Password)
+        if (mode != DevSignInMode.TestAccount)
         {
             return;
         }
         var accounts = ReadAccounts(configuration);
         if (accounts.Count == 0)
         {
-            throw new InvalidOperationException($"{ModeKey} is Password but no test accounts are configured under {AccountsKey}.");
+            throw new InvalidOperationException($"{ModeKey} is TestAccount but no test accounts are configured under {AccountsKey}.");
         }
         foreach (var account in accounts)
         {
             if (string.IsNullOrWhiteSpace(account.Username) || string.IsNullOrWhiteSpace(account.Email))
             {
                 throw new InvalidOperationException("Every test account needs a username and an email.");
-            }
-            if (string.IsNullOrEmpty(account.Password))
-            {
-                throw new InvalidOperationException(
-                    $"Test account '{account.Username}' has no password. Set it from a deployment secret, never in source control.");
             }
         }
         if (accounts.Select(a => a.Username.Trim().ToLowerInvariant()).Distinct().Count() != accounts.Count)
@@ -101,23 +94,11 @@ public static class DevAuthModule
         return services;
     }
 
-    /// <summary>Finds the test account for a username and password. Compares in constant time.</summary>
-    public static TestAccount? MatchAccount(IReadOnlyList<TestAccount> accounts, string? username, string? password)
+    /// <summary>Finds the configured test account for a username (not case sensitive).</summary>
+    public static TestAccount? MatchAccount(IReadOnlyList<TestAccount> accounts, string? username)
     {
         var name = (username ?? string.Empty).Trim();
-        var given = SHA256.HashData(Encoding.UTF8.GetBytes(password ?? string.Empty));
-        TestAccount? match = null;
-        foreach (var account in accounts)
-        {
-            var expected = SHA256.HashData(Encoding.UTF8.GetBytes(account.Password ?? string.Empty));
-            var passwordOk = CryptographicOperations.FixedTimeEquals(given, expected);
-            if (passwordOk && string.Equals(account.Username.Trim(), name, StringComparison.OrdinalIgnoreCase)
-                && !string.IsNullOrEmpty(account.Password))
-            {
-                match = account;
-            }
-        }
-        return match;
+        return accounts.FirstOrDefault(a => string.Equals(a.Username.Trim(), name, StringComparison.OrdinalIgnoreCase));
     }
 
     public static IEndpointRouteBuilder MapDevAuthEndpoints(this IEndpointRouteBuilder app, IConfiguration configuration)
@@ -141,14 +122,14 @@ public static class DevAuthModule
 
             string email;
             string displayName;
-            if (mode == DevSignInMode.Password)
+            if (mode == DevSignInMode.TestAccount)
             {
-                if (MatchAccount(accounts, request.Username, request.Password) is not { } account)
+                if (MatchAccount(accounts, request.Username) is not { } account)
                 {
                     accessor.SetTenant(tenant.Id);
                     accessor.SetActor(ActorType.Anonymous, null);
                     await audit.WriteAsync(new AuditEntry(AuditActions.SignInRefused, "user", null, AuditOutcome.Denied,
-                        Changes: new { reason = "test_account_password", issuer = Issuer }), ct);
+                        Changes: new { reason = "unknown_test_account", issuer = Issuer }), ct);
                     await session.CommitAsync(ct);
                     throw new AppException(ProblemCodes.SignInRefused, 403);
                 }
@@ -175,8 +156,8 @@ public static class DevAuthModule
         dev.MapPost("/platform/signin", async (DevSignInRequest request, HttpResponse response, ITenantContext context,
             SessionService sessions, IDbSession session, CancellationToken ct) =>
         {
-            // Passwordless platform sign-in exists only in open mode. Password mode (staging) has no platform console sign-in.
-            if (mode == DevSignInMode.Password || context.Host.Kind != HostScopeKind.Platform)
+            // Platform dev sign-in exists only in open mode. Test account mode (staging) has no platform console sign-in.
+            if (mode == DevSignInMode.TestAccount || context.Host.Kind != HostScopeKind.Platform)
             {
                 throw AppException.NotFound();
             }
@@ -203,16 +184,15 @@ public static class DevAuthModule
 public enum DevSignInMode
 {
     Open,
-    Password,
+    TestAccount,
 }
 
-public sealed record DevSignInRequest(string? Email, string? DisplayName, string? Username = null, string? Password = null);
+public sealed record DevSignInRequest(string? Email, string? DisplayName, string? Username = null);
 
-/// <summary>A configured test account for password mode. Fictional data only; the password comes from a secret.</summary>
+/// <summary>A configured test account for test account mode. Fictional data only, no password.</summary>
 public sealed class TestAccount
 {
     public string Username { get; set; } = string.Empty;
-    public string? Password { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? DisplayName { get; set; }
 }

@@ -34,6 +34,7 @@ public sealed class WorkerProgram
         }
         builder.Services.AddHostedService<AuditSealerService>();
         builder.Services.AddHostedService<AuditRetentionService>();
+        builder.Services.AddHostedService<DirectorySyncSchedulerService>();
 
         var app = builder.Build();
         app.MapHealthChecks("/health/live");

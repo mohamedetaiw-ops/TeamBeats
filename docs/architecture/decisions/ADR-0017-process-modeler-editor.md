@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | Proposed (Mohamed asked on 2026-11-05 for a modeler that needs no special licence; accepted when the pull request that adds it merges) |
+| Status | Accepted (2026-11-05 by Mohamed) |
 | Date | 2026-11-05 |
 | Owners | Mohamed |
 | Related specs | 024 (modeler, FR-002, sections 10 and 12, open question 1), 016 (simple designer); constitution XXII, XXIII, XXIX, XXX; ADR-0010, ADR-0014 |

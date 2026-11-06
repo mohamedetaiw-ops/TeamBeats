@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 009-content-and-publishing |
 | Area | experience |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (news, announcements, pages, targeting, approval, versions, review dates, critical announcements with acknowledgement), R1 also includes content components for the page builder of spec 032; R2 (sites, campaigns across channels, AI translation, content health dashboard), R3 (external sites for guests, advanced campaign automation) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | EXP-002, EXP-003, EXP-004, LOC-004, UC-04, PUB-001 to PUB-020 (new) |
 | Use cases | UC-04 |
 | Depends on | 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization), 008 (shell, personalization), 032 (page composition), 033 (themes and organization inheritance), 010 (profiles), 011 (documents and assets), 012 (search), 013 (AI Gateway), 015 (notifications), 021 (analytics), 024 (process engine, for approval routes), 025 (policies), 026 (external users) |

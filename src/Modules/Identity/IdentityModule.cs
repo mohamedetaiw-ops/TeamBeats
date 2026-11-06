@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Localization;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Identity.Sso;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -23,10 +24,19 @@ public static class IdentityModule
         services.AddScoped<SessionService>();
         services.AddScoped<ISessionRevocation>(sp => sp.GetRequiredService<SessionService>());
         services.AddScoped<SignInService>();
+        services.AddHttpClient(Sso.HttpOidcProvider.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
+        services.AddSingleton<Sso.IOidcProvider, Sso.HttpOidcProvider>();
+        services.AddScoped<Sso.IdentityProviderStore>();
+        services.AddScoped<Sso.GroupRoleSync>();
+        services.AddScoped<Sso.SsoService>();
         services.AddScoped<UserDirectory>();
         services.AddScoped<IUserDirectory>(sp => sp.GetRequiredService<UserDirectory>());
         services.AddScoped<RequestLocale>();
         services.AddMessageHandler<TenantSuspended, RevokeSessionsOnSuspension>("identity.revoke_on_suspend");
+        services.AddScoped<Directory.DirectorySyncService>();
+        services.AddScoped<Integrations.Contracts.IConnectionDependents, Directory.DirectoryConnectionDependents>();
+        services.AddMessageHandler<Directory.DirectorySyncRequested, Directory.RunRequestedDirectorySync>("identity.directory_sync_now");
+        services.AddMessageHandler<Integrations.Contracts.ConnectionDeleted, Directory.RemoveDirectoryOnConnectionDeleted>("identity.directory_connection_deleted");
         return services;
     }
 
@@ -39,6 +49,9 @@ public static class IdentityModule
             sessions.ClearCookie(response);
             return Results.NoContent();
         }).WithTags("Auth");
+
+        app.MapSsoEndpoints();
+        Directory.DirectoryEndpoints.MapDirectoryEndpoints(app);
 
         var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me");
 
@@ -93,6 +106,9 @@ public sealed class UserDirectory(IDbSession session) : IUserDirectory
 
     public Task<UserInfo?> FindByEmailAsync(string email, CancellationToken ct = default) =>
         session.QuerySingleOrDefaultAsync(Select + " where lower(u.email) = lower(@e)", new { e = email.Trim() }, Map, ct);
+
+    public Task<bool> IsDisabledByDirectoryAsync(Guid userId, CancellationToken ct = default) =>
+        session.ScalarAsync<bool>("select exists (select 1 from identity.directory_user_link where user_id = @u and disabled_by_directory)", new { u = userId }, ct);
 
     public async Task<IReadOnlyList<UserInfo>> ListAsync(string? search, int limit, CancellationToken ct = default) =>
         await session.QueryAsync(

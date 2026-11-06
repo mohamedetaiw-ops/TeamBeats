@@ -16,23 +16,20 @@ using Xunit;
 namespace TeamBeats.Integration.Tests;
 
 /// <summary>
-/// Spec 003 US7: the staging test account. The development host runs as Staging with password-mode sign-in, the
-/// appsettings.Staging.json test account and seeded test tenant, and a password supplied the way a deployment secret is.
+/// Spec 003 US7: the staging test account. The development host runs as Staging with one-click test account sign-in,
+/// using the appsettings.Staging.json test account and seeded test tenant. No password and no secret.
 /// </summary>
 [Collection(WorldCollection.Name)]
 public sealed class StagingTestAccountTests(TenantWorld world) : IAsyncLifetime
 {
     private const string TenantKey = "staging-demo";
-    private const string Password = "admin";
-
     private DevHostFactory _staging = null!;
 
-    private static Dictionary<string, string?> StagingSettings(string? password = Password) => new()
+    private static Dictionary<string, string?> StagingSettings() => new()
     {
         // Tests reach tenants by subdomain; the deployed staging host uses dedicated mode from appsettings.Staging.json.
         ["Tenancy:Hosts:Mode"] = "Shared",
         ["Dev:MigrateOnStart"] = "false",
-        ["Auth:DevSignIn:TestAccounts:0:Password"] = password,
     };
 
     public Task InitializeAsync()
@@ -56,9 +53,9 @@ public sealed class StagingTestAccountTests(TenantWorld world) : IAsyncLifetime
         _staging.Tenant(tenantKey).PostAsJsonAsync("/dev/signin", body);
 
     [Fact]
-    public async Task Admin_with_password_admin_signs_in_as_tenant_administrator()
+    public async Task One_click_admin_sign_in_makes_a_tenant_administrator_session()
     {
-        var response = await SignIn(TenantKey, new { username = "admin", password = Password });
+        var response = await SignIn(TenantKey, new { username = "admin" });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var token = DevHostFactory.SessionToken(response);
         Assert.NotNull(token);
@@ -71,45 +68,43 @@ public sealed class StagingTestAccountTests(TenantWorld world) : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Username_is_case_insensitive_and_password_is_not()
+    public async Task Username_is_not_case_sensitive()
     {
-        Assert.Equal(HttpStatusCode.OK, (await SignIn(TenantKey, new { username = "Admin", password = Password })).StatusCode);
-        Assert.Equal(HttpStatusCode.Forbidden, (await SignIn(TenantKey, new { username = "admin", password = "ADMIN" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await SignIn(TenantKey, new { username = "Admin" })).StatusCode);
     }
 
     [Fact]
-    public async Task Wrong_password_is_refused_and_audited()
+    public async Task Unknown_username_is_refused_and_audited()
     {
-        var response = await SignIn(TenantKey, new { username = "admin", password = "not-the-password" });
+        var response = await SignIn(TenantKey, new { username = "root" });
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Null(DevHostFactory.SessionToken(response));
         var tenantId = await world.Database.OwnerScalarAsync<Guid>("select id from tenancy.tenant where key = 'staging-demo'");
         await world.Database.AssertAuditedAsync(tenantId, AuditActions.SignInRefused);
-        Assert.Equal(0, await world.Database.CountInTenantAsync(tenantId,
-            "select count(*) from audit.audit_event where changes::text like '%not-the-password%'"));
     }
 
     [Fact]
-    public async Task Unknown_username_and_passwordless_email_sign_in_are_refused()
+    public async Task Email_sign_in_is_refused_in_test_account_mode()
     {
-        Assert.Equal(HttpStatusCode.Forbidden, (await SignIn(TenantKey, new { username = "root", password = Password })).StatusCode);
-        // Open mode's email-only sign-in does not work in password mode, even for the test account's own email.
+        // Open mode's email sign-in does not exist on staging: nobody can choose an arbitrary account, not even an
+        // appointed admin of another seeded tenant and not even the test account's own email.
         Assert.Equal(HttpStatusCode.Forbidden, (await SignIn(TenantKey, new { email = "admin@staging.example" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await SignIn(world.A.Key, new { email = world.A["admin"].Email })).StatusCode);
     }
 
     [Fact]
     public async Task Test_account_cannot_reach_another_tenant()
     {
         // Same credentials on tenant A's host: the account has no identity there, so sign-in is refused.
-        Assert.Equal(HttpStatusCode.Forbidden, (await SignIn(world.A.Key, new { username = "admin", password = Password })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await SignIn(world.A.Key, new { username = "admin" })).StatusCode);
 
         // A staging session is useless on tenant A.
-        var token = DevHostFactory.SessionToken(await SignIn(TenantKey, new { username = "admin", password = Password }));
+        var token = DevHostFactory.SessionToken(await SignIn(TenantKey, new { username = "admin" }));
         Assert.Equal(HttpStatusCode.Unauthorized, (await _staging.Tenant(world.A.Key, token).GetAsync("/api/v1/me")).StatusCode);
     }
 
     [Fact]
-    public async Task Platform_sign_in_does_not_exist_in_password_mode()
+    public async Task Platform_sign_in_does_not_exist_in_test_account_mode()
     {
         var client = _staging.CreateClient(new WebApplicationFactoryClientOptions
         {
@@ -135,15 +130,18 @@ public sealed class StagingTestAccountTests(TenantWorld world) : IAsyncLifetime
         settings["Auth:DevSignIn:Mode"] = "Open";
         using var factory = new DevHostFactory(world.Database, DevAuthModule.StagingEnvironment, settings);
         var error = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
-        Assert.Contains("must be Password in Staging", Flatten(error));
+        Assert.Contains("must be TestAccount in Staging", Flatten(error));
     }
 
     [Fact]
-    public void Staging_refuses_to_start_without_the_password_secret()
+    public void Staging_refuses_to_start_without_a_test_account()
     {
-        using var factory = new DevHostFactory(world.Database, DevAuthModule.StagingEnvironment, StagingSettings(password: null));
+        var settings = StagingSettings();
+        settings["Auth:DevSignIn:TestAccounts:0:Username"] = "";
+        settings["Auth:DevSignIn:TestAccounts:0:Email"] = "";
+        using var factory = new DevHostFactory(world.Database, DevAuthModule.StagingEnvironment, settings);
         var error = Assert.ThrowsAny<Exception>(() => factory.CreateClient());
-        Assert.Contains("has no password", Flatten(error));
+        Assert.Contains("needs a username and an email", Flatten(error));
     }
 
     [Fact]
@@ -170,7 +168,6 @@ public sealed class StagingTestAccountTests(TenantWorld world) : IAsyncLifetime
         {
             b.UseEnvironment("Production");
             b.UseSetting("Auth:DevSignIn:TestAccounts:0:Username", "admin");
-            b.UseSetting("Auth:DevSignIn:TestAccounts:0:Password", Password);
             b.UseSetting("ConnectionStrings:App", world.Database.AppConnectionString);
         });
         Assert.ThrowsAny<Exception>(() => factory.CreateClient());
@@ -179,7 +176,7 @@ public sealed class StagingTestAccountTests(TenantWorld world) : IAsyncLifetime
     [Fact]
     public async Task Production_host_has_no_test_account_sign_in()
     {
-        var response = await world.Factory.TenantClient(world.A.Key).PostAsJsonAsync("/dev/signin", new { username = "admin", password = Password });
+        var response = await world.Factory.TenantClient(world.A.Key).PostAsJsonAsync("/dev/signin", new { username = "admin" });
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 

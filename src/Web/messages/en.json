@@ -16,10 +16,10 @@
     "ssoPending": "Single sign-on is configured by your administrator.",
     "failed": "Sign-in was refused. Check the email and try again.",
     "unavailable": "This workspace is not available right now.",
-    "testNotice": "Staging test sign-in. Use the test account you were given. Test accounts never exist in production.",
-    "username": "Username",
-    "password": "Password",
-    "testFailed": "Sign-in was refused. Check the username and password and try again."
+    "ssoMicrosoft": "Sign in with Microsoft",
+    "testNotice": "Staging only. Skip single sign-on and sign in as the test administrator. This option never exists in production.",
+    "testSubmit": "Sign in as test admin",
+    "testFailed": "Test sign-in was refused. The staging test account is not set up."
   },
   "admin": {
     "title": "Administration",
@@ -35,7 +35,8 @@
       "roles": "Roles and access",
       "plan": "Plan",
       "identity": "Sign-in settings",
-      "audit": "Audit log"
+      "audit": "Audit log",
+      "connections": "Connections"
     }
   },
   "header": {
@@ -51,5 +52,28 @@
   },
   "errors": {
     "generic": "Something went wrong. Try again in a moment."
+  },
+  "signin_problem": {
+    "no_access": {
+      "title": "You do not have access",
+      "body": "You signed in, but this workspace has no active account for you. Ask your administrator for access."
+    },
+    "tenant_suspended": {
+      "title": "This workspace is not available",
+      "body": "This workspace is suspended. Contact your administrator."
+    },
+    "idp_unavailable": {
+      "title": "Sign-in service is not responding",
+      "body": "Your organization's sign-in service could not be reached. Try again in a few minutes."
+    },
+    "not_configured": {
+      "title": "Single sign-on is not set up",
+      "body": "Your administrator has not set up single sign-on for this workspace yet."
+    },
+    "failed": {
+      "title": "Sign-in did not complete",
+      "body": "The sign-in could not be verified. Start again from the sign-in page."
+    },
+    "retry": "Sign in again"
   }
 }
