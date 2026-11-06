@@ -33,6 +33,10 @@ public static class Capabilities
     public const string ExperienceOrgBranding = "experience.org_branding";
     public const string ExperienceCustomDomain = "experience.custom_domain";
     public const string ExperienceTokenExtensions = "experience.token_extensions";
+    public const string ExperiencePersonalization = "experience.personalization";
+    public const string ExperienceAudienceVariants = "experience.audience_variants";
+    public const string ExperienceGuidedTours = "experience.guided_tours";
+    public const string ExperienceBehavioralPersonalization = "experience.behavioral_personalization";
 }
 
 /// <summary>Central entitlement check for the current tenant (spec 005). Unknown keys fail closed.</summary>

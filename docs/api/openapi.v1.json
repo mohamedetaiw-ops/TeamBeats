@@ -2859,6 +2859,276 @@
           }
         }
       }
+    },
+    "/api/v1/me/preference-profile": {
+      "get": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferenceProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/pages/{pageId}/layout": {
+      "get": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "parameters": [
+          {
+            "name": "pageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "parameters": [
+          {
+            "name": "pageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LayoutRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "parameters": [
+          {
+            "name": "pageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/layouts": {
+      "delete": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/pages/{pageId}/add-panel": {
+      "get": {
+        "tags": [
+          "Me: personalization"
+        ],
+        "parameters": [
+          {
+            "name": "pageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "region",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/pages/{pageId}/personalization-policy": {
+      "get": {
+        "tags": [
+          "Experience: personalization"
+        ],
+        "parameters": [
+          {
+            "name": "pageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Experience: personalization"
+        ],
+        "parameters": [
+          {
+            "name": "pageId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/audience-rules": {
+      "get": {
+        "tags": [
+          "Experience: personalization"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/audience-rules/{id}": {
+      "put": {
+        "tags": [
+          "Experience: personalization"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AudienceRuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/audience-rules/preview": {
+      "post": {
+        "tags": [
+          "Experience: personalization"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2997,6 +3267,85 @@
             ]
           },
           "condition": {}
+        }
+      },
+      "AudienceConditions": {
+        "required": [
+          "orgUnits",
+          "membershipTypes",
+          "locales",
+          "attributes"
+        ],
+        "type": "object",
+        "properties": {
+          "orgUnits": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "membershipTypes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "locales": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "attributes": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "AudienceRuleRequest": {
+        "required": [
+          "labels",
+          "conditions"
+        ],
+        "type": "object",
+        "properties": {
+          "labels": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "conditions": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AudienceConditions"
+              }
+            ]
+          }
         }
       },
       "BrandRequest": {
@@ -3583,6 +3932,49 @@
           }
         }
       },
+      "LayoutOperation": {
+        "required": [
+          "op",
+          "placementId"
+        ],
+        "type": "object",
+        "properties": {
+          "op": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "placementId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "componentRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "regionId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "props": {},
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "LayoutRef": {
         "required": [
           "id",
@@ -3595,6 +3987,23 @@
           },
           "version": {
             "type": "string"
+          }
+        }
+      },
+      "LayoutRequest": {
+        "required": [
+          "operations"
+        ],
+        "type": "object",
+        "properties": {
+          "operations": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/LayoutOperation"
+            }
           }
         }
       },
@@ -3874,6 +4283,52 @@
           }
         }
       },
+      "Persona": {
+        "required": [
+          "name",
+          "orgUnitId",
+          "membershipType",
+          "locale",
+          "attributes"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "orgUnitId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "membershipType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "locale": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "attributes": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "Placement": {
         "required": [
           "id",
@@ -3905,6 +4360,82 @@
           }
         }
       },
+      "PolicyRegionRequest": {
+        "required": [
+          "regionId",
+          "rights",
+          "audienceRuleId",
+          "maxPersonalPlacements"
+        ],
+        "type": "object",
+        "properties": {
+          "regionId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "rights": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "audienceRuleId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "maxPersonalPlacements": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "PolicyRequest": {
+        "required": [
+          "regions"
+        ],
+        "type": "object",
+        "properties": {
+          "regions": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/PolicyRegionRequest"
+            }
+          }
+        }
+      },
+      "PreferenceProfileRequest": {
+        "required": [
+          "values"
+        ],
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "PreferencesRequest": {
         "required": [
           "locale"
@@ -3916,6 +4447,31 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "PreviewRequest": {
+        "required": [
+          "pageId",
+          "personas"
+        ],
+        "type": "object",
+        "properties": {
+          "pageId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "personas": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Persona"
+            }
           }
         }
       },
@@ -4261,6 +4817,12 @@
     },
     {
       "name": "Experience: shell and navigation"
+    },
+    {
+      "name": "Me: personalization"
+    },
+    {
+      "name": "Experience: personalization"
     }
   ]
 }

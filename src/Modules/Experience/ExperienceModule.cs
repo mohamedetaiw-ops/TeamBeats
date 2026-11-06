@@ -7,6 +7,7 @@ using TeamBeats.Localization;
 using TeamBeats.Modules.Experience.Catalogue;
 using TeamBeats.Modules.Experience.Components;
 using TeamBeats.Modules.Experience.Pages;
+using TeamBeats.Modules.Experience.Personalization;
 using TeamBeats.Modules.Experience.Shell;
 using TeamBeats.Modules.Experience.Themes;
 using TeamBeats.Persistence;
@@ -26,6 +27,10 @@ public static class ExperienceModule
         services.AddSingleton<PlatformCatalogue>();
         services.AddSingleton<ComponentRegistry>();
         services.AddScoped<ComponentEnablement>();
+        services.AddScoped<ComponentAvailability>();
+        services.AddScoped<AudienceEvaluator>();
+        services.AddScoped<LayoutEngine>();
+        services.AddScoped<PersonalizationService>();
         services.AddScoped<PageService>();
         services.AddScoped<ThemeService>();
         services.AddScoped<ShellService>();
@@ -108,6 +113,7 @@ public static class ExperienceModule
 
         MapThemeEndpoints(app);
         MapShellEndpoints(app);
+        MapPersonalizationEndpoints(app);
         return app;
     }
 
@@ -303,5 +309,79 @@ public static class ExperienceModule
             await session.CommitAsync(ct);
             return Results.Ok(items);
         });
+    }
+
+    /// <summary>Preference profile, personal layouts, add panel, personalization policy, audience rules and targeting preview (spec 008 T010).</summary>
+    private static void MapPersonalizationEndpoints(IEndpointRouteBuilder app)
+    {
+        var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me: personalization");
+
+        // Language stays on PUT /api/v1/me/preferences of the user account; this profile holds appearance and accessibility.
+        me.MapGet("/preference-profile", async (PersonalizationService p, CancellationToken ct) => Results.Ok(await p.GetProfileAsync(ct)));
+
+        me.MapPut("/preference-profile", async (PreferenceProfileRequest request, PersonalizationService p, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await p.SaveProfileAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapGet("/pages/{pageId:guid}/layout", async (Guid pageId, HttpResponse response, PersonalizationService p, CancellationToken ct) =>
+        {
+            var view = await p.GetLayoutAsync(pageId, ct);
+            response.Headers.ETag = view.ETag;
+            return Results.Ok(view);
+        });
+
+        me.MapPut("/pages/{pageId:guid}/layout", async (Guid pageId, LayoutRequest request, HttpRequest http, PersonalizationService p, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await p.SaveLayoutAsync(pageId, http.Headers.IfMatch.ToString() is { Length: > 0 } tag ? tag : null, request, ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = view.ETag;
+            return Results.Ok(view);
+        });
+
+        me.MapDelete("/pages/{pageId:guid}/layout", async (Guid pageId, PersonalizationService p, IDbSession session, CancellationToken ct) =>
+        {
+            await p.ResetLayoutAsync(pageId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        me.MapDelete("/layouts", async (PersonalizationService p, IDbSession session, CancellationToken ct) =>
+        {
+            await p.ResetAllLayoutsAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        me.MapGet("/pages/{pageId:guid}/add-panel", async (Guid pageId, string? region, PersonalizationService p, CancellationToken ct) =>
+            Results.Ok(await p.AddPanelAsync(pageId, region, ct)));
+
+        var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: personalization");
+
+        x.MapGet("/pages/{pageId:guid}/personalization-policy", async (Guid pageId, PersonalizationService p, CancellationToken ct) =>
+            Results.Ok(await p.GetPolicyAsync(pageId, ct)));
+
+        x.MapPut("/pages/{pageId:guid}/personalization-policy", async (Guid pageId, PolicyRequest request, PersonalizationService p, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var policy = await p.SetPolicyAsync(pageId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(policy);
+        });
+
+        x.MapGet("/audience-rules", async (PersonalizationService p, CancellationToken ct) => Results.Ok(await p.ListRulesAsync(ct)));
+
+        x.MapPut("/audience-rules/{id:guid}", async (Guid id, AudienceRuleRequest request, PersonalizationService p, IDbSession session, CancellationToken ct) =>
+        {
+            var rule = await p.SaveRuleAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(rule);
+        });
+
+        x.MapPost("/audience-rules/preview", async (PreviewRequest request, PersonalizationService p, CancellationToken ct) =>
+            Results.Ok(await p.PreviewAsync(request, ct)));
     }
 }
