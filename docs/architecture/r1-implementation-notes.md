@@ -63,8 +63,43 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 ### Differences and follow-ups
 - Spec 003 scenario 6 calls the group source `directory`; the authz schema already has `idp` for groups owned by an identity provider, so the code uses `idp`.
 - Deletion threshold is a pure percentage of active synced users. In a very small directory one leaver can trip the default 10 percent; the admin can raise it. A minimum absolute count is a product rule the spec does not give.
-- Graph may send only changed properties on incremental reads, so a missing value keeps the previous one, and an account whose enabled state was never reported is treated as disabled.
+- Graph may send only changed properties on incremental reads, so a missing value keeps the previous one and an explicit null clears it. An account whose enabled state was never reported is treated as disabled.
 - `DirectorySyncNeedsAttention` is published but no notification is sent yet, because notifications are a later spec.
-- T025 stays open: the Graph delta reader and the sync job are built, and the `IDirectoryReader` contract for specs 002 and 010 comes with the Entra org mapping (spec 002 US5).
 - Manager link (reporting line) and the attribute mapping UI are not built; they belong with spec 010 and the directory admin page (T026), which is the next web task.
 - The run holds its transaction open while Graph is read. This is fine for R1 directory sizes; a staged import can replace it if large directories need it.
+
+## Entra organization mapping (spec 002 User Story 5)
+
+### Built
+- `IDirectoryReader` (Identity contract) gives Tenancy a snapshot of the directory mirror: each synced, enabled user with company, department, division, administrative units and groups, plus the directory's groups and administrative units. Directory sync now also reads `companyName`, `department`, `employeeOrgData.division` and Graph `administrativeUnits/delta`.
+- Strategies for Entra ID: `attributes` (levels chosen from company, division and department, top first), `admin_units` and `groups` (selected groups). `ou_path` is refused with `validation.org_mapping.strategy_unavailable` until on-premises AD arrives in R2. One mapping per directory connection (`tenancy.directory_mapping`).
+- Admin API: `GET`, `PUT /api/v1/org/directory-mapping`, `POST /api/v1/org/directory-mapping:preview` and `:approve`. Changing, previewing and approving need `org.manage` at tenant scope and the capability `identity.directory_sync`. Anyone who can view part of the hierarchy can read the mapping and run summaries (scenario 9). Any settings change clears the approval, so a new preview and approval are needed.
+- Each run diffs the whole snapshot against what the connection owns, so it is idempotent. Preview stores the diff (unit keys, unit IDs and user IDs only) without changing data. After approval, the mapping is applied at once and then after each successful directory sync (`DirectorySynced` event).
+- Units store `external_source = entra:{connection id}` and a stable key as `external_id` (normalized attribute path such as `company=acme gulf/department=finance`, or `admin_unit={id}` and `group={id}`). Codes are derived from the connection and key (`dir-` plus a hash), never from directory values. Unit and membership rows carry `owner = directory` and the connection ID.
+- Values that differ only in case, spacing or Unicode form are one unit, named with the most common spelling (ties go to the ordinal first, so the name never depends on directory order); alias rules merge values; a value path can map to an existing product unit, which is used instead of creating one.
+- Each mapped user gets one directory-owned primary membership. A mover gets the new primary first and the old one ended with today's date, so history is kept and `OrganizationMembershipChanged` is published. A person in several mapped administrative units or groups has no single primary unit and is listed as unmapped (`ambiguous`), like people with no value (`no_value`).
+- A unit that disappears is deactivated only when no active children or memberships remain; otherwise it is flagged and left active. Disappearing units and memberships ended without a replacement are checked against the threshold (default 10 percent); a breach applies nothing and publishes `OrgMappingNeedsAttention`.
+- Directory-owned units refuse rename of the default-locale name, type change, move and deactivate, and directory-owned memberships refuse end, with `conflict.org.directory_owned`. Names in other locales stay editable and survive syncs. Product units are never changed by the sync.
+- Deleting the connection hands its units and memberships back to the product (owner `product`) and removes the mapping; nothing is deleted.
+
+### Differences and follow-ups
+- The plan describes a delta-driven sync with batches of 500 on the worker. This build diffs the full mirror snapshot in one transaction, which gives the same result and is idempotent; batching can come with the performance test (T027).
+- "Values that differ only in language" (scenario 7) cannot be detected automatically; alias rules cover it.
+- If a user already has a product-owned primary membership, the directory primary takes over and the product one becomes secondary.
+- Not built yet: the mapping page and the "Managed by Active Directory" badge (T025), the hierarchy source setting (T026, FR-014), the performance test (T027), and a notification for `OrgMappingNeedsAttention`.
+
+## Attribute conditions on grants (spec 004 User Story 7)
+
+### Built
+- Role assignments (`POST /api/v1/authz/assignments`) and resource permissions (`PUT /api/v1/authz/resources/{type}/{id}/acl`) take an optional `condition`. A comparison is `{"attribute": "job_grade", "operator": "gte", "value": 7}`; comparisons combine with `{"all": [...]}` or `{"any": [...]}` to a depth of two. Operators are `eq`, `ne`, `in`, `not_in`, `gte` and `lte` (the last two for numbers only). Anything else, including extra properties or expression strings, is rejected with `validation.condition.*`.
+- The attribute catalogue lives in `Authorization.Contracts.ConditionAttributes` and matches spec 004 section 6. Values are normalized and stored as canonical JSON in a nullable `condition` jsonb column.
+- Sources: membership type from tenancy; job title and office from the directory mirror (`DirectoryUserAttributes` in Identity); other user attributes through `IUserAttributeProvider`, which the HR integration (planned 019) will implement. Resource classification comes from a new optional `Classification` on `ResourceDescriptor`, and the owning unit from the descriptor. Request attributes (MFA, step-up age, network zone) have no source until spec 026 is built, so conditions on them fail closed.
+- Explain returns `notApplied`: grants that cover the target but whose condition did not hold. Each reason carries the clauses, the expected and actual values and any missing attributes. Assignment, ACL and audit records include the condition.
+- Org coverage, `HoldsAnywhere` and delegation checks count a conditional grant only when it holds without a resource, so a condition on a resource attribute never widens them.
+- An inheritance rule that reaches a restricted resource through an org ACL entry still needs that entry's condition to hold.
+- Attribute changes reach decisions through the existing 60 second cache expiry (FR-008).
+
+### Interpretations and follow-ups
+- FR-015 says a missing attribute evaluates "the condition" as false. This build reads that as the whole condition: if any attribute it names is missing, the grant does not apply, even when another branch of an `any` group would hold. This is the stricter of the two readings. Per-comparison evaluation would also be safe, since there is no negation, and is a small change if preferred.
+- A stored condition that no longer validates (for example after an attribute is removed from the catalogue) never holds.
+- Not built yet: the condition editor in the role assignment and sharing UI (spec 004 T017), and request attribute sources (spec 026).

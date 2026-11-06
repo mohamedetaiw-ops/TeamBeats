@@ -15,7 +15,8 @@ public sealed record Grant(
     string? ScopeResourceType,
     IReadOnlySet<string> Permissions,
     IReadOnlySet<Guid> CoveredUnits,
-    string Via);
+    string Via,
+    GrantCondition? Condition = null);
 
 /// <summary>Inheritance rule that applies to this user: members of <see cref="UnitId"/> may view resources restricted to its descendants.</summary>
 public sealed record AppliedRule(Guid UnitId, string Rule, IReadOnlySet<Guid> Descendants);
@@ -28,21 +29,27 @@ public sealed record EffectiveGrants(
     IReadOnlySet<Guid> Groups,
     IReadOnlySet<Guid> MemberUnits,
     IReadOnlySet<Guid> MemberUnitsAndAncestors,
-    IReadOnlyList<AppliedRule> Rules)
+    IReadOnlyList<AppliedRule> Rules,
+    IReadOnlyDictionary<string, string>? Attributes = null)
 {
+    /// <summary>User attributes for conditions (spec 004 section 6). Absent keys fail closed.</summary>
+    public IReadOnlyDictionary<string, string> UserAttributes { get; } = Attributes ?? new Dictionary<string, string>();
+
     public static EffectiveGrants None(Guid userId) =>
         new(userId, false, [], new HashSet<Guid>(), new HashSet<Guid>(), new HashSet<Guid>(), []);
 }
 
 /// <summary>
 /// Loads effective grants. Cached per instance by (tenant, user, grants version, hierarchy version), so any grant,
-/// hierarchy or membership change is visible on the next request; the TTL bounds staleness to 60 seconds (FR-008).
+/// hierarchy or membership change is visible on the next request; the TTL bounds staleness to 60 seconds (FR-008),
+/// which also covers user attribute changes from the directory or HR sync (spec 004 US7 scenario 6).
 /// </summary>
 public sealed class EffectiveGrantsLoader(
     IDbSession session,
     ITenantContext context,
     ITenantMemberships memberships,
     IOrganizationHierarchy hierarchy,
+    IEnumerable<IUserAttributeProvider> attributeProviders,
     IMemoryCache cache)
 {
     public static readonly TimeSpan MaxStaleness = TimeSpan.FromSeconds(60);
@@ -78,7 +85,8 @@ public sealed class EffectiveGrantsLoader(
         var rows = await session.QueryAsync(
             """
             select a.id, r.key, a.scope_type, a.scope_id, a.scope_resource_type, a.subject_type,
-                   array(select permission_key from authz.role_permission p where p.role_id = r.id) as permissions
+                   array(select permission_key from authz.role_permission p where p.role_id = r.id) as permissions,
+                   a.condition::text as condition
             from authz.role_assignment a join authz.role r on r.id = a.role_id
             where a.revoked_at is null
               and ((a.subject_type = 'user' and a.subject_id = @u) or (a.subject_type = 'group' and a.subject_id = any(@groups)))
@@ -93,6 +101,7 @@ public sealed class EffectiveGrantsLoader(
                 ScopeResourceType = r.Get<string>("scope_resource_type"),
                 Subject = r.GetString(5),
                 Permissions = r.GetFieldValue<string[]>(6),
+                Condition = GrantCondition.FromStored(r.Get<string>("condition")),
             }, ct);
 
         var subtreeRoots = rows.Where(x => x.Scope == ScopeType.OrgSubtree && x.ScopeId is not null).Select(x => x.ScopeId!.Value).Distinct().ToList();
@@ -110,7 +119,7 @@ public sealed class EffectiveGrantsLoader(
                 ScopeType.OrgSubtree => subtrees[x.ScopeId!.Value],
                 _ => new HashSet<Guid>(),
             },
-            x.Subject == "group" ? "group" : "direct")).ToList();
+            x.Subject == "group" ? "group" : "direct", x.Condition)).ToList();
 
         // Default Employee role at tenant scope, unless removed for this membership type (spec 004 section 6).
         var policies = await memberships.GetMembershipTypePoliciesAsync(ct);
@@ -142,6 +151,31 @@ public sealed class EffectiveGrantsLoader(
             withAncestors.UnionWith(await hierarchy.GetAncestorsAndSelfAsync(unit, ct));
         }
 
-        return new EffectiveGrants(userId, true, grants, groups, memberUnits, withAncestors, rules);
+        return new EffectiveGrants(userId, true, grants, groups, memberUnits, withAncestors, rules,
+            await LoadAttributesAsync(userId, membership.MembershipType, ct));
+    }
+
+    /// <summary>
+    /// User attributes from systems of record only: membership type from tenancy, the rest from registered providers
+    /// (directory, HR sync). A provider cannot set membership type or a key outside the user catalogue.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<string, string>> LoadAttributesAsync(Guid userId, string membershipType, CancellationToken ct)
+    {
+        var attributes = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [ConditionAttributes.MembershipType] = membershipType,
+        };
+        foreach (var provider in attributeProviders)
+        {
+            foreach (var (key, value) in await provider.GetAsync(userId, ct))
+            {
+                if (ConditionAttributes.All.TryGetValue(key, out var a) && a.Source == AttributeSource.User
+                    && !string.IsNullOrWhiteSpace(value) && !attributes.ContainsKey(key))
+                {
+                    attributes[key] = value.Trim();
+                }
+            }
+        }
+        return attributes;
     }
 }

@@ -28,3 +28,32 @@ public sealed record UserProvisioned(Guid UserId, string Via) : IIntegrationEven
 public sealed record UserDeprovisioned(Guid UserId, string Reason) : IIntegrationEvent;
 public sealed record UserProfileSynced(Guid UserId, IReadOnlyList<string> ChangedFields) : IIntegrationEvent;
 public sealed record SessionRevoked(Guid UserId, int Count, string Reason) : IIntegrationEvent;
+
+/// <summary>A synced, enabled user and the organization values the directory holds for them (spec 002 US5).</summary>
+public sealed record DirectoryPerson(
+    Guid UserId,
+    string DirectoryId,
+    string? Company,
+    string? Department,
+    string? Division,
+    IReadOnlyList<string> AdminUnits,
+    IReadOnlyList<string> Groups);
+
+/// <summary>A directory group or administrative unit (<see cref="Kind"/> is <c>group</c> or <c>admin_unit</c>).</summary>
+public sealed record DirectoryContainer(string Id, string Kind, string? DisplayName);
+
+/// <summary>The current state of a directory connection's mirror. IDs are the directory's immutable IDs.</summary>
+public sealed record DirectorySnapshot(Guid ConnectionId, IReadOnlyList<DirectoryPerson> People, IReadOnlyList<DirectoryContainer> Containers);
+
+/// <summary>
+/// Directory reads for the organization mapping (spec 002 plan) and the profile (spec 010). Tenancy never calls the
+/// directory itself; it reads what directory sync (spec 003 US6) has mirrored. Tenant comes from context.
+/// </summary>
+public interface IDirectoryReader
+{
+    /// <summary>The snapshot for the tenant's directory connection, or null when directory sync is not set up.</summary>
+    Task<DirectorySnapshot?> ReadAsync(CancellationToken ct = default);
+}
+
+/// <summary>Published after each successful directory sync run.</summary>
+public sealed record DirectorySynced(Guid ConnectionId) : IIntegrationEvent;

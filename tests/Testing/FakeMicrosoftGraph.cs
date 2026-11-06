@@ -41,6 +41,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         private readonly Dictionary<string, (string Name, bool Deleted, long Version)> _groups = new(StringComparer.Ordinal);
         private readonly List<(string Group, string Member, bool Added, long Version)> _memberLog = [];
         private readonly Dictionary<string, HashSet<string>> _members = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, string> _kinds = new(StringComparer.Ordinal);
 
         public long Version { get { lock (_gate) { return _version; } } }
 
@@ -67,6 +68,19 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             }
         }
 
+        /// <summary>Organization attributes used by the organization mapping (spec 002 US5).</summary>
+        public void SetOrg(string oid, string? company, string? department, string? division = null)
+        {
+            lock (_gate)
+            {
+                var (props, _, _) = _users[oid];
+                props["companyName"] = company;
+                props["department"] = department;
+                props["employeeOrgData"] = new Dictionary<string, object?> { ["division"] = division };
+                _users[oid] = (props, false, ++_version);
+            }
+        }
+
         public void DeleteUser(string oid)
         {
             lock (_gate)
@@ -75,11 +89,32 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             }
         }
 
-        public void AddGroup(string gid, string name)
+        public void AddGroup(string gid, string name) => AddContainer(gid, name, "group");
+
+        public void AddAdminUnit(string id, string name) => AddContainer(id, name, "admin_unit");
+
+        public void Rename(string id, string name)
+        {
+            lock (_gate)
+            {
+                _groups[id] = (name, _groups[id].Deleted, ++_version);
+            }
+        }
+
+        public void DeleteContainer(string id)
+        {
+            lock (_gate)
+            {
+                _groups[id] = (_groups[id].Name, true, ++_version);
+            }
+        }
+
+        private void AddContainer(string gid, string name, string kind)
         {
             lock (_gate)
             {
                 _groups[gid] = (name, false, ++_version);
+                _kinds[gid] = kind;
                 _members.TryAdd(gid, new HashSet<string>(StringComparer.Ordinal));
             }
         }
@@ -114,13 +149,18 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             }
         }
 
-        public (List<object> Items, long Version) GroupChanges(long since)
+        public (List<object> Items, long Version) GroupChanges(long since, string kind = "group")
         {
             lock (_gate)
             {
                 var items = new List<object>();
-                foreach (var (gid, g) in _groups.Where(g => g.Value.Version > since).OrderBy(g => g.Key, StringComparer.Ordinal))
+                foreach (var (gid, g) in _groups.Where(g => g.Value.Version > since && _kinds[g.Key] == kind && !(since == 0 && g.Value.Deleted)).OrderBy(g => g.Key, StringComparer.Ordinal))
                 {
+                    if (g.Deleted)
+                    {
+                        items.Add(new Dictionary<string, object?> { ["id"] = gid, ["@removed"] = new { reason = "deleted" } });
+                        continue;
+                    }
                     var members = since == 0
                         ? _members[gid].Select(m => (object)new Dictionary<string, object?> { ["@odata.type"] = "#microsoft.graph.user", ["id"] = m }).ToList()
                         : _memberLog.Where(l => l.Group == gid && l.Version > since)
@@ -166,7 +206,8 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             var count = uri.AbsolutePath.Contains("/users/", StringComparison.Ordinal) ? d.Users : d.Groups;
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(count.ToString(System.Globalization.CultureInfo.InvariantCulture)) };
         }
-        if (uri.Host == "graph.microsoft.com" && (uri.AbsolutePath.EndsWith("/users/delta", StringComparison.Ordinal) || uri.AbsolutePath.EndsWith("/groups/delta", StringComparison.Ordinal)))
+        if (uri.Host == "graph.microsoft.com" && (uri.AbsolutePath.EndsWith("/users/delta", StringComparison.Ordinal) || uri.AbsolutePath.EndsWith("/groups/delta", StringComparison.Ordinal)
+            || uri.AbsolutePath.EndsWith("/administrativeUnits/delta", StringComparison.Ordinal)))
         {
             var bearer = request.Headers.Authorization?.Parameter ?? string.Empty;
             var directory = bearer.Split(".sig-").ElementAtOrDefault(1) ?? string.Empty;
@@ -179,8 +220,9 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             var since = query.TryGetValue("$deltatoken", out var token) ? long.Parse(token, System.Globalization.CultureInfo.InvariantCulture) : 0;
             var skip = query.TryGetValue("$skiptoken", out var skipToken) ? int.Parse(skipToken, System.Globalization.CultureInfo.InvariantCulture) : 0;
             var isUsers = uri.AbsolutePath.EndsWith("/users/delta", StringComparison.Ordinal);
-            var (items, version) = isUsers ? data.UserChanges(since) : data.GroupChanges(since);
-            var basePath = $"https://graph.microsoft.com/v1.0/{(isUsers ? "users" : "groups")}/delta";
+            var isUnits = uri.AbsolutePath.EndsWith("/administrativeUnits/delta", StringComparison.Ordinal);
+            var (items, version) = isUsers ? data.UserChanges(since) : data.GroupChanges(since, isUnits ? "admin_unit" : "group");
+            var basePath = $"https://graph.microsoft.com/v1.0/{(isUsers ? "users" : isUnits ? "directory/administrativeUnits" : "groups")}/delta";
             var page = items.Skip(skip).Take(isUsers ? PageSize : int.MaxValue).ToList();
             var body = new Dictionary<string, object?> { ["value"] = page };
             if (isUsers && skip + PageSize < items.Count)

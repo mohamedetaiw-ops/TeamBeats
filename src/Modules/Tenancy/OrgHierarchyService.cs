@@ -17,7 +17,15 @@ public sealed record OrgUnitView(
     string Code,
     string Status,
     IReadOnlyDictionary<string, string> Names,
-    int Level);
+    int Level,
+    string Owner = OrgOwners.Product);
+
+/// <summary>Who owns a unit or membership (spec 002 US5 scenario 4). Only the owner may change it.</summary>
+public static class OrgOwners
+{
+    public const string Product = "product";
+    public const string Directory = "directory";
+}
 
 public sealed record OrgUnitResult(OrgUnitView Unit, IReadOnlyList<string> Warnings);
 
@@ -81,7 +89,7 @@ public sealed class OrgHierarchyService(
             )
             select u.id, u.parent_id, u.type_key, u.code, u.status,
                    (select jsonb_object_agg(n.locale, n.name) from tenancy.org_unit_name n where n.org_unit_id = u.id)::text as names,
-                   (select max(depth) + 1 from tenancy.org_closure c where c.descendant_id = u.id) as level
+                   (select max(depth) + 1 from tenancy.org_closure c where c.descendant_id = u.id) as level, u.owner
             from scope s join tenancy.org_unit u on u.id = s.id
             where (@maxDepth::int is null or coalesce(s.rel, (select max(depth) from tenancy.org_closure c where c.descendant_id = u.id)) <= @maxDepth)
             order by level, u.code
@@ -127,13 +135,32 @@ public sealed class OrgHierarchyService(
             throw AppException.Validation("code", "validation.org.code_format");
         }
 
+        var id = await InsertUnitAsync(request.ParentId, request.TypeKey, request.Code, request.Names, null, ct);
+        var unit = (await LoadAsync(id, ct))!;
+        return new OrgUnitResult(unit, PlacementWarnings(parent?.TypeKey, request.TypeKey));
+    }
+
+    /// <summary>A unit owned by a directory connection, keyed by <c>external_source</c> and <c>external_id</c>.</summary>
+    internal sealed record DirectoryOwnership(Guid ConnectionId, string ExternalSource, string ExternalId);
+
+    /// <summary>Inserts a unit after the caller has authorized and validated it. Used by the API and by directory mapping.</summary>
+    internal async Task<Guid> InsertUnitAsync(Guid? parentId, string typeKey, string code, IReadOnlyDictionary<string, string> names,
+        DirectoryOwnership? directory, CancellationToken ct)
+    {
         var id = Ids.New();
         var tenantId = context.RequireTenant();
         try
         {
             await session.ExecAsync(
-                "insert into tenancy.org_unit (tenant_id, id, parent_id, type_key, code, status) values (@t, @id, @p, @type, @code, 'active')",
-                new { t = tenantId, id, p = request.ParentId, type = request.TypeKey, code = request.Code }, ct);
+                """
+                insert into tenancy.org_unit (tenant_id, id, parent_id, type_key, code, status, owner, owner_connection_id, external_source, external_id)
+                values (@t, @id, @p, @type, @code, 'active', @owner, @conn, @src, @ext)
+                """,
+                new
+                {
+                    t = tenantId, id, p = parentId, type = typeKey, code, owner = directory is null ? OrgOwners.Product : OrgOwners.Directory,
+                    conn = directory?.ConnectionId, src = directory?.ExternalSource, ext = directory?.ExternalId,
+                }, ct);
         }
         catch (PostgresException ex) when (ex.IsUniqueViolation())
         {
@@ -145,22 +172,66 @@ public sealed class OrgHierarchyService(
             insert into tenancy.org_closure (tenant_id, ancestor_id, descendant_id, depth)
             select tenant_id, ancestor_id, @id, depth + 1 from tenancy.org_closure where descendant_id = @p
             union all select @t, @id, @id, 0
-            """, new { t = tenantId, id, p = request.ParentId }, ct);
-        await WriteNamesAsync(id, request.Names, ct);
+            """, new { t = tenantId, id, p = parentId }, ct);
+        await WriteNamesAsync(id, names, ct);
         await BumpVersionAsync(ct);
 
         await audit.WriteAsync(new AuditEntry(AuditActions.OrgUnitCreated, "org_unit", id.ToString(), TargetOrgUnitId: id,
-            Changes: new { parentId = request.ParentId, typeKey = request.TypeKey, code = request.Code, names = request.Names }), ct);
-        await outbox.EnqueueAsync(new OrganizationUnitCreated(id, request.ParentId), ct);
+            Changes: new { parentId, typeKey, code, names, owner = directory is null ? OrgOwners.Product : OrgOwners.Directory }), ct);
+        await outbox.EnqueueAsync(new OrganizationUnitCreated(id, parentId), ct);
+        return id;
+    }
 
-        var unit = (await LoadAsync(id, ct))!;
-        return new OrgUnitResult(unit, PlacementWarnings(parent?.TypeKey, request.TypeKey));
+    /// <summary>Changes the default-locale name of a directory-owned unit; other locale names stay as the product set them.</summary>
+    internal async Task RenameFromDirectoryAsync(Guid id, string locale, string oldName, string newName, CancellationToken ct)
+    {
+        await WriteNamesAsync(id, new Dictionary<string, string> { [locale] = newName }, ct);
+        await BumpVersionAsync(ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.OrgUnitRenamed, "org_unit", id.ToString(), TargetOrgUnitId: id,
+            Changes: new { locale, oldName, newName, owner = OrgOwners.Directory }), ct);
+    }
+
+    /// <summary>Sets a directory-owned unit active again when its value reappears in the directory.</summary>
+    internal async Task ReactivateFromDirectoryAsync(Guid id, CancellationToken ct)
+    {
+        await session.ExecAsync("update tenancy.org_unit set status = 'active' where id = @id", new { id }, ct);
+        await BumpVersionAsync(ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.OrgUnitCreated, "org_unit", id.ToString(), TargetOrgUnitId: id,
+            Changes: new { reactivated = true, owner = OrgOwners.Directory }), ct);
+        await outbox.EnqueueAsync(new OrganizationUnitCreated(id, null), ct);
+    }
+
+    /// <summary>Deactivates a directory-owned unit that has no active children or memberships left (spec 002 US5 scenario 6).</summary>
+    internal async Task DeactivateFromDirectoryAsync(Guid id, CancellationToken ct)
+    {
+        await session.ExecAsync("update tenancy.org_unit set status = 'inactive' where id = @id", new { id }, ct);
+        await BumpVersionAsync(ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.OrgUnitDeactivated, "org_unit", id.ToString(), TargetOrgUnitId: id,
+            Changes: new { owner = OrgOwners.Directory }), ct);
+        await outbox.EnqueueAsync(new OrganizationUnitDeactivated(id), ct);
+    }
+
+    private static void RefuseIfDirectoryOwned(OrgUnitView unit)
+    {
+        if (unit.Owner == OrgOwners.Directory)
+        {
+            throw AppException.Conflict("conflict.org.directory_owned");
+        }
     }
 
     public async Task<OrgUnitView> UpdateAsync(Guid id, UpdateOrgUnitRequest request, CancellationToken ct)
     {
         var unit = await LoadAsync(id, ct) ?? throw AppException.NotFound();
         await authz.DemandAsync(Permissions.OrgUnitManage, AuthzTarget.OrgUnit(id), ct);
+        if (unit.Owner == OrgOwners.Directory)
+        {
+            // The directory owns the type and the default-locale name; names in other locales stay editable (spec 002 US5 edge cases).
+            var defaultLocale = (await settings.GetLocaleSettingsAsync(ct)).DefaultLocale;
+            if ((request.TypeKey is { } t && t != unit.TypeKey) || (request.Names?.ContainsKey(defaultLocale) ?? false))
+            {
+                throw AppException.Conflict("conflict.org.directory_owned");
+            }
+        }
 
         if (request.TypeKey is { } type && type != unit.TypeKey)
         {
@@ -185,6 +256,7 @@ public sealed class OrgHierarchyService(
     {
         var unit = await LoadAsync(id, ct) ?? throw AppException.NotFound();
         await authz.DemandAsync(Permissions.OrgUnitManage, AuthzTarget.OrgUnit(id), ct);
+        RefuseIfDirectoryOwned(unit);
 
         OrgUnitView? newParent = null;
         if (newParentId is { } np)
@@ -201,6 +273,13 @@ public sealed class OrgHierarchyService(
             await authz.DemandAsync(Permissions.OrgUnitManage, AuthzTarget.Tenant, ct);
         }
 
+        return await MoveCoreAsync(unit, newParentId, newParent, ct);
+    }
+
+    /// <summary>Moves a subtree after the caller has authorized it. Used by the API and by directory mapping.</summary>
+    internal async Task<int> MoveCoreAsync(OrgUnitView unit, Guid? newParentId, OrgUnitView? newParent, CancellationToken ct)
+    {
+        var id = unit.Id;
         if (unit.ParentId == newParentId)
         {
             return 0;
@@ -257,6 +336,7 @@ public sealed class OrgHierarchyService(
     {
         var unit = await LoadAsync(id, ct) ?? throw AppException.NotFound();
         await authz.DemandAsync(Permissions.OrgUnitManage, AuthzTarget.OrgUnit(id), ct);
+        RefuseIfDirectoryOwned(unit);
         if (unit.Status != "active")
         {
             return;
@@ -341,7 +421,7 @@ public sealed class OrgHierarchyService(
             """
             select u.id, u.parent_id, u.type_key, u.code, u.status,
                    (select jsonb_object_agg(n.locale, n.name) from tenancy.org_unit_name n where n.org_unit_id = u.id)::text as names,
-                   (select max(depth) + 1 from tenancy.org_closure c where c.descendant_id = u.id) as level
+                   (select max(depth) + 1 from tenancy.org_closure c where c.descendant_id = u.id) as level, u.owner
             from tenancy.org_unit u where u.id = @id
             """, new { id }, MapUnit, ct);
 
@@ -358,7 +438,8 @@ public sealed class OrgHierarchyService(
             r.GetString(3),
             r.GetString(4),
             names is null ? new Dictionary<string, string>() : JsonSerializer.Deserialize<Dictionary<string, string>>(names)!,
-            r.GetInt32(r.GetOrdinal("level")));
+            r.GetInt32(r.GetOrdinal("level")),
+            r.GetString(r.GetOrdinal("owner")));
     }
 
     private async Task ValidateTypeAsync(string? typeKey, CancellationToken ct)

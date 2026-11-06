@@ -163,11 +163,11 @@ public sealed class DirectorySyncService(
         context.SetActor(ActorType.System, null);
         var row = await session.QuerySingleOrDefaultAsync(
             """
-            select id, user_scope::text, sync_groups, schedule_minutes, deletion_threshold_pct, users_cursor, groups_cursor, consecutive_failures
+            select id, user_scope::text, sync_groups, schedule_minutes, deletion_threshold_pct, users_cursor, groups_cursor, consecutive_failures, admin_units_cursor
             from identity.directory_connection where connection_id = @c for update skip locked
             """, new { c = connectionId },
             r => new RunSettings(r.GetGuid(0), JsonSerializer.Deserialize<UserScope>(r.GetString(1), JsonDefaults.Options)!, r.GetFieldValue<string[]>(2),
-                r.GetInt32(3), r.GetInt32(4), r.Get<string>("users_cursor"), r.Get<string>("groups_cursor"), r.GetInt32(7)), ct);
+                r.GetInt32(3), r.GetInt32(4), r.Get<string>("users_cursor"), r.Get<string>("groups_cursor"), r.GetInt32(7), r.Get<string>("admin_units_cursor")), ct);
         if (row is null)
         {
             return null;
@@ -192,7 +192,7 @@ public sealed class DirectorySyncService(
         DirectoryChanges changes;
         try
         {
-            changes = await directory.ReadChangesAsync(connectionId, row.UsersCursor, row.GroupsCursor, ct);
+            changes = await directory.ReadChangesAsync(connectionId, row.UsersCursor, row.GroupsCursor, row.AdminUnitsCursor, ct);
         }
         catch (DirectoryUnavailableException ex)
         {
@@ -218,8 +218,10 @@ public sealed class DirectorySyncService(
         counts.Groups = await SyncGroupsAsync(connectionId, row.SyncGroups, mirror, ct);
 
         await session.ExecAsync(
-            "update identity.directory_connection set users_cursor = @u, groups_cursor = @g, consecutive_failures = 0, updated_at = now() where id = @id",
-            new { id = row.Id, u = changes.UsersCursor, g = changes.GroupsCursor }, ct);
+            "update identity.directory_connection set users_cursor = @u, groups_cursor = @g, admin_units_cursor = @a, consecutive_failures = 0, updated_at = now() where id = @id",
+            new { id = row.Id, u = changes.UsersCursor, g = changes.GroupsCursor, a = changes.AdminUnitsCursor }, ct);
+        // The organization mapping (spec 002 US5) follows each successful run.
+        await outbox.EnqueueAsync(new DirectorySynced(connectionId), ct);
         return await FinishAsync(runId, "succeeded", null, counts, ct);
     }
 
@@ -250,8 +252,8 @@ public sealed class DirectorySyncService(
     {
         var users = await session.QueryAsync("select directory_id, account_enabled, attributes::text from identity.directory_user where connection_id = @c",
             new { c = connectionId }, r => new MirrorUser(r.GetString(0), r.GetBoolean(1), JsonSerializer.Deserialize<MirrorAttributes>(r.GetString(2), JsonDefaults.Options)!), ct);
-        var groups = await session.QueryAsync("select directory_id, display_name, members from identity.directory_group where connection_id = @c",
-            new { c = connectionId }, r => new MirrorGroup(r.GetString(0), r.Get<string>("display_name"), r.GetFieldValue<string[]>(2).ToHashSet(StringComparer.Ordinal)), ct);
+        var groups = await session.QueryAsync("select directory_id, display_name, members, kind from identity.directory_group where connection_id = @c",
+            new { c = connectionId }, r => new MirrorGroup(r.GetString(0), r.Get<string>("display_name"), r.GetFieldValue<string[]>(2).ToHashSet(StringComparer.Ordinal), r.GetString(3)), ct);
         return new Mirror(users.ToDictionary(u => u.Id, StringComparer.Ordinal), groups.ToDictionary(g => g.Id, StringComparer.Ordinal));
     }
 
@@ -266,7 +268,7 @@ public sealed class DirectorySyncService(
         {
             foreach (var g in scope.Groups)
             {
-                if (mirror.Groups.TryGetValue(g, out var group))
+                if (mirror.Groups.TryGetValue(g, out var group) && group.Kind == MirrorGroup.GroupKind)
                 {
                     inScope.UnionWith(group.Members);
                 }
@@ -452,7 +454,7 @@ public sealed class DirectorySyncService(
         var synced = 0;
         foreach (var gid in selected)
         {
-            if (!mirror.Groups.TryGetValue(gid, out var group))
+            if (!mirror.Groups.TryGetValue(gid, out var group) || group.Kind != MirrorGroup.GroupKind)
             {
                 continue;
             }
@@ -514,7 +516,7 @@ public sealed class DirectorySyncService(
     }
 
     private sealed record RunSettings(Guid Id, UserScope UserScope, string[] SyncGroups, int ScheduleMinutes, int DeletionThresholdPct,
-        string? UsersCursor, string? GroupsCursor, int ConsecutiveFailures);
+        string? UsersCursor, string? GroupsCursor, int ConsecutiveFailures, string? AdminUnitsCursor);
 
     private sealed record Link(string DirectoryId, Guid UserId, bool DisabledByDirectory, string DisplayName, string Email);
 
@@ -540,11 +542,15 @@ public sealed class DirectorySyncService(
 
 /// <summary>Directory values kept for an account. Only mapped attributes are read (scenario 7).</summary>
 internal sealed record MirrorAttributes(string? DisplayName, string? Email, string? UserPrincipalName, string? JobTitle, string? Office,
-    string? Phone, string? EmployeeId, string? PreferredLanguage);
+    string? Phone, string? EmployeeId, string? PreferredLanguage, string? Company = null, string? Department = null, string? Division = null);
 
 internal sealed record MirrorUser(string Id, bool Enabled, MirrorAttributes Attributes);
 
-internal sealed record MirrorGroup(string Id, string? DisplayName, HashSet<string> Members);
+internal sealed record MirrorGroup(string Id, string? DisplayName, HashSet<string> Members, string Kind = MirrorGroup.GroupKind)
+{
+    public const string GroupKind = "group";
+    public const string AdminUnitKind = "admin_unit";
+}
 
 /// <summary>The stored mirror plus the latest changes, held in memory until the run is allowed to apply them.</summary>
 internal sealed class Mirror(Dictionary<string, MirrorUser> users, Dictionary<string, MirrorGroup> groups)
@@ -570,15 +576,17 @@ internal sealed class Mirror(Dictionary<string, MirrorUser> users, Dictionary<st
             }
             Users.TryGetValue(u.ExternalId, out var previous);
             var a = previous?.Attributes;
-            var attributes = new MirrorAttributes(u.DisplayName ?? a?.DisplayName, u.Email ?? a?.Email, u.UserPrincipalName ?? a?.UserPrincipalName,
-                u.JobTitle ?? a?.JobTitle, u.Office ?? a?.Office, u.Phone ?? a?.Phone, u.EmployeeId ?? a?.EmployeeId, u.PreferredLanguage ?? a?.PreferredLanguage);
+            var attributes = new MirrorAttributes(Merge(u.DisplayName, a?.DisplayName), Merge(u.Email, a?.Email), Merge(u.UserPrincipalName, a?.UserPrincipalName),
+                Merge(u.JobTitle, a?.JobTitle), Merge(u.Office, a?.Office), Merge(u.Phone, a?.Phone), Merge(u.EmployeeId, a?.EmployeeId),
+                Merge(u.PreferredLanguage, a?.PreferredLanguage), Merge(u.CompanyName, a?.Company), Merge(u.Department, a?.Department), Merge(u.Division, a?.Division));
             // An account whose state was never reported is treated as disabled, so access is never granted by default.
             Users[u.ExternalId] = new MirrorUser(u.ExternalId, u.AccountEnabled ?? previous?.Enabled ?? false, attributes);
             _changedUsers.Add(u.ExternalId);
             _removedUsers.Remove(u.ExternalId);
         }
 
-        foreach (var g in changes.Groups)
+        foreach (var (g, kind) in changes.Groups.Select(g => (g, MirrorGroup.GroupKind))
+                     .Concat((changes.AdminUnits ?? []).Select(g => (g, MirrorGroup.AdminUnitKind))))
         {
             if (g.Removed)
             {
@@ -589,7 +597,7 @@ internal sealed class Mirror(Dictionary<string, MirrorUser> users, Dictionary<st
             }
             var group = Groups.TryGetValue(g.ExternalId, out var existing)
                 ? existing with { DisplayName = g.DisplayName ?? existing.DisplayName }
-                : new MirrorGroup(g.ExternalId, g.DisplayName, new HashSet<string>(StringComparer.Ordinal));
+                : new MirrorGroup(g.ExternalId, g.DisplayName, new HashSet<string>(StringComparer.Ordinal), kind);
             group.Members.ExceptWith(g.MembersRemoved);
             group.Members.UnionWith(g.MembersAdded);
             Groups[g.ExternalId] = group;
@@ -597,6 +605,9 @@ internal sealed class Mirror(Dictionary<string, MirrorUser> users, Dictionary<st
             _removedGroups.Remove(g.ExternalId);
         }
     }
+
+    /// <summary>Null keeps the previous value (not reported); an empty string clears it.</summary>
+    private static string? Merge(string? reported, string? previous) => reported is null ? previous : reported.Length == 0 ? null : reported;
 
     public async Task SaveAsync(IDbSession session, Guid tenantId, Guid connectionId, CancellationToken ct)
     {
@@ -624,9 +635,9 @@ internal sealed class Mirror(Dictionary<string, MirrorUser> users, Dictionary<st
             var g = Groups[id];
             await session.ExecAsync(
                 """
-                insert into identity.directory_group (tenant_id, connection_id, directory_id, display_name, members) values (@t, @c, @d, @n, @m)
+                insert into identity.directory_group (tenant_id, connection_id, directory_id, display_name, members, kind) values (@t, @c, @d, @n, @m, @k)
                 on conflict (tenant_id, connection_id, directory_id) do update set display_name = excluded.display_name, members = excluded.members
-                """, new { t = tenantId, c = connectionId, d = id, n = g.DisplayName, m = g.Members.Order(StringComparer.Ordinal).ToArray() }, ct);
+                """, new { t = tenantId, c = connectionId, d = id, n = g.DisplayName, m = g.Members.Order(StringComparer.Ordinal).ToArray(), k = g.Kind }, ct);
         }
     }
 }

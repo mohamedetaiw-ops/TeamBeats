@@ -32,6 +32,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public FakeMicrosoftGraph Graph { get; } = new();
 
+    public TestUserAttributes UserAttributes { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Test");
@@ -45,6 +47,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         {
             services.AddSingleton(Documents);
             services.AddScoped<IResourceDescriptorProvider, TestDocumentProvider>();
+            services.AddSingleton(UserAttributes);
+            services.AddScoped<IUserAttributeProvider, TestUserAttributeProvider>();
             services.AddSingleton<ISecretStore>(Secrets);
             services.AddHttpClient(HttpOidcProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => Idp);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Microsoft365.HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => Graph);
@@ -96,10 +100,10 @@ public sealed class TestDocuments
 
     private readonly ConcurrentDictionary<Guid, (Guid TenantId, ResourceDescriptor Descriptor, string Title, string? TargetUnit)> _docs = new();
 
-    public Guid Add(Guid tenantId, Guid? owningUnit, ResourceVisibility visibility, string title, string? targetedTo = null)
+    public Guid Add(Guid tenantId, Guid? owningUnit, ResourceVisibility visibility, string title, string? targetedTo = null, string? classification = null)
     {
         var id = Guid.NewGuid();
-        _docs[id] = (tenantId, new ResourceDescriptor(ResourceType, id, owningUnit, visibility), title, targetedTo);
+        _docs[id] = (tenantId, new ResourceDescriptor(ResourceType, id, owningUnit, visibility, classification), title, targetedTo);
         return id;
     }
 
@@ -139,4 +143,35 @@ public static class HttpExtensions
         }
         return response;
     }
+}
+
+/// <summary>
+/// Stand-in for a directory or HR attribute source (spec 004 section 6), so condition tests can use attributes such as
+/// job grade before the HR integration exists. Attributes are per tenant and user.
+/// </summary>
+public sealed class TestUserAttributes
+{
+    private readonly ConcurrentDictionary<(Guid TenantId, Guid UserId), ConcurrentDictionary<string, string>> _values = new();
+
+    public void Set(Guid tenantId, Guid userId, string key, string? value)
+    {
+        var map = _values.GetOrAdd((tenantId, userId), _ => new ConcurrentDictionary<string, string>(StringComparer.Ordinal));
+        if (value is null)
+        {
+            map.TryRemove(key, out _);
+        }
+        else
+        {
+            map[key] = value;
+        }
+    }
+
+    public IReadOnlyDictionary<string, string> Get(Guid tenantId, Guid userId) =>
+        _values.TryGetValue((tenantId, userId), out var map) ? new Dictionary<string, string>(map) : new Dictionary<string, string>();
+}
+
+public sealed class TestUserAttributeProvider(TestUserAttributes attributes, ITenantContext context) : IUserAttributeProvider
+{
+    public Task<IReadOnlyDictionary<string, string>> GetAsync(Guid userId, CancellationToken ct) =>
+        Task.FromResult(context.TenantId is { } t ? attributes.Get(t, userId) : new Dictionary<string, string>());
 }

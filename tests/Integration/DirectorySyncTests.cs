@@ -124,6 +124,32 @@ public sealed class DirectorySyncTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task Synced_job_title_is_a_condition_attribute_and_product_users_have_none()
+    {
+        var s = await TenantAsync();
+        var (engineer, analyst) = (Oid(), Oid());
+        s.Data.AddUser(engineer, "Eman Engineer", s.Email("eman"), jobTitle: "Engineer");
+        s.Data.AddUser(analyst, "Omar Analyst", s.Email("omar"), jobTitle: "Analyst");
+        Assert.Equal("succeeded", (await RunAsync(s)).Outcome);
+
+        var admin = s.Tenant["admin"].Client;
+        var condition = new { attribute = "job_title", @operator = "eq", value = "engineer" };
+        var productUser = await world.SeedUserAsync(s.Tenant, "product_only", "employee");
+        var ids = new[] { (await UserIdAsync(s, engineer))!.Value, (await UserIdAsync(s, analyst))!.Value, productUser.Id };
+        var allowed = new List<bool>();
+        foreach (var id in ids)
+        {
+            (await admin.PostAsJsonAsync("/api/v1/authz/assignments",
+                new { subjectType = "user", subjectId = id, roleKey = "approver", scopeType = "tenant", condition })).EnsureSuccessStatusCode();
+            var explained = await admin.GetFromJsonAsync<JsonElement>($"/api/v1/authz/explain?userId={id}&permission=workflow.approve");
+            allowed.Add(explained.GetProperty("allowed").GetBoolean());
+        }
+
+        // The engineer matches; the analyst does not; the product user has no directory record, so the condition fails closed.
+        Assert.Equal([true, false, false], allowed);
+    }
+
+    [Fact]
     public async Task Rename_and_email_change_update_the_same_user_in_place()
     {
         var s = await TenantAsync();

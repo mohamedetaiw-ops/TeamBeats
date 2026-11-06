@@ -33,6 +33,12 @@ Depends on 001 Phase 1 and 002 Phase 1.
 - [ ] T016 Explain endpoint and `/me/access`
 - [ ] T017 Role assignment UI with scope picker; explain view
 
+## Phase 8: User Story 7, attribute conditions (P2, R1)
+- [x] T020 [P] [US7] Tests: grade condition allows and denies with explanations; missing attribute fails closed; no grant stays denied; condition on a share gives not-found to a contractor; attribute change shows within 60 s; schema rejections; property test that conditions never add an allowed decision; batch of 1,000 within 50 ms
+- [x] T021 [US7] Migration: nullable `condition` on `role_assignment` and `resource_acl`; strict condition parser and evaluator over the section 6 attribute catalogue
+- [x] T022 [US7] User attribute sources: membership type from tenancy, job title and office from the directory mirror (spec 003), `IUserAttributeProvider` for later HR sources; resource classification and owning unit from the descriptor
+- [x] T023 [US7] Conditions on assignment and ACL endpoints, explain and `/me/access`, audit entries carry the condition
+
 ## Final phase
 - [ ] T018 Membership type policy (remove default Employee role per type; never for guest memberships) with tests
 - [ ] T018a Audit events for group create, change, delete and membership add and remove, with tests
