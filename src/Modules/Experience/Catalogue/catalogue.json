@@ -656,6 +656,41 @@
           }
         }
       ]
+    },
+    {
+      "id": "H01",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.h01",
+      "descriptionKey": "experience.template.h01.description",
+      "layout": "L06",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "hero",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 6,
+            "protection": "protected",
+            "personal": false
+          }
+        },
+        {
+          "id": "grid",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 24,
+            "protection": "optional",
+            "personal": true
+          }
+        }
+      ]
     }
   ]
 }

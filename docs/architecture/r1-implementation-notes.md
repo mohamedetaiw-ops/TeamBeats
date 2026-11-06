@@ -293,3 +293,20 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 - `SettingsPanel` holds language, appearance mode, density, motion and text size in one place on every page (FR-010). The root layout applies them: mode and density pick the theme variant links, `data-motion="reduced"` stops animation like the device setting, and text size scales the root font.
 - The organization indicator shows when the person belongs to more than one organization. Notifications, the task badge, contextual actions and utilities render nothing until their modules register components.
 - Playwright `shell.spec.ts` in English and Arabic: the menu by keyboard, Escape and outside click, breadcrumbs and section menu on an IA address, old slug redirect, recovery, quick navigation, settings applied and kept after reload, the phone menu without horizontal scroll, and axe. The language test in `admin-shell.spec.ts` now opens the settings panel first.
+
+## Employee home and personalization mode (spec 008 T012, T013 in part)
+- Home template `H01` (layout L06) joins the catalogue next to T01 to T12: a protected top area for mandatory and critical items and a personal area (`personal: true`, up to 24 items). With no policy row the personal area is delegated to everyone in every package, and the top area never is.
+- The shell definition carries `homePageId`, published with `shell.edit` and audited with the shell. It must name a page of the tenant (`validation.shell.home_unknown`). `GET /api/v1/experience/shell` returns `home`, the page slug, only when the page is published and the caller holds `page.view` at its scope. The root address renders that page with the caller's layout; without one it keeps the plain welcome.
+- The add panel now returns the component name, description and refusal reason in the caller's language. R1 adds a component with its defaults, so one with a required setting and no default is listed with `validation.personalization.needs_setup` until personal settings exist.
+- `features/personalization`: a provider holds the operation list, its revision and an undo stack of the last 20 lists the API accepted. Every change sends the whole list with `If-Match` and the page re-renders from the API, so protection and policy are never decided in the browser. A stale revision reloads the layout and says so; a refusal announces the API's reason. Repeated moves of one item collapse into one operation, and removing one of the user's own items drops every operation about it.
+- Each item the user may change gets a labelled group of buttons (move up, move down, move to another area, hide or remove); each delegated area gets an add button and panel. Focus follows a moved item, and goes to a neighbour when an item leaves. A polite live region announces the mode and each result. Reset this page and reset all pages (in the settings panel) ask for confirmation first and keep language and the other preferences.
+- `PageRenderer` accepts optional region and placement tools; it gives them a place and never knows what they do.
+- Playwright `home-personalization.spec.ts` in English and Arabic: keyboard-only move, hide and add, announcements, the layout after a reload, three undos in reverse order, reset with confirmation, leaving the mode, the phone width without horizontal scroll, and axe in the mode.
+
+### Differences and follow-ups
+| Item | Note |
+|---|---|
+| Drag and drop | R1 reorders with buttons only, which gives the same result for keyboard and pointer (FR-025). Drag can come with resize in R2. |
+| My mail and My calendar | FR-051 needs the spec 018 components (018 T016). Once they exist the home shows them in the personal area when Mail and Calendar are on; T013 stays open until then. |
+| Default home page | A tenant gets the template, not a page: an administrator creates a page from `H01` and sets it as home. |
+| Hidden items | A hidden item returns through undo or reset; there is no list of hidden items in R1. |

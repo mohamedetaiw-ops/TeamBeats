@@ -4,6 +4,7 @@ import { useId, useRef, useState, type KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { PreferenceKey } from "@/lib/shell/types";
+import { ConfirmAction } from "@/components/ui/ConfirmAction";
 
 const options: Record<PreferenceKey, string[]> = {
   mode: ["system", "light", "dark"],
@@ -14,7 +15,8 @@ const options: Record<PreferenceKey, string[]> = {
 
 /**
  * One place on every page for language, mode, density, motion and text size (spec 008 FR-010). Language is saved on
- * the user account (spec 007), the rest in the preference profile; the page re-renders with the new values.
+ * the user account (spec 007), the rest in the preference profile; the page re-renders with the new values. Resetting
+ * every personal layout lives here too, and keeps language and the other preferences (FR-027).
  */
 export function SettingsPanel({ locales, locale, values }: { locales: string[]; locale: string; values: Record<PreferenceKey, string> }) {
   const t = useTranslations("shell.settings");
@@ -72,6 +74,16 @@ export function SettingsPanel({ locales, locale, values }: { locales: string[]; 
             </select>
           </label>
         ))}
+        <ConfirmAction
+          label={t("resetLayouts")}
+          question={t("resetLayoutsQuestion")}
+          confirmLabel={t("resetLayoutsConfirm")}
+          cancelLabel={t("resetLayoutsCancel")}
+          onConfirm={async () => {
+            await fetch("/api/v1/me/layouts", { method: "DELETE" });
+            router.refresh();
+          }}
+        />
       </div>
     </div>
   );

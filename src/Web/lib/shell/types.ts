@@ -14,7 +14,14 @@ export type ShellRegion =
   | "settings"
   | "utilities";
 
-export type ShellLayout = { start: ShellRegion[]; center: ShellRegion[]; end: ShellRegion[]; below: ShellRegion[]; utilities: string[] };
+export type ShellLayout = {
+  start: ShellRegion[];
+  center: ShellRegion[];
+  end: ShellRegion[];
+  below: ShellRegion[];
+  utilities: string[];
+  homePageId?: string | null;
+};
 
 export type NavLink = { nodeId: string; label: string; href: string; owner: string | null; children: NavLink[] };
 
@@ -29,6 +36,8 @@ export type Shell = {
   organizationMenus: OrganizationMenu[];
   organizations: OrganizationIndicator[];
   canSwitchOrganization: boolean;
+  /** Slug of the employee home when it is published and the viewer may open it. */
+  home: string | null;
 };
 
 export type Crumb = { label: string; href: string };

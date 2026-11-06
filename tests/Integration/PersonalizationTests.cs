@@ -109,6 +109,41 @@ public sealed class PersonalizationTests(TenantWorld world)
     private static object AddOp(string id, string component = "reference.alpha.text@1", string region = "canvas", int? position = null) =>
         new { op = "add", placementId = id, componentRef = component, regionId = region, position, props = PropsFor(component) };
 
+    // T013: the default home template
+
+    [Fact]
+    public async Task Home_template_delegates_its_personal_region_in_every_package_and_keeps_the_top_region_protected()
+    {
+        var t = await FreshAsync("workplace");
+        var created = await t["admin"].Client.PostAsJsonAsync("/api/v1/experience/pages", new { templateId = "H01", slug = Slug() });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var page = JsonNode.Parse(await created.Content.ReadAsStringAsync())!;
+        var draft = page["draft"]!.DeepClone();
+        foreach (var region in draft["regions"]!.AsArray())
+        {
+            region!["placements"] = region["id"]!.GetValue<string>() == "hero" ? new JsonArray(P("critical")) : new JsonArray(P("services"));
+        }
+        var request = new HttpRequestMessage(HttpMethod.Put, $"/api/v1/experience/pages/{page["id"]}/draft") { Content = JsonContent.Create(new { definition = draft }) };
+        request.Headers.TryAddWithoutValidation("If-Match", page["eTag"]!.GetValue<string>());
+        Assert.True((await t["admin"].Client.SendAsync(request)).IsSuccessStatusCode);
+        Assert.True((await t["admin"].Client.PostAsJsonAsync($"/api/v1/experience/pages/{page["id"]}/publish", new { reason = "home" })).IsSuccessStatusCode);
+        var id = page["id"]!.GetValue<Guid>();
+
+        // No policy row: the personal region is delegated to everyone by default, the protected one is not.
+        var policy = (await t["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/pages/{id}/personalization-policy"))
+            .EnumerateArray().ToDictionary(r => r.GetProperty("regionId").GetString()!);
+        Assert.Equal(["add", "hide", "remove", "reorder"], policy["grid"].GetProperty("rights").EnumerateArray().Select(r => r.GetString()));
+        Assert.Empty(policy["hero"].GetProperty("rights").EnumerateArray());
+
+        var saved = await LayoutAsync(t, id, "employee", AddOp("my-note", region: "grid", position: 0), new { op = "hide", placementId = "services" });
+        Assert.True(saved.IsSuccessStatusCode, await saved.Content.ReadAsStringAsync());
+        Assert.Contains("validation.personalization.protected",
+            await RefusedAsync(await LayoutAsync(t, id, "employee", new { op = "hide", placementId = "critical" })));
+        Assert.Contains("validation.personalization.region_not_delegated",
+            await RefusedAsync(await LayoutAsync(t, id, "employee", AddOp("my-note", region: "grid"),
+                new { op = "move", placementId = "my-note", regionId = "hero", position = 0 })));
+    }
+
     // T008, US2
 
     [Fact]
@@ -143,8 +178,14 @@ public sealed class PersonalizationTests(TenantWorld world)
         // The add panel gives the same answers with reasons.
         var panel = (await t["employee"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/me/pages/{page}/add-panel?region=canvas"))
             .EnumerateArray().ToDictionary(i => i.GetProperty("componentRef").GetString()!);
-        Assert.True(panel["reference.alpha.text@1"].GetProperty("eligible").GetBoolean());
+        Assert.True(panel["reference.alpha.links@1"].GetProperty("eligible").GetBoolean());
+        // Added from the panel with its defaults, so a component with a required setting and no default waits.
+        Assert.Equal("validation.personalization.needs_setup", panel["reference.alpha.text@1"].GetProperty("reasonKey").GetString());
         Assert.Equal("validation.page.component_not_permitted", panel["reference.beta.restricted@1"].GetProperty("reasonKey").GetString());
+        // Names and reasons come in the caller's language, so the panel needs no catalogue of its own.
+        Assert.Equal("Restricted tool (reference)", panel["reference.beta.restricted@1"].GetProperty("name").GetString());
+        Assert.Equal("You do not have the permission this component needs", panel["reference.beta.restricted@1"].GetProperty("reason").GetString());
+        Assert.Equal(JsonValueKind.Null, panel["reference.alpha.links@1"].GetProperty("reason").ValueKind);
         Assert.Equal("validation.page.component_disabled", panel["reference.alpha.kpi@1"].GetProperty("reasonKey").GetString());
         Assert.False(panel.ContainsKey("reference.beta.legacy@1"));
         var sidebar = await t["employee"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/me/pages/{page}/add-panel?region=sidebar");

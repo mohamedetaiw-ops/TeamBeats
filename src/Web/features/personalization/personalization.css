@@ -1,0 +1,70 @@
+/* Personalization mode (spec 008 US2). A clear mode: areas the user may change get an outline and their tools. */
+.pz-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  padding-block: var(--tb-space-sm);
+  padding-inline: var(--tb-space-md);
+}
+
+.pz-toolbar .ui-confirm {
+  flex-basis: 100%;
+}
+
+.pz-page[data-personalizing] .xp-region:has(.pz-region-tools),
+.pz-page[data-personalizing] .xp-placement:has(.pz-tools) {
+  outline: var(--tb-border-width-thin) dashed var(--tb-color-border-strong);
+  outline-offset: var(--tb-space-xs);
+}
+
+.pz-region-tools {
+  margin-block-end: var(--tb-space-sm);
+}
+
+.pz-add-panel {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin-block-start: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.pz-add-panel ul {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pz-add-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.pz-add-name {
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.pz-add-description {
+  flex: 1 1 12rem;
+  font-size: var(--tb-font-size-sm);
+}
+
+.pz-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  margin-block-end: var(--tb-space-xs);
+}
+
+.pz-tools-label {
+  font-size: var(--tb-font-size-sm);
+  margin-inline-end: var(--tb-space-sm);
+}

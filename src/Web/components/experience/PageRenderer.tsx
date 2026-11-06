@@ -1,6 +1,6 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { EventChannel } from "@/lib/experience/events";
-import type { RenderedPage, RenderedRegion, SectionMode } from "@/lib/experience/types";
+import type { RenderedPage, RenderedPlacement, RenderedRegion, SectionMode } from "@/lib/experience/types";
 import { Placement } from "./Placement";
 import { RegionTabs } from "./RegionTabs";
 import "./experience.css";
@@ -24,12 +24,22 @@ function rows(regions: RenderedRegion[]): Row[] {
   return result;
 }
 
-function Region({ region }: { region: RenderedRegion }) {
+/**
+ * Optional controls drawn next to regions and placements, such as personalization mode (spec 008). The renderer only
+ * gives them a place; it never knows what they do.
+ */
+export type RendererTools = {
+  region?: (region: RenderedRegion, index: number, page: RenderedPage) => ReactNode;
+  placement?: (placement: RenderedPlacement, region: RenderedRegion, index: number) => ReactNode;
+};
+
+function Region({ region, index, page, tools }: { region: RenderedRegion; index: number; page: RenderedPage; tools?: RendererTools }) {
   return (
     <div className="xp-region" data-region={region.id} style={{ "--xp-region-span": region.span } as CSSProperties}>
+      {tools?.region?.(region, index, page)}
       <div className="xp-region-grid">
-        {region.placements.map((placement) => (
-          <Placement key={placement.id} placement={{ ...placement, span: Math.min(placement.span, region.span) }} />
+        {region.placements.map((placement, i) => (
+          <Placement key={placement.id} placement={{ ...placement, span: Math.min(placement.span, region.span) }} tools={tools?.placement?.(placement, region, i)} />
         ))}
       </div>
     </div>
@@ -41,13 +51,24 @@ function Region({ region }: { region: RenderedRegion }) {
  * as size containers so placements adapt to the space they get, logical properties only, and the layout's fallback
  * for narrow containers. Every placement is its own boundary; the page never knows which components it holds.
  */
-export function PageRenderer({ page, tabLabel, tabsLabel }: { page: RenderedPage; tabLabel: (n: number) => string; tabsLabel: string }) {
+export function PageRenderer({
+  page,
+  tabLabel,
+  tabsLabel,
+  tools,
+}: {
+  page: RenderedPage;
+  tabLabel: (n: number) => string;
+  tabsLabel: string;
+  tools?: RendererTools;
+}) {
+  const index = (region: RenderedRegion) => page.regions.indexOf(region);
   const body =
     page.fallback === "tabs" ? (
       <div className="xp-row xp-section-contained">
         <RegionTabs label={tabsLabel} tabs={page.regions.map((r, i) => ({ id: r.id, label: tabLabel(i + 1) }))}>
           {page.regions.map((region) => (
-            <Region key={region.id} region={region} />
+            <Region key={region.id} region={region} index={index(region)} page={page} tools={tools} />
           ))}
         </RegionTabs>
       </div>
@@ -56,7 +77,7 @@ export function PageRenderer({ page, tabLabel, tabsLabel }: { page: RenderedPage
         <div key={row.regions[0]!.id} className={`xp-row xp-section-${row.section}`}>
           <div className="xp-row-grid">
             {row.regions.map((region) => (
-              <Region key={region.id} region={region} />
+              <Region key={region.id} region={region} index={index(region)} page={page} tools={tools} />
             ))}
           </div>
         </div>
