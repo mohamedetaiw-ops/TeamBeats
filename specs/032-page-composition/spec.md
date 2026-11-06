@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 032-page-composition |
 | Area | experience |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (page definition model, effective configuration resolver, responsive layout engine with the 10 layouts, the 12 page templates with visual variants, template preview, locks, distribution and lifecycle, component manifest registry, visual page builder with keyboard composition, autosave, undo and history, previews by device, direction and persona, accessibility and translation checks, error isolation, publish and rollback, performance and isolation baseline), R2 (approval routes, impact reports, fragments, import and export, scheduled releases, feature controls, resizable regions, independent component deployment), R3 (tenant-built components in a sandbox, template recommendations) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | CX-LAY-001 to CX-LAY-012, CX-TMP-001 to CX-TMP-010, CX-TMP-012, CX-EDT-001 to CX-EDT-015, CX-EXT-001 to CX-EXT-014, CX-GOV-001 to CX-GOV-012, CX-NFR-001 to CX-NFR-012, EXP-001, EXP-008 |
 | Use cases | UC-04 (page part) |
 | Depends on | 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit), 007 (localization and accessibility), 008 (shell and personalization), 021 (analytics), 024 (process engine, for approval routes), 026 (security controls), 033 (themes and inheritance) |

@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 011-document-management |
 | Area | knowledge |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (built-in document management: libraries, metadata, versions, check-out and check-in, preview, permissions, knowledge base, controlled documents with approval), R2 (retention and disposition, legal hold, brand asset portal, watermarking and download controls, external sharing to guests, bulk import, SharePoint Online connected libraries and import from SharePoint), R3 (records declaration with disposition certificates, customer-managed keys per library) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | KNO-001, KNO-003, KNO-006, ADM-003, INT-002 (SharePoint document part), DOC-001 to DOC-033 (new) |
 | Use cases | UC-04, UC-06 (as a source for the assistant), UC-10 (SharePoint content), UC-14 (deletion and legal hold) |
 | Depends on | 002, 004, 005, 006 (Connections area in administration), 007, 009 (pages that link documents), 012 (search), 013 and 014 (AI), 016 (task inbox), 017 (connector framework, `Integrations` module), 024 (process engine for approval and review routes), 025 (policies are controlled documents), 026 (external users, encryption, keys) |

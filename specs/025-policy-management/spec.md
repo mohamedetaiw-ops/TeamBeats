@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 025-policy-management |
 | Area | knowledge |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (policy register, authoring, approval, publishing, attestation campaigns, reminders, compliance view, policy Q&A), R2 (scheduled review cycles, comprehension checks, exemptions, control and regulation mapping, evidence pack export, manager dashboards), R3 (policy change impact analysis with AI, regulator change feeds) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | EXP-004, KNO-001, KNO-007, POL-001 to POL-018 (new) |
 | Use cases | UC-04 (distribution), UC-06 (policy questions) |
 | Depends on | 004, 005, 006, 007, 009 (pages, acknowledgement records), 010 (reporting lines), 011 (controlled documents), 012 (search), 014 (assistant), 015 (notifications), 016 (task inbox), 021 (analytics), 024 (process engine), 026 (compliance controls and evidence) |

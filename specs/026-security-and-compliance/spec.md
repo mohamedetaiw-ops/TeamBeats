@@ -4,12 +4,13 @@
 |---|---|
 | Spec ID | 026-security-and-compliance |
 | Area | platform |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (tenant security policy: IP rules, session rules, MFA assurance check, step-up for sensitive actions; encryption baseline; security alerts; trust documents), R2 (guest users and secure extranet spaces, SIEM streaming, sensitive data detection, compliance projects and control library, data residency choice, ISO 27001:2022 certificate and SOC 2 Type I report in hand by general availability, SOC 2 Type II six months after), R3 (customer-managed encryption keys, four-eyes admin changes, national government certifications, on-prem hardening pack) |
 | Last updated | 2026-11-05 |
+| Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-021 and CMP-001 to CMP-004 (new), CX-NFR-010 (shared with spec 032); foundation section 14 (Security, Privacy), 14.2, and open business decision 9 (certifications and residency) |
 | Use cases | UC-01, UC-03, UC-14 |
 | Depends on | 001 (tenants, break-glass), 003 (identity), 004 (authorization), 005 (entitlements), 006 (audit), 009 and 011 (content and documents shared with guests), 015 (notifications), 021 (security dashboards), 025 (policy to control mapping) |
