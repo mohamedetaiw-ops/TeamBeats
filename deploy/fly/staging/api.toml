@@ -1,7 +1,6 @@
 # Staging API: the development host in Staging (deploy/docker/api-staging.Dockerfile, spec 003 US7, ADR-0004).
 # Private network only; the web app proxies /api and /dev to it. App name comes from the deploy workflow.
-# Secrets set by the workflow: ConnectionStrings__App, ConnectionStrings__Owner and, when provided,
-# Auth__DevSignIn__TestAccounts__0__Password.
+# Secrets set by the workflow: ConnectionStrings__App, ConnectionStrings__Owner.
 primary_region = "fra"
 
 

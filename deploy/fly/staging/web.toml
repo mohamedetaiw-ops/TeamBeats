@@ -7,7 +7,7 @@ primary_region = "fra"
   # Fly sets HOSTNAME to the machine id; Next.js standalone binds to HOSTNAME, so pin it to all interfaces.
   HOSTNAME = "0.0.0.0"
   PORT = "3000"
-  TEAMBEATS_DEV_SIGNIN = "password"
+  TEAMBEATS_DEV_SIGNIN = "testaccount"
 
 [http_service]
   internal_port = 3000
