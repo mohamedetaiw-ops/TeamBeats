@@ -9,25 +9,29 @@ on:
 permissions:
   contents: read
 
+# Every job runs on the self-hosted Windows runner (docs/operations/ci-runner.md). Git Bash runs the scripts.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   backend:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_PASSWORD: ci_only_password
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    # Never run code from a fork on the self-hosted runner. Same condition on every job.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, windows, x64, teambeats]
     env:
       TEAMBEATS_TEST_PG_ADMIN: Host=localhost;Port=5432;Username=postgres;Password=ci_only_password
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: global.json
+      - uses: ./.github/actions/windows-postgres
+        with:
+          password: ci_only_password
       - run: dotnet restore TeamBeats.slnx
       - run: dotnet build TeamBeats.slnx --no-restore -c Release
       - name: Unit tests
@@ -50,11 +54,16 @@ jobs:
         run: |
           dotnet list TeamBeats.slnx package --vulnerable --include-transitive | tee vuln.txt
           ! grep -q "has the following vulnerable packages" vuln.txt
+      - name: Stop PostgreSQL
+        if: always()
+        run: pg_ctl stop -D "$TB_PGDATA" -m fast || true
 
   web:
-    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, windows, x64, teambeats]
     defaults:
       run:
+        shell: bash
         working-directory: src/Web
     steps:
       - uses: actions/checkout@v4
@@ -76,22 +85,17 @@ jobs:
   e2e:
     # Playwright end-to-end suite (tests/Acceptance, docs/testing/e2e-plan.md): web, development API host and
     # PostgreSQL together, in Arabic and English, with axe accessibility checks.
-    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, windows, x64, teambeats]
     timeout-minutes: 25
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_PASSWORD: ci_only_password
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
+        env:
+          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: global.json
       - uses: actions/setup-node@v4
@@ -101,6 +105,9 @@ jobs:
           cache-dependency-path: |
             src/Web/package-lock.json
             tests/Acceptance/package-lock.json
+      - uses: ./.github/actions/windows-postgres
+        with:
+          password: ci_only_password
       - name: Database roles (development passwords from deploy/compose, CI only)
         env:
           PGPASSWORD: ci_only_password
@@ -117,12 +124,15 @@ jobs:
         run: npm run typecheck
         working-directory: tests/Acceptance
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
         working-directory: tests/Acceptance
       - name: Playwright
         run: npx playwright test
         working-directory: tests/Acceptance
       # Uploaded only on failure, and kept briefly, to stay inside the artifact storage budget.
+      - name: Stop PostgreSQL
+        if: always()
+        run: pg_ctl stop -D "$TB_PGDATA" -m fast || true
       - name: Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
@@ -134,7 +144,8 @@ jobs:
           retention-days: 7
 
   governance:
-    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: [self-hosted, windows, x64, teambeats]
     permissions:
       contents: read
       pull-requests: read   # gitleaks-action lists the PR's commits to scan
