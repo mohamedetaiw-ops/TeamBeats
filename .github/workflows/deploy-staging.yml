@@ -7,7 +7,8 @@
 # Repository variables (optional): FLY_ORG (default personal), FLY_APP_PREFIX (default teambeats-staging).
 # Region: primary_region in deploy/fly/staging/*.toml.
 #
-# Database passwords are generated here on the first run and stored only as Fly secrets. To rotate them, unset
+# Database passwords and app keys (Integrations__Microsoft365__TokenKey) are generated here on the first run and
+# stored only as Fly secrets. To rotate the database passwords, unset
 # ConnectionStrings__App on the API app (fly secrets unset) and run this workflow again.
 name: deploy-staging
 
@@ -85,6 +86,23 @@ jobs:
           printf 'ConnectionStrings__App=%s\nConnectionStrings__Owner=%s\n' "$app_cs" "$owner_cs" \
             | flyctl secrets import --app "$API_APP" --stage
           printf 'ConnectionStrings__App=%s\n' "$app_cs" | flyctl secrets import --app "$WORKERS_APP" --stage
+
+      - name: Generate app keys on first run
+        run: |
+          # Integrations__Microsoft365__TokenKey encrypts stored Microsoft 365 tokens (staging uses the fake Microsoft 365).
+          # API and workers share one key; if either lacks it, both get a new one (stored staging tokens become unreadable).
+          has_secret() { flyctl secrets list --app "$1" --json | jq -e --arg n "$2" 'map(.Name // .name) | index($n)' >/dev/null; }
+          name=Integrations__Microsoft365__TokenKey
+          if has_secret "$API_APP" "$name" && has_secret "$WORKERS_APP" "$name"; then
+            echo "$name already set"
+            exit 0
+          fi
+          key=$(openssl rand -base64 32)
+          echo "::add-mask::$key"
+          for app in "$API_APP" "$WORKERS_APP"; do
+            printf '%s=%s\n' "$name" "$key" | flyctl secrets import --app "$app" --stage
+          done
+          echo "Generated $name"
 
       - name: Deploy database
         run: >-
