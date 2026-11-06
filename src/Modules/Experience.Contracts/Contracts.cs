@@ -101,3 +101,8 @@ public sealed record ThemePublished(Guid BrandId, int Version) : IIntegrationEve
 public sealed record BrandAssignmentChanged(Guid? ScopeOrgUnitId, Guid? BrandId) : IIntegrationEvent;
 
 public sealed record ExperienceLockChanged(Guid? ScopeOrgUnitId, IReadOnlyList<string> Settings) : IIntegrationEvent;
+
+// Spec 008 section 12.
+public sealed record ShellPublished(int Version) : IIntegrationEvent;
+
+public sealed record NavigationPublished(Guid MenuId, string Kind, string Scope, int Version) : IIntegrationEvent;

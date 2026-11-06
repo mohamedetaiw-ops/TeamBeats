@@ -42,6 +42,16 @@ public sealed class TenancyContracts(
     public Task<bool> UnitExistsAsync(Guid unitId, CancellationToken ct = default) =>
         session.ScalarAsync<bool>("select exists (select 1 from tenancy.org_unit where id = @id)", new { id = unitId }, ct);
 
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>>> GetNamesAsync(IEnumerable<Guid> unitIds,
+        CancellationToken ct = default)
+    {
+        var rows = await session.QueryAsync(
+            "select org_unit_id, locale, name from tenancy.org_unit_name where org_unit_id = any(@ids)",
+            new { ids = unitIds.Distinct().ToArray() }, r => (Unit: r.GetGuid(0), Locale: r.GetString(1), Name: r.GetString(2)), ct);
+        return rows.GroupBy(r => r.Unit).ToDictionary(g => g.Key,
+            g => (IReadOnlyDictionary<string, string>)g.ToDictionary(r => r.Locale, r => r.Name, StringComparer.Ordinal));
+    }
+
     public async Task<IReadOnlySet<Guid>> GetMemberUserIdsAsync(IEnumerable<Guid> unitIds, CancellationToken ct = default) =>
         (await session.QueryAsync(
             "select distinct user_id from tenancy.org_membership where org_unit_id = any(@ids) and valid_to is null",

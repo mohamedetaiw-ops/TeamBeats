@@ -248,3 +248,19 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 |---|---|
 | Offline handling | The offline state view exists; keeping unsaved preference edits while offline comes with preferences (T007 to T010). |
 | Personal density and motion choice | Comes with the preference profile; until then density and motion follow the theme and the device. |
+
+## Shell, menus and information architecture (spec 008 T004 to T006)
+- Tables in the Experience module with forced RLS: `shell_config` (one insert-only row per published version), `nav_menu` (one row per kind and scope: `global`/`tenant`, `organization`/unit id, `section`/node id), `ia_node` (labels per language, a unique slug, either a page or a link, an owning organization and a position) and `slug_redirect` (rows are only written and removed).
+- New permissions `shell.edit`, `navigation.edit` and `help.edit`. The tenant administrator gets all three; the organization administrator gets `navigation.edit` within their subtree.
+- Endpoints under `/api/v1/experience`: `GET /shell` (layout, global menu, the organization menus of the caller's units and their parents, and the caller's organizations), `GET` and `PUT /shell/definition`, `GET /menus`, `PUT /menus/{kind}/{scope}`, `GET /ia`, `PUT /ia/{id}`, `GET /resolve?path=` and `GET /quick-nav?q=`. Every publish writes a new version on its own, is audited (`shell.published`, `navigation.published`, `navigation.node_changed`) and emits `ShellPublished` or `NavigationPublished`. Nothing here touches pages.
+- Menus, breadcrumbs, section menus and quick navigation list only entries the caller may open: a link entry always, a page entry when the page is published and the caller holds `page.view` at its scope, and only when every parent entry is visible too. Labels follow the reader's language.
+- Resolve gives a page, a redirect (an old slug after a rename, or a link entry), or one recovery answer (home and search) that is the same for missing, unpublished and not permitted destinations. Pages outside the IA stay reachable by their own slug under the same rule.
+- Editing a global menu or a tenant entry without permission answers forbidden; an organization or section scope outside the caller's grants, or of another tenant, answers not found.
+- The shell layout holds the placement of registered regions and utilities only; `identity` and `settings` must stay placed so language, mode, density and accessibility remain in one place. Utility components belong to their own modules.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Quick navigation over search | Matches IA labels and slugs and published page slugs until search (spec 012) takes over. |
+| Help content | `help.edit` exists; editing contextual help content is not built yet. |
+| Organization switching | The shell answers the caller's organizations and whether switching applies; the switcher comes with the shell frontend. |

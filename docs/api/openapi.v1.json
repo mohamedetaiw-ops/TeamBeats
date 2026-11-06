@@ -2676,6 +2676,189 @@
           }
         }
       }
+    },
+    "/api/v1/experience/shell": {
+      "get": {
+        "tags": [
+          "Experience: shell and navigation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/shell/definition": {
+      "get": {
+        "tags": [
+          "Experience: shell and navigation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Experience: shell and navigation"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShellDefinition"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/menus": {
+      "get": {
+        "tags": [
+          "Experience: shell and navigation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/menus/{kind}/{scope}": {
+      "put": {
+        "tags": [
+          "Experience: shell and navigation"
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "scope",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MenuRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/ia": {
+      "get": {
+        "tags": [
+          "Experience: shell and navigation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/ia/{id}": {
+      "put": {
+        "tags": [
+          "Experience: shell and navigation"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/resolve": {
+      "get": {
+        "tags": [
+          "Experience: shell and navigation"
+        ],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/quick-nav": {
+      "get": {
+        "tags": [
+          "Experience: shell and navigation"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3443,6 +3626,45 @@
           }
         }
       },
+      "MenuItemInput": {
+        "required": [
+          "nodeId",
+          "children"
+        ],
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "children": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MenuItemInput"
+            }
+          }
+        }
+      },
+      "MenuRequest": {
+        "required": [
+          "items"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/MenuItemInput"
+            }
+          }
+        }
+      },
       "MoveOrgUnitRequest": {
         "required": [
           "newParentId"
@@ -3455,6 +3677,70 @@
               "string"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "NodeRequest": {
+        "required": [
+          "parentId",
+          "labels",
+          "slug",
+          "pageId",
+          "url",
+          "ownerOrgUnitId"
+        ],
+        "type": "object",
+        "properties": {
+          "parentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "labels": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "slug": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pageId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "ownerOrgUnitId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 0
           }
         }
       },
@@ -3704,6 +3990,48 @@
           }
         }
       },
+      "ShellDefinition": {
+        "required": [
+          "start",
+          "center",
+          "end",
+          "below",
+          "utilities"
+        ],
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "center": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "end": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "below": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "utilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "StatusChangeRequest": {
         "required": [
           "reason"
@@ -3930,6 +4258,9 @@
     },
     {
       "name": "Experience: themes"
+    },
+    {
+      "name": "Experience: shell and navigation"
     }
   ]
 }

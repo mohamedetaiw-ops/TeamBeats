@@ -38,6 +38,9 @@ public interface IOrganizationHierarchy
 
     Task<bool> UnitExistsAsync(Guid unitId, CancellationToken ct = default);
 
+    /// <summary>Unit names by locale, for labels such as the shell's organization indicator.</summary>
+    Task<IReadOnlyDictionary<Guid, IReadOnlyDictionary<string, string>>> GetNamesAsync(IEnumerable<Guid> unitIds, CancellationToken ct = default);
+
     /// <summary>Users with an active membership in any of the units.</summary>
     Task<IReadOnlySet<Guid>> GetMemberUserIdsAsync(IEnumerable<Guid> unitIds, CancellationToken ct = default);
 
