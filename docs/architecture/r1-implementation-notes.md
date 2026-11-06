@@ -284,3 +284,12 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Groups and roles in audience rules | There is no group contract yet, and role names are never checked, so R1 rules use org units, membership types, languages and attributes. |
 | Preference endpoint path | Appearance preferences use `/me/preference-profile` because `/me/preferences` already holds the language on the user account. |
 | Undo | The command stack of the last 20 changes is kept by the frontend (T012). |
+
+## Shell frontend (spec 008 T011)
+- `features/shell`: `Shell` renders the regions of the published shell definition in their slots (start, center, end and below), with a fallback layout when the shell API is unavailable. `components/shell/Header` now renders the shell, so the home page, published pages and administration share one frame.
+- `GlobalMenu` is a disclosure menu for the global and organization menus: links stay links, entries with children have their own toggle, Escape closes and returns focus, a click outside or focus leaving closes it. Below 48rem the same list sits behind one menu button. Link owners show next to same-named labels (FR-015).
+- `app/[...path]` resolves IA addresses through `GET /api/v1/experience/resolve`: pages render with breadcrumbs and the section menu, redirects follow, and anything else shows the one recovery view with a link home.
+- `QuickNav` lists permitted destinations from `GET /api/v1/experience/quick-nav` as the user types, announced by count.
+- `SettingsPanel` holds language, appearance mode, density, motion and text size in one place on every page (FR-010). The root layout applies them: mode and density pick the theme variant links, `data-motion="reduced"` stops animation like the device setting, and text size scales the root font.
+- The organization indicator shows when the person belongs to more than one organization. Notifications, the task badge, contextual actions and utilities render nothing until their modules register components.
+- Playwright `shell.spec.ts` in English and Arabic: the menu by keyboard, Escape and outside click, breadcrumbs and section menu on an IA address, old slug redirect, recovery, quick navigation, settings applied and kept after reload, the phone menu without horizontal scroll, and axe. The language test in `admin-shell.spec.ts` now opens the settings panel first.

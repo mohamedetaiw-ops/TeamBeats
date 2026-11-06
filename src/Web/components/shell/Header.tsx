@@ -1,19 +1,8 @@
-import { getTranslations } from "next-intl/server";
 import type { Me } from "@/lib/api";
-import { LanguageSwitcher } from "./LanguageSwitcher";
-import { SignOutButton } from "./SignOutButton";
+import type { Crumb } from "@/lib/shell/types";
+import { Shell } from "@/features/shell/Shell";
 
-export async function Header({ me }: { me: Me }) {
-  const t = await getTranslations();
-  const enabled = me.tenant.enabledLocales.filter((l) => l === "ar" || l === "en");
-  return (
-    <header className="header">
-      <span className="brand">{t("app.name")}</span>
-      <div className="header-actions">
-        <bdi>{me.displayName}</bdi>
-        {enabled.length > 1 ? <LanguageSwitcher label={t("header.language")} locales={enabled} current={me.locale} /> : null}
-        <SignOutButton label={t("header.signOut")} />
-      </div>
-    </header>
-  );
+/** The page header is the spec 008 shell; kept as an entry point so every page renders the same frame. */
+export function Header({ me, breadcrumbs }: { me: Me; breadcrumbs?: Crumb[] }) {
+  return <Shell me={me} breadcrumbs={breadcrumbs} />;
 }

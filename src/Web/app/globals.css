@@ -220,7 +220,7 @@ body {
   white-space: nowrap;
 }
 
-/* Reduced motion (spec 008 FR-044): nonessential animation stops, state still changes. */
+/* Reduced motion (spec 008 FR-044): nonessential animation stops, state still changes, from the device or the personal choice. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -230,4 +230,13 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }

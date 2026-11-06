@@ -19,7 +19,7 @@ Depends on 032 (`Experience` module, pages, renderer), 033 (tokens), 003, 004, 0
 - [x] T010 [US2] [US3] Preference, layout, add panel, policy, audience rule and targeting preview endpoints
 
 ## Phase 4: Shell and home frontend (P1)
-- [ ] T011 [US1] [US4] Shell frame, accessible menus, mobile navigation, organization indicator, breadcrumbs and settings panel in English and Arabic, RTL
+- [x] T011 [US1] [US4] Shell frame, accessible menus, mobile navigation, organization indicator, breadcrumbs and settings panel in English and Arabic, RTL
 - [ ] T012 [US2] Personalization mode with add panel, move actions without drag, live announcements, undo and reset with confirmation
 - [ ] T013 Default home template with protected and personal regions; My mail and My calendar in the personal region when spec 018 features are on (FR-051)
 - [ ] T014 Tool box utilities (weather, world clock, time zone converter) as platform components with manifests
