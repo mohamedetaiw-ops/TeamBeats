@@ -182,6 +182,12 @@ public sealed class GrantConditionTests
         int Run() => resources.Count(r => Evaluator.Evaluate(grants, "content.view", AuthzTarget.Resource(r), acl[r.ResourceId].ToList()).Allowed);
         Assert.Equal(500, Run());
 
+        // Warm up first so the measured runs time the evaluator, not tiered JIT compilation still in progress.
+        for (var i = 0; i < 10; i++)
+        {
+            Run();
+        }
+
         var timings = new List<double>();
         for (var i = 0; i < 20; i++)
         {
