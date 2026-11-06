@@ -21,7 +21,7 @@ Depends on 032 (`Experience` module), 001 (tenant logo and color), 002 (org hier
 
 ## Phase 5: Frontend
 - [x] T010 Web app reads only `--tb-*` variables generated from the token schema, with a lint rule against raw colors and sizes; theme switches by scope, mode and density with no layout shift
-- [ ] T011 Brand manager page with token groups, contrast table, asset upload and live preview in both modes and directions, in English and Arabic
+- [x] T011 Brand manager page with token groups, contrast table, asset upload and live preview in both modes and directions, in English and Arabic
 
 ## Final phase
 - [ ] T012 OpenAPI, R1 implementation notes, spec evidence

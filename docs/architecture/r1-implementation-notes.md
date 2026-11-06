@@ -223,3 +223,16 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 |---|---|
 | Density | The web app uses the comfortable variant until the personal mode and density choice of spec 008 is built. |
 | Shell colors | The header still uses surface tokens; the shell tokens (`color.shell.*`, `color.nav.*`) come into use with the spec 008 shell. |
+
+## Brand manager (spec 033 T011)
+- `/admin/branding` (navigation section `branding`, permission `theme.edit`): token groups with light, dark and compact values where the schema allows them, color pickers, approved fonts and easings as choices, the contrast and size table with ratios in text, brand images, and a live preview of a sample shell, navigation, card, link, buttons and states in light and dark, left to right (English sample) and right to left (Arabic sample).
+- The page applies no theme rules. `GET /api/v1/experience/tokens` gives the schema with defaults, allowed modes, approved fonts, easings and asset slots. `POST /brands/{id}/check` now also answers `preview`, the CSS custom properties per mode as the theme CSS would serve them, which the preview panes apply directly. Brand views carry `assetUrls`.
+- Brand images: `POST /api/v1/experience/assets` (raw body, `theme.edit` at tenant scope) checks the file with the spec 001 rules, now shared as `ImageValidator` in Primitives (PNG, JPEG, static SVG, 1 MB). Files go to tenant-prefixed storage under `experience/assets/`, rows in `experience.brand_asset` are insert-only, and uploads are audited as `brand.asset_uploaded`. `GET /api/v1/experience/assets/{id}` serves them to members of the tenant, immutable and private, with `nosniff` and a sandboxing CSP for SVG. A brand version may refer only to this tenant's uploaded assets or `tenant:logo`.
+- Playwright `brand-manager.spec.ts` in English and Arabic: live preview in both modes and directions, a blocking contrast row refused on save, logo upload and an unsafe SVG refused, save as a new version that becomes the tenant theme, no horizontal scroll at 320, 375 and 1440 px, and axe.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Tenant settings link | The spec 001 settings screen is still the generic section page; its link to the brand manager comes with that screen. |
+| Asset preview sizes | The preview shows the logo in light, dark and both directions; mobile and desktop shell previews come with the spec 008 shell. |
+| Org overrides and locks | Managed through the API; their screens come with preview as organization (R2) or the shell slice. |

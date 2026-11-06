@@ -1,0 +1,284 @@
+/* Brand manager (spec 033 T011). Tokens only; logical properties only. */
+.brand-manager {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.brand-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-md);
+}
+
+.brand-toolbar p {
+  margin: 0;
+}
+
+.brand-field {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.brand-field input,
+.brand-field select,
+.brand-input input[type="text"],
+.brand-input select {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-base);
+  color: var(--tb-color-text-primary);
+  font: inherit;
+  min-inline-size: 0;
+}
+
+.brand-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: var(--tb-space-lg);
+  container-type: inline-size;
+}
+
+.brand-editor,
+.brand-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--tb-space-md);
+  align-content: start;
+  min-inline-size: 0;
+}
+
+.brand-group {
+  min-inline-size: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  padding: var(--tb-space-sm) var(--tb-space-md);
+}
+
+.brand-group summary {
+  cursor: pointer;
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.brand-section h2 {
+  margin-block: 0 var(--tb-space-sm);
+  font-size: var(--tb-font-size-lg);
+}
+
+.brand-table-wrap {
+  overflow-x: auto;
+}
+
+.brand-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.brand-table th,
+.brand-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: top;
+}
+
+.brand-table tr[data-severity="blocking"] td:last-child {
+  color: var(--tb-color-state-danger);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.brand-input {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs);
+}
+
+.brand-input input[type="text"] {
+  inline-size: 8rem;
+}
+
+.brand-swatch {
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+  border-radius: var(--tb-radius-sm);
+  background: none;
+}
+
+.brand-assets {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.brand-asset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.brand-asset-name {
+  min-inline-size: 10rem;
+}
+
+.brand-asset-image {
+  max-block-size: 2.5rem;
+  max-inline-size: 10rem;
+}
+
+.brand-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--tb-space-md);
+}
+
+/* Each pane takes the custom properties of its mode from the check answer. */
+.brand-preview {
+  margin: 0;
+  overflow: hidden;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-base);
+  color: var(--tb-color-text-primary);
+  font-family: var(--tb-font-family-latin);
+  font-size: var(--tb-font-size-md);
+  line-height: var(--tb-font-line-height-body);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+.brand-preview:lang(ar) {
+  font-family: var(--tb-font-family-arabic);
+}
+
+.brand-preview[data-mode="dark"] {
+  color-scheme: dark;
+}
+
+.brand-preview-caption {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  background: var(--tb-color-surface-sunken);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.brand-preview-shell {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-sm) var(--tb-space-md);
+  background: var(--tb-color-shell-background);
+  color: var(--tb-color-shell-text);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.brand-preview-logo {
+  max-block-size: 1.5rem;
+  max-inline-size: 6rem;
+}
+
+.brand-preview-nav {
+  display: flex;
+  gap: var(--tb-space-md);
+  padding: var(--tb-space-xs) var(--tb-space-md);
+  background: var(--tb-color-nav-background);
+  color: var(--tb-color-nav-text);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.brand-preview-nav [aria-current="page"] {
+  color: var(--tb-color-nav-active);
+  box-shadow: inset 0 calc(-1 * var(--tb-border-width-thick)) 0 var(--tb-color-nav-active);
+}
+
+.brand-preview-card {
+  margin: var(--tb-space-md);
+  padding: var(--tb-space-md);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.brand-preview-card h3 {
+  margin-block: 0 var(--tb-space-sm);
+  font-size: var(--tb-font-size-lg);
+  line-height: var(--tb-font-line-height-heading);
+}
+
+.brand-preview-card p {
+  margin-block: 0 var(--tb-space-sm);
+}
+
+.brand-preview-card a {
+  color: var(--tb-color-link);
+}
+
+.brand-preview-secondary {
+  color: var(--tb-color-text-secondary);
+}
+
+.brand-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin-block-end: var(--tb-space-sm);
+}
+
+.brand-preview-primary,
+.brand-preview-outline,
+.brand-preview-state {
+  padding: var(--tb-space-xs) var(--tb-space-md);
+  border-radius: var(--tb-radius-sm);
+  font-size: var(--tb-font-size-sm);
+}
+
+.brand-preview-primary {
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
+}
+
+.brand-preview-outline {
+  border: var(--tb-border-width-thin) solid var(--tb-color-accent-base);
+  color: var(--tb-color-link);
+}
+
+.brand-preview-state {
+  border: var(--tb-border-width-thin) solid currentcolor;
+}
+
+.brand-preview-state[data-state="success"] {
+  color: var(--tb-color-state-success);
+}
+
+.brand-preview-state[data-state="warning"] {
+  color: var(--tb-color-state-warning);
+}
+
+.brand-preview-state[data-state="danger"] {
+  color: var(--tb-color-state-danger);
+}
+
+@container (width < 56rem) {
+  .brand-preview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The checks and preview stay in view while the editor scrolls. */
+@media (width > 64rem) {
+  .brand-side {
+    position: sticky;
+    inset-block-start: var(--tb-space-md);
+    align-self: start;
+  }
+}
+
+@media (width <= 64rem) {
+  .brand-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

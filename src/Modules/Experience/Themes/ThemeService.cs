@@ -23,7 +23,11 @@ public sealed record BrandRequest(string? Name, IReadOnlyDictionary<string, Toke
 public sealed record BrandSummary(Guid Id, string Name, int CurrentVersion, bool Seeded, IReadOnlyList<string> AssignedScopes);
 
 public sealed record BrandView(Guid Id, string Name, int Version, bool Seeded, bool StrictContrast, IReadOnlyDictionary<string, TokenValue> Tokens,
-    IReadOnlyDictionary<string, string> Assets, IReadOnlyList<ContrastFinding> Findings);
+    IReadOnlyDictionary<string, string> Assets, IReadOnlyDictionary<string, string> AssetUrls, IReadOnlyList<ContrastFinding> Findings);
+
+/// <summary>One token of the schema with its platform defaults, for editors (spec 033 T011).</summary>
+public sealed record TokenSchemaEntry(string Name, string Group, string Type, string CssName, string Light, string? Dark, string? Compact,
+    string? Script, IReadOnlyList<string> Modes);
 
 public sealed record AssignmentRequest(Guid? BrandId, IReadOnlyDictionary<string, TokenValue>? Overrides);
 
@@ -32,6 +36,11 @@ public sealed record AssignmentView(string Scope, Guid? BrandId, IReadOnlyDictio
 public sealed record LockRequest(IReadOnlyList<string>? Settings);
 
 public sealed record LockView(string Setting, string Scope, bool Inherited, bool Permanent);
+
+public sealed record AssetView(string Reference, string Url, string ContentType, int Bytes);
+
+/// <summary>Check answer: findings plus the CSS custom properties of the edited brand per mode, for the live preview.</summary>
+public sealed record BrandCheck(IReadOnlyList<ContrastFinding> Findings, IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Preview);
 
 public sealed record ThemeVariant(string Mode, string Density, string CssUrl, IReadOnlyDictionary<string, string> Tokens);
 
@@ -53,6 +62,7 @@ public sealed partial class ThemeService(
     ITenantSettingsReader tenantSettings,
     IAuditWriter audit,
     IOutbox outbox,
+    TenantObjectStorage storage,
     IMemoryCache cache,
     ILogger<ThemeService> logger)
 {
@@ -95,7 +105,7 @@ public sealed partial class ThemeService(
     {
         await authz.DemandAsync(Permissions.ThemeEdit, AuthzTarget.Tenant, ct);
         await EnsureSeededAsync(ct);
-        var (tokens, assets) = ValidateBrand(request);
+        var (tokens, assets) = await ValidateBrandAsync(request, ct);
         var findings = BrandFindings(tokens, request.StrictContrast);
 
         await session.ExecAsync("select pg_advisory_xact_lock(hashtext('experience.brand:' || @t::text))", new { t = context.RequireTenant() }, ct);
@@ -127,7 +137,7 @@ public sealed partial class ThemeService(
             // A brand in use changes what employees see, so the change is a publish.
             await authz.DemandAsync(Permissions.ThemePublish, AuthzTarget.Tenant, ct);
         }
-        var (tokens, assets) = ValidateBrand(request);
+        var (tokens, assets) = await ValidateBrandAsync(request, ct);
         var findings = BrandFindings(tokens, request.StrictContrast);
         foreach (var scope in assignments.Where(a => a.BrandId == id).Select(a => a.Scope))
         {
@@ -143,7 +153,7 @@ public sealed partial class ThemeService(
     }
 
     /// <summary>Findings for a candidate version of a brand without saving (plan API, <c>/check</c>).</summary>
-    public async Task<IReadOnlyList<ContrastFinding>> CheckBrandAsync(Guid id, BrandRequest request, CancellationToken ct)
+    public async Task<BrandCheck> CheckBrandAsync(Guid id, BrandRequest request, CancellationToken ct)
     {
         await authz.DemandAsync(Permissions.ThemeEdit, AuthzTarget.Tenant, ct);
         if (await BrandAsync(id, null, ct) is null)
@@ -155,9 +165,51 @@ public sealed partial class ThemeService(
         errors.ThrowIfAny();
         var tokens = new Dictionary<string, TokenValue>(request.Tokens ?? new Dictionary<string, TokenValue>());
         ThrowIfCycles(tokens);
-        return ThemeEngine.Check(ThemeEngine.Resolve([new ThemeLayer(0, null, "brand", null, null, tokens)], new Dictionary<string, (int, Guid?)>()),
-            request.StrictContrast);
+        var resolved = ThemeEngine.Resolve([new ThemeLayer(0, null, "brand", null, null, tokens)], new Dictionary<string, (int, Guid?)>());
+        var preview = ThemeModes.Modes.ToDictionary(m => m, m => ThemeEngine.Properties(resolved.Variants[$"{m}.{ThemeModes.Comfortable}"]));
+        return new BrandCheck(ThemeEngine.Check(resolved, request.StrictContrast), preview);
     }
+
+    // Brand assets (US4)
+
+    /// <summary>
+    /// Stores a brand image after the spec 001 checks (PNG, JPEG, static SVG, 1 MB) under the tenant's storage prefix.
+    /// The asset takes effect only when a brand version refers to it, which is the audited publish.
+    /// </summary>
+    public async Task<AssetView> UploadAssetAsync(string? contentType, byte[] data, CancellationToken ct)
+    {
+        await authz.DemandAsync(Permissions.ThemeEdit, AuthzTarget.Tenant, ct);
+        var extension = ImageValidator.Validate("asset", contentType, data);
+        var mime = extension switch { "png" => "image/png", "jpg" => "image/jpeg", _ => "image/svg+xml" };
+        var id = Ids.New();
+        var key = $"experience/assets/{id:N}.{extension}";
+        using (var stream = new MemoryStream(data))
+        {
+            await storage.PutAsync(key, stream, mime, ct);
+        }
+        await session.ExecAsync(
+            "insert into experience.brand_asset (tenant_id, id, object_key, content_type, bytes, created_by) values (@t, @id, @key, @mime, @bytes, @a)",
+            new { t = context.RequireTenant(), id, key, mime, bytes = data.Length, a = context.ActorId }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.BrandAssetUploaded, "brand_asset", id.ToString(),
+            Changes: new { contentType = mime, bytes = data.Length }), ct);
+        return new AssetView($"asset:{id}", AssetUrl(id), mime, data.Length);
+    }
+
+    /// <summary>Any member of the tenant may read brand assets, because the shell shows them. Other tenants get not found.</summary>
+    public async Task<(Stream Content, string ContentType)> OpenAssetAsync(Guid id, CancellationToken ct)
+    {
+        var row = await session.QuerySingleOrDefaultAsync(
+            "select object_key, content_type from experience.brand_asset where id = @id", new { id },
+            r => (Key: r.Get<string>("object_key")!, Type: r.Get<string>("content_type")!), ct);
+        if (row.Key is null)
+        {
+            throw AppException.NotFound();
+        }
+        var stream = await storage.OpenReadAsync(row.Key, ct) ?? throw AppException.NotFound();
+        return (stream, row.Type);
+    }
+
+    public static string AssetUrl(Guid id) => $"/api/v1/experience/assets/{id}";
 
     // Assignments and overrides
 
@@ -444,7 +496,8 @@ public sealed partial class ThemeService(
 
     private static ThemeLayer Layer(int depth, Guid? scope, BrandRow brand) => new(depth, scope, "brand", brand.Id, brand.Version, brand.Tokens);
 
-    private (Dictionary<string, TokenValue> Tokens, Dictionary<string, string> Assets) ValidateBrand(BrandRequest request)
+    private async Task<(Dictionary<string, TokenValue> Tokens, Dictionary<string, string> Assets)> ValidateBrandAsync(BrandRequest request,
+        CancellationToken ct)
     {
         var errors = new ValidationErrors();
         if (string.IsNullOrWhiteSpace(request.Name) || request.Name.Trim().Length > 80)
@@ -460,6 +513,13 @@ public sealed partial class ThemeService(
             }
             else if (!AssetReference().IsMatch(reference ?? ""))
             {
+                errors.Add("assets." + slot, "validation.theme.asset_reference_invalid");
+            }
+            else if (reference!.StartsWith("asset:", StringComparison.Ordinal)
+                && await session.ScalarAsync<long>("select count(*) from experience.brand_asset where id = @id",
+                    new { id = Guid.Parse(reference["asset:".Length..]) }, ct) == 0)
+            {
+                // Uploaded assets only, and only this tenant's: row-level security hides the rest.
                 errors.Add("assets." + slot, "validation.theme.asset_reference_invalid");
             }
         }
@@ -619,7 +679,14 @@ public sealed partial class ThemeService(
     private static string ScopeName(Guid? unit) => unit?.ToString() ?? TenantScope;
 
     private static BrandView View(BrandRow brand, IReadOnlyList<ContrastFinding> findings) =>
-        new(brand.Id, brand.Name, brand.Version, brand.Seeded, brand.Strict, brand.Tokens, brand.Assets, findings);
+        new(brand.Id, brand.Name, brand.Version, brand.Seeded, brand.Strict, brand.Tokens, brand.Assets,
+            brand.Assets.ToDictionary(a => a.Key, a => AssetUrlOf(a.Value)), findings);
+
+    /// <summary>Where the browser loads an asset reference: the spec 001 logo, or an uploaded brand asset.</summary>
+    public static string AssetUrlOf(string reference) =>
+        reference == "tenant:logo" ? "/api/v1/tenant/branding/logo" : AssetUrl(Guid.Parse(reference["asset:".Length..]));
+
+    public static IReadOnlyList<string> Slots => AssetSlots;
 
     public static string Hash(string css) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(css)))[..16];
 

@@ -109,12 +109,12 @@ public static class TenancyModule
         {
             await authz.DemandAsync(Permissions.TenantSettingsManage, AuthzTarget.Tenant, ct);
             using var buffer = new MemoryStream();
-            var limited = new byte[LogoValidator.MaxBytes + 1];
+            var limited = new byte[ImageValidator.MaxBytes + 1];
             int read, total = 0;
             while ((read = await http.Body.ReadAsync(limited.AsMemory(total, limited.Length - total), ct)) > 0)
             {
                 total += read;
-                if (total > LogoValidator.MaxBytes)
+                if (total > ImageValidator.MaxBytes)
                 {
                     throw AppException.Validation("logo", "validation.logo.size");
                 }

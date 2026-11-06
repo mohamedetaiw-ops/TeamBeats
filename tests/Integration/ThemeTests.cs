@@ -336,4 +336,95 @@ public sealed class ThemeTests(TenantWorld world)
         AssertOk(edit, await edit.Content.ReadAsStringAsync());
         Assert.Equal("#5eead4", Value(await ThemeAsync(t, "tenant"), "color.accent.base", "dark"));
     }
+
+    private static readonly byte[] Png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52];
+
+    private static Task<HttpResponseMessage> UploadAsync(TestTenant t, string user, byte[] data, string contentType)
+    {
+        var content = new ByteArrayContent(data);
+        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        return t[user].Client.PostAsync("/api/v1/experience/assets", content);
+    }
+
+    [Fact]
+    public async Task Brand_assets_are_validated_stored_per_tenant_and_readable_by_members_only()
+    {
+        var a = world.A;
+        var b = world.B;
+        var uploaded = await UploadAsync(a, "admin", Png, "image/png");
+        Assert.Equal(HttpStatusCode.Created, uploaded.StatusCode);
+        var asset = await uploaded.Content.ReadFromJsonAsync<JsonElement>();
+        var reference = asset.GetProperty("reference").GetString()!;
+        var url = asset.GetProperty("url").GetString()!;
+        Assert.StartsWith("asset:", reference);
+        Assert.Equal("image/png", asset.GetProperty("contentType").GetString());
+
+        // Members see the asset, because the shell shows it; the URL is useless in another tenant.
+        var read = await a["employee_holding"].Client.GetAsync(url);
+        Assert.Equal(HttpStatusCode.OK, read.StatusCode);
+        Assert.Equal(Png, await read.Content.ReadAsByteArrayAsync());
+        Assert.Equal("nosniff", read.Headers.GetValues("X-Content-Type-Options").Single());
+        Assert.Equal(HttpStatusCode.NotFound, (await b["admin"].Client.GetAsync(url)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await a["admin"].Client.GetAsync($"/api/v1/experience/assets/{Guid.NewGuid()}")).StatusCode);
+
+        var brand = await CreateBrandAsync(a, Code("Logo"), new(), "admin");
+        var saved = await a["admin"].Client.PutAsJsonAsync($"/api/v1/experience/brands/{brand.GetProperty("id").GetGuid()}",
+            new { name = "Logo", tokens = new Dictionary<string, object>(), assets = new Dictionary<string, string> { ["logo"] = reference } });
+        AssertOk(saved, await saved.Content.ReadAsStringAsync());
+        var view = await saved.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(reference, view.GetProperty("assets").GetProperty("logo").GetString());
+        Assert.Equal(url, view.GetProperty("assetUrls").GetProperty("logo").GetString());
+
+        // Another tenant cannot point its brand at this asset, and unknown assets are refused too.
+        var foreign = await b["admin"].Client.PostAsJsonAsync("/api/v1/experience/brands",
+            new { name = Code("Foreign"), tokens = new Dictionary<string, object>(), assets = new Dictionary<string, string> { ["logo"] = reference } });
+        Assert.Equal(HttpStatusCode.BadRequest, foreign.StatusCode);
+        Assert.Contains("validation.theme.asset_reference_invalid", await foreign.Content.ReadAsStringAsync());
+
+        await world.Database.AssertAuditedAsync(a.Id, AuditActions.BrandAssetUploaded, reference["asset:".Length..]);
+    }
+
+    [Fact]
+    public async Task Asset_upload_needs_theme_edit_and_refuses_unsafe_or_large_files()
+    {
+        var t = world.A;
+        Assert.Equal(HttpStatusCode.Forbidden, (await UploadAsync(t, "employee_holding", Png, "image/png")).StatusCode);
+
+        var script = Encoding.UTF8.GetBytes("<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>");
+        var unsafeSvg = await UploadAsync(t, "admin", script, "image/svg+xml");
+        Assert.Equal(HttpStatusCode.BadRequest, unsafeSvg.StatusCode);
+        Assert.Contains("validation.asset.unsafe_svg", await unsafeSvg.Content.ReadAsStringAsync());
+
+        var disguised = await UploadAsync(t, "admin", Encoding.UTF8.GetBytes("<svg/>"), "image/png");
+        Assert.Contains("validation.asset.type", await disguised.Content.ReadAsStringAsync());
+
+        var large = await UploadAsync(t, "admin", [.. Png, .. new byte[1024 * 1024]], "image/png");
+        Assert.Equal(HttpStatusCode.BadRequest, large.StatusCode);
+        Assert.Contains("validation.asset.size", await large.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Check_returns_the_preview_properties_of_both_modes()
+    {
+        var t = world.A;
+        var brand = (await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/brands"))[0].GetProperty("id").GetGuid();
+        var check = await t["admin"].Client.PostAsJsonAsync($"/api/v1/experience/brands/{brand}/check", new
+        {
+            name = "Preview",
+            tokens = new Dictionary<string, object> { ["color.accent.base"] = Token("#0f766e", "#5eead4"), ["color.link"] = Token("{color.accent.base}") },
+        });
+        AssertOk(check, await check.Content.ReadAsStringAsync());
+        var preview = (await check.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("preview");
+        Assert.Equal("#0f766e", preview.GetProperty("light").GetProperty("--tb-color-accent-base").GetString());
+        Assert.Equal("#5eead4", preview.GetProperty("dark").GetProperty("--tb-color-link").GetString());
+        Assert.StartsWith("\"Inter\"", preview.GetProperty("light").GetProperty("--tb-font-family-latin").GetString());
+
+        var schema = await t["employee_holding"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/tokens");
+        var tokens = schema.GetProperty("tokens").EnumerateArray().ToList();
+        Assert.Equal(preview.GetProperty("light").EnumerateObject().Count(), tokens.Count);
+        var accent = tokens.Single(x => x.GetProperty("name").GetString() == "color.accent.base");
+        Assert.Equal("color", accent.GetProperty("group").GetString());
+        Assert.Equal(["dark"], accent.GetProperty("modes").EnumerateArray().Select(m => m.GetString()));
+        Assert.Contains("logo", schema.GetProperty("assetSlots").EnumerateArray().Select(m => m.GetString()));
+    }
 }

@@ -1,13 +1,12 @@
 using System.Xml;
-using TeamBeats.Primitives;
-
-namespace TeamBeats.Modules.Tenancy;
+namespace TeamBeats.Primitives;
 
 /// <summary>
-/// Logo rules (spec 001 US2 scenario 4): PNG, JPEG or SVG up to 1 MB. SVG must be static artwork: scripts,
-/// event handlers, foreign objects, external references and DTDs are rejected rather than silently rewritten.
+/// Image rules shared by the tenant logo (spec 001 US2 scenario 4) and brand assets (spec 033 US4): PNG, JPEG or SVG up
+/// to 1 MB. SVG must be static artwork: scripts, event handlers, foreign objects, external references and DTDs are
+/// rejected rather than silently rewritten. Errors use the keys <c>validation.{field}.size</c> and <c>validation.{field}.type</c>.
 /// </summary>
-public static class LogoValidator
+public static class ImageValidator
 {
     public const int MaxBytes = 1024 * 1024;
 
@@ -16,11 +15,11 @@ public static class LogoValidator
         "script", "foreignObject", "iframe", "embed", "object", "audio", "video", "handler", "listener", "set", "animate",
     };
 
-    public static string Validate(string? contentType, byte[] data)
+    public static string Validate(string field, string? contentType, byte[] data)
     {
         if (data.Length == 0 || data.Length > MaxBytes)
         {
-            throw AppException.Validation("logo", "validation.logo.size");
+            throw AppException.Validation(field, $"validation.{field}.size");
         }
 
         var type = contentType?.Split(';')[0].Trim().ToLowerInvariant();
@@ -31,14 +30,14 @@ public static class LogoValidator
             case "image/jpeg" when data.Length > 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF:
                 return "jpg";
             case "image/svg+xml":
-                ValidateSvg(data);
+                ValidateSvg(field, data);
                 return "svg";
             default:
-                throw AppException.Validation("logo", "validation.logo.type");
+                throw AppException.Validation(field, $"validation.{field}.type");
         }
     }
 
-    private static void ValidateSvg(byte[] data)
+    private static void ValidateSvg(string field, byte[] data)
     {
         var settings = new XmlReaderSettings
         {
@@ -56,7 +55,7 @@ public static class LogoValidator
             {
                 if (reader.NodeType == XmlNodeType.ProcessingInstruction)
                 {
-                    Reject();
+                    Reject(field);
                 }
                 if (reader.NodeType != XmlNodeType.Element)
                 {
@@ -67,14 +66,14 @@ public static class LogoValidator
                 {
                     if (reader.LocalName != "svg")
                     {
-                        Reject();
+                        Reject(field);
                     }
                     sawRoot = true;
                 }
 
                 if (ForbiddenSvgElements.Contains(reader.LocalName))
                 {
-                    Reject();
+                    Reject(field);
                 }
 
                 if (reader.HasAttributes)
@@ -85,17 +84,17 @@ public static class LogoValidator
                         var value = reader.Value.Trim();
                         if (name.StartsWith("on", StringComparison.OrdinalIgnoreCase))
                         {
-                            Reject();
+                            Reject(field);
                         }
                         if ((name is "href" or "src") && !value.StartsWith('#'))
                         {
-                            Reject();
+                            Reject(field);
                         }
                         if (value.Contains("javascript:", StringComparison.OrdinalIgnoreCase)
                             || value.Contains("url(http", StringComparison.OrdinalIgnoreCase)
                             || value.Contains("@import", StringComparison.OrdinalIgnoreCase))
                         {
-                            Reject();
+                            Reject(field);
                         }
                     }
                     reader.MoveToElement();
@@ -107,21 +106,21 @@ public static class LogoValidator
                     if (css.Contains("@import", StringComparison.OrdinalIgnoreCase) || css.Contains("url(", StringComparison.OrdinalIgnoreCase)
                         || css.Contains("expression(", StringComparison.OrdinalIgnoreCase))
                     {
-                        Reject();
+                        Reject(field);
                     }
                 }
             }
 
             if (!sawRoot)
             {
-                Reject();
+                Reject(field);
             }
         }
         catch (XmlException)
         {
-            Reject();
+            Reject(field);
         }
     }
 
-    private static void Reject() => throw AppException.Validation("logo", "validation.logo.unsafe_svg");
+    private static void Reject(string field) => throw AppException.Validation(field, $"validation.{field}.unsafe_svg");
 }

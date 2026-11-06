@@ -36,7 +36,8 @@
       "plan": "Plan",
       "identity": "Sign-in settings",
       "audit": "Audit log",
-      "connections": "Connections"
+      "connections": "Connections",
+      "branding": "Brand"
     }
   },
   "header": {
@@ -91,6 +92,91 @@
       "counter": "Clicked {count} times",
       "restricted": "Restricted block",
       "old": "Older block"
+    }
+  },
+  "brand": {
+    "title": "Brand",
+    "intro": "Set the colors, type, spacing and images your workspace uses. Changes publish when you save, and the checks below run as you type.",
+    "brandLabel": "Brand profile",
+    "name": "Brand name",
+    "version": "Version {version}",
+    "strict": "Treat accent contrast warnings as blocking",
+    "save": "Save and publish",
+    "saving": "Saving…",
+    "saved": "Saved as version {version}.",
+    "blocked": "Not saved: fix the blocking contrast checks first.",
+    "invalid": "Not saved: some values are not valid.",
+    "saveFailed": "Not saved. Try again in a moment.",
+    "tokenInput": "{token}, {mode}",
+    "pickColor": "Pick a color for {token}, {mode}",
+    "useDefault": "Default ({value})",
+    "columns": {
+      "token": "Token"
+    },
+    "modes": {
+      "light": "Light",
+      "dark": "Dark",
+      "comfortable": "Comfortable",
+      "compact": "Compact"
+    },
+    "groups": {
+      "color": "Colors",
+      "font": "Typography",
+      "space": "Spacing",
+      "radius": "Corner radius",
+      "border": "Borders",
+      "shadow": "Shadows",
+      "motion": "Motion",
+      "state": "Interaction states"
+    },
+    "contrast": {
+      "title": "Contrast and size checks",
+      "token": "Token",
+      "against": "Checked against",
+      "mode": "Mode",
+      "ratio": "Ratio",
+      "required": "Required",
+      "result": "Result",
+      "blocking": "Blocks saving",
+      "warning": "Warning",
+      "empty": "Every pair passes the contrast and size checks."
+    },
+    "assets": {
+      "title": "Brand images",
+      "rules": "PNG, JPEG or SVG up to 1 MB. SVG files with scripts or external content are refused.",
+      "none": "Not set",
+      "upload": "Upload",
+      "uploading": "Uploading…",
+      "uploadFor": "Upload an image for {slot}",
+      "remove": "Remove",
+      "failed": "The image could not be uploaded.",
+      "slots": {
+        "logo": "Logo",
+        "lockup": "Logo lockup",
+        "favicon": "Browser icon",
+        "default_image": "Default image",
+        "sign_in_image": "Sign-in image"
+      }
+    },
+    "preview": {
+      "title": "Live preview",
+      "pane": "{mode}, {direction}",
+      "ltr": "left to right",
+      "rtl": "right to left"
+    },
+    "sample": {
+      "shell": "Company intranet",
+      "navHome": "Home",
+      "navNews": "News",
+      "heading": "Quarterly town hall",
+      "body": "Join the leadership team on Thursday for results, plans and questions.",
+      "secondary": "Posted by Internal Communications",
+      "link": "Read the agenda",
+      "primary": "Register",
+      "secondaryAction": "Add to calendar",
+      "success": "Approved",
+      "warning": "Due soon",
+      "danger": "Overdue"
     }
   }
 }
