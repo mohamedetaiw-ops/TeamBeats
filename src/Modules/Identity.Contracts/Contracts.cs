@@ -29,6 +29,9 @@ public sealed record UserDeprovisioned(Guid UserId, string Reason) : IIntegratio
 public sealed record UserProfileSynced(Guid UserId, IReadOnlyList<string> ChangedFields) : IIntegrationEvent;
 public sealed record SessionRevoked(Guid UserId, int Count, string Reason) : IIntegrationEvent;
 
+/// <summary>One session ended by sign-out, so anything held for that session can be dropped (spec 003 FR-016).</summary>
+public sealed record SessionEnded(Guid UserId, Guid SessionId) : IIntegrationEvent;
+
 /// <summary>A synced, enabled user and the organization values the directory holds for them (spec 002 US5).</summary>
 public sealed record DirectoryPerson(
     Guid UserId,
