@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { getTheme, renderPage } from "@/lib/experience/client";
+import { getPreferences } from "@/lib/shell/client";
 import { Header } from "@/components/shell/Header";
 import { ThemeLinks } from "@/components/shell/ThemeLinks";
 import { PageRenderer } from "@/components/experience/PageRenderer";
@@ -23,10 +24,13 @@ export default async function PublishedPage({ params }: { params: Promise<{ slug
   }
   // The layout already links the tenant theme; a page owned by an org unit adds the theme of that scope after it.
   const scoped = page.data.themeScope === "tenant" ? null : await getTheme(page.data.themeScope);
+  const prefs = await getPreferences();
   const t = await getTranslations("experience");
   return (
     <>
-      {scoped?.ok ? <ThemeLinks variants={scoped.data.variants} /> : null}
+      {scoped?.ok ? (
+        <ThemeLinks variants={scoped.data.variants} density={prefs.density === "compact" ? "compact" : "comfortable"} mode={prefs.mode === "light" || prefs.mode === "dark" ? prefs.mode : "system"} />
+      ) : null}
       <Header me={me.data} />
       <main id="main">
         <PageRenderer page={page.data} tabsLabel={t("panels")} tabLabel={(n) => t("panel", { number: n })} />

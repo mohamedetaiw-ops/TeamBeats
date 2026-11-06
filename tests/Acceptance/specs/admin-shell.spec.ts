@@ -39,7 +39,9 @@ test.describe("language and keyboard", () => {
     await signInWithDevForm(page, tenant.key, tenant.adminEmail, "en");
     await expect(page.locator("html")).toHaveAttribute("dir", "ltr");
 
-    await page.getByLabel(msg("en", "header.language")).selectOption("ar");
+    // Language lives with the other personal settings in one place on every page (spec 008 FR-010).
+    await page.getByRole("button", { name: msg("en", "shell.settings.open") }).click();
+    await page.getByLabel(msg("en", "shell.settings.language")).selectOption("ar");
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.locator("html")).toHaveAttribute("lang", "ar");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg("ar", "home.title", { name: tenant.adminEmail }));
@@ -65,7 +67,7 @@ test.describe("language and keyboard", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(`${hostOrigin(tenant.key)}/admin`);
 
-    await page.getByRole("button", { name: msg("en", "header.signOut") }).focus();
+    await page.getByRole("button", { name: msg("en", "shell.signOut") }).focus();
     await page.keyboard.press("Enter");
     await page.waitForURL(`${hostOrigin(tenant.key)}/signin`);
 

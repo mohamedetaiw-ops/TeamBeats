@@ -1,0 +1,257 @@
+/* The spec 008 shell. Colors come from the shell and navigation tokens, so a tenant brand restyles it. */
+.shell {
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.shell-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-md);
+  padding-block: var(--tb-space-sm);
+  padding-inline: var(--tb-space-md);
+  background: var(--tb-color-shell-background);
+  color: var(--tb-color-shell-text);
+}
+
+.shell-bar a,
+.shell-bar .button-quiet,
+.shell-bar .button.secondary {
+  color: inherit;
+}
+
+.shell-bar .button.secondary {
+  border-color: currentcolor;
+}
+
+.shell-bar :focus-visible {
+  outline-color: var(--tb-color-focus-ring-inverse);
+}
+
+.shell-slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-md);
+  min-inline-size: 0;
+}
+
+.shell-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-md);
+  min-inline-size: 0;
+}
+
+.shell-user {
+  overflow-wrap: anywhere;
+  min-inline-size: 0;
+}
+
+.shell-menu {
+  position: relative;
+}
+
+.shell-menu-list,
+.shell-submenu,
+.shell-section ul,
+.shell-search-results,
+.shell-breadcrumbs ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shell-menu-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+.shell-menu-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.shell-menu-item > a,
+.shell-submenu a,
+.shell-section a,
+.shell-search-results a {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  min-block-size: 2.75rem;
+  padding-inline: var(--tb-space-sm);
+}
+
+.shell-submenu,
+.shell-search-results,
+.shell-settings-panel {
+  position: absolute;
+  z-index: 10;
+  inset-inline-start: 0;
+  inset-block-start: 100%;
+  min-inline-size: 14rem;
+  max-inline-size: min(90vw, 24rem);
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-nav-background);
+  box-shadow: var(--tb-shadow-md);
+  color: var(--tb-color-nav-text);
+}
+
+.shell-bar .shell-submenu a,
+.shell-bar .shell-search-results a {
+  color: var(--tb-color-nav-text);
+}
+
+.shell-settings,
+.shell-search {
+  position: relative;
+}
+
+.shell-settings-panel {
+  inset-inline: auto 0;
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.shell-settings-panel[hidden],
+.shell-submenu[hidden] {
+  display: none;
+}
+
+.shell-setting {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.shell-setting select,
+.shell-search input {
+  min-block-size: 2.75rem;
+  font: inherit;
+}
+
+.shell-search input {
+  inline-size: min(100%, 18rem);
+}
+
+.shell-owner {
+  font-size: var(--tb-font-size-xs);
+  opacity: 0.85;
+}
+
+.shell-chevron {
+  display: inline-block;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-block-end: var(--tb-border-width-thick) solid currentcolor;
+  border-inline-end: var(--tb-border-width-thick) solid currentcolor;
+  transform: rotate(45deg);
+}
+
+[aria-expanded="true"] > .shell-chevron {
+  transform: rotate(-135deg);
+}
+
+.shell-menu-button {
+  display: none;
+}
+
+.shell-below {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-md);
+  padding-inline: var(--tb-space-md);
+  background: var(--tb-color-nav-background);
+  color: var(--tb-color-nav-text);
+}
+
+.shell-below:empty {
+  display: none;
+}
+
+.shell > .shell-menu {
+  padding-inline: var(--tb-space-md);
+  background: var(--tb-color-nav-background);
+  color: var(--tb-color-nav-text);
+}
+
+.shell > .shell-menu a,
+.shell > .shell-menu .button-quiet {
+  color: var(--tb-color-nav-text);
+}
+
+.shell-organization {
+  margin: 0;
+  padding-block: var(--tb-space-sm);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.shell-breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+}
+
+.shell-breadcrumbs li:not(:last-child)::after {
+  content: "/";
+  padding-inline-start: var(--tb-space-xs);
+}
+
+.shell-below .shell-breadcrumbs a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+  color: var(--tb-color-link);
+}
+
+.shell-below .shell-breadcrumbs a[aria-current="page"] {
+  color: var(--tb-color-text-primary);
+  text-decoration: none;
+}
+
+.shell-section {
+  padding-inline: var(--tb-space-md);
+}
+
+.shell-section ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+/* Narrow screens: the same menu, with the same labels, behind one button (FR-018). */
+@media (width <= 48rem) {
+  .shell-menu-button {
+    display: inline-flex;
+  }
+
+  .shell-menu[data-expanded="false"] > .shell-menu-list {
+    display: none;
+  }
+
+  .shell-menu[data-expanded="true"] > .shell-menu-list {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .shell-menu-item {
+    flex-wrap: wrap;
+  }
+
+  .shell-submenu {
+    position: static;
+    inline-size: 100%;
+    box-shadow: none;
+  }
+
+  .shell-search input {
+    inline-size: 100%;
+  }
+}

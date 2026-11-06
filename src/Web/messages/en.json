@@ -262,5 +262,53 @@
       "cancel": "Cancel selection",
       "archive": "Archive"
     }
+  },
+  "shell": {
+    "home": "Home",
+    "signOut": "Sign out",
+    "globalNav": "Main",
+    "organizationNav": "{name}",
+    "menu": "Menu",
+    "submenu": "More in {label}",
+    "organization": "Organization: {name}",
+    "breadcrumbs": "Breadcrumb",
+    "sectionNav": "In this section",
+    "search": {
+      "label": "Go to a page",
+      "placeholder": "Go to a page",
+      "count": "{count, plural, =0 {No pages found} one {# page found} other {# pages found}}"
+    },
+    "recovery": {
+      "title": "This page is not available",
+      "message": "It may have moved, or you may not have access. Go to the home page or try a search.",
+      "home": "Go to the home page"
+    },
+    "settings": {
+      "open": "Settings",
+      "language": "Language",
+      "mode": {
+        "label": "Appearance",
+        "system": "Same as device",
+        "light": "Light",
+        "dark": "Dark"
+      },
+      "density": {
+        "label": "Density",
+        "comfortable": "Comfortable",
+        "compact": "Compact"
+      },
+      "motion": {
+        "label": "Motion",
+        "system": "Same as device",
+        "reduced": "Reduced"
+      },
+      "text_scale": {
+        "label": "Text size",
+        "100": "100%",
+        "125": "125%",
+        "150": "150%",
+        "200": "200%"
+      }
+    }
   }
 }
