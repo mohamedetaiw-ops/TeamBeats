@@ -26,7 +26,7 @@ if (-not (Test-Path (Join-Path $Root 'config.cmd'))) {
 
 # An elevated shell cannot read the gh sign-in from the Windows credential store, so fetch the token first from a
 # normal shell (see docs/operations/ci-runner.md). It is valid for one hour and this script deletes the file.
-$tokenFile = Join-Path $env:LOCALAPPDATA 'teambeats-runner-token.txt'
+$tokenFile = Join-Path $Root '.registration-token'
 if (-not (Test-Path $tokenFile)) { throw "Token file not found: $tokenFile" }
 $token = (Get-Content $tokenFile -Raw).Trim()
 Remove-Item $tokenFile
