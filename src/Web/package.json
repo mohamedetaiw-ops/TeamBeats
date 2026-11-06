@@ -14,8 +14,9 @@
     "lint": "eslint .",
     "lint:css": "stylelint \"**/*.css\"",
     "check:messages": "node scripts/check-messages.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run lint:css && npm run check:messages && npm run check:placements",
-    "check:placements": "node scripts/check-placements.mjs"
+    "verify": "npm run typecheck && npm run lint && npm run lint:css && npm run check:messages && npm run check:placements && npm run check:tokens",
+    "check:placements": "node scripts/check-placements.mjs",
+    "check:tokens": "node scripts/check-tokens.mjs"
   },
   "dependencies": {
     "next": "16.4.2",

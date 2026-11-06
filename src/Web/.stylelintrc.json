@@ -1,14 +1,87 @@
 {
-  "extends": ["stylelint-config-standard"],
+  "extends": [
+    "stylelint-config-standard"
+  ],
   "rules": {
     "property-disallowed-list": [
-      ["/^margin-(left|right)$/", "/^padding-(left|right)$/", "/^border-(left|right)/", "left", "right", "/^border-(top|bottom)-(left|right)-radius$/"],
-      { "message": "Use logical properties (inline-start/inline-end) so layouts work in right-to-left languages." }
+      [
+        "/^margin-(left|right)$/",
+        "/^padding-(left|right)$/",
+        "/^border-(left|right)/",
+        "left",
+        "right",
+        "/^border-(top|bottom)-(left|right)-radius$/"
+      ],
+      {
+        "message": "Use logical properties (inline-start/inline-end) so layouts work in right-to-left languages."
+      }
     ],
     "declaration-property-value-disallowed-list": [
-      { "text-align": ["left", "right"], "float": ["left", "right"], "clear": ["left", "right"] },
-      { "message": "Use start/end or inline-start/inline-end so layouts work in right-to-left languages." }
+      {
+        "text-align": [
+          "left",
+          "right"
+        ],
+        "float": [
+          "left",
+          "right"
+        ],
+        "clear": [
+          "left",
+          "right"
+        ]
+      },
+      {
+        "message": "Use start/end or inline-start/inline-end so layouts work in right-to-left languages."
+      }
     ],
-    "selector-class-pattern": null
-  }
+    "selector-class-pattern": null,
+    "color-no-hex": [
+      true,
+      {
+        "message": "Use a --tb-color-* token (spec 033 T010); raw colors cannot follow the tenant theme."
+      }
+    ],
+    "color-named": [
+      "never",
+      {
+        "message": "Use a --tb-color-* token (spec 033 T010); raw colors cannot follow the tenant theme."
+      }
+    ],
+    "function-disallowed-list": [
+      [
+        "rgb",
+        "rgba",
+        "hsl",
+        "hsla",
+        "hwb",
+        "lab",
+        "lch",
+        "oklab",
+        "oklch",
+        "color",
+        "color-mix"
+      ],
+      {
+        "message": "Use a --tb-color-* token (spec 033 T010); raw colors cannot follow the tenant theme."
+      }
+    ],
+    "unit-disallowed-list": [
+      [
+        "px",
+        "pt",
+        "pc",
+        "cm",
+        "mm",
+        "in",
+        "q"
+      ],
+      {
+        "message": "Use a --tb-space-*, --tb-font-size-*, --tb-radius-* or --tb-border-width-* token (spec 033 T010), or rem for layout breakpoints."
+      }
+    ]
+  },
+  "ignoreFiles": [
+    "app/tokens.css"
+  ]
 }

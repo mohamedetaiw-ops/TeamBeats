@@ -20,7 +20,7 @@ Depends on 032 (`Experience` module), 001 (tenant logo and color), 002 (org hier
 - [x] T009 Theme and theme CSS endpoints; seeding the default brand from spec 001 tenant settings; tenant settings page links to the brand manager (the link comes with T011)
 
 ## Phase 5: Frontend
-- [ ] T010 Web app reads only `--tb-*` variables generated from the token schema, with a lint rule against raw colors and sizes; theme switches by scope, mode and density with no layout shift
+- [x] T010 Web app reads only `--tb-*` variables generated from the token schema, with a lint rule against raw colors and sizes; theme switches by scope, mode and density with no layout shift
 - [ ] T011 Brand manager page with token groups, contrast table, asset upload and live preview in both modes and directions, in English and Arabic
 
 ## Final phase

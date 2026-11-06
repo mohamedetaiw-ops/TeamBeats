@@ -3,6 +3,9 @@ import type { ReactNode } from "react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { direction, isLocale } from "@/i18n/locales";
+import { getTheme } from "@/lib/experience/client";
+import { ThemeLinks } from "@/components/shell/ThemeLinks";
+import "./tokens.css";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -14,9 +17,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const locale = await getLocale();
   const t = await getTranslations("app");
   const dir = isLocale(locale) ? direction(locale) : "ltr";
+  // The tenant theme is awaited here, before the page renders, so a page that links the theme of its own scope
+  // always comes later in the head and wins. Signed-out pages get no theme and keep the platform tokens.
+  const theme = await getTheme("tenant");
   return (
     <html lang={locale} dir={dir}>
       <body>
+        {theme.ok ? <ThemeLinks variants={theme.data.variants} /> : null}
         <a className="skip-link" href="#main">
           {t("skipToContent")}
         </a>

@@ -211,3 +211,15 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Failure telemetry sink | Failures are a `tb:placement-failure` DOM event for now; shipping them to the API is T021. |
 | Visibility rules | Still refused at save (spec 008), so the renderer has nothing to evaluate yet. |
 | Brand assets | The banner draws a labelled area because asset delivery is not built yet. |
+
+## Theme tokens in the web app (spec 033 T010)
+- `src/Web/app/tokens.css` holds the platform defaults (light, and dark under `prefers-color-scheme`) as `--tb-*` custom properties. It is generated from the token schema by `tests/Unit/WebTokensFileTests.cs`, which fails when the file drifts; regenerate with `TEAMBEATS_UPDATE_TOKENS=1`.
+- All web styles now read only these tokens. Stylelint refuses hex and named colors, color functions and absolute units such as `px`; `rem` stays for layout widths and breakpoints. `npm run check:tokens` refuses any custom property that is not a schema token or a local `--xp-*` layout property, and refuses setting a `--tb-*` token in our own CSS.
+- The root layout links the tenant theme for signed-in viewers, and a page owned by an org unit adds the theme of its scope after it. The stylesheets are render-blocking and hoisted, so the first paint already has the final tokens. Signed-out pages keep the platform defaults.
+- Playwright `theme.spec.ts`: platform tokens when signed out, the tenant accent in light and dark when signed in, and a layout shift score below 0.1.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Density | The web app uses the comfortable variant until the personal mode and density choice of spec 008 is built. |
+| Shell colors | The header still uses surface tokens; the shell tokens (`color.shell.*`, `color.nav.*`) come into use with the spec 008 shell. |
