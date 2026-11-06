@@ -3,6 +3,7 @@ using TeamBeats.Messaging;
 using TeamBeats.Modules.Identity.Directory;
 using TeamBeats.Modules.Identity.Sso;
 using TeamBeats.Modules.Integrations;
+using TeamBeats.Modules.Integrations.Microsoft365;
 using TeamBeats.Modules.Tenancy;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -88,6 +89,8 @@ public sealed class ScenarioSeeder(FakeSystems fakes, IServiceScopeFactory scope
             var created = await connections.CreateAsync(new CreateConnectionRequest("microsoft365", dir.Id, plan.ConnectionName, plan.Features), ct);
             // Admin consent for each feature, as the fake consent page would give it.
             fakes.Graph.Consent(directoryId, dir.GrantedRoles, dir.Users.Count, dir.Groups.Count);
+            fakes.Graph.AddDelegatedConsent(directoryId, plan.Features.Select(FeatureCatalogue.Find).OfType<FeatureDefinition>()
+                .SelectMany(f => f.Permissions).Where(p => p.Type == PermissionType.Delegated).Select(p => p.Name).ToArray());
             foreach (var feature in plan.Features)
             {
                 var (url, binding) = await connections.StartConsentAsync(created.Id, feature, key, $"https://{key}.invalid/consent", ct);

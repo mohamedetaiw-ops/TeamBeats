@@ -39,6 +39,7 @@ public sealed partial class FakeSystemsTests(TenantWorld world) : IAsyncLifetime
             ["Dev:MigrateOnStart"] = "false",
             ["Dev:Fakes:RunDirectorySync"] = "false",
             ["Dev:SeedTenant:Key"] = TenantKey,
+            [TeamBeats.Modules.Integrations.Microsoft365.TokenProtector.KeySetting] = ApiFactory.TokenKey,
         });
         _ = _staging.Services;
         return Task.CompletedTask;
@@ -86,6 +87,35 @@ public sealed partial class FakeSystemsTests(TenantWorld world) : IAsyncLifetime
         back.DefaultRequestHeaders.Add("Cookie", $"tb_sso={binding}");
         var landed = await back.GetAsync(callback.PathAndQuery);
         return (landed, Cookie(landed, "tb_session"), html);
+    }
+
+    [Fact]
+    public async Task An_employee_connects_Outlook_through_the_fake_Microsoft_page()
+    {
+        // Spec 018: the real connect flow (PKCE, login hint, delegated scopes) against the fake page and token endpoint.
+        var (_, session, _) = await SignInWithFakeMicrosoftAsync(Layla);
+        var employee = _staging.Tenant(TenantKey, session);
+        var start = await employee.GetAsync("/api/v1/me/outlook/connect");
+        Assert.Equal(HttpStatusCode.Redirect, start.StatusCode);
+        var location = start.Headers.Location!.ToString();
+        Assert.StartsWith($"/dev/fake/entra/{Directory}/oauth2/v2.0/authorize?", location, StringComparison.Ordinal);
+
+        var html = await (await employee.GetAsync(location)).Content.ReadAsStringAsync();
+        var picked = await employee.PostAsync(location.Split('?')[0], FormFrom(html, Layla));
+        var callback = picked.Headers.Location!;
+        Assert.Contains("code=", callback.Query, StringComparison.Ordinal);
+
+        // Shared mode: Microsoft returns to the platform host, which relays to the tenant host.
+        var relay = await _staging.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri($"https://{callback.Host}"), AllowAutoRedirect = false, HandleCookies = false,
+        }).GetAsync(callback.PathAndQuery);
+        var finish = _staging.Tenant(TenantKey, session);
+        finish.DefaultRequestHeaders.Add("Cookie", $"tb_outlook={Cookie(start, "tb_outlook")}");
+        await finish.GetAsync((relay.Headers.Location ?? callback).PathAndQuery);
+
+        var state = await (await employee.GetAsync("/api/v1/me/outlook")).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("ok", state.GetProperty("state").GetString());
     }
 
     [Fact]

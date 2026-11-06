@@ -85,7 +85,7 @@ public static class FakeEndpoints
             var users = FakeScenario.SignInUsers(f.Graph, directoryId, f.GroupsByUser(directory));
             var ar = Arabic(request);
             var hidden = new StringBuilder();
-            foreach (var key in new[] { "client_id", "redirect_uri", "state", "nonce", "code_challenge", "scope" })
+            foreach (var key in new[] { "client_id", "redirect_uri", "state", "nonce", "code_challenge", "code_challenge_method", "scope" })
             {
                 hidden.Append($"<input type=\"hidden\" name=\"{key}\" value=\"{Enc(q[key])}\">");
             }
@@ -121,6 +121,11 @@ public static class FakeEndpoints
             string code;
             if (clientId == FakeMicrosoftGraph.ClientId)
             {
+                var query = new[] { "client_id", "scope", "code_challenge_method" }.ToDictionary(k => k, k => form[k].ToString());
+                if (f.Graph.DelegatedRefusal(directoryId.ToString("D"), query) is { } refusal)
+                {
+                    return Results.Redirect(Append(redirect, $"error=consent_required&error_description={Uri.EscapeDataString(refusal)}&state={Uri.EscapeDataString(form["state"].ToString())}"));
+                }
                 code = f.Graph.IssueDelegatedCode(directoryId, user.ObjectId, clientId, redirect, form["code_challenge"].ToString(), form["scope"].ToString());
             }
             else
@@ -169,8 +174,14 @@ public static class FakeEndpoints
                 return Results.Redirect(Append(redirect, $"error=access_denied&error_description=admin_declined&state={state}"));
             }
             var d = f.Scenario.FindDirectory(directory);
-            f.Graph.Consent(directoryId, d?.GrantedRoles ?? ["User.Read.All", "Group.Read.All", "AdministrativeUnit.Read.All"],
-                f.Graph.Data(directoryId).CurrentUsers().Count, d?.Groups.Count ?? 0);
+            // ".default" consents the application permissions; named scopes are delegated permissions.
+            var scopes = FakeMicrosoftGraph.PlainScopes(form["scope"].ToString());
+            if (scopes.Contains(".default"))
+            {
+                f.Graph.Consent(directoryId, d?.GrantedRoles ?? ["User.Read.All", "Group.Read.All", "AdministrativeUnit.Read.All"],
+                    f.Graph.Data(directoryId).CurrentUsers().Count, d?.Groups.Count ?? 0);
+            }
+            f.Graph.AddDelegatedConsent(directoryId, scopes.Where(x => x != ".default").ToArray());
             return Results.Redirect(Append(redirect, $"admin_consent=True&tenant={directoryId:D}&state={state}"));
         }).DisableAntiforgery();
 

@@ -14,7 +14,7 @@ The real adapters run unchanged. Only their outbound HTTP clients are pointed at
 | Microsoft Entra ID sign-in (spec 003 US2) | `HttpOidcProvider`, HTTP client `oidc` | `FakeIdentityProvider` | Discovery, signing keys, token endpoint with client secret, redirect URI and PKCE checks. ID tokens carry `oid`, `email`, `name`, `groups`, `nonce`. |
 | Microsoft admin consent (spec 006 US5) | `HttpMicrosoftGraph.AdminConsentUrl` | `/dev/fake/entra/{directory}/v2.0/adminconsent` | A consent page that lists the requested permissions; Accept returns `admin_consent=True`, Cancel returns `access_denied`. |
 | Microsoft Graph directory (spec 003 US6, 002 US5) | `HttpMicrosoftGraph`, `MicrosoftDirectorySource`, HTTP client `msgraph` | `FakeMicrosoftGraph` | Client credentials tokens for consented directories, `$count`, `users/delta`, `groups/delta`, `administrativeUnits/delta` with paging and delta links. |
-| Microsoft Graph mail, calendar, free/busy, rooms (spec 018) | to be built by the R1 build thread, HTTP client `msgraph` | `FakeMicrosoftGraph` | Delegated authorization code tokens (with PKCE), `GET /me`, `/me/messages`, `/me/mailFolders/inbox/messages`, `/me/calendarView`, `/me/events`, `POST /me/calendar/getSchedule`, `/places/microsoft.graph.room`. Scopes are enforced: no mail scope, no mailbox. |
+| Microsoft Graph mail, calendar, free/busy, rooms (spec 018) | Outlook connect (`DelegatedAccessService`) built; reads to come, HTTP client `msgraph` | `FakeMicrosoftGraph` | Delegated authorization code tokens (with PKCE, login hint and the directory's delegated consent), `GET /me`, `/me/messages`, `/me/mailFolders/inbox/messages`, `/me/calendarView`, `/me/events`, `POST /me/calendar/getSchedule`, `/places/microsoft.graph.room`. Scopes are enforced: no mail scope, no mailbox. |
 | OpenRouter for the AI gateway (spec 013, ADR-0003) | to be built, HTTP client `openrouter` | `FakeOpenRouter` | `chat/completions` (plain and streaming), `models`, `embeddings`. Deterministic answer in the language of the question. Failure markers in the last user message: `[fake:429]`, `[fake:500]`, `[fake:timeout]`, `[fake:refuse]`. API key `fictional-openrouter-key`. |
 
 The browser pages for sign-in and consent live under `/dev/fake/entra/...`. A middleware in the development host rewrites any redirect to `https://login.microsoftonline.com/...` into `/dev/fake/entra/...`, so the browser never leaves the test environment. The pages only send the browser back to the same host or another host under the installation's base domain (no open redirect). They render in Arabic or English from `Accept-Language`, right to left for Arabic, with a banner saying the data is fictional.
@@ -44,7 +44,7 @@ Settings (`Dev:Fakes`): `Enabled`, `Scenario` (path relative to the content root
 - With fakes on, `Integrations:Microsoft365:ClientId` may not name a real application; the host sets the fake application's fictional credentials itself.
 - Staging fails to start with fakes off.
 - Scenario files may only contain addresses on reserved `.example` domains (loader check and architecture test).
-- Workers in staging run the production image, which has no fakes. Set `Workers__DirectorySync__Enabled=false` there; the staging API host runs the sync instead.
+- Workers in staging run the production image, which has no fakes, so `deploy/fly/staging/workers.toml` sets `Workers__DirectorySync__Enabled=false`; the staging API host runs the sync instead.
 
 ## 5. The `staging-demo` scenario
 `src/Api.DevHost/scenarios/staging-demo.json`, all fictional:
@@ -60,7 +60,7 @@ On start, the host connects the seeded tenant through each module's own use case
 
 ### Sign in on staging
 - **Test admin**: "Sign in as test admin" on the sign-in page (spec 003 US7).
-- **Any fictional employee**: "Sign in with Microsoft" opens the fake Microsoft page; pick a person. Layla Haddad is a tenant administrator through her group; Omar Al Farsi is an integration administrator; Maryam Al Abdullah is a content editor; everyone else is an employee.
+- **Any fictional employee**: "Sign in with Microsoft" opens the fake Microsoft page; pick a person. Connecting Outlook goes through the same page; the scenario's directory has already consented the delegated mail and calendar permissions. Layla Haddad is a tenant administrator through her group; Omar Al Farsi is an integration administrator; Maryam Al Abdullah is a content editor; everyone else is an employee.
 
 ## 6. Control API for testers (`/dev/fake`)
 Development host only, no sign-in needed, fictional data only. Same accepted risk as the staging test admin.

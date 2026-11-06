@@ -21,7 +21,8 @@ public sealed record FeatureView(
     string ConsentStatus,
     IReadOnlyList<PermissionView> Permissions,
     IReadOnlyList<string> GrantedPermissions,
-    JsonElement? LastTest);
+    JsonElement? LastTest,
+    object? Options = null);
 
 public sealed record ConnectionView(
     Guid Id,
@@ -33,6 +34,9 @@ public sealed record ConnectionView(
     Guid? OwnerUserId,
     DateTimeOffset? LastSuccessAt,
     IReadOnlyList<FeatureView> Features);
+
+/// <summary>Admin options of a feature (spec 018): Mail <c>previewLine</c>, <c>maxMessages</c>; Calendar <c>maxDays</c>.</summary>
+public sealed record FeatureOptionsRequest(bool? PreviewLine, int? MaxMessages, int? MaxDays);
 
 public sealed record CreateConnectionRequest(string? Kind, string? ExternalTenantId, string? DisplayName, IReadOnlyList<string>? Features);
 
@@ -55,7 +59,8 @@ public sealed class ConnectionService(
     IAuditWriter audit,
     IOutbox outbox,
     IClock clock,
-    IEnumerable<IConnectionDependents> dependents)
+    IEnumerable<IConnectionDependents> dependents,
+    DelegatedTokenStore delegatedTokens)
 {
     public static readonly TimeSpan ConsentLifetime = TimeSpan.FromMinutes(15);
 
@@ -64,7 +69,8 @@ public sealed class ConnectionService(
         var list = new List<FeatureView>();
         foreach (var f in FeatureCatalogue.All)
         {
-            list.Add(new FeatureView(f.Key, false, await entitlements.IsEnabledAsync(f.CapabilityKey, ct), "pending", Permissions(f), [], null));
+            list.Add(new FeatureView(f.Key, false, await entitlements.IsEnabledAsync(f.CapabilityKey, ct), "pending", Permissions(f), [], null,
+                FeatureOptions.Default.ToStored(f.Key)));
         }
         return list;
     }
@@ -94,17 +100,17 @@ public sealed class ConnectionService(
             return null;
         }
         var stored = (await session.QueryAsync(
-            "select feature, enabled, consent_status, granted_permissions, last_test::text from integrations.connection_feature where connection_id = @id",
+            "select feature, enabled, consent_status, granted_permissions, last_test::text, options::text from integrations.connection_feature where connection_id = @id",
             new { id }, r => (Feature: r.GetString(0), Enabled: r.GetBoolean(1), Consent: r.GetString(2), Granted: r.GetFieldValue<string[]>(3),
-                LastTest: r.Get<string>("last_test")), ct)).ToDictionary(f => f.Feature);
+                LastTest: r.Get<string>("last_test"), Options: FeatureOptions.FromStored(r.GetString(5))), ct)).ToDictionary(f => f.Feature);
         var features = new List<FeatureView>();
         foreach (var f in FeatureCatalogue.All)
         {
             var inPackage = await entitlements.IsEnabledAsync(f.CapabilityKey, ct);
             features.Add(stored.TryGetValue(f.Key, out var s)
-                ? new FeatureView(f.Key, s.Enabled, inPackage, s.Consent, Permissions(f), s.Granted,
-                    s.LastTest is null ? null : JsonSerializer.Deserialize<JsonElement>(s.LastTest))
-                : new FeatureView(f.Key, false, inPackage, "pending", Permissions(f), [], null));
+                ? new FeatureView(f.Key, s.Enabled, inPackage, s.Consent, Permissions(f, s.Options), s.Granted,
+                    s.LastTest is null ? null : JsonSerializer.Deserialize<JsonElement>(s.LastTest), s.Options.ToStored(f.Key))
+                : new FeatureView(f.Key, false, inPackage, "pending", Permissions(f), [], null, FeatureOptions.Default.ToStored(f.Key)));
         }
         return new ConnectionView(row.Id, row.Kind, row.External, row.Name, row.Status, row.Enabled, row.Owner, row.LastSuccess, features);
     }
@@ -187,13 +193,76 @@ public sealed class ConnectionService(
             "connection", id.ToString(), Changes: new { feature }), ct);
         await outbox.EnqueueAsync(new ConnectionFeatureChanged(id, feature, enabled), ct);
         await RecomputeStatusAsync(id, ct);
+        if (!enabled)
+        {
+            await delegatedTokens.PruneAsync(id, "feature_off", ct);
+        }
     }
+
+    /// <summary>
+    /// Sets a feature's options (spec 018 plan "Data model"). Turning the Mail preview line on needs <c>Mail.Read</c>, so
+    /// the feature goes back to pending consent; turning it off drops tokens that still hold <c>Mail.Read</c>.
+    /// </summary>
+    public async Task<ConnectionView> SetOptionsAsync(Guid id, string feature, FeatureOptionsRequest request, CancellationToken ct)
+    {
+        var connection = await GetAsync(id, ct) ?? throw AppException.NotFound();
+        var definition = FeatureCatalogue.Find(feature) ?? throw AppException.NotFound();
+        if (!await entitlements.IsEnabledAsync(definition.CapabilityKey, ct))
+        {
+            throw AppException.Validation("feature", "validation.integrations.feature_not_in_package");
+        }
+        var before = await OptionsAsync(id, feature, ct);
+        var errors = new ValidationErrors();
+        var isMail = feature == Microsoft365Features.Mail;
+        var isCalendar = feature == Microsoft365Features.Calendar;
+        if ((!isMail && (request.PreviewLine is not null || request.MaxMessages is not null)) || (!isCalendar && request.MaxDays is not null))
+        {
+            errors.Add("options", "validation.integrations.option_not_for_feature");
+        }
+        if (request.MaxMessages is { } m && m is < 1 or > 10)
+        {
+            errors.Add("maxMessages", "validation.integrations.max_messages_range");
+        }
+        if (request.MaxDays is { } d && d is < 1 or > 14)
+        {
+            errors.Add("maxDays", "validation.integrations.max_days_range");
+        }
+        errors.ThrowIfAny();
+
+        var after = new FeatureOptions(request.PreviewLine ?? before.PreviewLine, request.MaxMessages ?? before.MaxMessages, request.MaxDays ?? before.MaxDays);
+        if (after == before)
+        {
+            return connection;
+        }
+        var widened = FeatureCatalogue.PermissionsFor(definition, after).Select(p => p.Name)
+            .Except(FeatureCatalogue.PermissionsFor(definition, before).Select(p => p.Name), StringComparer.Ordinal).Any();
+        await session.ExecAsync(
+            """
+            insert into integrations.connection_feature (tenant_id, connection_id, feature, enabled, options) values (@t, @c, @f, false, @o)
+            on conflict (tenant_id, connection_id, feature) do update set options = @o,
+              consent_status = case when @widened then 'pending' else integrations.connection_feature.consent_status end, updated_at = now()
+            """, new { t = context.RequireTenant(), c = id, f = feature, o = Jsonb.From(after.ToStored(feature)), widened }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.ConnectionFeatureOptionsChanged, "connection", id.ToString(),
+            Changes: new { feature, from = before.ToStored(feature), to = after.ToStored(feature) }), ct);
+        await RecomputeStatusAsync(id, ct);
+        await delegatedTokens.PruneAsync(id, "feature_options", ct);
+        return (await GetAsync(id, ct))!;
+    }
+
+    private async Task<FeatureOptions> OptionsAsync(Guid id, string feature, CancellationToken ct) =>
+        FeatureOptions.FromStored(await session.QuerySingleOrDefaultAsync(
+            "select options::text from integrations.connection_feature where connection_id = @c and feature = @f",
+            new { c = id, f = feature }, r => r.GetString(0), ct));
 
     public async Task SetEnabledAsync(Guid id, bool enabled, CancellationToken ct)
     {
         _ = await GetAsync(id, ct) ?? throw AppException.NotFound();
         await session.ExecAsync("update integrations.connection set enabled = @e, updated_at = now() where id = @id", new { id, e = enabled }, ct);
         await RecomputeStatusAsync(id, ct);
+        if (!enabled)
+        {
+            await delegatedTokens.PruneAsync(id, "connection_disabled", ct);
+        }
     }
 
     public async Task<DeletePreview> PreviewDeleteAsync(Guid id, CancellationToken ct)
@@ -239,9 +308,10 @@ public sealed class ConnectionService(
             insert into integrations.consent_request (tenant_id, id, connection_id, feature, state_hash, browser_binding_hash, expires_at)
             values (@t, @id, @c, @f, @s, @b, @exp)
             """, new { t = context.RequireTenant(), id = Ids.New(), c = id, f = feature, s = Hash(state), b = Hash(binding), exp = now + ConsentLifetime }, ct);
+        var options = await OptionsAsync(id, feature, ct);
         var scopes = definition.UsesApplicationPermissions
             ? ["https://graph.microsoft.com/.default"]
-            : definition.Permissions.Select(p => "https://graph.microsoft.com/" + p.Name).ToList();
+            : FeatureCatalogue.PermissionsFor(definition, options).Select(p => "https://graph.microsoft.com/" + p.Name).ToList();
         return (graph.AdminConsentUrl(connection.ExternalTenantId, scopes, redirectUri, state), binding);
     }
 
@@ -275,7 +345,8 @@ public sealed class ConnectionService(
         {
             return (connection.Id, false);
         }
-        var permissions = FeatureCatalogue.Find(pending.Feature)!.Permissions.Select(p => p.Name).ToArray();
+        var options = await OptionsAsync(connection.Id, pending.Feature, ct);
+        var permissions = FeatureCatalogue.PermissionsFor(FeatureCatalogue.Find(pending.Feature)!, options).Select(p => p.Name).ToArray();
         await session.ExecAsync(
             """
             update integrations.connection_feature set consent_status = 'granted', granted_permissions = @p, consent_granted_at = now(), updated_at = now()
@@ -406,8 +477,8 @@ public sealed class ConnectionService(
         }
     }
 
-    private static IReadOnlyList<PermissionView> Permissions(FeatureDefinition f) =>
-        f.Permissions.Select(p => new PermissionView(p.Name, p.Type == PermissionType.Application ? "application" : "delegated", p.ReasonKey)).ToList();
+    private static IReadOnlyList<PermissionView> Permissions(FeatureDefinition f, FeatureOptions? options = null) =>
+        FeatureCatalogue.PermissionsFor(f, options ?? FeatureOptions.Default).Select(p => new PermissionView(p.Name, p.Type == PermissionType.Application ? "application" : "delegated", p.ReasonKey)).ToList();
 
     private static string Random() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 

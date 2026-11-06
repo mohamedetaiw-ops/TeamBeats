@@ -60,6 +60,71 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
 
     public void AddRoom(Guid directoryId, Room room) => _rooms.GetOrAdd(directoryId.ToString("D"), _ => []).Add(room);
 
+    private readonly ConcurrentDictionary<string, HashSet<string>> _delegated = new(StringComparer.Ordinal);
+
+    /// <summary>Delegated permissions consented for the TeamBeats application in a directory (plain names such as Mail.ReadBasic).</summary>
+    /// <remarks>Replaces what was consented before, so tests can take consent away.</remarks>
+    public void ConsentDelegated(Guid directoryId, params string[] scopes) =>
+        _delegated[directoryId.ToString("D")] = new HashSet<string>(scopes, StringComparer.Ordinal);
+
+    /// <summary>Adds delegated permissions to what the directory already consented, as a further admin consent does.</summary>
+    public void AddDelegatedConsent(Guid directoryId, params string[] scopes) =>
+        _delegated.AddOrUpdate(directoryId.ToString("D"), _ => new HashSet<string>(scopes, StringComparer.Ordinal),
+            (_, existing) => new HashSet<string>(existing.Concat(scopes), StringComparer.Ordinal));
+
+    /// <summary>The next authorize answers with this error instead of a code (for example consent or conditional access).</summary>
+    public (string Error, string Description)? NextAuthorizeError { get; set; }
+
+    /// <summary>The next authorization code redemption fails with this error code.</summary>
+    public string? NextTokenError { get; set; }
+
+    /// <summary>Delegated access tokens issued, so tests can check they never leave the server.</summary>
+    public ConcurrentBag<string> IssuedDelegatedTokens { get; } = [];
+
+    /// <summary>Scope names without the Graph resource prefix.</summary>
+    public static string[] PlainScopes(string scope) =>
+        scope.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Replace("https://graph.microsoft.com/", string.Empty, StringComparison.Ordinal)).ToArray();
+
+    /// <summary>
+    /// Why Microsoft would refuse a delegated authorize request for the TeamBeats application, or null when it would
+    /// issue a code: wrong client, no PKCE, or delegated permissions the directory has not consented.
+    /// </summary>
+    public string? DelegatedRefusal(string directory, IReadOnlyDictionary<string, string> query)
+    {
+        var scopes = PlainScopes(query.GetValueOrDefault("scope") ?? string.Empty).Where(x => x is not ("openid" or "profile" or "email" or "offline_access"));
+        return query.GetValueOrDefault("client_id") != ClientId || query.GetValueOrDefault("code_challenge_method") != "S256"
+            || !_delegated.TryGetValue(directory, out var consented) || !scopes.All(consented.Contains)
+            ? "AADSTS65001: The user or administrator has not consented."
+            : null;
+    }
+
+    /// <summary>
+    /// Plays Microsoft's authorize page for tests: returns the query Microsoft appends to the redirect URI. The user is
+    /// the directory user whose mail matches <c>login_hint</c>.
+    /// </summary>
+    public string Authorize(Uri authorizeUrl)
+    {
+        var q = FakeIdentityProvider.ParseQuery(authorizeUrl.Query);
+        var directory = authorizeUrl.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries)[0];
+        var state = Uri.EscapeDataString(q["state"]);
+        if (NextAuthorizeError is { } e)
+        {
+            NextAuthorizeError = null;
+            return $"?error={e.Error}&error_description={Uri.EscapeDataString(e.Description)}&state={state}";
+        }
+        if (DelegatedRefusal(directory, q) is { } refusal)
+        {
+            return $"?error=consent_required&error_description={Uri.EscapeDataString(refusal)}&state={state}";
+        }
+        var hint = q.GetValueOrDefault("login_hint");
+        var user = Guid.TryParse(directory, out var directoryId)
+            ? Data(directoryId).CurrentUsers().FirstOrDefault(u => string.Equals(u.Properties.GetValueOrDefault("mail") as string, hint, StringComparison.OrdinalIgnoreCase)).Id
+            : null;
+        var code = "code-" + Guid.NewGuid().ToString("N");
+        _delegatedCodes[code] = new DelegatedCode(directory, user ?? "unknown-user", ClientId, q["redirect_uri"], q["code_challenge"], q["scope"]);
+        return $"?code={code}&state={state}";
+    }
+
     /// <summary>
     /// The user signed in at the fake authorize page and agreed to the delegated scopes. Returns the authorization code
     /// the token endpoint redeems (with PKCE when a challenge was sent).
@@ -313,6 +378,11 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
 
     private HttpResponseMessage RedeemDelegated(string directory, Dictionary<string, string> form)
     {
+        if (NextTokenError is { } error)
+        {
+            NextTokenError = null;
+            return new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent($"{{\"error\":\"{error}\"}}") };
+        }
         var code = form.GetValueOrDefault("code") ?? string.Empty;
         if (!_delegatedCodes.TryRemove(code, out var issued) || issued.Directory != directory
             || form.GetValueOrDefault("client_id") != ClientId || form.GetValueOrDefault("client_secret") != ClientSecret
@@ -328,7 +398,8 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             .Where(x => x is not ("openid" or "profile" or "email" or "offline_access")).ToArray();
         var payload = Base64Url(JsonSerializer.Serialize(new { tid = directory, oid = issued.UserId, scp = string.Join(' ', scopes) }));
         var token = $"{Base64Url("{\"alg\":\"none\"}")}.{payload}.sig-{directory}~{issued.UserId}~{string.Join(',', scopes)}";
-        return Json(new { access_token = token, token_type = "Bearer", expires_in = 3600, scope = string.Join(' ', scopes) });
+        IssuedDelegatedTokens.Add(token);
+        return Json(new { access_token = token, token_type = "Bearer", expires_in = 3600, scope = string.Join(' ', scopes.Append("openid").Append("profile")) });
     }
 
     private async Task<HttpResponseMessage> DelegatedAsync(HttpRequestMessage request, Uri uri, CancellationToken ct)

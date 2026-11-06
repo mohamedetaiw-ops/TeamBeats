@@ -54,6 +54,18 @@
         }
       }
     },
+    "/api/v1/integrations/outlook/callback": {
+      "get": {
+        "tags": [
+          "Integrations: Outlook"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/platform/tenants": {
       "post": {
         "tags": [
@@ -1781,6 +1793,47 @@
         }
       }
     },
+    "/api/v1/integrations/connections/{id}/features/{feature}/options": {
+      "put": {
+        "tags": [
+          "Integrations: connections"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "feature",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeatureOptionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/connections/{id}/dependents": {
       "get": {
         "tags": [
@@ -1823,6 +1876,56 @@
             "name": "feature",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/outlook": {
+      "get": {
+        "tags": [
+          "Integrations: Outlook"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Integrations: Outlook"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/outlook/connect": {
+      "get": {
+        "tags": [
+          "Integrations: Outlook"
+        ],
+        "parameters": [
+          {
+            "name": "silent",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "returnTo",
+            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -2279,6 +2382,40 @@
           }
         }
       },
+      "FeatureOptionsRequest": {
+        "required": [
+          "previewLine",
+          "maxMessages",
+          "maxDays"
+        ],
+        "type": "object",
+        "properties": {
+          "previewLine": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "maxMessages": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "GroupMemberRequest": {
         "required": [
           "userId"
@@ -2708,6 +2845,9 @@
     },
     {
       "name": "Integrations: connections"
+    },
+    {
+      "name": "Integrations: Outlook"
     },
     {
       "name": "Platform: tenants"

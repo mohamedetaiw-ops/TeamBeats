@@ -108,6 +108,7 @@ public sealed class FakeScenario
             if (d.Consented)
             {
                 graph.Consent(directoryId, d.GrantedRoles, d.Users.Count, d.Groups.Count);
+                graph.AddDelegatedConsent(directoryId, d.GrantedDelegated.ToArray());
             }
             foreach (var r in d.Rooms)
             {
@@ -155,10 +156,13 @@ public sealed class ScenarioDirectory
     /// <summary>Offset used to place calendar times, for example "+04:00".</summary>
     public string UtcOffset { get; set; } = "+00:00";
 
-    /// <summary>When true, the directory's admin has already granted the TeamBeats application these roles.</summary>
+    /// <summary>When true, the directory's admin has already granted the TeamBeats application these roles and delegated permissions.</summary>
     public bool Consented { get; set; } = true;
 
     public List<string> GrantedRoles { get; set; } = ["User.Read.All", "Group.Read.All", "AdministrativeUnit.Read.All"];
+
+    /// <summary>Delegated permissions the directory's admin has consented for the TeamBeats application (spec 018).</summary>
+    public List<string> GrantedDelegated { get; set; } = ["User.Read", "Mail.ReadBasic", "Mail.Read", "Calendars.ReadBasic"];
 
     /// <summary>The tenant's own app registration for single sign-on in this directory (fictional values).</summary>
     public ScenarioSsoApp? SsoApp { get; set; }

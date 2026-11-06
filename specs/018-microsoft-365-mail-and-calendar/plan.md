@@ -25,9 +25,9 @@ Rooms (US5) are R2 and not planned here.
 
 ## Delegated access (spec 003 FR-016, spec 018 FR-002, FR-004, FR-013, FR-023)
 - **Connect Outlook:** `GET /api/v1/me/outlook/connect` starts an authorization code flow with PKCE at `login.microsoftonline.com/{directory}/oauth2/v2.0/authorize` for the connection's directory, with `login_hint` set to the employee's directory UPN and the scopes of the features that are on. Because the employee already signed in with Entra ID, Microsoft normally completes this without a second sign-in. State and the PKCE verifier are bound to the session with a short-lived cookie, as in the sign-in and consent flows.
-- **Callback:** redeems the code, stores the access token encrypted with AES-GCM (from the .NET base library, no new dependency) under a platform key `Integrations:Microsoft365:TokenKey`. The associated data binds the ciphertext to tenant, membership and session, so a row copied to another tenant or session cannot be decrypted. Audit `integration.outlook_connected`, event `OutlookConnected`.
+- **Callback:** `GET /api/v1/integrations/outlook/callback`, routed from the platform host to the tenant host like the admin consent callback; only the user, session and browser that started the connect can finish it. It redeems the code, stores the access token encrypted with AES-GCM (from the .NET base library, no new dependency) under a platform key `Integrations:Microsoft365:TokenKey`. The associated data binds the ciphertext to tenant, membership and session, so a row copied to another tenant or session cannot be decrypted. Audit `integration.outlook_connected`, event `OutlookConnected`.
 - **Lifetime:** R1 requests no `offline_access`, so there is no refresh token. When the access token expires (about an hour), the APIs answer with state `reconnect` and the web shell repeats the connect redirect with `prompt=none`, which is silent while the Entra session lasts. The signed-out opt-in of FR-023 (with `offline_access`) comes with the briefing agent.
-- **Clean-up:** tokens are deleted at sign-out, session revocation (`SessionRevoked`), membership disable (`UserDeprovisioned`), disconnect (`integration.outlook_disconnected`, `OutlookDisconnected`), connection delete, and when a feature is turned off and no remaining feature needs the token's scopes (`ConnectionFeatureChanged`).
+- **Clean-up:** tokens are deleted at sign-out (`SessionEnded`), session revocation (`SessionRevoked`), membership disable (`UserDeprovisioned`), disconnect (`integration.outlook_disconnected`, `OutlookDisconnected`), connection delete, and when a feature is turned off, an option changes or the connection is disabled and no remaining feature needs the token's scopes (in the same transaction as the change).
 - **Consent missing:** when Microsoft answers `consent_required` or `interaction_required` for consent, the state is `admin_setup`, never another consent prompt for the employee (FR-004). Conditional access failures map to `conditional_access` with a link to Outlook (FR-012).
 
 ## Data model (schema `integrations`)
@@ -45,8 +45,8 @@ Rooms (US5) are R2 and not planned here.
 ## API (v1)
 - `GET /api/v1/me/mail?view=focused|all&top=5` and `GET /api/v1/me/calendar?days=7`: state plus data; the server applies FR-014 rules (expand series with `calendarView`, hide cancelled and declined, mark free and tentative, hide private subjects when the placement asks).
 - `GET /api/v1/people/{userId}/availability`: today's status text for a colleague whose profile the viewer may see; nothing when the colleague does not share free and busy.
-- `GET /api/v1/me/outlook`, `GET /api/v1/me/outlook/connect`, `GET /api/v1/me/outlook/callback`, `DELETE /api/v1/me/outlook`.
-- Admin options on the existing `PUT /api/v1/integrations/connections/{id}/features/{feature}`.
+- `GET /api/v1/me/outlook`, `GET /api/v1/me/outlook/connect`, `DELETE /api/v1/me/outlook`, and the callback `GET /api/v1/integrations/outlook/callback`.
+- Admin options on `PUT /api/v1/integrations/connections/{id}/features/{feature}/options`.
 
 ## Caching and limits
 - Mail lists and counts up to 2 minutes, events and availability up to 5 minutes, in memory, keyed `(tenant_id, user_id, session_id, feature, query)`; refresh on demand bypasses the cache but still counts against the per-employee limit (default 6 Graph refreshes per minute).

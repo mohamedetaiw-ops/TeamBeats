@@ -1,0 +1,14 @@
+# Staging PostgreSQL (private network only: no public services). App name comes from the deploy workflow.
+primary_region = "fra"
+kill_signal = "SIGINT"
+kill_timeout = 30
+
+
+[mounts]
+  source = "pgdata"
+  destination = "/var/lib/postgresql"
+  initial_size = "1gb"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
