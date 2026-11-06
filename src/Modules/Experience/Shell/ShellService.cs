@@ -11,9 +11,12 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Experience.Shell;
 
-/// <summary>Shell layout: ordered regions per slot, and which registered utilities are on (spec 008 FR-001).</summary>
+/// <summary>
+/// Shell layout: ordered regions per slot, which registered utilities are on (spec 008 FR-001), and the page shown at the
+/// root address as the employee home (spec 008 US2), usually a page from the home template.
+/// </summary>
 public sealed record ShellDefinition(IReadOnlyList<string> Start, IReadOnlyList<string> Center, IReadOnlyList<string> End,
-    IReadOnlyList<string> Below, IReadOnlyList<string> Utilities);
+    IReadOnlyList<string> Below, IReadOnlyList<string> Utilities, Guid? HomePageId = null);
 
 public sealed record ShellAdminView(int Version, ShellDefinition Definition, IReadOnlyList<string> Regions, IReadOnlyList<string> Utilities);
 
@@ -34,8 +37,10 @@ public sealed record NavLink(Guid NodeId, string Label, string Href, string? Own
 
 public sealed record OrganizationIndicator(Guid Id, string Name, bool Primary);
 
+/// <param name="Home">Slug of the home page when it is published and the caller may view it; otherwise null.</param>
 public sealed record ShellView(int Version, ShellDefinition Layout, IReadOnlyList<NavLink> GlobalMenu,
-    IReadOnlyList<OrganizationMenu> OrganizationMenus, IReadOnlyList<OrganizationIndicator> Organizations, bool CanSwitchOrganization);
+    IReadOnlyList<OrganizationMenu> OrganizationMenus, IReadOnlyList<OrganizationIndicator> Organizations, bool CanSwitchOrganization,
+    string? Home = null);
 
 public sealed record OrganizationMenu(Guid OrgUnitId, string Name, IReadOnlyList<NavLink> Items);
 
@@ -97,6 +102,11 @@ public sealed partial class ShellService(
     {
         await authz.DemandAsync(Permissions.ShellEdit, AuthzTarget.Tenant, ct);
         var definition = ValidateShell(request);
+        if (definition.HomePageId is { } home
+            && await session.ScalarAsync<int?>("select 1 from experience.page where id = @home", new { home }, ct) is null)
+        {
+            throw AppException.Validation("homePageId", "validation.shell.home_unknown");
+        }
         var (current, before) = await LiveShellAsync(ct);
         var version = current + 1;
         await session.ExecAsync(
@@ -141,7 +151,7 @@ public sealed partial class ShellService(
         }
 
         return new ShellView(version, layout, global is null ? [] : await LinksAsync(global.Items, nodes, visible, locale, ct), orgMenus,
-            organizations, organizations.Count > 1);
+            organizations, organizations.Count > 1, await HomeSlugAsync(layout.HomePageId, ct));
     }
 
     // Menus
@@ -421,7 +431,7 @@ public sealed partial class ShellService(
             errors.Add("utilities", "validation.shell.utilities_unplaced");
         }
         errors.ThrowIfAny();
-        return new ShellDefinition(request.Start ?? [], request.Center ?? [], request.End ?? [], request.Below ?? [], utilities);
+        return new ShellDefinition(request.Start ?? [], request.Center ?? [], request.End ?? [], request.Below ?? [], utilities, request.HomePageId);
     }
 
     private static IReadOnlyList<MenuItemInput> ValidateItems(IReadOnlyList<MenuItemInput>? items, IReadOnlyDictionary<Guid, Node> nodes)
@@ -462,6 +472,19 @@ public sealed partial class ShellService(
         await session.QueryAsync("select old_slug, node_id from experience.slug_redirect", null, r => (r.GetString(0), r.GetGuid(1)), ct);
 
     /// <summary>Nodes the caller may open: URL nodes always, page nodes when the page is published and viewable, and only under visible parents.</summary>
+    /// <summary>The home page's slug when it is published and the caller holds <c>page.view</c> at its scope.</summary>
+    private async Task<string?> HomeSlugAsync(Guid? homePageId, CancellationToken ct)
+    {
+        if (homePageId is not { } id)
+        {
+            return null;
+        }
+        var page = await session.QuerySingleOrDefaultAsync(
+            "select slug, org_unit_id from experience.page where id = @id and current_release is not null", new { id },
+            r => (Slug: r.GetString(0), Unit: r.IsDBNull(1) ? (Guid?)null : r.GetGuid(1)), ct);
+        return page.Slug is not null && (await authz.CheckAsync(Permissions.PageView, Target(page.Unit), ct)).Allowed ? page.Slug : null;
+    }
+
     private async Task<HashSet<Guid>> VisibleNodesAsync(IReadOnlyDictionary<Guid, Node> nodes, CancellationToken ct)
     {
         var pageIds = nodes.Values.Where(n => n.PageId is not null).Select(n => n.PageId!.Value).Distinct().ToArray();

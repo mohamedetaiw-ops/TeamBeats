@@ -14,11 +14,16 @@ export type RenderedPlacement = {
   context: Record<string, string>;
   publishes: string[];
   subscribes: string[];
+  /** Added by this viewer in personalization mode (spec 008); visible to them only. */
+  personal: boolean;
 };
 
 export type SectionMode = "contained" | "full_bleed" | "fixed" | "fluid";
 
-export type RenderedRegion = { id: string; span: number; section: SectionMode; placements: RenderedPlacement[] };
+/** `rights` lists what this viewer may change here in personalization mode (spec 008); empty or null when nothing. */
+export type RenderedRegion = { id: string; span: number; section: SectionMode; placements: RenderedPlacement[]; rights?: PersonalRight[] | null };
+
+export type PersonalRight = "add" | "hide" | "remove" | "reorder";
 
 export type RenderedPage = {
   pageId: string;

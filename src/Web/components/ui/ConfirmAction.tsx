@@ -58,7 +58,11 @@ export function ConfirmAction({
       aria-modal="false"
       aria-label={label}
       onKeyDown={(e) => {
-        if (e.key === "Escape") close();
+        if (e.key === "Escape") {
+          // Escape closes only the question, not a menu or panel around it.
+          e.stopPropagation();
+          close();
+        }
       }}
     >
       <p className="ui-confirm-question">{question}</p>

@@ -4585,6 +4585,13 @@
             "items": {
               "type": "string"
             }
+          },
+          "homePageId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },

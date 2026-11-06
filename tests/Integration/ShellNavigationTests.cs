@@ -91,6 +91,44 @@ public sealed class ShellNavigationTests(TenantWorld world)
         Assert.Equal(["world_clock", "weather"], shell.GetProperty("layout").GetProperty("utilities").EnumerateArray().Select(u => u.GetString()));
     }
 
+    private static object HomeShell(Guid? home) => new
+    {
+        start = new[] { "identity", "global_navigation" },
+        center = new[] { "search" },
+        end = new[] { "settings" },
+        below = new[] { "breadcrumbs" },
+        utilities = Array.Empty<string>(),
+        homePageId = home,
+    };
+
+    [Fact]
+    public async Task Home_page_is_set_in_the_shell_and_shown_only_when_published_and_of_this_tenant()
+    {
+        var t = await FreshAsync();
+        await world.SeedUserAsync(t, "employee", "employee");
+        var (draftId, _) = await PageAsync(t, publish: false);
+        var set = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", HomeShell(draftId));
+        Assert.True(set.IsSuccessStatusCode, await set.Content.ReadAsStringAsync());
+        // A home that is not published yet is not offered, so the root address keeps its plain welcome.
+        var shell = await t["employee"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
+        Assert.Equal(JsonValueKind.Null, shell.GetProperty("home").ValueKind);
+
+        var (homeId, homeSlug) = await PageAsync(t);
+        Assert.True((await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", HomeShell(homeId))).IsSuccessStatusCode);
+        shell = await t["employee"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
+        Assert.Equal(homeSlug, shell.GetProperty("home").GetString());
+        Assert.Equal(homeId, shell.GetProperty("layout").GetProperty("homePageId").GetGuid());
+
+        // A page of another tenant, or no page at all, cannot be the home.
+        var (otherPage, _) = await PageAsync(world.A);
+        foreach (var id in new[] { otherPage, Guid.NewGuid() })
+        {
+            var refused = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", HomeShell(id));
+            Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+            Assert.Contains("validation.shell.home_unknown", await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        }
+    }
+
     [Fact]
     public async Task Shell_definition_is_validated_and_needs_shell_edit()
     {

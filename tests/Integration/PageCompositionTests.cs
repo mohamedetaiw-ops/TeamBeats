@@ -80,13 +80,14 @@ public sealed class PageCompositionTests(TenantWorld world)
     private static readonly object Text = new { body = new { en = "Wear a helmet on the plant floor.", ar = "ارتد الخوذة في أرض المصنع." } };
 
     [Fact]
-    public async Task Catalogue_has_ten_layouts_and_twelve_templates_and_every_template_makes_an_empty_page()
+    public async Task Catalogue_has_ten_layouts_the_twelve_templates_and_the_home_template_and_every_template_makes_an_empty_page()
     {
         var t = world.A;
         var catalogue = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/catalogue");
         Assert.Equal(10, catalogue.GetProperty("layouts").GetArrayLength());
         var templates = catalogue.GetProperty("templates").EnumerateArray().ToList();
-        Assert.Equal(12, templates.Count);
+        Assert.Equal(13, templates.Count);
+        Assert.Contains(templates, t => t.GetProperty("id").GetString() == "H01");
         foreach (var template in templates)
         {
             Assert.Equal(["spacious", "balanced", "compact"], template.GetProperty("variants").EnumerateArray().Select(v => v.GetString()));

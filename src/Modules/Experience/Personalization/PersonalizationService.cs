@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Localization;
 using TeamBeats.Modules.Experience.Catalogue;
 using TeamBeats.Modules.Experience.Components;
 using TeamBeats.Modules.Experience.Contracts;
@@ -26,7 +27,9 @@ public sealed record LayoutView(Guid PageId, int Revision, string ETag, IReadOnl
 
 public sealed record LayoutRequest(IReadOnlyList<LayoutOperation>? Operations);
 
-public sealed record AddPanelItem(string ComponentRef, string NameKey, string DescriptionKey, string Category, string Icon, bool Eligible, string? ReasonKey);
+/// <summary>A component of the add panel, with its name, description and any refusal reason in the caller's locale.</summary>
+public sealed record AddPanelItem(string ComponentRef, string NameKey, string DescriptionKey, string Category, string Icon, bool Eligible, string? ReasonKey,
+    string Name = "", string Description = "", string? Reason = null);
 
 public sealed record PolicyRegionRequest(string? RegionId, IReadOnlyList<string>? Rights, Guid? AudienceRuleId, int? MaxPersonalPlacements);
 
@@ -60,7 +63,9 @@ public sealed partial class PersonalizationService(
     LayoutEngine layouts,
     AudienceEvaluator audiences,
     IAuditWriter audit,
-    IClock clock)
+    IClock clock,
+    ILocalizer localizer,
+    RequestLocale locale)
 {
     public const int PreferenceSchemaVersion = 1;
     public const int LayoutSchemaVersion = 1;
@@ -204,8 +209,12 @@ public sealed partial class PersonalizationService(
             : null;
         return registry.All.Where(m => m.State != ComponentStates.Retired).Select(m =>
         {
-            var reason = regionReason ?? check(new LayoutOperation("panel", "my-check", m.Reference, regionId));
-            return new AddPanelItem(m.Reference, m.Display.NameKey, m.Display.DescriptionKey, m.Display.Category, m.Display.Icon, reason is null, reason);
+            // R1 adds a component with its defaults; one with required settings and no default waits for personal settings.
+            var reason = regionReason ?? check(new LayoutOperation("panel", "my-check", m.Reference, regionId))
+                ?? (PropertyValidator.Validate(m.Properties, null).Count > 0 ? "validation.personalization.needs_setup" : null);
+            return new AddPanelItem(m.Reference, m.Display.NameKey, m.Display.DescriptionKey, m.Display.Category, m.Display.Icon, reason is null, reason,
+                localizer.Get(m.Display.NameKey, locale.Locale), localizer.Get(m.Display.DescriptionKey, locale.Locale),
+                reason is null ? null : localizer.Get(reason, locale.Locale));
         }).ToList();
     }
 

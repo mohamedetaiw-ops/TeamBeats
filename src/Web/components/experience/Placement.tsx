@@ -70,7 +70,7 @@ function Mounted({ placement, Loaded }: { placement: RenderedPlacement; Loaded: 
  * Placement decorator (spec 032 plan, frontend): error boundary, size-reserving placeholder while code loads, the
  * unavailable state for components the API marked so or whose code is missing, and failure telemetry.
  */
-export function Placement({ placement }: { placement: RenderedPlacement }) {
+export function Placement({ placement, tools }: { placement: RenderedPlacement; tools?: ReactNode }) {
   const Loaded = placement.state === "ready" ? lazyComponent(placement.componentRef) : null;
   const missing = placement.state === "ready" && !Loaded;
   useEffect(() => {
@@ -80,7 +80,8 @@ export function Placement({ placement }: { placement: RenderedPlacement }) {
   }, [missing, placement.componentRef, placement.id]);
   return (
     <div className="xp-placement" style={{ "--xp-span": placement.span } as CSSProperties} data-placement-id={placement.id}
-      data-component={placement.componentRef}>
+      data-component={placement.componentRef} data-personal={placement.personal || undefined}>
+      {tools}
       {Loaded ? (
         <PlacementErrorBoundary placement={placement} fallback={<PlacementState placement={placement} kind="failed" />}>
           <Suspense fallback={<PlacementState placement={placement} kind="loading" />}>

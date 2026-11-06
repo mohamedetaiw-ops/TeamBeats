@@ -119,7 +119,12 @@ public sealed class ExperienceValidationTests
     {
         var catalogue = new PlatformCatalogue();
         Assert.Equal(10, catalogue.Layouts.Count);
-        Assert.Equal(12, catalogue.Templates.Count);
+        // The 12 templates of spec 032 plus the default home template of spec 008 (T013).
+        Assert.Equal([.. Enumerable.Range(1, 12).Select(i => $"T{i:00}"), "H01"],
+            catalogue.Templates.Keys.OrderBy(k => k.StartsWith('H') ? 1 : 0).ThenBy(k => k, StringComparer.Ordinal));
+        var home = catalogue.Templates["H01"];
+        Assert.Contains(home.Regions, r => r.Policy.Personal && r.Policy.Protection == RegionProtection.Optional);
+        Assert.Contains(home.Regions, r => !r.Policy.Personal && r.Policy.Protection == RegionProtection.Protected);
         foreach (var template in catalogue.Templates.Values)
         {
             Assert.All(template.Regions, r => Assert.All(r.Policy.AllowedCategories, c => Assert.Contains(c, ComponentRegistry.Categories)));
