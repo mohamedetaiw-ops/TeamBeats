@@ -14,6 +14,12 @@ namespace TeamBeats.Modules.Integrations.Microsoft365;
 /// <summary>What the employee's Outlook connection looks like for this session. Never carries a token.</summary>
 public sealed record OutlookStatus(string State, IReadOnlyList<string> Features, DateTimeOffset? ConnectedAt, DateTimeOffset? ExpiresAt);
 
+/// <summary>The employee's delegated access for one feature: the state, and the token only when the state is <c>ok</c>.</summary>
+public sealed record DelegatedAccess(string State, string? AccessToken, FeatureOptions Options, IReadOnlyList<string> Scopes)
+{
+    public static DelegatedAccess Not(string state) => new(state, null, FeatureOptions.Default, []);
+}
+
 /// <summary>The start of "Connect Outlook": Microsoft's page, or the outcome to show when there is nothing to ask for.</summary>
 public sealed record OutlookConnectStart(string? Url, string? Binding, string? Outcome);
 
@@ -144,6 +150,51 @@ public sealed class DelegatedAccessService(
         // A feature turned on after connecting needs its scope added: the shell repeats the silent connect.
         var current = token.Expires > clock.UtcNow && setup.Scopes.All(token.Scopes.Contains);
         return new OutlookStatus(current ? M365States.Ok : M365States.Reconnect, covered, token.Created, token.Expires);
+    }
+
+    /// <summary>
+    /// The session's access token for one feature, for the Graph adapters only. Never leaves the server. The state says
+    /// why there is none: feature off, consent missing, not connected, expired or missing the feature's scope.
+    /// </summary>
+    public async Task<DelegatedAccess> AcquireAsync(string feature, CancellationToken ct)
+    {
+        if (!await entitlements.IsEnabledAsync(Capabilities.IntegrationMicrosoft365, ct))
+        {
+            return DelegatedAccess.Not(M365States.NotInPlan);
+        }
+        var (user, sid) = Actor();
+        var setup = await DelegatedSetup.LoadAsync(session, ct);
+        if (setup is null || !setup.Enabled.Contains(feature))
+        {
+            return DelegatedAccess.Not(M365States.TurnedOff);
+        }
+        if (!setup.Granted.Contains(feature))
+        {
+            return DelegatedAccess.Not(M365States.AdminSetup);
+        }
+        if (!protector.Configured)
+        {
+            return DelegatedAccess.Not(M365States.Degraded);
+        }
+        var options = FeatureOptions.FromStored(await session.QuerySingleOrDefaultAsync(
+            "select options::text from integrations.connection_feature where connection_id = @c and feature = @f",
+            new { c = setup.ConnectionId, f = feature }, r => r.GetString(0), ct));
+        var token = await session.QuerySingleOrDefaultAsync(
+            "select scopes, nonce, ciphertext, expires_at from integrations.delegated_token where user_id = @u and session_id = @s and connection_id = @c",
+            new { u = user, s = sid, c = setup.ConnectionId },
+            r => (Scopes: r.GetFieldValue<string[]>(0), Nonce: r.GetFieldValue<byte[]>(1), Cipher: r.GetFieldValue<byte[]>(2), Expires: r.Get<DateTimeOffset>("expires_at")), ct);
+        if (token == default)
+        {
+            var status = await StatusAsync(ct);
+            return DelegatedAccess.Not(status.State);
+        }
+        var needed = FeatureCatalogue.PermissionsFor(FeatureCatalogue.Find(feature)!, options).Select(p => p.Name);
+        if (token.Expires <= clock.UtcNow || !needed.All(token.Scopes.Contains))
+        {
+            return DelegatedAccess.Not(M365States.Reconnect);
+        }
+        var value = protector.Unprotect(token.Nonce, token.Cipher, context.RequireTenant(), user, sid);
+        return value is null ? DelegatedAccess.Not(M365States.Reconnect) : new DelegatedAccess(M365States.Ok, value, options, token.Scopes);
     }
 
     /// <summary>Starts the connect. <paramref name="tenantKey"/> travels in the state so the platform callback can route back.</summary>

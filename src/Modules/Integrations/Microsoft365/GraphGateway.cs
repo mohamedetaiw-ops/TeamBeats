@@ -23,6 +23,15 @@ public sealed class DelegatedAccessRefusedException(string reason) : Exception(r
     public string Reason { get; } = reason;
 }
 
+/// <summary>
+/// A delegated Graph call failed after retries. <see cref="Kind"/> is <c>unauthorized</c> (token no longer accepted),
+/// <c>forbidden</c>, <c>no_mailbox</c>, <c>not_found</c> or <c>unavailable</c> (throttled, 5xx or unreachable).
+/// </summary>
+public sealed class GraphCallException(string kind) : Exception("Microsoft Graph call failed: " + kind)
+{
+    public string Kind { get; } = kind;
+}
+
 /// <summary>Port to Microsoft identity platform and Graph (ADR-0013). External DTOs stay inside the adapter.</summary>
 public interface IMicrosoftGraph
 {
@@ -38,6 +47,12 @@ public interface IMicrosoftGraph
         IEnumerable<string> scopes, CancellationToken ct);
 
     string ClientId { get; }
+
+    /// <summary>
+    /// A Graph call as the signed-in employee. Retries 429 and 5xx with backoff as <c>Retry-After</c> asks, within a short
+    /// budget so a page never waits long, then throws <see cref="GraphCallException"/>.
+    /// </summary>
+    Task<JsonElement> DelegatedSendAsync(string accessToken, HttpMethod method, string pathAndQuery, object? body, CancellationToken ct);
 
     /// <summary>Microsoft's admin consent page for a directory.</summary>
     string AdminConsentUrl(string externalTenantId, IEnumerable<string> scopes, string redirectUri, string state);
@@ -189,6 +204,70 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
                 throw new GraphUnavailableException($"Graph returned {(int)response.StatusCode}.");
             }
             return long.Parse(await response.Content.ReadAsStringAsync(ct), System.Globalization.CultureInfo.InvariantCulture);
+        }
+    }
+
+    public static readonly TimeSpan RetryBudget = TimeSpan.FromSeconds(3);
+    private const int MaxAttempts = 3;
+
+    public async Task<JsonElement> DelegatedSendAsync(string accessToken, HttpMethod method, string pathAndQuery, object? body, CancellationToken ct)
+    {
+        using var client = httpClients.CreateClient(ClientName);
+        var waited = TimeSpan.Zero;
+        for (var attempt = 1; ; attempt++)
+        {
+            using var request = new HttpRequestMessage(method, $"{GraphBase}/{pathAndQuery.TrimStart('/')}");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            request.Headers.Add("Prefer", "outlook.timezone=\"UTC\"");
+            if (body is not null)
+            {
+                request.Content = JsonContent.Create(body);
+            }
+            HttpResponseMessage? response = null;
+            try
+            {
+                response = await client.SendAsync(request, ct);
+            }
+            catch (HttpRequestException)
+            {
+                // Unreachable: retried like a 5xx below.
+            }
+            using (response)
+            {
+                if (response is { IsSuccessStatusCode: true })
+                {
+                    return await response.Content.ReadFromJsonAsync<JsonElement>(ct);
+                }
+                var status = response is null ? 503 : (int)response.StatusCode;
+                if (status is 429 or >= 500)
+                {
+                    var delay = response?.Headers.RetryAfter?.Delta ?? TimeSpan.FromMilliseconds(200 * Math.Pow(2, attempt - 1));
+                    if (attempt >= MaxAttempts || waited + delay > RetryBudget)
+                    {
+                        throw new GraphCallException("unavailable");
+                    }
+                    waited += delay;
+                    await Task.Delay(delay, ct);
+                    continue;
+                }
+                var code = string.Empty;
+                try
+                {
+                    var error = await response!.Content.ReadFromJsonAsync<JsonElement>(ct);
+                    code = error.TryGetProperty("error", out var e) && e.TryGetProperty("code", out var c) ? c.GetString() ?? string.Empty : string.Empty;
+                }
+                catch (JsonException)
+                {
+                    // No error body.
+                }
+                throw new GraphCallException(status switch
+                {
+                    401 => "unauthorized",
+                    _ when code is "MailboxNotEnabledForRESTAPI" or "MailboxNotSupportedForRESTAPI" or "ResourceNotFound" && status is 404 or 400 => "no_mailbox",
+                    403 => "forbidden",
+                    _ => "not_found",
+                });
+            }
         }
     }
 

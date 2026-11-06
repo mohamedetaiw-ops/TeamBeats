@@ -35,6 +35,11 @@ public static class IntegrationsModule
         services.AddSingleton<TokenProtector>();
         services.AddScoped<DelegatedTokenStore>();
         services.AddScoped<DelegatedAccessService>();
+        services.AddMemoryCache();
+        services.AddScoped<GraphReadCache>();
+        services.AddScoped<IMailbox, GraphMailbox>();
+        services.AddScoped<ICalendar, GraphCalendar>();
+        services.AddScoped<IAvailability, GraphAvailability>();
         services.AddMessageHandler<SessionEnded, DropTokensOnSessionEnded>("integrations.tokens_session_ended");
         services.AddMessageHandler<SessionRevoked, DropTokensOnSessionRevoked>("integrations.tokens_session_revoked");
         services.AddMessageHandler<UserDeprovisioned, DropTokensOnUserDeprovisioned>("integrations.tokens_user_deprovisioned");
@@ -167,6 +172,7 @@ public static class IntegrationsModule
         }).WithTags("Integrations: connections");
 
         MapOutlookEndpoints(app);
+        WorkspaceEndpoints.Map(app);
         return app;
     }
 

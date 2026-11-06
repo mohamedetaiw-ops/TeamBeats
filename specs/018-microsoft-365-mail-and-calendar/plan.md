@@ -31,7 +31,7 @@ Rooms (US5) are R2 and not planned here.
 - **Consent missing:** when Microsoft answers `consent_required` or `interaction_required` for consent, the state is `admin_setup`, never another consent prompt for the employee (FR-004). Conditional access failures map to `conditional_access` with a link to Outlook (FR-012).
 
 ## Data model (schema `integrations`)
-- `connection_feature` gains `options jsonb` (Mail: `previewLine`, maximum messages; Calendar: maximum days). Preview line on swaps `Mail.ReadBasic` for `Mail.Read` in the requested scopes.
+- `connection_feature` gains `options jsonb` (Mail: `previewLine`, maximum messages, default 10; Calendar: maximum days, default 14). A placement asks for its own count and range within those maximums. Preview line on swaps `Mail.ReadBasic` for `Mail.Read` in the requested scopes.
 - `delegated_token`: `tenant_id`, `membership_user_id`, `session_id`, `connection_id`, `scopes text[]`, `ciphertext bytea`, `nonce bytea`, `expires_at`, `created_at`. Primary key `(tenant_id, membership_user_id, session_id)`. RLS.
 - No table for mail, events or free and busy.
 

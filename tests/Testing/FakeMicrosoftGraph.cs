@@ -29,10 +29,42 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
     public void Consent(Guid directoryId, IReadOnlyList<string> roles, long users = 3400, long groups = 120) =>
         _directories[directoryId.ToString("D")] = new Directory(roles, users, groups);
 
+    // Mailboxes and calendars for delegated reads (spec 018), keyed by the signed-in user's UPN. All content is fictional.
+
+    public sealed record FakeMessage(string Id, string FromName, string FromAddress, string Subject, DateTimeOffset Received, bool IsRead = false,
+        string Importance = "normal", bool HasAttachments = false, string Preview = "", bool Focused = true);
+
+    public sealed record FakeEvent(string Id, string Subject, DateTimeOffset Start, DateTimeOffset End, bool AllDay = false, string ShowAs = "busy",
+        string Sensitivity = "normal", bool Cancelled = false, string Response = "accepted", string? Location = null, string? JoinUrl = null);
+
+    public sealed record FakeScheduleItem(string Status, DateTimeOffset Start, DateTimeOffset End);
+
+    public sealed class FakeMailbox
+    {
+        public List<FakeMessage> Messages { get; } = [];
+        public List<FakeEvent> Events { get; } = [];
+        public int UnreadCount { get; set; }
+        public bool Exists { get; set; } = true;
+    }
+
+    private readonly ConcurrentDictionary<string, FakeMailbox> _mailboxes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, List<FakeScheduleItem>> _schedules = new(StringComparer.OrdinalIgnoreCase);
+
+    public FakeMailbox Mailbox(string upn) => _mailboxes.GetOrAdd(upn, _ => new FakeMailbox());
+
+    /// <summary>Free and busy that the colleague shares; a colleague without an entry does not share.</summary>
+    public void Schedule(string upn, params FakeScheduleItem[] items) => _schedules[upn] = [.. items];
+
+    /// <summary>Status codes the next delegated Graph calls answer with, one per call (429 carries Retry-After: 0).</summary>
+    public ConcurrentQueue<int> DelegatedFaults { get; } = new();
+
+    /// <summary>Delegated Graph calls received, by path.</summary>
+    public ConcurrentBag<string> DelegatedCalls { get; } = [];
+
     public void Revoke(Guid directoryId) => _directories.TryRemove(directoryId.ToString("D"), out _);
 
     private readonly ConcurrentDictionary<string, HashSet<string>> _delegated = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, (string Directory, string Challenge, string RedirectUri, string[] Scopes)> _codes = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, (string Directory, string Challenge, string RedirectUri, string[] Scopes, string Upn)> _codes = new(StringComparer.Ordinal);
 
     /// <summary>Delegated permissions consented for the TeamBeats application in a directory (plain names such as Mail.ReadBasic).</summary>
     public void ConsentDelegated(Guid directoryId, params string[] scopes) =>
@@ -65,7 +97,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             return $"?error=consent_required&error_description={Uri.EscapeDataString("AADSTS65001: The user or administrator has not consented.")}&state={state}";
         }
         var code = "code-" + Guid.NewGuid().ToString("N");
-        _codes[code] = (directory, q["code_challenge"], q["redirect_uri"], scopes);
+        _codes[code] = (directory, q["code_challenge"], q["redirect_uri"], scopes, q.GetValueOrDefault("login_hint") ?? string.Empty);
         return $"?code={code}&state={state}";
     }
 
@@ -238,6 +270,10 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             var token = $"{Base64Url("{\"alg\":\"none\"}")}.{payload}.sig-{directory}";
             return Json(new { access_token = token, token_type = "Bearer", expires_in = 3600 });
         }
+        if (uri.Host == "graph.microsoft.com" && uri.AbsolutePath.StartsWith("/v1.0/me/", StringComparison.Ordinal))
+        {
+            return await DelegatedAsync(request, uri, cancellationToken);
+        }
         if (uri.Host == "graph.microsoft.com" && uri.AbsolutePath.EndsWith("/$count", StringComparison.Ordinal))
         {
             var bearer = request.Headers.Authorization?.Parameter ?? string.Empty;
@@ -281,6 +317,110 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         return new HttpResponseMessage(HttpStatusCode.NotFound);
     }
 
+    private async Task<HttpResponseMessage> DelegatedAsync(HttpRequestMessage request, Uri uri, CancellationToken ct)
+    {
+        DelegatedCalls.Add(uri.AbsolutePath);
+        if (DelegatedFaults.TryDequeue(out var fault))
+        {
+            var failed = new HttpResponseMessage((HttpStatusCode)fault) { Content = new StringContent("{\"error\":{\"code\":\"fault\"}}") };
+            if (fault == 429)
+            {
+                failed.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.Zero);
+            }
+            return failed;
+        }
+        var bearer = request.Headers.Authorization?.Parameter ?? string.Empty;
+        var parts = bearer.Split('.');
+        if (parts.Length != 3 || !IssuedDelegatedTokens.Contains(bearer))
+        {
+            return new HttpResponseMessage(HttpStatusCode.Unauthorized);
+        }
+        var payload = JsonDocument.Parse(Encoding.UTF8.GetString(Convert.FromBase64String(Pad(parts[1])))).RootElement;
+        var scopes = payload.GetProperty("scp").GetString()!.Split(' ').ToHashSet(StringComparer.Ordinal);
+        var upn = payload.GetProperty("upn").GetString()!;
+        var mailbox = Mailbox(upn);
+        var path = uri.AbsolutePath["/v1.0/me/".Length..];
+        var query = FakeIdentityProvider.ParseQuery(uri.Query);
+        static string Time(DateTimeOffset t) => t.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss.fffffff", System.Globalization.CultureInfo.InvariantCulture);
+        var forbidden = new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = new StringContent("{\"error\":{\"code\":\"ErrorAccessDenied\"}}") };
+        var noMailbox = new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{\"error\":{\"code\":\"MailboxNotEnabledForRESTAPI\"}}") };
+
+        if (path.StartsWith("mailFolders/inbox", StringComparison.Ordinal))
+        {
+            var select = query.GetValueOrDefault("$select") ?? string.Empty;
+            if (!scopes.Contains("Mail.ReadBasic") && !scopes.Contains("Mail.Read") || (select.Contains("bodyPreview", StringComparison.Ordinal) && !scopes.Contains("Mail.Read")))
+            {
+                return forbidden;
+            }
+            if (!mailbox.Exists)
+            {
+                return noMailbox;
+            }
+            if (path == "mailFolders/inbox")
+            {
+                return Json(new { unreadItemCount = mailbox.UnreadCount });
+            }
+            var focused = (query.GetValueOrDefault("$filter") ?? string.Empty).Contains("focused", StringComparison.Ordinal);
+            var top = int.Parse(query.GetValueOrDefault("$top") ?? "10", System.Globalization.CultureInfo.InvariantCulture);
+            var items = mailbox.Messages.Where(m => !focused || m.Focused).OrderByDescending(m => m.Received).Take(top)
+                .Select(m =>
+                {
+                    var item = new Dictionary<string, object?>
+                    {
+                        ["id"] = m.Id, ["subject"] = m.Subject, ["from"] = new { emailAddress = new { name = m.FromName, address = m.FromAddress } },
+                        ["receivedDateTime"] = m.Received.ToString("o", System.Globalization.CultureInfo.InvariantCulture), ["isRead"] = m.IsRead,
+                        ["importance"] = m.Importance, ["hasAttachments"] = m.HasAttachments, ["webLink"] = $"https://outlook.office365.com/owa/?ItemID={m.Id}",
+                    };
+                    if (select.Contains("bodyPreview", StringComparison.Ordinal))
+                    {
+                        item["bodyPreview"] = m.Preview;
+                    }
+                    return item;
+                }).ToList();
+            return Json(new { value = items });
+        }
+        if (path == "calendarView")
+        {
+            if (!scopes.Contains("Calendars.ReadBasic"))
+            {
+                return forbidden;
+            }
+            if (!mailbox.Exists)
+            {
+                return noMailbox;
+            }
+            var from = DateTimeOffset.Parse(query["startDateTime"], System.Globalization.CultureInfo.InvariantCulture);
+            var to = DateTimeOffset.Parse(query["endDateTime"], System.Globalization.CultureInfo.InvariantCulture);
+            var items = mailbox.Events.Where(e => e.End > from && e.Start < to).OrderBy(e => e.Start).Select(e => new Dictionary<string, object?>
+            {
+                ["id"] = e.Id, ["subject"] = e.Subject, ["start"] = new { dateTime = Time(e.Start), timeZone = "UTC" }, ["end"] = new { dateTime = Time(e.End), timeZone = "UTC" },
+                ["isAllDay"] = e.AllDay, ["showAs"] = e.ShowAs, ["sensitivity"] = e.Sensitivity, ["isCancelled"] = e.Cancelled,
+                ["responseStatus"] = new { response = e.Response }, ["location"] = new { displayName = e.Location ?? string.Empty },
+                ["onlineMeeting"] = e.JoinUrl is null ? null : new { joinUrl = e.JoinUrl }, ["webLink"] = $"https://outlook.office365.com/owa/?itemid={e.Id}&path=/calendar/item",
+            }).ToList();
+            return Json(new { value = items });
+        }
+        if (path == "calendar/getSchedule" && request.Method == HttpMethod.Post)
+        {
+            if (!scopes.Contains("Calendars.ReadBasic"))
+            {
+                return forbidden;
+            }
+            var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct)).RootElement;
+            var values = body.GetProperty("schedules").EnumerateArray().Select(x => x.GetString()!).Select(address => _schedules.TryGetValue(address, out var items)
+                ? (object)new { scheduleId = address, scheduleItems = items.Select(i => new { status = i.Status, start = new { dateTime = Time(i.Start), timeZone = "UTC" }, end = new { dateTime = Time(i.End), timeZone = "UTC" } }) }
+                : new { scheduleId = address, error = new { message = "Not shared", responseCode = "ErrorNoFreeBusyAccess" } }).ToList();
+            return Json(new { value = values });
+        }
+        return new HttpResponseMessage(HttpStatusCode.NotFound);
+    }
+
+    private static string Pad(string b64url)
+    {
+        var p = b64url.Replace('-', '+').Replace('_', '/');
+        return p.PadRight(p.Length + ((4 - (p.Length % 4)) % 4), '=');
+    }
+
     private HttpResponseMessage RedeemCode(string directory, IReadOnlyDictionary<string, string> form)
     {
         if (NextTokenError is { } error)
@@ -296,7 +436,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         {
             return new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("{\"error\":\"invalid_grant\"}") };
         }
-        var payload = Base64Url(JsonSerializer.Serialize(new { tid = directory, scp = string.Join(' ', issued.Scopes) }));
+        var payload = Base64Url(JsonSerializer.Serialize(new { tid = directory, scp = string.Join(' ', issued.Scopes), upn = issued.Upn }));
         var token = $"{Base64Url("{\"alg\":\"none\"}")}.{payload}.sig-{directory}";
         IssuedDelegatedTokens.Add(token);
         return Json(new { access_token = token, token_type = "Bearer", expires_in = 3600, scope = string.Join(' ', issued.Scopes.Append("openid").Append("profile")) });
