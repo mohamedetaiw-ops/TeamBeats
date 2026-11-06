@@ -1,6 +1,6 @@
 #Requires -RunAsAdministrator
 # Registers this Windows machine as the TeamBeats self-hosted GitHub Actions runner and installs it as a service.
-# Run once in an administrator PowerShell, after `gh auth login`. See docs/operations/ci-runner.md.
+# Run once in an administrator PowerShell, after saving a registration token. See docs/operations/ci-runner.md.
 param(
   [string]$Repo = 'mohamedetaiw-ops/TeamBeats',
   [string]$Root = 'C:\actions-runner',
@@ -9,10 +9,6 @@ param(
   [string]$Labels = 'teambeats'
 )
 $ErrorActionPreference = 'Stop'
-
-$gh = (Get-Command gh -ErrorAction SilentlyContinue).Source
-if (-not $gh) { $gh = Join-Path $env:LOCALAPPDATA 'Programs\gh\bin\gh.exe' }
-if (-not (Test-Path $gh)) { throw 'GitHub CLI not found. Install it and run gh auth login.' }
 
 if (-not (Test-Path (Join-Path $Root 'config.cmd'))) {
   $ProgressPreference = 'SilentlyContinue'
@@ -28,8 +24,13 @@ if (-not (Test-Path (Join-Path $Root 'config.cmd'))) {
 # The job checkouts are deep enough for node_modules to pass the old 260 character limit.
 & git config --system core.longpaths true
 
-$token = & $gh api -X POST "repos/$Repo/actions/runners/registration-token" --jq .token
-if ($LASTEXITCODE -ne 0 -or -not $token) { throw 'Could not get a registration token. Check gh auth status.' }
+# An elevated shell cannot read the gh sign-in from the Windows credential store, so fetch the token first from a
+# normal shell (see docs/operations/ci-runner.md). It is valid for one hour and this script deletes the file.
+$tokenFile = Join-Path $env:LOCALAPPDATA 'teambeats-runner-token.txt'
+if (-not (Test-Path $tokenFile)) { throw "Token file not found: $tokenFile" }
+$token = (Get-Content $tokenFile -Raw).Trim()
+Remove-Item $tokenFile
+if (-not $token) { throw 'The token file was empty.' }
 
 # With no --windowslogonaccount the service runs as NETWORK SERVICE, which cannot read your profile, your git
 # credentials or your flyctl sign-in. Keep it that way.
@@ -42,5 +43,4 @@ try {
 }
 
 Get-Service 'actions.runner.*' | Format-Table Name, Status, StartType
-& $gh api "repos/$Repo/actions/runners" --jq '.runners[] | "\(.name): \(.status), labels: \([.labels[].name] | join(", "))"'
 Write-Host 'Done. You can close this window.'

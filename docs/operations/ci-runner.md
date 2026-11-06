@@ -21,7 +21,8 @@ All GitHub Actions jobs run on one self-hosted Windows runner, because the repos
 
 ## Install or reinstall
 1. Install Git for Windows and sign in with `gh auth login`.
-2. In an administrator PowerShell, run `tools/runner/install-runner.ps1`.
+2. In a normal PowerShell, save a registration token: `gh api -X POST repos/mohamedetaiw-ops/TeamBeats/actions/runners/registration-token --jq .token > "$env:LOCALAPPDATA\teambeats-runner-token.txt"`. It is valid for one hour.
+3. In an administrator PowerShell, run `tools/runner/install-runner.ps1`. It reads the token and deletes the file.
 
 To remove it, run `.\config.cmd remove --token <token>` in `C:\actions-runner` from an administrator PowerShell. Get the token from **Settings, Actions, Runners** in the repository.
 
