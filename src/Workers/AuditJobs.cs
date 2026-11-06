@@ -65,3 +65,17 @@ public sealed class AuditRetentionService(IServiceScopeFactory scopes, ILogger<P
         }
     }
 }
+
+/// <summary>Starts directory syncs whose schedule is due (spec 003 US6). Each tenant runs in its own transaction.</summary>
+public sealed class DirectorySyncSchedulerService(IServiceScopeFactory scopes, ILogger<PerTenantRunner> logger) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var runner = new PerTenantRunner(scopes, logger);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            await runner.RunAsync((sp, ct) => sp.GetRequiredService<TeamBeats.Modules.Identity.Directory.DirectorySyncService>().RunIfDueAsync(ct), stoppingToken);
+            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+        }
+    }
+}

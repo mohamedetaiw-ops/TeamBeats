@@ -33,6 +33,10 @@ public static class IdentityModule
         services.AddScoped<IUserDirectory>(sp => sp.GetRequiredService<UserDirectory>());
         services.AddScoped<RequestLocale>();
         services.AddMessageHandler<TenantSuspended, RevokeSessionsOnSuspension>("identity.revoke_on_suspend");
+        services.AddScoped<Directory.DirectorySyncService>();
+        services.AddScoped<Integrations.Contracts.IConnectionDependents, Directory.DirectoryConnectionDependents>();
+        services.AddMessageHandler<Directory.DirectorySyncRequested, Directory.RunRequestedDirectorySync>("identity.directory_sync_now");
+        services.AddMessageHandler<Integrations.Contracts.ConnectionDeleted, Directory.RemoveDirectoryOnConnectionDeleted>("identity.directory_connection_deleted");
         return services;
     }
 
@@ -47,6 +51,7 @@ public static class IdentityModule
         }).WithTags("Auth");
 
         app.MapSsoEndpoints();
+        Directory.DirectoryEndpoints.MapDirectoryEndpoints(app);
 
         var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me");
 
@@ -101,6 +106,9 @@ public sealed class UserDirectory(IDbSession session) : IUserDirectory
 
     public Task<UserInfo?> FindByEmailAsync(string email, CancellationToken ct = default) =>
         session.QuerySingleOrDefaultAsync(Select + " where lower(u.email) = lower(@e)", new { e = email.Trim() }, Map, ct);
+
+    public Task<bool> IsDisabledByDirectoryAsync(Guid userId, CancellationToken ct = default) =>
+        session.ScalarAsync<bool>("select exists (select 1 from identity.directory_user_link where user_id = @u and disabled_by_directory)", new { u = userId }, ct);
 
     public async Task<IReadOnlyList<UserInfo>> ListAsync(string? search, int limit, CancellationToken ct = default) =>
         await session.QueryAsync(

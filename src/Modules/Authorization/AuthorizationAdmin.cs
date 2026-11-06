@@ -378,9 +378,12 @@ public sealed class AuthorizationAdmin(
     public async Task AddGroupMemberAsync(Guid groupId, Guid userId, CancellationToken ct)
     {
         await authz.DemandAsync(Permissions.RolesManage, AuthzTarget.Tenant, ct);
-        if (!await session.ScalarAsync<bool>("select exists (select 1 from authz.user_group where id = @g)", new { g = groupId }, ct))
+        var source = await session.ScalarAsync<string?>("select source from authz.user_group where id = @g", new { g = groupId }, ct)
+            ?? throw AppException.NotFound();
+        if (source != "product")
         {
-            throw AppException.NotFound();
+            // Directory-owned groups are read-only in the product (spec 003 FR-014).
+            throw AppException.Conflict("conflict.group.directory_owned");
         }
         var member = await memberships.GetAsync(userId, ct);
         if (member is null)

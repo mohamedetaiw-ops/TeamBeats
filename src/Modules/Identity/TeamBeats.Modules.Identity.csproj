@@ -10,6 +10,7 @@
     <ProjectReference Include="../../BuildingBlocks/Localization/TeamBeats.Localization.csproj" />
     <ProjectReference Include="../Identity.Contracts/TeamBeats.Modules.Identity.Contracts.csproj" />
     <ProjectReference Include="../Tenancy.Contracts/TeamBeats.Modules.Tenancy.Contracts.csproj" />
+    <ProjectReference Include="../Integrations.Contracts/TeamBeats.Modules.Integrations.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />

@@ -38,6 +38,7 @@ public sealed class SsoService(
     ISecretStore secrets,
     IEntitlementService entitlements,
     SignInService signIn,
+    Directory.DirectorySyncService directorySync,
     IAuditWriter audit,
     IClock clock)
 {
@@ -183,7 +184,9 @@ public sealed class SsoService(
         var overage = token.TryGetPayloadValue<Dictionary<string, object>>("_claim_names", out var names) && names.ContainsKey("groups");
         IReadOnlyList<string>? groups = overage ? null : token.Claims.Where(c => c.Type == "groups").Select(c => c.Value).ToList();
 
-        var policy = new ProviderSignInPolicy(config.Id, config.JitEnabled, config.JitDomains, groups, config.GroupRoleMap);
+        // While the directory is synced, it decides who has an account: JIT is off and synced users link by object ID (US6 scenario 3).
+        var jit = config.JitEnabled && !await directorySync.IsActiveAsync(ct);
+        var policy = new ProviderSignInPolicy(config.Id, jit, config.JitDomains, groups, config.GroupRoleMap);
         var result = await signIn.SignInAsync(tenant, config.Issuer, subject.ToLowerInvariant(), email, name, "entra", "admin", ct, policy);
         return result.Outcome switch
         {

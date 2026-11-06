@@ -15,8 +15,12 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
     public const string ClientSecret = "fictional-platform-app-secret";
 
     private readonly ConcurrentDictionary<string, Directory> _directories = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, DirectoryData> _data = new(StringComparer.Ordinal);
 
     public bool Unavailable { get; set; }
+
+    /// <summary>Users per delta page, so paging with nextLink is exercised.</summary>
+    public int PageSize { get; set; } = 2;
 
     public sealed record Directory(IReadOnlyList<string> Roles, long Users, long Groups);
 
@@ -25,6 +29,111 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         _directories[directoryId.ToString("D")] = new Directory(roles, users, groups);
 
     public void Revoke(Guid directoryId) => _directories.TryRemove(directoryId.ToString("D"), out _);
+
+    /// <summary>Directory content for delta queries. Every change gets a version, and a delta link returns changes after its version.</summary>
+    public DirectoryData Data(Guid directoryId) => _data.GetOrAdd(directoryId.ToString("D"), _ => new DirectoryData());
+
+    public sealed class DirectoryData
+    {
+        private readonly object _gate = new();
+        private long _version;
+        private readonly Dictionary<string, (Dictionary<string, object?> Props, bool Deleted, long Version)> _users = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, (string Name, bool Deleted, long Version)> _groups = new(StringComparer.Ordinal);
+        private readonly List<(string Group, string Member, bool Added, long Version)> _memberLog = [];
+        private readonly Dictionary<string, HashSet<string>> _members = new(StringComparer.Ordinal);
+
+        public long Version { get { lock (_gate) { return _version; } } }
+
+        public void AddUser(string oid, string displayName, string? mail, bool enabled = true, string? jobTitle = null)
+        {
+            lock (_gate)
+            {
+                _users[oid] = (new Dictionary<string, object?>
+                {
+                    ["displayName"] = displayName, ["mail"] = mail, ["userPrincipalName"] = mail, ["jobTitle"] = jobTitle, ["accountEnabled"] = enabled,
+                }, false, ++_version);
+            }
+        }
+
+        public void UpdateUser(string oid, string? displayName = null, string? mail = null, bool? enabled = null)
+        {
+            lock (_gate)
+            {
+                var (props, _, _) = _users[oid];
+                if (displayName is not null) props["displayName"] = displayName;
+                if (mail is not null) { props["mail"] = mail; props["userPrincipalName"] = mail; }
+                if (enabled is not null) props["accountEnabled"] = enabled;
+                _users[oid] = (props, false, ++_version);
+            }
+        }
+
+        public void DeleteUser(string oid)
+        {
+            lock (_gate)
+            {
+                _users[oid] = (_users[oid].Props, true, ++_version);
+            }
+        }
+
+        public void AddGroup(string gid, string name)
+        {
+            lock (_gate)
+            {
+                _groups[gid] = (name, false, ++_version);
+                _members.TryAdd(gid, new HashSet<string>(StringComparer.Ordinal));
+            }
+        }
+
+        public void AddMember(string gid, string oid) => ChangeMember(gid, oid, true);
+
+        public void RemoveMember(string gid, string oid) => ChangeMember(gid, oid, false);
+
+        private void ChangeMember(string gid, string oid, bool added)
+        {
+            lock (_gate)
+            {
+                var changed = added ? _members[gid].Add(oid) : _members[gid].Remove(oid);
+                if (changed)
+                {
+                    _memberLog.Add((gid, oid, added, ++_version));
+                    _groups[gid] = (_groups[gid].Name, _groups[gid].Deleted, _version);
+                }
+            }
+        }
+
+        public (List<object> Items, long Version) UserChanges(long since)
+        {
+            lock (_gate)
+            {
+                var items = _users.Where(u => u.Value.Version > since && !(since == 0 && u.Value.Deleted)).OrderBy(u => u.Key, StringComparer.Ordinal)
+                    .Select(u => u.Value.Deleted
+                        ? (object)new Dictionary<string, object?> { ["id"] = u.Key, ["@removed"] = new { reason = "changed" } }
+                        : new Dictionary<string, object?>(u.Value.Props) { ["id"] = u.Key })
+                    .ToList();
+                return (items, _version);
+            }
+        }
+
+        public (List<object> Items, long Version) GroupChanges(long since)
+        {
+            lock (_gate)
+            {
+                var items = new List<object>();
+                foreach (var (gid, g) in _groups.Where(g => g.Value.Version > since).OrderBy(g => g.Key, StringComparer.Ordinal))
+                {
+                    var members = since == 0
+                        ? _members[gid].Select(m => (object)new Dictionary<string, object?> { ["@odata.type"] = "#microsoft.graph.user", ["id"] = m }).ToList()
+                        : _memberLog.Where(l => l.Group == gid && l.Version > since)
+                            .Select(l => (object)(l.Added
+                                ? new Dictionary<string, object?> { ["@odata.type"] = "#microsoft.graph.user", ["id"] = l.Member }
+                                : new Dictionary<string, object?> { ["@odata.type"] = "#microsoft.graph.user", ["id"] = l.Member, ["@removed"] = new { reason = "deleted" } }))
+                            .ToList();
+                    items.Add(new Dictionary<string, object?> { ["id"] = gid, ["displayName"] = g.Name, ["members@delta"] = members });
+                }
+                return (items, _version);
+            }
+        }
+    }
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
@@ -56,6 +165,33 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             }
             var count = uri.AbsolutePath.Contains("/users/", StringComparison.Ordinal) ? d.Users : d.Groups;
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(count.ToString(System.Globalization.CultureInfo.InvariantCulture)) };
+        }
+        if (uri.Host == "graph.microsoft.com" && (uri.AbsolutePath.EndsWith("/users/delta", StringComparison.Ordinal) || uri.AbsolutePath.EndsWith("/groups/delta", StringComparison.Ordinal)))
+        {
+            var bearer = request.Headers.Authorization?.Parameter ?? string.Empty;
+            var directory = bearer.Split(".sig-").ElementAtOrDefault(1) ?? string.Empty;
+            if (!_directories.ContainsKey(directory))
+            {
+                return new HttpResponseMessage(HttpStatusCode.Forbidden);
+            }
+            var data = _data.GetOrAdd(directory, _ => new DirectoryData());
+            var query = FakeIdentityProvider.ParseQuery(uri.Query);
+            var since = query.TryGetValue("$deltatoken", out var token) ? long.Parse(token, System.Globalization.CultureInfo.InvariantCulture) : 0;
+            var skip = query.TryGetValue("$skiptoken", out var skipToken) ? int.Parse(skipToken, System.Globalization.CultureInfo.InvariantCulture) : 0;
+            var isUsers = uri.AbsolutePath.EndsWith("/users/delta", StringComparison.Ordinal);
+            var (items, version) = isUsers ? data.UserChanges(since) : data.GroupChanges(since);
+            var basePath = $"https://graph.microsoft.com/v1.0/{(isUsers ? "users" : "groups")}/delta";
+            var page = items.Skip(skip).Take(isUsers ? PageSize : int.MaxValue).ToList();
+            var body = new Dictionary<string, object?> { ["value"] = page };
+            if (isUsers && skip + PageSize < items.Count)
+            {
+                body["@odata.nextLink"] = $"{basePath}?$deltatoken={since}&$skiptoken={skip + PageSize}";
+            }
+            else
+            {
+                body["@odata.deltaLink"] = $"{basePath}?$deltatoken={version}";
+            }
+            return Json(body);
         }
         return new HttpResponseMessage(HttpStatusCode.NotFound);
     }

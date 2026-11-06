@@ -26,6 +26,7 @@ public static class IntegrationsModule
         services.AddSingleton<IMicrosoftGraph, HttpMicrosoftGraph>();
         services.AddScoped<ConnectionService>();
         services.AddScoped<IConnectionFeatures, ConnectionFeatures>();
+        services.AddScoped<IDirectorySource, MicrosoftDirectorySource>();
         return services;
     }
 

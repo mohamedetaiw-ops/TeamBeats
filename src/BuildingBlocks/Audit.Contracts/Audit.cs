@@ -57,6 +57,10 @@ public static class AuditActions
     public const string SignInRefused = "auth.sign_in_refused";
     public const string SessionRevoked = "auth.session_revoked";
     public const string IdpConfigChanged = "auth.idp_config_changed";
+    public const string DirectoryConnectionChanged = "identity.directory_connection_changed";
+    public const string UserSynced = "identity.user_synced";
+    public const string DisabledByDirectory = "identity.disabled_by_directory";
+    public const string ReenabledByDirectory = "identity.reenabled_by_directory";
 
     // 004
     public const string RoleAssigned = "authz.role_assigned";
@@ -104,7 +108,7 @@ public static class AuditActions
     /// <summary>Events added in R1 that must be emitted and tested.</summary>
     public static readonly IReadOnlyList<string> RequiredInR1 =
     [
-        SignInFailed, IdpConfigChanged,
+        SignInFailed, IdpConfigChanged, DirectoryConnectionChanged, UserSynced, DisabledByDirectory, ReenabledByDirectory,
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
         ConnectionConsentRevokedDetected, ConnectionStatusChanged,
     ];

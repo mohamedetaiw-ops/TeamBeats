@@ -52,6 +52,75 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
         return id;
     }
 
+    public async Task<Guid> SyncDirectoryGroupAsync(string key, string name, IReadOnlyCollection<Guid> memberUserIds, CancellationToken ct = default)
+    {
+        var tenantId = context.RequireTenant();
+        var existing = await session.QuerySingleOrDefaultAsync("select id, source, name from authz.user_group where key = @k", new { k = key },
+            r => (Id: r.GetGuid(0), Source: r.GetString(1), Name: r.GetString(2)), ct);
+        Guid groupId;
+        if (existing == default)
+        {
+            groupId = Ids.New();
+            await session.ExecAsync("insert into authz.user_group (tenant_id, id, key, name, source) values (@t, @id, @k, @n, 'idp')",
+                new { t = tenantId, id = groupId, k = key, n = name }, ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.RoleChanged, "group", groupId.ToString(), Changes: new { created = key, source = "idp" }), ct);
+        }
+        else
+        {
+            if (existing.Source != "idp")
+            {
+                throw new InvalidOperationException("A product group cannot be changed by directory sync.");
+            }
+            groupId = existing.Id;
+            if (existing.Name != name)
+            {
+                await session.ExecAsync("update authz.user_group set name = @n where id = @id", new { id = groupId, n = name }, ct);
+            }
+        }
+
+        var current = (await session.QueryAsync("select user_id from authz.group_member where group_id = @g", new { g = groupId }, r => r.GetGuid(0), ct)).ToHashSet();
+        var wanted = memberUserIds.ToHashSet();
+        var added = wanted.Except(current).ToList();
+        var removed = current.Except(wanted).ToList();
+        foreach (var u in added)
+        {
+            await session.ExecAsync("insert into authz.group_member (tenant_id, group_id, user_id) values (@t, @g, @u) on conflict do nothing",
+                new { t = tenantId, g = groupId, u }, ct);
+        }
+        if (removed.Count > 0)
+        {
+            await session.ExecAsync("delete from authz.group_member where group_id = @g and user_id = any(@u)", new { g = groupId, u = removed.ToArray() }, ct);
+        }
+        if (added.Count > 0 || removed.Count > 0)
+        {
+            await store.BumpAsync(ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.RoleChanged, "group", groupId.ToString(),
+                Changes: new { membersAdded = added.Count, membersRemoved = removed.Count, source = "idp" }), ct);
+        }
+        return groupId;
+    }
+
+    public async Task AssignBuiltInRoleToGroupAsync(Guid groupId, string builtInRoleKey, ScopeType scopeType, Guid? scopeId, CancellationToken ct = default)
+    {
+        var roleId = await session.ScalarAsync<Guid?>("select id from authz.role where key = @k and is_builtin", new { k = builtInRoleKey }, ct)
+            ?? throw new InvalidOperationException($"Built-in role {builtInRoleKey} is not seeded.");
+        var exists = await session.ScalarAsync<bool>(
+            """
+            select exists (select 1 from authz.role_assignment where subject_type = 'group' and subject_id = @g and role_id = @r
+                           and scope_type = @s and scope_id is not distinct from @sid and revoked_at is null)
+            """, new { g = groupId, r = roleId, s = scopeType, sid = scopeId }, ct);
+        if (exists)
+        {
+            return;
+        }
+        var id = Ids.New();
+        await store.InsertAssignmentAsync(id, "group", groupId, roleId, scopeType, scopeId, null, null, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.RoleAssigned, "role_assignment", id.ToString(),
+            TargetOrgUnitId: scopeType is ScopeType.OrgUnit or ScopeType.OrgSubtree ? scopeId : null,
+            Changes: new { subjectType = "group", subjectId = groupId, role = builtInRoleKey, scopeType = Sql.ToSnake(scopeType.ToString()), scopeId, system = true }), ct);
+        await outbox.EnqueueAsync(new RoleAssignmentChanged(id, groupId, builtInRoleKey, "assigned"), ct);
+    }
+
     public Task<bool> IsBuiltInRoleKeyAsync(string roleKey, CancellationToken ct = default) =>
         session.ScalarAsync<bool>("select exists (select 1 from authz.role where key = @k and is_builtin)", new { k = roleKey }, ct);
 
