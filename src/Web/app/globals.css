@@ -67,6 +67,7 @@ body {
 .page {
   padding: var(--tb-space-md);
   max-inline-size: 60rem;
+  overflow-wrap: anywhere; /* long addresses and names wrap instead of widening a phone screen */
 }
 
 .narrow {
