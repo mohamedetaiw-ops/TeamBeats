@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Npgsql;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
@@ -14,11 +15,15 @@ public sealed record RoleView(Guid Id, string Key, bool IsBuiltIn, bool IsDelega
 
 public sealed record DefineRoleRequest(string Key, IReadOnlyDictionary<string, string>? Names, IReadOnlyList<string> Permissions, bool Delegable);
 
-public sealed record AssignRoleRequest(string SubjectType, Guid SubjectId, string RoleKey, string ScopeType, Guid? ScopeId, string? ScopeResourceType);
+/// <param name="Condition">Optional attribute condition that narrows the grant (spec 004 US7, FR-014 to FR-016).</param>
+public sealed record AssignRoleRequest(string SubjectType, Guid SubjectId, string RoleKey, string ScopeType, Guid? ScopeId, string? ScopeResourceType,
+    JsonElement? Condition = null);
 
-public sealed record AssignmentView(Guid Id, string SubjectType, Guid SubjectId, string RoleKey, string ScopeType, Guid? ScopeId, DateTimeOffset CreatedAt);
+public sealed record AssignmentView(Guid Id, string SubjectType, Guid SubjectId, string RoleKey, string ScopeType, Guid? ScopeId, DateTimeOffset CreatedAt,
+    JsonElement? Condition = null);
 
-public sealed record AclEntryRequest(string SubjectType, Guid SubjectId, string Permission);
+/// <param name="Condition">Optional attribute condition that narrows the entry (spec 004 US7, FR-014 to FR-016).</param>
+public sealed record AclEntryRequest(string SubjectType, Guid SubjectId, string Permission, JsonElement? Condition = null);
 
 public sealed record InheritanceRuleRequest(Guid OrgUnitId, string Rule, bool Enabled);
 
@@ -26,7 +31,8 @@ public sealed record CreateGroupRequest(string Key, string Name);
 
 public sealed record GroupMemberRequest(Guid UserId);
 
-public sealed record ExplainResult(bool Allowed, IReadOnlyList<DecisionReason> Reasons);
+/// <param name="NotApplied">Grants that cover the target but whose condition did not hold, with the attribute values used.</param>
+public sealed record ExplainResult(bool Allowed, IReadOnlyList<DecisionReason> Reasons, IReadOnlyList<DecisionReason> NotApplied);
 
 /// <summary>Role, assignment, ACL, rule and group administration (spec 004 US1 to US6).</summary>
 public sealed class AuthorizationAdmin(
@@ -113,12 +119,13 @@ public sealed class AuthorizationAdmin(
         }
         var rows = await session.QueryAsync(
             """
-            select a.id, a.subject_type, a.subject_id, r.key, a.scope_type, a.scope_id, a.created_at
+            select a.id, a.subject_type, a.subject_id, r.key, a.scope_type, a.scope_id, a.created_at, a.condition::text as condition
             from authz.role_assignment a join authz.role r on r.id = a.role_id
             where a.revoked_at is null and (@u::uuid is null or (a.subject_type = 'user' and a.subject_id = @u))
             order by a.created_at
             """, new { u = userId },
-            r => new AssignmentView(r.GetGuid(0), r.GetString(1), r.GetGuid(2), r.GetString(3), r.GetString(4), r.Get<Guid?>("scope_id"), r.GetFieldValue<DateTimeOffset>(6)), ct);
+            r => new AssignmentView(r.GetGuid(0), r.GetString(1), r.GetGuid(2), r.GetString(3), r.GetString(4), r.Get<Guid?>("scope_id"),
+                r.GetFieldValue<DateTimeOffset>(6), ConditionJson(r.Get<string>("condition"))), ct);
         return coverage.WholeTenant ? rows : rows.Where(a => a.ScopeId is { } s && coverage.Units.Contains(s)).ToList();
     }
 
@@ -138,6 +145,9 @@ public sealed class AuthorizationAdmin(
         {
             throw AppException.Validation("subjectType", "validation.role.subject_type");
         }
+        var conditionErrors = new ValidationErrors();
+        var condition = await ParseConditionAsync(request.Condition, conditionErrors, "condition", ct);
+        conditionErrors.ThrowIfAny();
 
         var role = await session.QuerySingleOrDefaultAsync(
             """
@@ -228,16 +238,18 @@ public sealed class AuthorizationAdmin(
         try
         {
             await InsertAssignmentAsync(id, request.SubjectType, request.SubjectId, role.Id, scopeType, request.ScopeId,
-                scopeType == ScopeType.Resource ? request.ScopeResourceType : null, assigner, ct);
+                scopeType == ScopeType.Resource ? request.ScopeResourceType : null, assigner, ct, condition);
         }
         catch (PostgresException ex) when (ex.IsUniqueViolation())
         {
             throw AppException.Conflict("conflict.role.already_assigned");
         }
 
-        await AuditAssignmentAsync(AuditActions.RoleAssigned, id, request.SubjectType, request.SubjectId, role.Key, scopeType, request.ScopeId, ct);
+        await AuditAssignmentAsync(AuditActions.RoleAssigned, id, request.SubjectType, request.SubjectId, role.Key, scopeType, request.ScopeId, ct,
+            condition: condition);
         await outbox.EnqueueAsync(new RoleAssignmentChanged(id, request.SubjectId, role.Key, "assigned"), ct);
-        return new AssignmentView(id, request.SubjectType, request.SubjectId, role.Key, Sql.ToSnake(scopeType.ToString()), request.ScopeId, DateTimeOffset.UtcNow);
+        return new AssignmentView(id, request.SubjectType, request.SubjectId, role.Key, Sql.ToSnake(scopeType.ToString()), request.ScopeId, DateTimeOffset.UtcNow,
+            ConditionJson(condition?.ToCanonicalJson()));
     }
 
     public async Task RevokeAsync(Guid assignmentId, CancellationToken ct)
@@ -290,8 +302,9 @@ public sealed class AuthorizationAdmin(
         var (_, descriptor) = await DescribeAsync(resourceType, resourceId, ct);
         await authz.DemandVisibleAsync(ManagePermission(resourceType), AuthzTarget.Resource(descriptor), ct);
         return await session.QueryAsync(
-            "select subject_type, subject_id, permission_key from authz.resource_acl where resource_type = @t and resource_id = @id order by created_at",
-            new { t = resourceType, id = resourceId }, r => new AclEntryRequest(r.GetString(0), r.GetGuid(1), r.GetString(2)), ct);
+            "select subject_type, subject_id, permission_key, condition::text as condition from authz.resource_acl where resource_type = @t and resource_id = @id order by created_at",
+            new { t = resourceType, id = resourceId },
+            r => new AclEntryRequest(r.GetString(0), r.GetGuid(1), r.GetString(2), ConditionJson(r.Get<string>("condition"))), ct);
     }
 
     public async Task ReplaceAclAsync(string resourceType, Guid resourceId, IReadOnlyList<AclEntryRequest> entries, CancellationToken ct)
@@ -300,8 +313,10 @@ public sealed class AuthorizationAdmin(
         await authz.DemandVisibleAsync(provider.ManagePermission, AuthzTarget.Resource(descriptor), ct);
 
         var errors = new ValidationErrors();
+        var normalized = new List<(AclEntryRequest Entry, GrantCondition? Condition)>();
         foreach (var e in entries)
         {
+            normalized.Add((e, await ParseConditionAsync(e.Condition, errors, "condition", ct)));
             if (e.SubjectType is not ("user" or "group" or "org_unit" or "org_subtree"))
             {
                 errors.Add("subjectType", "validation.acl.subject_type");
@@ -315,21 +330,40 @@ public sealed class AuthorizationAdmin(
                 errors.Add("subjectId", "validation.org.parent_not_found");
             }
         }
+        // Identical entries collapse; the same subject and permission with two different conditions is ambiguous.
+        var distinct = normalized
+            .GroupBy(x => (x.Entry.SubjectType, x.Entry.SubjectId, x.Entry.Permission, Condition: x.Condition?.ToCanonicalJson()))
+            .Select(x => x.First()).ToList();
+        if (distinct.GroupBy(x => (x.Entry.SubjectType, x.Entry.SubjectId, x.Entry.Permission)).Any(x => x.Count() > 1))
+        {
+            errors.Add("condition", "validation.acl.conflicting_conditions");
+        }
         errors.ThrowIfAny();
 
         await session.ExecAsync("delete from authz.resource_acl where resource_type = @t and resource_id = @id", new { t = resourceType, id = resourceId }, ct);
-        foreach (var e in entries.Distinct())
+        foreach (var (e, condition) in distinct)
         {
             await session.ExecAsync(
                 """
-                insert into authz.resource_acl (tenant_id, id, resource_type, resource_id, subject_type, subject_id, permission_key, granted_by)
-                values (@t, @id, @rt, @rid, @st, @sid, @p, @by)
+                insert into authz.resource_acl (tenant_id, id, resource_type, resource_id, subject_type, subject_id, permission_key, granted_by, condition)
+                values (@t, @id, @rt, @rid, @st, @sid, @p, @by, @c)
                 """,
-                new { t = context.RequireTenant(), id = Ids.New(), rt = resourceType, rid = resourceId, st = e.SubjectType, sid = e.SubjectId, p = e.Permission, by = context.ActorId }, ct);
+                new
+                {
+                    t = context.RequireTenant(), id = Ids.New(), rt = resourceType, rid = resourceId, st = e.SubjectType, sid = e.SubjectId, p = e.Permission,
+                    by = context.ActorId, c = condition is null ? null : new Jsonb(condition.ToCanonicalJson()),
+                }, ct);
         }
         await BumpAsync(ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ResourcePermissionChanged, resourceType, resourceId.ToString(),
-            TargetOrgUnitId: descriptor.OwningOrgUnitId, Changes: new { entries }), ct);
+            TargetOrgUnitId: descriptor.OwningOrgUnitId,
+            Changes: new
+            {
+                entries = distinct.Select(x => new
+                {
+                    x.Entry.SubjectType, x.Entry.SubjectId, x.Entry.Permission, condition = x.Condition?.ToJson(),
+                }),
+            }), ct);
         await outbox.EnqueueAsync(new ResourcePermissionChanged(resourceType, resourceId), ct);
     }
 
@@ -417,7 +451,7 @@ public sealed class AuthorizationAdmin(
 
         var grants = await authz.GrantsForAsync(userId, ct);
         var decision = await authz.EvaluateAsync(grants, permission, target, ct);
-        return new ExplainResult(decision.Allowed, decision.Reasons);
+        return new ExplainResult(decision.Allowed, decision.Reasons, decision.NotApplied);
     }
 
     public async Task<object> MyAccessAsync(CancellationToken ct)
@@ -425,8 +459,12 @@ public sealed class AuthorizationAdmin(
         var g = await authz.GrantsForAsync(context.RequireUser(), ct);
         return new
         {
-            grants = g.Grants.Select(x => new { role = x.RoleKey, scopeType = Sql.ToSnake(x.ScopeType.ToString()), scopeId = x.ScopeId, via = x.Via }),
-            permissions = g.Grants.SelectMany(x => x.Permissions).Distinct().Order(),
+            grants = g.Grants.Select(x => new
+            {
+                role = x.RoleKey, scopeType = Sql.ToSnake(x.ScopeType.ToString()), scopeId = x.ScopeId, via = x.Via, condition = x.Condition?.ToJson(),
+            }),
+            // Permissions that apply without a resource. A grant whose condition needs resource attributes is listed above only.
+            permissions = Evaluator.ApplicableWithoutResource(g).SelectMany(x => x.Permissions).Distinct().Order(),
             memberUnits = g.MemberUnits,
         };
     }
@@ -442,11 +480,43 @@ public sealed class AuthorizationAdmin(
         providers.FirstOrDefault(p => p.ResourceType == resourceType)?.ManagePermission ?? throw AppException.NotFound();
 
     internal Task InsertAssignmentAsync(Guid id, string subjectType, Guid subjectId, Guid roleId, ScopeType scope, Guid? scopeId,
-        string? scopeResourceType, Guid? grantedBy, CancellationToken ct) =>
-        store.InsertAssignmentAsync(id, subjectType, subjectId, roleId, scope, scopeId, scopeResourceType, grantedBy, ct);
+        string? scopeResourceType, Guid? grantedBy, CancellationToken ct, GrantCondition? condition = null) =>
+        store.InsertAssignmentAsync(id, subjectType, subjectId, roleId, scope, scopeId, scopeResourceType, grantedBy, ct, condition);
+
+    /// <summary>Parses a condition and checks that org unit values exist in this tenant (another tenant's unit is unknown).</summary>
+    private async Task<GrantCondition?> ParseConditionAsync(JsonElement? json, ValidationErrors errors, string field, CancellationToken ct)
+    {
+        var condition = GrantCondition.Parse(json, errors, field);
+        if (condition is null)
+        {
+            return null;
+        }
+        foreach (var c in condition.Comparisons().Where(c => c.Attribute.Kind == AttributeKind.OrgUnit))
+        {
+            foreach (var value in c.Values)
+            {
+                if (!await hierarchy.UnitExistsAsync(Guid.Parse(value), ct))
+                {
+                    errors.Add(field, "validation.org.parent_not_found");
+                    return null;
+                }
+            }
+        }
+        return condition;
+    }
+
+    private static JsonElement? ConditionJson(string? stored)
+    {
+        if (string.IsNullOrEmpty(stored))
+        {
+            return null;
+        }
+        using var doc = JsonDocument.Parse(stored);
+        return doc.RootElement.Clone();
+    }
 
     private async Task AuditAssignmentAsync(string action, Guid id, string subjectType, Guid subjectId, string role, ScopeType scope, Guid? scopeId,
-        CancellationToken ct, bool bump = false)
+        CancellationToken ct, bool bump = false, GrantCondition? condition = null)
     {
         if (bump)
         {
@@ -454,7 +524,7 @@ public sealed class AuthorizationAdmin(
         }
         await audit.WriteAsync(new AuditEntry(action, "role_assignment", id.ToString(),
             TargetOrgUnitId: scope is ScopeType.OrgUnit or ScopeType.OrgSubtree ? scopeId : null,
-            Changes: new { subjectType, subjectId, role, scopeType = Sql.ToSnake(scope.ToString()), scopeId }), ct);
+            Changes: new { subjectType, subjectId, role, scopeType = Sql.ToSnake(scope.ToString()), scopeId, condition = condition?.ToJson() }), ct);
     }
 
     internal Task BumpAsync(CancellationToken ct) => store.BumpAsync(ct);
@@ -464,14 +534,18 @@ public sealed class AuthorizationAdmin(
 public sealed class AssignmentStore(IDbSession session, ITenantContext context)
 {
     public async Task InsertAssignmentAsync(Guid id, string subjectType, Guid subjectId, Guid roleId, ScopeType scope, Guid? scopeId,
-        string? scopeResourceType, Guid? grantedBy, CancellationToken ct)
+        string? scopeResourceType, Guid? grantedBy, CancellationToken ct, GrantCondition? condition = null)
     {
         await session.ExecAsync(
             """
-            insert into authz.role_assignment (tenant_id, id, subject_type, subject_id, role_id, scope_type, scope_id, scope_resource_type, granted_by)
-            values (@t, @id, @st, @sid, @role, @scope, @scopeId, @srt, @by)
+            insert into authz.role_assignment (tenant_id, id, subject_type, subject_id, role_id, scope_type, scope_id, scope_resource_type, granted_by, condition)
+            values (@t, @id, @st, @sid, @role, @scope, @scopeId, @srt, @by, @c)
             """,
-            new { t = context.RequireTenant(), id, st = subjectType, sid = subjectId, role = roleId, scope, scopeId, srt = scopeResourceType, by = grantedBy }, ct);
+            new
+            {
+                t = context.RequireTenant(), id, st = subjectType, sid = subjectId, role = roleId, scope, scopeId, srt = scopeResourceType, by = grantedBy,
+                c = condition is null ? null : new Jsonb(condition.ToCanonicalJson()),
+            }, ct);
         await BumpAsync(ct);
     }
 

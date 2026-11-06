@@ -65,7 +65,7 @@ public sealed class AuthorizationService(
     public async Task<bool> HoldsAnywhereAsync(string permission, CancellationToken ct = default)
     {
         var g = await CurrentAsync(ct);
-        return g.ActiveMember && g.Grants.Any(x => x.Permissions.Contains(permission));
+        return g.ActiveMember && Evaluator.ApplicableWithoutResource(g).Any(x => x.Permissions.Contains(permission));
     }
 
     public async Task<OrgCoverage> CoverageAsync(string permission, CancellationToken ct = default) =>
@@ -99,7 +99,7 @@ public sealed class AuthorizationService(
 
     private async Task<IReadOnlyList<AclEntry>> LoadAclAsync(string resourceType, Guid[] ids, CancellationToken ct) =>
         await session.QueryAsync(
-            "select resource_type, resource_id, subject_type, subject_id, permission_key from authz.resource_acl where resource_type = @t and resource_id = any(@ids)",
+            "select resource_type, resource_id, subject_type, subject_id, permission_key, condition::text as condition from authz.resource_acl where resource_type = @t and resource_id = any(@ids)",
             new { t = resourceType, ids },
-            r => new AclEntry(r.GetString(0), r.GetGuid(1), r.GetString(2), r.GetGuid(3), r.GetString(4)), ct);
+            r => new AclEntry(r.GetString(0), r.GetGuid(1), r.GetString(2), r.GetGuid(3), r.GetString(4), GrantCondition.FromStored(r.Get<string>("condition"))), ct);
 }

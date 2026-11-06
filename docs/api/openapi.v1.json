@@ -1855,7 +1855,8 @@
           },
           "permission": {
             "type": "string"
-          }
+          },
+          "condition": {}
         }
       },
       "AddMembershipRequest": {
@@ -1944,7 +1945,8 @@
               "null",
               "string"
             ]
-          }
+          },
+          "condition": {}
         }
       },
       "CapabilityValue": {
