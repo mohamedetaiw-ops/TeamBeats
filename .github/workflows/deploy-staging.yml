@@ -14,7 +14,7 @@ name: deploy-staging
 on:
   workflow_dispatch:
   push:
-    branches: [main, claude/project-thread-tdrqq2]  # the feature branch entry is temporary, for the first deploy
+    branches: [main]
 
 permissions:
   contents: read
