@@ -1,0 +1,661 @@
+{
+  "layouts": [
+    {
+      "id": "L01",
+      "version": "1.0.0",
+      "nameKey": "experience.layout.l01",
+      "regions": [
+        {
+          "id": "main",
+          "span": 12,
+          "section": "contained"
+        }
+      ],
+      "fallback": "stack"
+    },
+    {
+      "id": "L02",
+      "version": "1.0.0",
+      "nameKey": "experience.layout.l02",
+      "regions": [
+        {
+          "id": "start",
+          "span": 6,
+          "section": "contained"
+        },
+        {
+          "id": "end",
+          "span": 6,
+          "section": "contained"
+        }
+      ],
+      "fallback": "stack"
+    },
+    {
+      "id": "L03",
+      "version": "1.0.0",
+      "nameKey": "experience.layout.l03",
+      "regions": [
+        {
+          "id": "aside",
+          "span": 4,
+          "section": "contained"
+        },
+        {
+          "id": "main",
+          "span": 8,
+          "section": "contained"
+        }
+      ],
+      "fallback": "stack"
+    },
+    {
+      "id": "L04",
+      "version": "1.0.0",
+      "nameKey": "experience.layout.l04",
+      "regions": [
+        {
+          "id": "start",
+          "span": 4,
+          "section": "contained"
+        },
+        {
+          "id": "middle",
+          "span": 4,
+          "section": "contained"
+        },
+        {
+          "id": "end",
+          "span": 4,
+          "section": "contained"
+        }
+      ],
+      "fallback": "two_then_stack"
+    },
+    {
+      "id": "L05",
+      "version": "1.0.0",
+      "nameKey": "experience.layout.l05",
+      "regions": [
+        {
+          "id": "sidebar",
+          "span": 3,
+          "section": "contained"
+        },
+        {
+          "id": "canvas",
+          "span": 9,
+          "section": "contained"
+        }
+      ],
+      "fallback": "stack"
+    },
+    {
+      "id": "L06",
+      "version": "1.0.0",
+      "nameKey": "experience.layout.l06",
+      "regions": [
+        {
+          "id": "hero",
+          "span": 12,
+          "section": "full_bleed"
+        },
+        {
+          "id": "grid",
+          "span": 12,
+          "section": "contained"
+        }
+      ],
+      "fallback": "stack"
+    },
+    {
+      "id": "L07",
+      "version": "1.0.0",
+      "nameKey": "experience.layout.l07",
+      "regions": [
+        {
+          "id": "band1",
+          "span": 12,
+          "section": "fluid"
+        },
+        {
+          "id": "band2",
+          "span": 12,
+          "section": "fluid"
+        },
+        {
+          "id": "band3",
+          "span": 12,
+          "section": "fluid"
+        }
+      ],
+      "fallback": "stack"
+    },
+    {
+      "id": "L08",
+      "version": "1.0.0",
+      "nameKey": "experience.layout.l08",
+      "regions": [
+        {
+          "id": "mosaic",
+          "span": 12,
+          "section": "contained"
+        }
+      ],
+      "fallback": "stack"
+    },
+    {
+      "id": "L09",
+      "version": "1.0.0",
+      "nameKey": "experience.layout.l09",
+      "regions": [
+        {
+          "id": "panel1",
+          "span": 12,
+          "section": "contained"
+        },
+        {
+          "id": "panel2",
+          "span": 12,
+          "section": "contained"
+        },
+        {
+          "id": "panel3",
+          "span": 12,
+          "section": "contained"
+        }
+      ],
+      "fallback": "tabs"
+    },
+    {
+      "id": "L10",
+      "version": "1.0.0",
+      "nameKey": "experience.layout.l10",
+      "regions": [
+        {
+          "id": "wide1",
+          "span": 12,
+          "section": "full_bleed"
+        },
+        {
+          "id": "contained1",
+          "span": 12,
+          "section": "contained"
+        },
+        {
+          "id": "wide2",
+          "span": 12,
+          "section": "full_bleed"
+        },
+        {
+          "id": "contained2",
+          "span": 12,
+          "section": "contained"
+        }
+      ],
+      "fallback": "stack"
+    }
+  ],
+  "templates": [
+    {
+      "id": "T01",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t01",
+      "descriptionKey": "experience.template.t01.description",
+      "layout": "L01",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "main",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 40,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T02",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t02",
+      "descriptionKey": "experience.template.t02.description",
+      "layout": "L01",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "main",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 8,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T03",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t03",
+      "descriptionKey": "experience.template.t03.description",
+      "layout": "L03",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "aside",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 8,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "main",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 12,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T04",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t04",
+      "descriptionKey": "experience.template.t04.description",
+      "layout": "L06",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "hero",
+          "policy": {
+            "allowedCategories": [
+              "content",
+              "media",
+              "data"
+            ],
+            "minPlacements": 0,
+            "maxPlacements": 2,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "grid",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 24,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T05",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t05",
+      "descriptionKey": "experience.template.t05.description",
+      "layout": "L05",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "sidebar",
+          "policy": {
+            "allowedCategories": [
+              "navigation",
+              "services",
+              "utility"
+            ],
+            "minPlacements": 0,
+            "maxPlacements": 8,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "canvas",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 24,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T06",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t06",
+      "descriptionKey": "experience.template.t06.description",
+      "layout": "L06",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "hero",
+          "policy": {
+            "allowedCategories": [
+              "media",
+              "content"
+            ],
+            "minPlacements": 0,
+            "maxPlacements": 1,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "grid",
+          "policy": {
+            "allowedCategories": [
+              "content",
+              "media",
+              "people"
+            ],
+            "minPlacements": 0,
+            "maxPlacements": 16,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T07",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t07",
+      "descriptionKey": "experience.template.t07.description",
+      "layout": "L05",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "sidebar",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 8,
+            "protection": "protected",
+            "personal": false
+          }
+        },
+        {
+          "id": "canvas",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 24,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T08",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t08",
+      "descriptionKey": "experience.template.t08.description",
+      "layout": "L08",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "mosaic",
+          "policy": {
+            "allowedCategories": [
+              "data",
+              "content",
+              "utility",
+              "personal"
+            ],
+            "minPlacements": 0,
+            "maxPlacements": 40,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T09",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t09",
+      "descriptionKey": "experience.template.t09.description",
+      "layout": "L03",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "aside",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 8,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "main",
+          "policy": {
+            "allowedCategories": [
+              "content",
+              "data",
+              "people"
+            ],
+            "minPlacements": 1,
+            "maxPlacements": 8,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T10",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t10",
+      "descriptionKey": "experience.template.t10.description",
+      "layout": "L07",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "band1",
+          "policy": {
+            "allowedCategories": [
+              "navigation",
+              "content"
+            ],
+            "minPlacements": 0,
+            "maxPlacements": 2,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "band2",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 1,
+            "maxPlacements": 8,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "band3",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 4,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T11",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t11",
+      "descriptionKey": "experience.template.t11.description",
+      "layout": "L10",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "wide1",
+          "policy": {
+            "allowedCategories": [
+              "media",
+              "content"
+            ],
+            "minPlacements": 1,
+            "maxPlacements": 1,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "contained1",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 8,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "wide2",
+          "policy": {
+            "allowedCategories": [
+              "media",
+              "content"
+            ],
+            "minPlacements": 0,
+            "maxPlacements": 2,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "contained2",
+          "policy": {
+            "allowedCategories": [],
+            "minPlacements": 0,
+            "maxPlacements": 8,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "T12",
+      "version": "1.0.0",
+      "state": "released",
+      "nameKey": "experience.template.t12",
+      "descriptionKey": "experience.template.t12.description",
+      "layout": "L05",
+      "variants": [
+        "spacious",
+        "balanced",
+        "compact"
+      ],
+      "regions": [
+        {
+          "id": "sidebar",
+          "policy": {
+            "allowedCategories": [
+              "navigation",
+              "data"
+            ],
+            "minPlacements": 0,
+            "maxPlacements": 4,
+            "protection": "optional",
+            "personal": false
+          }
+        },
+        {
+          "id": "canvas",
+          "policy": {
+            "allowedCategories": [
+              "data",
+              "content",
+              "people"
+            ],
+            "minPlacements": 0,
+            "maxPlacements": 24,
+            "protection": "optional",
+            "personal": false
+          }
+        }
+      ]
+    }
+  ]
+}

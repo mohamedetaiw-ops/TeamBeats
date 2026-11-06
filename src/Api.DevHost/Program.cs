@@ -22,6 +22,7 @@ public sealed class DevHostProgram
         builder.AddTeamBeatsApi();
         builder.Services.AddDevAuth(builder.Configuration, builder.Environment);
         builder.Services.AddScoped<TestTenantSeeder>();
+        builder.Services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, ReferencePacks>();
         builder.AddFakeExternalSystems();
         var app = builder.Build();
         app.UseTeamBeatsApi(endpoints => endpoints.MapDevAuthEndpoints(app.Configuration));

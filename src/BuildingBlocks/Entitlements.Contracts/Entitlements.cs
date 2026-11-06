@@ -23,6 +23,12 @@ public static class Capabilities
     public const string AnalyticsAdvanced = "analytics.advanced";
     public const string AnalyticsExport = "analytics.export";
     public const string DeploymentOnPrem = "deployment.on_prem";
+    public const string ExperiencePageBuilder = "experience.page_builder";
+    public const string ExperienceFragments = "experience.fragments";
+    public const string ExperienceApprovalRoutes = "experience.approval_routes";
+    public const string ExperienceMaxCustomTemplates = "experience.max_custom_templates";
+    public const string ExperienceFeatureControls = "experience.feature_controls";
+    public const string ExperienceCustomComponents = "experience.custom_components";
 }
 
 /// <summary>Central entitlement check for the current tenant (spec 005). Unknown keys fail closed.</summary>

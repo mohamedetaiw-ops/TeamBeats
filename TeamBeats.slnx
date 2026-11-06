@@ -47,6 +47,12 @@
   <Folder Name="/src/Modules/Authorization/">
     <Project Path="src/Modules/Authorization/TeamBeats.Modules.Authorization.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Experience/">
+    <Project Path="src/Modules/Experience/TeamBeats.Modules.Experience.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Experience.Contracts/">
+    <Project Path="src/Modules/Experience.Contracts/TeamBeats.Modules.Experience.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Integrations/">
     <Project Path="src/Modules/Integrations/TeamBeats.Modules.Integrations.csproj" />
   </Folder>

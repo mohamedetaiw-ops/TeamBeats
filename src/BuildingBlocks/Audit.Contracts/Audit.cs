@@ -99,6 +99,13 @@ public static class AuditActions
     public const string OutlookConnected = "integration.outlook_connected";
     public const string OutlookDisconnected = "integration.outlook_disconnected";
 
+    // 032
+    public const string PageCreated = "page.created";
+    public const string PagePublished = "page.published";
+    public const string PageRolledBack = "page.rolled_back";
+    public const string ComponentEnabled = "component.enabled";
+    public const string ComponentDisabled = "component.disabled";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -118,6 +125,7 @@ public static class AuditActions
         SignInFailed, IdpConfigChanged, DirectoryConnectionChanged, UserSynced, DisabledByDirectory, ReenabledByDirectory,
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
         ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, OutlookConnected, OutlookDisconnected,
+        PageCreated, PagePublished, PageRolledBack, ComponentEnabled, ComponentDisabled,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =
