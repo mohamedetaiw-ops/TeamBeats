@@ -1,8 +1,9 @@
 # Development-only credentials for the local compose stack and the CI test database are deliberate and
-# labelled "_dev_only" / "ci_only". Real secrets come from the environment or a secret store.
+# labelled "_dev_only" / "ci_only". Values the fake external systems accept are labelled "fictional-"
+# (docs/testing/fake-systems.md). Real secrets come from the environment or a secret store.
 [extend]
 useDefault = true
 
 [allowlist]
-description = "Labelled development and CI placeholders"
-regexes = ['''[a-z_]*_dev_only''', '''ci_only_password''', '''Password=postgres''', '''tb_(app|owner)_test_only''']
+description = "Labelled development, CI and fake-system placeholders"
+regexes = ['''[a-z_]*_dev_only''', '''ci_only_password''', '''Password=postgres''', '''tb_(app|owner)_test_only''', '''fictional-[a-z-]+''']

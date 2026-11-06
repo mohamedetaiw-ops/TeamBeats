@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    In-process stand-ins for external systems (Microsoft Entra ID, Microsoft Graph, OpenRouter), for the development
+    host, staging and tests only. Never referenced by the production API or workers (ADR-0004, architecture tests,
+    CI artifact check, tools/deploy-lint.sh). No module references: the fakes speak the external protocol only.
+  -->
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+  <PropertyGroup><RootNamespace>TeamBeats.DevFakes</RootNamespace><AssemblyName>TeamBeats.DevFakes</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
+  </ItemGroup>
+</Project>

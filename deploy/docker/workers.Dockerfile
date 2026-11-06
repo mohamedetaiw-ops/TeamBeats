@@ -2,7 +2,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY . .
 RUN dotnet publish src/Workers/TeamBeats.Workers.csproj -c Release -o /out \
- && test ! -f /out/TeamBeats.Modules.Identity.DevAuth.dll
+ && test ! -f /out/TeamBeats.Modules.Identity.DevAuth.dll \
+ && test ! -f /out/TeamBeats.DevFakes.dll
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app

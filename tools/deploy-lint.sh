@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # deploy-lint (constitution V "deployment manifest lint", spec 003 US7, ADR-0004).
-# Fails when a production deployment file could bring in development sign-in, test accounts or the test tenant.
+# Fails when a production deployment file could bring in development sign-in, test accounts, the test tenant or fake
+# external systems.
 # Production files: the production Dockerfiles, and any file under deploy/ or .github/workflows/ whose path
 # contains "prod". Staging files must say "staging" in their path and are not checked here.
 # Usage: tools/deploy-lint.sh [repo-root]
@@ -11,7 +12,7 @@ cd "$root"
 files=$( { printf '%s\n' deploy/docker/api.Dockerfile deploy/docker/workers.Dockerfile deploy/docker/web.Dockerfile;
            find deploy .github/workflows -type f 2>/dev/null | grep -i 'prod' || true; } | sort -u)
 
-forbidden='Api\.DevHost|Identity\.DevAuth|api-staging\.Dockerfile|DevSignIn|TestAccounts|SeedTenant|TEAMBEATS_DEV_SIGNIN|ASPNETCORE_ENVIRONMENT[=: "]+(Development|Test|Staging)'
+forbidden='Api\.DevHost|Identity\.DevAuth|DevFakes|Dev__Fakes|api-staging\.Dockerfile|DevSignIn|TestAccounts|SeedTenant|TEAMBEATS_DEV_SIGNIN|ASPNETCORE_ENVIRONMENT[=: "]+(Development|Test|Staging)'
 
 status=0
 for f in $files; do

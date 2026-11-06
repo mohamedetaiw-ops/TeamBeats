@@ -34,7 +34,11 @@ public sealed class WorkerProgram
         }
         builder.Services.AddHostedService<AuditSealerService>();
         builder.Services.AddHostedService<AuditRetentionService>();
-        builder.Services.AddHostedService<DirectorySyncSchedulerService>();
+        // Staging turns this off: its fake directory lives in the development host, which runs the sync itself.
+        if (builder.Configuration.GetValue("Workers:DirectorySync:Enabled", true))
+        {
+            builder.Services.AddHostedService<DirectorySyncSchedulerService>();
+        }
 
         var app = builder.Build();
         app.MapHealthChecks("/health/live");

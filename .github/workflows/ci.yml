@@ -42,8 +42,8 @@ jobs:
         run: |
           dotnet publish src/Api/TeamBeats.Api.csproj -c Release -o out/api
           dotnet publish src/Workers/TeamBeats.Workers.csproj -c Release -o out/workers
-          if ls out/api out/workers | grep -q "Identity.DevAuth"; then
-            echo "Development sign-in assembly found in a production artifact." >&2
+          if ls out/api out/workers | grep -qE "Identity\.DevAuth|DevFakes"; then
+            echo "Development sign-in or fake external systems found in a production artifact." >&2
             exit 1
           fi
       - name: Vulnerable or deprecated packages
