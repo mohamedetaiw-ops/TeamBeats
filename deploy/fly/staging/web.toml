@@ -1,0 +1,28 @@
+# Staging web (deploy/docker/web.Dockerfile). The only public app: https://<app>.fly.dev.
+# TEAMBEATS_API_ORIGIN is set by the workflow (build arg and env) to the API's private address.
+primary_region = "fra"
+
+
+[env]
+  # Fly sets HOSTNAME to the machine id; Next.js standalone binds to HOSTNAME, so pin it to all interfaces.
+  HOSTNAME = "0.0.0.0"
+  PORT = "3000"
+  TEAMBEATS_DEV_SIGNIN = "testaccount"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    interval = "15s"
+    timeout = "5s"
+    grace_period = "20s"
+    method = "GET"
+    path = "/signin"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

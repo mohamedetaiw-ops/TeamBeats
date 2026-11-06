@@ -1,0 +1,169 @@
+# Deploys the shared staging environment to Fly.io (staging only; production never uses these files).
+# Apps (in FLY_ORG, names from FLY_APP_PREFIX): <prefix>-db, <prefix>-api, <prefix>-workers, <prefix>-web.
+# Only <prefix>-web is public. The workflow touches no other Fly app.
+#
+# Repository secret: FLY_API_TOKEN (Fly org deploy token). Nothing else: the staging test admin signs in with the
+# one-click test account button (spec 003 US7), which needs no password.
+# Repository variables (optional): FLY_ORG (default personal), FLY_APP_PREFIX (default teambeats-staging).
+# Region: primary_region in deploy/fly/staging/*.toml.
+#
+# Database passwords are generated here on the first run and stored only as Fly secrets. To rotate them, unset
+# ConnectionStrings__App on the API app (fly secrets unset) and run this workflow again.
+name: deploy-staging
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+env:
+  FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+  FLY_ORG: ${{ vars.FLY_ORG || 'personal' }}
+  PREFIX: ${{ vars.FLY_APP_PREFIX || 'teambeats-staging' }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the Fly token is present
+        run: |
+          if [ -z "$FLY_API_TOKEN" ]; then
+            echo "::error::FLY_API_TOKEN repository secret is missing"
+            exit 1
+          fi
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Name the apps
+        run: |
+          {
+            echo "DB_APP=$PREFIX-db"
+            echo "API_APP=$PREFIX-api"
+            echo "WORKERS_APP=$PREFIX-workers"
+            echo "WEB_APP=$PREFIX-web"
+          } >> "$GITHUB_ENV"
+
+      - name: Create missing apps
+        run: |
+          existing=$(flyctl apps list --org "$FLY_ORG" --json | jq -r '.[] | (.Name // .name)')
+          for app in "$DB_APP" "$API_APP" "$WORKERS_APP" "$WEB_APP"; do
+            if grep -qxF "$app" <<<"$existing"; then
+              echo "$app exists"
+            else
+              echo "Creating $app in $FLY_ORG"
+              flyctl apps create "$app" --org "$FLY_ORG"
+            fi
+          done
+
+      - name: Generate database credentials on first run
+        run: |
+          has_secret() { flyctl secrets list --app "$1" --json | jq -e --arg n "$2" 'map(.Name // .name) | index($n)' >/dev/null; }
+          if has_secret "$API_APP" ConnectionStrings__App && has_secret "$WORKERS_APP" ConnectionStrings__App \
+             && has_secret "$DB_APP" TB_APP_PASSWORD; then
+            echo "Database credentials already set"
+            exit 0
+          fi
+          echo "Generating new database credentials"
+          gen() { openssl rand -hex 24; }
+          pg=$(gen); owner=$(gen); app=$(gen); operator=$(gen)
+          for v in "$pg" "$owner" "$app" "$operator"; do echo "::add-mask::$v"; done
+          host="$DB_APP.internal"
+          app_cs="Host=$host;Port=5432;Database=teambeats;Username=tb_app;Password=$app"
+          owner_cs="Host=$host;Port=5432;Database=teambeats;Username=tb_owner;Password=$owner"
+          printf 'POSTGRES_PASSWORD=%s\nTB_OWNER_PASSWORD=%s\nTB_APP_PASSWORD=%s\nTB_OPERATOR_PASSWORD=%s\n' \
+            "$pg" "$owner" "$app" "$operator" | flyctl secrets import --app "$DB_APP" --stage
+          printf 'ConnectionStrings__App=%s\nConnectionStrings__Owner=%s\n' "$app_cs" "$owner_cs" \
+            | flyctl secrets import --app "$API_APP" --stage
+          printf 'ConnectionStrings__App=%s\n' "$app_cs" | flyctl secrets import --app "$WORKERS_APP" --stage
+
+      - name: Deploy database
+        run: >-
+          flyctl deploy . --app "$DB_APP" --config deploy/fly/staging/db.toml
+          --dockerfile deploy/fly/staging/db.Dockerfile
+          --remote-only --ha=false --wait-timeout 10m
+
+      - name: Deploy API (applies migrations on start)
+        run: >-
+          flyctl deploy . --app "$API_APP" --config deploy/fly/staging/api.toml
+          --dockerfile deploy/docker/api-staging.Dockerfile
+          --remote-only --ha=false --wait-timeout 10m
+
+      - name: Start and wait for the API
+        run: |
+          # flyctl deploy updates a stopped machine without starting it (for example after it hit its restart limit).
+          flyctl machines list --app "$API_APP" --json | jq -r '.[] | select(.state != "started") | .id' \
+            | xargs -r -n1 flyctl machine start --app "$API_APP"
+          for i in $(seq 1 36); do
+            states=$(flyctl machines list --app "$API_APP" --json | jq -r '[.[] | .checks[]? | .status] | unique | join(",")')
+            echo "API checks: ${states:-none}"
+            [ "$states" = "passing" ] && exit 0
+            sleep 5
+          done
+          echo "::error::API did not become healthy"
+          exit 1
+
+      - name: Deploy workers
+        run: >-
+          flyctl deploy . --app "$WORKERS_APP" --config deploy/fly/staging/workers.toml
+          --dockerfile deploy/docker/workers.Dockerfile
+          --remote-only --ha=false --wait-timeout 5m
+
+      - name: Start workers if stopped
+        run: |
+          flyctl machines list --app "$WORKERS_APP" --json | jq -r '.[] | select(.state != "started") | .id' \
+            | xargs -r -n1 flyctl machine start --app "$WORKERS_APP"
+
+      - name: Deploy web
+        run: >-
+          flyctl deploy . --app "$WEB_APP" --config deploy/fly/staging/web.toml
+          --dockerfile deploy/docker/web.Dockerfile
+          --build-arg "TEAMBEATS_API_ORIGIN=http://$API_APP.internal:8080"
+          --env "TEAMBEATS_API_ORIGIN=http://$API_APP.internal:8080"
+          --remote-only --ha=false --wait-timeout 10m
+
+      - name: Smoke test
+        run: |
+          base="https://$WEB_APP.fly.dev"
+          echo "Staging URL: $base"
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$base/signin" || true)
+            [ "$code" = 200 ] && break
+            sleep 6
+          done
+          [ "$code" = 200 ] || { echo "::error::$base/signin answered $code"; exit 1; }
+          echo "Sign-in page: 200"
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$base/api/v1/me")
+            [ "$code" = 401 ] && break
+            sleep 5
+          done
+          [ "$code" = 401 ] || { echo "::error::/api/v1/me signed out answered $code, expected 401"; exit 1; }
+          echo "API through web, signed out: 401"
+          jar=$(mktemp)
+          code=$(curl -s -o /dev/null -w '%{http_code}' -c "$jar" -H 'content-type: application/json' \
+            -d '{"username":"admin"}' "$base/dev/signin")
+          case "$code" in 2*) ;; *) echo "::error::test admin sign-in answered $code"; exit 1;; esac
+          code=$(curl -s -o /dev/null -w '%{http_code}' -b "$jar" "$base/api/v1/me")
+          [ "$code" = 200 ] || { echo "::error::/api/v1/me as test admin answered $code"; exit 1; }
+          echo "Test admin sign-in and /api/v1/me: 200"
+          echo "### Staging deployed: $base" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Show recent app logs on failure
+        if: failure()
+        run: |
+          for app in "$DB_APP" "$API_APP" "$WORKERS_APP" "$WEB_APP"; do
+            echo "::group::$app"
+            flyctl status --app "$app" 2>&1 || true
+            flyctl logs --app "$app" --no-tail 2>&1 | tail -120 || true
+            echo "::endgroup::"
+          done
