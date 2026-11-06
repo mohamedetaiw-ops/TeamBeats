@@ -19,10 +19,12 @@ public sealed class ApiProgram
 public static class ProductionGuards
 {
     public const string DevSignInKey = "Auth:DevSignIn:Enabled";
+    public const string TestAccountsKey = "Auth:DevSignIn:TestAccounts";
+    public const string SeedTenantKey = "Dev:SeedTenant";
 
     /// <summary>
-    /// Spec 003 US1 scenario 2: the production artifact refuses to start when the dev sign-in setting is enabled,
-    /// whatever the environment name says.
+    /// Spec 003 US1 scenario 2 and US7: the production artifact refuses to start when the dev sign-in setting is enabled,
+    /// or when test accounts or a seeded test tenant are configured, whatever the environment name says.
     /// </summary>
     public static void EnsureDevSignInDisabled(IConfiguration configuration)
     {
@@ -30,6 +32,14 @@ public static class ProductionGuards
         {
             throw new InvalidOperationException(
                 $"{DevSignInKey} is enabled, but this is the production host, which does not contain development sign-in. Refusing to start.");
+        }
+        foreach (var key in new[] { TestAccountsKey, SeedTenantKey })
+        {
+            if (configuration.GetSection(key).GetChildren().Any())
+            {
+                throw new InvalidOperationException(
+                    $"{key} is configured, but test accounts and test tenants never exist in production. Refusing to start.");
+            }
         }
     }
 }

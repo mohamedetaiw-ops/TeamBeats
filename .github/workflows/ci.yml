@@ -95,6 +95,8 @@ jobs:
           output-file: teambeats-sbom.spdx.json
           # Generated on every run; uploading is off until artifact storage is budgeted (release builds will attach it).
           upload-artifact: false
+      - name: Deployment manifest lint (constitution V, ADR-0004)
+        run: tools/deploy-lint.sh
       - name: spec-lint
         if: github.event_name == 'pull_request'
         env:

@@ -12,6 +12,11 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 - [ ] T005 [US1] `Identity.DevAuth` assembly with seeded fictional users; referenced only by `Api.DevHost`
 - [ ] T006 [US1] Startup guard in `Api`
 
+## Phase 2b: User Story 7, staging test account (P1, R0)
+- [x] T029 [P] [US7] Tests: `admin` signs in with the configured password as tenant administrator; wrong password and unknown username refused and audited; email-only and platform dev sign-in refused in password mode; staging refuses open mode or a missing password; production host refuses test accounts and a test tenant; cross-tenant refusal; tenant seeded once
+- [x] T030 [US7] Password mode in `Identity.DevAuth`, `Staging` environment in `Api.DevHost`, test tenant seeder through the tenancy use case, `appsettings.Staging.json` (no password), `deploy/docker/api-staging.Dockerfile`, staging sign-in form in the web app
+- [x] T031 [US7] Production guard for test accounts and test tenant; `tools/deploy-lint.sh` in CI; architecture tests for passwords in configuration and production Dockerfiles
+
 ## Phase 3: User Story 3, session invalidation (P1, R0)
 - [ ] T007 [P] [US3] Tests: sign-out ends session; disabled membership rejected on next request; role change effective within 5 minutes; suspended tenant sessions rejected
 - [ ] T008 [US3] Revocation on `MembershipDisabled`, `TenantSuspended`; `roles_version` bump on `RoleAssignmentChanged`

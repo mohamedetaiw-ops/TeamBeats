@@ -4,17 +4,25 @@ using TeamBeats.Api.DevHost;
 
 namespace TeamBeats.Testing;
 
-/// <summary>The development host (with development sign-in) on the shared test database. Used only by sign-in tests.</summary>
-public sealed class DevHostFactory(TestDatabase database) : WebApplicationFactory<DevHostProgram>
+/// <summary>
+/// The development host (with development sign-in) on the shared test database. Used only by sign-in tests.
+/// <paramref name="environment"/> and <paramref name="settings"/> let tests run it as the staging composition (spec 003 US7).
+/// </summary>
+public sealed class DevHostFactory(TestDatabase database, string environment = "Test", IReadOnlyDictionary<string, string?>? settings = null)
+    : WebApplicationFactory<DevHostProgram>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Test");
+        builder.UseEnvironment(environment);
         builder.UseSetting("ConnectionStrings:App", database.AppConnectionString);
         builder.UseSetting("Tenancy:Hosts:BaseDomain", ApiFactory.BaseDomain);
         builder.UseSetting("Storage:Root", Path.Combine(Path.GetTempPath(), "tb-devhost-" + Guid.NewGuid().ToString("N")[..8]));
         builder.UseSetting("Messaging:Transport", "InMemory");
         builder.UseSetting("Auth:DevSignIn:Enabled", "true");
+        foreach (var (key, value) in settings ?? new Dictionary<string, string?>())
+        {
+            builder.UseSetting(key, value);
+        }
     }
 
     public HttpClient Tenant(string key, string? token = null)

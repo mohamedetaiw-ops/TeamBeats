@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Status | Proposed |
-| Date | 2026-11-04 |
+| Date | 2026-11-04, staging test account 2026-11-06 |
 | Owners | Mohamed |
 | Related specs | 003 |
 
@@ -18,8 +18,10 @@ The foundation requires temporary username/password sign-in for development, its
 ## Decision
 Option 3. The production host project has no reference to the dev auth assembly. If a production configuration enables dev auth, startup fails. CI inspects the production artifact and fails if the dev auth assembly or its endpoints are present. No local credential tables exist in production migrations.
 
+**Staging.** The shared staging deployment is a Test environment. It runs the development host (`deploy/docker/api-staging.Dockerfile`, environment `Staging`), never the production image. In `Staging`, development sign-in must run in password mode: only test accounts listed in configuration can sign in, with a username and a password that comes from a deployment secret. The development host creates the fictional test tenant on start through the tenancy use case and appoints the test account as its administrator. Passwordless email sign-in and platform dev sign-in are off in password mode. The production host also refuses to start if test accounts or a test tenant are configured, and `tools/deploy-lint.sh` fails CI if a production deployment file references the development host, the staging image, development sign-in settings or a non-production environment name (constitution V, deployment manifest lint).
+
 ## Consequences and risks
-Two host compositions to maintain (small). Test automation uses a test authentication handler, not the dev sign-in.
+Two host compositions to maintain (small). Integration tests use a test authentication handler, not the dev sign-in. End-to-end tests against staging use the staging test account. Staging is reachable from the internet with a simple password, so it must only ever hold fictional data; the password can be rotated by changing the secret.
 
 ## Security and multi-tenancy implications
 Removes the risk of a password login reaching production while keeping a single code line.

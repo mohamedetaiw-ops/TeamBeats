@@ -3,7 +3,7 @@
 What was built for R0, and where it differs from `r0-solution-structure.md`. Each difference is either covered by an ADR or listed as a follow-up.
 
 ## Built
-- .NET 10 modular monolith: `src/Api` (production host), `src/Api.DevHost` (Development/Test host with development sign-in), `src/Workers` (outbox dispatch, consumers, audit sealing and retention, `migrate` command).
+- .NET 10 modular monolith: `src/Api` (production host), `src/Api.DevHost` (Development, Test and Staging host with development sign-in; Staging uses password mode for the staging test account, spec 003 US7), `src/Workers` (outbox dispatch, consumers, audit sealing and retention, `migrate` command).
 - Modules: Tenancy (tenants, settings, lifecycle, org hierarchy, memberships), Identity (users, sessions, sign-in pipeline), Identity.DevAuth, Authorization, Entitlements, Audit, Administration (admin shell API).
 - Building blocks: Primitives, TenantContext, Persistence, Messaging, Localization, Telemetry, and the Contracts projects for Authorization, Entitlements and Audit.
 - Next.js 16 web app in `src/Web`: locale and direction from the API, sign-in page, server-driven admin shell, language switcher, lint gates.

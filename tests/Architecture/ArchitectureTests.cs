@@ -226,6 +226,29 @@ public sealed partial class ArchitectureTests
         Assert.Empty(suspicious);
     }
 
+    [Fact]
+    public void Test_account_passwords_are_never_in_tracked_configuration()
+    {
+        // Spec 003 US7: the staging test account password is a deployment secret (constitution IV).
+        var offending = SourceFiles("src", "appsettings*.json")
+            .Where(f => File.ReadAllText(f).Contains("TestAccounts", StringComparison.Ordinal))
+            .Where(f => Regex.IsMatch(File.ReadAllText(f), "\"Password\"\\s*:", RegexOptions.IgnoreCase))
+            .Select(Rel)
+            .ToList();
+        Assert.Empty(offending);
+    }
+
+    [Fact]
+    public void Production_dockerfiles_never_build_the_development_host()
+    {
+        foreach (var name in new[] { "api.Dockerfile", "workers.Dockerfile" })
+        {
+            var text = File.ReadAllText(Path.Combine(Root, "deploy/docker", name));
+            Assert.DoesNotContain("Api.DevHost", text, StringComparison.Ordinal);
+            Assert.DoesNotContain("ASPNETCORE_ENVIRONMENT=Staging", text, StringComparison.Ordinal);
+        }
+    }
+
     [GeneratedRegex("\"(workplace|workplace_plus|enterprise_government)\"")]
     private static partial Regex PackageLiteral();
 

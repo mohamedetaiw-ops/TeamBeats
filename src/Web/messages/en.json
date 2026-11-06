@@ -15,7 +15,11 @@
     "submit": "Sign in",
     "ssoPending": "Single sign-on is configured by your administrator.",
     "failed": "Sign-in was refused. Check the email and try again.",
-    "unavailable": "This workspace is not available right now."
+    "unavailable": "This workspace is not available right now.",
+    "testNotice": "Staging test sign-in. Use the test account you were given. Test accounts never exist in production.",
+    "username": "Username",
+    "password": "Password",
+    "testFailed": "Sign-in was refused. Check the username and password and try again."
   },
   "admin": {
     "title": "Administration",
