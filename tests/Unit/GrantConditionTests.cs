@@ -200,14 +200,18 @@ public sealed class GrantConditionTimingTests
         int Run() => resources.Count(r => Evaluator.Evaluate(grants, "content.view", AuthzTarget.Resource(r), acl[r.ResourceId].ToList()).Allowed);
         Assert.Equal(500, Run());
 
-        // Warm up first so the measured runs time the evaluator, not tiered JIT compilation still in progress.
-        for (var i = 0; i < 10; i++)
+        // Warm up long enough for tiered JIT to reach its optimized code, and collect garbage before timing, so the measured
+        // runs time the evaluator. 100 samples keep a single scheduler pause on a shared CI runner from deciding the p95.
+        for (var i = 0; i < 50; i++)
         {
             Run();
         }
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
 
         var timings = new List<double>();
-        for (var i = 0; i < 20; i++)
+        for (var i = 0; i < 100; i++)
         {
             var sw = Stopwatch.StartNew();
             Run();
