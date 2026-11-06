@@ -2463,6 +2463,53 @@
         }
       }
     },
+    "/api/v1/experience/tokens": {
+      "get": {
+        "tags": [
+          "Experience: themes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/assets": {
+      "post": {
+        "tags": [
+          "Experience: themes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/assets/{id}": {
+      "get": {
+        "tags": [
+          "Experience: themes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/brand-assignments/{scope}": {
       "get": {
         "tags": [

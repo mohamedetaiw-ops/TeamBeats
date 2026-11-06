@@ -232,19 +232,30 @@ public static class ThemeEngine
     /// fonts (quoted with their fallback stack) and easings (named curve to its function). The body font follows the
     /// document language, so Arabic and Urdu pages use their own stacks (FR-007).
     /// </summary>
-    public static string Css(IReadOnlyDictionary<string, string> values)
+    /// <summary>CSS custom properties of a resolved variant, by property name, as the stylesheet writes them.</summary>
+    public static IReadOnlyDictionary<string, string> Properties(IReadOnlyDictionary<string, string> values)
     {
-        var css = new StringBuilder(":root{");
+        var properties = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var token in TokenSchema.All)
         {
             var value = values[token.Name];
-            var output = token.Type switch
+            properties[token.CssName] = token.Type switch
             {
                 TokenTypes.FontFamily => $"\"{value}\", {TokenSchema.FontFallbacks[token.Script!]}",
                 TokenTypes.Easing => TokenSchema.Easings[value],
                 _ => value,
             };
-            css.Append(token.CssName).Append(':').Append(output).Append(';');
+        }
+        return properties;
+    }
+
+    public static string Css(IReadOnlyDictionary<string, string> values)
+    {
+        var css = new StringBuilder(":root{");
+        var properties = Properties(values);
+        foreach (var token in TokenSchema.All)
+        {
+            css.Append(token.CssName).Append(':').Append(properties[token.CssName]).Append(';');
         }
         css.Append("--tb-font-family-body:var(--tb-font-family-latin);}");
         css.Append(":root:lang(ar){--tb-font-family-body:var(--tb-font-family-arabic);}");

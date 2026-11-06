@@ -9,6 +9,7 @@ using TeamBeats.Modules.Experience.Components;
 using TeamBeats.Modules.Experience.Pages;
 using TeamBeats.Modules.Experience.Themes;
 using TeamBeats.Persistence;
+using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Experience;
@@ -141,7 +142,47 @@ public static class ExperienceModule
         });
 
         x.MapPost("/brands/{id:guid}/check", async (Guid id, BrandRequest request, ThemeService themes, CancellationToken ct) =>
-            Results.Ok(new { findings = await themes.CheckBrandAsync(id, request, ct) }));
+            Results.Ok(await themes.CheckBrandAsync(id, request, ct)));
+
+        // The token schema with platform defaults and allowed modes, so editors never hard-code token rules (spec 033 T011).
+        x.MapGet("/tokens", () => Results.Ok(new
+        {
+            tokens = TokenSchema.All.Select(t => new TokenSchemaEntry(t.Name, t.Name.Split('.')[0], t.Type, t.CssName, t.Light, t.Dark, t.Compact, t.Script,
+                [.. (t.AllowsDark ? new[] { ThemeModes.Dark } : []), .. (t.AllowsCompact ? new[] { ThemeModes.Compact } : [])])),
+            assetSlots = ThemeService.Slots,
+            fonts = TokenSchema.ApprovedFonts,
+            easings = TokenSchema.Easings.Keys,
+        }));
+
+        x.MapPost("/assets", async (HttpRequest http, ThemeService themes, IDbSession session, CancellationToken ct) =>
+        {
+            var buffer = new byte[ImageValidator.MaxBytes + 1];
+            int read, total = 0;
+            while ((read = await http.Body.ReadAsync(buffer.AsMemory(total, buffer.Length - total), ct)) > 0)
+            {
+                total += read;
+                if (total > ImageValidator.MaxBytes)
+                {
+                    throw AppException.Validation("asset", "validation.asset.size");
+                }
+            }
+            var asset = await themes.UploadAssetAsync(http.ContentType, buffer[..total], ct);
+            await session.CommitAsync(ct);
+            return Results.Created(asset.Url, asset);
+        }).DisableAntiforgery();
+
+        x.MapGet("/assets/{id:guid}", async (Guid id, ThemeService themes, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, type) = await themes.OpenAssetAsync(id, ct);
+            // Assets never change once written, so the browser may keep them; the URL is checked against the session.
+            response.Headers.CacheControl = "private, max-age=31536000, immutable";
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            if (type == "image/svg+xml")
+            {
+                response.Headers.ContentSecurityPolicy = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+            }
+            return Results.File(content, type);
+        });
 
         x.MapGet("/brand-assignments/{scope}", async (string scope, ThemeService themes, IDbSession session, CancellationToken ct) =>
         {

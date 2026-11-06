@@ -98,11 +98,11 @@ public sealed class LogoValidatorTests
     private static readonly byte[] Png = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0];
 
     [Fact]
-    public void Accepts_png_with_magic_bytes() => Assert.Equal("png", LogoValidator.Validate("image/png", Png));
+    public void Accepts_png_with_magic_bytes() => Assert.Equal("png", ImageValidator.Validate("logo", "image/png", Png));
 
     [Fact]
     public void Rejects_png_content_type_with_wrong_bytes() =>
-        Assert.Throws<AppException>(() => LogoValidator.Validate("image/png", Encoding.UTF8.GetBytes("<svg/>")));
+        Assert.Throws<AppException>(() => ImageValidator.Validate("logo", "image/png", Encoding.UTF8.GetBytes("<svg/>")));
 
     [Theory]
     [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>")]
@@ -110,13 +110,13 @@ public sealed class LogoValidatorTests
     [InlineData("<!DOCTYPE svg [<!ENTITY x SYSTEM \"file:///etc/passwd\">]><svg>&x;</svg>")]
     [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><a href=\"javascript:alert(1)\"/></svg>")]
     public void Rejects_active_svg_content(string svg) =>
-        Assert.Throws<AppException>(() => LogoValidator.Validate("image/svg+xml", Encoding.UTF8.GetBytes(svg)));
+        Assert.Throws<AppException>(() => ImageValidator.Validate("logo", "image/svg+xml", Encoding.UTF8.GetBytes(svg)));
 
     [Fact]
     public void Accepts_plain_svg() =>
-        Assert.Equal("svg", LogoValidator.Validate("image/svg+xml", Encoding.UTF8.GetBytes("<svg xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"1\" height=\"1\"/></svg>")));
+        Assert.Equal("svg", ImageValidator.Validate("logo", "image/svg+xml", Encoding.UTF8.GetBytes("<svg xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"1\" height=\"1\"/></svg>")));
 
     [Fact]
     public void Rejects_oversized_files() =>
-        Assert.Throws<AppException>(() => LogoValidator.Validate("image/png", new byte[LogoValidator.MaxBytes + 1]));
+        Assert.Throws<AppException>(() => ImageValidator.Validate("logo", "image/png", new byte[ImageValidator.MaxBytes + 1]));
 }

@@ -173,3 +173,13 @@ body {
     border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   }
 }
+
+/* Hidden visually but still announced and focusable through its label. */
+.visually-hidden {
+  position: absolute;
+  inline-size: 0.0625rem;
+  block-size: 0.0625rem;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

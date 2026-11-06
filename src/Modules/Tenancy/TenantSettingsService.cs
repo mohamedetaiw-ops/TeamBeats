@@ -126,7 +126,7 @@ public sealed class TenantSettingsService(
 
     public async Task SetLogoAsync(string? contentType, byte[] data, CancellationToken ct)
     {
-        var extension = LogoValidator.Validate(contentType, data);
+        var extension = ImageValidator.Validate("logo", contentType, data);
         var relative = $"branding/logo-{Ids.New():N}.{extension}";
         using var stream = new MemoryStream(data);
         var mime = extension switch { "png" => "image/png", "jpg" => "image/jpeg", _ => "image/svg+xml" };
