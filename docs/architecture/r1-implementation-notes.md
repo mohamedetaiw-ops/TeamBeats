@@ -236,3 +236,15 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Tenant settings link | The spec 001 settings screen is still the generic section page; its link to the brand manager comes with that screen. |
 | Asset preview sizes | The preview shows the logo in light, dark and both directions; mobile and desktop shell previews come with the spec 008 shell. |
 | Org overrides and locks | Managed through the API; their screens come with preview as organization (R2) or the shell slice. |
+
+## Shared states and interaction primitives (spec 008 T001 to T003)
+- `components/ui`: `StateView` for the seven shared states (loading, success, empty, error, permission denied, offline, unsupported) with platform wording under `ui.state.*`; `Skeleton` sized by the caller and announced once; `Button` with primary, secondary, quiet and destructive variants and a busy state; `ConfirmAction`, where the first press only asks, focus goes to the safe choice and Escape cancels; `MessagesProvider` and `useMessages` with critical messages that persist and are announced assertively, and normal and low messages that never block, dismiss themselves (10 s and 5 s, 15 s with an action such as undo) and pause while focused or hovered; `SelectionBar` with count and consequence in text; `FormField` hints.
+- Placement states in the renderer now use `StateView`.
+- Buttons are at least 44 by 44 CSS pixels. Reduced motion stops animation and transitions globally. Density comes from the theme variant, so both densities use the same components.
+- `/ui-gallery` shows all of them for tests and exists only with the development fixtures (`NEXT_PUBLIC_TB_REFERENCE_PACKS=true`). Playwright `interaction.spec.ts` in English and Arabic covers the states, one primary action per context, the destructive look, linked and announced errors that keep values, bulk selection, confirm and undo, message priorities with a fake clock, both densities at a 640 px viewport (200% zoom of 1280 px) and reduced motion.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Offline handling | The offline state view exists; keeping unsaved preference edits while offline comes with preferences (T007 to T010). |
+| Personal density and motion choice | Comes with the preference profile; until then density and motion follow the theme and the device. |

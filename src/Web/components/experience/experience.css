@@ -119,18 +119,6 @@
   box-shadow: inset 0 calc(-1 * var(--tb-border-width-thick)) 0 var(--tb-color-accent-base);
 }
 
-/* Shared placement states (spec 008 shared states): they keep the space the component would take. */
-.xp-state {
-  min-block-size: 6rem;
-  display: grid;
-  place-items: center;
-  padding: var(--tb-space-md);
-  border: var(--tb-border-width-thin) dashed var(--tb-color-border-default);
-  border-radius: var(--tb-radius-md);
-  color: var(--tb-color-text-secondary);
-  text-align: center;
-}
-
 /* Reference packs (contract tests only). */
 .ref-card {
   padding: var(--tb-space-md);
