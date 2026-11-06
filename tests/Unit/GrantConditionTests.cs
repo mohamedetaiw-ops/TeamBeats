@@ -10,6 +10,8 @@ namespace TeamBeats.Unit.Tests;
 /// <summary>Spec 004 FR-014 to FR-016: condition parsing, evaluation, monotonicity and batch cost.</summary>
 public sealed class GrantConditionTests
 {
+    internal static GrantCondition ParseCondition(string json) => Parse(json);
+
     private static GrantCondition Parse(string json)
     {
         var errors = new ValidationErrors();
@@ -163,6 +165,22 @@ public sealed class GrantConditionTests
             }
         }
     }
+}
+
+/// <summary>
+/// Timing tests run alone, after the parallel tests, so other test classes do not compete for the CPU while the evaluator is
+/// timed. With them in parallel on a two-core runner the p95 measured the runner, not the evaluator.
+/// </summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class TimingCollection
+{
+    public const string Name = "timing";
+}
+
+[Collection(TimingCollection.Name)]
+public sealed class GrantConditionTimingTests
+{
+    private static GrantCondition Parse(string json) => GrantConditionTests.ParseCondition(json);
 
     /// <summary>FR-016: conditions stay within the batch target of 1,000 resources in under 50 ms (spec 004 section 15).</summary>
     [Fact]
