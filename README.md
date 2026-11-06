@@ -32,6 +32,7 @@ The layout follows GitHub spec-kit conventions so `/specify`, `/clarify`, `/plan
 | `src/Modules` | Tenancy, Identity, Authorization, Entitlements, Audit, Administration |
 | `src/Web` | Next.js 16 app (sign-in, admin shell), Arabic and English, RTL |
 | `tests` | Unit, Integration, Security, Architecture suites and the shared two-tenant harness |
+| `tests/Acceptance` | Playwright end-to-end suite with axe checks, in Arabic and English (plan in `docs/testing/e2e-plan.md`) |
 | `deploy` | Database bootstrap, local compose stack, Dockerfiles |
 | `docs/architecture/r0-implementation-notes.md` | What R0 contains and where it differs from the plan |
 
@@ -51,6 +52,7 @@ The development host migrates the database and seeds a fictional platform operat
 export TEAMBEATS_TEST_PG_ADMIN="Host=localhost;Port=5432;Username=postgres;Password=postgres_dev_only"
 dotnet test TeamBeats.slnx
 cd src/Web && npm run verify
+cd ../../tests/Acceptance && npm ci && npx playwright install chromium && npm test   # end to end, see tests/Acceptance/README.md
 ```
 Each test assembly creates its own database with the `tb_owner` and `tb_app` roles, so tests run against real RLS. Regenerate the OpenAPI snapshot with `TEAMBEATS_UPDATE_OPENAPI=1` after a reviewed contract change.
 
