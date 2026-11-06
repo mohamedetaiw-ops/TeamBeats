@@ -102,7 +102,7 @@ jobs:
         run: >-
           flyctl deploy . --app "$WORKERS_APP" --config deploy/fly/staging/workers.toml
           --dockerfile deploy/docker/workers.Dockerfile
-          --remote-only --ha=false --wait-timeout 10m
+          --remote-only --ha=false --wait-timeout 5m
 
       - name: Deploy web
         run: >-
@@ -134,3 +134,13 @@ jobs:
           [ "$code" = 200 ] || { echo "::error::/api/v1/me as test admin answered $code"; exit 1; }
           echo "Test admin sign-in and /api/v1/me: 200"
           echo "### Staging deployed: $base" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Show recent app logs on failure
+        if: failure()
+        run: |
+          for app in "$DB_APP" "$API_APP" "$WORKERS_APP" "$WEB_APP"; do
+            echo "::group::$app"
+            flyctl status --app "$app" 2>&1 || true
+            flyctl logs --app "$app" --no-tail 2>&1 | tail -120 || true
+            echo "::endgroup::"
+          done
