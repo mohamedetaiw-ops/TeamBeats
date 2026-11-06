@@ -139,8 +139,16 @@ body {
   color: var(--tb-color-text-secondary);
 }
 
+/*
+ * Action hierarchy (spec 008 FR-037): primary is the default look of .button for one main action per context,
+ * secondary and quiet for the rest, and destructive looks different. Targets are at least 44 by 44 CSS pixels (FR-047).
+ */
 .button {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 2.75rem;
+  min-inline-size: 2.75rem;
   padding-block: var(--tb-space-sm);
   padding-inline: var(--tb-space-md);
   border: var(--tb-border-width-thin) solid var(--tb-color-accent-base);
@@ -150,11 +158,39 @@ body {
   font: inherit;
   text-decoration: none;
   cursor: pointer;
+  transition: background-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
 }
 
-.button.secondary {
+.button.secondary,
+.button-secondary {
   background: transparent;
   color: var(--tb-color-link);
+}
+
+.button-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--tb-color-link);
+}
+
+.button-destructive {
+  border-color: var(--tb-color-state-danger);
+  background: var(--tb-color-surface-base);
+  color: var(--tb-color-state-danger);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.button[aria-busy="true"],
+.button[aria-disabled="true"],
+.button:disabled {
+  cursor: not-allowed;
+  opacity: calc(1 - var(--tb-state-disabled-opacity) / 2);
+}
+
+.field-hint {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
 }
 
 .inline-field {
@@ -165,7 +201,7 @@ body {
 
 @media (width <= 40rem) {
   .admin {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .admin-nav {
@@ -182,4 +218,16 @@ body {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* Reduced motion (spec 008 FR-044): nonessential animation stops, state still changes. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

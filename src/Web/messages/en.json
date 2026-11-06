@@ -178,5 +178,89 @@
       "warning": "Due soon",
       "danger": "Overdue"
     }
+  },
+  "ui": {
+    "state": {
+      "loading": {
+        "title": "Loading",
+        "message": "This takes a moment."
+      },
+      "success": {
+        "title": "Done",
+        "message": "Your change is saved."
+      },
+      "empty": {
+        "title": "Nothing here yet",
+        "message": "When there is something to show, it appears here."
+      },
+      "error": {
+        "title": "Something went wrong",
+        "message": "Try again. If it keeps happening, contact your administrator."
+      },
+      "denied": {
+        "title": "You do not have access",
+        "message": "Ask your administrator if you need this."
+      },
+      "offline": {
+        "title": "You are offline",
+        "message": "Changes you make are kept and sent when you reconnect."
+      },
+      "unsupported": {
+        "title": "Not available here",
+        "message": "This feature is not available in your workspace or on this device."
+      }
+    },
+    "messages": {
+      "region": "Notifications",
+      "dismiss": "Dismiss"
+    }
+  },
+  "gallery": {
+    "title": "Interface states and actions",
+    "states": "Shared states",
+    "retry": "Try again",
+    "skeleton": "Loading placeholder",
+    "form": {
+      "title": "Form",
+      "name": "Project name",
+      "hint": "At least 3 characters, for example Onboarding.",
+      "error": "Enter a project name of at least 3 characters.",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved.",
+      "cancel": "Clear"
+    },
+    "confirm": {
+      "title": "Confirm and undo",
+      "present": "Draft: Spring campaign",
+      "deleted": "The draft is deleted.",
+      "delete": "Delete draft",
+      "question": "Delete the draft Spring campaign? You can undo this for a short time.",
+      "yes": "Delete",
+      "no": "Keep draft",
+      "done": "Draft deleted.",
+      "undo": "Undo"
+    },
+    "messages": {
+      "title": "Messages",
+      "showCritical": "Show critical",
+      "showNormal": "Show normal",
+      "showLow": "Show low priority",
+      "critical": "Payroll export failed. Fix the bank details before 5 PM.",
+      "normal": "Your settings are saved.",
+      "low": "A new version of the handbook is available."
+    },
+    "selection": {
+      "title": "Selection",
+      "items": {
+        "one": "Q1 report",
+        "two": "Q2 report",
+        "three": "Q3 report"
+      },
+      "summary": "{count, plural, one {# item selected} other {# items selected}}",
+      "consequence": "Archiving hides them from everyone in the team.",
+      "cancel": "Cancel selection",
+      "archive": "Archive"
+    }
   }
 }

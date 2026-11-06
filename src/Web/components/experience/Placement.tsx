@@ -7,6 +7,7 @@ import { usePlacementEvents } from "@/lib/experience/events";
 import { loaderFor } from "@/lib/experience/registry";
 import { reportPlacementFailure } from "@/lib/experience/telemetry";
 import type { RenderedPlacement } from "@/lib/experience/types";
+import { StateView } from "@/components/ui/StateView";
 
 const noSubscription = () => () => undefined;
 
@@ -44,13 +45,12 @@ class PlacementErrorBoundary extends Component<BoundaryProps, { failed: boolean 
   }
 }
 
+const stateKinds = { loading: "loading", failed: "error", unavailable: "unsupported" } as const;
+
 function PlacementState({ placement, kind }: { placement: RenderedPlacement; kind: "unavailable" | "failed" | "loading" }) {
   const t = useTranslations("experience.placement");
   return (
-    <div className={`xp-state xp-state-${kind}`} role={kind === "loading" ? undefined : "status"} aria-busy={kind === "loading" || undefined}
-      data-placement-state={kind} data-placement-id={placement.id}>
-      {t(kind)}
-    </div>
+    <StateView kind={stateKinds[kind]} title={t(kind)} message="" data-placement-state={kind} data-placement-id={placement.id} />
   );
 }
 

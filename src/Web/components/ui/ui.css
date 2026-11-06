@@ -1,0 +1,159 @@
+/* Shared states and interaction primitives (spec 008 T001, T002). Tokens and logical properties only. */
+.ui-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.ui-state {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--tb-space-xs);
+  min-block-size: 6rem;
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) dashed var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  color: var(--tb-color-text-secondary);
+  text-align: center;
+}
+
+.ui-state p {
+  margin: 0;
+}
+
+.ui-state-title {
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.ui-state[data-state="error"] .ui-state-title,
+.ui-state[data-state="denied"] .ui-state-title {
+  color: var(--tb-color-state-danger);
+}
+
+.ui-state[data-state="success"] .ui-state-title {
+  color: var(--tb-color-state-success);
+}
+
+.ui-state[data-state="offline"] .ui-state-title {
+  color: var(--tb-color-state-warning);
+}
+
+.ui-skeleton-group {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.ui-skeleton {
+  display: block;
+  border-radius: var(--tb-radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--tb-color-surface-sunken) 25%,
+    var(--tb-color-surface-raised) 50%,
+    var(--tb-color-surface-sunken) 75%
+  );
+  background-size: 200% 100%;
+  animation: ui-shimmer 1.2s var(--tb-motion-easing-standard) infinite;
+}
+
+@keyframes ui-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -100% 0;
+  }
+}
+
+.ui-confirm {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-sm) var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-state-danger);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.ui-confirm-question {
+  margin: 0;
+}
+
+.ui-selection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-sm) var(--tb-space-md);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-accent-subtle);
+}
+
+.ui-selection-text {
+  margin: 0;
+}
+
+/* Messages sit outside the content flow so they never block the task. */
+.ui-messages {
+  position: fixed;
+  inset-block-end: var(--tb-space-md);
+  inset-inline-end: var(--tb-space-md);
+  z-index: 10;
+  display: grid;
+  gap: var(--tb-space-sm);
+  max-inline-size: min(28rem, calc(100vw - 2 * var(--tb-space-md)));
+  pointer-events: none;
+}
+
+.ui-messages-critical,
+.ui-messages-other {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.ui-message {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-sm) var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+  border-inline-start-width: var(--tb-border-width-thick);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  box-shadow: var(--tb-shadow-md);
+  pointer-events: auto;
+}
+
+.ui-message p {
+  margin: 0;
+}
+
+.ui-message[data-priority="critical"] {
+  border-color: var(--tb-color-state-danger);
+}
+
+.ui-message[data-priority="low"] {
+  border-color: var(--tb-color-border-default);
+}
+
+/* Development gallery only. */
+.gallery {
+  display: grid;
+  gap: var(--tb-space-xl);
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 14rem), 1fr));
+  gap: var(--tb-space-md);
+}
+
+.gallery-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

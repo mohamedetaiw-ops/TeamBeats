@@ -3,9 +3,9 @@
 Depends on 032 (`Experience` module, pages, renderer), 033 (tokens), 003, 004, 005, 006, 007. R1 covers User Stories 1, 3 and 5, User Story 2 add, hide, reorder and reset, User Story 4 without favorites, recents and commands, and the policy and consent model of User Story 6.
 
 ## Phase 1: Shared states and interaction primitives (P1, US1, US5)
-- [ ] T001 `components/ui` state views (loading, success, empty, error, permission denied, offline, unsupported) and message rules (critical persists, low priority never blocks)
-- [ ] T002 Button hierarchy, confirm and undo, form field errors with announcements, skeletons, density presets, reduced motion
-- [ ] T003 [P] [US5] Tests: one primary action per context, destructive look, errors linked and announced with values kept, both densities at 200% zoom, reduced motion stops nonessential animation
+- [x] T001 `components/ui` state views (loading, success, empty, error, permission denied, offline, unsupported) and message rules (critical persists, low priority never blocks)
+- [x] T002 Button hierarchy, confirm and undo, form field errors with announcements, skeletons, density presets, reduced motion
+- [x] T003 [P] [US5] Tests: one primary action per context, destructive look, errors linked and announced with values kept, both densities at 200% zoom, reduced motion stops nonessential animation
 
 ## Phase 2: Shell and navigation (P1, US1, US4)
 - [ ] T004 Migration: `shell_config`, `nav_menu`, `ia_node`, `slug_redirect` with forced RLS; permissions `shell.edit`, `navigation.edit`, `help.edit`

@@ -7,6 +7,8 @@ import { getTheme } from "@/lib/experience/client";
 import { ThemeLinks } from "@/components/shell/ThemeLinks";
 import "./tokens.css";
 import "./globals.css";
+import "@/components/ui/ui.css";
+import { MessagesProvider } from "@/components/ui/Messages";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app");
@@ -27,7 +29,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <a className="skip-link" href="#main">
           {t("skipToContent")}
         </a>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <MessagesProvider>{children}</MessagesProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
