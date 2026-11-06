@@ -7,7 +7,7 @@ namespace TeamBeats.Api.DevHost;
 
 /// <summary>
 /// Development, Test and Staging host (ADR-0004). Refuses to run in any other environment. Staging is the shared test
-/// deployment and must use password-mode development sign-in (spec 003 US7).
+/// deployment and must use test-account-mode development sign-in (spec 003 US7).
 /// </summary>
 public sealed class DevHostProgram
 {
