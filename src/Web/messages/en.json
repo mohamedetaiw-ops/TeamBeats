@@ -75,5 +75,22 @@
       "body": "The sign-in could not be verified. Start again from the sign-in page."
     },
     "retry": "Sign in again"
+  },
+  "experience": {
+    "panels": "Page sections",
+    "panel": "Section {number}",
+    "placement": {
+      "unavailable": "This part of the page is not available",
+      "failed": "This part of the page could not be shown",
+      "loading": "Loading"
+    },
+    "reference": {
+      "filterLabel": "Filter",
+      "listAll": "Showing up to {size} items",
+      "listFiltered": "Showing up to {size} items for {query}",
+      "counter": "Clicked {count} times",
+      "restricted": "Restricted block",
+      "old": "Older block"
+    }
   }
 }

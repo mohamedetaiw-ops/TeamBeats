@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +14,8 @@
     "lint": "eslint .",
     "lint:css": "stylelint \"**/*.css\"",
     "check:messages": "node scripts/check-messages.mjs",
-    "verify": "npm run typecheck && npm run lint && npm run lint:css && npm run check:messages"
+    "verify": "npm run typecheck && npm run lint && npm run lint:css && npm run check:messages && npm run check:placements",
+    "check:placements": "node scripts/check-placements.mjs"
   },
   "dependencies": {
     "next": "16.4.2",

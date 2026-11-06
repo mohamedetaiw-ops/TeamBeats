@@ -192,3 +192,22 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Tenant settings reader | `ITenantSettingsReader` gained `GetBrandingAsync` (primary color and whether a logo exists) for seeding. The plan said the contract gains nothing; reading the color needs one method. |
 | Brand asset upload | Brands hold asset references (`tenant:logo` or `asset:{id}`). Upload with the spec 001 validator comes with the brand manager page (T011). |
 | Experience impact on unit moves (US5) | The resolver follows the new parent once the move is saved. The impact preview before confirming is not built. |
+
+## Page renderer in the web app (spec 032 T015 to T017)
+
+### Built
+- `/p/{slug}` renders the latest release of a page from `GET /api/v1/experience/render` and links the effective theme CSS of the page's scope (light and dark by `prefers-color-scheme`). The render answer now carries `themeScope`. Pages of another tenant, or that the viewer may not see, answer 404.
+- `lib/experience`: typed render client, the registry (`id@major` to a lazy import from `components/placements`), the page-scoped event channel and the placement contract (own props, declared context keys, events).
+- Placement decorator: error boundary with a failed state, a Suspense placeholder that keeps the space, an unavailable state for placements the API marked so or whose code is missing, and a failure signal that carries only the component, placement and kind.
+- Layouts: rows of a 12-column CSS grid built from the regions' spans and section modes (contained, fixed, fluid, full bleed), regions and rows as size containers, logical properties only, the `stack` and `two_then_stack` fallbacks by container width, and WAI-ARIA tabs for the panel layout (L09) with arrow keys that follow the reading direction.
+- `npm run verify` now also runs `check:placements`: no placement imports another, and only the registry loads placement code.
+- Playwright: both reference packs on all 12 templates in English and Arabic at 320, 375, 768, 1024, 1440 and 1920 px with no horizontal scroll, axe on two templates per language, a throwing, slow and missing component next to working ones, events between unrelated components, and cross-tenant not found. The shell header now wraps at narrow widths, which the 320 px check found.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Event payload schemas | The channel allows only declared event names and caps payloads at 4 KB of JSON. Checking payloads against the manifest schemas needs the schemas in the render answer; that comes with the builder slice. |
+| Reference packs in the web build | Included only when `NEXT_PUBLIC_TB_REFERENCE_PACKS=true`, which the Playwright stack sets. Production builds leave them out. |
+| Failure telemetry sink | Failures are a `tb:placement-failure` DOM event for now; shipping them to the API is T021. |
+| Visibility rules | Still refused at save (spec 008), so the renderer has nothing to evaluate yet. |
+| Brand assets | The banner draws a labelled area because asset delivery is not built yet. |
