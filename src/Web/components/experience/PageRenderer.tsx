@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { EventChannel } from "@/lib/experience/events";
 import type { RenderedPage, RenderedPlacement, RenderedRegion, SectionMode } from "@/lib/experience/types";
+import { PageTelemetry } from "./PageTelemetry";
 import { Placement } from "./Placement";
 import { RegionTabs } from "./RegionTabs";
 import "./experience.css";
@@ -85,6 +86,7 @@ export function PageRenderer({
     );
   return (
     <EventChannel>
+      <PageTelemetry page={{ pageId: page.pageId, release: page.release, template: page.template, layout: page.layout }} />
       <div className={`xp-page xp-variant-${page.variant} xp-fallback-${page.fallback}`} data-layout={page.layout} data-template={page.template}>
         {body}
       </div>

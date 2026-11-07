@@ -2639,6 +2639,28 @@
         }
       }
     },
+    "/api/v1/experience/telemetry": {
+      "post": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelemetryBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/brands": {
       "get": {
         "tags": [
@@ -5055,6 +5077,127 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "TelemetryBatch": {
+        "required": [
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TelemetryEvent"
+            }
+          }
+        }
+      },
+      "TelemetryEvent": {
+        "required": [
+          "name",
+          "pageId",
+          "release",
+          "componentRef",
+          "placementId",
+          "kind",
+          "template",
+          "layout",
+          "deviceClass",
+          "lcp",
+          "inp",
+          "cls"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "pageId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "release": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "componentRef": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "placementId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "kind": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "template": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "layout": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "deviceClass": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "lcp": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "inp": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "cls": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },

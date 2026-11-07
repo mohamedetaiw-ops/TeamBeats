@@ -347,6 +347,7 @@
   "validation.shell.region_unknown": "This region is not one the shell offers",
   "validation.shell.utilities_unplaced": "Place the utilities region before turning utilities on",
   "validation.shell.utility_unknown": "This utility is not one the shell offers",
+  "validation.telemetry.too_many": "Send at most 20 telemetry events at a time",
   "validation.template.descriptions_invalid": "Each description must have a language and be up to 300 characters",
   "validation.template.distribution_too_long": "Choose up to 50 organization units",
   "validation.template.id_invalid": "Use 3 to 40 lowercase letters, digits or hyphens, starting with a letter",
