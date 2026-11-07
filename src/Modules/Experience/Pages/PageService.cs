@@ -9,6 +9,7 @@ using TeamBeats.Modules.Experience.Catalogue;
 using TeamBeats.Modules.Experience.Components;
 using TeamBeats.Modules.Experience.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
+using TeamBeats.Localization;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -29,7 +30,12 @@ public sealed record PageView(Guid Id, string Slug, Guid? OrgUnitId, string Temp
 public sealed record ReleaseView(int Release, DateTimeOffset PublishedAt, Guid PublishedBy, string? Reason, int? RollbackOf);
 
 public sealed record PickerItem(string ComponentRef, string Version, string NameKey, string DescriptionKey, string Category, string Icon,
-    IReadOnlyList<string> RequiredPermissions, bool Eligible, string? ReasonKey);
+    IReadOnlyList<string> RequiredPermissions, bool Eligible, string? ReasonKey, string? Name = null, string? Description = null, string? Reason = null,
+    IReadOnlyDictionary<string, PropertySchema>? Properties = null, PlacementRules? Placement = null);
+
+/// <summary>A page in the builder's list (spec 032 US2): only pages the caller may edit.</summary>
+public sealed record PageSummary(Guid Id, string Slug, Guid? OrgUnitId, string TemplateId, string TemplateVersion, int? CurrentRelease,
+    DateTimeOffset DraftUpdatedAt, DateTimeOffset? PublishedAt);
 
 /// <summary>A placement as the renderer receives it: only declared context values, defaults applied (FR-025, FR-028).</summary>
 public sealed record RenderedPlacement(string Id, string ComponentRef, string State, int Span, IReadOnlyDictionary<string, JsonElement> Props,
@@ -67,7 +73,9 @@ public sealed partial class PageService(
     IOutbox outbox,
     IMemoryCache cache,
     IClock clock,
-    Personalization.HomeDefaults homeDefaults)
+    Personalization.HomeDefaults homeDefaults,
+    ILocalizer localizer,
+    RequestLocale locale)
 {
     private sealed record PageRow(Guid Id, Guid? OrgUnitId, string Slug, string TemplateId, string TemplateVersion, int? CurrentRelease);
 
@@ -119,6 +127,29 @@ public sealed partial class PageService(
         await audit.WriteAsync(new AuditEntry(AuditActions.PageCreated, "page", id.ToString(), TargetOrgUnitId: request.OrgUnitId,
             Changes: new { slug = request.Slug, template = $"{template.Id}@{template.Version}", layout = template.Layout }), ct);
         return await GetAsync(id, ct);
+    }
+
+    /// <summary>Pages the caller may edit, newest change first. Pages outside the caller's scope are left out, not refused.</summary>
+    public async Task<IReadOnlyList<PageSummary>> ListAsync(CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
+        var rows = await session.QueryAsync(
+            """
+            select p.id, p.org_unit_id, p.slug, p.template_id, p.template_version, p.current_release, d.updated_at,
+              (select max(r.published_at) from experience.page_release r where r.page_id = p.id) as published_at
+            from experience.page p join experience.page_draft d on d.page_id = p.id
+            order by d.updated_at desc
+            """, null, r => new PageSummary(r.Get<Guid>("id"), r.Get<string>("slug")!, r.Get<Guid?>("org_unit_id"), r.Get<string>("template_id")!,
+                r.Get<string>("template_version")!, r.Get<int?>("current_release"), r.Get<DateTimeOffset>("updated_at"), r.Get<DateTimeOffset?>("published_at")), ct);
+        var result = new List<PageSummary>();
+        foreach (var row in rows)
+        {
+            if ((await authz.CheckAsync(Permissions.PageEdit, Target(row.OrgUnitId), ct)).Allowed)
+            {
+                result.Add(row);
+            }
+        }
+        return result;
     }
 
     public async Task<PageView> GetAsync(Guid id, CancellationToken ct)
@@ -236,7 +267,8 @@ public sealed partial class PageService(
                 reason = "validation.page.region_too_narrow";
             }
             items.Add(new PickerItem(m.Reference, m.Version, m.Display.NameKey, m.Display.DescriptionKey, m.Display.Category, m.Display.Icon,
-                m.Requires.Permissions, reason is null, reason));
+                m.Requires.Permissions, reason is null, reason, localizer.Get(m.Display.NameKey, locale.Locale),
+                localizer.Get(m.Display.DescriptionKey, locale.Locale), reason is null ? null : localizer.Get(reason, locale.Locale), m.Properties, m.Placement));
         }
         return items;
     }
