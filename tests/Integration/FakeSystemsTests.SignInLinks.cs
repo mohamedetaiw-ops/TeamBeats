@@ -77,6 +77,24 @@ public sealed partial class FakeSystemsTests
     }
 
     [Fact]
+    public async Task Single_sign_on_returns_to_the_public_host_behind_the_web_proxy()
+    {
+        // Staging: the web app proxies /api and /dev to the API's private address and passes the public host in
+        // X-Forwarded-Host. The callback Microsoft returns to must be the public host, never the private one.
+        var publicHost = $"{TenantKey}.{ApiFactory.BaseDomain}";
+        var request = new HttpRequestMessage(HttpMethod.Get, TeamBeats.Modules.Identity.Sso.SsoEndpoints.StartPath);
+        request.Headers.Host = "teambeats-staging-api.internal:8080";
+        request.Headers.Add("X-Forwarded-Host", publicHost);
+        request.Headers.Add("X-Forwarded-Proto", "https");
+        var start = await _staging.Tenant(TenantKey).SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Redirect, start.StatusCode);
+        var location = WebUtility.UrlDecode(start.Headers.Location!.ToString());
+        Assert.Contains($"redirect_uri=https://{publicHost}/api/v1/auth/signin/sso/callback", location, StringComparison.Ordinal);
+        Assert.DoesNotContain(".internal", location, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Unknown_sign_in_link_is_not_found_and_sets_nothing()
     {
         var response = await _staging.Tenant(TenantKey).GetAsync(FakeEndpoints.SignInLinkPrefix + "admin");
