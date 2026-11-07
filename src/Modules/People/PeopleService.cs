@@ -92,7 +92,24 @@ public sealed class PeopleService(
 
     // Search (US1, FR-006, FR-017)
 
-    public async Task<SearchPage> SearchAsync(string? q, Guid? unitId, string? location, int? offset, int? limit, CancellationToken ct)
+    /// <summary>A comma separated list of person ids (the people component's named set), at most a page; unreadable ids are rejected.</summary>
+    public static Guid[]? ParseIds(string? ids)
+    {
+        if (string.IsNullOrWhiteSpace(ids))
+        {
+            return null;
+        }
+        var parts = ids.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (parts.Length > MaxPageSize || parts.Any(p => !Guid.TryParse(p, out _)))
+        {
+            var errors = new ValidationErrors();
+            errors.Add("ids", "validation.people.ids");
+            errors.ThrowIfAny();
+        }
+        return parts.Select(Guid.Parse).Distinct().ToArray();
+    }
+
+    public async Task<SearchPage> SearchAsync(string? q, Guid? unitId, string? location, int? offset, int? limit, CancellationToken ct, Guid[]? ids = null)
     {
         var (viewer, policies) = await BeginAsync(ct);
         var tokens = SearchText.Normalize(q).Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(5).ToArray();
@@ -110,6 +127,7 @@ public sealed class PeopleService(
             active and membership_type <> 'guest'
             and (@units::uuid[] is null or unit_ids && @units)
             and (@location::text is null or location_key = @location)
+            and (@ids::uuid[] is null or user_id = any(@ids))
             and not exists (
               select 1 from unnest(@contains::text[], @skeletons::text[], @digits::text[]) as t(c, s, d)
               where not (
@@ -127,6 +145,7 @@ public sealed class PeopleService(
             new
             {
                 units,
+                ids,
                 location = SearchText.LocationKey(location),
                 contains = tokens.Select(Like).ToArray(),
                 skeletons = tokens.Select(t => t.Length >= 3 && SearchText.Skeleton(t) is { Length: >= 2 } s ? "% " + s + "%" : string.Empty).ToArray(),

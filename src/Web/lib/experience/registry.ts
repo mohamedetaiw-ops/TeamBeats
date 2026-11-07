@@ -17,6 +17,8 @@ const product: Record<string, Loader> = {
   // Microsoft 365 mail and calendar (spec 018 US2, US3).
   "outlook.my_mail@1": () => import("@/components/placements/outlook.my_mail"),
   "outlook.my_calendar@1": () => import("@/components/placements/outlook.my_calendar"),
+  // People directory (spec 010 US4).
+  "people.list@1": () => import("@/components/placements/people.list"),
 };
 
 const reference: Record<string, Loader> =

@@ -199,6 +199,20 @@ public sealed class PeopleDirectoryTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task The_people_component_reads_a_named_set_and_bad_ids_are_refused()
+    {
+        var (s, _) = await DirectoryTenantAsync();
+        var employee = s.Tenant["kofi"].Client;
+        var named = await OkAsync(await employee.GetAsync($"/api/v1/people?ids={s.Tenant["layla"].Id},{s.Tenant["omar"].Id}"));
+        Assert.Equal(["Layla Nasser", "Mohamed Omar"], named.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("displayName").GetString()!).Order().ToArray());
+        // An id from outside the tenant simply matches no one.
+        var other = await world.CreateTenantAsync("ppn-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        var none = await OkAsync(await employee.GetAsync($"/api/v1/people?ids={other["admin"].Id}"));
+        Assert.Equal(0, none.GetProperty("items").GetArrayLength());
+        Assert.Contains("validation.people.ids", await ErrorKeysAsync(await employee.GetAsync("/api/v1/people?ids=not-an-id")));
+    }
+
+    [Fact]
     public async Task Visibility_rules_apply_in_profiles_and_search()
     {
         var (s, _) = await DirectoryTenantAsync();
