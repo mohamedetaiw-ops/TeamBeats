@@ -39,6 +39,14 @@ public sealed class TenancyContracts(
             where m.user_id = @u and m.valid_from <= now() and (m.valid_to is null or m.valid_to > now()) and u.status = 'active'
             """, new { u = userId }, r => new OrgMembershipInfo(r.GetGuid(0), r.GetGuid(1), r.GetString(2), r.GetBoolean(3)), ct);
 
+    public async Task<IReadOnlyList<UserOrgMembership>> ListActiveMembershipsAsync(CancellationToken ct = default) =>
+        await session.QueryAsync(
+            """
+            select m.user_id, m.org_unit_id, m.is_primary
+            from tenancy.org_membership m join tenancy.org_unit u on u.id = m.org_unit_id
+            where m.valid_from <= now() and (m.valid_to is null or m.valid_to > now()) and u.status = 'active'
+            """, null, r => new UserOrgMembership(r.GetGuid(0), r.GetGuid(1), r.GetBoolean(2)), ct);
+
     public Task<bool> UnitExistsAsync(Guid unitId, CancellationToken ct = default) =>
         session.ScalarAsync<bool>("select exists (select 1 from tenancy.org_unit where id = @id)", new { id = unitId }, ct);
 
@@ -64,6 +72,13 @@ public sealed class TenancyContracts(
         session.QuerySingleOrDefaultAsync(
             "select user_id, membership_type, status, preferred_org_unit_id from tenancy.tenant_membership where user_id = @u",
             new { u = userId },
+            r => new TenantMembershipInfo(r.GetGuid(0), r.GetString(1), Sql.ParseEnum<MembershipStatus>(r.GetString(2)), r.Get<Guid?>("preferred_org_unit_id")),
+            ct);
+
+    public async Task<IReadOnlyList<TenantMembershipInfo>> ListAsync(CancellationToken ct = default) =>
+        await session.QueryAsync(
+            "select user_id, membership_type, status, preferred_org_unit_id from tenancy.tenant_membership",
+            null,
             r => new TenantMembershipInfo(r.GetGuid(0), r.GetString(1), Sql.ParseEnum<MembershipStatus>(r.GetString(2)), r.Get<Guid?>("preferred_org_unit_id")),
             ct);
 

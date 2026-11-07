@@ -11,6 +11,7 @@ using TeamBeats.Modules.Authorization;
 using TeamBeats.Modules.Entitlements;
 using TeamBeats.Modules.Experience;
 using TeamBeats.Modules.Hr;
+using TeamBeats.Modules.People;
 using TeamBeats.Modules.Identity;
 using TeamBeats.Modules.Integrations;
 using TeamBeats.Modules.Notifications;
@@ -39,6 +40,7 @@ public static class TeamBeatsModules
         ExperienceModule.Migrations,
         NotificationsModule.Migrations,
         HrModule.Migrations,
+        PeopleModule.Migrations,
     ];
 
     public static IServiceCollection AddTeamBeatsCore(this IServiceCollection services, IConfiguration configuration)
@@ -69,6 +71,7 @@ public static class TeamBeatsModules
         services.AddExperienceModule();
         services.AddNotificationsModule(configuration);
         services.AddHrModule();
+        services.AddPeopleModule();
         return services;
     }
 }
@@ -95,6 +98,10 @@ public static class ApiComposition
             o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
             // Audit search is an exfiltration path (spec 006 section 14): limit per user.
             o.AddPolicy("audit", http => RateLimitPartition.GetFixedWindowLimiter(
+                http.RequestServices.GetRequiredService<ITenantContext>().ActorId?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
+            // People search is a scraping path (spec 010 FR-017): limit per user.
+            o.AddPolicy(PeopleModule.SearchRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
                 http.RequestServices.GetRequiredService<ITenantContext>().ActorId?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
         });
@@ -133,6 +140,7 @@ public static class ApiComposition
         app.MapExperienceEndpoints();
         app.MapNotificationsEndpoints();
         app.MapHrEndpoints();
+        app.MapPeopleEndpoints();
         extraEndpoints?.Invoke(app);
         return app;
     }

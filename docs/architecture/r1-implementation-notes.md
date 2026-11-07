@@ -459,3 +459,28 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Tenant default | Created on first use with Monday to Friday and no holidays, so every tenant always has one. It cannot be deleted. |
 | Snapshot cache | Plan T005 named a cache invalidated by `WorkingCalendarChanged`. Snapshots are cached for one request only, so no invalidation is needed yet; a shared cache can follow if leave (R2) needs it. |
 | Not built | Week start preference and Hijri date display. |
+
+## People directory backend (spec 010 T001 to T006, T007 and T008 in part)
+| Part | Where |
+|---|---|
+| Data | `people.profile` (one row per tenant membership: account values copied from Identity and Tenancy, directory, person and administrator values, location, hire date, normalized search text), `people.reporting_line` (history with dates), `people.field_policy`, `people.location`, `people.settings`; forced RLS on all |
+| Account read model | Names, emails, status and units are copied through the `IUserDirectory`, `ITenantMemberships` and `IOrganizationHierarchy` contracts whenever the hierarchy version moves (membership and unit changes bump it), and per person on `UserProvisioned`, `UserProfileSynced` and `UserDeprovisioned` |
+| Directory | Directory sync now reads `manager`, `businessPhones`, `mobilePhone` and `employeeHireDate` as well; `IDirectoryReader` hands them over in `DirectoryProfile`. After each `DirectorySynced`, `DirectoryProfiles` updates directory values, the location and the reporting line |
+| Contracts | `IReportingLine` (manager of, chain, direct and all reports, is manager of) and `IProfiles` (fields visible to a viewer) in `People.Contracts`; events `ProfileUpdated`, `ReportingLineChanged`, `LocationAdded` |
+| API | `GET /api/v1/people` (search, rate limited per user), `/people/{id}`, `/people/{id}/org-chart`, `/people/newcomers`, `/people/locations`, `PUT /people/locations/{key}`, `GET/PUT /people/policy` (`If-Match`), `PUT /people/{id}/fields`, `PUT /people/{id}/manager`, `GET /me/team`, `GET/PUT /me/profile` |
+| Access | `people.view` (Employee, HR officer, organization and tenant administrators), `people.hr_view` (HR officer), `people.manage` (organization and tenant administrators); migration 0010 adds them to existing tenants. Capabilities `people.directory` (every package) and `people.custom_fields` (Workplace Plus and up) |
+| Tests | `PeopleDirectoryTests`, `PeopleSearchTextTests`, `PermissionBackfillTests` |
+
+### Differences and follow-ups
+| Item | Note |
+|---|---|
+| Same subtree | The spec does not define the subtree. It is the branch just below the top of the hierarchy that holds the person's primary unit, so an Acme Gulf person's field is visible across Acme Gulf and hidden from Acme Africa (section 7). |
+| HR only rule | Section 6 gives employee number to "HR and administrators", which none of the four rules in section 2 covers, so a fifth rule `hr` exists for it. |
+| Search on restricted fields | Search matches title, department, email and phones only while that field is visible to everyone; a field with a narrower rule is not used for matching at all, so a match can never reveal it. |
+| Transliteration | Latin names also match on a consonant skeleton (Mohamed, Mohammed and Muhammad meet). Arabic to Latin matching needs a localized name set by an administrator. |
+| Photos | Upload, resizing and the directory photo are not built: resizing needs an image library, which needs its own decision. Profiles show initials. |
+| Cycle report | A reporting cycle is written to the audit log as `people.reporting_cycle_detected` and logged; no notification is sent yet. |
+| Search analytics | `people.searched` is not recorded; there is no analytics module yet. |
+| Policy cache | The policy is read on every request, so changes apply at once rather than within 60 seconds. |
+| Settings audit | Newcomer period, opt-out and location attribute changes and location renames are audited as `people.settings_changed`, which section 13 does not list. |
+| Performance | Search uses plain SQL over normalized columns with no extension. The 50,000 member performance test (T011) is still to come. |

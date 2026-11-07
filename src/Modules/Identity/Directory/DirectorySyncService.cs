@@ -542,7 +542,8 @@ public sealed class DirectorySyncService(
 
 /// <summary>Directory values kept for an account. Only mapped attributes are read (scenario 7).</summary>
 internal sealed record MirrorAttributes(string? DisplayName, string? Email, string? UserPrincipalName, string? JobTitle, string? Office,
-    string? Phone, string? EmployeeId, string? PreferredLanguage, string? Company = null, string? Department = null, string? Division = null);
+    string? Phone, string? EmployeeId, string? PreferredLanguage, string? Company = null, string? Department = null, string? Division = null,
+    string? WorkPhone = null, string? MobilePhone = null, string? Manager = null, string? HireDate = null);
 
 internal sealed record MirrorUser(string Id, bool Enabled, MirrorAttributes Attributes);
 
@@ -578,7 +579,8 @@ internal sealed class Mirror(Dictionary<string, MirrorUser> users, Dictionary<st
             var a = previous?.Attributes;
             var attributes = new MirrorAttributes(Merge(u.DisplayName, a?.DisplayName), Merge(u.Email, a?.Email), Merge(u.UserPrincipalName, a?.UserPrincipalName),
                 Merge(u.JobTitle, a?.JobTitle), Merge(u.Office, a?.Office), Merge(u.Phone, a?.Phone), Merge(u.EmployeeId, a?.EmployeeId),
-                Merge(u.PreferredLanguage, a?.PreferredLanguage), Merge(u.CompanyName, a?.Company), Merge(u.Department, a?.Department), Merge(u.Division, a?.Division));
+                Merge(u.PreferredLanguage, a?.PreferredLanguage), Merge(u.CompanyName, a?.Company), Merge(u.Department, a?.Department), Merge(u.Division, a?.Division),
+                Merge(u.WorkPhone, a?.WorkPhone), Merge(u.MobilePhone, a?.MobilePhone), Merge(u.ManagerId, a?.Manager), Merge(u.HireDate, a?.HireDate));
             // An account whose state was never reported is treated as disabled, so access is never granted by default.
             Users[u.ExternalId] = new MirrorUser(u.ExternalId, u.AccountEnabled ?? previous?.Enabled ?? false, attributes);
             _changedUsers.Add(u.ExternalId);
