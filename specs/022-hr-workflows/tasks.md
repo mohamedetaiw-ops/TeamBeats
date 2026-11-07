@@ -14,4 +14,4 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 - [x] T007 [US2] Calendars admin page with holiday table, working week picker, unit assignment and preview, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
-- [ ] T008 OpenAPI; R1 implementation notes (calendar assignment default); spec evidence
+- [x] T008 OpenAPI; R1 implementation notes (calendar assignment default); spec evidence
