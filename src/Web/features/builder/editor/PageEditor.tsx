@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { CatalogueTemplate, Finding, PageDefinition, PageView } from "@/lib/experience/builder-types";
 import { Button } from "@/components/ui/Button";
 import * as model from "./model";
@@ -57,6 +57,9 @@ export function PageEditor({
 }) {
   const t = useTranslations("builder.editor");
   const tr = useTranslations("builder");
+  const uiLocale = useLocale();
+  const languages = new Intl.DisplayNames([uiLocale], { type: "language" });
+  const language = (l: string) => languages.of(l) ?? l;
   const key = backupKey(tenantId, page.id);
   const items = new Map(catalogueItems.map((i) => [i.componentRef, i]));
   const regionName = (id: string) => tr(`regions.${id}`);
@@ -77,6 +80,9 @@ export function PageEditor({
   const [announcement, setAnnouncement] = useState(restored ? t("restored") : "");
   const [reason, setReason] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [savedCount, setSavedCount] = useState(0);
+  const [device, setDevice] = useState<"phone" | "tablet" | "desktop">("desktop");
+  const [previewLocale, setPreviewLocale] = useState(locales.includes(uiLocale) ? uiLocale : (locales[0] ?? uiLocale));
   const [published, setPublished] = useState<number | null>(page.currentRelease);
   const etag = useRef(restored?.etag ?? page.eTag);
   const focusAfter = useRef<string | null>(null);
@@ -112,6 +118,7 @@ export function PageEditor({
         etag.current = response.headers.get("etag") ?? view.eTag;
         writeBackup(key, null);
         setSaved(definition);
+        setSavedCount((n) => n + 1);
         setFindings(view.findings);
         setConflict(null);
         setState("saved");
@@ -250,6 +257,9 @@ export function PageEditor({
 
   const status = state === "saved" && dirty ? "unsaved" : state;
   const pageFindings = findings.filter((f) => !f.placement);
+  const warnings = findings.filter((f) => f.severity !== "blocking").length;
+  const missing = (l: string) => findings.filter((f) => f.code === "validation.page.translation_missing" && f.locale === l).length;
+  const findingText = (f: Finding) => (f.locale ? t("missingIn", { message: f.message ?? f.code, language: language(f.locale) }) : (f.message ?? f.code));
   const blocking = findings.filter((f) => f.severity === "blocking").length;
 
   return (
@@ -333,7 +343,7 @@ export function PageEditor({
               {region.placements.map((p) => {
                 const item = items.get(p.componentRef);
                 const own = findings.filter((f) => f.placement === p.id);
-                const problems = Object.fromEntries(own.filter((f) => f.property).map((f) => [f.property!, f.message ?? f.code]));
+                const problems = Object.fromEntries(own.filter((f) => f.property).map((f) => [f.property!, findingText(f)]));
                 const name = nameOf(p.componentRef);
                 const menuId = `builder-menu-${p.id}`;
                 return (
@@ -433,7 +443,7 @@ export function PageEditor({
                             .filter((f) => !f.property)
                             .map((f, i) => (
                               <li key={i} data-severity={f.severity}>
-                                {f.severity === "blocking" ? t("blocking") : t("warning")} {f.message ?? f.code}
+                                {f.severity === "blocking" ? t("blocking") : t("warning")} {findingText(f)}
                               </li>
                             ))}
                         </ul>
@@ -467,6 +477,52 @@ export function PageEditor({
           </section>
         );
       })}
+
+      <section className="builder-region builder-panel" aria-labelledby="builder-checks-title" data-testid="checks">
+        <h2 id="builder-checks-title">{t("checks.title")}</h2>
+        <p>{blocking > 0 ? t("checks.blocking", { count: blocking }) : t("checks.noBlocking")}</p>
+        {warnings > 0 ? <p>{t("checks.warnings", { count: warnings })}</p> : null}
+        <h3>{t("checks.translations")}</h3>
+        <ul className="builder-findings">
+          {locales.map((l) => (
+            <li key={l} data-testid={`translation-${l}`}>
+              {missing(l) === 0 ? t("checks.complete", { language: language(l) }) : t("checks.missing", { language: language(l), count: missing(l) })}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="builder-region builder-panel" aria-labelledby="builder-preview-title">
+        <h2 id="builder-preview-title">{t("preview.title")}</h2>
+        <p className="builder-template-description">{t("preview.saved")}</p>
+        <div className="builder-actions">
+          <div className="builder-switch" role="group" aria-label={t("preview.device")}>
+            {(["phone", "tablet", "desktop"] as const).map((d) => (
+              <button key={d} type="button" className="button button-quiet" aria-pressed={device === d} onClick={() => setDevice(d)}>
+                {t(`preview.devices.${d}`)}
+              </button>
+            ))}
+          </div>
+          <div className="field">
+            <label htmlFor="builder-preview-locale">{t("preview.language")}</label>
+            <select id="builder-preview-locale" value={previewLocale} onChange={(e) => setPreviewLocale(e.target.value)}>
+              {locales.map((l) => (
+                <option key={l} value={l}>
+                  {language(l)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="builder-preview-frame" data-device={device}>
+          <iframe
+            key={`${previewLocale}-${savedCount}`}
+            title={t("preview.frame", { device: t(`preview.devices.${device}`), language: language(previewLocale) })}
+            src={`/preview/pages/${page.id}?locale=${encodeURIComponent(previewLocale)}&v=${savedCount}`}
+            data-testid="preview-frame"
+          />
+        </div>
+      </section>
 
       <section className="builder-region builder-publish" aria-labelledby="builder-publish-title">
         <h2 id="builder-publish-title">{t("publishTitle")}</h2>

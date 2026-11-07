@@ -19,7 +19,8 @@ public sealed record PageRegion(string Id, IReadOnlyList<Placement> Placements);
 public sealed record PageDefinition(TemplateRef Template, LayoutRef Layout, string Variant, IReadOnlyList<PageRegion> Regions);
 
 /// <summary>One validation finding. Codes are resource keys; region and placement point to the offending part (FR-010).</summary>
-public sealed record Finding(string Code, string Severity, string? Region = null, string? Placement = null, string? Property = null, string? Message = null);
+public sealed record Finding(string Code, string Severity, string? Region = null, string? Placement = null, string? Property = null, string? Message = null,
+    string? Locale = null);
 
 public static class Severities
 {

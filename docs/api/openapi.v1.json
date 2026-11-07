@@ -2287,6 +2287,36 @@
         }
       }
     },
+    "/api/v1/experience/pages/{id}/preview": {
+      "get": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/pages/{id}/components": {
       "get": {
         "tags": [

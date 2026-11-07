@@ -581,7 +581,29 @@
       "publishBlocked": "Not published. Fix the problems marked on the page.",
       "publishFailed": "Not published. Try again.",
       "fixFirst": "Fix the problems that block publishing first.",
-      "shortcuts": "On a component: Alt and the up or down arrow moves it, Alt and D duplicates it, Delete removes it. Control and Z undoes, Control, Shift and Z redoes."
+      "shortcuts": "On a component: Alt and the up or down arrow moves it, Alt and D duplicates it, Delete removes it. Control and Z undoes, Control, Shift and Z redoes.",
+      "missingIn": "{message} ({language})",
+      "checks": {
+        "title": "Checks",
+        "blocking": "{count, plural, one {# problem blocks publishing} other {# problems block publishing}}",
+        "noBlocking": "Nothing blocks publishing",
+        "warnings": "{count, plural, one {# warning to review} other {# warnings to review}}",
+        "translations": "Translations",
+        "complete": "{language}: complete",
+        "missing": "{language}: {count, plural, one {# text missing} other {# texts missing}}"
+      },
+      "preview": {
+        "title": "Preview",
+        "saved": "The preview shows the last saved version, as employees will see it after publishing.",
+        "device": "Device",
+        "devices": {
+          "phone": "Phone",
+          "tablet": "Tablet",
+          "desktop": "Desktop"
+        },
+        "language": "Language and direction",
+        "frame": "Preview on {device} in {language}"
+      }
     },
     "picker": {
       "title": "Add a component to {region}",

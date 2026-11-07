@@ -76,7 +76,8 @@ public sealed partial class PageService(
     IClock clock,
     Personalization.HomeDefaults homeDefaults,
     ILocalizer localizer,
-    RequestLocale locale)
+    RequestLocale locale,
+    ITenantSettingsReader tenantSettings)
 {
     private sealed record PageRow(Guid Id, Guid? OrgUnitId, string Slug, string TemplateId, string TemplateVersion, int? CurrentRelease);
 
@@ -296,6 +297,52 @@ public sealed partial class PageService(
         return labels;
     }
 
+    /// <summary>
+    /// The saved draft drawn as the renderer receives it, for the builder's previews by device and direction (FR-044). Only an
+    /// editor of the page sees it; there is no audience targeting or personalization, and components the page may not hold show
+    /// as unavailable, as they would after publishing.
+    /// </summary>
+    public async Task<RenderedPage> PreviewAsync(Guid id, string? previewLocale, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
+        var page = await EditableAsync(id, Permissions.PageEdit, ct);
+        var (_, draft) = await DraftAsync(id, ct);
+        var shown = previewLocale is { } l && Primitives.Locales.IsSupported(l) ? l : locale.Locale;
+        var template = catalogue.Templates[draft.Template.Id];
+        var layout = catalogue.Layouts[template.Layout];
+        var availability = await AvailabilityAsync(page.OrgUnitId, ct);
+        var known = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["tenantId"] = context.RequireTenant().ToString(),
+            ["pageId"] = page.Id.ToString(),
+            ["locale"] = shown,
+            ["direction"] = LocaleResolver.Direction(shown),
+        };
+        if (page.OrgUnitId is { } unit)
+        {
+            known["orgUnitId"] = unit.ToString();
+        }
+        var regions = layout.Regions.Select(lr =>
+        {
+            var placements = draft.Regions.FirstOrDefault(r => r.Id == lr.Id)?.Placements ?? [];
+            return new RenderedRegion(lr.Id, lr.Span, lr.Section, placements.Select(p =>
+            {
+                var manifest = registry.Find(p.ComponentRef);
+                if (manifest is null || manifest.State == ComponentStates.Retired || availability(manifest) != Availability.Available)
+                {
+                    return new RenderedPlacement(p.Id, p.ComponentRef, "unavailable", p.Span ?? lr.Span,
+                        new Dictionary<string, JsonElement>(), new Dictionary<string, string>(), [], []);
+                }
+                return new RenderedPlacement(p.Id, p.ComponentRef, "ready", p.Span ?? Math.Min(lr.Span, manifest.Placement.MaxSpan),
+                    PropertyValidator.WithDefaults(manifest.Properties, p.Props),
+                    manifest.Context.Where(known.ContainsKey).ToDictionary(k => k, k => known[k], StringComparer.Ordinal),
+                    manifest.Events.Publishes.Select(e => e.Name).ToList(), manifest.Events.Subscribes.Select(e => e.Name).ToList());
+            }).ToList());
+        }).ToList();
+        return new RenderedPage(page.Id, page.CurrentRelease ?? 0, template.Id, layout.Id, draft.Variant, layout.Fallback, regions, null,
+            page.OrgUnitId?.ToString() ?? "tenant");
+    }
+
     /// <summary>The latest release of a page for the current viewer, with the effective structure (FR-002, FR-028, FR-066).</summary>
     public async Task<RenderedPage> RenderAsync(string slug, string locale, string direction, CancellationToken ct)
     {
@@ -424,8 +471,46 @@ public sealed partial class PageService(
         var rules = (await audiences.RulesAsync(ct)).Keys.Select(k => k.ToString()).ToHashSet(StringComparer.Ordinal);
         var findings = PageValidator.Validate(definition, page.TemplateId, catalogue, registry, availability, mode, rules,
             await entitlements.IsEnabledAsync(Capabilities.ExperienceAudienceVariants, ct));
-        // Each finding carries its text in the editor's language, so the builder shows it next to the placement (FR-043).
+        findings.AddRange(await TranslationFindingsAsync(definition, ct));
+        // Each finding carries its text in the editor's language, so the builder shows it next to the placement (FR-046).
         return findings.Select(f => f with { Message = localizer.Get(f.Code, locale.Locale) }).ToList();
+    }
+
+    /// <summary>
+    /// Translation status (FR-047): a localized text that has a value in some enabled language but not in another is a warning
+    /// naming the missing language. It never blocks publishing: no tenant policy requires a language yet (gap recorded in the R1
+    /// implementation notes). A text missing in every language is the validator's required-property finding instead.
+    /// </summary>
+    private async Task<List<Finding>> TranslationFindingsAsync(PageDefinition definition, CancellationToken ct)
+    {
+        var enabled = (await tenantSettings.GetLocaleSettingsAsync(ct)).EnabledLocales;
+        var result = new List<Finding>();
+        foreach (var region in definition.Regions)
+        {
+            foreach (var placement in region.Placements)
+            {
+                if (registry.Find(placement.ComponentRef) is not { } manifest || placement.Props is not { ValueKind: JsonValueKind.Object } props)
+                {
+                    continue;
+                }
+                foreach (var (name, schema) in manifest.Properties.Where(p => p.Value.Type == "text"))
+                {
+                    if (!props.TryGetProperty(name, out var value) || value.ValueKind != JsonValueKind.Object)
+                    {
+                        continue;
+                    }
+                    var given = value.EnumerateObject().Where(e => e.Value.ValueKind == JsonValueKind.String && e.Value.GetString()!.Trim().Length > 0)
+                        .Select(e => e.Name).ToHashSet(StringComparer.Ordinal);
+                    if (given.Count == 0)
+                    {
+                        continue;
+                    }
+                    result.AddRange(enabled.Where(l => !given.Contains(l)).Select(l =>
+                        new Finding("validation.page.translation_missing", Severities.Warning, region.Id, placement.Id, name, Locale: l)));
+                }
+            }
+        }
+        return result;
     }
 
     private Task<Func<ComponentManifest, Availability>> AvailabilityAsync(Guid? orgUnitId, CancellationToken ct, bool viewer = false) =>

@@ -37,3 +37,8 @@ export function getPage(id: string): Promise<ApiResult<PageView>> {
 export function listPickerItems(pageId: string): Promise<ApiResult<PickerItem[]>> {
   return apiGet<PickerItem[]>(`/api/v1/experience/pages/${encodeURIComponent(pageId)}/components`);
 }
+
+/** The saved draft drawn for the builder's preview in one language (spec 032 T018). Not found outside the editor's scope. */
+export function previewPage(id: string, locale: string): Promise<ApiResult<RenderedPage>> {
+  return apiGet<RenderedPage>(`/api/v1/experience/pages/${encodeURIComponent(id)}/preview?locale=${encodeURIComponent(locale)}`);
+}

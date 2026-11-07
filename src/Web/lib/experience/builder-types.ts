@@ -37,7 +37,7 @@ export function unitName(unit: OrgUnit, locale: string): string {
 export type DraftPlacement = { id: string; componentRef: string; span?: number | null; props?: Record<string, unknown> | null; visibilityRuleRef?: string | null };
 export type DraftRegion = { id: string; placements: DraftPlacement[] };
 export type PageDefinition = { template: { id: string; version: string }; layout: { id: string; version: string }; variant: string; regions: DraftRegion[] };
-export type Finding = { code: string; severity: string; region?: string | null; placement?: string | null; property?: string | null; message?: string | null };
+export type Finding = { code: string; severity: string; region?: string | null; placement?: string | null; property?: string | null; message?: string | null; locale?: string | null };
 export type PageView = {
   id: string;
   slug: string;

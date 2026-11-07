@@ -299,6 +299,7 @@
   "validation.page.too_few_placements": "تحتاج هذه المنطقة إلى مكونات أكثر قبل نشر الصفحة",
   "validation.page.too_many_placements": "تحتوي هذه المنطقة بالفعل على الحد الأقصى من المكونات",
   "validation.page.too_many_placements_page": "يمكن أن تحتوي الصفحة على 40 مكونا كحد أقصى",
+  "validation.page.translation_missing": "هذا النص غير متوفر بإحدى لغات مؤسستك",
   "validation.page.variant_invalid": "اختر نمطا مرئيا يتيحه هذا القالب",
   "validation.page.visibility_rule_not_entitled": "استهداف الجماهير ليس ضمن باقتك",
   "validation.page.visibility_rule_unknown": "قاعدة الجمهور هذه غير موجودة",

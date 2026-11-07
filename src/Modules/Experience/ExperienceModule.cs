@@ -107,6 +107,9 @@ public static class ExperienceModule
 
         x.MapGet("/pages/{id:guid}/releases", async (Guid id, PageService pages, CancellationToken ct) => Results.Ok(await pages.ReleasesAsync(id, ct)));
 
+        x.MapGet("/pages/{id:guid}/preview", async (Guid id, string? locale, PageService pages, CancellationToken ct) =>
+            Results.Ok(await pages.PreviewAsync(id, locale, ct)));
+
         x.MapGet("/pages/{id:guid}/components", async (Guid id, string? region, PageService pages, CancellationToken ct) =>
             Results.Ok(await pages.PickerAsync(id, region, ct)));
 
