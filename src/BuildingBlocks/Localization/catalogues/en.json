@@ -5,6 +5,7 @@
   "admin.nav.pages": "Pages",
   "admin.nav.plan": "Plan and usage",
   "admin.nav.roles": "Roles",
+  "admin.nav.templates": "Templates",
   "admin.nav.tenant_settings": "Tenant settings",
   "admin.nav.users": "Users and groups",
   "authz.denied.escalation": "You cannot grant permissions you do not hold yourself",

@@ -326,3 +326,34 @@
 .builder-preview-frame[data-device="tablet"] iframe {
   inline-size: 48rem;
 }
+
+/* Template designer (spec 032 US5). */
+.builder-designer {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.builder-region-policy {
+  display: grid;
+  gap: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  padding: var(--tb-space-sm);
+}
+
+.builder-check[data-level="1"] {
+  padding-inline-start: var(--tb-space-md);
+}
+
+.builder-check[data-level="2"],
+.builder-check[data-level="3"] {
+  padding-inline-start: calc(var(--tb-space-md) * 2);
+}
+
+.builder-template-change {
+  display: grid;
+  gap: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  padding: var(--tb-space-sm);
+}

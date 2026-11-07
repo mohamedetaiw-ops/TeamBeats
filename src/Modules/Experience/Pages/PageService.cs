@@ -41,8 +41,11 @@ public sealed record TemplateChangeView(PageDefinition Draft, IReadOnlyList<Unpl
 /// template change with its preview (spec 032 US5 scenario 3); null when the page is on the latest one.</param>
 /// <param name="TemplateDeprecated">True when the page's template version is deprecated: the page keeps working, and the owner is
 /// told to move it to another template (US5 scenario 6).</param>
+/// <param name="TemplateName">The name of the page's template in the editor's language, and <paramref name="TemplateRegions"/> its
+/// region policies, both of the version the page records, which the chooser may no longer offer.</param>
 public sealed record PageView(Guid Id, string Slug, Guid? OrgUnitId, string TemplateId, string TemplateVersion, int? CurrentRelease,
-    string ETag, PageDefinition Draft, IReadOnlyList<Finding> Findings, string? NewerTemplateVersion = null, bool TemplateDeprecated = false);
+    string ETag, PageDefinition Draft, IReadOnlyList<Finding> Findings, string? NewerTemplateVersion = null, bool TemplateDeprecated = false,
+    string? TemplateName = null, IReadOnlyList<TemplateRegion>? TemplateRegions = null);
 
 public sealed record ReleaseView(int Release, DateTimeOffset PublishedAt, Guid PublishedBy, string? Reason, int? RollbackOf);
 
@@ -191,6 +194,8 @@ public sealed partial class PageService(
             NewerTemplateVersion = latest is not null && latest.Version != page.TemplateVersion && int.TryParse(latest.Version, System.Globalization.CultureInfo.InvariantCulture, out var l)
                 && int.TryParse(page.TemplateVersion, System.Globalization.CultureInfo.InvariantCulture, out var p) && l > p ? latest.Version : null,
             TemplateDeprecated = recorded?.State == TemplateStates.Deprecated,
+            TemplateName = recorded is null ? null : tenantTemplates.NameOf(recorded, locale.Locale),
+            TemplateRegions = recorded?.Regions,
         };
     }
 
