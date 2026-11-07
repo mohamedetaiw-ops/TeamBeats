@@ -22,23 +22,24 @@ Planned modules are listed so that specs use the same names before the code exis
 | `Content` | 009 | News, announcements, campaigns, content pages and their workflow state | Content queries for components and search | `ContentPublished`, `ContentExpired`, `CampaignStepSent` | R1 |
 | `Documents` | 011 | Libraries, documents, versions, records holds, knowledge articles, connected library links (document source port, ADR-0016) | Document queries, file access tokens, legal hold contract (held audit selections for `Audit`) | `DocumentVersionPublished`, `DocumentDeleted`, `LegalHoldApplied`, `ConnectedLibraryAdded` | R1, R2 connected libraries |
 | `Policies` | 025 | Policies, attestations, policy versions | Policy queries, attestation status | `PolicyPublished`, `PolicyAttested`, `AttestationOverdue` | R1 |
-| `People` | planned 010 | Employee profiles and org chart projections (identity data stays in `Identity`) | Profile queries | `ProfileUpdated` | R1 |
-| `Search` | planned 012 | Search and vector index records (derived, rebuildable) | Query API with permission filtering | none | R1 |
+| `People` | 010 | Employee profiles and org chart projections (identity data stays in `Identity`) | Profile queries | `ProfileUpdated` | R1 |
+| `Search` | 012 | Search and vector index records (derived, rebuildable) | Query API with permission filtering | none | R1 |
 | `AiGateway` | 013 | Model policy, routes, budgets, private endpoints, usage records | `IAiGateway` (chat, tools, embeddings) | `AiPolicyChanged`, `AiBudgetThresholdReached` | R1 |
-| `Agents` | 020, 027, planned 014 | Agent definitions, versions, runs and checkpoints, tool registry, execution records, assistant conversations | Agent invocation, tool gateway | `AgentRunCompleted`, `AgentActionAwaitingApproval`, `AgentKillSwitchActivated` | R1 |
-| `Notifications` | planned 015 | Notifications, channel preferences, deliveries | `INotificationSender` | `NotificationDelivered` | R1 |
+| `Agents` | 020, 027, 014 | Agent definitions, versions, runs and checkpoints, tool registry, execution records, assistant conversations | Agent invocation, tool gateway | `AgentRunCompleted`, `AgentActionAwaitingApproval`, `AgentKillSwitchActivated` | R1 |
+| `Evaluation` | 034 | Evaluation suites, datasets, rubrics, thresholds, runs, results, gate decisions and evidence (ADR-0015) | Gate requests and results, run queries | `EvaluationRunCompleted`, `EvaluationGateDecided` | R1 |
+| `Notifications` | 015 | Notifications, channel preferences, deliveries | `INotificationSender` | `NotificationDelivered` | R1 |
 | `Services` | 016 | Service catalogue, forms, requests, task inbox, delegations | Task inbox API, request submission | `RequestSubmitted`, `RequestCompleted`, `TaskCompleted` | R1 |
 | `Workflow` | 024 | Process and decision definitions, instances, jobs, timers, incidents | Start process, correlate message, complete task | `ProcessInstanceCompleted`, `UserTaskCreated`, `IncidentRaised` | R1 core, R2 BPMN |
-| `Integrations` | 018 (mail, calendar, rooms), planned 017 and 019, 006 (Connections area), 011 (SharePoint adapter) | Connections and their features, consent and secret references, sync state, field mappings, external IDs | Canonical connector contracts per capability (for example the document repository contract of ADR-0016), connection list and actions | `ConnectionCreated`, `ConnectionConsentRevoked`, `ExternalRecordSynced`, `ConnectorUnavailable`, `ConnectorRestored` | R2 (Microsoft 365 connection for directory sync from R1) |
+| `Integrations` | 018 (mail, calendar, rooms), 017, 019, 006 (Connections area), 011 (SharePoint adapter) | Connections and their features, consent and secret references, sync state, field mappings, external IDs | Canonical connector contracts per capability (for example the document repository contract of ADR-0016), connection list and actions | `ConnectionCreated`, `ConnectionConsentRevoked`, `ExternalRecordSynced`, `ConnectorUnavailable`, `ConnectorRestored` | R2 (Microsoft 365 connection for directory sync from R1) |
 | `Hr` | 022 | Leave, attendance, HR journeys, expense claims | Balances, team calendar, working-day calculation (from R1) | `LeaveApproved`, `JourneyStarted`, `ExpenseApproved`, `WorkingCalendarChanged` | R1 (holiday and working week calendars), R2 (rest) |
 | `Analytics` | 021 | Aggregated metrics and reports (derived from events) | Report queries with minimum group size | none | R1 |
 | `Security` | 026 | Guest access, security controls and settings of spec 026 | Classification lookups, security settings | `SecurityPolicyChanged`, `GuestExpired`, `SecurityAlertRaised` | R1 |
-| `Engagement` | planned 023 | Channels, posts, polls, recognition | Feed queries | `RecognitionGiven` | R2 |
-| `Learning` | planned 028 | Courses, assignments, completions | Completion status | `TrainingCompleted` | R2 |
-| `Spaces` | planned 029 | Project and team spaces, tasks, milestones | Space queries | `SpaceTaskDue` | R2 |
-| `Booking` | planned 031 | Bookable resources, reservations | Availability | `BookingConfirmed` | R2 |
+| `Engagement` | 023 | Communities, channels, posts, comments, polls, surveys, recognition, points, celebrations, galleries | Feed queries, widget queries | `PostPublished`, `PostRemoved`, `RecognitionGiven`, `SurveyClosed` | R2 |
+| `Learning` | 028 | Courses, quizzes, paths, assignments, progress, certificates | Assign course, completion status | `CourseAssigned`, `CourseCompleted`, `CourseOverdue` | R2 |
+| `Spaces` | 029 | Project and team spaces, members, tasks, milestones, status | Space queries, My tasks source for the 016 inbox | `SpaceCreated`, `TaskAssigned`, `TaskCompleted`, `SpaceStatusChanged` | R2 |
+| `Booking` | 031 | Floors, zones, bookable resources, rules, bookings, check-ins | Availability | `BookingConfirmed`, `BookingReleased`, `CheckedIn` | R2 |
 
-Planned 030 (mobile app) is a client of the same APIs, not a module. Localization (007) is a building block, not a module.
+030 (mobile app and PWA) is a client of the same APIs, not a module. Localization (007) is a building block, not a module.
 
 ## 2. Relationships
 

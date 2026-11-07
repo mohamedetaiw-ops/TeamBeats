@@ -2,7 +2,7 @@
 
 Compared on 2026-11-05 against two competing products. Product A is a modular intranet sold mainly to regulated industries, as SaaS or self-hosted. Product B is an enterprise employee experience platform, SaaS only, aimed at large global companies. Product B's public material is short, so its rows describe the claim, not the detail.
 
-"Spec" is where the capability lives in TeamBeats. Specs marked "planned" are rows in [specs/README.md](../../specs/README.md) and not yet written.
+"Spec" is where the capability lives in TeamBeats. All referenced specs are written; see [specs/README.md](../../specs/README.md).
 
 ## Communications
 
@@ -12,9 +12,9 @@ Compared on 2026-11-05 against two competing products. Product A is a modular in
 | Urgent announcements, banners and pop-ups with required "I have read this" | A | 009 (US2, FR-006, FR-007) |
 | Targeting by role, location, group and device | A, B | 009 (FR-005) |
 | Sites for each location, brand or franchise | A | 009 (US6) |
-| Campaigns across several channels, with measurement | B | 009 (US8), 015 planned, 021 (US2) |
+| Campaigns across several channels, with measurement | B | 009 (US8), 015, 021 (US2) |
 | Personal feed and recommendations from user preferences | B | 009 (FR-017), 008 |
-| @mentions, #hashtags, reactions, comments | A, B | 009 (US9), 023 planned |
+| @mentions, #hashtags, reactions, comments | A, B | 009 (US9), 023 |
 | Multilingual content and AI translation into many languages | A, B | 009 (US5), 007 |
 | Events calendar | A | 009 (FR-018) |
 | Share to external social networks | A | 009 (section 12) |
@@ -26,7 +26,7 @@ Compared on 2026-11-05 against two competing products. Product A is a modular in
 | Themes for colors, logos, fonts and images | A | 009 (FR-014), 001 |
 | Drag-and-drop page builder with widgets and layouts | A | 009 (US7) |
 | Store of ready-made widgets added without development | B | 032 (component registry and builder), 008 (personal regions), 009 (content components) |
-| One branded app for desktop and mobile, office and frontline | A, B | 030 planned |
+| One branded app for desktop and mobile, office and frontline | A, B | 030 |
 
 ## Knowledge and documents
 
@@ -44,10 +44,10 @@ Compared on 2026-11-05 against two competing products. Product A is a modular in
 
 | Capability | Seen in | Spec |
 |---|---|---|
-| AI search across pages, documents, policies and processes, with summaries | A, B | 012 planned, 014 planned |
-| Search that respects permissions | A | constitution VII, 012 planned |
-| Unified search across other platforms | B | 012 planned (federated results) |
-| AI assistant for questions and tech support | A, B | 014 planned; agents in 020 and agent governance in 027 |
+| AI search across pages, documents, policies and processes, with summaries | A, B | 012, 014 |
+| Search that respects permissions | A | constitution VII, 012 |
+| Unified search across other platforms | B | 012 (federated results) |
+| AI assistant for questions and tech support | A, B | 014; agents in 020 and agent governance in 027 |
 | Q&A assistants for documents and policies | A | 011 (section 11), 025 (US4) |
 | AI sentiment on audience engagement | B | 021 (US8) |
 | A layer that turns information into action (no detail published) | B | Task inbox (016), process engine (024), agents (020) |
@@ -56,17 +56,17 @@ Compared on 2026-11-05 against two competing products. Product A is a modular in
 
 | Capability | Seen in | Spec |
 |---|---|---|
-| Messaging, comment threads, discussion rooms | A | 023 planned, 009 (comments) |
-| Profiles with skills and badges, people directory, org charts | A | 010 planned |
-| Project spaces with tasks, deadlines, milestones and progress | A | 029 planned |
+| Messaging, comment threads, discussion rooms | A | 023, 009 (comments) |
+| Profiles with skills and badges, people directory, org charts | A | 010 |
+| Project spaces with tasks, deadlines, milestones and progress | A | 029 |
 | Calendars for events, holidays and team availability | A | 009 (events), 022 (US2, team availability) |
 
 ## Engagement
 
 | Capability | Seen in | Spec |
 |---|---|---|
-| Anonymous polls and surveys | A | 023 planned |
-| Thank-you shout-outs and custom badges | A | 023 planned |
+| Anonymous polls and surveys | A | 023 |
+| Thank-you shout-outs and custom badges | A | 023 |
 
 ## HR and operations
 
@@ -74,10 +74,10 @@ Compared on 2026-11-05 against two competing products. Product A is a modular in
 |---|---|---|
 | Leave requests | A | 022 (US1) |
 | Expenses | A | 022 (US8) |
-| Room booking | A | 018 planned (Microsoft 365 rooms), 031 planned |
+| Room booking | A | 018 (Microsoft 365 rooms), 031 |
 | Onboarding and offboarding journeys | A (LMS for onboarding) | 022 (US4, US5) |
 | No-code workflows and e-forms | A | 016, 024 |
-| LMS for onboarding and mandatory training | A | 028 planned |
+| LMS for onboarding and mandatory training | A | 028 |
 | Dashboard per location or department, including business performance | A | 021 (US6) |
 
 ## Governance, security and compliance
@@ -110,8 +110,8 @@ Compared on 2026-11-05 against two competing products. Product A is a modular in
 | Microsoft Active Directory | A | 002, 003 |
 | SharePoint | B | 011 (US9 connected libraries, US10 import), 006 (Connections area) |
 | Google Docs | A | INT-004, 011 (section 12) |
-| Slack | A | 017 planned |
-| Custom APIs | A | 017 planned |
+| Slack | A | 017 |
+| Custom APIs | A | 017 |
 | SaaS or self-hosted on premises | A | Foundation deployment profiles, R3 |
 
 ## Where TeamBeats goes further

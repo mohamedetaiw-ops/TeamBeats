@@ -1,0 +1,19 @@
+# Implementation Plan: AI Assistant and Retrieval-Augmented Answers
+
+**Spec:** `specs/014-ai-assistant/spec.md` (v1.0, Approved) | **Date:** 2026-11-07
+**Shared base:** ADR-0011 (`Agents` module), spec 012, 013, 020, 027 plans
+
+## Summary
+The assistant lives in the `Agents` module as the platform "knowledge" agent plus a router: each turn calls `ISearchRetrieval` as the user, builds a prompt with passages in the untrusted envelope, calls `IAiGateway` with use case `assistant`, checks that every cited passage ID was among those retrieved, and streams the answer. When the router picks an agent (spec 020), the turn runs as that agent. Conversations are stored in `agents.conversation` and `agents.turn` with the tenant retention job.
+
+## API (v1)
+`POST /api/v1/assistant/turns` (streamed), `GET /api/v1/assistant/conversations`, `DELETE /api/v1/assistant/conversations/{id}`, `DELETE /api/v1/assistant/conversations`, `POST /api/v1/assistant/turns/{id}/feedback`.
+
+## Tests
+Citation check against retrieved IDs; no evidence answer; policy-blocked evidence; hidden content never cited (persona fixtures); routing only to permitted agents; history isolation and retention; degraded states; streaming. Acceptance (e2e): panel, cited answer, feedback, in English and Arabic with axe.
+
+## R2
+- File upload uses the 011 upload pipeline (scanner, text extraction) into conversation-scoped storage deleted with the conversation.
+- Voice uses speech-to-text and text-to-speech model types added to the 013 gateway routes; audio is streamed and not persisted.
+- The Teams personal app calls the same assistant endpoints with a Teams SSO token exchanged for a TeamBeats session.
+- Personal context answers need no assistant code: they are agents with self-scoped tools registered in 027.

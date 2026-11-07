@@ -14,9 +14,14 @@ import { hostOrigin } from "../support/stack";
  */
 const unique = (prefix: string) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
-const minutes = (n: number) => new Date(Date.now() + n * 60_000).toISOString();
 const dubaiDate = (offsetDays: number) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dubai", year: "numeric", month: "2-digit", day: "2-digit" }).format(Date.now() + offsetDays * 86_400_000);
+/**
+ * The calendar groups events by day in Asia/Dubai, so events a few minutes from now fall on tomorrow late in the
+ * Dubai evening. The browser clock is fixed at noon in Dubai on today's Dubai date and the fixtures count from it.
+ */
+const now = Date.parse(`${dubaiDate(0)}T08:00:00Z`);
+const minutes = (n: number) => new Date(now + n * 60_000).toISOString();
 
 function message(id: string, extra: Record<string, unknown> = {}) {
   return {
@@ -130,6 +135,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("mail and calendar show their data, markers, links and every state", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       const seen = await fakeOutlook(page);
+      await page.clock.setFixedTime(now);
       await page.goto(`${hostOrigin(tenant.key)}/p/${slug}`);
 
       const mails = page.getByRole("region", { name: msg(locale, "outlook.mail.title") });
