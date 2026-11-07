@@ -12,6 +12,7 @@ public sealed class AuthorizationService(
     ITenantContext context,
     EffectiveGrantsLoader loader,
     IDbSession session,
+    IEnumerable<IRequestAttributeProvider> requestAttributes,
     ILogger<AuthorizationService> logger) : IAuthorizationService
 {
     private EffectiveGrants? _current;
@@ -23,7 +24,23 @@ public sealed class AuthorizationService(
             // Platform operators and anonymous callers hold no tenant permissions (spec 001 FR-010).
             return EffectiveGrants.None(Guid.Empty);
         }
-        return _current ??= await loader.LoadAsync(context.ActorId.Value, ct);
+        return _current ??= await WithRequestAsync(await loader.LoadAsync(context.ActorId.Value, ct), ct);
+    }
+
+    private async Task<EffectiveGrants> WithRequestAsync(EffectiveGrants grants, CancellationToken ct)
+    {
+        var request = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var provider in requestAttributes)
+        {
+            foreach (var (key, value) in await provider.GetAsync(ct))
+            {
+                if (ConditionAttributes.All.TryGetValue(key, out var attribute) && attribute.Source == AttributeSource.Request)
+                {
+                    request[key] = value;
+                }
+            }
+        }
+        return request.Count == 0 ? grants : grants with { RequestAttributes = request };
     }
 
     public Task<EffectiveGrants> GrantsForAsync(Guid userId, CancellationToken ct) => loader.LoadAsync(userId, ct);

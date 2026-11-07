@@ -35,6 +35,9 @@ public sealed record EffectiveGrants(
     /// <summary>User attributes for conditions (spec 004 section 6). Absent keys fail closed.</summary>
     public IReadOnlyDictionary<string, string> UserAttributes { get; } = Attributes ?? new Dictionary<string, string>();
 
+    /// <summary>Request attributes for conditions (spec 026), set per request on the current user's grants only, never cached.</summary>
+    public IReadOnlyDictionary<string, string> RequestAttributes { get; init; } = new Dictionary<string, string>();
+
     public static EffectiveGrants None(Guid userId) =>
         new(userId, false, [], new HashSet<Guid>(), new HashSet<Guid>(), new HashSet<Guid>(), []);
 }

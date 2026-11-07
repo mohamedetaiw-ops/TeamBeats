@@ -10,7 +10,7 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 ## Phase 2: User Story 1, restrict access by network (P1)
 - [x] T004 [P] [US1] Tests: tenant allow and block lists; admin area list; forwarded header spoofing ignored; self lock-out needs step-up and confirmation; network zone condition and explainer; Workplace refuses scoped rules; cross-tenant
 - [x] T005 [US1] Network middleware with `AdminArea` endpoint metadata and rate-limited refusal audit
-- [ ] T006 [US1] `network_zone` condition attribute in spec 004 conditions
+- [x] T006 [US1] `network_zone` condition attribute in spec 004 conditions
 - [x] T007 [US1] Policy endpoints with preview count of affected users
 
 ## Phase 3: User Story 2, MFA and step-up (P1)

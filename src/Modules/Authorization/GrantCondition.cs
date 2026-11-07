@@ -195,7 +195,17 @@ public abstract record GrantCondition
 
         protected override bool HoldsFrom(IEnumerator<ConditionClause> clauses) => clauses.MoveNext() && clauses.Current.Met;
 
-        public bool Holds(string actual) => Operator switch
+        public bool Holds(string actual)
+        {
+            if (!Attribute.MultiValued)
+            {
+                return HoldsOne(actual);
+            }
+            var values = actual.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return Operator is "ne" or "not_in" ? values.All(HoldsOne) : values.Any(HoldsOne);
+        }
+
+        private bool HoldsOne(string actual) => Operator switch
         {
             "eq" => Values.Any(v => Same(actual, v)),
             "ne" => !Values.Any(v => Same(actual, v)),

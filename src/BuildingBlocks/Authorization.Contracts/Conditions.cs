@@ -27,7 +27,11 @@ public enum AttributeKind
     OrgUnit,
 }
 
-public sealed record ConditionAttribute(string Key, AttributeSource Source, AttributeKind Kind, IReadOnlyList<string>? Choices = null);
+/// <summary>
+/// An attribute conditions can test. A multi-valued attribute arrives as a comma-separated list, such as every network
+/// zone the request address falls in: equal and in hold when any value matches, not equal and not in when none does.
+/// </summary>
+public sealed record ConditionAttribute(string Key, AttributeSource Source, AttributeKind Kind, IReadOnlyList<string>? Choices = null, bool MultiValued = false);
 
 /// <summary>
 /// The attribute catalogue for grant conditions (spec 004 FR-015, section 6). Adding an attribute is a change to spec 004.
@@ -67,7 +71,7 @@ public static class ConditionAttributes
         new(OwningOrgUnit, AttributeSource.Resource, AttributeKind.OrgUnit),
         new(MfaPerformed, AttributeSource.Request, AttributeKind.Flag),
         new(StepUpAgeMinutes, AttributeSource.Request, AttributeKind.Number),
-        new(NetworkZone, AttributeSource.Request, AttributeKind.Text),
+        new(NetworkZone, AttributeSource.Request, AttributeKind.Text, MultiValued: true),
     }.ToDictionary(a => a.Key, StringComparer.Ordinal);
 }
 
@@ -79,6 +83,16 @@ public static class ConditionAttributes
 public interface IUserAttributeProvider
 {
     Task<IReadOnlyDictionary<string, string>> GetAsync(Guid userId, CancellationToken ct);
+}
+
+/// <summary>
+/// Supplies request attributes for conditions (spec 004 section 6, spec 026): facts about the current request, such as
+/// the network zones its address falls in, worked out by the module that owns them. Never cached with grants, never
+/// taken from client input. A key that does not apply is left out, so conditions on it fail closed.
+/// </summary>
+public interface IRequestAttributeProvider
+{
+    Task<IReadOnlyDictionary<string, string>> GetAsync(CancellationToken ct);
 }
 
 /// <summary>One comparison in a condition, with the value used, for explanations (spec 004 FR-016).</summary>
