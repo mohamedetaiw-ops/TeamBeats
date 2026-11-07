@@ -9,6 +9,7 @@ public sealed class ApiProgram
     {
         var builder = WebApplication.CreateBuilder(args);
         ProductionGuards.EnsureDevSignInDisabled(builder.Configuration);
+        ProductionGuards.EnsureMailIsSentInProduction(builder.Environment, builder.Configuration);
         builder.AddTeamBeatsApi();
         var app = builder.Build();
         app.UseTeamBeatsApi();
@@ -42,6 +43,18 @@ public static class ProductionGuards
                 throw new InvalidOperationException(
                     $"{key} is configured, but test accounts, test tenants and fake external systems never exist in production. Refusing to start.");
             }
+        }
+    }
+
+    /// <summary>
+    /// Spec 015: captured mail (the development mailbox) never replaces sending in Production. Staging workers run the
+    /// production artifact with capture on, so this checks the environment name rather than the artifact.
+    /// </summary>
+    public static void EnsureMailIsSentInProduction(IHostEnvironment environment, IConfiguration configuration)
+    {
+        if (environment.IsProduction() && TeamBeats.Modules.Notifications.EmailOptions.IsCapture(configuration))
+        {
+            throw new InvalidOperationException("Notifications:Email:Mode is Capture in Production, where mail must be sent. Refusing to start.");
         }
     }
 }

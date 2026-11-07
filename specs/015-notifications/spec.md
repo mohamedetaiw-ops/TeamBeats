@@ -212,7 +212,7 @@ None. Agent briefings (spec 020, R2) send through this contract like any module.
 
 ## 15. Non-functional requirements
 - In-app delivery under 5 seconds p95; 100,000 in-app notifications within 2 minutes.
-- Live count updates through the existing server-sent events connection of the shell.
+- The unread count in the shell refreshes within 30 seconds while the page is visible, and at once when the page becomes visible again.
 
 ## 16. Success criteria
 - **SC-001**: Every "notify" in R1 specs is delivered through this contract in the release suite.

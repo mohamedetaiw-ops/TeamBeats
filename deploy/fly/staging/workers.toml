@@ -7,6 +7,8 @@ primary_region = "fra"
   ASPNETCORE_ENVIRONMENT = "Staging"
   # The production workers image has no fake Microsoft 365; on staging the API host runs directory sync against the fakes.
   Workers__DirectorySync__Enabled = "false"
+  # Email on staging goes to the captured mailbox, which the API host fills itself (spec 015 plan, Staging).
+  Workers__NotificationDelivery__Enabled = "false"
 
 # Workers stop the host when a background job fails (for example before the API has applied migrations); always restart.
 [[restart]]

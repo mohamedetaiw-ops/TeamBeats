@@ -25,8 +25,16 @@ public sealed class DevHostProgram
         builder.Services.AddSingleton<StagingHomeSeeder>();
         builder.Services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, ReferencePacks>();
         builder.AddFakeExternalSystems();
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Notifications.NotificationDeliveryWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Notifications.NotificationDeliveryWorker>();
+        }
         var app = builder.Build();
-        app.UseTeamBeatsApi(endpoints => endpoints.MapDevAuthEndpoints(app.Configuration));
+        app.UseTeamBeatsApi(endpoints =>
+        {
+            endpoints.MapDevAuthEndpoints(app.Configuration);
+            TeamBeats.Modules.Notifications.NotificationsModule.MapNotificationDevEndpoints(endpoints);
+        });
         app.UseFakeExternalSystems();
 
         if (app.Configuration.GetConnectionString("Owner") is { } owner && app.Configuration.GetValue<bool>("Dev:MigrateOnStart"))

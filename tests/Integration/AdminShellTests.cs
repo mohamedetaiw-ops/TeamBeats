@@ -20,7 +20,7 @@ public sealed class AdminShellTests(TenantWorld world)
     public async Task Navigation_is_server_driven_per_permission()
     {
         var admin = await Sections(world.A["admin"]);
-        Assert.Superset(new HashSet<string> { "tenant_settings", "organization", "users", "roles", "plan", "audit", "pages", "templates" }, admin);
+        Assert.Superset(new HashSet<string> { "tenant_settings", "organization", "users", "roles", "plan", "audit", "pages", "templates", "notifications" }, admin);
 
         var orgadmin = await Sections(world.A["orgadmin"]);
         Assert.Contains("organization", orgadmin);
@@ -28,6 +28,7 @@ public sealed class AdminShellTests(TenantWorld world)
         Assert.DoesNotContain("plan", orgadmin);
         // The org admin holds template.edit for the Gulf only; template designers work tenant-wide in R1.
         Assert.DoesNotContain("templates", orgadmin);
+        Assert.DoesNotContain("notifications", orgadmin);
 
         var security = await Sections(world.A["security"]);
         Assert.Contains("audit", security);

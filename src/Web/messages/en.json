@@ -41,7 +41,8 @@
       "connections": "Connections",
       "branding": "Brand",
       "pages": "Pages",
-      "templates": "Templates"
+      "templates": "Templates",
+      "notifications": "Notifications"
     }
   },
   "header": {
@@ -724,6 +725,113 @@
       "changed": "The page changed since you looked. Review the change again.",
       "blocked": "The change cannot be applied yet. Review it again.",
       "failed": "The change did not work. Try again in a moment."
+    }
+  },
+  "notifications": {
+    "title": "Notifications",
+    "bell": "{count, plural, =0 {Notifications} one {Notifications, # unread} other {Notifications, # unread}}",
+    "overflow": "99+",
+    "unreadStatus": "{count, plural, =0 {No unread notifications} one {# unread notification} other {# unread notifications}}",
+    "readAll": "Mark all as read",
+    "failed": "Notifications could not be loaded.",
+    "retry": "Try again",
+    "empty": "You have no notifications.",
+    "emptyFiltered": "Nothing matches this filter.",
+    "viewAll": "See all notifications",
+    "unread": "Unread:",
+    "mandatory": "Required",
+    "loading": "Loading",
+    "more": "Show more",
+    "category": {
+      "security_notice": "Security notices",
+      "critical_announcement": "Critical announcements",
+      "attestation_due": "Attestations due",
+      "approval_escalation": "Approval escalations",
+      "site_emergency": "Site emergencies",
+      "approval_waiting": "Approvals waiting for you",
+      "request_update": "Updates on your requests",
+      "mention": "Mentions",
+      "comment": "Comments",
+      "announcement": "Announcements",
+      "document_update": "Document updates",
+      "integration_alert": "Connection alerts",
+      "system": "System messages"
+    },
+    "filter": {
+      "label": "Show",
+      "all": "All",
+      "unread": "Unread",
+      "mandatory": "Required"
+    },
+    "preferences": {
+      "link": "Notification preferences",
+      "title": "Notification preferences",
+      "saved": "Your preferences are saved.",
+      "failed": "Your preferences could not be saved. Try again.",
+      "emailPaused": "Email to your address is paused because messages to it were refused. Ask your administrator to check the address.",
+      "inAppAlways": "Notifications always appear here in TeamBeats. Choose which ones also come by email.",
+      "tableCaption": "Email choices for each kind of notification",
+      "category": "Kind",
+      "email": "Email",
+      "digest": "Daily digest",
+      "mandatory": "Required",
+      "emailFor": "Email for {category}",
+      "digestFor": "Daily digest for {category}",
+      "quietHours": "Quiet hours",
+      "quietHoursHint": "Email waits until quiet hours end, except urgent required messages.",
+      "quietHoursOn": "Use quiet hours",
+      "quietStart": "From",
+      "quietEnd": "Until",
+      "digestTime": "Daily digest time",
+      "timeZone": "Time zone",
+      "timeZoneHint": "For example Asia/Dubai.",
+      "saving": "Saving",
+      "save": "Save preferences"
+    },
+    "settings": {
+      "title": "Notifications",
+      "intro": "Choose how notification email looks and which kinds every employee must receive.",
+      "saved": "Settings are saved.",
+      "stale": "Someone else changed these settings. Reload the page and try again.",
+      "failed": "The settings could not be saved. Try again.",
+      "test": {
+        "action": "Send a test email to me",
+        "sent": "The test email was sent.",
+        "refused": "The mail server refused the test email.",
+        "failed": "The test email could not be sent."
+      },
+      "relay": {
+        "title": "Mail server",
+        "use": "Send through our own mail server",
+        "host": "Server name",
+        "port": "Port",
+        "username": "User name",
+        "secretReference": "Password secret reference",
+        "secretReferenceHint": "The reference to the password in your secret manager, not the password itself.",
+        "startTls": "Require an encrypted connection (STARTTLS)",
+        "platform": "Email is sent through the TeamBeats mail service.",
+        "notInPlan": "Your plan sends email through the TeamBeats mail service."
+      },
+      "senderName": "Sender name",
+      "senderNameHint": "Shown as the sender of notification email. Leave empty to use TeamBeats.",
+      "categoriesCaption": "Kinds of notification",
+      "category": "Kind",
+      "emailDefault": "Email by default",
+      "mandatory": "Required for everyone",
+      "always": "Always",
+      "platformMandatory": "Always required",
+      "emailDefaultFor": "Email by default for {category}",
+      "mandatoryFor": "Required for everyone: {category}",
+      "saving": "Saving",
+      "testing": "Sending",
+      "save": "Save settings"
+    },
+    "mailbox": {
+      "title": "Captured email",
+      "intro": "Email in this environment is kept here instead of being sent.",
+      "empty": "No email has been captured yet.",
+      "to": "To:",
+      "from": "From:"
     }
   }
 }

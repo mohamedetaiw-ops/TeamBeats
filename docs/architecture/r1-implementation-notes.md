@@ -417,3 +417,24 @@ Screen reader checks assert the roles, names and states that assistive technolog
 
 ## Backfilling tenant rows in migrations
 Tenant tables force row-level security, so a migration that reads or writes their rows without a tenant set sees nothing. Authorization migrations 0003 to 0006 meant to add new permissions and roles to existing tenants and changed nothing; tenants created before them (the staging tenant among them) had administrators without page, theme, shell and personalization permissions. Migration 0007 applies those additions once per tenant with `app.tenant_id` set, and `PermissionBackfillTests` covers it. A future migration that changes rows of existing tenants loops over the tenants the same way.
+
+## Notifications and email (spec 015 T001 to T008)
+| Part | Where |
+|---|---|
+| Send contract | `INotificationSender.SendAsync` in `Notifications.Contracts`, in the caller's transaction. Recipients who are not active members of the current tenant are skipped and counted. Links must be paths on the tenant host. |
+| In-app centre | `GET /api/v1/me/notifications` (filter, category, cursor), `/count`, `/{id}/read`, `/read-all`; text is rendered in the reader's language at read time |
+| Dedupe and grouping | Same dedupe key for the same user within 1 hour is dropped; the same group key on an unread entry within 15 minutes adds to its count and sends no new email |
+| Email | `delivery` rows are the queue; `NotificationDeliveryWorker` runs per tenant every 5 seconds, digests every minute, purge daily. Retries after 1, 5, 15 and 60 minutes, then every 3 hours, and the delivery fails after 24 hours with an error log. A 5xx recipient refusal pauses the address. |
+| Preferences | `GET/PUT /api/v1/me/notification-preferences`; mandatory categories (platform and tenant) always email and ignore changes |
+| Tenant settings | `/admin/notifications`; `GET/PUT /api/v1/notifications/settings` with a version, relay test, template overrides. A tenant relay needs `notifications.tenant_smtp` (workplace_plus and enterprise_gov) and stores only a secret reference. |
+| Hosts | Production API and workers send with SMTP; `Notifications:Email:Mode` `Capture` is refused in Production. The development host captures mail and runs the delivery worker in process (`Notifications:Delivery:InProcess`); staging workers turn theirs off. `/dev/mailbox` shows captured mail. |
+| Tests | `NotificationsTests`, `NotificationRulesTests`, `PermissionBackfillTests`, `notifications.spec.ts` in `ar` and `en` |
+
+### Differences and follow-ups
+| Item | Note |
+|---|---|
+| Live count | Section 15 named a server-sent events connection that does not exist; the bell polls the count every 30 seconds while the page is visible. The spec wording is corrected to that. |
+| Bounces | Only synchronous refusals count as hard bounces. Delivery status notifications that arrive later by email are not read in R1. |
+| Platform relay | No provider is chosen yet (spec 015 section 17). Production needs `Notifications:Email:SmtpHost` and a from address with SPF, DKIM and DMARC before email is turned on. |
+| Template editor screen | The template override API exists; the admin screen lists no templates yet because no sending module defines any. It comes with the first sending module (T009). |
+| T009 | Wiring existing notify points, the 100,000 burst test and spec evidence wait for the sending modules. |

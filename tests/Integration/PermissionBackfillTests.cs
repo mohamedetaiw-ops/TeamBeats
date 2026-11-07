@@ -43,6 +43,30 @@ public sealed class PermissionBackfillTests(TenantWorld world)
             "select relforcerowsecurity from pg_class where oid = 'authz.role'::regclass"));
     }
 
+    [Fact]
+    public async Task Notification_backfill_gives_an_older_tenants_administrators_notification_settings()
+    {
+        var old = await world.CreateTenantAsync("bfn-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        var admin = old["admin"].Client;
+        await world.Database.OwnerExecAsync(
+            """
+            select set_config('app.tenant_id', @t, false);
+            delete from authz.role_permission where permission_key = 'notifications.manage';
+            update authz.grants_version set version = version + 1;
+            """, ("t", old.Id.ToString()));
+        Assert.Equal(HttpStatusCode.Forbidden, (await admin.GetAsync("/api/v1/notifications/settings")).StatusCode);
+        var before = await CountAsync(world.A.Id);
+
+        var script = AuthorizationModule.Migrations.Scripts().Single(s => s.Name.StartsWith("0008_", StringComparison.Ordinal)).Sql;
+        await world.Database.OwnerExecAsync(script);
+        await world.Database.OwnerExecAsync(script);
+
+        Assert.Equal(HttpStatusCode.OK, (await admin.GetAsync("/api/v1/notifications/settings")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await (await world.SeedUserAsync(old, "employee", TeamBeats.Modules.Tenancy.Contracts.MembershipTypes.Employee))
+            .Client.GetAsync("/api/v1/notifications/settings")).StatusCode);
+        Assert.Equal(before, await CountAsync(world.A.Id));
+    }
+
     /// <summary>Counts as the table owner with one tenant set, on one connection, as row-level security requires.</summary>
     private async Task<long> CountAsync(Guid tenant, string sql = "select count(*) from authz.role_permission")
     {

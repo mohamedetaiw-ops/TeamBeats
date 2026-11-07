@@ -54,6 +54,8 @@ public static class Permissions
     public const string PersonalizationPolicy = "personalization.policy";
     public const string PersonalLayoutEdit = "personal_layout.edit";
 
+    public const string NotificationsManage = "notifications.manage";
+
     public static readonly IReadOnlyList<string> All =
     [
         TenantSettingsView, TenantSettingsManage, TenantAdminsManage,
@@ -66,6 +68,7 @@ public static class Permissions
         PageView, PageEdit, PagePublish, TemplateEdit, TemplateDistribute, ComponentEnable, ConfigHistoryView,
         ThemeEdit, ThemePublish, ConfigLockManage,
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
+        NotificationsManage,
     ];
 }
 
