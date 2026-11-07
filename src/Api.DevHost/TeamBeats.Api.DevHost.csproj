@@ -12,5 +12,7 @@
   <!-- Fictional scenarios for the fake external systems (docs/testing/fake-systems.md). -->
   <ItemGroup>
     <Content Update="scenarios/*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Seed content for the test tenant, such as the staging home (docs/testing/fake-systems.md). -->
+    <Content Update="seeds/*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

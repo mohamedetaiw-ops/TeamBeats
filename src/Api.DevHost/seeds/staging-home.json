@@ -1,0 +1,37 @@
+{
+  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md): a page from the home template H01, published and set as the shell home. Staging web builds leave out the reference packs, so only product components are placed. Mail and calendar join the personal area by themselves (spec 008 FR-051). Edit in place; a home that is already set is never replaced.",
+  "template": "H01",
+  "slug": "home",
+  "variant": "balanced",
+  "regions": {
+    "hero": [],
+    "grid": [
+      {
+        "id": "weather",
+        "componentRef": "toolbox.weather@1",
+        "span": 4,
+        "props": {
+          "location": "Dubai"
+        }
+      },
+      {
+        "id": "world-clock",
+        "componentRef": "toolbox.world_clock@1",
+        "span": 4,
+        "props": {
+          "zones": [
+            "Asia/Dubai",
+            "Asia/Riyadh",
+            "Africa/Cairo",
+            "Europe/London"
+          ]
+        }
+      },
+      {
+        "id": "time-converter",
+        "componentRef": "toolbox.time_converter@1",
+        "span": 4
+      }
+    ]
+  }
+}
