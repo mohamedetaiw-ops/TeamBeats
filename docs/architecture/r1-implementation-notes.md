@@ -438,3 +438,24 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Platform relay | No provider is chosen yet (spec 015 section 17). Production needs `Notifications:Email:SmtpHost` and a from address with SPF, DKIM and DMARC before email is turned on. |
 | Template editor screen | The template override API exists; the admin screen lists no templates yet because no sending module defines any. It comes with the first sending module (T009). |
 | T009 | Wiring existing notify points, the 100,000 burst test and spec evidence wait for the sending modules. |
+
+## Working calendars (spec 022 T001 to T007)
+| Part | Where |
+|---|---|
+| Data | `hr.working_calendar` (name in each language, country, ISO week days, owner unit, one tenant default), `hr.calendar_holiday` (date, name, half day), `hr.calendar_assignment` (one calendar per org unit); forced RLS on all three |
+| Contract | `IWorkingCalendar` in `Hr.Contracts`: `ForUnitAsync`, `ForUserAsync`, `TenantDefaultAsync` return a `WorkingCalendarSnapshot` with `IsWorkingDay`, `WorkingFraction`, `CountWorkingDays`, `AddWorkingDays` and `NextWorkingDayOnOrAfter` in the tenant time zone |
+| Resolution | The nearest assigned unit on the way up the hierarchy wins, then the tenant default, then a built-in Monday to Friday week |
+| API | `/api/v1/hr/calendars` (list, create, get, update and delete with `If-Match`), `PUT /calendars/{id}/holidays` (replaces one year), `/assignments`, `PUT /assignments/{orgUnitId}`, `GET /working-days` preview of up to 366 days |
+| Access | `hr.calendar_manage`, granted to the tenant administrator and the new built-in role HR officer (`hr_officer`); migration 0009 adds both to existing tenants. A scoped HR officer edits calendars owned in their subtree and assigns calendars within it; tenant calendars need whole tenant coverage to edit. |
+| Events and audit | Every change audits `hr.calendar_changed` and publishes `WorkingCalendarChanged` with the affected dates and units |
+| Web | `/admin/calendars`: calendar list, working week picker, holiday table per year, unit assignment and working-day preview |
+| Tests | `WorkingDayTests`, `WorkingCalendarTests`, `PermissionBackfillTests`, `calendars.spec.ts` in `ar` and `en` |
+
+### Differences and follow-ups
+| Item | Note |
+|---|---|
+| Assignment target | The spec does not say whether a calendar attaches to a unit or a location. Calendars attach to org units and children inherit; locations can be added when 010 models them. |
+| Owner unit | A calendar with no owner unit is a tenant calendar. A calendar owned by a unit can be assigned only within that unit's subtree. |
+| Tenant default | Created on first use with Monday to Friday and no holidays, so every tenant always has one. It cannot be deleted. |
+| Snapshot cache | Plan T005 named a cache invalidated by `WorkingCalendarChanged`. Snapshots are cached for one request only, so no invalidation is needed yet; a shared cache can follow if leave (R2) needs it. |
+| Not built | Week start preference and Hijri date display. |

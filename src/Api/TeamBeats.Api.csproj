@@ -18,6 +18,7 @@
     <ProjectReference Include="../Modules/Administration/TeamBeats.Modules.Administration.csproj" />
     <ProjectReference Include="../Modules/Integrations/TeamBeats.Modules.Integrations.csproj" />
     <ProjectReference Include="../Modules/Notifications/TeamBeats.Modules.Notifications.csproj" />
+    <ProjectReference Include="../Modules/Hr/TeamBeats.Modules.Hr.csproj" />
     <ProjectReference Include="../Modules/Experience/TeamBeats.Modules.Experience.csproj" />
   </ItemGroup>
 </Project>

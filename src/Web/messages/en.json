@@ -42,7 +42,8 @@
       "branding": "Brand",
       "pages": "Pages",
       "templates": "Templates",
-      "notifications": "Notifications"
+      "notifications": "Notifications",
+      "calendars": "Calendars"
     }
   },
   "header": {
@@ -832,6 +833,70 @@
       "empty": "No email has been captured yet.",
       "to": "To:",
       "from": "From:"
+    }
+  },
+  "calendars": {
+    "title": "Working calendars",
+    "intro": "Set the working week and public holidays, then choose which units each calendar applies to. A unit without its own calendar uses the nearest parent unit's calendar.",
+    "tenantDefault": "Organization default",
+    "failed": "Something went wrong. Try again.",
+    "list": {
+      "title": "Calendars"
+    },
+    "separator": ", ",
+    "created": "Calendar created.",
+    "saved": "Calendar saved.",
+    "deleted": "Calendar deleted.",
+    "readOnly": "You can view this calendar but not change it.",
+    "nameEn": "Name in English",
+    "nameAr": "Name in Arabic",
+    "country": "Country code",
+    "countryHint": "Two letters, for example AE. Optional.",
+    "week": "Working days",
+    "owner": "Managed by",
+    "wholeOrganization": "Whole organization",
+    "new": {
+      "title": "New calendar",
+      "create": "Create calendar"
+    },
+    "save": "Save calendar",
+    "delete": "Delete calendar",
+    "deleteQuestion": "Delete this calendar? Units must not be using it.",
+    "deleteConfirm": "Yes, delete",
+    "cancel": "Cancel",
+    "holidays": {
+      "saved": "Holidays saved.",
+      "title": "Public holidays",
+      "year": "Year",
+      "caption": "Holidays in {year}",
+      "date": "Date",
+      "halfDay": "Half day",
+      "actions": "Actions",
+      "none": "No holidays for this year yet.",
+      "dateFor": "Date of holiday {number}",
+      "nameEnFor": "English name of holiday {number}",
+      "nameArFor": "Arabic name of holiday {number}",
+      "halfDayFor": "Holiday {number} is a half day",
+      "remove": "Remove holiday {number}",
+      "add": "Add holiday",
+      "save": "Save holidays"
+    },
+    "assign": {
+      "title": "Where each calendar applies",
+      "hint": "Choose a calendar for a unit, or leave it to use its parent unit's calendar.",
+      "unit": "Unit",
+      "calendar": "Calendar",
+      "calendarFor": "Calendar for {unit}",
+      "saved": "Assignment saved.",
+      "inherit": "Same as parent unit"
+    },
+    "preview": {
+      "title": "Count working days",
+      "from": "From",
+      "to": "To",
+      "run": "Count",
+      "failed": "Could not count working days for these dates.",
+      "result": "{count, plural, =0 {No working days} one {# working day} other {# working days}}"
     }
   }
 }

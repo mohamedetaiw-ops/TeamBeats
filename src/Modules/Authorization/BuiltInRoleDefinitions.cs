@@ -29,5 +29,6 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.PageEditor, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit]),
         new(BuiltInRoles.PagePublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit, P.PagePublish]),
         new(BuiltInRoles.BrandManager, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ThemeEdit]),
+        new(BuiltInRoles.HrOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.HrCalendarManage]),
     ];
 }

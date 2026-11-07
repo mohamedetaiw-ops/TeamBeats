@@ -88,6 +88,7 @@ public sealed partial class ArchitectureTests
             ["Tenancy"] = "tenancy", ["Identity"] = "identity", ["Authorization"] = "authz",
             ["Entitlements"] = "entitlements", ["Audit"] = "audit", ["Integrations"] = "integrations",
             ["Experience"] = "experience", ["Notifications"] = "notifications",
+            ["Hr"] = "hr",
         };
         var violations = new List<string>();
         foreach (var (module, own) in schemas)

@@ -131,6 +131,9 @@ public static class AuditActions
     public const string NotificationRelayTested = "notifications.relay_tested";
     public const string NotificationTemplateOverridden = "notifications.template_overridden";
 
+    // 022
+    public const string HrCalendarChanged = "hr.calendar_changed";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -154,6 +157,7 @@ public static class AuditActions
         TemplateReleased, TemplateDistributed, TemplateDeprecated, RegionLockChanged,
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
+        HrCalendarChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

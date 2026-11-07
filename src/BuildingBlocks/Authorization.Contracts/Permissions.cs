@@ -56,6 +56,8 @@ public static class Permissions
 
     public const string NotificationsManage = "notifications.manage";
 
+    public const string HrCalendarManage = "hr.calendar_manage";
+
     public static readonly IReadOnlyList<string> All =
     [
         TenantSettingsView, TenantSettingsManage, TenantAdminsManage,
@@ -69,6 +71,7 @@ public static class Permissions
         ThemeEdit, ThemePublish, ConfigLockManage,
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
         NotificationsManage,
+        HrCalendarManage,
     ];
 }
 
@@ -88,5 +91,6 @@ public static class BuiltInRoles
     public const string PageEditor = "page_editor";
     public const string PagePublisher = "page_publisher";
     public const string BrandManager = "brand_manager";
+    public const string HrOfficer = "hr_officer";
 
 }

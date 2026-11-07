@@ -1,0 +1,123 @@
+/* Spec 022 working calendars admin. Colors and spacing come from tokens. */
+.calendars {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.calendars-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+.calendars-section h2,
+.calendars-section h3 {
+  margin: 0;
+}
+
+.calendars-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.calendars-item {
+  display: grid;
+  gap: var(--tb-space-xs);
+  justify-items: start;
+  text-align: start;
+}
+
+.calendars-item[aria-pressed="true"] {
+  border-width: var(--tb-border-width-thick);
+  border-color: var(--tb-color-border-strong);
+}
+
+.calendars-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.calendars-form {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.calendars-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.calendars-plain {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.calendars-week {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+}
+
+.calendars-check {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  min-block-size: 2.75rem;
+}
+
+.calendars-check input,
+.calendars-table input[type="checkbox"] {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+}
+
+.calendars-year {
+  max-inline-size: 10rem;
+}
+
+.calendars-table-wrap {
+  overflow-x: auto;
+}
+
+.calendars-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.calendars-table th,
+.calendars-table td {
+  padding: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+}
+
+.calendars-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+.calendars-answer {
+  margin: 0;
+  font-weight: var(--tb-font-weight-bold);
+}
