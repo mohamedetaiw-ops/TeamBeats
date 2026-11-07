@@ -11,7 +11,7 @@ namespace TeamBeats.Modules.Integrations.Microsoft365;
 /// </summary>
 public sealed class MicrosoftDirectorySource(IDbSession session, IMicrosoftGraph graph, IHttpClientFactory httpClients) : IDirectorySource
 {
-    private const string UserSelect = "id,displayName,mail,userPrincipalName,jobTitle,officeLocation,mobilePhone,businessPhones,employeeId,preferredLanguage,accountEnabled,companyName,department,employeeOrgData";
+    private const string UserSelect = "id,displayName,mail,userPrincipalName,jobTitle,officeLocation,mobilePhone,businessPhones,employeeId,preferredLanguage,accountEnabled,companyName,department,employeeOrgData,employeeHireDate,manager";
     private const int MaxPages = 10_000;
 
     public string IssuerFor(string externalTenantId) => $"{HttpMicrosoftGraph.LoginAuthority}/{externalTenantId}/v2.0";
@@ -110,12 +110,22 @@ public sealed class MicrosoftDirectorySource(IDbSession session, IMicrosoftGraph
             : v.ValueKind == JsonValueKind.String ? v.GetString() : v.ValueKind == JsonValueKind.Null ? string.Empty : null;
         var phone = Text("mobilePhone")
             ?? (u.TryGetProperty("businessPhones", out var phones) && phones.ValueKind == JsonValueKind.Array && phones.GetArrayLength() > 0 ? phones[0].GetString() : null);
+        var workPhone = !u.TryGetProperty("businessPhones", out var business) ? null
+            : business.ValueKind == JsonValueKind.Array ? (business.GetArrayLength() > 0 ? business[0].GetString() ?? string.Empty : string.Empty) : null;
+        // manager@delta lists the current manager; an entry marked removed, or an empty list, means the manager was cleared.
+        string? manager = null;
+        if (u.TryGetProperty("manager@delta", out var managers) && managers.ValueKind == JsonValueKind.Array)
+        {
+            manager = managers.EnumerateArray().Where(m => !m.TryGetProperty("@removed", out _) && m.TryGetProperty("id", out _))
+                .Select(m => m.GetProperty("id").GetString()!.ToLowerInvariant()).FirstOrDefault() ?? string.Empty;
+        }
         bool? enabled = u.TryGetProperty("accountEnabled", out var e) && e.ValueKind is JsonValueKind.True or JsonValueKind.False ? e.GetBoolean() : null;
         return new DirectoryUserRecord(u.GetProperty("id").GetString()!.ToLowerInvariant(), removed, enabled, Text("displayName"), Text("mail"),
             Text("userPrincipalName"), Text("jobTitle"), Text("officeLocation"), phone, Text("employeeId"), Text("preferredLanguage"),
             Text("companyName"), Text("department"),
             !u.TryGetProperty("employeeOrgData", out var org) ? null
-                : org.ValueKind == JsonValueKind.Object && org.TryGetProperty("division", out var div) && div.ValueKind == JsonValueKind.String ? div.GetString() : string.Empty);
+                : org.ValueKind == JsonValueKind.Object && org.TryGetProperty("division", out var div) && div.ValueKind == JsonValueKind.String ? div.GetString() : string.Empty,
+            workPhone, Text("mobilePhone"), manager, Text("employeeHireDate"));
     }
 
     private static DirectoryGroupRecord MapGroup(JsonElement g)

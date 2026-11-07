@@ -42,8 +42,15 @@ public sealed class DirectoryReader(IDbSession session) : IDirectoryReader
                 var a = JsonSerializer.Deserialize<MirrorAttributes>(r.GetString(2), JsonDefaults.Options)!;
                 var id = r.GetString(1);
                 memberOf.TryGetValue(id, out var lists);
-                return new DirectoryPerson(r.GetGuid(0), id, a.Company, a.Department, a.Division, lists.Units ?? [], lists.Groups ?? []);
+                var profile = new DirectoryProfile(a.DisplayName, a.Email, a.JobTitle, a.Department, a.Company, a.Office, a.WorkPhone,
+                    a.MobilePhone, a.PreferredLanguage, a.EmployeeId, HireDate(a.HireDate), a.Manager);
+                return new DirectoryPerson(r.GetGuid(0), id, a.Company, a.Department, a.Division, lists.Units ?? [], lists.Groups ?? [], profile);
             }, ct);
         return new DirectorySnapshot(connectionId.Value, people, containers.Select(c => c.Container).ToList());
     }
+
+    /// <summary>Graph reports the hire date as a date and time; only the date is kept.</summary>
+    private static DateOnly? HireDate(string? value) =>
+        DateTimeOffset.TryParse(value, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var d)
+            ? DateOnly.FromDateTime(d.UtcDateTime) : null;
 }

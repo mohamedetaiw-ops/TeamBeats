@@ -134,6 +134,14 @@ public static class AuditActions
     // 022
     public const string HrCalendarChanged = "hr.calendar_changed";
 
+    // 010
+    public const string PeopleVisibilityChanged = "people.visibility_changed";
+    public const string PeopleFieldSourceChanged = "people.field_source_changed";
+    public const string PeopleManagerSetManually = "people.manager_set_manually";
+    public const string PeopleProfileUpdated = "people.profile_updated";
+    public const string PeopleReportingCycleDetected = "people.reporting_cycle_detected";
+    public const string PeopleSettingsChanged = "people.settings_changed";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -158,6 +166,7 @@ public static class AuditActions
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
         HrCalendarChanged,
+        PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

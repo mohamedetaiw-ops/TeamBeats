@@ -56,6 +56,7 @@ public sealed record ConnectionDeleted(Guid ConnectionId, string Kind) : IIntegr
 /// <summary>
 /// A directory account in canonical form (constitution XVII: no external DTOs leave Integrations). On an incremental
 /// read a null value means "not reported", so the previous value is kept; an empty string means the directory cleared it.
+/// <see cref="ManagerId"/> is the manager's directory ID; <see cref="HireDate"/> is the ISO date the directory reports (spec 010).
 /// </summary>
 public sealed record DirectoryUserRecord(
     string ExternalId,
@@ -71,7 +72,11 @@ public sealed record DirectoryUserRecord(
     string? PreferredLanguage,
     string? CompanyName = null,
     string? Department = null,
-    string? Division = null);
+    string? Division = null,
+    string? WorkPhone = null,
+    string? MobilePhone = null,
+    string? ManagerId = null,
+    string? HireDate = null);
 
 /// <summary>A directory group and the member changes since the last read.</summary>
 public sealed record DirectoryGroupRecord(string ExternalId, bool Removed, string? DisplayName, IReadOnlyList<string> MembersAdded, IReadOnlyList<string> MembersRemoved);

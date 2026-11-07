@@ -219,6 +219,21 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             }
         }
 
+        /// <summary>Sets or clears the user's manager, reported as <c>manager@delta</c> the way Graph reports it (spec 010).</summary>
+        public void SetManager(string oid, string? managerOid)
+        {
+            lock (_gate)
+            {
+                var (props, deleted, _) = _users[oid];
+                props["manager@delta"] = managerOid is null
+                    ? (props.TryGetValue("manager@delta", out var old) && old is object[] { Length: > 0 } list
+                        ? new object[] { new Dictionary<string, object?> { ["id"] = ((Dictionary<string, object?>)list[0])["id"], ["@removed"] = new { reason = "deleted" } } }
+                        : Array.Empty<object>())
+                    : new object[] { new Dictionary<string, object?> { ["@odata.type"] = "#microsoft.graph.user", ["id"] = managerOid } };
+                _users[oid] = (props, deleted, ++_version);
+            }
+        }
+
         public void UpdateUser(string oid, string? displayName = null, string? mail = null, bool? enabled = null)
         {
             lock (_gate)

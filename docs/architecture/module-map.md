@@ -22,7 +22,7 @@ Planned modules are listed so that specs use the same names before the code exis
 | `Content` | 009 | News, announcements, campaigns, content pages and their workflow state | Content queries for components and search | `ContentPublished`, `ContentExpired`, `CampaignStepSent` | R1 |
 | `Documents` | 011 | Libraries, documents, versions, records holds, knowledge articles, connected library links (document source port, ADR-0016) | Document queries, file access tokens, legal hold contract (held audit selections for `Audit`) | `DocumentVersionPublished`, `DocumentDeleted`, `LegalHoldApplied`, `ConnectedLibraryAdded` | R1, R2 connected libraries |
 | `Policies` | 025 | Policies, attestations, policy versions | Policy queries, attestation status | `PolicyPublished`, `PolicyAttested`, `AttestationOverdue` | R1 |
-| `People` | 010 | Employee profiles and org chart projections (identity data stays in `Identity`) | Profile queries | `ProfileUpdated` | R1 |
+| `People` | 010 | Employee profiles, field policy, reporting line, locations and org chart projections (identity data stays in `Identity`) | `IReportingLine`, `IProfiles` | `ProfileUpdated`, `ReportingLineChanged`, `LocationAdded` | R1 |
 | `Search` | 012 | Search and vector index records (derived, rebuildable) | Query API with permission filtering | none | R1 |
 | `AiGateway` | 013 | Model policy, routes, budgets, private endpoints, usage records | `IAiGateway` (chat, tools, embeddings) | `AiPolicyChanged`, `AiBudgetThresholdReached` | R1 |
 | `Agents` | 020, 027, 014 | Agent definitions, versions, runs and checkpoints, tool registry, execution records, assistant conversations | Agent invocation, tool gateway | `AgentRunCompleted`, `AgentActionAwaitingApproval`, `AgentKillSwitchActivated` | R1 |

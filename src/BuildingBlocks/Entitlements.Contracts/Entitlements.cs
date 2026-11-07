@@ -39,6 +39,8 @@ public static class Capabilities
     public const string ExperienceBehavioralPersonalization = "experience.behavioral_personalization";
     public const string NotificationsCore = "notifications.core";
     public const string NotificationsTenantSmtp = "notifications.tenant_smtp";
+    public const string PeopleDirectory = "people.directory";
+    public const string PeopleCustomFields = "people.custom_fields";
 }
 
 /// <summary>Central entitlement check for the current tenant (spec 005). Unknown keys fail closed.</summary>

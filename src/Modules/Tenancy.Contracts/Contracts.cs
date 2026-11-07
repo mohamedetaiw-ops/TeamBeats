@@ -22,6 +22,9 @@ public sealed record TenantMembershipInfo(Guid UserId, string MembershipType, Me
 
 public sealed record OrgMembershipInfo(Guid MembershipId, Guid OrgUnitId, string Type, bool IsPrimary);
 
+/// <summary>An active membership of one user, for bulk reads such as the people directory (spec 010).</summary>
+public sealed record UserOrgMembership(Guid UserId, Guid OrgUnitId, bool IsPrimary);
+
 public sealed record TenantLocaleSettings(string DefaultLocale, IReadOnlyList<string> EnabledLocales, string TimeZone, string NumberingSystem);
 
 /// <summary>Hierarchy reads for other modules (spec 002 plan, "Contracts published"). All calls are in the current tenant.</summary>
@@ -35,6 +38,9 @@ public interface IOrganizationHierarchy
     Task<IReadOnlySet<Guid>> GetSubtreesAsync(IEnumerable<Guid> unitIds, CancellationToken ct = default);
 
     Task<IReadOnlyList<OrgMembershipInfo>> GetActiveMembershipsAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>Every active membership in the tenant, in active units.</summary>
+    Task<IReadOnlyList<UserOrgMembership>> ListActiveMembershipsAsync(CancellationToken ct = default);
 
     Task<bool> UnitExistsAsync(Guid unitId, CancellationToken ct = default);
 
@@ -52,6 +58,9 @@ public interface IOrganizationHierarchy
 public interface ITenantMemberships
 {
     Task<TenantMembershipInfo?> GetAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>Every tenant membership, active or disabled.</summary>
+    Task<IReadOnlyList<TenantMembershipInfo>> ListAsync(CancellationToken ct = default);
 
     Task CreateAsync(Guid userId, string membershipType, CancellationToken ct = default);
 

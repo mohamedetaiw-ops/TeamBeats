@@ -116,6 +116,10 @@ public sealed class UserDirectory(IDbSession session) : IUserDirectory
         await session.QueryAsync(
             Select + " where (@q::text is null or u.display_name ilike '%' || @q || '%' or u.email ilike '%' || @q || '%') order by u.display_name limit @n",
             new { q = search?.Replace("%", string.Empty, StringComparison.Ordinal), n = Math.Clamp(limit, 1, 500) }, Map, ct);
+
+    public async Task<IReadOnlyList<UserInfo>> ListAllAsync(CancellationToken ct = default) =>
+        await session.QueryAsync("select id, display_name, email, status, preferred_locale from identity.user_account", null,
+            r => new UserInfo(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.Get<string>("preferred_locale"), null), ct);
 }
 
 /// <summary>Revokes all sessions of a suspended tenant (spec 001 plan "Key behaviors"). Runs even though the tenant is inactive.</summary>

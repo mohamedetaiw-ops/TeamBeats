@@ -58,6 +58,10 @@ public static class Permissions
 
     public const string HrCalendarManage = "hr.calendar_manage";
 
+    public const string PeopleView = "people.view";
+    public const string PeopleHrView = "people.hr_view";
+    public const string PeopleManage = "people.manage";
+
     public static readonly IReadOnlyList<string> All =
     [
         TenantSettingsView, TenantSettingsManage, TenantAdminsManage,
@@ -72,6 +76,7 @@ public static class Permissions
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
         NotificationsManage,
         HrCalendarManage,
+        PeopleView, PeopleHrView, PeopleManage,
     ];
 }
 

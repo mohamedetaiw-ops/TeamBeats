@@ -12,6 +12,9 @@ public interface IUserDirectory
 
     Task<IReadOnlyList<UserInfo>> ListAsync(string? search, int limit, CancellationToken ct = default);
 
+    /// <summary>Every user of the tenant without sign-in times, for read models such as the people directory (spec 010).</summary>
+    Task<IReadOnlyList<UserInfo>> ListAllAsync(CancellationToken ct = default);
+
     /// <summary>True while the directory has the account disabled; product admins cannot re-enable it (spec 003 FR-013).</summary>
     Task<bool> IsDisabledByDirectoryAsync(Guid userId, CancellationToken ct = default);
 }
@@ -40,7 +43,26 @@ public sealed record DirectoryPerson(
     string? Department,
     string? Division,
     IReadOnlyList<string> AdminUnits,
-    IReadOnlyList<string> Groups);
+    IReadOnlyList<string> Groups,
+    DirectoryProfile? Profile = null);
+
+/// <summary>
+/// The profile values the directory holds for a person (spec 010 section 12). <see cref="ManagerDirectoryId"/> is the
+/// manager's directory ID, which may name someone who is not a member of the tenant.
+/// </summary>
+public sealed record DirectoryProfile(
+    string? DisplayName,
+    string? Email,
+    string? JobTitle,
+    string? Department,
+    string? Company,
+    string? Office,
+    string? WorkPhone,
+    string? MobilePhone,
+    string? PreferredLanguage,
+    string? EmployeeId,
+    DateOnly? HireDate,
+    string? ManagerDirectoryId);
 
 /// <summary>A directory group or administrative unit (<see cref="Kind"/> is <c>group</c> or <c>admin_unit</c>).</summary>
 public sealed record DirectoryContainer(string Id, string Kind, string? DisplayName);

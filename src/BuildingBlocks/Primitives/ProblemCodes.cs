@@ -19,5 +19,8 @@ public static class ProblemCodes
     public const string Conflict = "conflict";
     public const string SignInRefused = "auth.sign_in_refused";
 
+    /// <summary>The resource existed but is no longer available, such as the profile of a disabled member.</summary>
+    public const string Gone = "gone";
+
     public static string TypeUri(string code) => $"urn:teambeats:problem:{code}";
 }
