@@ -495,3 +495,15 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Pages | `/people` (search with unit and location filters, new joiners), `/people/{id}` (profile, contact actions from visible fields only, manager, org chart with chart and list views), `/people/team` (My team with indirect reports), `/people/me` (own profile, new joiner opt-out), `/admin/people` (field sources and visibility, tenant fields, settings, location names) |
 | Code | `src/Web/features/people`, `src/Web/lib/people/types.ts`, the `people` message namespace; the admin section `people` is tenant-wide like notifications |
 | Tests | `tests/Acceptance/specs/people.spec.ts` in English and Arabic with axe |
+
+## People component (spec 010 T008)
+| Part | Where |
+|---|---|
+| Manifest | `people.list` in `PeopleComponents` (category `people`, needs `people.directory` and `people.view`): source `newcomers`, `unit` (with its subtree) or `named`, and how many to show |
+| Data | `GET /api/v1/people/newcomers`, and `GET /api/v1/people` with `unitId` or the new `ids` parameter (up to 50 ids; ids outside the tenant match no one) |
+| Web | `components/placements/people.list.tsx`, registered in `lib/experience/registry.ts` |
+| Tests | `PeopleDirectoryTests` (named set, bad ids), `PageCompositionTests` (picker), `people.spec.ts` (component on a published page, both languages, axe) |
+
+| Item | Note |
+|---|---|
+| Choosing people | The builder has no unit or person picker for component properties yet, so the unit and the named people are entered as ids. A picker belongs to the builder (spec 032) and comes with a later builder task. |

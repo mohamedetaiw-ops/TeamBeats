@@ -223,6 +223,9 @@ public sealed class PageCompositionTests(TenantWorld world)
         Assert.Equal("validation.page.category_not_allowed", byRef["reference.alpha.links@1"].GetProperty("reasonKey").GetString());
         // Workplace does not include Microsoft 365, which the counter declares.
         Assert.Equal("validation.page.component_not_entitled", byRef["reference.beta.counter@1"].GetProperty("reasonKey").GetString());
+        // The people component of spec 010 is registered by its module like any other.
+        Assert.Equal("People", byRef["people.list@1"].GetProperty("name").GetString());
+        Assert.Equal("New joiners", byRef["people.list@1"].GetProperty("labels").GetProperty("source.newcomers").GetString());
         // Retired and invalid manifests never reach the picker.
         Assert.False(byRef.ContainsKey("reference.beta.legacy@1"));
         Assert.False(byRef.ContainsKey("reference.beta.invalid@1"));

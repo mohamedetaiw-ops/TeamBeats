@@ -29,6 +29,7 @@ public static class PeopleModule
         services.AddScoped<IProfiles>(sp => sp.GetRequiredService<Profiles>());
         services.AddScoped<PeopleService>();
         services.AddScoped<DirectoryProfiles>();
+        services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, PeopleComponents>();
         services.AddMessageHandler<DirectorySynced, ApplyDirectoryProfiles>("people.directory_profiles");
         services.AddMessageHandler<UserProfileSynced, RefreshProfileOnSync>("people.profile_synced");
         services.AddMessageHandler<UserProvisioned, RefreshProfileOnSync>("people.user_provisioned");
@@ -44,9 +45,9 @@ public static class PeopleModule
         var people = app.MapGroup("/api/v1/people").RequireTenantUser().RequiresCapability(Capabilities.PeopleDirectory).WithTags("People");
         var me = app.MapGroup("/api/v1/me").RequireTenantUser().RequiresCapability(Capabilities.PeopleDirectory).WithTags("People");
 
-        people.MapGet("", async (string? q, Guid? unitId, string? location, int? offset, int? limit, PeopleService service, IDbSession session, CancellationToken ct) =>
+        people.MapGet("", async (string? q, Guid? unitId, string? location, string? ids, int? offset, int? limit, PeopleService service, IDbSession session, CancellationToken ct) =>
         {
-            var page = await service.SearchAsync(q, unitId, location, offset, limit, ct);
+            var page = await service.SearchAsync(q, unitId, location, offset, limit, ct, PeopleService.ParseIds(ids));
             await session.CommitAsync(ct);
             return Results.Ok(page);
         }).RequireRateLimiting(SearchRateLimit);

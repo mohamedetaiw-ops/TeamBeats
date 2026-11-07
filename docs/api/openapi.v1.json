@@ -3975,6 +3975,13 @@
             }
           },
           {
+            "name": "ids",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "offset",
             "in": "query",
             "schema": {

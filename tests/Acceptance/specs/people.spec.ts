@@ -1,7 +1,7 @@
 import { request } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { msg, type LaunchLocale } from "../support/messages";
-import { tenantApi } from "../support/pages";
+import { createPage, saveAndPublish, tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
 
@@ -68,6 +68,34 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "people.org.list") }).click();
       await expect(page.getByTestId("org-list").getByRole("link", { name: omar })).toBeVisible();
       await expect(page.getByRole("button", { name: msg(locale, "people.org.list") })).toHaveAttribute("aria-pressed", "true");
+    });
+
+    test("the people component lists new joiners and a chosen person on a page", async ({ page }, testInfo) => {
+      const api = await tenantApi(tenant);
+      const found = await api.get(`/api/v1/people?q=${encodeURIComponent(omar)}`);
+      const omarId = ((await found.json()) as { items: { id: string }[] }).items[0]!.id;
+      const created = await createPage(api, "T09", `people-${Date.now().toString(36)}`);
+      const main = created.draft.regions.find((r) => r.id === "main")!;
+      await saveAndPublish(api, created, [
+        ...created.draft.regions.filter((r) => r.id !== "main"),
+        {
+          ...main,
+          placements: [
+            { id: "joiners", componentRef: "people.list@1", props: { source: "newcomers", top: 6 } },
+            { id: "chosen", componentRef: "people.list@1", props: { source: "named", people: [omarId] } },
+          ],
+        },
+      ]);
+      await api.dispose();
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/p/${created.slug}`);
+      const placement = (id: string) => page.locator(`.xp-placement[data-placement-id="${id}"]`);
+      await expect(placement("joiners").getByRole("heading", { name: msg(locale, "people.component.newcomers") })).toBeVisible();
+      await expect(placement("joiners").getByRole("link", { name: layla })).toBeVisible();
+      await expect(placement("chosen").getByRole("link", { name: omar })).toBeVisible();
+      await expect(placement("chosen").getByRole("link", { name: layla })).toHaveCount(0);
+      await expectAccessible(page, testInfo, `people-component-${locale}`);
     });
 
     test("My team lists direct reports and, on request, indirect ones", async ({ page }, testInfo) => {

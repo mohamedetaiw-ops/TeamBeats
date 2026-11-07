@@ -1035,6 +1035,15 @@
       "rename": "Save names",
       "renamed": "Location names saved.",
       "noLocations": "No locations yet."
+    },
+    "component": {
+      "newcomers": "New joiners",
+      "unit": "People",
+      "named": "People",
+      "notSet": "Choose a unit or people for this component.",
+      "none": "No one to show.",
+      "failed": "People could not be loaded.",
+      "retry": "Try again"
     }
   }
 }
