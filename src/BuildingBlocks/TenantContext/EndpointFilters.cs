@@ -14,8 +14,24 @@ public sealed class AdminAreaMetadata
     public static readonly AdminAreaMetadata Instance = new();
 }
 
+/// <summary>
+/// Marks a sensitive action (spec 026 section 6): the caller must have authenticated within the tenant's step-up window,
+/// otherwise the API answers 401 <c>security.step_up_required</c> and the web app sends them for a fresh sign-in.
+/// </summary>
+public sealed class StepUpMetadata
+{
+    public static readonly StepUpMetadata Instance = new();
+}
+
+/// <summary>When the current session's holder last authenticated, and how; set by the session middleware.</summary>
+public sealed record SessionAssurance(DateTimeOffset AuthenticatedAt, string Method);
+
 public static class EndpointScopeExtensions
 {
+    /// <summary>Makes the endpoints sensitive actions that need a recent sign-in (spec 026 FR-005).</summary>
+    public static TBuilder RequireStepUp<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder =>
+        builder.WithMetadata(StepUpMetadata.Instance);
+
     /// <summary>Puts the endpoints in the administration area (spec 026): the admin area network rules apply to them.</summary>
     public static TBuilder InAdminArea<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder =>
         builder.WithMetadata(AdminAreaMetadata.Instance);

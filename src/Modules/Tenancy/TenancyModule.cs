@@ -143,7 +143,7 @@ public static class TenancyModule
             var result = await settings.AppointAdminAsync(request.Email, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/tenant/admins/{result.Id}", result);
-        });
+        }).RequireStepUp();
 
         tenant.MapPut("/membership-policies/{membershipType}", async (string membershipType, MembershipPolicyRequest request,
             IAuthorizationService authz, IDbSession session, IAuditWriter audit, ITenantContext context, CancellationToken ct) =>

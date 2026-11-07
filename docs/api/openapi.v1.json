@@ -735,6 +735,13 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "stepUp",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {

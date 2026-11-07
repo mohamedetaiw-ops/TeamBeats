@@ -43,7 +43,7 @@ public static class SecurityModule
             await session.CommitAsync(ct);
             http.HttpContext.Response.Headers.ETag = view.ETag;
             return Results.Ok(view);
-        });
+        }).RequireStepUp();
 
         security.MapGet("/policy/preview", async (string? ipAllow, string? ipBlock, PolicyService policies, CancellationToken ct) =>
             Results.Ok(await policies.PreviewAsync(ipAllow, ipBlock, ct)));

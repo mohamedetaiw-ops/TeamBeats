@@ -30,11 +30,11 @@ public static class SsoEndpoints
             return Results.Ok(new SignInOptions(sso, sso ? config!.Kind : null, sso ? config!.DisplayName : null));
         });
 
-        signin.MapGet("/sso", async (string? returnTo, HttpRequest request, HttpResponse response, ITenantContext context,
+        signin.MapGet("/sso", async (string? returnTo, bool? stepUp, HttpRequest request, HttpResponse response, ITenantContext context,
             SsoService sso, IDbSession session, CancellationToken ct) =>
         {
             var tenant = RequireTenantHost(context);
-            var step = await sso.StartAsync(tenant, CallbackUri(request), returnTo, ct);
+            var step = await sso.StartAsync(tenant, CallbackUri(request), returnTo, ct, stepUp == true);
             await session.CommitAsync(ct);
             if (step.BindingCookie is { } binding)
             {
@@ -77,7 +77,7 @@ public static class SsoEndpoints
             var saved = await providers.SaveAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(saved);
-        });
+        }).RequireStepUp();
 
         return app;
     }

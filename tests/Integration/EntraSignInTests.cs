@@ -66,12 +66,21 @@ public sealed class EntraSignInTests(TenantWorld world)
         return new Started(location, state ?? string.Empty, binding);
     }
 
-    private async Task<Landed> CallbackAsync(string tenantKey, string query, string? binding)
+    private async Task<Landed> CallbackAsync(string tenantKey, string query, string? binding, string? sessionToken = null)
     {
         var client = world.Factory.TenantClient(tenantKey);
+        var cookies = new List<string>();
         if (binding is not null)
         {
-            client.DefaultRequestHeaders.Add("Cookie", $"tb_sso={binding}");
+            cookies.Add($"tb_sso={binding}");
+        }
+        if (sessionToken is not null)
+        {
+            cookies.Add($"tb_session={sessionToken}");
+        }
+        if (cookies.Count > 0)
+        {
+            client.DefaultRequestHeaders.Add("Cookie", string.Join("; ", cookies));
         }
         var response = await client.GetAsync("/api/v1/auth/signin/sso/callback?" + query);
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
@@ -527,5 +536,95 @@ public sealed class EntraSignInTests(TenantWorld world)
         var other = await TenantAsync();
         Assert.NotNull((await SignInAsync(other, other.User("Elsewhere"))).SessionToken);
         Assert.False((await (await other.Tenant["admin"].Client.GetAsync("/api/v1/security/policy")).ReadAsync<JsonElement>()).GetProperty("mfaClaimSeen").GetBoolean());
+    }
+    /// <summary>Spec 026 T008 and T010 (US2 scenario 2, SC-004): every sensitive action needs a sign-in inside the step-up window.</summary>
+    [Fact]
+    public async Task Sensitive_actions_need_a_recent_sign_in_and_step_up_asks_the_provider_for_a_fresh_one()
+    {
+        var t = await TenantAsync();
+        var user = t.User("Stepper") with { Groups = [] };
+        var first = await SignInAsync(t, user);
+        var userId = (await (await world.Factory.TenantClient(t.Key, first.SessionToken).GetAsync("/api/v1/me")).ReadAsync<JsonElement>()).GetProperty("id").GetGuid();
+        t.Tenant.Users["stepper"] = new TestUser("stepper", userId, user.Email, first.SessionToken!, world.Factory.TenantClient(t.Key, first.SessionToken));
+        await world.AssignAsync(t.Tenant, "stepper", "tenant_administrator", "tenant", null);
+
+        var client = world.Factory.TenantClient(t.Key, first.SessionToken);
+        var sensitive = new (HttpMethod Method, string Path, object? Body)[]
+        {
+            (HttpMethod.Put, "/api/v1/security/policy", new { idleMinutes = 40 }),
+            (HttpMethod.Post, "/api/v1/authz/assignments", new { subjectType = "user", subjectId = t.Tenant["admin"].Id, roleKey = "content_publisher", scopeType = "tenant" }),
+            (HttpMethod.Delete, $"/api/v1/authz/assignments/{Guid.NewGuid()}", null),
+            (HttpMethod.Put, "/api/v1/tenant/identity-provider", new { kind = "entra" }),
+            (HttpMethod.Put, "/api/v1/tenant/directory", new { }),
+            (HttpMethod.Post, "/api/v1/audit/exports", new { format = "csv" }),
+            (HttpMethod.Post, "/api/v1/integrations/connections", new { kind = "microsoft365" }),
+            (HttpMethod.Post, "/api/v1/tenant/admins", new { email = "someone@" + t.Key + ".example" }),
+        };
+        Task<HttpResponseMessage> SendAsync(HttpClient c, (HttpMethod Method, string Path, object? Body) a) =>
+            c.SendAsync(new HttpRequestMessage(a.Method, a.Path) { Content = a.Body is null ? null : JsonContent.Create(a.Body) });
+
+        // Fresh from sign-in: none of them asks for step-up (they may fail validation, which is fine here).
+        foreach (var action in sensitive)
+        {
+            var response = await SendAsync(client, action);
+            Assert.NotEqual("security.step_up_required", await CodeAsync(response));
+        }
+
+        // Eleven minutes later, past the default 10 minute window: every one of them asks for step-up and changes nothing.
+        await world.Database.OwnerExecInTenantAsync(t.Id, "update identity.user_session set authenticated_at = now() - interval '11 minutes' where user_id = @u",
+            ("u", userId));
+        var policyBefore = await (await client.GetAsync("/api/v1/security/policy")).ReadAsync<JsonElement>();
+        foreach (var action in sensitive)
+        {
+            var response = await SendAsync(client, action);
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+            Assert.Equal("security.step_up_required", body.GetProperty("code").GetString());
+            Assert.Equal("/api/v1/auth/signin/sso?stepUp=true", body.GetProperty("stepUpUrl").GetString());
+        }
+        Assert.Equal(policyBefore.GetProperty("idleMinutes").GetInt32(),
+            (await (await client.GetAsync("/api/v1/security/policy")).ReadAsync<JsonElement>()).GetProperty("idleMinutes").GetInt32());
+        // Reading is not sensitive.
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/v1/authz/roles")).StatusCode);
+
+        // Step-up: the provider is asked for a fresh sign-in, and an old provider session is not accepted.
+        var started = await StartStepUpAsync(t, first.SessionToken!, "/admin/security");
+        var query = FakeIdentityProvider.ParseQuery(new Uri(started.AuthorizeUrl).Query);
+        Assert.Equal("login", query["prompt"]);
+        Assert.Equal("0", query["max_age"]);
+        var stale = await CallbackAsync(t.Key, $"code={Idp.Authenticate(started.AuthorizeUrl, user with { AuthTimeAgo = TimeSpan.FromMinutes(30) }, ClientSecret)}&state={started.State}",
+            started.Binding, first.SessionToken);
+        Assert.Null(stale.SessionToken);
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.SecurityStepUpFailed);
+
+        var again = await StartStepUpAsync(t, first.SessionToken!, "/admin/security");
+        var fresh = await CallbackAsync(t.Key, $"code={Idp.Authenticate(again.AuthorizeUrl, user, ClientSecret)}&state={again.State}", again.Binding, first.SessionToken);
+        Assert.Equal("/admin/security", fresh.Location);
+        Assert.NotNull(fresh.SessionToken);
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.SecurityStepUpCompleted, userId.ToString());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/v1/me")).StatusCode);
+        var stepped = world.Factory.TenantClient(t.Key, fresh.SessionToken);
+        Assert.Equal(HttpStatusCode.OK, (await SendAsync(stepped, sensitive[0])).StatusCode);
+
+        // A tenant can shorten the window.
+        (await stepped.PutAsJsonAsync("/api/v1/security/policy", new { stepUpMinutes = 1 })).EnsureSuccessStatusCode();
+        await world.Database.OwnerExecInTenantAsync(t.Id, "update identity.user_session set authenticated_at = now() - interval '2 minutes' where user_id = @u",
+            ("u", userId));
+        Assert.Equal("security.step_up_required", await CodeAsync(await SendAsync(stepped, sensitive[0])));
+    }
+
+    private static async Task<string?> CodeAsync(HttpResponseMessage response)
+    {
+        var text = await response.Content.ReadAsStringAsync();
+        return text.StartsWith('{') && JsonDocument.Parse(text).RootElement.TryGetProperty("code", out var code) ? code.GetString() : null;
+    }
+
+    private async Task<Started> StartStepUpAsync(SsoTenant t, string sessionToken, string returnTo)
+    {
+        var client = world.Factory.TenantClient(t.Key, sessionToken);
+        var response = await client.GetAsync("/api/v1/auth/signin/sso?stepUp=true&returnTo=" + Uri.EscapeDataString(returnTo));
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        var location = response.Headers.Location!.ToString();
+        return new Started(location, FakeIdentityProvider.ParseQuery(new Uri(location).Query)["state"], Cookie(response, "tb_sso"));
     }
 }

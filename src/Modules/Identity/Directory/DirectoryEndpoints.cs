@@ -35,7 +35,7 @@ public static class DirectoryEndpoints
             var saved = await sync.SaveSettingsAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(saved);
-        });
+        }).RequireStepUp();
 
         admin.MapPost("/sync", async (IAuthorizationService authz, IEntitlementService entitlements, DirectorySyncService sync,
             IOutbox outbox, IDbSession session, CancellationToken ct) =>

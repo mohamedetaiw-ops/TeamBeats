@@ -129,6 +129,7 @@ public static class ApiComposition
         });
         app.UseTeamBeatsSessions();
         app.UseNetworkRules();
+        app.UseStepUp();
         app.UseRateLimiter();
 
         app.MapHealthChecks("/health/live");
