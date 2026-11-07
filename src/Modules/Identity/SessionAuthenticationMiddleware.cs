@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using TeamBeats.Localization;
+using TeamBeats.Modules.Security.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -67,15 +68,27 @@ public static class SessionAuthenticationMiddleware
                         context.SetTenant(tenant.Id);
                         var s = await db.QuerySingleOrDefaultAsync(
                             """
-                            select s.id, s.user_id from identity.user_session s
+                            select s.id, s.user_id, s.created_at, s.last_seen_at from identity.user_session s
                             join identity.user_account u on u.id = s.user_id
                             where s.token_hash = @h and s.revoked_at is null and s.expires_at > now() and u.status = 'active'
-                            """, new { h = SessionTokens.Hash(token) }, r => (Session: r.GetGuid(0), User: r.GetGuid(1)), http.RequestAborted);
+                            """, new { h = SessionTokens.Hash(token) },
+                            r => (Session: r.GetGuid(0), User: r.GetGuid(1), Created: r.GetFieldValue<DateTimeOffset>(2), LastSeen: r.GetFieldValue<DateTimeOffset>(3)),
+                            http.RequestAborted);
                         var membership = s == default ? null
                             : await services.GetRequiredService<ITenantMemberships>().GetAsync(s.User, http.RequestAborted);
-                        if (membership is { Status: MembershipStatus.Active })
+                        var ended = membership is { Status: MembershipStatus.Active }
+                            ? SessionRules.Ended(await services.GetRequiredService<ISecurityPolicy>().GetAsync(http.RequestAborted), s.Created, s.LastSeen,
+                                services.GetRequiredService<IClock>().UtcNow)
+                            : null;
+                        if (membership is { Status: MembershipStatus.Active } && ended is null)
                         {
                             context.SetActor(ActorType.User, s.User, s.Session);
+                            await SessionRules.TouchAsync(services, s.Session, s.LastSeen, http.RequestAborted);
+                        }
+                        else if (ended is not null)
+                        {
+                            await SessionRules.EndAsync(services, s.Session, ended, http.RequestAborted);
+                            context.SetTenant(null);
                         }
                         else
                         {

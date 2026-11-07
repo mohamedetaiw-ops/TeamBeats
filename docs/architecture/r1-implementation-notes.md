@@ -526,3 +526,16 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Unknown routes | A path that matches no endpoint carries no admin area mark, so it gets the normal 404 rather than a network refusal; tenant rules still apply to it. |
 | Audit rate | Refusals are audited once a minute per tenant, address and area, per instance. |
 | Network zones (T006) | `network_zone` is a request attribute from `IRequestAttributeProvider` (the Security module's `NetworkZoneAttributes`), added to the current user's grants per request and never cached. It is multi-valued: an address in several zones satisfies `in` when any of them matches. The explainer runs for another user without their request, so a zone condition shows as a missing attribute there. |
+
+## Session rules (spec 026 T011)
+| Part | Where |
+|---|---|
+| Rules | `SessionRules` in Identity: the session middleware ends a session idle longer than `idleMinutes` or older than `absoluteHours` (reasons `idle_timeout`, `absolute_timeout`) and records use at most once a minute. These writes use their own short database session so they hold when the request changes nothing |
+| Limit | With `maxSessions` set, a new sign-in ends the user's oldest sessions beyond the limit (`session_limit`) |
+| Endpoints | `POST /api/v1/me/sessions/revoke-all` (sign out everywhere, clears the cookie), `POST /api/v1/identity/users/{id}/sessions/revoke-all` (`identity.users_manage`, admin area) |
+| Tests | `SecuritySessionTests` |
+
+| Item | Note |
+|---|---|
+| Lifetime | The existing 8 hour cookie and `expires_at` still apply, so the absolute timeout only shortens sessions until the cookie lifetime follows the policy. |
+| Revocation speed | The middleware reads the session row on every request, so revoke-all takes effect on the next request, well inside the 1 minute of FR-003. |

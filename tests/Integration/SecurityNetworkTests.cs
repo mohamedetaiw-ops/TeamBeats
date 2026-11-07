@@ -254,7 +254,7 @@ public sealed class SecurityNetworkTests(TenantWorld world)
             await world.Database.OwnerExecInTenantAsync(t.Id,
                 "update identity.user_session set source_ip = @a::inet, created_at = now() - make_interval(days => @d) where user_id = @u",
                 ("a", address), ("d", daysAgo), ("u", t[user].Id));
-        await SignedInFromAsync("admin", Office, 1);
+        await SignedInFromAsync("admin", Office, 0);
         await SignedInFromAsync("inside", "203.0.113.40", 2);
         await SignedInFromAsync("travelling", Outside, 3);
         await SignedInFromAsync("away", "192.0.2.10", 45); // Older than 30 days: not counted.
