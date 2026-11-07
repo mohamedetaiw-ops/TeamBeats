@@ -32,6 +32,17 @@ public static class FakeEndpoints
     public const string EntraPrefix = Prefix + "/entra/";
     public const string MicrosoftLogin = "https://login.microsoftonline.com/";
 
+    /// <summary>Direct test sign-in links: <c>/dev/fake/signin/{name}</c> (spec 003 US7).</summary>
+    public const string SignInLinkPrefix = Prefix + "/signin/";
+
+    /// <summary>
+    /// Short-lived cookie a direct sign-in link sets: the fake Microsoft page then picks this account by itself instead
+    /// of showing the picker. Used once, then deleted.
+    /// </summary>
+    public const string PickCookie = "tb_fake_pick";
+
+    public static readonly TimeSpan PickLifetime = TimeSpan.FromMinutes(2);
+
     /// <summary>
     /// Rewrites redirects to Microsoft's sign-in and consent pages to the fake pages on the same host, so the real
     /// adapters run unchanged and the browser never leaves the test environment.
@@ -52,9 +63,30 @@ public static class FakeEndpoints
         });
 
     /// <param name="baseDomain">The installation's base domain: the fake pages may send the browser back to any host under it.</param>
-    public static IEndpointRouteBuilder MapFakeEndpoints(this IEndpointRouteBuilder app, string baseDomain)
+    /// <param name="signInLinks">Direct test sign-in links, link name to the email of a person in the scenario.</param>
+    /// <param name="ssoStartPath">The product's single sign-on start path, where a direct link sends the browser.</param>
+    public static IEndpointRouteBuilder MapFakeEndpoints(this IEndpointRouteBuilder app, string baseDomain,
+        IReadOnlyDictionary<string, string>? signInLinks = null, string? ssoStartPath = null)
     {
         var fake = app.MapGroup(Prefix).WithTags("Development only: fake external systems").ExcludeFromDescription();
+        var links = new Dictionary<string, string>(signInLinks ?? new Dictionary<string, string>(), StringComparer.OrdinalIgnoreCase);
+
+        // Direct test sign-in link (spec 003 US7): the real single sign-on flow runs, and the fake Microsoft page picks
+        // the configured fictional person by itself. Same accepted risk as the one-click test admin: anyone with the
+        // staging address can use it, and staging holds fictional data only.
+        fake.MapGet("/signin/{name}", (string name, HttpRequest request, HttpResponse response) =>
+        {
+            if (ssoStartPath is null || !links.TryGetValue(name.Trim(), out var email))
+            {
+                return Page(request, "Unknown test sign-in link", "رابط دخول تجريبي غير معروف",
+                    Say(request, "No test account has this link.", "لا يوجد حساب تجريبي بهذا الرابط."), HttpStatusCode.NotFound);
+            }
+            response.Cookies.Append(PickCookie, email, new CookieOptions
+            {
+                HttpOnly = true, Secure = true, SameSite = SameSiteMode.Lax, Path = EntraPrefix.TrimEnd('/'), MaxAge = PickLifetime,
+            });
+            return Results.Redirect(ssoStartPath);
+        });
 
         fake.MapGet("/", (FakeSystems f) => Results.Ok(new
         {
@@ -86,6 +118,19 @@ public static class FakeEndpoints
                 return Page(request, "Redirect refused", "تم رفض إعادة التوجيه", Say(request, "The redirect URI is not on this test environment.", "عنوان إعادة التوجيه ليس ضمن بيئة الاختبار هذه."), HttpStatusCode.BadRequest);
             }
             var users = FakeScenario.SignInUsers(f.Graph, directoryId, f.GroupsByUser(directory));
+            if (request.Cookies.TryGetValue(PickCookie, out var pick))
+            {
+                // A direct test sign-in link chose the account: complete single sign-on without the picker. Used once.
+                request.HttpContext.Response.Cookies.Delete(PickCookie, new CookieOptions
+                {
+                    HttpOnly = true, Secure = true, SameSite = SameSiteMode.Lax, Path = EntraPrefix.TrimEnd('/'),
+                });
+                var picked = users.FirstOrDefault(u => string.Equals(u.Email, pick, StringComparison.OrdinalIgnoreCase));
+                if (picked is not null && q["client_id"].ToString() != FakeMicrosoftGraph.ClientId)
+                {
+                    return Complete(directory, directoryId, key => q[key].ToString(), picked.ObjectId, f);
+                }
+            }
             var ar = Arabic(request);
             var hidden = new StringBuilder();
             foreach (var key in new[] { "client_id", "redirect_uri", "state", "nonce", "code_challenge", "code_challenge_method", "scope" })
@@ -115,34 +160,7 @@ public static class FakeEndpoints
             {
                 return Results.BadRequest();
             }
-            var user = FakeScenario.SignInUsers(f.Graph, directoryId, f.GroupsByUser(directory)).FirstOrDefault(u => u.ObjectId == form["oid"]);
-            if (user is null)
-            {
-                return Results.Redirect(Append(redirect, $"error=access_denied&error_description=account_not_found&state={Uri.EscapeDataString(form["state"].ToString())}"));
-            }
-            var clientId = form["client_id"].ToString();
-            string code;
-            if (clientId == FakeMicrosoftGraph.ClientId)
-            {
-                var query = new[] { "client_id", "scope", "code_challenge_method" }.ToDictionary(k => k, k => form[k].ToString());
-                if (f.Graph.DelegatedRefusal(directoryId.ToString("D"), query) is { } refusal)
-                {
-                    return Results.Redirect(Append(redirect, $"error=consent_required&error_description={Uri.EscapeDataString(refusal)}&state={Uri.EscapeDataString(form["state"].ToString())}"));
-                }
-                code = f.Graph.IssueDelegatedCode(directoryId, user.ObjectId, clientId, redirect, form["code_challenge"].ToString(), form["scope"].ToString());
-            }
-            else
-            {
-                var app = f.Scenario.FindDirectory(directory)?.SsoApp;
-                if (app is null || !string.Equals(app.ClientId, clientId, StringComparison.OrdinalIgnoreCase))
-                {
-                    return Results.Redirect(Append(redirect, $"error=unauthorized_client&error_description=unknown_application&state={Uri.EscapeDataString(form["state"].ToString())}"));
-                }
-                var authorizeUrl = $"{MicrosoftLogin}{directoryId:D}/oauth2/v2.0/authorize?"
-                    + string.Join("&", new[] { "client_id", "redirect_uri", "code_challenge", "nonce" }.Select(k => $"{k}={Uri.EscapeDataString(form[k].ToString())}"));
-                code = f.Entra.Authenticate(authorizeUrl, user, app.ClientSecret);
-            }
-            return Results.Redirect(Append(redirect, $"code={Uri.EscapeDataString(code)}&state={Uri.EscapeDataString(form["state"].ToString())}"));
+            return Complete(directory, directoryId, key => form[key].ToString(), form["oid"].ToString(), f);
         }).DisableAntiforgery();
 
         // Microsoft's admin consent endpoint for the TeamBeats application.
@@ -222,6 +240,40 @@ public static class FakeEndpoints
             return Results.Ok(new { system, down = value });
         });
         return app;
+    }
+
+    /// <summary>The account is chosen: issue the code for single sign-on or for delegated access and return to the app.</summary>
+    private static IResult Complete(string directory, Guid directoryId, Func<string, string> field, string oid, FakeSystems f)
+    {
+        var redirect = field("redirect_uri");
+        var user = FakeScenario.SignInUsers(f.Graph, directoryId, f.GroupsByUser(directory)).FirstOrDefault(u => u.ObjectId == oid);
+        if (user is null)
+        {
+            return Results.Redirect(Append(redirect, $"error=access_denied&error_description=account_not_found&state={Uri.EscapeDataString(field("state"))}"));
+        }
+        var clientId = field("client_id");
+        string code;
+        if (clientId == FakeMicrosoftGraph.ClientId)
+        {
+            var query = new[] { "client_id", "scope", "code_challenge_method" }.ToDictionary(k => k, k => field(k));
+            if (f.Graph.DelegatedRefusal(directoryId.ToString("D"), query) is { } refusal)
+            {
+                return Results.Redirect(Append(redirect, $"error=consent_required&error_description={Uri.EscapeDataString(refusal)}&state={Uri.EscapeDataString(field("state"))}"));
+            }
+            code = f.Graph.IssueDelegatedCode(directoryId, user.ObjectId, clientId, redirect, field("code_challenge"), field("scope"));
+        }
+        else
+        {
+            var app = f.Scenario.FindDirectory(directory)?.SsoApp;
+            if (app is null || !string.Equals(app.ClientId, clientId, StringComparison.OrdinalIgnoreCase))
+            {
+                return Results.Redirect(Append(redirect, $"error=unauthorized_client&error_description=unknown_application&state={Uri.EscapeDataString(field("state"))}"));
+            }
+            var authorizeUrl = $"{MicrosoftLogin}{directoryId:D}/oauth2/v2.0/authorize?"
+                + string.Join("&", new[] { "client_id", "redirect_uri", "code_challenge", "nonce" }.Select(k => $"{k}={Uri.EscapeDataString(field(k))}"));
+            code = f.Entra.Authenticate(authorizeUrl, user, app.ClientSecret);
+        }
+        return Results.Redirect(Append(redirect, $"code={Uri.EscapeDataString(code)}&state={Uri.EscapeDataString(field("state"))}"));
     }
 
     private static IResult Change(Action change)

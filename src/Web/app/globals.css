@@ -168,6 +168,13 @@ body {
   color: var(--tb-color-link);
 }
 
+/* A row of actions that wraps on narrow screens and follows the reading direction. */
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
 .button-quiet {
   border-color: transparent;
   background: transparent;

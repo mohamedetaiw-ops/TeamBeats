@@ -16,6 +16,7 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 - [x] T029 [P] [US7] Tests: one-click `admin` sign-in gives a tenant administrator session; unknown username refused and audited; email and platform dev sign-in refused in test account mode; staging refuses open mode or a missing test account; production host refuses test accounts and a test tenant; cross-tenant refusal; tenant seeded once
 - [x] T030 [US7] Test account mode in `Identity.DevAuth`, `Staging` environment in `Api.DevHost`, test tenant seeder through the tenancy use case, `appsettings.Staging.json`, `deploy/docker/api-staging.Dockerfile`, "Sign in as test admin" button in the web app
 - [x] T031 [US7] Production guard for test accounts and test tenant; `tools/deploy-lint.sh` in CI; architecture tests for passwords in configuration and production Dockerfiles
+- [x] T032 [US7] Test employee direct link: `Dev:Fakes:SignInLinks` (`employee` is Ahmed Mansour in `appsettings.Staging.json`), `/dev/fake/signin/{name}` and one-time pick on the fake Microsoft page, startup check that each link names an enabled scenario person, "Sign in as test employee" link in the web app; tests for employee session without admin rights, cross-tenant refusal, unknown link, disabled person, production guard
 
 ## Phase 3: User Story 3, session invalidation (P1, R0)
 - [ ] T007 [P] [US3] Tests: sign-out ends session; disabled membership rejected on next request; role change effective within 5 minutes; suspended tenant sessions rejected

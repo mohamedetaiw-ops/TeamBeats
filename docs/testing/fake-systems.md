@@ -35,7 +35,7 @@ When a new adapter calls an external system (SharePoint document source, a futur
 | Staging (Fly) | `src/Api.DevHost` in Staging | **must be on**, the host refuses to start otherwise | `scenarios/staging-demo.json` | `staging-demo` |
 | Production | `src/Api` | **not present** | none | none |
 
-Settings (`Dev:Fakes`): `Enabled`, `Scenario` (path relative to the content root or the published folder), `RunDirectorySync` (run due directory syncs inside the host, where the fake directory lives).
+Settings (`Dev:Fakes`): `Enabled`, `Scenario` (path relative to the content root or the published folder), `RunDirectorySync` (run due directory syncs inside the host, where the fake directory lives), `SignInLinks` (direct test sign-in links, name to scenario email).
 
 ## 4. Guards
 - `TeamBeats.DevFakes` is referenced only by `src/Api.DevHost` (architecture test `Fakes_are_referenced_only_by_the_development_host_and_tests`), never by `src/Api` or `src/Workers` (`Production_api_does_not_contain_development_sign_in`).
@@ -60,6 +60,7 @@ On start, the host connects the seeded tenant through each module's own use case
 
 ### Sign in on staging
 - **Test admin**: "Sign in as test admin" on the sign-in page (spec 003 US7).
+- **Test employee**: "Sign in as test employee" on the sign-in page, or the direct link `https://teambeats-staging-web.fly.dev/dev/fake/signin/employee` (spec 003 US7). It runs single sign-on through the fake Microsoft page, which picks Ahmed Mansour (Finance Manager, no administration role) by itself. Links are configured under `Dev:Fakes:SignInLinks` as link name to a scenario email; the host refuses to start if a link names a person who is missing or disabled. The pick is a two-minute, one-time cookie (`tb_fake_pick`).
 - **Any fictional employee**: "Sign in with Microsoft" opens the fake Microsoft page; pick a person. Connecting Outlook goes through the same page; the scenario's directory has already consented the delegated mail and calendar permissions. Layla Haddad is a tenant administrator through her group; Omar Al Farsi is an integration administrator; Maryam Al Abdullah is a content editor; everyone else is an employee.
 
 ## 6. Control API for testers (`/dev/fake`)
@@ -72,6 +73,7 @@ Development host only, no sign-in needed, fictional data only. Same accepted ris
 | `POST /dev/fake/graph/{directory}/users/{id}:disable`, `:enable`, `:delete` | Change a person, then run a sync to see the effect |
 | `POST /dev/fake/graph/{directory}/consent:revoke` | Revoke admin consent, to test the needs-consent state |
 | `POST /dev/fake/outage/{entra,graph,openrouter}?down=true` | Simulate an outage; `down=false` restores |
+| `GET /dev/fake/signin/{name}` | Direct test sign-in link, for example `employee`: single sign-on as the configured person without the picker |
 
 The fake state lives in the API host's memory and is rebuilt from the scenario on restart.
 
