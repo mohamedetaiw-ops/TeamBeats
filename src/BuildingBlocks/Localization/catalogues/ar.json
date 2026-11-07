@@ -347,6 +347,7 @@
   "validation.shell.region_unknown": "هذه المنطقة غير متاحة في الواجهة",
   "validation.shell.utilities_unplaced": "ضع منطقة الأدوات قبل تفعيل الأدوات",
   "validation.shell.utility_unknown": "هذه الأداة غير متاحة في الواجهة",
+  "validation.telemetry.too_many": "أرسل 20 حدثًا من أحداث القياس على الأكثر في كل مرة",
   "validation.template.descriptions_invalid": "يجب أن يكون لكل وصف لغة وألا يزيد على 300 حرف",
   "validation.template.distribution_too_long": "اختر 50 وحدة تنظيمية على الأكثر",
   "validation.template.id_invalid": "استخدم من 3 إلى 40 حرفًا لاتينيًا صغيرًا أو رقمًا أو شرطة، يبدأ بحرف",

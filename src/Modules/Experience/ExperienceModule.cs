@@ -37,6 +37,7 @@ public static class ExperienceModule
         services.AddScoped<Templates.TemplateStore>();
         services.AddScoped<Templates.TemplateService>();
         services.AddScoped<PageService>();
+        services.AddScoped<Telemetry.PageTelemetry>();
         services.AddScoped<ThemeService>();
         services.AddScoped<ShellService>();
         return services;
@@ -200,6 +201,10 @@ public static class ExperienceModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        // Renderer telemetry (spec 032 section 13): identifiers and numbers only, tagged with the session's tenant.
+        x.MapPost("/telemetry", (Telemetry.TelemetryBatch batch, Telemetry.PageTelemetry telemetry) =>
+            Results.Accepted(value: new { accepted = telemetry.Record(batch) }));
 
         MapThemeEndpoints(app);
         MapShellEndpoints(app);

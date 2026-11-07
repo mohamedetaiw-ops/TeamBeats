@@ -31,7 +31,7 @@ public static class TelemetryExtensions
             })
             .WithMetrics(m =>
             {
-                m.AddAspNetCoreInstrumentation();
+                m.AddAspNetCoreInstrumentation().AddMeter("TeamBeats.*");
                 if (otlp)
                 {
                     m.AddOtlpExporter();

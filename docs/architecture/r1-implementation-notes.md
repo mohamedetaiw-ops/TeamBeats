@@ -376,6 +376,22 @@ Screen reader checks assert the roles, names and states that assistive technolog
 | Platform template versions | The platform catalogue holds one version of each platform template. A page that records another version gets `validation.page.template_mismatch`. |
 | Designer screens | `/admin/templates` lists the organization's templates and copies a platform template; `/admin/templates/[id]` edits names, variants, region locks, policies and distribution, and releases or deprecates. The section shows only for template designers of the whole tenant. The page editor has a "Template and layout" panel that says when a newer version is released or the version is deprecated, works the change out, lets the editor place or remove each component without a region, and applies it to the saved draft. Playwright: `templates.spec.ts` in `en` and `ar`. |
 
+## Performance budgets and renderer telemetry (spec 032 T021)
+
+### Built
+- Playwright `performance.spec.ts` fills all 12 reference templates with both reference packs and checks LCP 2.5 s or less, INP 200 ms or less and CLS 0.1 or less (FR-058, SC-005) on two reference profiles: mobile (375 by 812) and desktop (1440 by 900). Each page is opened once before it is measured, so the development server's first compile is not counted. The measured values are attached to the report.
+- Renderer telemetry: `PageRenderer` mounts `PageTelemetry`, which collects LCP, CLS (largest session window) and INP (longest interaction) from the browser's own performance entries, without a library, and sends one `page.web_vitals` event with template, layout and device class when the page is hidden. Placement failures (error, missing, undeclared event, invalid payload) are sent as `placement.render_failed` with the page key and release. Events go in batches of at most 20 with `sendBeacon`.
+- `POST /api/v1/experience/telemetry` (signed-in users) accepts only the declared shape: identifiers that match their patterns, known kinds and device classes, and numbers in range. Anything else is dropped and counted. Accepted events become OpenTelemetry metrics (`experience.placement.render_failed`, `experience.web_vitals.lcp`, `.inp`, `.cls`) tagged with the tenant from the session; a render failure also writes a log line with the page key and correlation ID. The `TeamBeats.*` meters are now exported with the rest of the metrics.
+- Tests: `PageTelemetryTests` (metrics tagged with the session tenant, free text and out-of-range values dropped, session required, batch limit) and the telemetry check in `performance.spec.ts`.
+
+### Differences and follow-ups
+| Item | Note |
+|---|---|
+| Reference profiles | The spec asks for "agreed reference profiles", which are not defined. The two viewports above, on the CI runner without CPU or network throttling, are the smallest safe default. Throttled profiles need an agreed device and network. |
+| Lab, not field, values | CI measures one load per template on the development server. The p75 by mobile and desktop segments comes from the `page.web_vitals` metrics once a metrics backend receives them. |
+| Asset budgets (FR-060) | Script, font and image size budgets need a production build in CI and are not checked yet. |
+| Telemetry retention | Spec 032 section 10 sets 30 days for frontend error events. Nothing is stored by the API; retention belongs to the metrics and log backend. |
+
 ## Page builder (spec 032 T018 to T020)
 | Part | Where |
 |---|---|
