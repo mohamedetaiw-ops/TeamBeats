@@ -41,6 +41,7 @@ public static class IntegrationsModule
         services.AddScoped<IMailbox, GraphMailbox>();
         services.AddScoped<ICalendar, GraphCalendar>();
         services.AddScoped<IAvailability, GraphAvailability>();
+        services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, OutlookComponents>();
         services.AddHttpClient(OpenMeteoWeather.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
         services.AddScoped<IWeather, OpenMeteoWeather>();
         services.AddMessageHandler<SessionEnded, DropTokensOnSessionEnded>("integrations.tokens_session_ended");

@@ -89,6 +89,13 @@ public static class ComponentContext
 public interface IComponentRegistration
 {
     IEnumerable<ComponentManifest> Manifests();
+
+    /// <summary>
+    /// References (<c>id@major</c>) of this module's components that the default home offers in its personal region
+    /// (spec 008 FR-051), in order. They appear as personal placements while the viewer may use them, and the viewer can
+    /// remove, reorder or re-add them. Templates never name components (spec 032 FR-014), so modules suggest them here.
+    /// </summary>
+    IEnumerable<string> PersonalHomeDefaults() => [];
 }
 
 public sealed record PagePublished(Guid PageId, int Release) : IIntegrationEvent;

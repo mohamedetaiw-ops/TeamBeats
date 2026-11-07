@@ -382,5 +382,85 @@
         "unknown": "Weather"
       }
     }
+  },
+  "outlook": {
+    "state": {
+      "connect": "Connect Outlook",
+      "notConnected": "Outlook is not connected",
+      "notConnectedMessage": {
+        "mail": "Connect Outlook to see your latest mail here.",
+        "calendar": "Connect Outlook to see your appointments here."
+      },
+      "reconnect": "Outlook needs to be connected again",
+      "reconnectMessage": "Your Outlook sign-in expired or a new feature was turned on.",
+      "reconnectAction": "Reconnect Outlook",
+      "adminSetup": "Your administrator needs to finish setting up Outlook",
+      "adminSetupMessage": "Ask your administrator to give consent for mail and calendar in Microsoft 365.",
+      "noMailbox": "You don't have a work mailbox",
+      "turnedOff": {
+        "mail": "Mail is turned off for your organization",
+        "calendar": "Calendar is turned off for your organization"
+      },
+      "conditionalAccess": "Your organization requires you to open Outlook on a managed device",
+      "openOutlook": "Open Outlook (opens in a new tab)",
+      "notInPlan": "This is not part of your organization's plan",
+      "unavailable": {
+        "mail": "Mail is not available right now",
+        "calendar": "Your calendar is not available right now"
+      },
+      "retry": "Try again",
+      "stale": "Outlook could not be reached. Showing what was read at {time}.",
+      "staleNoData": "Outlook could not be reached. Try again in a moment."
+    },
+    "mail": {
+      "title": "My mail",
+      "unread": "{count, plural, one {# unread} other {# unread}}",
+      "view": "Messages to show",
+      "views": {
+        "focused": "Focused",
+        "all": "All"
+      },
+      "compose": "New message",
+      "opensOutlook": "(opens Outlook in a new tab)",
+      "empty": "No new mail",
+      "noSubject": "(no subject)",
+      "markers": {
+        "unread": "Unread",
+        "important": "High importance",
+        "attachment": "Has attachment"
+      },
+      "markerSeparator": ", "
+    },
+    "calendar": {
+      "title": "My calendar",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "allDay": "All day",
+      "range": "{start} to {end}",
+      "private": "Private appointment",
+      "online": "Online",
+      "markers": {
+        "tentative": "Tentative",
+        "free": "Free"
+      },
+      "markerSeparator": ", ",
+      "opensOutlook": "(opens Outlook in a new tab)",
+      "join": "Join",
+      "joinLabel": "Join {subject} (opens the meeting in a new tab)",
+      "empty": "Nothing on your calendar"
+    },
+    "settings": {
+      "title": "Outlook",
+      "connected": "Outlook is connected. My mail and My calendar read your mailbox while you are signed in.",
+      "disconnect": "Disconnect Outlook",
+      "disconnecting": "Disconnecting",
+      "notConnected": "Outlook is not connected.",
+      "connect": "Connect Outlook",
+      "reconnect": "Outlook needs to be connected again.",
+      "reconnectAction": "Reconnect Outlook",
+      "adminSetup": "Your administrator needs to finish setting up Outlook.",
+      "conditionalAccess": "Your organization requires a managed device for Outlook.",
+      "unavailable": "Outlook settings are not available right now."
+    }
   }
 }

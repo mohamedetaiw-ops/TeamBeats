@@ -382,5 +382,85 @@
         "unknown": "الطقس"
       }
     }
+  },
+  "outlook": {
+    "state": {
+      "connect": "ربط Outlook",
+      "notConnected": "Outlook غير مربوط",
+      "notConnectedMessage": {
+        "mail": "اربط Outlook لترى أحدث بريدك هنا.",
+        "calendar": "اربط Outlook لترى مواعيدك هنا."
+      },
+      "reconnect": "يجب ربط Outlook مرة أخرى",
+      "reconnectMessage": "انتهت صلاحية تسجيل دخولك إلى Outlook أو تم تشغيل ميزة جديدة.",
+      "reconnectAction": "إعادة ربط Outlook",
+      "adminSetup": "يحتاج المسؤول إلى إكمال إعداد Outlook",
+      "adminSetupMessage": "اطلب من المسؤول منح الموافقة على البريد والتقويم في Microsoft 365.",
+      "noMailbox": "ليس لديك صندوق بريد للعمل",
+      "turnedOff": {
+        "mail": "البريد متوقف في مؤسستك",
+        "calendar": "التقويم متوقف في مؤسستك"
+      },
+      "conditionalAccess": "تطلب مؤسستك فتح Outlook على جهاز مُدار",
+      "openOutlook": "فتح Outlook (يفتح في علامة تبويب جديدة)",
+      "notInPlan": "هذه الميزة ليست ضمن خطة مؤسستك",
+      "unavailable": {
+        "mail": "البريد غير متاح الآن",
+        "calendar": "تقويمك غير متاح الآن"
+      },
+      "retry": "إعادة المحاولة",
+      "stale": "تعذر الوصول إلى Outlook. نعرض ما تمت قراءته في {time}.",
+      "staleNoData": "تعذر الوصول إلى Outlook. حاول مرة أخرى بعد قليل."
+    },
+    "mail": {
+      "title": "بريدي",
+      "unread": "{count, plural, zero {لا رسائل غير مقروءة} one {رسالة واحدة غير مقروءة} two {رسالتان غير مقروءتين} few {# رسائل غير مقروءة} many {# رسالة غير مقروءة} other {# رسالة غير مقروءة}}",
+      "view": "الرسائل المعروضة",
+      "views": {
+        "focused": "المركّز",
+        "all": "الكل"
+      },
+      "compose": "رسالة جديدة",
+      "opensOutlook": "(يفتح Outlook في علامة تبويب جديدة)",
+      "empty": "لا يوجد بريد جديد",
+      "noSubject": "(بلا موضوع)",
+      "markers": {
+        "unread": "غير مقروءة",
+        "important": "أهمية عالية",
+        "attachment": "بها مرفق"
+      },
+      "markerSeparator": "، "
+    },
+    "calendar": {
+      "title": "تقويمي",
+      "today": "اليوم",
+      "tomorrow": "غدا",
+      "allDay": "طوال اليوم",
+      "range": "من {start} إلى {end}",
+      "private": "موعد خاص",
+      "online": "عبر الإنترنت",
+      "markers": {
+        "tentative": "مبدئي",
+        "free": "متاح"
+      },
+      "markerSeparator": "، ",
+      "opensOutlook": "(يفتح Outlook في علامة تبويب جديدة)",
+      "join": "انضمام",
+      "joinLabel": "الانضمام إلى {subject} (يفتح الاجتماع في علامة تبويب جديدة)",
+      "empty": "لا شيء في تقويمك"
+    },
+    "settings": {
+      "title": "Outlook",
+      "connected": "Outlook مربوط. يقرأ بريدي وتقويمي صندوق بريدك أثناء تسجيل دخولك.",
+      "disconnect": "فصل Outlook",
+      "disconnecting": "جارٍ الفصل",
+      "notConnected": "Outlook غير مربوط.",
+      "connect": "ربط Outlook",
+      "reconnect": "يجب ربط Outlook مرة أخرى.",
+      "reconnectAction": "إعادة ربط Outlook",
+      "adminSetup": "يحتاج المسؤول إلى إكمال إعداد Outlook.",
+      "conditionalAccess": "تطلب مؤسستك جهازا مُدارا لاستخدام Outlook.",
+      "unavailable": "إعدادات Outlook غير متاحة الآن."
+    }
   }
 }

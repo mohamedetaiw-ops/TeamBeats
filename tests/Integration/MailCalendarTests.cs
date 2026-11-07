@@ -93,6 +93,93 @@ public sealed class MailCalendarTests(TenantWorld world)
         return box;
     }
 
+    /// <summary>A published home from H01 with nothing placed, so the add panel can be read for its personal region.</summary>
+    private static Task<Guid> HomeAsync(TestTenant t) => HomeAsync(t, "home-" + Guid.NewGuid().ToString("N")[..8]);
+
+    private static async Task<Guid> HomeAsync(TestTenant t, string slug)
+    {
+        var created = await t["admin"].Client.PostAsJsonAsync("/api/v1/experience/pages", new { templateId = "H01", slug });
+        var page = await created.ReadAsync<JsonElement>();
+        var id = page.GetProperty("id").GetGuid();
+        var published = await t["admin"].Client.PostAsJsonAsync($"/api/v1/experience/pages/{id}/publish", new { reason = "home" });
+        Assert.True(published.IsSuccessStatusCode, await published.Content.ReadAsStringAsync());
+        return id;
+    }
+
+    [Fact]
+    public async Task My_mail_and_My_calendar_are_offered_only_while_their_connection_feature_is_on()
+    {
+        var s = await SetupAsync(["mail"]);
+        var home = await HomeAsync(s.Tenant);
+        async Task<Dictionary<string, JsonElement>> PanelAsync() =>
+            (await GetAsync(s.Tenant, $"/api/v1/me/pages/{home}/add-panel?region=grid")).EnumerateArray().ToDictionary(i => i.GetProperty("componentRef").GetString()!);
+
+        var panel = await PanelAsync();
+        Assert.True(panel["outlook.my_mail@1"].GetProperty("eligible").GetBoolean());
+        Assert.Equal("validation.personalization.feature_off", panel["outlook.my_calendar@1"].GetProperty("reasonKey").GetString());
+        Assert.Equal("personal", panel["outlook.my_mail@1"].GetProperty("category").GetString());
+
+        Assert.True((await s.Tenant["admin"].Client.PostAsync($"/api/v1/integrations/connections/{s.Connection}/features/mail:disable", null)).IsSuccessStatusCode);
+        Assert.Equal("validation.personalization.feature_off", (await PanelAsync())["outlook.my_mail@1"].GetProperty("reasonKey").GetString());
+    }
+
+    /// <summary>Spec 008 FR-051 and T013: the default home offers My calendar and My mail in its personal region.</summary>
+    [Fact]
+    public async Task The_default_home_shows_My_calendar_and_My_mail_in_the_personal_region_while_their_features_are_on()
+    {
+        var s = await SetupAsync(["mail", "calendar"], "workplace_plus", "colleague");
+        var slug = "home-" + Guid.NewGuid().ToString("N")[..8];
+        var home = await HomeAsync(s.Tenant, slug);
+        async Task<string[]> GridAsync(string user = "employee")
+        {
+            var page = await GetAsync(s.Tenant, $"/api/v1/experience/render?slug={slug}", user);
+            var grid = page.GetProperty("regions").EnumerateArray().Single(r => r.GetProperty("id").GetString() == "grid");
+            Assert.All(grid.GetProperty("placements").EnumerateArray(), p => Assert.True(p.GetProperty("personal").GetBoolean()));
+            return grid.GetProperty("placements").EnumerateArray().Select(p => p.GetProperty("componentRef").GetString()!).ToArray();
+        }
+
+        Assert.Equal(["outlook.my_calendar@1", "outlook.my_mail@1"], await GridAsync());
+        var hero = (await GetAsync(s.Tenant, $"/api/v1/experience/render?slug={slug}")).GetProperty("regions").EnumerateArray()
+            .Single(r => r.GetProperty("id").GetString() == "hero");
+        Assert.Empty(hero.GetProperty("placements").EnumerateArray());
+
+        // The employee can reorder and remove them like their own; a removal stays removed.
+        var layout = $"/api/v1/me/pages/{home}/layout";
+        var saved = await s.Tenant["employee"].Client.PutAsJsonAsync(layout, new
+        {
+            operations = new object[]
+            {
+                new { op = "move", placementId = "home-outlook-my-mail", regionId = "grid", position = 0 },
+                new { op = "remove", placementId = "home-outlook-my-calendar" },
+            },
+        });
+        Assert.True(saved.IsSuccessStatusCode, await saved.Content.ReadAsStringAsync());
+        Assert.Equal(["outlook.my_mail@1"], await GridAsync());
+        // Another employee still gets both.
+        Assert.Equal(["outlook.my_calendar@1", "outlook.my_mail@1"], await GridAsync("colleague"));
+
+        // Mail turned off: the suggestion goes, and the saved move is reported as skipped rather than lost.
+        Assert.True((await s.Tenant["admin"].Client.PostAsync($"/api/v1/integrations/connections/{s.Connection}/features/mail:disable", null)).IsSuccessStatusCode);
+        Assert.Empty(await GridAsync());
+        Assert.Equal(["outlook.my_calendar@1"], await GridAsync("colleague"));
+    }
+
+    [Fact]
+    public async Task The_default_home_suggests_nothing_without_the_entitlement_or_the_feature()
+    {
+        var workplace = await SetupAsync([], package: "workplace");
+        var slug = "home-" + Guid.NewGuid().ToString("N")[..8];
+        await HomeAsync(workplace.Tenant, slug);
+        var page = await GetAsync(workplace.Tenant, $"/api/v1/experience/render?slug={slug}");
+        Assert.All(page.GetProperty("regions").EnumerateArray(), r => Assert.Empty(r.GetProperty("placements").EnumerateArray()));
+
+        var none = await SetupAsync([]);
+        var other = "home-" + Guid.NewGuid().ToString("N")[..8];
+        await HomeAsync(none.Tenant, other);
+        page = await GetAsync(none.Tenant, $"/api/v1/experience/render?slug={other}");
+        Assert.All(page.GetProperty("regions").EnumerateArray(), r => Assert.Empty(r.GetProperty("placements").EnumerateArray()));
+    }
+
     [Fact]
     public async Task My_mail_shows_unread_count_and_latest_focused_messages_with_markers_and_links()
     {

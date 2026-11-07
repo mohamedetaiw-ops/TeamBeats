@@ -65,7 +65,8 @@ public sealed partial class PersonalizationService(
     IAuditWriter audit,
     IClock clock,
     ILocalizer localizer,
-    RequestLocale locale)
+    RequestLocale locale,
+    HomeDefaults homeDefaults)
 {
     public const int PreferenceSchemaVersion = 1;
     public const int LayoutSchemaVersion = 1;
@@ -129,8 +130,8 @@ public sealed partial class PersonalizationService(
     {
         var page = await pages.PublishedForViewerAsync(pageId, ct);
         var (revision, operations) = await layouts.OperationsAsync(context.RequireUser(), page.Id, ct);
-        var (regions, rights) = await ViewerLayoutAsync(page, ct);
-        var result = LayoutEngine.Apply(regions, operations, rights);
+        var (regions, rights, defaults) = await ViewerLayoutAsync(page, ct);
+        var result = LayoutEngine.Apply(regions, operations, rights, defaults: defaults);
         return new LayoutView(page.Id, revision, ETag(revision), operations, result.Skipped, rights.Values.ToList());
     }
 
@@ -159,9 +160,9 @@ public sealed partial class PersonalizationService(
             throw new AppException(ProblemCodes.Conflict, 409, "conflict.personalization.layout_changed", null,
                 new Dictionary<string, object?> { ["etag"] = ETag(revision) });
         }
-        var (regions, rights) = await ViewerLayoutAsync(page, ct);
+        var (regions, rights, defaults) = await ViewerLayoutAsync(page, ct);
         var check = await NewPlacementCheckAsync(page, ct);
-        var result = LayoutEngine.Apply(regions, operations, rights, check);
+        var result = LayoutEngine.Apply(regions, operations, rights, check, defaults);
         if (result.Skipped.Count > 0)
         {
             throw new AppException(ProblemCodes.ValidationFailed, 422, "validation.personalization.refused", null,
@@ -200,17 +201,20 @@ public sealed partial class PersonalizationService(
             throw AppException.Validation("region", "validation.page.region_unknown");
         }
         var (_, operations) = await layouts.OperationsAsync(context.RequireUser(), page.Id, ct);
-        var (regions, rights) = await ViewerLayoutAsync(page, ct);
-        var current = LayoutEngine.Apply(regions, operations, rights);
+        var (regions, rights, defaults) = await ViewerLayoutAsync(page, ct);
+        var current = LayoutEngine.Apply(regions, operations, rights, defaults: defaults);
         var region = rights[regionId];
         var check = await NewPlacementCheckAsync(page, ct);
         string? regionReason = !region.Rights.Contains(LayoutEngine.RightAdd) ? "validation.personalization.region_not_delegated"
             : current.Regions[regionId].Count(p => p.Personal) >= region.MaxPersonalPlacements ? "validation.personalization.region_full"
             : null;
+        var featureOff = await homeDefaults.FeaturesOffAsync(ct);
         return registry.All.Where(m => m.State != ComponentStates.Retired).Select(m =>
         {
             // R1 adds a component with its defaults; one with required settings and no default waits for personal settings.
+            // A component that reads a connection feature is offered only while that feature is on (spec 032 FR-069).
             var reason = regionReason ?? check(new LayoutOperation("panel", "my-check", m.Reference, regionId))
+                ?? (m.Requires.ConnectionFeature is { } f && featureOff.Contains(f) ? "validation.personalization.feature_off" : null)
                 ?? (PropertyValidator.Validate(m.Properties, null).Count > 0 ? "validation.personalization.needs_setup" : null);
             return new AddPanelItem(m.Reference, m.Display.NameKey, m.Display.DescriptionKey, m.Display.Category, m.Display.Icon, reason is null, reason,
                 localizer.Get(m.Display.NameKey, locale.Locale), localizer.Get(m.Display.DescriptionKey, locale.Locale),
@@ -387,8 +391,8 @@ public sealed partial class PersonalizationService(
 
     // Internals
 
-    private async Task<(IReadOnlyList<PageRegion> Regions, IReadOnlyDictionary<string, RegionRights> Rights)> ViewerLayoutAsync(PageContext page,
-        CancellationToken ct)
+    private async Task<(IReadOnlyList<PageRegion> Regions, IReadOnlyDictionary<string, RegionRights> Rights,
+        IReadOnlyDictionary<string, IReadOnlyList<Placement>> Defaults)> ViewerLayoutAsync(PageContext page, CancellationToken ct)
     {
         var template = catalogue.Templates[page.TemplateId];
         var layout = catalogue.Layouts[template.Layout];
@@ -397,7 +401,9 @@ public sealed partial class PersonalizationService(
         var canPersonalize = (await authz.CheckAsync(Permissions.PersonalLayoutEdit, Target(page.OrgUnitId), ct)).Allowed;
         var targeted = LayoutEngine.ForAudience(page.Definition.Regions, rules, viewer);
         var regions = layout.Regions.Select(lr => targeted.FirstOrDefault(r => r.Id == lr.Id) ?? new PageRegion(lr.Id, [])).ToList();
-        return (regions, await layouts.RightsAsync(page.Id, template, viewer, rules, canPersonalize, ct));
+        var rights = await layouts.RightsAsync(page.Id, template, viewer, rules, canPersonalize, ct);
+        var defaults = await homeDefaults.ForAsync(template, rights, await availability.ForScopeAsync(page.OrgUnitId, ct, viewer: true), ct);
+        return (regions, rights, defaults);
     }
 
     /// <summary>

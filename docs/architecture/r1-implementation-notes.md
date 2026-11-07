@@ -149,6 +149,23 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | All-day items | Placed on the date Microsoft gives them, not shifted by the tenant time zone. |
 | Telemetry `integration.graph_call` and OpenAPI examples (T018) | Not built yet. |
 
+## My mail and My calendar components (spec 018 T016)
+
+### Built
+- The Integrations module registers `outlook.my_mail@1` and `outlook.my_calendar@1` (category `personal`, at least 4 columns). Both need `integration.microsoft365` and declare their connection feature (`microsoft365:mail`, `microsoft365:calendar`). The registry checks the `kind:feature` form, and the add panel answers `validation.personalization.feature_off` while the feature is not usable, so they are offered only while Mail or Calendar is on.
+- My mail properties: `view` focused or all (default focused) and `top` 1 to 10 (default 5). My calendar properties: `days` 1 to 14 (default 7) and `hidePrivate`.
+- Web components in `components/placements`: unread badge, messages with unread, importance and attachment markers in text, a Focused and All switch, a New message link, days grouped as Today, Tomorrow and dates in the tenant time zone, all-day items first, free and tentative in text, Private appointment for hidden subjects, and a Join link that is the primary action from 10 minutes before the start until the end. Every link opens Outlook or the meeting in a new tab and says so to screen readers.
+- Every state of section 10 comes from the shared state view: loading, empty, not connected and reconnect with Connect Outlook back to the current page, admin setup, no mailbox, turned off, conditional access with a link to Outlook, not in plan, failure with retry, and degraded with the time of the data shown and a retry that asks for `refresh=true`.
+- Personal settings has an Outlook section that reads `GET /api/v1/me/outlook` when the panel opens: connected with Disconnect, not connected or reconnect with Connect Outlook, admin setup and managed device messages. It is left out when the server answers turned off, not in plan or a refusal.
+- Browser tests `outlook.spec.ts` in English and Arabic with axe.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Browser tests and the Microsoft sign-in | The connect redirect needs HTTPS on the tenant host, so the browser tests answer the employee's mail, calendar and Outlook endpoints with their documented shapes. The server side of each state runs against the fake Graph in `MailCalendarTests`. |
+| Focused or All as a saved preference (US2 scenario 2) | The switch starts from the placement's `view` and lasts for the page visit. Saving the choice per employee needs per-placement personal properties in the spec 008 preference profile, which do not exist yet. |
+| Outcome after connect | The callback returns with `?outlook=<outcome>`; the components and the settings section show the new state, but the outcome itself is not announced yet. |
+
 ## Pages, templates and the component registry (spec 032 backend foundation)
 
 ### Built
@@ -307,7 +324,8 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Item | Note |
 |---|---|
 | Drag and drop | R1 reorders with buttons only, which gives the same result for keyboard and pointer (FR-025). Drag can come with resize in R2. |
-| My mail and My calendar | FR-051 needs the spec 018 components (018 T016). Once they exist the home shows them in the personal area when Mail and Calendar are on; T013 stays open until then. |
+| My mail and My calendar | Modules suggest components for the default home through `IComponentRegistration.PersonalHomeDefaults`, because templates never name components (spec 032 FR-014). The Integrations module suggests My calendar, then My mail. They come first in the first personal region (`grid` in `H01`) as personal placements with fixed IDs (`home-outlook-my-calendar`, `home-outlook-my-mail`), only while the component is available to the viewer, its feature is on and the viewer may add to the region. Employees move or remove them like their own placements, and a removal stays removed. |
+| Employees without a mailbox (FR-051) | TeamBeats learns that an employee has no mailbox only when Microsoft answers for them, so the home still shows My mail and My calendar, and they show the no work mailbox state. |
 | Default home page | A tenant gets the template, not a page: an administrator creates a page from `H01` and sets it as home. |
 | Hidden items | A hidden item returns through undo or reset; there is no list of hidden items in R1. |
 
