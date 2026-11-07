@@ -4406,6 +4406,18 @@
         }
       }
     },
+    "/api/v1/security/posture": {
+      "get": {
+        "tags": [
+          "Security"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/security/alerts": {
       "get": {
         "tags": [

@@ -24,8 +24,8 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T013 [US5] Alert rules, list and handle endpoints; admin shell badge
 
 ## Phase 5: Posture, secure rendering and pages
-- [ ] T014 Posture endpoint and checks
-- [ ] T015 Test that the content security policy has no inline script and that rich text goes through the sanitizer (FR-025)
+- [x] T014 Posture endpoint and checks
+- [x] T015 Test that the content security policy has no inline script and that rich text goes through the sanitizer (FR-025)
 - [ ] T016 Admin pages: Security policy (with lock-out preview), Alerts, Posture, in English and Arabic, RTL; e2e with axe
 
 ## Final phase

@@ -21,6 +21,7 @@ public static class SecurityModule
         services.AddScoped<ISecurityPolicy>(sp => sp.GetRequiredService<PolicyStore>());
         services.AddScoped<PolicyService>();
         services.AddScoped<AlertService>();
+        services.AddScoped<PostureService>();
         services.AddMessageHandler<TeamBeats.Modules.Documents.Contracts.DocumentDownloaded, DownloadVolumeRule>("security.download_volume");
         services.AddMessageHandler<TeamBeats.Authorization.Contracts.RoleAssignmentChanged, OutOfHoursGrantRule>("security.privilege_grant_out_of_hours");
         services.AddScoped<IAuthenticationAssurance, AuthenticationAssurance>();
@@ -51,6 +52,8 @@ public static class SecurityModule
 
         security.MapGet("/policy/preview", async (string? ipAllow, string? ipBlock, PolicyService policies, CancellationToken ct) =>
             Results.Ok(await policies.PreviewAsync(ipAllow, ipBlock, ct)));
+
+        security.MapGet("/posture", async (PostureService posture, CancellationToken ct) => Results.Ok(await posture.GetAsync(ct)));
 
         security.MapGet("/alerts", async (string? status, AlertService alerts, CancellationToken ct) => Results.Ok(await alerts.ListAsync(status, ct)));
 

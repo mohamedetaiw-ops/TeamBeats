@@ -580,3 +580,29 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Privileged permissions | Spec 026 says "admin role" without a list. The smallest safe reading is a role that holds any permission that changes access, sign-in or tenant configuration (`Permissions.Privileged`). |
 | Badge and notifications | The admin shell badge and the notification to security officers come with the admin pages (T016). |
 | First administrator | The tenant's first administrator is assigned by the system at creation and, at night, raises an out-of-hours alert like any other grant. |
+
+## Security posture (spec 026 T014)
+| Part | Where |
+|---|---|
+| Endpoint | `GET /api/v1/security/posture` (`security.view` or `security.manage`) returns `passed`, `total` and `checks[] {key, state, link}`; the state is `passed`, `failed` or `unavailable` |
+| Checks | `sso_configured`, `mfa_required`, `ip_rules` (an allowlist is set), `admin_area_rule` (unavailable without `security.ip_rules_scoped`), `step_up_window` (10 minutes or less), `idle_timeout` (30 minutes or less), `absolute_timeout` (12 hours or less), `dev_sign_in_absent` |
+| Contracts | `ISignInMethods` in Identity.Contracts says whether an enabled SSO provider exists and whether development sign-in is on |
+| Tests | `SecurityPostureTests`, `PostureTests` |
+
+| Item | Note |
+|---|---|
+| Score | The spec gives no formula, so the page shows passed checks out of the checks that apply (plan, Posture). Unavailable checks do not count. |
+| Recommended values | The spec 026 defaults are taken as the recommended baseline. |
+| Development sign-in | Has no link, because the host configuration fixes it, not the tenant administrator. On staging it shows as failed, which is correct. |
+
+## Secure rendering (spec 026 T015)
+| Part | Where |
+|---|---|
+| Policy | `src/Web/proxy.ts` sets a content security policy on every page: `script-src 'self' 'nonce-…' 'strict-dynamic'` with a new nonce per request, `object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'self'`, and everything else on the tenant host. Next.js puts the nonce on its own scripts. `'unsafe-eval'` is added on the development server only |
+| Tests | `SecureRenderingTests` (architecture: the policy has a nonce and no `unsafe-inline` for scripts; the web code never writes markup from data; property types have no raw markup type and text and URLs are checked), e2e `secure-rendering.spec.ts`, and every e2e test now fails on a policy violation |
+
+| Item | Note |
+|---|---|
+| Inline styles | `style-src` allows `'unsafe-inline'` because React sets style attributes for layout values. FR-025 asks for no inline script; styles cannot run code. |
+| Rich text | No rich text property exists in R1: text is plain and refused when it holds markup. The first rich text type must bring a server-side sanitizer, and the architecture test names that rule. |
+| Embeds | No embed component exists yet, so `frame-src` is `'self'` (the page builder preview). The tenant embed allowlist of spec 032 extends it when embeds arrive. |
