@@ -324,7 +324,8 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Item | Note |
 |---|---|
 | Drag and drop | R1 reorders with buttons only, which gives the same result for keyboard and pointer (FR-025). Drag can come with resize in R2. |
-| My mail and My calendar | The spec 018 components exist (018 T016) and are offered in the personal area only while Mail or Calendar is on. Placing them in the default home for employees is the rest of T013. |
+| My mail and My calendar | Modules suggest components for the default home through `IComponentRegistration.PersonalHomeDefaults`, because templates never name components (spec 032 FR-014). The Integrations module suggests My calendar, then My mail. They come first in the first personal region (`grid` in `H01`) as personal placements with fixed IDs (`home-outlook-my-calendar`, `home-outlook-my-mail`), only while the component is available to the viewer, its feature is on and the viewer may add to the region. Employees move or remove them like their own placements, and a removal stays removed. |
+| Employees without a mailbox (FR-051) | TeamBeats learns that an employee has no mailbox only when Microsoft answers for them, so the home still shows My mail and My calendar, and they show the no work mailbox state. |
 | Default home page | A tenant gets the template, not a page: an administrator creates a page from `H01` and sets it as home. |
 | Hidden items | A hidden item returns through undo or reset; there is no list of hidden items in R1. |
 

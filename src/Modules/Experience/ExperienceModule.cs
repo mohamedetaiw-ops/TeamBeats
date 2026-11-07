@@ -32,6 +32,7 @@ public static class ExperienceModule
         services.AddScoped<ComponentAvailability>();
         services.AddScoped<AudienceEvaluator>();
         services.AddScoped<LayoutEngine>();
+        services.AddScoped<HomeDefaults>();
         services.AddScoped<PersonalizationService>();
         services.AddScoped<PageService>();
         services.AddScoped<ThemeService>();

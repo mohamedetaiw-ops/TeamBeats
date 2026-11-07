@@ -106,11 +106,20 @@ public sealed class LayoutEngine(IDbSession session, IEntitlementService entitle
     /// <summary>
     /// Replays the operations in order. Each is checked against the current rights; one that fails is skipped with its
     /// reason. <paramref name="extraCheck"/> lets a save add checks for new placements (component eligibility).
+    /// <paramref name="defaults"/> are the home suggestions (spec 008 FR-051): personal placements that come first in their
+    /// region before the operations run, so the viewer can move or remove them like their own.
     /// </summary>
     public static LayoutResult Apply(IReadOnlyList<PageRegion> regions, IReadOnlyList<LayoutOperation> operations,
-        IReadOnlyDictionary<string, RegionRights> rights, Func<LayoutOperation, string?>? extraCheck = null)
+        IReadOnlyDictionary<string, RegionRights> rights, Func<LayoutOperation, string?>? extraCheck = null,
+        IReadOnlyDictionary<string, IReadOnlyList<Placement>>? defaults = null)
     {
-        var layout = regions.ToDictionary(r => r.Id, r => r.Placements.Select(p => new LaidOutPlacement(p, false)).ToList(), StringComparer.Ordinal);
+        var layout = regions.ToDictionary(r => r.Id, r =>
+        {
+            var page = r.Placements.Select(p => new LaidOutPlacement(p, false)).ToList();
+            var suggested = defaults is not null && defaults.TryGetValue(r.Id, out var d)
+                ? d.Where(p => page.TrueForAll(x => x.Placement.Id != p.Id)).Select(p => new LaidOutPlacement(p, true)) : [];
+            return suggested.Concat(page).ToList();
+        }, StringComparer.Ordinal);
         var skipped = new List<SkippedOperation>();
         bool Has(string region, string right) => rights.TryGetValue(region, out var r) && r.Rights.Contains(right);
         (string Region, int Index)? Find(string id)

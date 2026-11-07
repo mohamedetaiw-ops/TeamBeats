@@ -38,4 +38,7 @@ public sealed class OutlookComponents : IComponentRegistration
             ["hidePrivate"] = new PropertySchema("boolean", Default: Json(false)),
         }, ["/api/v1/me/calendar", "/api/v1/me/outlook"]),
     ];
+
+    /// <summary>Spec 008 FR-051: My calendar, then My mail, in the personal region of the default home while their feature is on.</summary>
+    public IEnumerable<string> PersonalHomeDefaults() => ["outlook.my_calendar@1", "outlook.my_mail@1"];
 }
