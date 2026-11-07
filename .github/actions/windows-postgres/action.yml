@@ -1,7 +1,9 @@
 name: PostgreSQL on the Windows runner
 description: >-
-  Starts a throwaway PostgreSQL 18 on localhost:5432 and adds psql to PATH. Windows runners cannot use GitHub service
+  Starts a throwaway PostgreSQL 18 on localhost and adds psql to PATH. Windows runners cannot use GitHub service
   containers, so this runs the official Windows binaries directly. Stop it with `pg_ctl stop` in an `if: always()` step.
+  Runners share one machine, so every port depends on the runner: MSAFAA uses 5432, 5080 and 3000, and MSAFAA-2 uses
+  5433, 5081 and 3001. The action exports TB_PG_PORT, TEAMBEATS_TEST_PG_ADMIN, E2E_API_ORIGIN and E2E_WEB_PORT.
 inputs:
   password:
     description: Password of the postgres superuser. CI only.
@@ -31,6 +33,9 @@ runs:
           Remove-Item $zip
         }
 
+        $slot = if ($env:RUNNER_NAME -match '-(\d+)$') { [int]$Matches[1] - 1 } else { 0 }
+        $port = 5432 + $slot
+
         $data = Join-Path $env:RUNNER_TEMP 'pgdata'
         $passwordFile = Join-Path $env:RUNNER_TEMP 'pgpassword'
         if (Test-Path $data) { Remove-Item $data -Recurse -Force }
@@ -38,8 +43,12 @@ runs:
         & "$bin\initdb.exe" -D $data -U postgres "--pwfile=$passwordFile" --auth=scram-sha-256 --encoding=UTF8 --locale-provider=icu --icu-locale=en-US --locale=C
         if ($LASTEXITCODE -ne 0) { throw 'initdb failed' }
         Remove-Item $passwordFile
-        & "$bin\pg_ctl.exe" -D $data -w -t 60 -l (Join-Path $env:RUNNER_TEMP 'postgresql.log') -o '-p 5432' start
+        & "$bin\pg_ctl.exe" -D $data -w -t 60 -l (Join-Path $env:RUNNER_TEMP 'postgresql.log') -o "-p $port" start
         if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL did not start' }
 
         Add-Content $env:GITHUB_PATH $bin
         Add-Content $env:GITHUB_ENV "TB_PGDATA=$data"
+        Add-Content $env:GITHUB_ENV "TB_PG_PORT=$port"
+        Add-Content $env:GITHUB_ENV "TEAMBEATS_TEST_PG_ADMIN=Host=localhost;Port=$port;Username=postgres;Password=$env:PG_PASSWORD"
+        Add-Content $env:GITHUB_ENV "E2E_API_ORIGIN=http://localhost:$(5080 + $slot)"
+        Add-Content $env:GITHUB_ENV "E2E_WEB_PORT=$(3000 + $slot)"
