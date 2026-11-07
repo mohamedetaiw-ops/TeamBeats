@@ -102,6 +102,12 @@ public sealed record PagePublished(Guid PageId, int Release) : IIntegrationEvent
 
 public sealed record PageRolledBack(Guid PageId, int Release, int RestoredRelease) : IIntegrationEvent;
 
+/// <summary>A tenant template version was released (spec 032 section 12); owners of pages on older versions may move to it.</summary>
+public sealed record TemplateReleased(string TemplateId, int Version) : IIntegrationEvent;
+
+/// <summary>Released versions of a tenant template were deprecated: their pages keep working, new pages cannot use them.</summary>
+public sealed record TemplateDeprecated(string TemplateId, IReadOnlyList<int> Versions) : IIntegrationEvent;
+
 // Spec 033 section 12. A null scope means the tenant.
 public sealed record ThemePublished(Guid BrandId, int Version) : IIntegrationEvent;
 

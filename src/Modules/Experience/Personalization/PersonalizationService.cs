@@ -57,6 +57,7 @@ public sealed partial class PersonalizationService(
     IEntitlementService entitlements,
     IOrganizationHierarchy hierarchy,
     PlatformCatalogue catalogue,
+    Templates.TemplateStore templates,
     ComponentRegistry registry,
     ComponentAvailability availability,
     PageService pages,
@@ -195,7 +196,7 @@ public sealed partial class PersonalizationService(
     public async Task<IReadOnlyList<AddPanelItem>> AddPanelAsync(Guid pageId, string? regionId, CancellationToken ct)
     {
         var page = await pages.PublishedForViewerAsync(pageId, ct);
-        var template = catalogue.Templates[page.TemplateId];
+        var template = await templates.GetAsync(page.Definition.Template, ct);
         if (regionId is null || template.Regions.All(r => r.Id != regionId))
         {
             throw AppException.Validation("region", "validation.page.region_unknown");
@@ -227,13 +228,13 @@ public sealed partial class PersonalizationService(
     public async Task<IReadOnlyList<RegionPolicyView>> GetPolicyAsync(Guid pageId, CancellationToken ct)
     {
         var page = await pages.ForEditorAsync(pageId, Permissions.PersonalizationPolicy, ct);
-        return await layouts.PolicyAsync(page.Id, catalogue.Templates[page.TemplateId], ct);
+        return await layouts.PolicyAsync(page.Id, await templates.GetAsync(page.Definition.Template, ct), ct);
     }
 
     public async Task<IReadOnlyList<RegionPolicyView>> SetPolicyAsync(Guid pageId, PolicyRequest request, CancellationToken ct)
     {
         var page = await pages.ForEditorAsync(pageId, Permissions.PersonalizationPolicy, ct);
-        var template = catalogue.Templates[page.TemplateId];
+        var template = await templates.GetAsync(page.Definition.Template, ct);
         var entitled = await entitlements.IsEnabledAsync(Capabilities.ExperiencePersonalization, ct);
         var audiencesEntitled = await entitlements.IsEnabledAsync(Capabilities.ExperienceAudienceVariants, ct);
         var rules = await audiences.RulesAsync(ct);
@@ -394,7 +395,7 @@ public sealed partial class PersonalizationService(
     private async Task<(IReadOnlyList<PageRegion> Regions, IReadOnlyDictionary<string, RegionRights> Rights,
         IReadOnlyDictionary<string, IReadOnlyList<Placement>> Defaults)> ViewerLayoutAsync(PageContext page, CancellationToken ct)
     {
-        var template = catalogue.Templates[page.TemplateId];
+        var template = await templates.GetAsync(page.Definition.Template, ct);
         var layout = catalogue.Layouts[template.Layout];
         var rules = await audiences.RulesAsync(ct);
         var viewer = await audiences.ViewerAsync(ct);
@@ -413,7 +414,7 @@ public sealed partial class PersonalizationService(
     /// </summary>
     private async Task<Func<LayoutOperation, string?>> NewPlacementCheckAsync(PageContext page, CancellationToken ct)
     {
-        var template = catalogue.Templates[page.TemplateId];
+        var template = await templates.GetAsync(page.Definition.Template, ct);
         var layout = catalogue.Layouts[template.Layout];
         var usable = await availability.ForScopeAsync(page.OrgUnitId, ct);
         return op =>

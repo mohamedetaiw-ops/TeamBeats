@@ -18,8 +18,8 @@ Depends on 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit)
 - [x] T009 [US6] Publish, rollback and releases endpoints; audit and `PagePublished`, `PageRolledBack`
 
 ## Phase 4: User Story 5, templates (P1)
-- [ ] T010 [P] [US5] Tests: each of the 12 templates instantiates with no placements; variants change presentation only; template version 2 does not change existing pages; a template distributed to one org is invisible and not usable in another; protected regions cannot be removed through the API; deprecated version keeps pages working and blocks new ones; layout change lists placements with no compatible region
-- [ ] T011 [US5] Tenant template copies with locks and distribution, `experience.max_custom_templates` limit, layout change endpoint
+- [x] T010 [P] [US5] Tests: each of the 12 templates instantiates with no placements; variants change presentation only; template version 2 does not change existing pages; a template distributed to one org is invisible and not usable in another; protected regions cannot be removed through the API; deprecated version keeps pages working and blocks new ones; layout change lists placements with no compatible region
+- [x] T011 [US5] Tenant template copies with locks and distribution, `experience.max_custom_templates` limit, layout change endpoint
 
 ## Phase 5: User Story 7 and 8, registry and isolation (P1)
 - [ ] T012 [P] [US7] [US8] Tests (done except the migration hook): invalid manifest not registered; out-of-range upgrade blocked; migration hook converts props; undeclared context keys are not supplied; executable content in any field refused; page and component config from another tenant not found
