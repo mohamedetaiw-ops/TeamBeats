@@ -12,28 +12,21 @@ on:
 permissions:
   contents: read
 
-defaults:
-  run:
-    shell: bash
-
 jobs:
   fly-read-only:
-    # Never run code from a fork on the self-hosted runner.
+    # Fork pull requests get no secrets, so skip them instead of failing.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, windows, x64, teambeats]
+    runs-on: ubuntu-latest
     env:
-      PSExecutionPolicyPreference: Bypass
       FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/windows-shell
       - name: Check the secret is present
         run: |
           if [ -z "$FLY_API_TOKEN" ]; then
             echo "::error::FLY_API_TOKEN repository secret is missing or not available to this run"
             exit 1
           fi
-      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - uses: superfly/flyctl-actions/setup-flyctl@ed8efb33836e8b2096c7fd3ba1c8afe303ebbff1 # 1.6
       - name: Show flyctl version
         run: flyctl version
       - name: List orgs (read-only, informational)
