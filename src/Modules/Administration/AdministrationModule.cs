@@ -13,7 +13,8 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Administration;
 
-public sealed record NavigationSection(string Key, string LabelKey, string Path, bool WholeTenant);
+/// <summary>An admin shell section. <see cref="Badge"/> is a count that needs attention, such as open security alerts.</summary>
+public sealed record NavigationSection(string Key, string LabelKey, string Path, bool WholeTenant, int? Badge = null);
 
 public sealed record UserSummary(Guid Id, string DisplayName, string Email, string Status, string? MembershipStatus, DateTimeOffset? LastSignInAt);
 
@@ -39,10 +40,11 @@ public static class AdministrationModule
         ("calendars", Permissions.HrCalendarManage, "/admin/calendars"),
         ("people", Permissions.PeopleManage, "/admin/people"),
         ("audit", Permissions.AuditView, "/admin/audit"),
+        ("security", Permissions.SecurityView, "/admin/security"),
     ];
 
     /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) and the people directory policy (spec 010 US1) are for the whole tenant.</summary>
-    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications", "people" };
+    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications", "people", "security" };
 
     public static IServiceCollection AddAdministrationModule(this IServiceCollection services) => services;
 
@@ -50,7 +52,7 @@ public static class AdministrationModule
     {
         var admin = app.MapGroup("/api/v1/admin").RequireTenantUser().InAdminArea().WithTags("Administration");
 
-        admin.MapGet("/navigation", async (IAuthorizationService authz, CancellationToken ct) =>
+        admin.MapGet("/navigation", async (IAuthorizationService authz, TeamBeats.Modules.Security.Contracts.ISecurityAlertSummary alerts, CancellationToken ct) =>
         {
             var result = new List<NavigationSection>();
             foreach (var (key, permission, path) in Sections)
@@ -58,7 +60,9 @@ public static class AdministrationModule
                 var coverage = await authz.CoverageAsync(permission, ct);
                 if (TenantOnly.Contains(key) ? coverage.WholeTenant : coverage.Any)
                 {
-                    result.Add(new NavigationSection(key, $"admin.nav.{key}", path, coverage.WholeTenant));
+                    // The security section shows how many alerts are open (spec 026 US5); the section's own check already passed.
+                    var badge = key == "security" ? await alerts.OpenCountAsync(ct) : (int?)null;
+                    result.Add(new NavigationSection(key, $"admin.nav.{key}", path, coverage.WholeTenant, badge is > 0 ? badge : null));
                 }
             }
             return Results.Ok(result);

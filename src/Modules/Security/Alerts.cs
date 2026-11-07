@@ -57,13 +57,13 @@ public sealed record AlertSettings(int DownloadFiles = 200, long DownloadBytes =
 }
 
 public sealed record AlertView(Guid Id, string Kind, Guid? SubjectUserId, JsonElement Facts, string Status, Guid? HandledBy, DateTimeOffset? HandledAt,
-    string? Note, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
+    string? Note, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, string? SubjectName = null, string? HandledByName = null);
 
 public sealed record HandleAlertRequest(string? Outcome, string? Note);
 
 /// <summary>Raises, lists and handles tenant security alerts (spec 026 US5, FR-013). Facts are counts and references, never content.</summary>
 public sealed class AlertService(IDbSession session, ITenantContext context, IAuthorizationService authz, IEntitlementService entitlements,
-    IAuditWriter audit, IOutbox outbox)
+    IAuditWriter audit, IOutbox outbox, TeamBeats.Modules.Identity.Contracts.IUserDirectory users)
 {
     public const int NoteMax = 1000;
 
@@ -108,11 +108,22 @@ public sealed class AlertService(IDbSession session, ITenantContext context, IAu
         {
             throw AppException.Validation("status", "validation.security.alert_status");
         }
-        return await session.QueryAsync(
+        var alerts = await session.QueryAsync(
             """
             select id, kind, subject_user_id, facts::text, status, handled_by, handled_at, note, created_at, updated_at from security.alert
             where (@status::text is null or status = @status) order by created_at desc, id desc limit 200
             """, new { status }, Read, ct);
+        // Names for the alerts page, from the tenant's own user directory.
+        var names = new Dictionary<Guid, string?>();
+        foreach (var id in alerts.SelectMany(a => new[] { a.SubjectUserId, a.HandledBy }).OfType<Guid>().Distinct())
+        {
+            names[id] = (await users.GetAsync(id, ct))?.DisplayName;
+        }
+        return alerts.Select(a => a with
+        {
+            SubjectName = a.SubjectUserId is { } s ? names.GetValueOrDefault(s) : null,
+            HandledByName = a.HandledBy is { } h ? names.GetValueOrDefault(h) : null,
+        }).ToList();
     }
 
     public async Task<AlertView> HandleAsync(Guid id, HandleAlertRequest request, CancellationToken ct)

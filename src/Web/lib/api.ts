@@ -65,6 +65,7 @@ export type Me = {
   tenant: { id: string; key: string; enabledLocales: string[]; defaultLocale: string };
 };
 
-export type NavigationSection = { key: string; labelKey: string; path: string; wholeTenant: boolean };
+/** An admin shell section; badge counts items that need attention, such as open security alerts (spec 026). */
+export type NavigationSection = { key: string; labelKey: string; path: string; wholeTenant: boolean; badge?: number | null };
 
 export type SignInOptions = { sso: boolean; kind: string | null; displayName: string | null };

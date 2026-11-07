@@ -117,6 +117,12 @@ public interface IAuthorizationProvisioning
     /// <summary>The permissions a role of the current tenant holds; empty for an unknown key.</summary>
     Task<IReadOnlySet<string>> RolePermissionsAsync(string roleKey, CancellationToken ct = default);
 
+    /// <summary>
+    /// Users holding the permission tenant-wide through a live role assignment, directly or through a group, so a module
+    /// can tell them something (for example security alerts, spec 026). Conditions on the assignment are not evaluated.
+    /// </summary>
+    Task<IReadOnlyList<Guid>> TenantHoldersAsync(string permission, CancellationToken ct = default);
+
     /// <summary>Whether removing access for this user would leave the tenant without an administrator.</summary>
     Task<bool> IsLastTenantAdministratorAsync(Guid userId, CancellationToken ct = default);
 }

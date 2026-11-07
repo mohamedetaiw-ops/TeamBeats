@@ -172,4 +172,51 @@ public sealed class SecurityAlertTests(TenantWorld world)
         // Tenant administrators can read alerts; only responders handle them.
         Assert.Single(await AlertsAsync(t["admin"].Client));
     }
+
+    private static async Task<JsonElement[]> NotificationsAsync(HttpClient client) =>
+        (await (await client.GetAsync("/api/v1/me/notifications")).Content.ReadFromJsonAsync<JsonElement>()).GetProperty("items").EnumerateArray().ToArray();
+
+    private static async Task<JsonElement?> SecuritySectionAsync(HttpClient client)
+    {
+        var response = await client.GetAsync("/api/v1/admin/navigation");
+        if (!response.IsSuccessStatusCode)
+        {
+            return null;
+        }
+        var sections = (await response.Content.ReadFromJsonAsync<JsonElement>()).EnumerateArray();
+        return sections.Where(x => x.GetProperty("key").GetString() == "security").Select(x => (JsonElement?)x).FirstOrDefault();
+    }
+
+    [Fact]
+    public async Task A_new_alert_notifies_alert_handlers_and_shows_as_a_badge_on_the_security_section()
+    {
+        var t = await FreshAsync("workplace");
+        var other = await FreshAsync("workplace");
+        await SettingsAsync(t, new { downloadFiles = 1 });
+        var user = t["employee"].Id;
+        Assert.False((await SecuritySectionAsync(t["admin"].Client))!.Value.TryGetProperty("badge", out var none) && none.ValueKind == JsonValueKind.Number);
+
+        await PublishAsync(t, new DocumentDownloaded(Guid.NewGuid(), Guid.NewGuid(), user, 10), new DocumentDownloaded(Guid.NewGuid(), Guid.NewGuid(), user, 10));
+        await DispatchAsync();
+        var alert = Assert.Single(await AlertsAsync(t["officer"].Client));
+
+        foreach (var who in new[] { "officer", "admin" })
+        {
+            var note = Assert.Single(await NotificationsAsync(t[who].Client), n => n.GetProperty("link").GetString() == "/admin/security/alerts");
+            Assert.Equal("Unusual download volume", note.GetProperty("title").GetString());
+            Assert.DoesNotContain(user.ToString(), note.GetRawText(), StringComparison.OrdinalIgnoreCase);
+        }
+        Assert.DoesNotContain(await NotificationsAsync(t["employee"].Client), n => n.GetProperty("link").GetString() == "/admin/security/alerts");
+        Assert.DoesNotContain(await NotificationsAsync(other["officer"].Client), n => n.GetProperty("link").GetString() == "/admin/security/alerts");
+
+        Assert.Equal(1, (await SecuritySectionAsync(t["officer"].Client))!.Value.GetProperty("badge").GetInt32());
+        Assert.Null(await SecuritySectionAsync(t["employee"].Client));
+        var otherSection = (await SecuritySectionAsync(other["admin"].Client))!.Value;
+        Assert.False(otherSection.TryGetProperty("badge", out var b) && b.ValueKind == JsonValueKind.Number);
+
+        var handled = await t["officer"].Client.PostAsJsonAsync($"/api/v1/security/alerts/{alert.GetProperty("id").GetGuid()}/handle", new { outcome = "dismissed" });
+        handled.EnsureSuccessStatusCode();
+        var after = (await SecuritySectionAsync(t["officer"].Client))!.Value;
+        Assert.False(after.TryGetProperty("badge", out var c) && c.ValueKind == JsonValueKind.Number);
+    }
 }

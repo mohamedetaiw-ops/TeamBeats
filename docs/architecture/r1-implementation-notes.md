@@ -578,7 +578,6 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 |---|---|
 | Thresholds | Thresholds and working hours live in `security.policy.alert_settings`; there is no API to change them yet. Editing them is a `security.alerts_advanced` feature and comes with the alerts page. |
 | Privileged permissions | Spec 026 says "admin role" without a list. The smallest safe reading is a role that holds any permission that changes access, sign-in or tenant configuration (`Permissions.Privileged`). |
-| Badge and notifications | The admin shell badge and the notification to security officers come with the admin pages (T016). |
 | First administrator | The tenant's first administrator is assigned by the system at creation and, at night, raises an out-of-hours alert like any other grant. |
 
 ## Security posture (spec 026 T014)
@@ -606,3 +605,20 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Inline styles | `style-src` allows `'unsafe-inline'` because React sets style attributes for layout values. FR-025 asks for no inline script; styles cannot run code. |
 | Rich text | No rich text property exists in R1: text is plain and refused when it holds markup. The first rich text type must bring a server-side sanitizer, and the architecture test names that rule. |
 | Embeds | No embed component exists yet, so `frame-src` is `'self'` (the page builder preview). The tenant embed allowlist of spec 032 extends it when embeds arrive. |
+
+## Security pages (spec 026 T016)
+| Part | Where |
+|---|---|
+| Pages | `/admin/security` (policy with the lock-out preview, MFA and session rules), `/admin/security/alerts` (filter, handle or dismiss with a note), `/admin/security/posture`, in English and Arabic |
+| Admin shell | New `security` section on `security.view`, tenant-wide only. The navigation answer carries `badge`, the open alert count, from the new `ISecurityAlertSummary` contract |
+| Step-up | Saving the policy on an old sign-in gets `security.step_up_required`; the page sends the user to `stepUpUrl` with `returnTo=/admin/security` |
+| Notifications | `AlertNotifier` handles `SecurityAlertRaised` and tells holders of `security.respond` tenant-wide (new `IAuthorizationProvisioning.TenantHoldersAsync`) in the mandatory `security_notice` category, one template per alert kind, linking to the alerts page. The text names the kind only |
+| Alert names | Alerts carry `subjectName` and `handledByName` from the user directory |
+| Tests | `SecurityAlertTests` (notification and badge), e2e `security.spec.ts` in both languages with axe |
+
+| Item | Note |
+|---|---|
+| Network zones | Zones (T006) are set through the API only; the policy page does not edit them yet. |
+| Alert thresholds | Still no screen or API to change thresholds and working hours (`security.alerts_advanced`). |
+| Recipients | Holders are read from tenant-scope assignments, direct or through a group; assignment conditions are not evaluated for who is told, because the notification shows no facts. |
+| Policy editor for readers | Security officers see the same form; the API refuses their save with its own message, as the screen does not check roles. |
