@@ -30,7 +30,7 @@ public static class SessionTokens
 
 /// <summary>Creates and revokes server-side sessions (ADR-0007). The browser only ever holds an opaque token.</summary>
 public sealed class SessionService(IDbSession session, ITenantContext context, IAuditWriter audit, IOutbox outbox, IClock clock,
-    Microsoft.Extensions.Options.IOptions<SessionOptions> options) : ISessionRevocation
+    Microsoft.Extensions.Options.IOptions<SessionOptions> options, TeamBeats.Modules.Security.Contracts.ISecurityPolicy policies) : ISessionRevocation
 {
     public async Task<string> CreateUserSessionAsync(Guid userId, string method, CancellationToken ct)
     {
@@ -45,6 +45,17 @@ public sealed class SessionService(IDbSession session, ITenantContext context, I
                 t = context.RequireTenant(), id = Ids.New(), u = userId, h = SessionTokens.Hash(token), m = method, exp = clock.UtcNow + options.Value.Lifetime,
                 ip = System.Net.IPAddress.TryParse(context.SourceIp, out var address) ? address.ToString() : null, now = clock.UtcNow,
             }, ct);
+
+        // Concurrent session limit (spec 026 FR-003): the oldest sessions beyond the limit end on a new sign-in.
+        if ((await policies.GetAsync(ct)).MaxSessions is { } max)
+        {
+            await session.ExecAsync(
+                """
+                update identity.user_session set revoked_at = now(), revoked_reason = @r
+                where id in (select id from identity.user_session where user_id = @u and revoked_at is null and expires_at > now()
+                             order by created_at desc, id desc offset @max)
+                """, new { u = userId, max, r = SessionRules.SessionLimit }, ct);
+        }
         return token;
     }
 

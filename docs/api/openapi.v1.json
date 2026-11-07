@@ -867,6 +867,18 @@
         }
       }
     },
+    "/api/v1/me/sessions/revoke-all": {
+      "post": {
+        "tags": [
+          "Me"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/preferences": {
       "put": {
         "tags": [
@@ -882,6 +894,29 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/identity/users/{id}/sessions/revoke-all": {
+      "post": {
+        "tags": [
+          "Tenant: identity"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"

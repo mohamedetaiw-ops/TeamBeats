@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Authorization.Contracts;
 using TeamBeats.Localization;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Identity.Contracts;
@@ -72,6 +73,30 @@ public static class IdentityModule
                 dir = locale.Direction,
                 tenant = new { id = context.TenantId, key = context.Host.Tenant?.Key, tenant.EnabledLocales, tenant.DefaultLocale, tenant.TimeZone, tenant.NumberingSystem },
             });
+        });
+
+        // Sign out everywhere (spec 026 FR-003): every session of the caller ends, this one included.
+        me.MapPost("/sessions/revoke-all", async (ITenantContext context, SessionService sessions, IDbSession session, HttpResponse response,
+            CancellationToken ct) =>
+        {
+            await sessions.RevokeUserSessionsAsync(context.RequireUser(), SessionRules.SignOutEverywhere, ct);
+            await session.CommitAsync(ct);
+            sessions.ClearCookie(response);
+            return Results.NoContent();
+        });
+
+        var users = app.MapGroup("/api/v1/identity/users").RequireTenantUser().InAdminArea().WithTags("Tenant: identity");
+        users.MapPost("/{id:guid}/sessions/revoke-all", async (Guid id, IAuthorizationService authz, SessionService sessions, IDbSession session,
+            CancellationToken ct) =>
+        {
+            await authz.DemandAsync(Permissions.UsersManage, AuthzTarget.Tenant, ct);
+            if (!await session.ScalarAsync<bool>("select exists (select 1 from identity.user_account where id = @id)", new { id }, ct))
+            {
+                throw AppException.NotFound();
+            }
+            var count = await sessions.RevokeUserSessionsAsync(id, SessionRules.AdminRevoked, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(new { revoked = count });
         });
 
         me.MapPut("/preferences", async (PreferencesRequest request, ITenantContext context, IDbSession session, CancellationToken ct) =>
