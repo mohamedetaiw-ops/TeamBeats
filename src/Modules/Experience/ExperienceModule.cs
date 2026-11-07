@@ -88,6 +88,18 @@ public static class ExperienceModule
             return Results.Ok(page);
         });
 
+        x.MapPost("/pages/{id:guid}/change-template", async (Guid id, ChangeTemplateRequest request, HttpRequest http, PageService pages,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var change = await pages.ChangeTemplateAsync(id, http.Headers.IfMatch.ToString() is { Length: > 0 } tag ? tag : null, request, ct);
+            if (change.Page is { } page)
+            {
+                await session.CommitAsync(ct);
+                http.HttpContext.Response.Headers.ETag = page.ETag;
+            }
+            return Results.Ok(change);
+        });
+
         x.MapPost("/pages/{id:guid}/validate", async (Guid id, PageService pages, CancellationToken ct) =>
             Results.Ok(new { findings = await pages.ValidateDraftAsync(id, ct) }));
 

@@ -22,6 +22,7 @@ public sealed class DevHostProgram
         builder.AddTeamBeatsApi();
         builder.Services.AddDevAuth(builder.Configuration, builder.Environment);
         builder.Services.AddScoped<TestTenantSeeder>();
+        builder.Services.AddSingleton<StagingHomeSeeder>();
         builder.Services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, ReferencePacks>();
         builder.AddFakeExternalSystems();
         var app = builder.Build();
@@ -51,6 +52,7 @@ public sealed class DevHostProgram
                 {
                     await app.Services.GetRequiredService<ScenarioSeeder>().SeedAsync(tenant.Key, CancellationToken.None);
                 }
+                await app.Services.GetRequiredService<StagingHomeSeeder>().SeedAsync(tenant.Key, CancellationToken.None);
             }
         }
 

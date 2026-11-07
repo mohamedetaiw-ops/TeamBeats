@@ -24,6 +24,19 @@ public sealed record PublishRequest(string? Reason);
 
 public sealed record RollbackRequest(int Release, string? Reason);
 
+/// <summary>
+/// A change of template (and with it, layout) on an existing page (spec 032 US5 scenario 7). <paramref name="Assignments"/> maps a
+/// placement ID to the region the editor chose for it; an empty region removes the placement. Without <paramref name="Apply"/>
+/// the change is only worked out and returned, nothing is saved.
+/// </summary>
+public sealed record ChangeTemplateRequest(string? TemplateId, string? Variant, IReadOnlyDictionary<string, string>? Assignments, bool Apply = false);
+
+/// <summary>A placement with no compatible region in the new layout, and the regions the editor may put it in.</summary>
+public sealed record UnplacedPlacement(string PlacementId, string ComponentRef, string FromRegion, IReadOnlyList<string> Options);
+
+public sealed record TemplateChangeView(PageDefinition Draft, IReadOnlyList<UnplacedPlacement> Unplaced, IReadOnlyList<Finding> Findings,
+    PageView? Page);
+
 public sealed record PageView(Guid Id, string Slug, Guid? OrgUnitId, string TemplateId, string TemplateVersion, int? CurrentRelease,
     string ETag, PageDefinition Draft, IReadOnlyList<Finding> Findings);
 
@@ -184,6 +197,128 @@ public sealed partial class PageService(
             "update experience.page_draft set revision = @r, definition = @d, updated_by = @u, updated_at = @now where page_id = @id",
             new { r = revision + 1, d = Jsonb.From(request.Definition), u = context.RequireUser(), now = clock.UtcNow, id }, ct);
         return View(page, revision + 1, request.Definition, findings);
+    }
+
+    /// <summary>
+    /// Moves the draft to another template (CX-TMP-003). Each placement keeps the region with the same ID when it fits there,
+    /// otherwise goes to a fitting region of the same section, otherwise is listed as unplaced for the editor to assign or remove.
+    /// Applying needs the draft's ETag and no unplaced or blocking findings; the live release is untouched until the next publish.
+    /// </summary>
+    public async Task<TemplateChangeView> ChangeTemplateAsync(Guid id, string? ifMatch, ChangeTemplateRequest request, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
+        var page = await EditableAsync(id, Permissions.PageEdit, ct);
+        if (request.TemplateId is null || !catalogue.Templates.TryGetValue(request.TemplateId, out var template))
+        {
+            throw AppException.Validation("templateId", "validation.page.template_unknown");
+        }
+        if (template.State != "released")
+        {
+            throw AppException.Validation("templateId", "validation.page.template_not_released");
+        }
+        if (request.Variant is not null && !template.Variants.Contains(request.Variant))
+        {
+            throw AppException.Validation("variant", "validation.page.variant_invalid");
+        }
+        var (revision, current) = await DraftAsync(id, ct, forUpdate: request.Apply);
+        if (request.Apply && (ifMatch is null || ifMatch != ETag(revision)))
+        {
+            throw new AppException(ProblemCodes.Conflict, 409, "conflict.page.draft_changed", null,
+                new Dictionary<string, object?> { ["etag"] = ETag(revision), ["current"] = current });
+        }
+
+        var layout = catalogue.Layouts[template.Layout];
+        var (draft, unplaced) = MapToTemplate(current, template, layout, request.Variant, request.Assignments ?? new Dictionary<string, string>());
+        var moved = page with { TemplateId = template.Id, TemplateVersion = template.Version };
+        var findings = await ValidateAsync(moved, draft, ValidationMode.Save, ct);
+        findings.InsertRange(0, unplaced.Select(u => new Finding("validation.page.placement_unplaced", Severities.Blocking, u.FromRegion,
+            u.PlacementId, Message: localizer.Get("validation.page.placement_unplaced", locale.Locale))));
+        if (!request.Apply)
+        {
+            return new TemplateChangeView(draft, unplaced, findings, null);
+        }
+
+        ThrowIfBlocking(findings);
+        await session.ExecAsync("update experience.page set template_id = @template, template_version = @version where id = @id",
+            new { template = template.Id, version = template.Version, id }, ct);
+        await session.ExecAsync(
+            "update experience.page_draft set revision = @r, definition = @d, updated_by = @u, updated_at = @now where page_id = @id",
+            new { r = revision + 1, d = Jsonb.From(draft), u = context.RequireUser(), now = clock.UtcNow, id }, ct);
+        var before = current.Regions.Sum(r => r.Placements.Count);
+        var after = draft.Regions.Sum(r => r.Placements.Count);
+        await audit.WriteAsync(new AuditEntry(AuditActions.PageTemplateChanged, "page", id.ToString(), TargetOrgUnitId: page.OrgUnitId,
+            Changes: new
+            {
+                from = $"{page.TemplateId}@{page.TemplateVersion}",
+                to = $"{template.Id}@{template.Version}",
+                layout = layout.Id,
+                removed = before - after,
+            }), ct);
+        return new TemplateChangeView(draft, [], findings, View(moved, revision + 1, draft, findings));
+    }
+
+    private (PageDefinition Draft, List<UnplacedPlacement> Unplaced) MapToTemplate(PageDefinition current, TemplateDefinition template,
+        LayoutDefinition layout, string? variant, IReadOnlyDictionary<string, string> assignments)
+    {
+        var policies = template.Regions.ToDictionary(r => r.Id, r => r.Policy, StringComparer.Ordinal);
+        var targets = layout.Regions.ToDictionary(r => r.Id, _ => new List<Placement>(), StringComparer.Ordinal);
+        var oldSections = catalogue.Layouts.TryGetValue(current.Layout?.Id ?? "", out var oldLayout)
+            ? oldLayout.Regions.ToDictionary(r => r.Id, r => r.Section, StringComparer.Ordinal)
+            : new Dictionary<string, string>(StringComparer.Ordinal);
+        var unplaced = new List<UnplacedPlacement>();
+
+        bool Fits(LayoutRegion region, ComponentManifest? manifest)
+        {
+            var policy = policies[region.Id];
+            if (targets[region.Id].Count >= policy.MaxPlacements)
+            {
+                return false;
+            }
+            return manifest is null || ((policy.AllowedCategories.Count == 0 || policy.AllowedCategories.Contains(manifest.Display.Category))
+                && manifest.Placement.MinSpan <= region.Span);
+        }
+
+        void Put(LayoutRegion region, Placement placement) =>
+            targets[region.Id].Add(placement.Span > region.Span ? placement with { Span = null } : placement);
+
+        foreach (var region in current.Regions ?? [])
+        {
+            foreach (var placement in region.Placements ?? [])
+            {
+                var manifest = placement.ComponentRef is null ? null : registry.Find(placement.ComponentRef);
+                if (placement.Id is not null && assignments.TryGetValue(placement.Id, out var chosen))
+                {
+                    if (chosen.Length == 0)
+                    {
+                        continue;
+                    }
+                    if (layout.Regions.FirstOrDefault(r => r.Id == chosen) is { } assigned)
+                    {
+                        // The editor's choice stands; the validator reports anything that does not fit there.
+                        Put(assigned, placement);
+                        continue;
+                    }
+                }
+                var target = layout.Regions.FirstOrDefault(r => r.Id == region.Id && Fits(r, manifest))
+                    ?? (oldSections.TryGetValue(region.Id, out var section)
+                        ? layout.Regions.FirstOrDefault(r => r.Section == section && Fits(r, manifest))
+                        : null);
+                if (target is not null)
+                {
+                    Put(target, placement);
+                }
+                else
+                {
+                    unplaced.Add(new UnplacedPlacement(placement.Id ?? "", placement.ComponentRef ?? "", region.Id,
+                        layout.Regions.Where(r => Fits(r, manifest)).Select(r => r.Id).ToList()));
+                }
+            }
+        }
+
+        var chosenVariant = variant ?? (template.Variants.Contains(current.Variant) ? current.Variant : template.Variants[0]);
+        var definition = new PageDefinition(new TemplateRef(template.Id, template.Version), new LayoutRef(layout.Id, layout.Version), chosenVariant,
+            layout.Regions.Select(r => new PageRegion(r.Id, targets[r.Id])).ToList());
+        return (definition, unplaced);
     }
 
     public async Task<IReadOnlyList<Finding>> ValidateDraftAsync(Guid id, CancellationToken ct)

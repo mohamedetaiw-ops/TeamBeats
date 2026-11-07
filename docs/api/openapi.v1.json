@@ -2169,6 +2169,39 @@
         }
       }
     },
+    "/api/v1/experience/pages/{id}/change-template": {
+      "post": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/pages/{id}/validate": {
       "post": {
         "tags": [
@@ -3472,6 +3505,41 @@
               "string"
             ],
             "format": "int64"
+          }
+        }
+      },
+      "ChangeTemplateRequest": {
+        "required": [
+          "templateId",
+          "variant",
+          "assignments"
+        ],
+        "type": "object",
+        "properties": {
+          "templateId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "variant": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "assignments": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "apply": {
+            "type": "boolean",
+            "default": false
           }
         }
       },

@@ -283,6 +283,7 @@
   "validation.page.org_unit_unknown": "اختر وحدة تنظيمية موجودة",
   "validation.page.placement_duplicate_id": "يوجد مكونان في هذه الصفحة بالمعرف نفسه",
   "validation.page.placement_id_invalid": "استخدم أحرفا لاتينية صغيرة وأرقاما وشرطات لمعرف المكون",
+  "validation.page.placement_unplaced": "لا توجد منطقة مناسبة في التخطيط الجديد. اختر منطقة له أو أزله",
   "validation.page.property_invalid": "تحقق من هذا الإعداد: القيمة غير صالحة",
   "validation.page.reason_too_long": "اجعل السبب أقل من 500 حرف",
   "validation.page.region_duplicate": "تظهر هذه المنطقة أكثر من مرة",
