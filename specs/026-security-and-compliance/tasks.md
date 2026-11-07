@@ -26,7 +26,7 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 ## Phase 5: Posture, secure rendering and pages
 - [x] T014 Posture endpoint and checks
 - [x] T015 Test that the content security policy has no inline script and that rich text goes through the sanitizer (FR-025)
-- [ ] T016 Admin pages: Security policy (with lock-out preview), Alerts, Posture, in English and Arabic, RTL; e2e with axe
+- [x] T016 Admin pages: Security policy (with lock-out preview), Alerts, Posture, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
-- [ ] T017 OpenAPI; R1 implementation notes; spec evidence
+- [x] T017 OpenAPI; R1 implementation notes; spec evidence

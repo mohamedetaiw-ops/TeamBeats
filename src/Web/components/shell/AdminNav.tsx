@@ -12,6 +12,11 @@ export async function AdminNav({ label, sections }: { label: string; sections: N
           <li key={s.key}>
             <Link href={s.path}>
               <span>{t(s.labelKey)}</span>
+              {s.badge ? (
+                <span className="admin-nav-badge" aria-label={t("admin.navBadge", { count: s.badge })}>
+                  {s.badge}
+                </span>
+              ) : null}
               <Icon name="chevron-forward" mirrorInRtl />
             </Link>
           </li>

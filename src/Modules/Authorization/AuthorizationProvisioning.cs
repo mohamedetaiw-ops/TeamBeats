@@ -125,6 +125,16 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
         (await session.QueryAsync("select p.permission_key from authz.role r join authz.role_permission p on p.role_id = r.id where r.key = @k",
             new { k = roleKey }, r => r.GetString(0), ct)).ToHashSet(StringComparer.Ordinal);
 
+    public async Task<IReadOnlyList<Guid>> TenantHoldersAsync(string permission, CancellationToken ct = default) =>
+        await session.QueryAsync(
+            """
+            select distinct coalesce(m.user_id, a.subject_id)
+            from authz.role_assignment a
+            join authz.role_permission p on p.role_id = a.role_id and p.permission_key = @p
+            left join authz.group_member m on a.subject_type = 'group' and m.group_id = a.subject_id
+            where a.scope_type = 'tenant' and a.revoked_at is null and (a.subject_type = 'user' or m.user_id is not null)
+            """, new { p = permission }, r => r.GetGuid(0), ct);
+
     public Task<bool> IsBuiltInRoleKeyAsync(string roleKey, CancellationToken ct = default) =>
         session.ScalarAsync<bool>("select exists (select 1 from authz.role where key = @k and is_builtin)", new { k = roleKey }, ct);
 

@@ -44,8 +44,10 @@
       "templates": "Templates",
       "notifications": "Notifications",
       "calendars": "Calendars",
-      "people": "People directory"
-    }
+      "people": "People directory",
+      "security": "Security"
+    },
+    "navBadge": "{count, plural, one {# needs attention} other {# need attention}}"
   },
   "header": {
     "language": "Language",
@@ -1048,6 +1050,140 @@
       "none": "No one to show.",
       "failed": "People could not be loaded.",
       "retry": "Try again"
+    }
+  },
+  "security": {
+    "tabsLabel": "Security pages",
+    "tabs": {
+      "policy": "Policy",
+      "alerts": "Alerts",
+      "posture": "Posture"
+    },
+    "openAlerts": "{count, plural, one {# open alert} other {# open alerts}}",
+    "policy": {
+      "title": "Security policy",
+      "intro": "These rules apply to everyone in your organization. Each setting shows the recommended value and what weakening it risks.",
+      "network": {
+        "title": "Network rules",
+        "intro": "Limit where people can use the intranet from. Leave the allowed list empty to allow every network.",
+        "yourAddress": "Your current address:",
+        "allow": "Allowed networks",
+        "allowHint": "One address or range per line, such as 203.0.113.0/24. Recommended: your offices and VPN.",
+        "block": "Blocked networks",
+        "blockHint": "One address or range per line. Blocked networks are refused even when they are in the allowed list.",
+        "admin": "Networks allowed for administration",
+        "adminHint": "One address or range per line. Administration pages are refused from anywhere else.",
+        "adminUnavailable": "Separate rules for administration pages are not part of your plan.",
+        "preview": "Check who would be refused",
+        "previewResult": "{count, plural, =0 {Nobody who signed in during the last 30 days would be refused.} one {# person who signed in during the last 30 days would be refused.} other {# people who signed in during the last 30 days would be refused.}}",
+        "previewYou": "Your current address would be refused too.",
+        "confirm": "Type your address to confirm",
+        "confirmHint": "This change would refuse your own address. If you are locked out, use the break-glass account."
+      },
+      "mfa": {
+        "title": "Multi-factor sign-in",
+        "require": "Require multi-factor sign-in",
+        "hint": "Recommended: on. People who sign in without a second factor are refused.",
+        "notSeen": "Sign in once with a second factor through your identity provider before you can turn this on, so nobody is locked out.",
+        "stepUp": "Fresh sign-in window for sensitive actions, in minutes",
+        "stepUpHint": "Recommended: 10 minutes or less. Sensitive actions ask for a fresh sign-in after this."
+      },
+      "sessions": {
+        "title": "Sessions",
+        "idle": "Sign out after inactivity, in minutes",
+        "idleHint": "Recommended: 30 minutes or less.",
+        "absolute": "Sign out after, in hours",
+        "absoluteHint": "Recommended: 12 hours or less, whatever the activity.",
+        "max": "Most sessions per person",
+        "maxHint": "Leave empty for no limit. The oldest session ends when a new one goes over the limit.",
+        "remember": "Remember a device for, in days",
+        "rememberHint": "0 means never. Longer periods ask for the second factor less often."
+      },
+      "save": "Save policy",
+      "saving": "Saving",
+      "saved": "The security policy is saved.",
+      "failed": "Something went wrong. Try again."
+    },
+    "alerts": {
+      "title": "Security alerts",
+      "intro": "Alerts show counts and references only, never the content people opened.",
+      "filter": "Show",
+      "filters": {
+        "open": "Open",
+        "handled": "Handled",
+        "dismissed": "Dismissed",
+        "all": "All"
+      },
+      "empty": "No alerts to show.",
+      "kinds": {
+        "download_volume": "Unusual download volume",
+        "privilege_grant_out_of_hours": "Privileged role granted out of hours",
+        "network_blocked": "Requests blocked by network rules"
+      },
+      "facts": {
+        "downloads": "{files, plural, one {# file} other {# files}}, {size} MB, from {libraries, plural, one {# library} other {# libraries}} within one hour.",
+        "grant": "Role granted: {role}.",
+        "blockedTenant": "Refused address:",
+        "blockedAdmin": "Refused address for administration pages:"
+      },
+      "raised": "Raised {at}.",
+      "subject": "Person:",
+      "note": "Note (optional)",
+      "markHandled": "Mark as handled",
+      "dismiss": "Dismiss",
+      "working": "Saving",
+      "outcome": {
+        "handled": "Handled.",
+        "dismissed": "Dismissed."
+      },
+      "by": "By",
+      "unavailable": "Security alerts are not part of your plan, or you cannot see them.",
+      "failed": "Alerts could not be loaded. Try again.",
+      "done": "The alert is closed."
+    },
+    "posture": {
+      "title": "Security posture",
+      "summary": "{passed} of {total} checks meet the recommended baseline.",
+      "fix": "Fix this setting",
+      "states": {
+        "passed": "Meets the baseline",
+        "failed": "Weaker than recommended",
+        "unavailable": "Not in your plan"
+      },
+      "checks": {
+        "sso_configured": {
+          "title": "Single sign-on",
+          "why": "People sign in with your organization's identity provider, so leavers lose access when their account is disabled."
+        },
+        "mfa_required": {
+          "title": "Multi-factor sign-in required",
+          "why": "A stolen password alone is not enough to get in."
+        },
+        "ip_rules": {
+          "title": "Network rules",
+          "why": "The intranet can be used only from networks you allow."
+        },
+        "admin_area_rule": {
+          "title": "Network rules for administration",
+          "why": "Administration pages can be reached only from networks you trust."
+        },
+        "step_up_window": {
+          "title": "Fresh sign-in for sensitive actions",
+          "why": "Sensitive changes need a sign-in from the last 10 minutes or less."
+        },
+        "idle_timeout": {
+          "title": "Sign out after inactivity",
+          "why": "An unattended session ends after 30 minutes or less."
+        },
+        "absolute_timeout": {
+          "title": "Longest session",
+          "why": "Every session ends after 12 hours or less."
+        },
+        "dev_sign_in_absent": {
+          "title": "No development sign-in",
+          "why": "Test sign-in is turned off on this installation. Your provider sets this, not your administrators."
+        }
+      }
     }
   }
 }

@@ -10,5 +10,6 @@
     <ProjectReference Include="../../BuildingBlocks/Localization/TeamBeats.Localization.csproj" />
     <ProjectReference Include="../Tenancy.Contracts/TeamBeats.Modules.Tenancy.Contracts.csproj" />
     <ProjectReference Include="../Identity.Contracts/TeamBeats.Modules.Identity.Contracts.csproj" />
+    <ProjectReference Include="../Security.Contracts/TeamBeats.Modules.Security.Contracts.csproj" />
   </ItemGroup>
 </Project>

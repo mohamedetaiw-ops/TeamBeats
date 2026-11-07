@@ -22,6 +22,8 @@ public static class SecurityModule
         services.AddScoped<PolicyService>();
         services.AddScoped<AlertService>();
         services.AddScoped<PostureService>();
+        services.AddScoped<ISecurityAlertSummary, AlertSummary>();
+        services.AddMessageHandler<SecurityAlertRaised, AlertNotifier>("security.alert_notifier");
         services.AddMessageHandler<TeamBeats.Modules.Documents.Contracts.DocumentDownloaded, DownloadVolumeRule>("security.download_volume");
         services.AddMessageHandler<TeamBeats.Authorization.Contracts.RoleAssignmentChanged, OutOfHoursGrantRule>("security.privilege_grant_out_of_hours");
         services.AddScoped<IAuthenticationAssurance, AuthenticationAssurance>();

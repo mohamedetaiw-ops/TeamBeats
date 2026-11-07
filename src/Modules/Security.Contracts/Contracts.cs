@@ -41,6 +41,12 @@ public interface IAuthenticationAssurance
 }
 
 /// <summary>A security alert was raised (spec 026 US5); kind and ID only.</summary>
+/// <summary>Open security alerts of the current tenant, for the admin shell badge (spec 026 US5).</summary>
+public interface ISecurityAlertSummary
+{
+    Task<int> OpenCountAsync(CancellationToken ct = default);
+}
+
 public sealed record SecurityAlertRaised(Guid AlertId, string Kind) : IIntegrationEvent;
 
 /// <summary>Setting names only, never values.</summary>
