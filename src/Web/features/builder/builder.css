@@ -292,3 +292,37 @@
   color: var(--tb-color-text-secondary);
   font-style: italic;
 }
+
+.builder-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+}
+
+.builder-switch [aria-pressed="true"] {
+  border-block-end: var(--tb-border-width-thick) solid var(--tb-color-accent-base);
+}
+
+.builder-preview-frame {
+  overflow-x: auto;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+}
+
+.builder-preview-frame iframe {
+  display: block;
+  inline-size: 80rem;
+  block-size: 40rem;
+  margin-inline: auto;
+  border: 0;
+  background: var(--tb-color-surface-base);
+}
+
+.builder-preview-frame[data-device="phone"] iframe {
+  inline-size: 23.5rem;
+}
+
+.builder-preview-frame[data-device="tablet"] iframe {
+  inline-size: 48rem;
+}

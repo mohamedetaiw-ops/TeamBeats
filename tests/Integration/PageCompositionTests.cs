@@ -151,6 +151,40 @@ public sealed class PageCompositionTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task Preview_draws_the_saved_draft_for_its_editors_only_in_the_chosen_language()
+    {
+        var t = world.A;
+        var page = await CreateAsync(t, "T01");
+        await SavedAsync(t, page, WithPlacements(page, "main", P("a", "reference.alpha.text@1", Text)));
+
+        var preview = await t["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/pages/{page["id"]}/preview?locale=ar");
+        var placement = preview.GetProperty("regions").EnumerateArray().Single(r => r.GetProperty("id").GetString() == "main")
+            .GetProperty("placements").EnumerateArray().Single();
+        Assert.Equal("ready", placement.GetProperty("state").GetString());
+        Assert.Equal("ارتد الخوذة في أرض المصنع.", placement.GetProperty("props").GetProperty("body").GetProperty("ar").GetString());
+        Assert.Equal(JsonValueKind.Null, preview.GetProperty("provenance").ValueKind);
+
+        // The draft is not published: viewers and other tenants get nothing.
+        Assert.Equal(HttpStatusCode.NotFound, (await t["employee_gulf"].Client.GetAsync($"/api/v1/experience/pages/{page["id"]}/preview")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await world.B["admin"].Client.GetAsync($"/api/v1/experience/pages/{page["id"]}/preview")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Text_missing_in_one_enabled_language_is_a_translation_warning_that_does_not_block()
+    {
+        var t = world.A;
+        var page = await CreateAsync(t, "T01");
+        var englishOnly = new { body = new { en = "Wear a helmet on the plant floor." } };
+        var saved = await SavedAsync(t, page, WithPlacements(page, "main", P("a", "reference.alpha.text@1", englishOnly)));
+        var warning = saved["findings"]!.AsArray().Single(f => f!["code"]!.GetValue<string>() == "validation.page.translation_missing");
+        Assert.Equal("warning", warning!["severity"]!.GetValue<string>());
+        Assert.Equal("a", warning["placement"]!.GetValue<string>());
+        Assert.Equal("body", warning["property"]!.GetValue<string>());
+        Assert.Equal("ar", warning["locale"]!.GetValue<string>());
+        Assert.True((await PublishAsync(t, saved)).IsSuccessStatusCode);
+    }
+
+    [Fact]
     public async Task Page_is_created_from_configuration_with_provenance_and_audited()
     {
         var t = world.A;

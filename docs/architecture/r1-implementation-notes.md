@@ -354,3 +354,24 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | axe with no critical findings in `ar` and `en`, desktop and phone | all of the above, plus `toolbox.spec.ts` and `interaction.spec.ts` |
 
 Screen reader checks assert the roles, names and states that assistive technology reads. They do not replace a manual pass with NVDA and VoiceOver, which is a follow-up before the R1 release.
+
+## Page builder (spec 032 T018 to T020)
+| Part | Where |
+|---|---|
+| Pages list, template chooser with layout preview, text description and regions | `/admin/pages`, `/admin/pages/new`; `GET /api/v1/experience/pages`, localized `GET /api/v1/experience/catalogue` |
+| Editor: regions, picker with reasons, settings drawn from the manifest schema, action menu and shortcuts, undo and redo, autosave with If-Match | `/admin/pages/[id]`, `features/builder/editor` |
+| Labels for settings | Picker items carry `labels`, from the resource keys `<component name key without .name>.props.<property>` and `.props.<property>.<option>`; a property with no resource is labelled by its schema name |
+| Previews by device and direction | `GET /api/v1/experience/pages/{id}/preview?locale=`, drawn at `/preview/pages/[id]` in a frame at phone, tablet or desktop width |
+| Checks | Every finding carries its localized `message`; translation status per enabled language comes from `validation.page.translation_missing` warnings with `locale` |
+| Tests | `page-builder.spec.ts` in `ar` and `en`; `PageCompositionTests` |
+
+### Differences and follow-ups
+| Item | Note |
+|---|---|
+| Unsaved edits | Kept in the browser's local storage under `tb.builder.<tenant>.<page>` while a save fails or the browser is offline, and saved when it is back online. A copy from an earlier visit is restored and saved against the version it started from, so a conflict shows if the page changed meanwhile. |
+| Save refusals | The API refuses to save a draft with blocking findings, such as a required text left empty. The editor keeps the edit, shows the findings and saves once they are fixed. |
+| Preview | Shows the last saved draft, with no audience targeting or personalization. Component text follows the preview language; component chrome follows the editor's own language. Persona previews (spec 008 audiences) are a follow-up. |
+| Translation status (FR-047) | A localized text with a value in one enabled language and not another is a warning. It never blocks publishing, because there is no tenant policy for required languages yet. Page labels and navigation labels are not checked yet. |
+| Accessibility findings (FR-046) | The builder shows every validator finding per page, region and placement with its text, and publish stays blocked while any is blocking (required texts such as image descriptions, markup in text, unsafe links). Manifests carry no accessibility metadata yet, so focus order and theme contrast are not checked per placement; contrast is checked by the brand manager (spec 033). |
+| Images | Image settings take an `asset:<id>` reference typed by hand until the asset picker comes. |
+| Revision history across sessions (FR-043) | Releases and rollback exist; a history of draft revisions is a follow-up. |

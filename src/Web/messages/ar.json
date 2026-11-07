@@ -581,7 +581,29 @@
       "publishBlocked": "لم يتم النشر. أصلح المشكلات المشار إليها في الصفحة.",
       "publishFailed": "لم يتم النشر. حاول مرة أخرى.",
       "fixFirst": "أصلح أولا المشكلات التي تمنع النشر.",
-      "shortcuts": "على أي مكون: Alt مع السهم لأعلى أو لأسفل ينقله، و Alt مع D يكرره، و Delete يزيله. Control مع Z للتراجع، و Control مع Shift و Z للإعادة."
+      "shortcuts": "على أي مكون: Alt مع السهم لأعلى أو لأسفل ينقله، و Alt مع D يكرره، و Delete يزيله. Control مع Z للتراجع، و Control مع Shift و Z للإعادة.",
+      "missingIn": "{message} ({language})",
+      "checks": {
+        "title": "الفحوص",
+        "blocking": "{count, plural, one {مشكلة واحدة تمنع النشر} two {مشكلتان تمنعان النشر} few {# مشكلات تمنع النشر} other {# مشكلة تمنع النشر}}",
+        "noBlocking": "لا شيء يمنع النشر",
+        "warnings": "{count, plural, one {تنبيه واحد للمراجعة} two {تنبيهان للمراجعة} few {# تنبيهات للمراجعة} other {# تنبيها للمراجعة}}",
+        "translations": "الترجمات",
+        "complete": "{language}: مكتملة",
+        "missing": "{language}: {count, plural, one {نص واحد ناقص} two {نصان ناقصان} few {# نصوص ناقصة} other {# نصا ناقصا}}"
+      },
+      "preview": {
+        "title": "المعاينة",
+        "saved": "تعرض المعاينة آخر نسخة محفوظة كما سيراها الموظفون بعد النشر.",
+        "device": "الجهاز",
+        "devices": {
+          "phone": "هاتف",
+          "tablet": "جهاز لوحي",
+          "desktop": "حاسوب"
+        },
+        "language": "اللغة والاتجاه",
+        "frame": "معاينة على {device} باللغة {language}"
+      }
     },
     "picker": {
       "title": "إضافة مكون إلى {region}",

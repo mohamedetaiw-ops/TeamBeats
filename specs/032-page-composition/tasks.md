@@ -32,9 +32,9 @@ Depends on 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit)
 - [x] T017 [P] [US3] [US4] Tests: both reference packs on all 12 templates; widths 320, 375, 768, 1024, 1440, 1920 in LTR and RTL with no horizontal scroll; a throwing, slow and missing component leaves the rest working; axe in `ar` and `en`
 
 ## Phase 7: User Story 2, builder (P1)
-- [ ] T018 Builder feature: template chooser with previews and text descriptions, picker, schema-driven property forms, action menu and shortcuts for every placement operation, command stack for undo and redo, autosave states, previews by device and direction
-- [ ] T019 Builder checks: accessibility findings per placement and translation status per locale, blocking publish on blocking findings
-- [ ] T020 [P] [US2] Tests: keyboard-only and single-pointer composition, focus stays on moved placement and moves are announced, undo and redo order, offline autosave keeps edits locally
+- [x] T018 Builder feature: template chooser with previews and text descriptions, picker, schema-driven property forms, action menu and shortcuts for every placement operation, command stack for undo and redo, autosave states, previews by device and direction
+- [x] T019 Builder checks: accessibility findings per placement and translation status per locale, blocking publish on blocking findings
+- [x] T020 [P] [US2] Tests: keyboard-only and single-pointer composition, focus stays on moved placement and moves are announced, undo and redo order, offline autosave keeps edits locally
 
 ## Final phase
 - [ ] T021 Performance budgets in CI (LCP, INP, CLS on reference profiles), frontend failure telemetry without content, OpenAPI, R1 implementation notes, spec evidence

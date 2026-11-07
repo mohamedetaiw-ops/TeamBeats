@@ -299,6 +299,7 @@
   "validation.page.too_few_placements": "This region needs more components before the page can be published",
   "validation.page.too_many_placements": "This region already holds the most components it allows",
   "validation.page.too_many_placements_page": "A page can hold at most 40 components",
+  "validation.page.translation_missing": "This text is missing in one of your organization's languages",
   "validation.page.variant_invalid": "Choose a visual variant this template offers",
   "validation.page.visibility_rule_not_entitled": "Targeting audiences is not part of your plan",
   "validation.page.visibility_rule_unknown": "This audience rule does not exist",

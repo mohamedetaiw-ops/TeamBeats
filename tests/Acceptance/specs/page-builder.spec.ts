@@ -59,7 +59,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.waitForURL(/\/admin\/pages\/[0-9a-f-]{36}$/);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(`/p/news/${locale}-overview`);
       await expect(page.getByText(msg(locale, "builder.pages.draftOnly"))).toBeVisible();
-      await expect(page.locator("section.builder-region:not(.builder-publish)")).toHaveCount(2);
+      await expect(page.locator("section.builder-region:not(.builder-publish):not(.builder-panel)")).toHaveCount(2);
       await expectAccessible(page, testInfo, `pages-detail-${locale}`);
 
       // The same address again is refused with the reason next to the field.
@@ -112,6 +112,21 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const kpi = page.getByTestId("placement-kpi-1");
       await kpi.getByRole("group").first().locator('[lang="en"]').fill("Uptime");
       await expect(saveState).toHaveText(msg(locale, "builder.editor.save.saved"));
+      // Translation status per language: the figure's label exists in English only.
+      const languageName = (code: string) => page.evaluate(([ui, c]) => new Intl.DisplayNames([ui], { type: "language" }).of(c) ?? c, [locale, code] as const);
+      await expect(page.getByTestId("translation-en")).toHaveText(msg(locale, "builder.editor.checks.complete", { language: await languageName("en") }));
+      await expect(page.getByTestId("translation-ar")).not.toHaveText(msg(locale, "builder.editor.checks.complete", { language: await languageName("ar") }));
+
+      // Previews by device and direction show the saved draft in a frame.
+      await page.getByRole("button", { name: msg(locale, "builder.editor.preview.devices.phone") }).click();
+      await page.getByLabel(msg(locale, "builder.editor.preview.language")).selectOption("ar");
+      const frame = page.frameLocator('[data-testid="preview-frame"]');
+      await expect(frame.locator("main")).toHaveAttribute("dir", "rtl");
+      await expect(frame.getByText("ارتد الخوذة في أرض المصنع.")).toBeVisible();
+      await page.getByLabel(msg(locale, "builder.editor.preview.language")).selectOption("en");
+      await expect(frame.locator("main")).toHaveAttribute("dir", "ltr");
+      await expect(frame.getByText("Wear a helmet on the plant floor.")).toBeVisible();
+
       await text.focus();
       await page.keyboard.press("Alt+ArrowDown");
       await expect(text).toBeFocused();
