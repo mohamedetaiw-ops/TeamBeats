@@ -483,7 +483,7 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Search analytics | `people.searched` is not recorded; there is no analytics module yet. |
 | Policy cache | The policy is read on every request, so changes apply at once rather than within 60 seconds. |
 | Settings audit | Newcomer period, opt-out and location attribute changes and location renames are audited as `people.settings_changed`, which section 13 does not list. |
-| Performance | Search uses plain SQL over normalized columns with no extension. The 50,000 member performance test (T011) is still to come. |
+| Performance | Search uses plain SQL over normalized columns with no extension. `PeopleSearchPerformanceTests` checks p95 under 300 ms at 50,000 members (98 ms locally). Evidence is in `specs/010-people-directory/evidence.md`. |
 | Large teams of others | The org chart shows a count of further reports; the link to the full list exists only on your own profile (My team), since there is no reports list for another person yet. |
 | Menus | The people pages are not in the global menu or quick navigation yet; the global menu comes from tenant configuration, and quick navigation entries come with the people component wiring (T008, T010). |
 | Manual manager screen | Managers are set by hand through `PUT /people/{id}/manager`; the profile has no screen for it yet. |
