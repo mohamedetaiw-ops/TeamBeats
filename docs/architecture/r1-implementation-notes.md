@@ -325,3 +325,14 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 |---|---|
 | Weather plan | The free Open-Meteo tier is non-commercial. A paid plan is needed before customer production use; it is configuration only. |
 | Shell utilities | The shell keys `world_clock`, `time_converter` and `weather` exist; placing the components in the shell's utilities region comes with the utilities slot rendering. |
+
+## Shell and home accessibility tests (spec 008 T015)
+| Need | Where it is tested |
+|---|---|
+| Menus by keyboard: open, move in, Escape back to the toggle, close when focus or a click leaves | `shell.spec.ts`, `shell-reachability.spec.ts` |
+| Screen reader: skip link reaches the content, one main landmark, named navigation, page title, `aria-expanded` and `aria-controls` on toggles, closed submenus out of the reading order, live announcements | `shell-reachability.spec.ts`, `home-personalization.spec.ts` |
+| Personalization by keyboard only: move, hide, add, undo, reset, focus following the item | `home-personalization.spec.ts` |
+| Mobile reachability at 375px: every shell control reached by Tab and on screen, the phone menu by keyboard, no sideways scroll, personalization tools fit | `shell-reachability.spec.ts`, `shell.spec.ts`, `home-personalization.spec.ts` |
+| axe with no critical findings in `ar` and `en`, desktop and phone | all of the above, plus `toolbox.spec.ts` and `interaction.spec.ts` |
+
+Screen reader checks assert the roles, names and states that assistive technology reads. They do not replace a manual pass with NVDA and VoiceOver, which is a follow-up before the R1 release.
