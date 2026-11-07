@@ -177,7 +177,14 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' -b "$jar" "$base/api/v1/me")
           [ "$code" = 200 ] || { echo "::error::/api/v1/me as test admin answered $code"; exit 1; }
           echo "Test admin sign-in and /api/v1/me: 200"
+          # Report only: the test admin's access to the shell settings, which the staging home seed needs.
+          code=$(curl -s -o /dev/null -w '%{http_code}' -b "$jar" "$base/api/v1/experience/shell/definition")
+          echo "Shell settings as test admin: $code"
           echo "### Staging deployed: $base" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Show the staging home seed result
+        if: always()
+        run: flyctl logs --app "$API_APP" --no-tail 2>&1 | grep -i "home seed" | tail -10 || true
 
       - name: Show recent app logs on failure
         if: failure()
