@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.Experience.Pages;
 using TeamBeats.Modules.Experience.Shell;
 using TeamBeats.Modules.Identity.Contracts;
@@ -47,24 +48,54 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
             return;
         }
 
+        // A seed must never stop the host: anything unexpected is logged and the home is left for an administrator to set.
+        try
+        {
+            foreach (var email in configuration.GetSection(TestTenantSeeder.Section + ":Admins").Get<List<string>>() ?? [])
+            {
+                if (await TrySeedAsAsync(tenant.Id, key, email, file, ct))
+                {
+                    return;
+                }
+            }
+            logger.LogInformation("Home seed: no test administrator of {Tenant} can set the home yet; it is seeded on a later start", key);
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            logger.LogWarning(e, "Home seed: the home of {Tenant} was not seeded", key);
+        }
+    }
+
+    /// <returns>True when the tenant has a home after this call, false when this administrator cannot set one.</returns>
+    private async Task<bool> TrySeedAsAsync(Guid tenantId, string key, string email, HomeFile file, CancellationToken ct)
+    {
+        // A scope per administrator: the authorization service keeps the grants of the first actor it sees in a scope.
         await using var scope = scopes.CreateAsyncScope();
         var sp = scope.ServiceProvider;
         var context = sp.GetRequiredService<TenantContextAccessor>();
-        context.SetTenant(tenant.Id);
+        context.SetTenant(tenantId);
         context.SetActor(ActorType.System, null);
-        var admin = await FirstAdminAsync(sp, ct);
-        if (admin is null)
+        if (await sp.GetRequiredService<IUserDirectory>().FindByEmailAsync(email, ct) is not { Status: "active" } admin)
         {
-            logger.LogInformation("Home seed: no test administrator of {Tenant} has signed in yet; the home is seeded on the next start", key);
-            return;
+            logger.LogInformation("Home seed: test administrator {Email} of {Tenant} has not signed in yet", email, key);
+            return false;
         }
         context.SetActor(ActorType.User, admin.Id);
+        var authz = sp.GetRequiredService<IAuthorizationService>();
+        foreach (var permission in new[] { Permissions.ShellEdit, Permissions.PageEdit, Permissions.PagePublish })
+        {
+            if (!(await authz.CheckAsync(permission, AuthzTarget.Tenant, ct)).Allowed)
+            {
+                logger.LogInformation("Home seed: {Email} of {Tenant} does not hold {Permission} for the whole tenant", email, key, permission);
+                return false;
+            }
+        }
 
         var shells = sp.GetRequiredService<ShellService>();
         var shell = await shells.GetShellAdminAsync(ct);
         if (shell.Definition.HomePageId is not null)
         {
-            return;
+            return true;
         }
 
         var pages = sp.GetRequiredService<PageService>();
@@ -81,19 +112,6 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
         await shells.PublishShellAsync(shell.Definition with { HomePageId = page.Id }, ct);
         await sp.GetRequiredService<IDbSession>().CommitAsync(ct);
         logger.LogInformation("Home seed: page {Slug} published as the home of {Tenant}", file.Slug, key);
-    }
-
-    private async Task<UserInfo?> FirstAdminAsync(IServiceProvider sp, CancellationToken ct)
-    {
-        var users = sp.GetRequiredService<IUserDirectory>();
-        var emails = configuration.GetSection(TestTenantSeeder.Section + ":Admins").Get<List<string>>() ?? [];
-        foreach (var email in emails)
-        {
-            if (await users.FindByEmailAsync(email, ct) is { Status: "active" } user)
-            {
-                return user;
-            }
-        }
-        return null;
+        return true;
     }
 }
