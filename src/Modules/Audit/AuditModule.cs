@@ -57,7 +57,7 @@ public static class AuditModule
             await outbox.EnqueueAsync(new AuditExportRequested(id), ct);
             await session.CommitAsync(ct);
             return Results.Accepted($"/api/v1/audit/exports/{id}", new { id, status = "pending" });
-        });
+        }).RequireStepUp();
 
         group.MapGet("/exports/{id:guid}", async (Guid id, IAuthorizationService authz, AuditQueries queries, CancellationToken ct) =>
         {

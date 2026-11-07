@@ -73,7 +73,7 @@ public static class IntegrationsModule
             var created = await connections.CreateAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/integrations/connections/{created.Id}", created);
-        });
+        }).RequireStepUp();
 
         api.MapGet("/connections/{id:guid}", async (Guid id, IAuthorizationService authz, ConnectionService connections, CancellationToken ct) =>
         {

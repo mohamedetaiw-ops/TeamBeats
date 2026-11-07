@@ -24,6 +24,7 @@ public static class ProblemCodes
 
     /// <summary>The tenant's network rules refuse the caller's address (spec 026 US1).</summary>
     public const string NetworkNotAllowed = "security.network_not_allowed";
+    public const string StepUpRequired = "security.step_up_required";
 
     public static string TypeUri(string code) => $"urn:teambeats:problem:{code}";
 }

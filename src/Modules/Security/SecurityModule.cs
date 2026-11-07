@@ -19,6 +19,7 @@ public static class SecurityModule
         services.AddScoped<PolicyStore>();
         services.AddScoped<ISecurityPolicy>(sp => sp.GetRequiredService<PolicyStore>());
         services.AddScoped<PolicyService>();
+        services.AddScoped<IAuthenticationAssurance, AuthenticationAssurance>();
         services.AddScoped<TeamBeats.Authorization.Contracts.IRequestAttributeProvider, NetworkZoneAttributes>();
         return services;
     }
@@ -42,7 +43,7 @@ public static class SecurityModule
             await session.CommitAsync(ct);
             http.HttpContext.Response.Headers.ETag = view.ETag;
             return Results.Ok(view);
-        });
+        }).RequireStepUp();
 
         security.MapGet("/policy/preview", async (string? ipAllow, string? ipBlock, PolicyService policies, CancellationToken ct) =>
             Results.Ok(await policies.PreviewAsync(ipAllow, ipBlock, ct)));

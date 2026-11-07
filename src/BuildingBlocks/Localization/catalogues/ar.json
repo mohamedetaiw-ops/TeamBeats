@@ -197,6 +197,7 @@
   "problem.internal": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
   "problem.not_found": "غير موجود",
   "problem.security.network_not_allowed": "شبكتك غير مسموح لها بالوصول إلى هذه المؤسسة. تواصل مع المسؤول.",
+  "problem.security.step_up_required": "تأكيد هويتك: سجّل الدخول مرة أخرى لمتابعة هذا الإجراء.",
   "problem.tenant.closed": "تم إغلاق حساب هذه المؤسسة",
   "problem.tenant.suspended": "تم تعليق وصول هذه المؤسسة",
   "problem.tenant.unavailable": "مساحة العمل هذه غير متاحة",

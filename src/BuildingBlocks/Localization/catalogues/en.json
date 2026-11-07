@@ -197,6 +197,7 @@
   "problem.internal": "Something went wrong. Please try again.",
   "problem.not_found": "Not found",
   "problem.security.network_not_allowed": "Your network is not allowed to reach this organization. Contact your administrator.",
+  "problem.security.step_up_required": "Confirm it is you: sign in again to continue with this action.",
   "problem.tenant.closed": "This organization's account is closed",
   "problem.tenant.suspended": "This organization's access is suspended",
   "problem.tenant.unavailable": "This workspace is not available",

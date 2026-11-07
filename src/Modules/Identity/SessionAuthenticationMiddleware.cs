@@ -68,11 +68,12 @@ public static class SessionAuthenticationMiddleware
                         context.SetTenant(tenant.Id);
                         var s = await db.QuerySingleOrDefaultAsync(
                             """
-                            select s.id, s.user_id, s.created_at, s.last_seen_at from identity.user_session s
+                            select s.id, s.user_id, s.created_at, s.last_seen_at, s.authenticated_at, s.method from identity.user_session s
                             join identity.user_account u on u.id = s.user_id
                             where s.token_hash = @h and s.revoked_at is null and s.expires_at > now() and u.status = 'active'
                             """, new { h = SessionTokens.Hash(token) },
-                            r => (Session: r.GetGuid(0), User: r.GetGuid(1), Created: r.GetFieldValue<DateTimeOffset>(2), LastSeen: r.GetFieldValue<DateTimeOffset>(3)),
+                            r => (Session: r.GetGuid(0), User: r.GetGuid(1), Created: r.GetFieldValue<DateTimeOffset>(2), LastSeen: r.GetFieldValue<DateTimeOffset>(3),
+                                Authenticated: r.GetFieldValue<DateTimeOffset>(4), Method: r.GetString(5)),
                             http.RequestAborted);
                         var membership = s == default ? null
                             : await services.GetRequiredService<ITenantMemberships>().GetAsync(s.User, http.RequestAborted);
@@ -83,6 +84,7 @@ public static class SessionAuthenticationMiddleware
                         if (membership is { Status: MembershipStatus.Active } && ended is null)
                         {
                             context.SetActor(ActorType.User, s.User, s.Session);
+                            http.Features.Set(new SessionAssurance(s.Authenticated, s.Method));
                             await SessionRules.TouchAsync(services, s.Session, s.LastSeen, http.RequestAborted);
                         }
                         else if (ended is not null)

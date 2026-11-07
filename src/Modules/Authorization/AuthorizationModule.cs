@@ -46,14 +46,14 @@ public static class AuthorizationModule
             var assignment = await admin.AssignAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/authz/assignments/{assignment.Id}", assignment);
-        });
+        }).RequireStepUp();
 
         g.MapDelete("/assignments/{id:guid}", async (Guid id, AuthorizationAdmin admin, IDbSession session, CancellationToken ct) =>
         {
             await admin.RevokeAsync(id, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
-        });
+        }).RequireStepUp();
 
         g.MapGet("/resources/{type}/{id:guid}/acl", async (string type, Guid id, AuthorizationAdmin admin, CancellationToken ct) =>
             Results.Ok(await admin.GetAclAsync(type, id, ct)));

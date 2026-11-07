@@ -78,6 +78,10 @@
       "title": "Single sign-on is not set up",
       "body": "Your administrator has not set up single sign-on for this workspace yet."
     },
+    "mfa_required": {
+      "title": "Multi-factor sign-in is required",
+      "body": "Your organization requires multi-factor sign-in, and this sign-in did not use it. Contact your IT team to set it up, then sign in again."
+    },
     "failed": {
       "title": "Sign-in did not complete",
       "body": "The sign-in could not be verified. Start again from the sign-in page."

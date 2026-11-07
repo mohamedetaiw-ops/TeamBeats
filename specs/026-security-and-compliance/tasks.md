@@ -14,9 +14,9 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T007 [US1] Policy endpoints with preview count of affected users
 
 ## Phase 3: User Story 2, MFA and step-up (P1)
-- [ ] T008 [P] [US2] Tests: MFA claim mapping for Entra; refusal without MFA; step-up required and satisfied with a fresh `auth_time`; idle and absolute timeouts with the fake clock; concurrent limit; revoke all within 1 minute
-- [ ] T009 [US2] MFA check in the Entra sign-in callback; `require_mfa` turns on only after a test sign-in shows the claim
-- [ ] T010 [US2] `RequireStepUp` metadata on the section 6 endpoints that exist; step-up redirect with `prompt=login` and `max_age=0`; web shell handling of `security.step_up_required`
+- [x] T008 [P] [US2] Tests: MFA claim mapping for Entra; refusal without MFA; step-up required and satisfied with a fresh `auth_time`; idle and absolute timeouts with the fake clock; concurrent limit; revoke all within 1 minute
+- [x] T009 [US2] MFA check in the Entra sign-in callback; `require_mfa` turns on only after a test sign-in shows the claim
+- [x] T010 [US2] `RequireStepUp` metadata on the section 6 endpoints that exist; step-up redirect with `prompt=login` and `max_age=0`; web shell handling of `security.step_up_required`
 - [x] T011 [US2] Session idle, absolute and concurrent rules in the session middleware; revoke-all endpoints
 
 ## Phase 4: User Story 5, security alerts (P1, basic)

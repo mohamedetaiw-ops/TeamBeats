@@ -22,6 +22,12 @@ public sealed record FakeUser(string ObjectId, string Email, string Name)
     public TimeSpan Lifetime { get; init; } = TimeSpan.FromHours(1);
     public TimeSpan IssuedAgo { get; init; } = TimeSpan.Zero;
     public bool OmitObjectId { get; init; }
+
+    /// <summary>Authentication methods; Entra ID reports <c>mfa</c> after a second factor.</summary>
+    public IReadOnlyList<string> Amr { get; init; } = ["pwd"];
+
+    /// <summary>How long ago the user last authenticated at the provider; a request with <c>max_age=0</c> authenticates now.</summary>
+    public TimeSpan? AuthTimeAgo { get; init; }
 }
 
 /// <summary>
@@ -54,7 +60,7 @@ public sealed class FakeIdentityProvider : HttpMessageHandler
         var directory = uri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries)[0];
         var code = Base64UrlEncoder.Encode(RandomNumberGenerator.GetBytes(16));
         _codes[code] = new IssuedCode(user, $"{Authority}/{directory}/v2.0", query["client_id"], clientSecret, query["redirect_uri"],
-            query["code_challenge"], query["nonce"]);
+            query["code_challenge"], query["nonce"], query.GetValueOrDefault("max_age") == "0");
         return code;
     }
 
@@ -123,6 +129,9 @@ public sealed class FakeIdentityProvider : HttpMessageHandler
         {
             claims["nonce"] = user.NonceOverride ?? issued.Nonce;
         }
+        claims["amr"] = user.Amr.ToArray();
+        var authAgo = user.AuthTimeAgo ?? (issued.Fresh ? TimeSpan.Zero : TimeSpan.FromHours(2));
+        claims["auth_time"] = DateTimeOffset.UtcNow.Add(-authAgo).ToUnixTimeSeconds();
         if (user.GroupOverage)
         {
             claims["_claim_names"] = new Dictionary<string, object> { ["groups"] = "src1" };
@@ -153,5 +162,5 @@ public sealed class FakeIdentityProvider : HttpMessageHandler
             .Select(p => p.Split('=', 2))
             .ToDictionary(p => Uri.UnescapeDataString(p[0].Replace('+', ' ')), p => p.Length > 1 ? Uri.UnescapeDataString(p[1].Replace('+', ' ')) : string.Empty);
 
-    private sealed record IssuedCode(FakeUser User, string Issuer, string ClientId, string ClientSecret, string RedirectUri, string CodeChallenge, string Nonce);
+    private sealed record IssuedCode(FakeUser User, string Issuer, string ClientId, string ClientSecret, string RedirectUri, string CodeChallenge, string Nonce, bool Fresh);
 }

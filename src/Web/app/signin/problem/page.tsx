@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-const reasons = ["no_access", "tenant_suspended", "idp_unavailable", "not_configured", "failed"] as const;
+const reasons = ["no_access", "tenant_suspended", "idp_unavailable", "not_configured", "mfa_required", "failed"] as const;
 type Reason = (typeof reasons)[number];
 
 /** Sign-in outcomes the API redirects to (spec 003 section 10). The reason is a code, never free text. */

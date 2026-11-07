@@ -30,5 +30,15 @@ public interface ISecurityPolicy
     Task<SecurityPolicySnapshot> GetAsync(CancellationToken ct = default);
 }
 
+/// <summary>
+/// Authentication assurance (spec 026 US2 scenario 1): whether a sign-in token shows multi-factor authentication under
+/// the tenant's claim mapping for the provider (default: <c>amr</c> contains <c>mfa</c>). A sign-in that shows it is
+/// recorded, so the tenant can then require MFA (section 6).
+/// </summary>
+public interface IAuthenticationAssurance
+{
+    Task<bool> CheckMfaAsync(string provider, IReadOnlyList<string> amr, string? acr, CancellationToken ct);
+}
+
 /// <summary>Setting names only, never values.</summary>
 public sealed record SecurityPolicyChanged(int Version, IReadOnlyList<string> Settings) : IIntegrationEvent;

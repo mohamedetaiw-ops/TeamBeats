@@ -522,7 +522,7 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 
 | Item | Note |
 |---|---|
-| Self lock-out | A change that refuses the caller's own address needs the address typed back. The step-up part of plan section US1 scenario 3 comes with step-up in T010. |
+| Self lock-out | A change that refuses the caller's own address needs the address typed back, and the policy change itself needs step-up (T010). |
 | Unknown routes | A path that matches no endpoint carries no admin area mark, so it gets the normal 404 rather than a network refusal; tenant rules still apply to it. |
 | Audit rate | Refusals are audited once a minute per tenant, address and area, per instance. |
 | Network zones (T006) | `network_zone` is a request attribute from `IRequestAttributeProvider` (the Security module's `NetworkZoneAttributes`), added to the current user's grants per request and never cached. It is multi-valued: an address in several zones satisfies `in` when any of them matches. The explainer runs for another user without their request, so a zone condition shows as a missing attribute there. |
@@ -539,3 +539,28 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 |---|---|
 | Lifetime | The existing 8 hour cookie and `expires_at` still apply, so the absolute timeout only shortens sessions until the cookie lifetime follows the policy. |
 | Revocation speed | The middleware reads the session row on every request, so revoke-all takes effect on the next request, well inside the 1 minute of FR-003. |
+
+## MFA assurance (spec 026 T009)
+| Part | Where |
+|---|---|
+| Check | The Entra callback reads `amr` and `acr` and asks `IAuthenticationAssurance` (Security) whether they show MFA under the tenant mapping for provider `entra` (default `amr` contains `mfa`). A sign-in that shows MFA sets `seen_at`, which lets the tenant turn on `requireMfa` |
+| Refusal | With `requireMfa` on, a sign-in without the claim creates no account or session, goes to `/signin/problem?reason=mfa_required` and is audited as `security.mfa_missing` |
+| Tests | `EntraSignInTests` (MFA case); the fake Entra ID sends `amr` (default `pwd`) |
+
+| Item | Note |
+|---|---|
+| Claim mapping | There is no screen to change the mapping yet; the default fits Entra ID. The admin pages come with T016. |
+
+## Step-up (spec 026 T008, T010)
+| Part | Where |
+|---|---|
+| Marking | `RequireStepUp()` endpoint metadata on the section 6 actions that exist: `PUT /security/policy`, `POST` and `DELETE /authz/assignments`, `PUT /tenant/identity-provider`, `PUT /tenant/directory`, `POST /audit/exports`, `POST /integrations/connections`, `POST /tenant/admins` |
+| Guard | `UseStepUp()` after the network guard: when the session's `authenticated_at` is older than `stepUpMinutes` (default 10), the answer is 401 `security.step_up_required` with `stepUpUrl` and `stepUpMinutes`. Development sign-in sessions count as fresh |
+| Fresh sign-in | `GET /api/v1/auth/signin/sso?stepUp=true&returnTo=` sends `prompt=login` and `max_age=0`; the callback needs an `auth_time` within 5 minutes, then audits `security.step_up_completed`, starts a new session and ends the old one (`stepped_up`). A stale `auth_time` is audited as `security.step_up_failed` |
+| Tests | `EntraSignInTests` (every marked action fresh, stale and after step-up; stale provider session; shorter window) |
+
+| Item | Note |
+|---|---|
+| Web handling | No web page calls a marked action yet. The security policy page (T016) is the first; it sends the user to `stepUpUrl` with `returnTo` when it gets `security.step_up_required`. |
+| Admin roles | Section 6 names admin roles; every role assignment and removal is marked, the stricter reading, because role definitions can make any role an admin role. |
+| Providers without forced re-authentication | Entra ID honours `prompt=login` and `max_age`, so the setup warning of US2 scenario 3 is not needed for the only R1 provider. |
