@@ -22,6 +22,9 @@ public sealed record FakeUser(string ObjectId, string Email, string Name)
     public TimeSpan Lifetime { get; init; } = TimeSpan.FromHours(1);
     public TimeSpan IssuedAgo { get; init; } = TimeSpan.Zero;
     public bool OmitObjectId { get; init; }
+
+    /// <summary>Authentication methods; Entra ID reports <c>mfa</c> after a second factor.</summary>
+    public IReadOnlyList<string> Amr { get; init; } = ["pwd"];
 }
 
 /// <summary>
@@ -123,6 +126,7 @@ public sealed class FakeIdentityProvider : HttpMessageHandler
         {
             claims["nonce"] = user.NonceOverride ?? issued.Nonce;
         }
+        claims["amr"] = user.Amr.ToArray();
         if (user.GroupOverage)
         {
             claims["_claim_names"] = new Dictionary<string, object> { ["groups"] = "src1" };

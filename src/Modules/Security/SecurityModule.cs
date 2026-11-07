@@ -19,6 +19,7 @@ public static class SecurityModule
         services.AddScoped<PolicyStore>();
         services.AddScoped<ISecurityPolicy>(sp => sp.GetRequiredService<PolicyStore>());
         services.AddScoped<PolicyService>();
+        services.AddScoped<IAuthenticationAssurance, AuthenticationAssurance>();
         services.AddScoped<TeamBeats.Authorization.Contracts.IRequestAttributeProvider, NetworkZoneAttributes>();
         return services;
     }

@@ -21,6 +21,7 @@ public static class SsoProblems
     public const string NoAccess = "no_access";
     public const string TenantSuspended = "tenant_suspended";
     public const string Failed = "failed";
+    public const string MfaRequired = "mfa_required";
 
     public static string PagePath(string reason) => "/signin/problem?reason=" + reason;
 }
@@ -40,10 +41,15 @@ public sealed class SsoService(
     SignInService signIn,
     Directory.DirectorySyncService directorySync,
     IAuditWriter audit,
-    IClock clock)
+    IClock clock,
+    TeamBeats.Modules.Security.Contracts.ISecurityPolicy securityPolicy,
+    TeamBeats.Modules.Security.Contracts.IAuthenticationAssurance assurance)
 {
     public static readonly TimeSpan StateLifetime = TimeSpan.FromMinutes(10);
     public static readonly TimeSpan ClockSkew = TimeSpan.FromMinutes(5);
+
+    /// <summary>The provider key of the MFA claim mapping (spec 026 section 6).</summary>
+    public const string Provider = "entra";
 
     public async Task<SsoStep> StartAsync(TenantInfo tenant, string callbackUri, string? returnTo, CancellationToken ct)
     {
@@ -179,6 +185,16 @@ public sealed class SsoService(
             await FailAsync("subject_missing", config.Issuer, ct);
             return Problem(SsoProblems.Failed);
         }
+        // Authentication assurance (spec 026 US2 scenario 1): MFA stays with the identity provider; this checks it happened.
+        var amr = token.Claims.Where(c => c.Type == "amr").Select(c => c.Value).ToList();
+        if (!await assurance.CheckMfaAsync(Provider, amr, Claim(token, "acr"), ct) && (await securityPolicy.GetAsync(ct)).RequireMfa)
+        {
+            context.SetActor(ActorType.Anonymous, null);
+            await audit.WriteAsync(new AuditEntry(AuditActions.SecurityMfaMissing, "user", null, AuditOutcome.Denied,
+                Changes: new { issuer = config.Issuer, method = "entra", amr }), ct);
+            return Problem(SsoProblems.MfaRequired);
+        }
+
         var email = Claim(token, "email") ?? Claim(token, "preferred_username") ?? string.Empty;
         var name = Claim(token, "name") ?? email;
         var overage = token.TryGetPayloadValue<Dictionary<string, object>>("_claim_names", out var names) && names.ContainsKey("groups");

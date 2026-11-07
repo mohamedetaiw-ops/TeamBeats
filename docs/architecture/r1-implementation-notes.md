@@ -539,3 +539,14 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 |---|---|
 | Lifetime | The existing 8 hour cookie and `expires_at` still apply, so the absolute timeout only shortens sessions until the cookie lifetime follows the policy. |
 | Revocation speed | The middleware reads the session row on every request, so revoke-all takes effect on the next request, well inside the 1 minute of FR-003. |
+
+## MFA assurance (spec 026 T009)
+| Part | Where |
+|---|---|
+| Check | The Entra callback reads `amr` and `acr` and asks `IAuthenticationAssurance` (Security) whether they show MFA under the tenant mapping for provider `entra` (default `amr` contains `mfa`). A sign-in that shows MFA sets `seen_at`, which lets the tenant turn on `requireMfa` |
+| Refusal | With `requireMfa` on, a sign-in without the claim creates no account or session, goes to `/signin/problem?reason=mfa_required` and is audited as `security.mfa_missing` |
+| Tests | `EntraSignInTests` (MFA case); the fake Entra ID sends `amr` (default `pwd`) |
+
+| Item | Note |
+|---|---|
+| Claim mapping | There is no screen to change the mapping yet; the default fits Entra ID. The admin pages come with T016. |

@@ -145,6 +145,7 @@ public static class AuditActions
     // Spec 026 (R1): security policy and network refusals.
     public const string SecurityPolicyChanged = "security.policy_changed";
     public const string SecurityRequestBlockedNetwork = "security.request_blocked_network";
+    public const string SecurityMfaMissing = "security.mfa_missing";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -171,7 +172,7 @@ public static class AuditActions
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
         HrCalendarChanged,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
-        SecurityPolicyChanged, SecurityRequestBlockedNetwork,
+        SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

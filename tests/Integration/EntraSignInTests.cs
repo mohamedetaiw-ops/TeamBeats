@@ -494,4 +494,38 @@ public sealed class EntraSignInTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Contains("secretRef", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
     }
+    /// <summary>Spec 026 T008 and T009 (US2 scenario 1): MFA can be required only once a sign-in has shown it, then a sign-in without it is refused.</summary>
+    [Fact]
+    public async Task Required_MFA_refuses_a_sign_in_without_the_claim_after_one_has_shown_it()
+    {
+        var t = await TenantAsync();
+        var admin = t.Tenant["admin"].Client;
+        var before = await admin.PutAsJsonAsync("/api/v1/security/policy", new { requireMfa = true });
+        Assert.Equal(HttpStatusCode.BadRequest, before.StatusCode);
+        Assert.Contains("validation.security.mfa_not_seen", await before.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        // A password-only sign-in works while MFA is not required, and does not count as seeing the claim.
+        var passwordOnly = await SignInAsync(t, t.User("Pwd"));
+        Assert.NotNull(passwordOnly.SessionToken);
+        Assert.False((await (await admin.GetAsync("/api/v1/security/policy")).ReadAsync<JsonElement>()).GetProperty("mfaClaimSeen").GetBoolean());
+
+        var withMfa = await SignInAsync(t, t.User("Strong") with { Amr = ["pwd", "mfa"] });
+        Assert.NotNull(withMfa.SessionToken);
+        Assert.True((await (await admin.GetAsync("/api/v1/security/policy")).ReadAsync<JsonElement>()).GetProperty("mfaClaimSeen").GetBoolean());
+        (await admin.PutAsJsonAsync("/api/v1/security/policy", new { requireMfa = true })).EnsureSuccessStatusCode();
+
+        var refused = await SignInAsync(t, t.User("Weak"));
+        Assert.Null(refused.SessionToken);
+        Assert.Equal("/signin/problem?reason=mfa_required", refused.Location);
+        Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from identity.user_account where email like 'weak@%'"));
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.SecurityMfaMissing);
+
+        var allowed = await SignInAsync(t, t.User("Second") with { Amr = ["pwd", "mfa"] });
+        Assert.NotNull(allowed.SessionToken);
+
+        // Another tenant's requirement and claim history are its own.
+        var other = await TenantAsync();
+        Assert.NotNull((await SignInAsync(other, other.User("Elsewhere"))).SessionToken);
+        Assert.False((await (await other.Tenant["admin"].Client.GetAsync("/api/v1/security/policy")).ReadAsync<JsonElement>()).GetProperty("mfaClaimSeen").GetBoolean());
+    }
 }
