@@ -52,6 +52,10 @@ public static class NetworkRules
         return ranges.Any(r => r.BaseAddress.AddressFamily == normalized.AddressFamily && r.Contains(normalized));
     }
 
+    /// <summary>The named zones of the policy that contain the address, in name order; none for an unknown address.</summary>
+    public static IReadOnlyList<string> Zones(SecurityPolicySnapshot policy, IPAddress? address) =>
+        address is null ? [] : policy.NetworkZones.Where(z => Contains(Parse(z.Value), address)).Select(z => z.Key).Order(StringComparer.Ordinal).ToList();
+
     /// <summary>The area that refuses the address, or null when the request may continue.</summary>
     public static NetworkArea? Refusal(SecurityPolicySnapshot policy, IPAddress? address, bool adminArea)
     {

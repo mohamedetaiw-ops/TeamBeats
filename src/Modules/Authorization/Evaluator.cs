@@ -122,7 +122,7 @@ public static class Evaluator
 
     /// <summary>
     /// Attribute values for a condition. User attributes come from the effective grants snapshot, resource attributes
-    /// from the owning module's descriptor. Request attributes (spec 026) have no source yet, so they are absent.
+    /// from the owning module's descriptor, request attributes (spec 026) from the request, for the current user only.
     /// </summary>
     private static string? Lookup(EffectiveGrants g, ResourceDescriptor? resource, string key)
     {
@@ -139,6 +139,7 @@ public static class Evaluator
                 ConditionAttributes.OwningOrgUnit => resource?.OwningOrgUnitId?.ToString(),
                 _ => null,
             },
+            AttributeSource.Request => g.RequestAttributes.TryGetValue(key, out var r) ? r : null,
             _ => null,
         };
     }

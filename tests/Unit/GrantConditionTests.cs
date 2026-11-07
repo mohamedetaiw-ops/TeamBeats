@@ -28,6 +28,23 @@ public sealed class GrantConditionTests
     }
 
     [Theory]
+    [InlineData("""{"attribute":"network_zone","operator":"in","value":["office","vpn"]}""", "hq,vpn", true)]
+    [InlineData("""{"attribute":"network_zone","operator":"in","value":["office","vpn"]}""", "hq", false)]
+    [InlineData("""{"attribute":"network_zone","operator":"eq","value":"office"}""", "office", true)]
+    [InlineData("""{"attribute":"network_zone","operator":"not_in","value":["office"]}""", "hq,office", false)]
+    [InlineData("""{"attribute":"network_zone","operator":"ne","value":"office"}""", "hq,vpn", true)]
+    public void Network_zone_is_multi_valued_so_any_zone_of_the_address_can_satisfy_it(string json, string actual, bool expected) =>
+        Assert.Equal(expected, Eval(json, ("network_zone", actual)).Met);
+
+    [Fact]
+    public void A_request_from_no_named_zone_fails_a_network_condition_closed()
+    {
+        var trace = Eval("""{"attribute":"network_zone","operator":"not_in","value":["guest_wifi"]}""");
+        Assert.False(trace.Met);
+        Assert.Equal(["network_zone"], trace.MissingAttributes);
+    }
+
+    [Theory]
     [InlineData("""{"attribute":"job_grade","operator":"gte","value":7}""", "7", true)]
     [InlineData("""{"attribute":"job_grade","operator":"gte","value":7}""", "6.5", false)]
     [InlineData("""{"attribute":"job_grade","operator":"lte","value":7}""", "10", false)]

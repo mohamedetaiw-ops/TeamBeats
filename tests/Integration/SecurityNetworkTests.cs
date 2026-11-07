@@ -296,4 +296,36 @@ public sealed class SecurityNetworkTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.OK, (await From(old, "officer", Office).GetAsync("/api/v1/security/policy")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await PutAsync(From(old, "officer", Office), new { ipBlock = new[] { "192.0.2.1" } })).StatusCode);
     }
+    [Fact]
+    public async Task A_network_zone_condition_limits_one_grant_to_named_networks_and_the_explainer_names_it()
+    {
+        var t = await FreshAsync();
+        await world.SeedUserAsync(t, "approver", MembershipTypes.Employee);
+        var admin = From(t, "admin", Office);
+        await OkAsync(await PutAsync(admin, new
+        {
+            networkZones = new Dictionary<string, string[]> { ["office"] = [OfficeRange], ["vpn"] = ["10.0.0.0/8"] },
+        }));
+        var assigned = await admin.PostAsJsonAsync("/api/v1/authz/assignments", new
+        {
+            subjectType = "user", subjectId = t["approver"].Id, roleKey = "security_officer", scopeType = "tenant", scopeId = (Guid?)null,
+            condition = new { attribute = "network_zone", @operator = "in", value = new[] { "office", "vpn" } },
+        });
+        Assert.True(assigned.IsSuccessStatusCode, await assigned.Content.ReadAsStringAsync());
+
+        Assert.Equal(HttpStatusCode.OK, (await From(t, "approver", "203.0.113.77").GetAsync("/api/v1/security/policy")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await From(t, "approver", "10.9.8.7").GetAsync("/api/v1/security/policy")).StatusCode);
+        var outside = From(t, "approver", Outside);
+        var denied = await outside.GetAsync("/api/v1/security/policy");
+        Assert.Equal(HttpStatusCode.Forbidden, denied.StatusCode);
+        Assert.Equal("authz.denied", (await denied.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("code").GetString());
+        // Access from other grants continues outside the zones.
+        Assert.Equal(HttpStatusCode.OK, (await outside.GetAsync("/api/v1/people")).StatusCode);
+
+        var explained = await OkAsync(await admin.GetAsync($"/api/v1/authz/explain?userId={t["approver"].Id}&permission=security.view"));
+        Assert.False(explained.GetProperty("allowed").GetBoolean());
+        var trace = explained.GetProperty("notApplied")[0].GetProperty("condition");
+        Assert.Equal("network_zone", trace.GetProperty("clauses")[0].GetProperty("attribute").GetString());
+        Assert.Equal("network_zone", trace.GetProperty("missingAttributes")[0].GetString());
+    }
 }
