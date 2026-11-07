@@ -52,6 +52,15 @@ public static class NetworkGuard
                 await services.GetRequiredService<IAuditWriter>().WriteAsync(new AuditEntry(AuditActions.SecurityRequestBlockedNetwork, "network", source,
                     AuditOutcome.Denied, Changes: new { address = source, area = area == NetworkArea.Admin ? "admin" : "tenant", path = http.Request.Path.Value }),
                     http.RequestAborted);
+                // Sign-ins and requests from blocked networks reach security officers as one alert per address and hour.
+                if (await services.GetRequiredService<TeamBeats.Entitlements.Contracts.IEntitlementService>()
+                        .IsEnabledAsync(TeamBeats.Entitlements.Contracts.Capabilities.SecurityAlerts, http.RequestAborted))
+                {
+                    var now = services.GetRequiredService<IClock>().UtcNow;
+                    await services.GetRequiredService<AlertService>().RaiseAsync(AlertKinds.NetworkBlocked, null,
+                        new { address = source, area = area == NetworkArea.Admin ? "admin" : "tenant" },
+                        $"{AlertKinds.NetworkBlocked}:{source}:{area}:{now:yyyyMMddHH}", http.RequestAborted);
+                }
                 await services.GetRequiredService<IDbSession>().CommitAsync(http.RequestAborted);
                 context.SetTenant(previous);
             }

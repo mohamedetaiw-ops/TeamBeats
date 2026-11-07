@@ -121,6 +121,10 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
         await outbox.EnqueueAsync(new RoleAssignmentChanged(id, groupId, builtInRoleKey, "assigned"), ct);
     }
 
+    public async Task<IReadOnlySet<string>> RolePermissionsAsync(string roleKey, CancellationToken ct = default) =>
+        (await session.QueryAsync("select p.permission_key from authz.role r join authz.role_permission p on p.role_id = r.id where r.key = @k",
+            new { k = roleKey }, r => r.GetString(0), ct)).ToHashSet(StringComparer.Ordinal);
+
     public Task<bool> IsBuiltInRoleKeyAsync(string roleKey, CancellationToken ct = default) =>
         session.ScalarAsync<bool>("select exists (select 1 from authz.role where key = @k and is_builtin)", new { k = roleKey }, ct);
 

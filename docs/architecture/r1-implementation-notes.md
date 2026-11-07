@@ -564,3 +564,19 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Web handling | No web page calls a marked action yet. The security policy page (T016) is the first; it sends the user to `stepUpUrl` with `returnTo` when it gets `security.step_up_required`. |
 | Admin roles | Section 6 names admin roles; every role assignment and removal is marked, the stricter reading, because role definitions can make any role an admin role. |
 | Providers without forced re-authentication | Entra ID honours `prompt=login` and `max_age`, so the setup warning of US2 scenario 3 is not needed for the only R1 provider. |
+
+## Security alerts (spec 026 T012, T013)
+| Part | Where |
+|---|---|
+| Rules | `DownloadVolumeRule` on `DocumentDownloaded` (counts per user per hour in `security.download_count`, default 200 files or 2 GB); `OutOfHoursGrantRule` on `RoleAssignmentChanged` for roles holding a permission in `Permissions.Privileged`, outside the tenant default calendar (spec 022) and 08:00 to 18:00 (`security.alerts_advanced`); the network guard raises `network_blocked` once per address, area and hour |
+| Store | `security.alert` with a dedupe key, so a rule raises one alert per subject and window and later events update its facts. Raising is audited as `security.alert_raised` and publishes `SecurityAlertRaised` |
+| Endpoints | `GET /api/v1/security/alerts?status=` (`security.view` or `security.manage`), `POST /api/v1/security/alerts/{id}/handle {outcome, note}` (`security.respond`, audited as `security.alert_handled`) |
+| Contracts | New `Documents.Contracts` with `DocumentDownloaded` (IDs and size only), ahead of spec 011 downloads; `IAuthorizationProvisioning.RolePermissionsAsync` |
+| Tests | `SecurityAlertTests`, `AlertSettingsTests` |
+
+| Item | Note |
+|---|---|
+| Thresholds | Thresholds and working hours live in `security.policy.alert_settings`; there is no API to change them yet. Editing them is a `security.alerts_advanced` feature and comes with the alerts page. |
+| Privileged permissions | Spec 026 says "admin role" without a list. The smallest safe reading is a role that holds any permission that changes access, sign-in or tenant configuration (`Permissions.Privileged`). |
+| Badge and notifications | The admin shell badge and the notification to security officers come with the admin pages (T016). |
+| First administrator | The tenant's first administrator is assigned by the system at creation and, at night, raises an out-of-hours alert like any other grant. |
