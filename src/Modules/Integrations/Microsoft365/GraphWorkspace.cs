@@ -39,7 +39,7 @@ public sealed class GraphReadCache(IMemoryCache cache, TenantContextAccessor con
         }
         try
         {
-            var value = await fetch();
+            var value = await GraphTelemetry.MeasureAsync(context.RequireTenant(), feature, fetch);
             var entry = new Entry<T>(value, clock.UtcNow);
             cache.Set(key + ":fresh", entry, freshness);
             cache.Set(key + ":last", entry, LastKnown);

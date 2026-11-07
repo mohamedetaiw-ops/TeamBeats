@@ -36,4 +36,4 @@ Depends on 003 (Entra ID sign-in), 006 (Microsoft 365 connection), 005 (entitlem
 - [ ] T017 Calendar read tool under spec 027 with untrusted-content handling, once the tool registry exists; signed-out opt-in (FR-023) with the briefing agent
 
 ## Final phase
-- [ ] T018 Telemetry `integration.graph_call` without content; rate limit per employee; OpenAPI; R1 implementation notes; spec evidence
+- [x] T018 Telemetry `integration.graph_call` without content; rate limit per employee; OpenAPI; R1 implementation notes; spec evidence
