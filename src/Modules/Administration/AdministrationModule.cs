@@ -36,6 +36,7 @@ public static class AdministrationModule
         ("templates", Permissions.TemplateEdit, "/admin/templates"),
         ("branding", Permissions.ThemeEdit, "/admin/branding"),
         ("notifications", Permissions.NotificationsManage, "/admin/notifications"),
+        ("calendars", Permissions.HrCalendarManage, "/admin/calendars"),
         ("audit", Permissions.AuditView, "/admin/audit"),
     ];
 

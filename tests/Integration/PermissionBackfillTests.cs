@@ -67,6 +67,28 @@ public sealed class PermissionBackfillTests(TenantWorld world)
         Assert.Equal(before, await CountAsync(world.A.Id));
     }
 
+    [Fact]
+    public async Task Calendar_backfill_adds_the_HR_officer_role_and_calendar_permission_to_an_older_tenant()
+    {
+        var old = await world.CreateTenantAsync("bfh-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        await world.Database.OwnerExecAsync(
+            """
+            select set_config('app.tenant_id', @t, false);
+            delete from authz.role_permission where permission_key = 'hr.calendar_manage';
+            delete from authz.role_permission where role_id in (select id from authz.role where key = 'hr_officer');
+            delete from authz.role where key = 'hr_officer';
+            update authz.grants_version set version = version + 1;
+            """, ("t", old.Id.ToString()));
+        Assert.Equal(HttpStatusCode.Forbidden, (await old["admin"].Client.GetAsync("/api/v1/hr/calendars")).StatusCode);
+
+        var script = AuthorizationModule.Migrations.Scripts().Single(s => s.Name.StartsWith("0009_", StringComparison.Ordinal)).Sql;
+        await world.Database.OwnerExecAsync(script);
+        await world.Database.OwnerExecAsync(script);
+
+        Assert.Equal(HttpStatusCode.OK, (await old["admin"].Client.GetAsync("/api/v1/hr/calendars")).StatusCode);
+        Assert.Equal(1, await CountAsync(old.Id, "select count(*) from authz.role where key = 'hr_officer'"));
+    }
+
     /// <summary>Counts as the table owner with one tenant set, on one connection, as row-level security requires.</summary>
     private async Task<long> CountAsync(Guid tenant, string sql = "select count(*) from authz.role_permission")
     {
