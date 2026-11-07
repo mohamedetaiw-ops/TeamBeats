@@ -47,8 +47,9 @@ export function uniqueKey(prefix: string): string {
 /**
  * Creates a tenant with one appointed administrator. Tenants are never reused, so tests stay independent. The package
  * is Workplace unless a test needs a capability of another one, such as integration.microsoft365 in Workplace Plus.
+ * otherAdmins are local parts of more appointed administrators, for tests that need several people in the tenant.
  */
-export async function createTenant(prefix: string, defaultLocale: "ar" | "en", packageKey = "workplace"): Promise<TestTenant> {
+export async function createTenant(prefix: string, defaultLocale: "ar" | "en", packageKey = "workplace", otherAdmins: string[] = []): Promise<TestTenant> {
   const platform = await platformClient();
   const key = uniqueKey(prefix);
   const adminEmail = `admin@${key}.example`;
@@ -60,7 +61,7 @@ export async function createTenant(prefix: string, defaultLocale: "ar" | "en", p
       defaultLocale,
       enabledLocales: ["ar", "en"],
       timeZone: "Asia/Dubai",
-      admins: [adminEmail],
+      admins: [adminEmail, ...otherAdmins.map((local) => `${local}@${key}.example`)],
     },
   });
   if (response.status() !== 201) {

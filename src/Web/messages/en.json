@@ -43,7 +43,8 @@
       "pages": "Pages",
       "templates": "Templates",
       "notifications": "Notifications",
-      "calendars": "Calendars"
+      "calendars": "Calendars",
+      "people": "People directory"
     }
   },
   "header": {
@@ -897,6 +898,143 @@
       "run": "Count",
       "failed": "Could not count working days for these dates.",
       "result": "{count, plural, =0 {No working days} one {# working day} other {# working days}}"
+    }
+  },
+  "people": {
+    "title": "People",
+    "intro": "Find colleagues by name, title, department, office or phone.",
+    "failed": "Something went wrong. Try again.",
+    "loading": "Loading",
+    "separator": ", ",
+    "nav": {
+      "directory": "Directory",
+      "team": "My team",
+      "me": "My profile",
+      "label": "People pages"
+    },
+    "search": {
+      "label": "Search people",
+      "hint": "Name, title, department, office or phone number",
+      "submit": "Search",
+      "unit": "Unit",
+      "location": "Location",
+      "any": "All",
+      "none": "No one matches your search.",
+      "more": "Show more",
+      "results": "Results"
+    },
+    "newcomers": {
+      "title": "New joiners",
+      "none": "No new joiners right now."
+    },
+    "card": {
+      "unit": "Unit: {name}",
+      "location": "Location: {name}"
+    },
+    "profile": {
+      "gone": "This person is no longer available.",
+      "manager": "Manager",
+      "noManager": "No manager on record",
+      "reports": "{count, plural, =0 {No direct reports} one {# direct report} other {# direct reports}}",
+      "units": "Units",
+      "location": "Location",
+      "details": "Details",
+      "contact": "Contact",
+      "email": "Email {name}",
+      "call": "Call {number}",
+      "editOwn": "Edit my profile"
+    },
+    "org": {
+      "title": "Org chart",
+      "view": "View",
+      "chart": "Chart",
+      "list": "List",
+      "chain": "Management chain",
+      "person": "This person",
+      "peers": "Peers",
+      "reports": "Direct reports",
+      "managerOf": "{name}, manager of {count, plural, one {# person} other {# people}}",
+      "more": "{count, plural, one {# more} other {# more}}",
+      "seeAll": "See all reports",
+      "none": "None"
+    },
+    "team": {
+      "title": "My team",
+      "indirect": "Include indirect reports",
+      "total": "{count, plural, =0 {No one reports to you} one {# person} other {# people}}",
+      "level": "{level, plural, one {Direct report} other {Level #}}",
+      "more": "Show more"
+    },
+    "me": {
+      "title": "My profile",
+      "intro": "Fields marked as yours can be changed here. Others come from the directory or your administrator.",
+      "save": "Save",
+      "saving": "Saving",
+      "saved": "Profile saved.",
+      "optOut": "Leave me out of the new joiners list",
+      "visibility": "Who sees this: {value}",
+      "source": "Source: {value}",
+      "empty": "Not set",
+      "view": "View my public profile"
+    },
+    "field": {
+      "email": "Email",
+      "jobTitle": "Job title",
+      "department": "Department",
+      "office": "Office",
+      "workPhone": "Work phone",
+      "mobilePhone": "Mobile phone",
+      "preferredLanguage": "Preferred language",
+      "timeZone": "Time zone",
+      "hireDate": "Hire date",
+      "employeeNumber": "Employee number"
+    },
+    "visibility": {
+      "everyone": "Everyone",
+      "subtree": "Same part of the organization",
+      "managers_hr": "Their managers and HR",
+      "hr": "HR only",
+      "private": "Only them and administrators"
+    },
+    "source": {
+      "directory": "Directory",
+      "person": "The person",
+      "admin": "Administrator"
+    },
+    "admin": {
+      "title": "People directory",
+      "intro": "Choose where each profile field comes from and who can see it.",
+      "fields": "Fields",
+      "field": "Field",
+      "source": "Source",
+      "visibility": "Visibility",
+      "remove": "Remove {name}",
+      "custom": "Tenant fields",
+      "customHint": "Up to 10 fields of your own, filled by people or administrators.",
+      "customUnavailable": "Tenant fields are not part of your plan.",
+      "nameEn": "Name in English",
+      "nameAr": "Name in Arabic",
+      "add": "Add field",
+      "settings": "Settings",
+      "newcomerDays": "New joiner period in days",
+      "newcomerHint": "Between 7 and 90 days.",
+      "allowOptOut": "Let people leave the new joiners list",
+      "locationAttribute": "Directory attribute for location",
+      "attr": {
+        "officeLocation": "Office",
+        "department": "Department",
+        "companyName": "Company"
+      },
+      "save": "Save changes",
+      "saved": "Changes saved.",
+      "synced": "Directory last synced {time}.",
+      "notSynced": "The directory has not been synced. Managers can be set by hand.",
+      "locations": "Locations",
+      "locationPeople": "{count, plural, one {# person} other {# people}}",
+      "locationLabel": "From the directory: {label}",
+      "rename": "Save names",
+      "renamed": "Location names saved.",
+      "noLocations": "No locations yet."
     }
   }
 }
