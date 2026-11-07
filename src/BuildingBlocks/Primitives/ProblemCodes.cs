@@ -22,5 +22,8 @@ public static class ProblemCodes
     /// <summary>The resource existed but is no longer available, such as the profile of a disabled member.</summary>
     public const string Gone = "gone";
 
+    /// <summary>The tenant's network rules refuse the caller's address (spec 026 US1).</summary>
+    public const string NetworkNotAllowed = "security.network_not_allowed";
+
     public static string TypeUri(string code) => $"urn:teambeats:problem:{code}";
 }

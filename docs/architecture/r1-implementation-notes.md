@@ -507,3 +507,21 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Item | Note |
 |---|---|
 | Choosing people | The builder has no unit or person picker for component properties yet, so the unit and the named people are entered as ids. A picker belongs to the builder (spec 032) and comes with a later builder task. |
+
+## Network rules (spec 026 T001 to T005, T007)
+| Part | Where |
+|---|---|
+| Module | `src/Modules/Security` and `Security.Contracts`; schema `security` with `policy`, `mfa_claim_mapping` and `alert` (forced RLS); `ISecurityPolicy` with a 30 second per-tenant cache cleared on commit of a change |
+| Sessions | `identity.user_session` gains `source_ip`, `authenticated_at` and `last_seen_at` (migration 0005); `ISignInHistory` gives the addresses of recent sign-ins for the preview |
+| Guard | `UseNetworkRules()` right after the session middleware, on tenant hosts only: blocklist, then tenant allowlist, then the admin allowlist for endpoints marked `InAdminArea()`. Refusal is 403 `security.network_not_allowed` with `area`, before any module or sign-in code runs. The address is `RemoteIpAddress` after the forwarded headers middleware, so with one trusted proxy hop only the rightmost `X-Forwarded-For` entry counts |
+| Admin area | `InAdminArea()` on the admin, authz, audit, tenant, directory, identity provider, notification settings, HR, integrations, security and people administration endpoints |
+| Endpoints | `GET` and `PUT /api/v1/security/policy` (ETag and If-Match), `GET /api/v1/security/policy/preview?ipAllow=&ipBlock=` |
+| Keys | permissions `security.manage`, `security.view`, `security.respond` (backfilled by Authorization 0011); capabilities `security.ip_rules`, `security.session_policy`, `security.alerts` in every plan and `security.ip_rules_scoped`, `security.alerts_advanced` from Workplace Plus (Entitlements 0008) |
+| Web | Server-side API calls forward the rightmost incoming `x-forwarded-for` so rules apply to the real caller |
+| Tests | `NetworkRulesTests` (unit), `SecurityNetworkTests` (allow, block, admin area, spoofed header, lock-out confirmation, preview, plan limit, permissions, cross-tenant, audit, backfill) |
+
+| Item | Note |
+|---|---|
+| Self lock-out | A change that refuses the caller's own address needs the address typed back. The step-up part of plan section US1 scenario 3 comes with step-up in T010. |
+| Unknown routes | A path that matches no endpoint carries no admin area mark, so it gets the normal 404 rather than a network refusal; tenant rules still apply to it. |
+| Audit rate | Refusals are audited once a minute per tenant, address and area, per instance. |

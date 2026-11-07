@@ -23,6 +23,7 @@ public static class IdentityModule
         services.Configure<SessionOptions>(configuration.GetSection(SessionOptions.Section));
         services.AddScoped<SessionService>();
         services.AddScoped<ISessionRevocation>(sp => sp.GetRequiredService<SessionService>());
+        services.AddScoped<ISignInHistory, SignInHistory>();
         services.AddScoped<SignInService>();
         services.AddHttpClient(Sso.HttpOidcProvider.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
         services.AddSingleton<Sso.IOidcProvider, Sso.HttpOidcProvider>();

@@ -19,6 +19,15 @@ public interface IUserDirectory
     Task<bool> IsDisabledByDirectoryAsync(Guid userId, CancellationToken ct = default);
 }
 
+/// <summary>Where members signed in from (spec 026 lock-out preview). Addresses only, no other session data.</summary>
+public interface ISignInHistory
+{
+    /// <summary>The source address of each session created since the given time, per user; sessions without one are left out.</summary>
+    Task<IReadOnlyList<SignInAddress>> AddressesSinceAsync(DateTimeOffset since, CancellationToken ct = default);
+}
+
+public sealed record SignInAddress(Guid UserId, string Address);
+
 public interface ISessionRevocation
 {
     Task<int> RevokeUserSessionsAsync(Guid userId, string reason, CancellationToken ct = default);

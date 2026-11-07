@@ -12,6 +12,7 @@ using TeamBeats.Modules.Entitlements;
 using TeamBeats.Modules.Experience;
 using TeamBeats.Modules.Hr;
 using TeamBeats.Modules.People;
+using TeamBeats.Modules.Security;
 using TeamBeats.Modules.Identity;
 using TeamBeats.Modules.Integrations;
 using TeamBeats.Modules.Notifications;
@@ -41,6 +42,7 @@ public static class TeamBeatsModules
         NotificationsModule.Migrations,
         HrModule.Migrations,
         PeopleModule.Migrations,
+        SecurityModule.Migrations,
     ];
 
     public static IServiceCollection AddTeamBeatsCore(this IServiceCollection services, IConfiguration configuration)
@@ -72,6 +74,7 @@ public static class TeamBeatsModules
         services.AddNotificationsModule(configuration);
         services.AddHrModule();
         services.AddPeopleModule();
+        services.AddSecurityModule();
         return services;
     }
 }
@@ -125,6 +128,7 @@ public static class ApiComposition
             await next(http);
         });
         app.UseTeamBeatsSessions();
+        app.UseNetworkRules();
         app.UseRateLimiter();
 
         app.MapHealthChecks("/health/live");
@@ -141,6 +145,7 @@ public static class ApiComposition
         app.MapNotificationsEndpoints();
         app.MapHrEndpoints();
         app.MapPeopleEndpoints();
+        app.MapSecurityEndpoints();
         extraEndpoints?.Invoke(app);
         return app;
     }

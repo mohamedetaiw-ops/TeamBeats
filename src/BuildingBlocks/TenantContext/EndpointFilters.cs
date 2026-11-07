@@ -5,8 +5,21 @@ using TeamBeats.Primitives;
 
 namespace TeamBeats.TenantContext;
 
+/// <summary>
+/// Marks an endpoint as part of the administration area, so the tenant's admin area network rules apply to it (spec 026
+/// US1 scenario 2). It changes nothing else: authorization still happens per action.
+/// </summary>
+public sealed class AdminAreaMetadata
+{
+    public static readonly AdminAreaMetadata Instance = new();
+}
+
 public static class EndpointScopeExtensions
 {
+    /// <summary>Puts the endpoints in the administration area (spec 026): the admin area network rules apply to them.</summary>
+    public static TBuilder InAdminArea<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder =>
+        builder.WithMetadata(AdminAreaMetadata.Instance);
+
     /// <summary>Requires an authenticated tenant user on a tenant host. Authorization still happens per action.</summary>
     public static TBuilder RequireTenantUser<TBuilder>(this TBuilder builder) where TBuilder : IEndpointConventionBuilder =>
         builder.AddEndpointFilter(async (ctx, next) =>

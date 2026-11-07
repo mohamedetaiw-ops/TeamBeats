@@ -142,6 +142,10 @@ public static class AuditActions
     public const string PeopleReportingCycleDetected = "people.reporting_cycle_detected";
     public const string PeopleSettingsChanged = "people.settings_changed";
 
+    // Spec 026 (R1): security policy and network refusals.
+    public const string SecurityPolicyChanged = "security.policy_changed";
+    public const string SecurityRequestBlockedNetwork = "security.request_blocked_network";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -167,6 +171,7 @@ public static class AuditActions
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
         HrCalendarChanged,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
+        SecurityPolicyChanged, SecurityRequestBlockedNetwork,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

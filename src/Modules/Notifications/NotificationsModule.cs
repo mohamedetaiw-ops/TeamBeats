@@ -95,7 +95,7 @@ public static class NotificationsModule
             return Results.Ok(view);
         });
 
-        var admin = app.MapGroup("/api/v1/notifications").RequireTenantUser().WithTags("Notifications: administration");
+        var admin = app.MapGroup("/api/v1/notifications").RequireTenantUser().InAdminArea().WithTags("Notifications: administration");
 
         admin.MapGet("/settings", async (IAuthorizationService authz, NotificationSettingsService settings, CancellationToken ct) =>
         {

@@ -52,7 +52,7 @@ public static class IntegrationsModule
 
     public static IEndpointRouteBuilder MapIntegrationsEndpoints(this IEndpointRouteBuilder app)
     {
-        var api = app.MapGroup("/api/v1/integrations").RequireTenantUser().WithTags("Integrations: connections");
+        var api = app.MapGroup("/api/v1/integrations").RequireTenantUser().InAdminArea().WithTags("Integrations: connections");
 
         api.MapGet("/catalogue/microsoft365", async (IAuthorizationService authz, ConnectionService connections, CancellationToken ct) =>
         {

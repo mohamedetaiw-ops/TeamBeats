@@ -37,10 +37,14 @@ public sealed class SessionService(IDbSession session, ITenantContext context, I
         var token = SessionTokens.NewToken();
         await session.ExecAsync(
             """
-            insert into identity.user_session (tenant_id, id, user_id, token_hash, method, expires_at)
-            values (@t, @id, @u, @h, @m, @exp)
+            insert into identity.user_session (tenant_id, id, user_id, token_hash, method, expires_at, source_ip, authenticated_at, last_seen_at)
+            values (@t, @id, @u, @h, @m, @exp, @ip::inet, @now, @now)
             """,
-            new { t = context.RequireTenant(), id = Ids.New(), u = userId, h = SessionTokens.Hash(token), m = method, exp = clock.UtcNow + options.Value.Lifetime }, ct);
+            new
+            {
+                t = context.RequireTenant(), id = Ids.New(), u = userId, h = SessionTokens.Hash(token), m = method, exp = clock.UtcNow + options.Value.Lifetime,
+                ip = System.Net.IPAddress.TryParse(context.SourceIp, out var address) ? address.ToString() : null, now = clock.UtcNow,
+            }, ct);
         return token;
     }
 

@@ -27,7 +27,7 @@ public static class AuthorizationModule
 
     public static IEndpointRouteBuilder MapAuthorizationEndpoints(this IEndpointRouteBuilder app)
     {
-        var g = app.MapGroup("/api/v1/authz").RequireTenantUser().WithTags("Authorization");
+        var g = app.MapGroup("/api/v1/authz").RequireTenantUser().InAdminArea().WithTags("Authorization");
 
         g.MapGet("/roles", async (AuthorizationAdmin admin, CancellationToken ct) => Results.Ok(await admin.ListRolesAsync(ct)));
 

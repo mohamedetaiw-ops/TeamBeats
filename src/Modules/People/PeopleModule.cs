@@ -71,7 +71,7 @@ public static class PeopleModule
             var view = await service.RenameLocationAsync(key, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
-        });
+        }).InAdminArea();
 
         people.MapGet("/policy", async (PeopleService service, IDbSession session, HttpResponse response, CancellationToken ct) =>
         {
@@ -79,7 +79,7 @@ public static class PeopleModule
             await session.CommitAsync(ct);
             response.Headers.ETag = view.ETag;
             return Results.Ok(view);
-        });
+        }).InAdminArea();
 
         people.MapPut("/policy", async (PolicyRequest request, HttpRequest http, PeopleService service, IDbSession session, CancellationToken ct) =>
         {
@@ -87,7 +87,7 @@ public static class PeopleModule
             await session.CommitAsync(ct);
             http.HttpContext.Response.Headers.ETag = view.ETag;
             return Results.Ok(view);
-        });
+        }).InAdminArea();
 
         people.MapGet("/{id:guid}", async (Guid id, PeopleService service, IDbSession session, CancellationToken ct) =>
         {
@@ -108,14 +108,14 @@ public static class PeopleModule
             var view = await service.UpdateAdminFieldsAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
-        });
+        }).InAdminArea();
 
         people.MapPut("/{id:guid}/manager", async (Guid id, ManagerRequest request, PeopleService service, IDbSession session, CancellationToken ct) =>
         {
             var view = await service.SetManagerAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
-        });
+        }).InAdminArea();
 
         me.MapGet("/team", async (bool? indirect, int? offset, int? limit, PeopleService service, IDbSession session, CancellationToken ct) =>
         {

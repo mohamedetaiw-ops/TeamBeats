@@ -32,7 +32,7 @@ public static class AuditModule
 
     public static IEndpointRouteBuilder MapAuditEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/v1/audit").RequireTenantUser().WithTags("Audit").RequireRateLimiting("audit");
+        var group = app.MapGroup("/api/v1/audit").RequireTenantUser().InAdminArea().WithTags("Audit").RequireRateLimiting("audit");
 
         group.MapGet("/events", async (string? actor, string? action, string? targetType, string? targetId,
             DateTimeOffset? from, DateTimeOffset? to, string? cursor, int? limit, AuditQueries queries, CancellationToken ct) =>
