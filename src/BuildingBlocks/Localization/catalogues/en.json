@@ -283,6 +283,7 @@
   "validation.page.org_unit_unknown": "Choose an organization unit that exists",
   "validation.page.placement_duplicate_id": "Two components on this page have the same ID",
   "validation.page.placement_id_invalid": "Use lowercase letters, digits and hyphens for the component ID",
+  "validation.page.placement_unplaced": "There is no matching region in the new layout. Choose a region for it or remove it",
   "validation.page.property_invalid": "Check this setting: the value is not valid",
   "validation.page.reason_too_long": "Keep the reason under 500 characters",
   "validation.page.region_duplicate": "This region appears more than once",

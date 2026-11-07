@@ -103,6 +103,7 @@ public static class AuditActions
     public const string PageCreated = "page.created";
     public const string PagePublished = "page.published";
     public const string PageRolledBack = "page.rolled_back";
+    public const string PageTemplateChanged = "page.template_changed";
     public const string ComponentEnabled = "component.enabled";
     public const string ComponentDisabled = "component.disabled";
 
@@ -139,7 +140,7 @@ public static class AuditActions
         SignInFailed, IdpConfigChanged, DirectoryConnectionChanged, UserSynced, DisabledByDirectory, ReenabledByDirectory,
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
         ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, OutlookConnected, OutlookDisconnected,
-        PageCreated, PagePublished, PageRolledBack, ComponentEnabled, ComponentDisabled,
+        PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, ComponentEnabled, ComponentDisabled,
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
     ];
 

@@ -383,6 +383,96 @@ public sealed class PageCompositionTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.NotFound, (await t["employee_gulf"].Client.GetAsync($"/api/v1/experience/pages/{gulf["id"]}")).StatusCode);
     }
 
+    private static async Task<HttpResponseMessage> ChangeTemplateAsync(TestTenant t, JsonNode page, object body, string user = "admin",
+        string? etag = null)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, $"/api/v1/experience/pages/{page["id"]}/change-template") { Content = JsonContent.Create(body) };
+        if (etag is not null)
+        {
+            request.Headers.TryAddWithoutValidation("If-Match", etag);
+        }
+        return await t[user].Client.SendAsync(request);
+    }
+
+    private static string[] PlacementsIn(JsonNode draft, string region) =>
+        draft["regions"]!.AsArray().Single(r => r!["id"]!.GetValue<string>() == region)!["placements"]!.AsArray()
+            .Select(p => p!["id"]!.GetValue<string>()).ToArray();
+
+    [Fact]
+    public async Task Layout_change_keeps_placements_in_compatible_regions_and_lists_the_rest_for_the_editor()
+    {
+        var t = world.A;
+        var page = await CreateAsync(t, "T04");
+        var kpi = new { label = new { en = "Visits", ar = "الزيارات" }, value = 5 };
+        var draft = WithPlacements(page, "hero", P("h", "reference.alpha.text@1", Text));
+        draft["regions"]!.AsArray().Single(r => r!["id"]!.GetValue<string>() == "grid")!["placements"] = new JsonArray(
+            P("g", "reference.alpha.text@1", Text, span: 12), P("k", "reference.alpha.kpi@1", kpi), P("x", "reference.alpha.text@1", Text));
+        var saved = await SavedAsync(t, page, draft);
+
+        // A dry run works the change out and saves nothing. T05 has no full-width section, so the hero text has no matching region.
+        var dry = await ChangeTemplateAsync(t, saved, new { templateId = "T05" });
+        Assert.Equal(HttpStatusCode.OK, dry.StatusCode);
+        var plan = JsonNode.Parse(await dry.Content.ReadAsStringAsync())!;
+        var unplaced = plan["unplaced"]!.AsArray().Single()!;
+        Assert.Equal("h", unplaced["placementId"]!.GetValue<string>());
+        Assert.Equal("hero", unplaced["fromRegion"]!.GetValue<string>());
+        Assert.Equal(["canvas"], unplaced["options"]!.AsArray().Select(o => o!.GetValue<string>()));
+        Assert.Empty(PlacementsIn(plan["draft"]!, "sidebar"));
+        Assert.Equal(["g", "k", "x"], PlacementsIn(plan["draft"]!, "canvas"));
+        Assert.Equal("balanced", plan["draft"]!["variant"]!.GetValue<string>());
+        Assert.Contains(plan["findings"]!.AsArray(), f => f!["code"]!.GetValue<string>() == "validation.page.placement_unplaced"
+            && f["placement"]!.GetValue<string>() == "h" && f["severity"]!.GetValue<string>() == "blocking");
+        Assert.Null(plan["page"]);
+        var unchanged = await t["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/pages/{page["id"]}");
+        Assert.Equal("T04", unchanged.GetProperty("templateId").GetString());
+        var etag = unchanged.GetProperty("eTag").GetString()!;
+
+        // Applying needs the draft version, and refuses while a placement has no region.
+        Assert.Equal(HttpStatusCode.Conflict, (await ChangeTemplateAsync(t, saved, new { templateId = "T05", apply = true })).StatusCode);
+        Assert.True(Has(await FindingsAsync(await ChangeTemplateAsync(t, saved, new { templateId = "T05", apply = true }, etag: etag)),
+            "placement_unplaced", "h"));
+
+        // The editor places the hero text in the canvas and removes another; the change is saved and audited.
+        var applied = await ChangeTemplateAsync(t, saved,
+            new { templateId = "T05", variant = "compact", apply = true, assignments = new Dictionary<string, string> { ["h"] = "canvas", ["x"] = "" } },
+            etag: etag);
+        Assert.Equal(HttpStatusCode.OK, applied.StatusCode);
+        var result = JsonNode.Parse(await applied.Content.ReadAsStringAsync())!;
+        Assert.Empty(result["unplaced"]!.AsArray());
+        // Placements keep their order on the page, so the hero text comes first.
+        Assert.Equal(["h", "g", "k"], PlacementsIn(result["draft"]!, "canvas"));
+        var after = await t["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/pages/{page["id"]}");
+        Assert.Equal("T05", after.GetProperty("templateId").GetString());
+        Assert.Equal("L05", after.GetProperty("draft").GetProperty("layout").GetProperty("id").GetString());
+        Assert.Equal("compact", after.GetProperty("draft").GetProperty("variant").GetString());
+        Assert.NotEqual(etag, after.GetProperty("eTag").GetString());
+        // A width wider than the new region falls back to the component default.
+        var moved = after.GetProperty("draft").GetProperty("regions").EnumerateArray().Single(r => r.GetProperty("id").GetString() == "canvas")
+            .GetProperty("placements").EnumerateArray().Single(p => p.GetProperty("id").GetString() == "g");
+        Assert.True(!moved.TryGetProperty("span", out var span) || span.ValueKind == JsonValueKind.Null);
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.PageTemplateChanged, page["id"]!.GetValue<string>());
+        Assert.True((await PublishAsync(t, JsonNode.Parse(after.GetRawText())!)).IsSuccessStatusCode);
+
+        // The old version is stale now.
+        Assert.Equal(HttpStatusCode.Conflict, (await ChangeTemplateAsync(t, saved, new { templateId = "T01", apply = true }, etag: etag)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Layout_change_refuses_unknown_templates_and_is_not_found_outside_scope_and_tenant()
+    {
+        var page = await CreateAsync(world.A, "T01");
+        var etag = page["eTag"]!.GetValue<string>();
+        Assert.Equal(HttpStatusCode.BadRequest, (await ChangeTemplateAsync(world.A, page, new { templateId = "T99" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await ChangeTemplateAsync(world.A, page, new { templateId = "T03", variant = "loud" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await ChangeTemplateAsync(world.A, page, new { templateId = "T03", apply = true }, user: "employee_gulf", etag: etag)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await world.B["admin"].Client.PostAsJsonAsync(
+            $"/api/v1/experience/pages/{page["id"]}/change-template", new { templateId = "T03", apply = true })).StatusCode);
+        var still = await world.A["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/pages/{page["id"]}");
+        Assert.Equal("T01", still.GetProperty("templateId").GetString());
+        Assert.Equal(etag, still.GetProperty("eTag").GetString());
+    }
+
     [Fact]
     public async Task Pages_of_another_tenant_are_not_found()
     {

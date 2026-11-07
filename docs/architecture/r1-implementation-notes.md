@@ -364,6 +364,7 @@ Screen reader checks assert the roles, names and states that assistive technolog
 | Previews by device and direction | `GET /api/v1/experience/pages/{id}/preview?locale=`, drawn at `/preview/pages/[id]` in a frame at phone, tablet or desktop width |
 | Checks | Every finding carries its localized `message`; translation status per enabled language comes from `validation.page.translation_missing` warnings with `locale` |
 | Tests | `page-builder.spec.ts` in `ar` and `en`; `PageCompositionTests` |
+| Layout change (US5 scenario 7, part of T011) | `POST /api/v1/experience/pages/{id}/change-template` works the change out without saving; with `apply` and If-Match it saves it. Each placement keeps the region with the same ID when it fits (category, minimum width, room), else goes to a fitting region of the same section, else is listed in `unplaced` with the regions it fits, as a blocking `validation.page.placement_unplaced` finding. `assignments` maps a placement to a region, or to an empty value to remove it. A width wider than the new region falls back to the component default; the variant is kept when the new template has it. Only the draft and the page's template change; the live release changes at the next publish. Audited as `page.template_changed` (spec 032 section 13 does not list it; recorded here as the smallest safe default, since a template change is not a publish). |
 
 ### Differences and follow-ups
 | Item | Note |
