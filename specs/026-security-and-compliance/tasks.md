@@ -20,8 +20,8 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T011 [US2] Session idle, absolute and concurrent rules in the session middleware; revoke-all endpoints
 
 ## Phase 4: User Story 5, security alerts (P1, basic)
-- [ ] T012 [P] [US5] Tests: download volume threshold from `DocumentDownloaded`; out-of-hours admin grant (advanced key); handling audited; cross-tenant
-- [ ] T013 [US5] Alert rules, list and handle endpoints; admin shell badge
+- [x] T012 [P] [US5] Tests: download volume threshold from `DocumentDownloaded`; out-of-hours admin grant (advanced key); handling audited; cross-tenant
+- [x] T013 [US5] Alert rules, list and handle endpoints; admin shell badge
 
 ## Phase 5: Posture, secure rendering and pages
 - [ ] T014 Posture endpoint and checks

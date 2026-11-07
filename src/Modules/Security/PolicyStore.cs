@@ -54,6 +54,10 @@ public sealed class PolicyStore(IDbSession session, TenantContextAccessor contex
 
     public void Forget(Guid tenant) => cache.Remove(Key(tenant));
 
+    /// <summary>The tenant's alert thresholds as stored, or null for the defaults.</summary>
+    public Task<string?> AlertSettingsJsonAsync(CancellationToken ct) =>
+        session.ScalarAsync<string?>("select alert_settings::text from security.policy", null, ct);
+
     private static IReadOnlyDictionary<string, IReadOnlyList<string>> Zones(string json) =>
         (JsonSerializer.Deserialize<Dictionary<string, string[]>>(json) ?? []).ToDictionary(z => z.Key, z => (IReadOnlyList<string>)z.Value, StringComparer.Ordinal);
 }

@@ -40,5 +40,8 @@ public interface IAuthenticationAssurance
     Task<bool> CheckMfaAsync(string provider, IReadOnlyList<string> amr, string? acr, CancellationToken ct);
 }
 
+/// <summary>A security alert was raised (spec 026 US5); kind and ID only.</summary>
+public sealed record SecurityAlertRaised(Guid AlertId, string Kind) : IIntegrationEvent;
+
 /// <summary>Setting names only, never values.</summary>
 public sealed record SecurityPolicyChanged(int Version, IReadOnlyList<string> Settings) : IIntegrationEvent;

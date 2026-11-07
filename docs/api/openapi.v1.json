@@ -4405,6 +4405,60 @@
           }
         }
       }
+    },
+    "/api/v1/security/alerts": {
+      "get": {
+        "tags": [
+          "Security"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/security/alerts/{id}/handle": {
+      "post": {
+        "tags": [
+          "Security"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandleAlertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5276,6 +5330,27 @@
               "string"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "HandleAlertRequest": {
+        "required": [
+          "outcome",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

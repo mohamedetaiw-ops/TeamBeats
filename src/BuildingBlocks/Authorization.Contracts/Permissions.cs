@@ -67,6 +67,16 @@ public static class Permissions
     public const string SecurityView = "security.view";
     public const string SecurityRespond = "security.respond";
 
+    /// <summary>
+    /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
+    /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
+    /// </summary>
+    public static readonly IReadOnlySet<string> Privileged = new HashSet<string>(StringComparer.Ordinal)
+    {
+        TenantSettingsManage, TenantAdminsManage, OrgUnitManage, RolesManage, RolesAssign, InheritanceRulesManage, UsersManage,
+        IdentityConfigManage, AuditRetentionManage, IntegrationManage, AiPolicyManage, SecurityManage,
+    };
+
     public static readonly IReadOnlyList<string> All =
     [
         TenantSettingsView, TenantSettingsManage, TenantAdminsManage,

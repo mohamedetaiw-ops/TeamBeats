@@ -148,6 +148,8 @@ public static class AuditActions
     public const string SecurityMfaMissing = "security.mfa_missing";
     public const string SecurityStepUpCompleted = "security.step_up_completed";
     public const string SecurityStepUpFailed = "security.step_up_failed";
+    public const string SecurityAlertRaised = "security.alert_raised";
+    public const string SecurityAlertHandled = "security.alert_handled";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -174,7 +176,7 @@ public static class AuditActions
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
         HrCalendarChanged,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
-        SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed,
+        SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

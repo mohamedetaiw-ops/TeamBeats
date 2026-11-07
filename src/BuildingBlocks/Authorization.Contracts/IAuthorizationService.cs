@@ -114,6 +114,9 @@ public interface IAuthorizationProvisioning
 
     Task<IReadOnlyList<RoleAssignmentSummary>> GetUserAssignmentsAsync(Guid userId, CancellationToken ct = default);
 
+    /// <summary>The permissions a role of the current tenant holds; empty for an unknown key.</summary>
+    Task<IReadOnlySet<string>> RolePermissionsAsync(string roleKey, CancellationToken ct = default);
+
     /// <summary>Whether removing access for this user would leave the tenant without an administrator.</summary>
     Task<bool> IsLastTenantAdministratorAsync(Guid userId, CancellationToken ct = default);
 }
