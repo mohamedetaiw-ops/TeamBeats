@@ -463,5 +463,77 @@
       "conditionalAccess": "Your organization requires a managed device for Outlook.",
       "unavailable": "Outlook settings are not available right now."
     }
+  },
+  "builder": {
+    "pages": {
+      "title": "Pages",
+      "intro": "Pages you may change, newest change first. A draft is never visible to employees until you publish it.",
+      "create": "New page",
+      "unavailable": "Pages cannot be loaded right now",
+      "empty": "No pages yet",
+      "emptyMessage": "Create a page from a template to get started.",
+      "address": "Address",
+      "template": "Template",
+      "scope": "Who it is for",
+      "status": "Status",
+      "changed": "Last changed",
+      "wholeTenant": "Whole organization",
+      "unit": "An organization unit",
+      "draftOnly": "Draft, not published",
+      "published": "Published, release {release}"
+    },
+    "create": {
+      "title": "New page",
+      "intro": "Choose a template, then give the page an address. You can fill its regions after it is created.",
+      "template": "Template",
+      "regions": "Regions: {regions}",
+      "listSeparator": ", ",
+      "variant": "Spacing",
+      "slug": "Address",
+      "slugHint": "Lowercase letters, numbers and hyphens, for example people/benefits. The page opens at /p/ followed by this address.",
+      "slugInvalid": "Use lowercase letters, numbers and hyphens, with slashes between parts.",
+      "slugTaken": "Another page already uses this address.",
+      "scope": "Who it is for",
+      "scopeDenied": "You cannot create pages for this unit. Choose a unit you manage.",
+      "failed": "The page could not be created. Try again.",
+      "submit": "Create page",
+      "creating": "Creating page"
+    },
+    "page": {
+      "open": "Open published page",
+      "findings": "Checks",
+      "blocking": "{count, plural, one {# problem blocks publishing} other {# problems block publishing}}",
+      "noBlocking": "Nothing blocks publishing",
+      "regions": "Regions",
+      "placements": "{count, plural, =0 {is empty} one {has # component} other {has # components}}",
+      "editorPending": "Adding and arranging components on this page arrives with the next builder release."
+    },
+    "variants": {
+      "spacious": "Spacious",
+      "balanced": "Balanced",
+      "compact": "Compact"
+    },
+    "regions": {
+      "main": "Main",
+      "aside": "Side",
+      "hero": "Banner",
+      "grid": "Grid",
+      "sidebar": "Sidebar",
+      "canvas": "Canvas",
+      "mosaic": "Mosaic",
+      "band1": "First band",
+      "band2": "Second band",
+      "band3": "Third band",
+      "wide1": "First wide band",
+      "contained1": "First section",
+      "wide2": "Second wide band",
+      "contained2": "Second section",
+      "start": "Start",
+      "middle": "Middle",
+      "end": "End",
+      "panel1": "First panel",
+      "panel2": "Second panel",
+      "panel3": "Third panel"
+    }
   }
 }
