@@ -4,16 +4,16 @@
 **Shared base:** ADR-0006 (outbox), ADR-0013, module map (`Notifications`)
 
 ## Summary
-A `Notifications` module with `INotificationSender.SendAsync(NotificationRequest)` in `Notifications.Contracts`. A send writes the in-app rows and an outbox message per email recipient in one transaction. A worker renders the template and sends through `IEmailSender`, with an SMTP adapter on .NET's `System.Net.Mail` or MailKit (MIT) if the base library proves insufficient for TLS and auth needs; a fake that stores messages for tests and dev. Templates are resource files per locale. The header bell uses `GET /api/v1/me/notifications/count`, cached per user for 30 seconds.
+A `Notifications` module with `INotificationSender.SendAsync(NotificationRequest)` in `Notifications.Contracts`. A send writes the in-app rows and a `delivery` row per email recipient in one transaction with the caller. The `delivery` table is the email queue, because the outbox has no delayed delivery and quiet hours, digests and retries need a not-before time; the worker polls it per tenant. It renders the template and sends through `IEmailSender`, with an SMTP adapter on .NET's `System.Net.Mail` (STARTTLS and authentication are enough for R1, so no mail library is added) and a capture sender that stores messages for tests, development and staging. Templates are resource keys per locale with tenant overrides. The header bell polls `GET /api/v1/me/notifications/count` every 30 seconds while the page is visible.
 
 ## Data model (schema `notifications`)
-`notification` (user, category, mandatory, template key, parameters, link, read_at, dedupe_key), `preference` (user, category, channel flags, digest), `quiet_hours` (user, start, end, time zone), `group_entry` (user, group key, count, window end), `delivery` (notification, channel, address, status, attempts), `tenant_settings` (sender name, relay reference, defaults).
+`notification` (user, category, mandatory, template key, parameters, link, read_at, dedupe_key), `preference` (user, category, channel flags, digest), `user_settings` (user, quiet hours start and end, time zone, digest time, last digest), `delivery` (notification, channel, address, status, attempts, not before), `address_state` (paused addresses after a hard bounce), `tenant_settings` (sender name, relay with secret reference, default email per category, extra mandatory categories, version), `template_override` (template key, locale, title, body), `captured_mail` (development and staging only). Grouping is kept on the `notification` row (group key and count).
 
 ## API (v1)
-`GET /api/v1/me/notifications`, `POST /api/v1/me/notifications/{id}/read`, `POST /api/v1/me/notifications/read-all`, `GET/PUT /api/v1/me/notification-preferences`, `GET/PUT /api/v1/notifications/settings`, `POST /api/v1/notifications/settings/test`.
+`GET /api/v1/me/notifications`, `GET /api/v1/me/notifications/count`, `POST /api/v1/me/notifications/{id}/read`, `POST /api/v1/me/notifications/read-all`, `GET/PUT /api/v1/me/notification-preferences`, `GET/PUT /api/v1/notifications/settings`, `POST /api/v1/notifications/settings/test`, `GET/PUT/DELETE /api/v1/notifications/templates/{key}/{locale}`. Development host only: `GET /api/v1/dev/notifications/mailbox`, `POST /api/v1/dev/notifications/sample`.
 
 ## Grouping and quiet hours
-Grouping is applied when the in-app row is written: an existing row with the same group key inside the window is updated with a count. Held deliveries for quiet hours are outbox messages with a not-before time.
+Grouping is applied when the in-app row is written: an existing row with the same group key inside the window is updated with a count. Held deliveries for quiet hours are `delivery` rows with a not-before time at the end of the user's quiet hours.
 
 ## R2 channels
 `IChannelSender` per channel: email (R1), Teams (Microsoft 365 connection through `Integrations.Contracts`), web push (030 adapter), Slack and SMS (017 runtime), and a signage feed endpoint that reads published announcements through the 009 contract.

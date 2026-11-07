@@ -4,6 +4,7 @@ import type { Me } from "@/lib/api";
 import { getPreferences, getShell } from "@/lib/shell/client";
 import type { Crumb, NavLink, ShellLayout, ShellRegion } from "@/lib/shell/types";
 import { SignOutButton } from "@/components/shell/SignOutButton";
+import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { GlobalMenu } from "./GlobalMenu";
 import { QuickNav } from "./QuickNav";
 import { SettingsPanel } from "./SettingsPanel";
@@ -13,15 +14,15 @@ import "./shell.css";
 const fallbackLayout: ShellLayout = {
   start: ["identity", "global_navigation"],
   center: ["search"],
-  end: ["settings"],
+  end: ["notifications", "settings"],
   below: ["organization_indicator", "breadcrumbs"],
   utilities: [],
 };
 
 /**
  * The global shell around every page (spec 008 US1, FR-001): regions in the order the published shell definition
- * gives, independent of page content. Notifications, the task badge, contextual actions and utilities belong to their
- * modules and render nothing until those modules register them.
+ * gives, independent of page content. The task badge, contextual actions and utilities belong to their modules and
+ * render nothing until those modules register them; notifications come from spec 015.
  */
 export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Crumb[] }) {
   const [shell, values, t] = await Promise.all([getShell(), getPreferences(), getTranslations("shell")]);
@@ -45,6 +46,8 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
         return shell.ok ? <GlobalMenu key={region} id="global-navigation" label={t("globalNav")} links={shell.data.globalMenu} /> : null;
       case "search":
         return <QuickNav key={region} />;
+      case "notifications":
+        return <NotificationBell key={region} />;
       case "settings":
         return <SettingsPanel key={region} locales={locales} locale={me.locale} values={values} />;
       case "organization_indicator":

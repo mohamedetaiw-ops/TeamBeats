@@ -247,16 +247,18 @@ public sealed partial class FakeSystemsTests(TenantWorld world) : IAsyncLifetime
         Assert.True(mail.GetProperty("value").GetArrayLength() >= 3);
         Assert.Contains(mail.GetProperty("value").EnumerateArray(), m => m.GetProperty("subject").GetString() == "طلب إجازة سنوية");
 
-        var today = DateTimeOffset.UtcNow.Date;
-        var view = await (await user.GetAsync($"https://graph.microsoft.com/v1.0/me/calendarView?startDateTime={today.AddDays(-1):yyyy-MM-ddTHH:mm:ssZ}&endDateTime={today.AddDays(7):yyyy-MM-ddTHH:mm:ssZ}"))
+        // Scenario events are placed on days of the directory's own time zone (+04:00), so count days there.
+        var dubai = TimeSpan.FromHours(4);
+        var today = new DateTimeOffset(DateTimeOffset.UtcNow.ToOffset(dubai).Date, dubai);
+        var view = await (await user.GetAsync($"https://graph.microsoft.com/v1.0/me/calendarView?startDateTime={today.AddDays(-1).UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}&endDateTime={today.AddDays(7).UtcDateTime:yyyy-MM-ddTHH:mm:ssZ}"))
             .Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(view.GetProperty("value").GetArrayLength() >= 4);
 
         var schedule = await user.PostAsync("https://graph.microsoft.com/v1.0/me/calendar/getSchedule", new StringContent(JsonSerializer.Serialize(new
         {
             schedules = new[] { "omar.alfarsi@staging.example" },
-            startTime = new { dateTime = today.AddDays(4).ToString("yyyy-MM-ddT00:00:00"), timeZone = "UTC" },
-            endTime = new { dateTime = today.AddDays(5).ToString("yyyy-MM-ddT00:00:00"), timeZone = "UTC" },
+            startTime = new { dateTime = today.AddDays(4).UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss"), timeZone = "UTC" },
+            endTime = new { dateTime = today.AddDays(5).UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss"), timeZone = "UTC" },
             availabilityViewInterval = 60,
         }), Encoding.UTF8, "application/json"));
         var free = await schedule.Content.ReadFromJsonAsync<JsonElement>();

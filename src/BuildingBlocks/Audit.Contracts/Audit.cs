@@ -126,6 +126,11 @@ public static class AuditActions
     public const string PersonalizationPolicyChanged = "personalization.policy_changed";
     public const string AudienceRuleChanged = "personalization.audience_rule_changed";
 
+    // 015
+    public const string NotificationSettingsChanged = "notifications.settings_changed";
+    public const string NotificationRelayTested = "notifications.relay_tested";
+    public const string NotificationTemplateOverridden = "notifications.template_overridden";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -148,6 +153,7 @@ public static class AuditActions
         PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, ComponentEnabled, ComponentDisabled, ComponentUpgraded,
         TemplateReleased, TemplateDistributed, TemplateDeprecated, RegionLockChanged,
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
+        NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

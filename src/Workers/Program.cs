@@ -15,6 +15,7 @@ public sealed class WorkerProgram
     {
         var builder = WebApplication.CreateBuilder(args);
         ProductionGuards.EnsureDevSignInDisabled(builder.Configuration);
+        ProductionGuards.EnsureMailIsSentInProduction(builder.Environment, builder.Configuration);
 
         if (args.Contains("migrate"))
         {
@@ -34,6 +35,11 @@ public sealed class WorkerProgram
         }
         builder.Services.AddHostedService<AuditSealerService>();
         builder.Services.AddHostedService<AuditRetentionService>();
+        // Staging turns this off: its development host delivers into the captured mailbox itself.
+        if (builder.Configuration.GetValue("Workers:NotificationDelivery:Enabled", true))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Notifications.NotificationDeliveryWorker>();
+        }
         // Staging turns this off: its fake directory lives in the development host, which runs the sync itself.
         if (builder.Configuration.GetValue("Workers:DirectorySync:Enabled", true))
         {
