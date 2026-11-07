@@ -37,11 +37,12 @@ public static class AdministrationModule
         ("branding", Permissions.ThemeEdit, "/admin/branding"),
         ("notifications", Permissions.NotificationsManage, "/admin/notifications"),
         ("calendars", Permissions.HrCalendarManage, "/admin/calendars"),
+        ("people", Permissions.PeopleManage, "/admin/people"),
         ("audit", Permissions.AuditView, "/admin/audit"),
     ];
 
-    /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) are for the whole tenant.</summary>
-    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications" };
+    /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) and the people directory policy (spec 010 US1) are for the whole tenant.</summary>
+    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications", "people" };
 
     public static IServiceCollection AddAdministrationModule(this IServiceCollection services) => services;
 

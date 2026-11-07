@@ -484,3 +484,14 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Policy cache | The policy is read on every request, so changes apply at once rather than within 60 seconds. |
 | Settings audit | Newcomer period, opt-out and location attribute changes and location renames are audited as `people.settings_changed`, which section 13 does not list. |
 | Performance | Search uses plain SQL over normalized columns with no extension. The 50,000 member performance test (T011) is still to come. |
+| Large teams of others | The org chart shows a count of further reports; the link to the full list exists only on your own profile (My team), since there is no reports list for another person yet. |
+| Menus | The people pages are not in the global menu or quick navigation yet; the global menu comes from tenant configuration, and quick navigation entries come with the people component wiring (T008, T010). |
+| Manual manager screen | Managers are set by hand through `PUT /people/{id}/manager`; the profile has no screen for it yet. |
+| Tenant field keys | A new tenant field gets a generated key (`custom.f` and a time based suffix); administrators see only its names. |
+
+## People directory pages (spec 010 T009)
+| Part | Where |
+|---|---|
+| Pages | `/people` (search with unit and location filters, new joiners), `/people/{id}` (profile, contact actions from visible fields only, manager, org chart with chart and list views), `/people/team` (My team with indirect reports), `/people/me` (own profile, new joiner opt-out), `/admin/people` (field sources and visibility, tenant fields, settings, location names) |
+| Code | `src/Web/features/people`, `src/Web/lib/people/types.ts`, the `people` message namespace; the admin section `people` is tenant-wide like notifications |
+| Tests | `tests/Acceptance/specs/people.spec.ts` in English and Arabic with axe |

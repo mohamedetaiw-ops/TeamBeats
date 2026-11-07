@@ -1,0 +1,221 @@
+/* Spec 010 people directory. Colors and spacing come from tokens; logical properties keep the layout right in RTL. */
+.people {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.people-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.people-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+.people-section h2,
+.people-section h3 {
+  margin: 0;
+}
+
+.people-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.people-search .field {
+  flex: 1 1 14rem;
+}
+
+.people-select {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.people-list {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.people-item {
+  display: flex;
+  align-items: start;
+  gap: var(--tb-space-sm);
+}
+
+.people-item-text {
+  display: grid;
+  gap: var(--tb-space-xs);
+  min-inline-size: 0;
+}
+
+.people-item-name {
+  font-weight: 600;
+}
+
+.people-avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+  border-radius: 50%;
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  font-weight: 600;
+}
+
+.people-avatar-large {
+  inline-size: 4rem;
+  block-size: 4rem;
+}
+
+.people-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs) var(--tb-space-sm);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.people-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-md);
+}
+
+.people-head h1 {
+  margin: 0;
+}
+
+.people-details {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  margin: 0;
+}
+
+.people-details dt {
+  color: var(--tb-color-text-secondary);
+}
+
+.people-details dd {
+  margin: 0;
+}
+
+.people-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+.people-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.people-toggle legend {
+  margin-block-end: var(--tb-space-xs);
+}
+
+.people-toggle button[aria-pressed="true"] {
+  border-width: var(--tb-border-width-thick);
+  border-color: var(--tb-color-border-strong);
+}
+
+.people-chart {
+  display: grid;
+  justify-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.people-chart-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.people-chart-node {
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.people-chart-node[aria-current="true"] {
+  border-width: var(--tb-border-width-thick);
+  border-color: var(--tb-color-border-strong);
+}
+
+.people-chart-link {
+  block-size: var(--tb-space-md);
+  border-inline-start: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+}
+
+.people-form {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.people-form-row {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.people-table-wrap {
+  overflow-x: auto;
+}
+
+.people-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.people-table th,
+.people-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: top;
+}
+
+.people-check {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+ol.people-chart {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.people-pair {
+  display: contents;
+}
