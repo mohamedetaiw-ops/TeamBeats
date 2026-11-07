@@ -28,6 +28,14 @@ public interface ISignInHistory
 
 public sealed record SignInAddress(Guid UserId, string Address);
 
+/// <summary>Which ways in the tenant has (spec 026 FR-017 posture): an enabled single sign-on provider, and development sign-in.</summary>
+public sealed record SignInMethods(bool SsoEnabled, bool DevSignInEnabled);
+
+public interface ISignInMethods
+{
+    Task<SignInMethods> CurrentAsync(CancellationToken ct = default);
+}
+
 public interface ISessionRevocation
 {
     Task<int> RevokeUserSessionsAsync(Guid userId, string reason, CancellationToken ct = default);

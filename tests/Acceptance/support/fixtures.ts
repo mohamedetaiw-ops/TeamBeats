@@ -22,5 +22,27 @@ export async function signInWithDevForm(page: Page, tenantKey: string, email: st
   await page.waitForURL(`${hostOrigin(tenantKey)}/`);
 }
 
-export const test = base;
+/**
+ * Every test fails on a content security policy violation (spec 026 FR-025): the web app must work under its own
+ * policy, with no inline script and nothing loaded from another site.
+ */
+export const test = base.extend<{ cspViolationsExpected: boolean; cspGuard: void }>({
+  // Only a test that injects content on purpose to prove the policy blocks it sets this.
+  cspViolationsExpected: [false, { option: true }],
+  cspGuard: [
+    async ({ page, cspViolationsExpected }, use) => {
+      const violations: string[] = [];
+      page.on("console", (message) => {
+        if (message.type() === "error" && message.text().includes("Content Security Policy")) {
+          violations.push(message.text());
+        }
+      });
+      await use();
+      if (!cspViolationsExpected) {
+        expect(violations, "content security policy violations").toEqual([]);
+      }
+    },
+    { auto: true },
+  ],
+});
 export { expect };
