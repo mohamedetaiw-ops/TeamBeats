@@ -15,8 +15,12 @@ defaults:
     shell: bash
 
 # Windows blocks PowerShell scripts for the runner's service account by default.
+# Two runners share this machine and its service account, so jobs must not share long-lived build servers: a server
+# started by one job is killed when that job ends, even if the other job is using it.
 env:
   PSExecutionPolicyPreference: Bypass
+  MSBUILDDISABLENODEREUSE: "1"
+  UseSharedCompilation: "false"
 
 jobs:
   backend:
@@ -24,7 +28,6 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, windows, x64, teambeats]
     env:
-      TEAMBEATS_TEST_PG_ADMIN: Host=localhost;Port=5432;Username=postgres;Password=ci_only_password
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     steps:
       - uses: actions/checkout@v4
@@ -119,7 +122,7 @@ jobs:
         env:
           PGPASSWORD: ci_only_password
         run: >-
-          psql -h localhost -U postgres -v ON_ERROR_STOP=1
+          psql -h localhost -p "$TB_PG_PORT" -U postgres -v ON_ERROR_STOP=1
           -v owner_password=tb_owner_dev_only -v app_password=tb_app_dev_only -v operator_password=tb_operator_dev_only
           -f deploy/db/bootstrap.sql
       - run: dotnet build src/Api.DevHost
@@ -136,6 +139,9 @@ jobs:
       - name: Playwright
         run: npx playwright test
         working-directory: tests/Acceptance
+        env:
+          ConnectionStrings__App: Host=localhost;Port=${{ env.TB_PG_PORT }};Database=teambeats;Username=tb_app;Password=tb_app_dev_only
+          ConnectionStrings__Owner: Host=localhost;Port=${{ env.TB_PG_PORT }};Database=teambeats;Username=tb_owner;Password=tb_owner_dev_only
       # Uploaded only on failure, and kept briefly, to stay inside the artifact storage budget.
       - name: Stop PostgreSQL
         if: always()
