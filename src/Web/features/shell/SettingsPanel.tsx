@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { PreferenceKey } from "@/lib/shell/types";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
+import { OutlookSettings } from "./OutlookSettings";
 
 const options: Record<PreferenceKey, string[]> = {
   mode: ["system", "light", "dark"],
@@ -16,7 +17,8 @@ const options: Record<PreferenceKey, string[]> = {
 /**
  * One place on every page for language, mode, density, motion and text size (spec 008 FR-010). Language is saved on
  * the user account (spec 007), the rest in the preference profile; the page re-renders with the new values. Resetting
- * every personal layout lives here too, and keeps language and the other preferences (FR-027).
+ * every personal layout lives here too, and keeps language and the other preferences (FR-027). The Outlook connection
+ * (spec 018 FR-013) is read when the panel opens.
  */
 export function SettingsPanel({ locales, locale, values }: { locales: string[]; locale: string; values: Record<PreferenceKey, string> }) {
   const t = useTranslations("shell.settings");
@@ -84,6 +86,7 @@ export function SettingsPanel({ locales, locale, values }: { locales: string[]; 
             router.refresh();
           }}
         />
+        {open ? <OutlookSettings /> : null}
       </div>
     </div>
   );

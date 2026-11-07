@@ -44,8 +44,11 @@ export function uniqueKey(prefix: string): string {
   return `e2e-${prefix}-${suffix}`.slice(0, 40).replace(/-+$/, "");
 }
 
-/** Creates a tenant with one appointed administrator. Tenants are never reused, so tests stay independent. */
-export async function createTenant(prefix: string, defaultLocale: "ar" | "en"): Promise<TestTenant> {
+/**
+ * Creates a tenant with one appointed administrator. Tenants are never reused, so tests stay independent. The package
+ * is Workplace unless a test needs a capability of another one, such as integration.microsoft365 in Workplace Plus.
+ */
+export async function createTenant(prefix: string, defaultLocale: "ar" | "en", packageKey = "workplace"): Promise<TestTenant> {
   const platform = await platformClient();
   const key = uniqueKey(prefix);
   const adminEmail = `admin@${key}.example`;
@@ -53,7 +56,7 @@ export async function createTenant(prefix: string, defaultLocale: "ar" | "en"): 
     data: {
       key,
       displayName: `${key} holding`,
-      packageKey: "workplace",
+      packageKey,
       defaultLocale,
       enabledLocales: ["ar", "en"],
       timeZone: "Asia/Dubai",

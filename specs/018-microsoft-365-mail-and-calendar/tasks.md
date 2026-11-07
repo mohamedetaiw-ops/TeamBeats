@@ -30,7 +30,7 @@ Depends on 003 (Entra ID sign-in), 006 (Microsoft 365 connection), 005 (entitlem
 - [x] T015 [US4] `IAvailability` Graph adapter and `GET /api/v1/people/{userId}/availability`
 
 ## Phase 7: Experience (with specs 008, 032, 033)
-- [ ] T016 My mail and My calendar components with every state of section 10, the unread badge, and the Outlook section in personal settings, in English and Arabic, RTL
+- [x] T016 My mail and My calendar components with every state of section 10, the unread badge, and the Outlook section in personal settings, in English and Arabic, RTL
 
 ## Phase 8: User Story 6, calendar for the assistant (P2)
 - [ ] T017 Calendar read tool under spec 027 with untrusted-content handling, once the tool registry exists; signed-out opt-in (FR-023) with the briefing agent

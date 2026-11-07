@@ -14,6 +14,9 @@ const product: Record<string, Loader> = {
   "toolbox.world_clock@1": () => import("@/components/placements/toolbox.world_clock"),
   "toolbox.time_converter@1": () => import("@/components/placements/toolbox.time_converter"),
   "toolbox.weather@1": () => import("@/components/placements/toolbox.weather"),
+  // Microsoft 365 mail and calendar (spec 018 US2, US3).
+  "outlook.my_mail@1": () => import("@/components/placements/outlook.my_mail"),
+  "outlook.my_calendar@1": () => import("@/components/placements/outlook.my_calendar"),
 };
 
 const reference: Record<string, Loader> =

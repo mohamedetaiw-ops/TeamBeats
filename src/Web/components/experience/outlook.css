@@ -1,0 +1,142 @@
+/* My mail and My calendar (spec 018 section 10). Tokens only, logical properties only, so RTL and themes need nothing extra. */
+.outlook {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.outlook-header,
+.outlook-actions,
+.outlook-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+}
+
+.outlook-title {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.outlook-day-title {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+}
+
+.outlook-badge {
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-sm);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-accent-text);
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.outlook-switch {
+  display: flex;
+  gap: var(--tb-space-xs);
+}
+
+.outlook-switch [aria-pressed="true"] {
+  border-block-end: var(--tb-border-width-thick) solid var(--tb-color-accent-base);
+}
+
+.outlook-day {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.outlook-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.outlook-item {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.outlook-link {
+  display: grid;
+  flex: 1;
+  gap: var(--tb-space-xs);
+  min-inline-size: 0;
+  padding-block: var(--tb-space-xs);
+  color: inherit;
+  text-decoration: none;
+}
+
+.outlook-subject,
+.outlook-preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outlook-time,
+.outlook-markers,
+.outlook-preview {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.outlook-link:hover .outlook-subject {
+  text-decoration: underline;
+}
+
+.outlook-time {
+  font-variant-numeric: tabular-nums;
+}
+
+.outlook-item[data-unread] .outlook-sender,
+.outlook-item[data-unread] .outlook-subject {
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.outlook-join {
+  flex: none;
+}
+
+.outlook-stale {
+  display: grid;
+  gap: var(--tb-space-xs);
+  justify-items: start;
+}
+
+.outlook-stale p {
+  margin: 0;
+}
+
+.outlook-settings {
+  display: grid;
+  gap: var(--tb-space-xs);
+  justify-items: start;
+  padding-block-start: var(--tb-space-sm);
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.outlook-settings-title {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+}
+
+.outlook-settings-body {
+  display: grid;
+  gap: var(--tb-space-xs);
+  justify-items: start;
+}
+
+.outlook-settings p {
+  margin: 0;
+}
