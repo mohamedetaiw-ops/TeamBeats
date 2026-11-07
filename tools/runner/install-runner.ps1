@@ -6,7 +6,8 @@ param(
   [string]$Root = 'C:\actions-runner',
   [string]$Version = '2.338.2',
   [string]$Sha256 = 'a1f17aa987fc8158bc7521d284912267a0d01b7c2c4684b33c86783b5e8221cc',
-  [string]$Labels = 'teambeats'
+  [string]$Labels = 'teambeats',
+  [string]$Name = $env:COMPUTERNAME
 )
 $ErrorActionPreference = 'Stop'
 
@@ -36,7 +37,7 @@ if (-not $token) { throw 'The token file was empty.' }
 # credentials or your flyctl sign-in. Keep it that way.
 Push-Location $Root
 try {
-  & .\config.cmd --unattended --replace --url "https://github.com/$Repo" --token $token --name $env:COMPUTERNAME --labels $Labels --work _work --runasservice
+  & .\config.cmd --unattended --replace --url "https://github.com/$Repo" --token $token --name $Name --labels $Labels --work _work --runasservice
   if ($LASTEXITCODE -ne 0) { throw "Runner configuration failed with exit code $LASTEXITCODE" }
 } finally {
   Pop-Location
