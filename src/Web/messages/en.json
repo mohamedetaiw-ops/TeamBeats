@@ -38,7 +38,8 @@
       "identity": "Sign-in settings",
       "audit": "Audit log",
       "connections": "Connections",
-      "branding": "Brand"
+      "branding": "Brand",
+      "pages": "Pages"
     }
   },
   "header": {

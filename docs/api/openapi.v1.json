@@ -2082,6 +2082,16 @@
       }
     },
     "/api/v1/experience/pages": {
+      "get": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
       "post": {
         "tags": [
           "Experience: pages"

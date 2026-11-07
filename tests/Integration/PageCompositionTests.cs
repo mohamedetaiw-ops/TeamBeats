@@ -100,6 +100,57 @@ public sealed class PageCompositionTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task Catalogue_names_layouts_and_templates_in_the_editor_locale()
+    {
+        var t = await world.CreateTenantAsync("pn-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
+        var english = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/catalogue");
+        var canvas = english.GetProperty("templates").EnumerateArray().Single(x => x.GetProperty("id").GetString() == "T01");
+        Assert.Equal("Canvas", canvas.GetProperty("name").GetString());
+        Assert.Equal("One region you fill as you like.", canvas.GetProperty("description").GetString());
+        Assert.All(english.GetProperty("layouts").EnumerateArray(), l => Assert.False(string.IsNullOrWhiteSpace(l.GetProperty("name").GetString())));
+        Assert.All(english.GetProperty("templates").EnumerateArray(), x => Assert.False(string.IsNullOrWhiteSpace(x.GetProperty("description").GetString())));
+
+        (await t["admin"].Client.PutAsJsonAsync("/api/v1/me/preferences", new { locale = "ar" })).EnsureSuccessStatusCode();
+        var arabic = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/catalogue");
+        Assert.Equal("لوحة فارغة", arabic.GetProperty("templates").EnumerateArray().Single(x => x.GetProperty("id").GetString() == "T01").GetProperty("name").GetString());
+        Assert.Equal("عمود واحد", arabic.GetProperty("layouts").EnumerateArray().Single(x => x.GetProperty("id").GetString() == "L01").GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task Page_list_shows_only_pages_the_editor_may_edit_in_their_own_tenant()
+    {
+        var t = world.A;
+        await world.SeedUserAsync(t, "list_editor", "employee");
+        await world.AssignAsync(t, "list_editor", "page_publisher", "org_subtree", t.Unit("Gulf"));
+        var gulf = await CreateAsync(t, "T01", t.Unit("Gulf"), user: "list_editor");
+        var africa = await CreateAsync(t, "T02", t.Unit("Africa"));
+        var other = await CreateAsync(world.B, "T01");
+
+        static async Task<HashSet<string>> Ids(HttpClient client)
+        {
+            var list = await client.GetFromJsonAsync<JsonElement>("/api/v1/experience/pages");
+            return list.EnumerateArray().Select(p => p.GetProperty("id").GetString()!).ToHashSet();
+        }
+
+        var admin = await Ids(t["admin"].Client);
+        Assert.Contains(gulf["id"]!.GetValue<string>(), admin);
+        Assert.Contains(africa["id"]!.GetValue<string>(), admin);
+        Assert.DoesNotContain(other["id"]!.GetValue<string>(), admin);
+
+        var editor = await Ids(t["list_editor"].Client);
+        Assert.Contains(gulf["id"]!.GetValue<string>(), editor);
+        Assert.DoesNotContain(africa["id"]!.GetValue<string>(), editor);
+
+        var list = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/pages");
+        var row = list.EnumerateArray().Single(p => p.GetProperty("id").GetString() == africa["id"]!.GetValue<string>());
+        Assert.Equal("T02", row.GetProperty("templateId").GetString());
+        Assert.Equal(JsonValueKind.Null, row.GetProperty("publishedAt").ValueKind);
+
+        // Someone who may edit nothing gets an empty list, never another unit's pages.
+        Assert.Empty(await Ids(t["employee_gulf"].Client));
+    }
+
+    [Fact]
     public async Task Page_is_created_from_configuration_with_provenance_and_audited()
     {
         var t = world.A;
@@ -125,6 +176,12 @@ public sealed class PageCompositionTests(TenantWorld world)
 
         Assert.True(byRef["reference.alpha.text@1"].GetProperty("eligible").GetBoolean());
         Assert.True(byRef["reference.beta.banner@1"].GetProperty("eligible").GetBoolean());
+        // The builder draws names and property forms from the picker answer, never from component code.
+        var text = byRef["reference.alpha.text@1"];
+        Assert.False(string.IsNullOrWhiteSpace(text.GetProperty("name").GetString()));
+        Assert.Equal(JsonValueKind.Object, text.GetProperty("properties").ValueKind);
+        Assert.Equal(JsonValueKind.Object, text.GetProperty("placement").ValueKind);
+        Assert.False(string.IsNullOrWhiteSpace(byRef["reference.alpha.links@1"].GetProperty("reason").GetString()));
         // The hero region allows content, media and data only.
         Assert.Equal("validation.page.category_not_allowed", byRef["reference.alpha.links@1"].GetProperty("reasonKey").GetString());
         // Workplace does not include Microsoft 365, which the counter declares.

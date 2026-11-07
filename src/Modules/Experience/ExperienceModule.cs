@@ -44,11 +44,26 @@ public static class ExperienceModule
     {
         var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: pages");
 
-        x.MapGet("/catalogue", async (IEntitlementService entitlements, PlatformCatalogue catalogue, CancellationToken ct) =>
+        x.MapGet("/catalogue", async (IEntitlementService entitlements, PlatformCatalogue catalogue, ILocalizer localizer, RequestLocale locale,
+            CancellationToken ct) =>
         {
             await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
-            return Results.Ok(new { layouts = catalogue.Layouts.Values.OrderBy(l => l.Id), templates = catalogue.Templates.Values.OrderBy(t => t.Id) });
+            // Names and the text description of each structure in the caller's language, for the template chooser (FR-017).
+            return Results.Ok(new
+            {
+                layouts = catalogue.Layouts.Values.OrderBy(l => l.Id).Select(l => new
+                {
+                    l.Id, l.Version, l.NameKey, l.Regions, l.Fallback, name = localizer.Get(l.NameKey, locale.Locale),
+                }),
+                templates = catalogue.Templates.Values.OrderBy(t => t.Id).Select(t => new
+                {
+                    t.Id, t.Version, t.State, t.NameKey, t.DescriptionKey, t.Layout, t.Variants, t.Regions,
+                    name = localizer.Get(t.NameKey, locale.Locale), description = localizer.Get(t.DescriptionKey, locale.Locale),
+                }),
+            });
         });
+
+        x.MapGet("/pages", async (PageService pages, CancellationToken ct) => Results.Ok(await pages.ListAsync(ct)));
 
         x.MapPost("/pages", async (CreatePageRequest request, PageService pages, IDbSession session, CancellationToken ct) =>
         {
