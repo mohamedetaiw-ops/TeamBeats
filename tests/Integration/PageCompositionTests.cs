@@ -531,4 +531,62 @@ public sealed class PageCompositionTests(TenantWorld world)
         // Enablement needs its own permission.
         Assert.Equal(HttpStatusCode.Forbidden, (await t["employee"].Client.PutAsJsonAsync("/api/v1/experience/components/reference.alpha.kpi/enablement", new { enabled = false })).StatusCode);
     }
+
+    [Fact]
+    public async Task Component_upgrade_runs_the_migration_hook_on_drafts_that_use_it_and_leaves_other_pages_alone()
+    {
+        var t = await world.CreateTenantAsync("pu-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
+        await world.SeedUserAsync(t, "employee", "employee");
+        var gauge = await CreateAsync(t, "T01");
+        var draft = WithPlacements(gauge, "main", P("g", "test.upgrade.gauge@1", new { label = "Open tickets", unit = "count" }),
+            P("t", "reference.alpha.text@1", Text));
+        gauge = await SavedAsync(t, gauge, draft);
+        var tooLong = await CreateAsync(t, "T01");
+        tooLong = await SavedAsync(t, tooLong, WithPlacements(tooLong, "main",
+            P("long", "test.upgrade.gauge@1", new { label = "A label far longer than the new version allows", unit = "percent" })));
+        var other = await CreateAsync(t, "T01");
+        other = await SavedAsync(t, other, WithPlacements(other, "main", P("t", "reference.alpha.text@1", Text)));
+        var otherTag = other["eTag"]!.GetValue<string>();
+
+        var response = await t["admin"].Client.PostAsJsonAsync("/api/v1/experience/components/test.upgrade.gauge/upgrade", new { fromMajor = 1 });
+        Assert.True(response.IsSuccessStatusCode, await response.Content.ReadAsStringAsync());
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("test.upgrade.gauge@2", result.GetProperty("to").GetString());
+        Assert.Equal([gauge["id"]!.GetValue<string>()], result.GetProperty("upgraded").EnumerateArray().Select(x => x.GetString()));
+        var blocked = Assert.Single(result.GetProperty("blocked").EnumerateArray());
+        Assert.Equal("long", blocked.GetProperty("placementId").GetString());
+        Assert.Equal("validation.component.upgrade_invalid", blocked.GetProperty("reason").GetString());
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.ComponentUpgraded, "test.upgrade.gauge");
+
+        // The hook converted the properties; the other placement on the page is unchanged.
+        var upgraded = await t["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/pages/{gauge["id"]}");
+        var placements = upgraded.GetProperty("draft").GetProperty("regions").EnumerateArray()
+            .Single(r => r.GetProperty("id").GetString() == "main").GetProperty("placements").EnumerateArray().ToList();
+        Assert.Equal("test.upgrade.gauge@2", placements[0].GetProperty("componentRef").GetString());
+        Assert.Equal("number", placements[0].GetProperty("props").GetProperty("format").GetString());
+        Assert.False(placements[0].GetProperty("props").TryGetProperty("unit", out _));
+        Assert.Equal("reference.alpha.text@1", placements[1].GetProperty("componentRef").GetString());
+
+        // A page whose placement would be invalid keeps its draft, and a page without the component is not touched.
+        var kept = await t["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/pages/{tooLong["id"]}");
+        Assert.Equal(tooLong["eTag"]!.GetValue<string>(), kept.GetProperty("eTag").GetString());
+        var untouched = await t["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/pages/{other["id"]}");
+        Assert.Equal(otherTag, untouched.GetProperty("eTag").GetString());
+
+        // No hook from version 2, and the hook that skips a major was never registered: both are refused.
+        var none = await t["admin"].Client.PostAsJsonAsync("/api/v1/experience/components/test.upgrade.gauge/upgrade", new { fromMajor = 2 });
+        Assert.Equal(HttpStatusCode.BadRequest, none.StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await t["employee"].Client.PostAsJsonAsync("/api/v1/experience/components/test.upgrade.gauge/upgrade", new { fromMajor = 1 })).StatusCode);
+
+        // Another tenant's pages are never upgraded by this tenant's call.
+        var b = world.B;
+        var theirs = await CreateAsync(b, "T01");
+        theirs = await SavedAsync(b, theirs, WithPlacements(theirs, "main", P("g", "test.upgrade.gauge@1", new { label = "Theirs", unit = "count" })));
+        var again = await t["admin"].Client.PostAsJsonAsync("/api/v1/experience/components/test.upgrade.gauge/upgrade", new { fromMajor = 1 });
+        Assert.DoesNotContain(theirs["id"]!.GetValue<string>(),
+            (await again.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("upgraded").EnumerateArray().Select(x => x.GetString()));
+        var stillTheirs = await b["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/pages/{theirs["id"]}");
+        Assert.Equal(theirs["eTag"]!.GetValue<string>(), stillTheirs.GetProperty("eTag").GetString());
+    }
 }

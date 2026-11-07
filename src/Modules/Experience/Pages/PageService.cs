@@ -71,6 +71,14 @@ public sealed record Provenance(string Template, string Layout, int Release, Gui
 public sealed record RenderedPage(Guid PageId, int Release, string Template, string Layout, string Variant, string Fallback,
     IReadOnlyList<RenderedRegion> Regions, Provenance? Provenance, string ThemeScope, IReadOnlyList<Personalization.SkippedOperation>? Skipped = null);
 
+/// <summary>An upgrade of every page draft that uses <c>id@FromMajor</c> to the next major (spec 032 US7 scenario 2).</summary>
+public sealed record ComponentUpgradeRequest(int? FromMajor);
+
+public sealed record UpgradeBlocked(Guid PageId, string PlacementId, string Reason);
+
+/// <summary>Pages whose draft moved to the new major, and placements that kept their page unchanged, with the reason.</summary>
+public sealed record ComponentUpgradeView(string From, string To, IReadOnlyList<Guid> Upgraded, IReadOnlyList<UpgradeBlocked> Blocked);
+
 /// <summary>A page's identity and the definition a personalization call works on.</summary>
 public sealed record PageContext(Guid Id, Guid? OrgUnitId, string TemplateId, int? CurrentRelease, PageDefinition Definition);
 
@@ -384,6 +392,73 @@ public sealed partial class PageService(
             Changes: new { release = release.Release, restored = request.Release, previous = page.CurrentRelease, reason = request.Reason }), ct);
         await outbox.EnqueueAsync(new PageRolledBack(id, release.Release, request.Release), ct);
         return release;
+    }
+
+    /// <summary>
+    /// Runs a component's migration hook (FR-030) over every page draft in the tenant that places <c>id@FromMajor</c>. Each
+    /// converted placement must be valid for the new manifest; a page with any placement that fails keeps its draft as it
+    /// was and is listed with the reason. Pages that do not use the component are not touched. Releases change at the next
+    /// publish, as after any draft change.
+    /// </summary>
+    public async Task<ComponentUpgradeView> UpgradeComponentAsync(string componentId, ComponentUpgradeRequest request, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
+        await authz.DemandAsync(Permissions.ComponentEnable, AuthzTarget.Tenant, ct);
+        if (request.FromMajor is not { } from || registry.MigrationFrom($"{componentId}@{from}") is not { } migration)
+        {
+            throw AppException.Validation("fromMajor", "validation.component.upgrade_unsupported");
+        }
+        var target = registry.Find(migration.To)!;
+        var upgraded = new List<Guid>();
+        var blocked = new List<UpgradeBlocked>();
+        foreach (var page in await session.QueryAsync(PageSelect + " order by id", null, MapPage, ct))
+        {
+            var (revision, draft) = await DraftAsync(page.Id, ct, forUpdate: true);
+            if (!draft.Regions.Any(r => r.Placements.Any(p => p.ComponentRef == migration.From)))
+            {
+                continue;
+            }
+            var problems = new List<UpgradeBlocked>();
+            var regions = draft.Regions.Select(region => region with
+            {
+                Placements = region.Placements.Select(placement =>
+                {
+                    if (placement.ComponentRef != migration.From)
+                    {
+                        return placement;
+                    }
+                    JsonElement? props;
+                    try
+                    {
+                        props = migration.Convert(placement.Props);
+                    }
+                    catch (Exception e) when (e is not OperationCanceledException)
+                    {
+                        // A failing hook never stops the upgrade of other pages; this page stays as it was.
+                        problems.Add(new UpgradeBlocked(page.Id, placement.Id, "validation.component.upgrade_failed"));
+                        return placement;
+                    }
+                    if (PropertyValidator.Validate(target.Properties, props).Count > 0)
+                    {
+                        problems.Add(new UpgradeBlocked(page.Id, placement.Id, "validation.component.upgrade_invalid"));
+                        return placement;
+                    }
+                    return placement with { ComponentRef = migration.To, Props = props };
+                }).ToList(),
+            }).ToList();
+            if (problems.Count > 0)
+            {
+                blocked.AddRange(problems);
+                continue;
+            }
+            await session.ExecAsync(
+                "update experience.page_draft set revision = @r, definition = @d, updated_by = @u, updated_at = @now where page_id = @id",
+                new { r = revision + 1, d = Jsonb.From(draft with { Regions = regions }), u = context.RequireUser(), now = clock.UtcNow, id = page.Id }, ct);
+            upgraded.Add(page.Id);
+        }
+        await audit.WriteAsync(new AuditEntry(AuditActions.ComponentUpgraded, "component", componentId,
+            Changes: new { from = migration.From, to = migration.To, upgraded = upgraded.Count, blocked = blocked.Count }), ct);
+        return new ComponentUpgradeView(migration.From, migration.To, upgraded, blocked);
     }
 
     public async Task<IReadOnlyList<ReleaseView>> ReleasesAsync(Guid id, CancellationToken ct)

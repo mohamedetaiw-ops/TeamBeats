@@ -193,6 +193,14 @@ public static class ExperienceModule
             return Results.Ok(view);
         });
 
+        x.MapPost("/components/{componentId}/upgrade", async (string componentId, ComponentUpgradeRequest request, PageService pages,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await pages.UpgradeComponentAsync(componentId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
         MapThemeEndpoints(app);
         MapShellEndpoints(app);
         MapPersonalizationEndpoints(app);

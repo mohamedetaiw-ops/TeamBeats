@@ -22,7 +22,7 @@ Depends on 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit)
 - [x] T011 [US5] Tenant template copies with locks and distribution, `experience.max_custom_templates` limit, layout change endpoint
 
 ## Phase 5: User Story 7 and 8, registry and isolation (P1)
-- [ ] T012 [P] [US7] [US8] Tests (done except the migration hook): invalid manifest not registered; out-of-range upgrade blocked; migration hook converts props; undeclared context keys are not supplied; executable content in any field refused; page and component config from another tenant not found
+- [x] T012 [P] [US7] [US8] Tests: invalid manifest not registered; out-of-range upgrade blocked; migration hook converts props; undeclared context keys are not supplied; executable content in any field refused; page and component config from another tenant not found
 - [x] T013 [US7] Component enablement endpoint, render endpoint with effective structure, release snapshots cached by tenant, page and release (immutable, so no invalidation)
 - [x] T014 Architecture test: no template, layout or page file names a concrete component ID (the import rule between placement packages comes with T015)
 

@@ -53,6 +53,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         {
             services.AddSingleton(Documents);
             services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, TeamBeats.Api.DevHost.ReferencePacks>();
+            services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, UpgradePack>();
             services.AddScoped<IResourceDescriptorProvider, TestDocumentProvider>();
             services.AddSingleton(UserAttributes);
             services.AddScoped<IUserAttributeProvider, TestUserAttributeProvider>();
