@@ -2,8 +2,9 @@
 // through t("...") must exist. Pending locales (fr, ur, hi) fall back to English until R2.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, extname } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 const launch = ["en", "ar"];
 
 const flatten = (obj, prefix = "") =>
