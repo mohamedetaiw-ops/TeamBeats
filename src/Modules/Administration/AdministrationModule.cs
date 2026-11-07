@@ -48,7 +48,7 @@ public static class AdministrationModule
 
     public static IEndpointRouteBuilder MapAdministrationEndpoints(this IEndpointRouteBuilder app)
     {
-        var admin = app.MapGroup("/api/v1/admin").RequireTenantUser().WithTags("Administration");
+        var admin = app.MapGroup("/api/v1/admin").RequireTenantUser().InAdminArea().WithTags("Administration");
 
         admin.MapGet("/navigation", async (IAuthorizationService authz, CancellationToken ct) =>
         {

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+  <PropertyGroup><RootNamespace>TeamBeats.Modules.Security</RootNamespace><AssemblyName>TeamBeats.Modules.Security</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlocks/Persistence/TeamBeats.Persistence.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Messaging/TeamBeats.Messaging.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Authorization.Contracts/TeamBeats.Authorization.Contracts.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Audit.Contracts/TeamBeats.Audit.Contracts.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/TenantContext/TeamBeats.TenantContext.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Localization/TeamBeats.Localization.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Entitlements.Contracts/TeamBeats.Entitlements.Contracts.csproj" />
+    <ProjectReference Include="../Identity.Contracts/TeamBeats.Modules.Identity.Contracts.csproj" />
+    <ProjectReference Include="../Security.Contracts/TeamBeats.Modules.Security.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Migrations/*.sql" />
+  </ItemGroup>
+</Project>

@@ -25,7 +25,7 @@ public static class HrModule
 
     public static IEndpointRouteBuilder MapHrEndpoints(this IEndpointRouteBuilder app)
     {
-        var hr = app.MapGroup("/api/v1/hr").RequireTenantUser().WithTags("HR: working calendars");
+        var hr = app.MapGroup("/api/v1/hr").RequireTenantUser().InAdminArea().WithTags("HR: working calendars");
 
         hr.MapGet("/calendars", async (CalendarService calendars, IDbSession session, CancellationToken ct) =>
         {

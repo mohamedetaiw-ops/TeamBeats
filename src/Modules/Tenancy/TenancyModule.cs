@@ -87,7 +87,7 @@ public static class TenancyModule
 
     private static void MapTenant(IEndpointRouteBuilder app)
     {
-        var tenant = app.MapGroup("/api/v1/tenant").RequireTenantUser().WithTags("Tenant: settings");
+        var tenant = app.MapGroup("/api/v1/tenant").RequireTenantUser().InAdminArea().WithTags("Tenant: settings");
 
         tenant.MapGet("/settings", async (IAuthorizationService authz, TenantSettingsService settings, CancellationToken ct) =>
         {

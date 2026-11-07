@@ -77,6 +77,12 @@
   <Folder Name="/src/Modules/People.Contracts/">
     <Project Path="src/Modules/People.Contracts/TeamBeats.Modules.People.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Security/">
+    <Project Path="src/Modules/Security/TeamBeats.Modules.Security.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Security.Contracts/">
+    <Project Path="src/Modules/Security.Contracts/TeamBeats.Modules.Security.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Entitlements/">
     <Project Path="src/Modules/Entitlements/TeamBeats.Modules.Entitlements.csproj" />
   </Folder>

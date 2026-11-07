@@ -41,6 +41,11 @@ public static class Capabilities
     public const string NotificationsTenantSmtp = "notifications.tenant_smtp";
     public const string PeopleDirectory = "people.directory";
     public const string PeopleCustomFields = "people.custom_fields";
+    public const string SecurityIpRules = "security.ip_rules";
+    public const string SecurityIpRulesScoped = "security.ip_rules_scoped";
+    public const string SecuritySessionPolicy = "security.session_policy";
+    public const string SecurityAlerts = "security.alerts";
+    public const string SecurityAlertsAdvanced = "security.alerts_advanced";
 }
 
 /// <summary>Central entitlement check for the current tenant (spec 005). Unknown keys fail closed.</summary>

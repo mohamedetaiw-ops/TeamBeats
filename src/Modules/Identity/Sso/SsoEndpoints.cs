@@ -60,7 +60,7 @@ public static class SsoEndpoints
             return Results.Redirect(step.Location);
         });
 
-        var admin = app.MapGroup("/api/v1/tenant/identity-provider").RequireTenantUser().WithTags("Tenant: identity");
+        var admin = app.MapGroup("/api/v1/tenant/identity-provider").RequireTenantUser().InAdminArea().WithTags("Tenant: identity");
 
         admin.MapGet("/", async (IAuthorizationService authz, IdentityProviderStore providers, CancellationToken ct) =>
         {

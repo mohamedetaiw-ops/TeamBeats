@@ -48,6 +48,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         builder.UseSetting("Tenancy:Hosts:BaseDomain", BaseDomain);
         builder.UseSetting("Storage:Root", StorageRoot);
         builder.UseSetting("Messaging:Transport", "InMemory");
+        builder.UseSetting("Http:TrustForwardedHeaders", "true");
         builder.UseSetting("Integrations:Microsoft365:ClientId", FakeMicrosoftGraph.ClientId);
         builder.UseSetting("Integrations:Microsoft365:ClientSecret", FakeMicrosoftGraph.ClientSecret);
         builder.UseSetting(TeamBeats.Modules.Integrations.Microsoft365.TokenProtector.KeySetting, TokenKey);

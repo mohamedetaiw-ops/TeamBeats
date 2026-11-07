@@ -7,12 +7,23 @@ import { cookies, headers } from "next/headers";
  */
 const apiOrigin = process.env.TEAMBEATS_API_ORIGIN ?? "http://localhost:5080";
 
+/**
+ * The caller's address as the edge proxy saw it: the rightmost x-forwarded-for entry, which the proxy appends.
+ * Entries further left come from the client and are ignored, so the API applies network rules (spec 026) to the
+ * real caller on server-rendered calls too.
+ */
+function clientAddress(forwardedFor: string | null): string | null {
+  const last = forwardedFor?.split(",").map((part) => part.trim()).filter(Boolean).at(-1);
+  return last ?? null;
+}
+
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; status: number };
 
 async function apiRequest<T>(path: string, init: { method: string; body?: unknown }): Promise<ApiResult<T>> {
   const cookieStore = await cookies();
   const incoming = await headers();
   const session = cookieStore.get("tb_session")?.value;
+  const address = clientAddress(incoming.get("x-forwarded-for"));
   let response: Response;
   try {
     response = await fetch(new URL(path, apiOrigin), {
@@ -20,6 +31,7 @@ async function apiRequest<T>(path: string, init: { method: string; body?: unknow
       headers: {
         accept: "application/json",
         "x-forwarded-host": incoming.get("host") ?? "",
+        ...(address ? { "x-forwarded-for": address } : {}),
         ...(init.body === undefined ? {} : { "content-type": "application/json" }),
         ...(session ? { cookie: `tb_session=${session}` } : {}),
       },

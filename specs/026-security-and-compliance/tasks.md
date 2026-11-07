@@ -3,15 +3,15 @@
 Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, explainer), 005 (entitlements), 006 (audit, admin shell), 022 (tenant working week for out-of-hours alerts). R1 covers User Stories 1, 2 and 5 (basic), FR-017 and FR-025; the rest is R2 and R3.
 
 ## Phase 1: Foundations
-- [ ] T001 `Security` and `Security.Contracts` projects; migration for `security_policy`, `mfa_claim_mapping`, `security_alert` (forced RLS); `user_session.last_seen_at` and `authenticated_at` in `Identity`
-- [ ] T002 Permissions `security.manage`, `security.view`, `security.respond`; security officer role grants; capability keys of section 9; audit actions `security.policy_changed`, `security.network_refused`, `security.alert_raised`, `security.alert_handled`, `identity.step_up_completed`
-- [ ] T003 `ISecurityPolicy` contract with a per-tenant cache invalidated by `SecurityPolicyChanged`
+- [x] T001 `Security` and `Security.Contracts` projects; migration for `security_policy`, `mfa_claim_mapping`, `security_alert` (forced RLS); `user_session.last_seen_at` and `authenticated_at` in `Identity`
+- [x] T002 Permissions `security.manage`, `security.view`, `security.respond`; security officer role grants; capability keys of section 9; audit actions `security.policy_changed`, `security.request_blocked_network`, `security.alert_raised`, `security.alert_handled`, `identity.step_up_completed`
+- [x] T003 `ISecurityPolicy` contract with a per-tenant cache invalidated by `SecurityPolicyChanged`
 
 ## Phase 2: User Story 1, restrict access by network (P1)
-- [ ] T004 [P] [US1] Tests: tenant allow and block lists; admin area list; forwarded header spoofing ignored; self lock-out needs step-up and confirmation; network zone condition and explainer; Workplace refuses scoped rules; cross-tenant
-- [ ] T005 [US1] Network middleware with `AdminArea` endpoint metadata and rate-limited refusal audit
+- [x] T004 [P] [US1] Tests: tenant allow and block lists; admin area list; forwarded header spoofing ignored; self lock-out needs step-up and confirmation; network zone condition and explainer; Workplace refuses scoped rules; cross-tenant
+- [x] T005 [US1] Network middleware with `AdminArea` endpoint metadata and rate-limited refusal audit
 - [ ] T006 [US1] `network_zone` condition attribute in spec 004 conditions
-- [ ] T007 [US1] Policy endpoints with preview count of affected users
+- [x] T007 [US1] Policy endpoints with preview count of affected users
 
 ## Phase 3: User Story 2, MFA and step-up (P1)
 - [ ] T008 [P] [US2] Tests: MFA claim mapping for Entra; refusal without MFA; step-up required and satisfied with a fresh `auth_time`; idle and absolute timeouts with the fake clock; concurrent limit; revoke all within 1 minute

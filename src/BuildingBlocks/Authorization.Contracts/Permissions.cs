@@ -62,6 +62,11 @@ public static class Permissions
     public const string PeopleHrView = "people.hr_view";
     public const string PeopleManage = "people.manage";
 
+    // Spec 026 (R1): tenant security policy, alerts and posture.
+    public const string SecurityManage = "security.manage";
+    public const string SecurityView = "security.view";
+    public const string SecurityRespond = "security.respond";
+
     public static readonly IReadOnlyList<string> All =
     [
         TenantSettingsView, TenantSettingsManage, TenantAdminsManage,
@@ -77,6 +82,7 @@ public static class Permissions
         NotificationsManage,
         HrCalendarManage,
         PeopleView, PeopleHrView, PeopleManage,
+        SecurityManage, SecurityView, SecurityRespond,
     ];
 }
 

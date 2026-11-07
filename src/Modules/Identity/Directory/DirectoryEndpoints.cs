@@ -16,7 +16,7 @@ public static class DirectoryEndpoints
 {
     public static IEndpointRouteBuilder MapDirectoryEndpoints(this IEndpointRouteBuilder app)
     {
-        var admin = app.MapGroup("/api/v1/tenant/directory").RequireTenantUser().WithTags("Tenant: identity");
+        var admin = app.MapGroup("/api/v1/tenant/directory").RequireTenantUser().InAdminArea().WithTags("Tenant: identity");
 
         admin.MapGet("/", async (IAuthorizationService authz, IConnectionFeatures connections, DirectorySyncService sync, CancellationToken ct) =>
         {
