@@ -7,12 +7,14 @@ using Microsoft.AspNetCore.Routing;
 namespace TeamBeats.DevFakes;
 
 /// <summary>The fakes one development or staging host uses, shared by the HTTP handlers and the browser pages.</summary>
-public sealed class FakeSystems(FakeScenario scenario, FakeIdentityProvider entra, FakeMicrosoftGraph graph, FakeOpenRouter openRouter)
+public sealed class FakeSystems(FakeScenario scenario, FakeIdentityProvider entra, FakeMicrosoftGraph graph, FakeOpenRouter openRouter,
+    FakeOpenMeteo? weather = null)
 {
     public FakeScenario Scenario { get; } = scenario;
     public FakeIdentityProvider Entra { get; } = entra;
     public FakeMicrosoftGraph Graph { get; } = graph;
     public FakeOpenRouter OpenRouter { get; } = openRouter;
+    public FakeOpenMeteo Weather { get; } = weather ?? new FakeOpenMeteo();
 
     /// <summary>Group memberships per user, for the groups claim of the fake ID token.</summary>
     public IReadOnlyDictionary<string, IReadOnlyList<string>> GroupsByUser(string directoryId) =>
@@ -62,6 +64,7 @@ public static class FakeEndpoints
                 new { name = "entra", down = f.Entra.Unavailable },
                 new { name = "graph", down = f.Graph.Unavailable },
                 new { name = "openrouter", down = f.OpenRouter.Unavailable },
+                new { name = "open-meteo", down = f.Weather.Unavailable },
             },
             directories = f.Scenario.Directories.Select(d => new
             {
@@ -213,6 +216,7 @@ public static class FakeEndpoints
                 case "entra": f.Entra.Unavailable = value; break;
                 case "graph": f.Graph.Unavailable = value; break;
                 case "openrouter": f.OpenRouter.Unavailable = value; break;
+                case "open-meteo": f.Weather.Unavailable = value; break;
                 default: return Results.NotFound();
             }
             return Results.Ok(new { system, down = value });

@@ -10,10 +10,10 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Api.DevHost;
 
 /// <summary>
-/// Puts fake external systems in place of the real ones (Microsoft Entra ID, Microsoft Graph, OpenRouter) when
+/// Puts fake external systems in place of the real ones (Microsoft Entra ID, Microsoft Graph, OpenRouter, Open-Meteo) when
 /// <c>Dev:Fakes:Enabled</c> is true. The real adapters keep running; only their HTTP clients are pointed at in-process
 /// fakes, and browser redirects to Microsoft are rewritten to the fake pages on the same host. Staging must run with
-/// fakes on, so it can never reach a real directory or mailbox. Development host only (ADR-0004).
+/// fakes on, so it can never reach a real directory, mailbox or weather service. Development host only (ADR-0004).
 /// </summary>
 public static class FakeSystemsSetup
 {
@@ -87,6 +87,7 @@ public static class FakeSystemsSetup
         services.AddHttpClient(HttpOidcProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Entra);
         services.AddHttpClient(HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Graph);
         services.AddHttpClient(OpenRouterClient).ConfigurePrimaryHttpMessageHandler(() => systems.OpenRouter);
+        services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Weather);
 
         // Single sign-on client secrets named in the scenario resolve to their fictional values.
         var inner = services.LastOrDefault(d => d.ServiceType == typeof(ISecretStore));

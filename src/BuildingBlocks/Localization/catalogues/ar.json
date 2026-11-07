@@ -62,6 +62,12 @@
   "experience.component.reference_beta_old.name": "كتلة سابقة (مرجعية)",
   "experience.component.reference_beta_restricted.description": "تحتاج إلى صلاحية نشر المحتوى",
   "experience.component.reference_beta_restricted.name": "أداة مقيدة (مرجعية)",
+  "experience.component.toolbox_time_converter.description": "يحوّل وقتًا من منطقة زمنية إلى أخرى",
+  "experience.component.toolbox_time_converter.name": "محوّل المناطق الزمنية",
+  "experience.component.toolbox_weather.description": "طقس اليوم في مكان ما",
+  "experience.component.toolbox_weather.name": "الطقس",
+  "experience.component.toolbox_world_clock.description": "الوقت الحالي في الأماكن التي تعمل معها",
+  "experience.component.toolbox_world_clock.name": "الساعة العالمية",
   "integrations.dependent.synced_users": "المستخدمون الذين تتم مزامنتهم من الدليل",
   "integrations.outlook.admin_setup": "يحتاج المسؤول إلى إكمال إعداد Outlook في TeamBeats",
   "integrations.outlook.conditional_access": "منعت سياسة الوصول في مؤسستك ذلك. افتح Outlook للمتابعة",
@@ -299,5 +305,6 @@
   "validation.theme.token_value_invalid": "أدخل قيمة لهذا الرمز",
   "validation.theme.too_many_locks": "عدد كبير جدا من الإعدادات في طلب واحد",
   "validation.theme.too_many_tokens": "عدد كبير جدا من الرموز في طلب واحد",
+  "validation.weather.location_length": "أدخل اسم مكان لا يزيد عن 100 حرف",
   "warning.org.unusual_placement": "يقع هذا النوع من الوحدات عادةً في مستوى أعلى من الهيكل"
 }

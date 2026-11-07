@@ -9,7 +9,12 @@ type Loader = () => Promise<{ default: ComponentType<PlacementProps> }>;
  * Modules add their components here when they ship them. The reference packs exist for contract tests and are only
  * included when the build sets NEXT_PUBLIC_TB_REFERENCE_PACKS, so production bundles leave them out.
  */
-const product: Record<string, Loader> = {};
+const product: Record<string, Loader> = {
+  // Tool box utilities (spec 008 FR-050).
+  "toolbox.world_clock@1": () => import("@/components/placements/toolbox.world_clock"),
+  "toolbox.time_converter@1": () => import("@/components/placements/toolbox.time_converter"),
+  "toolbox.weather@1": () => import("@/components/placements/toolbox.weather"),
+};
 
 const reference: Record<string, Loader> =
   process.env.NEXT_PUBLIC_TB_REFERENCE_PACKS === "true"

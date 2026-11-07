@@ -8,6 +8,7 @@ using TeamBeats.Messaging;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Integrations.Microsoft365;
+using TeamBeats.Modules.Integrations.Weather;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -40,6 +41,8 @@ public static class IntegrationsModule
         services.AddScoped<IMailbox, GraphMailbox>();
         services.AddScoped<ICalendar, GraphCalendar>();
         services.AddScoped<IAvailability, GraphAvailability>();
+        services.AddHttpClient(OpenMeteoWeather.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
+        services.AddScoped<IWeather, OpenMeteoWeather>();
         services.AddMessageHandler<SessionEnded, DropTokensOnSessionEnded>("integrations.tokens_session_ended");
         services.AddMessageHandler<SessionRevoked, DropTokensOnSessionRevoked>("integrations.tokens_session_revoked");
         services.AddMessageHandler<UserDeprovisioned, DropTokensOnUserDeprovisioned>("integrations.tokens_user_deprovisioned");
@@ -173,6 +176,7 @@ public static class IntegrationsModule
 
         MapOutlookEndpoints(app);
         WorkspaceEndpoints.Map(app);
+        WeatherEndpoints.Map(app);
         return app;
     }
 

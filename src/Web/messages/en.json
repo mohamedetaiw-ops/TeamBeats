@@ -348,5 +348,39 @@
     "loading": "Loading",
     "conflict": "Your layout changed in another window, so the latest version is shown. Try your change again.",
     "failed": "Your change could not be saved. Try again."
+  },
+  "toolbox": {
+    "clock": {
+      "title": "World clock"
+    },
+    "converter": {
+      "title": "Time zone converter",
+      "when": "Date and time",
+      "from": "From time zone",
+      "to": "To time zone",
+      "result": "That is {time}",
+      "empty": "Choose a date and time to convert"
+    },
+    "weather": {
+      "title": "Weather",
+      "noPlace": "Set a place to see its weather",
+      "notFound": "No place called {place} was found",
+      "unavailable": "Weather is not available right now",
+      "retry": "Try again",
+      "stale": "Weather could not be updated. Showing the reading from {time}.",
+      "place": "{name}, {country}",
+      "range": "High {high}, low {low}",
+      "condition": {
+        "clear": "Clear",
+        "partly_cloudy": "Partly cloudy",
+        "cloudy": "Cloudy",
+        "fog": "Fog",
+        "drizzle": "Drizzle",
+        "rain": "Rain",
+        "snow": "Snow",
+        "thunderstorm": "Thunderstorm",
+        "unknown": "Weather"
+      }
+    }
   }
 }

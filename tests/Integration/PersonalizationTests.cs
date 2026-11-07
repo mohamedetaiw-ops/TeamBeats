@@ -137,6 +137,13 @@ public sealed class PersonalizationTests(TenantWorld world)
 
         var saved = await LayoutAsync(t, id, "employee", AddOp("my-note", region: "grid", position: 0), new { op = "hide", placementId = "services" });
         Assert.True(saved.IsSuccessStatusCode, await saved.Content.ReadAsStringAsync());
+        // The tool box utilities are in every package and need no setup.
+        var panel = (await t["employee"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/me/pages/{id}/add-panel?region=grid"))
+            .EnumerateArray().ToDictionary(i => i.GetProperty("componentRef").GetString()!);
+        Assert.All(new[] { "toolbox.world_clock@1", "toolbox.time_converter@1", "toolbox.weather@1" }, c => Assert.True(panel[c].GetProperty("eligible").GetBoolean()));
+        var clock = await LayoutAsync(t, id, "employee", AddOp("my-note", region: "grid", position: 0), new { op = "hide", placementId = "services" },
+            new { op = "add", placementId = "my-clock", componentRef = "toolbox.world_clock@1", regionId = "grid" });
+        Assert.True(clock.IsSuccessStatusCode, await clock.Content.ReadAsStringAsync());
         Assert.Contains("validation.personalization.protected",
             await RefusedAsync(await LayoutAsync(t, id, "employee", new { op = "hide", placementId = "critical" })));
         Assert.Contains("validation.personalization.region_not_delegated",

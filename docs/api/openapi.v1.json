@@ -2041,6 +2041,34 @@
         }
       }
     },
+    "/api/v1/weather": {
+      "get": {
+        "tags": [
+          "Integrations: weather"
+        ],
+        "parameters": [
+          {
+            "name": "location",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "refresh",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/catalogue": {
       "get": {
         "tags": [
@@ -4815,6 +4843,9 @@
     },
     {
       "name": "Administration"
+    },
+    {
+      "name": "Integrations: weather"
     },
     {
       "name": "Experience: pages"
