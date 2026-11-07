@@ -376,3 +376,6 @@ Screen reader checks assert the roles, names and states that assistive technolog
 | Accessibility findings (FR-046) | The builder shows every validator finding per page, region and placement with its text, and publish stays blocked while any is blocking (required texts such as image descriptions, markup in text, unsafe links). Manifests carry no accessibility metadata yet, so focus order and theme contrast are not checked per placement; contrast is checked by the brand manager (spec 033). |
 | Images | Image settings take an `asset:<id>` reference typed by hand until the asset picker comes. |
 | Revision history across sessions (FR-043) | Releases and rollback exist; a history of draft revisions is a follow-up. |
+
+## Backfilling tenant rows in migrations
+Tenant tables force row-level security, so a migration that reads or writes their rows without a tenant set sees nothing. Authorization migrations 0003 to 0006 meant to add new permissions and roles to existing tenants and changed nothing; tenants created before them (the staging tenant among them) had administrators without page, theme, shell and personalization permissions. Migration 0007 applies those additions once per tenant with `app.tenant_id` set, and `PermissionBackfillTests` covers it. A future migration that changes rows of existing tenants loops over the tenants the same way.
