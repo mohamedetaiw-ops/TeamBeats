@@ -29,4 +29,4 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T016 Admin pages: Security policy (with lock-out preview), Alerts, Posture, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
-- [ ] T017 OpenAPI; R1 implementation notes; spec evidence
+- [x] T017 OpenAPI; R1 implementation notes; spec evidence
