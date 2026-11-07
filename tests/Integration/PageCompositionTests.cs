@@ -181,6 +181,8 @@ public sealed class PageCompositionTests(TenantWorld world)
         Assert.False(string.IsNullOrWhiteSpace(text.GetProperty("name").GetString()));
         Assert.Equal(JsonValueKind.Object, text.GetProperty("properties").ValueKind);
         Assert.Equal(JsonValueKind.Object, text.GetProperty("placement").ValueKind);
+        Assert.Equal("Heading", text.GetProperty("labels").GetProperty("heading").GetString());
+        Assert.Equal("Percent", byRef["reference.alpha.kpi@1"].GetProperty("labels").GetProperty("unit.percent").GetString());
         Assert.False(string.IsNullOrWhiteSpace(byRef["reference.alpha.links@1"].GetProperty("reason").GetString()));
         // The hero region allows content, media and data only.
         Assert.Equal("validation.page.category_not_allowed", byRef["reference.alpha.links@1"].GetProperty("reasonKey").GetString());
@@ -224,6 +226,8 @@ public sealed class PageCompositionTests(TenantWorld world)
         Assert.True(Has(findings, "span_invalid", "kpi"));
         Assert.True(Has(findings, "component_unknown", "ghost"));
         Assert.True(Has(findings, "executable_content", "script"));
+        // Each finding carries its text in the editor's language.
+        Assert.Contains(findings.EnumerateArray(), f => f.GetProperty("message").GetString() == "Remove markup or script from this field");
 
         var twice = WithPlacements(page, "grid", P("f1", "reference.alpha.filter@1"), P("f2", "reference.alpha.filter@1"), P("f3", "reference.alpha.text@1"));
         twice["regions"]!.AsArray().RemoveAt(0);

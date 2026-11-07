@@ -123,7 +123,9 @@ body {
   margin-block-end: var(--tb-space-md);
 }
 
-.field input {
+.field input,
+.field select,
+.field textarea {
   padding: var(--tb-space-sm);
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-sm);
