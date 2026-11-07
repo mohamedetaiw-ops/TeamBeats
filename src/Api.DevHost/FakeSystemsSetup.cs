@@ -22,6 +22,31 @@ public static class FakeSystemsSetup
     public const string ScenarioKey = Section + ":Scenario";
     public const string RunDirectorySyncKey = Section + ":RunDirectorySync";
 
+    /// <summary>
+    /// Direct test sign-in links (spec 003 US7): link name to the email of a person in the scenario, for example
+    /// <c>employee</c>. <c>/dev/fake/signin/{name}</c> signs that person in through the fake Microsoft page.
+    /// </summary>
+    public const string SignInLinksKey = Section + ":SignInLinks";
+
+    public static IReadOnlyDictionary<string, string> ReadSignInLinks(IConfiguration configuration) =>
+        configuration.GetSection(SignInLinksKey).GetChildren()
+            .ToDictionary(c => c.Key, c => (c.Value ?? string.Empty).Trim(), StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Every direct sign-in link must name an enabled person of the scenario, so a link never fails silently.</summary>
+    public static void ValidateSignInLinks(IReadOnlyDictionary<string, string> links, FakeScenario scenario)
+    {
+        foreach (var (name, email) in links)
+        {
+            var person = scenario.Directories.SelectMany(d => d.Users)
+                .FirstOrDefault(u => string.Equals(u.Mail, email, StringComparison.OrdinalIgnoreCase));
+            if (person is null || !person.Enabled)
+            {
+                throw new InvalidOperationException(
+                    $"{SignInLinksKey}:{name} must be the email of an enabled person in the scenario, but '{email}' is not.");
+            }
+        }
+    }
+
     /// <summary>Named HTTP client the AI gateway (spec 013) uses for OpenRouter; the fake is registered on it ahead of time.</summary>
     public const string OpenRouterClient = "openrouter";
 
@@ -71,6 +96,7 @@ public static class FakeSystemsSetup
                 : Path.Combine(AppContext.BaseDirectory, path);
         }
         var scenario = FakeScenario.Load(path);
+        ValidateSignInLinks(ReadSignInLinks(builder.Configuration), scenario);
         var graph = new FakeMicrosoftGraph();
         scenario.ApplyTo(graph, DateTimeOffset.UtcNow);
         var systems = new FakeSystems(scenario, new FakeIdentityProvider(), graph, new FakeOpenRouter());
@@ -112,7 +138,8 @@ public static class FakeSystemsSetup
         if (Enabled(app.Configuration))
         {
             app.UseFakeMicrosoftRedirects();
-            app.MapFakeEndpoints(app.Services.GetRequiredService<IOptions<HostResolutionOptions>>().Value.BaseDomain);
+            app.MapFakeEndpoints(app.Services.GetRequiredService<IOptions<HostResolutionOptions>>().Value.BaseDomain,
+                ReadSignInLinks(app.Configuration), SsoEndpoints.StartPath);
         }
         return app;
     }

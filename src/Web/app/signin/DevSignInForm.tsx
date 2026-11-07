@@ -7,9 +7,15 @@ import { FormField } from "@/components/ui/FormField";
 
 /**
  * Development sign-in (spec 003 US1, US7). "open" picks a seeded account by email; "testaccount" is a one-click
- * sign-in as the staging test account named by `testAccount`.
+ * sign-in as the staging test account named by `testAccount`, plus the direct link for the test employee.
  */
 export type DevSignInMode = "open" | "testaccount";
+
+/**
+ * Direct sign-in link for the staging test employee (spec 003 US7). The development host signs a fictional employee
+ * in through the fake Microsoft page; the production API has no /dev routes, so the link grants nothing there.
+ */
+export const TEST_EMPLOYEE_LINK = "/dev/fake/signin/employee";
 
 export function DevSignInForm({ mode, testAccount = "admin" }: { mode: DevSignInMode; testAccount?: string }) {
   const t = useTranslations("signin");
@@ -51,9 +57,16 @@ export function DevSignInForm({ mode, testAccount = "admin" }: { mode: DevSignIn
       ) : (
         <FormField label={t("email")} name="email" type="email" autoComplete="email" required dir="ltr" error={error} />
       )}
-      <button className="button" type="submit" disabled={busy}>
-        {mode === "testaccount" ? t("testSubmit") : t("submit")}
-      </button>
+      <div className="button-row">
+        <button className="button" type="submit" disabled={busy}>
+          {mode === "testaccount" ? t("testSubmit") : t("submit")}
+        </button>
+        {mode === "testaccount" ? (
+          <a className="button secondary" href={TEST_EMPLOYEE_LINK}>
+            {t("testEmployee")}
+          </a>
+        ) : null}
+      </div>
     </form>
   );
 }
