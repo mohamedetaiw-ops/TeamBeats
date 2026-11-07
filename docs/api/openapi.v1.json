@@ -2081,6 +2081,168 @@
         }
       }
     },
+    "/api/v1/experience/templates": {
+      "get": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/templates/{id}": {
+      "get": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/templates/{id}/draft": {
+      "put": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/templates/{id}/release": {
+      "post": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/templates/{id}/deprecate": {
+      "post": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/templates/{id}/distribution": {
+      "put": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateDistributionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/pages": {
       "get": {
         "tags": [
@@ -3662,6 +3824,47 @@
           }
         }
       },
+      "CreateTemplateRequest": {
+        "required": [
+          "id",
+          "basedOn",
+          "names",
+          "descriptions"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "basedOn": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "names": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "descriptions": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "CreateTenantRequest": {
         "required": [
           "key",
@@ -4625,6 +4828,46 @@
           }
         }
       },
+      "RegionPolicy": {
+        "required": [
+          "allowedCategories",
+          "minPlacements",
+          "maxPlacements",
+          "protection",
+          "personal"
+        ],
+        "type": "object",
+        "properties": {
+          "allowedCategories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "minPlacements": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxPlacements": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "protection": {
+            "type": "string"
+          },
+          "personal": {
+            "type": "boolean"
+          }
+        }
+      },
       "RetentionRequest": {
         "required": [
           "days"
@@ -4766,6 +5009,71 @@
           }
         }
       },
+      "TemplateDistributionRequest": {
+        "required": [
+          "orgUnitIds"
+        ],
+        "type": "object",
+        "properties": {
+          "orgUnitIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
+      "TemplateDraftRequest": {
+        "required": [
+          "names",
+          "descriptions",
+          "variants",
+          "regions"
+        ],
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "descriptions": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "variants": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "regions": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/TemplateRegion"
+            }
+          }
+        }
+      },
       "TemplateRef": {
         "required": [
           "id",
@@ -4778,6 +5086,21 @@
           },
           "version": {
             "type": "string"
+          }
+        }
+      },
+      "TemplateRegion": {
+        "required": [
+          "id",
+          "policy"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "policy": {
+            "$ref": "#/components/schemas/RegionPolicy"
           }
         }
       },

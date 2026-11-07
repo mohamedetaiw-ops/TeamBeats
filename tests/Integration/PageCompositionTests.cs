@@ -85,7 +85,8 @@ public sealed class PageCompositionTests(TenantWorld world)
         var t = world.A;
         var catalogue = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/catalogue");
         Assert.Equal(10, catalogue.GetProperty("layouts").GetArrayLength());
-        var templates = catalogue.GetProperty("templates").EnumerateArray().ToList();
+        // Tenant templates other tests release in this tenant follow the platform ones and are left out here.
+        var templates = catalogue.GetProperty("templates").EnumerateArray().Where(x => !x.GetProperty("custom").GetBoolean()).ToList();
         Assert.Equal(13, templates.Count);
         Assert.Contains(templates, t => t.GetProperty("id").GetString() == "H01");
         foreach (var template in templates)

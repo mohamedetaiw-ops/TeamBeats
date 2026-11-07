@@ -34,6 +34,8 @@ public static class ExperienceModule
         services.AddScoped<LayoutEngine>();
         services.AddScoped<HomeDefaults>();
         services.AddScoped<PersonalizationService>();
+        services.AddScoped<Templates.TemplateStore>();
+        services.AddScoped<Templates.TemplateService>();
         services.AddScoped<PageService>();
         services.AddScoped<ThemeService>();
         services.AddScoped<ShellService>();
@@ -44,10 +46,12 @@ public static class ExperienceModule
     {
         var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: pages");
 
-        x.MapGet("/catalogue", async (IEntitlementService entitlements, PlatformCatalogue catalogue, ILocalizer localizer, RequestLocale locale,
-            CancellationToken ct) =>
+        x.MapGet("/catalogue", async (IEntitlementService entitlements, PlatformCatalogue catalogue, Templates.TemplateService tenantTemplates,
+            ILocalizer localizer, RequestLocale locale, CancellationToken ct) =>
         {
             await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
+            // Tenant templates follow the platform ones, and only those the caller may build pages with (FR-020).
+            var own = await tenantTemplates.ForChooserAsync(ct);
             // Names and the text description of each structure in the caller's language, for the template chooser (FR-017).
             return Results.Ok(new
             {
@@ -55,12 +59,57 @@ public static class ExperienceModule
                 {
                     l.Id, l.Version, l.NameKey, l.Regions, l.Fallback, name = localizer.Get(l.NameKey, locale.Locale),
                 }),
-                templates = catalogue.Templates.Values.OrderBy(t => t.Id).Select(t => new
+                templates = catalogue.Templates.Values.OrderBy(t => t.Id).Concat(own).Select(t => new
                 {
                     t.Id, t.Version, t.State, t.NameKey, t.DescriptionKey, t.Layout, t.Variants, t.Regions,
-                    name = localizer.Get(t.NameKey, locale.Locale), description = localizer.Get(t.DescriptionKey, locale.Locale),
+                    name = tenantTemplates.NameOf(t, locale.Locale), description = tenantTemplates.DescriptionOf(t, locale.Locale),
+                    custom = t.Names is not null,
                 }),
             });
+        });
+
+        // Spec 032 US5: tenant templates, for template designers.
+        x.MapGet("/templates", async (Templates.TemplateService templates, CancellationToken ct) => Results.Ok(await templates.ListAsync(ct)));
+
+        x.MapGet("/templates/{id}", async (string id, Templates.TemplateService templates, CancellationToken ct) =>
+            Results.Ok(await templates.GetAsync(id, ct)));
+
+        x.MapPost("/templates", async (Templates.CreateTemplateRequest request, Templates.TemplateService templates, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var template = await templates.CreateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/experience/templates/{template.Id}", template);
+        });
+
+        x.MapPut("/templates/{id}/draft", async (string id, Templates.TemplateDraftRequest request, Templates.TemplateService templates,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var template = await templates.SaveDraftAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(template);
+        });
+
+        x.MapPost("/templates/{id}/release", async (string id, Templates.TemplateService templates, IDbSession session, CancellationToken ct) =>
+        {
+            var template = await templates.ReleaseAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(template);
+        });
+
+        x.MapPost("/templates/{id}/deprecate", async (string id, Templates.TemplateService templates, IDbSession session, CancellationToken ct) =>
+        {
+            var template = await templates.DeprecateAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(template);
+        });
+
+        x.MapPut("/templates/{id}/distribution", async (string id, Templates.TemplateDistributionRequest request, Templates.TemplateService templates,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var template = await templates.DistributeAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(template);
         });
 
         x.MapGet("/pages", async (PageService pages, CancellationToken ct) => Results.Ok(await pages.ListAsync(ct)));

@@ -50,7 +50,7 @@ public static partial class PageValidator
 {
     public const int MaxPlacementsPerPage = 40;
 
-    public static List<Finding> Validate(PageDefinition page, string templateId, PlatformCatalogue catalogue, ComponentRegistry registry,
+    public static List<Finding> Validate(PageDefinition page, TemplateDefinition? template, PlatformCatalogue catalogue, ComponentRegistry registry,
         Func<ComponentManifest, Availability> availability, ValidationMode mode, IReadOnlySet<string>? audienceRules = null,
         bool audiencesEntitled = false)
     {
@@ -60,8 +60,7 @@ public static partial class PageValidator
         void Warn(string code, string? region = null, string? placement = null) =>
             findings.Add(new Finding("validation.page." + code, Severities.Warning, region, placement));
 
-        if (page.Template is null || page.Template.Id != templateId || !catalogue.Templates.TryGetValue(templateId, out var template)
-            || page.Template.Version != template.Version)
+        if (template is null || page.Template is null || page.Template.Id != template.Id || page.Template.Version != template.Version)
         {
             Block("template_mismatch");
             return findings;

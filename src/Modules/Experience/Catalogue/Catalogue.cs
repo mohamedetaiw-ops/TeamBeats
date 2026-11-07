@@ -17,15 +17,28 @@ public sealed record RegionPolicy(IReadOnlyList<string> AllowedCategories, int M
 
 public sealed record TemplateRegion(string Id, RegionPolicy Policy);
 
-/// <summary>One of the 12 page templates (FR-015) with its visual variants (FR-016).</summary>
+/// <summary>
+/// One of the 12 page templates (FR-015) with its visual variants (FR-016), or a tenant template. A platform template is
+/// named by resource keys; a tenant template carries the names its designers wrote, per locale, in <paramref name="Names"/>.
+/// </summary>
 public sealed record TemplateDefinition(string Id, string Version, string State, string NameKey, string DescriptionKey, string Layout,
-    IReadOnlyList<string> Variants, IReadOnlyList<TemplateRegion> Regions);
+    IReadOnlyList<string> Variants, IReadOnlyList<TemplateRegion> Regions, IReadOnlyDictionary<string, string>? Names = null,
+    IReadOnlyDictionary<string, string>? Descriptions = null);
 
 public static class RegionProtection
 {
     public const string Optional = "optional";
     public const string Mandatory = "mandatory";
     public const string Protected = "protected";
+
+    public static readonly IReadOnlyList<string> All = [Optional, Mandatory, Protected];
+}
+
+public static class TemplateStates
+{
+    public const string Draft = "draft";
+    public const string Released = "released";
+    public const string Deprecated = "deprecated";
 }
 
 /// <summary>The platform layout and template catalogue, loaded once from the embedded <c>catalogue.json</c>.</summary>

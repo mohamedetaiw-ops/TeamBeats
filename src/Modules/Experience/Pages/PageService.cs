@@ -37,8 +37,12 @@ public sealed record UnplacedPlacement(string PlacementId, string ComponentRef, 
 public sealed record TemplateChangeView(PageDefinition Draft, IReadOnlyList<UnplacedPlacement> Unplaced, IReadOnlyList<Finding> Findings,
     PageView? Page);
 
+/// <param name="NewerTemplateVersion">A later released version of the page's tenant template, which the owner may apply through a
+/// template change with its preview (spec 032 US5 scenario 3); null when the page is on the latest one.</param>
+/// <param name="TemplateDeprecated">True when the page's template version is deprecated: the page keeps working, and the owner is
+/// told to move it to another template (US5 scenario 6).</param>
 public sealed record PageView(Guid Id, string Slug, Guid? OrgUnitId, string TemplateId, string TemplateVersion, int? CurrentRelease,
-    string ETag, PageDefinition Draft, IReadOnlyList<Finding> Findings);
+    string ETag, PageDefinition Draft, IReadOnlyList<Finding> Findings, string? NewerTemplateVersion = null, bool TemplateDeprecated = false);
 
 public sealed record ReleaseView(int Release, DateTimeOffset PublishedAt, Guid PublishedBy, string? Reason, int? RollbackOf);
 
@@ -79,6 +83,8 @@ public sealed partial class PageService(
     IEntitlementService entitlements,
     IOrganizationHierarchy hierarchy,
     PlatformCatalogue catalogue,
+    Templates.TemplateStore templates,
+    Templates.TemplateService tenantTemplates,
     ComponentRegistry registry,
     ComponentAvailability availability,
     Personalization.LayoutEngine layouts,
@@ -98,12 +104,12 @@ public sealed partial class PageService(
     {
         await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
         var errors = new ValidationErrors();
-        if (request.TemplateId is null || !catalogue.Templates.TryGetValue(request.TemplateId, out var template))
+        var template = request.TemplateId is null ? null : await templates.CurrentAsync(request.TemplateId, ct);
+        if (template is null)
         {
             errors.Add("templateId", "validation.page.template_unknown");
-            template = null;
         }
-        else if (template.State != "released")
+        else if (template.State != TemplateStates.Released)
         {
             errors.Add("templateId", "validation.page.template_not_released");
         }
@@ -121,6 +127,11 @@ public sealed partial class PageService(
             throw AppException.Validation("orgUnitId", "validation.page.org_unit_unknown");
         }
         await authz.DemandAsync(Permissions.PageEdit, Target(request.OrgUnitId), ct);
+        // A tenant template outside its distribution is answered as unknown, so other scopes never learn it exists (FR-020).
+        if (!await tenantTemplates.UsableAtAsync(template!, request.OrgUnitId, ct))
+        {
+            throw AppException.Validation("templateId", "validation.page.template_unknown");
+        }
 
         var taken = await session.ScalarAsync<Guid?>("select id from experience.page where slug = @s", new { s = request.Slug }, ct);
         if (taken is not null)
@@ -173,7 +184,14 @@ public sealed partial class PageService(
         var page = await EditableAsync(id, Permissions.PageEdit, ct);
         var (revision, draft) = await DraftAsync(id, ct);
         var findings = await ValidateAsync(page, draft, ValidationMode.Save, ct);
-        return View(page, revision, draft, findings);
+        var recorded = await templates.FindAsync(page.TemplateId, page.TemplateVersion, ct);
+        var latest = await templates.CurrentAsync(page.TemplateId, ct);
+        return View(page, revision, draft, findings) with
+        {
+            NewerTemplateVersion = latest is not null && latest.Version != page.TemplateVersion && int.TryParse(latest.Version, System.Globalization.CultureInfo.InvariantCulture, out var l)
+                && int.TryParse(page.TemplateVersion, System.Globalization.CultureInfo.InvariantCulture, out var p) && l > p ? latest.Version : null,
+            TemplateDeprecated = recorded?.State == TemplateStates.Deprecated,
+        };
     }
 
     public async Task<PageView> SaveDraftAsync(Guid id, string? ifMatch, SaveDraftRequest request, CancellationToken ct)
@@ -208,11 +226,12 @@ public sealed partial class PageService(
     {
         await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
         var page = await EditableAsync(id, Permissions.PageEdit, ct);
-        if (request.TemplateId is null || !catalogue.Templates.TryGetValue(request.TemplateId, out var template))
+        var template = request.TemplateId is null ? null : await templates.CurrentAsync(request.TemplateId, ct);
+        if (template is null || !await tenantTemplates.UsableAtAsync(template, page.OrgUnitId, ct))
         {
             throw AppException.Validation("templateId", "validation.page.template_unknown");
         }
-        if (template.State != "released")
+        if (template.State != TemplateStates.Released)
         {
             throw AppException.Validation("templateId", "validation.page.template_not_released");
         }
@@ -377,7 +396,7 @@ public sealed partial class PageService(
     {
         await entitlements.DemandAsync(Capabilities.ExperiencePageBuilder, ct);
         var page = await EditableAsync(id, Permissions.PageEdit, ct);
-        var template = catalogue.Templates[page.TemplateId];
+        var template = await templates.GetAsync(new TemplateRef(page.TemplateId, page.TemplateVersion), ct);
         var policy = template.Regions.FirstOrDefault(r => r.Id == regionId)?.Policy;
         if (regionId is not null && policy is null)
         {
@@ -443,7 +462,7 @@ public sealed partial class PageService(
         var page = await EditableAsync(id, Permissions.PageEdit, ct);
         var (_, draft) = await DraftAsync(id, ct);
         var shown = previewLocale is { } l && Primitives.Locales.IsSupported(l) ? l : locale.Locale;
-        var template = catalogue.Templates[draft.Template.Id];
+        var template = await templates.GetAsync(draft.Template, ct);
         var layout = catalogue.Layouts[template.Layout];
         var availability = await AvailabilityAsync(page.OrgUnitId, ct);
         var known = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -488,7 +507,7 @@ public sealed partial class PageService(
         }
         await authz.DemandVisibleAsync(Permissions.PageView, Target(page.OrgUnitId), ct);
         var snapshot = await ReleaseAsync(page.Id, current, ct);
-        var template = catalogue.Templates[snapshot.Definition.Template.Id];
+        var template = await templates.GetAsync(snapshot.Definition.Template, ct);
         var layout = catalogue.Layouts[template.Layout];
         var availability = await AvailabilityAsync(page.OrgUnitId, ct, viewer: true);
         var known = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -604,7 +623,8 @@ public sealed partial class PageService(
     {
         var availability = await AvailabilityAsync(page.OrgUnitId, ct);
         var rules = (await audiences.RulesAsync(ct)).Keys.Select(k => k.ToString()).ToHashSet(StringComparer.Ordinal);
-        var findings = PageValidator.Validate(definition, page.TemplateId, catalogue, registry, availability, mode, rules,
+        var template = definition.Template is { } named && named.Id == page.TemplateId && named.Version == page.TemplateVersion ? await templates.FindAsync(named, ct) : null;
+        var findings = PageValidator.Validate(definition, template, catalogue, registry, availability, mode, rules,
             await entitlements.IsEnabledAsync(Capabilities.ExperienceAudienceVariants, ct));
         findings.AddRange(await TranslationFindingsAsync(definition, ct));
         // Each finding carries its text in the editor's language, so the builder shows it next to the placement (FR-046).

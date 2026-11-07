@@ -183,7 +183,7 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Manifest validation without a JSON Schema library | ADR-0012 point 3 says manifests are validated by a JSON Schema. The module validates a typed subset itself instead, to avoid a new dependency (CLAUDE.md rule 6). The manifest format stays JSON-compatible, so a schema can be published later. |
 | Visibility rules | Audience rules come with spec 008. Until then a placement with `visibilityRuleRef` is refused, so no page can depend on a rule that does not exist. |
 | Overlap, nesting and breakpoint order checks | Placements flow in region order with spans, so cells cannot collide yet. Sections, nesting and per-breakpoint order arrive with the renderer (T016). |
-| Tenant templates, distribution and layout change (T010, T011) | Not built. Pages use the platform templates only. |
+| Tenant templates, distribution and layout change (T010, T011) | Built, see "Tenant templates (spec 032 T010, T011)". |
 | Manifest migration hooks (part of T012) | Not built. Only one version of each reference component exists. |
 | Theme tokens in manifests | Token names are checked once the spec 033 token schema exists. |
 | Denied publish outside scope | Recorded as `page.published` or `page.rolled_back` with outcome `denied`, then answered as not found. |
@@ -354,6 +354,27 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | axe with no critical findings in `ar` and `en`, desktop and phone | all of the above, plus `toolbox.spec.ts` and `interaction.spec.ts` |
 
 Screen reader checks assert the roles, names and states that assistive technology reads. They do not replace a manual pass with NVDA and VoiceOver, which is a follow-up before the R1 release.
+
+## Tenant templates (spec 032 T010, T011)
+
+### Built
+- Tables `experience.template` (ID, the platform template it copies and its version, distribution as org unit IDs) and `experience.template_version` (version number, `draft`, `released` or `deprecated`, and the stored definition: names and descriptions per locale, layout, variants and region policies). Both are tenant tables under forced row-level security.
+- `TemplateStore` finds the template a page names, platform or tenant, by ID and version, and is used everywhere pages, the picker, previews, rendering and personalization looked at the platform catalogue before. A page keeps the version it records (FR-018).
+- `TemplateService` and `/api/v1/experience/templates`: list, get, create (copy of a released platform template), `PUT {id}/draft`, `POST {id}/release`, `POST {id}/deprecate` and `PUT {id}/distribution`. Saving after a release starts the next version as a draft. Variants must come from the base template, every layout region needs a policy once, and protection is `optional`, `mandatory` or `protected`.
+- `experience.max_custom_templates` (5 on Workplace, 50 on Workplace Plus, unlimited on `enterprise_gov`) answers 403 `entitlement.quota_exhausted` with the capability key.
+- Distribution (FR-020): an empty list is the whole tenant. Otherwise a page may use the template only when its org unit is inside one of the listed subtrees, and the chooser in `GET /catalogue` lists the template only for editors who can edit pages in one of those subtrees. Everywhere else the template answers as `validation.page.template_unknown`, the same as a template that does not exist.
+- Versions (US5 scenarios 3 and 6): `GET /pages/{id}` carries `newerTemplateVersion` when a later version is released, which the owner applies through `change-template` with its preview, and `templateDeprecated` when the page's version is deprecated. Deprecated pages keep rendering; new pages and template changes cannot use the template.
+- Audit `template.released`, `template.distributed`, `template.deprecated` and `region.lock_changed` (one entry per region whose protection changed, with before and after). Events `TemplateReleased` and `TemplateDeprecated` through the outbox.
+- Tests: `TemplateTests` (distribution to the Gulf, the limit, version 2, deprecation, removal of a protected region, input checks, another tenant).
+
+### Differences and follow-ups
+| Item | Note |
+|---|---|
+| Designer scope | Template designers need `template.edit` for the whole tenant, and distribution needs `template.distribute`. Templates owned by one organization's designers (`template.edit` at org scope, spec 032 section 3) are a follow-up. |
+| Protection levels | Every region of the template must stay on the page (`validation.page.region_missing`), and region policies always come from the template, never from the page. `mandatory` and `protected` regions are never delegated to personalization. Regions "removable by named delegated roles" (FR-019) need a role list in the policy and are not built. |
+| Retired state and migration guidance | FR-021 also names a `retired` state and migration guidance. R1 has draft, released and deprecated; the page view only says that its version is deprecated. |
+| Platform template versions | The platform catalogue holds one version of each platform template. A page that records another version gets `validation.page.template_mismatch`. |
+| Designer screens | The API comes first; the admin screens and the layout change in the editor follow. |
 
 ## Page builder (spec 032 T018 to T020)
 | Part | Where |
