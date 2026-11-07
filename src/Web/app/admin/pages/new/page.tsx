@@ -29,7 +29,10 @@ export default async function NewPagePage() {
       <h1>{t("create.title")}</h1>
       <p className="notice">{t("create.intro")}</p>
       <TemplateChooser
-        templates={catalogue.data.templates.filter((x) => x.state === "released")}
+        templates={catalogue.data.templates
+          .filter((x) => x.state === "released")
+          // Page templates first; the employee home template last.
+          .sort((a, b) => Number(a.id.startsWith("H")) - Number(b.id.startsWith("H")) || a.id.localeCompare(b.id))}
         layouts={catalogue.data.layouts}
         units={choices}
         tenantWide={nav.data.find((s) => s.key === "pages")?.wholeTenant ?? false}

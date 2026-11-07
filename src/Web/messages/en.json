@@ -501,13 +501,7 @@
       "creating": "Creating page"
     },
     "page": {
-      "open": "Open published page",
-      "findings": "Checks",
-      "blocking": "{count, plural, one {# problem blocks publishing} other {# problems block publishing}}",
-      "noBlocking": "Nothing blocks publishing",
-      "regions": "Regions",
-      "placements": "{count, plural, =0 {is empty} one {has # component} other {has # components}}",
-      "editorPending": "Adding and arranging components on this page arrives with the next builder release."
+      "open": "Open published page"
     },
     "variants": {
       "spacious": "Spacious",
@@ -535,6 +529,83 @@
       "panel1": "First panel",
       "panel2": "Second panel",
       "panel3": "Third panel"
+    },
+    "editor": {
+      "toolbar": "Page editing",
+      "undo": "Undo",
+      "redo": "Redo",
+      "retry": "Save now",
+      "loading": "Opening the editor",
+      "save": {
+        "saved": "All changes saved",
+        "unsaved": "Unsaved changes",
+        "saving": "Saving",
+        "offline": "Offline. Your changes are kept in this browser and save when you are back online.",
+        "blocked": "Not saved. Fix the problems marked below.",
+        "conflict": "Not saved. Someone else changed this page.",
+        "failed": "Not saved. Try again."
+      },
+      "restored": "Unsaved changes from your last visit were restored.",
+      "conflict": "Someone else saved this page while you were editing. Both versions are kept until you choose.",
+      "keepMine": "Keep my version",
+      "takeTheirs": "Use their version",
+      "pageFindings": "Problems on this page",
+      "blocking": "Blocks publishing:",
+      "warning": "Warning:",
+      "inRegion": "{region}: {message}",
+      "limits": "Holds {min} to {max} components",
+      "emptyRegion": "This region has no components yet.",
+      "placementLabel": "{name}, {number} of {count} in {region}",
+      "settings": "Settings",
+      "actions": "Actions",
+      "actionsFor": "Actions for {name}",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "moveTo": "Move to {region}",
+      "duplicate": "Duplicate",
+      "remove": "Remove",
+      "add": "Add a component to {region}",
+      "moved": "{name} moved to position {number} of {count} in {region}",
+      "atStart": "{name} is already first",
+      "atEnd": "{name} is already last",
+      "duplicated": "{name} duplicated",
+      "removed": "{name} removed",
+      "added": "{name} added to {region}",
+      "undone": "Undone",
+      "redone": "Redone",
+      "publishTitle": "Publish",
+      "reason": "What changed (optional)",
+      "publish": "Publish page",
+      "publishing": "Publishing",
+      "publishedNow": "Published as release {release}",
+      "publishBlocked": "Not published. Fix the problems marked on the page.",
+      "publishFailed": "Not published. Try again.",
+      "fixFirst": "Fix the problems that block publishing first.",
+      "shortcuts": "On a component: Alt and the up or down arrow moves it, Alt and D duplicates it, Delete removes it. Control and Z undoes, Control, Shift and Z redoes."
+    },
+    "picker": {
+      "title": "Add a component to {region}",
+      "close": "Close",
+      "search": "Search components",
+      "loading": "Loading components",
+      "failed": "Components cannot be loaded right now.",
+      "empty": "No component matches your search.",
+      "add": "Add",
+      "addLabel": "Add {name}"
+    },
+    "properties": {
+      "none": "This component has no settings.",
+      "required": "(required)",
+      "notSet": "Not set",
+      "inLanguage": "In {language}",
+      "item": "{label}, item {number}",
+      "removeItem": "Remove item {number}",
+      "addItem": "Add an item",
+      "hints": {
+        "url": "An https address or a path on this site, such as /p/news.",
+        "image": "An uploaded image, written as asset: followed by its id.",
+        "colorToken": "A brand color token, such as color.accent.base."
+      }
     }
   }
 }

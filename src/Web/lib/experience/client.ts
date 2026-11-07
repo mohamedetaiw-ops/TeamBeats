@@ -1,7 +1,7 @@
 import "server-only";
 import { apiGet, type ApiResult } from "@/lib/api";
 import type { EffectiveTheme, RenderedPage } from "./types";
-import type { Catalogue, OrgUnit, PageSummary, PageView } from "./builder-types";
+import type { Catalogue, OrgUnit, PageSummary, PageView, PickerItem } from "./builder-types";
 
 /** Effective configuration of the latest release for the signed-in viewer (spec 032 FR-002). */
 export function renderPage(slug: string): Promise<ApiResult<RenderedPage>> {
@@ -31,4 +31,9 @@ export function listUnits(): Promise<ApiResult<OrgUnit[]>> {
 /** One page's draft and findings, for the builder. Not found when the page is outside the editor's scope. */
 export function getPage(id: string): Promise<ApiResult<PageView>> {
   return apiGet<PageView>(`/api/v1/experience/pages/${encodeURIComponent(id)}`);
+}
+
+/** Every component the page may hold, with names, property schemas and labels, for drawing placements in the editor. */
+export function listPickerItems(pageId: string): Promise<ApiResult<PickerItem[]>> {
+  return apiGet<PickerItem[]>(`/api/v1/experience/pages/${encodeURIComponent(pageId)}/components`);
 }

@@ -31,7 +31,8 @@ public sealed record ReleaseView(int Release, DateTimeOffset PublishedAt, Guid P
 
 public sealed record PickerItem(string ComponentRef, string Version, string NameKey, string DescriptionKey, string Category, string Icon,
     IReadOnlyList<string> RequiredPermissions, bool Eligible, string? ReasonKey, string? Name = null, string? Description = null, string? Reason = null,
-    IReadOnlyDictionary<string, PropertySchema>? Properties = null, PlacementRules? Placement = null);
+    IReadOnlyDictionary<string, PropertySchema>? Properties = null, PlacementRules? Placement = null,
+    IReadOnlyDictionary<string, string>? Labels = null);
 
 /// <summary>A page in the builder's list (spec 032 US2): only pages the caller may edit.</summary>
 public sealed record PageSummary(Guid Id, string Slug, Guid? OrgUnitId, string TemplateId, string TemplateVersion, int? CurrentRelease,
@@ -268,9 +269,31 @@ public sealed partial class PageService(
             }
             items.Add(new PickerItem(m.Reference, m.Version, m.Display.NameKey, m.Display.DescriptionKey, m.Display.Category, m.Display.Icon,
                 m.Requires.Permissions, reason is null, reason, localizer.Get(m.Display.NameKey, locale.Locale),
-                localizer.Get(m.Display.DescriptionKey, locale.Locale), reason is null ? null : localizer.Get(reason, locale.Locale), m.Properties, m.Placement));
+                localizer.Get(m.Display.DescriptionKey, locale.Locale), reason is null ? null : localizer.Get(reason, locale.Locale), m.Properties, m.Placement,
+                Labels(m)));
         }
         return items;
+    }
+
+    /// <summary>
+    /// Property and option labels in the editor's language, so the builder draws a form from the schema alone (FR-025). The key is
+    /// the component's name key with <c>.props.&lt;property&gt;</c>, and <c>.&lt;option&gt;</c> for enum options. A property with no
+    /// resource yet is labelled by its schema name.
+    /// </summary>
+    private Dictionary<string, string> Labels(ComponentManifest m)
+    {
+        var prefix = (m.Display.NameKey.EndsWith(".name", StringComparison.Ordinal) ? m.Display.NameKey[..^5] : m.Display.NameKey) + ".props.";
+        var labels = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (name, schema) in m.Properties)
+        {
+            labels[name] = localizer.Has(prefix + name, locale.Locale) || localizer.Has(prefix + name, "en") ? localizer.Get(prefix + name, locale.Locale) : name;
+            foreach (var option in schema.Enum ?? [])
+            {
+                var key = $"{prefix}{name}.{option}";
+                labels[$"{name}.{option}"] = localizer.Has(key, locale.Locale) || localizer.Has(key, "en") ? localizer.Get(key, locale.Locale) : option;
+            }
+        }
+        return labels;
     }
 
     /// <summary>The latest release of a page for the current viewer, with the effective structure (FR-002, FR-028, FR-066).</summary>
@@ -399,8 +422,10 @@ public sealed partial class PageService(
     {
         var availability = await AvailabilityAsync(page.OrgUnitId, ct);
         var rules = (await audiences.RulesAsync(ct)).Keys.Select(k => k.ToString()).ToHashSet(StringComparer.Ordinal);
-        return PageValidator.Validate(definition, page.TemplateId, catalogue, registry, availability, mode, rules,
+        var findings = PageValidator.Validate(definition, page.TemplateId, catalogue, registry, availability, mode, rules,
             await entitlements.IsEnabledAsync(Capabilities.ExperienceAudienceVariants, ct));
+        // Each finding carries its text in the editor's language, so the builder shows it next to the placement (FR-043).
+        return findings.Select(f => f with { Message = localizer.Get(f.Code, locale.Locale) }).ToList();
     }
 
     private Task<Func<ComponentManifest, Availability>> AvailabilityAsync(Guid? orgUnitId, CancellationToken ct, bool viewer = false) =>
