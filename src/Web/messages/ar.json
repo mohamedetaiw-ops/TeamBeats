@@ -363,7 +363,24 @@
     },
     "weather": {
       "title": "الطقس",
-      "unsupported": "الطقس غير متاح بعد"
+      "noPlace": "حدد مكانا لعرض طقسه",
+      "notFound": "لم يتم العثور على مكان باسم {place}",
+      "unavailable": "الطقس غير متاح الآن",
+      "retry": "أعد المحاولة",
+      "stale": "تعذر تحديث الطقس. تظهر قراءة الساعة {time}.",
+      "place": "{name}، {country}",
+      "range": "العظمى {high}، الصغرى {low}",
+      "condition": {
+        "clear": "صافٍ",
+        "partly_cloudy": "غائم جزئيا",
+        "cloudy": "غائم",
+        "fog": "ضباب",
+        "drizzle": "رذاذ",
+        "rain": "مطر",
+        "snow": "ثلج",
+        "thunderstorm": "عاصفة رعدية",
+        "unknown": "الطقس"
+      }
     }
   }
 }

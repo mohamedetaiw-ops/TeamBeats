@@ -305,5 +305,6 @@
   "validation.theme.token_value_invalid": "Enter a value for this token",
   "validation.theme.too_many_locks": "Too many settings in one request",
   "validation.theme.too_many_tokens": "Too many tokens in one request",
+  "validation.weather.location_length": "Enter a place name of up to 100 characters",
   "warning.org.unusual_placement": "This unit type usually sits higher in the hierarchy"
 }

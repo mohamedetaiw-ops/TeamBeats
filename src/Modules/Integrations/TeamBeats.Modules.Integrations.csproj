@@ -8,6 +8,7 @@
     <ProjectReference Include="../../BuildingBlocks/Entitlements.Contracts/TeamBeats.Entitlements.Contracts.csproj" />
     <ProjectReference Include="../../BuildingBlocks/Audit.Contracts/TeamBeats.Audit.Contracts.csproj" />
     <ProjectReference Include="../../BuildingBlocks/TenantContext/TeamBeats.TenantContext.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Localization/TeamBeats.Localization.csproj" />
     <ProjectReference Include="../Identity.Contracts/TeamBeats.Modules.Identity.Contracts.csproj" />
     <ProjectReference Include="../Tenancy.Contracts/TeamBeats.Modules.Tenancy.Contracts.csproj" />
     <ProjectReference Include="../Integrations.Contracts/TeamBeats.Modules.Integrations.Contracts.csproj" />

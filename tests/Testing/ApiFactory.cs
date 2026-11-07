@@ -35,6 +35,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public FakeMicrosoftGraph Graph { get; } = new();
 
+    public FakeOpenMeteo Weather { get; } = new();
+
     public TestUserAttributes UserAttributes { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -57,6 +59,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddSingleton<ISecretStore>(Secrets);
             services.AddHttpClient(HttpOidcProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => Idp);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Microsoft365.HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => Graph);
+            services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => Weather);
         });
     }
 

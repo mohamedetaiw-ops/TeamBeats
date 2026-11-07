@@ -143,12 +143,28 @@ public sealed class ExperienceValidationTests
         {
             Assert.Equal("utility", m.Display.Category);
             Assert.Empty(m.Requires.Capabilities);
-            Assert.Empty(m.Data);
             Assert.Empty(PropertyValidator.Validate(m.Properties, null));
         });
+        Assert.Equal(["/api/v1/weather"], registry.Find("toolbox.weather@1")!.Data);
+        Assert.Empty(registry.Find("toolbox.world_clock@1")!.Data);
         var clock = registry.Find("toolbox.world_clock@1")!;
         var tooMany = JsonSerializer.SerializeToElement(new { zones = Enumerable.Repeat("Asia/Dubai", PlatformComponents.MaxClockZones + 1) });
         Assert.NotEmpty(PropertyValidator.Validate(clock.Properties, tooMany));
         Assert.Empty(PropertyValidator.Validate(clock.Properties, JsonSerializer.SerializeToElement(new { zones = new[] { "Asia/Dubai", "Europe/London" } })));
     }
+
+    [Theory]
+    [InlineData(0, "clear")]
+    [InlineData(2, "partly_cloudy")]
+    [InlineData(3, "cloudy")]
+    [InlineData(48, "fog")]
+    [InlineData(55, "drizzle")]
+    [InlineData(63, "rain")]
+    [InlineData(81, "rain")]
+    [InlineData(75, "snow")]
+    [InlineData(86, "snow")]
+    [InlineData(95, "thunderstorm")]
+    [InlineData(4, "unknown")]
+    public void Open_meteo_weather_codes_group_into_the_conditions_the_component_names(int code, string condition) =>
+        Assert.Equal(condition, TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.Condition(code));
 }

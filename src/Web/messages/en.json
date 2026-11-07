@@ -363,7 +363,24 @@
     },
     "weather": {
       "title": "Weather",
-      "unsupported": "Weather is not available yet"
+      "noPlace": "Set a place to see its weather",
+      "notFound": "No place called {place} was found",
+      "unavailable": "Weather is not available right now",
+      "retry": "Try again",
+      "stale": "Weather could not be updated. Showing the reading from {time}.",
+      "place": "{name}, {country}",
+      "range": "High {high}, low {low}",
+      "condition": {
+        "clear": "Clear",
+        "partly_cloudy": "Partly cloudy",
+        "cloudy": "Cloudy",
+        "fog": "Fog",
+        "drizzle": "Drizzle",
+        "rain": "Rain",
+        "snow": "Snow",
+        "thunderstorm": "Thunderstorm",
+        "unknown": "Weather"
+      }
     }
   }
 }

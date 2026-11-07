@@ -305,5 +305,6 @@
   "validation.theme.token_value_invalid": "أدخل قيمة لهذا الرمز",
   "validation.theme.too_many_locks": "عدد كبير جدا من الإعدادات في طلب واحد",
   "validation.theme.too_many_tokens": "عدد كبير جدا من الرموز في طلب واحد",
+  "validation.weather.location_length": "أدخل اسم مكان لا يزيد عن 100 حرف",
   "warning.org.unusual_placement": "يقع هذا النوع من الوحدات عادةً في مستوى أعلى من الهيكل"
 }

@@ -312,13 +312,16 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Hidden items | A hidden item returns through undo or reset; there is no list of hidden items in R1. |
 
 ## Tool box utilities (spec 008 T014)
-- `Components/PlatformComponents` registers three platform manifests through the same `IComponentRegistration` as any module: `toolbox.world_clock@1`, `toolbox.time_converter@1` and `toolbox.weather@1`, category `utility`, no package capability, no data contract, and every property has a default, so they can be added from the personal add panel.
+- `Components/PlatformComponents` registers three platform manifests through the same `IComponentRegistration` as any module: `toolbox.world_clock@1`, `toolbox.time_converter@1` and `toolbox.weather@1`, category `utility`, no package capability, and every property has a default, so they can be added from the personal add panel.
 - The world clock shows up to six IANA zones (default: the viewer's own zone and UTC) with localized zone names and digits, ticks once a minute after hydration, and leaves out a zone the browser does not know. The converter turns a date and time in one zone into another in the browser, checking the offset twice so daylight saving edges land right. Neither sends anything to the server.
-- Weather renders the shared unsupported state. When a provider is chosen it reads through a backend connector port and declares that endpoint in its manifest.
-- Playwright `toolbox.spec.ts` in English and Arabic with axe; unit and integration tests cover the manifests and adding the clock to the home.
+- Weather uses Open-Meteo (decision 2026-11-07). The canonical port `IWeather` lives in `Integrations.Contracts`; the adapter `Integrations/Weather/OpenMeteoWeather` looks the place up, then reads current weather and today's high and low, and maps WMO codes to the conditions the component names. Only the place name leaves the platform. `GET /api/v1/weather?location=` (any signed-in user, 1 to 100 characters, `refresh=true` for retry) answers `ok`, `not_found`, `degraded` (the last good answer, kept 6 hours) or `unavailable`. Answers are cached per tenant, language and place for 15 minutes; a failure pauses calls for a minute. The manifest declares the endpoint as its data.
+- Settings sit under `Integrations:Weather` (`Provider`, base URLs, optional `ApiKey`). The free Open-Meteo endpoints are for non-commercial use; a paid plan sets its own base URLs and key there, and another provider is another `IWeather` adapter.
+- `DevFakes/FakeOpenMeteo` answers for Dubai, Riyadh, Cairo and London (Arabic names when asked) with fictional readings. Development, staging and the integration tests use it; staging never calls the real service. `/dev/fake/outage/open-meteo` turns it off.
+- The component shows the city of the viewer's time zone when no place is set, and the shared loading, empty, error (with retry) and stale states.
+- Playwright `toolbox.spec.ts` in English and Arabic with axe; unit tests cover the manifests and weather codes, and integration tests cover adding the clock to the home and the weather states, tenant cache and validation.
 
 ### Differences and follow-ups
 | Item | Note |
 |---|---|
-| Weather provider | Open decision; the component stays in the unsupported state until then. |
+| Weather plan | The free Open-Meteo tier is non-commercial. A paid plan is needed before customer production use; it is configuration only. |
 | Shell utilities | The shell keys `world_clock`, `time_converter` and `weather` exist; placing the components in the shell's utilities region comes with the utilities slot rendering. |

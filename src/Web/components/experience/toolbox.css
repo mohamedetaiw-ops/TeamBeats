@@ -52,3 +52,30 @@
 .toolbox-result {
   margin: 0;
 }
+
+.toolbox-weather {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.toolbox-weather p {
+  margin: 0;
+}
+
+.toolbox-weather-now {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tb-space-sm);
+}
+
+.toolbox-weather-temperature {
+  font-size: var(--tb-font-size-xl);
+  font-variant-numeric: tabular-nums;
+}
+
+.toolbox-weather-stale {
+  display: grid;
+  gap: var(--tb-space-xs);
+  justify-items: start;
+}

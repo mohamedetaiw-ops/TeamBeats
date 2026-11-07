@@ -6,18 +6,19 @@ namespace TeamBeats.Modules.Experience.Components;
 /// <summary>
 /// The tool box utilities of spec 008 FR-050: platform components registered through spec 032 manifests like any other
 /// module's components, so pages, templates and personal layouts place them without knowing them. They need no package
-/// capability. Weather has no provider yet (open decision), so it renders the unsupported state and declares no data.
+/// capability. Weather reads the weather connector of the Integrations module (Open-Meteo, decision 2026-11-07).
 /// </summary>
 public sealed class PlatformComponents : IComponentRegistration
 {
     /// <summary>World clock zones: IANA names, so a city's daylight saving rules follow the zone.</summary>
     public const int MaxClockZones = 6;
 
-    private static ComponentManifest Manifest(string id, string icon, Dictionary<string, PropertySchema> properties, PlacementRules placement)
+    private static ComponentManifest Manifest(string id, string icon, Dictionary<string, PropertySchema> properties, PlacementRules placement,
+        IReadOnlyList<string>? data = null)
     {
         var key = "experience.component." + id.Replace('.', '_');
         return new(id, "1.0.0", "TeamBeats", "^1", new ComponentDisplay(key + ".name", key + ".description", "utility", icon), properties,
-            placement, ["locale", "direction"], ComponentRequirements.None, ComponentEvents.None, [], TrustTiers.Platform, ComponentStates.Active);
+            placement, ["locale", "direction"], ComponentRequirements.None, ComponentEvents.None, data ?? [], TrustTiers.Platform, ComponentStates.Active);
     }
 
     public IEnumerable<ComponentManifest> Manifests() =>
@@ -31,6 +32,6 @@ public sealed class PlatformComponents : IComponentRegistration
         Manifest("toolbox.weather", "cloud", new()
         {
             ["location"] = new PropertySchema("string", MaxLength: 100),
-        }, new PlacementRules(MinSpan: 3)),
+        }, new PlacementRules(MinSpan: 3), ["/api/v1/weather"]),
     ];
 }

@@ -190,3 +190,44 @@ public interface IAvailability
     /// <summary>Free and busy of one colleague, read as the signed-in employee, so never more than Outlook shows them.</summary>
     Task<AvailabilityResult> GetAsync(string colleagueAddress, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
 }
+
+// Weather for the tool box (spec 008 FR-050). A canonical port, so the provider can be swapped by configuration; provider
+// types stay inside the adapter. Weather is public data and needs no connection or capability.
+
+/// <summary>The state that comes with every weather answer; the component maps it to a shared state of spec 008 FR-006.</summary>
+public static class WeatherStates
+{
+    public const string Ok = "ok";
+    public const string NotFound = "not_found";
+    /// <summary>The provider did not answer; the last good report is returned with its time.</summary>
+    public const string Degraded = "degraded";
+    public const string Unavailable = "unavailable";
+}
+
+/// <summary>Weather conditions the component can name, grouped from the provider's codes.</summary>
+public static class WeatherConditions
+{
+    public const string Clear = "clear";
+    public const string PartlyCloudy = "partly_cloudy";
+    public const string Cloudy = "cloudy";
+    public const string Fog = "fog";
+    public const string Drizzle = "drizzle";
+    public const string Rain = "rain";
+    public const string Snow = "snow";
+    public const string Thunderstorm = "thunderstorm";
+    public const string Unknown = "unknown";
+}
+
+public sealed record WeatherPlace(string Name, string? Country, double Latitude, double Longitude);
+
+/// <summary>Current weather and today's range, in degrees Celsius; the component formats units for the viewer.</summary>
+public sealed record WeatherReport(WeatherPlace Place, double TemperatureC, string Condition, double? HighC, double? LowC, DateTimeOffset ObservedAt);
+
+/// <summary><see cref="AsOf"/> is when the report was read from the provider (older when degraded).</summary>
+public sealed record WeatherResult(string State, DateTimeOffset? AsOf, WeatherReport? Report);
+
+public interface IWeather
+{
+    /// <summary>Today's weather for a place name, with place names in <paramref name="locale"/> where the provider has them.</summary>
+    Task<WeatherResult> TodayAsync(string location, string locale, bool refresh = false, CancellationToken ct = default);
+}

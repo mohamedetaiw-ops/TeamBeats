@@ -6,8 +6,8 @@ import { hostOrigin } from "../support/stack";
 
 /**
  * Spec 008 T014: the tool box utilities as platform components on a published page, in English and Arabic with axe.
- * The world clock shows its configured zones, the converter turns a time in one zone into another, and weather shows
- * the unsupported state until a provider is chosen.
+ * The world clock shows its configured zones, the converter turns a time in one zone into another, and weather reads
+ * the fake Open-Meteo provider: the city of the viewer's time zone when no place is set, and not found for an unknown place.
  */
 const unique = (prefix: string) => `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
@@ -27,6 +27,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
           { id: "clock", componentRef: "toolbox.world_clock@1", props: { zones: ["Asia/Dubai", "Europe/London", "Not/AZone"] } },
           { id: "converter", componentRef: "toolbox.time_converter@1" },
           { id: "weather", componentRef: "toolbox.weather@1" },
+          { id: "nowhere", componentRef: "toolbox.weather@1", props: { location: "Atlantis" } },
         ],
       })));
       slug = page.slug;
@@ -41,8 +42,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const clock = page.getByRole("region", { name: msg(locale, "toolbox.clock.title") });
       await expect(clock.getByRole("listitem")).toHaveCount(2);
 
+      // Without a place, weather follows the city of the viewer's time zone (Asia/Dubai).
       const weather = page.getByRole("region", { name: msg(locale, "toolbox.weather.title") });
-      await expect(weather).toContainText(msg(locale, "toolbox.weather.unsupported"));
+      await expect(weather).toHaveCount(2);
+      const degrees = (c: number) => page.evaluate(([l, v]) => new Intl.NumberFormat(l as string, { style: "unit", unit: "celsius", maximumFractionDigits: 0 }).format(v as number), [locale, c] as const);
+      const dubai = locale === "en" ? { name: "Dubai", country: "United Arab Emirates" } : { name: "دبي", country: "الإمارات العربية المتحدة" };
+      await expect(weather.first()).toContainText(msg(locale, "toolbox.weather.place", dubai));
+      await expect(weather.first()).toContainText(await degrees(31.4));
+      await expect(weather.first()).toContainText(msg(locale, "toolbox.weather.condition.clear"));
+      await expect(weather.first()).toContainText(msg(locale, "toolbox.weather.range", { high: await degrees(34), low: await degrees(26.5) }));
+      await expect(weather.nth(1).getByRole("status")).toHaveText(msg(locale, "toolbox.weather.notFound", { place: "Atlantis" }));
 
       const converter = page.getByRole("region", { name: msg(locale, "toolbox.converter.title") });
       await expect(converter.getByRole("status")).toHaveText(msg(locale, "toolbox.converter.empty"));
