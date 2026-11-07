@@ -2,8 +2,9 @@
 // placement, and only the registry names placement modules. Components talk through declared events only.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, extname, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 const placements = join(root, "components", "placements");
 const registry = join(root, "lib", "experience", "registry.ts");
 const errors = [];

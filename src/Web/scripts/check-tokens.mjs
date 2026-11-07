@@ -3,8 +3,9 @@
 // Any other custom property, or a --tb-* name the schema does not define, fails the build.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, extname, relative } from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 const tokensFile = join(root, "app", "tokens.css");
 const defined = new Set([...readFileSync(tokensFile, "utf8").matchAll(/(--tb-[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
 const errors = [];
