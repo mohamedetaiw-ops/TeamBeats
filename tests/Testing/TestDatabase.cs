@@ -7,7 +7,7 @@ namespace TeamBeats.Testing;
 /// <summary>
 /// A fresh PostgreSQL database per test assembly, with the real roles (tb_owner, tb_app) and RLS on.
 /// Connects with TEAMBEATS_TEST_PG_ADMIN (a superuser used only to create roles and the database).
-/// CI runs this against a PostgreSQL 18 started by .github/actions/windows-postgres.
+/// CI runs this against a PostgreSQL 18 service container.
 /// </summary>
 public sealed class TestDatabase : IAsyncDisposable
 {

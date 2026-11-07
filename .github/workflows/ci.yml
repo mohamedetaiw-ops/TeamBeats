@@ -9,37 +9,28 @@ on:
 permissions:
   contents: read
 
-# Every job runs on the self-hosted Windows runner (docs/operations/ci-runner.md). Git Bash runs the scripts.
-defaults:
-  run:
-    shell: bash
-
-# Windows blocks PowerShell scripts for the runner's service account by default.
-# Two runners share this machine and its service account, so jobs must not share long-lived build servers: a server
-# started by one job is killed when that job ends, even if the other job is using it.
-env:
-  PSExecutionPolicyPreference: Bypass
-  MSBUILDDISABLENODEREUSE: "1"
-  UseSharedCompilation: "false"
+# Every job runs on GitHub-hosted runners. The repository is public, so never add a self-hosted runner: anyone can
+# open a pull request, and a self-hosted runner would run that code on the machine that hosts it.
 
 jobs:
   backend:
-    # Never run code from a fork on the self-hosted runner. Same condition on every job.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, windows, x64, teambeats]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: ci_only_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
     env:
+      TEAMBEATS_TEST_PG_ADMIN: Host=localhost;Port=5432;Username=postgres;Password=ci_only_password
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/windows-shell
       - uses: actions/setup-dotnet@v4
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: global.json
-      - uses: ./.github/actions/windows-postgres
-        with:
-          password: ci_only_password
       - run: dotnet restore TeamBeats.slnx
       - run: dotnet build TeamBeats.slnx --no-restore -c Release
       - name: Unit tests
@@ -62,20 +53,14 @@ jobs:
         run: |
           dotnet list TeamBeats.slnx package --vulnerable --include-transitive | tee vuln.txt
           ! grep -q "has the following vulnerable packages" vuln.txt
-      - name: Stop PostgreSQL
-        if: always()
-        run: pg_ctl stop -D "$TB_PGDATA" -m fast || true
 
   web:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, windows, x64, teambeats]
+    runs-on: ubuntu-latest
     defaults:
       run:
-        shell: bash
         working-directory: src/Web
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/windows-shell
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -94,18 +79,22 @@ jobs:
   e2e:
     # Playwright end-to-end suite (tests/Acceptance, docs/testing/e2e-plan.md): web, development API host and
     # PostgreSQL together, in Arabic and English, with axe accessibility checks.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, windows, x64, teambeats]
+    runs-on: ubuntu-latest
     timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: ci_only_password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: "1"
       NEXT_TELEMETRY_DISABLED: "1"
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/windows-shell
       - uses: actions/setup-dotnet@v4
-        env:
-          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: global.json
       - uses: actions/setup-node@v4
@@ -115,14 +104,11 @@ jobs:
           cache-dependency-path: |
             src/Web/package-lock.json
             tests/Acceptance/package-lock.json
-      - uses: ./.github/actions/windows-postgres
-        with:
-          password: ci_only_password
       - name: Database roles (development passwords from deploy/compose, CI only)
         env:
           PGPASSWORD: ci_only_password
         run: >-
-          psql -h localhost -p "$TB_PG_PORT" -U postgres -v ON_ERROR_STOP=1
+          psql -h localhost -U postgres -v ON_ERROR_STOP=1
           -v owner_password=tb_owner_dev_only -v app_password=tb_app_dev_only -v operator_password=tb_operator_dev_only
           -f deploy/db/bootstrap.sql
       - run: dotnet build src/Api.DevHost
@@ -134,18 +120,12 @@ jobs:
         run: npm run typecheck
         working-directory: tests/Acceptance
       - name: Install Chromium
-        run: npx playwright install chromium
+        run: npx playwright install --with-deps chromium
         working-directory: tests/Acceptance
       - name: Playwright
         run: npx playwright test
         working-directory: tests/Acceptance
-        env:
-          ConnectionStrings__App: Host=localhost;Port=${{ env.TB_PG_PORT }};Database=teambeats;Username=tb_app;Password=tb_app_dev_only
-          ConnectionStrings__Owner: Host=localhost;Port=${{ env.TB_PG_PORT }};Database=teambeats;Username=tb_owner;Password=tb_owner_dev_only
       # Uploaded only on failure, and kept briefly, to stay inside the artifact storage budget.
-      - name: Stop PostgreSQL
-        if: always()
-        run: pg_ctl stop -D "$TB_PGDATA" -m fast || true
       - name: Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
@@ -157,33 +137,23 @@ jobs:
           retention-days: 7
 
   governance:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: [self-hosted, windows, x64, teambeats]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: read   # gitleaks-action lists the PR's commits to scan
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/windows-shell
       - name: Install gitleaks
-        # gitleaks-action cannot install on Windows: it asks for a .tar.gz, and the Windows release is a .zip.
-        shell: powershell
         run: |
-          $ErrorActionPreference = 'Stop'
-          $version = '8.24.3'
-          $sha256 = '3f1a35578631dbfe633cc5b49e6c906e55ff14a4bfd7336a10fb27fe33b6dcd2'
-          $dir = Join-Path $env:RUNNER_TOOL_CACHE "gitleaks\$version"
-          if (-not (Test-Path "$dir\gitleaks.exe")) {
-            [Net.ServicePointManager]::SecurityProtocol = 'Tls12'
-            $zip = Join-Path $env:RUNNER_TEMP 'gitleaks.zip'
-            Invoke-WebRequest "https://github.com/gitleaks/gitleaks/releases/download/v$version/gitleaks_${version}_windows_x64.zip" -OutFile $zip -UseBasicParsing
-            if ((Get-FileHash $zip -Algorithm SHA256).Hash.ToLower() -ne $sha256) { throw 'gitleaks download failed its checksum' }
-            Expand-Archive $zip -DestinationPath $dir -Force
-            Remove-Item $zip
-          }
-          Add-Content $env:GITHUB_PATH $dir
+          version=8.24.3
+          sha256=9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c
+          file="gitleaks_${version}_linux_x64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$file" "https://github.com/gitleaks/gitleaks/releases/download/v$version/$file"
+          echo "$sha256  $RUNNER_TEMP/$file" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/gitleaks"
+          tar -xzf "$RUNNER_TEMP/$file" -C "$RUNNER_TEMP/gitleaks" gitleaks
+          echo "$RUNNER_TEMP/gitleaks" >> "$GITHUB_PATH"
       - name: Secret scan
         # Scans the commits of the pull request or push. Findings fail the job and appear in the log.
         env:

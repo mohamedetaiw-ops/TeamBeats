@@ -1,5 +1,5 @@
-# The repository stores LF everywhere. CI now checks out on a Windows runner whose git would otherwise convert to
-# CRLF, which breaks shell scripts and the files deployed into Linux images.
+# The repository stores LF everywhere, so shell scripts and files deployed into Linux images keep LF on every
+# checkout, including on Windows machines.
 * text=auto eol=lf
 *.cmd text eol=crlf
 *.bat text eol=crlf
