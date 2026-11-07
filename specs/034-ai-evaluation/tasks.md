@@ -1,6 +1,6 @@
 # Tasks: AI Evaluation Layer
 
-Depends on 004, 006, 013 (`evaluation` use case), 020 and 027 (runtime, execution records, tool gateway sandbox mode); planned 012 (retrieval suites). R1 covers User Stories 1 to 6, 8 (calibration) and 10 (platform, tenant and agent levels).
+Depends on 004, 006, 013 (`evaluation` use case), 020 and 027 (runtime, execution records, tool gateway sandbox mode); 012 (retrieval suites). R1 covers User Stories 1 to 6, 8 (calibration) and 10 (platform, tenant and agent levels).
 
 ## Phase 1: Foundations
 - [ ] T001 `Evaluation` and `Evaluation.Contracts` projects; module map row; migration for suites, datasets, cases, personas, rubrics, runs, results and gates (forced RLS, platform tables as RLS exceptions)

@@ -4,13 +4,14 @@
 |---|---|
 | Spec ID | 012-search-and-retrieval |
 | Area | knowledge |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (one search across people, content, documents, knowledge articles, policies and services; type-ahead; keyword and semantic hybrid ranking; permission filtering at query time; best bets; the retrieval contract used by the assistant; the 5 minute synchronization objective), R2 (federated results from SharePoint and other connected systems, AI summary of top results, search analytics dashboards in 021, judged query sets), R3 (personalized ranking) |
+| Target release | R1 (one search across people, content, documents, knowledge articles, policies and services; type-ahead; keyword and semantic hybrid ranking; permission filtering at query time; best bets; the retrieval contract used by the assistant; the 5 minute synchronization objective), R2 (R2 sources: communities, courses and project spaces; federated results from SharePoint and other connected systems; AI summary of top results; saved searches with alerts; search analytics dashboards in 021; judged query sets), R3 (personalized ranking) |
 | Last updated | 2026-11-07 |
-| Requirement IDs | KNO-002 to KNO-006, SRC-001 to SRC-014 (new) |
+| Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
+| Requirement IDs | KNO-002 to KNO-006, SRC-001 to SRC-022 (new) |
 | Use cases | UC-05, UC-06 |
 | Depends on | 004 (authorization), 005, 006, 007, 009, 010, 011, 013 (embeddings), 016, 025, 034 (gate on retrieval changes) |
 | Used by | 014 (assistant retrieval), 020 and 027 (knowledge tools), 021 (search analytics, R2) |
@@ -33,17 +34,24 @@
 - A retrieval contract for the assistant and agents: top passages with citation anchors, filtered as the user.
 - Synchronization objective: permission changes and deletions reflected within 5 minutes by default. *(KNO-006)*
 
+- R2: sources from communities (023), courses (028) and project spaces (029), each with its own access rules.
+- R2: federated results from SharePoint libraries (011 connected libraries) and connectors that implement the 017 search contract, queried live as the user, shown in their own group.
+- R2: AI summary of top results with citations through the assistant (014), off by default per tenant.
+- R2: saved searches with alerts for new results through 015.
+- R2: judged query sets per tenant for ranking evaluation (034) and the search analytics feed for 021.
+
 **Out of scope:**
-- Federated results from connected systems (R2, with spec 011 connected libraries and spec 017).
-- AI summary of top results (R2, through the assistant).
-- Search analytics dashboards (spec 021, R2). R1 records the events.
+- Personalized ranking (R3).
+- Indexing content of connected systems into the TeamBeats index (federated results are queried live, never copied).
+- Searching email and chats.
 
 ## 3. Actors and permissions
 
 | Actor | What they can do | Permission / scope |
 |---|---|---|
 | Employee | Search and see permitted results | Active membership; each result checked against the item's permissions |
-| Search administrator | Manage best bets and synonyms | `search.manage` at tenant scope |
+| Search administrator | Manage best bets, synonyms, federated sources, judged query sets and the AI summary setting | `search.manage` at tenant scope |
+| Search analyst | See search analytics (spec 021) | `analytics.view` with the search dataset |
 | Assistant and agents | Retrieve passages as the user | Spec 027 tool grant plus the user's permissions |
 
 ## 4. User scenarios
@@ -82,6 +90,32 @@ Omar types "travel policy" and sees the Travel policy clause, the travel request
 1. **Given** a best bet for "payslip" pointing to the payslip service, **When** a user who may see the service searches "payslip", **Then** it shows first, marked as recommended.
 2. **Given** a synonym pair ("leave", "vacation", "إجازة"), **Then** queries with one find items with the other.
 
+### User Story 5: Find files in SharePoint too (Priority: P2, R2)
+
+**Acceptance scenarios:**
+1. **Given** a SharePoint connected library (011) with federated search on, **When** Omar searches, **Then** a "SharePoint" group shows results queried live with his delegated identity, so SharePoint enforces its own permissions.
+2. **Given** SharePoint is slow, **Then** TeamBeats results show at once and the federated group loads after, with a 3 second limit and a "not available now" note on timeout.
+3. **Given** a federated source the tenant turned off, **Then** no query is sent to it.
+
+### User Story 6: Get a short answer above results (Priority: P2, R2)
+
+**Acceptance scenarios:**
+1. **Given** the tenant turned on AI summaries, **When** Laila searches a question, **Then** a short summary from the top permitted passages appears above results with citations, produced through 014 and 013.
+2. **Given** the top passages are blocked for AI by classification, **Then** no summary is shown and results appear as usual.
+3. **Given** the summary is wrong, **Then** Laila can mark it unhelpful, which feeds 034 production evaluation.
+
+### User Story 7: Be told when something new matches (Priority: P3, R2)
+
+**Acceptance scenarios:**
+1. **Given** Laila saved the search "procurement policy", **When** a new item she may read matches, **Then** she gets at most one grouped notification a day.
+2. **Given** the item is one she cannot read, **Then** no alert is sent.
+
+### User Story 8: Measure and improve ranking (Priority: P2, R2)
+
+**Acceptance scenarios:**
+1. **Given** a judged query set (queries with the results that should rank high), **When** ranking or retrieval configuration changes, **Then** the 034 gate reports precision at 5 and NDCG at 10 against the set and blocks a regression beyond the threshold.
+2. **Given** search events, **Then** spec 021 shows top queries, zero result queries and click-through, with query text hidden for tenants that turned it off.
+
 ### Edge cases
 - An item in several languages: each variant is a separate unit with its language, grouped in results.
 - Very large documents: indexed in passages with a per-document limit; the rest is searchable by keyword only.
@@ -103,6 +137,14 @@ Omar types "travel policy" and sees the Travel policy clause, the travel request
 - **SRC-012 / FR-012**: The index MUST be rebuildable from the owning modules at any time.
 - **SRC-013 / FR-013**: Search MUST record query events (pseudonymous, spec 021) for later analytics, without storing query text for tenants that turn it off.
 - **SRC-014 / FR-014**: When embeddings are unavailable, keyword search MUST keep working with a degraded note. *(constitution XII)*
+- **SRC-015 / FR-015**: Communities, courses and project spaces MUST be indexed with their own access rules, including closed and secret visibility (R2).
+- **SRC-016 / FR-016**: Federated results MUST be queried live with the user's delegated identity, MUST NOT be stored in the TeamBeats index, and MUST time out after 3 seconds without delaying TeamBeats results.
+- **SRC-017 / FR-017**: Federated sources MUST be per tenant settings using 011 connected libraries or connectors implementing the 017 search contract.
+- **SRC-018 / FR-018**: AI summaries MUST use only passages from the retrieval contract for the user, MUST cite them, and MUST be off by default.
+- **SRC-019 / FR-019**: Saved search alerts MUST notify through 015 at most once a day per saved search and only for permitted items.
+- **SRC-020 / FR-020**: Judged query sets MUST be usable by the 034 gate with precision at 5 and NDCG at 10.
+- **SRC-021 / FR-021**: Payslips (019), anonymous engagement items (023) and other items their owning spec excludes MUST never be indexed.
+- **SRC-022 / FR-022**: Guests (026) MUST search only within spaces they were invited to.
 
 ## 6. Business and validation rules
 - Default results per page 20; maximum query length 200 characters.
@@ -123,11 +165,13 @@ Omar types "travel policy" and sees the Travel policy clause, the travel request
 
 ## 9. Package entitlements
 
-| Capability key | Behavior |
-|---|---|
-| `search.core` | All packages: keyword search, permission filtering, best bets |
-| `search.semantic` | All packages: semantic and hybrid ranking (embeddings count against the AI quota) |
-| `search.federated` | Workplace Plus and above (R2) |
+| Capability key | Workplace | Workplace Plus | Enterprise & Government |
+|---|---|---|---|
+| `search.core` (keyword, permission filtering, best bets) | on | on | on |
+| `search.semantic` (embeddings count against the AI quota) | on | on | on |
+| `search.federated` (R2) | off | on | on |
+| `search.ai_summary` (R2) | off | on | on |
+| `search.saved_alerts` (R2) | on | on | on |
 
 ## 10. UX, localization and accessibility
 - One search box in the shell (spec 008) with type-ahead; a results page with filters.
@@ -137,7 +181,7 @@ Omar types "travel policy" and sees the Travel policy clause, the travel request
 Embeddings are produced through the AI Gateway with the item's classification. Restricted items are embedded only by an approved private endpoint (none in R1, so they are keyword-only). Query text sent for embedding is classified Internal.
 
 ## 12. Integrations and events
-Consumes `ContentPublished`, `ContentUnpublished`, `DocumentVersionPublished`, `DocumentDeleted`, `DocumentPermissionsChanged`, `PolicyPublished`, `ServicePublished`, `ProfileUpdated`, `ResourcePermissionChanged`, `RoleAssignmentChanged`, `OrganizationMembershipChanged`. Publishes none.
+Consumes (R2 additions: `PostPublished`, `PostRemoved`, `CourseVersionPublished`, `SpaceCreated`, `TaskAssigned`) and `ContentPublished`, `ContentUnpublished`, `DocumentVersionPublished`, `DocumentDeleted`, `DocumentPermissionsChanged`, `PolicyPublished`, `ServicePublished`, `ProfileUpdated`, `ResourcePermissionChanged`, `RoleAssignmentChanged`, `OrganizationMembershipChanged`. Publishes none.
 
 ## 13. Audit
 
@@ -173,3 +217,4 @@ Consumes `ContentPublished`, `ContentUnpublished`, `DocumentVersionPublished`, `
 | KNO-005 | SRC-005 |
 | KNO-006 | SRC-006, US2 |
 | KNO-007, AI-005 | SRC-007, US3 |
+| R2 additions | SRC-015 to SRC-022, US5 to US8 |

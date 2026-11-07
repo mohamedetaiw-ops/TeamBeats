@@ -1,6 +1,6 @@
 # Implementation Plan: Employee Directory, Profiles and Org Chart
 
-**Spec:** `specs/010-people-directory/spec.md` (v0.1, Proposed) | **Date:** 2026-11-07
+**Spec:** `specs/010-people-directory/spec.md` (v1.0, Approved) | **Date:** 2026-11-07
 **Shared base:** ADR-0013, spec 003 plan (directory sync), module map (`People`)
 
 ## Summary

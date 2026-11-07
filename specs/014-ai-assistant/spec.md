@@ -4,16 +4,17 @@
 |---|---|
 | Spec ID | 014-ai-assistant |
 | Area | ai |
-| Status | Proposed |
-| Version | 0.1 |
+| Status | Approved |
+| Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (universal assistant panel, cited answers from permitted content, routing to agents, conversation history, feedback, Q&A, summarize, translate, rewrite and draft), R2 (AI summary of search results, file upload in a conversation, voice input), R3 (proactive suggestions across the intranet) |
+| Target release | R1 (universal assistant panel, cited answers from permitted content, routing to agents, conversation history, feedback, Q&A, summarize, translate, rewrite and draft), R2 (AI summary of search results for spec 012, file upload in a conversation, voice input and read aloud, French, Urdu and Hindi, assistant in Microsoft Teams, personal context answers such as my leave balance and my open requests through agents), R3 (proactive suggestions across the intranet) |
 | Last updated | 2026-11-07 |
-| Requirement IDs | AI-005, AI-007, KNO-007, AST-001 to AST-014 (new) |
+| Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
+| Requirement IDs | AI-005, AI-007, KNO-007, AST-001 to AST-022 (new) |
 | Use cases | UC-06 |
 | Depends on | 008 (shell), 012 (retrieval), 013 (AI Gateway), 020 (routing to agents), 027 (governance), 034 (gate on routing and RAG configuration), 007 |
-| Used by | 009, 011, 025 (contextual actions and policy Q&A) |
+| Used by | 009, 011, 025 (contextual actions and policy Q&A), 012 (search summaries, R2), 015 (Teams, R2) |
 
 ## 1. Problem and outcome
 
@@ -32,9 +33,17 @@
 - Feedback (helpful or not, with an optional reason), feeding evaluation (spec 034, R2 review queues) and knowledge gaps (spec 011 US4).
 - Degraded states for no evidence, blocked by policy, provider unavailable, quota exhausted.
 
+- R2: file upload in a conversation (scanned by 026, classified, kept with the conversation and deleted with it).
+- R2: voice input and read aloud through speech models on the AI Gateway.
+- R2: French, Urdu and Hindi answers, following 007 locales.
+- R2: the assistant inside Microsoft Teams as a personal app, with the same rules.
+- R2: personal context answers ("how many leave days do I have") by routing to agents whose tools read the user's own records (022, 016).
+- R2: summary of search results for spec 012.
+
 **Out of scope:**
 - Tools of its own: the assistant holds none (spec 020); actions come from agents under spec 027.
-- File upload in a conversation (R2), voice (R2).
+- Proactive suggestions (R3).
+- Answers from the open web.
 
 ## 3. Actors and permissions
 
@@ -77,6 +86,32 @@ Ahmed asks "Can I carry over unused leave?". The assistant answers in Arabic fro
 2. **Given** feedback on an answer, **Then** it is stored with the execution record reference and counted for the agent owner.
 3. **Given** the provider is unavailable or the quota is used up, **Then** the panel shows the matching message and the rest of the page keeps working.
 
+### User Story 5: Ask about a file I bring (Priority: P2, R2)
+
+**Acceptance scenarios:**
+1. **Given** Laila uploads a PDF up to 20 MB, **Then** it is scanned, classified by the user (default Internal), and used only in that conversation.
+2. **Given** the file's classification is above what the AI policy allows for the assistant, **Then** the upload is refused with the reason.
+3. **Given** the conversation is deleted or expires, **Then** the file and its extracted text are deleted with it.
+
+### User Story 6: Talk instead of type (Priority: P3, R2)
+
+**Acceptance scenarios:**
+1. **Given** voice is on for the tenant, **When** Omar holds the microphone button, **Then** his speech is transcribed through the AI Gateway, shown for him to edit, and sent only when he confirms.
+2. **Given** read aloud, **Then** the answer is spoken in its language, and citations remain visible.
+3. **Given** audio, **Then** it is not stored after transcription.
+
+### User Story 7: Ask about my own things (Priority: P1, R2)
+
+**Acceptance scenarios:**
+1. **Given** an HR agent with a "my leave balance" tool (022), **When** Ahmed asks how many leave days he has, **Then** the assistant routes to it, the tool reads only Ahmed's record, and the answer shows the source and time.
+2. **Given** a question about another person's record, **Then** the tool refuses unless Ahmed may see it under 004, and the assistant says so.
+
+### User Story 8: Use the assistant in Teams (Priority: P2, R2)
+
+**Acceptance scenarios:**
+1. **Given** the TeamBeats Teams app (015 US5), **Then** the assistant is available as a personal chat with the same retrieval, citations, routing and history as in TeamBeats.
+2. **Given** an action confirmation, **Then** it opens in TeamBeats when step-up is required.
+
 ### Edge cases
 - A source changes between retrieval and display: the citation links to the version used and says if a newer one exists.
 - Very long conversations: older turns are summarized or dropped by the assistant before the context limit (spec 013 leaves trimming to the caller).
@@ -97,6 +132,14 @@ Ahmed asks "Can I carry over unused leave?". The assistant answers in Arabic fro
 - **AST-012 / FR-012**: Answers MUST be in the user's language unless they ask otherwise.
 - **AST-013 / FR-013**: Routing and RAG configuration changes MUST pass the spec 034 gate.
 - **AST-014 / FR-014**: Answer rendering MUST not load external images and MUST show links outside the tenant allowlist as text.
+- **AST-015 / FR-015**: Uploaded files MUST be scanned, classified, used only in their conversation, refused above the AI policy ceiling, and deleted with the conversation.
+- **AST-016 / FR-016**: Voice input MUST be transcribed through the AI Gateway, shown for confirmation before sending, and audio MUST NOT be stored.
+- **AST-017 / FR-017**: Personal context answers MUST come only from agent tools that read records the user may see, with source and time shown.
+- **AST-018 / FR-018**: The Teams assistant MUST use the same contracts, history and rules as the web assistant.
+- **AST-019 / FR-019**: Search summaries for 012 MUST use only the passages 012 retrieved for the user.
+- **AST-020 / FR-020**: Payslips (019) and anonymous engagement content (023) MUST never enter the assistant's context.
+- **AST-021 / FR-021**: Each answer MUST record the model, prompt version and retrieval configuration in the execution record for evaluation (034).
+- **AST-022 / FR-022**: Guests (026) MUST NOT use the assistant unless the tenant enables it for guests, and then only over spaces they were invited to.
 
 ## 6. Business and validation rules
 - Maximum question length 2,000 characters.
@@ -116,10 +159,13 @@ Ahmed asks "Can I carry over unused leave?". The assistant answers in Arabic fro
 
 ## 9. Package entitlements
 
-| Capability key | Behavior |
-|---|---|
-| `ai.assistant` | All packages |
-| `ai.assistant.monthly_requests` | Quota per package |
+| Capability key | Workplace | Workplace Plus | Enterprise & Government |
+|---|---|---|---|
+| `ai.assistant` | on | on | on |
+| `ai.assistant.monthly_requests` (limit per user) | 50 | 300 | 1,000 |
+| `ai.assistant.file_upload` (R2) | off | on | on |
+| `ai.assistant.voice` (R2) | off | on | on |
+| `ai.assistant.teams` (R2) | on | on | on |
 
 ## 10. UX, localization and accessibility
 - Panel opens from the shell with a keyboard shortcut; answers stream; citations are links with text, not only icons; RTL.
@@ -159,4 +205,5 @@ Publishes `AssistantAnswered` (IDs, agent, outcome) for analytics. Consumes noth
 | AI-005 | AST-002, US1 |
 | AI-007 | AST-007, US3 |
 | KNO-007 | AST-003, US1 |
-| UC-06 | US1 to US4 |
+| UC-06 | US1 to US4, US7 |
+| R2 additions | AST-015 to AST-022, US5 to US8 |

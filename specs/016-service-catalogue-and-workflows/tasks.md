@@ -1,6 +1,6 @@
 # Tasks: Self Services, Service Catalogue and Workflows
 
-Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot), 022 (working days), 024 (engine core); planned 010 (reporting line), 012 (search), 015 (notifications). R1 covers User Stories 1 to 4 and the R1 parts of 7 and 8.
+Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot), 022 (working days), 024 (engine core); 010 (reporting line), 012 (search), 015 (notifications). R1 covers User Stories 1 to 4 and the R1 parts of 7 and 8.
 
 ## Phase 1: Foundations
 - [ ] T001 `Services` and `Services.Contracts` projects; migration for categories, services, versions, requests, events, attachments, favourites, recent use and delegations (forced RLS)

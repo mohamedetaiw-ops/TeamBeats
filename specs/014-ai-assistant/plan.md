@@ -1,6 +1,6 @@
 # Implementation Plan: AI Assistant and Retrieval-Augmented Answers
 
-**Spec:** `specs/014-ai-assistant/spec.md` (v0.1, Proposed) | **Date:** 2026-11-07
+**Spec:** `specs/014-ai-assistant/spec.md` (v1.0, Approved) | **Date:** 2026-11-07
 **Shared base:** ADR-0011 (`Agents` module), spec 012, 013, 020, 027 plans
 
 ## Summary
@@ -11,3 +11,9 @@ The assistant lives in the `Agents` module as the platform "knowledge" agent plu
 
 ## Tests
 Citation check against retrieved IDs; no evidence answer; policy-blocked evidence; hidden content never cited (persona fixtures); routing only to permitted agents; history isolation and retention; degraded states; streaming. Acceptance (e2e): panel, cited answer, feedback, in English and Arabic with axe.
+
+## R2
+- File upload uses the 011 upload pipeline (scanner, text extraction) into conversation-scoped storage deleted with the conversation.
+- Voice uses speech-to-text and text-to-speech model types added to the 013 gateway routes; audio is streamed and not persisted.
+- The Teams personal app calls the same assistant endpoints with a Teams SSO token exchanged for a TeamBeats session.
+- Personal context answers need no assistant code: they are agents with self-scoped tools registered in 027.

@@ -1,6 +1,6 @@
 # Tasks: Content, Publishing and Governance
 
-Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slots, shared states), 016 (task inbox), 024 (engine core), 032 (component manifests), 033 (tokens); planned 010 (reporting line, locations), 012 (search), 015 (notifications). R1 covers User Stories 1 to 5 (manual translation), 7 and 9 (reactions and comments).
+Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slots, shared states), 016 (task inbox), 024 (engine core), 032 (component manifests), 033 (tokens); 010 (reporting line, locations), 012 (search), 015 (notifications). R1 covers User Stories 1 to 5 (manual translation), 7 and 9 (reactions and comments).
 
 ## Phase 1: Foundations
 - [ ] T001 `Content` and `Content.Contracts` projects; migration for `site`, `content_type`, `content_item`, `content_version`, `acknowledgement`, `audience_member`, `comment`, `reaction` (forced RLS)

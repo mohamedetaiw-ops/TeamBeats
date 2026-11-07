@@ -1,6 +1,6 @@
 # Implementation Plan: Search and Retrieval
 
-**Spec:** `specs/012-search-and-retrieval/spec.md` (v0.1, Proposed) | **Date:** 2026-11-07
+**Spec:** `specs/012-search-and-retrieval/spec.md` (v1.0, Approved) | **Date:** 2026-11-07
 **Shared base:** ADR-0002 (PostgreSQL), ADR-0013, spec 013 plan (embeddings), module map (`Search`, derived read model)
 
 ## Summary
@@ -17,6 +17,13 @@ Hybrid with reciprocal rank fusion of keyword and vector lists, then best bets o
 
 ## API (v1)
 `GET /api/v1/search?q=&source=&from=&to=&page=`, `GET /api/v1/search/suggest?q=`, best bets and synonyms admin endpoints; `ISearchRetrieval.RetrieveAsync(query, filters, useCase)` in `Search.Contracts` for the assistant and agent tools.
+
+## R2
+- New sources are more consumers of the same indexing pipeline.
+- Federated search: `IFederatedSearchSource` in `Integrations.Contracts`, implemented by the SharePoint adapter (Graph search API with delegated tokens) and connector packs; queried in parallel with a 3 second budget and returned as a separate group from a second endpoint so the main results are not delayed.
+- AI summary: the results page calls the 014 assistant contract with the retrieved passages.
+- Saved searches: a daily job runs each saved query as the user and sends one grouped notification.
+- Judged sets: stored in `Evaluation` (034) as a dataset type, scored by a search scorer.
 
 ## Tests
 Permission fixtures across tenants, units and broken inheritance (SC-001 on every build); Arabic normalization; lag and deletion within the objective; degraded keyword-only mode; rebuild; performance at 1 million units. Acceptance (e2e): search box, results and filters in English and Arabic with axe.

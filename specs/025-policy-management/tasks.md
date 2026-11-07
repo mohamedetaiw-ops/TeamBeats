@@ -1,6 +1,6 @@
 # Tasks: Policy Management
 
-Depends on 004, 005, 006, 007, 009 (body document, audience model), 011 (controlled documents), 016 (task inbox source), 024 (sequential steps); planned 010 (reporting line), 012 (search), 014 (assistant), 015 (notifications). R1 covers User Stories 1 to 4.
+Depends on 004, 005, 006, 007, 009 (body document, audience model), 011 (controlled documents), 016 (task inbox source), 024 (sequential steps); 010 (reporting line), 012 (search), 014 (assistant), 015 (notifications). R1 covers User Stories 1 to 4.
 
 ## Phase 1: Foundations
 - [ ] T001 `Policies` and `Policies.Contracts` projects; migration for policies, versions, clause comments, campaigns, members and attestations (forced RLS; attestations insert only for the app role)

@@ -1,6 +1,6 @@
 # Tasks: Agent Hub (Registry, Templates, Studio and Marketplace)
 
-Depends on 004, 005, 006, 013, 016, 027 (same module), 034; planned 012 (search source), 014 (assistant). R1 covers User Stories 1 to 3, 5, 7 and 8 (tasks).
+Depends on 004, 005, 006, 013, 016, 027 (same module), 034; 012 (search source), 014 (assistant). R1 covers User Stories 1 to 3, 5, 7 and 8 (tasks).
 
 ## Phase 1: Foundations
 - [ ] T001 `Agents` and `Agents.Contracts` projects; migration for agents, versions, templates (platform, RLS exception) and checkpoints (forced RLS)

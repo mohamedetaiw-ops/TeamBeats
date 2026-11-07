@@ -13,21 +13,28 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [007 Localization and accessibility](007-localization-and-accessibility/spec.md) | experience | R0 to R2 | Approved; composable experience additions pending approval | LOC-001 to LOC-004, EXP-008, CX-ACC-001 to CX-ACC-014, CX-LOC-001 to CX-LOC-005, CX-LOC-007 to CX-LOC-010 |
 | [008 Experience shell, navigation, employee home and personalization](008-experience-shell-and-personalization/spec.md) | experience | R1 to R3 | Approved | EXP-001, EXP-008, CX-EXP-001 to CX-EXP-010, CX-NAV-001 to CX-NAV-010, CX-PER-001 to CX-PER-015, CX-INT-001 to CX-INT-012 |
 | [009 Content, publishing and governance](009-content-and-publishing/spec.md) | experience | R1 to R3 | Approved | EXP-002 to EXP-004, LOC-004, PUB-001 to PUB-020 |
-| [010 Employee directory, profiles and org chart](010-people-directory/spec.md) | experience | R1, R2 | Proposed | EXP-005, EXP-006, PPL-001 to PPL-014 (new) |
+| [010 Employee directory, profiles and org chart](010-people-directory/spec.md) | experience | R1, R2 | Approved | EXP-005, EXP-006, PPL-001 to PPL-022 (new) |
 | [011 Document management and knowledge base](011-document-management/spec.md) | knowledge | R1 to R3 | Approved | KNO-001, KNO-003, KNO-006, ADM-003, INT-002 (SharePoint documents), DOC-001 to DOC-033 |
-| [012 Search and retrieval](012-search-and-retrieval/spec.md) | knowledge | R1 to R3 | Proposed | KNO-002 to KNO-006, SRC-001 to SRC-014 (new) |
+| [012 Search and retrieval](012-search-and-retrieval/spec.md) | knowledge | R1 to R3 | Approved | KNO-002 to KNO-006, SRC-001 to SRC-022 (new) |
 | [013 AI Gateway and model governance](013-ai-gateway/spec.md) | ai | R1 to R3 | Approved | AI-002 to AI-004, AI-006, AI-011 to AI-013, AIG-001 to AIG-019 |
-| [014 AI assistant and retrieval-augmented answers](014-ai-assistant/spec.md) | ai | R1 to R3 | Proposed | AI-005, AI-007, KNO-007, AST-001 to AST-014 (new) |
-| [015 Notifications and email](015-notifications/spec.md) | platform | R1, R2 | Proposed | INT-008, INT-003, NOT-001 to NOT-012 (new) |
+| [014 AI assistant and retrieval-augmented answers](014-ai-assistant/spec.md) | ai | R1 to R3 | Approved | AI-005, AI-007, KNO-007, AST-001 to AST-022 (new) |
+| [015 Notifications and email](015-notifications/spec.md) | platform | R1, R2 | Approved | INT-008, INT-003, NOT-001 to NOT-024 (new) |
 | [016 Self services, service catalogue and workflows](016-service-catalogue-and-workflows/spec.md) | workflows | R1, R2 | Approved | WF-001 to WF-016, UC-08 |
+| [017 Connector framework and integration packs](017-connector-framework/spec.md) | integrations | R2, R3 | Approved | INT-001, INT-004 to INT-006, INT-009, INT-010, CON-001 to CON-024 (new) |
 | [018 Microsoft 365 mail, calendar and rooms](018-microsoft-365-mail-and-calendar/spec.md) | integrations | R1 (mail and calendar), R2 (rooms), R3 | Approved | INT-001, INT-002, INT-009, UC-10 (mail and calendar part), M365-001 to M365-024 (new) |
+| [019 HR system integration and payslips](019-hr-integration/spec.md) | integrations | R2, R3 | Approved | INT-007, UC-09, HRI-001 to HRI-018 (new) |
 | [020 Agent Hub: registry, templates, studio and marketplace](020-agent-hub/spec.md) | ai | R1 to R3 | Approved | AI-007 (agent part), AI-008, AGT-001 to AGT-020, UC-07 |
 | [021 Analytics and insights](021-analytics/spec.md) | analytics | R1 to R3 | Approved | ANL-001 to ANL-024 (ANL-001 and ANL-002 were LOC-005 and LOC-006), AI-013 (shared with 013), CX-MET-001 to CX-MET-008 |
 | [022 Leave, attendance and HR workflows](022-hr-workflows/spec.md) | workflows | R1 to R3 | Approved | INT-007, LVA-001 to LVA-012, HRW-001 to HRW-014 |
+| [023 Communities and engagement](023-communities-and-engagement/spec.md) | experience | R2, R3 | Approved | EXP-007, ENG-001 to ENG-026 (new) |
 | [024 Process engine (BPMN and DMN)](024-process-engine/spec.md) | workflows | R1 to R3 | Approved | WF-002, WF-003, BPM-001 to BPM-016 |
 | [025 Policy management](025-policy-management/spec.md) | knowledge | R1 to R3 | Approved | EXP-004, KNO-001, KNO-007, POL-001 to POL-018 |
 | [026 Security controls, compliance and certifications](026-security-and-compliance/spec.md) | platform | R1 to R3 | Approved | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-021, CMP-001 to CMP-004, CX-NFR-010 |
 | [027 Agent governance, tools and safety](027-agent-governance/spec.md) | ai | R1 to R3 | Approved | AI-005, AI-009, AI-010, AGV-001 to AGV-024, UC-07, UC-13 |
+| [028 Learning and mandatory training](028-learning-and-training/spec.md) | knowledge | R2, R3 | Approved | LRN-001 to LRN-020 (new) |
+| [029 Project and team spaces](029-project-and-team-spaces/spec.md) | workflows | R2, R3 | Approved | PRJ-001 to PRJ-018 (new) |
+| [030 Mobile app, PWA and push](030-mobile-app-and-push/spec.md) | experience | R2, R3 | Approved | EXP-009, MOB-001 to MOB-020 (new) |
+| [031 Workplace booking](031-workplace-booking/spec.md) | workflows | R2, R3 | Approved | BKG-001 to BKG-018 (new) |
 | [032 Page composition: layouts, templates, component registry and page builder](032-page-composition/spec.md) | experience | R1 to R3 | Approved | CX-LAY-001 to CX-LAY-012, CX-TMP-001 to CX-TMP-010, CX-TMP-012, CX-EDT-001 to CX-EDT-015, CX-EXT-001 to CX-EXT-014, CX-GOV-001 to CX-GOV-012, CX-NFR-001 to CX-NFR-012 |
 | [033 Brands, themes, white labeling and multi-organization experience](033-themes-and-white-labeling/spec.md) | experience | R1, R2 | Approved | CX-BRD-001 to CX-BRD-015, CX-ORG-001 to CX-ORG-011, CX-TMP-011, CX-LOC-006, ADM-001 (branding) |
 | [034 AI Evaluation Layer](034-ai-evaluation/spec.md) | ai | R1 to R3 | Approved | EVL-001 to EVL-030, AI-008 (quality part), AI-010 (evidence part), UC-07, UC-13 |
@@ -36,7 +43,7 @@ Open questions across these specs, with defaults: [open-questions.md](open-quest
 
 ## R1 build order
 
-Every R1 spec now has `plan.md` and `tasks.md`. Specs 010, 012, 014 and 015 are new and Proposed. Order, by dependency:
+Every R1 spec now has `plan.md` and `tasks.md`, and all are Approved. Order, by dependency:
 
 1. Platform services: 015 notifications, 022 calendars (US2), 010 people and reporting line, 026 security policy
 2. Workflow core: 024 engine core, then 016 catalogue, requests and inbox
@@ -57,20 +64,12 @@ Each spec folder now has `spec.md` (Approved), `plan.md` and `tasks.md`. Shared 
 6. 006 admin shell and the rest of 007
 7. R0 exit: all cross-tenant and org boundary suites green
 
-## Next specs (not yet written)
+## R2 specs
 
-| Planned spec | Release | Requirement IDs |
-|---|---|---|
-| 017 Connector framework | R2 | INT-001, INT-009, INT-010. `Integrations` module behind the Connections area of 006 (FR-010 to FR-015) and the document repository contract of ADR-0016; custom REST API connectors; Slack as a notification and share channel; clock data and ERP hand-off used by 022; KPI tiles used by 021 |
-| 019 HR integration | R2 | INT-007, UC-09. Payslip view (read-only, Confidential), HR record prefill; AD covers the directory part (specs 002, 003) |
-| 023 Communities and engagement | R2 | EXP-007. Discussion channels (public and per department), Speak Up with anonymous option, polls, recognition (team and star of the period), celebrations, photo gallery, points and leaderboard. Anonymous surveys with results thresholds, custom badges, site-wide thank-you shout-outs, discussion rooms, in-product messaging |
-| 028 Learning and mandatory training | R2 | New LRN- IDs. Courses and learning paths, mandatory training assignments with due dates (onboarding in 022, policy linked training in 025), completion tracking, external LMS connector as an alternative |
-| 029 Project and team spaces | R2 | New PRJ- IDs. Spaces with tasks, deadlines, milestones and progress, files from 011, discussions from 023, team calendar; can be opened to guests (026) |
-| 030 Mobile app and push | R2 | EXP-009. Branded mobile app for office and frontline staff (or PWA first, foundation open decision), push notifications, offline reading of critical items, kiosk and shared device mode |
-| 031 Workplace booking | R2 | New BKG- IDs. Rooms, desks and resources for tenants without Microsoft 365 rooms (018 covers M365 room mailboxes); availability calendar; check-in |
+Every spec number referenced in the roadmap is now written. R2 adds 017, 019, 023, 028, 029, 030 and 031, plus the R2 parts of the R1 specs. Each has `plan.md` and `tasks.md`.
 
 ## Requirement coverage
-Every foundation requirement ID is mapped above to a written or planned spec, except INT-004 to INT-006 (Google, Oracle, SAP packs), which belong to later R2 and R3 specs. EXP-009 (PWA) is in planned 030; AI-013 (usage visibility) is in 021 with 013.
+Every foundation requirement ID is mapped above to a written spec. INT-004 to INT-006 (Google, Oracle, SAP packs) are extension points and R3 packs in 017. EXP-009 (PWA) is in 030; AI-013 (usage visibility) is in 021 with 013.
 
 ## AI Agent Governance Plan coverage
 
@@ -140,7 +139,7 @@ Source: functional review of the current Link Development intranet (Performly "I
 | Intra mail inbox | Notification centre (015) | R1 |
 | Tool box: weather, world clock, time zone converter | Home widget (008) | R1 |
 | Linkawy360, Talent, Agile, Tech Hub, PAL, SPIN, Happiness Circle | Linked apps (016) with SSO cue | R1 |
-| iOS and Android apps | Responsive web and PWA (EXP-009); native apps are an open foundation decision | R2 |
+| iOS and Android apps | PWA first (030), native shell apps in R3 | R2, R3 |
 | Five languages (en, ar, hi, bn, fr) | ar and en in R1; fr, ur, hi in R2. Bengali is not planned | R1, R2 |
 
 Gaps in the current intranet that the specs close: single catalogue page (016), one look for all services (007, 016), policies as searchable pages (009, 012), search that finds services and documents (012), clear cue and SSO for other systems (016), personalizable home (008), one discussion source for widget and list (023), labelled icons and AA contrast (007).

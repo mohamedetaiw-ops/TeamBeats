@@ -13,7 +13,7 @@
 | Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | INT-007, UC-08, UC-09, LVA-001 to LVA-012 and HRW-001 to HRW-014 (new) |
 | Use cases | UC-08 (service request), UC-09 (HR data) |
-| Depends on | 002, 003 (`UserProvisioned`, `UserDeprovisioned`), 004, 005, 006, 007, 010 (profile and reporting line), 011 (documents), 015 (notifications), 016 (service catalogue, task inbox, delegation), 017 (connectors), 019 (HR integration), 021 (analytics), 024 (process engine), 025 (onboarding policy attestations), 026 (classification), planned 028 (learning assignments) |
+| Depends on | 002, 003 (`UserProvisioned`, `UserDeprovisioned`), 004, 005, 006, 007, 010 (profile and reporting line), 011 (documents), 015 (notifications), 016 (service catalogue, task inbox, delegation), 017 (connectors), 019 (HR integration), 021 (analytics), 024 (process engine), 025 (onboarding policy attestations), 026 (classification), 028 (learning assignments) |
 
 ## 1. Problem and outcome
 

@@ -1,6 +1,6 @@
 # Tasks: Analytics and Insights
 
-Depends on 004, 006, 008, 009, 025, 032; planned 010 (location breakdown), 015 (reminders). R1 covers the event pipeline, item counts (User Story 1, R1 part), adoption basics and the R1 part of User Story 9.
+Depends on 004, 006, 008, 009, 025, 032; 010 (location breakdown), 015 (reminders). R1 covers the event pipeline, item counts (User Story 1, R1 part), adoption basics and the R1 part of User Story 9.
 
 ## Phase 1: Pipeline
 - [ ] T001 `Analytics` and `Analytics.Contracts` projects; migration for events (monthly partitions), daily and weekly aggregates and the tenant analytics policy (forced RLS)
