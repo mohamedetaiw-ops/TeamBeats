@@ -167,4 +167,33 @@ public sealed class ExperienceValidationTests
     [InlineData(4, "unknown")]
     public void Open_meteo_weather_codes_group_into_the_conditions_the_component_names(int code, string condition) =>
         Assert.Equal(condition, TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.Condition(code));
+
+    [Fact]
+    public void My_mail_and_My_calendar_register_as_personal_components_needing_Microsoft_365_and_their_feature()
+    {
+        var registry = new ComponentRegistry([new TeamBeats.Modules.Integrations.Microsoft365.OutlookComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        Assert.Empty(registry.Rejected);
+        var mail = registry.Find("outlook.my_mail@1")!;
+        var calendar = registry.Find("outlook.my_calendar@1")!;
+        Assert.Equal("personal", mail.Display.Category);
+        Assert.Equal(["integration.microsoft365"], mail.Requires.Capabilities);
+        Assert.Equal("microsoft365:mail", mail.Requires.ConnectionFeature);
+        Assert.Equal("microsoft365:calendar", calendar.Requires.ConnectionFeature);
+        Assert.Empty(PropertyValidator.Validate(mail.Properties, null));
+        Assert.Empty(PropertyValidator.Validate(calendar.Properties, null));
+        Assert.NotEmpty(PropertyValidator.Validate(mail.Properties, JsonSerializer.SerializeToElement(new { top = 11 })));
+        Assert.NotEmpty(PropertyValidator.Validate(calendar.Properties, JsonSerializer.SerializeToElement(new { days = 15 })));
+    }
+
+    [Fact]
+    public void A_manifest_naming_a_connection_feature_in_another_form_is_rejected()
+    {
+        var bad = new TeamBeats.Modules.Integrations.Microsoft365.OutlookComponents().Manifests().First() with
+        {
+            Requires = new ComponentRequirements(["integration.microsoft365"], [], "Microsoft 365 mail"),
+        };
+        var registry = new ComponentRegistry([new Fixed(bad)], Localizer, NullLogger<ComponentRegistry>.Instance);
+        Assert.Contains(registry.Rejected, r => r.Reason == "requirements");
+    }
+
 }

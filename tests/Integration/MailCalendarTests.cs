@@ -93,6 +93,34 @@ public sealed class MailCalendarTests(TenantWorld world)
         return box;
     }
 
+    /// <summary>A published home from H01 with nothing placed, so the add panel can be read for its personal region.</summary>
+    private static async Task<Guid> HomeAsync(TestTenant t)
+    {
+        var created = await t["admin"].Client.PostAsJsonAsync("/api/v1/experience/pages", new { templateId = "H01", slug = "home-" + Guid.NewGuid().ToString("N")[..8] });
+        var page = await created.ReadAsync<JsonElement>();
+        var id = page.GetProperty("id").GetGuid();
+        var published = await t["admin"].Client.PostAsJsonAsync($"/api/v1/experience/pages/{id}/publish", new { reason = "home" });
+        Assert.True(published.IsSuccessStatusCode, await published.Content.ReadAsStringAsync());
+        return id;
+    }
+
+    [Fact]
+    public async Task My_mail_and_My_calendar_are_offered_only_while_their_connection_feature_is_on()
+    {
+        var s = await SetupAsync(["mail"]);
+        var home = await HomeAsync(s.Tenant);
+        async Task<Dictionary<string, JsonElement>> PanelAsync() =>
+            (await GetAsync(s.Tenant, $"/api/v1/me/pages/{home}/add-panel?region=grid")).EnumerateArray().ToDictionary(i => i.GetProperty("componentRef").GetString()!);
+
+        var panel = await PanelAsync();
+        Assert.True(panel["outlook.my_mail@1"].GetProperty("eligible").GetBoolean());
+        Assert.Equal("validation.personalization.feature_off", panel["outlook.my_calendar@1"].GetProperty("reasonKey").GetString());
+        Assert.Equal("personal", panel["outlook.my_mail@1"].GetProperty("category").GetString());
+
+        Assert.True((await s.Tenant["admin"].Client.PostAsync($"/api/v1/integrations/connections/{s.Connection}/features/mail:disable", null)).IsSuccessStatusCode);
+        Assert.Equal("validation.personalization.feature_off", (await PanelAsync())["outlook.my_mail@1"].GetProperty("reasonKey").GetString());
+    }
+
     [Fact]
     public async Task My_mail_shows_unread_count_and_latest_focused_messages_with_markers_and_links()
     {

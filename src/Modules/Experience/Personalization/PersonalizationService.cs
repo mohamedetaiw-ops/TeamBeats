@@ -7,6 +7,7 @@ using TeamBeats.Localization;
 using TeamBeats.Modules.Experience.Catalogue;
 using TeamBeats.Modules.Experience.Components;
 using TeamBeats.Modules.Experience.Contracts;
+using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Experience.Pages;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
@@ -65,7 +66,8 @@ public sealed partial class PersonalizationService(
     IAuditWriter audit,
     IClock clock,
     ILocalizer localizer,
-    RequestLocale locale)
+    RequestLocale locale,
+    IConnectionFeatures connections)
 {
     public const int PreferenceSchemaVersion = 1;
     public const int LayoutSchemaVersion = 1;
@@ -207,15 +209,33 @@ public sealed partial class PersonalizationService(
         string? regionReason = !region.Rights.Contains(LayoutEngine.RightAdd) ? "validation.personalization.region_not_delegated"
             : current.Regions[regionId].Count(p => p.Personal) >= region.MaxPersonalPlacements ? "validation.personalization.region_full"
             : null;
+        var featureOff = await FeaturesOffAsync(ct);
         return registry.All.Where(m => m.State != ComponentStates.Retired).Select(m =>
         {
             // R1 adds a component with its defaults; one with required settings and no default waits for personal settings.
+            // A component that reads a connection feature is offered only while that feature is on (spec 032 FR-069).
             var reason = regionReason ?? check(new LayoutOperation("panel", "my-check", m.Reference, regionId))
+                ?? (m.Requires.ConnectionFeature is { } f && featureOff.Contains(f) ? "validation.personalization.feature_off" : null)
                 ?? (PropertyValidator.Validate(m.Properties, null).Count > 0 ? "validation.personalization.needs_setup" : null);
             return new AddPanelItem(m.Reference, m.Display.NameKey, m.Display.DescriptionKey, m.Display.Category, m.Display.Icon, reason is null, reason,
                 localizer.Get(m.Display.NameKey, locale.Locale), localizer.Get(m.Display.DescriptionKey, locale.Locale),
                 reason is null ? null : localizer.Get(reason, locale.Locale));
         }).ToList();
+    }
+
+    /// <summary>Connection features (<c>kind:feature</c>) that components declare and that are not on and usable for the tenant.</summary>
+    private async Task<IReadOnlySet<string>> FeaturesOffAsync(CancellationToken ct)
+    {
+        var off = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var feature in registry.All.Select(m => m.Requires.ConnectionFeature).OfType<string>().Distinct())
+        {
+            var parts = feature.Split(':', 2);
+            if (await connections.FindAsync(parts[0], parts[1], ct) is not { Usable: true })
+            {
+                off.Add(feature);
+            }
+        }
+        return off;
     }
 
     // Policy
