@@ -241,6 +241,10 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
                 var status = response is null ? 503 : (int)response.StatusCode;
                 if (status is 429 or >= 500)
                 {
+                    if (status == 429)
+                    {
+                        GraphTelemetry.MarkThrottled();
+                    }
                     var delay = response?.Headers.RetryAfter?.Delta ?? TimeSpan.FromMilliseconds(200 * Math.Pow(2, attempt - 1));
                     if (attempt >= MaxAttempts || waited + delay > RetryBudget)
                     {

@@ -147,7 +147,8 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Who may see a colleague's availability | Until the people profile module (spec 010) exists, any active member of the same tenant. A user of another tenant is not found. |
 | Calendar paging | One page of up to 250 occurrences, which covers 14 days for R1 calendars. |
 | All-day items | Placed on the date Microsoft gives them, not shifted by the tenant time zone. |
-| Telemetry `integration.graph_call` and OpenAPI examples (T018) | Not built yet. |
+| Telemetry `integration.graph_call` (T018) | Built. One histogram measurement (`TeamBeats.Integrations` meter, milliseconds) per Graph read an employee causes, tagged `tenant_id`, `feature`, `status` (`ok` or the failure kind) and `throttled` (Microsoft answered 429 on any attempt). Cached answers make no call and record nothing. No content, subjects, addresses or tokens. |
+| Rate limit per employee (T018) | The forced refresh limit of 6 per employee per minute covers it; free and busy never forces a refresh. Room booking (R2) will need its own limit. |
 
 ## My mail and My calendar components (spec 018 T016)
 

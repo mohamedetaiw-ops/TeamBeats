@@ -277,6 +277,64 @@ public sealed class MailCalendarTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task Each_graph_read_is_recorded_as_telemetry_without_content()
+    {
+        var recorded = new System.Collections.Concurrent.ConcurrentBag<(double Value, Dictionary<string, object?> Tags)>();
+        using var listener = new System.Diagnostics.Metrics.MeterListener();
+        listener.InstrumentPublished = (instrument, l) =>
+        {
+            if (instrument.Meter.Name == "TeamBeats.Integrations" && instrument.Name == "integration.graph_call")
+            {
+                l.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<double>((_, v, tags, _) =>
+        {
+            var map = new Dictionary<string, object?>(StringComparer.Ordinal);
+            foreach (var tag in tags)
+            {
+                map[tag.Key] = tag.Value;
+            }
+            recorded.Add((v, map));
+        });
+        listener.Start();
+
+        var s = await SetupAsync(["mail", "calendar"]);
+        SeedMail(s.Tenant);
+        await ConnectAsync(s.Tenant);
+        var tenant = s.Tenant.Id.ToString();
+        List<(double Value, Dictionary<string, object?> Tags)> Mine() => recorded.Where(r => (string?)r.Tags["tenant_id"] == tenant).ToList();
+
+        // A read retried after a 429 succeeds and is marked throttled.
+        Graph.DelegatedFaults.Enqueue(429);
+        Assert.Equal("ok", State(await GetAsync(s.Tenant, "/api/v1/me/mail")));
+        var mail = Assert.Single(Mine());
+        Assert.Equal("mail", mail.Tags["feature"]);
+        Assert.Equal("ok", mail.Tags["status"]);
+        Assert.Equal(true, mail.Tags["throttled"]);
+        Assert.True(mail.Value >= 0);
+
+        // A cached answer makes no Graph call, so nothing is recorded.
+        await GetAsync(s.Tenant, "/api/v1/me/mail");
+        Assert.Single(Mine());
+
+        // Graph down: recorded as unavailable, not throttled.
+        for (var i = 0; i < 3; i++)
+        {
+            Graph.DelegatedFaults.Enqueue(503);
+        }
+        Assert.Equal("degraded", State(await GetAsync(s.Tenant, "/api/v1/me/calendar")));
+        var calendar = Assert.Single(Mine(), r => (string?)r.Tags["feature"] == "calendar");
+        Assert.Equal("unavailable", calendar.Tags["status"]);
+        Assert.Equal(false, calendar.Tags["throttled"]);
+        Graph.DelegatedFaults.Clear();
+
+        // Only the declared tags, and no content from the mailbox.
+        Assert.All(Mine(), r => Assert.Equal(["feature", "status", "tenant_id", "throttled"], r.Tags.Keys.Order(StringComparer.Ordinal)));
+        Assert.DoesNotContain(Mine(), r => r.Tags.Values.Any(v => v is string text && (text.Contains("Subject", StringComparison.Ordinal) || text.Contains('@'))));
+    }
+
+    [Fact]
     public async Task Reads_are_cached_per_employee_and_refresh_is_limited()
     {
         var s = await SetupAsync(["mail"], users: "colleague");
