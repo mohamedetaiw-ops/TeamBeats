@@ -33,9 +33,13 @@ public static class AdministrationModule
         ("identity", Permissions.IdentityConfigManage, "/admin/identity"),
         ("connections", Permissions.IntegrationManage, "/admin/connections"),
         ("pages", Permissions.PageEdit, "/admin/pages"),
+        ("templates", Permissions.TemplateEdit, "/admin/templates"),
         ("branding", Permissions.ThemeEdit, "/admin/branding"),
         ("audit", Permissions.AuditView, "/admin/audit"),
     ];
+
+    /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide.</summary>
+    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates" };
 
     public static IServiceCollection AddAdministrationModule(this IServiceCollection services) => services;
 
@@ -49,7 +53,7 @@ public static class AdministrationModule
             foreach (var (key, permission, path) in Sections)
             {
                 var coverage = await authz.CoverageAsync(permission, ct);
-                if (coverage.Any)
+                if (TenantOnly.Contains(key) ? coverage.WholeTenant : coverage.Any)
                 {
                     result.Add(new NavigationSection(key, $"admin.nav.{key}", path, coverage.WholeTenant));
                 }

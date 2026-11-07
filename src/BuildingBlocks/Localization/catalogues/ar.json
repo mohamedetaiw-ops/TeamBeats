@@ -5,6 +5,7 @@
   "admin.nav.pages": "الصفحات",
   "admin.nav.plan": "الباقة والاستخدام",
   "admin.nav.roles": "الأدوار",
+  "admin.nav.templates": "القوالب",
   "admin.nav.tenant_settings": "إعدادات المؤسسة",
   "admin.nav.users": "المستخدمون والمجموعات",
   "authz.denied.escalation": "لا يمكنك منح صلاحيات لا تملكها",

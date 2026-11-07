@@ -374,7 +374,7 @@ Screen reader checks assert the roles, names and states that assistive technolog
 | Protection levels | Every region of the template must stay on the page (`validation.page.region_missing`), and region policies always come from the template, never from the page. `mandatory` and `protected` regions are never delegated to personalization. Regions "removable by named delegated roles" (FR-019) need a role list in the policy and are not built. |
 | Retired state and migration guidance | FR-021 also names a `retired` state and migration guidance. R1 has draft, released and deprecated; the page view only says that its version is deprecated. |
 | Platform template versions | The platform catalogue holds one version of each platform template. A page that records another version gets `validation.page.template_mismatch`. |
-| Designer screens | The API comes first; the admin screens and the layout change in the editor follow. |
+| Designer screens | `/admin/templates` lists the organization's templates and copies a platform template; `/admin/templates/[id]` edits names, variants, region locks, policies and distribution, and releases or deprecates. The section shows only for template designers of the whole tenant. The page editor has a "Template and layout" panel that says when a newer version is released or the version is deprecated, works the change out, lets the editor place or remove each component without a region, and applies it to the saved draft. Playwright: `templates.spec.ts` in `en` and `ar`. |
 
 ## Page builder (spec 032 T018 to T020)
 | Part | Where |

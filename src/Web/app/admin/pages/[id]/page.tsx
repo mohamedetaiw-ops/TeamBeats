@@ -6,6 +6,7 @@ import { getCatalogue, getPage, listPickerItems, listUnits } from "@/lib/experie
 import { pagePath, unitName } from "@/lib/experience/builder-types";
 import { LayoutPreview } from "@/features/builder/LayoutPreview";
 import { EditorMount } from "@/features/builder/editor/EditorMount";
+import { TemplateChange } from "@/features/builder/TemplateChange";
 import "@/features/builder/builder.css";
 
 /**
@@ -24,7 +25,22 @@ export default async function BuilderPage({ params }: { params: Promise<{ id: st
   }
   const t = await getTranslations("builder");
   const locale = await getLocale();
-  const template = catalogue.data.templates.find((x) => x.id === page.data.templateId);
+  // The page's own template version, which the chooser may no longer offer (a deprecated or older tenant version).
+  const offered = catalogue.data.templates.find((x) => x.id === page.data.templateId);
+  const recorded = page.data.templateRegions;
+  const template = recorded
+    ? {
+        id: page.data.templateId,
+        state: page.data.templateDeprecated ? "deprecated" : "released",
+        description: "",
+        layout: page.data.draft.layout.id,
+        variants: [page.data.draft.variant],
+        ...offered,
+        version: page.data.templateVersion,
+        regions: recorded,
+        name: page.data.templateName ?? offered?.name ?? page.data.templateId,
+      }
+    : offered;
   const layout = catalogue.data.layouts.find((l) => l.id === page.data.draft.layout.id);
   const unit = page.data.orgUnitId && units.ok ? units.data.find((u) => u.id === page.data.orgUnitId) : undefined;
   const regionName = (r: string) => t(`regions.${r}`);
@@ -43,12 +59,14 @@ export default async function BuilderPage({ params }: { params: Promise<{ id: st
       </div>
       <dl className="builder-facts">
         <dt>{t("pages.template")}</dt>
-        <dd>{template?.name ?? page.data.templateId}</dd>
+        <dd>{page.data.templateName ?? template?.name ?? page.data.templateId}</dd>
         <dt>{t("pages.scope")}</dt>
         <dd>{page.data.orgUnitId ? (unit ? unitName(unit, locale) : t("pages.unit")) : t("pages.wholeTenant")}</dd>
       </dl>
       {layout ? <LayoutPreview layout={layout} regionName={regionName} /> : null}
+      <TemplateChange page={page.data} templates={catalogue.data.templates.filter((x) => x.state === "released")} />
       <EditorMount
+        key={page.data.eTag}
         page={page.data}
         template={template}
         tenantId={me.data.tenant.id}

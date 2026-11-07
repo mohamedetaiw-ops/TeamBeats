@@ -13,6 +13,8 @@ export type CatalogueTemplate = {
   layout: string;
   variants: string[];
   regions: { id: string; policy: RegionPolicy }[];
+  /** True for a tenant template; the platform templates are false. */
+  custom?: boolean;
 };
 export type Catalogue = { layouts: CatalogueLayout[]; templates: CatalogueTemplate[] };
 
@@ -48,7 +50,49 @@ export type PageView = {
   eTag: string;
   draft: PageDefinition;
   findings: Finding[];
+  /** A later released version of the page's tenant template, which the owner may apply with a template change. */
+  newerTemplateVersion?: string | null;
+  /** The page's template version is deprecated: the page keeps working and should move to another template. */
+  templateDeprecated?: boolean;
+  /** Name and region policies of the template version the page records. */
+  templateName?: string | null;
+  templateRegions?: { id: string; policy: RegionPolicy }[] | null;
 };
+
+/** A placement the new template has no fitting region for, with the regions the editor may put it in. */
+export type UnplacedPlacement = { placementId: string; componentRef: string; fromRegion: string; options: string[] };
+export type TemplateChange = { draft: PageDefinition; unplaced: UnplacedPlacement[]; findings: Finding[]; page: PageView | null };
+
+/** Component categories a region may allow (spec 032 FR-012); an empty list allows any. */
+export const COMPONENT_CATEGORIES = ["content", "media", "navigation", "data", "people", "services", "personal", "utility"] as const;
+export const PROTECTIONS = ["optional", "mandatory", "protected"] as const;
+
+export type TemplateDefinition = {
+  id: string;
+  version: string;
+  state: string;
+  layout: string;
+  variants: string[];
+  regions: { id: string; policy: RegionPolicy }[];
+  names: Record<string, string> | null;
+  descriptions: Record<string, string> | null;
+};
+export type TemplateVersion = { version: number; state: string; updatedAt: string; releasedAt: string | null };
+/** A tenant template for its designers (spec 032 US5). An empty distribution is the whole organization. */
+export type TenantTemplate = {
+  id: string;
+  basedOn: string;
+  basedOnVersion: string;
+  distribution: string[];
+  latest: TemplateDefinition;
+  versions: TemplateVersion[];
+};
+
+/** The template's name in the viewer's language, then English, then any name it has. */
+export function templateName(template: TemplateDefinition, locale: string): string {
+  const names = template.names ?? {};
+  return names[locale] ?? names.en ?? Object.values(names)[0] ?? template.id;
+}
 
 /** Where a published page opens. */
 export function pagePath(slug: string): string {
