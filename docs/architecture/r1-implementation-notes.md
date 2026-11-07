@@ -184,7 +184,7 @@ What was built for R1, slice by slice, and where it differs from the specs and p
 | Visibility rules | Audience rules come with spec 008. Until then a placement with `visibilityRuleRef` is refused, so no page can depend on a rule that does not exist. |
 | Overlap, nesting and breakpoint order checks | Placements flow in region order with spans, so cells cannot collide yet. Sections, nesting and per-breakpoint order arrive with the renderer (T016). |
 | Tenant templates, distribution and layout change (T010, T011) | Built, see "Tenant templates (spec 032 T010, T011)". |
-| Manifest migration hooks (part of T012) | Not built. Only one version of each reference component exists. |
+| Manifest migration hooks (part of T012) | A module registers `ComponentMigration` hooks through `IComponentRegistration.Migrations()`, each from one major to the next of components it registered; any other hook is refused at start as `migration_range`. `POST /api/v1/experience/components/{id}/upgrade` with `fromMajor` (needs `component.enable` for the whole tenant) runs the hook over every page draft in the tenant that places `id@fromMajor`. A page whose converted placement is invalid for the new manifest, or whose hook throws, keeps its draft and is listed in `blocked` with the reason; pages without the component are not touched. Releases change at the next publish. Audited as `component.upgraded`. No platform or reference component has a second major yet, so the tests use a test-only component (`tests/Testing/UpgradePack.cs`). |
 | Theme tokens in manifests | Token names are checked once the spec 033 token schema exists. |
 | Denied publish outside scope | Recorded as `page.published` or `page.rolled_back` with outcome `denied`, then answered as not found. |
 

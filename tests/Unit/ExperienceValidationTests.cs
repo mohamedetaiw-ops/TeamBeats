@@ -109,6 +109,15 @@ public sealed class ExperienceValidationTests
         Assert.Equal("duplicate_version", registry.Rejected.Single().Reason);
     }
 
+    [Fact]
+    public void Migration_hooks_register_only_to_the_next_major_of_registered_components()
+    {
+        var registry = new ComponentRegistry([new TeamBeats.Testing.UpgradePack()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        Assert.Equal([("test.upgrade.gauge@2->test.upgrade.gauge@4", "migration_range")], registry.Rejected);
+        Assert.Equal("test.upgrade.gauge@2", registry.MigrationFrom("test.upgrade.gauge@1")!.To);
+        Assert.Null(registry.MigrationFrom("test.upgrade.gauge@2"));
+    }
+
     private sealed class Fixed(params ComponentManifest[] manifests) : IComponentRegistration
     {
         public IEnumerable<ComponentManifest> Manifests() => manifests;

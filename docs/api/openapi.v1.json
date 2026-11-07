@@ -2607,6 +2607,38 @@
         }
       }
     },
+    "/api/v1/experience/components/{componentId}/upgrade": {
+      "post": {
+        "tags": [
+          "Experience: pages"
+        ],
+        "parameters": [
+          {
+            "name": "componentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComponentUpgradeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/brands": {
       "get": {
         "tags": [
@@ -3702,6 +3734,23 @@
           "apply": {
             "type": "boolean",
             "default": false
+          }
+        }
+      },
+      "ComponentUpgradeRequest": {
+        "required": [
+          "fromMajor"
+        ],
+        "type": "object",
+        "properties": {
+          "fromMajor": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },

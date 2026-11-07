@@ -96,6 +96,21 @@ public interface IComponentRegistration
     /// remove, reorder or re-add them. Templates never name components (spec 032 FR-014), so modules suggest them here.
     /// </summary>
     IEnumerable<string> PersonalHomeDefaults() => [];
+
+    /// <summary>Migration hooks from one major version of this module's components to the next (spec 032 FR-030).</summary>
+    IEnumerable<ComponentMigration> Migrations() => [];
+}
+
+/// <summary>
+/// A manifest migration hook (spec 032 FR-030): converts a placement's properties written for <c>id@FromMajor</c> into
+/// properties for <c>id@ToMajor</c>. The hook sees only the placement's own properties, never page or tenant data, and its
+/// result is validated against the new manifest before any page is changed. Only the next major is supported.
+/// </summary>
+public sealed record ComponentMigration(string Id, int FromMajor, int ToMajor, Func<JsonElement?, JsonElement?> Convert)
+{
+    public string From => $"{Id}@{FromMajor}";
+
+    public string To => $"{Id}@{ToMajor}";
 }
 
 public sealed record PagePublished(Guid PageId, int Release) : IIntegrationEvent;

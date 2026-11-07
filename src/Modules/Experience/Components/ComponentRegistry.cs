@@ -42,8 +42,28 @@ public sealed partial class ComponentRegistry
             }
             _byReference[manifest.Reference] = manifest;
         }
+        foreach (var migration in registrations.SelectMany(r => r.Migrations()))
+        {
+            // An upgrade must go to the next major of a registered component; anything else is out of range (FR-030).
+            var problem = migration.ToMajor != migration.FromMajor + 1 || !_byReference.ContainsKey(migration.From)
+                || !_byReference.ContainsKey(migration.To) || _migrations.ContainsKey(migration.From)
+                ? "migration_range"
+                : null;
+            if (problem is not null)
+            {
+                rejected.Add(($"{migration.From}->{migration.To}", problem));
+                logger.LogWarning("Component migration {Migration} was not registered: {Reason}", $"{migration.From}->{migration.To}", problem);
+                continue;
+            }
+            _migrations[migration.From] = migration;
+        }
         Rejected = rejected;
     }
+
+    private readonly Dictionary<string, ComponentMigration> _migrations = new(StringComparer.Ordinal);
+
+    /// <summary>The migration hook from <c>id@major</c> to the next major, or null when there is none.</summary>
+    public ComponentMigration? MigrationFrom(string reference) => _migrations.GetValueOrDefault(reference);
 
     /// <summary>Manifests that failed validation, with the reason code.</summary>
     public IReadOnlyList<(string Component, string Reason)> Rejected { get; }

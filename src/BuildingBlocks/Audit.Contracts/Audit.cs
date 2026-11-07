@@ -106,6 +106,7 @@ public static class AuditActions
     public const string PageTemplateChanged = "page.template_changed";
     public const string ComponentEnabled = "component.enabled";
     public const string ComponentDisabled = "component.disabled";
+    public const string ComponentUpgraded = "component.upgraded";
     public const string TemplateReleased = "template.released";
     public const string TemplateDistributed = "template.distributed";
     public const string TemplateDeprecated = "template.deprecated";
@@ -144,7 +145,7 @@ public static class AuditActions
         SignInFailed, IdpConfigChanged, DirectoryConnectionChanged, UserSynced, DisabledByDirectory, ReenabledByDirectory,
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
         ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, OutlookConnected, OutlookDisconnected,
-        PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, ComponentEnabled, ComponentDisabled,
+        PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, ComponentEnabled, ComponentDisabled, ComponentUpgraded,
         TemplateReleased, TemplateDistributed, TemplateDeprecated, RegionLockChanged,
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
     ];
