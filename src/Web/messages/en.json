@@ -18,8 +18,9 @@
     "failed": "Sign-in was refused. Check the email and try again.",
     "unavailable": "This workspace is not available right now.",
     "ssoMicrosoft": "Sign in with Microsoft",
-    "testNotice": "Staging only. Skip single sign-on and sign in as the test administrator. This option never exists in production.",
+    "testNotice": "Staging only. Skip single sign-on and sign in as the test administrator or as a test employee. These options never exist in production.",
     "testSubmit": "Sign in as test admin",
+    "testEmployee": "Sign in as test employee",
     "testFailed": "Test sign-in was refused. The staging test account is not set up."
   },
   "admin": {
