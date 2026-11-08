@@ -25,6 +25,8 @@ public static class ContentModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ContentTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, ContentTaskSource>("content.notify_review");
         services.AddScoped<CriticalAnnouncements>();
+        services.AddScoped<ContentGovernance>();
+        services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, ContentOwnerHandler>("content.owner_left");
         services.AddMessageHandler<Contracts.ContentPublished, CriticalAudience>("content.critical_audience");
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, CriticalAudience>("content.critical_membership");
         services.AddMessageHandler<Contracts.AckReportRequested, AckReportHandler>("content.ack_report");
@@ -138,6 +140,39 @@ public static class ContentModule
         items.MapGet("/{id:guid}/view", async (Guid id, Items service, CancellationToken ct) => Results.Ok(await service.ReadAsync(id, ct)));
 
         items.MapGet("/{id:guid}/versions", async (Guid id, Items service, CancellationToken ct) => Results.Ok(await service.VersionsAsync(id, ct)));
+
+        items.MapGet("/{id:guid}/versions/{number:int}", async (Guid id, int number, Items service, CancellationToken ct) =>
+            Results.Ok(await service.VersionDetailAsync(id, number, ct)));
+
+        items.MapGet("/{id:guid}/compare", async (Guid id, int from, int to, string? locale, Items service, CancellationToken ct) =>
+            Results.Ok(await service.CompareAsync(id, from, to, locale, ct)));
+
+        items.MapPost("/{id:guid}/versions/{number:int}/restore", async (Guid id, int number, RestoreRequest? request, Items service, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var item = await service.RestoreAsync(id, number, request ?? new RestoreRequest(null), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(item);
+        });
+
+        items.MapPost("/{id:guid}/owner-review", async (Guid id, OwnerReviewRequest request, ContentGovernance service, IDbSession session, CancellationToken ct) =>
+        {
+            var item = await service.ReviewAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(item);
+        });
+
+        var health = app.MapGroup("/api/v1/content/health").RequireTenantUser().WithTags("Content: health");
+
+        health.MapGet("", async (ContentGovernance service, IDbSession session, CancellationToken ct) =>
+        {
+            var list = await service.HealthAsync(ct);
+            await session.CommitAsync(ct); // The default site is created on first use.
+            return Results.Ok(list);
+        });
+
+        health.MapGet("/items", async (Guid site, string? kind, ContentGovernance service, CancellationToken ct) =>
+            Results.Ok(await service.HealthItemsAsync(site, kind, ct)));
 
         // Critical announcements (US2).
         app.MapGroup("/api/v1/content/critical").RequireTenantUser().WithTags("Content: critical").MapGet("/pending",

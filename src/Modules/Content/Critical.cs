@@ -117,7 +117,7 @@ public sealed class CriticalAnnouncements(
               and not exists (select 1 from content.acknowledgement a where a.tenant_id = i.tenant_id and a.item_id = i.id and a.user_id = @user
                 and a.version_number >= {CountedFrom})
             order by i.published_at, i.id limit @limit
-            """, new { user, now, limit = MaxPending }, r => (Item: Items.Read(r), Reminded: r.GetInt32(24)), ct);
+            """, new { user, now, limit = MaxPending }, r => (Item: Items.Read(r), Reminded: r.GetInt32(r.GetOrdinal("remind_count"))), ct);
         CriticalNotice? modal = null;
         var banners = new List<CriticalNotice>();
         var locales = await tenantSettings.GetLocaleSettingsAsync(ct);

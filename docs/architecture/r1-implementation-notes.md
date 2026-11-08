@@ -797,3 +797,23 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Manager list | Managers see their direct reports only, through the spec 010 reporting line; the relationship, not a role, gives the access. |
 | Links | Notifications link to `/content/read/{id}` and `/content/items/{id}/team`; those pages come with T023, as does the shell's modal and banner component. |
 | Audience size | Refreshing the audience evaluates every candidate member's facts; when every clause names org units only their members are evaluated. The 2 minute target for 100,000 people is checked with T024. |
+
+## Governance, history and restore (spec 009 T012 to T015)
+| Part | Where |
+|---|---|
+| Review task | The content scheduler opens the owner's review 30 days before `review_due_at` on live items: one engine step for the owner (`content.review.{owner}`), shown in the spec 016 inbox as source `content_owner_review`, with `ContentReviewDue` published and the owner notified |
+| Actions | `POST .../items/{id}/owner-review` with `confirm`, `edit` or `retire` (and an optional `nextReviewOn`). In the inbox, approve means confirm, return means edit and reject means retire. Confirm and edit set the next review date (the type's review period, 12 months when it has none); edit also copies the live version into a new draft. Audited as `content.reviewed` |
+| Retire | An owner holding `content.publish` archives at once. Anyone else starts a one-step retirement for the site's publishers (`content.retire.{site}`, source `content_retire`); approval archives the item |
+| Overdue | Once the review date passes, the owner's line manager and the communications administrators are told once per date, and readers see `underReview` on the reader view when the type has the label |
+| Owner leaves | `UserDeprovisioned` hands the person's items to an active backup owner; otherwise the item becomes ownerless and the administrators are told. An open review task is withdrawn. Audited as `content.owner_reassigned` per item |
+| Health | `GET /api/v1/content/health` counts per site items overdue for review, without an active owner and expired; `GET /api/v1/content/health/items?site=&kind=overdue|ownerless|expired` lists them. Needs `content.admin` |
+| History | `GET .../versions/{n}` gives one version with its text; `GET .../compare?from=&to=&locale=` returns kept, added and removed runs of title, summary and body text, word by word; `POST .../versions/{n}/restore` makes the next draft from it (`restoredFrom`), audited as `content.version_restored`. Readers see none of it unless the type shows history to readers |
+| Tests | `ContentGovernanceTests` |
+
+| Item | Note |
+|---|---|
+| Site owner | Sites have no owner of their own in R1 (`site.manage` comes with R2 sites), so the communications administrators (`content.admin` at tenant scope) stand in for the site owner in overdue and ownerless notices. Without a backup owner an item becomes ownerless rather than going to a site owner. |
+| Edit date | Choosing edit also moves the review date on, so the next reminder does not open while the update is being written. |
+| Retire in the inbox | Reject in the inbox asks for a reason, so retiring from the inbox needs a comment; the item page action does not. |
+| Not viewed | The not viewed count waits for spec 021 view counts and is returned as null. Expired counts expired items; "still linked" needs page placements from the Experience module and comes with the page builder components of T019. |
+| Restore with a draft | Restore is refused while a draft exists, so a draft in progress is never overwritten. |

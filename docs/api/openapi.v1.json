@@ -5233,6 +5233,177 @@
         }
       }
     },
+    "/api/v1/content/items/{id}/versions/{number}": {
+      "get": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/compare": {
+      "get": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/versions/{number}/restore": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/RestoreRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/owner-review": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnerReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/content/items/{id}/acknowledge": {
       "post": {
         "tags": [
@@ -5377,6 +5548,48 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/health": {
+      "get": {
+        "tags": [
+          "Content: health"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/health/items": {
+      "get": {
+        "tags": [
+          "Content: health"
+        ],
+        "parameters": [
+          {
+            "name": "site",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -8055,6 +8268,28 @@
           }
         }
       },
+      "OwnerReviewRequest": {
+        "required": [
+          "action",
+          "nextReviewOn"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "nextReviewOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          }
+        }
+      },
       "OwnProfileRequest": {
         "required": [
           "values",
@@ -8496,6 +8731,20 @@
             "format": "uuid"
           },
           "idempotencyKey": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RestoreRequest": {
+        "required": [
+          "changeNote"
+        ],
+        "type": "object",
+        "properties": {
+          "changeNote": {
             "type": [
               "null",
               "string"
@@ -9655,6 +9904,9 @@
     },
     {
       "name": "Content: items"
+    },
+    {
+      "name": "Content: health"
     },
     {
       "name": "Content: critical"

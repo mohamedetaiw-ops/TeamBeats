@@ -16,3 +16,6 @@ public sealed record ContentAcknowledged(Guid ItemId, int Version, Guid UserId, 
 
 /// <summary>A completion report was asked for; the worker writes the file.</summary>
 public sealed record AckReportRequested(Guid ReportId, Guid ItemId) : IIntegrationEvent;
+
+/// <summary>An item's review window opened and its owner got a review task (US3 scenario 2). IDs only.</summary>
+public sealed record ContentReviewDue(Guid ItemId, Guid SiteId, Guid OwnerId, DateTimeOffset DueAt) : IIntegrationEvent;

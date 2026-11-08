@@ -13,7 +13,8 @@ namespace TeamBeats.Modules.Content;
 /// expired items archive once the grace period ends (spec 009 section 6). Critical announcements whose deadline
 /// passed send their reminders (US2 scenario 4). Runs as the system actor.
 /// </summary>
-public sealed class ContentScheduler(IDbSession session, Items items, Sites sites, CriticalAnnouncements critical, INotificationSender notifications)
+public sealed class ContentScheduler(IDbSession session, Items items, Sites sites, CriticalAnnouncements critical, INotificationSender notifications,
+    ContentGovernance governance)
 {
     public async Task<int> RunDueAsync(DateTimeOffset now, int limit, CancellationToken ct)
     {
@@ -54,7 +55,7 @@ public sealed class ContentScheduler(IDbSession session, Items items, Sites site
                 moved++;
             }
         }
-        return moved;
+        return moved + await governance.RunAsync(now, limit, ct);
     }
 
     private async Task<List<Guid>> DueAsync(string where, DateTimeOffset now, int limit, CancellationToken ct) =>

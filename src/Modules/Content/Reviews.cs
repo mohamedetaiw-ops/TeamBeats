@@ -88,7 +88,8 @@ public sealed class ContentTaskSource(
     ContentReviews reviews,
     IAuditWriter audit,
     INotificationSender notifications,
-    IClock clock) : ITaskSource, IMessageHandler<UserTaskCreated>
+    IClock clock,
+    ContentGovernance governance) : ITaskSource, IMessageHandler<UserTaskCreated>
 {
     public const string Waiting = "content.review.waiting";
     public const string Returned = "content.review.returned";
@@ -110,6 +111,10 @@ public sealed class ContentTaskSource(
 
     public async Task<TaskSubject?> DescribeAsync(UserTaskInfo task, CancellationToken ct = default)
     {
+        if (ContentGovernance.Owns(task.DefinitionKey))
+        {
+            return await governance.DescribeAsync(task, ct);
+        }
         if (await WaitingAsync(task, false, ct) is not var (item, site) || item.DraftVersion is not { } number)
         {
             return null;
@@ -122,6 +127,10 @@ public sealed class ContentTaskSource(
     /// <summary>The engine already keeps writers out; this holds the line again for the person whose authority is used.</summary>
     public async Task<bool> MayDecideAsync(UserTaskInfo task, Guid authority, CancellationToken ct = default)
     {
+        if (ContentGovernance.Owns(task.DefinitionKey))
+        {
+            return await governance.MayDecideAsync(task, authority, ct);
+        }
         if (await WaitingAsync(task, false, ct) is not var (item, _) || item.DraftVersion is not { } number)
         {
             return false;
@@ -132,6 +141,11 @@ public sealed class ContentTaskSource(
 
     public async Task DecidedAsync(UserTaskInfo task, UserTaskInfo done, CancellationToken ct = default)
     {
+        if (ContentGovernance.Owns(task.DefinitionKey))
+        {
+            await governance.DecidedAsync(task, done, ct);
+            return;
+        }
         if (await WaitingAsync(task, true, ct) is not var (item, site) || item.DraftVersion is not { } version)
         {
             return;
@@ -182,6 +196,11 @@ public sealed class ContentTaskSource(
 
     public async Task HandleAsync(UserTaskCreated message, CancellationToken ct)
     {
+        if (ContentGovernance.Owns(message.DefinitionKey))
+        {
+            await governance.TaskCreatedAsync(message, ct);
+            return;
+        }
         if (!Handles(message.DefinitionKey) || ContentReviews.ItemIdOf(message.DefinitionKey, message.BusinessKey) is not { } id
             || await items.RowAsync(id, false, ct) is not { } item || item.ReviewInstanceId != message.InstanceId)
         {
