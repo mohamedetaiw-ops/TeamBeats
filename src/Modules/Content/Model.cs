@@ -47,6 +47,27 @@ public sealed record ContentRoute(bool Approval, IReadOnlyList<Guid>? Approvers 
     public const int MaxApprovers = 20;
 }
 
+/// <summary>
+/// How a critical announcement interrupts (FR-006): a modal on the next page, closed only by confirming or by "remind
+/// me later" up to <see cref="RemindLaterMax"/> times, or a banner above the content until it expires, is confirmed
+/// or, when <see cref="Dismissible"/>, dismissed. <see cref="RequireAck"/> counts it in the completion report and the
+/// deadline reminders; a modal always asks for confirmation.
+/// </summary>
+public sealed record CriticalSettings(string Presentation, bool RequireAck, int RemindLaterMax, DateTimeOffset? DeadlineAt, bool Dismissible)
+{
+    public const string Modal = "modal";
+    public const string Banner = "banner";
+    public const int MaxRemindLater = 10;
+    public const int DefaultRemindLater = 3;
+    public static readonly TimeSpan RemindLaterFor = TimeSpan.FromHours(4);
+
+    /// <summary>Whether confirmations are recorded and counted.</summary>
+    public bool Confirms => RequireAck || Presentation == Modal;
+}
+
+/// <summary>Critical settings as the editor sends them; the deadline is a local time in the site's zone. Presentation "none" clears them.</summary>
+public sealed record CriticalInput(string? Presentation, bool? RequireAck, int? RemindLaterMax, DateTime? Deadline, bool? Dismissible);
+
 /// <summary>One locale of a version. <see cref="OutOfDate"/> marks a variant that fell behind the primary locale (US5 scenario 5).</summary>
 public sealed record ContentVariant(string Title, string? Summary, BodyDocument Body, bool OutOfDate = false);
 

@@ -182,6 +182,10 @@ public static class AuditActions
     public const string ContentApproved = "content.approved";
     public const string ContentReturned = "content.returned";
     public const string ContentWithdrawn = "content.withdrawn";
+    public const string ContentCriticalSent = "content.critical_sent";
+    public const string ContentCriticalDenied = "content.critical_denied";
+    public const string ContentAcknowledged = "content.acknowledged";
+    public const string ContentAckReportExported = "content.ack_report_exported";
     public const string SiteCreated = "site.created";
     public const string SiteChanged = "site.changed";
 
@@ -215,6 +219,7 @@ public static class AuditActions
         ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,
         TaskApproved, TaskRejected, TaskReturned, DelegationSet, DelegationChanged, DelegationEnded,
         ContentCreated, ContentPublished, ContentScheduled, ContentUnpublished, ContentArchived, ContentExpired, ContentSettingsChanged, ContentSubmitted, ContentApproved, ContentReturned, ContentWithdrawn,
+        ContentCriticalSent, ContentCriticalDenied, ContentAcknowledged, ContentAckReportExported,
         SiteCreated, SiteChanged,
     ];
 
