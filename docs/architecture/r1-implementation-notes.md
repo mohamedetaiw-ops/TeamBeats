@@ -817,3 +817,20 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Retire in the inbox | Reject in the inbox asks for a reason, so retiring from the inbox needs a comment; the item page action does not. |
 | Not viewed | The not viewed count waits for spec 021 view counts and is returned as null. Expired counts expired items; "still linked" needs page placements from the Experience module and comes with the page builder components of T019. |
 | Restore with a draft | Restore is refused while a draft exists, so a draft in progress is never overwritten. |
+
+## Page components, reactions and comments (spec 009 T018 to T021)
+| Part | Where |
+|---|---|
+| Components | `ContentComponents` registers five spec 032 manifests: `content.news_feed`, `content.rich_text`, `content.links`, `content.call_to_action` and `content.announcement_banner` (one per page, also needs `content.critical_ack`). All need `content.core`, so a tenant without it is not offered them and the content APIs refuse them. The web parts live in `components/placements/content.*.tsx` and read the content APIs with the viewer's session on every render |
+| Reader | `/content/read/{id}` shows a live item with its body blocks, the language fallback, expired and under review labels, then reactions and comments |
+| Reactions | `GET` and `POST .../items/{id}/reactions` with `like`, `celebrate`, `support` or `insightful`; one per person and item, `none` takes it back |
+| Comments | `GET` and `POST .../items/{id}/comments`, then `POST /api/v1/content/comments/{id}/approve`, `/hide`, `/report` and `DELETE /api/v1/content/comments/{id}`. A visible comment notifies the item owner, or its creator when it has none (`content.comment.new`). With site moderation on, comments from people without `content.edit` at the site wait for a moderator. Moderation is audited as `content.comment_moderated` |
+| Tests | `ContentSocialTests`, `ExperienceValidationTests` |
+
+| Item | Note |
+|---|---|
+| Report threshold | Three reports from different people hide a visible comment until a moderator looks at it. The number is a constant (`ContentSocial.ReportsToHide`), not a tenant setting, until the spec asks for one. Approving a reported comment starts the count again. |
+| Moderators | A moderator is anyone holding `content.edit` at the site, since the spec names no separate moderator permission. |
+| Content images | Image blocks show their alt text as a caption until spec 011 stores content media; embeds use a sandboxed frame from the tenant allowlist. |
+| Mentions and photos | Mentions, hashtags and photos in comments are R2 (US9 R2 part). |
+| Still linked | The health count of expired items that pages still show needs a placements query from the Experience module and is left for slice 6. |

@@ -19,6 +19,12 @@ const product: Record<string, Loader> = {
   "outlook.my_calendar@1": () => import("@/components/placements/outlook.my_calendar"),
   // People directory (spec 010 US4).
   "people.list@1": () => import("@/components/placements/people.list"),
+  // Content and news (spec 009 FR-030, US8).
+  "content.news_feed@1": () => import("@/components/placements/content.news_feed"),
+  "content.rich_text@1": () => import("@/components/placements/content.rich_text"),
+  "content.links@1": () => import("@/components/placements/content.links"),
+  "content.call_to_action@1": () => import("@/components/placements/content.call_to_action"),
+  "content.announcement_banner@1": () => import("@/components/placements/content.announcement_banner"),
 };
 
 const reference: Record<string, Loader> =

@@ -195,6 +195,39 @@ public sealed class ExperienceValidationTests
     }
 
     [Fact]
+    public void Content_components_register_with_the_content_capability_and_validate_their_properties()
+    {
+        var registry = new ComponentRegistry([new TeamBeats.Modules.Content.ContentComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        Assert.Empty(registry.Rejected);
+        Assert.Equal(["content.announcement_banner@1", "content.call_to_action@1", "content.links@1", "content.news_feed@1", "content.rich_text@1"],
+            registry.All.Select(m => m.Reference).Order(StringComparer.Ordinal));
+        Assert.All(registry.All, m => Assert.Contains(TeamBeats.Entitlements.Contracts.Capabilities.ContentCore, m.Requires.Capabilities));
+        Assert.Contains(TeamBeats.Entitlements.Contracts.Capabilities.ContentCriticalAck, registry.Find("content.announcement_banner@1")!.Requires.Capabilities);
+        Assert.True(registry.Find("content.announcement_banner@1")!.Placement.Singleton);
+        Assert.Equal(["/api/v1/content/feed"], registry.Find("content.news_feed@1")!.Data);
+
+        var feed = registry.Find("content.news_feed@1")!;
+        Assert.Empty(PropertyValidator.Validate(feed.Properties, null));
+        Assert.NotEmpty(PropertyValidator.Validate(feed.Properties, JsonSerializer.SerializeToElement(new { top = 21 })));
+        Assert.NotEmpty(PropertyValidator.Validate(feed.Properties, JsonSerializer.SerializeToElement(new { type = "event" })));
+
+        var text = registry.Find("content.rich_text@1")!;
+        Assert.NotEmpty(PropertyValidator.Validate(text.Properties, null));
+        Assert.Empty(PropertyValidator.Validate(text.Properties, JsonSerializer.SerializeToElement(new { itemId = Guid.NewGuid().ToString() })));
+
+        var links = registry.Find("content.links@1")!;
+        Assert.Empty(PropertyValidator.Validate(links.Properties, JsonSerializer.SerializeToElement(new { links = new[] { "https://example.org/a" } })));
+        Assert.NotEmpty(PropertyValidator.Validate(links.Properties, JsonSerializer.SerializeToElement(new { links = new[] { "javascript:alert(1)" } })));
+        Assert.NotEmpty(PropertyValidator.Validate(links.Properties,
+            JsonSerializer.SerializeToElement(new { links = Enumerable.Repeat("https://example.org", TeamBeats.Modules.Content.ContentComponents.MaxLinks + 1) })));
+
+        var cta = registry.Find("content.call_to_action@1")!;
+        Assert.NotEmpty(PropertyValidator.Validate(cta.Properties, null));
+        Assert.Empty(PropertyValidator.Validate(cta.Properties,
+            JsonSerializer.SerializeToElement(new { heading = new { en = "Join" }, label = new { en = "Sign up" }, link = "https://example.org/join" })));
+    }
+
+    [Fact]
     public void A_manifest_naming_a_connection_feature_in_another_form_is_rejected()
     {
         var bad = new TeamBeats.Modules.Integrations.Microsoft365.OutlookComponents().Manifests().First() with

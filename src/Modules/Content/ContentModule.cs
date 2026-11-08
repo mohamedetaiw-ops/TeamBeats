@@ -26,6 +26,8 @@ public static class ContentModule
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, ContentTaskSource>("content.notify_review");
         services.AddScoped<CriticalAnnouncements>();
         services.AddScoped<ContentGovernance>();
+        services.AddScoped<ContentSocial>();
+        services.AddSingleton<Experience.Contracts.IComponentRegistration, ContentComponents>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, ContentOwnerHandler>("content.owner_left");
         services.AddMessageHandler<Contracts.ContentPublished, CriticalAudience>("content.critical_audience");
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, CriticalAudience>("content.critical_membership");
@@ -173,6 +175,55 @@ public static class ContentModule
 
         health.MapGet("/items", async (Guid site, string? kind, ContentGovernance service, CancellationToken ct) =>
             Results.Ok(await service.HealthItemsAsync(site, kind, ct)));
+
+        // Reactions and comments (US9).
+        items.MapGet("/{id:guid}/reactions", async (Guid id, ContentSocial service, CancellationToken ct) => Results.Ok(await service.ReactionsAsync(id, ct)));
+
+        items.MapPost("/{id:guid}/reactions", async (Guid id, ReactionRequest request, ContentSocial service, IDbSession session, CancellationToken ct) =>
+        {
+            var summary = await service.ReactAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(summary);
+        });
+
+        items.MapGet("/{id:guid}/comments", async (Guid id, ContentSocial service, CancellationToken ct) => Results.Ok(await service.CommentsAsync(id, ct)));
+
+        items.MapPost("/{id:guid}/comments", async (Guid id, CommentRequest request, ContentSocial service, IDbSession session, CancellationToken ct) =>
+        {
+            var comment = await service.CommentAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/content/comments/{comment.Id}", comment);
+        });
+
+        var comments = app.MapGroup("/api/v1/content/comments").RequireTenantUser().WithTags("Content: social");
+
+        comments.MapPost("/{id:guid}/approve", async (Guid id, ContentSocial service, IDbSession session, CancellationToken ct) =>
+        {
+            var comment = await service.ModerateAsync(id, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(comment);
+        });
+
+        comments.MapPost("/{id:guid}/hide", async (Guid id, ContentSocial service, IDbSession session, CancellationToken ct) =>
+        {
+            var comment = await service.ModerateAsync(id, false, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(comment);
+        });
+
+        comments.MapPost("/{id:guid}/report", async (Guid id, ContentSocial service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.ReportAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        comments.MapDelete("/{id:guid}", async (Guid id, ContentSocial service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.DeleteAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
 
         // Critical announcements (US2).
         app.MapGroup("/api/v1/content/critical").RequireTenantUser().WithTags("Content: critical").MapGet("/pending",
