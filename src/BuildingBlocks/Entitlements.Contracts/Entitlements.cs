@@ -48,6 +48,13 @@ public static class Capabilities
     public const string SecuritySessionPolicy = "security.session_policy";
     public const string SecurityAlerts = "security.alerts";
     public const string SecurityAlertsAdvanced = "security.alerts_advanced";
+    public const string ContentCore = "content.core";
+    public const string ContentCriticalAck = "content.critical_ack";
+    public const string ContentMultistepApproval = "content.multistep_approval";
+    public const string ContentMaxSites = "content.max_sites";
+    public const string ContentCampaigns = "content.campaigns";
+    public const string ContentAiTranslation = "content.ai_translation";
+    public const string AiAuthoring = "ai.authoring";
 }
 
 /// <summary>Central entitlement check for the current tenant (spec 005). Unknown keys fail closed.</summary>

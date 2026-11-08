@@ -71,6 +71,11 @@ public static class Permissions
     public const string ServiceManage = "service.manage";
     public const string ServiceRequestOnBehalf = "service.request_on_behalf";
 
+    // Spec 009 (R1): authors write drafts at site scope; critical announcements and content settings need their own keys.
+    public const string ContentAuthor = "content.author";
+    public const string ContentPublishCritical = "content.publish_critical";
+    public const string ContentAdmin = "content.admin";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -98,6 +103,7 @@ public static class Permissions
         PeopleView, PeopleHrView, PeopleManage,
         SecurityManage, SecurityView, SecurityRespond,
         ServiceManage, ServiceRequestOnBehalf,
+        ContentAuthor, ContentPublishCritical, ContentAdmin,
     ];
 }
 

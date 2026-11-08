@@ -734,3 +734,26 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Person fields | A person field holds one colleague, picked through the people directory search, so it only holds IDs the API returned. |
 | Lookup and service templates | The builder keeps options inside the field (see the catalogue notes); service templates arrive with R2 (US7 scenario 1 "from a template"). |
 | Fulfilment queue | Queues and fulfilment (US5) are R2, so the builder does not show the queue setting yet. |
+
+## Content items and lifecycle (spec 009 T001 to T004, T006, T016, T017)
+| Part | Where |
+|---|---|
+| Module | `src/Modules/Content` and `Content.Contracts`, schema `content` with forced RLS. Events `ContentPublished`, `ContentUnpublished`, `ContentExpired` |
+| Permissions | `content.author` (own drafts), `content.edit` (any draft of the site), `content.publish`, `content.publish_critical`, `content.admin` (sites and settings), all checked at the site's org unit through central authorization. Migration `authz 0013` grants them to the built-in roles of every tenant |
+| Packages | `content.core`, `content.critical_ack`, `content.multistep_approval`, `content.max_sites` (3, 25, unlimited), `content.campaigns`, `content.ai_translation`, `ai.authoring` (migration `entitlements 0010`) |
+| Body | A block document (paragraph, heading 2 to 4, list, quote, table, image by asset id, link, embed) with bold and italic marks, never HTML. Links are https, http, mailto or tenant paths; embeds are https on a host of the tenant allowlist or its subdomains. Limits: 500 blocks, 100,000 characters |
+| Audience | Clauses joined by OR, criteria inside a clause by AND: org units with or without subtree, locations from the people profile (spec 010), directory groups, roles and membership types |
+| Lifecycle | Draft, scheduled, published, expired, archived; `in_review` and `approved` are stored for the approval route of the next slice. Each move is audited. A published version is immutable in the database (trigger). Editing a live item starts the next version and the live one stays until that is published, also when the next version is scheduled |
+| Scheduler | `ContentScheduler` runs once a minute per active tenant from the worker (`ContentScheduleWorker`) and from the development host (`Content:Schedule:InProcess`): due versions go live, live items past their expiry expire, expired items archive after 30 days |
+| API | `/api/v1/content/sites`, `/api/v1/content/settings`, `/api/v1/content/items` with `publish`, `unpublish`, `archive`, `view` (reader) and `versions` |
+| Tests | `ContentRulesTests` (unit), `ContentLifecycleTests` (integration) |
+
+| Item | Note |
+|---|---|
+| Content types | The three built-in types (news, announcement, page) and their defaults live in code; a tenant changes the settings per type in `content.content_type`. Custom types come later. |
+| Sites | Sites are created and changed with `content.admin`. The per-site management permission and site homes come with US6 in R2. |
+| Locations | Locations are now targetable, because the people profile of spec 010 has a location. Profile attributes and channels are stored in the model but refused until their releases. |
+| Schedule times | Publish and expiry times are entered as local times in the site's time zone and stored in UTC. |
+| Direct publish | Until the approval route of the next slice, a publisher publishes directly and is recorded as the version's approver. |
+| Unpublish | Unpublish returns an item to draft with its versions, so it can be published again. |
+| Reading | Readers need `content.view` on the item as a resource: public and internal items have tenant visibility, so every active member may read them; confidential and restricted items need a role grant covering the site's unit or an entry on the item. No role grants `content.view` to everyone, which keeps restricted resources closed. |
