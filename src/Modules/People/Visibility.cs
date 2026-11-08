@@ -106,7 +106,7 @@ public sealed class VisibilityResolver(IAuthorizationService authz, IOrganizatio
             }
             if (viewer.Sees(person, policy, root))
             {
-                fields.Add(new VisibleField(policy.Key, value));
+                fields.Add(new VisibleField(policy.Key, value, policy.Source));
             }
         }
         return fields;

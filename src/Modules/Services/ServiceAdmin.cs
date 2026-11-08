@@ -394,11 +394,11 @@ public sealed partial class ServiceAdmin(
         }
         if (latest.Route.Approval is { } step)
         {
-            var name = step.Names?.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v)) ?? row.Names.Values.First();
+            var name = Preferred(step.Names) ?? Preferred(row.Names) ?? id.ToString("N");
             var rule = step.Approvers;
             var candidates = rule.Kind == ApproverKinds.Users ? new CandidateRule(Users: rule.Users) : new CandidateRule(Permission: rule.Permission);
             await engine.PublishRouteAsync(ProcessKey(id), RouteSources.ServiceRoute,
-                new RouteSpec(row.Names.Values.First(), [new RouteStep("approval", name, candidates, step.DueWorkingDays)]), ct);
+                new RouteSpec(Preferred(row.Names) ?? id.ToString("N"), [new RouteStep("approval", name, candidates, step.DueWorkingDays)]), ct);
         }
         var now = clock.UtcNow;
         var user = context.RequireUser();
@@ -411,6 +411,10 @@ public sealed partial class ServiceAdmin(
         await outbox.EnqueueAsync(new ServicePublished(id, latest.Version, row.Kind), ct);
         return await GetAsync(id, ct);
     }
+
+    /// <summary>The engine keeps one name per element, for history and monitoring: English when there is one.</summary>
+    private static string? Preferred(IReadOnlyDictionary<string, string>? names) =>
+        names is null ? null : names.TryGetValue("en", out var en) && !string.IsNullOrWhiteSpace(en) ? en : names.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
     /// <summary>Takes a service out of the catalogue. Open requests finish on their version.</summary>
     public async Task<ServiceAdminView> RetireAsync(Guid id, CancellationToken ct)

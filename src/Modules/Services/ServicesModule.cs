@@ -16,6 +16,8 @@ public static class ServicesModule
     {
         services.AddScoped<Catalogue>();
         services.AddScoped<ServiceAdmin>();
+        services.AddScoped<Requests>();
+        services.AddScoped<Attachments>();
         return services;
     }
 
@@ -56,6 +58,57 @@ public static class ServicesModule
             await services.MarkUsedAsync(id, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
+        });
+
+        catalogue.MapGet("/{id:guid}/prefill", async (Guid id, Guid? @for, Requests requests, CancellationToken ct) =>
+            Results.Ok(await requests.PrefillAsync(id, @for, ct)));
+
+        var requests = app.MapGroup("/api/v1/requests").RequireTenantUser().WithTags("Services: requests");
+
+        requests.MapPost("", async (RequestSubmit request, Requests service, IDbSession session, CancellationToken ct) =>
+        {
+            var (detail, created) = await service.SubmitAsync(request, ct);
+            await session.CommitAsync(ct);
+            return created ? Results.Created($"/api/v1/requests/{detail.Request.Id}", detail) : Results.Ok(detail);
+        });
+
+        requests.MapGet("", async (string? status, int? limit, Requests service, CancellationToken ct) =>
+            Results.Ok(await service.MineAsync(status, limit ?? 50, ct)));
+
+        requests.MapGet("/{id:guid}", async (Guid id, Requests service, CancellationToken ct) => Results.Ok(await service.DetailAsync(id, ct)));
+
+        requests.MapPost("/{id:guid}/cancel", async (Guid id, Requests service, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await service.CancelAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        requests.MapPost("/attachments", async (string? name, HttpRequest http, Attachments files, IDbSession session, CancellationToken ct) =>
+        {
+            var buffer = new byte[Attachments.MaxBytes + 1];
+            int read, total = 0;
+            while ((read = await http.Body.ReadAsync(buffer.AsMemory(total, buffer.Length - total), ct)) > 0)
+            {
+                total += read;
+                if (total > Attachments.MaxBytes)
+                {
+                    throw Primitives.AppException.Validation("file", "validation.services.attachment_size");
+                }
+            }
+            var view = await files.UploadAsync(name, http.ContentType, buffer[..total], ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/requests/attachments/{view.Id}", view);
+        }).DisableAntiforgery();
+
+        requests.MapGet("/{id:guid}/attachments/{attachmentId:guid}", async (Guid id, Guid attachmentId, Requests service, Attachments files,
+            HttpResponse response, CancellationToken ct) =>
+        {
+            await service.VisibleRowAsync(id, ct);
+            var (content, type, fileName) = await files.OpenAsync(id, attachmentId, ct);
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
+            return Results.File(content, type, fileName);
         });
 
         var admin = app.MapGroup("/api/v1/services/admin").RequireTenantUser().InAdminArea().WithTags("Services: builder");

@@ -95,13 +95,18 @@ public sealed class Catalogue(
         {
             return viewer;
         }
-        var user = context.RequireUser();
+        return viewer = await FactsAsync(context.RequireUser(), ct);
+    }
+
+    /// <summary>The audience facts of any member of the tenant, for example the person a request is filed for.</summary>
+    public async Task<AudienceFacts> FactsAsync(Guid user, CancellationToken ct)
+    {
         var units = new HashSet<Guid>();
         foreach (var m in await hierarchy.GetActiveMembershipsAsync(user, ct))
         {
             units.UnionWith(await hierarchy.GetAncestorsAndSelfAsync(m.OrgUnitId, ct));
         }
-        return viewer = new AudienceFacts(units, await groups.GroupIdsOfAsync(user, ct), (await memberships.GetAsync(user, ct))?.MembershipType);
+        return new AudienceFacts(units, await groups.GroupIdsOfAsync(user, ct), (await memberships.GetAsync(user, ct))?.MembershipType);
     }
 
     /// <summary>Adds module services that are not in the catalogue yet and keeps their names in step with the module.</summary>

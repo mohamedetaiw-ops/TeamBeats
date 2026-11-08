@@ -47,3 +47,9 @@ public sealed record ServicePublished(Guid ServiceId, int Version, string Kind) 
 
 /// <summary>Published when a service is retired and leaves the catalogue.</summary>
 public sealed record ServiceRetired(Guid ServiceId) : IIntegrationEvent;
+
+/// <summary>A request was submitted (spec 016 section 12). IDs and the request number only.</summary>
+public sealed record RequestSubmitted(Guid RequestId, Guid ServiceId, string Number) : IIntegrationEvent;
+
+/// <summary>A request reached an end: approved, rejected, cancelled or completed.</summary>
+public sealed record RequestCompleted(Guid RequestId, Guid ServiceId, string Status) : IIntegrationEvent;
