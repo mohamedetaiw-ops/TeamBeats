@@ -21,6 +21,7 @@
     <ProjectReference Include="../Modules/Hr/TeamBeats.Modules.Hr.csproj" />
     <ProjectReference Include="../Modules/People/TeamBeats.Modules.People.csproj" />
     <ProjectReference Include="../Modules/Security/TeamBeats.Modules.Security.csproj" />
+    <ProjectReference Include="../Modules/Workflow/TeamBeats.Modules.Workflow.csproj" />
     <ProjectReference Include="../Modules/Experience/TeamBeats.Modules.Experience.csproj" />
   </ItemGroup>
 </Project>

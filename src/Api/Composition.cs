@@ -13,6 +13,7 @@ using TeamBeats.Modules.Experience;
 using TeamBeats.Modules.Hr;
 using TeamBeats.Modules.People;
 using TeamBeats.Modules.Security;
+using TeamBeats.Modules.Workflow;
 using TeamBeats.Modules.Identity;
 using TeamBeats.Modules.Integrations;
 using TeamBeats.Modules.Notifications;
@@ -43,6 +44,7 @@ public static class TeamBeatsModules
         HrModule.Migrations,
         PeopleModule.Migrations,
         SecurityModule.Migrations,
+        WorkflowModule.Migrations,
     ];
 
     public static IServiceCollection AddTeamBeatsCore(this IServiceCollection services, IConfiguration configuration)
@@ -75,6 +77,7 @@ public static class TeamBeatsModules
         services.AddHrModule();
         services.AddPeopleModule();
         services.AddSecurityModule();
+        services.AddWorkflowModule();
         return services;
     }
 }
