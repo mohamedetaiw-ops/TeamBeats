@@ -160,6 +160,8 @@ public static class AuditActions
     public const string ServicePublished = "service.published";
     public const string ServiceRetired = "service.retired";
     public const string ServiceCategoryChanged = "service.category_changed";
+    public const string RequestSubmitted = "request.submitted";
+    public const string RequestCancelled = "request.cancelled";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -188,7 +190,7 @@ public static class AuditActions
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
-        ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged,
+        ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

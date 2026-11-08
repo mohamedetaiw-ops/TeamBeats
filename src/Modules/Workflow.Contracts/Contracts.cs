@@ -95,9 +95,12 @@ public interface IProcessEngine
 
     /// <summary>
     /// Starts an instance of the latest version. The business key is unique per process key, so starting twice for the
-    /// same business object returns the existing instance instead of a second one.
+    /// same business object returns the existing instance instead of a second one. When the route excludes the
+    /// starter, <paramref name="alsoExcluded"/> names more people who may never be candidates (for example the person a
+    /// request was filed for).
     /// </summary>
-    Task<ProcessInstanceInfo> StartAsync(string key, string businessKey, Guid? orgUnitId, Guid? startedBy, CancellationToken ct = default);
+    Task<ProcessInstanceInfo> StartAsync(string key, string businessKey, Guid? orgUnitId, Guid? startedBy, IReadOnlyCollection<Guid>? alsoExcluded = null,
+        CancellationToken ct = default);
 
     /// <summary>Completes an open task as the current user, who must be a candidate. Refused with 409 once completed.</summary>
     Task<UserTaskInfo> CompleteTaskAsync(Guid taskId, string outcome, string? comment, CancellationToken ct = default);

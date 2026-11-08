@@ -101,7 +101,8 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         r.GetGuid(0), r.GetString(1), r.GetInt32(2), r.GetString(3), r.Get<Guid?>("org_unit_id"), r.Get<Guid?>("started_by"), r.GetString(6),
         r.Get<string?>("outcome"), r.GetFieldValue<DateTimeOffset>(8), r.Get<DateTimeOffset?>("ended_at"));
 
-    public async Task<ProcessInstanceInfo> StartAsync(string key, string businessKey, Guid? orgUnitId, Guid? startedBy, CancellationToken ct = default)
+    public async Task<ProcessInstanceInfo> StartAsync(string key, string businessKey, Guid? orgUnitId, Guid? startedBy, IReadOnlyCollection<Guid>? alsoExcluded = null,
+        CancellationToken ct = default)
     {
         context.RequireTenant();
         if (string.IsNullOrWhiteSpace(businessKey) || businessKey.Length > 200)
@@ -114,11 +115,11 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         var now = clock.UtcNow;
         var created = await session.ScalarAsync<Guid?>(
             """
-            insert into workflow.process_instance (tenant_id, id, definition_key, definition_version, business_key, org_unit_id, started_by, status, started_at)
-            values (platform.current_tenant_id(), @id, @key, @version, @businessKey, @orgUnitId, @startedBy, 'active', @now)
+            insert into workflow.process_instance (tenant_id, id, definition_key, definition_version, business_key, org_unit_id, started_by, excluded_user_ids, status, started_at)
+            values (platform.current_tenant_id(), @id, @key, @version, @businessKey, @orgUnitId, @startedBy, @alsoExcluded, 'active', @now)
             on conflict (tenant_id, definition_key, business_key) do nothing
             returning id
-            """, new { id, key = definition.Key, version = definition.Version, businessKey, orgUnitId, startedBy, now }, ct);
+            """, new { id, key = definition.Key, version = definition.Version, businessKey, orgUnitId, startedBy, alsoExcluded = (alsoExcluded ?? []).Distinct().ToArray(), now }, ct);
         if (created is null)
         {
             // Started before for this business object: hand back that instance (at most one per business key).
@@ -188,7 +189,12 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
     {
         var step = route.Steps[stepIndex];
         var id = Ids.New();
-        Guid[] excluded = route.ExcludeStarter && instance.StartedBy is { } starter ? [starter] : [];
+        var excluded = Array.Empty<Guid>();
+        if (route.ExcludeStarter)
+        {
+            var others = await session.ScalarAsync<Guid[]>("select excluded_user_ids from workflow.process_instance where id = @id", new { id = instance.Id }, ct) ?? [];
+            excluded = [.. others.Concat(instance.StartedBy is { } starter ? [starter] : []).Distinct()];
+        }
         var candidates = new CandidateSet(step.Name, step.Users, step.Permission);
         var now = clock.UtcNow;
         DateTimeOffset? dueAt = step.DueWorkingDays is { } days ? await jobs.DueAtAsync(instance.OrgUnitId, now, days, ct) : null;

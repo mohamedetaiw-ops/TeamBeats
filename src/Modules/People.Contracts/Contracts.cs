@@ -22,8 +22,12 @@ public interface IReportingLine
     Task<bool> IsManagerOfAsync(Guid managerId, Guid userId, CancellationToken ct = default);
 }
 
-/// <summary>One profile field as a viewer may see it. Fields the viewer may not see are left out, never blanked.</summary>
-public sealed record VisibleField(string Key, string Value);
+/// <summary>
+/// One profile field as a viewer may see it. Fields the viewer may not see are left out, never blanked.
+/// <see cref="Source"/> is where the value comes from (<c>directory</c>, <c>person</c> or <c>admin</c>), so a form can keep
+/// directory values read-only (spec 016 FR-004).
+/// </summary>
+public sealed record VisibleField(string Key, string Value, string? Source = null);
 
 /// <summary>A person's profile reduced to what one viewer may see (spec 010 FR-003).</summary>
 public sealed record VisibleProfile(Guid UserId, string DisplayName, bool Active, Guid? PrimaryUnitId, string? Location, IReadOnlyList<VisibleField> Fields)

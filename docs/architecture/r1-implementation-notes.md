@@ -662,3 +662,21 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Lookup lists | A lookup field keeps its options in the form in R1. Shared tenant lookup lists can come later without changing submitted data. |
 | Rule messages | Errors carry resource keys. The owner's own message per locale is stored with the rule and shown by the form. |
 | Search | The catalogue filters names, descriptions and synonyms in every locale, folding Arabic letter forms. Global search (spec 012) indexes services from `ServicePublished`. |
+
+## Requests and attachments (spec 016 T006 to T008)
+| Part | Where |
+|---|---|
+| Prefill | `GET /api/v1/services/{id}/prefill?for=` returns the values for the person the request is for and the keys that stay read only. Account, manager and org unit values are always read only; a profile value is read only when its field comes from the directory. Submit puts the read only values back on the server, whatever the client sent |
+| Submit | `POST /api/v1/requests` validates against the published version, takes today from the working calendar of the person it is for, numbers requests `REQ-yyyy-000001` per tenant, and starts the approval route. A repeated idempotency key returns the first request |
+| On behalf | Needs the service to allow it and `service.request_on_behalf` at the primary unit of the person it is for. The filer and that person are never candidates of its steps |
+| Reading | `GET /api/v1/requests` lists requests filed by or for the caller with status, current step and assignees. `GET /api/v1/requests/{id}` adds the data, attachments and Tracking. The filer, the person it is for, a step candidate or completer, and the service owner may read it; anyone else gets 404 |
+| Cancel | `POST /api/v1/requests/{id}/cancel` by the filer while it is open; the open task is cancelled with the instance |
+| Attachments | `POST /api/v1/requests/attachments?name=` takes the raw file up to 10 MB, scans it through `IMalwareScanner` before storing it under `tenants/{tenant}/services/attachments/`, and refuses an infected file. A submit only links the caller's own clean uploads. Download goes through the request's read check, returns 409 until clean, and serves only safe types inline with `nosniff` and a sandbox policy |
+| Scanner | `ClamAvScanner` (INSTREAM) when `Scanning:ClamAv:Host` is set, a `clamav` service in compose; without it every scan fails closed. Tests and the dev host use a signature scanner that flags the EICAR test file |
+| Tests | `ServiceRequestTests` |
+
+| Item | Note |
+|---|---|
+| Staging scanner | Staging runs the dev host, which uses the signature scanner because there is no ClamAV machine yet. A production deployment without `Scanning:ClamAv:Host` fails every scan, so nothing unscanned is attached. A ClamAV Fly machine is the follow up. |
+| Who cancels | The spec names the requester. Only the filer cancels; the person a request was filed for can read it but not cancel it. |
+| Read only prefill | The spec says directory values stay read only. Fields an employee may edit in their own profile stay editable in the form. |

@@ -12,9 +12,9 @@ Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot)
 - [x] T005 [US1] Catalogue endpoints and module service registration contract
 
 ## Phase 3: User Story 2, prefilled requests (P1)
-- [ ] T006 [P] [US2] Tests: prefill read-only for directory fields; policy note per locale; validation blocks submit; attachment stored under the tenant path and blocked until clean; My requests with status, step, assignee and Tracking; idempotent submit
-- [ ] T007 [US2] Request endpoints and lifecycle; `IMalwareScanner` port with ClamAV adapter and a fake for tests
-- [ ] T008 [US2] Attachments upload and download
+- [x] T006 [P] [US2] Tests: prefill read-only for directory fields; policy note per locale; validation blocks submit; attachment stored under the tenant path and blocked until clean; My requests with status, step, assignee and Tracking; idempotent submit
+- [x] T007 [US2] Request endpoints and lifecycle; `IMalwareScanner` port with ClamAV adapter and a fake for tests
+- [x] T008 [US2] Attachments upload and download
 
 ## Phase 4: User Stories 3 and 4, inbox and delegation (P1)
 - [ ] T009 [P] [US3] Tests: one inbox across sources with filters; approve, reject with reason, return; another user cannot act; badge count

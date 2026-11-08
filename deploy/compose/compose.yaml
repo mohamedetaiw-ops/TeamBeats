@@ -23,6 +23,11 @@ services:
       RABBITMQ_DEFAULT_PASS: rabbit_dev_only
     ports: ["5672:5672", "15672:15672"]
 
+  # Malware scanning of uploads (spec 016). Set Scanning__ClamAv__Host=localhost to use it from the API.
+  clamav:
+    image: clamav/clamav:1.4
+    ports: ["3310:3310"]
+
   # Object storage: R0 uses the file-system adapter. MinIO joins with the S3 adapter in R1.
 
 volumes:

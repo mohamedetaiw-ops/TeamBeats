@@ -25,6 +25,11 @@ public sealed class DevHostProgram
         builder.Services.AddSingleton<StagingHomeSeeder>();
         builder.Services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, ReferencePacks>();
         builder.AddFakeExternalSystems();
+        if (builder.Configuration[TeamBeats.Persistence.ClamAvScanner.HostKey] is not { Length: > 0 })
+        {
+            // Development and staging without ClamAV: the signature scanner flags the EICAR test file only.
+            builder.Services.AddSingleton<TeamBeats.Persistence.IMalwareScanner, TeamBeats.Persistence.TestSignatureScanner>();
+        }
         if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Notifications.NotificationDeliveryWorker.InProcessKey))
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Notifications.NotificationDeliveryWorker>();

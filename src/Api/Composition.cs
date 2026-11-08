@@ -63,6 +63,15 @@ public static class TeamBeatsModules
         var storageRoot = configuration["Storage:Root"] ?? Path.Combine(AppContext.BaseDirectory, ".storage");
         services.AddSingleton<IObjectStorage>(new FileSystemObjectStorage(storageRoot));
         services.AddScoped<TenantObjectStorage>();
+        // Uploads are scanned by ClamAV when it is configured; without it nothing is ever clean (spec 016 plan).
+        if (configuration[ClamAvScanner.HostKey] is { Length: > 0 } clamHost)
+        {
+            services.AddSingleton<IMalwareScanner>(new ClamAvScanner(clamHost, configuration.GetValue(ClamAvScanner.PortKey, 3310), TimeSpan.FromSeconds(30)));
+        }
+        else
+        {
+            services.AddSingleton<IMalwareScanner, UnavailableScanner>();
+        }
 
         services.AddTeamBeatsMessaging();
         services.AddMessageTransport(configuration);
