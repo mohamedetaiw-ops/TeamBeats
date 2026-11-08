@@ -1731,7 +1731,96 @@
       "previewEveryone": "Everyone in the organization would see this in their feed.",
       "previewTargeted": "Shown to people in {units, plural, =0 {any unit} one {# chosen unit} other {# chosen units}} with {types, plural, =0 {any membership type} one {# chosen membership type} other {# chosen membership types}}.",
       "previewOf": "Preview of {title}",
+      "embed": "Embedded content",
+      "modalHint": "A window must always be answered: people confirm it or ask to be reminded later."
+    },
+    "history": {
+      "title": "History",
+      "heading": "History of {title}",
+      "versions": "Versions",
+      "number": "Version",
+      "author": "Written by",
+      "approver": "Approved by",
+      "noApprover": "None",
+      "note": "Change note",
+      "when": "Date",
+      "actions": "Actions",
+      "current": "live",
+      "draft": "draft",
+      "restoredFrom": "restored from {number}",
+      "minor": "minor",
+      "restore": "Restore",
+      "restoreVersion": "Restore version {number}",
+      "restoring": "Restoring",
+      "compare": "Compare versions",
+      "from": "From",
+      "to": "To",
+      "language": "Language",
+      "languageValue": {
+        "en": "English",
+        "ar": "Arabic"
+      },
+      "show": "Compare",
+      "comparing": "Comparing",
+      "legend": "Added text is underlined and removed text is struck through.",
+      "titleField": "Title",
+      "summaryField": "Summary",
+      "bodyField": "Body",
+      "failed": "That did not work. Please try again."
+    },
+    "acks": {
+      "title": "Acknowledgements",
+      "heading": "Acknowledgements of {title}",
+      "audience": "Audience",
+      "confirmed": "Confirmed",
+      "pending": "Not yet confirmed",
+      "channel": {
+        "web": "On the web",
+        "mobile": "On mobile"
+      },
+      "countedFrom": "Counted from version {version}.",
+      "deadline": "Deadline {date}.",
+      "report": "Completion report",
+      "requestReport": "Prepare the report",
+      "requesting": "Requesting",
+      "reportStatus": {
+        "pending": "The report is being prepared.",
+        "completed": "The report is ready.",
+        "failed": "The report could not be prepared. Please try again."
+      },
+      "download": "Download the report ({rows} rows)",
+      "failed": "That did not work. Please try again.",
+      "teamTitle": "My team's confirmations",
+      "teamHeading": "Who in my team has confirmed {title}",
+      "openItem": "Open the announcement",
+      "noTeam": "No one who reports to you is in the audience.",
+      "person": "Person",
+      "state": "Confirmed",
+      "when": "When",
+      "yes": "Yes",
+      "no": "Not yet"
+    },
+    "critical": {
+      "label": "Important",
+      "confirm": "I have read this",
+      "dismiss": "Dismiss",
+      "remindLater": "Remind me later ({count} left)",
+      "saving": "Saving",
+      "failed": "That did not work. Please try again.",
+      "deadline": "Please confirm by {date}.",
       "embed": "Embedded content"
+    },
+    "health": {
+      "title": "Content health",
+      "denied": "Content health is for communications administrators.",
+      "site": "Site",
+      "kind": {
+        "overdue": "Overdue for review",
+        "ownerless": "Without an active owner",
+        "expired": "Expired"
+      },
+      "show": "Show {kind} in {site}",
+      "none": "Nothing to show."
     }
   }
 }

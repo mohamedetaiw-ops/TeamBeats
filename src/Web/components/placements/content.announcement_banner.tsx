@@ -51,7 +51,9 @@ export default function AnnouncementBanner(_: PlacementProps) {
     setErrors((e) => ({ ...e, [notice.id]: messages.length > 0 ? messages : [t("failed")] }));
   };
 
-  if (banners.length === 0) return null;
+  // The shell already shows banners above every page (US2 scenario 6); the component then stays empty so a page that
+  // places it does not show them twice. It still shows them on a surface without the shell, such as a page preview.
+  if (banners.length === 0 || (typeof document !== "undefined" && document.querySelector("[data-shell-critical]"))) return null;
   return (
     <div className="content-banners">
       {banners.map((notice) => (

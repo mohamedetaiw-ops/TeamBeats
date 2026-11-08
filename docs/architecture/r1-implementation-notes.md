@@ -848,3 +848,18 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Other formats | Lexical shortcuts for underline or code are dropped on save, since the body document keeps bold and italic only. |
 | Audience preview | The preview names the chosen units and membership types; counting the people an audience reaches needs a directory query and is left for the analytics of spec 021. |
 | Groups and locations | The audience picker offers units and membership types. Groups and locations are accepted by the API and come to the picker with the directory groups screen. |
+
+## History, confirmations, health and the shell notices (spec 009 T023 rest)
+| Part | Where |
+|---|---|
+| History | `/content/items/{id}/history`: versions with writer, approver, note and date; compare any two in one language word by word (added text underlined, removed struck through, so it reads without color); restore an older version into a new draft |
+| Confirmations | `/content/items/{id}/acknowledgements` for publishers (audience, confirmed, pending, by channel, the counted version and deadline, and the completion report with a download once it is built); `/content/items/{id}/team` for managers, the page the deadline notice links to |
+| Health | `/content/health`: per site, items overdue for review, without an active owner and expired, each count opening the list of its items |
+| Shell | `CriticalNotices` in the shell header shows the pop-up (a modal dialog that Escape does not close, since it always needs an answer) and the banners above the content of every page, as US2 scenario 6 asks |
+| Development host | `Messaging:Outbox:InProcess` lets the development host dispatch the outbox itself, so local runs and the e2e suite see background steps (audiences, notices) without the workers host. Staging leaves it off because its workers app dispatches |
+| Tests | `tests/Acceptance/specs/content-governance.spec.ts` in English and Arabic with axe |
+
+| Item | Note |
+|---|---|
+| Banner component | The shell shows banners on every page, so the `content.announcement_banner` component renders nothing when the shell strip is on the page and only shows them on surfaces without the shell. |
+| Pop-up answers | A pop-up always asks for confirmation (the API sets this for modal presentation), so the pop-up offers confirm and remind me later only. |
