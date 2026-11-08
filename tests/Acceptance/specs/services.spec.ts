@@ -1,13 +1,16 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { msg, type LaunchLocale } from "../support/messages";
+import { request } from "@playwright/test";
+import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
-import { hostOrigin } from "../support/stack";
+import { hostOrigin, stack } from "../support/stack";
 
 /**
  * Spec 016 T015: the services journey in the browser. An owner builds a form service with one approval step, previews
  * and publishes it; a colleague finds it in the catalogue, files a request and follows it in My requests; the approver
  * sees the header badge, opens the task from the inbox and approves it; the requester then sees it approved in
- * Tracking. In English and Arabic, with axe on every screen.
+ * Tracking, and the manager finds it in Team requests once the reporting line names them (T016). In English and Arabic,
+ * with axe on every screen.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`services in ${locale}`, () => {
@@ -117,6 +120,24 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByTestId("my-requests").getByRole("link", { name: serviceName }).click();
       await expect(page.getByTestId("request-status")).toHaveText(m("services.status.approved"));
       await expect(page.getByTestId("request-tracking")).toContainText(m("services.request.event.approved"));
+    });
+
+    test("the manager finds the request in Team requests", async ({ page }, testInfo) => {
+      const host = `${tenant.key}.${stack.baseDomain}`;
+      const asLayla = await request.newContext({ baseURL: stack.apiOrigin, extraHTTPHeaders: { "x-forwarded-host": host } });
+      expect((await asLayla.post("/dev/signin", { data: { email: laylaEmail } })).ok()).toBe(true);
+      const laylaId = ((await (await asLayla.get("/api/v1/me/profile")).json()) as { profile: { id: string } }).profile.id;
+      await asLayla.dispose();
+      const admin = await tenantApi(tenant);
+      const adminId = ((await (await admin.get("/api/v1/me/profile")).json()) as { profile: { id: string } }).profile.id;
+      expect((await admin.put(`/api/v1/people/${laylaId}/manager`, { data: { managerId: adminId } })).ok()).toBe(true);
+      await admin.dispose();
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/requests/team`);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("services.team.title"));
+      await expect(page.getByTestId("team-requests").getByRole("link", { name: serviceName })).toBeVisible();
+      await expectAccessible(page, testInfo, `services-team-${locale}`);
     });
   });
 }

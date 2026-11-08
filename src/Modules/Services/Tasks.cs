@@ -3,6 +3,7 @@ using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Modules.Services.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Persistence;
@@ -35,7 +36,8 @@ public sealed record InboxCount(int Open);
 /// The task inbox of spec 016 US3 (FR-007): every task waiting for the person, from form services and from the
 /// engine's other sources, with a count for the header badge; and approve, reject with a reason, or return. Acting
 /// needs a current assignment (directly or as a delegate) and <c>workflow.approve</c> at the request's unit, held by the
-/// person whose authority is used: the approver, or the person a delegate acts for.
+/// person whose authority is used: the approver, or the person a delegate acts for. A manager holds that approval for
+/// requests of their direct and indirect reports through the reporting line (spec 016 roles).
 /// </summary>
 public sealed class Tasks(
     IDbSession session,
@@ -44,6 +46,7 @@ public sealed class Tasks(
     IAuthorizationProvisioning grants,
     IEntitlementService entitlements,
     IUserDirectory users,
+    IReportingLine reportingLine,
     IProcessEngine engine,
     IAuditWriter audit,
     IOutbox outbox,
@@ -56,14 +59,20 @@ public sealed class Tasks(
     private const string ServicePrefix = "service.";
 
     /// <summary>The request a task of a form service belongs to: its business key starts with the request ID.</summary>
-    internal static Guid? RequestIdOf(UserTaskInfo task) =>
-        task.DefinitionKey.StartsWith(ServicePrefix, StringComparison.Ordinal) && task.BusinessKey.Length >= 32
-            && Guid.TryParseExact(task.BusinessKey[..32], "N", out var id) ? id : null;
+    internal static Guid? RequestIdOf(UserTaskInfo task) => RequestIdOf(task.DefinitionKey, task.BusinessKey);
+
+    internal static Guid? RequestIdOf(string definitionKey, string businessKey) =>
+        definitionKey.StartsWith(ServicePrefix, StringComparison.Ordinal) && businessKey.Length >= 32
+            && Guid.TryParseExact(businessKey[..32], "N", out var id) ? id : null;
 
     private readonly Dictionary<(Guid, Guid?), bool> approves = [];
 
-    private async Task<bool> MayApproveAsync(Guid authority, Guid? unit, CancellationToken ct)
+    private async Task<bool> MayApproveAsync(Guid authority, RequestRow? request, Guid? unit, CancellationToken ct)
     {
+        if (request is not null && await reportingLine.IsManagerOfAsync(authority, request.SubjectId, ct))
+        {
+            return true;
+        }
         if (!approves.TryGetValue((authority, unit), out var allowed))
         {
             var target = unit is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant;
@@ -97,7 +106,7 @@ public sealed class Tasks(
         foreach (var task in await engine.MyOpenTasksAsync(InboxMax, ct))
         {
             var request = RequestIdOf(task) is { } requestId ? await requests.RowAsync(requestId, false, ct) : null;
-            if (await MayApproveAsync(task.OnBehalfOf ?? user, await UnitOfAsync(task, request, ct), ct))
+            if (await MayApproveAsync(task.OnBehalfOf ?? user, request, await UnitOfAsync(task, request, ct), ct))
             {
                 list.Add((task, request));
             }
@@ -162,7 +171,7 @@ public sealed class Tasks(
             throw AppException.Conflict("conflict.workflow.task_closed");
         }
         var onBehalfOf = task.OnBehalfOf;
-        if (!await MayApproveAsync(onBehalfOf ?? user, await UnitOfAsync(task, request, ct), ct))
+        if (!await MayApproveAsync(onBehalfOf ?? user, request, await UnitOfAsync(task, request, ct), ct))
         {
             throw AppException.Denied();
         }

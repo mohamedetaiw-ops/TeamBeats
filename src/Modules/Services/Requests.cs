@@ -338,7 +338,7 @@ public sealed class Requests(
     private async Task StartRouteAsync(Guid id, Guid serviceId, Guid? unit, Guid filer, Guid subject, int round, CancellationToken ct)
     {
         var businessKey = round == 1 ? id.ToString("N") : $"{id:N}.{round}";
-        var instance = await engine.StartAsync(ServiceAdmin.ProcessKey(serviceId), businessKey, unit, filer, subject == filer ? null : [subject], ct);
+        var instance = await engine.StartAsync(ServiceAdmin.ProcessKey(serviceId), businessKey, unit, filer, subject == filer ? null : [subject], subject, ct);
         await session.ExecAsync("update services.request set process_instance_id = @instance where id = @id", new { id, instance = instance.Id }, ct);
     }
 
@@ -426,7 +426,8 @@ public sealed class Requests(
         session.QuerySingleOrDefaultAsync($"select {Columns} from services.request r where r.id = @id" + (forUpdate ? " for update" : ""), new { id }, Read, ct);
 
     /// <summary>
-    /// Who may read a request: the person who filed it, the person it is for, a candidate of one of its tasks, and
+    /// Who may read a request: the person who filed it, the person it is for, a candidate of one of its tasks, a manager
+    /// of the person it is for (Team requests, through the reporting line and never through org unit membership), and
     /// owners of its service. Everyone else, and every other tenant, gets not found.
     /// </summary>
     internal async Task<RequestRow> VisibleRowAsync(Guid id, CancellationToken ct)
@@ -439,6 +440,10 @@ public sealed class Requests(
         }
         if (row.InstanceId is { } instance && (await engine.InstanceTasksAsync(instance, ct)).Any(t => t.CompletedBy == user)
             || row.InstanceId is { } open && (await engine.MyOpenTasksAsync(500, ct)).Any(t => t.InstanceId == open))
+        {
+            return row;
+        }
+        if (await reportingLine.IsManagerOfAsync(user, row.SubjectId, ct))
         {
             return row;
         }
@@ -478,9 +483,40 @@ public sealed class Requests(
                     assignees.Add(await PersonAsync(person, ct));
                 }
             }
+            else if (version?.Route.Approval?.Approvers is { Kind: ApproverKinds.LineManager }
+                && await reportingLine.ManagerOfAsync(row.SubjectId, ct) is { } manager && manager != row.RequesterId)
+            {
+                assignees.Add(await PersonAsync(manager, ct));
+            }
         }
         return new RequestSummary(row.Id, row.Number, row.ServiceId, Catalogue.Json<Dictionary<string, string>>(names!), row.Status, await PersonAsync(row.RequesterId, ct),
             row.OnBehalfOfId is { } other ? await PersonAsync(other, ct) : null, step, assignees, row.CreatedAt, row.SubmittedAt, row.ClosedAt);
+    }
+
+    /// <summary>
+    /// Team requests (FR-005, US2 scenario 4): requests for the caller's direct and indirect reports by the reporting
+    /// line, newest first. Org unit membership alone never adds anyone.
+    /// </summary>
+    public async Task<IReadOnlyList<RequestSummary>> TeamAsync(string? status, int limit, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var reports = (await reportingLine.AllReportsAsync(user, ct)).Where(r => r != user).ToArray();
+        if (reports.Length == 0)
+        {
+            return [];
+        }
+        var rows = await session.QueryAsync(
+            $"""
+            select {Columns} from services.request r
+            where coalesce(r.on_behalf_of_user_id, r.requester_user_id) = any(@reports) and (@status::text is null or r.status = @status)
+            order by r.created_at desc, r.id limit @limit
+            """, new { reports, status, limit = Math.Clamp(limit, 1, 200) }, Read, ct);
+        var list = new List<RequestSummary>();
+        foreach (var row in rows)
+        {
+            list.Add(await SummaryAsync(row, ct));
+        }
+        return list;
     }
 
     /// <summary>My requests (FR-005): filed by me or for me, newest first.</summary>

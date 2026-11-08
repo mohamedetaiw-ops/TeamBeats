@@ -472,7 +472,12 @@ export function ServiceEditor({ initial, categories, units }: { initial: Service
                       : {
                           names: approval?.names ?? null,
                           dueWorkingDays: approval?.dueWorkingDays ?? null,
-                          approvers: e.target.value === "users" ? { kind: "users", users: [] } : { kind: "permission_at_unit", permission: "workflow.approve" },
+                          approvers:
+                            e.target.value === "users"
+                              ? { kind: "users", users: [] }
+                              : e.target.value === "line_manager"
+                                ? { kind: "line_manager", permission: null }
+                                : { kind: "permission_at_unit", permission: "workflow.approve" },
                         },
                   )
                 }
@@ -480,6 +485,7 @@ export function ServiceEditor({ initial, categories, units }: { initial: Service
                 <option value="">{t("noApproval")}</option>
                 <option value="users">{t("approvers.users")}</option>
                 <option value="permission_at_unit">{t("approvers.permission_at_unit")}</option>
+                <option value="line_manager">{t("approvers.line_manager")}</option>
               </select>
             </label>
             {approval ? (
@@ -508,6 +514,8 @@ export function ServiceEditor({ initial, categories, units }: { initial: Service
                       }
                     />
                   </>
+                ) : approval.approvers.kind === "line_manager" ? (
+                  <p className="field-hint">{t("lineManagerHint")}</p>
                 ) : (
                   <p className="field-hint">{t("permissionHint")}</p>
                 )}

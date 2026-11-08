@@ -2,13 +2,18 @@ using TeamBeats.Persistence;
 
 namespace TeamBeats.Modules.Services;
 
-/// <summary>Approver rule kinds of R1: named users, or holders of a permission at the requester's unit ("role at unit").</summary>
+/// <summary>
+/// Approver rule kinds of R1: named users, holders of a permission at the requester's unit ("role at unit"), or the
+/// line manager of the person the request is for. A line manager rule names the permission its step falls back to
+/// when there is no manager (default <c>workflow.approve</c> at the requester's unit).
+/// </summary>
 public static class ApproverKinds
 {
     public const string Users = "users";
     public const string PermissionAtRequesterUnit = "permission_at_unit";
+    public const string LineManager = "line_manager";
 
-    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Users, PermissionAtRequesterUnit };
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Users, PermissionAtRequesterUnit, LineManager };
 }
 
 public sealed record ApproverRule(string Kind, IReadOnlyList<Guid>? Users = null, string? Permission = null);

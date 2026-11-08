@@ -32,9 +32,12 @@ public static class InstanceOutcomes
 
 /// <summary>
 /// Who may complete a step: named users, or anyone who holds <see cref="Permission"/> at the instance's org unit through
-/// central authorization (so a sibling unit's holder is not a candidate). Role names are never used.
+/// central authorization (so a sibling unit's holder is not a candidate). Role names are never used. With
+/// <see cref="LineManager"/>, the current manager of the person the instance is for decides, from the reporting line
+/// (spec 010), checked each time so a new manager takes over an open step; when that person has no manager, or the
+/// manager may not decide (they filed it), <see cref="Permission"/> holders are the fallback.
 /// </summary>
-public sealed record CandidateRule(IReadOnlyList<Guid>? Users = null, string? Permission = null);
+public sealed record CandidateRule(IReadOnlyList<Guid>? Users = null, string? Permission = null, bool LineManager = false);
 
 /// <summary>One approval step. <see cref="DueWorkingDays"/> sets a due time from the tenant calendar of the instance's unit.</summary>
 public sealed record RouteStep(string Id, string Name, CandidateRule Candidates, int? DueWorkingDays = null);
@@ -97,10 +100,11 @@ public interface IProcessEngine
     /// Starts an instance of the latest version. The business key is unique per process key, so starting twice for the
     /// same business object returns the existing instance instead of a second one. When the route excludes the
     /// starter, <paramref name="alsoExcluded"/> names more people who may never be candidates (for example the person a
-    /// request was filed for).
+    /// request was filed for). <paramref name="requestedFor"/> is the person the instance is for, whose line manager a
+    /// line manager step asks; the starter when not given.
     /// </summary>
     Task<ProcessInstanceInfo> StartAsync(string key, string businessKey, Guid? orgUnitId, Guid? startedBy, IReadOnlyCollection<Guid>? alsoExcluded = null,
-        CancellationToken ct = default);
+        Guid? requestedFor = null, CancellationToken ct = default);
 
     /// <summary>Completes an open task as the current user, who must be a candidate. Refused with 409 once completed.</summary>
     Task<UserTaskInfo> CompleteTaskAsync(Guid taskId, string outcome, string? comment, CancellationToken ct = default);

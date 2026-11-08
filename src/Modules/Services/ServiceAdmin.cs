@@ -318,6 +318,10 @@ public sealed partial class ServiceAdmin(
         {
             errors.Add("route.approval.approvers", "validation.services.approvers");
         }
+        if (rule.Kind == ApproverKinds.LineManager && (rule.Users is { Count: > 0 } || rule.Permission is { } fallback && !Permissions.All.Contains(fallback)))
+        {
+            errors.Add("route.approval.approvers", "validation.services.approvers");
+        }
         if (step.DueWorkingDays is { } due && (due < 1 || due > 90))
         {
             errors.Add("route.approval.dueWorkingDays", "validation.services.due");
@@ -407,7 +411,12 @@ public sealed partial class ServiceAdmin(
         {
             var name = Preferred(step.Names) ?? Preferred(row.Names) ?? id.ToString("N");
             var rule = step.Approvers;
-            var candidates = rule.Kind == ApproverKinds.Users ? new CandidateRule(Users: rule.Users) : new CandidateRule(Permission: rule.Permission);
+            var candidates = rule.Kind switch
+            {
+                ApproverKinds.Users => new CandidateRule(Users: rule.Users),
+                ApproverKinds.LineManager => new CandidateRule(Permission: rule.Permission ?? Permissions.WorkflowApprove, LineManager: true),
+                _ => new CandidateRule(Permission: rule.Permission),
+            };
             await engine.PublishRouteAsync(ProcessKey(id), RouteSources.ServiceRoute,
                 new RouteSpec(Preferred(row.Names) ?? id.ToString("N"), [new RouteStep("approval", name, candidates, step.DueWorkingDays)]), ct);
         }

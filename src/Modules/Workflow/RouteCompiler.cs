@@ -17,7 +17,7 @@ public sealed record CompiledRoute(string Name, bool ExcludeStarter, IReadOnlyLi
         ?? throw new InvalidOperationException("Compiled route is empty.");
 }
 
-public sealed record CompiledStep(string Id, string Name, IReadOnlyList<Guid> Users, string? Permission, int? DueWorkingDays);
+public sealed record CompiledStep(string Id, string Name, IReadOnlyList<Guid> Users, string? Permission, int? DueWorkingDays, bool LineManager = false);
 
 /// <summary>
 /// Compiles simple routes (spec 024 plan) to BPMN 2.0 XML with the <c>teambeats</c> extension namespace and to the
@@ -87,12 +87,12 @@ public static partial class RouteCompiler
             }
             var users = step.Candidates?.Users ?? [];
             var permission = step.Candidates?.Permission;
-            if (users.Count == 0 && string.IsNullOrEmpty(permission))
+            if (users.Count == 0 && string.IsNullOrEmpty(permission) && step.Candidates?.LineManager != true)
             {
                 // A user task with no assignment cannot be published (US1 scenario 2).
                 errors.Add($"{field}.candidates", "validation.workflow.no_candidates");
             }
-            if (users.Count > MaxUsersPerStep || users.Any(u => u == Guid.Empty))
+            if (users.Count > MaxUsersPerStep || users.Any(u => u == Guid.Empty) || (step.Candidates?.LineManager == true && users.Count > 0))
             {
                 errors.Add($"{field}.candidates.users", "validation.workflow.users");
             }
@@ -114,7 +114,7 @@ public static partial class RouteCompiler
     {
         Validate(route).ThrowIfAny();
         return new CompiledRoute(route.Name.Trim(), route.ExcludeStarter,
-            route.Steps.Select(s => new CompiledStep(s.Id, s.Name.Trim(), (s.Candidates.Users ?? []).Distinct().ToList(), s.Candidates.Permission, s.DueWorkingDays)).ToList());
+            route.Steps.Select(s => new CompiledStep(s.Id, s.Name.Trim(), (s.Candidates.Users ?? []).Distinct().ToList(), s.Candidates.Permission, s.DueWorkingDays, s.Candidates.LineManager)).ToList());
     }
 
     /// <summary>BPMN 2.0 XML for the route. Element IDs are the step IDs, so history and monitoring name the same elements.</summary>
@@ -140,6 +140,10 @@ public static partial class RouteCompiler
         foreach (var step in route.Steps)
         {
             var candidates = new XElement(Tb + "candidates");
+            if (step.LineManager)
+            {
+                candidates.Add(new XElement(Tb + "lineManager"));
+            }
             foreach (var user in step.Users)
             {
                 candidates.Add(new XElement(Tb + "user", new XAttribute("id", user.ToString("D"))));
@@ -210,7 +214,8 @@ public static partial class RouteCompiler
             var users = candidates?.Elements(Tb + "user").Select(u => Guid.Parse((string)u.Attribute("id")!)).ToList() ?? [];
             var permission = (string?)candidates?.Element(Tb + "permissionAtUnit")?.Attribute("key");
             var due = (int?)extensions?.Element(Tb + "dueDate")?.Attribute("workingDays");
-            steps.Add(new CompiledStep(current, (string?)task.Attribute("name") ?? current, users, permission, due));
+            var lineManager = candidates?.Element(Tb + "lineManager") is not null;
+            steps.Add(new CompiledStep(current, (string?)task.Attribute("name") ?? current, users, permission, due, lineManager));
             var gateway = flows.Single(f => f.From == current).To;
             current = flows.Single(f => f.From == gateway && f.Condition == approve).To;
         }

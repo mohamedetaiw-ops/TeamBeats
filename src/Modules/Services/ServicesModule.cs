@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Messaging;
+using TeamBeats.Modules.Services.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
@@ -21,6 +23,9 @@ public static class ServicesModule
         services.AddScoped<Tasks>();
         services.AddScoped<Delegations>();
         services.AddScoped<Workflow.Contracts.IDelegations>(sp => sp.GetRequiredService<Delegations>());
+        services.AddMessageHandler<RequestCompleted, RequestNotifier>("services.notify_completed");
+        services.AddMessageHandler<RequestReturned, RequestNotifier>("services.notify_returned");
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, RequestNotifier>("services.notify_task");
         return services;
     }
 
@@ -77,6 +82,9 @@ public static class ServicesModule
 
         requests.MapGet("", async (string? status, int? limit, Requests service, CancellationToken ct) =>
             Results.Ok(await service.MineAsync(status, limit ?? 50, ct)));
+
+        requests.MapGet("/team", async (string? status, int? limit, Requests service, CancellationToken ct) =>
+            Results.Ok(await service.TeamAsync(status, limit ?? 50, ct)));
 
         requests.MapGet("/{id:guid}", async (Guid id, Requests service, CancellationToken ct) => Results.Ok(await service.DetailAsync(id, ct)));
 
