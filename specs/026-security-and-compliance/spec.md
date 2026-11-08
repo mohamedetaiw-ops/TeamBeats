@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (tenant security policy: IP rules, session rules, MFA assurance check, step-up for sensitive actions; encryption baseline; security alerts; trust documents), R2 (guest users and secure extranet spaces, SIEM streaming, sensitive data detection, compliance projects and control library, data residency choice, ISO 27001:2022 certificate and SOC 2 Type I report in hand by general availability, SOC 2 Type II six months after), R3 (customer-managed encryption keys, four-eyes admin changes, national government certifications, on-prem hardening pack) |
-| Last updated | 2026-11-05 |
+| Last updated | 2026-11-08 |
 | Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-021 and CMP-001 to CMP-004 (new), CX-NFR-010 (shared with spec 032); foundation section 14 (Security, Privacy), 14.2, and open business decision 9 (certifications and residency) |
 | Use cases | UC-01, UC-03, UC-14 |
@@ -111,6 +111,7 @@ The compliance officer creates a guest space "External audit 2027", shares the p
 2. **Given** an admin role is granted outside the tenant's working hours, **Then** an alert is raised.
 3. **Given** a guest opens a Confidential item, **Then** the sponsor and security officers can be notified per tenant setting.
 4. **Given** a security officer marks an alert as handled, **Then** the outcome and note are audited.
+5. **Given** an app or AI client of spec 035, **When** a refresh token is reused, more than 50 of its calls are denied by authorization in 10 minutes, or its hourly call volume is over 5 times its 30 day average, **Then** security officers and API administrators get an alert with the app and principal, and a reused token family is already revoked. *(R2)*
 
 ### User Story 6: Detect sensitive data before it is shared (Priority: P2, R2)
 
@@ -144,7 +145,7 @@ The compliance officer creates a guest space "External audit 2027", shares the p
 
 ## 5. Functional requirements
 
-- **FR-001 / SEC-001**: Tenants MUST be able to set IP allowlists and blocklists for the whole tenant, for the admin area and per role, enforced on every request in the backend. *(TEN-009)*
+- **FR-001 / SEC-001**: Tenants MUST be able to set IP allowlists and blocklists for the whole tenant, for the admin area and per role, enforced on every request in the backend, including the public API, MCP server and authorization server of spec 035. *(TEN-009)*
 - **FR-002 / SEC-002**: Client addresses MUST be taken only from the connection or from proxies the platform trusts.
 - **FR-003 / SEC-003**: Tenants MUST be able to set session idle timeout, absolute timeout, concurrent session limit and remember-device period, and users and admins MUST be able to end all sessions. *(IAM-009)*
 - **FR-004 / SEC-004**: When the tenant requires MFA, the product MUST refuse sessions whose token does not show MFA, using per-provider claim mapping.
@@ -172,7 +173,7 @@ The compliance officer creates a guest space "External audit 2027", shares the p
 
 ## 6. Business and validation rules
 
-**Sensitive actions needing step-up (default list):** granting or removing admin roles; changing identity provider settings; changing security policy, IP rules, session rules; inviting or renewing guests; creating SIEM or connector credentials; audit export; evidence pack export; legal hold changes; key changes; tenant data export or deletion.
+**Sensitive actions needing step-up (default list):** granting or removing admin roles; changing identity provider settings; changing security policy, IP rules, session rules; inviting or renewing guests; creating SIEM or connector credentials; adding or replacing API app credentials and giving admin consent to an app (spec 035); audit export; evidence pack export; legal hold changes; key changes; tenant data export or deletion.
 
 **Guest sign-in methods (default):** (a) the customer's identity provider business-to-business guest feature (for example Entra ID guests), or (b) federation with the guest's own organization identity provider configured by the tenant admin. [NEEDS CLARIFICATION: allow a one-time email code for guests whose organization has no identity provider?] Default: not until a constitution amendment, because the constitution limits product-side credentials; to be decided before R2.
 

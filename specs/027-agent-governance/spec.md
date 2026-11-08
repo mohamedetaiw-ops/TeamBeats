@@ -8,12 +8,13 @@
 | Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (autonomy L0 to L2, agent identity, tool registry and gateway for product tools, confirmation, risk classes, execution records, emergency controls, mandatory safety suites), R2 (L3 governed execution with approvals, connector tools, policy inheritance to org units, Agent Security Center, incidents, anomaly alerts), R3 (L4 bounded autonomy, MCP tools, SIEM export of agent events) |
-| Last updated | 2026-11-05 |
+| Target release | R1 (autonomy L0 to L2, agent identity, tool registry and gateway for product tools, confirmation, risk classes, execution records, emergency controls, mandatory safety suites), R2 (L3 governed execution with approvals, connector tools, external AI clients calling TeamBeats tools through the spec 035 MCP server, policy inheritance to org units, Agent Security Center, incidents, anomaly alerts), R3 (L4 bounded autonomy, MCP tools, SIEM export of agent events) |
+| Last updated | 2026-11-08 |
 | Approved | 2026-11-05 by Mohamed |
-| Requirement IDs | AI-005, AI-009, AI-010, UC-07, UC-13, AGV-001 to AGV-024 (new) |
+| Requirement IDs | AI-005, AI-009, AI-010, UC-07, UC-13, AGV-001 to AGV-025 (new) |
 | Use cases | UC-07, UC-13 |
 | Depends on | ADR-0011 (agent runtime), 013 (AI Gateway), 020 (Agent Hub), 034 (AI evaluation), 004 (authorization), 005 (entitlements), 006 (audit), 002 (hierarchy), 016 (task inbox), 024 (process engine), 017 (connectors), 015 (notifications) |
+| Used by | 035 (MCP tools for external AI clients run through the tool registry and tool gateway of this spec) |
 
 ## 1. Problem and outcome
 
@@ -27,6 +28,7 @@
 - Autonomy levels L0 to L4 and where each is allowed.
 - Agent identity and effective permissions.
 - Tool registry and tool gateway, including product tools, connector tools and MCP tools.
+- External AI clients (spec 035): AI assistants outside TeamBeats that call TeamBeats tools through its MCP server, as a caller type of the same tool gateway, with their own policy section.
 - Approval and confirmation policy for actions, enforced in the tool layer, using the task inbox (016) and process engine (024).
 - Tenant agent policy with inheritance to org units.
 - Data classification rules for agents.
@@ -148,7 +150,7 @@ Default approval rules (tenants can make them stricter, not looser):
 ### User Story 8: Tenant and org unit agent policy (Priority: P1, R1 tenant, R2 org units)
 
 **Acceptance scenarios:**
-1. **Given** the tenant agent policy, **When** the AI Policy Administrator edits it, **Then** they can set: maximum autonomy level, allowed tools and connectors, approval rules per tool (stricter than default), maximum classification agents may use, whether scheduled agents are allowed, whether persistent memory is allowed, run limits, and who may design and publish.
+1. **Given** the tenant agent policy, **When** the AI Policy Administrator edits it, **Then** they can set: maximum autonomy level, allowed tools and connectors, approval rules per tool (stricter than default), maximum classification agents may use, whether scheduled agents are allowed, whether persistent memory is allowed, run limits, who may design and publish, and the external AI client settings of spec 035 (allowed MCP clients, allowed tools, maximum classification returned with Internal as default and Restricted never, and whether write tools are allowed, off by default).
 2. **Given** a mandatory platform baseline (tenant isolation, permission checks, audit, tool gateway, injection handling, Restricted never to shared providers), **When** anyone tries to switch it off, **Then** there is no setting to do so.
 3. **Given** an org unit policy for Acme Gulf, **When** its administrator tries to raise autonomy above the tenant cap or allow a tool the tenant blocks, **Then** the save is rejected with the parent rule named.
 4. **Given** policy changes, **When** saved, **Then** they apply within 60 seconds, published agents that break the new policy are suspended automatically, and their owners are told why.
@@ -195,11 +197,12 @@ Default approval rules (tenants can make them stricter, not looser):
 - **AGV-017 / FR-017**: Agent data classification MUST be capped per agent; sources above the cap MUST be excluded at retrieval, and model calls MUST follow spec 013 routing. *(constitution IX, XXV)*
 - **AGV-018 / FR-018**: The tenant agent policy MUST cover the settings in US8, with org unit policies that only restrict, and automatic suspension of published agents that break a new policy.
 - **AGV-019 / FR-019**: The mandatory platform baseline (US8 scenario 2) MUST be present in every package and MUST NOT be configurable. *(constitution XIII)*
-- **AGV-020 / FR-020**: Emergency controls MUST include: suspend agent, tenant kill switch, disable tool, disable connector, revoke agent tokens, stop a run, roll back version, and a platform switch for a template or tool, with the timings in US7.
+- **AGV-020 / FR-020**: Emergency controls MUST include: suspend agent, tenant kill switch (which also stops external AI client calls of spec 035), turn off external AI access, disable tool, disable connector, revoke agent tokens, stop a run, roll back version, and a platform switch for a template or tool, with the timings in US7.
 - **AGV-021 / FR-021**: Risk class MUST be computed from the rules in US9 and drive the publishing rules of spec 020.
 - **AGV-022 / FR-022**: The mandatory safety suites in US9 MUST exist, run as critical suites in the spec 034 gate on every agent version before publish, and run nightly for High risk agents.
 - **AGV-023 / FR-023**: The Agent Security Center MUST provide run search, anomaly alerts, incidents, a watch list, and evidence export. *(R2, UC-13)*
 - **AGV-024 / FR-024**: L4 autonomy MUST only run as agent tasks inside a published BPMN process (024) that a process owner and a holder of `ai.policy_manage` have both approved for autonomous agent steps. *(R3)*
+- **AGV-025 / FR-025**: The tool gateway MUST accept the caller type "external AI client" for calls arriving through the spec 035 MCP server. Such calls MUST run as the delegated employee, only for registry entries marked exposable to external AI clients, through the US3 checks plus the external AI client policy; write tools MUST wait for the employee's confirmation inside TeamBeats; and they MUST produce execution records and appear in the Agent Security Center. Tools whose approval rule is "block" MUST NOT be marked exposable. *(R2)*
 
 ## 6. Business and validation rules
 - An agent cannot hold a tool whose approval rule is "block".
@@ -232,7 +235,7 @@ Default approval rules (tenants can make them stricter, not looser):
 | `ai.agents.basic` (L0 to L2) | Yes | Yes | Yes |
 | `ai.agents.write_tools` (L3, connector write tools) | No | Yes | Yes |
 | `ai.agents.autonomous` (L4) | No | No | Yes |
-| `ai.agents.mcp` | No | No | Yes |
+| `ai.agents.mcp` (TeamBeats agents using external MCP servers; external AI clients calling TeamBeats use `api.mcp` of spec 035) | No | No | Yes |
 | `ai.governance.advanced` (org unit agent policies, anomaly alerts) | No | Yes | Yes |
 | `ai.governance.security_center` (incidents, watch list, evidence export) | No | No | Yes |
 

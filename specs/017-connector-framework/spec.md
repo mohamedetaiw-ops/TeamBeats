@@ -9,12 +9,12 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R2 (common connector contract and runtime, connection types beyond Microsoft 365, custom REST API connector, outbound webhooks and inbound signed webhooks, connector actions for workflows and agents, sync jobs with retry, replay and status, on-premises sync agent for Active Directory over LDAPS, Slack, Google Workspace directory and Drive extension points, clock data import and ERP hand-off for spec 022, KPI feed contract), R3 (Oracle Fusion and SAP integration packs, MCP server registration for agents, connector marketplace, KPI tiles on location dashboards) |
-| Last updated | 2026-11-07 |
+| Last updated | 2026-11-08 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
 | Requirement IDs | INT-001, INT-004, INT-005, INT-006, INT-009, INT-010, CON-001 to CON-024 (new) |
 | Use cases | UC-07, UC-10 |
 | Depends on | 004 (authorization), 005 (entitlements), 006 (Connections area, FR-010 to FR-015), 013 (no model calls from connectors), 015 (alerts), 024 (service tasks, messages), 026 (step-up, SIEM), 027 (connector actions as agent tools) |
-| Used by | 002 and 003 (on-premises AD), 011 (document repository contract), 016 (fulfilment steps), 019 (HR integration), 021 (KPI feeds), 022 (clock data, ERP hand-off), 024 (service tasks and message correlation), 027 (connector tools) |
+| Used by | 002 and 003 (on-premises AD), 011 (document repository contract), 016 (fulfilment steps), 019 (HR integration), 021 (KPI feeds), 022 (clock data, ERP hand-off), 024 (service tasks and message correlation), 027 (connector tools), 035 (event notifications to registered apps through the outbound webhook runtime; client metadata fetches through the SSRF guard) |
 
 ## 1. Problem and outcome
 
@@ -41,6 +41,7 @@
 - Microsoft 365 features already specified in specs 006, 011 and 018 (they move onto this runtime without behavior changes).
 - HR system specifics (spec 019 builds on this framework).
 - Oracle Fusion and SAP packs (R3, INT-005, INT-006), MCP servers for agents (R3, spec 027).
+- Other systems and AI clients calling TeamBeats: the public API, its OAuth authorization server, event subscriptions for registered apps and the TeamBeats MCP server are spec 035. Spec 035 reuses the outbound webhook runtime of User Story 5 to deliver its event notifications.
 - Running customer code: no script steps, no custom code in connectors.
 - An integration platform for system-to-system flows that never touch TeamBeats.
 
