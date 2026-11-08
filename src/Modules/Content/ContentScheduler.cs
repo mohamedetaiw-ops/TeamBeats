@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -9,9 +10,10 @@ namespace TeamBeats.Modules.Content;
 
 /// <summary>
 /// The timed moves of the lifecycle for one tenant: scheduled versions go live, live items past their expiry expire, and
-/// expired items archive once the grace period ends (spec 009 section 6). Runs as the system actor.
+/// expired items archive once the grace period ends (spec 009 section 6). Critical announcements whose deadline
+/// passed send their reminders (US2 scenario 4). Runs as the system actor.
 /// </summary>
-public sealed class ContentScheduler(IDbSession session, Items items, Sites sites)
+public sealed class ContentScheduler(IDbSession session, Items items, Sites sites, CriticalAnnouncements critical, INotificationSender notifications)
 {
     public async Task<int> RunDueAsync(DateTimeOffset now, int limit, CancellationToken ct)
     {
@@ -39,6 +41,16 @@ public sealed class ContentScheduler(IDbSession session, Items items, Sites site
             if (await items.RowAsync(id, forUpdate: true, ct) is { Status: ContentStatuses.Expired } item)
             {
                 await items.ArchiveRowAsync(item, (await sites.RowAsync(item.SiteId, false, ct))!, "expired", ct);
+                moved++;
+            }
+        }
+        foreach (var id in await DueAsync(
+            "status = 'published' and critical is not null and deadline_reminded_at is null and (critical->>'requireAck')::boolean and (critical->>'deadlineAt')::timestamptz <= @now",
+            now, limit, ct))
+        {
+            if (await items.RowAsync(id, forUpdate: true, ct) is { Status: ContentStatuses.Published, Critical: { Confirms: true, DeadlineAt: { } at } } item && at <= now)
+            {
+                await critical.RemindAfterDeadlineAsync(item, now, notifications, ct);
                 moved++;
             }
         }

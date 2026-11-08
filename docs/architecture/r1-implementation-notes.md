@@ -776,3 +776,24 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Feed scan | The feed reads live items in batches and checks audience and access per item, at most 1,000 per page request. The performance targets of section 15 are checked with T024. |
 | Inbox link | The inbox shows a content review with its title; the link opens once the item editor pages of T023 exist. |
 
+
+## Critical announcements (spec 009 T009 to T011)
+| Part | Where |
+|---|---|
+| Settings | `critical` on an announcement: `modal` or `banner`, require acknowledgement (always on for a modal), "remind me later" count (default 3, at most 10), a deadline as a local time in the site's zone, and dismissible (banners only). `"presentation": "none"` clears them. Setting them needs the capability `content.critical_ack` |
+| Sending | Publish and submit of a critical item need `content.publish_critical` at the site, and at tenant scope when the audience reaches past the site's units. A refusal is audited as `content.critical_denied` with outcome denied and the request fails with 403 |
+| Audience | On `ContentPublished` the module fills `content.audience_member` with every active member the audience matches and audits `content.critical_sent` with the audience size. `OrganizationMembershipChanged` adds or removes that person on every live critical item. A material version resets "remind me later" counts and dismissals and notifies the audience (category critical announcement) |
+| Shell check | `GET /api/v1/content/critical/pending` returns at most one modal and the banners for the signed-in person, in their language, leaving out items they may not read, items confirmed from the counted version on, dismissed banners and modals put off |
+| Actions | `POST .../items/{id}/acknowledge` (`locale`, `channel` web or mobile) records user, version, time, channel and SHA-256 of title, summary and plain body text; insert only. `POST .../remind-later` puts a modal off for 4 hours up to the allowed count. `POST .../dismiss` hides a dismissible banner |
+| Counting | Confirmations count from the latest published version marked material; minor versions keep them (section 6) |
+| Deadline | The content scheduler, once the deadline passes, notifies each person who has not confirmed and each of their line managers once with the count. `GET .../acknowledgements/team` lists a manager's direct reports in the audience with their status |
+| Completion | `GET .../acknowledgements` gives counts; `POST .../ack-report` (202) audits `content.ack_report_exported` and the worker writes a CSV (person, name, email, status, time, channel, version) to tenant storage for 7 days: `GET /api/v1/content/ack-reports/{id}` and `/file`. Both need `content.publish_critical` at the site or `content.admin` |
+| Tests | `ContentCriticalTests` |
+
+| Item | Note |
+|---|---|
+| Submit | A critical item sent through an approval route needs `content.publish_critical` of the person who submits; the approver then releases it. The spec names the permission for sending only. |
+| Recall, rate limit, second approver | Section 9 asks for a recall action, a rate limit on critical sends and an optional second approver per tenant. Unpublish already removes the modal and banner; the rest waits for the tenant setting and is recorded as a gap. |
+| Manager list | Managers see their direct reports only, through the spec 010 reporting line; the relationship, not a role, gives the access. |
+| Links | Notifications link to `/content/read/{id}` and `/content/items/{id}/team`; those pages come with T023, as does the shell's modal and banner component. |
+| Audience size | Refreshing the audience evaluates every candidate member's facts; when every clause names org units only their members are evaluated. The 2 minute target for 100,000 people is checked with T024. |

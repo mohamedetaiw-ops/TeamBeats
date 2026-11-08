@@ -5233,6 +5233,218 @@
         }
       }
     },
+    "/api/v1/content/items/{id}/acknowledge": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AcknowledgeRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/remind-later": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/dismiss": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/acknowledgements": {
+      "get": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/acknowledgements/team": {
+      "get": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/ack-report": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/critical/pending": {
+      "get": {
+        "tags": [
+          "Content: critical"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/ack-reports/{id}": {
+      "get": {
+        "tags": [
+          "Content: critical"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/ack-reports/{id}/file": {
+      "get": {
+        "tags": [
+          "Content: critical"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/people": {
       "get": {
         "tags": [
@@ -5720,6 +5932,27 @@
   },
   "components": {
     "schemas": {
+      "AcknowledgeRequest": {
+        "required": [
+          "locale",
+          "channel"
+        ],
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "channel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AclEntryRequest": {
         "required": [
           "subjectType",
@@ -6699,6 +6932,52 @@
           }
         }
       },
+      "CriticalInput": {
+        "required": [
+          "presentation",
+          "requireAck",
+          "remindLaterMax",
+          "deadline",
+          "dismissible"
+        ],
+        "type": "object",
+        "properties": {
+          "presentation": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "requireAck": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "remindLaterMax": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "deadline": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "dismissible": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
       "DeactivateOrgUnitRequest": {
         "required": [
           "childrenAction",
@@ -7438,6 +7717,16 @@
               "string"
             ],
             "format": "int32"
+          },
+          "critical": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/CriticalInput"
+              }
+            ]
           }
         }
       },
@@ -9366,6 +9655,9 @@
     },
     {
       "name": "Content: items"
+    },
+    {
+      "name": "Content: critical"
     },
     {
       "name": "People"

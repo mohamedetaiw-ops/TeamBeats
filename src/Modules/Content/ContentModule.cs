@@ -24,6 +24,10 @@ public static class ContentModule
         services.AddScoped<ContentTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ContentTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, ContentTaskSource>("content.notify_review");
+        services.AddScoped<CriticalAnnouncements>();
+        services.AddMessageHandler<Contracts.ContentPublished, CriticalAudience>("content.critical_audience");
+        services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, CriticalAudience>("content.critical_membership");
+        services.AddMessageHandler<Contracts.AckReportRequested, AckReportHandler>("content.ack_report");
         return services;
     }
 
@@ -134,6 +138,51 @@ public static class ContentModule
         items.MapGet("/{id:guid}/view", async (Guid id, Items service, CancellationToken ct) => Results.Ok(await service.ReadAsync(id, ct)));
 
         items.MapGet("/{id:guid}/versions", async (Guid id, Items service, CancellationToken ct) => Results.Ok(await service.VersionsAsync(id, ct)));
+
+        // Critical announcements (US2).
+        app.MapGroup("/api/v1/content/critical").RequireTenantUser().WithTags("Content: critical").MapGet("/pending",
+            async (CriticalAnnouncements service, CancellationToken ct) => Results.Ok(await service.PendingAsync(ct)));
+
+        items.MapPost("/{id:guid}/acknowledge", async (Guid id, AcknowledgeRequest? request, CriticalAnnouncements service, IDbSession session, CancellationToken ct) =>
+        {
+            var ack = await service.AcknowledgeAsync(id, request ?? new AcknowledgeRequest(null, null), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(ack);
+        });
+
+        items.MapPost("/{id:guid}/remind-later", async (Guid id, CriticalAnnouncements service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.RemindLaterAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        items.MapPost("/{id:guid}/dismiss", async (Guid id, CriticalAnnouncements service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.DismissAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        items.MapGet("/{id:guid}/acknowledgements", async (Guid id, CriticalAnnouncements service, CancellationToken ct) =>
+            Results.Ok(await service.SummaryAsync(id, ct)));
+
+        items.MapGet("/{id:guid}/acknowledgements/team", async (Guid id, CriticalAnnouncements service, CancellationToken ct) =>
+            Results.Ok(await service.TeamAsync(id, ct)));
+
+        items.MapPost("/{id:guid}/ack-report", async (Guid id, CriticalAnnouncements service, IDbSession session, CancellationToken ct) =>
+        {
+            var report = await service.RequestReportAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Accepted($"/api/v1/content/ack-reports/{report.Id}", report);
+        });
+
+        var reports = app.MapGroup("/api/v1/content/ack-reports").RequireTenantUser().WithTags("Content: critical");
+
+        reports.MapGet("/{id:guid}", async (Guid id, CriticalAnnouncements service, CancellationToken ct) => Results.Ok(await service.ReportAsync(id, ct)));
+
+        reports.MapGet("/{id:guid}/file", async (Guid id, CriticalAnnouncements service, TenantObjectStorage storage, CancellationToken ct) =>
+            Results.File(await service.ReportFileAsync(id, storage, ct), "text/csv", $"acknowledgements-{id}.csv"));
 
         return app;
     }

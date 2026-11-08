@@ -10,3 +10,9 @@ public sealed record ContentUnpublished(Guid ItemId, Guid SiteId) : IIntegration
 
 /// <summary>A published item reached its expiry date.</summary>
 public sealed record ContentExpired(Guid ItemId, Guid SiteId) : IIntegrationEvent;
+
+/// <summary>A person confirmed a critical announcement (FR-007). IDs only.</summary>
+public sealed record ContentAcknowledged(Guid ItemId, int Version, Guid UserId, string Channel) : IIntegrationEvent;
+
+/// <summary>A completion report was asked for; the worker writes the file.</summary>
+public sealed record AckReportRequested(Guid ReportId, Guid ItemId) : IIntegrationEvent;

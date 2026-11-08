@@ -15,9 +15,9 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T008 [US1] Feed endpoint with permission filtering and cursor paging
 
 ## Phase 3: User Story 2, critical announcements (P1)
-- [ ] T009 [P] [US2] Tests: modal until confirmed; remind later limit; record with text hash; material change resets; `content.publish_critical` required; banner; background report audited
-- [ ] T010 [US2] Pending check, acknowledge and remind later; audience membership table and refresh on membership change
-- [ ] T011 [US2] Deadline reminders through notifications; manager list once the reporting line exists; completion report export
+- [x] T009 [P] [US2] Tests: modal until confirmed; remind later limit; record with text hash; material change resets; `content.publish_critical` required; banner; background report audited
+- [x] T010 [US2] Pending check, acknowledge and remind later; audience membership table and refresh on membership change
+- [x] T011 [US2] Deadline reminders through notifications; manager list once the reporting line exists; completion report export
 
 ## Phase 4: User Stories 3 to 5, governance, versions and locales (P1)
 - [ ] T012 [P] [US3] Tests: owner required; review task with confirm, edit, retire; overdue label; ownerless reassignment on `UserDeprovisioned`; health counts
