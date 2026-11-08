@@ -58,6 +58,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, TeamBeats.Api.DevHost.ReferencePacks>();
             services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, UpgradePack>();
             services.AddScoped<IResourceDescriptorProvider, TestDocumentProvider>();
+            services.AddSingleton<TeamBeats.Modules.Services.Contracts.IModuleServiceSource, TestModuleServices>();
             services.AddSingleton(UserAttributes);
             services.AddScoped<IUserAttributeProvider, TestUserAttributeProvider>();
             services.AddSingleton<ISecretStore>(Secrets);

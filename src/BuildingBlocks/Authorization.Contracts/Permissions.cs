@@ -67,6 +67,10 @@ public static class Permissions
     public const string SecurityView = "security.view";
     public const string SecurityRespond = "security.respond";
 
+    // Spec 016 (R1): service catalogue and requests.
+    public const string ServiceManage = "service.manage";
+    public const string ServiceRequestOnBehalf = "service.request_on_behalf";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -93,6 +97,7 @@ public static class Permissions
         HrCalendarManage,
         PeopleView, PeopleHrView, PeopleManage,
         SecurityManage, SecurityView, SecurityRespond,
+        ServiceManage, ServiceRequestOnBehalf,
     ];
 }
 

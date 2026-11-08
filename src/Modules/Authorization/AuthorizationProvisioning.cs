@@ -135,6 +135,13 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
             where a.scope_type = 'tenant' and a.revoked_at is null and (a.subject_type = 'user' or m.user_id is not null)
             """, new { p = permission }, r => r.GetGuid(0), ct);
 
+    public async Task<IReadOnlySet<Guid>> GroupIdsOfAsync(Guid userId, CancellationToken ct = default) =>
+        (await session.QueryAsync("select group_id from authz.group_member where user_id = @userId", new { userId }, r => r.GetGuid(0), ct)).ToHashSet();
+
+    public async Task<IReadOnlySet<Guid>> ExistingGroupsAsync(IReadOnlyCollection<Guid> groupIds, CancellationToken ct = default) =>
+        groupIds.Count == 0 ? new HashSet<Guid>()
+            : (await session.QueryAsync("select id from authz.user_group where id = any(@ids)", new { ids = groupIds.ToArray() }, r => r.GetGuid(0), ct)).ToHashSet();
+
     public Task<bool> IsBuiltInRoleKeyAsync(string roleKey, CancellationToken ct = default) =>
         session.ScalarAsync<bool>("select exists (select 1 from authz.role where key = @k and is_builtin)", new { k = roleKey }, ct);
 

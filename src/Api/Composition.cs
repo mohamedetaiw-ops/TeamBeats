@@ -13,6 +13,7 @@ using TeamBeats.Modules.Experience;
 using TeamBeats.Modules.Hr;
 using TeamBeats.Modules.People;
 using TeamBeats.Modules.Security;
+using TeamBeats.Modules.Services;
 using TeamBeats.Modules.Workflow;
 using TeamBeats.Modules.Identity;
 using TeamBeats.Modules.Integrations;
@@ -45,6 +46,7 @@ public static class TeamBeatsModules
         PeopleModule.Migrations,
         SecurityModule.Migrations,
         WorkflowModule.Migrations,
+        ServicesModule.Migrations,
     ];
 
     public static IServiceCollection AddTeamBeatsCore(this IServiceCollection services, IConfiguration configuration)
@@ -78,6 +80,7 @@ public static class TeamBeatsModules
         services.AddPeopleModule();
         services.AddSecurityModule();
         services.AddWorkflowModule();
+        services.AddServicesModule();
         return services;
     }
 }
@@ -148,6 +151,7 @@ public static class ApiComposition
         app.MapExperienceEndpoints();
         app.MapNotificationsEndpoints();
         app.MapHrEndpoints();
+        app.MapServicesEndpoints();
         app.MapPeopleEndpoints();
         app.MapSecurityEndpoints();
         extraEndpoints?.Invoke(app);

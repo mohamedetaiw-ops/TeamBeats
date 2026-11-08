@@ -123,6 +123,12 @@ public interface IAuthorizationProvisioning
     /// </summary>
     Task<IReadOnlyList<Guid>> TenantHoldersAsync(string permission, CancellationToken ct = default);
 
+    /// <summary>The groups the user is a member of, product and directory groups alike (audiences such as spec 016).</summary>
+    Task<IReadOnlySet<Guid>> GroupIdsOfAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>Which of the given group IDs exist in the current tenant.</summary>
+    Task<IReadOnlySet<Guid>> ExistingGroupsAsync(IReadOnlyCollection<Guid> groupIds, CancellationToken ct = default);
+
     /// <summary>Whether removing access for this user would leave the tenant without an administrator.</summary>
     Task<bool> IsLastTenantAdministratorAsync(Guid userId, CancellationToken ct = default);
 }
