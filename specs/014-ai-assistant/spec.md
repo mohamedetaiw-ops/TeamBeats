@@ -9,12 +9,12 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (universal assistant panel, cited answers from permitted content, routing to agents, conversation history, feedback, Q&A, summarize, translate, rewrite and draft), R2 (AI summary of search results for spec 012, file upload in a conversation, voice input and read aloud, French, Urdu and Hindi, assistant in Microsoft Teams, personal context answers such as my leave balance and my open requests through agents), R3 (proactive suggestions across the intranet) |
-| Last updated | 2026-11-07 |
+| Last updated | 2026-11-08 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
 | Requirement IDs | AI-005, AI-007, KNO-007, AST-001 to AST-022 (new) |
 | Use cases | UC-06 |
 | Depends on | 008 (shell), 012 (retrieval), 013 (AI Gateway), 020 (routing to agents), 027 (governance), 034 (gate on routing and RAG configuration), 007 |
-| Used by | 009, 011, 025 (contextual actions and policy Q&A), 012 (search summaries, R2), 015 (Teams, R2) |
+| Used by | 009, 011, 025 (contextual actions and policy Q&A), 012 (search summaries, R2), 015 (Teams, R2), 035 (the `ask_teambeats` MCP tool and the `assistant:ask` scope give cited answers to external AI clients, R2) |
 
 ## 1. Problem and outcome
 

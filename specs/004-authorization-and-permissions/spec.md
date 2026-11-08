@@ -8,12 +8,13 @@
 | Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R0, R1 (attribute conditions: FR-014 to FR-016, User Story 7) |
-| Last updated | 2026-11-05 |
+| Target release | R0, R1 (attribute conditions: FR-014 to FR-016, User Story 7), R2 (application principals for spec 035: FR-017) |
+| Last updated | 2026-11-08 |
 | Approved | 2026-11-04 by Mohamed |
 | Requirement IDs | TEN-007, TEN-008, IAM-007, IAM-008, ADM-001 (roles part) |
 | Use cases | UC-02, UC-03 |
 | Depends on | 001, 002, 003 |
+| Used by | 035 (scopes narrow these decisions for apps and AI clients) |
 
 ## 1. Problem and outcome
 
@@ -123,6 +124,7 @@ The tenant admin gives the Approver role for the "Acme Gulf" subtree only to peo
 - **FR-014**: Role assignments and resource permissions MAY carry a condition that must hold for the grant to apply. A condition MUST only narrow its own grant; it MUST NOT create access, and since there is no explicit deny, access remains the union of the grants whose conditions hold. *(constitution III, R1)*
 - **FR-015**: Conditions MUST be built only from the attribute catalogue in section 6 and the operators equals, not equals, in list, not in list, greater or equal and less or equal, combined with AND and OR to a depth of two. Conditions are data validated against a schema; free-form expressions or scripts MUST be rejected. A missing attribute MUST evaluate the condition as false. *(constitution III, XXIX, R1)*
 - **FR-016**: Explanations (FR-010) MUST show each condition with the attribute values used, and batch evaluation (FR-012) MUST apply conditions within its existing performance targets. *(R1)*
+- **FR-017**: Principals MUST be users, groups, organization units, agent principals (spec 027) and application principals (spec 035). An application principal belongs to one tenant, MAY hold only roles flagged as assignable to apps, and MUST NOT hold a role containing any `authz.*`, `identity.*`, `security.*`, `api.*`, `audit.export` or `ai.policy_manage` permission. Scopes granted to an app or AI client MUST only narrow the decisions of this service, never add to them. *(R2)*
 
 ## 6. Business rules
 - Groups can come from the identity provider (claims), HR sync, or be product-defined.
@@ -162,7 +164,7 @@ The tenant admin gives the Approver role for the "Acme Gulf" subtree only to peo
 AI retrieval and agent tools MUST call FR-012 batch evaluation before context assembly (constitution VII).
 
 ## 12. Events
-Publishes `RoleAssignmentChanged`, `ResourcePermissionChanged` so search indexes, caches and AI retrieval can refresh.
+Publishes `RoleAssignmentChanged`, `ResourcePermissionChanged` so search indexes, caches, AI retrieval and the public API revocation cache (spec 035) can refresh.
 
 ## 13. Audit
 

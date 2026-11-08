@@ -9,11 +9,12 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R0 (dev auth, staging test account), R1 (Entra ID sign-in, Entra ID directory sync, delegated Microsoft Graph access for mail and calendar), R2 (Google, SAML, AD FS sign-in, on-premises AD sync) |
-| Last updated | 2026-11-06 |
+| Last updated | 2026-11-08 |
 | Approved | 2026-11-04 by Mohamed; FR-016 2026-11-05 by Mohamed; AD sign-in and sync 2026-11-06 by Mohamed; US7 and FR-017 2026-11-06 by Mohamed; US7 test employee link 2026-11-07 by Mohamed |
 | Requirement IDs | IAM-001 to IAM-007, IAM-009, IAM-010, INT-007 (directory part) |
 | Use cases | UC-03, UC-09 (directory part) |
 | Depends on | 001, 002, 004, 017 (connector framework, for on-premises AD), 018 (delegated Microsoft Graph access) |
+| Used by | 035 (the tenant authorization server signs employees in through this spec before an app or AI client gets a token) |
 
 ## 1. Problem and outcome
 
@@ -34,6 +35,7 @@
 - Just-in-time provisioning when allowed by tenant policy.
 - Session creation, refresh, logout and invalidation.
 - Tenant discovery at sign-in (which tenant is this user signing into).
+- Sign-in step of the tenant authorization server for apps and AI clients (spec 035, R2): the same provider flow, then the spec 035 consent screen.
 
 **Out of scope:**
 - Authorization rules (spec 004).
@@ -160,6 +162,7 @@ The staging deployment is a Test environment in the sense of constitution V. It 
 - **FR-015**: The product MUST NOT accept AD passwords. Active Directory sign-in MUST go through a federated provider (Entra ID or AD FS).
 - **FR-016**: When a Microsoft 365 connection feature needs delegated Microsoft Graph access as the signed-in employee (mail, calendar and rooms in spec 018), the Entra ID sign-in MUST obtain it by incremental consent for only that feature's permissions, without a second sign-in. Delegated tokens MUST be held server side, encrypted, per tenant membership, never sent to the browser or logged, and deleted at sign-out, session revocation, membership disable or employee disconnect, unless the employee opted in to signed-out access (spec 018 FR-023).
 - **FR-017**: A staging test account MAY exist only in the development host composition running as `Staging`, `Development` or `Test`. In `Staging` the development sign-in MUST run in test account mode, where only configured test accounts can sign in, by username with one click and no password; email sign-in and platform dev sign-in are off. A direct test sign-in link MAY sign in a configured, enabled person of the fake directory through the real single sign-on flow and the fake identity provider; it MUST NOT grant any role beyond what that person's directory groups map to. The test account MUST use fictional data and belong to a fictional test tenant. The production host MUST refuse to start if test accounts or a seeded test tenant are configured, and CI MUST lint production deployment files for any reference to the development host or test setup. *(IAM-001, IAM-002, IAM-003)*
+- **FR-018**: When an app or AI client asks the tenant authorization server of spec 035 for delegated access, the employee MUST sign in through the same identity provider flow, MFA and conditional access as a browser sign-in (FR-005, FR-009). Disabling a user or membership MUST also refuse their delegated app tokens at once (FR-007). Browser sessions stay cookie based (FR-006); bearer tokens are issued only to registered apps. *(R2)*
 
 ## 6. Business rules
 - Tenant discovery: user enters work email or uses the tenant's URL. The email domain maps to a tenant's configured identity provider. Domain-to-tenant mapping must be unique in a shared installation.

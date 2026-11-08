@@ -8,8 +8,8 @@
 | Version | 1.0 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R0 (audit, admin shell), R1 (Connections area with Microsoft 365 connection for directory sync, mail and calendar), R2 (connection features for SharePoint documents and rooms, and other connectors from spec 017) |
-| Last updated | 2026-11-05 |
+| Target release | R0 (audit, admin shell), R1 (Connections area with Microsoft 365 connection for directory sync, mail and calendar), R2 (connection features for SharePoint documents and rooms, and other connectors from spec 017; "API and MCP access" area of spec 035) |
+| Last updated | 2026-11-08 |
 | Approved | 2026-11-04 by Mohamed; Connections area (US5, FR-010 to FR-015) 2026-11-05 by Mohamed |
 | Requirement IDs | ADM-001, ADM-002, ADM-003 (retention part), TEN-010, INT-001 (connection administration part), new AUD-001 to AUD-007 |
 | Use cases | UC-01, UC-10 and UC-11 (connection setup part), UC-13 (audit part) |
@@ -32,6 +32,7 @@
 - Admin shell: navigation frame, scope switcher, landing dashboard with links to settings areas.
 - User and group administration screens (list, view, disable membership, view roles).
 - Connections area: one place where integration administrators create, consent, test, monitor, disable and delete the tenant's connections to external systems, and turn individual features of a connection on or off.
+- A place in the admin shell for the "API and MCP access" area of spec 035 (apps, consents, event subscriptions, usage), next to Connections. Connections are TeamBeats calling out; API and MCP access is other systems calling in. Its data lives in the `PublicApi` module.
 
 **Out of scope:**
 - SIEM streaming (spec 026, R2). This spec provides the extension point only.
