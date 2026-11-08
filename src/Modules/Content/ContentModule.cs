@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Messaging;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
@@ -18,6 +19,11 @@ public static class ContentModule
         services.AddScoped<Items>();
         services.AddScoped<AudienceFactsLoader>();
         services.AddScoped<ContentScheduler>();
+        services.AddScoped<ContentReviews>();
+        services.AddScoped<ContentFeed>();
+        services.AddScoped<ContentTaskSource>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ContentTaskSource>());
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, ContentTaskSource>("content.notify_review");
         return services;
     }
 
@@ -59,6 +65,10 @@ public static class ContentModule
             return Results.Ok(view);
         });
 
+        app.MapGroup("/api/v1/content").RequireTenantUser().WithTags("Content: feed").MapGet("/feed",
+            async (Guid? site, string? type, string? cursor, int? limit, ContentFeed feed, CancellationToken ct) =>
+                Results.Ok(await feed.PageAsync(site, type, cursor, limit ?? 20, ct)));
+
         var items = app.MapGroup("/api/v1/content/items").RequireTenantUser().WithTags("Content: items");
 
         items.MapGet("", async (Guid? site, string? status, string? type, int? limit, Items service, IDbSession session, CancellationToken ct) =>
@@ -90,6 +100,22 @@ public static class ContentModule
             await session.CommitAsync(ct);
             return Results.Ok(item);
         });
+
+        items.MapPost("/{id:guid}/submit", async (Guid id, PublishRequest? request, Items service, IDbSession session, CancellationToken ct) =>
+        {
+            var item = await service.SubmitAsync(id, request ?? new PublishRequest(null, null, null), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(item);
+        });
+
+        items.MapPost("/{id:guid}/withdraw", async (Guid id, Items service, IDbSession session, CancellationToken ct) =>
+        {
+            var item = await service.WithdrawAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(item);
+        });
+
+        items.MapGet("/{id:guid}/reviews", async (Guid id, Items service, CancellationToken ct) => Results.Ok(await service.ReviewHistoryAsync(id, ct)));
 
         items.MapPost("/{id:guid}/unpublish", async (Guid id, Items service, IDbSession session, CancellationToken ct) =>
         {

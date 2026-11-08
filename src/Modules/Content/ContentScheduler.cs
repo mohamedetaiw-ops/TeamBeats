@@ -16,9 +16,9 @@ public sealed class ContentScheduler(IDbSession session, Items items, Sites site
     public async Task<int> RunDueAsync(DateTimeOffset now, int limit, CancellationToken ct)
     {
         var moved = 0;
-        foreach (var id in await DueAsync("status in ('scheduled', 'published') and publish_at is not null and publish_at <= @now", now, limit, ct))
+        foreach (var id in await DueAsync("status in ('scheduled', 'published', 'expired') and review_instance_id is null and publish_at is not null and publish_at <= @now", now, limit, ct))
         {
-            if (await items.RowAsync(id, forUpdate: true, ct) is { PublishAt: { } at, DraftVersion: { } version } item && at <= now)
+            if (await items.RowAsync(id, forUpdate: true, ct) is { PublishAt: { } at, DraftVersion: { } version, ReviewInstanceId: null } item && at <= now)
             {
                 var site = (await sites.RowAsync(item.SiteId, false, ct))!;
                 await items.GoLiveAsync(item, site, version, now, ct);

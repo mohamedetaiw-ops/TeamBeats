@@ -22,10 +22,13 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
     const seen = new Map<string, string>();
     for (const i of items) {
       const key = i.serviceId ?? i.source;
-      if (!seen.has(key)) seen.set(key, i.serviceNames ? pick(i.serviceNames, locale) : i.name);
+      if (!seen.has(key)) seen.set(key, i.serviceNames ? pick(i.serviceNames, locale) : sourceName(i));
     }
     return [...seen.entries()];
   }, [items, locale]);
+  function sourceName(i: InboxItem) {
+    return i.source === "content_review" ? t("contentReview") : i.name;
+  }
   const shown = items.filter((i) => !type || (i.serviceId ?? i.source) === type);
 
   return (
@@ -49,7 +52,7 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
       ) : (
         <ul className="services-list" data-testid="task-inbox">
           {shown.map((i) => {
-            const title = i.serviceNames ? pick(i.serviceNames, locale) : i.name;
+            const title = i.serviceNames ? pick(i.serviceNames, locale) : i.title ? pick(i.title, locale) : sourceName(i);
             return (
               <li key={i.taskId} className="services-item">
                 {i.requestId ? (
@@ -66,7 +69,7 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
                   <bdi>{title}</bdi>
                 )}
                 <span className="services-meta">
-                  {i.step ? <bdi>{pick(i.step, locale)}</bdi> : null}
+                  {i.step ? <bdi>{pick(i.step, locale)}</bdi> : i.title ? <bdi>{sourceName(i)}</bdi> : null}
                   {i.requester ? <> · {t("from", { name: i.requester.displayName })}</> : null}
                   {i.requestedFor ? <> · {t("for", { name: i.requestedFor.displayName })}</> : null}
                 </span>

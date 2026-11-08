@@ -1,4 +1,5 @@
 using Npgsql;
+using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
@@ -55,7 +56,8 @@ public sealed record ItemView(
     string? ChangeNote,
     ContentPerson CreatedBy,
     DateTimeOffset UpdatedAt,
-    int Version);
+    int Version,
+    bool InReview);
 
 /// <summary>What a reader sees: the published version in their language, or the fallback with a note (US5 scenario 2).</summary>
 public sealed record ReaderView(
@@ -81,7 +83,14 @@ public sealed record VersionSummary(int Number, ContentPerson Author, ContentPer
 internal sealed record ItemRow(
     Guid Id, Guid SiteId, string Type, string Classification, string PrimaryLocale, Guid? OwnerId, Guid? BackupOwnerId, DateTimeOffset? ReviewDueAt,
     ContentAudience Audience, bool Pinned, bool Featured, string Status, int? PublishedVersion, int? DraftVersion, DateTimeOffset? PublishAt,
-    DateTimeOffset? ExpiresAt, DateTimeOffset? PublishedAt, DateTimeOffset? ExpiredAt, Guid CreatedBy, DateTimeOffset UpdatedAt, int Version);
+    DateTimeOffset? ExpiresAt, DateTimeOffset? PublishedAt, DateTimeOffset? ExpiredAt, Guid CreatedBy, DateTimeOffset UpdatedAt, int Version,
+    Guid? ReviewInstanceId = null, Guid? SubmittedBy = null)
+{
+    /// <summary>The draft waits for a decision. A live item stays published (and readable) while its next version is reviewed.</summary>
+    public bool InReview => ReviewInstanceId is not null || Status == ContentStatuses.InReview;
+
+    public bool Live => Status is ContentStatuses.Published or ContentStatuses.Expired;
+}
 
 internal sealed record VersionRow(int Number, IReadOnlyDictionary<string, ContentVariant> Variants, string? ChangeNote, bool Material, Guid Author,
     Guid? Approver, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, DateTimeOffset? PublishedAt);
@@ -105,21 +114,24 @@ public sealed class Items(
     IOutbox outbox,
     IClock clock,
     RequestLocale requestLocale,
-    Sites sites)
+    IProcessEngine engine,
+    Sites sites,
+    ContentReviews reviews)
 {
     public static readonly IReadOnlySet<string> Classifications = new HashSet<string>(StringComparer.Ordinal) { "public", "internal", "confidential", "restricted" };
 
-    private const string Columns =
+    internal const string Columns =
         """
         id, site_id, type, classification, primary_locale, owner_user_id, backup_owner_user_id, review_due_at, audience::text, pinned, featured, status,
-        published_version, draft_version, publish_at, expires_at, published_at, expired_at, created_by, updated_at, row_version
+        published_version, draft_version, publish_at, expires_at, published_at, expired_at, created_by, updated_at, row_version, review_instance_id, submitted_by
         """;
 
-    private static ItemRow Read(NpgsqlDataReader r) => new(
+    internal static ItemRow Read(NpgsqlDataReader r) => new(
         r.GetGuid(0), r.GetGuid(1), r.GetString(2), r.GetString(3), r.GetString(4), r.Get<Guid?>("owner_user_id"), r.Get<Guid?>("backup_owner_user_id"),
         r.Get<DateTimeOffset?>("review_due_at"), ContentJson.Read<ContentAudience>(r.GetString(8)), r.GetBoolean(9), r.GetBoolean(10), r.GetString(11),
         r.Get<int?>("published_version"), r.Get<int?>("draft_version"), r.Get<DateTimeOffset?>("publish_at"), r.Get<DateTimeOffset?>("expires_at"),
-        r.Get<DateTimeOffset?>("published_at"), r.Get<DateTimeOffset?>("expired_at"), r.GetGuid(18), r.GetFieldValue<DateTimeOffset>(19), r.GetInt32(20));
+        r.Get<DateTimeOffset?>("published_at"), r.Get<DateTimeOffset?>("expired_at"), r.GetGuid(18), r.GetFieldValue<DateTimeOffset>(19), r.GetInt32(20),
+        r.Get<Guid?>("review_instance_id"), r.Get<Guid?>("submitted_by"));
 
     private const string VersionColumns = "number, variants::text, change_note, material, author_user_id, approver_user_id, created_at, updated_at, published_at";
 
@@ -143,7 +155,7 @@ public sealed class Items(
     /// visible to every active member of the tenant; confidential and restricted items need a covering role grant at the
     /// site's unit or an entry on the item. Targeting never enters this check.
     /// </summary>
-    private async Task<bool> MayReadAsync(ItemRow item, SiteRow site, CancellationToken ct)
+    internal async Task<bool> MayReadAsync(ItemRow item, SiteRow site, CancellationToken ct)
     {
         var visibility = item.Classification is "public" or "internal" ? ResourceVisibility.Tenant : ResourceVisibility.Restricted;
         var descriptor = new ResourceDescriptor(ResourceType, item.Id, site.OrgUnitId, visibility, item.Classification);
@@ -343,7 +355,7 @@ public sealed class Items(
         {
             throw AppException.Conflict("conflict.content.changed");
         }
-        if (item.Status is ContentStatuses.Archived or ContentStatuses.InReview)
+        if (item.Status == ContentStatuses.Archived || item.InReview)
         {
             throw AppException.Conflict(item.Status == ContentStatuses.Archived ? "conflict.content.archived" : "conflict.content.in_review");
         }
@@ -404,7 +416,26 @@ public sealed class Items(
         {
             throw AppException.Denied();
         }
-        if (item.Status is ContentStatuses.Archived or ContentStatuses.InReview)
+        var (version, publishAt, expiresAt) = await ReadyAsync(item, site, request.PublishAt, request.ExpiresAt, ct);
+        if (item.DraftVersion is not null && site.RouteOf(item.Type).Approval)
+        {
+            // The site routes this type through approval: the draft goes live only through submit (FR-003).
+            throw AppException.Conflict("conflict.content.approval_required");
+        }
+        await session.ExecAsync("update content.content_version set material = @material, approver_user_id = @user where item_id = @id and number = @version",
+            new { id, version, material = request.Material ?? true, user }, ct);
+        await ReleaseAsync(item, site, version, publishAt, expiresAt, ct);
+        return await ViewAsync((await RowAsync(id, false, ct))!, ct);
+    }
+
+    /// <summary>
+    /// The checks every way to live shares: not archived or in review, something to publish, an owner when the type
+    /// needs one, and an expiry after the publish time. Times are local in the site's zone.
+    /// </summary>
+    private async Task<(int Version, DateTimeOffset? PublishAt, DateTimeOffset? ExpiresAt)> ReadyAsync(ItemRow item, SiteRow site, DateTime? publishLocal,
+        DateTime? expiresLocal, CancellationToken ct)
+    {
+        if (item.Status == ContentStatuses.Archived || item.InReview)
         {
             throw AppException.Conflict(item.Status == ContentStatuses.Archived ? "conflict.content.archived" : "conflict.content.in_review");
         }
@@ -421,32 +452,115 @@ public sealed class Items(
         }
         var zone = TimeZoneInfo.FindSystemTimeZoneById(site.TimeZone);
         var now = clock.UtcNow;
-        DateTimeOffset? publishAt = request.PublishAt is { } p ? Utc(p, zone) : null;
-        DateTimeOffset? expiresAt = request.ExpiresAt is { } e ? Utc(e, zone) : item.ExpiresAt;
+        DateTimeOffset? publishAt = publishLocal is { } p ? Utc(p, zone) : null;
+        DateTimeOffset? expiresAt = expiresLocal is { } e ? Utc(e, zone) : item.ExpiresAt;
         if (expiresAt is { } ex && ex <= (publishAt is { } pa && pa > now ? pa : now))
         {
             errors.Add("expiresAt", "validation.content.expiry");
         }
         errors.ThrowIfAny();
+        return (version, publishAt, expiresAt);
+    }
 
-        var material = request.Material ?? true;
-        await session.ExecAsync("update content.content_version set material = @material, approver_user_id = @user where item_id = @id and number = @version",
-            new { id, version, material, user }, ct);
+    /// <summary>Schedules the version when its time is ahead, otherwise puts it live now. A live item stays readable while the next version waits.</summary>
+    internal async Task ReleaseAsync(ItemRow item, SiteRow site, int version, DateTimeOffset? publishAt, DateTimeOffset? expiresAt, CancellationToken ct)
+    {
+        var now = clock.UtcNow;
         if (publishAt is { } at && at > now)
         {
             await session.ExecAsync(
                 """
-                update content.content_item set status = case when status = 'published' then 'published' else 'scheduled' end, publish_at = @at, expires_at = @expiresAt, updated_at = @now, row_version = row_version + 1
+                update content.content_item set status = case when status in ('published', 'expired') then status else 'scheduled' end, publish_at = @at,
+                  expires_at = @expiresAt, updated_at = @now, row_version = row_version + 1
                 where id = @id
-                """, new { id, at, expiresAt, now }, ct);
-            await audit.WriteAsync(new AuditEntry(AuditActions.ContentScheduled, "content_item", id.ToString(), TargetOrgUnitId: site.OrgUnitId,
+                """, new { id = item.Id, at, expiresAt, now }, ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.ContentScheduled, "content_item", item.Id.ToString(), TargetOrgUnitId: site.OrgUnitId,
                 Changes: new { version, publishAt = at, expiresAt }), ct);
         }
         else
         {
-            await session.ExecAsync("update content.content_item set expires_at = @expiresAt where id = @id", new { id, expiresAt }, ct);
+            await session.ExecAsync("update content.content_item set expires_at = @expiresAt where id = @id", new { id = item.Id, expiresAt }, ct);
             await GoLiveAsync(item with { ExpiresAt = expiresAt }, site, version, now, ct);
         }
+    }
+
+    // ---- Review (FR-003) ----
+
+    /// <summary>
+    /// Sends the draft through the site's route for its type: one step on the process engine whose task shows in the
+    /// spec 016 inbox (US1 scenario 1). The wanted schedule is kept and applied on approval. The person who submits and
+    /// the people who wrote the item never decide (scenario 6); when every named approver is one of them, the site's
+    /// publishers decide instead.
+    /// </summary>
+    public async Task<ItemView> SubmitAsync(Guid id, PublishRequest request, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var (item, site) = await ManagedAsync(id, forUpdate: true, ct);
+        if (!await MayWriteAsync(site, item, user, ct))
+        {
+            throw AppException.Denied();
+        }
+        var route = site.RouteOf(item.Type);
+        if (!route.Approval)
+        {
+            throw AppException.Conflict("conflict.content.no_route");
+        }
+        if (item.DraftVersion is null || item.PublishAt is not null)
+        {
+            throw AppException.Conflict(item.Status == ContentStatuses.Archived ? "conflict.content.archived"
+                : item.InReview ? "conflict.content.in_review" : "conflict.content.nothing_to_publish");
+        }
+        var (version, publishAt, expiresAt) = await ReadyAsync(item, site, request.PublishAt, request.ExpiresAt, ct);
+        var author = (await VersionAsync(id, version, ct))!.Author;
+        var writers = new[] { user, author, item.CreatedBy }.Distinct().ToArray();
+        var key = await reviews.RouteKeyAsync(site, item.Type, route, writers, ct);
+        var instance = await engine.StartAsync(key, $"{id:N}{Ids.New():N}", site.OrgUnitId, user, writers.Where(w => w != user).ToArray(), user, ct);
+        var now = clock.UtcNow;
+        await session.ExecAsync("update content.content_version set material = @material where item_id = @id and number = @version",
+            new { id, version, material = request.Material ?? true }, ct);
+        await session.ExecAsync(
+            """
+            update content.content_item set status = case when status in ('published', 'expired') then status else 'in_review' end,
+              review_instance_id = @instance, submitted_by = @user, publish_at = @publishAt, expires_at = @expiresAt, updated_at = @now, row_version = row_version + 1
+            where id = @id
+            """, new { id, instance = instance.Id, user, publishAt, expiresAt, now }, ct);
+        await reviews.EventAsync(id, version, "submitted", user, null, null, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.ContentSubmitted, "content_item", id.ToString(), TargetOrgUnitId: site.OrgUnitId,
+            Changes: new { version, publishAt, expiresAt, route = key }), ct);
+        return await ViewAsync((await RowAsync(id, false, ct))!, ct);
+    }
+
+    /// <summary>The review history of an item for the people who work on it, return comments included (US1 scenario 2).</summary>
+    public async Task<IReadOnlyList<ReviewEvent>> ReviewHistoryAsync(Guid id, CancellationToken ct)
+    {
+        await ManagedAsync(id, false, ct);
+        var list = new List<ReviewEvent>();
+        foreach (var e in await reviews.HistoryAsync(id, ct))
+        {
+            list.Add(new ReviewEvent(e.Version, e.Event, e.Actor is { } a ? await PersonAsync(a, ct) : null,
+                e.OnBehalfOf is { } o ? await PersonAsync(o, ct) : null, e.Comment, e.At));
+        }
+        return list;
+    }
+
+    /// <summary>The person who submitted, or an editor of the site, takes the draft back out of review.</summary>
+    public async Task<ItemView> WithdrawAsync(Guid id, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var (item, site) = await ManagedAsync(id, forUpdate: true, ct);
+        if (item.ReviewInstanceId is not { } instance)
+        {
+            throw AppException.Conflict("conflict.content.not_in_review");
+        }
+        if (item.SubmittedBy != user && !await HoldsAsync(Permissions.ContentEdit, site, ct))
+        {
+            throw AppException.Denied();
+        }
+        await engine.WithdrawAsync(instance, ct);
+        await reviews.CloseAsync(item, ct);
+        await reviews.EventAsync(id, item.DraftVersion ?? 0, "withdrawn", user, null, null, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.ContentWithdrawn, "content_item", id.ToString(), TargetOrgUnitId: site.OrgUnitId,
+            Changes: new { version = item.DraftVersion }), ct);
         return await ViewAsync((await RowAsync(id, false, ct))!, ct);
     }
 
@@ -503,7 +617,7 @@ public sealed class Items(
         {
             throw AppException.Denied();
         }
-        if (item.Status is ContentStatuses.Archived or ContentStatuses.InReview)
+        if (item.Status == ContentStatuses.Archived || item.InReview)
         {
             throw AppException.Conflict(item.Status == ContentStatuses.Archived ? "conflict.content.archived" : "conflict.content.in_review");
         }
@@ -555,7 +669,7 @@ public sealed class Items(
         return new ItemView(item.Id, item.SiteId, item.Type, item.Status, item.Classification, item.PrimaryLocale, item.Audience,
             item.OwnerId is { } o ? await PersonAsync(o, ct) : null, item.BackupOwnerId is { } b ? await PersonAsync(b, ct) : null, item.ReviewDueAt,
             item.Pinned, item.Featured, item.PublishedVersion, item.DraftVersion, item.PublishAt, item.ExpiresAt, item.PublishedAt, item.ExpiredAt,
-            version?.Variants ?? new Dictionary<string, ContentVariant>(), version?.ChangeNote, await PersonAsync(item.CreatedBy, ct), item.UpdatedAt, item.Version);
+            version?.Variants ?? new Dictionary<string, ContentVariant>(), version?.ChangeNote, await PersonAsync(item.CreatedBy, ct), item.UpdatedAt, item.Version, item.InReview);
     }
 
     public async Task<ItemView> GetAsync(Guid id, CancellationToken ct) => await ViewAsync((await ManagedAsync(id, false, ct)).Item, ct);

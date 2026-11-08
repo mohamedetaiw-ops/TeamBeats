@@ -757,3 +757,22 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Direct publish | Until the approval route of the next slice, a publisher publishes directly and is recorded as the version's approver. |
 | Unpublish | Unpublish returns an item to draft with its versions, so it can be published again. |
 | Reading | Readers need `content.view` on the item as a resource: public and internal items have tenant visibility, so every active member may read them; confidential and restricted items need a role grant covering the site's unit or an entry on the item. No role grants `content.view` to everyone, which keeps restricted resources closed. |
+
+## Content approval and feed (spec 009 T005, T007, T008)
+| Part | Where |
+|---|---|
+| Routes | A site keeps a route per content type: none (publishers publish directly) or one review step with named approvers. With a route, a draft goes live only through `POST /api/v1/content/items/{id}/submit`; `publish` is refused with `conflict.content.approval_required` |
+| Engine | Each site, type and set of deciders compiles to its own engine definition `content.{site}.{type}.{hash}` (source `content_route`), so a change of approvers applies to the next submission and running reviews keep their route. The business key starts with the item ID |
+| Deciders | The named approvers other than the writers (the person who submits, the version's author and the item's creator), or the site's publishers (`content.publish` at the site's unit) when that leaves nobody (US1 scenario 6). The engine excludes the writers and the content module checks again before a decision |
+| Inbox | The spec 016 inbox serves tasks of other modules through `ITaskSource` (Workflow contracts): the module describes the task (title per locale, link, unit, requester), says who may decide instead of `workflow.approve`, and moves its object on after the decision in the same transaction |
+| Decisions | Approve releases the version at the wanted time, or now when that time has passed (event `schedule_missed`, the person who submitted is told). Return and reject send the draft back with the comment. A live item stays published and readable while its next version is reviewed. `withdraw` takes a draft out of review. `GET .../reviews` shows the history |
+| Feed | `GET /api/v1/content/feed?site=&type=&cursor=&limit=` returns live items whose audience includes the viewer and which the viewer may read, pinned first and then newest, with an opaque cursor |
+| Tests | `ContentReviewTests` |
+
+| Item | Note |
+|---|---|
+| Default route | Sites start without routes, so publishers publish directly until a communications administrator adds one (FR-003 allows routes "from none"). |
+| Reject | Reject and return both send the draft back to its writers; the spec names only return. |
+| Feed scan | The feed reads live items in batches and checks audience and access per item, at most 1,000 per page request. The performance targets of section 15 are checked with T024. |
+| Inbox link | The inbox shows a content review with its title; the link opens once the item editor pages of T023 exist. |
+

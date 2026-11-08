@@ -28,7 +28,9 @@ public sealed record InboxItem(
     PersonRef? RequestedFor,
     PersonRef? OnBehalfOf,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? DueAt);
+    DateTimeOffset? DueAt,
+    IReadOnlyDictionary<string, string>? Title = null,
+    string? Link = null);
 
 public sealed record InboxCount(int Open);
 
@@ -51,7 +53,8 @@ public sealed class Tasks(
     IAuditWriter audit,
     IOutbox outbox,
     IClock clock,
-    Requests requests)
+    Requests requests,
+    IEnumerable<ITaskSource> sources)
 {
     public const int CommentMax = 2000;
     public const int InboxMax = 500;
@@ -66,6 +69,8 @@ public sealed class Tasks(
             && Guid.TryParseExact(businessKey[..32], "N", out var id) ? id : null;
 
     private readonly Dictionary<(Guid, Guid?), bool> approves = [];
+
+    private ITaskSource? SourceOf(UserTaskInfo task) => sources.FirstOrDefault(s => s.Handles(task.DefinitionKey));
 
     private async Task<bool> MayApproveAsync(Guid authority, RequestRow? request, Guid? unit, CancellationToken ct)
     {
@@ -98,17 +103,26 @@ public sealed class Tasks(
     private async Task<Guid?> UnitOfAsync(UserTaskInfo task, RequestRow? request, CancellationToken ct) =>
         request is not null ? request.OrgUnitId : (await engine.GetInstanceAsync(task.InstanceId, ct))?.OrgUnitId;
 
-    private async Task<IReadOnlyList<(UserTaskInfo Task, RequestRow? Request)>> ActionableAsync(CancellationToken ct)
+    private async Task<IReadOnlyList<(UserTaskInfo Task, RequestRow? Request, TaskSubject? Subject)>> ActionableAsync(CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.WorkflowCatalogue, ct);
         var user = context.RequireUser();
-        var list = new List<(UserTaskInfo, RequestRow?)>();
+        var list = new List<(UserTaskInfo, RequestRow?, TaskSubject?)>();
         foreach (var task in await engine.MyOpenTasksAsync(InboxMax, ct))
         {
+            // Another module's task: that module describes it and decides who may act, never workflow.approve.
+            if (SourceOf(task) is { } source)
+            {
+                if (await source.DescribeAsync(task, ct) is { } subject && await source.MayDecideAsync(task, task.OnBehalfOf ?? user, ct))
+                {
+                    list.Add((task, null, subject));
+                }
+                continue;
+            }
             var request = RequestIdOf(task) is { } requestId ? await requests.RowAsync(requestId, false, ct) : null;
             if (await MayApproveAsync(task.OnBehalfOf ?? user, request, await UnitOfAsync(task, request, ct), ct))
             {
-                list.Add((task, request));
+                list.Add((task, request, null));
             }
         }
         return list;
@@ -117,7 +131,7 @@ public sealed class Tasks(
     public async Task<IReadOnlyList<InboxItem>> InboxAsync(Guid? serviceId, CancellationToken ct)
     {
         var items = new List<InboxItem>();
-        foreach (var (task, request) in await ActionableAsync(ct))
+        foreach (var (task, request, subject) in await ActionableAsync(ct))
         {
             if (serviceId is { } only && request?.ServiceId != only)
             {
@@ -131,10 +145,12 @@ public sealed class Tasks(
                 var version = await Versions.GetAsync(session, request.ServiceId, request.ServiceVersion, ct);
                 step = version?.Route.Approval?.Names is { Count: > 0 } stepNames ? stepNames : names;
             }
-            items.Add(new InboxItem(task.Id, request is null ? task.DefinitionKey : "service_request", task.Name, step, request?.Id, request?.Number,
-                request?.ServiceId, names, request is null ? null : await PersonAsync(request.RequesterId, ct),
-                request?.OnBehalfOfId is { } subject ? await PersonAsync(subject, ct) : null,
-                task.OnBehalfOf is { } delegator ? await PersonAsync(delegator, ct) : null, task.CreatedAt, task.DueAt));
+            var requester = request?.RequesterId ?? subject?.RequesterId;
+            items.Add(new InboxItem(task.Id, subject?.Source ?? (request is null ? task.DefinitionKey : "service_request"), task.Name, step, request?.Id, request?.Number,
+                request?.ServiceId, names, requester is { } r ? await PersonAsync(r, ct) : null,
+                request?.OnBehalfOfId is { } forWhom ? await PersonAsync(forWhom, ct) : null,
+                task.OnBehalfOf is { } delegator ? await PersonAsync(delegator, ct) : null, task.CreatedAt, task.DueAt, subject?.Title,
+                subject?.Link ?? (request is not null ? RequestNotifier.Link(request.Id) : null)));
         }
         return items;
     }
@@ -171,7 +187,19 @@ public sealed class Tasks(
             throw AppException.Conflict("conflict.workflow.task_closed");
         }
         var onBehalfOf = task.OnBehalfOf;
-        if (!await MayApproveAsync(onBehalfOf ?? user, request, await UnitOfAsync(task, request, ct), ct))
+        var source = SourceOf(task);
+        if (source is not null)
+        {
+            if (await source.DescribeAsync(task, ct) is null)
+            {
+                throw AppException.Conflict("conflict.workflow.task_closed");
+            }
+            if (!await source.MayDecideAsync(task, onBehalfOf ?? user, ct))
+            {
+                throw AppException.Denied();
+            }
+        }
+        else if (!await MayApproveAsync(onBehalfOf ?? user, request, await UnitOfAsync(task, request, ct), ct))
         {
             throw AppException.Denied();
         }
@@ -192,6 +220,10 @@ public sealed class Tasks(
         if (request is not null)
         {
             await MoveRequestAsync(request, task, done, ct);
+        }
+        if (source is not null)
+        {
+            await source.DecidedAsync(task, done, ct);
         }
         return done;
     }

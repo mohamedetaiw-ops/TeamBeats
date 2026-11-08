@@ -4847,6 +4847,54 @@
         }
       }
     },
+    "/api/v1/content/feed": {
+      "get": {
+        "tags": [
+          "Content: feed"
+        ],
+        "parameters": [
+          {
+            "name": "site",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/content/items": {
       "get": {
         "tags": [
@@ -5001,6 +5049,91 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/submit": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PublishRequest"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/withdraw": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/reviews": {
+      "get": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -6257,6 +6390,27 @@
           },
           "isEveryone": {
             "type": "boolean"
+          }
+        }
+      },
+      "ContentRoute": {
+        "required": [
+          "approval"
+        ],
+        "type": "object",
+        "properties": {
+          "approval": {
+            "type": "boolean"
+          },
+          "approvers": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
@@ -8545,6 +8699,15 @@
               "string"
             ],
             "format": "int32"
+          },
+          "routes": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ContentRoute"
+            }
           }
         }
       },
@@ -9197,6 +9360,9 @@
     },
     {
       "name": "Content: settings"
+    },
+    {
+      "name": "Content: feed"
     },
     {
       "name": "Content: items"

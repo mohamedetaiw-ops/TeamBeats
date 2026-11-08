@@ -1330,7 +1330,8 @@
       "for": "for {name}",
       "age": "Arrived {when}",
       "due": "Due {when}",
-      "onBehalfOf": "On behalf of {name}"
+      "onBehalfOf": "On behalf of {name}",
+      "contentReview": "Content review"
     },
     "delegation": {
       "title": "While you are away",
