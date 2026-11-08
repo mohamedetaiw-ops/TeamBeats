@@ -680,3 +680,23 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Staging scanner | Staging runs the dev host, which uses the signature scanner because there is no ClamAV machine yet. A production deployment without `Scanning:ClamAv:Host` fails every scan, so nothing unscanned is attached. A ClamAV Fly machine is the follow up. |
 | Who cancels | The spec names the requester. Only the filer cancels; the person a request was filed for can read it but not cancel it. |
 | Read only prefill | The spec says directory values stay read only. Fields an employee may edit in their own profile stay editable in the form. |
+
+## Task inbox and delegation (spec 016 T009 to T012, spec 024 T007)
+| Part | Where |
+|---|---|
+| Inbox | `GET /api/v1/tasks?service=` lists every open engine task the caller may act on now, oldest first, with the request number, service, step names per locale, requester, the person it is for, "on behalf of" and due time. `GET /api/v1/tasks/count` feeds the header badge |
+| Decisions | `POST /api/v1/tasks/{id}/decision` with `approve`, `reject` (reason required) or `return`. It needs a current assignment and `workflow.approve` at the request's unit. Another tenant's task is not found; a task of the tenant the caller is not assigned to is refused |
+| Request update | The decision moves the request in the same transaction: approved and rejected close it and publish `RequestCompleted`, returned keeps it open for the filer and publishes `RequestReturned`. Each decision is a Tracking entry with actor, on behalf of and comment, and audited as `task.approved`, `task.rejected` or `task.returned` |
+| Resubmit | `POST /api/v1/requests/{id}/resubmit` by the filer of a returned request, on the same form version, with the same validation and read only prefill. The route starts again under business key `{request}.{round}`, so each round has its own history; audited as `request.resubmitted` |
+| Delegation | `GET`, `PUT` and `DELETE /api/v1/me/delegation`: one delegate for a range of days on the delegator's calendar, at most a year. The engine asks `IDelegations` (Workflow.Contracts, kept by Services) when it checks a candidate, so tasks reach the delegate inside the range and come back after it without moving anything. The engine stores "on behalf of" on the task and in history. Audited as `delegation.set`, `delegation.changed` and `delegation.ended` |
+| Authorization | `IAuthorizationProvisioning.UserHoldsAsync` checks another person's grants, for a delegate acting on behalf of an approver who holds a permission at the unit |
+| Tests | `TaskInboxTests` |
+
+| Item | Note |
+|---|---|
+| Approve permission for delegates | The spec asks for `workflow.approve` besides the assignment. A delegate acts with the authority of the person they stand in for, so the check uses that person's grants. A delegate who is excluded from the request (filer or the person it is for) is never a candidate, so the step stays with the approver. |
+| The delegator during the window | The delegator still sees the task, and may still act on it. The spec says the delegator can still see it and is silent on acting; refusing them would stall urgent approvals. |
+| Assigned without the permission | A named approver without `workflow.approve` at the unit does not see the task and cannot act. Tenants give named approvers the Approver role; the line manager rule (T016) will grant it through the reporting line. |
+| Return reason | The spec requires a reason to reject only, so returning takes an optional comment. |
+| Route version on resubmit | The form stays at the request's version; the route is the latest published version of the service. |
+| Other sources | Tasks from other engine sources (content, policy and document routes later in R1) appear in the same inbox with their definition key as source. Their own modules will add request style details when they are built. |

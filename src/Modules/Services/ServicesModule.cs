@@ -18,6 +18,9 @@ public static class ServicesModule
         services.AddScoped<ServiceAdmin>();
         services.AddScoped<Requests>();
         services.AddScoped<Attachments>();
+        services.AddScoped<Tasks>();
+        services.AddScoped<Delegations>();
+        services.AddScoped<Workflow.Contracts.IDelegations>(sp => sp.GetRequiredService<Delegations>());
         return services;
     }
 
@@ -82,6 +85,44 @@ public static class ServicesModule
             var detail = await service.CancelAsync(id, ct);
             await session.CommitAsync(ct);
             return Results.Ok(detail);
+        });
+
+        requests.MapPost("/{id:guid}/resubmit", async (Guid id, RequestResubmit request, Requests service, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await service.ResubmitAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        var tasks = app.MapGroup("/api/v1/tasks").RequireTenantUser().WithTags("Services: task inbox");
+
+        tasks.MapGet("", async (Guid? service, Tasks inbox, CancellationToken ct) => Results.Ok(await inbox.InboxAsync(service, ct)));
+
+        tasks.MapGet("/count", async (Tasks inbox, CancellationToken ct) => Results.Ok(await inbox.CountAsync(ct)));
+
+        tasks.MapPost("/{id:guid}/decision", async (Guid id, TaskDecision decision, Tasks inbox, IDbSession session, CancellationToken ct) =>
+        {
+            var task = await inbox.DecideAsync(id, decision, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(task);
+        });
+
+        var delegation = app.MapGroup("/api/v1/me/delegation").RequireTenantUser().WithTags("Services: delegation");
+
+        delegation.MapGet("", async (Delegations delegations, CancellationToken ct) => Results.Ok(new { delegation = await delegations.MineAsync(ct) }));
+
+        delegation.MapPut("", async (DelegationRequest request, Delegations delegations, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await delegations.SetAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(new { delegation = view });
+        });
+
+        delegation.MapDelete("", async (Delegations delegations, IDbSession session, CancellationToken ct) =>
+        {
+            await delegations.EndAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
 
         requests.MapPost("/attachments", async (string? name, HttpRequest http, Attachments files, IDbSession session, CancellationToken ct) =>

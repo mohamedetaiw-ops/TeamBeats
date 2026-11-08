@@ -4,7 +4,7 @@ Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot)
 
 ## Phase 1: Foundations
 - [x] T001 `Services` and `Services.Contracts` projects; migration for categories, services, versions, requests, events, attachments, favourites, recent use and delegations (forced RLS)
-- [ ] T002 Permissions `service.manage`, `service.request_on_behalf`; audit actions `service.published`, `request.submitted`, `request.cancelled`, `task.approved`, `task.rejected`, `task.returned`, `delegation.changed`; capability `workflow.max_services` quota
+- [x] T002 Permissions `service.manage`, `service.request_on_behalf`; audit actions `service.published`, `request.submitted`, `request.cancelled`, `task.approved`, `task.rejected`, `task.returned`, `delegation.changed`; capability `workflow.max_services` quota
 - [x] T003 Form schema and validator with unit tests (field types of FR-003, required, comparisons, conditions, prefill sources)
 
 ## Phase 2: User Story 1, catalogue (P1)
@@ -17,10 +17,10 @@ Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot)
 - [x] T008 [US2] Attachments upload and download
 
 ## Phase 4: User Stories 3 and 4, inbox and delegation (P1)
-- [ ] T009 [P] [US3] Tests: one inbox across sources with filters; approve, reject with reason, return; another user cannot act; badge count
-- [ ] T010 [US3] One approval step on the engine core; task endpoints and count; request update on completion
-- [ ] T011 [P] [US4] Tests: delegate receives "on behalf of"; requester as delegate skips; tasks return after the window
-- [ ] T012 [US4] Delegation endpoints and `IDelegations` contract
+- [x] T009 [P] [US3] Tests: one inbox across sources with filters; approve, reject with reason, return; another user cannot act; badge count
+- [x] T010 [US3] One approval step on the engine core; task endpoints and count; request update on completion
+- [x] T011 [P] [US4] Tests: delegate receives "on behalf of"; requester as delegate skips; tasks return after the window
+- [x] T012 [US4] Delegation endpoints and `IDelegations` contract
 
 ## Phase 5: User Story 7, builder (P1, R1 basic)
 - [ ] T013 [P] [US7] Tests: create, preview and publish; form version kept by submitted requests; scoped owner cannot reach beyond their unit

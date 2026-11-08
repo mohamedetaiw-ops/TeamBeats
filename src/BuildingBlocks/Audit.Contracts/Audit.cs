@@ -162,6 +162,13 @@ public static class AuditActions
     public const string ServiceCategoryChanged = "service.category_changed";
     public const string RequestSubmitted = "request.submitted";
     public const string RequestCancelled = "request.cancelled";
+    public const string RequestResubmitted = "request.resubmitted";
+    public const string TaskApproved = "task.approved";
+    public const string TaskRejected = "task.rejected";
+    public const string TaskReturned = "task.returned";
+    public const string DelegationSet = "delegation.set";
+    public const string DelegationChanged = "delegation.changed";
+    public const string DelegationEnded = "delegation.ended";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -190,7 +197,8 @@ public static class AuditActions
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
-        ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled,
+        ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,
+        TaskApproved, TaskRejected, TaskReturned, DelegationSet, DelegationChanged, DelegationEnded,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

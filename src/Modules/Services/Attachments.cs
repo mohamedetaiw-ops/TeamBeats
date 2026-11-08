@@ -81,6 +81,17 @@ public sealed class Attachments(IDbSession session, ITenantContext context, Tena
         ids.Count == 0 ? Task.CompletedTask
             : session.ExecAsync("update services.attachment set request_id = @requestId where id = any(@ids) and request_id is null", new { requestId, ids = ids.ToArray() }, ct);
 
+    /// <summary>Which of the given attachments already belong to the request.</summary>
+    internal async Task<IReadOnlySet<Guid>> LinkedAsync(Guid requestId, IReadOnlySet<Guid> ids, CancellationToken ct) =>
+        ids.Count == 0 ? new HashSet<Guid>()
+            : (await session.QueryAsync("select id from services.attachment where request_id = @requestId and id = any(@ids)", new { requestId, ids = ids.ToArray() },
+                r => r.GetGuid(0), ct)).ToHashSet();
+
+    /// <summary>Lets go of the request's attachments that are not kept; they become unattached uploads of the person who uploaded them.</summary>
+    internal Task ReleaseAsync(Guid requestId, IReadOnlySet<Guid> keep, CancellationToken ct) =>
+        session.ExecAsync("update services.attachment set request_id = null where request_id = @requestId and not (id = any(@keep))",
+            new { requestId, keep = keep.ToArray() }, ct);
+
     internal async Task<IReadOnlyList<AttachmentView>> ForRequestAsync(Guid requestId, CancellationToken ct) =>
         await session.QueryAsync("select id, file_name, size_bytes, content_type, scan_state from services.attachment where request_id = @requestId order by created_at, id",
             new { requestId }, r => new AttachmentView(r.GetGuid(0), r.GetString(1), r.GetInt64(2), r.GetString(3), r.GetString(4)), ct);

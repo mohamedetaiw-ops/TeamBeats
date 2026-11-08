@@ -114,12 +114,31 @@ public interface IProcessEngine
 
     Task<UserTaskInfo?> GetTaskAsync(Guid taskId, CancellationToken ct = default);
 
-    /// <summary>Open tasks the current user may complete now, oldest first (the spec 016 inbox).</summary>
+    /// <summary>
+    /// The task when the current user may complete it, directly or as a delegate, whatever its status. A delegated task
+    /// carries the person it is done for in <see cref="UserTaskInfo.OnBehalfOf"/>. Null when the user is not a candidate.
+    /// </summary>
+    Task<UserTaskInfo?> MyTaskAsync(Guid taskId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Open tasks the current user may complete now, oldest first (the spec 016 inbox). Tasks the user holds as a
+    /// delegate carry the person they are done for in <see cref="UserTaskInfo.OnBehalfOf"/>.
+    /// </summary>
     Task<IReadOnlyList<UserTaskInfo>> MyOpenTasksAsync(int limit = 100, CancellationToken ct = default);
 
     Task<IReadOnlyList<UserTaskInfo>> InstanceTasksAsync(Guid instanceId, CancellationToken ct = default);
 
     Task<IReadOnlyList<HistoryEntry>> HistoryAsync(Guid instanceId, CancellationToken ct = default);
+}
+
+/// <summary>
+/// Who acts for whom while someone is away (spec 016 US4, spec 024 FR-016). The engine asks it when deciding who may
+/// complete a task; the module that keeps delegations implements it.
+/// </summary>
+public interface IDelegations
+{
+    /// <summary>People who have handed their tasks to <paramref name="delegateId"/> at <paramref name="at"/>, each on their own calendar day.</summary>
+    Task<IReadOnlyList<Guid>> DelegatorsOfAsync(Guid delegateId, DateTimeOffset at, CancellationToken ct = default);
 }
 
 public sealed record UserTaskCreated(Guid TaskId, Guid InstanceId, string DefinitionKey, string BusinessKey, string ElementId, DateTimeOffset? DueAt) : IIntegrationEvent;

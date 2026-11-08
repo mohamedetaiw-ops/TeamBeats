@@ -14,7 +14,8 @@ namespace TeamBeats.Modules.Workflow;
 /// sequence with an outcome gateway after each, and history. Moves happen in the caller's transaction, with the task row
 /// locked, so a second completion of the same task is refused and never creates a second next step (FR-012).
 /// </summary>
-public sealed class ProcessEngine(IDbSession session, ITenantContext context, IAuthorizationService authz, IAuditWriter audit, IOutbox outbox, IClock clock, EngineJobs jobs)
+public sealed class ProcessEngine(IDbSession session, ITenantContext context, IAuthorizationService authz, IAuthorizationProvisioning grants, IDelegations delegations,
+    IAuditWriter audit, IOutbox outbox, IClock clock, EngineJobs jobs)
     : IProcessEngine
 {
     public const int CommentMax = 2000;
@@ -222,30 +223,77 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             new { instanceId }, ReadTask, ct)).Select(t => t.Info).ToList();
 
     /// <summary>
-    /// Whether the user may complete the task: never the excluded starter; otherwise a named user, or a holder of the
-    /// step's permission at the instance's org unit through central authorization. Checks are for the current user only.
+    /// Whether the current user may complete the task: never an excluded person (the starter, or the person a request
+    /// is for), directly or as a delegate; otherwise a named user or a holder of the step's permission at the instance's
+    /// org unit through central authorization. A delegate may complete the task when the person who handed it over is
+    /// a candidate, and then acts on their behalf. Returns the person acted for, or null when acting directly.
     /// </summary>
-    private async Task<bool> IsCandidateAsync(TaskRow task, Guid userId, Dictionary<(string, Guid?), bool> cache, CancellationToken ct)
+    private CandidateCheck Check(Guid user) => new(authz, grants, delegations, clock.UtcNow, user);
+
+    private sealed class CandidateCheck(IAuthorizationService authz, IAuthorizationProvisioning grants, IDelegations delegations, DateTimeOffset now, Guid user)
     {
-        if (task.Excluded.Contains(userId))
+        private readonly Dictionary<(Guid, string, Guid?), bool> holds = [];
+        private IReadOnlyList<Guid>? delegators;
+
+        private async Task<bool> IsCandidateAsync(TaskRow task, Guid person, CancellationToken ct)
         {
-            return false;
+            if (task.Excluded.Contains(person))
+            {
+                return false;
+            }
+            if (task.Candidates.Users.Contains(person))
+            {
+                return true;
+            }
+            if (task.Candidates.Permission is not { } permission)
+            {
+                return false;
+            }
+            if (!holds.TryGetValue((person, permission, task.OrgUnitId), out var allowed))
+            {
+                var target = task.OrgUnitId is { } unit ? AuthzTarget.OrgUnit(unit) : AuthzTarget.Tenant;
+                allowed = person == user
+                    ? (await authz.CheckAsync(permission, target, ct)).Allowed
+                    : await grants.UserHoldsAsync(person, permission, target, ct);
+                holds[(person, permission, task.OrgUnitId)] = allowed;
+            }
+            return allowed;
         }
-        if (task.Candidates.Users.Contains(userId))
+
+        public async Task<(bool Allowed, Guid? OnBehalfOf)> CheckAsync(TaskRow task, CancellationToken ct)
         {
-            return true;
+            if (task.Excluded.Contains(user))
+            {
+                return (false, null);
+            }
+            if (await IsCandidateAsync(task, user, ct))
+            {
+                return (true, null);
+            }
+            delegators ??= await delegations.DelegatorsOfAsync(user, now, ct);
+            foreach (var delegator in delegators)
+            {
+                if (await IsCandidateAsync(task, delegator, ct))
+                {
+                    return (true, delegator);
+                }
+            }
+            return (false, null);
         }
-        if (task.Candidates.Permission is not { } permission)
+    }
+
+    public async Task<UserTaskInfo?> MyTaskAsync(Guid taskId, CancellationToken ct = default)
+    {
+        var user = context.RequireUser();
+        var task = await session.QuerySingleOrDefaultAsync(
+            $"select {TaskColumns} from workflow.user_task t join workflow.process_instance i on i.id = t.instance_id where t.id = @taskId",
+            new { taskId }, ReadTask, ct);
+        if (task is null)
         {
-            return false;
+            return null;
         }
-        if (!cache.TryGetValue((permission, task.OrgUnitId), out var allowed))
-        {
-            var target = task.OrgUnitId is { } unit ? AuthzTarget.OrgUnit(unit) : AuthzTarget.Tenant;
-            allowed = (await authz.CheckAsync(permission, target, ct)).Allowed;
-            cache[(permission, task.OrgUnitId)] = allowed;
-        }
-        return allowed;
+        var (allowed, onBehalfOf) = await Check(user).CheckAsync(task, ct);
+        return !allowed ? null : task.Info.Status == "open" ? task.Info with { OnBehalfOf = onBehalfOf } : task.Info;
     }
 
     public async Task<IReadOnlyList<UserTaskInfo>> MyOpenTasksAsync(int limit = 100, CancellationToken ct = default)
@@ -256,13 +304,13 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             select {TaskColumns} from workflow.user_task t join workflow.process_instance i on i.id = t.instance_id
             where t.status = 'open' order by t.created_at, t.id limit 1000
             """, null, ReadTask, ct);
-        var cache = new Dictionary<(string, Guid?), bool>();
+        var check = Check(user);
         var mine = new List<UserTaskInfo>();
         foreach (var task in open)
         {
-            if (await IsCandidateAsync(task, user, cache, ct))
+            if (await check.CheckAsync(task, ct) is (true, var onBehalfOf))
             {
-                mine.Add(task.Info);
+                mine.Add(task.Info with { OnBehalfOf = onBehalfOf });
                 if (mine.Count >= Math.Clamp(limit, 1, 500))
                 {
                     break;
@@ -294,7 +342,8 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             select {TaskColumns} from workflow.user_task t join workflow.process_instance i on i.id = t.instance_id
             where t.id = @taskId for update of t, i
             """, new { taskId }, ReadTask, ct) ?? throw AppException.NotFound();
-        if (!await IsCandidateAsync(task, user, [], ct))
+        var (allowed, onBehalfOf) = await Check(user).CheckAsync(task, ct);
+        if (!allowed)
         {
             throw AppException.Denied();
         }
@@ -305,12 +354,14 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
 
         var now = clock.UtcNow;
         await session.ExecAsync(
-            "update workflow.user_task set status = 'completed', outcome = @outcome, comment = @comment, completed_by = @user, completed_at = @now where id = @taskId",
-            new { taskId, outcome, comment, user, now }, ct);
+            """
+            update workflow.user_task set status = 'completed', outcome = @outcome, comment = @comment, completed_by = @user, on_behalf_of = @onBehalfOf, completed_at = @now
+            where id = @taskId
+            """, new { taskId, outcome, comment, user, onBehalfOf, now }, ct);
         await jobs.CloseTaskJobsAsync(taskId, ct);
-        await HistoryAsync(task.Info.InstanceId, task.Info.ElementId, "task_completed:" + outcome, user, null, ct);
+        await HistoryAsync(task.Info.InstanceId, task.Info.ElementId, "task_completed:" + outcome, user, onBehalfOf, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.WorkflowTaskCompleted, "user_task", taskId.ToString(), TargetOrgUnitId: task.OrgUnitId,
-            Changes: new { task.Info.DefinitionKey, task.Info.BusinessKey, element = task.Info.ElementId, outcome }), ct);
+            Changes: new { task.Info.DefinitionKey, task.Info.BusinessKey, element = task.Info.ElementId, outcome, onBehalfOf }), ct);
         await outbox.EnqueueAsync(new UserTaskCompleted(taskId, task.Info.InstanceId, task.Info.DefinitionKey, task.Info.BusinessKey, task.Info.ElementId, outcome, user), ct);
 
         var instance = (await GetInstanceAsync(task.Info.InstanceId, ct))!;
@@ -333,7 +384,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             await HistoryAsync(instance.Id, "end_" + end, "completed", null, null, ct);
             await outbox.EnqueueAsync(new ProcessInstanceCompleted(instance.Id, instance.DefinitionKey, instance.BusinessKey, end), ct);
         }
-        return task.Info with { Status = "completed", Outcome = outcome, Comment = comment, CompletedBy = user, CompletedAt = now };
+        return task.Info with { Status = "completed", Outcome = outcome, Comment = comment, CompletedBy = user, OnBehalfOf = onBehalfOf, CompletedAt = now };
     }
 
     // ---- History ----

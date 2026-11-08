@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Persistence;
@@ -7,7 +8,8 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Authorization;
 
 /// <summary>Seeding and system assignments used by tenant creation and first sign-in.</summary>
-public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext context, AssignmentStore store, IAuditWriter audit, Messaging.IOutbox outbox)
+public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext context, AssignmentStore store, IAuditWriter audit, Messaging.IOutbox outbox,
+    IServiceProvider services)
     : IAuthorizationProvisioning
 {
     public async Task SeedTenantRolesAsync(CancellationToken ct = default)
@@ -134,6 +136,14 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
             left join authz.group_member m on a.subject_type = 'group' and m.group_id = a.subject_id
             where a.scope_type = 'tenant' and a.revoked_at is null and (a.subject_type = 'user' or m.user_id is not null)
             """, new { p = permission }, r => r.GetGuid(0), ct);
+
+    public async Task<bool> UserHoldsAsync(Guid userId, string permission, AuthzTarget target, CancellationToken ct = default)
+    {
+        context.RequireTenant();
+        // Resolved here: the policy service depends on tenancy, which depends on this class for tenant creation.
+        var authz = services.GetRequiredService<AuthorizationService>();
+        return (await authz.EvaluateAsync(await authz.GrantsForAsync(userId, ct), permission, target, ct)).Allowed;
+    }
 
     public async Task<IReadOnlySet<Guid>> GroupIdsOfAsync(Guid userId, CancellationToken ct = default) =>
         (await session.QueryAsync("select group_id from authz.group_member where user_id = @userId", new { userId }, r => r.GetGuid(0), ct)).ToHashSet();
