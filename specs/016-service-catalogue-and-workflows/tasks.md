@@ -3,13 +3,13 @@
 Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot), 022 (working days), 024 (engine core); 010 (reporting line), 012 (search), 015 (notifications). R1 covers User Stories 1 to 4 and the R1 parts of 7 and 8.
 
 ## Phase 1: Foundations
-- [ ] T001 `Services` and `Services.Contracts` projects; migration for categories, services, versions, requests, events, attachments, favourites, recent use and delegations (forced RLS)
+- [x] T001 `Services` and `Services.Contracts` projects; migration for categories, services, versions, requests, events, attachments, favourites, recent use and delegations (forced RLS)
 - [ ] T002 Permissions `service.manage`, `service.request_on_behalf`; audit actions `service.published`, `request.submitted`, `request.cancelled`, `task.approved`, `task.rejected`, `task.returned`, `delegation.changed`; capability `workflow.max_services` quota
-- [ ] T003 Form schema and validator with unit tests (field types of FR-003, required, comparisons, conditions, prefill sources)
+- [x] T003 Form schema and validator with unit tests (field types of FR-003, required, comparisons, conditions, prefill sources)
 
 ## Phase 2: User Story 1, catalogue (P1)
-- [ ] T004 [P] [US1] Tests: audience filtering by unit, group and membership type; linked app http(s) only with external cue and SSO flag; contractor gets "not available to you"; favourites and recent; cross-tenant
-- [ ] T005 [US1] Catalogue endpoints and module service registration contract
+- [x] T004 [P] [US1] Tests: audience filtering by unit, group and membership type; linked app http(s) only with external cue and SSO flag; contractor gets "not available to you"; favourites and recent; cross-tenant
+- [x] T005 [US1] Catalogue endpoints and module service registration contract
 
 ## Phase 3: User Story 2, prefilled requests (P1)
 - [ ] T006 [P] [US2] Tests: prefill read-only for directory fields; policy note per locale; validation blocks submit; attachment stored under the tenant path and blocked until clean; My requests with status, step, assignee and Tracking; idempotent submit

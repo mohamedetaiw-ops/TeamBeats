@@ -17,6 +17,8 @@ public static class Capabilities
     public const string IdentityScim = "identity.scim";
     public const string IdentityDirectorySync = "identity.directory_sync";
     public const string WorkflowAdvanced = "workflow.advanced";
+    public const string WorkflowCatalogue = "workflow.catalogue";
+    public const string WorkflowMaxServices = "workflow.max_services";
     public const string IntegrationMicrosoft365 = "integration.microsoft365";
     public const string IntegrationOracleFusion = "integration.oracle_fusion";
     public const string IntegrationSap = "integration.sap";

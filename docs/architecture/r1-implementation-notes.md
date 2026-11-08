@@ -642,3 +642,23 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Recalculation | Every open task with a pending reminder in the tenant is recalculated on a calendar change, because a change reaches units through inheritance. Reminders already sent are not sent again. |
 | Delegation (T007) | Needs the delegation contract of spec 016 and lands with it: the engine will ask that contract for active delegates when it lists or completes tasks, and write "on behalf of" in history. |
 | Line manager candidates | Line manager and manager chain candidates (FR-006) wait for the routes of spec 016 that need them. |
+
+## Service catalogue (spec 016 T001 to T005)
+| Part | Where |
+|---|---|
+| Module | `Services` and `Services.Contracts`, schema `services` with forced RLS on categories, services, versions, requests, Tracking events, attachments, favourites, recent use and delegations |
+| Catalogue | `GET /api/v1/services?q=&category=` returns categories, the services offered to the viewer and their recent use; `GET /api/v1/services/{id}` returns the published form, or 403 `services.not_available` when the audience leaves the viewer out; favourites and `POST /{id}/used` |
+| Builder | `/api/v1/services/admin`: create a form service or linked app, settings, draft form and approval step, publish, retire, and categories. Owners need `service.manage` at the owning unit, or the tenant for services without one |
+| Forms | `FormValidator` checks definitions on save and data on submit: the field types of FR-003, required, show-when conditions on earlier choice fields, comparisons with constants and with today plus or minus days. Prefill sources are a fixed list |
+| Module services | Modules register `IModuleServiceSource`; their services join each tenant's catalogue on first read, for everyone, and an administrator can then set the audience and category |
+| Permissions and plan | `service.manage` (tenant and organization administrators, workflow designers), `service.request_on_behalf` (administrators); `workflow.catalogue` in every package; `workflow.max_services` quota |
+| Tests | `FormValidatorTests`, `ServiceCatalogueTests` |
+
+| Item | Note |
+|---|---|
+| Quota values | The spec leaves the service quota to commercial data. Defaults: 25 on Workplace, 200 on Workplace Plus (the design-to scale), unlimited on Enterprise and Government. Module services do not count. |
+| Audience | Every criterion that is given must match, and inside a criterion any value matches, as in the spec 008 audience rules. Org units cover their subtree. No criterion means everyone. A service owned by a unit must name units inside it. |
+| Approver rule "role at unit" | Stored as a permission held at the requester's unit, because checks never use role names. Line manager approval comes with T016. |
+| Lookup lists | A lookup field keeps its options in the form in R1. Shared tenant lookup lists can come later without changing submitted data. |
+| Rule messages | Errors carry resource keys. The owner's own message per locale is stored with the rule and shown by the form. |
+| Search | The catalogue filters names, descriptions and synonyms in every locale, folding Arabic letter forms. Global search (spec 012) indexes services from `ServicePublished`. |
