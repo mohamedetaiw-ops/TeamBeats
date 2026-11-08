@@ -1,0 +1,181 @@
+/* Spec 016 services, requests and task inbox. Colors and spacing come from tokens; logical properties keep the layout right in RTL. */
+.services {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.services-nav ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.services-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+.services-section h2,
+.services-section h3 {
+  margin: 0;
+}
+
+.services-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.services-toolbar .field {
+  flex: 1 1 14rem;
+}
+
+.services-select {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.services-card {
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.services-card h3 {
+  margin: 0;
+  font-size: inherit;
+}
+
+.services-meta {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.services-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.services-list {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.services-item {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.services-status {
+  display: inline-block;
+  padding-inline: var(--tb-space-xs);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  font-size: var(--tb-font-size-sm);
+}
+
+.services-form {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.services-form fieldset {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+}
+
+.services-form textarea,
+.services-form select {
+  font: inherit;
+}
+
+.services-note {
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border-inline-start: var(--tb-border-width-thick) solid var(--tb-color-border-strong);
+  background: var(--tb-color-surface-sunken);
+}
+
+.services-details {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) 1fr;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  margin: 0;
+}
+
+.services-details dt {
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.services-details dd {
+  margin: 0;
+}
+
+.services-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+.services-check {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+}
+
+.services-builder-field {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+}
+
+.task-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+}
+
+.task-badge-count {
+  min-inline-size: 1.25rem;
+  padding-inline: var(--tb-space-xs);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-text-inverse);
+  font-size: var(--tb-font-size-xs);
+  text-align: center;
+}

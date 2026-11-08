@@ -27,7 +27,7 @@ Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot)
 - [x] T014 [US7] Builder endpoints
 
 ## Phase 6: Experience
-- [ ] T015 Services page, request form, My requests, Details and Tracking, task inbox page, header badge, builder pages, in English and Arabic, RTL; e2e with axe
+- [x] T015 Services page, request form, My requests, Details and Tracking, task inbox page, header badge, builder pages, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
 - [ ] T016 Line manager rule and Team requests once the reporting line exists (planned spec 010)
