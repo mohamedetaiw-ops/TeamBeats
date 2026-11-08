@@ -34,7 +34,7 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T021 [US9] Comments and reactions endpoints and UI
 
 ## Phase 6: Authoring experience
-- [ ] T022 Block editor on Lexical with the body document format, RTL and mixed direction, keyboard and screen reader support
+- [x] T022 Block editor on Lexical with the body document format, RTL and mixed direction, keyboard and screen reader support
 - [ ] T023 Item editor pages: audience picker, schedule and expiry, owner and review date, critical options, preview per audience and device; history and compare views; in English and Arabic; e2e with axe
 
 ## Final phase

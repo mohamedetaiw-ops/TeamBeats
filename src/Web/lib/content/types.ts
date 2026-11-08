@@ -89,3 +89,83 @@ export type ReactionSummary = { itemId: string; counts: Record<ReactionKind, num
 
 /** Where a reader opens an item. */
 export const readHref = (id: string) => `/content/read/${encodeURIComponent(id)}`;
+
+/** Authoring shapes of `/api/v1/content/items` and `/api/v1/content/sites` (spec 009 T023). */
+export type UnitTarget = { id: string; subtree?: boolean };
+export type AudienceClause = { orgUnits?: UnitTarget[] | null; membershipTypes?: string[] | null; locations?: string[] | null; groups?: string[] | null; roles?: string[] | null };
+export type ContentAudience = { anyOf?: AudienceClause[] | null };
+
+export type ContentVariant = { title: string; summary: string | null; body: BodyDocument; outOfDate: boolean };
+
+export type CriticalSettings = { presentation: "modal" | "banner"; requireAck: boolean; remindLaterMax: number; deadlineAt: string | null; dismissible: boolean };
+
+export type ItemView = {
+  id: string;
+  siteId: string;
+  type: string;
+  status: string;
+  classification: string;
+  primaryLocale: string;
+  audience: ContentAudience;
+  owner: ContentPerson | null;
+  backupOwner: ContentPerson | null;
+  reviewDueAt: string | null;
+  pinned: boolean;
+  featured: boolean;
+  publishedVersion: number | null;
+  draftVersion: number | null;
+  publishAt: string | null;
+  expiresAt: string | null;
+  publishedAt: string | null;
+  expiredAt: string | null;
+  variants: Record<string, ContentVariant>;
+  changeNote: string | null;
+  createdBy: ContentPerson;
+  updatedAt: string;
+  version: number;
+  inReview: boolean;
+  critical: CriticalSettings | null;
+  ownerReviewOpen: boolean;
+  retirePending: boolean;
+};
+
+export type SiteView = { id: string; names: Record<string, string>; orgUnitId: string | null; timeZone: string; commentsMode: string; moderation: boolean; isDefault: boolean; status: string };
+
+export type VersionSummary = {
+  number: number;
+  author: ContentPerson;
+  approver: ContentPerson | null;
+  changeNote: string | null;
+  material: boolean;
+  locales: string[];
+  createdAt: string;
+  publishedAt: string | null;
+  current: boolean;
+  draft: boolean;
+  restoredFrom: number | null;
+};
+
+export type DiffSegment = { op: "equal" | "added" | "removed"; text: string };
+export type VersionCompare = { from: number; to: number; locale: string; title: DiffSegment[]; summary: DiffSegment[]; body: DiffSegment[] };
+
+export type AcknowledgementSummary = { itemId: string; countedFrom: number; audience: number; confirmed: number; pending: number; byChannel: Record<string, number>; deadlineAt: string | null };
+export type TeamMemberStatus = { person: ContentPerson; confirmed: boolean; at: string | null; channel: string | null };
+export type AckReportView = { id: string; itemId: string; status: string; rowCount: number | null; createdAt: string; completedAt: string | null; expiresAt: string | null };
+
+export type SiteHealth = { siteId: string; names: Record<string, string>; overdueForReview: number; withoutActiveOwner: number; expired: number; notViewed: number | null };
+export type HealthItem = { id: string; siteId: string; type: string; status: string; title: string; ownerId: string | null; reviewDueAt: string | null; expiredAt: string | null };
+
+export const contentTypes = ["news", "announcement", "page"] as const;
+export const contentStatuses = ["draft", "in_review", "approved", "scheduled", "published", "expired", "archived"] as const;
+export const classifications = ["public", "internal", "confidential", "restricted"] as const;
+export const membershipTypes = ["employee", "contractor", "guest"] as const;
+
+/** A name in the viewer's language, then English, then any. */
+export const pickName = (names: Record<string, string>, locale: string) => names[locale] ?? names.en ?? Object.values(names)[0] ?? "";
+
+/** The variant to show first: the viewer's language, then the primary one, then any. */
+export function variantFor(item: Pick<ItemView, "variants" | "primaryLocale">, locale: string): ContentVariant | undefined {
+  return item.variants[locale] ?? item.variants[item.primaryLocale] ?? Object.values(item.variants)[0];
+}
+
+export const editHref = (id: string) => `/content/items/${encodeURIComponent(id)}`;
