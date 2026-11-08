@@ -9,10 +9,10 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T004 Audience model and evaluator (org unit with or without subtree, group, role, membership type) with unit tests
 
 ## Phase 2: User Story 1, targeted news with approval (P1)
-- [ ] T005 [P] [US1] Tests: submit creates an inbox task; return with comment; scheduled and late approval; in-audience feed and sibling exclusion; edit of a published item keeps it live; no self-approval
+- [x] T005 [P] [US1] Tests: submit creates an inbox task; return with comment; scheduled and late approval; in-audience feed and sibling exclusion; edit of a published item keeps it live; no self-approval
 - [x] T006 [US1] Items, versions and lifecycle endpoints; scheduler for publish and expiry
-- [ ] T007 [US1] One-step route on the spec 024 engine core with the inbox task
-- [ ] T008 [US1] Feed endpoint with permission filtering and cursor paging
+- [x] T007 [US1] One-step route on the spec 024 engine core with the inbox task
+- [x] T008 [US1] Feed endpoint with permission filtering and cursor paging
 
 ## Phase 3: User Story 2, critical announcements (P1)
 - [ ] T009 [P] [US2] Tests: modal until confirmed; remind later limit; record with text hash; material change resets; `content.publish_critical` required; banner; background report audited

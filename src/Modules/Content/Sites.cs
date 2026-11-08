@@ -19,7 +19,8 @@ public sealed record SiteView(
     bool Moderation,
     bool IsDefault,
     string Status,
-    int Version);
+    int Version,
+    IReadOnlyDictionary<string, ContentRoute> Routes);
 
 public sealed record SiteRequest(
     IReadOnlyDictionary<string, string>? Names,
@@ -28,7 +29,8 @@ public sealed record SiteRequest(
     ContentAudience? DefaultAudience,
     string? CommentsMode,
     bool? Moderation,
-    int? Version);
+    int? Version,
+    IReadOnlyDictionary<string, ContentRoute>? Routes = null);
 
 public sealed record ContentSettingsView(IReadOnlyList<string> EmbedHosts, IReadOnlyList<ContentTypeSettings> Types);
 
@@ -39,7 +41,12 @@ internal sealed record SiteRow(Guid Id, IReadOnlyDictionary<string, string> Name
 {
     public AuthzTarget Target => OrgUnitId is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant;
 
-    public SiteView View() => new(Id, Names, OrgUnitId, TimeZone, DefaultAudience, CommentsMode, Moderation, IsDefault, Status, Version);
+    public IReadOnlyDictionary<string, ContentRoute> Routes { get; } = ContentJson.Read<Dictionary<string, ContentRoute>>(RoutesJson);
+
+    /// <summary>The route of a content type; none means publishers publish directly.</summary>
+    public ContentRoute RouteOf(string type) => Routes.TryGetValue(type, out var r) ? r : new ContentRoute(false);
+
+    public SiteView View() => new(Id, Names, OrgUnitId, TimeZone, DefaultAudience, CommentsMode, Moderation, IsDefault, Status, Version, Routes);
 }
 
 /// <summary>
@@ -55,6 +62,7 @@ public sealed class Sites(
     IEntitlementService entitlements,
     IOrganizationHierarchy hierarchy,
     ITenantSettingsReader tenantSettings,
+    ITenantMemberships memberships,
     ILocalizer localizer,
     IAuditWriter audit,
     IClock clock)
@@ -150,7 +158,27 @@ public sealed class Sites(
             errors.Add("commentsMode", "validation.content.comments_mode");
         }
         AudienceRules.Validate(request.DefaultAudience, "defaultAudience", errors);
+        foreach (var (type, route) in request.Routes ?? new Dictionary<string, ContentRoute>())
+        {
+            if (!ContentTypes.Defaults.ContainsKey(type) || route is null || route.Approvers is { Count: > ContentRoute.MaxApprovers }
+                || (route.Approvers is { Count: > 0 } && !route.Approval))
+            {
+                errors.Add("routes", "validation.content.route");
+                continue;
+            }
+            foreach (var approver in route.Approvers ?? [])
+            {
+                if ((await memberships.GetAsync(approver, ct))?.Status != MembershipStatus.Active)
+                {
+                    errors.Add("routes", "validation.content.route_approver");
+                    break;
+                }
+            }
+        }
     }
+
+    private static string RoutesJson(IReadOnlyDictionary<string, ContentRoute>? routes) =>
+        ContentJson.Write((routes ?? new Dictionary<string, ContentRoute>()).ToDictionary(r => r.Key, r => r.Value with { Approvers = r.Value.Approvers?.Distinct().ToList() }));
 
     internal static bool IsTimeZone(string id)
     {
@@ -188,12 +216,13 @@ public sealed class Sites(
         var tz = request.TimeZone ?? (await tenantSettings.GetLocaleSettingsAsync(ct)).TimeZone;
         await session.ExecAsync(
             """
-            insert into content.site (tenant_id, id, names, org_unit_id, time_zone, default_audience, comments_mode, moderation, created_by, created_at, updated_at)
-            values (platform.current_tenant_id(), @id, @names, @unit, @tz, @audience, @mode, @moderation, @user, @now, @now)
+            insert into content.site (tenant_id, id, names, org_unit_id, time_zone, default_audience, routes, comments_mode, moderation, created_by, created_at, updated_at)
+            values (platform.current_tenant_id(), @id, @names, @unit, @tz, @audience, @routes, @mode, @moderation, @user, @now, @now)
             """, new
             {
                 id, names = new Jsonb(ContentJson.Write(Clean(request.Names!))), unit = request.OrgUnitId, tz,
-                audience = new Jsonb(ContentJson.Write(request.DefaultAudience ?? ContentAudience.Everyone)), mode = request.CommentsMode ?? "on",
+                audience = new Jsonb(ContentJson.Write(request.DefaultAudience ?? ContentAudience.Everyone)), routes = new Jsonb(RoutesJson(request.Routes)),
+                mode = request.CommentsMode ?? "on",
                 moderation = request.Moderation ?? false, user, now = clock.UtcNow,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.SiteCreated, "content_site", id.ToString(), TargetOrgUnitId: request.OrgUnitId,
@@ -222,17 +251,22 @@ public sealed class Sites(
         var unit = row.IsDefault ? null : request.OrgUnitId ?? row.OrgUnitId;
         await session.ExecAsync(
             """
-            update content.site set names = @names, org_unit_id = @unit, time_zone = @tz, default_audience = @audience, comments_mode = @mode,
+            update content.site set names = @names, org_unit_id = @unit, time_zone = @tz, default_audience = @audience, routes = @routes, comments_mode = @mode,
               moderation = @moderation, updated_at = @now, row_version = row_version + 1
             where id = @id
             """, new
             {
                 id, names = new Jsonb(ContentJson.Write(names)), unit, tz = request.TimeZone ?? row.TimeZone,
-                audience = new Jsonb(ContentJson.Write(request.DefaultAudience ?? row.DefaultAudience)), mode = request.CommentsMode ?? row.CommentsMode,
+                audience = new Jsonb(ContentJson.Write(request.DefaultAudience ?? row.DefaultAudience)),
+                routes = new Jsonb(request.Routes is null ? row.RoutesJson : RoutesJson(request.Routes)), mode = request.CommentsMode ?? row.CommentsMode,
                 moderation = request.Moderation ?? row.Moderation, now = clock.UtcNow,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.SiteChanged, "content_site", id.ToString(), TargetOrgUnitId: unit,
-            Changes: new { before = new { row.OrgUnitId, row.TimeZone }, after = new { orgUnitId = unit, timeZone = request.TimeZone ?? row.TimeZone } }), ct);
+            Changes: new
+            {
+                before = new { row.OrgUnitId, row.TimeZone, row.Routes },
+                after = new { orgUnitId = unit, timeZone = request.TimeZone ?? row.TimeZone, routes = request.Routes ?? row.Routes },
+            }), ct);
         return (await RowAsync(id, false, ct))!.View();
     }
 

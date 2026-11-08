@@ -37,6 +37,16 @@ public static class ContentTypes
     };
 }
 
+/// <summary>
+/// The approval route of a content type in a site (FR-003). Without approval, publishers publish directly. With it,
+/// items go through one review step on the process engine (more steps with <c>content.multistep_approval</c> in R2): the
+/// named approvers decide, or the site's publishers when no one is named or every named approver wrote the item.
+/// </summary>
+public sealed record ContentRoute(bool Approval, IReadOnlyList<Guid>? Approvers = null)
+{
+    public const int MaxApprovers = 20;
+}
+
 /// <summary>One locale of a version. <see cref="OutOfDate"/> marks a variant that fell behind the primary locale (US5 scenario 5).</summary>
 public sealed record ContentVariant(string Title, string? Summary, BodyDocument Body, bool OutOfDate = false);
 

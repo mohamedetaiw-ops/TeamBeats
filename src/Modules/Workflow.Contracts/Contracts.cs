@@ -155,3 +155,25 @@ public sealed record ProcessInstanceWithdrawn(Guid InstanceId, string Definition
 
 /// <summary>A user task reached its due time (spec 015 reminders).</summary>
 public sealed record UserTaskDue(Guid TaskId, Guid InstanceId, string DefinitionKey, string BusinessKey, DateTimeOffset DueAt) : IIntegrationEvent;
+
+/// <summary>What the task inbox shows for a task of another module: a title per locale, a link and the unit it is for.</summary>
+public sealed record TaskSubject(string Source, IReadOnlyDictionary<string, string> Title, string Link, Guid? OrgUnitId, Guid? RequesterId);
+
+/// <summary>
+/// A module whose approvals run on the engine and show in the spec 016 task inbox (spec 009 FR-003, spec 011, spec 025).
+/// The inbox lists the module's tasks, asks it whether the person whose authority is used may decide (on top of the
+/// engine's candidate check), and calls it after the decision in the same transaction so its object moves on.
+/// </summary>
+public interface ITaskSource
+{
+    /// <summary>Whether tasks of this process definition key belong to the module.</summary>
+    bool Handles(string definitionKey);
+
+    /// <summary>The subject of the task, or null when its object no longer waits for a decision (it is then left out).</summary>
+    Task<TaskSubject?> DescribeAsync(UserTaskInfo task, CancellationToken ct = default);
+
+    Task<bool> MayDecideAsync(UserTaskInfo task, Guid authority, CancellationToken ct = default);
+
+    /// <summary>Called after the engine completed the task; <paramref name="done"/> carries the outcome and comment.</summary>
+    Task DecidedAsync(UserTaskInfo task, UserTaskInfo done, CancellationToken ct = default);
+}

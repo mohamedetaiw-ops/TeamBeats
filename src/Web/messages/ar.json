@@ -1330,7 +1330,8 @@
       "for": "من أجل {name}",
       "age": "وصلت {when}",
       "due": "تستحق {when}",
-      "onBehalfOf": "نيابة عن {name}"
+      "onBehalfOf": "نيابة عن {name}",
+      "contentReview": "مراجعة محتوى"
     },
     "delegation": {
       "title": "أثناء غيابك",

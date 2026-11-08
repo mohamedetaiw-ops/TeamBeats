@@ -145,6 +145,9 @@ export type InboxItem = {
   onBehalfOf: PersonRef | null;
   createdAt: string;
   dueAt: string | null;
+  /** Set for tasks of other modules, such as content reviews (spec 009). */
+  title?: Names | null;
+  link?: string | null;
 };
 
 export type Delegation = { delegate: PersonRef; startsOn: string; endsOn: string; active: boolean };
