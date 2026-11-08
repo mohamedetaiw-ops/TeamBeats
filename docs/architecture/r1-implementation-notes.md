@@ -622,3 +622,23 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Alert thresholds | Still no screen or API to change thresholds and working hours (`security.alerts_advanced`). |
 | Recipients | Holders are read from tenant-scope assignments, direct or through a group; assignment conditions are not evaluated for who is told, because the notification shows no facts. |
 | Policy editor for readers | Security officers see the same form; the API refuses their save with its own message, as the screen does not check roles. |
+
+## Process engine core (spec 024 T001 to T006)
+| Part | Where |
+|---|---|
+| Module | `Workflow` and `Workflow.Contracts`, schema `workflow` with forced RLS on definitions, instances, user tasks, engine jobs and history |
+| Routes | `RouteSpec` (steps in order, each with named users or a permission, an optional due time in working days, and starter exclusion) compiles to BPMN 2.0 XML with the `teambeats` namespace and to an executable graph. `RouteCompiler.FromBpmn` reads the XML back and refuses anything outside the R1 subset |
+| Contract | `IProcessEngine`: publish (immutable versions; the same route again adds no version), start (one instance per business key), complete (candidate check, 409 once closed), withdraw (the starter only), queries, history, and the open tasks of the current user |
+| Candidates | A named user, or a holder of the step's permission at the instance's org unit through central authorization, so a holder in a sibling unit is not a candidate. The starter is never a candidate when the route excludes them |
+| Events | `UserTaskCreated`, `UserTaskCompleted`, `ProcessInstanceCompleted`, `ProcessInstanceWithdrawn`, `UserTaskDue`. Audit: `workflow.definition_published`, `workflow.task_completed`, `workflow.instance_withdrawn` |
+| Due times | `EngineJobs` computes the due time from `IWorkingCalendar` for the instance's unit and stores a `task_due` job. `EngineJobWorker` runs due jobs per active tenant every 10 seconds (worker host; development host with `Workflow:Jobs:InProcess`) and deletes done jobs after 30 days. `WorkingCalendarChanged` recalculates open due times and moves their jobs |
+| Tests | `RouteCompilerTests`, `WorkflowEngineTests`, `WorkflowDueTests` |
+
+| Item | Note |
+|---|---|
+| Role at unit | FR-006 names an org unit role. The hard rules ban role names in checks, so a step names a permission that the role holds (for example `workflow.approve` from the approver role), checked at the instance's unit. |
+| Due time of day | The spec gives working days without a time of day. The smallest safe default is the end of the Nth working day (local midnight after it) in the calendar's time zone, counted from the day the task was created. |
+| Jobs | Jobs are claimed with `for update skip locked` in the worker's transaction, and a job is marked done before its effect, so a second delivery does nothing. A reminder only fires while the task is open and its due time still matches. |
+| Recalculation | Every open task with a pending reminder in the tenant is recalculated on a calendar change, because a change reaches units through inheritance. Reminders already sent are not sent again. |
+| Delegation (T007) | Needs the delegation contract of spec 016 and lands with it: the engine will ask that contract for active delegates when it lists or completes tasks, and write "on behalf of" in history. |
+| Line manager candidates | Line manager and manager chain candidates (FR-006) wait for the routes of spec 016 that need them. |

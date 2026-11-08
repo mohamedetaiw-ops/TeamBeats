@@ -8,6 +8,6 @@ Depends on 004 (authorization), 006 (audit), 022 (working-day contract), ADR-000
 - [x] T003 Compiler and executor for start, sequential user tasks, exclusive gateway on outcome, end
 - [x] T004 [P] Integration tests: start, approve, reject, withdraw; duplicate job delivery has no second effect; starter excluded from candidates; sibling role holder denied; cross-tenant start, complete and query fail
 - [x] T005 `IProcessEngine` contract, events `UserTaskCreated`, `UserTaskCompleted`, `ProcessInstanceCompleted`, `ProcessInstanceWithdrawn`; audit of task completion
-- [ ] T006 Working-day due times on user tasks with reminder jobs and recalculation on `WorkingCalendarChanged`; `UserTaskDue` event
+- [x] T006 Working-day due times on user tasks with reminder jobs and recalculation on `WorkingCalendarChanged`; `UserTaskDue` event
 - [ ] T007 Delegation lookup through the spec 016 contract; "on behalf of" in history
 - [ ] T008 R1 implementation notes; spec evidence for the R1 part

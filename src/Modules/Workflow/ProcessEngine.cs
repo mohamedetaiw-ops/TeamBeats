@@ -14,7 +14,7 @@ namespace TeamBeats.Modules.Workflow;
 /// sequence with an outcome gateway after each, and history. Moves happen in the caller's transaction, with the task row
 /// locked, so a second completion of the same task is refused and never creates a second next step (FR-012).
 /// </summary>
-public sealed class ProcessEngine(IDbSession session, ITenantContext context, IAuthorizationService authz, IAuditWriter audit, IOutbox outbox, IClock clock)
+public sealed class ProcessEngine(IDbSession session, ITenantContext context, IAuthorizationService authz, IAuditWriter audit, IOutbox outbox, IClock clock, EngineJobs jobs)
     : IProcessEngine
 {
     public const int CommentMax = 2000;
@@ -153,6 +153,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         }
         var now = clock.UtcNow;
         await session.ExecAsync("update workflow.user_task set status = 'cancelled', completed_at = @now where instance_id = @instanceId and status = 'open'", new { instanceId, now }, ct);
+        await jobs.CloseInstanceJobsAsync(instanceId, ct);
         await session.ExecAsync("update workflow.process_instance set status = 'withdrawn', outcome = @outcome, ended_at = @now where id = @instanceId",
             new { instanceId, outcome = InstanceOutcomes.Withdrawn, now }, ct);
         await HistoryAsync(instanceId, "end_withdrawn", "withdrawn", Actor(), null, ct);
@@ -189,13 +190,19 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         var id = Ids.New();
         Guid[] excluded = route.ExcludeStarter && instance.StartedBy is { } starter ? [starter] : [];
         var candidates = new CandidateSet(step.Name, step.Users, step.Permission);
+        var now = clock.UtcNow;
+        DateTimeOffset? dueAt = step.DueWorkingDays is { } days ? await jobs.DueAtAsync(instance.OrgUnitId, now, days, ct) : null;
         await session.ExecAsync(
             """
-            insert into workflow.user_task (tenant_id, id, instance_id, element_id, step_index, candidates, excluded_user_ids, status, created_at)
-            values (platform.current_tenant_id(), @id, @instanceId, @elementId, @stepIndex, @candidates, @excluded, 'open', @now)
-            """, new { id, instanceId = instance.Id, elementId = step.Id, stepIndex, candidates = Jsonb.From(candidates), excluded, now = clock.UtcNow }, ct);
+            insert into workflow.user_task (tenant_id, id, instance_id, element_id, step_index, candidates, excluded_user_ids, status, due_at, created_at)
+            values (platform.current_tenant_id(), @id, @instanceId, @elementId, @stepIndex, @candidates, @excluded, 'open', @dueAt, @now)
+            """, new { id, instanceId = instance.Id, elementId = step.Id, stepIndex, candidates = Jsonb.From(candidates), excluded, dueAt, now }, ct);
+        if (dueAt is { } due)
+        {
+            await jobs.ScheduleTaskDueAsync(instance.Id, id, due, ct);
+        }
         await HistoryAsync(instance.Id, step.Id, "task_created", null, null, ct);
-        await outbox.EnqueueAsync(new UserTaskCreated(id, instance.Id, instance.DefinitionKey, instance.BusinessKey, step.Id, null), ct);
+        await outbox.EnqueueAsync(new UserTaskCreated(id, instance.Id, instance.DefinitionKey, instance.BusinessKey, step.Id, dueAt), ct);
     }
 
     public async Task<UserTaskInfo?> GetTaskAsync(Guid taskId, CancellationToken ct = default) =>
@@ -294,6 +301,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         await session.ExecAsync(
             "update workflow.user_task set status = 'completed', outcome = @outcome, comment = @comment, completed_by = @user, completed_at = @now where id = @taskId",
             new { taskId, outcome, comment, user, now }, ct);
+        await jobs.CloseTaskJobsAsync(taskId, ct);
         await HistoryAsync(task.Info.InstanceId, task.Info.ElementId, "task_completed:" + outcome, user, null, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.WorkflowTaskCompleted, "user_task", taskId.ToString(), TargetOrgUnitId: task.OrgUnitId,
             Changes: new { task.Info.DefinitionKey, task.Info.BusinessKey, element = task.Info.ElementId, outcome }), ct);

@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Messaging;
+using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Persistence;
 
@@ -11,8 +13,10 @@ public static class WorkflowModule
 
     public static IServiceCollection AddWorkflowModule(this IServiceCollection services)
     {
+        services.AddScoped<EngineJobs>();
         services.AddScoped<ProcessEngine>();
         services.AddScoped<IProcessEngine>(sp => sp.GetRequiredService<ProcessEngine>());
+        services.AddMessageHandler<WorkingCalendarChanged, CalendarChangeHandler>("workflow.due_recalculation");
         return services;
     }
 }
