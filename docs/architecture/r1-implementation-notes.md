@@ -652,6 +652,7 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Forms | `FormValidator` checks definitions on save and data on submit: the field types of FR-003, required, show-when conditions on earlier choice fields, comparisons with constants and with today plus or minus days. Prefill sources are a fixed list |
 | Module services | Modules register `IModuleServiceSource`; their services join each tenant's catalogue on first read, for everyone, and an administrator can then set the audience and category |
 | Permissions and plan | `service.manage` (tenant and organization administrators, workflow designers), `service.request_on_behalf` (administrators); `workflow.catalogue` in every package; `workflow.max_services` quota |
+| Preview | `GET /api/v1/services/admin/{id}/preview` returns the latest version, draft or published, with the form prefilled for the owner, so the builder shows it as a requester will see it. Nothing is stored |
 | Tests | `FormValidatorTests`, `ServiceCatalogueTests` |
 
 | Item | Note |

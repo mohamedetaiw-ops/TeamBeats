@@ -39,6 +39,10 @@ public sealed record PrefillView(IReadOnlyDictionary<string, JsonElement> Values
 
 public sealed record PersonRef(Guid Id, string DisplayName);
 
+/// <summary>The latest version of a service as the owner will see it as a requester, before publishing (US7 scenario 1).</summary>
+public sealed record ServicePreview(int Version, string State, FormDefinition Form, PrefillView Prefill, IReadOnlyDictionary<string, string>? ApprovalStep,
+    bool AllowOnBehalf, int MaxAttachments);
+
 public sealed record RequestSummary(
     Guid Id,
     string Number,
@@ -87,6 +91,7 @@ public sealed class Requests(
     IOutbox outbox,
     IClock clock,
     Catalogue catalogue,
+    ServiceAdmin admin,
     Attachments attachments)
 {
     public const int MaxIdempotencyKeyLength = 100;
@@ -184,6 +189,18 @@ public sealed class Requests(
         };
         var field = key is null ? null : profile?.Fields.FirstOrDefault(f => f.Key == key);
         return (field?.Value, field?.Source == "directory");
+    }
+
+    /// <summary>
+    /// Previews the latest version of a form service, draft or published, prefilled for the owner. Only owners of the
+    /// service may preview it; nothing is stored.
+    /// </summary>
+    public async Task<ServicePreview> PreviewAsync(Guid serviceId, CancellationToken ct)
+    {
+        var latest = await admin.LatestManagedAsync(serviceId, ct);
+        var (values, readOnly) = await PrefillValuesAsync(latest.Form, context.RequireUser(), ct);
+        return new ServicePreview(latest.Version, latest.State, latest.Form, new PrefillView(values, readOnly.ToList()), latest.Route.Approval?.Names,
+            latest.AllowOnBehalf, latest.MaxAttachments);
     }
 
     /// <summary>

@@ -23,8 +23,8 @@ Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot)
 - [x] T012 [US4] Delegation endpoints and `IDelegations` contract
 
 ## Phase 5: User Story 7, builder (P1, R1 basic)
-- [ ] T013 [P] [US7] Tests: create, preview and publish; form version kept by submitted requests; scoped owner cannot reach beyond their unit
-- [ ] T014 [US7] Builder endpoints
+- [x] T013 [P] [US7] Tests: create, preview and publish; form version kept by submitted requests; scoped owner cannot reach beyond their unit
+- [x] T014 [US7] Builder endpoints
 
 ## Phase 6: Experience
 - [ ] T015 Services page, request form, My requests, Details and Tracking, task inbox page, header badge, builder pages, in English and Arabic, RTL; e2e with axe

@@ -170,6 +170,8 @@ public static class ServicesModule
 
         admin.MapGet("/{id:guid}", async (Guid id, ServiceAdmin services, CancellationToken ct) => Results.Ok(await services.GetAsync(id, ct)));
 
+        admin.MapGet("/{id:guid}/preview", async (Guid id, Requests requests, CancellationToken ct) => Results.Ok(await requests.PreviewAsync(id, ct)));
+
         admin.MapPut("/{id:guid}", async (Guid id, ServiceSettingsRequest request, ServiceAdmin services, IDbSession session, CancellationToken ct) =>
         {
             var view = await services.UpdateAsync(id, request, ct);

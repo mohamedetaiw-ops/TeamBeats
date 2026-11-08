@@ -4518,6 +4518,29 @@
         }
       }
     },
+    "/api/v1/services/admin/{id}/preview": {
+      "get": {
+        "tags": [
+          "Services: builder"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/services/admin/{id}/draft": {
       "put": {
         "tags": [

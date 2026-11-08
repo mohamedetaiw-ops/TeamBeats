@@ -95,6 +95,17 @@ public sealed partial class ServiceAdmin(
         return views;
     }
 
+    /// <summary>The latest version of a form service the caller owns, for the preview.</summary>
+    internal async Task<VersionRow> LatestManagedAsync(Guid id, CancellationToken ct)
+    {
+        var row = await ManagedAsync(id, false, ct);
+        if (row.Kind != ServiceKinds.Form)
+        {
+            throw AppException.Validation("serviceId", "validation.services.not_form");
+        }
+        return await Versions.LatestAsync(session, id, false, ct) ?? throw AppException.NotFound();
+    }
+
     public async Task<ServiceAdminView> GetAsync(Guid id, CancellationToken ct)
     {
         var row = await ManagedAsync(id, false, ct);
