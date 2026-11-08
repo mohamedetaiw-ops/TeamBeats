@@ -39,6 +39,7 @@ public static class AdministrationModule
         ("notifications", Permissions.NotificationsManage, "/admin/notifications"),
         ("calendars", Permissions.HrCalendarManage, "/admin/calendars"),
         ("people", Permissions.PeopleManage, "/admin/people"),
+        ("services", Permissions.ServiceManage, "/admin/services"),
         ("audit", Permissions.AuditView, "/admin/audit"),
         ("security", Permissions.SecurityView, "/admin/security"),
     ];

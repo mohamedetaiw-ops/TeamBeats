@@ -39,7 +39,8 @@ test.describe("tenant theme", () => {
     await signInWithDevForm(page, tenant.key, tenant.adminEmail, "en");
     await page.goto(`${hostOrigin(tenant.key)}/`);
     expect(await accent(page)).toBe("#0f766e");
-    const button = page.locator("a.button").first();
+    // The first filled link button; quiet ones such as the header task badge have no fill.
+    const button = page.locator("a.button:not(.button-quiet)").first();
     if ((await button.count()) > 0) {
       await expect(button).toHaveCSS("background-color", "rgb(15, 118, 110)");
     }

@@ -701,3 +701,18 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Return reason | The spec requires a reason to reject only, so returning takes an optional comment. |
 | Route version on resubmit | The form stays at the request's version; the route is the latest published version of the service. |
 | Other sources | Tasks from other engine sources (content, policy and document routes later in R1) appear in the same inbox with their definition key as source. Their own modules will add request style details when they are built. |
+
+## Service pages (spec 016 T015)
+| Part | Where |
+|---|---|
+| Pages | `/services` catalogue with search, categories, favourites and recent use; `/services/{id}` request form; `/requests` My requests with a status filter; `/requests/{id}` Details and Tracking with cancel and, from the inbox, the decision panel; `/requests/{id}/edit` to change and submit a returned request; `/tasks` inbox and delegation; `/admin/services` and `/admin/services/{id}` for owners |
+| Shell | The `task_badge` region shows the open task count from `GET /api/v1/tasks/count`, read every 30 seconds while the page is visible, like the notification bell |
+| Admin | The `services` admin section appears for holders of `service.manage` anywhere; the API scopes the list and every change to the owner's units |
+| Forms | One renderer for the request form, the resubmit form and the builder preview. It shows and hides fields on their conditions; every rule, read only value and permission is checked again by the API |
+| Tests | `tests/Acceptance/specs/services.spec.ts`: build, preview and publish; find, file and follow; badge, inbox and decide; approved in Tracking; in English and Arabic with axe |
+
+| Item | Note |
+|---|---|
+| Person fields | A person field holds one colleague, picked through the people directory search, so it only holds IDs the API returned. |
+| Lookup and service templates | The builder keeps options inside the field (see the catalogue notes); service templates arrive with R2 (US7 scenario 1 "from a template"). |
+| Fulfilment queue | Queues and fulfilment (US5) are R2, so the builder does not show the queue setting yet. |
