@@ -83,6 +83,12 @@
   <Folder Name="/src/Modules/Security/">
     <Project Path="src/Modules/Security/TeamBeats.Modules.Security.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Workflow/">
+    <Project Path="src/Modules/Workflow/TeamBeats.Modules.Workflow.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Workflow.Contracts/">
+    <Project Path="src/Modules/Workflow.Contracts/TeamBeats.Modules.Workflow.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Security.Contracts/">
     <Project Path="src/Modules/Security.Contracts/TeamBeats.Modules.Security.Contracts.csproj" />
   </Folder>

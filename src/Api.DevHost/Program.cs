@@ -29,6 +29,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Notifications.NotificationDeliveryWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Workflow.EngineJobWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Workflow.EngineJobWorker>();
+        }
         var app = builder.Build();
         app.UseTeamBeatsApi(endpoints =>
         {

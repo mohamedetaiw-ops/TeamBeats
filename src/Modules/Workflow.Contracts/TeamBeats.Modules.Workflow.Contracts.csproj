@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><RootNamespace>TeamBeats.Modules.Workflow.Contracts</RootNamespace><AssemblyName>TeamBeats.Modules.Workflow.Contracts</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlocks/Primitives/TeamBeats.Primitives.csproj" />
+  </ItemGroup>
+</Project>
