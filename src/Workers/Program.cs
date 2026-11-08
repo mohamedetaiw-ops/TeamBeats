@@ -41,6 +41,7 @@ public sealed class WorkerProgram
             builder.Services.AddHostedService<TeamBeats.Modules.Notifications.NotificationDeliveryWorker>();
         }
         builder.Services.AddHostedService<TeamBeats.Modules.Workflow.EngineJobWorker>();
+        builder.Services.AddHostedService<TeamBeats.Modules.Content.ContentScheduleWorker>();
         // Staging turns this off: its fake directory lives in the development host, which runs the sync itself.
         if (builder.Configuration.GetValue("Workers:DirectorySync:Enabled", true))
         {

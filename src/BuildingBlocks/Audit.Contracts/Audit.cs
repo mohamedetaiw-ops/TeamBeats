@@ -170,6 +170,17 @@ public static class AuditActions
     public const string DelegationChanged = "delegation.changed";
     public const string DelegationEnded = "delegation.ended";
 
+    // Spec 009 (R1): content lifecycle, sites and settings (section 13). Every lifecycle transition is audited (FR-002).
+    public const string ContentCreated = "content.created";
+    public const string ContentPublished = "content.published";
+    public const string ContentScheduled = "content.scheduled";
+    public const string ContentUnpublished = "content.unpublished";
+    public const string ContentArchived = "content.archived";
+    public const string ContentExpired = "content.expired";
+    public const string ContentSettingsChanged = "content.settings_changed";
+    public const string SiteCreated = "site.created";
+    public const string SiteChanged = "site.changed";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -199,6 +210,8 @@ public static class AuditActions
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
         ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,
         TaskApproved, TaskRejected, TaskReturned, DelegationSet, DelegationChanged, DelegationEnded,
+        ContentCreated, ContentPublished, ContentScheduled, ContentUnpublished, ContentArchived, ContentExpired, ContentSettingsChanged,
+        SiteCreated, SiteChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =
