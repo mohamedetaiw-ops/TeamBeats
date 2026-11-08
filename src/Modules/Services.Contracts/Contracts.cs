@@ -53,3 +53,9 @@ public sealed record RequestSubmitted(Guid RequestId, Guid ServiceId, string Num
 
 /// <summary>A request reached an end: approved, rejected, cancelled or completed.</summary>
 public sealed record RequestCompleted(Guid RequestId, Guid ServiceId, string Status) : IIntegrationEvent;
+
+/// <summary>An approver returned a request for changes; the requester can change it and submit it again.</summary>
+public sealed record RequestReturned(Guid RequestId, Guid ServiceId) : IIntegrationEvent;
+
+/// <summary>The requester changed a returned request and submitted it again.</summary>
+public sealed record RequestResubmitted(Guid RequestId, Guid ServiceId, string Number) : IIntegrationEvent;

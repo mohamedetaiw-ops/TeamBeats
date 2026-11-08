@@ -32,10 +32,16 @@ public static class RequestStatuses
 
 public sealed record RequestSubmit(Guid ServiceId, Dictionary<string, JsonElement>? Data, Guid? OnBehalfOf, string? IdempotencyKey);
 
+public sealed record RequestResubmit(Dictionary<string, JsonElement>? Data);
+
 /// <summary>Starting values of a form for one person, and which of them come from the directory or the account and stay read-only.</summary>
 public sealed record PrefillView(IReadOnlyDictionary<string, JsonElement> Values, IReadOnlyList<string> ReadOnly);
 
 public sealed record PersonRef(Guid Id, string DisplayName);
+
+/// <summary>The latest version of a service as the owner will see it as a requester, before publishing (US7 scenario 1).</summary>
+public sealed record ServicePreview(int Version, string State, FormDefinition Form, PrefillView Prefill, IReadOnlyDictionary<string, string>? ApprovalStep,
+    bool AllowOnBehalf, int MaxAttachments);
 
 public sealed record RequestSummary(
     Guid Id,
@@ -85,6 +91,7 @@ public sealed class Requests(
     IOutbox outbox,
     IClock clock,
     Catalogue catalogue,
+    ServiceAdmin admin,
     Attachments attachments)
 {
     public const int MaxIdempotencyKeyLength = 100;
@@ -185,6 +192,18 @@ public sealed class Requests(
     }
 
     /// <summary>
+    /// Previews the latest version of a form service, draft or published, prefilled for the owner. Only owners of the
+    /// service may preview it; nothing is stored.
+    /// </summary>
+    public async Task<ServicePreview> PreviewAsync(Guid serviceId, CancellationToken ct)
+    {
+        var latest = await admin.LatestManagedAsync(serviceId, ct);
+        var (values, readOnly) = await PrefillValuesAsync(latest.Form, context.RequireUser(), ct);
+        return new ServicePreview(latest.Version, latest.State, latest.Form, new PrefillView(values, readOnly.ToList()), latest.Route.Approval?.Names,
+            latest.AllowOnBehalf, latest.MaxAttachments);
+    }
+
+    /// <summary>
     /// The person a request is for: the caller, or someone else when the service allows it and the caller holds
     /// <c>service.request_on_behalf</c> at that person's unit (section 3).
     /// </summary>
@@ -245,27 +264,8 @@ public sealed class Requests(
             throw AppException.Validation("onBehalfOf", "validation.services.not_in_audience");
         }
 
-        // Read-only prefilled values always come from their source, whatever the client sent.
-        var input = new Dictionary<string, JsonElement>(request.Data ?? [], StringComparer.Ordinal);
-        var (prefilled, locked) = await PrefillValuesAsync(published.Form, subject, ct);
-        foreach (var field in locked)
-        {
-            if (prefilled.TryGetValue(field, out var value))
-            {
-                input[field] = value;
-            }
-            else
-            {
-                input.Remove(field);
-            }
-        }
-
         var now = clock.UtcNow;
-        var today = (await calendars.ForUserAsync(subject, ct)).Today(now);
-        var errors = new ValidationErrors();
-        var (data, references) = FormValidator.ValidateData(published.Form, input, today, errors);
-        await CheckReferencesAsync(references, published.MaxAttachments, errors, ct);
-        errors.ThrowIfAny();
+        var (data, references) = await PrepareAsync(published, subject, request.Data, null, ct);
 
         var id = Ids.New();
         var number = await NextNumberAsync(ct);
@@ -293,8 +293,7 @@ public sealed class Requests(
         await EventAsync(id, "submitted", null, user, subject == user ? null : subject, null, ct);
         if (published.Route.Approval is not null)
         {
-            var instance = await engine.StartAsync(ServiceAdmin.ProcessKey(row.Id), id.ToString("N"), unit, user, subject == user ? null : [subject], ct);
-            await session.ExecAsync("update services.request set process_instance_id = @instance where id = @id", new { id, instance = instance.Id }, ct);
+            await StartRouteAsync(id, row.Id, unit, user, subject, 1, ct);
         }
         await audit.WriteAsync(new AuditEntry(AuditActions.RequestSubmitted, "request", id.ToString(), TargetOrgUnitId: unit,
             Changes: new { service = row.Id, version, number, onBehalf = subject != user }), ct);
@@ -303,7 +302,87 @@ public sealed class Requests(
         return (await DetailAsync(id, ct), true);
     }
 
-    private async Task CheckReferencesAsync(FormReferences references, int maxAttachments, ValidationErrors errors, CancellationToken ct)
+    /// <summary>
+    /// Validates data against a published version for the person a request is for. Read-only prefilled values always come
+    /// from their source, whatever the client sent; dates compare with today on that person's calendar.
+    /// </summary>
+    private async Task<(Dictionary<string, JsonElement> Data, FormReferences References)> PrepareAsync(VersionRow published, Guid subject,
+        Dictionary<string, JsonElement>? sent, Guid? existingRequest, CancellationToken ct)
+    {
+        var input = new Dictionary<string, JsonElement>(sent ?? [], StringComparer.Ordinal);
+        var (prefilled, locked) = await PrefillValuesAsync(published.Form, subject, ct);
+        foreach (var field in locked)
+        {
+            if (prefilled.TryGetValue(field, out var value))
+            {
+                input[field] = value;
+            }
+            else
+            {
+                input.Remove(field);
+            }
+        }
+
+        var today = (await calendars.ForUserAsync(subject, ct)).Today(clock.UtcNow);
+        var errors = new ValidationErrors();
+        var (data, references) = FormValidator.ValidateData(published.Form, input, today, errors);
+        await CheckReferencesAsync(references, published.MaxAttachments, existingRequest, errors, ct);
+        errors.ThrowIfAny();
+        return (data, references);
+    }
+
+    /// <summary>
+    /// Starts the approval route of a request. The business key is the request ID, with the round added after a return,
+    /// so each submission has its own instance and history.
+    /// </summary>
+    private async Task StartRouteAsync(Guid id, Guid serviceId, Guid? unit, Guid filer, Guid subject, int round, CancellationToken ct)
+    {
+        var businessKey = round == 1 ? id.ToString("N") : $"{id:N}.{round}";
+        var instance = await engine.StartAsync(ServiceAdmin.ProcessKey(serviceId), businessKey, unit, filer, subject == filer ? null : [subject], ct);
+        await session.ExecAsync("update services.request set process_instance_id = @instance where id = @id", new { id, instance = instance.Id }, ct);
+    }
+
+    // ---- Resubmit ----
+
+    /// <summary>
+    /// The person who filed a returned request changes it and submits it again (FR-005 lifecycle). It keeps its number
+    /// and form version, and the approval route starts again; attachments left out of the new data are let go.
+    /// </summary>
+    public async Task<RequestDetail> ResubmitAsync(Guid id, RequestResubmit request, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var row = await RowAsync(id, true, ct) ?? throw AppException.NotFound();
+        if (row.RequesterId != user)
+        {
+            await VisibleRowAsync(id, ct);
+            throw AppException.Denied();
+        }
+        if (row.Status != RequestStatuses.Returned)
+        {
+            throw AppException.Conflict("conflict.services.request_not_returned");
+        }
+        var service = await session.QuerySingleOrDefaultAsync("select status from services.service where id = @id", new { id = row.ServiceId }, r => r.GetString(0), ct);
+        if (service != "published")
+        {
+            throw AppException.Conflict("conflict.services.service_retired");
+        }
+        var published = (await Versions.GetAsync(session, row.ServiceId, row.ServiceVersion, ct))!;
+        var (data, references) = await PrepareAsync(published, row.SubjectId, request.Data, id, ct);
+
+        await session.ExecAsync("update services.request set data = @data, status = 'in_approval', submitted_at = @now where id = @id",
+            new { id, data = Jsonb.From(data), now = clock.UtcNow }, ct);
+        await attachments.ReleaseAsync(id, references.Attachments, ct);
+        await attachments.LinkAsync(id, references.Attachments, ct);
+        await EventAsync(id, "resubmitted", null, user, row.OnBehalfOfId, null, ct);
+        var round = 1 + await session.ScalarAsync<long>("select count(*) from services.request_event where request_id = @id and event = 'resubmitted'", new { id }, ct);
+        await StartRouteAsync(id, row.ServiceId, row.OrgUnitId, user, row.SubjectId, (int)round, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.RequestResubmitted, "request", id.ToString(), TargetOrgUnitId: row.OrgUnitId,
+            Changes: new { service = row.ServiceId, row.Number, round }), ct);
+        await outbox.EnqueueAsync(new RequestResubmitted(id, row.ServiceId, row.Number), ct);
+        return await DetailAsync(id, ct);
+    }
+
+    private async Task CheckReferencesAsync(FormReferences references, int maxAttachments, Guid? existingRequest, ValidationErrors errors, CancellationToken ct)
     {
         foreach (var person in references.People)
         {
@@ -326,7 +405,9 @@ public sealed class Requests(
             errors.Add("data", "validation.services.too_many_attachments");
             return;
         }
-        if (references.Attachments.Count > 0 && await attachments.ProblemAsync(references.Attachments, ct) is { } problem)
+        var kept = existingRequest is { } requestId ? await attachments.LinkedAsync(requestId, references.Attachments, ct) : new HashSet<Guid>();
+        var added = references.Attachments.Except(kept).ToHashSet();
+        if (added.Count > 0 && await attachments.ProblemAsync(added, ct) is { } problem)
         {
             errors.Add("data", problem);
         }

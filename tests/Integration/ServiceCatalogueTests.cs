@@ -267,6 +267,63 @@ public sealed class ServiceCatalogueTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task An_owner_previews_the_draft_prefilled_for_themselves_and_a_submitted_request_keeps_its_form_version()
+    {
+        var o = await FreshAsync();
+        var owner = o.T["owner_gulf"].Client;
+        var id = await CreateAsync(owner, new { kind = "form", names = Names("Gulf cards", "بطاقات الخليج"), descriptions = Names("Order cards", "اطلب البطاقات"),
+            ownerOrgUnitId = o.Gulf, audience = new { orgUnits = new[] { o.Dubai } } });
+        var draft = new
+        {
+            form = new
+            {
+                fields = new object[]
+                {
+                    new { key = "email", type = "text", labels = Names("Email", "البريد"), prefill = "profile.email" },
+                    new { key = "boxes", type = "number", labels = Names("Boxes", "العلب"), required = true },
+                },
+            },
+            route = new { approval = new { names = Names("Logistics approval", "موافقة اللوجستيات"), approvers = new { kind = "users", users = new[] { o.T["omar"].Id } } } },
+        };
+        Assert.Equal(HttpStatusCode.OK, (await owner.PutAsJsonAsync($"{Admin}/{id}/draft", draft)).StatusCode);
+
+        var preview = await (await owner.GetAsync($"{Admin}/{id}/preview")).ReadAsync<JsonElement>();
+        Assert.Equal("draft", preview.GetProperty("state").GetString());
+        Assert.Equal(2, preview.GetProperty("form").GetProperty("fields").GetArrayLength());
+        Assert.Equal(o.T["owner_gulf"].Email, preview.GetProperty("prefill").GetProperty("values").GetProperty("email").GetString());
+        Assert.Equal("موافقة اللوجستيات", preview.GetProperty("approvalStep").GetProperty("ar").GetString());
+        Assert.Equal(HttpStatusCode.Forbidden, (await o.T["sara"].Client.GetAsync($"{Admin}/{id}/preview")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await o.T["owner_africa"].Client.GetAsync($"{Admin}/{id}/preview")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await o.T["sara"].Client.GetAsync($"{Catalogue}/{id}")).StatusCode); // not published yet
+
+        Assert.Equal(HttpStatusCode.OK, (await owner.PostAsJsonAsync($"{Admin}/{id}/publish", new { })).StatusCode);
+        var first = await o.T["sara"].Client.PostAsJsonAsync("/api/v1/requests", new { serviceId = id, data = new { boxes = 1 } });
+        Assert.Equal(HttpStatusCode.Created, first.StatusCode);
+        var firstId = (await first.ReadAsync<JsonElement>()).GetProperty("request").GetProperty("id").GetGuid();
+
+        var changed = new
+        {
+            form = new
+            {
+                fields = new object[]
+                {
+                    new { key = "boxes", type = "number", labels = Names("Boxes", "العلب"), required = true },
+                    new { key = "title", type = "text", labels = Names("Title on card", "المسمى على البطاقة"), required = true },
+                },
+            },
+            draft.route,
+        };
+        Assert.Equal(HttpStatusCode.OK, (await owner.PutAsJsonAsync($"{Admin}/{id}/draft", changed)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await owner.PostAsJsonAsync($"{Admin}/{id}/publish", new { })).StatusCode);
+
+        var kept = await (await o.T["sara"].Client.GetAsync($"/api/v1/requests/{firstId}")).ReadAsync<JsonElement>();
+        Assert.Equal(1, kept.GetProperty("serviceVersion").GetInt32());
+        Assert.Equal(["email", "boxes"], kept.GetProperty("form").GetProperty("fields").EnumerateArray().Select(f => f.GetProperty("key").GetString()!).ToArray());
+        var second = await o.T["sara"].Client.PostAsJsonAsync("/api/v1/requests", new { serviceId = id, data = new { boxes = 1 } });
+        Assert.Contains("validation.services.field_required", await ErrorKeysAsync(second));
+    }
+
+    [Fact]
     public async Task Services_stop_at_the_plan_quota()
     {
         // Workplace allows 25 catalogue services (r1-implementation-notes); module services do not count.

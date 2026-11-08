@@ -129,6 +129,12 @@ public interface IAuthorizationProvisioning
     /// <summary>Which of the given group IDs exist in the current tenant.</summary>
     Task<IReadOnlySet<Guid>> ExistingGroupsAsync(IReadOnlyCollection<Guid> groupIds, CancellationToken ct = default);
 
+    /// <summary>
+    /// Whether another user of the tenant holds the permission at the target, for work done in their name (a delegate
+    /// acting on behalf of an approver, spec 016 US4). Request attributes such as the network are not evaluated.
+    /// </summary>
+    Task<bool> UserHoldsAsync(Guid userId, string permission, AuthzTarget target, CancellationToken ct = default);
+
     /// <summary>Whether removing access for this user would leave the tenant without an administrator.</summary>
     Task<bool> IsLastTenantAdministratorAsync(Guid userId, CancellationToken ct = default);
 }

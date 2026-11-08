@@ -95,6 +95,17 @@ public sealed partial class ServiceAdmin(
         return views;
     }
 
+    /// <summary>The latest version of a form service the caller owns, for the preview.</summary>
+    internal async Task<VersionRow> LatestManagedAsync(Guid id, CancellationToken ct)
+    {
+        var row = await ManagedAsync(id, false, ct);
+        if (row.Kind != ServiceKinds.Form)
+        {
+            throw AppException.Validation("serviceId", "validation.services.not_form");
+        }
+        return await Versions.LatestAsync(session, id, false, ct) ?? throw AppException.NotFound();
+    }
+
     public async Task<ServiceAdminView> GetAsync(Guid id, CancellationToken ct)
     {
         var row = await ManagedAsync(id, false, ct);
@@ -413,7 +424,7 @@ public sealed partial class ServiceAdmin(
     }
 
     /// <summary>The engine keeps one name per element, for history and monitoring: English when there is one.</summary>
-    private static string? Preferred(IReadOnlyDictionary<string, string>? names) =>
+    internal static string? Preferred(IReadOnlyDictionary<string, string>? names) =>
         names is null ? null : names.TryGetValue("en", out var en) && !string.IsNullOrWhiteSpace(en) ? en : names.Values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
     /// <summary>Takes a service out of the catalogue. Open requests finish on their version.</summary>
