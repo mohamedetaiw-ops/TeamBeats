@@ -73,6 +73,7 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
             {
                 "type" => TestDocuments.ResourceType,
                 "membershipType" => "contractor",
+                _ when s.Contains(":int}", StringComparison.Ordinal) => "1" + suffix,
                 _ when collection == TestDocuments.ResourceType => (ids.TryGetValue("resources", out var r) ? r : Guid.NewGuid()) + suffix,
                 _ => (ids.TryGetValue(collection, out var id) ? id : Guid.NewGuid()) + suffix,
             };

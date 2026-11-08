@@ -1331,7 +1331,9 @@
       "age": "Arrived {when}",
       "due": "Due {when}",
       "onBehalfOf": "On behalf of {name}",
-      "contentReview": "Content review"
+      "contentReview": "Content review",
+      "contentOwnerReview": "Content owner review",
+      "contentRetire": "Content retirement"
     },
     "delegation": {
       "title": "While you are away",

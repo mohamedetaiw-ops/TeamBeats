@@ -59,7 +59,9 @@ public sealed record ItemView(
     DateTimeOffset UpdatedAt,
     int Version,
     bool InReview,
-    CriticalSettings? Critical);
+    CriticalSettings? Critical,
+    bool OwnerReviewOpen = false,
+    bool RetirePending = false);
 
 /// <summary>What a reader sees: the published version in their language, or the fallback with a note (US5 scenario 2).</summary>
 public sealed record ReaderView(
@@ -77,16 +79,28 @@ public sealed record ReaderView(
     DateTimeOffset UpdatedAt,
     bool Expired,
     bool Pinned,
-    bool Featured);
+    bool Featured,
+    bool UnderReview = false);
 
 public sealed record VersionSummary(int Number, ContentPerson Author, ContentPerson? Approver, string? ChangeNote, bool Material, IReadOnlyList<string> Locales,
-    DateTimeOffset CreatedAt, DateTimeOffset? PublishedAt, bool Current, bool Draft);
+    DateTimeOffset CreatedAt, DateTimeOffset? PublishedAt, bool Current, bool Draft, int? RestoredFrom = null);
+
+/// <summary>One version with its full text, for history and compare (US4 scenario 1).</summary>
+public sealed record VersionDetail(int Number, IReadOnlyDictionary<string, ContentVariant> Variants, ContentPerson Author, ContentPerson? Approver,
+    string? ChangeNote, bool Material, DateTimeOffset CreatedAt, DateTimeOffset? PublishedAt, int? RestoredFrom);
+
+/// <summary>Two versions side by side in one locale, as runs of kept, added and removed text.</summary>
+public sealed record VersionCompare(int From, int To, string Locale, IReadOnlyList<DiffSegment> Title, IReadOnlyList<DiffSegment> Summary,
+    IReadOnlyList<DiffSegment> Body);
+
+public sealed record RestoreRequest(string? ChangeNote);
 
 internal sealed record ItemRow(
     Guid Id, Guid SiteId, string Type, string Classification, string PrimaryLocale, Guid? OwnerId, Guid? BackupOwnerId, DateTimeOffset? ReviewDueAt,
     ContentAudience Audience, bool Pinned, bool Featured, string Status, int? PublishedVersion, int? DraftVersion, DateTimeOffset? PublishAt,
     DateTimeOffset? ExpiresAt, DateTimeOffset? PublishedAt, DateTimeOffset? ExpiredAt, Guid CreatedBy, DateTimeOffset UpdatedAt, int Version,
-    Guid? ReviewInstanceId = null, Guid? SubmittedBy = null, CriticalSettings? Critical = null)
+    Guid? ReviewInstanceId = null, Guid? SubmittedBy = null, CriticalSettings? Critical = null, Guid? OwnerReviewInstanceId = null,
+    Guid? RetireInstanceId = null)
 {
     /// <summary>The draft waits for a decision. A live item stays published (and readable) while its next version is reviewed.</summary>
     public bool InReview => ReviewInstanceId is not null || Status == ContentStatuses.InReview;
@@ -95,7 +109,7 @@ internal sealed record ItemRow(
 }
 
 internal sealed record VersionRow(int Number, IReadOnlyDictionary<string, ContentVariant> Variants, string? ChangeNote, bool Material, Guid Author,
-    Guid? Approver, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, DateTimeOffset? PublishedAt);
+    Guid? Approver, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt, DateTimeOffset? PublishedAt, int? RestoredFrom = null);
 
 /// <summary>
 /// Content items of spec 009 R1: drafts with locale variants, publish now or on a schedule in the site's time zone,
@@ -126,7 +140,8 @@ public sealed class Items(
     internal const string Columns =
         """
         id, site_id, type, classification, primary_locale, owner_user_id, backup_owner_user_id, review_due_at, audience::text, pinned, featured, status,
-        published_version, draft_version, publish_at, expires_at, published_at, expired_at, created_by, updated_at, row_version, review_instance_id, submitted_by, critical::text
+        published_version, draft_version, publish_at, expires_at, published_at, expired_at, created_by, updated_at, row_version, review_instance_id, submitted_by, critical::text,
+        owner_review_instance_id, retire_instance_id
         """;
 
     internal static ItemRow Read(NpgsqlDataReader r) => new(
@@ -134,13 +149,14 @@ public sealed class Items(
         r.Get<DateTimeOffset?>("review_due_at"), ContentJson.Read<ContentAudience>(r.GetString(8)), r.GetBoolean(9), r.GetBoolean(10), r.GetString(11),
         r.Get<int?>("published_version"), r.Get<int?>("draft_version"), r.Get<DateTimeOffset?>("publish_at"), r.Get<DateTimeOffset?>("expires_at"),
         r.Get<DateTimeOffset?>("published_at"), r.Get<DateTimeOffset?>("expired_at"), r.GetGuid(18), r.GetFieldValue<DateTimeOffset>(19), r.GetInt32(20),
-        r.Get<Guid?>("review_instance_id"), r.Get<Guid?>("submitted_by"), r.Get<string?>("critical") is { } c ? ContentJson.Read<CriticalSettings>(c) : null);
+        r.Get<Guid?>("review_instance_id"), r.Get<Guid?>("submitted_by"), r.Get<string?>("critical") is { } c ? ContentJson.Read<CriticalSettings>(c) : null,
+        r.Get<Guid?>("owner_review_instance_id"), r.Get<Guid?>("retire_instance_id"));
 
-    private const string VersionColumns = "number, variants::text, change_note, material, author_user_id, approver_user_id, created_at, updated_at, published_at";
+    private const string VersionColumns = "number, variants::text, change_note, material, author_user_id, approver_user_id, created_at, updated_at, published_at, restored_from";
 
     private static VersionRow ReadVersion(NpgsqlDataReader r) => new(r.GetInt32(0), ContentJson.Read<Dictionary<string, ContentVariant>>(r.GetString(1)),
         r.Get<string?>("change_note"), r.GetBoolean(3), r.GetGuid(4), r.Get<Guid?>("approver_user_id"), r.GetFieldValue<DateTimeOffset>(6),
-        r.GetFieldValue<DateTimeOffset>(7), r.Get<DateTimeOffset?>("published_at"));
+        r.GetFieldValue<DateTimeOffset>(7), r.Get<DateTimeOffset?>("published_at"), r.Get<int?>("restored_from"));
 
     internal Task<ItemRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
         session.QuerySingleOrDefaultAsync($"select {Columns} from content.content_item where id = @id" + (forUpdate ? " for update" : ""), new { id }, Read, ct);
@@ -422,16 +438,16 @@ public sealed class Items(
         return await ViewAsync((await RowAsync(id, false, ct))!, ct);
     }
 
-    private static DateTimeOffset ReviewAt(DateOnly on, SiteRow site) =>
+    internal static DateTimeOffset ReviewAt(DateOnly on, SiteRow site) =>
         new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(on.ToDateTime(new TimeOnly(9, 0)), TimeZoneInfo.FindSystemTimeZoneById(site.TimeZone)), TimeSpan.Zero);
 
-    private Task InsertVersionAsync(Guid item, int number, IReadOnlyDictionary<string, ContentVariant> variants, string? note, Guid user, DateTimeOffset now,
-        CancellationToken ct) =>
+    internal Task InsertVersionAsync(Guid item, int number, IReadOnlyDictionary<string, ContentVariant> variants, string? note, Guid user, DateTimeOffset now,
+        CancellationToken ct, int? restoredFrom = null) =>
         session.ExecAsync(
             """
-            insert into content.content_version (tenant_id, item_id, number, variants, change_note, author_user_id, created_at, updated_at)
-            values (platform.current_tenant_id(), @item, @number, @variants, @note, @user, @now, @now)
-            """, new { item, number, variants = new Jsonb(ContentJson.Write(variants)), note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(), user, now }, ct);
+            insert into content.content_version (tenant_id, item_id, number, variants, change_note, author_user_id, created_at, updated_at, restored_from)
+            values (platform.current_tenant_id(), @item, @number, @variants, @note, @user, @now, @now, @restoredFrom)
+            """, new { item, number, variants = new Jsonb(ContentJson.Write(variants)), note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(), user, now, restoredFrom }, ct);
 
     /// <summary>
     /// Saves the draft. On an item with a live version and no draft, this starts the next version; the live version
@@ -766,7 +782,8 @@ public sealed class Items(
         return new ItemView(item.Id, item.SiteId, item.Type, item.Status, item.Classification, item.PrimaryLocale, item.Audience,
             item.OwnerId is { } o ? await PersonAsync(o, ct) : null, item.BackupOwnerId is { } b ? await PersonAsync(b, ct) : null, item.ReviewDueAt,
             item.Pinned, item.Featured, item.PublishedVersion, item.DraftVersion, item.PublishAt, item.ExpiresAt, item.PublishedAt, item.ExpiredAt,
-            version?.Variants ?? new Dictionary<string, ContentVariant>(), version?.ChangeNote, await PersonAsync(item.CreatedBy, ct), item.UpdatedAt, item.Version, item.InReview, item.Critical);
+            version?.Variants ?? new Dictionary<string, ContentVariant>(), version?.ChangeNote, await PersonAsync(item.CreatedBy, ct), item.UpdatedAt, item.Version, item.InReview, item.Critical,
+            item.OwnerReviewInstanceId is not null, item.RetireInstanceId is not null);
     }
 
     public async Task<ItemView> GetAsync(Guid id, CancellationToken ct) => await ViewAsync((await ManagedAsync(id, false, ct)).Item, ct);
@@ -821,7 +838,8 @@ public sealed class Items(
         var (locale, variant) = Pick(version.Variants, requestLocale.Locale, locales.DefaultLocale, item.PrimaryLocale);
         return new ReaderView(id, site.Id, item.Type, locale, locale != requestLocale.Locale, version.Variants.Keys.Order(StringComparer.Ordinal).ToList(),
             variant.Title, variant.Summary, variant.Body, number, item.PublishedAt ?? version.PublishedAt ?? version.CreatedAt,
-            version.PublishedAt ?? version.CreatedAt, item.Status == ContentStatuses.Expired, item.Pinned, item.Featured);
+            version.PublishedAt ?? version.CreatedAt, item.Status == ContentStatuses.Expired, item.Pinned, item.Featured,
+            (await sites.TypeAsync(item.Type, ct))!.UnderReviewLabel && item.ReviewDueAt is { } due && due <= clock.UtcNow);
     }
 
     /// <summary>The reader's locale, else the tenant default, else the item's primary locale.</summary>
@@ -860,8 +878,115 @@ public sealed class Items(
         foreach (var v in versions.Where(v => worker || v.PublishedAt is not null))
         {
             list.Add(new VersionSummary(v.Number, await PersonAsync(v.Author, ct), v.Approver is { } a ? await PersonAsync(a, ct) : null, v.ChangeNote, v.Material,
-                v.Variants.Keys.Order(StringComparer.Ordinal).ToList(), v.CreatedAt, v.PublishedAt, v.Number == item.PublishedVersion, v.Number == item.DraftVersion));
+                v.Variants.Keys.Order(StringComparer.Ordinal).ToList(), v.CreatedAt, v.PublishedAt, v.Number == item.PublishedVersion, v.Number == item.DraftVersion, v.RestoredFrom));
         }
         return list;
+    }
+
+    /// <summary>
+    /// Who may see history: the people who work on content in the site see every version; a reader sees published
+    /// versions only when the type shows history to readers (US4 scenario 3).
+    /// </summary>
+    private async Task<(ItemRow Item, bool Worker)> HistoryAccessAsync(Guid id, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ContentCore, ct);
+        context.RequireUser();
+        var item = await RowAsync(id, false, ct) ?? throw AppException.NotFound();
+        var site = (await sites.RowAsync(item.SiteId, false, ct))!;
+        var worker = await HoldsAsync(Permissions.ContentAuthor, site, ct) || await HoldsAsync(Permissions.ContentEdit, site, ct)
+            || await HoldsAsync(Permissions.ContentPublish, site, ct);
+        if (!worker && (!(await sites.TypeAsync(item.Type, ct))!.ShowHistoryToReaders || !ContentStatuses.Readable(item.Status) || !await MayReadAsync(item, site, ct)))
+        {
+            throw AppException.NotFound();
+        }
+        return (item, worker);
+    }
+
+    private async Task<VersionRow> VisibleVersionAsync(ItemRow item, bool worker, int number, CancellationToken ct)
+    {
+        var version = await VersionAsync(item.Id, number, ct);
+        return version is null || (!worker && version.PublishedAt is null) ? throw AppException.NotFound() : version;
+    }
+
+    public async Task<VersionDetail> VersionDetailAsync(Guid id, int number, CancellationToken ct)
+    {
+        var (item, worker) = await HistoryAccessAsync(id, ct);
+        var v = await VisibleVersionAsync(item, worker, number, ct);
+        return new VersionDetail(v.Number, v.Variants, await PersonAsync(v.Author, ct), v.Approver is { } a ? await PersonAsync(a, ct) : null, v.ChangeNote,
+            v.Material, v.CreatedAt, v.PublishedAt, v.RestoredFrom);
+    }
+
+    /// <summary>Compares two versions in one locale (the item's primary locale when not given): title, summary and the body's plain text.</summary>
+    public async Task<VersionCompare> CompareAsync(Guid id, int from, int to, string? locale, CancellationToken ct)
+    {
+        var (item, worker) = await HistoryAccessAsync(id, ct);
+        var a = await VisibleVersionAsync(item, worker, from, ct);
+        var b = await VisibleVersionAsync(item, worker, to, ct);
+        var wanted = locale ?? item.PrimaryLocale;
+        if (!a.Variants.ContainsKey(wanted) && !b.Variants.ContainsKey(wanted))
+        {
+            throw AppException.Validation("locale", "validation.content.variant_locale");
+        }
+        var left = a.Variants.GetValueOrDefault(wanted);
+        var right = b.Variants.GetValueOrDefault(wanted);
+        return new VersionCompare(from, to, wanted, TextDiff.Words(left?.Title, right?.Title), TextDiff.Words(left?.Summary, right?.Summary),
+            TextDiff.Words(left is null ? null : BodyValidator.PlainText(left.Body), right is null ? null : BodyValidator.PlainText(right.Body)));
+    }
+
+    /// <summary>
+    /// Restores an earlier version as a new draft that follows the normal route (US4 scenario 2). History is never
+    /// rewritten: the new draft gets the next number and remembers where it came from.
+    /// </summary>
+    public async Task<ItemView> RestoreAsync(Guid id, int number, RestoreRequest request, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var (item, site) = await ManagedAsync(id, forUpdate: true, ct);
+        if (!await MayWriteAsync(site, item, user, ct))
+        {
+            throw AppException.Denied();
+        }
+        if (item.Status == ContentStatuses.Archived || item.InReview)
+        {
+            throw AppException.Conflict(item.Status == ContentStatuses.Archived ? "conflict.content.archived" : "conflict.content.in_review");
+        }
+        if (item.DraftVersion is not null)
+        {
+            throw AppException.Conflict("conflict.content.draft_exists");
+        }
+        var source = await VersionAsync(id, number, ct) ?? throw AppException.NotFound();
+        if (request.ChangeNote is { Length: > ContentLimits.ChangeNoteMax })
+        {
+            throw AppException.Validation("changeNote", "validation.content.change_note");
+        }
+        var current = item.PublishedVersion is { } p ? (await VersionAsync(id, p, ct))?.Variants : null;
+        var variants = MarkOutOfDate(source.Variants.ToDictionary(v => v.Key, v => v.Value with { OutOfDate = false }, StringComparer.Ordinal),
+            item.PrimaryLocale, current);
+        var now = clock.UtcNow;
+        var draft = await session.ScalarAsync<int>("select coalesce(max(number), 0) + 1 from content.content_version where item_id = @id", new { id }, ct);
+        await InsertVersionAsync(id, draft, variants, request.ChangeNote, user, now, ct, number);
+        await session.ExecAsync("update content.content_item set draft_version = @draft, updated_at = @now, row_version = row_version + 1 where id = @id",
+            new { id, draft, now }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.ContentVersionRestored, "content_item", id.ToString(), TargetOrgUnitId: site.OrgUnitId,
+            Changes: new { from = number, draft }), ct);
+        return await ViewAsync((await RowAsync(id, false, ct))!, ct);
+    }
+
+    /// <summary>A new draft copied from the live version, for the owner who chose "edit" on a review task (US3 scenario 2).</summary>
+    internal async Task<int?> DraftFromLiveAsync(ItemRow item, Guid user, CancellationToken ct)
+    {
+        if (item.DraftVersion is { } existing)
+        {
+            return existing;
+        }
+        if (item.PublishedVersion is not { } live || await VersionAsync(item.Id, live, ct) is not { } version)
+        {
+            return null;
+        }
+        var now = clock.UtcNow;
+        var draft = await session.ScalarAsync<int>("select coalesce(max(number), 0) + 1 from content.content_version where item_id = @id", new { id = item.Id }, ct);
+        await InsertVersionAsync(item.Id, draft, version.Variants, null, user, now, ct, live);
+        await session.ExecAsync("update content.content_item set draft_version = @draft, updated_at = @now, row_version = row_version + 1 where id = @id",
+            new { id = item.Id, draft, now }, ct);
+        return draft;
     }
 }

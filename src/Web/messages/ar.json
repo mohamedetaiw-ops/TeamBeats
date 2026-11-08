@@ -1331,7 +1331,9 @@
       "age": "وصلت {when}",
       "due": "تستحق {when}",
       "onBehalfOf": "نيابة عن {name}",
-      "contentReview": "مراجعة محتوى"
+      "contentReview": "مراجعة محتوى",
+      "contentOwnerReview": "مراجعة مالك المحتوى",
+      "contentRetire": "إيقاف محتوى"
     },
     "delegation": {
       "title": "أثناء غيابك",

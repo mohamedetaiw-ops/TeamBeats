@@ -27,7 +27,16 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
     return [...seen.entries()];
   }, [items, locale]);
   function sourceName(i: InboxItem) {
-    return i.source === "content_review" ? t("contentReview") : i.name;
+    switch (i.source) {
+      case "content_review":
+        return t("contentReview");
+      case "content_owner_review":
+        return t("contentOwnerReview");
+      case "content_retire":
+        return t("contentRetire");
+      default:
+        return i.name;
+    }
   }
   const shown = items.filter((i) => !type || (i.serviceId ?? i.source) === type);
 

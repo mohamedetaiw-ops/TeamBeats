@@ -20,10 +20,10 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T011 [US2] Deadline reminders through notifications; manager list once the reporting line exists; completion report export
 
 ## Phase 4: User Stories 3 to 5, governance, versions and locales (P1)
-- [ ] T012 [P] [US3] Tests: owner required; review task with confirm, edit, retire; overdue label; ownerless reassignment on `UserDeprovisioned`; health counts
-- [ ] T013 [US3] Review scheduler, review actions and health endpoint
-- [ ] T014 [P] [US4] Tests: history, compare with text markers, restore creates a draft, readers see no history
-- [ ] T015 [US4] Versions, compare and restore endpoints
+- [x] T012 [P] [US3] Tests: owner required; review task with confirm, edit, retire; overdue label; ownerless reassignment on `UserDeprovisioned`; health counts
+- [x] T013 [US3] Review scheduler, review actions and health endpoint
+- [x] T014 [P] [US4] Tests: history, compare with text markers, restore creates a draft, readers see no history
+- [x] T015 [US4] Versions, compare and restore endpoints
 - [x] T016 [P] [US5] Tests: variant per locale, fallback note, out-of-date flag
 - [x] T017 [US5] Locale variants in versions and fallback on read
 
