@@ -189,6 +189,7 @@ public static class AuditActions
     public const string ContentReviewed = "content.reviewed";
     public const string ContentOwnerReassigned = "content.owner_reassigned";
     public const string ContentVersionRestored = "content.version_restored";
+    public const string ContentCommentModerated = "content.comment_moderated";
     public const string SiteCreated = "site.created";
     public const string SiteChanged = "site.changed";
 
@@ -223,7 +224,7 @@ public static class AuditActions
         TaskApproved, TaskRejected, TaskReturned, DelegationSet, DelegationChanged, DelegationEnded,
         ContentCreated, ContentPublished, ContentScheduled, ContentUnpublished, ContentArchived, ContentExpired, ContentSettingsChanged, ContentSubmitted, ContentApproved, ContentReturned, ContentWithdrawn,
         ContentCriticalSent, ContentCriticalDenied, ContentAcknowledged, ContentAckReportExported,
-        ContentReviewed, ContentOwnerReassigned, ContentVersionRestored,
+        ContentReviewed, ContentOwnerReassigned, ContentVersionRestored, ContentCommentModerated,
         SiteCreated, SiteChanged,
     ];
 

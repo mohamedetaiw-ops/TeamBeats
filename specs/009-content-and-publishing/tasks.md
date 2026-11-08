@@ -28,10 +28,10 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T017 [US5] Locale variants in versions and fallback on read
 
 ## Phase 5: User Stories 7 and 9, components and social (P2)
-- [ ] T018 [P] [US7] Tests: components in every compatible region and width in both directions; viewer permissions on every render; embed allowlist; refused without capability
-- [ ] T019 [US7] Manifests and React components: news feed, rich text, links, call to action, announcement banner
-- [ ] T020 [P] [US9] Tests: comment notifies the owner; moderation holds comments; reports hide a comment; cross-tenant IDs
-- [ ] T021 [US9] Comments and reactions endpoints and UI
+- [x] T018 [P] [US7] Tests: components in every compatible region and width in both directions; viewer permissions on every render; embed allowlist; refused without capability
+- [x] T019 [US7] Manifests and React components: news feed, rich text, links, call to action, announcement banner
+- [x] T020 [P] [US9] Tests: comment notifies the owner; moderation holds comments; reports hide a comment; cross-tenant IDs
+- [x] T021 [US9] Comments and reactions endpoints and UI
 
 ## Phase 6: Authoring experience
 - [ ] T022 Block editor on Lexical with the body document format, RTL and mixed direction, keyboard and screen reader support

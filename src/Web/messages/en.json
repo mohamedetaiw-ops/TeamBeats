@@ -1520,5 +1520,68 @@
       "emptyHint": "Requests for the people who report to you, directly or through their managers, show here.",
       "for": "For {name}"
     }
+  },
+  "content": {
+    "read": {
+      "crumb": "News and pages",
+      "updated": "Updated {date}",
+      "expired": "Past its review date",
+      "underReview": "Under owner review",
+      "fallback": "This item is not available in your language, so it is shown in another one.",
+      "embed": "Embedded content"
+    },
+    "social": {
+      "title": "Reactions and comments",
+      "reactions": "Reactions",
+      "kind": {
+        "like": "Like",
+        "celebrate": "Celebrate",
+        "support": "Support",
+        "insightful": "Insightful"
+      },
+      "failed": "Reactions and comments could not be loaded.",
+      "retry": "Try again",
+      "none": "No comments yet.",
+      "status": {
+        "held": "Waiting for a moderator",
+        "hidden": "Hidden",
+        "deleted": "Deleted"
+      },
+      "approve": "Approve",
+      "restore": "Restore",
+      "hide": "Hide",
+      "report": "Report",
+      "delete": "Delete",
+      "write": "Write a comment",
+      "sending": "Sending",
+      "send": "Post comment",
+      "off": "Comments are turned off for this site.",
+      "held": "Thanks. Your comment will appear once a moderator approves it.",
+      "reportedThanks": "Thanks for reporting. A moderator will look at it."
+    },
+    "component": {
+      "feed": {
+        "title": "Latest news",
+        "retry": "Try again",
+        "failed": "News could not be loaded.",
+        "none": "No news yet.",
+        "pinned": "Pinned"
+      },
+      "richText": {
+        "missing": "This content is not available.",
+        "failed": "This content could not be loaded.",
+        "retry": "Try again"
+      },
+      "links": {
+        "title": "Quick links",
+        "none": "No links yet."
+      },
+      "banner": {
+        "confirm": "I have read this",
+        "dismiss": "Dismiss",
+        "sending": "Saving",
+        "failed": "That did not work. Please try again."
+      }
+    }
   }
 }
