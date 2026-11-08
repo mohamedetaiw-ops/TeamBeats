@@ -60,7 +60,24 @@ public sealed class RouteCompilerTests
         Assert.Throws<FormatException>(() => RouteCompiler.FromBpmn(xml));
     }
 
+    [Fact]
+    public void A_line_manager_step_with_or_without_a_fallback_permission_survives_BPMN()
+    {
+        var route = new RouteSpec("Leave", [
+            new RouteStep("manager", "Manager approval", new CandidateRule(LineManager: true)),
+            new RouteStep("hr", "HR approval", new CandidateRule(Permission: "workflow.approve", LineManager: true)),
+        ]);
+        Assert.False(RouteCompiler.Validate(route).Any);
+        var compiled = RouteCompiler.Compile(route);
+        var xml = RouteCompiler.ToBpmn("service.leave", compiled);
+        Assert.Contains("lineManager", xml);
+        var back = RouteCompiler.FromBpmn(xml);
+        Assert.Equal(compiled.ToJson(), back.ToJson());
+        Assert.All(back.Steps, s => Assert.True(s.LineManager));
+    }
+
     [Theory]
+    [InlineData("line_manager_with_users")]
     [InlineData("no_steps")]
     [InlineData("no_candidates")]
     [InlineData("duplicate_id")]
@@ -74,6 +91,7 @@ public sealed class RouteCompilerTests
         var route = problem switch
         {
             "no_steps" => new RouteSpec("R", []),
+            "line_manager_with_users" => new RouteSpec("R", [ok with { Candidates = new CandidateRule(Users: [Legal], LineManager: true) }]),
             "no_candidates" => new RouteSpec("R", [ok with { Candidates = new CandidateRule() }]),
             "duplicate_id" => new RouteSpec("R", [ok, ok]),
             "reserved_id" => new RouteSpec("R", [ok with { Id = "gw_a" }]),

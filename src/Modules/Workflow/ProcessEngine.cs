@@ -2,6 +2,7 @@ using Npgsql;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -15,7 +16,7 @@ namespace TeamBeats.Modules.Workflow;
 /// locked, so a second completion of the same task is refused and never creates a second next step (FR-012).
 /// </summary>
 public sealed class ProcessEngine(IDbSession session, ITenantContext context, IAuthorizationService authz, IAuthorizationProvisioning grants, IDelegations delegations,
-    IAuditWriter audit, IOutbox outbox, IClock clock, EngineJobs jobs)
+    IReportingLine reportingLine, IAuditWriter audit, IOutbox outbox, IClock clock, EngineJobs jobs)
     : IProcessEngine
 {
     public const int CommentMax = 2000;
@@ -103,7 +104,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         r.Get<string?>("outcome"), r.GetFieldValue<DateTimeOffset>(8), r.Get<DateTimeOffset?>("ended_at"));
 
     public async Task<ProcessInstanceInfo> StartAsync(string key, string businessKey, Guid? orgUnitId, Guid? startedBy, IReadOnlyCollection<Guid>? alsoExcluded = null,
-        CancellationToken ct = default)
+        Guid? requestedFor = null, CancellationToken ct = default)
     {
         context.RequireTenant();
         if (string.IsNullOrWhiteSpace(businessKey) || businessKey.Length > 200)
@@ -116,11 +117,11 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         var now = clock.UtcNow;
         var created = await session.ScalarAsync<Guid?>(
             """
-            insert into workflow.process_instance (tenant_id, id, definition_key, definition_version, business_key, org_unit_id, started_by, excluded_user_ids, status, started_at)
-            values (platform.current_tenant_id(), @id, @key, @version, @businessKey, @orgUnitId, @startedBy, @alsoExcluded, 'active', @now)
+            insert into workflow.process_instance (tenant_id, id, definition_key, definition_version, business_key, org_unit_id, started_by, excluded_user_ids, requested_for, status, started_at)
+            values (platform.current_tenant_id(), @id, @key, @version, @businessKey, @orgUnitId, @startedBy, @alsoExcluded, @requestedFor, 'active', @now)
             on conflict (tenant_id, definition_key, business_key) do nothing
             returning id
-            """, new { id, key = definition.Key, version = definition.Version, businessKey, orgUnitId, startedBy, alsoExcluded = (alsoExcluded ?? []).Distinct().ToArray(), now }, ct);
+            """, new { id, key = definition.Key, version = definition.Version, businessKey, orgUnitId, startedBy, alsoExcluded = (alsoExcluded ?? []).Distinct().ToArray(), requestedFor, now }, ct);
         if (created is null)
         {
             // Started before for this business object: hand back that instance (at most one per business key).
@@ -170,12 +171,13 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
     private const string TaskColumns =
         """
         t.id, t.instance_id, i.definition_key, i.business_key, t.element_id, t.step_index, t.status, t.outcome, t.comment, t.completed_by,
-        t.on_behalf_of, t.due_at, t.created_at, t.completed_at, t.candidates::text, t.excluded_user_ids, i.org_unit_id, i.definition_version
+        t.on_behalf_of, t.due_at, t.created_at, t.completed_at, t.candidates::text, t.excluded_user_ids, i.org_unit_id, i.definition_version,
+        coalesce(i.requested_for, i.started_by) as subject_id
         """;
 
-    private sealed record TaskRow(UserTaskInfo Info, CandidateSet Candidates, Guid[] Excluded, Guid? OrgUnitId, int DefinitionVersion);
+    private sealed record TaskRow(UserTaskInfo Info, CandidateSet Candidates, Guid[] Excluded, Guid? OrgUnitId, int DefinitionVersion, Guid? Subject);
 
-    private sealed record CandidateSet(string Name, IReadOnlyList<Guid> Users, string? Permission);
+    private sealed record CandidateSet(string Name, IReadOnlyList<Guid> Users, string? Permission, bool LineManager = false);
 
     private static TaskRow ReadTask(NpgsqlDataReader r)
     {
@@ -183,7 +185,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         var info = new UserTaskInfo(r.GetGuid(0), r.GetGuid(1), r.GetString(2), r.GetString(3), r.GetString(4), candidates.Name, r.GetInt32(5), r.GetString(6),
             r.Get<string?>("outcome"), r.Get<string?>("comment"), r.Get<Guid?>("completed_by"), r.Get<Guid?>("on_behalf_of"), r.Get<DateTimeOffset?>("due_at"),
             r.GetFieldValue<DateTimeOffset>(12), r.Get<DateTimeOffset?>("completed_at"));
-        return new TaskRow(info, candidates, r.GetFieldValue<Guid[]>(15), r.Get<Guid?>("org_unit_id"), r.GetInt32(17));
+        return new TaskRow(info, candidates, r.GetFieldValue<Guid[]>(15), r.Get<Guid?>("org_unit_id"), r.GetInt32(17), r.Get<Guid?>("subject_id"));
     }
 
     private async Task CreateTaskAsync(ProcessInstanceInfo instance, CompiledRoute route, int stepIndex, CancellationToken ct)
@@ -196,7 +198,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             var others = await session.ScalarAsync<Guid[]>("select excluded_user_ids from workflow.process_instance where id = @id", new { id = instance.Id }, ct) ?? [];
             excluded = [.. others.Concat(instance.StartedBy is { } starter ? [starter] : []).Distinct()];
         }
-        var candidates = new CandidateSet(step.Name, step.Users, step.Permission);
+        var candidates = new CandidateSet(step.Name, step.Users, step.Permission, step.LineManager);
         var now = clock.UtcNow;
         DateTimeOffset? dueAt = step.DueWorkingDays is { } days ? await jobs.DueAtAsync(instance.OrgUnitId, now, days, ct) : null;
         await session.ExecAsync(
@@ -228,12 +230,34 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
     /// org unit through central authorization. A delegate may complete the task when the person who handed it over is
     /// a candidate, and then acts on their behalf. Returns the person acted for, or null when acting directly.
     /// </summary>
-    private CandidateCheck Check(Guid user) => new(authz, grants, delegations, clock.UtcNow, user);
+    private CandidateCheck Check(Guid user) => new(authz, grants, delegations, reportingLine, clock.UtcNow, user);
 
-    private sealed class CandidateCheck(IAuthorizationService authz, IAuthorizationProvisioning grants, IDelegations delegations, DateTimeOffset now, Guid user)
+    private sealed class CandidateCheck(IAuthorizationService authz, IAuthorizationProvisioning grants, IDelegations delegations, IReportingLine reportingLine,
+        DateTimeOffset now, Guid user)
     {
         private readonly Dictionary<(Guid, string, Guid?), bool> holds = [];
+        private readonly Dictionary<Guid, Guid?> managers = [];
         private IReadOnlyList<Guid>? delegators;
+
+        /// <summary>
+        /// The subject's current manager when a line manager step can go to them, or null when it falls back to the
+        /// step's permission: no subject, no manager, or a manager who may not approve this instance (an excluded
+        /// person, such as a manager who filed the request for their report). Read at check time, so a manager change
+        /// during approval moves an open step to the new manager (spec 016 edge cases).
+        /// </summary>
+        private async Task<Guid?> LineManagerAsync(TaskRow task, CancellationToken ct)
+        {
+            if (task.Subject is not { } subject)
+            {
+                return null;
+            }
+            if (!managers.TryGetValue(subject, out var manager))
+            {
+                manager = await reportingLine.ManagerOfAsync(subject, ct);
+                managers[subject] = manager;
+            }
+            return manager is { } m && !task.Excluded.Contains(m) ? m : null;
+        }
 
         private async Task<bool> IsCandidateAsync(TaskRow task, Guid person, CancellationToken ct)
         {
@@ -244,6 +268,11 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             if (task.Candidates.Users.Contains(person))
             {
                 return true;
+            }
+            if (task.Candidates.LineManager && await LineManagerAsync(task, ct) is { } manager)
+            {
+                // The reporting line grants the approval (spec 016: a line manager holds workflow.approve for their reports).
+                return person == manager;
             }
             if (task.Candidates.Permission is not { } permission)
             {

@@ -169,7 +169,7 @@ export type ServiceRow = {
   updatedAt: string;
 };
 
-export type ApproverRule = { kind: "users" | "permission_at_unit"; users?: string[] | null; permission?: string | null };
+export type ApproverRule = { kind: "users" | "permission_at_unit" | "line_manager"; users?: string[] | null; permission?: string | null };
 export type ApprovalStep = { names: Names | null; approvers: ApproverRule; dueWorkingDays?: number | null };
 export type ServiceRoute = { approval: ApprovalStep | null };
 

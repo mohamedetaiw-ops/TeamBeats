@@ -1192,7 +1192,8 @@
       "label": "Services pages",
       "catalogue": "Services",
       "requests": "My requests",
-      "tasks": "Tasks"
+      "tasks": "Tasks",
+      "team": "Team requests"
     },
     "badge": {
       "label": "{count, plural, =0 {Tasks, nothing waiting} one {Tasks, # waiting} other {Tasks, # waiting}}",
@@ -1456,7 +1457,8 @@
       "stepName": "Step name",
       "approvers": {
         "users": "Named people",
-        "permission_at_unit": "Approvers of the requester's unit"
+        "permission_at_unit": "Approvers of the requester's unit",
+        "line_manager": "Line manager of the person the request is for"
       },
       "approverList": "Approvers",
       "approver": "Approver",
@@ -1506,7 +1508,14 @@
         "profile_manager": "Manager",
         "org_primary_unit": "Unit",
         "org_company": "Company"
-      }
+      },
+      "lineManagerHint": "The manager of the person the request is for decides, from the reporting line. When there is no manager, or the manager filed the request, people who hold the Approver role for the requester's unit decide instead."
+    },
+    "team": {
+      "title": "Team requests",
+      "empty": "No requests from your team",
+      "emptyHint": "Requests for the people who report to you, directly or through their managers, show here.",
+      "for": "For {name}"
     }
   }
 }

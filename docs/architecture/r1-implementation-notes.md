@@ -697,10 +697,28 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 |---|---|
 | Approve permission for delegates | The spec asks for `workflow.approve` besides the assignment. A delegate acts with the authority of the person they stand in for, so the check uses that person's grants. A delegate who is excluded from the request (filer or the person it is for) is never a candidate, so the step stays with the approver. |
 | The delegator during the window | The delegator still sees the task, and may still act on it. The spec says the delegator can still see it and is silent on acting; refusing them would stall urgent approvals. |
-| Assigned without the permission | A named approver without `workflow.approve` at the unit does not see the task and cannot act. Tenants give named approvers the Approver role; the line manager rule (T016) will grant it through the reporting line. |
+| Assigned without the permission | A named approver without `workflow.approve` at the unit does not see the task and cannot act. Tenants give named approvers the Approver role; a manager holds the approval for their reports through the reporting line (see Line manager approvals). |
 | Return reason | The spec requires a reason to reject only, so returning takes an optional comment. |
 | Route version on resubmit | The form stays at the request's version; the route is the latest published version of the service. |
 | Other sources | Tasks from other engine sources (content, policy and document routes later in R1) appear in the same inbox with their definition key as source. Their own modules will add request style details when they are built. |
+
+## Line manager approvals and Team requests (spec 016 T016)
+| Part | Where |
+|---|---|
+| Rule | The approver kind `line_manager` publishes a step with `CandidateRule(LineManager: true)` and a fallback permission (`workflow.approve` unless the owner names another). BPMN carries it as `<teambeats:lineManager/>` |
+| Subject | The engine stores `requested_for` on the instance (migration `workflow/0004`): the person a request is for, or the starter. A line manager step goes to that person's current manager from `IReportingLine` (People.Contracts) |
+| Resolution | The manager is read when a candidate is checked, not when the task is created, so a manager change during approval moves an open step to the new manager. With no manager, or when the manager is excluded (they filed the request for their report), the step goes to holders of the fallback permission at the requester's unit |
+| Approval right | Spec 016 says a line manager holds `workflow.approve` for their reporting line. The inbox and decision check accept a manager anywhere in the subject's chain as holding it, so a manager and their delegate act without an Approver role |
+| Team requests | `GET /api/v1/requests/team?status=` lists requests for the caller's direct and indirect reports by the reporting line. A manager in the chain may read those requests. Org unit membership never adds anyone. Page `/requests/team` |
+| Notifications | `RequestNotifier` tells the filer and the person a request is for when it is approved, rejected or returned (`request_update`), and tells a named approver or line manager that a request waits (`approval_waiting`). Notifications carry the request number only |
+| Tests | `LineManagerTests`, `RouteCompilerTests`, `services.spec.ts` (Team requests) |
+
+| Item | Note |
+|---|---|
+| Team requests subject | A request counts for the person it is for. A request a report files for someone outside the team is not a team request. |
+| Fallback alert | The spec asks to alert the service owner when a step falls back. The fallback works; the owner alert waits for service level alerts (US8, R2), which add the owner as a recipient. |
+| Approvers by permission | Holders of a permission at a unit are not told one by one, because finding every holder at a unit needs a reverse grant query the authorization service does not offer yet. They see the header badge and the inbox. |
+| Manager chain level | Only the direct manager is assigned. The "manager of manager" and chain level rules arrive with multi-step routes (US5, R2). |
 
 ## Service pages (spec 016 T015)
 | Part | Where |
