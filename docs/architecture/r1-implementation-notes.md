@@ -834,3 +834,17 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Content images | Image blocks show their alt text as a caption until spec 011 stores content media; embeds use a sandboxed frame from the tenant allowlist. |
 | Mentions and photos | Mentions, hashtags and photos in comments are R2 (US9 R2 part). |
 | Still linked | The health count of expired items that pages still show needs a placements query from the Experience module and is left for slice 6. |
+
+## Block editor and item editor (spec 009 T022, T023 part)
+| Part | Where |
+|---|---|
+| Editor | `src/Web/features/content/editor`: Lexical (MIT, the one new dependency the 009 plan lists) with paragraphs, two heading levels, quotes, bulleted and numbered lists, bold, italic, links, undo and redo. `convert.ts` reads and writes the body document, never HTML. Embeds, images, tables and link cards are kept as cards the author can remove (`AtomicBlockNode`), so they round trip unchanged. Each block takes its direction from its first strong character, so Arabic and English mix in one body |
+| Pages | `/content/items` (filter by site, status and type), `/content/items/new`, `/content/items/{id}` with a tab per language, owner and backup owner, review date, classification, pin and feature, audience (everyone, or units with or without the units below them and membership types), critical options for announcements, publish now or at a site time with an expiry, send for approval, withdraw, unpublish, archive, and a preview at desktop or phone width |
+| Tests | `tests/Acceptance/specs/content-authoring.spec.ts` in English and Arabic with axe |
+
+| Item | Note |
+|---|---|
+| Nested lists | The body document has one list level, so a nested list's text is kept in its parent item on save. |
+| Other formats | Lexical shortcuts for underline or code are dropped on save, since the body document keeps bold and italic only. |
+| Audience preview | The preview names the chosen units and membership types; counting the people an audience reaches needs a directory query and is left for the analytics of spec 021. |
+| Groups and locations | The audience picker offers units and membership types. Groups and locations are accepted by the API and come to the picker with the directory groups screen. |

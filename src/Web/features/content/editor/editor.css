@@ -1,0 +1,112 @@
+/* Spec 009 block editor. Tokens only; logical properties keep the layout right in RTL. */
+.content-editor {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.content-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  align-items: center;
+  padding: var(--tb-space-xs);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+}
+
+.content-editor-toolbar [aria-pressed="true"] {
+  background: var(--tb-color-accent-subtle);
+}
+
+.content-editor-select select {
+  min-block-size: 2.25rem;
+}
+
+.content-editor-ask {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+}
+
+.content-editor-surface {
+  position: relative;
+}
+
+.content-editor-input {
+  min-block-size: 12rem;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  line-height: var(--tb-font-line-height-body);
+}
+
+.content-editor-input:focus-visible {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-accent-base);
+  outline-offset: var(--tb-border-width-thin);
+}
+
+.content-editor-placeholder {
+  position: absolute;
+  inset-block-start: var(--tb-space-sm);
+  inset-inline-start: var(--tb-space-sm);
+  color: var(--tb-color-text-secondary);
+  pointer-events: none;
+}
+
+.content-editor-p,
+.content-editor-quote,
+.content-editor-h2,
+.content-editor-h3 {
+  margin-block: 0 var(--tb-space-sm);
+}
+
+.content-editor-quote {
+  padding-inline-start: var(--tb-space-md);
+  border-inline-start: var(--tb-border-width-thick) solid var(--tb-color-border-strong);
+}
+
+.content-editor-h2 {
+  font-size: var(--tb-font-size-xl);
+}
+
+.content-editor-h3 {
+  font-size: var(--tb-font-size-lg);
+}
+
+.content-editor-ul,
+.content-editor-ol {
+  margin-block: 0 var(--tb-space-sm);
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.content-editor-bold {
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.content-editor-italic {
+  font-style: italic;
+}
+
+.content-editor-link {
+  color: var(--tb-color-link);
+}
+
+.content-atomic {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  margin-block: 0 var(--tb-space-sm);
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) dashed var(--tb-color-border-strong);
+  border-radius: var(--tb-radius-md);
+}
+
+.content-atomic-text {
+  overflow-wrap: anywhere;
+}
