@@ -35,6 +35,9 @@ public sealed record CriticalNotice(
 /// <summary>What the shell interrupts with on this page load: at most one modal, and the banners above the content.</summary>
 public sealed record PendingCritical(CriticalNotice? Modal, IReadOnlyList<CriticalNotice> Banners);
 
+/// <summary>One batch of an announcement's audience to notify; internal to the module, published through its own outbox.</summary>
+public sealed record CriticalNoticeBatch(Guid ItemId, int Version, IReadOnlyList<Guid> Recipients) : IIntegrationEvent;
+
 public sealed record AcknowledgeRequest(string? Locale, string? Channel);
 
 public sealed record AcknowledgementView(Guid ItemId, int Version, DateTimeOffset At, string Channel);
@@ -427,7 +430,8 @@ public sealed class CriticalAudience(
     ITenantMemberships memberships,
     IOrganizationHierarchy hierarchy,
     INotificationSender notifications,
-    IAuditWriter audit) : IMessageHandler<ContentPublished>, IMessageHandler<OrganizationMembershipChanged>
+    IOutbox outbox,
+    IAuditWriter audit) : IMessageHandler<ContentPublished>, IMessageHandler<OrganizationMembershipChanged>, IMessageHandler<CriticalNoticeBatch>
 {
     public async Task HandleAsync(ContentPublished message, CancellationToken ct)
     {
@@ -444,7 +448,12 @@ public sealed class CriticalAudience(
             select platform.current_tenant_id(), @id, u from unnest(@users) u
             on conflict (tenant_id, item_id, user_id) do nothing
             """, new { id = item.Id, users }, ct);
-        await session.ExecAsync("delete from content.audience_member where item_id = @id and not (user_id = any(@users))", new { id = item.Id, users }, ct);
+        // An anti join, not "<> all(array)", so 100,000 people stay linear (section 15).
+        await session.ExecAsync(
+            """
+            delete from content.audience_member m where m.item_id = @id
+              and not exists (select 1 from unnest(@users) as u(id) where u.id = m.user_id)
+            """, new { id = item.Id, users }, ct);
         var version = (await items.VersionAsync(item.Id, message.Version, ct))!;
         if (!version.Material)
         {
@@ -459,12 +468,27 @@ public sealed class CriticalAudience(
                 version = message.Version, audience = users.Length, settings.Presentation, settings.RequireAck, settings.RemindLaterMax, settings.DeadlineAt,
                 settings.Dismissible, approver = version.Approver,
             }), ct);
-        foreach (var chunk in users.Chunk(500))
+        // The notices go out in batches of their own, so the tracking above commits at once and a large audience is
+        // tracked within the two minutes of section 15 however long the notices take.
+        foreach (var chunk in users.Chunk(NoticeBatch))
         {
-            // No title: the text stays behind the read check of the item.
-            await notifications.SendAsync(new NotificationRequest(chunk, NotificationCategories.CriticalAnnouncement, CriticalAnnouncements.Sent,
-                CriticalAnnouncements.ReadLink(item.Id), Urgent: true, DedupeKey: $"content:{item.Id:N}:critical:{message.Version}"), ct);
+            await outbox.EnqueueAsync(new CriticalNoticeBatch(item.Id, message.Version, chunk), ct);
         }
+    }
+
+    public const int NoticeBatch = 500;
+
+    /// <summary>Tells one batch of the audience that a critical announcement is waiting, if it is still the live version.</summary>
+    public async Task HandleAsync(CriticalNoticeBatch message, CancellationToken ct)
+    {
+        if (await items.RowAsync(message.ItemId, false, ct) is not { Status: ContentStatuses.Published, Critical: not null } item
+            || item.PublishedVersion != message.Version)
+        {
+            return;
+        }
+        // No title: the text stays behind the read check of the item.
+        await notifications.SendAsync(new NotificationRequest(message.Recipients, NotificationCategories.CriticalAnnouncement, CriticalAnnouncements.Sent,
+            CriticalAnnouncements.ReadLink(item.Id), Urgent: true, DedupeKey: $"content:{item.Id:N}:critical:{message.Version}"), ct);
     }
 
     public async Task HandleAsync(OrganizationMembershipChanged message, CancellationToken ct)

@@ -863,3 +863,14 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 |---|---|
 | Banner component | The shell shows banners on every page, so the `content.announcement_banner` component renders nothing when the shell strip is on the page and only shows them on surfaces without the shell. |
 | Pop-up answers | A pop-up always asks for confirmation (the API sets this for modal presentation), so the pop-up offers confirm and remind me later only. |
+
+## Performance and evidence (spec 009 T024)
+| Part | Where |
+|---|---|
+| Measurements | `ContentPerformanceTests`: feed p95 134 ms for a reader in 50 units with 10,000 published items; the critical check p95 13 ms for the whole request; 100,000 people tracked for a critical announcement in 3 s |
+| Changes | The audience step removes people with an anti join instead of `<> all(array)`, and sends its notices as `CriticalNoticeBatch` messages of 500 people, so tracking commits at once. The schedule worker runs every 30 seconds, so a scheduled item goes live within a minute |
+| Evidence | `specs/009-content-and-publishing/evidence.md` |
+
+| Item | Note |
+|---|---|
+| Notice fan-out | Sending the notices to 100,000 people takes a few minutes through the spec 015 sender, which handles one person at a time. Tracking and the pop-up do not wait for it. A bulk send in spec 015 would shorten it; that is a spec 015 change and is left for its R2 work. |

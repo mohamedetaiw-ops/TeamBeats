@@ -63,13 +63,14 @@ public sealed class ContentScheduler(IDbSession session, Items items, Sites site
 }
 
 /// <summary>
-/// Runs <see cref="ContentScheduler"/> for every active tenant once a minute, each in its own scope and transaction.
+/// Runs <see cref="ContentScheduler"/> for every active tenant every 30 seconds, each in its own scope and transaction, so
+/// a scheduled item goes live within a minute of its time (section 15) even when a run takes a while.
 /// Hosted by the worker, and by the development host when <c>Content:Schedule:InProcess</c> is true.
 /// </summary>
 public sealed class ContentScheduleWorker(IServiceScopeFactory scopes, IClock clock, ILogger<ContentScheduleWorker> logger) : BackgroundService
 {
     public const string InProcessKey = "Content:Schedule:InProcess";
-    private static readonly TimeSpan Tick = TimeSpan.FromMinutes(1);
+    public static readonly TimeSpan Tick = TimeSpan.FromSeconds(30);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
