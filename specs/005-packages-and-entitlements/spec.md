@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R0 (core check and seeded packages), R2 (quotas, add-ons, overrides UI) |
-| Last updated | 2026-11-05 |
+| Last updated | 2026-11-08 |
 | Approved | 2026-11-04 by Mohamed |
 | Requirement IDs | AI-001, ADM-001 (entitlements part), new ENT-001 to ENT-008 |
 | Use cases | UC-12 |
@@ -128,6 +128,13 @@ Permission keys (spec 004 FR-013): `entitlements.view` lets a tenant administrat
 | `integration.microsoft365` | flag | off | on | on |
 | `integration.oracle_fusion` | flag | off | off | on |
 | `integration.sap` | flag | off | off | on |
+| `api.public` | flag | on (read scopes) | on | on |
+| `api.write_scopes` | flag | off | on | on |
+| `api.event_subscriptions` | flag | off | on | on |
+| `api.mcp` | flag | on (read tools and resources) | on | on |
+| `api.mcp_write_tools` | flag | off | on (confirmed write tools) | on |
+| `api.max_apps` | limit | 2 | 20 | unlimited |
+| `api.monthly_calls` | limit | [TBD] | [TBD] | [TBD] |
 | `analytics.advanced` | flag | off | on | on |
 | `analytics.export` | flag | off | off | on |
 | `deployment.on_prem` | flag | off | off | on |

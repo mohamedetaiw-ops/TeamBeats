@@ -23,6 +23,7 @@ The `Integrations` module gains a connector runtime: pack registrations in code 
 - `IConnectorRuntime.InvokeAsync(connectionId, action, input, idempotencyKey)` from `Integrations.Contracts` for 016, 024 and 027; jobs for syncs.
 - Retry policy per call site (section 6 defaults), circuit breaker per connection in memory with state shared through the database for multi-instance installs.
 - SSRF guard: allowlist plus resolved address check on every connection open, in one `SafeHttpClient` handler used by all packs.
+- `IWebhookDelivery` in `Integrations.Contracts` sends a signed outbound webhook with retry and delivery log; spec 035 event subscriptions use it with thin payloads.
 
 ## Sync agent
 A .NET worker service published as a signed Windows service and Linux container, talking gRPC over TLS with client certificates to a dedicated endpoint; enrolment by one-time code; long-poll for jobs; the AD pack runs inside it with `System.DirectoryServices.Protocols` (LDAPS), returning canonical records. No new third-party library.

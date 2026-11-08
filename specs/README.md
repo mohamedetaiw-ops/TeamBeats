@@ -30,7 +30,7 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [024 Process engine (BPMN and DMN)](024-process-engine/spec.md) | workflows | R1 to R3 | Approved | WF-002, WF-003, BPM-001 to BPM-016 |
 | [025 Policy management](025-policy-management/spec.md) | knowledge | R1 to R3 | Approved | EXP-004, KNO-001, KNO-007, POL-001 to POL-018 |
 | [026 Security controls, compliance and certifications](026-security-and-compliance/spec.md) | platform | R1 to R3 | Approved | TEN-009, IAM-009, ADM-002, ADM-003, SEC-001 to SEC-021, CMP-001 to CMP-004, CX-NFR-010 |
-| [027 Agent governance, tools and safety](027-agent-governance/spec.md) | ai | R1 to R3 | Approved | AI-005, AI-009, AI-010, AGV-001 to AGV-024, UC-07, UC-13 |
+| [027 Agent governance, tools and safety](027-agent-governance/spec.md) | ai | R1 to R3 | Approved | AI-005, AI-009, AI-010, AGV-001 to AGV-025, UC-07, UC-13 |
 | [028 Learning and mandatory training](028-learning-and-training/spec.md) | knowledge | R2, R3 | Approved | LRN-001 to LRN-020 (new) |
 | [029 Project and team spaces](029-project-and-team-spaces/spec.md) | workflows | R2, R3 | Approved | PRJ-001 to PRJ-018 (new) |
 | [030 Mobile app, PWA and push](030-mobile-app-and-push/spec.md) | experience | R2, R3 | Approved | EXP-009, MOB-001 to MOB-020 (new) |
@@ -38,6 +38,7 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [032 Page composition: layouts, templates, component registry and page builder](032-page-composition/spec.md) | experience | R1 to R3 | Approved | CX-LAY-001 to CX-LAY-012, CX-TMP-001 to CX-TMP-010, CX-TMP-012, CX-EDT-001 to CX-EDT-015, CX-EXT-001 to CX-EXT-014, CX-GOV-001 to CX-GOV-012, CX-NFR-001 to CX-NFR-012 |
 | [033 Brands, themes, white labeling and multi-organization experience](033-themes-and-white-labeling/spec.md) | experience | R1, R2 | Approved | CX-BRD-001 to CX-BRD-015, CX-ORG-001 to CX-ORG-011, CX-TMP-011, CX-LOC-006, ADM-001 (branding) |
 | [034 AI Evaluation Layer](034-ai-evaluation/spec.md) | ai | R1 to R3 | Approved | EVL-001 to EVL-030, AI-008 (quality part), AI-010 (evidence part), UC-07, UC-13 |
+| [035 Public API, MCP server and app access](035-public-api-and-mcp-server/spec.md) | integrations | R2, R3 | Approved | API-001 to API-030 (new) |
 
 Open questions across these specs, with defaults: [open-questions.md](open-questions.md). Release plan: [roadmap](../docs/product/roadmap.md).
 
@@ -66,7 +67,7 @@ Each spec folder now has `spec.md` (Approved), `plan.md` and `tasks.md`. Shared 
 
 ## R2 specs
 
-Every spec number referenced in the roadmap is now written. R2 adds 017, 019, 023, 028, 029, 030 and 031, plus the R2 parts of the R1 specs. Each has `plan.md` and `tasks.md`.
+Every spec number referenced in the roadmap is now written. R2 adds 017, 019, 023, 028, 029, 030, 031 and 035 (public API and MCP server, ADR-0018), plus the R2 parts of the R1 specs. Each has `plan.md` and `tasks.md`.
 
 ## Requirement coverage
 Every foundation requirement ID is mapped above to a written spec. INT-004 to INT-006 (Google, Oracle, SAP packs) are extension points and R3 packs in 017. EXP-009 (PWA) is in 030; AI-013 (usage visibility) is in 021 with 013.
