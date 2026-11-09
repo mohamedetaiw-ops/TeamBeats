@@ -417,7 +417,7 @@ public sealed class ThemeTests(TenantWorld world)
         var preview = (await check.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("preview");
         Assert.Equal("#0f766e", preview.GetProperty("light").GetProperty("--tb-color-accent-base").GetString());
         Assert.Equal("#5eead4", preview.GetProperty("dark").GetProperty("--tb-color-link").GetString());
-        Assert.StartsWith("\"Inter\"", preview.GetProperty("light").GetProperty("--tb-font-family-latin").GetString());
+        Assert.StartsWith("\"Readex Pro\"", preview.GetProperty("light").GetProperty("--tb-font-family-latin").GetString());
 
         var schema = await t["employee_holding"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/tokens");
         var tokens = schema.GetProperty("tokens").EnumerateArray().ToList();
