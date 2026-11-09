@@ -8812,6 +8812,28 @@
         }
       }
     },
+    "/api/v1/assistant/actions": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextActionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/assistant/turns/{id}/feedback": {
       "post": {
         "tags": [
@@ -13995,6 +14017,56 @@
           },
           "policy": {
             "$ref": "#/components/schemas/RegionPolicy"
+          }
+        }
+      },
+      "TextActionRequest": {
+        "required": [
+          "action",
+          "source",
+          "itemId",
+          "text",
+          "language",
+          "instructions"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "source": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "itemId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "text": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "language": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instructions": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

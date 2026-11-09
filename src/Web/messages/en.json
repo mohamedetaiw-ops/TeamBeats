@@ -2683,6 +2683,31 @@
       "saved": "Saved.",
       "failed": "That did not work. Try again in a moment."
     },
-    "marker": "[{n}]"
+    "marker": "[{n}]",
+    "tools": {
+      "title": "Work with text",
+      "intro": "Paste your own text to rewrite, translate, summarize or explain it, or describe a draft. The result is AI generated; nothing is saved, published or sent.",
+      "itemTitle": "Ask the assistant about this page",
+      "action": "What to do",
+      "text": "Your text",
+      "instructions": "Instructions (optional)",
+      "brief": "What should the draft say?",
+      "language": "Translate into",
+      "run": "Go",
+      "copy": "Copy",
+      "copied": "Copied",
+      "translateTo": "Translate into {language}",
+      "actions": {
+        "summarize": "Summarize",
+        "explain": "Explain",
+        "translate": "Translate",
+        "rewrite": "Rewrite",
+        "draft": "Draft"
+      },
+      "languages": {
+        "ar": "Arabic",
+        "en": "English"
+      }
+    }
   }
 }

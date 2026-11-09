@@ -89,3 +89,16 @@ export async function readTurnStream(
   }
   return done;
 }
+
+export type TextAction = "summarize" | "explain" | "translate" | "rewrite" | "draft";
+
+export type TextActionResult = {
+  action: TextAction;
+  outcome: AssistantOutcome;
+  reason: string | null;
+  text: string | null;
+  language: "ar" | "en";
+  source: Citation | null;
+  withheld: boolean;
+  generated: boolean;
+};

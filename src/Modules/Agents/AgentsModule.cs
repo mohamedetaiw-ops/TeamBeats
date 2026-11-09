@@ -22,6 +22,7 @@ public static class AgentsModule
     {
         services.AddScoped<AssistantService>();
         services.AddScoped<AssistantHistory>();
+        services.AddScoped<AssistantTextActions>();
         return services;
     }
 
@@ -78,6 +79,14 @@ public static class AgentsModule
                 await WriteEventAsync(response, "error", new { code = "failed" }, CancellationToken.None);
             }
             return Results.Empty;
+        });
+
+        // Summarize, explain, translate, rewrite and draft (US3, FR-007). Nothing is stored, published or sent.
+        root.MapPost("/actions", async (TextActionRequest request, AssistantTextActions actions, IDbSession session, CancellationToken ct) =>
+        {
+            var result = await actions.RunAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(result);
         });
 
         root.MapPost("/turns/{id:guid}/feedback", async (Guid id, FeedbackRequest request, AssistantHistory history, IDbSession session, CancellationToken ct) =>

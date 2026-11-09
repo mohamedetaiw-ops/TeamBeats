@@ -5,6 +5,8 @@ import type { ReaderView } from "@/lib/content/types";
 import { Header } from "@/components/shell/Header";
 import { BodyView } from "@/features/content/BodyView";
 import { ContentSocial } from "@/features/content/ContentSocial";
+import { ItemActions } from "@/features/assistant/TextActions";
+import "@/features/assistant/assistant.css";
 import "@/features/content/content.css";
 
 /**
@@ -51,6 +53,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
           ) : null}
           <BodyView body={v.body} embedTitle={t("embed")} anchors={v.anchors} />
         </article>
+        <ItemActions source="content" itemId={v.id} itemLocale={v.locale} uiLocale={locale} />
         <ContentSocial itemId={v.id} />
       </main>
     </>

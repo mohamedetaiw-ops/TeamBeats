@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { Header } from "@/components/shell/Header";
 import type { Conversation, ConversationSummary } from "@/lib/assistant/types";
 import { AssistantChat } from "@/features/assistant/Assistant";
+import { TextTools } from "@/features/assistant/TextActions";
 import "@/features/assistant/assistant.css";
 
 const ID = /^[0-9a-f-]{36}$/i;
@@ -18,6 +19,7 @@ export default async function AssistantPage({ searchParams }: { searchParams: Pr
     redirect("/signin");
   }
   const t = await getTranslations("assistant");
+  const locale = await getLocale();
   const { c } = await searchParams;
   const [list, open] = await Promise.all([
     apiGet<{ conversations: ConversationSummary[] }>("/api/v1/assistant/conversations"),
@@ -45,6 +47,7 @@ export default async function AssistantPage({ searchParams }: { searchParams: Pr
               initial={open?.ok ? open.data : null}
               conversations={list.data.conversations}
             />
+            <TextTools uiLocale={locale} />
           </>
         )}
       </main>

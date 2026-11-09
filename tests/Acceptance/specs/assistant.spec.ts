@@ -82,5 +82,23 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.waitForURL(/\/assistant$/);
       await expect(page.getByText(msg(locale, "assistant.history.empty"))).toBeVisible();
     });
+
+    test("the page an item is on can be summarized, and pasted text rewritten", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/content/read/${shuttle}`);
+      const actions = page.locator(".assistant-item-actions");
+      await expect(actions.getByRole("heading", { name: msg(locale, "assistant.tools.itemTitle") })).toBeVisible();
+      await actions.getByRole("button", { name: msg(locale, "assistant.tools.actions.summarize"), exact: true }).click();
+      await expect(actions.getByText(msg(locale, "assistant.generated"))).toBeVisible();
+      await expectAccessible(page, testInfo, `assistant-item-${locale}`);
+
+      await page.goto(`${hostOrigin(tenant.key)}/assistant`);
+      const tools = page.locator(".assistant-tools");
+      await tools.getByLabel(msg(locale, "assistant.tools.text"), { exact: true }).fill("pls send the report by friday thx");
+      await tools.getByRole("button", { name: msg(locale, "assistant.tools.run"), exact: true }).click();
+      await expect(tools.getByText(msg(locale, "assistant.generated"))).toBeVisible();
+      await expect(tools.getByRole("button", { name: msg(locale, "assistant.tools.copy"), exact: true })).toBeVisible();
+      await expectAccessible(page, testInfo, `assistant-tools-${locale}`);
+    });
   });
 }
