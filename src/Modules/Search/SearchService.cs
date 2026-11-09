@@ -32,7 +32,7 @@ internal sealed record Candidate(string Source, Guid ItemId, string Kind, DateTi
 /// any number (two-stage permission filtering of the plan).
 /// </summary>
 public sealed class SearchService(IDbSession session, ITenantContext context, IEntitlementService entitlements, IEnumerable<ISearchSource> sources,
-    IAiGateway gateway, ILogger<SearchService> logger)
+    IAiGateway gateway, SearchTuning tuning, ILogger<SearchService> logger)
 {
     public const int PageSize = 20;
     public const int MaxPages = 50;
@@ -74,19 +74,28 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
         await entitlements.DemandAsync(Capabilities.SearchCore, ct);
         context.RequireUser();
         var terms = SearchText.Terms(query);
-        var groups = terms.Select(t => (IReadOnlyList<string>)[t]).ToList();
+        var language = SearchText.QueryLanguage(query);
+        var groups = await GroupsAsync(terms, language, ct);
         var number = page ?? 1;
 
         var keyword = terms.Count == 0 ? [] : await KeywordAsync(SearchText.TsQuery(groups, all: true), from, to, MaxCandidates, ct);
         var (semantic, degraded) = await SemanticAsync(query, from, to, ct);
         var candidates = Fuse(keyword, semantic);
         var more = keyword.Count >= MaxCandidates;
+
+        // Best bets go first, marked as recommended, when the person may read them (US4 scenario 1). They are counted
+        // like any other result, once.
+        var bets = (await tuning.BestBetsForAsync(SearchText.QueryKey(query), language, ct))
+            .Select(b => new Candidate(b.Source, b.ItemId, b.Kind, b.UpdatedAt, double.MaxValue)).ToList();
+        var recommended = bets.Select(b => (b.Source, b.ItemId)).ToHashSet();
+        candidates = [.. bets, .. candidates.Where(c => !recommended.Contains((c.Source, c.ItemId)))];
         var permitted = await PermittedAsync(candidates, ct);
 
         var facets = permitted.GroupBy(c => c.Kind).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
         var filtered = kind is null ? permitted : [.. permitted.Where(c => c.Kind == kind)];
         var pageItems = filtered.Skip((number - 1) * PageSize).Take(PageSize).ToList();
-        var results = await ResultsAsync(pageItems, terms, ct);
+        var results = (await ResultsAsync(pageItems, terms, ct))
+            .Select(r => recommended.Contains((r.Source, r.ItemId)) ? r with { Recommended = true } : r).ToList();
 
         IReadOnlyList<SearchResult> alternatives = [];
         if (filtered.Count == 0 && terms.Count > 0)
@@ -97,6 +106,10 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
         }
         return new SearchPage(query, filtered.Count, more, number, PageSize, results, facets, degraded, alternatives);
     }
+
+    /// <summary>The query terms, each with its synonyms (US4 scenario 2).</summary>
+    internal async Task<IReadOnlyList<IReadOnlyList<string>>> GroupsAsync(IReadOnlyList<string> terms, string language, CancellationToken ct) =>
+        SearchText.Expand(terms, await tuning.SynonymsForAsync(terms, language, ct));
 
     /// <summary>Type-ahead on titles (FR-009): words typed so far, the last one as a prefix, readable items only.</summary>
     public async Task<IReadOnlyList<Suggestion>> SuggestAsync(string? q, CancellationToken ct)
@@ -142,6 +155,30 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
         {
             return ([], false);
         }
+        var (embedded, degraded) = await EmbedQueryAsync(query, ct);
+        if (embedded is null)
+        {
+            return ([], degraded);
+        }
+        var distance = Distance(embedded.Value.Vector);
+        var rows = await session.QueryAsync(
+            $"""
+            select source, item_id, kind, updated_at from search.unit
+            where embedding_model = @model and embedding_dims = @dims and {distance} <= @maxDistance
+              and (@from::timestamptz is null or updated_at >= @from) and (@to::timestamptz is null or updated_at <= @to)
+            order by {distance}
+            limit @limit
+            """, new { model = embedded.Value.Model, dims = embedded.Value.Vector.Length, vector = embedded.Value.Vector, from, to, limit = SemanticCandidates, maxDistance = MaxSemanticDistance },
+            r => new Candidate(r.GetString(0), r.GetGuid(1), r.GetString(2), r.Get<DateTimeOffset?>("updated_at"), 0), ct);
+        return ([.. rows.DistinctBy(c => (c.Source, c.ItemId))], false);
+    }
+
+    /// <summary>
+    /// The query's embedding through the gateway, or null with whether that is an outage (FR-014): a package or policy
+    /// that turns AI off is a setting, not an outage.
+    /// </summary>
+    internal async Task<((float[] Vector, string Model)? Embedded, bool Degraded)> EmbedQueryAsync(string query, CancellationToken ct)
+    {
         EmbeddingResult embedded;
         try
         {
@@ -151,28 +188,20 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(ex, "Query embedding failed; search is keyword only");
-            return ([], true);
+            return (null, true);
         }
         if (!embedded.IsOk)
         {
-            // A package or policy that turns AI off is a setting, not an outage.
             var setting = embedded.Denial is AiDenials.NotInPackage or AiDenials.ModelNotAllowed or AiDenials.ClassificationBlocked;
-            return ([], !setting);
+            return (null, !setting);
         }
-        var vector = embedded.Vectors![0];
-        var exact = vector.Length != 1536;
-        var rows = await session.QueryAsync(
-            $"""
-            select source, item_id, kind, updated_at from search.unit
-            where embedding_model = @model and embedding_dims = @dims
-              and {(exact ? "embedding operator(extensions.<=>) @vector::real[]::extensions.vector" : "(embedding::extensions.vector(1536)) operator(extensions.<=>) @vector::real[]::extensions.vector(1536)")} <= @maxDistance
-              and (@from::timestamptz is null or updated_at >= @from) and (@to::timestamptz is null or updated_at <= @to)
-            order by {(exact ? "embedding operator(extensions.<=>) @vector::real[]::extensions.vector" : "(embedding::extensions.vector(1536)) operator(extensions.<=>) @vector::real[]::extensions.vector(1536)")}
-            limit @limit
-            """, new { model = embedded.Model, dims = vector.Length, vector, from, to, limit = SemanticCandidates, maxDistance = MaxSemanticDistance },
-            r => new Candidate(r.GetString(0), r.GetGuid(1), r.GetString(2), r.Get<DateTimeOffset?>("updated_at"), 0), ct);
-        return ([.. rows.DistinctBy(c => (c.Source, c.ItemId))], false);
+        return ((embedded.Vectors![0], embedded.Model!), false);
     }
+
+    /// <summary>The cosine distance expression to <c>@vector</c>; the production size uses its approximate index, other sizes are scanned exactly.</summary>
+    internal static string Distance(float[] vector) => vector.Length == 1536
+        ? "(embedding::extensions.vector(1536)) operator(extensions.<=>) @vector::real[]::extensions.vector(1536)"
+        : "embedding operator(extensions.<=>) @vector::real[]::extensions.vector";
 
     internal static List<Candidate> Fuse(IReadOnlyList<Candidate> keyword, IReadOnlyList<Candidate> semantic)
     {

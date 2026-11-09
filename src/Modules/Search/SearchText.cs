@@ -68,6 +68,22 @@ public static class SearchText
     /// <summary>The distinct words of a query, at most <see cref="MaxTerms"/>, in the order typed.</summary>
     public static IReadOnlyList<string> Terms(string? query) => [.. Words(Normalize(query)).Distinct(StringComparer.Ordinal).Take(MaxTerms)];
 
+    /// <summary>The words of a query as one normalized phrase, the key best bets are matched on (US4 scenario 1).</summary>
+    public static string QueryKey(string? query) => string.Join(' ', Terms(query));
+
+    /// <summary>The language a query is treated as for locale specific best bets and synonyms: Arabic by its letters, else English.</summary>
+    public static string QueryLanguage(string? query) => IsArabic(query) ? "ar" : "en";
+
+    /// <summary>
+    /// Each query term with the other words of every synonym set that holds it (US4 scenario 2), as the groups of
+    /// <see cref="TsQuery"/>: a term matches when any word of its group does. The typed term stays first.
+    /// </summary>
+    public static IReadOnlyList<IReadOnlyList<string>> Expand(IReadOnlyList<string> terms, IEnumerable<IReadOnlyCollection<string>> synonymSets)
+    {
+        var sets = synonymSets.ToList();
+        return [.. terms.Select(t => (IReadOnlyList<string>)[t, .. sets.Where(s => s.Contains(t)).SelectMany(s => s).Where(w => w != t).Distinct(StringComparer.Ordinal)])];
+    }
+
     public static bool IsArabic(string? text) => text is not null && text.Any(c => c is >= '؀' and <= 'ۿ');
 
     /// <summary>

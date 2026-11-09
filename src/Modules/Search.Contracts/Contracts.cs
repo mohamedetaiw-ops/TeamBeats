@@ -69,3 +69,46 @@ public sealed record SearchItemChanged(string Source, Guid ItemId) : IIntegratio
 
 /// <summary>Asks Search to rebuild the tenant's index from every owner (FR-012), for a new tenant, a repair or a configuration change.</summary>
 public sealed record SearchRebuildRequested(Guid RebuildId) : IIntegrationEvent;
+
+/// <summary>
+/// A retrieval for a model (spec 012 US3, FR-007). <paramref name="UseCase"/> is the AI use case the passages are for
+/// (spec 013, for example <c>assistant</c>); its classification ceiling decides what may be returned. <paramref name="TopK"/>
+/// defaults to <see cref="ISearchRetrieval.DefaultTopK"/>; <paramref name="Kinds"/> narrows the sources.
+/// </summary>
+public sealed record RetrievalRequest(string Query, string UseCase, int? TopK = null, IReadOnlyList<string>? Kinds = null);
+
+/// <summary>
+/// One passage the person may read, with what a citation needs: <paramref name="Anchor"/> is the link that opens the
+/// item at the passage. The text is untrusted data written by people (section 14), never instructions for the model.
+/// </summary>
+public sealed record RetrievedPassage(
+    string Source,
+    Guid ItemId,
+    string Kind,
+    string Title,
+    string Text,
+    string Anchor,
+    string Locale,
+    string Classification,
+    int? Version,
+    DateTimeOffset? UpdatedAt,
+    double Score);
+
+/// <summary>
+/// The passages for a retrieval, best first. <paramref name="Withheld"/> counts passages the person could read that
+/// the AI policy keeps from this use case by classification, so the assistant can say evidence was withheld by policy
+/// (US3 scenario 2). <paramref name="Degraded"/> is true when semantic retrieval should have run and could not.
+/// </summary>
+public sealed record RetrievalResult(IReadOnlyList<RetrievedPassage> Passages, int Withheld, bool Degraded);
+
+/// <summary>
+/// The retrieval contract for the assistant and agent tools (spec 012 US3, plan API): top passages filtered as the
+/// signed-in person by each owner and by the AI classification policy of the use case. Specs 014, 020 and 027 call it.
+/// </summary>
+public interface ISearchRetrieval
+{
+    const int DefaultTopK = 8;
+    const int MaxTopK = 20;
+
+    Task<RetrievalResult> RetrieveAsync(RetrievalRequest request, CancellationToken ct = default);
+}

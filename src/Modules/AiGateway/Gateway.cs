@@ -33,7 +33,7 @@ public sealed class AiGatewayService(
     IDbSession session,
     IOrganizationHierarchy hierarchy,
     IClock clock,
-    ILogger<AiGatewayService> logger) : IAiGateway
+    ILogger<AiGatewayService> logger) : IAiGateway, IAiClassificationPolicy
 {
     /// <summary>Characters per token for the size estimate before a call; deliberately low so Arabic text is not underestimated.</summary>
     public const double CharsPerToken = 3.0;
@@ -153,6 +153,30 @@ public sealed class AiGatewayService(
             t = Math.Clamp(value, policy.MinTemperature ?? 0, policy.MaxTemperature ?? 2);
         }
         return (new RoutePlan(useCase, level, candidates, clampedTokens, t), null);
+    }
+
+    /// <summary>
+    /// The highest level whose plan is not refused for its classification (steps 3 and 4). Other refusals, such as a
+    /// model allowlist or an unreachable provider, are not about the content, so they do not lower the ceiling; a use case
+    /// that cannot be called at all (not in the package, quota used up) has no ceiling.
+    /// </summary>
+    public async Task<DataClassification?> CeilingAsync(string useCase, CancellationToken ct = default)
+    {
+        string[] needs = [useCase == AiUseCases.Embed ? ModelCapabilities.Embeddings : ModelCapabilities.Chat];
+        foreach (var level in new[] { DataClassification.Restricted, DataClassification.Confidential, DataClassification.Internal, DataClassification.Public })
+        {
+            var (_, denial) = await PlanAsync(useCase, null, level, 0, null, null, needs, null, platformCharged: false, ct);
+            if (denial is AiDenials.InvalidRequest or AiDenials.NotInPackage or AiDenials.QuotaExhausted)
+            {
+                // Refused before the content is looked at: no call of this use case can be made now.
+                return null;
+            }
+            if (denial != AiDenials.ClassificationBlocked)
+            {
+                return level;
+            }
+        }
+        return null;
     }
 
     private static string[] Needs(AiRequest request)

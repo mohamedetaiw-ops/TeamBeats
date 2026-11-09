@@ -24,6 +24,7 @@ public static class AiGatewayModule
         services.AddScoped<UsageReports>();
         services.AddScoped<AiGatewayService>();
         services.AddScoped<IAiGateway>(sp => sp.GetRequiredService<AiGatewayService>());
+        services.AddScoped<IAiClassificationPolicy>(sp => sp.GetRequiredService<AiGatewayService>());
         return services;
     }
 

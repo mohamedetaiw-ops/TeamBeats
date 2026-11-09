@@ -25,6 +25,8 @@ public static class SearchModule
         services.AddScoped<SearchIndexer>();
         services.AddScoped<SearchService>();
         services.AddScoped<SearchRebuilds>();
+        services.AddScoped<SearchTuning>();
+        services.AddScoped<ISearchRetrieval, SearchRetrieval>();
         services.AddMessageHandler<SearchItemChanged, SearchIndexer>("search.index_item");
         services.AddMessageHandler<C.ContentPublished, SearchIndexer>("search.index_content_published");
         services.AddMessageHandler<C.ContentUnpublished, SearchIndexer>("search.index_content_unpublished");
@@ -61,6 +63,46 @@ public static class SearchModule
             var view = await rebuilds.RequestAsync(ct);
             await session.CommitAsync(ct);
             return Results.Accepted($"/api/v1/search/rebuilds", view);
+        });
+
+        // Best bets and synonyms (US4, FR-010).
+        root.MapGet("/best-bets", async (SearchTuning tuning, CancellationToken ct) => Results.Ok(new { bestBets = await tuning.ListBestBetsAsync(ct) }));
+
+        root.MapPost("/best-bets", async (BestBetRequest request, SearchTuning tuning, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await tuning.AddBestBetAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/search/best-bets/{view.Id}", view);
+        });
+
+        root.MapDelete("/best-bets/{id:guid}", async (Guid id, SearchTuning tuning, IDbSession session, CancellationToken ct) =>
+        {
+            await tuning.RemoveBestBetAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapGet("/synonyms", async (SearchTuning tuning, CancellationToken ct) => Results.Ok(new { synonymSets = await tuning.ListSynonymsAsync(ct) }));
+
+        root.MapPost("/synonyms", async (SynonymSetRequest request, SearchTuning tuning, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await tuning.AddSynonymsAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/search/synonyms/{view.Id}", view);
+        });
+
+        root.MapPut("/synonyms/{id:guid}", async (Guid id, SynonymSetRequest request, SearchTuning tuning, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await tuning.UpdateSynonymsAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapDelete("/synonyms/{id:guid}", async (Guid id, SearchTuning tuning, IDbSession session, CancellationToken ct) =>
+        {
+            await tuning.RemoveSynonymsAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
 
         return app;
