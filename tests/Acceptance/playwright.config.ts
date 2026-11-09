@@ -49,6 +49,8 @@ export default defineConfig({
             ASPNETCORE_ENVIRONMENT: "Development",
             // The web app and these tests reach the API as a proxy on loopback and pass the tenant host on.
             Http__TrustForwardedHeaders: "true",
+            // The suite builds its own data; the demo data package would change what pages show.
+            Dev__SeedDemo__Folder: "",
           },
         },
         {
