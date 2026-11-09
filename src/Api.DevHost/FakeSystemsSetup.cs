@@ -108,6 +108,15 @@ public static class FakeSystemsSetup
             ["Integrations:Microsoft365:ClientSecret"] = FakeMicrosoftGraph.ClientSecret,
             ["Ai:OpenRouter:ApiKey"] = FakeOpenRouter.ApiKey,
         });
+        // Debug windows (spec 013 US8) need a log key. Development and staging get a random one per process unless the
+        // secret store has one, so entries written before a restart can no longer be read, which suits fictional data.
+        if (string.IsNullOrEmpty(builder.Configuration["Ai:DebugLog:Key"]))
+        {
+            builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Ai:DebugLog:Key"] = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)),
+            });
+        }
 
         var services = builder.Services;
         services.AddSingleton(systems);

@@ -1,0 +1,108 @@
+/* Spec 013 AI governance pages. Colors and spacing come from tokens; logical properties keep RTL working. */
+.ai {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.ai-tabs ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-tabs a {
+  display: inline-flex;
+  align-items: center;
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-full);
+  color: inherit;
+  text-decoration: none;
+}
+
+.ai-tabs a[aria-current="page"] {
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-accent-text);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.ai-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+.ai-section h2,
+.ai-section h3 {
+  margin: 0;
+}
+
+.ai-table {
+  overflow-x: auto;
+}
+
+.ai-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.ai-table th,
+.ai-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: top;
+}
+
+.ai-table td[data-number] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.ai-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: end;
+}
+
+.ai-route {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-route li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+}
+
+.ai-entry pre {
+  margin: 0;
+  padding: var(--tb-space-sm);
+  overflow-x: auto;
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.ai-bar {
+  display: block;
+  min-inline-size: var(--tb-space-xs);
+  block-size: var(--tb-space-sm);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-accent-base);
+}

@@ -373,13 +373,16 @@ public sealed class AiGatewayTests(TenantWorld world)
         {
             await OkAsync(t["sec"].Client.GetAsync($"/api/v1/ai/usage?groupBy={group}"));
         }
-        Assert.Equal(6, (await OkAsync(t["sec"].Client.GetAsync("/api/v1/ai/usage?groupBy=user"))).GetProperty("rows").GetArrayLength());
+        var byUser = await OkAsync(t["sec"].Client.GetAsync("/api/v1/ai/usage?groupBy=user"));
+        Assert.Equal(6, byUser.GetProperty("rows").GetArrayLength());
+        Assert.Equal(6, byUser.GetProperty("labels").EnumerateObject().Count());
 
         // The Gulf administrator sees Gulf only, never named users, and only groups of five people or more.
         var scoped = await OkAsync(t["gadmin"].Client.GetAsync("/api/v1/ai/usage?groupBy=unit"));
         Assert.Equal("units", scoped.GetProperty("scope").GetString());
         var unit = Assert.Single(scoped.GetProperty("rows").EnumerateArray());
         Assert.Equal(gulf.ToString(), unit.GetProperty("key").GetString());
+        Assert.Contains("Gulf", scoped.GetProperty("labels").GetProperty(gulf.ToString()).GetRawText());
         Assert.Equal(5, scoped.GetProperty("totals").GetProperty("requests").GetInt64());
         Assert.Equal(HttpStatusCode.Forbidden, (await t["gadmin"].Client.GetAsync("/api/v1/ai/usage?groupBy=user")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await t["emp"].Client.GetAsync("/api/v1/ai/usage")).StatusCode);
