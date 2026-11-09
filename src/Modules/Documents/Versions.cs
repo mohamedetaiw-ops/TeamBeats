@@ -459,7 +459,7 @@ public sealed class DocumentVersions(
             new { cutoff = now.AddDays(-days), limit }, r => (Id: r.GetGuid(0), Library: r.GetGuid(1), Inherits: r.GetBoolean(2)), ct);
         foreach (var (id, libraryId, inherits) in due)
         {
-            var keys = await session.QueryAsync("select distinct object_key from documents.document_version where document_id = @id", new { id }, r => r.GetString(0), ct);
+            var keys = await session.QueryAsync("select object_key from documents.document_version where document_id = @id union select preview_key from documents.document_version where document_id = @id and preview_key is not null", new { id }, r => r.GetString(0), ct);
             await session.ExecAsync(
                 """
                 delete from documents.download_token where document_id = @id;

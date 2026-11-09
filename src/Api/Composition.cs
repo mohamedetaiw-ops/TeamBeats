@@ -76,6 +76,17 @@ public static class TeamBeatsModules
         {
             services.AddSingleton<IMalwareScanner, UnavailableScanner>();
         }
+        // Office previews are converted by Gotenberg when it is configured; without it they are not available (spec 011 plan).
+        if (configuration[GotenbergConverter.UrlKey] is { Length: > 0 } gotenberg)
+        {
+            services.AddHttpClient(GotenbergConverter.ClientName, c => c.Timeout = GotenbergConverter.Timeout);
+            var baseUrl = new Uri(gotenberg.EndsWith('/') ? gotenberg : gotenberg + "/");
+            services.AddSingleton<IDocumentConverter>(sp => new GotenbergConverter(sp.GetRequiredService<IHttpClientFactory>(), baseUrl));
+        }
+        else
+        {
+            services.AddSingleton<IDocumentConverter, UnavailableConverter>();
+        }
 
         services.AddTeamBeatsMessaging();
         services.AddMessageTransport(configuration);

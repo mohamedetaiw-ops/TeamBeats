@@ -102,3 +102,10 @@ internal static class VersionLabels
 {
     public static string Of(int major, int minor) => $"{major}.{minor}";
 }
+
+public static class TokenPurposes
+{
+    public const string Download = "download";
+    public const string Preview = "preview";
+}
+

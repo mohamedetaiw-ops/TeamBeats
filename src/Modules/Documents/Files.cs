@@ -576,6 +576,17 @@ public sealed class DocumentFiles(
     /// </summary>
     public async Task<DownloadTokenView> DownloadTokenAsync(Guid documentId, Guid? versionId, CancellationToken ct)
     {
+        var target = await OpenableAsync(documentId, versionId, ct);
+        var (token, expires) = await IssueTokenAsync(documentId, target, TokenPurposes.Download, ct);
+        return new DownloadTokenView(token, $"/api/v1/documents/files/{token}", expires);
+    }
+
+    /// <summary>
+    /// The version the caller may open: the one asked for, or by default the current one for contributors and the
+    /// effective one for readers. Not found when it is not theirs to see; a conflict while it is not clean.
+    /// </summary>
+    internal async Task<Guid> OpenableAsync(Guid documentId, Guid? versionId, CancellationToken ct)
+    {
         var user = context.RequireUser();
         var (_, doc, rights) = await VisibleAsync(documentId, ct);
         var target = versionId ?? (rights.Contribute ? doc.Current : doc.Effective) ?? doc.Pending;
@@ -592,16 +603,24 @@ public sealed class DocumentFiles(
         {
             throw AppException.Conflict("conflict.documents.not_clean");
         }
+        return target!.Value;
+    }
+
+    /// <summary>A random token for one person, one version and one purpose; only its hash is kept.</summary>
+    internal async Task<(string Token, DateTimeOffset ExpiresAt)> IssueTokenAsync(Guid documentId, Guid versionId, string purpose, CancellationToken ct)
+    {
         var token = Base64Url(RandomNumberGenerator.GetBytes(32));
         var expires = clock.UtcNow.Add(TokenLifetime);
         await session.ExecAsync(
             """
             delete from documents.download_token where expires_at < @now;
-            insert into documents.download_token (tenant_id, token_hash, user_id, document_id, version_id, expires_at)
-            values (platform.current_tenant_id(), @hash, @user, @documentId, @version, @expires)
-            """, new { now = clock.UtcNow, hash = SHA256.HashData(Encoding.ASCII.GetBytes(token)), user, documentId, version = target, expires }, ct);
-        return new DownloadTokenView(token, $"/api/v1/documents/files/{token}", expires);
+            insert into documents.download_token (tenant_id, token_hash, user_id, document_id, version_id, expires_at, purpose)
+            values (platform.current_tenant_id(), @hash, @user, @documentId, @versionId, @expires, @purpose)
+            """, new { now = clock.UtcNow, hash = TokenHash(token), user = context.RequireUser(), documentId, versionId, expires, purpose }, ct);
+        return (token, expires);
     }
+
+    internal static byte[] TokenHash(string token) => SHA256.HashData(Encoding.ASCII.GetBytes(token));
 
     /// <summary>
     /// Opens the file behind a token. The token works only for the person it was issued to, in the tenant it was issued
@@ -620,8 +639,8 @@ public sealed class DocumentFiles(
             from documents.download_token t
             join documents.document_version v on v.id = t.version_id
             join documents.document d on d.id = t.document_id
-            where t.token_hash = @hash and t.user_id = @user and t.expires_at > @now and d.deleted_at is null
-            """, new { hash = SHA256.HashData(Encoding.ASCII.GetBytes(token)), user, now = clock.UtcNow },
+            where t.token_hash = @hash and t.user_id = @user and t.expires_at > @now and t.purpose = 'download' and d.deleted_at is null
+            """, new { hash = TokenHash(token), user, now = clock.UtcNow },
             r => (Doc: r.GetGuid(0), Version: r.GetGuid(1), Key: r.GetString(2), Type: r.GetString(3), Name: r.GetString(4), Size: r.GetInt64(5), Scan: r.GetString(6),
                 Classification: r.GetString(7), Library: r.GetGuid(8)), ct);
         if (row.Key is null || row.Scan != ScanStates.Clean)
