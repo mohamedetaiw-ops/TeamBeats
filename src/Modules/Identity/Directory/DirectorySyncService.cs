@@ -157,6 +157,10 @@ public sealed class DirectorySyncService(
         }
     }
 
+    /// <summary>Makes the connection's next scheduled run due now, so the host that runs the scheduler picks it up.</summary>
+    public async Task MarkDueAsync(Guid connectionId, CancellationToken ct) =>
+        await session.ExecAsync("update identity.directory_connection set next_run_at = now() where connection_id = @c", new { c = connectionId }, ct);
+
     /// <summary>One sync run. Locks the settings row so two workers never sync the same connection at once.</summary>
     public async Task<SyncRun?> RunAsync(Guid connectionId, CancellationToken ct)
     {

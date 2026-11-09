@@ -374,6 +374,41 @@ public sealed class DirectorySyncTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task Sync_now_on_a_worker_without_the_directory_hands_the_run_to_the_scheduling_host()
+    {
+        // Staging workers run without the directory scheduler (Workers:DirectorySync:Enabled=false): their "sync now"
+        // consumer only makes the run due, and the host that can reach the directory runs it.
+        var services = new ServiceCollection()
+            .AddMessageHandler<DirectorySyncRequested, RunRequestedDirectorySync>(RunRequestedDirectorySync.ConsumerName)
+            .DeferDirectorySyncRequests();
+        var consumer = Assert.Single(services.Select(d => d.ImplementationInstance).OfType<ConsumerRegistration>());
+        Assert.Equal(RunRequestedDirectorySync.ConsumerName, consumer.Name);
+        Assert.Equal(typeof(DeferRequestedDirectorySync), consumer.HandlerType);
+
+        var s = await TenantAsync();
+        await RunAsync(s);
+        s.Data.AddUser(Oid(), "Handed Over", s.Email("handed"));
+        await world.Factory.InScopeAsync(s.Id, async sp =>
+        {
+            await new DeferRequestedDirectorySync(sp.GetRequiredService<DirectorySyncService>())
+                .HandleAsync(new DirectorySyncRequested(s.Connection), CancellationToken.None);
+            await sp.GetRequiredService<IDbSession>().CommitAsync();
+            return true;
+        });
+        Assert.Equal(0, await CountAsync(s, "select count(*) from identity.user_account where created_via = 'directory' and display_name = 'Handed Over'"));
+        Assert.Equal(1, await CountAsync(s, "select count(*) from identity.directory_connection where next_run_at <= now()"));
+
+        await world.Factory.InScopeAsync(s.Id, async sp =>
+        {
+            await sp.GetRequiredService<DirectorySyncService>().RunIfDueAsync(CancellationToken.None);
+            await sp.GetRequiredService<IDbSession>().CommitAsync();
+            return true;
+        });
+        Assert.Equal(1, await CountAsync(s, "select count(*) from identity.user_account where created_via = 'directory' and display_name = 'Handed Over'"));
+        Assert.Equal(0, await CountAsync(s, "select count(*) from identity.directory_connection where next_run_at <= now()"));
+    }
+
+    [Fact]
     public async Task Deleting_the_connection_lists_synced_users_and_keeps_them()
     {
         var s = await TenantAsync();
