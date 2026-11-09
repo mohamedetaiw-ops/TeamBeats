@@ -931,3 +931,26 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Staging | Staging has no Gotenberg app yet, so Office previews there show "preview not available". Adding a Fly app for it is a deployment change made with the rest of the staging work for spec 011. |
 | Conversion time | Conversion runs on the first request, inside its 60 second timeout. Section 15 asks for 10 seconds for a 50 page document; Gotenberg normally meets this, and converting at upload in the background is the fallback if staging shows otherwise. |
 | Preview audit | Opening a preview is not audited, as the spec asks only for downloads of Confidential and Restricted files. View-only libraries with watermarks are R2. |
+
+## Controlled documents (spec 011 T009, T010)
+
+| Area | What was built |
+|---|---|
+| Types | A document type becomes controlled with `controlled` settings: a number prefix and digit count, one to five approval steps (named approvers, or the library's managers through `doc.manage` at the library's unit), read confirmation on or off, and review months (12 by default). It needs `docs.controlled` and stays controlled once set |
+| Numbers | Each controlled document gets the next number of its prefix (HS-SOP-0042) from a counter that only grows, so numbers are never reused, even after a purge. A unique index refuses duplicates |
+| Release | Publishing directly is refused for controlled types. `/release` submits the current draft with an optional effective date; the route runs on the process engine with the author and the submitter excluded, and tasks appear in the inbox (`document_release`). Named approvers are told when their step opens. While a release waits, the document cannot be checked out, checked in, restored or deleted. `/release/withdraw` takes it back |
+| Effective | On approval the draft becomes the next major version. With no date or a past one it takes effect at once; otherwise it waits as scheduled, readers keep the version in force and see the upcoming version and date, and the maintenance worker (now every minute) makes it effective on the date. The previous version becomes superseded. `/versions/{id}` gives the superseded banner its link to the version in force |
+| Reviews | Each effective version sets the review date. Thirty days before, the owner gets a review task (`document_review`) to confirm, revise (the owner gets the check-out) or withdraw (readers stop getting it; `DocumentWithdrawn`). Overdue reviews notify the owner and `doc.manage` holders once. `/libraries/{id}/reviews` lists review dates for managers |
+| Read confirmation | When a major version of a type that asks for it takes effect, everyone who may read the document is asked to confirm (`DocumentVersionPublished` handler). Confirmations are kept per person and version; managers get the report at `/read-confirmations` |
+| Controlled copy | `/controlled-copy` returns a token for the PDF (Office files converted first) with the footer "number, version, effective date, uncontrolled when printed" on every page, stamped once per version through Gotenberg's stamp route with a text source only. It counts as a download |
+| Tests | `DocumentControlledTests` |
+
+| Item | Note |
+|---|---|
+| Acknowledgement contract | The plan says read confirmations reuse the spec 009 acknowledgement contract, but spec 009 keeps acknowledgements on content items and has no contract for other modules. Documents keep read confirmations in their own table with the same fields; a shared contract can join them when spec 025 attestation needs it. `DocumentReadConfirmed` is published for that. |
+| Audience size | The audience is everyone in the tenant who may read the document, checked person by person in the background. This is fine for R1 tenant sizes; a holders-at-resource query in authorization would make it one query. |
+| Approvers who cannot read | Named approvers need read access to the library to open the document from their task; the type settings do not check this. |
+| Approver leaves | The edge case asks the route to fall back to the step's fallback; named steps have no fallback in R1, so a manager withdraws and resubmits after changing the type's approvers. |
+| Footer language | The stamped footer is in English: the conversion service draws standard PDF fonts, which do not join Arabic letters. The page shows the footer in the reader's language. |
+| Stamp options | The stamp options follow Gotenberg 8 (pdfcpu); the exact placement needs a check against the real service when staging gets Gotenberg. |
+| Knowledge health | Overdue reviews show on the knowledge health dashboard of spec 021; until then the reviews list and the overdue notice cover it. |

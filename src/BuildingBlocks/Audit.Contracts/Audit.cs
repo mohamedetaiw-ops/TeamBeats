@@ -211,6 +211,13 @@ public static class AuditActions
     public const string DocDeleted = "doc.deleted";
     public const string DocRestoredFromBin = "doc.undeleted";
     public const string DocPurged = "doc.purged";
+    public const string DocReleaseSubmitted = "doc.release_submitted";
+    public const string DocReleaseWithdrawn = "doc.release_withdrawn";
+    public const string DocReleaseApproved = "doc.release_approved";
+    public const string DocReleaseReturned = "doc.release_returned";
+    public const string DocVersionEffective = "doc.version_effective";
+    public const string DocReviewed = "doc.reviewed";
+    public const string DocReadConfirmed = "doc.read_confirmed";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -247,7 +254,8 @@ public static class AuditActions
         SiteCreated, SiteChanged,
         DocLibraryCreated, DocLibraryChanged, DocTypeChanged, DocSettingsChanged, DocUploaded, DocMetadataChanged, DocDownloaded,
         DocPermissionsBroken, DocPermissionsChanged, DocCheckedOut, DocCheckedIn, DocForcedCheckIn, DocVersionCreated, DocRestored, DocDeleted,
-        DocRestoredFromBin, DocPurged,
+        DocRestoredFromBin, DocPurged, DocReleaseSubmitted, DocReleaseWithdrawn, DocReleaseApproved, DocReleaseReturned, DocVersionEffective, DocReviewed,
+        DocReadConfirmed,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

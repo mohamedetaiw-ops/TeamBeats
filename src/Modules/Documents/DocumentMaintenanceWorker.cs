@@ -8,14 +8,15 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Documents;
 
 /// <summary>
-/// Once every ten minutes, for every active tenant in its own scope and transaction: purges documents left in the
-/// recycle bin past the tenant's period (spec 011 FR-018) and reminds holders of check-outs older than fourteen days.
+/// Every minute, for every active tenant in its own scope and transaction: purges documents left in the
+/// recycle bin past the tenant's period (spec 011 FR-018) reminds holders of check-outs older than fourteen days, puts
+/// approved controlled versions in force on their date and opens or flags owner reviews.
 /// Runs as the system actor. Hosted by the worker, and by the development host when <c>Documents:Maintenance:InProcess</c> is true.
 /// </summary>
 public sealed class DocumentMaintenanceWorker(IServiceScopeFactory scopes, IClock clock, ILogger<DocumentMaintenanceWorker> logger) : BackgroundService
 {
     public const string InProcessKey = "Documents:Maintenance:InProcess";
-    public static readonly TimeSpan Tick = TimeSpan.FromMinutes(10);
+    public static readonly TimeSpan Tick = TimeSpan.FromMinutes(1);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -51,6 +52,7 @@ public sealed class DocumentMaintenanceWorker(IServiceScopeFactory scopes, ICloc
                 var versions = scope.ServiceProvider.GetRequiredService<DocumentVersions>();
                 await versions.PurgeAsync(now, 100, ct);
                 await versions.RemindCheckOutsAsync(now, 200, ct);
+                await scope.ServiceProvider.GetRequiredService<DocumentReleases>().RunDueAsync(now, 200, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

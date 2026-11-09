@@ -25,9 +25,35 @@ public sealed record LibraryRequest(
     string? ClassificationDefault,
     int? Version);
 
-public sealed record DocumentTypeView(Guid Id, IReadOnlyDictionary<string, string> Names, IReadOnlyList<FieldDefinition> Fields, string Status, int Version);
+public sealed record DocumentTypeView(Guid Id, IReadOnlyDictionary<string, string> Names, IReadOnlyList<FieldDefinition> Fields, string Status, int Version,
+    ControlledSettings? Controlled = null);
 
-public sealed record DocumentTypeRequest(IReadOnlyDictionary<string, string>? Names, IReadOnlyList<FieldDefinition>? Fields, string? Status, int? Version);
+public sealed record DocumentTypeRequest(IReadOnlyDictionary<string, string>? Names, IReadOnlyList<FieldDefinition>? Fields, string? Status, int? Version,
+    ControlledSettings? Controlled = null);
+
+/// <summary>
+/// One approval step of a controlled type's release route: named approvers, or the library's managers
+/// (<c>doc.manage</c> at the library's unit) when <see cref="LibraryManagers"/> is set.
+/// </summary>
+public sealed record ApprovalStepSetting(IReadOnlyDictionary<string, string>? Names, IReadOnlyList<Guid>? Approvers, bool LibraryManagers = false);
+
+/// <summary>
+/// What makes a document type controlled (spec 011 FR-007, FR-008): its numbering scheme (a prefix and a digit count,
+/// for numbers like HS-SOP-0042), the approval steps before a major version is released, whether each new major
+/// version asks its readers to confirm they have read it, and the months until the owner's review.
+/// </summary>
+public sealed record ControlledSettings(string? NumberPrefix, int? NumberDigits, IReadOnlyList<ApprovalStepSetting>? Steps, bool ReadConfirmation = false,
+    int? ReviewMonths = null)
+{
+    public const int DefaultDigits = 4;
+    public const int DefaultReviewMonths = 12;
+    public const int MaxSteps = 5;
+    public const int MaxApprovers = 20;
+
+    public int Digits => NumberDigits ?? DefaultDigits;
+
+    public int Months => ReviewMonths ?? DefaultReviewMonths;
+}
 
 public sealed record LibraryView(
     Guid Id,
@@ -79,6 +105,7 @@ public sealed class Libraries(
     IAuthorizationProvisioning acl,
     IEntitlementService entitlements,
     IOrganizationHierarchy hierarchy,
+    ITenantMemberships memberships,
     ISiteDirectory sites,
     IAuditWriter audit,
     IOutbox outbox,
@@ -341,9 +368,79 @@ public sealed class Libraries(
     // Document types
 
     internal async Task<IReadOnlyList<DocumentTypeView>> TypesAsync(Guid libraryId, CancellationToken ct) =>
-        await session.QueryAsync("select id, names::text, fields::text, status, row_version from documents.document_type where library_id = @libraryId order by created_at, id",
+        await session.QueryAsync(
+            "select id, names::text, fields::text, status, row_version, controlled::text from documents.document_type where library_id = @libraryId order by created_at, id",
             new { libraryId },
-            r => new DocumentTypeView(r.GetGuid(0), DocJson.Read<Dictionary<string, string>>(r.GetString(1)), DocJson.Read<List<FieldDefinition>>(r.GetString(2)), r.GetString(3), r.GetInt32(4)), ct);
+            r => new DocumentTypeView(r.GetGuid(0), DocJson.Read<Dictionary<string, string>>(r.GetString(1)), DocJson.Read<List<FieldDefinition>>(r.GetString(2)), r.GetString(3),
+                r.GetInt32(4), r.Get<string>("controlled") is { } c ? DocJson.Read<ControlledSettings>(c) : null), ct);
+
+    /// <summary>The controlled settings of a type, or null for an ordinary type or no type.</summary>
+    internal async Task<ControlledSettings?> ControlledOfAsync(Guid? typeId, CancellationToken ct) =>
+        typeId is null ? null
+            : await session.ScalarAsync<string>("select controlled::text from documents.document_type where id = @typeId", new { typeId }, ct) is { } json
+                ? DocJson.Read<ControlledSettings>(json) : null;
+
+    /// <summary>The next number in the type's scheme. The counter only grows, so a number is never given twice.</summary>
+    internal async Task<string> NextNumberAsync(ControlledSettings settings, CancellationToken ct)
+    {
+        var value = await session.ScalarAsync<long>(
+            """
+            insert into documents.number_scheme (tenant_id, prefix, last_value) values (platform.current_tenant_id(), @prefix, 1)
+            on conflict (tenant_id, prefix) do update set last_value = documents.number_scheme.last_value + 1
+            returning last_value
+            """, new { prefix = settings.NumberPrefix }, ct);
+        return settings.NumberPrefix + value.ToString(System.Globalization.CultureInfo.InvariantCulture).PadLeft(settings.Digits, '0');
+    }
+
+    private async Task<ControlledSettings?> ControlledAsync(ControlledSettings? settings, ValidationErrors errors, CancellationToken ct)
+    {
+        if (settings is null)
+        {
+            return null;
+        }
+        await entitlements.DemandAsync(Capabilities.DocsControlled, ct);
+        var prefix = settings.NumberPrefix?.Trim().ToUpperInvariant();
+        if (prefix is not { Length: >= 1 and <= 20 } || !prefix.All(c => c is (>= 'A' and <= 'Z') or (>= '0' and <= '9') or '-' or '_' or '/' or '.'))
+        {
+            errors.Add("controlled.numberPrefix", "validation.documents.number_prefix");
+        }
+        if (settings.Digits is < 3 or > 8)
+        {
+            errors.Add("controlled.numberDigits", "validation.documents.number_digits");
+        }
+        if (settings.Months is < 1 or > 60)
+        {
+            errors.Add("controlled.reviewMonths", "validation.documents.review_months");
+        }
+        var steps = new List<ApprovalStepSetting>();
+        if (settings.Steps is not { Count: >= 1 and <= ControlledSettings.MaxSteps })
+        {
+            errors.Add("controlled.steps", "validation.documents.approval_steps");
+        }
+        else
+        {
+            for (var i = 0; i < settings.Steps.Count; i++)
+            {
+                var step = settings.Steps[i];
+                var approvers = (step.Approvers ?? []).Distinct().ToList();
+                if (step.LibraryManagers == approvers.Count > 0 || approvers.Count > ControlledSettings.MaxApprovers)
+                {
+                    errors.Add($"controlled.steps[{i}]", "validation.documents.approval_step");
+                    continue;
+                }
+                foreach (var user in approvers)
+                {
+                    if (await memberships.GetAsync(user, ct) is not { Status: MembershipStatus.Active })
+                    {
+                        errors.Add($"controlled.steps[{i}].approvers", "validation.documents.approver");
+                        break;
+                    }
+                }
+                steps.Add(new ApprovalStepSetting(step.Names is { Count: > 0 } names ? Trimmed(names) : null, step.LibraryManagers ? null : approvers, step.LibraryManagers));
+            }
+        }
+        return new ControlledSettings(prefix, settings.Digits, steps, settings.ReadConfirmation, settings.Months);
+    }
 
     public async Task<DocumentTypeView> CreateTypeAsync(Guid libraryId, DocumentTypeRequest request, CancellationToken ct)
     {
@@ -351,13 +448,17 @@ public sealed class Libraries(
         var errors = new ValidationErrors();
         Names(request.Names, "names", errors);
         var fields = MetadataRules.Definitions(request.Fields, errors);
+        var controlled = await ControlledAsync(request.Controlled, errors, ct);
         errors.ThrowIfAny();
         var id = Ids.New();
         await session.ExecAsync(
-            "insert into documents.document_type (tenant_id, id, library_id, names, fields) values (platform.current_tenant_id(), @id, @libraryId, @names, @fields)",
-            new { id, libraryId, names = new Jsonb(DocJson.Write(Trimmed(request.Names!))), fields = new Jsonb(DocJson.Write(fields)) }, ct);
+            """
+            insert into documents.document_type (tenant_id, id, library_id, names, fields, controlled)
+            values (platform.current_tenant_id(), @id, @libraryId, @names, @fields, @controlled)
+            """,
+            new { id, libraryId, names = new Jsonb(DocJson.Write(Trimmed(request.Names!))), fields = new Jsonb(DocJson.Write(fields)), controlled = ControlledJson(controlled) }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.DocTypeChanged, "document_type", id.ToString(), TargetOrgUnitId: library.OrgUnitId,
-            Changes: new { library = libraryId, names = request.Names, fields }), ct);
+            Changes: new { library = libraryId, names = request.Names, fields, controlled }), ct);
         return (await TypesAsync(libraryId, ct)).Single(t => t.Id == id);
     }
 
@@ -373,6 +474,12 @@ public sealed class Libraries(
         var errors = new ValidationErrors();
         Names(request.Names, "names", errors);
         var fields = MetadataRules.Definitions(request.Fields, errors);
+        var controlled = await ControlledAsync(request.Controlled, errors, ct);
+        if (current.Controlled is not null && controlled is null)
+        {
+            // Controlled documents keep their numbers and history; a type stays controlled once it is.
+            errors.Add("controlled", "validation.documents.controlled_kept");
+        }
         var status = request.Status ?? current.Status;
         if (status is not ("active" or "retired"))
         {
@@ -380,12 +487,21 @@ public sealed class Libraries(
         }
         errors.ThrowIfAny();
         await session.ExecAsync(
-            "update documents.document_type set names = @names, fields = @fields, status = @status, updated_at = @now, row_version = row_version + 1 where id = @typeId",
-            new { typeId, names = new Jsonb(DocJson.Write(Trimmed(request.Names!))), fields = new Jsonb(DocJson.Write(fields)), status, now = clock.UtcNow }, ct);
+            """
+            update documents.document_type set names = @names, fields = @fields, status = @status, controlled = @controlled, updated_at = @now, row_version = row_version + 1
+            where id = @typeId
+            """,
+            new
+            {
+                typeId, names = new Jsonb(DocJson.Write(Trimmed(request.Names!))), fields = new Jsonb(DocJson.Write(fields)), status, controlled = ControlledJson(controlled),
+                now = clock.UtcNow,
+            }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.DocTypeChanged, "document_type", typeId.ToString(), TargetOrgUnitId: library.OrgUnitId,
-            Changes: new { before = new { current.Names, current.Fields, current.Status }, after = new { names = request.Names, fields, status } }), ct);
+            Changes: new { before = new { current.Names, current.Fields, current.Status, current.Controlled }, after = new { names = request.Names, fields, status, controlled } }), ct);
         return (await TypesAsync(libraryId, ct)).Single(t => t.Id == typeId);
     }
+
+    private static Jsonb? ControlledJson(ControlledSettings? settings) => settings is null ? null : new Jsonb(DocJson.Write(settings));
 
     // Folders
 

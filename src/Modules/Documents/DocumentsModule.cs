@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Messaging;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -23,6 +24,12 @@ public static class DocumentsModule
         services.AddScoped<DocumentAccess>();
         services.AddScoped<DocumentVersions>();
         services.AddScoped<DocumentPreviews>();
+        services.AddScoped<DocumentReleases>();
+        services.AddScoped<DocumentTaskSource>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<DocumentTaskSource>());
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, DocumentTaskSource>("documents.notify_release");
+        services.AddScoped<DocumentReadConfirmations>();
+        services.AddMessageHandler<Contracts.DocumentVersionPublished, DocumentReadConfirmations>("documents.read_confirmation");
         services.AddScoped<IResourceDescriptorProvider, LibraryDescriptorProvider>();
         services.AddScoped<IResourceDescriptorProvider, FolderDescriptorProvider>();
         services.AddScoped<IResourceDescriptorProvider, DocumentDescriptorProviderForFiles>();
@@ -253,6 +260,59 @@ public static class DocumentsModule
             response.Headers.ContentDisposition = "inline";
             return Results.File(content, type, enableRangeProcessing: true);
         });
+
+        root.MapPost("/{id:guid}/release", async (Guid id, ReleaseRequest request, DocumentReleases releases, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await releases.SubmitAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/release/withdraw", async (Guid id, DocumentReleases releases, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await releases.WithdrawReleaseAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/review", async (Guid id, DocumentReviewRequest request, DocumentReleases releases, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await releases.ReviewAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/{id:guid}/versions/{versionId:guid}", async (Guid id, Guid versionId, DocumentReleases releases, CancellationToken ct) =>
+            Results.Ok(await releases.VersionAsync(id, versionId, ct)));
+
+        root.MapPost("/{id:guid}/read-confirmation", async (Guid id, DocumentReadConfirmations confirmations, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await confirmations.ConfirmAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/{id:guid}/read-confirmations", async (Guid id, DocumentReadConfirmations confirmations, CancellationToken ct) =>
+            Results.Ok(await confirmations.ReportAsync(id, ct)));
+
+        root.MapGet("/{id:guid}/controlled-copy", async (Guid id, Guid? version, DocumentPreviews previews, IDbSession session, CancellationToken ct) =>
+        {
+            var token = await previews.ControlledCopyAsync(id, version, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(token);
+        });
+
+        root.MapGet("/controlled/{token}", async (string token, DocumentPreviews previews, IDbSession session, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, fileName) = await previews.OpenControlledAsync(token, ct);
+            await session.CommitAsync(ct);
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
+            response.Headers.CacheControl = "private, no-store";
+            return Results.File(content, "application/pdf", fileName);
+        });
+
+        libraries.MapGet("/{id:guid}/reviews", async (Guid id, DocumentReleases releases, CancellationToken ct) => Results.Ok(await releases.ReviewsAsync(id, ct)));
 
         root.MapGet("/files/{token}", async (string token, DocumentFiles files, IDbSession session, HttpResponse response, CancellationToken ct) =>
         {

@@ -107,5 +107,6 @@ public static class TokenPurposes
 {
     public const string Download = "download";
     public const string Preview = "preview";
+    public const string ControlledCopy = "controlled_copy";
 }
 
