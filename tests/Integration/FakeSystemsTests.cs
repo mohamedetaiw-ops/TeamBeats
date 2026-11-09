@@ -29,6 +29,7 @@ public sealed partial class FakeSystemsTests(TenantWorld world) : IAsyncLifetime
     private const string Directory = "5a7e0c3d-1f2b-4c6d-9e8f-0a1b2c3d4e5f";
     private const string Layla = "00000000-0000-4000-8000-000000000001";
     private const string Former = "00000000-0000-4000-8000-000000000022";
+    private const string Ahmed = "00000000-0000-4000-8000-000000000005";
     private DevHostFactory _staging = null!;
 
     public Task InitializeAsync()
@@ -89,20 +90,21 @@ public sealed partial class FakeSystemsTests(TenantWorld world) : IAsyncLifetime
         return (landed, Cookie(landed, "tb_session"), html);
     }
 
-    [Fact]
-    public async Task An_employee_connects_Outlook_through_the_fake_Microsoft_page()
+    /// <summary>
+    /// The real Outlook connect flow (spec 018: PKCE, login hint, delegated scopes) against the fake page and token
+    /// endpoint. The hinted account is already signed in, so the fake page completes at once, as Microsoft does.
+    /// </summary>
+    private async Task<HttpClient> ConnectOutlookAsync(string session)
     {
-        // Spec 018: the real connect flow (PKCE, login hint, delegated scopes) against the fake page and token endpoint.
-        var (_, session, _) = await SignInWithFakeMicrosoftAsync(Layla);
         var employee = _staging.Tenant(TenantKey, session);
         var start = await employee.GetAsync("/api/v1/me/outlook/connect");
         Assert.Equal(HttpStatusCode.Redirect, start.StatusCode);
         var location = start.Headers.Location!.ToString();
         Assert.StartsWith($"/dev/fake/entra/{Directory}/oauth2/v2.0/authorize?", location, StringComparison.Ordinal);
 
-        var html = await (await employee.GetAsync(location)).Content.ReadAsStringAsync();
-        var picked = await employee.PostAsync(location.Split('?')[0], FormFrom(html, Layla));
-        var callback = picked.Headers.Location!;
+        var answered = await employee.GetAsync(location);
+        Assert.Equal(HttpStatusCode.Redirect, answered.StatusCode);
+        var callback = answered.Headers.Location!;
         Assert.Contains("code=", callback.Query, StringComparison.Ordinal);
 
         // Shared mode: Microsoft returns to the platform host, which relays to the tenant host.
@@ -116,6 +118,106 @@ public sealed partial class FakeSystemsTests(TenantWorld world) : IAsyncLifetime
 
         var state = await (await employee.GetAsync("/api/v1/me/outlook")).Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("ok", state.GetProperty("state").GetString());
+        return employee;
+    }
+
+    [Fact]
+    public async Task An_employee_connects_Outlook_in_one_step_and_sees_mail_and_calendar()
+    {
+        var (_, session, _) = await SignInWithFakeMicrosoftAsync(Ahmed);
+        var employee = await ConnectOutlookAsync(session!);
+
+        var mail = await (await employee.GetAsync("/api/v1/me/mail?view=all&top=10")).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("ok", mail.GetProperty("state").GetString());
+        Assert.True(mail.GetProperty("messages").GetArrayLength() >= 8, mail.ToString());
+        Assert.True(mail.GetProperty("unreadCount").GetInt32() > 0);
+        // Ahmed manages Fatima, so the generated mail includes a message from a report, and one from his manager.
+        var senders = mail.GetProperty("messages").EnumerateArray().Select(m => m.GetProperty("sender").GetString()).ToList();
+        Assert.Contains("Hassan Ibrahim", senders);
+        Assert.Contains("فاطمة الزهراء", senders);
+
+        var calendar = await (await employee.GetAsync("/api/v1/me/calendar")).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("ok", calendar.GetProperty("state").GetString());
+        Assert.True(calendar.GetProperty("items").GetArrayLength() >= 3, calendar.ToString());
+    }
+
+    [Fact]
+    public async Task Connect_without_a_known_hint_shows_the_picker_and_a_silent_connect_needs_interaction()
+    {
+        var picker = $"/dev/fake/entra/{Directory}/oauth2/v2.0/authorize?client_id={FakeMicrosoftGraph.ClientId}&redirect_uri={Uri.EscapeDataString($"https://{TenantKey}.teambeats.test/cb")}"
+            + "&state=s&code_challenge=c&code_challenge_method=S256&scope=Mail.ReadBasic&login_hint=nobody%40staging.example";
+        var page = await _staging.Tenant(TenantKey).GetAsync(picker);
+        Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+        Assert.Contains("Layla Haddad", await page.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        var silent = await _staging.Tenant(TenantKey).GetAsync(picker + "&prompt=none");
+        Assert.Equal(HttpStatusCode.Redirect, silent.StatusCode);
+        Assert.Contains("error=login_required", silent.Headers.Location!.Query, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_test_admin_connects_Outlook_to_a_fictional_mailbox()
+    {
+        var admin = await ConnectOutlookAsync(await TestAdminAsync());
+        var mail = await (await admin.GetAsync("/api/v1/me/mail?view=all&top=10")).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("ok", mail.GetProperty("state").GetString());
+        Assert.True(mail.GetProperty("messages").GetArrayLength() >= 6, mail.ToString());
+        var calendar = await (await admin.GetAsync("/api/v1/me/calendar")).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("ok", calendar.GetProperty("state").GetString());
+        Assert.True(calendar.GetProperty("items").GetArrayLength() >= 1, calendar.ToString());
+    }
+
+    [Fact]
+    public void Every_enabled_person_has_a_full_mailbox_calendar_and_manager()
+    {
+        var fakes = _staging.Services.GetRequiredService<TeamBeats.DevFakes.FakeSystems>();
+        var directory = fakes.Scenario.FindDirectory(Directory)!;
+        var events = fakes.Graph.DirectoryEvents(Guid.Parse(Directory));
+        var dubai = TimeSpan.FromHours(4);
+        var today = new DateTimeOffset(DateTimeOffset.UtcNow.ToOffset(dubai).Date, dubai);
+        foreach (var person in directory.Users.Where(u => u.Enabled))
+        {
+            Assert.True(fakes.Graph.MailboxOf(Guid.Parse(Directory), person.Id).Messages.Count >= 6, person.Mail);
+            var mine = events.Where(e => e.OrganizerAddress == person.Mail || e.Attendees.Contains(person.Mail)).ToList();
+            Assert.Contains(mine, e => e.Start >= today && e.Start < today.AddDays(1));
+            Assert.True(mine.Count(e => e.Start >= today && e.Start < today.AddDays(5)) >= 5, person.Mail);
+            Assert.True(person.Manager is not null || person.Mail == "hassan.ibrahim@staging.example", person.Mail);
+        }
+        // A meeting in a room books the room, so room free/busy has something to show.
+        Assert.Contains(events, e => e.Attendees.Contains("room.alnoor@staging.example"));
+        // Managers come out of the delta query the way Graph sends them.
+        var fatima = fakes.Graph.Data(Guid.Parse(Directory)).CurrentUsers().Single(u => u.Properties["mail"] as string == "fatima.alzahraa@staging.example");
+        Assert.Contains("00000000-0000-4000-8000-000000000005", JsonSerializer.Serialize(fatima.Properties["manager@delta"]), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Office_previews_convert_through_the_fake_converter()
+    {
+        var converter = _staging.Services.GetRequiredService<TeamBeats.Persistence.IDocumentConverter>();
+        Assert.True(converter.Available);
+        await using var pdf = await converter.ToPdfAsync(new MemoryStream(Encoding.UTF8.GetBytes("fictional docx")), "Leave policy.docx");
+        Assert.NotNull(pdf);
+        using var copy = new MemoryStream();
+        await pdf.CopyToAsync(copy);
+        var text = Encoding.ASCII.GetString(copy.ToArray());
+        Assert.StartsWith("%PDF-1.4", text, StringComparison.Ordinal);
+        Assert.Contains("Fictional preview of a DOCX file", text, StringComparison.Ordinal);
+        Assert.EndsWith("%%EOF\n", text, StringComparison.Ordinal);
+
+        copy.Position = 0;
+        await using var stamped = await converter.StampFooterAsync(copy, "Downloaded by a test user");
+        Assert.NotNull(stamped);
+
+        var fakes = _staging.Services.GetRequiredService<TeamBeats.DevFakes.FakeSystems>();
+        fakes.Conversion.Unavailable = true;
+        try
+        {
+            Assert.Null(await converter.ToPdfAsync(new MemoryStream([1, 2, 3]), "x.xlsx"));
+        }
+        finally
+        {
+            fakes.Conversion.Unavailable = false;
+        }
     }
 
     [Fact]
@@ -141,6 +243,8 @@ public sealed partial class FakeSystemsTests(TenantWorld world) : IAsyncLifetime
         var tenantId = await world.Database.OwnerScalarAsync<Guid>($"select id from tenancy.tenant where key = '{TenantKey}'");
         Assert.Equal(23L, await world.Database.CountInTenantAsync(tenantId, "select count(*) from identity.directory_user"));
         Assert.Equal(1L, await world.Database.CountInTenantAsync(tenantId, "select count(*) from identity.user_account where display_name = @n", ("n", "عمر الفارسي")));
+        // Managers from the directory fill reporting lines: everyone synced but the chief executive has one.
+        Assert.Equal(21L, await world.Database.CountInTenantAsync(tenantId, "select count(*) from people.reporting_line where valid_to is null and manager_user_id is not null"));
     }
 
     [Fact]
@@ -351,6 +455,24 @@ public sealed partial class FakeSystemsTests(TenantWorld world) : IAsyncLifetime
         File.WriteAllText(path, """
             { "name": "bad", "directories": [ { "id": "5a7e0c3d-1f2b-4c6d-9e8f-0a1b2c3d4e5f",
               "users": [ { "id": "u1", "displayName": "Someone", "mail": "someone@contoso.com" } ] } ] }
+            """);
+        try
+        {
+            Assert.Throws<InvalidOperationException>(() => TeamBeats.DevFakes.FakeScenario.Load(path));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public void Scenario_with_an_unknown_manager_is_refused()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "tb-scenario-" + Guid.NewGuid().ToString("N")[..8] + ".json");
+        File.WriteAllText(path, """
+            { "name": "bad", "directories": [ { "id": "5a7e0c3d-1f2b-4c6d-9e8f-0a1b2c3d4e5f",
+              "users": [ { "id": "u1", "displayName": "Someone", "mail": "someone@staging.example", "manager": "ghost@staging.example" } ] } ] }
             """);
         try
         {
