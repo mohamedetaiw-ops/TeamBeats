@@ -151,7 +151,7 @@ public sealed class AssistantTests(TenantWorld world)
         Assert.Equal(AssistantOutcomes.NoEvidence, foreign.GetProperty("outcome").GetString());
     }
 
-    private const string AssistantPromptVersion = "knowledge.v1";
+    private const string AssistantPromptVersion = "knowledge.v2";
 
     [Fact]
     public async Task An_arabic_question_gets_an_arabic_answer_and_streams()

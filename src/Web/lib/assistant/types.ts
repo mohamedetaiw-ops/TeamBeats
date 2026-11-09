@@ -39,7 +39,10 @@ export type Turn = {
 
 export type ConversationSummary = { id: string; title: string; turns: number; createdAt: string; lastTurnAt: string };
 
-export type Conversation = { id: string; title: string; createdAt: string; lastTurnAt: string; turns: Turn[] };
+/** The item a conversation is kept to (spec 025 FR-011): in R1 a policy, from "Ask about this policy". */
+export type AssistantScope = { source: "policies"; itemId: string };
+
+export type Conversation = { id: string; title: string; createdAt: string; lastTurnAt: string; turns: Turn[]; scope: AssistantScope | null };
 
 export type AssistantSettings = { retentionDays: number; updatedAt: string | null };
 

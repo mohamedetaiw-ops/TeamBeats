@@ -14,6 +14,7 @@ import {
   type Conversation,
   type ConversationSummary,
   type FeedbackReason,
+  type AssistantScope,
   type Turn,
 } from "@/lib/assistant/types";
 
@@ -159,7 +160,16 @@ function TurnItem({ turn }: { turn: Turn }) {
  * are text links into the product, and answers are plain text, so no image or outside link is ever loaded. Every rule
  * (what may be retrieved, cited or sent to a model) is the API's.
  */
-export function AssistantChat({ initial, conversations }: { initial: Conversation | null; conversations: ConversationSummary[] }) {
+export function AssistantChat({
+  initial,
+  conversations,
+  scope = null,
+}: {
+  initial: Conversation | null;
+  conversations: ConversationSummary[];
+  /** Keeps a new conversation to one item; the API keeps it for every later turn. */
+  scope?: AssistantScope | null;
+}) {
   const t = useTranslations("assistant");
   const router = useRouter();
   const format = useFormatter();
@@ -189,7 +199,7 @@ export function AssistantChat({ initial, conversations }: { initial: Conversatio
       const response = await fetch("/api/v1/assistant/turns", {
         method: "POST",
         headers: { "content-type": "application/json", accept: "text/event-stream" },
-        body: JSON.stringify({ question: q, conversationId }),
+        body: JSON.stringify({ question: q, conversationId, scope: conversationId === null ? scope : null }),
       });
       if (!response.ok) {
         setError(response.status === 403 ? t("notAvailable") : (await problemMessages(response)).join(" ") || t("failed"));
@@ -270,7 +280,7 @@ export function AssistantChat({ initial, conversations }: { initial: Conversatio
           ) : null}
         </div>
 
-        {turns.length === 0 && !pending ? <p className="assistant-intro">{t("intro")}</p> : null}
+        {turns.length === 0 && !pending && !scope ? <p className="assistant-intro">{t("intro")}</p> : null}
         <ol className="assistant-turns" aria-busy={pending ? true : undefined}>
           {turns.map((turn) => (
             <TurnItem key={turn.id} turn={turn} />

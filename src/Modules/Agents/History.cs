@@ -11,7 +11,9 @@ namespace TeamBeats.Modules.Agents;
 
 public sealed record ConversationSummary(Guid Id, string Title, int Turns, DateTimeOffset CreatedAt, DateTimeOffset LastTurnAt);
 
-public sealed record ConversationView(Guid Id, string Title, DateTimeOffset CreatedAt, DateTimeOffset LastTurnAt, IReadOnlyList<TurnView> Turns);
+/// <summary>A conversation with its turns. <paramref name="Scope"/> is the item it is kept to, if any (spec 025 FR-011).</summary>
+public sealed record ConversationView(Guid Id, string Title, DateTimeOffset CreatedAt, DateTimeOffset LastTurnAt, IReadOnlyList<TurnView> Turns,
+    AssistantScope? Scope = null);
 
 public sealed record FeedbackRequest(bool? Helpful, string? Reason);
 
@@ -51,8 +53,10 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
     public async Task<ConversationView> GetAsync(Guid id, CancellationToken ct)
     {
         var user = await UserAsync(ct);
-        var head = await session.QueryAsync("select title, created_at, last_turn_at from agents.conversation where id = @id and user_id = @user",
-            new { id, user }, r => (Title: r.GetString(0), Created: r.GetFieldValue<DateTimeOffset>(1), Last: r.GetFieldValue<DateTimeOffset>(2)), ct);
+        var head = await session.QueryAsync(
+            "select title, created_at, last_turn_at, scope_source, scope_item_id from agents.conversation where id = @id and user_id = @user",
+            new { id, user }, r => (Title: r.GetString(0), Created: r.GetFieldValue<DateTimeOffset>(1), Last: r.GetFieldValue<DateTimeOffset>(2),
+                Scope: r.Get<string?>("scope_source") is { } source ? new AssistantScope(source, r.GetGuid(4)) : null), ct);
         if (head.Count == 0)
         {
             throw AppException.NotFound();
@@ -68,7 +72,7 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
             r => new TurnView(r.GetGuid(0), id, r.GetString(1), r.Get<string?>("answer"), r.GetString(3), r.Get<string?>("reason"), r.GetString(5),
                 r.Get<string?>("agent"), JsonSerializer.Deserialize<List<CitationView>>(r.GetString(7), AssistantService.Json) ?? [], r.GetInt32(8) > 0,
                 r.GetBoolean(9), r.Get<string?>("answer") is not null, r.GetFieldValue<DateTimeOffset>(10), r.Get<bool?>("helpful")), ct);
-        return new ConversationView(id, head[0].Title, head[0].Created, head[0].Last, turns);
+        return new ConversationView(id, head[0].Title, head[0].Created, head[0].Last, turns, head[0].Scope);
     }
 
     public async Task DeleteAsync(Guid id, CancellationToken ct)

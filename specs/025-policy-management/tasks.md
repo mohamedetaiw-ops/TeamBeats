@@ -19,11 +19,11 @@ Depends on 004, 005, 006, 007, 009 (body document, audience model), 011 (control
 - [x] T008 [US3] Compliance endpoints; manager breakdown once the reporting line exists
 
 ## Phase 5: User Story 4, policy Q&A (P1)
-- [ ] T009 [US4] Clause units published for search with stable anchors; superseded excluded by default
-- [ ] T010 [US4] Assistant answers with clause citations and the policy-scoped entry, with the assistant spec; tests for scenarios 1 to 6
+- [x] T009 [US4] Clause units published for search with stable anchors; superseded excluded by default
+- [x] T010 [US4] Assistant answers with clause citations and the policy-scoped entry, with the assistant spec; tests for scenarios 1 to 6
 
 ## Phase 6: Experience
 - [x] T011 Register, editor with clauses, policy page with anchors, My policies, campaign and compliance pages, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
-- [ ] T012 OpenAPI; R1 implementation notes (location and manager breakdowns); spec evidence
+- [x] T012 OpenAPI; R1 implementation notes (location and manager breakdowns); spec evidence

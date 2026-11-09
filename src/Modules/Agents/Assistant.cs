@@ -14,8 +14,21 @@ namespace TeamBeats.Modules.Agents;
 /// <summary>
 /// A question to the assistant. <paramref name="AgentId"/> asks a particular agent the person may use (switching agent),
 /// and <paramref name="Knowledge"/> asks the knowledge agent without routing (going back). Otherwise the turn is routed.
+/// <paramref name="Scope"/> on the first turn keeps the conversation to one item (spec 025 FR-011); later turns keep the
+/// conversation's scope and never route.
 /// </summary>
-public sealed record TurnRequest(Guid? ConversationId, string? Question, Guid? AgentId = null, bool? Knowledge = null);
+public sealed record TurnRequest(Guid? ConversationId, string? Question, Guid? AgentId = null, bool? Knowledge = null, AssistantScope? Scope = null);
+
+/// <summary>
+/// The item a conversation is kept to: <paramref name="Source"/> is its search source and <paramref name="ItemId"/> the
+/// item. In R1 only policies offer it ("Ask about this policy").
+/// </summary>
+public sealed record AssistantScope(string Source, Guid ItemId)
+{
+    public const string Policies = "policies";
+
+    public static readonly IReadOnlyList<string> Sources = [Policies];
+}
 
 /// <summary>A cited passage: <paramref name="N"/> is the marker used in the answer, <paramref name="Anchor"/> opens the item at the passage.</summary>
 public sealed record CitationView(int N, string Source, Guid ItemId, string Kind, string Title, string Anchor, string Locale, int? Version, DateTimeOffset? UpdatedAt);
@@ -42,7 +55,8 @@ internal sealed record PreparedTurn(
     DataClassification Classification,
     AiRequest? Request,
     string? Outcome,
-    RouteView? Route = null);
+    RouteView? Route = null,
+    AssistantScope? Scope = null);
 
 /// <summary>
 /// The knowledge agent's turn pipeline (spec 014 T003, US1, FR-002 to FR-004, FR-010 to FR-012, FR-021). Retrieval runs
@@ -74,15 +88,18 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
         var position = 1;
         var floor = DataClassification.Public;
         var history = new List<AiMessage>();
+        var scope = request.Scope;
         if (request.ConversationId is { } existing)
         {
             var found = await session.QueryAsync(
-                "select turns, classification from agents.conversation where id = @id and user_id = @user for update",
-                new { id = existing, user }, r => (Turns: r.GetInt32(0), Classification: r.GetString(1)), ct);
+                "select turns, classification, scope_source, scope_item_id from agents.conversation where id = @id and user_id = @user for update",
+                new { id = existing, user }, r => (Turns: r.GetInt32(0), Classification: r.GetString(1),
+                    Scope: r.Get<string?>("scope_source") is { } source ? new AssistantScope(source, r.GetGuid(3)) : null), ct);
             if (found.Count == 0)
             {
                 throw AppException.NotFound();
             }
+            scope = found[0].Scope;
             position = found[0].Turns + 1;
             floor = AssistantPrompt.Highest([found[0].Classification], DataClassification.Public);
             var earlier = await session.QueryAsync(
@@ -98,22 +115,27 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
                 history.Add(new AiMessage(AiRoles.Assistant, AssistantPrompt.Check(a, 0).Answer));
             }
         }
+        else if (scope is not null)
+        {
+            await ScopeAsync(scope, ct);
+        }
 
         var language = AssistantPrompt.Language(question);
         // Routing (spec 014 US2, spec 020 US7): when an agent the person may use answers, the assistant hands the turn to it
         // and gains none of its tools; otherwise the knowledge agent answers below.
-        var route = await router.DecideAsync(question, request.AgentId, request.Knowledge == true, ct);
-        if (route.Agent is not null)
+        // A scoped conversation is answered by the knowledge agent from its item only, so it is never routed.
+        var route = scope is null ? await router.DecideAsync(question, request.AgentId, request.Knowledge == true, ct) : null;
+        if (route?.Agent is not null)
         {
             return new PreparedTurn(Ids.New(), conversationId, request.ConversationId is null, position, question, language, new RetrievalResult([], 0, false),
                 floor, null, null, route);
         }
-        var evidence = await retrieval.RetrieveAsync(new RetrievalRequest(question, AiUseCases.Assistant), ct);
+        var evidence = await retrieval.RetrieveAsync(new RetrievalRequest(question, AiUseCases.Assistant, Source: scope?.Source, ItemId: scope?.ItemId), ct);
         var turnId = Ids.New();
         if (evidence.Passages.Count == 0)
         {
             var outcome = evidence.Withheld > 0 ? AssistantOutcomes.PolicyBlocked : AssistantOutcomes.NoEvidence;
-            return new PreparedTurn(turnId, conversationId, request.ConversationId is null, position, question, language, evidence, floor, null, outcome, route);
+            return new PreparedTurn(turnId, conversationId, request.ConversationId is null, position, question, language, evidence, floor, null, outcome, route, scope);
         }
 
         var classification = AssistantPrompt.Highest(evidence.Passages.Select(p => p.Classification), floor);
@@ -125,7 +147,29 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
             new(AiRoles.User, question),
         ];
         var ai = new AiRequest(AiUseCases.Assistant, messages, classification, MaxTokens: MaxAnswerTokens, Temperature: 0.2);
-        return new PreparedTurn(turnId, conversationId, request.ConversationId is null, position, question, language, evidence, classification, ai, null, route);
+        return new PreparedTurn(turnId, conversationId, request.ConversationId is null, position, question, language, evidence, classification, ai, null, route, scope);
+    }
+
+    /// <summary>
+    /// Checks the scope of a new conversation: a source that offers it, the policy Q&A capability for policies, and an
+    /// item the person may read now. An item the person may not read is not found, so its existence is never shown
+    /// (spec 025 US4 scenario 6).
+    /// </summary>
+    private async Task ScopeAsync(AssistantScope scope, CancellationToken ct)
+    {
+        if (!AssistantScope.Sources.Contains(scope.Source))
+        {
+            throw AppException.Validation("scope", "validation.assistant.scope");
+        }
+        if (scope.Source == AssistantScope.Policies)
+        {
+            await entitlements.DemandAsync(Capabilities.AiPolicyQa, ct);
+        }
+        var item = await retrieval.ItemAsync(scope.Source, scope.ItemId, AiUseCases.Assistant, ct: ct);
+        if (item.Passages.Count == 0 && item.Withheld == 0)
+        {
+            throw AppException.NotFound();
+        }
     }
 
     /// <summary>Answers a turn in one call, for clients that do not read a stream.</summary>
@@ -206,9 +250,10 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
         {
             await session.ExecAsync(
                 """
-                insert into agents.conversation (tenant_id, id, user_id, title, classification, turns, created_at, last_turn_at)
-                values (platform.current_tenant_id(), @id, @user, @title, @classification, 1, @now, @now)
-                """, new { id = prepared.ConversationId, user, title = AssistantPrompt.Title(prepared.Question), classification, now }, ct);
+                insert into agents.conversation (tenant_id, id, user_id, title, classification, turns, created_at, last_turn_at, scope_source, scope_item_id)
+                values (platform.current_tenant_id(), @id, @user, @title, @classification, 1, @now, @now, @source, @item)
+                """, new { id = prepared.ConversationId, user, title = AssistantPrompt.Title(prepared.Question), classification, now,
+                    source = prepared.Scope?.Source, item = prepared.Scope?.ItemId }, ct);
         }
         else
         {
@@ -278,7 +323,7 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
         await SaveConversationAsync(prepared, user, classification, ct);
 
         var completionInfo = result?.Completion;
-        var settings = new { useCase = AiUseCases.Assistant, topK = ISearchRetrieval.DefaultTopK, passages = passages.Count };
+        var settings = new { useCase = AiUseCases.Assistant, topK = ISearchRetrieval.DefaultTopK, passages = passages.Count, scope = prepared.Scope };
         await session.ExecAsync(
             """
             insert into agents.turn (tenant_id, id, conversation_id, user_id, position, question, answer, outcome, reason, language, agent, citations,

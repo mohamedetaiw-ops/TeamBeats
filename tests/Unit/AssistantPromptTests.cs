@@ -51,4 +51,14 @@ public sealed class AssistantPromptTests
         Assert.Equal("Leave?", AssistantPrompt.Title("  Leave?\n"));
         Assert.Equal(120, AssistantPrompt.Title(new string('a', 300)).Length);
     }
+
+    [Fact]
+    public void Policy_passages_are_cited_by_title_version_and_clause_and_conflicts_are_left_to_the_owner()
+    {
+        var prompt = AssistantPrompt.System("en");
+        Assert.Contains("name the policy title, its version and the clause number", prompt, StringComparison.Ordinal);
+        Assert.Contains("If they disagree, say so and suggest contacting the policy owner, without choosing one.", prompt, StringComparison.Ordinal);
+        Assert.Contains("say that you found no policy that answers it", prompt, StringComparison.Ordinal);
+        Assert.Equal("knowledge.v2", AssistantPrompt.Version);
+    }
 }

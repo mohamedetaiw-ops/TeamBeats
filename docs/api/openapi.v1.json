@@ -11359,6 +11359,22 @@
           "condition": {}
         }
       },
+      "AssistantScope": {
+        "required": [
+          "source",
+          "itemId"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "AssistantSettingsRequest": {
         "required": [
           "retentionDays"
@@ -16362,6 +16378,16 @@
             "type": [
               "null",
               "boolean"
+            ]
+          },
+          "scope": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AssistantScope"
+              }
             ]
           }
         }

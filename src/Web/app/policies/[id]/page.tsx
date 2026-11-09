@@ -69,6 +69,13 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
             </ul>
           </nav>
         ) : null}
+        {reading?.ok && p.rights.ask ? (
+          <p>
+            <Link href={`/assistant?policy=${encodeURIComponent(p.id)}`} data-testid="policy-ask">
+              {t("ask")}
+            </Link>
+          </p>
+        ) : null}
         {reading?.ok ? <AskAgentLink source="policies" itemId={p.id} /> : null}
         {p.scheduled ? <p className="policies-banner">{tm("scheduled", { number: p.scheduled.number, date: format.dateTime(new Date(p.scheduled.effectiveFrom), { dateStyle: "long" }) })}</p> : null}
         {reading?.ok ? (

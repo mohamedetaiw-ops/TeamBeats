@@ -73,9 +73,11 @@ public sealed record SearchRebuildRequested(Guid RebuildId) : IIntegrationEvent;
 /// <summary>
 /// A retrieval for a model (spec 012 US3, FR-007). <paramref name="UseCase"/> is the AI use case the passages are for
 /// (spec 013, for example <c>assistant</c>); its classification ceiling decides what may be returned. <paramref name="TopK"/>
-/// defaults to <see cref="ISearchRetrieval.DefaultTopK"/>; <paramref name="Kinds"/> narrows the sources.
+/// defaults to <see cref="ISearchRetrieval.DefaultTopK"/>; <paramref name="Kinds"/> narrows the sources. <paramref name="Source"/>
+/// and <paramref name="ItemId"/>, given together, keep the retrieval to one item, ranked by the query, with no cap per item
+/// (spec 025 FR-011, a policy-scoped question).
 /// </summary>
-public sealed record RetrievalRequest(string Query, string UseCase, int? TopK = null, IReadOnlyList<string>? Kinds = null);
+public sealed record RetrievalRequest(string Query, string UseCase, int? TopK = null, IReadOnlyList<string>? Kinds = null, string? Source = null, Guid? ItemId = null);
 
 /// <summary>
 /// One passage the person may read, with what a citation needs: <paramref name="Anchor"/> is the link that opens the

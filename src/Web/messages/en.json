@@ -2144,7 +2144,8 @@
         "fr": "French",
         "hi": "Hindi",
         "ur": "Urdu"
-      }
+      },
+      "ask": "Ask about this policy"
     },
     "attest": {
       "title": "Your attestation",
@@ -2718,6 +2719,10 @@
         "ar": "Arabic",
         "en": "English"
       }
+    },
+    "scope": {
+      "policy": "Answers come only from <name></name>.",
+      "notFound": "This policy is not available to ask about. You can ask about anything you can open instead."
     }
   },
   "agents": {
