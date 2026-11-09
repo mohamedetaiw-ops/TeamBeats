@@ -31,6 +31,7 @@ public static class ContentModule
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, ContentOwnerHandler>("content.owner_left");
         services.AddMessageHandler<Contracts.ContentPublished, CriticalAudience>("content.critical_audience");
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, CriticalAudience>("content.critical_membership");
+        services.AddMessageHandler<CriticalNoticeBatch, CriticalAudience>("content.critical_notice");
         services.AddMessageHandler<Contracts.AckReportRequested, AckReportHandler>("content.ack_report");
         return services;
     }

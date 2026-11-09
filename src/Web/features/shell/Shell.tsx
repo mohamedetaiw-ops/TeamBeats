@@ -6,6 +6,7 @@ import type { Crumb, NavLink, ShellLayout, ShellRegion } from "@/lib/shell/types
 import { SignOutButton } from "@/components/shell/SignOutButton";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { TaskBadge } from "@/features/services/TaskBadge";
+import { CriticalNotices } from "@/features/content/CriticalNotices";
 import { GlobalMenu } from "./GlobalMenu";
 import { QuickNav } from "./QuickNav";
 import { SettingsPanel } from "./SettingsPanel";
@@ -83,6 +84,7 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
         <GlobalMenu key={menu.orgUnitId} id={`organization-${menu.orgUnitId}`} label={t("organizationNav", { name: menu.name })} links={menu.items} />
       ))}
       <div className="shell-below">{layout.below.map(render)}</div>
+      <CriticalNotices />
     </header>
   );
 }

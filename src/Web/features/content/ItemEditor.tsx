@@ -139,7 +139,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
         item.type !== "announcement"
           ? null
           : critical
-            ? { presentation, requireAck, remindLaterMax: Number(remindMax), deadline: deadline || null, dismissible }
+            ? { presentation, requireAck: presentation === "modal" || requireAck, remindLaterMax: Number(remindMax), deadline: deadline || null, dismissible: presentation === "banner" && dismissible }
             : { presentation: "none" },
     };
   }
@@ -312,16 +312,24 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
                   <option value="modal">{t("presentationValue.modal")}</option>
                 </select>
               </div>
-              <label className="content-check">
-                <input type="checkbox" checked={requireAck} onChange={(e) => setRequireAck(e.target.checked)} />
-                {t("requireAck")}
-              </label>
-              <FormField label={t("remindLaterMax")} name="remindLaterMax" type="number" min={0} max={10} value={remindMax} onChange={(e) => setRemindMax(e.target.value)} />
+              {presentation === "modal" ? (
+                <>
+                  <p className="content-meta">{t("modalHint")}</p>
+                  <FormField label={t("remindLaterMax")} name="remindLaterMax" type="number" min={0} max={10} value={remindMax} onChange={(e) => setRemindMax(e.target.value)} />
+                </>
+              ) : (
+                <label className="content-check">
+                  <input type="checkbox" checked={requireAck} onChange={(e) => setRequireAck(e.target.checked)} />
+                  {t("requireAck")}
+                </label>
+              )}
               <FormField label={t("deadline")} name="deadline" type="datetime-local" hint={t("siteTime", { zone: site.timeZone })} value={deadline} onChange={(e) => setDeadline(e.target.value)} />
-              <label className="content-check">
-                <input type="checkbox" checked={dismissible} onChange={(e) => setDismissible(e.target.checked)} />
-                {t("dismissible")}
-              </label>
+              {presentation === "banner" ? (
+                <label className="content-check">
+                  <input type="checkbox" checked={dismissible} onChange={(e) => setDismissible(e.target.checked)} />
+                  {t("dismissible")}
+                </label>
+              ) : null}
             </>
           ) : null}
         </fieldset>
