@@ -15,6 +15,7 @@ public static class PoliciesModule
 
     public static IServiceCollection AddPoliciesModule(this IServiceCollection services)
     {
+        services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, PolicySearchSource>();
         services.AddScoped<PolicyRegister>();
         services.AddScoped<PolicyApprovals>();
         services.AddScoped<PolicyTaskSource>();

@@ -21,6 +21,7 @@ public static class PeopleModule
 
     public static IServiceCollection AddPeopleModule(this IServiceCollection services)
     {
+        services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, PeopleSearchSource>();
         services.AddScoped<ProfileStore>();
         services.AddScoped<ReportingLine>();
         services.AddScoped<IReportingLine>(sp => sp.GetRequiredService<ReportingLine>());

@@ -19,3 +19,8 @@ where not exists (select 1 from pg_database where datname = 'teambeats') \gexec
 \connect teambeats
 revoke all on schema public from public;
 grant connect on database teambeats to tb_app;
+-- pgvector for the search index (spec 012 plan). The extension is not trusted, so it is created here by the
+-- cluster administrator in its own schema, and the owner and application roles may use its types and operators.
+create schema if not exists extensions;
+create extension if not exists vector schema extensions;
+grant usage on schema extensions to tb_owner, tb_app;

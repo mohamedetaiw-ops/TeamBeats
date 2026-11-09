@@ -1108,3 +1108,15 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | SC-001 in CI | The SC-001 case in `AiGatewayTests` and the classification tests run in the backend job's Integration suite on every pull request and push to `main`. |
 | Staging provider | Staging runs with fakes, so the gateway talks to the fake OpenRouter. Using the real one needs an OpenRouter key stored as the Fly secret `Ai__OpenRouter__ApiKey` and the fake turned off for AI only, which waits on the key. |
 | Policy editing | The whole policy needs `ai.model_choice`, including parameter limits and the region rule; spec section 9 only names the allowlist, defaults and fallbacks, so this is the smaller default. |
+
+## Spec 012 Search and retrieval
+
+| Topic | Note |
+|---|---|
+| Permission filtering | The index keeps coarse facts only. Each owner's `ISearchSource.ReadableAsync` decides at query time which candidates the person may open, so a permission change applies to the next query and results, totals, facets and suggestions never count a hidden item (SC-001). |
+| Semantic cutoff | Passages farther than cosine distance 0.7 from the query are not semantic matches, so a query about nothing in the index still finds nothing and the alternatives show. This is a fixed default until the versioned retrieval configuration of the plan holds it. |
+| Embeddings and packages | Embeddings go through the gateway, which needs `ai.assistant`. A package without it, or a model policy without an embed route, gives keyword only search without the degraded flag, because that is a setting and not an outage. |
+| Staging | Staging uses the fake OpenRouter, whose embeddings are a deterministic bag of words, so semantic results there behave like keyword matches. |
+| People freshness | The people projection refreshes on demand. The people source refreshes a person before indexing them and refreshes everyone at the start of a rebuild; membership, provisioning and profile events reindex the person. |
+| Rebuild size | A rebuild runs in one transaction per tenant. Paging rebuilds over several transactions comes with the performance tests at 1 million units. |
+| Query events | FR-013 query analytics events are not emitted yet; they come with the analytics feed for spec 021. |

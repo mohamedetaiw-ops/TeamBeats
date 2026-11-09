@@ -129,6 +129,9 @@ public sealed class ProfileStore(IDbSession session, IUserDirectory users, ITena
     /// <summary>Refreshes one person's account values now, for example after directory sync renamed them.</summary>
     public Task RefreshAsync(Guid userId, CancellationToken ct) => RefreshAccountsAsync(ct, userId);
 
+    /// <summary>Refreshes every person's account values now, for a full search rebuild.</summary>
+    public Task RefreshAllAsync(CancellationToken ct) => RefreshAccountsAsync(ct);
+
     private async Task RefreshAccountsAsync(CancellationToken ct, Guid? only = null)
     {
         var accounts = only is { } id ? (await users.GetAsync(id, ct) is { } one ? [one] : []) : await users.ListAllAsync(ct);

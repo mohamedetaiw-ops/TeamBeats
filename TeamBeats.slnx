@@ -89,6 +89,12 @@
   <Folder Name="/src/Modules/AiGateway.OpenRouter/">
     <Project Path="src/Modules/AiGateway.OpenRouter/TeamBeats.Modules.AiGateway.OpenRouter.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Search/">
+    <Project Path="src/Modules/Search/TeamBeats.Modules.Search.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Search.Contracts/">
+    <Project Path="src/Modules/Search.Contracts/TeamBeats.Modules.Search.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Policies/">
     <Project Path="src/Modules/Policies/TeamBeats.Modules.Policies.csproj" />
   </Folder>
