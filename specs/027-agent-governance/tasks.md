@@ -3,7 +3,7 @@
 Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and runtime, same module), 034 (gate and mandatory suites). R1 covers L0 to L2 and the R1 parts of User Stories 1 to 9.
 
 ## Phase 1: Foundations
-- [ ] T001 Migration in `Agents` for tool definitions, agent policy, runs and run steps (forced RLS)
+- [x] T001 Migration in `Agents` for tool definitions, agent policy, runs and run steps (forced RLS)
 - [x] T002 Permissions `agent.security_view`, `agent.suspend` for security officers alongside `ai.policy_manage`; audit actions of section 13 for R1; capability `ai.agents.basic`
 - [x] T003 `IToolRegistration` contract and registry with versioned parameter schemas
 
@@ -20,7 +20,7 @@ Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and ru
 - [x] T009 [P] Tests: execution record fields and masking; scoped run search; suspend and kill switch timings; rollback within 60 seconds; policy changes suspend breaking agents; risk class computed and not lowered
 - [x] T010 Execution records and search; suspend, resume, kill switch and the platform switch
 - [x] T011 Tenant agent policy with cache and auto-suspension; risk class computation
-- [ ] T012 Mandatory safety suites wired into the spec 034 gate as critical
+- [x] T012 Mandatory safety suites wired into the spec 034 gate as critical
 
 ## Phase 5: Experience
 - [x] T013 Agent policy page, runs search and run timeline, confirmation card component, kill switch control, in English and Arabic, RTL; e2e with axe

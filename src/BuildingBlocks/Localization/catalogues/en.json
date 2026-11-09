@@ -1063,5 +1063,6 @@
   "validation.search.overlap": "Use an overlap of 0 to 50 percent.",
   "validation.search.embedding_model": "Enter a model ID of up to 100 letters, digits and the characters . _ : / -",
   "validation.search.retrieval_unchanged": "Change at least one setting.",
-  "validation.search.override_reason": "Give a reason of 10 to 1000 characters."
+  "validation.search.override_reason": "Give a reason of 10 to 1000 characters.",
+  "validation.agent.published_limit": "Your plan allows no more published agents. Retire an agent first, or ask about a larger plan."
 }

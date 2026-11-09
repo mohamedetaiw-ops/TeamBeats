@@ -188,6 +188,10 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         var definition = Definition((await VersionDefinitionAsync(id, number, ct))!);
         AgentDefinitions.Validate(definition, tools, (await policies.CurrentAsync(ct)).Policy);
         var risk = AgentDefinitions.RiskClass(definition, tools);
+        if (agent.Agent.CurrentVersion is null)
+        {
+            await DemandPublishedLimitAsync(ct);
+        }
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
@@ -201,6 +205,25 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentVersionPublished, "agent", id.ToString(), TargetOrgUnitId: agent.Agent.OrgUnitId,
             Changes: new { version = number, from = agent.Agent.CurrentVersion, riskClass = risk }), ct);
         return await registry.GetAsync(id, ct);
+    }
+
+    /// <summary>
+    /// The package limit on published agents (020 FR-019, <c>ai.agents.max_published</c>): an agent counts from its first
+    /// publication until it is retired, so a new version, a rollback or a resume never needs a free place.
+    /// </summary>
+    private async Task DemandPublishedLimitAsync(CancellationToken ct)
+    {
+        if (await entitlements.GetLimitAsync(Capabilities.AiAgentsMaxPublished, ct) is not { } max)
+        {
+            return;
+        }
+        await session.ExecAsync("select pg_advisory_xact_lock(hashtext('agents.published:' || @t::text))", new { t = context.RequireTenant() }, ct);
+        var count = await session.ScalarAsync<long>("select count(*) from agents.agent where current_version is not null and status <> 'retired'", null, ct);
+        if (count >= max)
+        {
+            throw new AppException(ProblemCodes.EntitlementQuotaExhausted, 403, "validation.agent.published_limit", null,
+                new Dictionary<string, object?> { ["capability"] = Capabilities.AiAgentsMaxPublished, ["limit"] = max });
+        }
     }
 
     /// <summary>Rejects the version in review with a reason; the designer can edit it again as the next draft.</summary>

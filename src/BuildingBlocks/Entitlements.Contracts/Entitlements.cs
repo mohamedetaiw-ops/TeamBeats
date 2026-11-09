@@ -7,6 +7,8 @@ public static class Capabilities
     public const string AiAssistantMonthlyRequests = "ai.assistant.monthly_requests";
     public const string AiAgentsBasic = "ai.agents.basic";
     public const string AiAgentsWriteTools = "ai.agents.write_tools";
+    public const string AiAgentsMaxPublished = "ai.agents.max_published";
+    public const string AiAgentsMaxCustom = "ai.agents.max_custom";
     public const string AiModelChoice = "ai.model_choice";
 
     // Spec 034 section 9: the evaluation baseline has no key; these add depth (production, experiments, business

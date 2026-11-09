@@ -12,7 +12,7 @@ Depends on 004, 005, 006, 007; 034 for the release gate on route changes. R1 cov
 - [x] T005 [P] [US1] Tests: catalogue view; allowlist denial sends nothing; defaults per use case; read-only without `ai.model_choice`; change effective within 60 seconds and audited; route change held for the gate
 - [x] T006 [P] [US2] Tests: Confidential blocked by default and allowed only for zero retention models; Restricted never to OpenRouter; highest classification decides; missing classification rejected; localized denial keys
 - [x] T007 [US1] Pipeline steps 1 to 7 and 9; policy cache; policy endpoints with `If-Match`
-- [ ] T008 [US1] Route change proposals, `AiModelRouteChangeProposed`, apply on `EvaluationGateDecided`, audited override
+- [x] T008 [US1] Route change proposals, `AiModelRouteChangeProposed`, apply on `EvaluationGateDecided`, audited override
 
 ## Phase 3: User Story 3, fallback (P1)
 - [x] T009 [P] [US3] Tests: retry then fallback; weaker fallback skipped; all fail gives `provider_unavailable`; circuit opens and closes with events
