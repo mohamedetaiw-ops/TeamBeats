@@ -18,6 +18,9 @@ public static class AssistantOutcomes
     public const string Unavailable = "unavailable";
 
     public static readonly IReadOnlyList<string> All = [Answered, NoEvidence, PolicyBlocked, Unavailable];
+
+    /// <summary>The agent the turn was routed to proposed an action and waits for the person to confirm it (spec 014 US2 scenario 2).</summary>
+    public const string ActionPending = "action_pending";
 }
 
 /// <summary>An assistant turn finished (spec 014 section 12), for analytics. It carries IDs and the outcome, never the text.</summary>

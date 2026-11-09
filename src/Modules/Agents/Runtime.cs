@@ -7,6 +7,7 @@ using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
+using TeamBeats.Modules.Search.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -46,7 +47,11 @@ public static class ToolDecisions
     public const string WouldCall = "would_call";
 }
 
-public sealed record RunRequest(string? Message, string? Language);
+/// <summary>
+/// A turn with an agent. <paramref name="ItemSource"/> and <paramref name="ItemId"/> name the page, policy or document a
+/// contextual action works on (020 US7 scenario 4); it is read with the person's permissions.
+/// </summary>
+public sealed record RunRequest(string? Message, string? Language, string? ItemSource = null, Guid? ItemId = null);
 
 public sealed record ConfirmRequest(bool? Confirm, string? Hash);
 
@@ -80,7 +85,8 @@ public sealed record RunView(
 public sealed record RunSummary(Guid Id, Guid AgentId, int AgentVersion, Guid UserId, string Mode, string Status, string? Outcome, string? Reason, int Steps,
     int ToolCalls, int Denials, string? Model, int InputTokens, int OutputTokens, DateTimeOffset CreatedAt, DateTimeOffset? FinishedAt);
 
-public sealed record RunRecord(RunSummary Run, IReadOnlyList<RunStepView> Steps, IReadOnlyList<RunCitation> Sources);
+public sealed record RunRecord(RunSummary Run, IReadOnlyList<RunStepView> Steps, IReadOnlyList<RunCitation> Sources, RouteDecisionView? Route = null,
+    string? ItemSource = null, Guid? ItemId = null);
 
 /// <summary>A pending L2 call, bound to a hash of its exact parameters (027 FR-010).</summary>
 internal sealed record PendingCall(Guid Id, string CallId, string Tool, string Arguments, string Hash, DateTimeOffset ExpiresAt, List<string> FromContent);
@@ -122,7 +128,8 @@ internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefin
 /// record with its ordered steps. Test runs (the designer's test panel, 020 US1 scenario 4) never execute a write tool.
 /// </summary>
 public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
-    IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, AgentPolicyService policies)
+    IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, AgentPolicyService policies,
+    ISearchRetrieval retrieval)
 {
     public const int MaxMessage = 2000;
     public const string PromptVersion = "agent.v1";
@@ -166,7 +173,10 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     }
 
     /// <summary>A turn with a published agent the person may use (020 US7). Agents the person may not use are not found.</summary>
-    public async Task<RunView> RunAsync(Guid agentId, RunRequest request, CancellationToken ct)
+    public Task<RunView> RunAsync(Guid agentId, RunRequest request, CancellationToken ct) => RunAsync(agentId, request, null, ct);
+
+    /// <summary>A turn the assistant routed to the agent; the run keeps the routing decision (020 US7 scenario 3).</summary>
+    internal async Task<RunView> RunAsync(Guid agentId, RunRequest request, Guid? routeId, CancellationToken ct)
     {
         var user = await UserAsync(ct);
         var message = Message(request);
@@ -186,7 +196,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         }
         await DemandNoKillSwitchAsync(ct);
         var run = new RunAgent(agentId, version, agent.Unit, definition, "run", (await policies.CurrentAsync(ct)).Policy);
-        return await StartAsync(run, user, message, request.Language, ct);
+        return await StartAsync(run, user, message, request, routeId, ct);
     }
 
     /// <summary>The test panel (020 US1 scenario 4): the latest version, as the designer, with no write action executed.</summary>
@@ -210,7 +220,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         await DemandNoKillSwitchAsync(ct);
         var latest = await session.ScalarAsync<int>("select max(number) from agents.agent_version where agent_id = @agentId", new { agentId }, ct);
         var run = new RunAgent(agentId, latest, agent.Unit, await VersionAsync(agentId, latest, ct), "test", (await policies.CurrentAsync(ct)).Policy);
-        return await StartAsync(run, user, message, request.Language, ct);
+        return await StartAsync(run, user, message, request, null, ct);
     }
 
     private static string Message(RunRequest request)
@@ -224,25 +234,64 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             throw AppException.Validation("language", "validation.agent_run.language");
         }
+        if ((request.ItemSource is null) != (request.ItemId is null) || request.ItemSource is { Length: 0 or > 40 })
+        {
+            throw AppException.Validation("itemId", "validation.agent_run.item");
+        }
         return message;
     }
 
-    private async Task<RunView> StartAsync(RunAgent agent, Guid user, string message, string? requested, CancellationToken ct)
+    private async Task<RunView> StartAsync(RunAgent agent, Guid user, string message, RunRequest request, Guid? routeId, CancellationToken ct)
     {
         var languages = agent.Definition.Languages ?? ["en"];
-        var language = requested ?? AssistantPrompt.Language(message);
+        var language = request.Language ?? AssistantPrompt.Language(message);
         language = languages.Contains(language) ? language : languages[0];
         var id = Guid.NewGuid();
         var now = clock.UtcNow;
         var state = new RunState { Classification = "internal" };
         state.Messages.Add(new AiMessage(AiRoles.System, SystemPrompt(agent.Definition, language)));
+        if (request.ItemSource is { } source && request.ItemId is { } item)
+        {
+            await ItemContextAsync(agent, source, item, language, state, ct);
+        }
         state.Messages.Add(new AiMessage(AiRoles.User, message));
         await session.ExecAsync(
             """
-            insert into agents.run (tenant_id, id, agent_id, agent_version, user_id, org_unit_id, mode, status, language, classification, created_at, updated_at)
-            values (platform.current_tenant_id(), @id, @agent, @version, @user, @unit, @mode, 'running', @language, 'internal', @now, @now)
-            """, new { id, agent = agent.Id, version = agent.Version, user, unit = agent.OrgUnitId, mode = agent.Mode, language, now }, ct);
+            insert into agents.run (tenant_id, id, agent_id, agent_version, user_id, org_unit_id, mode, status, language, classification, route_id,
+              item_source, item_id, created_at, updated_at)
+            values (platform.current_tenant_id(), @id, @agent, @version, @user, @unit, @mode, 'running', @language, @classification, @routeId, @source, @item,
+              @now, @now)
+            """, new { id, agent = agent.Id, version = agent.Version, user, unit = agent.OrgUnitId, mode = agent.Mode, language, classification = state.Classification,
+                routeId, source = request.ItemSource, item = request.ItemId, now }, ct);
         return await LoopAsync(id, agent, user, language, state, ct);
+    }
+
+    /// <summary>
+    /// A contextual action (020 US7 scenario 4): the item is read as the person through search retrieval, so an item they
+    /// may not read is not found. Its passages go in the untrusted envelope before the message, numbered for citations,
+    /// and passages above the agent's classification cap are left out.
+    /// </summary>
+    private async Task ItemContextAsync(RunAgent agent, string source, Guid item, string language, RunState state, CancellationToken ct)
+    {
+        var result = await retrieval.ItemAsync(source, item, AiUseCases.Agent, language, ct);
+        if (result.Passages.Count == 0 && result.Withheld == 0)
+        {
+            throw AppException.NotFound();
+        }
+        var cap = Classifications.Rank(agent.Definition.MaxClassification ?? "internal");
+        var passages = result.Passages.Where(p => Classifications.Rank(p.Classification) is var rank && rank >= 0 && rank <= cap).ToList();
+        if (passages.Count == 0)
+        {
+            throw AppException.Conflict("conflict.agent_run.item_withheld");
+        }
+        var envelope = AssistantPrompt.Passages(passages);
+        state.Messages.Add(new AiMessage(AiRoles.User, envelope));
+        state.Untrusted += envelope.Length > MaxUntrusted ? envelope[..MaxUntrusted] : envelope;
+        state.Classification = AssistantPrompt.Name(AssistantPrompt.Highest(passages.Select(p => p.Classification), DataClassification.Internal));
+        foreach (var p in passages)
+        {
+            state.Citations.Add(new RunCitation(state.Citations.Count + 1, p.Source, p.ItemId, p.Title, p.Anchor));
+        }
     }
 
     /// <summary>
@@ -801,7 +850,17 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
                 r.GetFieldValue<DateTimeOffset>(9)), ct);
         var sources = JsonSerializer.Deserialize<List<RunCitation>>(
             (await session.ScalarAsync<string>("select sources::text from agents.run where id = @runId", new { runId }, ct))!, Json) ?? [];
-        return new RunRecord(run, steps, sources);
+        var extra = await session.QueryAsync("select route_id, item_source, item_id from agents.run where id = @runId", new { runId },
+            r => (Route: r.Get<Guid?>("route_id"), Source: r.Get<string?>("item_source"), Item: r.Get<Guid?>("item_id")), ct);
+        RouteDecisionView? route = null;
+        if (extra[0].Route is { } routeId)
+        {
+            var found = await session.QueryAsync("select id, method, candidates, agent_id, model, reason, created_at from agents.route_decision where id = @routeId",
+                new { routeId }, r => new RouteDecisionView(r.GetGuid(0), r.GetString(1), r.GetInt32(2), r.Get<Guid?>("agent_id"), r.Get<string?>("model"),
+                    r.Get<string?>("reason"), r.GetFieldValue<DateTimeOffset>(6)), ct);
+            route = found.Count > 0 ? found[0] : null;
+        }
+        return new RunRecord(run, steps, sources, route, extra[0].Source, extra[0].Item);
     }
 
     /// <summary>Execution records older than the retention period go (027 section 8, default 365 days); waiting runs past their card expire.</summary>
@@ -813,6 +872,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             where status = 'waiting' and updated_at < @cutoff
             """, new { now, cutoff = now - ConfirmationTimeout - TimeSpan.FromMinutes(5) }, ct);
         await session.ExecAsync("delete from agents.run_checkpoint c using agents.run r where r.id = c.run_id and r.status <> 'waiting'", null, ct);
+        await session.ExecAsync("delete from agents.route_decision where created_at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
         return await session.ExecAsync("delete from agents.run where created_at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
     }
 }

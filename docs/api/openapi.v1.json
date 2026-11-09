@@ -4203,6 +4203,52 @@
         }
       }
     },
+    "/api/v1/requests/prepared/{id}": {
+      "get": {
+        "tags": [
+          "Services: requests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/requests/prepared/{id}/discard": {
+      "post": {
+        "tags": [
+          "Services: requests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/requests/team": {
       "get": {
         "tags": [
@@ -9014,6 +9060,40 @@
         "tags": [
           "Agents"
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/agents/available": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/agents/route": {
+      "post": {
+        "tags": [
+          "Agents"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -13966,6 +14046,13 @@
               "null",
               "string"
             ]
+          },
+          "preparedId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -14036,6 +14123,20 @@
           }
         }
       },
+      "RouteRequest": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "RunRequest": {
         "required": [
           "message",
@@ -14054,6 +14155,19 @@
               "null",
               "string"
             ]
+          },
+          "itemSource": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "itemId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -14960,6 +15074,19 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "agentId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "knowledge": {
+            "type": [
+              "null",
+              "boolean"
             ]
           }
         }

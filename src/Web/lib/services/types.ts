@@ -96,6 +96,9 @@ export type FieldValue = string | number | string[] | { amount: number; currency
 
 export type Prefill = { values: Record<string, FieldValue>; readOnly: string[] };
 
+/** A request an AI agent prepared for the person (spec 020 US8); the form opens with its values. */
+export type PreparedRequest = { id: string; serviceId: string; data: Record<string, FieldValue>; status: "prepared" | "submitted" | "discarded" };
+
 export type PersonRef = { id: string; displayName: string };
 
 export type RequestStatus = "draft" | "submitted" | "in_approval" | "returned" | "approved" | "rejected" | "cancelled" | "completed";

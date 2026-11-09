@@ -1260,6 +1260,7 @@
         "failed": "Could not be checked"
       },
       "needsApproval": "This request goes to an approver before it is done.",
+      "prepared": "An AI agent prepared this request for you. Check every value before you submit it; nothing is sent until you do.",
       "previewOnly": "Preview only. Nothing is sent.",
       "changeTitle": "Change {name}",
       "returnedWith": "It was returned with this comment:",
@@ -1351,7 +1352,8 @@
       "contentRetire": "Content retirement",
       "policyApproval": "Policy approval",
       "policyAttestation": "Policy attestation",
-      "agentReview": "Agent review"
+      "agentReview": "Agent review",
+      "preparedByAi": "Prepared by AI"
     },
     "delegation": {
       "title": "While you are away",

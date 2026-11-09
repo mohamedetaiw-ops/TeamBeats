@@ -10,7 +10,7 @@ import { isShown, pick, type AttachmentView, type FieldValue, type FormDefinitio
 import { PersonPicker } from "./PersonPicker";
 import "./services.css";
 
-type Target = { kind: "new"; serviceId: string } | { kind: "resubmit"; requestId: string } | { kind: "preview" };
+type Target = { kind: "new"; serviceId: string; preparedId?: string } | { kind: "resubmit"; requestId: string } | { kind: "preview" };
 
 type Upload = { id: string; fileName: string; state: AttachmentView["scanState"] };
 
@@ -126,7 +126,7 @@ export function RequestForm({
           ? await fetch("/api/v1/requests", {
               method: "POST",
               headers: { "content-type": "application/json" },
-              body: JSON.stringify({ serviceId: target.serviceId, data: shown, idempotencyKey, onBehalfOf: forWhom }),
+              body: JSON.stringify({ serviceId: target.serviceId, data: shown, idempotencyKey, onBehalfOf: forWhom, preparedId: target.preparedId }),
             })
           : await fetch(`/api/v1/requests/${target.requestId}/resubmit`, {
               method: "POST",

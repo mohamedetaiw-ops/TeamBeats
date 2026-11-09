@@ -26,6 +26,9 @@ public static class ServicesModule
         services.AddScoped<Delegations>();
         services.AddScoped<Agents.Contracts.IAgentTool, RequestStatusTool>();
         services.AddScoped<Agents.Contracts.IAgentTool, TaskInboxTool>();
+        services.AddScoped<Agents.Contracts.IAgentTool, RequestPrepareTool>();
+        services.AddScoped<PreparedRequests>();
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<PreparedRequests>());
         services.AddScoped<Workflow.Contracts.IDelegations>(sp => sp.GetRequiredService<Delegations>());
         services.AddMessageHandler<RequestCompleted, RequestNotifier>("services.notify_completed");
         services.AddMessageHandler<RequestReturned, RequestNotifier>("services.notify_returned");
@@ -77,11 +80,25 @@ public static class ServicesModule
 
         var requests = app.MapGroup("/api/v1/requests").RequireTenantUser().WithTags("Services: requests");
 
-        requests.MapPost("", async (RequestSubmit request, Requests service, IDbSession session, CancellationToken ct) =>
+        requests.MapPost("", async (RequestSubmit request, Requests service, PreparedRequests prepared, IDbSession session, CancellationToken ct) =>
         {
             var (detail, created) = await service.SubmitAsync(request, ct);
+            if (request.PreparedId is { } preparedId)
+            {
+                await prepared.SubmittedAsync(preparedId, request.ServiceId, detail.Request.Id, ct);
+            }
             await session.CommitAsync(ct);
             return created ? Results.Created($"/api/v1/requests/{detail.Request.Id}", detail) : Results.Ok(detail);
+        });
+
+        // Requests an agent prepared for the person (spec 020 US8): load into the form, or discard.
+        requests.MapGet("/prepared/{id:guid}", async (Guid id, PreparedRequests prepared, CancellationToken ct) => Results.Ok(await prepared.GetAsync(id, ct)));
+
+        requests.MapPost("/prepared/{id:guid}/discard", async (Guid id, PreparedRequests prepared, IDbSession session, CancellationToken ct) =>
+        {
+            await prepared.DiscardAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
 
         requests.MapGet("", async (string? status, int? limit, Requests service, CancellationToken ct) =>
