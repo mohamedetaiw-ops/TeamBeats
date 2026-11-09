@@ -10,7 +10,7 @@ Depends on 004, 009, 010, 011, 013, 016, 025, 034. R1: US1 to US4. R2: US5 to US
 - [x] T006 [US1] Search and suggest endpoints with two-stage permission filtering
 - [ ] T007 [US3] Retrieval contract with citation anchors and AI classification filter; retrieval configuration with shadow index and gate
 - [x] T008 [US4] Best bets and synonyms
-- [ ] T009 Search box in the shell, results page with filters, admin pages, in English and Arabic, RTL; e2e with axe
+- [x] T009 Search box in the shell, results page with filters, admin pages, in English and Arabic, RTL; e2e with axe
 - [ ] T010 SC-001 suite in CI; performance tests; OpenAPI; R1 implementation notes; spec evidence
 
 ## R2

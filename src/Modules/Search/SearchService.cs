@@ -20,7 +20,7 @@ public sealed record SearchResult(Guid ItemId, string Source, string Kind, strin
 public sealed record SearchPage(string Query, int Total, bool More, int Page, int PageSize, IReadOnlyList<SearchResult> Results,
     IReadOnlyDictionary<string, int> Facets, bool Degraded, IReadOnlyList<SearchResult> Alternatives);
 
-public sealed record Suggestion(Guid ItemId, string Kind, string Title, string Link);
+public sealed record Suggestion(Guid ItemId, string Source, string Kind, string Title, string Link);
 
 /// <summary>A candidate item before permission filtering, with its fused score.</summary>
 internal sealed record Candidate(string Source, Guid ItemId, string Kind, DateTimeOffset? UpdatedAt, double Score);
@@ -132,7 +132,7 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
             """, new { tsquery }, r => (Source: r.GetString(0), Item: r.GetGuid(1), Kind: r.GetString(2), Title: r.GetString(3), Link: r.GetString(4)), ct);
         var readable = await ReadableAsync(rows.Select(r => (r.Source, r.Item)), ct);
         return [.. rows.Where(r => readable.Contains((r.Source, r.Item))).DistinctBy(r => (r.Source, r.Item)).Take(MaxSuggestions)
-            .Select(r => new Suggestion(r.Item, r.Kind, r.Title, r.Link))];
+            .Select(r => new Suggestion(r.Item, r.Source, r.Kind, r.Title, r.Link))];
     }
 
     internal async Task<List<Candidate>> KeywordAsync(string tsquery, DateTimeOffset? from, DateTimeOffset? to, int limit, CancellationToken ct) =>
