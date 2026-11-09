@@ -1074,7 +1074,7 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Clause blocks | The editor reuses the spec 009 block editor; headings and embeds are refused by the API for clauses with a message, since the clause title is the heading. |
 | No unit line | "See people" on the no unit line lists everyone, because the people filter has no "no unit" option yet. |
 
-## AI gateway pipeline, catalogue and model policy (spec 013 T001 to T014)
+## AI gateway pipeline, catalogue and model policy (spec 013 T001 to T014, T016)
 
 | Area | What was built |
 |---|---|
@@ -1090,6 +1090,7 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Quota | `ai.assistant.monthly_requests` counts served, tenant-charged calls this calendar month (UTC); at the limit calls are refused with `quota_exceeded`. Platform-charged evaluation calls are not counted |
 | Usage view | `GET /api/v1/ai/usage?from&to&groupBy` by day, use case, model, provider, unit, agent or user, with totals and denied calls by reason, up to 400 days. Tenant-wide for `ai.policy_manage` or `ai.policy_view` at tenant scope; an org-scoped `ai.policy_manage` holder sees calls in their subtree only, cannot group by user, and groups with fewer than five people are hidden and counted |
 | Debug windows | `ai.debug_window` and `ai.debug_log`. `POST /api/v1/ai/debug-windows` opens one per use case for 1 to 72 hours (`ai.policy_manage`, audited `ai.logging_window_opened`), `DELETE` closes it early (audited `ai.logging_window_closed`), `GET` lists them, `GET {id}/entries` shows prompts and answers to holders of both `audit.read` and `ai.policy_view`. Only Public and Internal calls are captured. Text is AES-GCM encrypted under `Ai:DebugLog:Key` (32 bytes, base64, from the secret store) with tenant and window bound as associated data; without the key no window opens. Entries older than 30 days are deleted on each new capture and never shown |
+| Admin pages | Admin section `ai` ("AI governance"), listed for `ai.policy_manage` at any scope or `ai.policy_view` tenant-wide. Model policy (catalogue table with regions, data terms, highest classification and price; allowlist, Confidential models, limits), Routing rules (default and fallbacks per use case, the held change and the override with a reason), AI usage (period, grouping, totals, table with bars, refused requests by reason, unit and person names from the usage view's labels), Debug windows (open, close, entries). People who only see usage for their units go straight to AI usage. e2e `ai-governance.spec.ts` in English and Arabic with axe |
 | Tests | `AiGatewayTests` (catalogue, read-only default set, defaults per use case, allowlist sends nothing, held route change and override, classification routing and SC-001, retry and fallback, weaker fallback skipped, output checks, streaming, embeddings, judge rule, cross-tenant, usage by dimension with org scope and the five person minimum, the monthly quota, debug windows with encryption and the Restricted rule), `AiGatewayRulesTests` (circuit breaker, policy validation, schema check), the architecture test that no provider URL or SDK is used outside the adapter, and the `0016` permission backfill |
 
 | Item | Note |
@@ -1100,4 +1101,7 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Gated use cases | Both the assistant and agent routes are gated, since there is no record of published agents before spec 020. |
 | Gate decisions | `EvaluationGateDecided` is consumed when spec 034 defines it; the page says the gate is not available until then. |
 | Circuit events | `AiProviderCircuitOpened` and `AiProviderCircuitClosed` are logged now; publishing them as platform events comes with the metering slice and the platform event stream. |
+| Clearing limits | The policy API keeps the current value of a field that is left out, so a maximum answer length or temperature, once set, can be changed but not cleared from the page. Clearing needs an explicit field in the API; recorded until the spec says limits can be removed. |
+| Usage chart | The AI usage page draws one bar per row next to the numbers in the same table, which is the chart's table view; a separate chart over time comes with the R2 usage export. |
+| Debug key in development | The dev host and staging generate a random `Ai:DebugLog:Key` per process when none is configured, so entries from before a restart show as unreadable. Production takes the key from the secret store and opens no window without it. |
 | Policy editing | The whole policy needs `ai.model_choice`, including parameter limits and the region rule; spec section 9 only names the allowlist, defaults and fallbacks, so this is the smaller default. |

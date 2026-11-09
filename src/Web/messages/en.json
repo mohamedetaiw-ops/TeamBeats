@@ -46,7 +46,8 @@
       "calendars": "Calendars",
       "people": "People directory",
       "security": "Security",
-      "services": "Services"
+      "services": "Services",
+      "ai": "AI governance"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}"
   },
@@ -2319,6 +2320,185 @@
       "overdue": "Version {number} overdue since {date}",
       "accepted": "Accepted version {number} on {date}",
       "notAsked": "Not asked to accept yet"
+    }
+  },
+  "ai": {
+    "tabsLabel": "AI governance pages",
+    "tabs": {
+      "policy": "Model policy",
+      "routing": "Routing rules",
+      "usage": "AI usage",
+      "debug": "Debug windows"
+    },
+    "denials": {
+      "not_in_package": "Not in the plan",
+      "quota_exhausted": "Monthly quota reached",
+      "budget_exhausted": "Budget reached",
+      "classification_blocked": "Blocked by data classification",
+      "model_not_allowed": "Model not allowed",
+      "region_blocked": "Blocked by region rule",
+      "provider_unavailable": "Provider unavailable",
+      "context_too_large": "Request too large",
+      "classification_missing": "Classification missing",
+      "invalid_request": "Invalid request"
+    },
+    "policy": {
+      "title": "Model policy",
+      "save": "Save policy",
+      "saving": "Saving",
+      "saved": "Policy saved. New AI requests use it within a minute.",
+      "held": "Saved for review. The assistant or agent route changed, so the change waits for the release gate on Routing rules.",
+      "failed": "The policy could not be saved. Try again.",
+      "readOnly": {
+        "package": "Your plan uses the platform default models. Changing models needs a plan with model choice.",
+        "permission": "You can view the model policy but not change it."
+      },
+      "source": {
+        "platform": "In force: the platform default models.",
+        "tenant": "In force: your organization's policy, version {version}."
+      },
+      "classification": {
+        "public": "Public",
+        "internal": "Internal",
+        "confidential": "Confidential",
+        "restricted": "Restricted"
+      },
+      "catalogue": {
+        "title": "Models",
+        "intro": "Every model the platform offers, with where it runs, what the provider keeps, the most sensitive data it may receive and its price.",
+        "model": "Model",
+        "provider": "Provider",
+        "regions": "Regions",
+        "retention": "Data terms",
+        "ceiling": "Highest classification",
+        "price": "Price per million tokens",
+        "allowed": "Allowed",
+        "confidential": "Confidential",
+        "zeroRetention": "Zero retention, no training",
+        "keepsData": "Provider may keep data",
+        "priceValue": "{input} in, {output} out",
+        "allowModel": "Allow {name}",
+        "confidentialModel": "Use {name} for Confidential data",
+        "notEligible": "Not eligible"
+      },
+      "limits": {
+        "title": "Limits",
+        "maxTokens": "Maximum answer length in tokens",
+        "maxTokensHint": "Leave empty to use each model's own limit.",
+        "minTemperature": "Lowest temperature",
+        "maxTemperature": "Highest temperature"
+      }
+    },
+    "routing": {
+      "title": "Routing rules",
+      "intro": "Each use case tries its default model first, then the fallbacks in order. Only allowed models can be added.",
+      "save": "Save routes",
+      "saving": "Saving",
+      "saved": "Routes saved.",
+      "held": "Saved for review. The assistant or agent route waits for the release gate.",
+      "failed": "The routes could not be saved. Try again.",
+      "readOnly": {
+        "package": "Your plan uses the platform default routes.",
+        "permission": "You can view the routes but not change them."
+      },
+      "useCases": {
+        "assistant": "Assistant",
+        "summarize": "Summaries",
+        "translate": "Translation",
+        "draft": "Drafting",
+        "embed": "Search embeddings",
+        "agent": "Agents",
+        "evaluation": "Evaluation"
+      },
+      "empty": "No model. Requests for this use case are refused.",
+      "default": "Default",
+      "fallback": "Fallback {position}",
+      "up": "Move {name} up in {useCase}",
+      "down": "Move {name} down in {useCase}",
+      "remove": "Remove {name} from {useCase}",
+      "upShort": "Up",
+      "downShort": "Down",
+      "removeShort": "Remove",
+      "add": "Add a model to {useCase}",
+      "choose": "Choose a model",
+      "addButton": "Add",
+      "pending": {
+        "title": "Change waiting for the release gate",
+        "gate": "The release gate is checking this change. It applies when the checks pass.",
+        "noGate": "The release gate is not available yet. The current routes stay in force until the change is applied with a reason.",
+        "change": "{useCase}: {before} becomes {after}",
+        "none": "no model",
+        "reason": "Reason for applying without the gate",
+        "reasonHint": "10 to 1000 characters. The reason is kept in the audit log.",
+        "override": "Apply with this reason",
+        "applied": "Change applied and recorded in the audit log."
+      }
+    },
+    "usage": {
+      "title": "AI usage",
+      "filters": "Period and grouping",
+      "from": "From",
+      "to": "To",
+      "groupBy": "Group by",
+      "apply": "Show",
+      "groups": {
+        "day": "Day",
+        "use_case": "Use case",
+        "model": "Model",
+        "provider": "Provider",
+        "unit": "Org unit",
+        "agent": "Agent",
+        "user": "Person"
+      },
+      "invalid": "Choose a grouping and a period of up to 400 days with the start before the end.",
+      "scoped": "You see AI use in your units only. Groups of fewer than {size} people are hidden.",
+      "totals": "Totals",
+      "totalsValue": "{requests} requests, {tokens} tokens, estimated cost {cost}",
+      "byGroup": "By {group}",
+      "empty": "No AI use in this period.",
+      "none": "Not set",
+      "requests": "Requests",
+      "inputTokens": "Tokens in",
+      "outputTokens": "Tokens out",
+      "cost": "Estimated cost",
+      "share": "Share of requests",
+      "hidden": "{count, plural, one {# group} other {# groups}} with fewer than {size} people not shown.",
+      "denied": "Refused requests",
+      "noDenied": "No requests were refused in this period.",
+      "reason": "Reason"
+    },
+    "debug": {
+      "title": "Debug windows",
+      "intro": "By default only call details are kept, never the text. A debug window keeps prompts and answers for one use case for up to 72 hours, for Public and Internal data only, encrypted, for 30 days.",
+      "open": "Open a debug window",
+      "useCase": "Use case",
+      "hours": "Hours",
+      "hoursHint": "1 to 72 hours.",
+      "openButton": "Open window",
+      "working": "Working",
+      "opened": "Debug window opened for {useCase}.",
+      "closed": "Debug window closed for {useCase}.",
+      "failed": "That did not work. Try again.",
+      "list": "Windows",
+      "none": "No debug windows yet.",
+      "openedAt": "Opened",
+      "endsAt": "Ends or ended",
+      "state": "State",
+      "entries": "Entries",
+      "actions": "Actions",
+      "states": {
+        "open": "Open",
+        "closed": "Closed"
+      },
+      "view": "View entries for {useCase}",
+      "close": "Close {useCase} window",
+      "entriesTitle": "Debug window entries",
+      "back": "Back to debug windows",
+      "deniedTitle": "Security officers only",
+      "denied": "Entries can be read by people who hold both audit and AI policy viewing rights.",
+      "noEntries": "No entries",
+      "keepNote": "Entries are kept for 30 days.",
+      "unreadable": "This entry can no longer be read."
     }
   }
 }

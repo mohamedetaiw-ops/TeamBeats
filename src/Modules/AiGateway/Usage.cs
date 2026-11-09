@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
+using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -114,15 +115,17 @@ public sealed record UsageView(
     IReadOnlyList<UsageRow> Rows,
     IReadOnlyList<DeniedRow> Denied,
     int MinimumGroupSize,
-    int HiddenGroups);
+    int HiddenGroups,
+    IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> Labels);
 
 /// <summary>
 /// The AI usage view (spec 013 US4, R1 part): requests, tokens and estimated cost by day, use case, model, provider,
 /// org unit or agent, and denied calls by reason. Holders of <c>ai.policy_manage</c> or <c>ai.policy_view</c> at tenant
 /// scope see the whole tenant and named users; an org-scoped <c>ai.policy_manage</c> holder sees calls made in their
-/// subtree only, and groups with fewer than five people are hidden from them (scenario 3).
+/// subtree only, and groups with fewer than five people are hidden from them (scenario 3). Unit rows carry the unit's
+/// names and user rows the person's display name, under <c>Labels</c>, so the page never shows bare ids.
 /// </summary>
-public sealed class UsageReports(IDbSession session, IAuthorizationService authz, IOrganizationHierarchy hierarchy, IClock clock)
+public sealed class UsageReports(IDbSession session, IAuthorizationService authz, IOrganizationHierarchy hierarchy, IUserDirectory users, IClock clock)
 {
     public const int MinimumGroupSize = 5;
     public const int MaxDays = 400;
@@ -190,6 +193,25 @@ public sealed class UsageReports(IDbSession session, IAuthorizationService authz
             hidden = rows.Count(r => r.Users < MinimumGroupSize);
             rows = [.. rows.Where(r => r.Users >= MinimumGroupSize)];
         }
-        return new UsageView(start, end, group, units is null ? "tenant" : "units", totals, rows, denied, MinimumGroupSize, hidden);
+        var labels = new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.Ordinal);
+        var ids = rows.Select(r => Guid.TryParse(r.Key, out var id) ? id : (Guid?)null).OfType<Guid>().ToList();
+        if (group == UsageGroups.Unit && ids.Count > 0)
+        {
+            foreach (var (id, names) in await hierarchy.GetNamesAsync(ids, ct))
+            {
+                labels[id.ToString()] = names;
+            }
+        }
+        else if (group == UsageGroups.User)
+        {
+            foreach (var id in ids)
+            {
+                if (await users.GetAsync(id, ct) is { } user)
+                {
+                    labels[id.ToString()] = new Dictionary<string, string> { ["default"] = user.DisplayName };
+                }
+            }
+        }
+        return new UsageView(start, end, group, units is null ? "tenant" : "units", totals, rows, denied, MinimumGroupSize, hidden, labels);
     }
 }

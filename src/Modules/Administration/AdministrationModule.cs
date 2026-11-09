@@ -42,7 +42,14 @@ public static class AdministrationModule
         ("services", Permissions.ServiceManage, "/admin/services"),
         ("audit", Permissions.AuditView, "/admin/audit"),
         ("security", Permissions.SecurityView, "/admin/security"),
+        ("ai", Permissions.AiPolicyManage, "/admin/ai"),
     ];
+
+    /// <summary>A second permission that also opens a section: security officers read the AI pages with <c>ai.policy_view</c> (spec 013).</summary>
+    public static readonly IReadOnlyDictionary<string, string> AlsoOpenedBy = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["ai"] = Permissions.AiPolicyView,
+    };
 
     /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) and the people directory policy (spec 010 US1) are for the whole tenant.</summary>
     public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications", "people", "security" };
@@ -59,6 +66,10 @@ public static class AdministrationModule
             foreach (var (key, permission, path) in Sections)
             {
                 var coverage = await authz.CoverageAsync(permission, ct);
+                if (!coverage.WholeTenant && AlsoOpenedBy.TryGetValue(key, out var other) && await authz.CoverageAsync(other, ct) is { WholeTenant: true } wide)
+                {
+                    coverage = wide;
+                }
                 if (TenantOnly.Contains(key) ? coverage.WholeTenant : coverage.Any)
                 {
                     // The security section shows how many alerts are open (spec 026 US5); the section's own check already passed.

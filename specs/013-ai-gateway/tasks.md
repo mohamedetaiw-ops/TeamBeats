@@ -26,7 +26,7 @@ Depends on 004, 005, 006, 007; 034 for the release gate on route changes. R1 cov
 
 ## Phase 5: Evaluation use case and pages
 - [ ] T015 `evaluation` use case with the judge rule of FR-017 and platform or tenant charging
-- [ ] T016 Model policy, routing rules and AI usage pages with table views, in English and Arabic, RTL; e2e with axe
+- [x] T016 Model policy, routing rules and AI usage pages with table views, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
 - [ ] T017 SC-001 suite in CI; overhead performance test; OpenAPI; R1 implementation notes; staging allowed host and secret steps; spec evidence
