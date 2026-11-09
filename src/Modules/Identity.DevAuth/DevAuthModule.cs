@@ -122,6 +122,7 @@ public static class DevAuthModule
 
             string email;
             string displayName;
+            string? next = null;
             if (mode == DevSignInMode.TestAccount)
             {
                 if (MatchAccount(accounts, request.Username) is not { } account)
@@ -135,6 +136,7 @@ public static class DevAuthModule
                 }
                 email = account.Email.Trim().ToLowerInvariant();
                 displayName = string.IsNullOrWhiteSpace(account.DisplayName) ? account.Username : account.DisplayName;
+                next = LocalPath(account.Next);
             }
             else
             {
@@ -146,7 +148,7 @@ public static class DevAuthModule
             await session.CommitAsync(ct);
             return result.Outcome switch
             {
-                SignInOutcome.Succeeded => SetCookie(response, sessions, result.SessionToken!, result.UserId!.Value),
+                SignInOutcome.Succeeded => SetCookie(response, sessions, result.SessionToken!, result.UserId!.Value, next),
                 SignInOutcome.RefusedTenantInactive => throw new AppException(
                     tenant.Status == TenantLifecycleStatus.Suspended ? ProblemCodes.TenantSuspended : ProblemCodes.TenantClosed, 403),
                 _ => throw new AppException(ProblemCodes.SignInRefused, 403),
@@ -174,11 +176,15 @@ public static class DevAuthModule
         return app;
     }
 
-    private static IResult SetCookie(HttpResponse response, SessionService sessions, string token, Guid userId)
+    private static IResult SetCookie(HttpResponse response, SessionService sessions, string token, Guid userId, string? next = null)
     {
         sessions.SetCookie(response, token);
-        return Results.Ok(new { userId });
+        return Results.Ok(new { userId, next });
     }
+
+    /// <summary>Only a path on this site: no scheme, host or protocol-relative address.</summary>
+    public static string? LocalPath(string? path) =>
+        path is { Length: > 0 } && path[0] == '/' && (path.Length == 1 || path[1] is not ('/' or '\\')) && !path.Contains("://", StringComparison.Ordinal) ? path : null;
 }
 
 public enum DevSignInMode
@@ -195,6 +201,12 @@ public sealed class TestAccount
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string? DisplayName { get; set; }
+
+    /// <summary>
+    /// Optional local path the browser opens after sign-in. Staging uses it to connect the test admin's fake Outlook,
+    /// so a demo starts with mail and calendar filled after every sign-in and redeploy.
+    /// </summary>
+    public string? Next { get; set; }
 }
 
 /// <summary>Seed file format (deploy/compose/seed/dev-users.json). Fictional data only.</summary>
