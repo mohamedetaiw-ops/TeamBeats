@@ -19,10 +19,10 @@ Depends on 004, 005, 006, 007; 034 for the release gate on route changes. R1 cov
 - [x] T010 [US3] OpenRouter adapter (chat, tools, structured output, streaming, embeddings), retries and circuit breaker
 
 ## Phase 4: User Stories 4 and 8, usage and logging (P1, P2)
-- [ ] T011 [P] [US4] Tests: usage by the six dimensions and denied calls; org scope; 5 user minimum for named users; no call lost on worker restart
-- [ ] T012 [US4] Call records through the outbox, daily aggregates, usage endpoint
-- [ ] T013 [P] [US8] Tests: metadata only by default; debug window for Public and Internal only, encrypted, 30 days; never for Restricted
-- [ ] T014 [US8] Debug windows and encrypted logs
+- [x] T011 [P] [US4] Tests: usage by the six dimensions and denied calls; org scope; 5 user minimum for named users; no call lost on worker restart
+- [x] T012 [US4] Call records through the outbox, daily aggregates, usage endpoint
+- [x] T013 [P] [US8] Tests: metadata only by default; debug window for Public and Internal only, encrypted, 30 days; never for Restricted
+- [x] T014 [US8] Debug windows and encrypted logs
 
 ## Phase 5: Evaluation use case and pages
 - [ ] T015 `evaluation` use case with the judge rule of FR-017 and platform or tenant charging

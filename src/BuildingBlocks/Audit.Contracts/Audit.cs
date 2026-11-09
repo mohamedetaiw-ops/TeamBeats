@@ -238,6 +238,8 @@ public static class AuditActions
     public const string AiRouteChangeProposed = "ai.route_change_proposed";
     public const string AiRouteChangeOverridden = "ai.route_change_overridden";
     public const string AiCatalogueChanged = "ai.catalogue_changed";
+    public const string AiLoggingWindowOpened = "ai.logging_window_opened";
+    public const string AiLoggingWindowClosed = "ai.logging_window_closed";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -278,7 +280,7 @@ public static class AuditActions
         DocReadConfirmed,
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested,
-        AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiCatalogueChanged,
+        AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =
