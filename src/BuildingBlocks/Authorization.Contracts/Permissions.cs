@@ -76,6 +76,13 @@ public static class Permissions
     public const string ContentPublishCritical = "content.publish_critical";
     public const string ContentAdmin = "content.admin";
 
+    // Spec 011 (R1): reading libraries, contributing files, managing libraries and writing knowledge articles. Reading is
+    // a .view permission so tenant-wide libraries are open to every member and unit libraries follow their ACL.
+    public const string DocView = "doc.view";
+    public const string DocContribute = "doc.contribute";
+    public const string DocManage = "doc.manage";
+    public const string KbEdit = "kb.edit";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -104,6 +111,7 @@ public static class Permissions
         SecurityManage, SecurityView, SecurityRespond,
         ServiceManage, ServiceRequestOnBehalf,
         ContentAuthor, ContentPublishCritical, ContentAdmin,
+        DocView, DocContribute, DocManage, KbEdit,
     ];
 }
 

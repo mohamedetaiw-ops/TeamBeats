@@ -3,13 +3,13 @@
 Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body document, knowledge content type), 016 (scanner port, inbox), 024 (engine core), 032 (component manifests). R1 covers User Stories 1 to 4 with TeamBeats libraries only (FR-023).
 
 ## Phase 1: Foundations
-- [ ] T001 `Documents` and `Documents.Contracts` projects; migration for libraries, folders, types, documents, versions and knowledge feedback (forced RLS)
-- [ ] T002 Permissions `doc.contribute`, `doc.manage`, `kb.edit`; audit actions of section 13 for R1; capability keys `docs.core`, `docs.controlled`, `docs.storage_gb`
-- [ ] T003 Object paths, signed download tokens, upload streaming with hash and allowlist checks
+- [x] T001 `Documents` and `Documents.Contracts` projects; migration for libraries, folders, types, documents, versions and knowledge feedback (forced RLS)
+- [x] T002 Permissions `doc.contribute`, `doc.manage`, `kb.edit`; audit actions of section 13 for R1; capability keys `docs.core`, `docs.controlled`, `docs.storage_gb`
+- [x] T003 Object paths, signed download tokens, upload streaming with hash and allowlist checks
 
 ## Phase 2: User Story 1, store and find (P1)
-- [ ] T004 [P] [US1] Tests: required fields keep a checked-out draft; type and size refusal; quarantine on scan hit; sibling reader denied and hidden; metadata filters and saved views; cross-tenant
-- [ ] T005 [US1] Libraries, folders, types, upload, metadata and query endpoints; permission breaks
+- [x] T004 [P] [US1] Tests: required fields keep a checked-out draft; type and size refusal; quarantine on scan hit; sibling reader denied and hidden; metadata filters and saved views; cross-tenant
+- [x] T005 [US1] Libraries, folders, types, upload, metadata and query endpoints; permission breaks
 
 ## Phase 3: User Story 2, check-out and versions (P1)
 - [ ] T006 [P] [US2] Tests: exclusive check-out with holder shown; minor versions hidden from readers; forced check-in keeps a draft and is audited; compare for text formats; restore creates a version; recycle bin delete and restore

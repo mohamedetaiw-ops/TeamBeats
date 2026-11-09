@@ -388,7 +388,12 @@ public sealed class DirectorySyncTests(TenantWorld world)
         Assert.Equal(1, dependent.GetProperty("count").GetInt64());
 
         Assert.Equal(HttpStatusCode.NoContent, (await s.Tenant["admin"].Client.DeleteAsync($"/api/v1/integrations/connections/{s.Connection}?confirm=true")).StatusCode);
-        await world.Factory.Services.GetRequiredService<OutboxDispatcher>().DispatchBatchAsync(500, CancellationToken.None);
+        // The outbox is shared with every other test, so other suites' messages can sit ahead of this one: dispatch until
+        // it is handled or nothing is left to send.
+        var dispatcher = world.Factory.Services.GetRequiredService<OutboxDispatcher>();
+        while (await CountAsync(s, "select count(*) from identity.directory_user_link") > 0 && await dispatcher.DispatchBatchAsync(500, CancellationToken.None) > 0)
+        {
+        }
         Assert.Equal(0, await CountAsync(s, "select count(*) from identity.directory_user_link"));
         Assert.Equal(0, await CountAsync(s, "select count(*) from identity.directory_connection"));
         Assert.Equal(1, await CountAsync(s, $"select count(*) from identity.user_account where id = '{userId}'"));
