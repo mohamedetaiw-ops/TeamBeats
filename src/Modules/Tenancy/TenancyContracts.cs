@@ -20,6 +20,18 @@ public sealed class TenancyContracts(
         await session.QueryAsync("select ancestor_id from tenancy.org_closure where descendant_id = @d order by depth",
             new { d = unitId }, r => r.GetGuid(0), ct);
 
+    public async Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetPathsAsync(IEnumerable<Guid> unitIds, CancellationToken ct = default)
+    {
+        var ids = unitIds.Distinct().ToArray();
+        if (ids.Length == 0)
+        {
+            return new Dictionary<Guid, IReadOnlyList<Guid>>();
+        }
+        var rows = await session.QueryAsync("select descendant_id, ancestor_id from tenancy.org_closure where descendant_id = any(@ids) order by descendant_id, depth desc",
+            new { ids }, r => (Unit: r.GetGuid(0), Ancestor: r.GetGuid(1)), ct);
+        return rows.GroupBy(r => r.Unit).ToDictionary(g => g.Key, g => (IReadOnlyList<Guid>)g.Select(r => r.Ancestor).ToList());
+    }
+
     public async Task<IReadOnlySet<Guid>> GetSubtreesAsync(IEnumerable<Guid> unitIds, CancellationToken ct = default)
     {
         var ids = unitIds.Distinct().ToArray();

@@ -1014,3 +1014,62 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Controlled document format | Policies kept as a signed PDF (FR-003, second half) link a released spec 011 document in a later slice of this spec. |
 | One version at a time | A new version cannot be submitted while an approved one waits for its date. |
 | Owner leaves | Moving ownership to the compliance officer of the scope (edge case) comes with the people events in the campaign slice. |
+
+## Attestation campaigns (spec 025 T002, T005, T006)
+
+| Area | What was built |
+|---|---|
+| Launch | `POST /api/v1/policies/{id}/campaigns`: the owner or a compliance officer launches a campaign for the version in force with a deadline (30 days by default), the attestation text in every language of the version (the standard text by default), reminder days (7 and 2), late joiner days (14), excluded membership types and an audience inside the policy's own |
+| Members | Every person in the audience gets a member row, an inbox item (source `policy_attestation`) and a notice. Notices go out in batches of 500 through the outbox |
+| Attest | `POST /api/v1/policies/{id}/attest` records the version, campaign, language, text shown, channel (web or mobile) and a SHA-256 hash of the title, clauses and attestation text. Records have only select and insert grants, so the app role can neither change nor delete one |
+| Scheduler | The maintenance worker sends reminders on each reminder day, marks members overdue at their due date with `AttestationOverdue`, tells the person, and with `policy.campaigns` sends each manager one list of their people |
+| Audience changes | People who join the audience while a campaign is open get their own due date (now plus the late joiner days); people who leave are kept as left audience and drop out of the open list |
+| Revisions | When a material revision comes into force, compliance officers and the owner are told the open campaign is for the earlier version; they close it and launch one for the new version |
+| My policies | `GET /api/v1/me/policies` lists what applies to the person with action needed or accepted; `GET /api/v1/policies/{id}/attestation` gives the state for the policy page |
+| Inbox | Workflow contracts gain `IPersonalTaskSource`, so modules outside the engine add items to the unified inbox and its count |
+| Tests | `PolicyCampaignTests` (launch, exclusions, inbox and My policies, Arabic mobile attestation with hash, immutability, reminders, overdue with manager list, counts, remind, close, late joiner, leaver, material revision, one open campaign on `policy.core`, employee denial, cross-tenant) |
+
+| Item | Note |
+|---|---|
+| One campaign on `policy.core` | Without `policy.campaigns` a tenant has at most one open campaign at a time and no manager escalation. |
+| Re-attestation cycles | A person attests once per campaign, so a later campaign for the same version can ask again. Automatic yearly cycles are not built; a compliance officer relaunches by hand. |
+| Material revision | The open campaign is not closed automatically; the spec leaves the choice to compliance, so they are told and choose. |
+
+## Compliance view (spec 025 T007, T008)
+
+| Area | What was built |
+|---|---|
+| Completion | `GET /api/v1/policies/{id}/compliance?campaign=&unit=`: counts and the share attested for a campaign (by default the open one for the version in force, else the latest for it), by org unit with subtree roll-up, by location and by line manager. Without a unit it opens on the deepest unit everyone sits under, so one root organization opens on its subsidiaries; people with no unit are a line of their own |
+| Drill-down | `GET /api/v1/policies/{id}/compliance/people` filters by unit (subtree, or `direct=true` for the unit itself), location, manager (`none` for neither) and status, overdue first, in pages of up to 200 |
+| Per person | `GET /api/v1/policies/compliance/people/{userId}` lists every policy that applies to the person with what they owe and the last version attested and when |
+| Scope | Compliance officers see people placed in the units where they hold `policy.manage` (everyone at tenant scope); line managers see their direct and indirect reports. Anyone else is refused; a person outside the viewer's people is not found |
+| Remind | `POST /api/v1/policies/{id}/compliance/remind` reminds the viewer's people who still owe in an open campaign, all or the ones named, and is audited with the viewer's scope |
+| Contracts | `IOrganizationHierarchy.GetPathsAsync` gives unit paths in one read; `IProfiles.PlacementsAsync` gives location keys and current managers in one read |
+| Tests | `PolicyComplianceTests` (unit roll-up and drill-down, location and manager breakdowns, paging and filter validation, per-person view, org-scoped officer, line manager with remind, employee refusal, closed campaign, cross-tenant) |
+
+| Item | Note |
+|---|---|
+| Placement | A person counts under their primary unit, or their first membership without one; an org-scoped officer sees anyone with a membership in their units. |
+| Location labels | Breakdowns return location keys; the page shows the labels from `/api/v1/people/locations`. |
+| Comprehension answers | Comprehension checks are R2, so there are no answers to hide from managers yet. |
+| Scale | The view groups members in memory after three bulk reads. The 100,000 people target (section 14) gets a performance test with the pages slice; a stored summary can follow if it misses. |
+
+## Policy pages (spec 025 T011)
+
+| Area | What was built |
+|---|---|
+| Register | `/policies` lists what the person may see with ID, name, status, version in force, effective date, next review and owner, with search and a status filter. Compliance officers get "New policy" (`GET /api/v1/policies/rights`) |
+| New policy | `/policies/new`: ID, name per language, binding language, review cycle and an optional named approver; without one the compliance officers of the scope approve |
+| Editor | `/policies/{id}/edit`: title and clauses per language in tabs, levels 1 to 3, move up or down, material or minor, change note and effective date; save, submit, withdraw. A revision starts from the version in force with its clause keys |
+| Review | `/policies/{id}/review`, where the approval task links: each clause marked added, changed, unchanged or removed with the earlier text, clause comments, resolve for editors, and the decision for the task holder |
+| Policy page | `/policies/{id}` and `/policies/{id}/versions/{n}`: numbered clauses with anchors and contents, the binding language note, links to other languages, the superseded banner, the attest panel, version history, and the actions the API allows (`PolicyRights`, now with `compliance`) |
+| Campaigns | `/policies/{id}/campaigns` (and `/campaigns/{campaignId}` from notices): launch with deadline, reminder days and late joiner days, counts, remind, close |
+| Compliance | `/policies/{id}/compliance`: totals, breakdowns by unit (drill-down by unit), location and manager, the people list with status filter and paging, remind; `/policies/compliance/people/{userId}` for one person |
+| My policies | `/policies/my`: what to accept first with due dates, then everything else with the version accepted |
+| Inbox | Items of other modules now link to the page their source names; policy approval and attestation have their own type names |
+| Tests | `policies.spec.ts` (inbox link, My policies, reading with anchors and binding note, attest, version page, register) and `policy-authoring.spec.ts` (create, write in both languages, review with a comment, approve, launch, compliance down to one person), in English and Arabic with axe |
+
+| Item | Note |
+|---|---|
+| Clause blocks | The editor reuses the spec 009 block editor; headings and embeds are refused by the API for clauses with a message, since the clause title is the heading. |
+| No unit line | "See people" on the no unit line lists everyone, because the people filter has no "no unit" option yet. |

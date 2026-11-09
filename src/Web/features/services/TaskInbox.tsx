@@ -9,7 +9,7 @@ import "./services.css";
 
 /**
  * The task inbox (spec 016 US3, FR-007): everything waiting for the signed-in person, from form services and other
- * sources, with type, requester, age and due date, filterable by type. Each task opens its request to decide.
+ * sources, with type, requester, age and due date, filterable by type. Each task opens its request, or the page its source names, to decide.
  */
 export function TaskInbox({ items }: { items: InboxItem[] }) {
   const t = useTranslations("services.inbox");
@@ -34,6 +34,10 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
         return t("contentOwnerReview");
       case "content_retire":
         return t("contentRetire");
+      case "policy_approval":
+        return t("policyApproval");
+      case "policy_attestation":
+        return t("policyAttestation");
       default:
         return i.name;
     }
@@ -73,6 +77,10 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
                         <bdi dir="ltr">{i.number}</bdi>
                       </>
                     ) : null}
+                  </Link>
+                ) : i.link && /^\/(?!\/)/.test(i.link) ? (
+                  <Link href={i.link}>
+                    <bdi>{title}</bdi>
                   </Link>
                 ) : (
                   <bdi>{title}</bdi>

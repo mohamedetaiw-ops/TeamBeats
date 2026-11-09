@@ -105,8 +105,14 @@ public sealed record WorkingVersion(Guid Id, string State, DateTimeOffset? Reque
 
 public sealed record ScheduledVersion(Guid Id, int Number, DateTimeOffset EffectiveFrom);
 
-/// <summary>What the current user may do with a policy, so the page shows the right actions; the API checks again.</summary>
-public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History);
+/// <summary>
+/// What the current user may do with a policy, so the page shows the right actions; the API checks again.
+/// <see cref="Compliance"/>: they have people to follow in the compliance view, as a compliance officer or line manager.
+/// </summary>
+public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance);
+
+/// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>.</summary>
+public sealed record RegisterRights(bool Create);
 
 public sealed record PolicyView(
     Guid Id,
@@ -179,3 +185,108 @@ internal static class PolicyJson
 
     public static string Write<T>(T value) => JsonSerializer.Serialize(value, Options);
 }
+
+public static class MemberStatuses
+{
+    public const string Open = "open";
+    public const string Attested = "attested";
+    public const string Overdue = "overdue";
+    public const string LeftAudience = "left_audience";
+}
+
+public static class AttestationChannels
+{
+    public const string Web = "web";
+    public const string Mobile = "mobile";
+
+    public static readonly IReadOnlySet<string> Online = new HashSet<string>(StringComparer.Ordinal) { Web, Mobile };
+}
+
+/// <summary>
+/// A campaign launch (US2). Leave fields out for the defaults: a deadline 30 days on, the standard attestation text in
+/// every language of the version, reminders 7 and 2 days before, 14 days for late joiners, the policy's own audience.
+/// </summary>
+public sealed record CampaignRequest(
+    DateOnly? Deadline,
+    IReadOnlyDictionary<string, string>? AttestationText,
+    IReadOnlyList<int>? ReminderDays,
+    int? LateJoinerDays,
+    IReadOnlyList<string>? ExcludedMembershipTypes,
+    ContentAudience? Audience);
+
+public sealed record CampaignCounts(int Members, int Attested, int Open, int Overdue, int LeftAudience);
+
+public sealed record CampaignView(
+    Guid Id,
+    Guid PolicyId,
+    int Version,
+    ContentAudience Audience,
+    DateTimeOffset Deadline,
+    IReadOnlyDictionary<string, string> AttestationText,
+    IReadOnlyList<int> ReminderDays,
+    int LateJoinerDays,
+    IReadOnlyList<string> ExcludedMembershipTypes,
+    string Status,
+    PolicyPerson LaunchedBy,
+    DateTimeOffset LaunchedAt,
+    DateTimeOffset? ClosedAt,
+    CampaignCounts Counts);
+
+public sealed record AttestRequest(Guid? CampaignId, string? Locale, string? Channel);
+
+public sealed record AttestationView(Guid Id, Guid PolicyId, int Version, Guid? CampaignId, string Locale, string AttestationText, string TextHash, string Channel,
+    DateTimeOffset AttestedAt);
+
+/// <summary>An attestation the person still owes: the campaign, the version, the due date and the text to confirm.</summary>
+public sealed record AttestationDue(Guid CampaignId, int Version, DateTimeOffset DueAt, bool Overdue, IReadOnlyDictionary<string, string> Text);
+
+/// <summary>The current user's attestation state for one policy, for the policy page.</summary>
+public sealed record MyAttestation(AttestationDue? Due, int? LastVersion, DateTimeOffset? LastAt);
+
+/// <summary>One line of My policies: action needed when <see cref="Due"/> is set, accepted when the last attestation is for the version in force.</summary>
+public sealed record MyPolicyItem(PolicySummary Policy, int? CurrentVersion, DateTimeOffset? EffectiveFrom, AttestationDue? Due, int? AttestedVersion, DateTimeOffset? AttestedAt);
+
+/// <summary>Whose people a compliance view covers: the whole tenant, the viewer's units, or their reports as line manager.</summary>
+public static class ComplianceScopes
+{
+    public const string Tenant = "tenant";
+    public const string Units = "units";
+    public const string Reports = "reports";
+}
+
+public sealed record ComplianceCampaign(Guid Id, int Version, DateTimeOffset Deadline, string Status);
+
+/// <summary>Counts for a group, with the share attested of everyone still in the audience.</summary>
+public sealed record ComplianceCounts(int Members, int Attested, int Open, int Overdue, int LeftAudience, double Percent);
+
+/// <summary>
+/// One line of a breakdown. By unit: <see cref="UnitId"/> with its names, rolled up over its subtree, or
+/// <see cref="Direct"/> for people placed in the unit itself. By location: the location key. By manager: the manager.
+/// A null key collects people with no unit, location or manager.
+/// </summary>
+public sealed record ComplianceGroup(Guid? UnitId, IReadOnlyDictionary<string, string>? UnitNames, bool Direct, string? Location, PolicyPerson? Manager, ComplianceCounts Counts);
+
+public sealed record ComplianceView(
+    Guid PolicyId,
+    int? CurrentVersion,
+    ComplianceCampaign? Campaign,
+    IReadOnlyList<ComplianceCampaign> Campaigns,
+    string Scope,
+    Guid? Unit,
+    IReadOnlyList<Guid> UnitPath,
+    ComplianceCounts Totals,
+    IReadOnlyList<ComplianceGroup> ByUnit,
+    IReadOnlyList<ComplianceGroup> ByLocation,
+    IReadOnlyList<ComplianceGroup> ByManager);
+
+public sealed record CompliancePerson(PolicyPerson Person, Guid? UnitId, string? Location, Guid? ManagerId, string Status, DateTimeOffset DueAt, DateTimeOffset? AttestedAt,
+    DateTimeOffset? LeftAt);
+
+public sealed record CompliancePeople(IReadOnlyList<CompliancePerson> Items, int Total, int Offset, int Limit);
+
+/// <summary>The per-person view (US3 scenario 2): every policy that applies to them with the last version attested and when.</summary>
+public sealed record PersonCompliance(PolicyPerson Person, IReadOnlyList<MyPolicyItem> Policies);
+
+public sealed record ComplianceRemindRequest(Guid? CampaignId, IReadOnlyList<Guid>? UserIds);
+
+public sealed record ComplianceRemindResult(Guid CampaignId, int Recipients);

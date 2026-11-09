@@ -1,0 +1,204 @@
+/* Spec 025 policies. Colors and spacing come from tokens; logical properties keep the layout right in RTL. */
+.policies-nav ul,
+.policies-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.policies-toolbar .field {
+  flex: 1 1 12rem;
+}
+
+.policies-page,
+.policies-document {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.policies-document h1 {
+  margin: 0;
+}
+
+.policies-meta {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.policies-badge {
+  display: inline-block;
+  margin-inline-end: var(--tb-space-sm);
+  padding-inline: var(--tb-space-xs);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-text-primary);
+}
+
+.policies-banner {
+  padding: var(--tb-space-md);
+  border-inline-start: var(--tb-border-width-thick) solid var(--tb-color-state-warning);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+  color: var(--tb-color-text-primary);
+}
+
+.policies-banner p {
+  margin: 0;
+}
+
+.policies-card {
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+.policies-card h2 {
+  margin: 0;
+}
+
+.policies-toc ol {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding-inline-start: 0;
+  list-style: none;
+}
+
+.policies-toc li[data-level="2"] {
+  padding-inline-start: var(--tb-space-md);
+}
+
+.policies-toc li[data-level="3"] {
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.policies-clause {
+  display: grid;
+  gap: var(--tb-space-sm);
+  scroll-margin-block-start: var(--tb-space-xl);
+}
+
+.policies-clause h2,
+.policies-clause h3,
+.policies-clause h4 {
+  margin: 0;
+}
+
+.policies-clause[data-level="2"],
+.policies-clause[data-level="3"] {
+  padding-inline-start: var(--tb-space-md);
+}
+
+.policies-number {
+  margin-inline-end: var(--tb-space-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.policies-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+}
+
+.policies-table {
+  overflow-x: auto;
+}
+
+.policies-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.policies-table th,
+.policies-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+}
+
+.policies-list {
+  display: grid;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.policies-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.policies-tab {
+  min-block-size: 2.75rem;
+  padding-inline: var(--tb-space-md);
+  border: 0;
+  border-block-end: var(--tb-border-width-thick) solid transparent;
+  background: transparent;
+  color: var(--tb-color-text-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.policies-tab[aria-selected="true"] {
+  border-block-end-color: var(--tb-color-accent-base);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.policies-clause-editor {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+}
+
+.policies-clause-editor[data-level="2"] {
+  margin-inline-start: var(--tb-space-lg);
+}
+
+.policies-clause-editor[data-level="3"] {
+  margin-inline-start: var(--tb-space-xl);
+}
+
+.policies-clause-editor fieldset {
+  display: contents;
+}
+
+.policies-change {
+  display: inline-block;
+  padding-inline: var(--tb-space-xs);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+  color: var(--tb-color-text-primary);
+}
+
+.policies-change[data-change="added"] {
+  border-inline-start: var(--tb-border-width-thick) solid var(--tb-color-state-success);
+}
+
+.policies-change[data-change="removed"] {
+  border-inline-start: var(--tb-border-width-thick) solid var(--tb-color-state-danger);
+}
+
+.policies-change[data-change="changed"] {
+  border-inline-start: var(--tb-border-width-thick) solid var(--tb-color-state-warning);
+}
+
+.policies-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: var(--tb-space-md);
+}

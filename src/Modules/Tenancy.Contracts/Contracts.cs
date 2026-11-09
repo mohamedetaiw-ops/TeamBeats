@@ -34,6 +34,9 @@ public interface IOrganizationHierarchy
 
     Task<IReadOnlyList<Guid>> GetAncestorsAndSelfAsync(Guid unitId, CancellationToken ct = default);
 
+    /// <summary>For each requested unit, its path from the root down to the unit itself, in one read.</summary>
+    Task<IReadOnlyDictionary<Guid, IReadOnlyList<Guid>>> GetPathsAsync(IEnumerable<Guid> unitIds, CancellationToken ct = default);
+
     /// <summary>Descendants (including the unit) of each requested unit, as one set.</summary>
     Task<IReadOnlySet<Guid>> GetSubtreesAsync(IEnumerable<Guid> unitIds, CancellationToken ct = default);
 

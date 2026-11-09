@@ -4,6 +4,7 @@ using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Content.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Persistence;
@@ -101,6 +102,7 @@ public sealed class PolicyRegister(
     IOrganizationHierarchy hierarchy,
     ITenantSettingsReader tenantSettings,
     IProcessEngine engine,
+    IReportingLine reportingLine,
     IAuditWriter audit,
     IClock clock)
 {
@@ -483,7 +485,17 @@ public sealed class PolicyRegister(
             policy.EffectiveFrom, policy.NextReviewAt,
             working is null ? null : new WorkingVersion(working.Id, working.State, working.RequestedEffectiveFrom, working.SubmittedAt, working.UpdatedAt),
             scheduled is { Number: { } n, EffectiveFrom: { } from } && (edit || manage || history) ? new ScheduledVersion(scheduled.Id, n, from) : null,
-            new PolicyRights(manage, edit && policy.Status != PolicyStatuses.Retired, review, history), policy.CreatedAt, policy.UpdatedAt);
+            new PolicyRights(manage, edit && policy.Status != PolicyStatuses.Retired, review, history, await FollowsPeopleAsync(ct)), policy.CreatedAt, policy.UpdatedAt);
+    }
+
+    /// <summary>Whether the user has people in the compliance view: <c>policy.manage</c> somewhere, or reports.</summary>
+    internal async Task<bool> FollowsPeopleAsync(CancellationToken ct) =>
+        (await authz.CoverageAsync(Permissions.PolicyManage, ct)).Any || (await reportingLine.DirectReportsAsync(context.RequireUser(), ct)).Count > 0;
+
+    public async Task<RegisterRights> RightsAsync(CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.PolicyCore, ct);
+        return new RegisterRights((await authz.CoverageAsync(Permissions.PolicyManage, ct)).Any);
     }
 
     /// <summary>

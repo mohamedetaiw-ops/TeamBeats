@@ -54,7 +54,8 @@ public sealed class Tasks(
     IOutbox outbox,
     IClock clock,
     Requests requests,
-    IEnumerable<ITaskSource> sources)
+    IEnumerable<ITaskSource> sources,
+    IEnumerable<IPersonalTaskSource> personal)
 {
     public const int CommentMax = 2000;
     public const int InboxMax = 500;
@@ -152,10 +153,27 @@ public sealed class Tasks(
                 task.OnBehalfOf is { } delegator ? await PersonAsync(delegator, ct) : null, task.CreatedAt, task.DueAt, subject?.Title,
                 subject?.Link ?? (request is not null ? RequestNotifier.Link(request.Id) : null)));
         }
+        if (serviceId is null)
+        {
+            items.AddRange((await PersonalAsync(ct)).Select(p => new InboxItem(p.Id, p.Source, p.Source, null, null, null, null, null, null, null, null, p.CreatedAt, p.DueAt,
+                p.Title, p.Link)));
+        }
         return items;
     }
 
-    public async Task<InboxCount> CountAsync(CancellationToken ct) => new((await ActionableAsync(ct)).Count);
+    /// <summary>Tasks only the person can do themselves (a policy attestation); never a delegate's.</summary>
+    private async Task<List<PersonalTask>> PersonalAsync(CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var list = new List<PersonalTask>();
+        foreach (var source in personal)
+        {
+            list.AddRange(await source.OpenForAsync(user, ct));
+        }
+        return list;
+    }
+
+    public async Task<InboxCount> CountAsync(CancellationToken ct) => new((await ActionableAsync(ct)).Count + (await PersonalAsync(ct)).Count);
 
     /// <summary>Approves, rejects (a reason is required) or returns a task, and moves its request on.</summary>
     public async Task<UserTaskInfo> DecideAsync(Guid taskId, TaskDecision decision, CancellationToken ct)
