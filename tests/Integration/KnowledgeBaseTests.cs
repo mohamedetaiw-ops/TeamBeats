@@ -130,6 +130,11 @@ public sealed class KnowledgeBaseTests(TenantWorld world)
         Assert.Equal($"/content/read/{id}#steps", sections[1].GetProperty("link").GetString());
         Assert.Contains((await OkAsync(t["emp"].Client.GetAsync($"{Kb}/articles"))).EnumerateArray(),
             a => Id(a) == id && a.GetProperty("template").GetString() == "sop");
+        // The reader page gives each heading the same anchor, and the news feed keeps knowledge articles out unless asked.
+        var page = await OkAsync(t["emp"].Client.GetAsync($"{Items}/{id}/view"));
+        Assert.Equal(["purpose", "steps"], page.GetProperty("anchors").EnumerateArray().Select(a => a.GetString()!).ToArray());
+        Assert.DoesNotContain((await OkAsync(t["emp"].Client.GetAsync("/api/v1/content/feed"))).GetProperty("items").EnumerateArray(), i => Id(i) == id);
+        Assert.Contains((await OkAsync(t["emp"].Client.GetAsync("/api/v1/content/feed?type=knowledge"))).GetProperty("items").EnumerateArray(), i => Id(i) == id);
 
         // Arabic readers get the Arabic sections.
         (await t["dee"].Client.PutAsJsonAsync("/api/v1/me/preferences", new { locale = "ar" })).EnsureSuccessStatusCode();

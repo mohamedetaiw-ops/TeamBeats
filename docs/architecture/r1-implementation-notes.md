@@ -973,4 +973,5 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Unanswered questions | US4 scenario 4 logs questions the assistant cannot answer; it lands with the assistant (specs 013 and 014) and the gaps view of spec 021. |
 | Search indexing | Spec 029 search is not built yet; it will read `IKnowledgeIndex` when content is published. |
 | Anonymous comments | The spec says the owner sees the score and is silent on who wrote a comment; the smallest safe default shows comments without names. |
-| Reader anchors | The reader page gives headings the same anchors in slice 6, so the citation links land on the pair. |
+| Reader anchors | The reader view returns the anchor of each heading in order; the reader page sets them in slice 6, so citation links land on the pair. |
+| News feed | Spec 009 is silent on knowledge articles in the feed; the smallest safe default keeps them out of the unfiltered feed, and `type=knowledge` lists them. |

@@ -80,7 +80,8 @@ public sealed record ReaderView(
     bool Expired,
     bool Pinned,
     bool Featured,
-    bool UnderReview = false);
+    bool UnderReview = false,
+    IReadOnlyList<string>? Anchors = null);
 
 public sealed record VersionSummary(int Number, ContentPerson Author, ContentPerson? Approver, string? ChangeNote, bool Material, IReadOnlyList<string> Locales,
     DateTimeOffset CreatedAt, DateTimeOffset? PublishedAt, bool Current, bool Draft, int? RestoredFrom = null);
@@ -830,7 +831,8 @@ public sealed class Items(
     }
 
     /// <summary>
-    /// The live version for a reader, in their language or the fallback (US5 scenario 2). Drafts, scheduled and archived
+    /// The live version for a reader, in their language or the fallback (US5 scenario 2), with the anchor of each heading
+    /// in order, so citation links (spec 011 US4) land on the section. Drafts, scheduled and archived
     /// items, and items the reader may not view, are not found. Targeting is not access: anyone permitted may open it by
     /// link (section 3).
     /// </summary>
@@ -850,7 +852,8 @@ public sealed class Items(
         return new ReaderView(id, site.Id, item.Type, locale, locale != requestLocale.Locale, version.Variants.Keys.Order(StringComparer.Ordinal).ToList(),
             variant.Title, variant.Summary, variant.Body, number, item.PublishedAt ?? version.PublishedAt ?? version.CreatedAt,
             version.PublishedAt ?? version.CreatedAt, item.Status == ContentStatuses.Expired, item.Pinned, item.Featured,
-            (await sites.TypeAsync(item.Type, ct))!.UnderReviewLabel && item.ReviewDueAt is { } due && due <= clock.UtcNow);
+            (await sites.TypeAsync(item.Type, ct))!.UnderReviewLabel && item.ReviewDueAt is { } due && due <= clock.UtcNow,
+            BodyValidator.Sections(variant.Body).Select(s => s.Anchor).ToList());
     }
 
     /// <summary>The reader's locale, else the tenant default, else the item's primary locale.</summary>
