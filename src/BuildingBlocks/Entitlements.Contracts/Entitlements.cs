@@ -61,6 +61,11 @@ public static class Capabilities
     public const string PolicyCore = "policy.core";
     public const string PolicyCampaigns = "policy.campaigns";
     public const string AiPolicyQa = "ai.policy_qa";
+    public const string SearchCore = "search.core";
+    public const string SearchSemantic = "search.semantic";
+    public const string SearchFederated = "search.federated";
+    public const string SearchAiSummary = "search.ai_summary";
+    public const string SearchSavedAlerts = "search.saved_alerts";
 }
 
 /// <summary>Central entitlement check for the current tenant (spec 005). Unknown keys fail closed.</summary>

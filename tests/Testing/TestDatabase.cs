@@ -72,6 +72,10 @@ public sealed class TestDatabase : IAsyncDisposable
         {
             await conn.OpenAsync();
             await Exec(conn, "revoke all on schema public from public");
+            // pgvector is not a trusted extension, so the administrator creates it, as deploy/db/bootstrap.sql does.
+            await Exec(conn, "create schema if not exists extensions");
+            await Exec(conn, "create extension if not exists vector schema extensions");
+            await Exec(conn, "grant usage on schema extensions to tb_owner, tb_app");
         }
 
         await MigrationRunner.RunAsync(db.OwnerConnectionString, TeamBeatsModules.Migrations);

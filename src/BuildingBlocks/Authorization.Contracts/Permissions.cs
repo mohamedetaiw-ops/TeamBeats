@@ -91,6 +91,9 @@ public static class Permissions
     public const string PolicyAuthor = "policy.author";
     public const string PolicyManage = "policy.manage";
 
+    /// <summary>Best bets, synonyms, rebuilds and later the search settings of spec 012 (search administrator, tenant scope).</summary>
+    public const string SearchManage = "search.manage";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -121,6 +124,7 @@ public static class Permissions
         ContentAuthor, ContentPublishCritical, ContentAdmin,
         DocView, DocContribute, DocManage, KbEdit,
         PolicyAuthor, PolicyManage,
+        SearchManage,
     ];
 }
 

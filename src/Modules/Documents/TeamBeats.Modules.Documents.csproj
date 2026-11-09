@@ -15,6 +15,7 @@
     <ProjectReference Include="../Notifications.Contracts/TeamBeats.Modules.Notifications.Contracts.csproj" />
     <ProjectReference Include="../Workflow.Contracts/TeamBeats.Modules.Workflow.Contracts.csproj" />
     <ProjectReference Include="../Experience.Contracts/TeamBeats.Modules.Experience.Contracts.csproj" />
+    <ProjectReference Include="../Search.Contracts/TeamBeats.Modules.Search.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="TeamBeats.Unit.Tests" />

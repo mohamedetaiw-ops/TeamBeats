@@ -578,9 +578,14 @@ public sealed class PeopleService(
 
         var before = current.ToDictionary(p => p.Key, StringComparer.Ordinal);
         var sourceChanged = false;
+        var searchChanged = false;
         foreach (var policy in next)
         {
             var old = before.GetValueOrDefault(policy.Key);
+            if (PeopleSearchSource.Fields.Contains(policy.Key) && (old?.Visibility != policy.Visibility || old?.Source != policy.Source))
+            {
+                searchChanged = true;
+            }
             if (old?.Visibility != policy.Visibility)
             {
                 await audit.WriteAsync(new AuditEntry(AuditActions.PeopleVisibilityChanged, "profile_field", policy.Key,
@@ -618,6 +623,14 @@ public sealed class PeopleService(
         if (sourceChanged)
         {
             await store.RebuildSearchFieldsAsync(ct);
+        }
+        if (searchChanged)
+        {
+            // Search (spec 012) holds the fields everyone may see; a visibility change re-reads every card.
+            foreach (var id in await session.QueryAsync("select user_id from people.profile where active and membership_type <> 'guest'", null, r => r.GetGuid(0), ct))
+            {
+                await outbox.EnqueueAsync(new Search.Contracts.SearchItemChanged(PeopleSearchSource.SourceName, id), ct);
+            }
         }
         return await PolicyAsync(ct);
     }

@@ -29,5 +29,6 @@
     <ProjectReference Include="../Modules/AiGateway/TeamBeats.Modules.AiGateway.csproj" />
     <ProjectReference Include="../Modules/AiGateway.OpenRouter/TeamBeats.Modules.AiGateway.OpenRouter.csproj" />
     <ProjectReference Include="../Modules/Experience/TeamBeats.Modules.Experience.csproj" />
+    <ProjectReference Include="../Modules/Search/TeamBeats.Modules.Search.csproj" />
   </ItemGroup>
 </Project>

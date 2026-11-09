@@ -14,7 +14,7 @@ namespace TeamBeats.DevFakes;
 /// <c>[fake:refuse]</c> a content filter stop, <c>[fake:cut]</c> a stream that ends without a final chunk,
 /// <c>[fake:tool:name]</c> a call of tool <c>name</c>, <c>[fake:badjson]</c> plain text even when a JSON schema was asked
 /// for. With a <c>response_format</c> the reply is the JSON object <c>{"answer": ...}</c>. Streaming
-/// (<c>stream: true</c>) returns server-sent events.
+/// (<c>stream: true</c>) returns server-sent events. Embeddings are a bag of words (see <see cref="Embed"/>).
 /// </summary>
 public sealed partial class FakeOpenRouter : HttpMessageHandler
 {
@@ -154,11 +154,33 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
     };
 
     /// <summary>A deterministic 8-dimension vector, so similar inputs are equal and different inputs differ.</summary>
+    /// <summary>Embedding dimensions of the fake: small, and different from the 1536 of the real model, so both paths run.</summary>
+    public const int EmbeddingDimensions = 512;
+
+    /// <summary>
+    /// A deterministic bag of words: each word adds weight to one dimension picked by its hash, then the vector is scaled
+    /// to unit length. Texts that share words are close and texts with none in common are almost orthogonal, so semantic
+    /// search behaves predictably in tests without a model.
+    /// </summary>
     private static float[] Embed(string text)
     {
-        var hash = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(text.Trim().ToLowerInvariant()));
-        return Enumerable.Range(0, 8).Select(i => (hash[i] - 128) / 128f).ToArray();
+        var vector = new float[EmbeddingDimensions];
+        foreach (var word in WordPattern().Matches(text.ToLowerInvariant()).Select(m => m.Value))
+        {
+            var hash = System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(word));
+            vector[BitConverter.ToUInt32(hash, 0) % EmbeddingDimensions] += 1;
+        }
+        var length = MathF.Sqrt(vector.Sum(v => v * v));
+        if (length == 0)
+        {
+            vector[0] = 1;
+            return vector;
+        }
+        return [.. vector.Select(v => v / length)];
     }
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"[\p{L}\p{N}]+")]
+    private static partial System.Text.RegularExpressions.Regex WordPattern();
 
     private static HttpResponseMessage Error(HttpStatusCode status, string message) =>
         new(status) { Content = new StringContent(JsonSerializer.Serialize(new { error = new { code = (int)status, message } }), Encoding.UTF8, "application/json") };
