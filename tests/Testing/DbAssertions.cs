@@ -6,7 +6,11 @@ namespace TeamBeats.Testing;
 /// <summary>Direct database checks. Owner connections are subject to FORCE RLS too, so tenant reads set context first.</summary>
 public static class DbAssertions
 {
-    public static async Task<long> CountInTenantAsync(this TestDatabase db, Guid tenantId, string sql, params (string Name, object Value)[] args)
+    public static async Task<long> CountInTenantAsync(this TestDatabase db, Guid tenantId, string sql, params (string Name, object Value)[] args) =>
+        Convert.ToInt64(await db.ScalarInTenantAsync<object>(tenantId, sql, args));
+
+    /// <summary>One value read as the owner inside the tenant, so forced row security lets the row through.</summary>
+    public static async Task<T?> ScalarInTenantAsync<T>(this TestDatabase db, Guid tenantId, string sql, params (string Name, object Value)[] args)
     {
         await using var conn = new NpgsqlConnection(db.OwnerConnectionString);
         await conn.OpenAsync();
@@ -21,7 +25,8 @@ public static class DbAssertions
         {
             cmd.Parameters.AddWithValue(n, v);
         }
-        return Convert.ToInt64(await cmd.ExecuteScalarAsync());
+        var result = await cmd.ExecuteScalarAsync();
+        return result is null or DBNull ? default : (T)result;
     }
 
     /// <summary>Runs a statement as the schema owner inside a tenant context (simulates direct database access, for tamper tests).</summary>

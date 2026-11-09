@@ -102,9 +102,9 @@ public sealed class DocumentFiles(
 
     private DocumentAccess Access => libraries.Access;
 
-    private static string ObjectKey(Guid library, Guid document, Guid version) => $"documents/{library:N}/{document:N}/{version:N}";
+    internal static string ObjectKey(Guid library, Guid document, Guid version) => $"documents/{library:N}/{document:N}/{version:N}";
 
-    private static string CleanName(string? name)
+    internal static string CleanName(string? name)
     {
         var file = Path.GetFileName((name ?? string.Empty).Replace('\\', '/'));
         var safe = new string(file.Where(c => !char.IsControl(c) && c is not ('"' or '<' or '>' or '|' or ':' or '*' or '?')).ToArray()).Trim();
@@ -167,11 +167,7 @@ public sealed class DocumentFiles(
         try
         {
             await QuotaAsync(size, ct);
-            if (await session.ScalarAsync<bool>(
-                """
-                select exists (select 1 from documents.document_version v join documents.document d on d.id = v.document_id
-                  where v.library_id = @lib and v.content_hash = @hash and v.scan_state <> 'infected' and d.deleted_at is null)
-                """, new { lib = library.Id, hash }, ct))
+            if (await DuplicateAsync(library.Id, hash, null, ct))
             {
                 throw AppException.Conflict("conflict.documents.duplicate");
             }
@@ -182,16 +178,7 @@ public sealed class DocumentFiles(
             throw;
         }
 
-        string scan;
-        await using (var stored = await storage.OpenReadAsync(key, ct) ?? throw new InvalidOperationException("Stored file is missing."))
-        {
-            scan = await scanner.ScanAsync(stored, ct) switch
-            {
-                ScanVerdict.Clean => ScanStates.Clean,
-                ScanVerdict.Infected => ScanStates.Infected,
-                _ => ScanStates.Failed,
-            };
-        }
+        var scan = await ScanStoredAsync(key, ct);
 
         var checkIn = complete && scan == ScanStates.Clean;
         var (major, minor, state) = !checkIn ? (0, 0, VersionStates.Pending) : request.Publish ? (1, 0, VersionStates.Effective) : (0, 1, VersionStates.Draft);
@@ -240,8 +227,29 @@ public sealed class DocumentFiles(
         return await GetAsync(documentId, ct);
     }
 
+    /// <summary>Scans a stored file; anything but a clean verdict leaves it unusable.</summary>
+    internal async Task<string> ScanStoredAsync(string key, CancellationToken ct)
+    {
+        await using var stored = await storage.OpenReadAsync(key, ct) ?? throw new InvalidOperationException("Stored file is missing.");
+        return await scanner.ScanAsync(stored, ct) switch
+        {
+            ScanVerdict.Clean => ScanStates.Clean,
+            ScanVerdict.Infected => ScanStates.Infected,
+            _ => ScanStates.Failed,
+        };
+    }
+
+    /// <summary>Whether another live document of the library already holds this content.</summary>
+    internal Task<bool> DuplicateAsync(Guid libraryId, string hash, Guid? except, CancellationToken ct) =>
+        session.ScalarAsync<bool>(
+            """
+            select exists (select 1 from documents.document_version v join documents.document d on d.id = v.document_id
+              where v.library_id = @libraryId and v.content_hash = @hash and v.scan_state <> 'infected' and d.deleted_at is null
+                and d.id is distinct from @except)
+            """, new { libraryId, hash, except }, ct);
+
     /// <summary>Streams the body to storage, hashing and counting as it goes; anything over the limit is removed and refused.</summary>
-    private async Task<(string Hash, long Size)> StoreAsync(string key, Stream body, string contentType, long maxBytes, CancellationToken ct)
+    internal async Task<(string Hash, long Size)> StoreAsync(string key, Stream body, string contentType, long maxBytes, CancellationToken ct)
     {
         await using var counted = new HashingStream(body, maxBytes);
         try
@@ -262,7 +270,7 @@ public sealed class DocumentFiles(
     }
 
     /// <summary>The tenant's storage limit (<c>docs.storage_gb</c>): every stored version counts, including the one arriving.</summary>
-    private async Task QuotaAsync(long incoming, CancellationToken ct)
+    internal async Task QuotaAsync(long incoming, CancellationToken ct)
     {
         if (await entitlements.GetLimitAsync(Capabilities.DocsStorageGb, ct) is not { } gb)
         {
@@ -280,14 +288,14 @@ public sealed class DocumentFiles(
     /// Tells the uploader and the tenant's library managers that a file was quarantined. Managers holding
     /// <c>doc.manage</c> only at a unit are not reached yet: authorization lists holders at tenant scope only.
     /// </summary>
-    private async Task QuarantinedAsync(LibraryRow library, Guid documentId, Guid uploader, CancellationToken ct)
+    internal async Task QuarantinedAsync(LibraryRow library, Guid documentId, Guid uploader, CancellationToken ct)
     {
         var recipients = (await provisioning.TenantHoldersAsync(Permissions.DocManage, ct)).Append(uploader).Distinct().ToList();
         await notifications.SendAsync(new NotificationRequest(recipients, NotificationCategories.SecurityNotice, QuarantinedTemplate,
             $"/documents/libraries/{library.Id}", DedupeKey: $"documents.quarantined:{documentId}"), ct);
     }
 
-    private async Task<IReadOnlyList<FieldDefinition>> FieldsAsync(Guid libraryId, Guid? typeId, ValidationErrors errors, CancellationToken ct)
+    internal async Task<IReadOnlyList<FieldDefinition>> FieldsAsync(Guid libraryId, Guid? typeId, ValidationErrors errors, CancellationToken ct)
     {
         if (typeId is null)
         {
@@ -336,7 +344,7 @@ public sealed class DocumentFiles(
         return (library, doc, rights);
     }
 
-    private async Task<VersionView?> VersionAsync(Guid? id, CancellationToken ct) =>
+    internal async Task<VersionView?> VersionAsync(Guid? id, CancellationToken ct) =>
         id is null ? null : await session.QuerySingleOrDefaultAsync(
             "select id, major, minor, state, scan_state, size_bytes, content_type, file_name, note, author_user_id, created_at from documents.document_version where id = @id",
             new { id }, r => new VersionView(r.GetGuid(0), r.GetInt32(1), r.GetInt32(2), VersionLabels.Of(r.GetInt32(1), r.GetInt32(2)), r.GetString(3), r.GetString(4),

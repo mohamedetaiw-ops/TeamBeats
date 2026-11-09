@@ -21,6 +21,7 @@ public static class DocumentsModule
         services.AddScoped<Libraries>();
         services.AddScoped<DocumentFiles>();
         services.AddScoped<DocumentAccess>();
+        services.AddScoped<DocumentVersions>();
         services.AddScoped<IResourceDescriptorProvider, LibraryDescriptorProvider>();
         services.AddScoped<IResourceDescriptorProvider, FolderDescriptorProvider>();
         services.AddScoped<IResourceDescriptorProvider, DocumentDescriptorProviderForFiles>();
@@ -99,11 +100,7 @@ public static class DocumentsModule
         libraries.MapPost("/{id:guid}/files", async (Guid id, HttpRequest http, string? name, Guid? folder, Guid? type, string? metadata, string? classification, bool? publish,
             DocumentFiles files, IDbSession session, CancellationToken ct) =>
         {
-            if (http.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } size)
-            {
-                // The service enforces the library's limit while streaming; the server-wide cap is lifted to the largest allowed.
-                size.MaxRequestBodySize = FileTypes.DefaultMaxFileMb * 1024L * 1024L + 1;
-            }
+            LiftBodyLimit(http);
             var request = new UploadRequest(name, folder, type, ParseMetadata(metadata), classification, publish ?? false);
             var view = await files.UploadAsync(id, request, http.Body, http.ContentLength, ct);
             await session.CommitAsync(ct);
@@ -161,6 +158,77 @@ public static class DocumentsModule
             return Results.Ok(rights);
         });
 
+        root.MapPost("/{id:guid}/checkout", async (Guid id, DocumentVersions versions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await versions.CheckOutAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // The working copy is the request body, named in the query.
+        root.MapPut("/{id:guid}/working", async (Guid id, HttpRequest http, string? name, DocumentVersions versions, IDbSession session, CancellationToken ct) =>
+        {
+            LiftBodyLimit(http);
+            var view = await versions.SaveWorkingCopyAsync(id, name, http.Body, http.ContentLength, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).DisableAntiforgery();
+
+        // With a name the body is the new file; without one the saved working copy is checked in.
+        root.MapPost("/{id:guid}/checkin", async (Guid id, HttpRequest http, string? name, string? note, bool? publish, DocumentVersions versions, IDbSession session,
+            CancellationToken ct) =>
+        {
+            LiftBodyLimit(http);
+            var request = new CheckInRequest(note, publish ?? false);
+            var view = string.IsNullOrEmpty(name)
+                ? await versions.CheckInAsync(id, request, null, null, null, ct)
+                : await versions.CheckInAsync(id, request, name, http.Body, http.ContentLength, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).DisableAntiforgery();
+
+        root.MapPost("/{id:guid}/discard", async (Guid id, DocumentVersions versions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await versions.DiscardAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/force-checkin", async (Guid id, ForceCheckInRequest request, DocumentVersions versions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await versions.ForceCheckInAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/{id:guid}/versions", async (Guid id, DocumentVersions versions, CancellationToken ct) => Results.Ok(await versions.VersionsAsync(id, ct)));
+
+        root.MapGet("/{id:guid}/compare", async (Guid id, Guid from, Guid to, DocumentVersions versions, CancellationToken ct) =>
+            Results.Ok(await versions.CompareAsync(id, from, to, ct)));
+
+        root.MapPost("/{id:guid}/restore", async (Guid id, RestoreRequest request, DocumentVersions versions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await versions.RestoreAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapDelete("/{id:guid}", async (Guid id, DocumentVersions versions, IDbSession session, CancellationToken ct) =>
+        {
+            await versions.DeleteAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapPost("/{id:guid}/undelete", async (Guid id, DocumentVersions versions, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await versions.UndeleteAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        libraries.MapGet("/{id:guid}/recycle-bin", async (Guid id, DocumentVersions versions, CancellationToken ct) => Results.Ok(await versions.RecycleBinAsync(id, ct)));
+
         root.MapGet("/{id:guid}/download-token", async (Guid id, Guid? version, DocumentFiles files, IDbSession session, CancellationToken ct) =>
         {
             var token = await files.DownloadTokenAsync(id, version, ct);
@@ -179,6 +247,15 @@ public static class DocumentsModule
         });
 
         return app;
+    }
+
+    /// <summary>The service enforces the library's limit while streaming; the server-wide cap is lifted to the largest allowed.</summary>
+    private static void LiftBodyLimit(HttpRequest http)
+    {
+        if (http.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } size)
+        {
+            size.MaxRequestBodySize = FileTypes.DefaultMaxFileMb * 1024L * 1024L + 1;
+        }
     }
 
     private static IReadOnlyDictionary<string, JsonElement>? ParseMetadata(string? json)

@@ -16,3 +16,6 @@ public sealed record DocumentVersionPublished(Guid DocumentId, Guid LibraryId, G
 
 /// <summary>A folder or document gained or lost its own permissions, so search re-checks what sits under it.</summary>
 public sealed record DocumentPermissionsChanged(Guid LibraryId, string ResourceType, Guid ResourceId) : IIntegrationEvent;
+
+/// <summary>A document went to the recycle bin (spec 011 FR-018), so search and subscriptions stop showing it.</summary>
+public sealed record DocumentDeleted(Guid DocumentId, Guid LibraryId) : IIntegrationEvent;

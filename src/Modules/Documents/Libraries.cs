@@ -12,9 +12,9 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Documents;
 
-public sealed record DocumentSettingsView(IReadOnlyList<string> AllowedExtensions, int MaxFileMb, IReadOnlyList<string> KnownExtensions);
+public sealed record DocumentSettingsView(IReadOnlyList<string> AllowedExtensions, int MaxFileMb, int RecycleDays, IReadOnlyList<string> KnownExtensions);
 
-public sealed record DocumentSettingsRequest(IReadOnlyList<string>? AllowedExtensions, int? MaxFileMb);
+public sealed record DocumentSettingsRequest(IReadOnlyList<string>? AllowedExtensions, int? MaxFileMb, int? RecycleDays = null);
 
 public sealed record LibraryRequest(
     IReadOnlyDictionary<string, string>? Names,
@@ -86,6 +86,7 @@ public sealed class Libraries(
 {
     public const int MaxNameLength = 120;
     public const int MaxViews = 50;
+    public const int DefaultRecycleDays = 93;
 
     /// <summary>A permission change reaching more documents than this asks for confirmation first (section 14).</summary>
     public const int ConfirmAbove = 500;
@@ -95,9 +96,9 @@ public sealed class Libraries(
     // Settings
 
     internal async Task<DocumentSettingsView> TenantRulesAsync(CancellationToken ct) =>
-        await session.QuerySingleOrDefaultAsync("select allowed_extensions, max_file_mb from documents.settings", null,
-            r => new DocumentSettingsView(r.GetFieldValue<string[]>(0), r.GetInt32(1), FileTypes.Defaults), ct)
-        ?? new DocumentSettingsView(FileTypes.Defaults, FileTypes.DefaultMaxFileMb, FileTypes.Defaults);
+        await session.QuerySingleOrDefaultAsync("select allowed_extensions, max_file_mb, recycle_days from documents.settings", null,
+            r => new DocumentSettingsView(r.GetFieldValue<string[]>(0), r.GetInt32(1), r.GetInt32(2), FileTypes.Defaults), ct)
+        ?? new DocumentSettingsView(FileTypes.Defaults, FileTypes.DefaultMaxFileMb, DefaultRecycleDays, FileTypes.Defaults);
 
     public async Task<DocumentSettingsView> SettingsAsync(CancellationToken ct)
     {
@@ -117,18 +118,27 @@ public sealed class Libraries(
         {
             errors.Add("maxFileMb", "validation.documents.max_file_mb");
         }
+        var recycle = request.RecycleDays ?? DefaultRecycleDays;
+        if (recycle is < 30 or > 180)
+        {
+            errors.Add("recycleDays", "validation.documents.recycle_days");
+        }
         errors.ThrowIfAny();
         var before = await TenantRulesAsync(ct);
         await session.ExecAsync(
             """
-            insert into documents.settings (tenant_id, allowed_extensions, max_file_mb, updated_at, updated_by)
-            values (platform.current_tenant_id(), @extensions, @max, @now, @by)
+            insert into documents.settings (tenant_id, allowed_extensions, max_file_mb, recycle_days, updated_at, updated_by)
+            values (platform.current_tenant_id(), @extensions, @max, @recycle, @now, @by)
             on conflict (tenant_id) do update set allowed_extensions = excluded.allowed_extensions, max_file_mb = excluded.max_file_mb,
-              updated_at = excluded.updated_at, updated_by = excluded.updated_by
-            """, new { extensions = extensions.ToArray(), max, now = clock.UtcNow, by = context.ActorId }, ct);
+              recycle_days = excluded.recycle_days, updated_at = excluded.updated_at, updated_by = excluded.updated_by
+            """, new { extensions = extensions.ToArray(), max, recycle, now = clock.UtcNow, by = context.ActorId }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.DocSettingsChanged, "document_settings", null,
-            Changes: new { before = new { before.AllowedExtensions, before.MaxFileMb }, after = new { allowedExtensions = extensions, maxFileMb = max } }), ct);
-        return new DocumentSettingsView(extensions, max, FileTypes.Defaults);
+            Changes: new
+            {
+                before = new { before.AllowedExtensions, before.MaxFileMb, before.RecycleDays },
+                after = new { allowedExtensions = extensions, maxFileMb = max, recycleDays = recycle },
+            }), ct);
+        return new DocumentSettingsView(extensions, max, recycle, FileTypes.Defaults);
     }
 
     /// <summary>Normalized extensions, each one allowed by the outer list; null when none were given.</summary>

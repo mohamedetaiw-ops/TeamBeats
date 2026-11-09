@@ -1,8 +1,8 @@
 using System.Text.RegularExpressions;
 
-namespace TeamBeats.Modules.Content;
+namespace TeamBeats.Primitives;
 
-/// <summary>A run of text in a compare: kept, added or removed (US4 scenario 1).</summary>
+/// <summary>A run of text in a compare: kept, added or removed (spec 009 US4 scenario 1, spec 011 US2 scenario 4).</summary>
 public sealed record DiffSegment(string Op, string Text)
 {
     public const string Equal = "equal";
