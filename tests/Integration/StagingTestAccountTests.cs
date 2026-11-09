@@ -61,6 +61,9 @@ public sealed class StagingTestAccountTests(TenantWorld world) : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var token = DevHostFactory.SessionToken(response);
         Assert.NotNull(token);
+        // Staging opens the fake Outlook connect next, so the admin's mail and calendar are filled after every sign-in.
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("/api/v1/me/outlook/connect?silent=true&returnTo=%2F", body.GetProperty("next").GetString());
 
         // The admin appointment from the seeded tenant was claimed: tenant administration works.
         var settings = await _staging.Tenant(TenantKey, token).GetAsync("/api/v1/tenant/settings");
