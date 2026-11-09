@@ -83,6 +83,11 @@ public static class Permissions
     public const string DocManage = "doc.manage";
     public const string KbEdit = "kb.edit";
 
+    // Spec 025 (R1): policy owners draft and revise their policies; compliance officers manage the register, campaigns
+    // and the compliance view at tenant or org scope.
+    public const string PolicyAuthor = "policy.author";
+    public const string PolicyManage = "policy.manage";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -112,6 +117,7 @@ public static class Permissions
         ServiceManage, ServiceRequestOnBehalf,
         ContentAuthor, ContentPublishCritical, ContentAdmin,
         DocView, DocContribute, DocManage, KbEdit,
+        PolicyAuthor, PolicyManage,
     ];
 }
 
@@ -132,5 +138,6 @@ public static class BuiltInRoles
     public const string PagePublisher = "page_publisher";
     public const string BrandManager = "brand_manager";
     public const string HrOfficer = "hr_officer";
+    public const string ComplianceOfficer = "compliance_officer";
 
 }

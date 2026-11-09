@@ -1,4 +1,5 @@
 using TeamBeats.Modules.Content;
+using TeamBeats.Modules.Content.Contracts;
 using TeamBeats.Primitives;
 using Xunit;
 

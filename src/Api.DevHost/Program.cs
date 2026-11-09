@@ -53,6 +53,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Documents.DocumentMaintenanceWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Policies.PolicyMaintenanceWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Policies.PolicyMaintenanceWorker>();
+        }
         var app = builder.Build();
         app.UseTeamBeatsApi(endpoints =>
         {

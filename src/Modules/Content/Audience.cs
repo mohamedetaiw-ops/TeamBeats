@@ -5,34 +5,6 @@ using TeamBeats.Primitives;
 
 namespace TeamBeats.Modules.Content;
 
-/// <summary>An org unit target: the unit itself, or the unit and everything below it.</summary>
-public sealed record UnitTarget(Guid Id, bool Subtree = true);
-
-/// <summary>
-/// One clause of an audience. Every criterion that is given must match (AND); inside a criterion any listed value
-/// matches. Locations come from the people profile (spec 010), groups from the directory (spec 003), roles from role
-/// assignments (spec 004). Profile attributes and channels are stored for later releases and refused until then.
-/// </summary>
-public sealed record AudienceClause(
-    IReadOnlyList<UnitTarget>? OrgUnits = null,
-    IReadOnlyList<string>? Locations = null,
-    IReadOnlyList<Guid>? Groups = null,
-    IReadOnlyList<string>? Roles = null,
-    IReadOnlyList<string>? MembershipTypes = null,
-    IReadOnlyDictionary<string, IReadOnlyList<string>>? Attributes = null,
-    IReadOnlyList<string>? Channels = null);
-
-/// <summary>
-/// Who an item targets (FR-005): any clause matches (OR). No clauses means everyone in the tenant. Targeting decides
-/// what appears in a feed, never who may read: access is checked apart from it (constitution II).
-/// </summary>
-public sealed record ContentAudience(IReadOnlyList<AudienceClause>? AnyOf = null)
-{
-    public static readonly ContentAudience Everyone = new();
-
-    public bool IsEveryone => AnyOf is not { Count: > 0 };
-}
-
 /// <summary>What an audience is evaluated on for one person.</summary>
 public sealed record AudienceFacts(
     IReadOnlySet<Guid> DirectUnits,
@@ -126,5 +98,46 @@ public sealed class AudienceFactsLoader(
         var facts = new AudienceFacts(direct, all, location, await roles.GroupIdsOfAsync(user, ct), roleKeys, (await memberships.GetAsync(user, ct))?.MembershipType);
         cache[user] = facts;
         return facts;
+    }
+}
+
+/// <summary>The spec 009 audience model for other modules, and for critical announcements in this one.</summary>
+public sealed class Audiences(AudienceFactsLoader facts, ITenantMemberships memberships, IOrganizationHierarchy hierarchy) : IAudiences
+{
+    public void Validate(ContentAudience? audience, string field, ValidationErrors errors) => AudienceRules.Validate(audience, field, errors);
+
+    public async Task<bool> IncludesAsync(ContentAudience audience, Guid userId, CancellationToken ct = default) =>
+        (await memberships.GetAsync(userId, ct))?.Status == MembershipStatus.Active
+        && (audience.IsEveryone || AudienceRules.Matches(audience, await facts.ForAsync(userId, ct)));
+
+    /// <summary>
+    /// Active members the audience matches. When every clause names org units, only members of those units are
+    /// evaluated; otherwise every active member is.
+    /// </summary>
+    public async Task<IReadOnlySet<Guid>> MembersAsync(ContentAudience audience, CancellationToken ct = default)
+    {
+        var active = (await memberships.ListAsync(ct)).Where(m => m.Status == MembershipStatus.Active).Select(m => m.UserId).ToHashSet();
+        if (audience.IsEveryone)
+        {
+            return active;
+        }
+        IEnumerable<Guid> candidates = active;
+        if (audience.AnyOf!.All(c => c.OrgUnits is { Count: > 0 }))
+        {
+            var units = audience.AnyOf!.SelectMany(c => c.OrgUnits!).ToList();
+            var subtrees = await hierarchy.GetSubtreesAsync(units.Where(u => u.Subtree).Select(u => u.Id), ct);
+            var all = subtrees.Concat(units.Where(u => !u.Subtree).Select(u => u.Id)).Distinct().ToList();
+            var members = await hierarchy.GetMemberUserIdsAsync(all, ct);
+            candidates = active.Where(members.Contains);
+        }
+        var result = new HashSet<Guid>();
+        foreach (var user in candidates)
+        {
+            if (AudienceRules.Matches(audience, await facts.ForAsync(user, ct)))
+            {
+                result.Add(user);
+            }
+        }
+        return result;
     }
 }

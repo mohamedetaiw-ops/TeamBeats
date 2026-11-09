@@ -991,3 +991,26 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 |---|---|
 | Picking a library | The component takes the library ID as a property, like the rich text component takes an item ID; a picker in the builder can come with the builder's data pickers. |
 | Compare view | Text compare exists in the API (`/compare`); the page lists versions with download and restore, and a side by side compare view can follow. |
+
+## Policy register, versions and approval (spec 025 T001 to T004)
+
+| Area | What was built |
+|---|---|
+| Module | `Policies` and `Policies.Contracts` with schema `policies`: register, categories, versions with clauses, clause comments, and the campaign, member and attestation tables for T005 and T006. Attestations have only select and insert grants for the app role |
+| Register | `/api/v1/policies`: compliance officers (`policy.manage` at the policy's unit or above) create and change entries with ID, names, category, owner, unit, audience, classification, binding language, route, review cycle and related policies. The owner must hold `policy.author` there. The list shows what the person manages, owns, or is published for them |
+| Versions | A version holds its titles and clauses in every language of the version. Clauses have a level (1 to 3) that gives the number (4, 4.2, 4.2.1) and a key that gives a stable anchor (`clause-{key}`) across versions. Clause bodies use the spec 009 body document with paragraphs, lists, quotes, tables and links |
+| Approval | Submitting runs the policy's route on the engine with tasks in the inbox (source `policy_approval`). The owner, everyone who edited the draft and the submitter are never candidates. Approvers read the draft, compare it clause by clause with the version in force, and comment on clauses; a returned version is a draft again with its comments |
+| Publishing | Final approval gives the next number and the effective date (now, or the requested day in the tenant's time zone). The maintenance worker puts it in force on the date, supersedes the version before it, sets the next review date and sends `PolicyPublished` and `PolicySuperseded` |
+| Reading | Versions in force are readable by the people the policy applies to, with the binding language for the note on other languages and, on a superseded version, the number in force for the banner |
+| Shared model | The spec 009 body document and audience model moved to `Content.Contracts`; Content implements `IAudiences` so Policies evaluates audiences without reading Content's tables |
+| Tests | `PolicyApprovalTests` (route, compare, comments, effective date, supersede, no self-approval, variants together, register checks, unit boundary, scoped compliance officer, cross-tenant), `PolicyRulesTests`, `PermissionBackfillTests.Policy_backfill_adds_the_compliance_officer_role_and_policy_permissions_to_an_older_tenant` |
+
+| Item | Note |
+|---|---|
+| Compliance officer role | The spec names compliance officers by permission only. A built-in `compliance_officer` role (`policy.author`, `policy.manage`, `org.view`, `people.view`) makes the permission easy to grant at tenant or org scope; tenant administrators hold both permissions. |
+| Default route | A policy with no route gets one step: the compliance officers at the policy's unit. |
+| Material change | The owner sets material or minor on the draft; the last approver confirms it by approving the version, which shows the flag. A separate confirmation control can follow if customers ask. |
+| Unit policies | A policy owned by a unit with no audience applies to that unit and everything below it, so a subsidiary policy never reaches a sibling. |
+| Controlled document format | Policies kept as a signed PDF (FR-003, second half) link a released spec 011 document in a later slice of this spec. |
+| One version at a time | A new version cannot be submitted while an approved one waits for its date. |
+| Owner leaves | Moving ownership to the compliance officer of the scope (edge case) comes with the people events in the campaign slice. |

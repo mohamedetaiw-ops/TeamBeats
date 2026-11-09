@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 using Npgsql;
 using TeamBeats.Modules.Authorization;
 using TeamBeats.Testing;
@@ -87,6 +88,31 @@ public sealed class PermissionBackfillTests(TenantWorld world)
 
         Assert.Equal(HttpStatusCode.OK, (await old["admin"].Client.GetAsync("/api/v1/hr/calendars")).StatusCode);
         Assert.Equal(1, await CountAsync(old.Id, "select count(*) from authz.role where key = 'hr_officer'"));
+    }
+
+    [Fact]
+    public async Task Policy_backfill_adds_the_compliance_officer_role_and_policy_permissions_to_an_older_tenant()
+    {
+        var old = await world.CreateTenantAsync("bfpo-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        await world.Database.OwnerExecAsync(
+            """
+            select set_config('app.tenant_id', @t, false);
+            delete from authz.role_permission where permission_key like 'policy.%';
+            delete from authz.role_permission where role_id in (select id from authz.role where key = 'compliance_officer');
+            delete from authz.role where key = 'compliance_officer';
+            update authz.grants_version set version = version + 1;
+            """, ("t", old.Id.ToString()));
+        var create = new { code = "BF-1", names = new Dictionary<string, string> { ["en"] = "Code of conduct" } };
+        Assert.Equal(HttpStatusCode.Forbidden, (await old["admin"].Client.PostAsJsonAsync("/api/v1/policies", create)).StatusCode);
+
+        var script = AuthorizationModule.Migrations.Scripts().Single(s => s.Name.StartsWith("0015_", StringComparison.Ordinal)).Sql;
+        await world.Database.OwnerExecAsync(script);
+        await world.Database.OwnerExecAsync(script);
+
+        Assert.Equal(HttpStatusCode.Created, (await old["admin"].Client.PostAsJsonAsync("/api/v1/policies", create)).StatusCode);
+        Assert.Equal(1, await CountAsync(old.Id, "select count(*) from authz.role where key = 'compliance_officer'"));
+        Assert.Equal(4, await CountAsync(old.Id,
+            "select count(*) from authz.role_permission p join authz.role r on r.id = p.role_id where r.key = 'compliance_officer'"));
     }
 
     [Fact]

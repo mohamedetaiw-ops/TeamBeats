@@ -1,0 +1,118 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Messaging;
+using TeamBeats.Persistence;
+using TeamBeats.TenantContext;
+
+namespace TeamBeats.Modules.Policies;
+
+/// <summary>Policy management (spec 025, module map: Policies).</summary>
+public static class PoliciesModule
+{
+    public static readonly MigrationSource Migrations = new("policies", typeof(PoliciesModule).Assembly);
+
+    public static IServiceCollection AddPoliciesModule(this IServiceCollection services)
+    {
+        services.AddScoped<PolicyRegister>();
+        services.AddScoped<PolicyApprovals>();
+        services.AddScoped<PolicyTaskSource>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<PolicyTaskSource>());
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
+        return services;
+    }
+
+    public static IEndpointRouteBuilder MapPoliciesEndpoints(this IEndpointRouteBuilder app)
+    {
+        var root = app.MapGroup("/api/v1/policies").RequireTenantUser().WithTags("Policies");
+
+        root.MapGet("/categories", async (PolicyRegister register, CancellationToken ct) => Results.Ok(await register.CategoriesAsync(ct)));
+
+        root.MapPost("/categories", async (CategoryRequest request, PolicyRegister register, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await register.CreateCategoryAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/policies/categories/{view.Id}", view);
+        });
+
+        root.MapGet("", async (Guid? category, string? status, string? q, PolicyRegister register, CancellationToken ct) =>
+            Results.Ok(await register.ListAsync(category, status, q, ct)));
+
+        root.MapPost("", async (PolicyRequest request, PolicyRegister register, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await register.CreateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/policies/{view.Id}", view);
+        });
+
+        root.MapGet("/{id:guid}", async (Guid id, PolicyRegister register, CancellationToken ct) => Results.Ok(await register.GetAsync(id, ct)));
+
+        root.MapPut("/{id:guid}", async (Guid id, PolicyRequest request, PolicyRegister register, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await register.UpdateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/retire", async (Guid id, PolicyRegister register, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await register.RetireAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/{id:guid}/current", async (Guid id, PolicyRegister register, CancellationToken ct) => Results.Ok(await register.CurrentAsync(id, ct)));
+
+        root.MapGet("/{id:guid}/versions", async (Guid id, PolicyRegister register, CancellationToken ct) => Results.Ok(await register.HistoryAsync(id, ct)));
+
+        root.MapGet("/{id:guid}/versions/{number:int}", async (Guid id, int number, PolicyRegister register, CancellationToken ct) =>
+            Results.Ok(await register.NumberedAsync(id, number, ct)));
+
+        root.MapGet("/{id:guid}/draft", async (Guid id, PolicyApprovals approvals, CancellationToken ct) => Results.Ok(await approvals.DraftAsync(id, ct)));
+
+        root.MapPut("/{id:guid}/draft", async (Guid id, DraftRequest request, PolicyApprovals approvals, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await approvals.SaveDraftAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/submit", async (Guid id, SubmitRequest request, PolicyApprovals approvals, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await approvals.SubmitAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/withdraw", async (Guid id, PolicyApprovals approvals, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await approvals.WithdrawAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/{id:guid}/compare", async (Guid id, PolicyApprovals approvals, CancellationToken ct) => Results.Ok(await approvals.CompareAsync(id, ct)));
+
+        root.MapGet("/{id:guid}/drafts/{versionId:guid}/comments", async (Guid id, Guid versionId, PolicyApprovals approvals, CancellationToken ct) =>
+            Results.Ok(await approvals.CommentsAsync(id, versionId, ct)));
+
+        root.MapPost("/{id:guid}/drafts/{versionId:guid}/comments", async (Guid id, Guid versionId, CommentRequest request, PolicyApprovals approvals, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await approvals.AddCommentAsync(id, versionId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/policies/{id}/drafts/{versionId}/comments/{view.Id}", view);
+        });
+
+        root.MapPost("/{id:guid}/drafts/{versionId:guid}/comments/{commentId:guid}/resolve", async (Guid id, Guid versionId, Guid commentId, PolicyApprovals approvals,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await approvals.ResolveCommentAsync(id, versionId, commentId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        return app;
+    }
+}
