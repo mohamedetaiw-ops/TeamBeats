@@ -26,7 +26,11 @@ public static class SearchModule
         services.AddScoped<SearchService>();
         services.AddScoped<SearchRebuilds>();
         services.AddScoped<SearchTuning>();
-        services.AddScoped<ISearchRetrieval, SearchRetrieval>();
+        services.AddScoped<SearchRetrieval>();
+        services.AddScoped<ISearchRetrieval>(sp => sp.GetRequiredService<SearchRetrieval>());
+        services.AddScoped<IRetrievalEvaluation>(sp => sp.GetRequiredService<SearchRetrieval>());
+        services.AddScoped<RetrievalStore>();
+        services.AddScoped<RetrievalConfigs>();
         // Changes and deletions reach the index within 5 minutes (FR-006); later ones are counted for the operators' alert.
         services.AddConsumerLagObjective("search.index_", SearchIndexer.LagObjective);
         services.AddMessageHandler<SearchItemChanged, SearchIndexer>("search.index_item");
@@ -46,6 +50,8 @@ public static class SearchModule
         services.AddMessageHandler<TeamBeats.Modules.Identity.Contracts.UserProvisioned, SearchIndexer>("search.index_user_provisioned");
         services.AddMessageHandler<TeamBeats.Modules.Identity.Contracts.UserDeprovisioned, SearchIndexer>("search.index_user_deprovisioned");
         services.AddMessageHandler<SearchRebuildRequested, SearchRebuilds>("search.rebuild");
+        services.AddMessageHandler<RetrievalShadowBuildRequested, RetrievalShadowBuilder>("search.retrieval_shadow_build");
+        services.AddMessageHandler<TeamBeats.Modules.Evaluation.Contracts.EvaluationRetrievalGateDecided, RetrievalGateDecisions>("search.retrieval_gate_decided");
         return services;
     }
 
@@ -70,6 +76,30 @@ public static class SearchModule
             var view = await rebuilds.RequestAsync(ct);
             await session.CommitAsync(ct);
             return Results.Accepted($"/api/v1/search/rebuilds", view);
+        });
+
+        // Retrieval configuration with its shadow index and release gate (US3 scenario 3, FR-008).
+        root.MapGet("/retrieval-config", async (RetrievalConfigs configs, CancellationToken ct) => Results.Ok(await configs.GetAsync(ct)));
+
+        root.MapPost("/retrieval-config", async (RetrievalChangeRequest request, RetrievalConfigs configs, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await configs.ProposeAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Accepted("/api/v1/search/retrieval-config", view);
+        });
+
+        root.MapPost("/retrieval-config/{id:guid}/apply", async (Guid id, RetrievalApplyRequest request, RetrievalConfigs configs, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await configs.ApplyAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/retrieval-config/{id:guid}/cancel", async (Guid id, RetrievalConfigs configs, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await configs.CancelAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         // Best bets and synonyms (US4, FR-010).

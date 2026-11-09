@@ -1053,5 +1053,15 @@
   "notifications.template.policies.analytics.reminder.title": "تذكير بسياسة تنطبق عليك",
   "notifications.template.policies.analytics.reminder.body": "افتح السياسة لقراءتها، وأكدها إذا طُلب منك ذلك.",
   "validation.analytics.group": "اختر مجموعة من التوزيع.",
-  "admin.nav.analytics": "التحليلات"
+  "admin.nav.analytics": "التحليلات",
+  "conflict.search.retrieval_change_open": "يوجد تغيير في الاسترجاع ينتظر بالفعل. طبّقه أو ألغه قبل اقتراح تغيير آخر.",
+  "conflict.search.retrieval_gate_running": "ما زالت بوابة الإصدار تفحص هذا التغيير. يمكنك تطبيقه مع ذكر السبب بعد أن تبلغ البوابة عن إخفاقات مانعة أو تعجز عن الاكتمال.",
+  "conflict.search.retrieval_gate_critical": "وجدت بوابة الإصدار إخفاقًا حرجًا، لذلك لا يمكن تطبيق هذا التغيير.",
+  "conflict.search.retrieval_change_decided": "تم البت في هذا التغيير بالفعل.",
+  "conflict.search.retrieval_change_not_gating": "تغيير الاسترجاع هذا لا ينتظر بوابة الإصدار.",
+  "validation.search.passage_tokens": "استخدم حجم مقطع من 100 إلى 1000 رمز.",
+  "validation.search.overlap": "استخدم تداخلًا من 0 إلى 50 بالمئة.",
+  "validation.search.embedding_model": "أدخل معرّف نموذج حتى 100 حرف من الأحرف والأرقام والرموز . _ : / -",
+  "validation.search.retrieval_unchanged": "غيّر إعدادًا واحدًا على الأقل.",
+  "validation.search.override_reason": "اكتب سببًا من 10 إلى 1000 حرف."
 }

@@ -48,3 +48,10 @@ public sealed record EvaluationRouteGateDecided(Guid RouteChangeId, string Resul
 
 /// <summary>A judge calibration was asked for (spec 034 US8); the worker measures it in the background.</summary>
 public sealed record CalibrationRequested(Guid CalibrationId) : TeamBeats.Primitives.IIntegrationEvent;
+
+/// <summary>
+/// The release gate decided a proposed retrieval configuration (spec 034 US5 scenario 5, spec 012 FR-008): the
+/// retrieval cases of the published agents ran against the shadow index. <paramref name="Result"/> is passed, failed
+/// (blocking failures only), incomplete or failed_critical; <paramref name="Failures"/> names them as "retrieval/metric:locale".
+/// </summary>
+public sealed record EvaluationRetrievalGateDecided(Guid ChangeId, string Result, IReadOnlyList<string> Failures) : TeamBeats.Primitives.IIntegrationEvent;

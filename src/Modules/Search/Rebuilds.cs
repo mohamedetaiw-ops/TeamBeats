@@ -18,7 +18,7 @@ public sealed record RebuildView(Guid Id, DateTimeOffset RequestedAt, DateTimeOf
 /// Starting and finishing are operational events (section 13) written to the log.
 /// </summary>
 public sealed class SearchRebuilds(IDbSession session, ITenantContext context, IAuthorizationService authz, IOutbox outbox, IEnumerable<ISearchSource> sources,
-    SearchIndexer indexer, IClock clock, ILogger<SearchRebuilds> logger) : IMessageHandler<SearchRebuildRequested>
+    SearchIndexer indexer, RetrievalStore store, IClock clock, ILogger<SearchRebuilds> logger) : IMessageHandler<SearchRebuildRequested>
 {
     public const int PageSize = 200;
 
@@ -78,6 +78,11 @@ public sealed class SearchRebuilds(IDbSession session, ITenantContext context, I
         // Rows of items no owner lists any more were not touched by this rebuild.
         await session.ExecAsync("delete from search.unit where synced_at < @started", new { started }, ct);
         await session.ExecAsync("delete from search.item_state where synced_at < @started", new { started }, ct);
+        if (await store.OpenAsync(ct) is { Status: not RetrievalChangeStatuses.Building })
+        {
+            // The indexer wrote every listed item to the shadow index of the open change too.
+            await session.ExecAsync("delete from search.shadow_unit where synced_at < @started", new { started }, ct);
+        }
         await session.ExecAsync("update search.rebuild set completed_at = @now, items = @items, units = @units where id = @id",
             new { id = message.RebuildId, now = clock.UtcNow, items, units }, ct);
         logger.LogInformation("search.rebuild_completed tenant {Tenant} rebuild {Rebuild} items {Items} units {Units}", context.TenantId, message.RebuildId, items, units);

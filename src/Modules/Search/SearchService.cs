@@ -33,7 +33,7 @@ internal sealed record Candidate(string Source, Guid ItemId, string Kind, DateTi
 /// any number (two-stage permission filtering of the plan).
 /// </summary>
 public sealed class SearchService(IDbSession session, ITenantContext context, IEntitlementService entitlements, IEnumerable<ISearchSource> sources,
-    IAiGateway gateway, SearchTuning tuning, IAnalyticsEvents analytics, ILogger<SearchService> logger)
+    IAiGateway gateway, SearchTuning tuning, IAnalyticsEvents analytics, RetrievalStore store, ILogger<SearchService> logger)
 {
     public const int PageSize = 20;
     public const int MaxPages = 50;
@@ -43,7 +43,7 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
 
     /// <summary>
     /// Passages farther than this cosine distance from the query are not semantic matches, so a query about nothing in the
-    /// index still finds nothing (US1 scenario 5). The default until the retrieval configuration of the plan holds it.
+    /// index still finds nothing (US1 scenario 5).
     /// </summary>
     public const double MaxSemanticDistance = 0.7;
 
@@ -166,7 +166,7 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
         {
             return ([], false);
         }
-        var (embedded, degraded) = await EmbedQueryAsync(query, ct);
+        var (embedded, degraded) = await EmbedQueryAsync(query, (await store.ActiveAsync(ct)).EmbeddingModel, ct);
         if (embedded is null)
         {
             return ([], degraded);
@@ -188,13 +188,13 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
     /// The query's embedding through the gateway, or null with whether that is an outage (FR-014): a package or policy
     /// that turns AI off is a setting, not an outage.
     /// </summary>
-    internal async Task<((float[] Vector, string Model)? Embedded, bool Degraded)> EmbedQueryAsync(string query, CancellationToken ct)
+    internal async Task<((float[] Vector, string Model)? Embedded, bool Degraded)> EmbedQueryAsync(string query, string? model, CancellationToken ct)
     {
         EmbeddingResult embedded;
         try
         {
             // Query text sent for embedding is classified Internal (section 11).
-            embedded = await gateway.EmbedAsync(new EmbeddingRequest([query], DataClassification.Internal), ct);
+            embedded = await gateway.EmbedAsync(new EmbeddingRequest([query], DataClassification.Internal, model), ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

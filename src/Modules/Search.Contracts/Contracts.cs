@@ -122,3 +122,23 @@ public interface ISearchRetrieval
     /// </summary>
     Task<RetrievalResult> ItemAsync(string source, Guid itemId, string useCase, string? locale = null, CancellationToken ct = default);
 }
+
+/// <summary>Asks Search to build the shadow index of a proposed retrieval configuration (spec 012 US3 scenario 3, plan "Ranking").</summary>
+public sealed record RetrievalShadowBuildRequested(Guid ChangeId) : IIntegrationEvent;
+
+/// <summary>
+/// A retrieval configuration change is ready for its release gate (spec 034 section 13, spec 012 FR-008): the shadow
+/// index of <paramref name="Version"/> is built and the change waits for <c>EvaluationRetrievalGateDecided</c>.
+/// </summary>
+public sealed record RetrievalConfigChangeProposed(Guid ChangeId, int Version, Guid? ProposedBy) : IIntegrationEvent;
+
+/// <summary>
+/// Retrieval with a proposed configuration, for its release gate (spec 034 US5 scenario 5): the same ranking, owner
+/// checks and classification ceiling as <see cref="ISearchRetrieval.RetrieveAsync"/>, as the person in context, but over
+/// the change's shadow index with its number of results and embedding model. A change that is no longer waiting for its
+/// gate is a conflict.
+/// </summary>
+public interface IRetrievalEvaluation
+{
+    Task<RetrievalResult> RetrieveProposedAsync(Guid changeId, string query, string useCase, CancellationToken ct = default);
+}

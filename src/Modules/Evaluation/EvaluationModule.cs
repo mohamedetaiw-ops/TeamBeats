@@ -38,11 +38,13 @@ public static class EvaluationModule
         services.AddScoped<Agents.Contracts.IAgentReleaseGate>(sp => sp.GetRequiredService<GateService>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, GateFollowUpTasks>();
         services.AddScoped<RouteGates>();
+        services.AddScoped<RetrievalGates>();
         services.AddScoped<ResultsService>();
         services.AddScoped<CalibrationService>();
         services.AddMessageHandler<CalibrationRequested, CalibrationRunner>("evaluation.calibration");
         services.AddMessageHandler<EvaluationRunRequested, EvaluationRunner>("evaluation.run");
         services.AddMessageHandler<AiGateway.Contracts.AiModelRouteChangeProposed, RouteGateStarter>("evaluation.route_gate");
+        services.AddMessageHandler<Search.Contracts.RetrievalConfigChangeProposed, RetrievalGateStarter>("evaluation.retrieval_gate");
         return services;
     }
 

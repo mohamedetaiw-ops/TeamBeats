@@ -8,7 +8,8 @@ import { hostOrigin } from "../support/stack";
 /**
  * Search (spec 012 T009): the shell search box suggests permitted items and opens the results page, which filters by
  * source, marks a best bet as recommended and offers no result help, in English and Arabic with axe; the search
- * administrator manages best bets and synonyms from the admin area.
+ * administrator manages best bets and synonyms from the admin area, and proposes a retrieval change that the release
+ * gate holds (no agent has retrieval cases yet) and applies it with a reason (T007).
  */
 const body = (text: string) => ({ blocks: [{ type: "paragraph", children: [{ text }] }] });
 
@@ -84,6 +85,33 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/admin/search`);
       await page.getByRole("button", { name: msg(locale, "search.admin.synonyms.remove", { words: "coach, shuttle" }) }).click();
       await expect(page.getByText(msg(locale, "search.admin.synonyms.empty"))).toBeVisible();
+    });
+
+    test("the search administrator proposes a retrieval change and applies it with a reason", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/search`);
+      const section = page.getByRole("region", { name: msg(locale, "search.admin.retrieval.title") });
+      await expect(section).toBeVisible();
+      await section.getByLabel(msg(locale, "search.admin.retrieval.topK"), { exact: true }).fill("6");
+      await section.getByRole("button", { name: msg(locale, "search.admin.retrieval.submit") }).click();
+      await expect(section.getByRole("status").filter({ hasText: msg(locale, "search.admin.retrieval.proposed") })).toBeVisible();
+
+      // The shadow index is built and the gate has no retrieval case to run, so the change waits for a decision.
+      const api = await tenantApi(tenant);
+      await expect
+        .poll(async () => ((await (await api.get("/api/v1/search/retrieval-config")).json()) as { open: { status: string } | null }).open?.status, {
+          timeout: 30_000,
+        })
+        .toBe("held");
+      await page.reload();
+      await expect(section.getByText(msg(locale, "search.admin.retrieval.status.held"), { exact: false })).toBeVisible();
+      await expectAccessible(page, testInfo, `search-retrieval-${locale}`);
+      await section.getByLabel(msg(locale, "search.admin.retrieval.reason")).fill("No retrieval cases yet; checked by hand.");
+      await section.getByRole("button", { name: msg(locale, "search.admin.retrieval.apply") }).click();
+      await expect(section.getByRole("status").filter({ hasText: msg(locale, "search.admin.retrieval.applied") })).toBeVisible();
+      const config = (await (await api.get("/api/v1/search/retrieval-config")).json()) as { active: { version: number; topK: number } };
+      expect(config.active).toMatchObject({ version: 1, topK: 6 });
+      await api.dispose();
     });
   });
 }

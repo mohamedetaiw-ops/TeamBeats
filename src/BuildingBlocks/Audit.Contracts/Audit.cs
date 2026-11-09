@@ -246,6 +246,10 @@ public static class AuditActions
     // 012
     public const string SearchBestBetChanged = "search.best_bet_changed";
     public const string SearchSynonymsChanged = "search.synonyms_changed";
+    public const string SearchRetrievalChangeProposed = "search.retrieval_change_proposed";
+    public const string SearchRetrievalChangeDecided = "search.retrieval_change_decided";
+    public const string SearchRetrievalChangeOverridden = "search.retrieval_change_overridden";
+    public const string SearchRetrievalChangeCancelled = "search.retrieval_change_cancelled";
 
     // 014
     public const string AssistantHistoryDeleted = "assistant.history_deleted";
@@ -322,7 +326,8 @@ public static class AuditActions
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested,
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
-        SearchBestBetChanged, SearchSynonymsChanged,
+        SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
+        SearchRetrievalChangeCancelled,
         AssistantHistoryDeleted, AssistantRetentionChanged,
         AgentInstalledFromTemplate, AgentAudienceChanged, AgentPolicyChanged, AgentToolCalled, AgentToolDenied, AgentActionConfirmed, AgentActionRejected,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,

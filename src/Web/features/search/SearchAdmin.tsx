@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { problemMessages } from "@/lib/notifications/types";
-import type { BestBet, Rebuild, Suggestion, SynonymSet } from "@/lib/search/types";
+import type { BestBet, Rebuild, RetrievalChange, RetrievalConfig, RetrievalSettings, Suggestion, SynonymSet } from "@/lib/search/types";
 
 type Message = { error: boolean; text: string } | null;
 
@@ -290,6 +290,176 @@ export function Rebuilds({ initial }: { initial: Rebuild[] }) {
           ))}
         </ul>
       )}
+    </section>
+  );
+}
+
+function SettingsList({ settings }: { settings: RetrievalSettings }) {
+  const t = useTranslations("search.admin");
+  return (
+    <dl className="search-admin-settings">
+      <dt>{t("retrieval.passageTokens")}</dt>
+      <dd>{settings.passageTokens}</dd>
+      <dt>{t("retrieval.overlapPercent")}</dt>
+      <dd>{settings.overlapPercent}</dd>
+      <dt>{t("retrieval.topK")}</dt>
+      <dd>{settings.topK}</dd>
+      <dt>{t("retrieval.embeddingModel")}</dt>
+      <dd>{settings.embeddingModel ? <bdi>{settings.embeddingModel}</bdi> : t("retrieval.modelDefault")}</dd>
+    </dl>
+  );
+}
+
+function ChangeStatus({ change }: { change: RetrievalChange }) {
+  const t = useTranslations("search.admin");
+  return (
+    <p>
+      {t(`retrieval.status.${change.status}`)}
+      {change.gateResult ? ` ${t(`retrieval.gate.${change.gateResult}`)}` : ""}
+    </p>
+  );
+}
+
+/**
+ * Retrieval configuration (spec 012 US3 scenario 3, FR-008): the settings in force, a form to propose a change, and the
+ * open change with its shadow index and release gate. A held change can be applied with a reason or cancelled; the
+ * API decides what is allowed and says so in canApply and canCancel.
+ */
+export function RetrievalSettingsPanel({ initial }: { initial: RetrievalConfig }) {
+  const t = useTranslations("search.admin");
+  const format = useFormatter();
+  const router = useRouter();
+  const active = initial.active;
+  const [tokens, setTokens] = useState(String(active.passageTokens));
+  const [overlap, setOverlap] = useState(String(active.overlapPercent));
+  const [topK, setTopK] = useState(String(active.topK));
+  const [model, setModel] = useState(active.embeddingModel ?? "");
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<Message>(null);
+  const ids = { tokens: useId(), overlap: useId(), topK: useId(), model: useId(), reason: useId() };
+  const open = initial.open;
+
+  async function run(url: string, body: unknown, done: string) {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const problem = await send(url, "POST", body);
+      setMessage(problem ? { error: true, text: problem } : { error: false, text: done });
+      if (!problem) router.refresh();
+    } catch {
+      setMessage({ error: true, text: t("failed") });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function propose(e: FormEvent) {
+    e.preventDefault();
+    void run(
+      "/api/v1/search/retrieval-config",
+      { passageTokens: Number(tokens), overlapPercent: Number(overlap), topK: Number(topK), embeddingModel: model.trim() },
+      t("retrieval.proposed"),
+    );
+  }
+
+  return (
+    <section aria-labelledby="retrieval-title">
+      <h2 id="retrieval-title">{t("retrieval.title")}</h2>
+      <p>{t("retrieval.intro")}</p>
+      <h3>{t("retrieval.active", { version: active.version })}</h3>
+      <SettingsList settings={active} />
+      {open ? (
+        <div className="search-admin-change">
+          <h3>{t("retrieval.open", { version: open.settings.version })}</h3>
+          <SettingsList settings={open.settings} />
+          <ChangeStatus change={open} />
+          {open.shadowUnits !== null ? <p>{t("retrieval.shadowUnits", { units: open.shadowUnits })}</p> : null}
+          {open.failures.length > 0 ? (
+            <>
+              <p>{t("retrieval.failures")}</p>
+              <ul className="search-admin-list">
+                {open.failures.map((f) => (
+                  <li key={f}>
+                    <bdi>{f}</bdi>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          {open.canApply ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void run(`/api/v1/search/retrieval-config/${open.id}/apply`, { reason }, t("retrieval.applied"));
+              }}
+            >
+              <div className="field">
+                <label htmlFor={ids.reason}>{t("retrieval.reason")}</label>
+                <textarea id={ids.reason} value={reason} onChange={(e) => setReason(e.target.value)} rows={3} minLength={10} maxLength={1000} required />
+              </div>
+              <div className="button-row">
+                <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>
+                  {t("retrieval.apply")}
+                </Button>
+              </div>
+            </form>
+          ) : null}
+          {open.canCancel ? (
+            <div className="button-row">
+              <Button variant="secondary" busy={busy} busyLabel={t("busy")} onClick={() => void run(`/api/v1/search/retrieval-config/${open.id}/cancel`, {}, t("retrieval.cancelled"))}>
+                {t("retrieval.cancel")}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <form onSubmit={propose}>
+          <h3>{t("retrieval.propose")}</h3>
+          <div className="field">
+            <label htmlFor={ids.tokens}>{t("retrieval.passageTokens")}</label>
+            <input id={ids.tokens} type="number" inputMode="numeric" min={100} max={1000} value={tokens} onChange={(e) => setTokens(e.target.value)} required />
+          </div>
+          <div className="field">
+            <label htmlFor={ids.overlap}>{t("retrieval.overlapPercent")}</label>
+            <input id={ids.overlap} type="number" inputMode="numeric" min={0} max={50} value={overlap} onChange={(e) => setOverlap(e.target.value)} required />
+          </div>
+          <div className="field">
+            <label htmlFor={ids.topK}>{t("retrieval.topK")}</label>
+            <input id={ids.topK} type="number" inputMode="numeric" min={1} max={20} value={topK} onChange={(e) => setTopK(e.target.value)} required />
+          </div>
+          <div className="field">
+            <label htmlFor={ids.model}>{t("retrieval.embeddingModel")}</label>
+            <p id={`${ids.model}-hint`} className="field-hint">
+              {t("retrieval.modelHint")}
+            </p>
+            <input id={ids.model} dir="ltr" value={model} onChange={(e) => setModel(e.target.value)} maxLength={100} aria-describedby={`${ids.model}-hint`} />
+          </div>
+          <div className="button-row">
+            <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>
+              {t("retrieval.submit")}
+            </Button>
+          </div>
+        </form>
+      )}
+      <Status message={message} />
+      {initial.history.length > 0 ? (
+        <>
+          <h3>{t("retrieval.history")}</h3>
+          <ul className="search-admin-list">
+            {initial.history.map((c) => (
+              <li key={c.id}>
+                <span>{t("retrieval.version", { version: c.settings.version })}</span>
+                <span>{format.dateTime(new Date(c.proposedAt), { dateStyle: "medium", timeStyle: "short" })}</span>
+                <span>
+                  {t(`retrieval.status.${c.status}`)}
+                  {c.gateResult ? ` ${t(`retrieval.gate.${c.gateResult}`)}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
     </section>
   );
 }
