@@ -279,6 +279,9 @@ public static class AuditActions
     public const string EvalRubricCalibrated = "eval.rubric_calibrated";
     public const string EvalRubricDemoted = "eval.rubric_demoted";
 
+    // 021
+    public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [

@@ -65,6 +65,12 @@
   <Folder Name="/src/Modules/Notifications.Contracts/">
     <Project Path="src/Modules/Notifications.Contracts/TeamBeats.Modules.Notifications.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Analytics/">
+    <Project Path="src/Modules/Analytics/TeamBeats.Modules.Analytics.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Analytics.Contracts/">
+    <Project Path="src/Modules/Analytics.Contracts/TeamBeats.Modules.Analytics.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Hr/">
     <Project Path="src/Modules/Hr/TeamBeats.Modules.Hr.csproj" />
   </Folder>

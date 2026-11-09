@@ -10463,6 +10463,60 @@
         }
       }
     },
+    "/api/v1/analytics/events": {
+      "post": {
+        "tags": [
+          "Analytics"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/policy": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Analytics"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsPolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/people": {
       "get": {
         "tags": [
@@ -11144,6 +11198,110 @@
           },
           "to": {
             "type": "string"
+          }
+        }
+      },
+      "AnalyticsBatch": {
+        "required": [
+          "events"
+        ],
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsEventInput"
+            }
+          }
+        }
+      },
+      "AnalyticsEventInput": {
+        "required": [
+          "name",
+          "occurredAt",
+          "channel",
+          "fields"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "occurredAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "channel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "fields": {
+            "type": [
+              "null",
+              "object"
+            ]
+          }
+        }
+      },
+      "AnalyticsPolicyRequest": {
+        "required": [
+          "nonessential",
+          "rawRetentionMonths",
+          "minGroupSize",
+          "individual",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "nonessential": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "rawRetentionMonths": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "minGroupSize": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "individual": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -16776,6 +16934,9 @@
     },
     {
       "name": "Evaluation"
+    },
+    {
+      "name": "Analytics"
     },
     {
       "name": "People"
