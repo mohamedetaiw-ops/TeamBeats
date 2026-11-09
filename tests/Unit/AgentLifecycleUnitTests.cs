@@ -1,5 +1,6 @@
 using TeamBeats.Modules.Agents;
 using Xunit;
+using TeamBeats.Modules.Agents.Contracts;
 
 namespace TeamBeats.Unit.Tests;
 

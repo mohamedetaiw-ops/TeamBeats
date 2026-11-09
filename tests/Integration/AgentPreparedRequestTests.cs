@@ -64,7 +64,7 @@ public sealed class AgentPreparedRequestTests(TenantWorld world)
         return id;
     }
 
-    private static async Task<Guid> AgentAsync(TestTenant t)
+    private async Task<Guid> AgentAsync(TestTenant t)
     {
         var detail = await OkAsync(t["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "workflow_requests", orgUnitId = t.Unit("Hr") }), HttpStatusCode.Created);
         var id = detail.GetProperty("agent").GetProperty("id").GetGuid();
@@ -74,6 +74,7 @@ public sealed class AgentPreparedRequestTests(TenantWorld world)
         definition["autonomy"] = "L1";
         await OkAsync(t["sara"].Client.PutAsJsonAsync($"{Agents}/{id}/draft", new { revision = 1, definition }));
         await OkAsync(t["sara"].Client.PostAsJsonAsync($"{Agents}/{id}/submit", new { revision = 2 }));
+        await world.Database.PassGateAsync(t.Id, id, 1);
         await OkAsync(t["aip"].Client.PostAsJsonAsync($"{Agents}/{id}/publish", new { version = 1 }));
         return id;
     }

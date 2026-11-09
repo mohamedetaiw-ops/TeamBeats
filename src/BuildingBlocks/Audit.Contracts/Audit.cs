@@ -272,6 +272,8 @@ public static class AuditActions
     public const string EvalDatasetImported = "eval.dataset_imported";
     public const string EvalPolicyChanged = "eval.policy_changed";
     public const string EvalPersonaCreated = "eval.persona_created";
+    public const string EvalGateDecided = "eval.gate_decided";
+    public const string EvalGateOverridden = "eval.gate_overridden";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -318,7 +320,7 @@ public static class AuditActions
         AgentInstalledFromTemplate, AgentAudienceChanged, AgentPolicyChanged, AgentToolCalled, AgentToolDenied, AgentActionConfirmed, AgentActionRejected,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,
         AgentRetired, AgentKillSwitch,
-        EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated,
+        EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

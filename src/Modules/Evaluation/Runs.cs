@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using TeamBeats.Audit.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Modules.Agents.Contracts;
@@ -57,11 +58,22 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
         {
             throw AppException.Conflict("conflict.eval.agent_unavailable");
         }
-        if (await session.ScalarAsync<long>("select count(*) from evaluation.run where agent_id = @agentId and agent_version = @version and status in ('queued', 'running')",
-            new { agentId, version }, ct) > 0)
+        if (await ActiveAsync(agentId, version, ct))
         {
             throw AppException.Conflict("conflict.eval.run_active");
         }
+        var id = await CreateAsync(agent, version, RunTriggers.Manual, ct);
+        return await GetAsync(id, ct);
+    }
+
+    internal async Task<bool> ActiveAsync(Guid agentId, int version, CancellationToken ct) =>
+        await session.ScalarAsync<long>("select count(*) from evaluation.run where agent_id = @agentId and agent_version = @version and status in ('queued', 'running')",
+            new { agentId, version }, ct) > 0;
+
+    /// <summary>Fixes the cases and versions of a run and queues it. The caller has checked who may start it.</summary>
+    internal async Task<Guid> CreateAsync(AgentFacts agent, int version, string trigger, CancellationToken ct)
+    {
+        var agentId = agent.Id;
         var user = context.RequireUser();
         var (suiteList, cases) = await PlanAsync(agent, ct);
         if (cases.Count == 0)
@@ -78,8 +90,8 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
         await session.ExecAsync(
             """
             insert into evaluation.run (tenant_id, id, agent_id, agent_version, org_unit_id, trigger, status, suites, total, requested_by, created_at)
-            values (platform.current_tenant_id(), @id, @agentId, @version, @unit, 'manual', 'queued', @suites, @total, @user, @now)
-            """, new { id, agentId, version, unit = agent.OrgUnitId, suites = Jsonb.From(suiteList), total = cases.Count, user, now }, ct);
+            values (platform.current_tenant_id(), @id, @agentId, @version, @unit, @trigger, 'queued', @suites, @total, @user, @now)
+            """, new { id, agentId, version, unit = agent.OrgUnitId, trigger, suites = Jsonb.From(suiteList), total = cases.Count, user, now }, ct);
         for (var i = 0; i < cases.Count; i++)
         {
             var c = cases[i];
@@ -95,16 +107,26 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
                 }, ct);
         }
         await outbox.EnqueueAsync(new EvaluationRunRequested(id), ct);
-        logger.LogInformation("eval.run_started tenant {Tenant} run {Run} agent {Agent} version {Version} cases {Cases} trigger manual", context.TenantId, id, agentId,
-            version, cases.Count);
-        return await GetAsync(id, ct);
+        logger.LogInformation("eval.run_started tenant {Tenant} run {Run} agent {Agent} version {Version} cases {Cases} trigger {Trigger}", context.TenantId, id, agentId,
+            version, cases.Count, trigger);
+        return id;
     }
+
+    /// <summary>What a run of the agent would test now, to tell whether an earlier result is stale (section 6).</summary>
+    internal async Task<IReadOnlyList<string>> SignatureAsync(AgentFacts agent, CancellationToken ct)
+    {
+        var (list, _) = await PlanAsync(agent, ct, withCases: false);
+        return Signature(list);
+    }
+
+    internal static IReadOnlyList<string> Signature(IEnumerable<RunSuite> suites) =>
+        suites.Select(s => $"{s.Key}@{s.Version}:{string.Join(",", s.Datasets.Select(d => $"{d.Id:N}@{d.Version}"))}").Order(StringComparer.Ordinal).ToList();
 
     internal sealed record PlannedCase(string Suite, Guid? DatasetId, int? DatasetVersion, int CaseN, string Locale, string Input, CaseExpectations Expect, Guid PersonaId,
         string Severity, string Classification);
 
     /// <summary>What the run tests: the inherited platform suites and the agent's own suite, with their effective rules and cases in the agent's languages.</summary>
-    private async Task<(List<RunSuite> Suites, List<PlannedCase> Cases)> PlanAsync(AgentFacts agent, CancellationToken ct)
+    private async Task<(List<RunSuite> Suites, List<PlannedCase> Cases)> PlanAsync(AgentFacts agent, CancellationToken ct, bool withCases = true)
     {
         var languages = agent.Languages.Count > 0 ? agent.Languages : ["en"];
         var tenant = await settings.TenantRulesAsync(ct);
@@ -112,6 +134,28 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
         var cases = new List<PlannedCase>();
         Guid? fallback = null;
         async Task<Guid> PersonaAsync(Guid? persona) => persona ?? (fallback ??= (await personas.DefaultAsync(agent.OrgUnitId, ct)).Id);
+        if (!withCases)
+        {
+            foreach (var suite in PlatformSuites.For(agent.TemplateId))
+            {
+                list.Add(new RunSuite(suite.Key, "platform", suite.Version, suite.Metrics, [], []));
+            }
+            var mine = await suites.CurrentAsync(agent.Id, ct);
+            if (mine.Id is not null && mine.Metrics.Count > 0)
+            {
+                var uses = new List<DatasetUse>();
+                foreach (var datasetId in mine.Datasets)
+                {
+                    if (await session.ScalarAsync<int?>("select current_version from evaluation.dataset where id = @datasetId and agent_id = @agent",
+                        new { datasetId, agent = agent.Id }, ct) is > 0 and var v)
+                    {
+                        uses.Add(new DatasetUse(datasetId, v));
+                    }
+                }
+                list.Add(new RunSuite(AgentSuiteKey, "agent", mine.Version, mine.Metrics, [], uses));
+            }
+            return (list, cases);
+        }
 
         foreach (var suite in PlatformSuites.For(agent.TemplateId))
         {
@@ -239,7 +283,7 @@ internal sealed record CaseWork(Guid RunId, int N, Guid AgentId, int AgentVersio
     string Classification, IReadOnlyList<string> Metrics);
 
 /// <summary>The run's bookkeeping, each call in its own short transaction so a cancel is never blocked by a running case.</summary>
-public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, ITenantContext context, ILogger<RunStore> logger)
+public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, ITenantContext context, IAuditWriter audit, ILogger<RunStore> logger)
 {
     /// <summary>Marks the run started; false when it is finished or cancelled.</summary>
     internal async Task<bool> BeginAsync(Guid runId, CancellationToken ct)
@@ -294,13 +338,13 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
     /// <summary>Scores a run whose cases have all finished and publishes <see cref="EvaluationRunCompleted"/> (US4).</summary>
     internal async Task FinishAsync(Guid runId, CancellationToken ct)
     {
-        var rows = await session.QueryAsync("select agent_id, agent_version, status, suites::text from evaluation.run where id = @runId for update", new { runId },
-            r => (Agent: r.GetGuid(0), Version: r.GetInt32(1), Status: r.GetString(2), Suites: r.GetString(3)), ct);
+        var rows = await session.QueryAsync("select agent_id, agent_version, status, suites::text, trigger, org_unit_id from evaluation.run where id = @runId for update",
+            new { runId }, r => (Agent: r.GetGuid(0), Version: r.GetInt32(1), Status: r.GetString(2), Suites: r.GetString(3), Trigger: r.GetString(4), Unit: r.GetGuid(5)), ct);
         if (rows.Count == 0 || rows[0].Status != RunStatuses.Running)
         {
             return;
         }
-        var (agent, version, _, suiteText) = rows[0];
+        var (agent, version, _, suiteText, trigger, unit) = rows[0];
         // A case left running by a worker that stopped mid-case cannot be trusted, so it counts as not run.
         var interrupted = await session.ExecAsync(
             "update evaluation.case_result set status = 'error', error = 'eval.case_interrupted', finished_at = @now where run_id = @runId and status = 'running'",
@@ -325,6 +369,21 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
             "update evaluation.run set status = 'completed', verdict = @verdict, result = @result, finished_at = @now where id = @runId",
             new { runId, verdict = result.Verdict, result = Jsonb.From(result), now = clock.UtcNow }, ct);
         await outbox.EnqueueAsync(new EvaluationRunCompleted(runId, agent, version, RunStatuses.Completed, result.Verdict), ct);
+        if (trigger == RunTriggers.Gate)
+        {
+            // A gate decision is evidence (FR-030): audited with the suite and dataset versions it used, and published for the Agent Hub.
+            await audit.WriteAsync(new AuditEntry(AuditActions.EvalGateDecided, "eval_run", runId.ToString(), TargetOrgUnitId: unit,
+                Changes: new { agentId = agent, version, verdict = result.Verdict, critical = result.CriticalFailures, blocking = result.BlockingFailures,
+                    incomplete = result.Incomplete, suites = RunService.Signature(suites) }), ct);
+            await outbox.EnqueueAsync(new EvaluationGateDecided(runId, agent, version, result.Verdict), ct);
+        }
+        if (result.Verdict == EvalVerdicts.Passed)
+        {
+            // A later version that passes closes the owner's follow-up of an earlier override (US5 scenario 3).
+            await session.ExecAsync(
+                "update evaluation.gate_override set follow_up_done_at = @now where agent_id = @agent and agent_version < @version and follow_up_done_at is null",
+                new { agent, version, now = clock.UtcNow }, ct);
+        }
         logger.LogInformation("eval.run_completed tenant {Tenant} run {Run} agent {Agent} version {Version} verdict {Verdict}", context.TenantId, runId, agent, version,
             result.Verdict);
     }

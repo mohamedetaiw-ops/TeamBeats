@@ -6,8 +6,8 @@ import { hostOrigin } from "../support/stack";
 
 /**
  * Spec 020 T014 and spec 027 T013: the agent pages. An administrator starts an agent from the Enterprise Knowledge
- * template, saves it, tries it in the test panel, sends it for review and approves it on the review page (a low risk
- * agent may be approved by its last editor). As a member of the agent's unit the administrator then finds it under
+ * template, saves it, tries it in the test panel and sends it for review, which starts the evaluation gate; the gate
+ * ends incomplete, and a second administrator, who is not the last editor, overrides it with a reason and publishes. As a member of the agent's unit the administrator then finds it under
  * Agents and gets an answer, asks the agent about a news item from its page, reads the run in the runs list and its timeline, and switches all agents off and on again
  * with the kill switch. In English and Arabic with axe on every screen. The API decides every rule; these steps check
  * what the pages send and show.
@@ -23,7 +23,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     const newName = locale === "ar" ? "مساعد السياسات" : "Policy helper";
 
     test.beforeAll(async () => {
-      tenant = await createTenant(`agents-${locale}`, locale, "workplace_plus");
+      tenant = await createTenant(`agents-${locale}`, locale, "workplace_plus", ["rana"]);
       const api = await tenantApi(tenant);
       const unit = await api.post("/api/v1/org/units", {
         data: { parentId: null, typeKey: "department", code: "PEOPLE", names: { en: "People services", ar: "خدمات الموظفين" } },
@@ -80,14 +80,32 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("status").filter({ hasText: m("agents.editor.submitted") })).toBeVisible();
       await expect(page.getByTestId("agent-status")).toHaveText(m("agents.status.in_review"));
 
-      // The review page shows the first version, the gate that is not built yet, and lets the publisher approve.
+      // Submitting started the evaluation gate, which runs on the workers. The template's own cases are too few for its
+      // blocking checks, so the gate ends incomplete and blocks publishing; the last editor cannot override it.
       await page.getByRole("link", { name: m("agents.editor.openReview") }).click();
       await page.waitForURL(/\/review$/);
-      await expect(page.getByTestId("review-gate")).toHaveText(m("agents.review.gateStatus.not_built"));
+      const review = page.url();
       await expect(page.getByRole("heading", { name: m("agents.review.firstVersion") })).toBeVisible();
+      await expect(async () => {
+        await page.reload();
+        await expect(page.getByTestId("review-gate")).toHaveText(m("agents.review.gateStatus.incomplete"), { timeout: 2_000 });
+      }).toPass({ timeout: 90_000 });
+      await expect(page.getByTestId("review-cannot-approve")).toHaveText(m("agents.review.cannot.gate_failed"));
+      await expect(page.getByLabel(m("agents.review.overrideReason"), { exact: true })).toHaveCount(0);
+
+      // Another administrator reads the result and the scores, overrides it with a reason, and publishes.
+      await signInWithDevForm(page, tenant.key, `rana@${tenant.key}.example`, locale);
+      await page.goto(review);
+      await expect(page.getByTestId("review-gate-incomplete").locator("li").first()).toBeVisible();
+      await expect(page.getByTestId("review-gate-diff")).toBeVisible();
       await expectAccessible(page, testInfo, `agents-review-${locale}`);
+      await page.getByLabel(m("agents.review.overrideReason"), { exact: true }).fill(locale === "ar" ? "راجعنا الإجابات يدويا قبل النشر." : "We checked the answers by hand before publishing.");
+      await page.getByRole("button", { name: m("agents.review.override") }).click();
+      await expect(page.getByRole("status").filter({ hasText: m("agents.review.overridden") })).toBeVisible();
+      await expect(page.getByTestId("review-gate")).toHaveText(m("agents.review.gateStatus.overridden"));
       await page.getByRole("button", { name: m("agents.review.approve") }).click();
       await expect(page.getByRole("status").filter({ hasText: m("agents.review.published") })).toBeVisible();
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
 
       // A member of the unit finds the agent and gets an answer.
       await page.goto(`${hostOrigin(tenant.key)}/agents`);

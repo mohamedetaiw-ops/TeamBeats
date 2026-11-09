@@ -33,7 +33,7 @@ public static class AgentsModule
         services.AddScoped<AgentRuns>();
         services.AddScoped<AgentLifecycle>();
         services.AddScoped<AgentRouter>();
-        services.TryAddScoped<IAgentReleaseGate, NoReleaseGate>();
+        services.TryAddScoped<Contracts.IAgentReleaseGate, NoReleaseGate>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AgentReviewTasks>();
         return services;
     }

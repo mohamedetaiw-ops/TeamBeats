@@ -871,7 +871,8 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
 
     /// <summary>
     /// Run search (027 US6 scenario 2): a person sees their own runs; holders of <c>agent.security_view</c> see the runs
-    /// of agents owned by units in their scope, filtered by agent, user, tool and outcome.
+    /// of agents owned by units in their scope, filtered by agent, user, tool and outcome. Evaluation runs of synthetic
+    /// personas are left out; they are read from their evaluation run (spec 034 US3), and each still opens by its ID.
     /// </summary>
     public async Task<IReadOnlyList<RunSummary>> SearchAsync(Guid? agentId, Guid? userId, string? tool, string? outcome, int limit, CancellationToken ct)
     {
@@ -880,7 +881,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         var rows = await session.QueryAsync(
             $"""
             {SummarySql}
-            where (@all or r.user_id = @user or r.org_unit_id = any(@units))
+            where (@all or r.user_id = @user or r.org_unit_id = any(@units)) and r.mode <> 'eval'
               and (@agentId::uuid is null or r.agent_id = @agentId) and (@userId::uuid is null or r.user_id = @userId)
               and (@outcome::text is null or r.outcome = @outcome)
               and (@tool::text is null or exists (select 1 from agents.run_step s where s.run_id = r.id and s.tool = @tool))

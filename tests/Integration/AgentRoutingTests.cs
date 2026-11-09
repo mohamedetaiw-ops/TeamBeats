@@ -67,7 +67,7 @@ public sealed class AgentRoutingTests(TenantWorld world)
     }
 
     /// <summary>Installs a template in Hr as Sara with these tools, submits it and has the AI policy administrator publish it.</summary>
-    private static async Task<Guid> PublishedAsync(TestTenant t, string template, string[] tools, string autonomy)
+    private async Task<Guid> PublishedAsync(TestTenant t, string template, string[] tools, string autonomy)
     {
         var detail = await OkAsync(t["sara"].Client.PostAsJsonAsync(Agents, new { templateId = template, orgUnitId = t.Unit("Hr") }), HttpStatusCode.Created);
         var id = detail.GetProperty("agent").GetProperty("id").GetGuid();
@@ -76,6 +76,7 @@ public sealed class AgentRoutingTests(TenantWorld world)
         definition["autonomy"] = autonomy;
         await OkAsync(t["sara"].Client.PutAsJsonAsync($"{Agents}/{id}/draft", new { revision = 1, definition }));
         await OkAsync(t["sara"].Client.PostAsJsonAsync($"{Agents}/{id}/submit", new { revision = 2 }));
+        await world.Database.PassGateAsync(t.Id, id, 1);
         await OkAsync(t["aip"].Client.PostAsJsonAsync($"{Agents}/{id}/publish", new { version = 1 }));
         return id;
     }

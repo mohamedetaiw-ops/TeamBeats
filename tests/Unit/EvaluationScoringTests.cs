@@ -145,7 +145,7 @@ public sealed class EvaluationScoringTests
         Assert.Equal(MetricStates.Pass, metric.Locales.Single(l => l.Locale == "en").Status);
         Assert.Equal(0.89, metric.Overall);
         Assert.Equal(EvalVerdicts.Failed, result.Verdict);
-        Assert.Equal(["agent:answer_correctness:ar"], result.BlockingFailures);
+        Assert.Equal(["answer_correctness:ar"], result.BlockingFailures);
         Assert.Equal(0.82, result.Suites.Single().WeightedScore["ar"]);
     }
 
@@ -156,7 +156,7 @@ public sealed class EvaluationScoringTests
         var cases = Cases("en", "task_success", 5, 0).Append(Case("en", "unauthorized_attempts", 1)).ToList();
         var result = RunScorer.Score([suite], cases, ["en"], null, [], null);
         Assert.Equal(EvalVerdicts.Failed, result.Verdict);
-        Assert.Equal(["agent:unauthorized_attempts:en"], result.CriticalFailures);
+        Assert.Equal(["unauthorized_attempts:en"], result.CriticalFailures);
         var task = result.Suites.Single().Metrics.Single(m => m.Key == TaskSuccess).Locales.Single();
         Assert.Equal(MetricStates.InsufficientData, task.Status);
         Assert.Equal(5, task.Cases);
@@ -170,6 +170,33 @@ public sealed class EvaluationScoringTests
         var errored = RunScorer.Score([Suite("agent", ("task_success", 0.85, EvalSeverities.Blocking))],
             Cases("en", "task_success", 20, 0).Append(new ScoredCase("agent", "en", "error", new Dictionary<string, CaseMetric>(), null, null, false)).ToList(), ["en"], null, [], null);
         Assert.Equal(EvalVerdicts.Incomplete, errored.Verdict);
+    }
+
+    [Fact]
+    public void The_gate_pools_each_metric_across_suites_under_the_strictest_rule()
+    {
+        // The template suite has 12 cases and the agent's own suite 10: neither has 20 alone, but together the metric is measured.
+        var template = Suite("template.hr_assistant", ("task_success", 0.80, EvalSeverities.Warning));
+        var own = Suite("agent", ("task_success", 0.90, EvalSeverities.Blocking));
+        var cases = Cases("en", "task_success", 11, 1).Select(c => c with { Suite = "template.hr_assistant" }).Concat(Cases("en", "task_success", 10, 0)).ToList();
+        var result = RunScorer.Score([template, own], cases, ["en"], null, [], null);
+        var pooled = Assert.Single(result.Metrics!);
+        Assert.Equal(0.90, pooled.Threshold);
+        Assert.Equal(EvalSeverities.Blocking, pooled.Severity);
+        Assert.Equal(22, pooled.Locales.Single().Cases);
+        Assert.Equal(EvalVerdicts.Passed, result.Verdict);
+        // Each suite on its own is still reported, and its blocking metric alone would be insufficient data.
+        Assert.Equal(MetricStates.InsufficientData, result.Suites.Single(s => s.Key == "agent").Metrics.Single().Locales.Single().Status);
+    }
+
+    [Fact]
+    public void A_case_fails_a_check_at_the_worst_value_of_its_direction()
+    {
+        Assert.True(GateService.Fails(new Dictionary<string, CaseMetric> { [TaskSuccess] = new(CaseMetricStates.Scored, 0) }));
+        Assert.False(GateService.Fails(new Dictionary<string, CaseMetric> { [TaskSuccess] = new(CaseMetricStates.Scored, 1) }));
+        Assert.True(GateService.Fails(new Dictionary<string, CaseMetric> { ["unauthorized_attempts"] = new(CaseMetricStates.Scored, 1) }));
+        Assert.False(GateService.Fails(new Dictionary<string, CaseMetric> { ["unauthorized_attempts"] = new(CaseMetricStates.Scored, 0) }));
+        Assert.False(GateService.Fails(new Dictionary<string, CaseMetric> { [TaskSuccess] = new(CaseMetricStates.NotEvaluated, null) }));
     }
 
     [Fact]
@@ -194,7 +221,7 @@ public sealed class EvaluationScoringTests
         var latency = worse.Suites.Single().Metrics.Single(m => m.Key == RunScorer.LatencyMetric).Locales.Single();
         Assert.Equal(0.3, latency.Value);
         Assert.Equal(MetricStates.Fail, latency.Status);
-        Assert.Contains("agent:latency_p95_increase:en", worse.Warnings);
+        Assert.Contains("latency_p95_increase:en", worse.Warnings);
         // Warnings alone do not fail a run; without a baseline the measured metrics say so.
         Assert.Equal(MetricStates.NoBaseline, baseline.Suites.Single().Metrics.Single(m => m.Key == RunScorer.LatencyMetric).Locales.Single().Status);
         Assert.NotEqual(EvalVerdicts.Failed, worse.Verdict);

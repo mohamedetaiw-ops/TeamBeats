@@ -35,3 +35,6 @@ public sealed record EvaluationRunRequested(Guid RunId) : TeamBeats.Primitives.I
 
 /// <summary>An evaluation run finished (spec 034 section 13). It carries IDs and the verdict, never case content.</summary>
 public sealed record EvaluationRunCompleted(Guid RunId, Guid AgentId, int AgentVersion, string Status, string? Verdict) : TeamBeats.Primitives.IIntegrationEvent;
+
+/// <summary>A release gate decided for an agent version (spec 034 section 13): passed, failed or incomplete, and later overridden.</summary>
+public sealed record EvaluationGateDecided(Guid RunId, Guid AgentId, int AgentVersion, string Result) : TeamBeats.Primitives.IIntegrationEvent;
