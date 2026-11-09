@@ -1,0 +1,1656 @@
+{
+  "$comment": "Demo data package, part 4: the service catalogue and requests at every stage. Approval steps name the test administrator and a second approver so open requests fill both their task inboxes and Your day; requests dated a week back are overdue. The first five services use the same names and forms as seeds/staging-home.json, so whichever seed runs first creates them and the other only adds the category. Request dates like +5d are days after submission. Fictional.",
+  "serviceCategories": [
+    {
+      "key": "hr",
+      "names": {
+        "en": "HR and pay",
+        "ar": "الموارد البشرية والرواتب"
+      }
+    },
+    {
+      "key": "it",
+      "names": {
+        "en": "IT and access",
+        "ar": "تقنية المعلومات والصلاحيات"
+      }
+    },
+    {
+      "key": "facilities",
+      "names": {
+        "en": "Facilities and workplace",
+        "ar": "المرافق وبيئة العمل"
+      }
+    },
+    {
+      "key": "finance",
+      "names": {
+        "en": "Finance",
+        "ar": "المالية"
+      }
+    },
+    {
+      "key": "travel",
+      "names": {
+        "en": "Travel",
+        "ar": "السفر"
+      }
+    },
+    {
+      "key": "comms",
+      "names": {
+        "en": "Communications and events",
+        "ar": "الاتصال والفعاليات"
+      }
+    }
+  ],
+  "services": [
+    {
+      "key": "salary-letter",
+      "category": "hr",
+      "names": {
+        "en": "Salary letter",
+        "ar": "خطاب راتب"
+      },
+      "descriptions": {
+        "en": "A signed letter stating your salary, for a bank or an embassy.",
+        "ar": "خطاب موقّع يوضح راتبك، لتقديمه إلى بنك أو سفارة."
+      },
+      "favouriteOf": [
+        "admin",
+        "ahmed",
+        "fatima"
+      ],
+      "form": {
+        "fields": [
+          {
+            "key": "addressee",
+            "type": "text",
+            "labels": {
+              "en": "Addressed to",
+              "ar": "موجه إلى"
+            },
+            "required": true
+          },
+          {
+            "key": "needed_by",
+            "type": "date",
+            "labels": {
+              "en": "Needed by",
+              "ar": "مطلوب بحلول"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "key": "it-support",
+      "category": "it",
+      "names": {
+        "en": "IT support",
+        "ar": "الدعم التقني"
+      },
+      "descriptions": {
+        "en": "Report a problem with your laptop, phone, printer or an application.",
+        "ar": "أبلغ عن مشكلة في جهازك أو هاتفك أو الطابعة أو أحد التطبيقات."
+      },
+      "favouriteOf": [
+        "admin",
+        "ahmed",
+        "priya"
+      ],
+      "form": {
+        "fields": [
+          {
+            "key": "problem",
+            "type": "text",
+            "labels": {
+              "en": "What is not working?",
+              "ar": "ما الذي لا يعمل؟"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "key": "system-access",
+      "category": "it",
+      "names": {
+        "en": "System access",
+        "ar": "صلاحية الوصول إلى الأنظمة"
+      },
+      "descriptions": {
+        "en": "Ask for access to a business system.",
+        "ar": "اطلب صلاحية الوصول إلى أحد أنظمة العمل."
+      },
+      "favouriteOf": [
+        "admin"
+      ],
+      "form": {
+        "fields": [
+          {
+            "key": "system",
+            "type": "text",
+            "labels": {
+              "en": "System",
+              "ar": "النظام"
+            },
+            "required": true
+          },
+          {
+            "key": "reason",
+            "type": "text",
+            "labels": {
+              "en": "Why you need it",
+              "ar": "سبب الحاجة"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "key": "parking-permit",
+      "category": "facilities",
+      "names": {
+        "en": "Parking permit",
+        "ar": "تصريح موقف"
+      },
+      "descriptions": {
+        "en": "A parking permit for the office car park.",
+        "ar": "تصريح موقف لسيارتك في موقف المكتب."
+      },
+      "favouriteOf": [
+        "admin"
+      ],
+      "form": {
+        "fields": [
+          {
+            "key": "plate",
+            "type": "text",
+            "labels": {
+              "en": "Plate number",
+              "ar": "رقم اللوحة"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "key": "business-cards",
+      "category": "facilities",
+      "names": {
+        "en": "Business cards",
+        "ar": "بطاقات العمل"
+      },
+      "descriptions": {
+        "en": "Order business cards in Arabic and English.",
+        "ar": "اطلب بطاقات عمل بالعربية والإنجليزية."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "quantity",
+            "type": "number",
+            "labels": {
+              "en": "How many boxes",
+              "ar": "عدد العلب"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "key": "annual-leave",
+      "category": "hr",
+      "names": {
+        "en": "Leave request",
+        "ar": "طلب إجازة"
+      },
+      "descriptions": {
+        "en": "Book annual, sick or compassionate leave. Public holidays are not counted.",
+        "ar": "احجز إجازة سنوية أو مرضية أو إجازة عائلية. لا تُحتسب العطل الرسمية."
+      },
+      "synonyms": {
+        "en": [
+          "vacation",
+          "time off",
+          "holiday"
+        ],
+        "ar": [
+          "عطلة",
+          "إجازة"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "leave_type",
+            "type": "choice",
+            "labels": {
+              "en": "Type of leave",
+              "ar": "نوع الإجازة"
+            },
+            "required": true,
+            "options": [
+              {
+                "value": "annual",
+                "labels": {
+                  "en": "Annual",
+                  "ar": "سنوية"
+                }
+              },
+              {
+                "value": "sick",
+                "labels": {
+                  "en": "Sick",
+                  "ar": "مرضية"
+                }
+              },
+              {
+                "value": "compassionate",
+                "labels": {
+                  "en": "Compassionate",
+                  "ar": "عائلية طارئة"
+                }
+              }
+            ]
+          },
+          {
+            "key": "dates",
+            "type": "date_range",
+            "labels": {
+              "en": "Dates",
+              "ar": "التواريخ"
+            },
+            "required": true
+          },
+          {
+            "key": "handover",
+            "type": "text",
+            "labels": {
+              "en": "Who covers your work",
+              "ar": "من يغطي عملك"
+            },
+            "required": false
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "Manager approval",
+          "ar": "موافقة المدير"
+        },
+        "approvers": [
+          "admin",
+          "layla"
+        ],
+        "dueWorkingDays": 2
+      },
+      "favouriteOf": [
+        "admin",
+        "ahmed",
+        "fatima",
+        "marco"
+      ]
+    },
+    {
+      "key": "experience-certificate",
+      "category": "hr",
+      "names": {
+        "en": "Experience certificate",
+        "ar": "شهادة خبرة"
+      },
+      "descriptions": {
+        "en": "A certificate of your role and years of service.",
+        "ar": "شهادة توضح وظيفتك وسنوات خدمتك."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "addressee",
+            "type": "text",
+            "labels": {
+              "en": "Addressed to",
+              "ar": "موجهة إلى"
+            },
+            "required": true
+          },
+          {
+            "key": "language",
+            "type": "choice",
+            "labels": {
+              "en": "Language",
+              "ar": "اللغة"
+            },
+            "required": true,
+            "options": [
+              {
+                "value": "en",
+                "labels": {
+                  "en": "English",
+                  "ar": "الإنجليزية"
+                }
+              },
+              {
+                "value": "ar",
+                "labels": {
+                  "en": "Arabic",
+                  "ar": "العربية"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "HR approval",
+          "ar": "موافقة الموارد البشرية"
+        },
+        "approvers": [
+          "admin",
+          "reem"
+        ],
+        "dueWorkingDays": 3
+      }
+    },
+    {
+      "key": "remote-work",
+      "category": "hr",
+      "names": {
+        "en": "Remote work day",
+        "ar": "يوم عمل عن بُعد"
+      },
+      "descriptions": {
+        "en": "Ask to work from home on specific days.",
+        "ar": "اطلب العمل من المنزل في أيام محددة."
+      },
+      "synonyms": {
+        "en": [
+          "work from home",
+          "wfh"
+        ],
+        "ar": [
+          "العمل من المنزل"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "day",
+            "type": "date",
+            "labels": {
+              "en": "Day",
+              "ar": "اليوم"
+            },
+            "required": true
+          },
+          {
+            "key": "reason",
+            "type": "text",
+            "labels": {
+              "en": "Reason",
+              "ar": "السبب"
+            },
+            "required": true
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "Manager approval",
+          "ar": "موافقة المدير"
+        },
+        "approvers": [
+          "admin",
+          "layla"
+        ],
+        "dueWorkingDays": 1
+      }
+    },
+    {
+      "key": "training",
+      "category": "hr",
+      "names": {
+        "en": "Training request",
+        "ar": "طلب تدريب"
+      },
+      "descriptions": {
+        "en": "Ask to attend a course, conference or certification.",
+        "ar": "اطلب حضور دورة أو مؤتمر أو شهادة مهنية."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "course",
+            "type": "text",
+            "labels": {
+              "en": "Course or event",
+              "ar": "الدورة أو الفعالية"
+            },
+            "required": true
+          },
+          {
+            "key": "cost",
+            "type": "money",
+            "labels": {
+              "en": "Cost",
+              "ar": "التكلفة"
+            },
+            "required": true,
+            "currencies": [
+              "AED",
+              "SAR",
+              "EGP",
+              "USD"
+            ]
+          },
+          {
+            "key": "starts",
+            "type": "date",
+            "labels": {
+              "en": "Starts on",
+              "ar": "تاريخ البدء"
+            },
+            "required": true
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "Learning approval",
+          "ar": "موافقة التعلّم"
+        },
+        "approvers": [
+          "admin",
+          "emily"
+        ],
+        "dueWorkingDays": 3
+      }
+    },
+    {
+      "key": "wellbeing-session",
+      "category": "hr",
+      "names": {
+        "en": "Wellbeing session",
+        "ar": "جلسة رفاهية"
+      },
+      "descriptions": {
+        "en": "Book a free health check or a session with the counsellor.",
+        "ar": "احجز فحصًا صحيًا مجانيًا أو جلسة مع المستشار."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "session",
+            "type": "choice",
+            "labels": {
+              "en": "Session",
+              "ar": "الجلسة"
+            },
+            "required": true,
+            "options": [
+              {
+                "value": "health_check",
+                "labels": {
+                  "en": "Health check",
+                  "ar": "فحص صحي"
+                }
+              },
+              {
+                "value": "counsellor",
+                "labels": {
+                  "en": "Counsellor",
+                  "ar": "مستشار"
+                }
+              }
+            ]
+          },
+          {
+            "key": "day",
+            "type": "date",
+            "labels": {
+              "en": "Preferred day",
+              "ar": "اليوم المفضل"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "key": "new-laptop",
+      "category": "it",
+      "names": {
+        "en": "New laptop or monitor",
+        "ar": "جهاز محمول أو شاشة جديدة"
+      },
+      "descriptions": {
+        "en": "Replace a broken device or ask for a second monitor.",
+        "ar": "استبدل جهازًا معطلًا أو اطلب شاشة إضافية."
+      },
+      "synonyms": {
+        "en": [
+          "computer",
+          "screen",
+          "hardware"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "device",
+            "type": "choice",
+            "labels": {
+              "en": "Device",
+              "ar": "الجهاز"
+            },
+            "required": true,
+            "options": [
+              {
+                "value": "laptop",
+                "labels": {
+                  "en": "Laptop",
+                  "ar": "جهاز محمول"
+                }
+              },
+              {
+                "value": "monitor",
+                "labels": {
+                  "en": "Monitor",
+                  "ar": "شاشة"
+                }
+              },
+              {
+                "value": "headset",
+                "labels": {
+                  "en": "Headset",
+                  "ar": "سماعة"
+                }
+              }
+            ]
+          },
+          {
+            "key": "reason",
+            "type": "text",
+            "labels": {
+              "en": "Why you need it",
+              "ar": "سبب الحاجة"
+            },
+            "required": true
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "IT approval",
+          "ar": "موافقة تقنية المعلومات"
+        },
+        "approvers": [
+          "admin",
+          "omar"
+        ],
+        "dueWorkingDays": 2
+      }
+    },
+    {
+      "key": "software",
+      "category": "it",
+      "names": {
+        "en": "Software request",
+        "ar": "طلب برنامج"
+      },
+      "descriptions": {
+        "en": "Ask for a licensed application to be installed.",
+        "ar": "اطلب تثبيت تطبيق مرخّص."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "software",
+            "type": "text",
+            "labels": {
+              "en": "Software",
+              "ar": "البرنامج"
+            },
+            "required": true
+          },
+          {
+            "key": "licences",
+            "type": "number",
+            "labels": {
+              "en": "Number of licences",
+              "ar": "عدد التراخيص"
+            },
+            "required": true
+          },
+          {
+            "key": "reason",
+            "type": "text",
+            "labels": {
+              "en": "Business reason",
+              "ar": "مبرر العمل"
+            },
+            "required": true
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "IT approval",
+          "ar": "موافقة تقنية المعلومات"
+        },
+        "approvers": [
+          "admin",
+          "omar"
+        ],
+        "dueWorkingDays": 3
+      }
+    },
+    {
+      "key": "mobile-line",
+      "category": "it",
+      "names": {
+        "en": "Mobile line",
+        "ar": "خط هاتف محمول"
+      },
+      "descriptions": {
+        "en": "A company SIM with data for your role.",
+        "ar": "شريحة اتصال من الشركة مع باقة بيانات حسب وظيفتك."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "plan",
+            "type": "choice",
+            "labels": {
+              "en": "Plan",
+              "ar": "الباقة"
+            },
+            "required": true,
+            "options": [
+              {
+                "value": "standard",
+                "labels": {
+                  "en": "Standard",
+                  "ar": "قياسية"
+                }
+              },
+              {
+                "value": "roaming",
+                "labels": {
+                  "en": "With roaming",
+                  "ar": "مع التجوال"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "key": "maintenance",
+      "category": "facilities",
+      "names": {
+        "en": "Maintenance request",
+        "ar": "طلب صيانة"
+      },
+      "descriptions": {
+        "en": "Report a fault in the office: air conditioning, lights, water or furniture.",
+        "ar": "أبلغ عن عطل في المكتب: التكييف أو الإضاءة أو المياه أو الأثاث."
+      },
+      "synonyms": {
+        "en": [
+          "repair",
+          "fault",
+          "aircon"
+        ],
+        "ar": [
+          "عطل",
+          "إصلاح"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "location",
+            "type": "text",
+            "labels": {
+              "en": "Where",
+              "ar": "الموقع"
+            },
+            "required": true
+          },
+          {
+            "key": "problem",
+            "type": "text",
+            "labels": {
+              "en": "What is wrong",
+              "ar": "وصف المشكلة"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "key": "event-catering",
+      "category": "comms",
+      "names": {
+        "en": "Event catering",
+        "ar": "ضيافة الفعاليات"
+      },
+      "descriptions": {
+        "en": "Coffee, lunch or a full buffet for a meeting or event.",
+        "ar": "قهوة أو غداء أو بوفيه كامل لاجتماع أو فعالية."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "event",
+            "type": "text",
+            "labels": {
+              "en": "Event",
+              "ar": "الفعالية"
+            },
+            "required": true
+          },
+          {
+            "key": "day",
+            "type": "date",
+            "labels": {
+              "en": "Day",
+              "ar": "اليوم"
+            },
+            "required": true
+          },
+          {
+            "key": "guests",
+            "type": "number",
+            "labels": {
+              "en": "Guests",
+              "ar": "عدد الضيوف"
+            },
+            "required": true
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "Facilities approval",
+          "ar": "موافقة المرافق"
+        },
+        "approvers": [
+          "admin",
+          "khalid"
+        ],
+        "dueWorkingDays": 2
+      }
+    },
+    {
+      "key": "expense-claim",
+      "category": "finance",
+      "names": {
+        "en": "Expense claim",
+        "ar": "مطالبة مصروفات"
+      },
+      "descriptions": {
+        "en": "Claim back what you spent on company business, with receipts.",
+        "ar": "استرد ما أنفقته على أعمال الشركة مع الإيصالات."
+      },
+      "synonyms": {
+        "en": [
+          "reimbursement",
+          "receipts"
+        ],
+        "ar": [
+          "استرداد",
+          "مصاريف"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "purpose",
+            "type": "text",
+            "labels": {
+              "en": "Purpose",
+              "ar": "الغرض"
+            },
+            "required": true
+          },
+          {
+            "key": "amount",
+            "type": "money",
+            "labels": {
+              "en": "Total amount",
+              "ar": "المبلغ الإجمالي"
+            },
+            "required": true,
+            "currencies": [
+              "AED",
+              "SAR",
+              "EGP",
+              "USD"
+            ]
+          },
+          {
+            "key": "spent_on",
+            "type": "date",
+            "labels": {
+              "en": "Date of expense",
+              "ar": "تاريخ الصرف"
+            },
+            "required": true
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "Manager approval",
+          "ar": "موافقة المدير"
+        },
+        "approvers": [
+          "admin",
+          "ahmed"
+        ],
+        "dueWorkingDays": 2
+      },
+      "favouriteOf": [
+        "admin",
+        "marco",
+        "james"
+      ]
+    },
+    {
+      "key": "purchase-request",
+      "category": "finance",
+      "names": {
+        "en": "Purchase request",
+        "ar": "طلب شراء"
+      },
+      "descriptions": {
+        "en": "Buy goods or services from a supplier.",
+        "ar": "شراء سلع أو خدمات من أحد الموردين."
+      },
+      "synonyms": {
+        "en": [
+          "procurement",
+          "PO",
+          "buy"
+        ],
+        "ar": [
+          "مشتريات"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "item",
+            "type": "text",
+            "labels": {
+              "en": "What to buy",
+              "ar": "ما المطلوب شراؤه"
+            },
+            "required": true
+          },
+          {
+            "key": "supplier",
+            "type": "text",
+            "labels": {
+              "en": "Supplier",
+              "ar": "المورد"
+            },
+            "required": false
+          },
+          {
+            "key": "amount",
+            "type": "money",
+            "labels": {
+              "en": "Estimated cost",
+              "ar": "التكلفة التقديرية"
+            },
+            "required": true,
+            "currencies": [
+              "AED",
+              "SAR",
+              "EGP",
+              "USD"
+            ]
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "Finance approval",
+          "ar": "موافقة المالية"
+        },
+        "approvers": [
+          "admin",
+          "ahmed"
+        ],
+        "dueWorkingDays": 3
+      }
+    },
+    {
+      "key": "finance-enquiry",
+      "category": "finance",
+      "names": {
+        "en": "Finance enquiry",
+        "ar": "استفسار مالي"
+      },
+      "descriptions": {
+        "en": "Ask Finance about a payment, an invoice or your claim.",
+        "ar": "اسأل المالية عن دفعة أو فاتورة أو مطالبتك."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "question",
+            "type": "text",
+            "labels": {
+              "en": "Your question",
+              "ar": "سؤالك"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "key": "business-travel",
+      "category": "travel",
+      "names": {
+        "en": "Business travel",
+        "ar": "سفر عمل"
+      },
+      "descriptions": {
+        "en": "Flights and hotel for a business trip, booked by the travel desk.",
+        "ar": "الرحلات والفندق لرحلة عمل، يحجزها مكتب السفر."
+      },
+      "synonyms": {
+        "en": [
+          "trip",
+          "flight",
+          "hotel"
+        ],
+        "ar": [
+          "رحلة",
+          "طيران",
+          "فندق"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "destination",
+            "type": "text",
+            "labels": {
+              "en": "Destination",
+              "ar": "الوجهة"
+            },
+            "required": true
+          },
+          {
+            "key": "dates",
+            "type": "date_range",
+            "labels": {
+              "en": "Travel dates",
+              "ar": "تواريخ السفر"
+            },
+            "required": true
+          },
+          {
+            "key": "purpose",
+            "type": "text",
+            "labels": {
+              "en": "Purpose",
+              "ar": "الغرض"
+            },
+            "required": true
+          },
+          {
+            "key": "budget",
+            "type": "money",
+            "labels": {
+              "en": "Estimated budget",
+              "ar": "الميزانية التقديرية"
+            },
+            "required": true,
+            "currencies": [
+              "AED",
+              "SAR",
+              "EGP",
+              "USD"
+            ]
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "Manager approval",
+          "ar": "موافقة المدير"
+        },
+        "approvers": [
+          "admin",
+          "ahmed"
+        ],
+        "dueWorkingDays": 2
+      },
+      "favouriteOf": [
+        "admin",
+        "khalid"
+      ]
+    },
+    {
+      "key": "visa-letter",
+      "category": "travel",
+      "names": {
+        "en": "Visa support letter",
+        "ar": "خطاب دعم تأشيرة"
+      },
+      "descriptions": {
+        "en": "A letter for an embassy confirming your trip and employment.",
+        "ar": "خطاب للسفارة يؤكد رحلتك ووظيفتك."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "country",
+            "type": "text",
+            "labels": {
+              "en": "Country",
+              "ar": "الدولة"
+            },
+            "required": true
+          },
+          {
+            "key": "travel_on",
+            "type": "date",
+            "labels": {
+              "en": "Travel date",
+              "ar": "تاريخ السفر"
+            },
+            "required": true
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "HR approval",
+          "ar": "موافقة الموارد البشرية"
+        },
+        "approvers": [
+          "admin",
+          "reem"
+        ],
+        "dueWorkingDays": 3
+      }
+    },
+    {
+      "key": "announcement-request",
+      "category": "comms",
+      "names": {
+        "en": "Announcement request",
+        "ar": "طلب نشر إعلان"
+      },
+      "descriptions": {
+        "en": "Ask Internal Communications to publish news or an announcement.",
+        "ar": "اطلب من فريق الاتصال الداخلي نشر خبر أو إعلان."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "headline",
+            "type": "text",
+            "labels": {
+              "en": "Headline",
+              "ar": "العنوان"
+            },
+            "required": true
+          },
+          {
+            "key": "audience",
+            "type": "choice",
+            "labels": {
+              "en": "Audience",
+              "ar": "الجمهور"
+            },
+            "required": true,
+            "options": [
+              {
+                "value": "everyone",
+                "labels": {
+                  "en": "Everyone",
+                  "ar": "الجميع"
+                }
+              },
+              {
+                "value": "uae",
+                "labels": {
+                  "en": "UAE offices",
+                  "ar": "مكاتب الإمارات"
+                }
+              },
+              {
+                "value": "ksa",
+                "labels": {
+                  "en": "Riyadh",
+                  "ar": "الرياض"
+                }
+              },
+              {
+                "value": "egypt",
+                "labels": {
+                  "en": "Cairo",
+                  "ar": "القاهرة"
+                }
+              }
+            ]
+          },
+          {
+            "key": "publish_on",
+            "type": "date",
+            "labels": {
+              "en": "Publish on",
+              "ar": "تاريخ النشر"
+            },
+            "required": true
+          }
+        ]
+      },
+      "approval": {
+        "names": {
+          "en": "Communications approval",
+          "ar": "موافقة الاتصال"
+        },
+        "approvers": [
+          "admin",
+          "sarah"
+        ],
+        "dueWorkingDays": 2
+      }
+    },
+    {
+      "key": "intranet-feedback",
+      "category": "comms",
+      "names": {
+        "en": "Intranet feedback",
+        "ar": "ملاحظات الشبكة الداخلية"
+      },
+      "descriptions": {
+        "en": "Tell us what works and what does not on TeamBeats.",
+        "ar": "أخبرنا بما يعجبك وما لا يعجبك في تيم بيتس."
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "feedback",
+            "type": "text",
+            "labels": {
+              "en": "Your feedback",
+              "ar": "ملاحظاتك"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "key": "payroll-portal",
+      "category": "hr",
+      "names": {
+        "en": "Payslips and tax documents",
+        "ar": "قسائم الراتب والمستندات الضريبية"
+      },
+      "descriptions": {
+        "en": "Opens the payroll portal in a new tab.",
+        "ar": "يفتح بوابة الرواتب في علامة تبويب جديدة."
+      },
+      "kind": "link",
+      "url": "https://payroll.example.com/"
+    },
+    {
+      "key": "learning-portal",
+      "category": "hr",
+      "names": {
+        "en": "Learning portal",
+        "ar": "بوابة التعلّم"
+      },
+      "descriptions": {
+        "en": "Online courses and your training record.",
+        "ar": "الدورات الإلكترونية وسجل تدريبك."
+      },
+      "kind": "link",
+      "url": "https://learning.example.com/"
+    }
+  ],
+  "requests": [
+    {
+      "key": "leave-fatima",
+      "service": "annual-leave",
+      "requester": "fatima",
+      "daysAgo": 1,
+      "data": {
+        "leave_type": "annual",
+        "dates": {
+          "from": "+12d",
+          "to": "+16d"
+        },
+        "handover": "Ahmed covers month-end reports"
+      }
+    },
+    {
+      "key": "leave-marco",
+      "service": "annual-leave",
+      "requester": "marco",
+      "daysAgo": 7,
+      "data": {
+        "leave_type": "annual",
+        "dates": {
+          "from": "+20d",
+          "to": "+27d"
+        },
+        "handover": "Night shift lead takes the roster"
+      },
+      "decisions": [
+        {
+          "by": "layla",
+          "outcome": "approve",
+          "daysAgo": 6,
+          "comment": "Enjoy the break, Marco."
+        }
+      ]
+    },
+    {
+      "key": "leave-priya",
+      "service": "annual-leave",
+      "requester": "priya",
+      "daysAgo": 0.3,
+      "data": {
+        "leave_type": "sick",
+        "dates": {
+          "from": "+0d",
+          "to": "+1d"
+        }
+      }
+    },
+    {
+      "key": "laptop-priya",
+      "service": "new-laptop",
+      "requester": "priya",
+      "daysAgo": 7,
+      "data": {
+        "device": "monitor",
+        "reason": "Second screen for the route planning dashboards"
+      }
+    },
+    {
+      "key": "software-tariq",
+      "service": "software",
+      "requester": "tariq",
+      "daysAgo": 10,
+      "data": {
+        "software": "Diagram editor",
+        "licences": 3,
+        "reason": "Service desk process maps"
+      },
+      "decisions": [
+        {
+          "by": "omar",
+          "outcome": "return",
+          "daysAgo": 9,
+          "comment": "Please confirm whether the free viewer is enough for two of the three people."
+        }
+      ]
+    },
+    {
+      "key": "software-daniel",
+      "service": "software",
+      "requester": "daniel",
+      "daysAgo": 3,
+      "data": {
+        "software": "Cloud cost explorer",
+        "licences": 1,
+        "reason": "Monthly cloud spend reviews"
+      }
+    },
+    {
+      "key": "expense-james",
+      "service": "expense-claim",
+      "requester": "james",
+      "daysAgo": 2,
+      "data": {
+        "purpose": "Supplier visit to Sharjah",
+        "amount": {
+          "amount": 386.5,
+          "currency": "AED"
+        },
+        "spent_on": "-3d"
+      }
+    },
+    {
+      "key": "expense-marco",
+      "service": "expense-claim",
+      "requester": "marco",
+      "daysAgo": 9,
+      "data": {
+        "purpose": "Fuel and tolls for site visits",
+        "amount": {
+          "amount": 612,
+          "currency": "SAR"
+        },
+        "spent_on": "-4d"
+      },
+      "decisions": [
+        {
+          "by": "ahmed",
+          "outcome": "approve",
+          "daysAgo": 8
+        }
+      ]
+    },
+    {
+      "key": "expense-ahmed",
+      "service": "expense-claim",
+      "requester": "ahmed",
+      "daysAgo": 1,
+      "data": {
+        "purpose": "Client lunch, Cairo",
+        "amount": {
+          "amount": 1450,
+          "currency": "EGP"
+        },
+        "spent_on": "-1d"
+      }
+    },
+    {
+      "key": "purchase-abdulrahman",
+      "service": "purchase-request",
+      "requester": "abdulrahman",
+      "daysAgo": 8,
+      "data": {
+        "item": "24 network switches for the new Riyadh office",
+        "supplier": "Gulf Network Supplies",
+        "amount": {
+          "amount": 86400,
+          "currency": "SAR"
+        }
+      }
+    },
+    {
+      "key": "purchase-james",
+      "service": "purchase-request",
+      "requester": "james",
+      "daysAgo": 14,
+      "data": {
+        "item": "Pallet wrap, 400 rolls",
+        "supplier": "Desert Packaging",
+        "amount": {
+          "amount": 9800,
+          "currency": "AED"
+        }
+      },
+      "decisions": [
+        {
+          "by": "ahmed",
+          "outcome": "approve",
+          "daysAgo": 13,
+          "comment": "Approved within the Q4 budget."
+        }
+      ]
+    },
+    {
+      "key": "travel-khalid",
+      "service": "business-travel",
+      "requester": "khalid",
+      "daysAgo": 4,
+      "data": {
+        "destination": "Dubai",
+        "dates": {
+          "from": "+9d",
+          "to": "+11d"
+        },
+        "purpose": "Quarterly operations review",
+        "budget": {
+          "amount": 5200,
+          "currency": "SAR"
+        }
+      }
+    },
+    {
+      "key": "travel-priya",
+      "service": "business-travel",
+      "requester": "priya",
+      "daysAgo": 12,
+      "data": {
+        "destination": "Singapore",
+        "dates": {
+          "from": "+30d",
+          "to": "+35d"
+        },
+        "purpose": "Logistics technology conference",
+        "budget": {
+          "amount": 14500,
+          "currency": "AED"
+        }
+      },
+      "decisions": [
+        {
+          "by": "ahmed",
+          "outcome": "reject",
+          "daysAgo": 11,
+          "comment": "The conference is online this year; please join remotely."
+        }
+      ]
+    },
+    {
+      "key": "training-noura",
+      "service": "training",
+      "requester": "noura",
+      "daysAgo": 3,
+      "data": {
+        "course": "Certified HR Professional exam preparation",
+        "cost": {
+          "amount": 4200,
+          "currency": "SAR"
+        },
+        "starts": "+21d"
+      }
+    },
+    {
+      "key": "training-emily",
+      "service": "training",
+      "requester": "emily",
+      "daysAgo": 16,
+      "data": {
+        "course": "Employer branding masterclass",
+        "cost": {
+          "amount": 2900,
+          "currency": "AED"
+        },
+        "starts": "+5d"
+      },
+      "decisions": [
+        {
+          "by": "admin",
+          "outcome": "approve",
+          "daysAgo": 15
+        }
+      ]
+    },
+    {
+      "key": "remote-emily",
+      "service": "remote-work",
+      "requester": "emily",
+      "daysAgo": 0.2,
+      "data": {
+        "day": "+2d",
+        "reason": "Interviews by video all day"
+      }
+    },
+    {
+      "key": "certificate-salma",
+      "service": "experience-certificate",
+      "requester": "salma",
+      "daysAgo": 5,
+      "data": {
+        "addressee": "Ministry of Justice",
+        "language": "ar"
+      },
+      "decisions": [
+        {
+          "by": "reem",
+          "outcome": "approve",
+          "daysAgo": 4
+        }
+      ]
+    },
+    {
+      "key": "visa-daniel",
+      "service": "visa-letter",
+      "requester": "daniel",
+      "daysAgo": 6,
+      "data": {
+        "country": "Germany",
+        "travel_on": "+25d"
+      },
+      "decisions": [
+        {
+          "by": "reem",
+          "outcome": "approve",
+          "daysAgo": 5
+        }
+      ]
+    },
+    {
+      "key": "catering-huda",
+      "service": "event-catering",
+      "requester": "huda",
+      "daysAgo": 2,
+      "data": {
+        "event": "Cairo ten-year breakfast",
+        "day": "+3d",
+        "guests": 60
+      },
+      "decisions": [
+        {
+          "by": "khalid",
+          "outcome": "approve",
+          "daysAgo": 1,
+          "comment": "Approved. Facilities will set up the terrace."
+        }
+      ]
+    },
+    {
+      "key": "announcement-maryam",
+      "service": "announcement-request",
+      "requester": "maryam",
+      "daysAgo": 1,
+      "data": {
+        "headline": "Step challenge leaderboard, week 2",
+        "audience": "everyone",
+        "publish_on": "+2d"
+      }
+    },
+    {
+      "key": "salary-ahmed",
+      "service": "salary-letter",
+      "requester": "ahmed",
+      "daysAgo": 3,
+      "data": {
+        "addressee": "National Bank of Egypt",
+        "needed_by": "+7d"
+      }
+    },
+    {
+      "key": "salary-admin",
+      "service": "salary-letter",
+      "requester": "admin",
+      "daysAgo": 6,
+      "data": {
+        "addressee": "Emirates NBD",
+        "needed_by": "+5d"
+      }
+    },
+    {
+      "key": "it-lina",
+      "service": "it-support",
+      "requester": "lina",
+      "daysAgo": 1,
+      "data": {
+        "problem": "The printer on floor 14 shows a paper jam that is not there"
+      }
+    },
+    {
+      "key": "it-admin",
+      "service": "it-support",
+      "requester": "admin",
+      "daysAgo": 0.5,
+      "data": {
+        "problem": "Second monitor flickers after the latest update"
+      }
+    },
+    {
+      "key": "parking-reem",
+      "service": "parking-permit",
+      "requester": "reem",
+      "daysAgo": 2,
+      "data": {
+        "plate": "Dubai L 48213"
+      }
+    },
+    {
+      "key": "cards-youssef",
+      "service": "business-cards",
+      "requester": "youssef",
+      "daysAgo": 4,
+      "data": {
+        "quantity": 200
+      }
+    },
+    {
+      "key": "maintenance-lina",
+      "service": "maintenance",
+      "requester": "lina",
+      "daysAgo": 2,
+      "data": {
+        "location": "Floor 14, meeting room 14.3",
+        "problem": "Air conditioning is too cold and cannot be adjusted"
+      }
+    },
+    {
+      "key": "wellbeing-priya",
+      "service": "wellbeing-session",
+      "requester": "priya",
+      "daysAgo": 3,
+      "data": {
+        "session": "health_check",
+        "day": "+9d"
+      }
+    },
+    {
+      "key": "enquiry-marco",
+      "service": "finance-enquiry",
+      "requester": "marco",
+      "daysAgo": 5,
+      "data": {
+        "question": "When is the November expense run?"
+      }
+    },
+    {
+      "key": "feedback-noura",
+      "service": "intranet-feedback",
+      "requester": "noura",
+      "daysAgo": 6,
+      "data": {
+        "feedback": "The Arabic search finds names written with or without hamza. Excellent."
+      }
+    }
+  ]
+}

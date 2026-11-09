@@ -19,6 +19,8 @@ public sealed class DevHostFactory(TestDatabase database, string environment = "
         builder.UseSetting("Storage:Root", Path.Combine(Path.GetTempPath(), "tb-devhost-" + Guid.NewGuid().ToString("N")[..8]));
         builder.UseSetting("Messaging:Transport", "InMemory");
         builder.UseSetting("Auth:DevSignIn:Enabled", "true");
+        // The demo data package (docs/testing/demo-data.md) is heavy; DemoDataSeedTests runs it on purpose, other host tests leave it off.
+        builder.UseSetting("Dev:SeedDemo:Folder", "");
         foreach (var (key, value) in settings ?? new Dictionary<string, string?>())
         {
             builder.UseSetting(key, value);

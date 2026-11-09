@@ -1,0 +1,167 @@
+{
+  "$comment": "Demo data package, part 3: knowledge base articles (how-to guides) in English and Arabic, each with an owner who keeps it current. Fictional; found again by English title.",
+  "knowledge": [
+    {
+      "key": "vpn",
+      "type": "knowledge",
+      "author": "daniel",
+      "owner": "omar",
+      "daysAgo": 20,
+      "title": { "en": "Connect to the VPN from home", "ar": "الاتصال بالشبكة الافتراضية الخاصة من المنزل" },
+      "summary": { "en": "Set up the VPN on a company laptop in five minutes.", "ar": "إعداد الشبكة الافتراضية الخاصة على جهاز الشركة في خمس دقائق." },
+      "body": {
+        "en": [
+          "## Before you start",
+          "You need a company laptop and the Authenticator app on your phone.",
+          "## Steps",
+          "- Open the VPN client from the Start menu.",
+          "- Choose the gateway nearest to you: Dubai, Riyadh or Cairo.",
+          "- Sign in with your work account and approve the request on your phone.",
+          "## If it does not connect",
+          "Restart the laptop and try again. If it still fails, raise an IT support request and choose the category Network."
+        ],
+        "ar": [
+          "## قبل أن تبدأ",
+          "تحتاج إلى جهاز من الشركة وتطبيق المصادقة على هاتفك.",
+          "## الخطوات",
+          "- افتح برنامج الشبكة الافتراضية من قائمة ابدأ.",
+          "- اختر البوابة الأقرب إليك: دبي أو الرياض أو القاهرة.",
+          "- سجّل الدخول بحساب العمل ووافق على الطلب من هاتفك.",
+          "## إذا لم يتم الاتصال",
+          "أعد تشغيل الجهاز وحاول مرة أخرى. إذا استمرت المشكلة، قدّم طلب دعم تقني واختر فئة الشبكة."
+        ]
+      }
+    },
+    {
+      "key": "mfa",
+      "type": "knowledge",
+      "author": "tariq",
+      "owner": "omar",
+      "daysAgo": 19,
+      "title": { "en": "Set up sign-in approval on a new phone", "ar": "إعداد الموافقة على تسجيل الدخول في هاتف جديد" },
+      "summary": { "en": "Move multi-factor sign-in to a new phone without getting locked out.", "ar": "انقل التحقق متعدد العوامل إلى هاتف جديد دون أن يُقفل حسابك." },
+      "body": {
+        "en": [
+          "Do this before you reset or hand in your old phone.",
+          "- On your laptop, open My sign-ins and choose Add method.",
+          "- Install the Authenticator app on the new phone and scan the code.",
+          "- Approve the test notification, then remove the old phone from the list.",
+          "Lost your old phone already? Call the service desk on extension 4000; they verify you and issue a temporary pass."
+        ],
+        "ar": [
+          "قم بذلك قبل إعادة ضبط هاتفك القديم أو تسليمه.",
+          "- افتح صفحة عمليات تسجيل الدخول من جهازك واختر إضافة طريقة.",
+          "- ثبّت تطبيق المصادقة على الهاتف الجديد وامسح الرمز.",
+          "- وافق على الإشعار التجريبي، ثم احذف الهاتف القديم من القائمة.",
+          "فقدت هاتفك القديم؟ اتصل بمكتب الخدمة على التحويلة 4000 للتحقق من هويتك وإصدار رمز مؤقت."
+        ]
+      }
+    },
+    {
+      "key": "meeting-rooms",
+      "type": "knowledge",
+      "author": "lina",
+      "owner": "khalid",
+      "daysAgo": 16,
+      "title": { "en": "Book a meeting room", "ar": "حجز قاعة اجتماعات" },
+      "summary": { "en": "Find a free room with the right screen and seats, in any office.", "ar": "اعثر على قاعة متاحة بالشاشة وعدد المقاعد المناسب في أي مكتب." },
+      "body": {
+        "en": [
+          "Rooms are booked from your Outlook calendar. Add the room as an attendee and it accepts if it is free.",
+          "- Rooms on floors 7 to 14 in Dubai HQ seat 4 to 20 people.",
+          "- The auditorium needs a Facilities request at least three working days ahead.",
+          "- Release a room you no longer need so others can use it.",
+          "Need catering? Add it in the Event catering service after you book."
+        ],
+        "ar": [
+          "تُحجز القاعات من تقويم أوتلوك. أضف القاعة كمدعو وستقبل الدعوة إذا كانت متاحة.",
+          "- تتسع القاعات في الطوابق من 7 إلى 14 في المقر الرئيسي لعدد يتراوح بين 4 و20 شخصًا.",
+          "- يتطلب حجز القاعة الكبرى طلبًا من إدارة المرافق قبل ثلاثة أيام عمل على الأقل.",
+          "- ألغِ حجز القاعة التي لم تعد بحاجة إليها ليستفيد منها غيرك.",
+          "تحتاج إلى ضيافة؟ أضفها عبر خدمة ضيافة الفعاليات بعد الحجز."
+        ]
+      }
+    },
+    {
+      "key": "expense-guide",
+      "type": "knowledge",
+      "author": "fatima",
+      "owner": "ahmed",
+      "daysAgo": 3,
+      "title": { "en": "How to submit an expense claim", "ar": "كيفية تقديم مطالبة مصروفات" },
+      "summary": { "en": "What you can claim, the receipts you need and when you are paid.", "ar": "ما الذي يمكنك المطالبة به، والإيصالات المطلوبة، وموعد الدفع." },
+      "body": {
+        "en": [
+          "## What you can claim",
+          "- Travel, hotels and meals on business trips, within the Travel policy limits.",
+          "- Client entertainment approved in advance by your manager.",
+          "- Work equipment under 500 AED when IT cannot supply it in time.",
+          "## How",
+          "Open the Expense claim service, add one line per receipt and attach a photo or PDF. Your line manager approves, then Finance pays in the weekly run.",
+          "Claims older than 60 days need a note from your manager."
+        ],
+        "ar": [
+          "## ما الذي يمكن المطالبة به",
+          "- السفر والفنادق والوجبات في رحلات العمل ضمن حدود سياسة السفر.",
+          "- ضيافة العملاء المعتمدة مسبقًا من مديرك.",
+          "- معدات العمل التي تقل عن 500 درهم عندما لا تستطيع تقنية المعلومات توفيرها في الوقت المناسب.",
+          "## الطريقة",
+          "افتح خدمة مطالبة المصروفات، وأضف سطرًا لكل إيصال وأرفق صورة أو ملف PDF. يعتمد مديرك المباشر الطلب ثم تدفعه المالية في الدفعة الأسبوعية.",
+          "تحتاج المطالبات التي يزيد عمرها عن 60 يومًا إلى ملاحظة من مديرك."
+        ]
+      }
+    },
+    {
+      "key": "new-joiner",
+      "type": "knowledge",
+      "author": "emily",
+      "owner": "layla",
+      "daysAgo": 14,
+      "title": { "en": "Your first week: new joiner checklist", "ar": "أسبوعك الأول: قائمة الموظف الجديد" },
+      "summary": { "en": "Everything to do in your first five days, in order.", "ar": "كل ما عليك فعله في أيامك الخمسة الأولى بالترتيب." },
+      "body": {
+        "en": [
+          "- Day 1: collect your laptop and access card, and set up sign-in approval on your phone.",
+          "- Day 2: read and confirm the Code of conduct and the Information security policy.",
+          "- Day 3: complete the safety induction for your site.",
+          "- Day 4: meet your buddy and book a coffee with three people outside your team.",
+          "- Day 5: check your profile in People and add your time zone.",
+          "Questions at any time go to your buddy or the HR Team."
+        ],
+        "ar": [
+          "- اليوم الأول: استلم جهازك وبطاقة الدخول، وفعّل الموافقة على تسجيل الدخول في هاتفك.",
+          "- اليوم الثاني: اقرأ مدونة السلوك وسياسة أمن المعلومات وأكّد اطلاعك عليهما.",
+          "- اليوم الثالث: أكمل التعريف بإجراءات السلامة في موقعك.",
+          "- اليوم الرابع: قابل زميلك المرشد واحجز لقاءً قصيرًا مع ثلاثة أشخاص من خارج فريقك.",
+          "- اليوم الخامس: راجع ملفك في دليل الأشخاص وأضف منطقتك الزمنية.",
+          "لأي سؤال تواصل مع زميلك المرشد أو فريق الموارد البشرية."
+        ]
+      }
+    },
+    {
+      "key": "travel-booking",
+      "type": "knowledge",
+      "author": "james",
+      "owner": "ahmed",
+      "daysAgo": 10,
+      "title": { "en": "Book business travel", "ar": "حجز سفر العمل" },
+      "summary": { "en": "Flights and hotels through the travel desk, approved before you book.", "ar": "الرحلات والفنادق عبر مكتب السفر، بعد الموافقة وقبل الحجز." },
+      "body": {
+        "en": [
+          "All business travel is approved first, then booked by the travel desk.",
+          "- Submit a Business travel request at least ten days before you fly.",
+          "- Economy class for flights under six hours; business class above that for director grades.",
+          "- The travel desk sends your itinerary by email and adds it to your calendar.",
+          "For visas, allow three extra weeks and attach a passport copy to the request."
+        ],
+        "ar": [
+          "يُعتمد كل سفر عمل أولًا، ثم يحجزه مكتب السفر.",
+          "- قدّم طلب سفر عمل قبل موعد الرحلة بعشرة أيام على الأقل.",
+          "- الدرجة السياحية للرحلات الأقل من ست ساعات، ودرجة رجال الأعمال لما يزيد عن ذلك لدرجة مدير فأعلى.",
+          "- يرسل مكتب السفر خط الرحلة بالبريد الإلكتروني ويضيفه إلى تقويمك.",
+          "للتأشيرات، خصّص ثلاثة أسابيع إضافية وأرفق نسخة من جواز السفر مع الطلب."
+        ]
+      }
+    }
+  ]
+}
