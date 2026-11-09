@@ -1522,6 +1522,28 @@
       "empty": "No requests from your team",
       "emptyHint": "Requests for the people who report to you, directly or through their managers, show here.",
       "for": "For {name}"
+    },
+    "home": {
+      "tasks": {
+        "title": "Your tasks",
+        "inbox": "Task inbox",
+        "retry": "Try again",
+        "failed": "Your tasks could not be loaded.",
+        "none": "Nothing is waiting for you.",
+        "waiting": "{count, plural, one {task waiting} other {tasks waiting}}",
+        "overdue": "overdue",
+        "dueSoon": "due within a day",
+        "from": "From {name}",
+        "age": "{when}"
+      },
+      "services": {
+        "title": "Your services",
+        "all": "All {count} services",
+        "allPlain": "All services",
+        "retry": "Try again",
+        "failed": "Your services could not be loaded.",
+        "none": "No services are open to you yet."
+      }
     }
   },
   "content": {
