@@ -3,7 +3,7 @@
 Depends on 004, 006, 013 (`evaluation` use case), 020 and 027 (runtime, execution records, tool gateway sandbox mode); 012 (retrieval suites). R1 covers User Stories 1 to 6, 8 (calibration) and 10 (platform, tenant and agent levels).
 
 ## Phase 1: Foundations
-- [ ] T001 `Evaluation` and `Evaluation.Contracts` projects; module map row; migration for suites, datasets, cases, personas, rubrics, runs, results and gates (forced RLS, platform tables as RLS exceptions)
+- [x] T001 `Evaluation` and `Evaluation.Contracts` projects; module map row; migration for suites, datasets, cases, personas, rubrics, runs, results and gates (forced RLS, platform tables as RLS exceptions)
 - [x] T002 Permissions `eval.design`, `eval.review`, `eval.policy_manage`, `eval.view`; built-in role Evaluation Reviewer; audit actions of section 13 for R1
 - [x] T003 Synthetic persona identities in `Identity`, excluded from sign-in and the directory
 
@@ -29,4 +29,4 @@ Depends on 004, 006, 013 (`evaluation` use case), 020 and 027 (runtime, executio
 - [x] T016 Suite and dataset editors, run and compare views with table views, settings page, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
-- [ ] T017 Run time performance test; OpenAPI; R1 implementation notes; spec evidence
+- [x] T017 Run time performance test; OpenAPI; R1 implementation notes; spec evidence

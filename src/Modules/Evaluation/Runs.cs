@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -423,11 +424,39 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
     }
 }
 
+/// <summary>
+/// Evaluation spans (FR-029): one span per batch and one per case, tagged with the run and the correlation ID its
+/// messages carry, and with the OpenTelemetry generative AI attributes for the agent call. No input or answer text is
+/// put on a span.
+/// </summary>
+public static class EvalTelemetry
+{
+    public const string SourceName = "TeamBeats.Evaluation";
+    public static readonly ActivitySource Source = new(SourceName);
+
+    internal static Activity? Start(string name, Guid runId)
+    {
+        var activity = Source.StartActivity(name);
+        activity?.SetTag("eval.run_id", runId.ToString());
+        if (Correlation.Id is { } correlation)
+        {
+            activity?.SetTag("correlation_id", correlation);
+        }
+        return activity;
+    }
+}
+
 /// <summary>Runs one case as its persona and scores it (US3): the agent on the real runtime, then the judge, then the deterministic and trajectory evaluators.</summary>
 public sealed class CaseExecutor(IDbSession session, IAgentEvaluationRuntime runtime, EvaluationJudge judge, RunStore store, IClock clock)
 {
     internal async Task RunAsync(CaseWork work, CancellationToken ct)
     {
+        using var span = EvalTelemetry.Start("eval.case", work.RunId);
+        span?.SetTag("eval.case", work.N);
+        span?.SetTag("eval.suite", work.Suite);
+        span?.SetTag("eval.locale", work.Locale);
+        span?.SetTag("gen_ai.operation.name", "invoke_agent");
+        span?.SetTag("gen_ai.agent.id", work.AgentId.ToString());
         EvalRunRecord record;
         try
         {
@@ -435,12 +464,17 @@ public sealed class CaseExecutor(IDbSession session, IAgentEvaluationRuntime run
         }
         catch (AppException e) when (e.Status is 404 or 409)
         {
+            span?.SetStatus(ActivityStatusCode.Error, e.DetailKey ?? e.Code);
             await store.ErrorAsync(work.RunId, work.N, e.DetailKey ?? e.Code, ct);
             return;
         }
+        span?.SetTag("gen_ai.response.model", record.Model);
+        span?.SetTag("gen_ai.usage.input_tokens", record.InputTokens);
+        span?.SetTag("gen_ai.usage.output_tokens", record.OutputTokens);
         var classification = Enum.Parse<DataClassification>(work.Classification, ignoreCase: true);
         var verdicts = await judge.JudgeAsync(work.Metrics, work.Locale, work.Input, work.Expect, record, classification, ct);
         var metrics = CaseEvaluators.Evaluate(work.Metrics, work.Expect, work.Locale, record, verdicts);
+        span?.SetTag("eval.failed", GateService.Fails(metrics));
         await session.ExecAsync(
             """
             update evaluation.case_result set status = 'done', agent_run_id = @runId, outcome = @outcome, answer = @answer, metrics = @metrics, verdicts = @verdicts,
@@ -481,6 +515,7 @@ public sealed class EvaluationRunner(IServiceScopeFactory scopes, ITenantContext
     {
         var tenant = context.RequireTenant();
         var runId = message.RunId;
+        using var span = EvalTelemetry.Start("eval.batch", runId);
         if (!await InScopeAsync(tenant, null, sp => sp.GetRequiredService<RunStore>().BeginAsync(runId, ct)))
         {
             return;

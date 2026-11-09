@@ -26,7 +26,7 @@ Planned modules are listed so that specs use the same names before the code exis
 | `Search` | 012 | Search and vector index records (derived, rebuildable) | Query API with permission filtering | none | R1 |
 | `AiGateway` | 013 | Model policy, routes, budgets, private endpoints, usage records | `IAiGateway` (chat, tools, embeddings) | `AiPolicyChanged`, `AiBudgetThresholdReached` | R1 |
 | `Agents` | 020, 027, 014 | Agent definitions, versions, runs and checkpoints, tool registry, execution records, assistant conversations | Agent invocation, tool gateway (also for external AI clients through `PublicApi`, spec 035) | `AgentRunCompleted`, `AgentActionAwaitingApproval`, `AgentKillSwitchActivated` | R1 |
-| `Evaluation` | 034 | Evaluation suites, datasets, rubrics, thresholds, runs, results, gate decisions and evidence (ADR-0015) | Gate requests and results, run queries | `EvaluationRunCompleted`, `EvaluationGateDecided` | R1 |
+| `Evaluation` | 034 | Evaluation suites, datasets, rubrics, thresholds, runs, results, gate decisions and evidence (ADR-0015) | Gate requests and results, run queries | `EvaluationRunCompleted`, `EvaluationGateDecided`, `EvaluationRouteGateDecided` | R1 |
 | `Notifications` | 015 | Notifications, channel preferences, deliveries | `INotificationSender` | `NotificationDelivered`, `NotificationBounced` | R1 |
 | `Services` | 016 | Service catalogue, forms, requests, task inbox, delegations | Task inbox API, request submission | `RequestSubmitted`, `RequestCompleted`, `TaskCompleted` | R1 |
 | `Workflow` | 024 | Process and decision definitions, instances, jobs, timers, incidents | Start process, correlate message, complete task | `ProcessInstanceCompleted`, `UserTaskCreated`, `IncidentRaised` | R1 core, R2 BPMN |

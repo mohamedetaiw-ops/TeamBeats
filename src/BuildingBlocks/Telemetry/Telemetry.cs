@@ -23,7 +23,8 @@ public static class TelemetryExtensions
             .ConfigureResource(r => r.AddService(serviceName))
             .WithTracing(t =>
             {
-                t.AddSource(ActivitySourceName).AddAspNetCoreInstrumentation();
+                // Module sources are named TeamBeats.{Module}, such as TeamBeats.Evaluation (spec 034 FR-029).
+                t.AddSource(ActivitySourceName, $"{ActivitySourceName}.*").AddAspNetCoreInstrumentation();
                 if (otlp)
                 {
                     t.AddOtlpExporter();
