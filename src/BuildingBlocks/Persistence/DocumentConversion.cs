@@ -13,6 +13,9 @@ public interface IDocumentConverter
 
     /// <summary>The PDF, or null when this file could not be converted. The caller disposes the stream.</summary>
     Task<Stream?> ToPdfAsync(Stream content, string fileName, CancellationToken ct = default);
+
+    /// <summary>The PDF with one line of text at the foot of every page, or null when it could not be stamped.</summary>
+    Task<Stream?> StampFooterAsync(Stream pdf, string text, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -27,24 +30,48 @@ public sealed class GotenbergConverter(IHttpClientFactory clients, Uri baseUrl) 
 
     public bool Available => true;
 
-    public async Task<Stream?> ToPdfAsync(Stream content, string fileName, CancellationToken ct = default)
+    public Task<Stream?> ToPdfAsync(Stream content, string fileName, CancellationToken ct = default)
+    {
+        var form = new MultipartFormDataContent();
+        var file = new StreamContent(content);
+        file.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        // Gotenberg picks the converter from the extension; the name itself is not needed and is not sent.
+        form.Add(file, "files", "document" + Path.GetExtension(fileName).ToLowerInvariant());
+        return PostAsync("forms/libreoffice/convert", form, ct);
+    }
+
+    /// <summary>
+    /// Gotenberg 8's stamp route with a text source only: the footer goes over the content at the bottom centre of
+    /// each page. No file or path source is ever sent (GHSA-3cv5-q585-h563 concerns those).
+    /// </summary>
+    public Task<Stream?> StampFooterAsync(Stream pdf, string text, CancellationToken ct = default)
+    {
+        var form = new MultipartFormDataContent();
+        var file = new StreamContent(pdf);
+        file.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+        form.Add(file, "files", "document.pdf");
+        form.Add(new StringContent("text"), "stampSource");
+        form.Add(new StringContent(text), "stampExpression");
+        form.Add(new StringContent("""{"position":"bc","offset":"0 14","points":8,"scale":"1 abs","rotation":0,"opacity":1}"""), "stampOptions");
+        return PostAsync("forms/pdfengines/stamp", form, ct);
+    }
+
+    private async Task<Stream?> PostAsync(string route, MultipartFormDataContent form, CancellationToken ct)
     {
         try
         {
-            using var form = new MultipartFormDataContent();
-            var file = new StreamContent(content);
-            file.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-            // Gotenberg picks the converter from the extension; the name itself is not needed and is not sent.
-            form.Add(file, "files", "document" + Path.GetExtension(fileName).ToLowerInvariant());
-            using var response = await clients.CreateClient(ClientName).PostAsync(new Uri(baseUrl, "forms/libreoffice/convert"), form, ct);
-            if (!response.IsSuccessStatusCode)
+            using (form)
             {
-                return null;
+                using var response = await clients.CreateClient(ClientName).PostAsync(new Uri(baseUrl, route), form, ct);
+                if (!response.IsSuccessStatusCode)
+                {
+                    return null;
+                }
+                var pdf = new FileStream(Path.GetTempFileName(), FileMode.Open, FileAccess.ReadWrite, FileShare.None, 81920, FileOptions.DeleteOnClose);
+                await response.Content.CopyToAsync(pdf, ct);
+                pdf.Position = 0;
+                return pdf;
             }
-            var pdf = new FileStream(Path.GetTempFileName(), FileMode.Open, FileAccess.ReadWrite, FileShare.None, 81920, FileOptions.DeleteOnClose);
-            await response.Content.CopyToAsync(pdf, ct);
-            pdf.Position = 0;
-            return pdf;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or IOException && !ct.IsCancellationRequested)
         {
@@ -59,4 +86,6 @@ public sealed class UnavailableConverter : IDocumentConverter
     public bool Available => false;
 
     public Task<Stream?> ToPdfAsync(Stream content, string fileName, CancellationToken ct = default) => Task.FromResult<Stream?>(null);
+
+    public Task<Stream?> StampFooterAsync(Stream pdf, string text, CancellationToken ct = default) => Task.FromResult<Stream?>(null);
 }

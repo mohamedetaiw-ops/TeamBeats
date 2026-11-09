@@ -19,3 +19,9 @@ public sealed record DocumentPermissionsChanged(Guid LibraryId, string ResourceT
 
 /// <summary>A document went to the recycle bin (spec 011 FR-018), so search and subscriptions stop showing it.</summary>
 public sealed record DocumentDeleted(Guid DocumentId, Guid LibraryId) : IIntegrationEvent;
+
+/// <summary>A controlled document's owner withdrew it on review (spec 011 US3 scenario 5); readers no longer get it.</summary>
+public sealed record DocumentWithdrawn(Guid DocumentId, Guid LibraryId) : IIntegrationEvent;
+
+/// <summary>A reader confirmed reading a controlled document's version in force (spec 011 FR-008), for spec 025 attestation.</summary>
+public sealed record DocumentReadConfirmed(Guid DocumentId, Guid VersionId, Guid UserId) : IIntegrationEvent;

@@ -66,6 +66,11 @@ public sealed class DocumentVersions(
         {
             throw HeldBy(doc);
         }
+        if (doc.ReleaseInstance is not null)
+        {
+            // The version under approval is the one approvers see; it may not change under them.
+            throw AppException.Conflict("conflict.documents.in_release");
+        }
         return (library, doc);
     }
 
@@ -165,6 +170,10 @@ public sealed class DocumentVersions(
     {
         var (library, doc) = await EditableAsync(id, ct);
         var note = Note(request.Note);
+        if (request.Publish && await libraries.ControlledOfAsync(doc.TypeId, ct) is not null)
+        {
+            throw AppException.Conflict("conflict.documents.controlled_release");
+        }
         Guid versionId;
         if (body is not null)
         {
@@ -397,6 +406,10 @@ public sealed class DocumentVersions(
         {
             throw HeldBy(doc);
         }
+        if (doc.ReleaseInstance is not null)
+        {
+            throw AppException.Conflict("conflict.documents.in_release");
+        }
         await DropWorkingCopyAsync(doc, ct);
         await session.ExecAsync(
             "update documents.document set deleted_at = @now, deleted_by = @user, checked_out_by = case when checked_in then null else checked_out_by end, checked_out_at = case when checked_in then null else checked_out_at end where id = @id",
@@ -459,10 +472,15 @@ public sealed class DocumentVersions(
             new { cutoff = now.AddDays(-days), limit }, r => (Id: r.GetGuid(0), Library: r.GetGuid(1), Inherits: r.GetBoolean(2)), ct);
         foreach (var (id, libraryId, inherits) in due)
         {
-            var keys = await session.QueryAsync("select object_key from documents.document_version where document_id = @id union select preview_key from documents.document_version where document_id = @id and preview_key is not null", new { id }, r => r.GetString(0), ct);
+            var keys = await session.QueryAsync("""
+                select object_key from documents.document_version where document_id = @id
+                union select preview_key from documents.document_version where document_id = @id and preview_key is not null
+                union select controlled_key from documents.document_version where document_id = @id and controlled_key is not null
+                """, new { id }, r => r.GetString(0), ct);
             await session.ExecAsync(
                 """
                 delete from documents.download_token where document_id = @id;
+                delete from documents.read_confirmation where document_id = @id;
                 update documents.document set pending_version_id = null, current_version_id = null, effective_version_id = null where id = @id;
                 delete from documents.document_version where document_id = @id;
                 delete from documents.document where id = @id;

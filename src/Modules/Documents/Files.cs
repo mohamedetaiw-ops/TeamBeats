@@ -55,7 +55,23 @@ public sealed record DocumentView(
     VersionView? Pending,
     bool Inherits,
     DocRights Rights,
-    int Version);
+    int Version,
+    ControlledView? Controlled = null);
+
+/// <summary>
+/// The controlled document state (spec 011 US3): its number, whether a release is in approval or approved and waiting
+/// for its date (with that version, so readers see "new version effective on ..."), the review date and, when the type
+/// asks for it, whether the caller has confirmed reading the version in force.
+/// </summary>
+public sealed record ControlledView(string? Number, string Release, VersionView? Upcoming, DateTimeOffset? ReviewDueAt, bool ReadConfirmationRequired,
+    DateTimeOffset? ReadConfirmedAt);
+
+public static class ReleaseStates
+{
+    public const string None = "none";
+    public const string InApproval = "in_approval";
+    public const string Scheduled = "scheduled";
+}
 
 public sealed record MetadataRequest(IReadOnlyDictionary<string, JsonElement>? Metadata, string? Classification, bool Publish, int? Version);
 
@@ -150,6 +166,15 @@ public sealed class DocumentFiles(
         }
         await QuotaAsync(declaredLength ?? 0, ct);
 
+        var controlled = await libraries.ControlledOfAsync(request.TypeId, ct);
+        if (controlled is not null)
+        {
+            await entitlements.DemandAsync(Capabilities.DocsControlled, ct);
+            if (request.Publish)
+            {
+                throw AppException.Conflict("conflict.documents.controlled_release");
+            }
+        }
         var errors = new ValidationErrors();
         var fields = await FieldsAsync(library.Id, request.TypeId, errors, ct);
         var (values, complete) = MetadataRules.Values(fields, request.Metadata, errors);
@@ -183,16 +208,17 @@ public sealed class DocumentFiles(
         var checkIn = complete && scan == ScanStates.Clean;
         var (major, minor, state) = !checkIn ? (0, 0, VersionStates.Pending) : request.Publish ? (1, 0, VersionStates.Effective) : (0, 1, VersionStates.Draft);
         var now = clock.UtcNow;
+        var number = controlled is not null ? await libraries.NextNumberAsync(controlled, ct) : null;
         await session.ExecAsync(
             """
-            insert into documents.document (tenant_id, id, library_id, folder_id, type_id, name, metadata, classification, owner_user_id, checked_in,
+            insert into documents.document (tenant_id, id, library_id, folder_id, type_id, name, number, metadata, classification, owner_user_id, checked_in,
               checked_out_by, checked_out_at, securable_type, securable_id, created_by, created_at, updated_at)
-            values (platform.current_tenant_id(), @documentId, @lib, @folder, @type, @name, @metadata, @classification, @user, @checkIn,
+            values (platform.current_tenant_id(), @documentId, @lib, @folder, @type, @name, @number, @metadata, @classification, @user, @checkIn,
               @holder, @heldAt, @securableType, @securable, @user, @now, @now)
             """,
             new
             {
-                documentId, lib = library.Id, folder = request.FolderId, type = request.TypeId, name, metadata = new Jsonb(DocJson.Write(values)), classification, user,
+                documentId, lib = library.Id, folder = request.FolderId, type = request.TypeId, name, number, metadata = new Jsonb(DocJson.Write(values)), classification, user,
                 checkIn, holder = checkIn ? (Guid?)null : user, heldAt = checkIn ? (DateTimeOffset?)null : now, securableType = securable.Type, securable = securable.Id, now,
             }, ct);
         await session.ExecAsync(
@@ -317,11 +343,31 @@ public sealed class DocumentFiles(
         Guid? CheckedOutBy, DateTimeOffset? CheckedOutAt, Guid? Pending, Guid? Current, Guid? Effective, bool Inherits, string SecurableType, Guid Securable, int Version)
     {
         public const string Columns = "id, library_id, folder_id, type_id, name, number, metadata::text, classification, owner_user_id, checked_in, checked_out_by, " +
-            "checked_out_at, pending_version_id, current_version_id, effective_version_id, inherits, securable_type, securable_id, row_version";
+            "checked_out_at, pending_version_id, current_version_id, effective_version_id, inherits, securable_type, securable_id, row_version, " +
+            "release_instance_id, release_version_id, scheduled_version_id, review_due_at, review_instance_id";
+
+        /// <summary>The release under approval (controlled documents), if any.</summary>
+        public Guid? ReleaseInstance { get; init; }
+
+        public Guid? ReleaseVersion { get; init; }
+
+        /// <summary>An approved version waiting for its effective date.</summary>
+        public Guid? Scheduled { get; init; }
+
+        public DateTimeOffset? ReviewDueAt { get; init; }
+
+        public Guid? ReviewInstance { get; init; }
 
         public static DocRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.Get<Guid?>("folder_id"), r.Get<Guid?>("type_id"), r.GetString(4),
             r.Get<string>("number"), r.GetString(6), r.GetString(7), r.GetGuid(8), r.GetBoolean(9), r.Get<Guid?>("checked_out_by"), r.Get<DateTimeOffset?>("checked_out_at"),
-            r.Get<Guid?>("pending_version_id"), r.Get<Guid?>("current_version_id"), r.Get<Guid?>("effective_version_id"), r.GetBoolean(15), r.GetString(16), r.GetGuid(17), r.GetInt32(18));
+            r.Get<Guid?>("pending_version_id"), r.Get<Guid?>("current_version_id"), r.Get<Guid?>("effective_version_id"), r.GetBoolean(15), r.GetString(16), r.GetGuid(17), r.GetInt32(18))
+        {
+            ReleaseInstance = r.Get<Guid?>("release_instance_id"),
+            ReleaseVersion = r.Get<Guid?>("release_version_id"),
+            Scheduled = r.Get<Guid?>("scheduled_version_id"),
+            ReviewDueAt = r.Get<DateTimeOffset?>("review_due_at"),
+            ReviewInstance = r.Get<Guid?>("review_instance_id"),
+        };
     }
 
     /// <summary>
@@ -343,6 +389,14 @@ public sealed class DocumentFiles(
         }
         return (library, doc, rights);
     }
+
+    /// <summary>The row with no permission check, for background work and the task inbox, which check on their own.</summary>
+    internal Task<DocRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
+        session.QuerySingleOrDefaultAsync($"select {DocRow.Columns} from documents.document where id = @id and deleted_at is null" + (forUpdate ? " for update" : ""),
+            new { id }, DocRow.Read, ct);
+
+    internal Task<Guid?> ReleaseSubmitterAsync(Guid id, CancellationToken ct) =>
+        session.ScalarAsync<Guid?>("select release_submitted_by from documents.document where id = @id", new { id }, ct);
 
     internal async Task<VersionView?> VersionAsync(Guid? id, CancellationToken ct) =>
         id is null ? null : await session.QuerySingleOrDefaultAsync(
@@ -366,7 +420,24 @@ public sealed class DocumentFiles(
         var current = rights.Contribute ? await VersionAsync(doc.Current, ct) : null;
         return new DocumentView(doc.Id, doc.LibraryId, doc.FolderId, doc.TypeId, doc.Name, doc.Number, metadata, doc.Classification, doc.Owner, doc.CheckedIn,
             doc.CheckedOutBy, doc.CheckedOutAt, MetadataRules.Complete(fields, metadata), current, await VersionAsync(doc.Effective, ct),
-            holder ? await VersionAsync(doc.Pending, ct) : null, doc.Inherits, rights, doc.Version);
+            holder ? await VersionAsync(doc.Pending, ct) : null, doc.Inherits, rights, doc.Version, await ControlledViewAsync(doc, ct));
+    }
+
+    private async Task<ControlledView?> ControlledViewAsync(DocRow doc, CancellationToken ct)
+    {
+        if (await libraries.ControlledOfAsync(doc.TypeId, ct) is not { } settings)
+        {
+            return null;
+        }
+        var release = doc.ReleaseInstance is not null ? ReleaseStates.InApproval : doc.Scheduled is not null ? ReleaseStates.Scheduled : ReleaseStates.None;
+        DateTimeOffset? confirmed = null;
+        if (settings.ReadConfirmation && doc.Effective is { } effective && context.ActorId is { } user)
+        {
+            confirmed = await session.QuerySingleOrDefaultAsync(
+                "select confirmed_at from documents.read_confirmation where version_id = @effective and user_id = @user", new { effective, user },
+                r => r.Get<DateTimeOffset?>("confirmed_at"), ct);
+        }
+        return new ControlledView(doc.Number, release, await VersionAsync(doc.Scheduled, ct), doc.ReviewDueAt, settings.ReadConfirmation && doc.Effective is not null, confirmed);
     }
 
     /// <summary>
@@ -390,6 +461,10 @@ public sealed class DocumentFiles(
         if (request.Version != doc.Version)
         {
             throw AppException.Conflict("conflict.documents.stale");
+        }
+        if (request.Publish && waiting && await libraries.ControlledOfAsync(doc.TypeId, ct) is not null)
+        {
+            throw AppException.Conflict("conflict.documents.controlled_release");
         }
         var errors = new ValidationErrors();
         var fields = await FieldsAsync(library.Id, doc.TypeId, errors, ct);

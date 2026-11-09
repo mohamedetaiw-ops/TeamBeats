@@ -1,3 +1,8 @@
+using TeamBeats.Audit.Contracts;
+using TeamBeats.Localization;
+using TeamBeats.Messaging;
+using TeamBeats.Modules.Documents.Contracts;
+using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -53,9 +58,21 @@ public static class PreviewKinds
 /// converted to PDF by the <see cref="IDocumentConverter"/> on first request and kept per version. Only clean versions the
 /// caller may open get a preview; the preview is served through its own short-lived token, inline and sandboxed.
 /// </summary>
-public sealed class DocumentPreviews(IDbSession session, ITenantContext context, DocumentFiles files, TenantObjectStorage storage, IDocumentConverter converter,
+public sealed class DocumentPreviews(
+    IDbSession session,
+    ITenantContext context,
+    DocumentFiles files,
+    Libraries libraries,
+    TenantObjectStorage storage,
+    IDocumentConverter converter,
+    ILocalizer localizer,
+    ITenantSettingsReader tenantSettings,
+    IAuditWriter audit,
+    IOutbox outbox,
     IClock clock)
 {
+    public const string FooterKey = "documents.controlled_footer";
+
     private sealed record Row(Guid Library, string Key, string ContentType, string FileName, string State, string? PreviewKey);
 
     public async Task<PreviewView> PreviewAsync(Guid documentId, Guid? versionId, CancellationToken ct)
@@ -88,7 +105,8 @@ public sealed class DocumentPreviews(IDbSession session, ITenantContext context,
 
     private async Task<Row> RowAsync(Guid versionId, bool forUpdate, CancellationToken ct) =>
         (await session.QuerySingleOrDefaultAsync(
-            "select library_id, object_key, content_type, file_name, preview_state, preview_key from documents.document_version where id = @versionId" + (forUpdate ? " for update" : ""),
+            "select library_id, object_key, content_type, file_name, preview_state, preview_key from documents.document_version where id = @versionId"
+            + (forUpdate ? " for update" : ""),
             new { versionId }, r => new Row(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetString(4), r.Get<string>("preview_key")), ct))
         ?? throw AppException.NotFound();
 
@@ -144,5 +162,99 @@ public sealed class DocumentPreviews(IDbSession session, ITenantContext context,
             throw AppException.NotFound();
         }
         return (await storage.OpenReadAsync(key, ct) ?? throw AppException.NotFound(), type);
+    }
+
+    // ---- Controlled copy (US3 scenario 6) ----
+
+    /// <summary>
+    /// A PDF of a released version of a controlled document with its control footer on every page: number, version,
+    /// effective date and "uncontrolled when printed". Made once per version and kept; served through its own token.
+    /// </summary>
+    public async Task<DownloadTokenView> ControlledCopyAsync(Guid documentId, Guid? versionId, CancellationToken ct)
+    {
+        var target = await files.OpenableAsync(documentId, versionId, ct);
+        var doc = (await files.RowAsync(documentId, false, ct))!;
+        if (doc.Number is not { } number || await libraries.ControlledOfAsync(doc.TypeId, ct) is null)
+        {
+            throw AppException.Conflict("conflict.documents.not_controlled");
+        }
+        var version = (await files.VersionAsync(target, ct))!;
+        var effectiveFrom = await session.QuerySingleOrDefaultAsync("select effective_from from documents.document_version where id = @target", new { target },
+            r => r.Get<DateTimeOffset?>("effective_from"), ct);
+        if (effectiveFrom is not { } from || version.State is not (VersionStates.Approved or VersionStates.Effective or VersionStates.Superseded))
+        {
+            throw AppException.Conflict("conflict.documents.not_released");
+        }
+        if (await session.ScalarAsync<string>("select controlled_key from documents.document_version where id = @target", new { target }, ct) is null)
+        {
+            await StampAsync(documentId, target, number, version.Label, from, ct);
+        }
+        var (token, expires) = await files.IssueTokenAsync(documentId, target, TokenPurposes.ControlledCopy, ct);
+        return new DownloadTokenView(token, $"/api/v1/documents/controlled/{token}", expires);
+    }
+
+    private async Task StampAsync(Guid documentId, Guid versionId, string number, string label, DateTimeOffset from, CancellationToken ct)
+    {
+        var row = await RowAsync(versionId, forUpdate: true, ct);
+        var (kind, convert) = PreviewKinds.Of(row.ContentType, row.FileName);
+        if (kind != PreviewKinds.Pdf)
+        {
+            throw AppException.Conflict("conflict.documents.no_pdf");
+        }
+        string source;
+        if (convert)
+        {
+            if (row.State != "ready" && (row.State == "failed" || !converter.Available || !await ConvertAsync(documentId, versionId, row, ct)))
+            {
+                throw AppException.Conflict("conflict.documents.copy_unavailable");
+            }
+            source = (await RowAsync(versionId, forUpdate: false, ct)).PreviewKey!;
+        }
+        else
+        {
+            source = row.Key;
+        }
+        var zone = TimeZoneInfo.FindSystemTimeZoneById((await tenantSettings.GetLocaleSettingsAsync(ct)).TimeZone);
+        var date = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(from.UtcDateTime, zone)).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        // Stamped in English: the conversion service draws standard PDF fonts, which do not join Arabic letters.
+        var text = localizer.Get(FooterKey, "en").Replace("{number}", number, StringComparison.Ordinal).Replace("{version}", label, StringComparison.Ordinal)
+            .Replace("{date}", date, StringComparison.Ordinal);
+        await using var original = await storage.OpenReadAsync(source, ct) ?? throw AppException.NotFound();
+        await using var stamped = await converter.StampFooterAsync(original, text, ct) ?? throw AppException.Conflict("conflict.documents.copy_unavailable");
+        var key = DocumentFiles.ObjectKey(row.Library, documentId, versionId) + ".controlled.pdf";
+        await storage.PutAsync(key, stamped, "application/pdf", ct);
+        await session.ExecAsync("update documents.document_version set controlled_key = @key where id = @versionId", new { versionId, key }, ct);
+    }
+
+    /// <summary>Opens a controlled copy token: a download, so it is counted and audited like one.</summary>
+    public async Task<(Stream Content, string FileName)> OpenControlledAsync(string token, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        if (string.IsNullOrEmpty(token) || token.Length > 100)
+        {
+            throw AppException.NotFound();
+        }
+        var row = await session.QuerySingleOrDefaultAsync(
+            """
+            select t.document_id, t.version_id, v.controlled_key, v.major, v.minor, d.number, d.classification, d.library_id
+            from documents.download_token t
+            join documents.document_version v on v.id = t.version_id
+            join documents.document d on d.id = t.document_id
+            where t.token_hash = @hash and t.user_id = @user and t.expires_at > @now and t.purpose = 'controlled_copy' and d.deleted_at is null
+            """, new { hash = DocumentFiles.TokenHash(token), user, now = clock.UtcNow },
+            r => (Doc: r.GetGuid(0), Version: r.GetGuid(1), Key: r.Get<string>("controlled_key"), Label: VersionLabels.Of(r.GetInt32(3), r.GetInt32(4)),
+                Number: r.Get<string>("number"), Classification: r.GetString(6), Library: r.GetGuid(7)), ct);
+        if (row.Key is null)
+        {
+            throw AppException.NotFound();
+        }
+        var content = await storage.OpenReadAsync(row.Key, ct) ?? throw AppException.NotFound();
+        if (row.Classification is "confidential" or "restricted")
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.DocDownloaded, Securables.Document, row.Doc.ToString(),
+                Changes: new { version = row.Version, library = row.Library, controlledCopy = true }), ct);
+        }
+        await outbox.EnqueueAsync(new DocumentDownloaded(row.Doc, row.Library, user, content.CanSeek ? content.Length : 0), ct);
+        return (content, $"{row.Number} {row.Label}.pdf");
     }
 }
