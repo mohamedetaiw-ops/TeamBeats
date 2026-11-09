@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using TeamBeats.Audit.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Agents.Contracts;
@@ -66,7 +67,7 @@ internal sealed record PreparedTurn(
 /// holds no tools (FR-005).
 /// </summary>
 public sealed class AssistantService(IDbSession session, ITenantContext context, IEntitlementService entitlements, ISearchRetrieval retrieval,
-    IAiGateway gateway, IOutbox outbox, IClock clock, AgentRouter router, AgentRuns runs)
+    IAiGateway gateway, IOutbox outbox, IClock clock, AgentRouter router, AgentRuns runs, IAuditWriter audit)
 {
     public const int MaxQuestionLength = 2000;
     public const int HistoryTurns = 3;
@@ -132,6 +133,15 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
         }
         var evidence = await retrieval.RetrieveAsync(new RetrievalRequest(question, AiUseCases.Assistant, Source: scope?.Source, ItemId: scope?.ItemId), ct);
         var turnId = Ids.New();
+        // Instruction-like text in a passage is recorded with its item (027 US5 scenario 1); the passage still goes only as marked data.
+        foreach (var p in evidence.Passages)
+        {
+            if (InjectionDetector.Detect(p.Text) is { } rule)
+            {
+                await audit.WriteAsync(new AuditEntry(AuditActions.AgentInjectionDetected, "assistant_turn",
+                    turnId.ToString(), Changes: new { conversation = conversationId, rule, source = p.Source, itemId = p.ItemId }), ct);
+            }
+        }
         if (evidence.Passages.Count == 0)
         {
             var outcome = evidence.Withheld > 0 ? AssistantOutcomes.PolicyBlocked : AssistantOutcomes.NoEvidence;

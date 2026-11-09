@@ -261,6 +261,7 @@ public static class AuditActions
     public const string AgentPolicyChanged = "agent.policy_changed";
     public const string AgentToolCalled = "agent.tool_called";
     public const string AgentToolDenied = "agent.tool_denied";
+    public const string AgentInjectionDetected = "agent.injection_detected";
     public const string AgentActionConfirmed = "agent.action_confirmed";
     public const string AgentActionRejected = "agent.action_rejected";
     public const string AgentVersionSubmitted = "agent.version_submitted";
@@ -329,7 +330,7 @@ public static class AuditActions
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled,
         AssistantHistoryDeleted, AssistantRetentionChanged,
-        AgentInstalledFromTemplate, AgentAudienceChanged, AgentPolicyChanged, AgentToolCalled, AgentToolDenied, AgentActionConfirmed, AgentActionRejected,
+        AgentInstalledFromTemplate, AgentAudienceChanged, AgentPolicyChanged, AgentToolCalled, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,
         AgentRetired, AgentKillSwitch,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,

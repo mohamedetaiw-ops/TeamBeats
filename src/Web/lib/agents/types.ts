@@ -138,6 +138,8 @@ export type RunView = {
   citations: RunCitation[];
   confirmation: ConfirmationCard | null;
   generated: boolean;
+  /** The answer names web addresses; they are shown as text only (spec 027 US5 scenario 3). */
+  linksAsText: boolean;
 };
 
 export type RunSummary = {

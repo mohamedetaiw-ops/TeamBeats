@@ -127,6 +127,7 @@ export function AgentConversation({ agentId, item }: { agentId: string; item: { 
                   {turn.run.answer}
                 </p>
                 {turn.run.generated ? <p className="field-hint">{ts("generated")}</p> : null}
+                {turn.run.linksAsText ? <p className="field-hint">{ts("use.linksAsText")}</p> : null}
               </div>
             ) : null}
             {turn.run.status === "waiting" && turn.run.confirmation ? (

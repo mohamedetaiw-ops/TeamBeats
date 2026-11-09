@@ -83,7 +83,8 @@ public sealed record RunView(
     string Language,
     IReadOnlyList<RunCitation> Citations,
     ConfirmationCard? Confirmation,
-    bool Generated);
+    bool Generated,
+    bool LinksAsText = false);
 
 public sealed record RunSummary(Guid Id, Guid AgentId, int AgentVersion, Guid UserId, string Mode, string Status, string? Outcome, string? Reason, int Steps,
     int ToolCalls, int Denials, string? Model, int InputTokens, int OutputTokens, DateTimeOffset CreatedAt, DateTimeOffset? FinishedAt);
@@ -294,7 +295,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         state.Messages.Add(new AiMessage(AiRoles.System, SystemPrompt(agent.Definition, language)));
         if (request.ItemSource is { } source && request.ItemId is { } item)
         {
-            await ItemContextAsync(agent, source, item, language, state, ct);
+            await ItemContextAsync(id, agent, source, item, language, state, ct);
         }
         state.Messages.Add(new AiMessage(AiRoles.User, message));
         await session.ExecAsync(
@@ -313,7 +314,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     /// may not read is not found. Its passages go in the untrusted envelope before the message, numbered for citations,
     /// and passages above the agent's classification cap are left out.
     /// </summary>
-    private async Task ItemContextAsync(RunAgent agent, string source, Guid item, string language, RunState state, CancellationToken ct)
+    private async Task ItemContextAsync(Guid runId, RunAgent agent, string source, Guid item, string language, RunState state, CancellationToken ct)
     {
         var result = await retrieval.ItemAsync(source, item, AiUseCases.Agent, language, ct);
         if (result.Passages.Count == 0 && result.Withheld == 0)
@@ -325,6 +326,13 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         if (passages.Count == 0)
         {
             throw AppException.Conflict("conflict.agent_run.item_withheld");
+        }
+        foreach (var p in passages)
+        {
+            if (InjectionDetector.Detect(p.Text) is { } rule)
+            {
+                await InjectionAsync(runId, agent, null, new InjectionFinding(rule, p.Source, p.ItemId), ct);
+            }
         }
         var envelope = AssistantPrompt.Passages(passages);
         state.Messages.Add(new AiMessage(AiRoles.User, envelope));
@@ -574,6 +582,10 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             {
                 state.Citations.Add(new RunCitation(state.Citations.Count + 1, source.Source, source.ItemId, source.Title, source.Link));
             }
+            foreach (var finding in InjectionDetector.Scan(result))
+            {
+                await InjectionAsync(runId, agent, name, finding, ct);
+            }
             if (state.Untrusted.Length < MaxUntrusted)
             {
                 state.Untrusted += result.Content.Length > MaxUntrusted ? result.Content[..MaxUntrusted] : result.Content;
@@ -606,6 +618,16 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         state.Executed.Add(hash);
         await StepAsync(runId, state, "tool", name, ToolDecisions.Sandboxed, null, hash, arguments, state.Classification, watch, ct);
         return new ToolResult(true, JsonSerializer.Serialize(new { status = "accepted" }), "internal", []);
+    }
+
+    /// <summary>
+    /// Records instruction-like text found in untrusted content (027 US5 scenario 1, section 13 <c>agent.injection_detected</c>):
+    /// the run, the tool that returned it and the source item. The content itself is not stored.
+    /// </summary>
+    private async Task InjectionAsync(Guid runId, RunAgent agent, string? tool, InjectionFinding finding, CancellationToken ct)
+    {
+        await audit.WriteAsync(new AuditEntry(AuditActions.AgentInjectionDetected, "agent_run", runId.ToString(), TargetOrgUnitId: agent.OrgUnitId,
+            Changes: new { agent = agent.Id, version = agent.Version, mode = agent.Mode, tool, rule = finding.Rule, source = finding.Source, itemId = finding.ItemId }), ct);
     }
 
     /// <summary>A tool result for the model, always inside the untrusted envelope; failures are a short key, never internal detail.</summary>
@@ -752,7 +774,8 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     {
         await session.ExecAsync("delete from agents.run_checkpoint where run_id = @runId", new { runId }, ct);
         await UpdateRunAsync(runId, state, status, outcome, reason, usage, true, ct);
-        return new RunView(runId, agent.Id, agent.Version, agent.Mode, status, outcome, reason, answer, language, cited ?? [], null, answer is not null);
+        return new RunView(runId, agent.Id, agent.Version, agent.Mode, status, outcome, reason, answer, language, cited ?? [], null, answer is not null,
+            InjectionDetector.HasLinks(answer));
     }
 
     private async Task UpdateRunAsync(Guid runId, RunState state, string status, string? outcome, string? reason, (string? Model, string? Provider, int In, int Out) usage,

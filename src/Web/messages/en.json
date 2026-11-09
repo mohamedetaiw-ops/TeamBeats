@@ -3106,7 +3106,8 @@
       "working": "Working…",
       "failed": "Something went wrong. Try again.",
       "ask": "Ask an agent about this",
-      "chooseForItem": "Choose an agent to work with the page or document you came from."
+      "chooseForItem": "Choose an agent to work with the page or document you came from.",
+      "linksAsText": "This answer mentions web addresses. They are shown as text and never opened, because they came from the AI. Check a link before you visit it."
     },
     "card": {
       "title": "Confirm this action",
