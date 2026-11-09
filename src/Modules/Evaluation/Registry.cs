@@ -54,6 +54,14 @@ public sealed class EvalAccess(IAgentCatalog agents, IAuthorizationService authz
 
     public async Task<bool> CanDesignAsync(AgentFacts agent, CancellationToken ct) =>
         (await authz.CheckAsync(Permissions.EvalDesign, AuthzTarget.OrgUnit(agent.OrgUnitId), ct)).Allowed;
+
+    /// <summary>The assistant serves the whole tenant, so its runs are started by the AI Policy Administrator (spec 014 T008).</summary>
+    public async Task<bool> CanRunAssistantAsync(CancellationToken ct) =>
+        (await authz.CheckAsync(Permissions.EvalPolicyManage, AuthzTarget.Tenant, ct)).Allowed;
+
+    /// <summary>Assistant runs are read with <c>eval.view</c> across the tenant, or by whoever may start them.</summary>
+    public async Task<bool> CanReadAssistantAsync(CancellationToken ct) =>
+        await CanRunAssistantAsync(ct) || (await authz.CheckAsync(Permissions.EvalView, AuthzTarget.Tenant, ct)).Allowed;
 }
 
 /// <summary>Tenant evaluation settings (US10 scenario 1 and 2): thresholds only stricter than the platform's.</summary>

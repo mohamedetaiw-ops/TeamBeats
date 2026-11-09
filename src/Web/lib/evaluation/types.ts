@@ -33,10 +33,11 @@ export type DashboardView = {
   canDesign: boolean;
 };
 
+/** A run of an agent version, or of the assistant's platform suites (capability "assistant", no agent or version). */
 export type RunSummary = {
   id: string;
-  agentId: string;
-  agentVersion: number;
+  agentId: string | null;
+  agentVersion: number | null;
   trigger: string;
   status: string;
   total: number;
@@ -47,7 +48,10 @@ export type RunSummary = {
   createdAt: string;
   startedAt: string | null;
   finishedAt: string | null;
+  capability: string;
 };
+
+export type AssistantRuns = { runs: RunSummary[]; canStart: boolean };
 
 export type SuiteMetric = { key: string; weight: number; threshold: number | null; severity: string | null };
 
@@ -127,14 +131,15 @@ export type CaseResult = {
   latencyMs: number | null;
   tokens: number | null;
   failed: boolean;
+  context: { title: string; text: string }[] | null;
 };
 
 export type CompareMetric = { metric: string; locale: string; a: number | null; b: number | null; delta: number | null };
 
 export type CompareSide = {
   runId: string;
-  agentId: string;
-  version: number;
+  agentId: string | null;
+  version: number | null;
   verdict: string | null;
   models: string[];
   tokensPerSuccess: Record<string, number | null>;

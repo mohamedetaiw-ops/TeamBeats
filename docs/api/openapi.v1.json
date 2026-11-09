@@ -10081,6 +10081,18 @@
         }
       }
     },
+    "/api/v1/evaluation/assistant/runs": {
+      "get": {
+        "tags": [
+          "Evaluation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/evaluation/runs/{id}": {
       "get": {
         "tags": [
@@ -15325,6 +15337,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "capability": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

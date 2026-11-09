@@ -73,13 +73,18 @@ export default async function EvaluationComparePage({ searchParams }: { searchPa
     );
   }
 
+  const versionName = (version: number | null) => (version === null ? t("assistantName") : String(version));
   return (
     <>
-      <h1>{t("compare.title", { a: String(v.a.version), b: String(v.b.version) })}</h1>
+      <h1>{t("compare.title", { a: versionName(v.a.version), b: versionName(v.b.version) })}</h1>
       <EvaluationTabs current="agents" />
       <div className="agents">
         <p>
-          <Link href={`/admin/evaluation/agents/${v.b.agentId}`}>{t("run.back")}</Link>
+          {v.b.agentId ? (
+            <Link href={`/admin/evaluation/agents/${v.b.agentId}`}>{t("run.back")}</Link>
+          ) : (
+            <Link href="/admin/evaluation">{t("run.backOverview")}</Link>
+          )}
         </p>
         <section className="agents-section" aria-labelledby="eval-compare-sides">
           <h2 id="eval-compare-sides">{t("compare.runs")}</h2>
@@ -90,7 +95,7 @@ export default async function EvaluationComparePage({ searchParams }: { searchPa
                   <th scope="col">{t("compare.measure")}</th>
                   {sides.map(([key, s]) => (
                     <th scope="col" key={key}>
-                      <Link href={`/admin/evaluation/runs/${s.runId}`}>{t(`compare.side_${key}`, { version: String(s.version) })}</Link>
+                      <Link href={`/admin/evaluation/runs/${s.runId}`}>{t(`compare.side_${key}`, { version: versionName(s.version) })}</Link>
                     </th>
                   ))}
                 </tr>
@@ -155,8 +160,8 @@ export default async function EvaluationComparePage({ searchParams }: { searchPa
                   <tr>
                     <th scope="col">{t("metric")}</th>
                     <th scope="col">{t("locale")}</th>
-                    <th scope="col">{t("compare.side_a", { version: String(v.a.version) })}</th>
-                    <th scope="col">{t("compare.side_b", { version: String(v.b.version) })}</th>
+                    <th scope="col">{t("compare.side_a", { version: versionName(v.a.version) })}</th>
+                    <th scope="col">{t("compare.side_b", { version: versionName(v.b.version) })}</th>
                     <th scope="col">{t("compare.delta")}</th>
                   </tr>
                 </thead>

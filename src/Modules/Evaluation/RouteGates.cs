@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TeamBeats.Audit.Contracts;
+using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
@@ -29,8 +30,11 @@ public static class RouteGateResults
 /// </summary>
 public sealed class RouteGates(IDbSession session, IOutbox outbox, IAuditWriter audit, IClock clock, ITenantContext context, ILogger<RouteGates> logger)
 {
-    /// <summary>What a gate cannot test in R1: the assistant has no suites of its own yet.</summary>
-    public const string AssistantNotTested = "assistant/no_suites";
+    /// <summary>The prefix of the assistant's failures in a route gate (spec 014 T008), in place of an agent ID.</summary>
+    public const string Assistant = "assistant";
+
+    /// <summary>The assistant could not be run: no proposer, or a proposer with no unit for its persona.</summary>
+    public const string AssistantNotTested = "assistant/not_run";
 
     internal async Task<bool> ExistsAsync(Guid routeChangeId, CancellationToken ct) =>
         await session.ScalarAsync<long>("select count(*) from evaluation.route_gate where route_change_id = @routeChangeId", new { routeChangeId }, ct) > 0;
@@ -72,18 +76,19 @@ public sealed class RouteGates(IDbSession session, IOutbox outbox, IAuditWriter 
         var critical = new List<string>();
         var blocking = new List<string>();
         var runs = await session.QueryAsync("select agent_id, status, result::text from evaluation.run where route_change_id = @routeChangeId", new { routeChangeId },
-            r => (Agent: r.GetGuid(0), Status: r.GetString(1), Result: r.Get<string?>("result")), ct);
+            r => (Agent: r.Get<Guid?>("agent_id"), Status: r.GetString(1), Result: r.Get<string?>("result")), ct);
         foreach (var run in runs)
         {
+            var subject = run.Agent is { } agent ? agent.ToString("N") : Assistant;
             if (run.Status != RunStatuses.Completed || run.Result is null)
             {
-                incomplete.Add($"{run.Agent:N}/{RunStatuses.Cancelled}");
+                incomplete.Add($"{subject}/{RunStatuses.Cancelled}");
                 continue;
             }
             var result = JsonSerializer.Deserialize<RunResult>(run.Result, EvalJson.Options)!;
-            critical.AddRange(result.CriticalFailures.Select(f => $"{run.Agent:N}/{f}"));
-            blocking.AddRange(result.BlockingFailures.Select(f => $"{run.Agent:N}/{f}"));
-            incomplete.AddRange(result.Incomplete.Select(f => $"{run.Agent:N}/{f}"));
+            critical.AddRange(result.CriticalFailures.Select(f => $"{subject}/{f}"));
+            blocking.AddRange(result.BlockingFailures.Select(f => $"{subject}/{f}"));
+            incomplete.AddRange(result.Incomplete.Select(f => $"{subject}/{f}"));
         }
         var verdict = critical.Count > 0 ? RouteGateResults.FailedCritical
             : blocking.Count > 0 ? RouteGateResults.Failed
@@ -102,7 +107,9 @@ public sealed class RouteGates(IDbSession session, IOutbox outbox, IAuditWriter 
 
 /// <summary>
 /// Starts the route gate when spec 013 holds a route change (FR-019): one run per published agent when the agent use
-/// case changes, on behalf of the person who proposed it. An agent with nothing to run is listed as not tested.
+/// case changes, and one run of the assistant's platform suites when the assistant use case changes (spec 014 FR-013),
+/// on behalf of the person who proposed it. Anything that cannot run is listed as not tested; the assistant is not
+/// run when the tenant's package does not include it.
 /// </summary>
 public sealed class RouteGateStarter(IServiceScopeFactory scopes, ITenantContext context, ILogger<RouteGateStarter> logger) : IMessageHandler<AiModelRouteChangeProposed>
 {
@@ -120,11 +127,20 @@ public sealed class RouteGateStarter(IServiceScopeFactory scopes, ITenantContext
             return;
         }
         var untested = new List<string>();
-        if (message.UseCases.Contains(AiUseCases.Assistant))
-        {
-            untested.Add(RouteGates.AssistantNotTested);
-        }
         var runs = 0;
+        if (message.UseCases.Contains(AiUseCases.Assistant) && await sp.GetRequiredService<IEntitlementService>().IsEnabledAsync(Capabilities.AiAssistant, ct))
+        {
+            var service = sp.GetRequiredService<RunService>();
+            if (message.ProposedBy is not { } proposer || await service.PersonaUnitAsync(proposer, ct) is not { } unit)
+            {
+                untested.Add(RouteGates.AssistantNotTested);
+            }
+            else
+            {
+                await service.CreateAssistantAsync(unit, RunTriggers.Route, ct, message.RouteChangeId);
+                runs++;
+            }
+        }
         if (message.UseCases.Contains(AiUseCases.Agent))
         {
             var service = sp.GetRequiredService<RunService>();

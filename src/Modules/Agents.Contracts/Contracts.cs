@@ -198,6 +198,27 @@ public interface IAgentEvaluationRuntime
     Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, Guid? routeChangeId = null, CancellationToken ct = default);
 }
 
+/// <summary>A synthetic passage an assistant evaluation case gives the knowledge agent in place of retrieval (spec 034, spec 014 T008).</summary>
+public sealed record EvalPassage(string Title, string Text);
+
+/// <summary>
+/// Runs one assistant evaluation case (spec 034 FR-004, spec 014 FR-013): the knowledge agent's prompt, envelope and
+/// citation check of spec 014 over the case's synthetic passages, as the person in context (a synthetic test identity),
+/// through the AI Gateway on the assistant use case. No conversation or turn is stored. The passages are numbered in
+/// the order given and come back as <see cref="EvalRunRecord.Read"/> with source <see cref="Source"/> and an item ID
+/// derived from their position, so citations can be checked. The assistant capability being off is a conflict.
+/// </summary>
+public interface IAssistantEvaluationRuntime
+{
+    public const string Source = "eval_passage";
+
+    /// <param name="routeChangeId">For a release gate run of a proposed model route change: the call follows the proposed routes.</param>
+    Task<EvalRunRecord> RunCaseAsync(string question, string language, IReadOnlyList<EvalPassage> passages, Guid? routeChangeId = null, CancellationToken ct = default);
+
+    /// <summary>The item ID of the passage numbered <paramref name="n"/> (from 1) in a case's record.</summary>
+    static Guid PassageId(int n) => new($"00000000-0000-0000-0000-{n:D12}");
+}
+
 /// <summary>Where the release gate of a version stands (spec 034 US5, spec 020 US5).</summary>
 public static class GateStatuses
 {

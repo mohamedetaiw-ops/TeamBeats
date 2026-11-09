@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
 import { pickText } from "@/lib/agents/types";
-import type { AgentSuites, CaseResult, RunDetail } from "@/lib/evaluation/types";
+import type { AgentSuites, CaseResult, PlatformSuite, RunDetail } from "@/lib/evaluation/types";
 import { EvaluationTabs } from "@/features/evaluation/EvaluationTabs";
 import { RunLive } from "@/features/evaluation/RunLive";
 import { evaluationSection } from "@/features/evaluation/guard";
@@ -25,8 +25,14 @@ export default async function EvaluationRunPage({ params }: { params: Promise<{ 
     apiGet<CaseResult[]>(`/api/v1/evaluation/runs/${encodeURIComponent(id)}/cases`),
   ]);
   if (!detail.ok) notFound();
-  const named = await apiGet<AgentSuites>(`/api/v1/evaluation/agents/${encodeURIComponent(detail.data.run.agentId)}/suites`);
-  const names = new Map((named.ok ? named.data.inherited : []).map((s) => [s.key, s.names]));
+  // An assistant run has no agent: its suites are the assistant's platform suites, named by the platform library.
+  const agentId = detail.data.run.agentId;
+  const inherited = agentId
+    ? await apiGet<AgentSuites>(`/api/v1/evaluation/agents/${encodeURIComponent(agentId)}/suites`).then((r) => (r.ok ? r.data.inherited : []))
+    : await Promise.all(detail.data.suites.map((s) => apiGet<PlatformSuite>(`/api/v1/evaluation/platform/suites/${encodeURIComponent(s.key)}`))).then((all) =>
+        all.flatMap((r) => (r.ok ? [r.data] : [])),
+      );
+  const names = new Map(inherited.map((s) => [s.key, s.names]));
   const t = await getTranslations("evaluation");
   const locale = await getLocale();
   const format = await getFormatter();
@@ -47,11 +53,15 @@ export default async function EvaluationRunPage({ params }: { params: Promise<{ 
   const locales = result ? [...new Set([...Object.keys(result.latencyP95), ...Object.keys(result.tokensPerSuccess)])].sort() : [];
   return (
     <>
-      <h1>{t("run.title", { version: String(run.agentVersion) })}</h1>
+      <h1>{run.agentVersion === null ? t("run.titleAssistant") : t("run.title", { version: String(run.agentVersion) })}</h1>
       <EvaluationTabs current="agents" />
       <div className="agents">
         <p>
-          <Link href={`/admin/evaluation/agents/${run.agentId}`}>{t("run.back")}</Link>
+          {run.agentId ? (
+            <Link href={`/admin/evaluation/agents/${run.agentId}`}>{t("run.back")}</Link>
+          ) : (
+            <Link href="/admin/evaluation">{t("run.backOverview")}</Link>
+          )}
         </p>
         <section className="agents-section" aria-labelledby="eval-run-status" aria-live="polite">
           <h2 id="eval-run-status">{t("run.status")}</h2>

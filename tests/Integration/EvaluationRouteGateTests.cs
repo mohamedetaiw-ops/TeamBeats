@@ -84,6 +84,22 @@ public sealed class EvaluationRouteGateTests(TenantWorld world)
         return held.GetProperty("routeChange").GetProperty("id").GetGuid();
     }
 
+    /// <summary>Moves the assistant route to the larger model only; returns the proposed change.</summary>
+    private static async Task<Guid> ProposeAssistantAsync(TestTenant t)
+    {
+        var client = t["aip"].Client;
+        var current = await client.GetAsync("/api/v1/ai/policy");
+        var routes = AiUseCases.All.ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding } : u == AiUseCases.Assistant ? new[] { Large } : new[] { Small, Large });
+        using var request = new HttpRequestMessage(HttpMethod.Put, "/api/v1/ai/policy")
+        {
+            Content = JsonContent.Create(new { allowlist = new[] { Small, Large, Embedding }, routes, confidential = Array.Empty<string>() }),
+        };
+        request.Headers.TryAddWithoutValidation("If-Match", current.Headers.ETag?.ToString());
+        var held = await OkAsync(client.SendAsync(request), HttpStatusCode.Accepted);
+        Assert.Equal(new[] { AiUseCases.Assistant }, held.GetProperty("routeChange").GetProperty("useCases").EnumerateArray().Select(u => u.GetString()).ToArray());
+        return held.GetProperty("routeChange").GetProperty("id").GetGuid();
+    }
+
     private static Task<JsonElement> PendingAsync(TestTenant t) => OkAsync(t["aip"].Client.GetAsync("/api/v1/ai/policy"));
 
     [Fact]
@@ -171,5 +187,32 @@ public sealed class EvaluationRouteGateTests(TenantWorld world)
         Assert.Equal(1, await AuditCountAsync(t, AuditActions.AiRouteChangeRejected));
         Assert.Equal(HttpStatusCode.Conflict,
             (await t["aip"].Client.PostAsJsonAsync($"/api/v1/ai/route-changes/{change}/override", new { reason = "Applying despite the critical failure." })).StatusCode);
+    }
+
+    [Fact]
+    public async Task A_change_to_the_assistant_route_runs_the_assistant_suites_on_the_proposed_model_and_applies_when_they_pass()
+    {
+        var t = await FreshAsync();
+        await world.AddMembershipAsync(t, "aip", "Hr");
+        var change = await ProposeAssistantAsync(t);
+        await RouteGateFlow.StartAsync(world, t.Id, change);
+
+        var runs = (await OkAsync(t["aip"].Client.GetAsync($"{Eval}/assistant/runs"))).GetProperty("runs").EnumerateArray().ToList();
+        var run = Assert.Single(runs);
+        Assert.Equal(RunTriggers.Route, run.GetProperty("trigger").GetString());
+        Assert.Equal(EvalCapabilities.Assistant, run.GetProperty("capability").GetString());
+        var id = run.GetProperty("id").GetGuid();
+        await RouteGateFlow.RunAsync(world, t.Id, change);
+        // Every case ran on the proposed route, not the one in force.
+        Assert.Equal(0, await world.Database.TenantScalarAsync<long>(t.Id,
+            "select count(*) from evaluation.case_result where run_id = @run and (status <> 'done' or model <> @model)", ("run", id), ("model", Large)));
+
+        await RouteGateFlow.DecideAsync(world, t.Id, change);
+        var view = await PendingAsync(t);
+        Assert.Equal(JsonValueKind.Null, view.GetProperty("pending").ValueKind);
+        Assert.Equal(Large, view.GetProperty("effectiveRoutes").GetProperty(AiUseCases.Assistant)[0].GetString());
+        var list = await OkAsync(t["aip"].Client.GetAsync("/api/v1/ai/route-changes"));
+        Assert.Equal("applied", list[0].GetProperty("status").GetString());
+        Assert.Equal("passed", list[0].GetProperty("gateStatus").GetString());
     }
 }

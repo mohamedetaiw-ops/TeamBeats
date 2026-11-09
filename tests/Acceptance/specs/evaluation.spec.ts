@@ -46,6 +46,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("evaluation.title"));
       const overview = page.getByTestId("eval-agents");
       await expect(overview.getByRole("link", { name: agentName })).toBeVisible();
+      // The assistant's platform suites have their own section for administrators (spec 014 T008).
+      await expect(page.getByRole("heading", { level: 2, name: m("evaluation.assistant.title"), exact: true })).toBeVisible();
       await expectAccessible(page, testInfo, `evaluation-overview-${locale}`);
 
       // The dashboard: a draft with no version in force and no runs yet.
