@@ -184,6 +184,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             throw AppException.Conflict(agent.Status == AgentStatuses.Suspended ? "conflict.agent.suspended" : "conflict.agent.unavailable");
         }
+        await DemandNoKillSwitchAsync(ct);
         var run = new RunAgent(agentId, version, agent.Unit, definition, "run", (await policies.CurrentAsync(ct)).Policy);
         return await StartAsync(run, user, message, request.Language, ct);
     }
@@ -206,6 +207,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             throw AppException.Conflict("conflict.agent.unavailable");
         }
+        await DemandNoKillSwitchAsync(ct);
         var latest = await session.ScalarAsync<int>("select max(number) from agents.agent_version where agent_id = @agentId", new { agentId }, ct);
         var run = new RunAgent(agentId, latest, agent.Unit, await VersionAsync(agentId, latest, ct), "test", (await policies.CurrentAsync(ct)).Policy);
         return await StartAsync(run, user, message, request.Language, ct);
@@ -566,8 +568,24 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     }
 
     /// <summary>Whether the agent may still act: not suspended or retired, and published for a real run (027 US7).</summary>
+    /// <summary>The tenant kill switch (027 US7 scenario 2) is checked before every run and every step.</summary>
+    private async Task<bool> KillSwitchOnAsync(CancellationToken ct) =>
+        await session.ScalarAsync<bool?>("select active from agents.kill_switch", null, ct) == true;
+
+    private async Task DemandNoKillSwitchAsync(CancellationToken ct)
+    {
+        if (await KillSwitchOnAsync(ct))
+        {
+            throw AppException.Conflict("conflict.agent.kill_switch");
+        }
+    }
+
     private async Task<bool> ActiveAsync(RunAgent agent, CancellationToken ct)
     {
+        if (await KillSwitchOnAsync(ct))
+        {
+            return false;
+        }
         var status = await session.ScalarAsync<string>("select status from agents.agent where id = @id", new { id = agent.Id }, ct);
         return agent.DryRun ? status is not (AgentStatuses.Suspended or AgentStatuses.Retired) : status == AgentStatuses.Published;
     }

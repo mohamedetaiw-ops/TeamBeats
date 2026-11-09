@@ -1350,7 +1350,8 @@
       "contentOwnerReview": "مراجعة مالك المحتوى",
       "contentRetire": "إيقاف محتوى",
       "policyApproval": "اعتماد سياسة",
-      "policyAttestation": "إقرار بسياسة"
+      "policyAttestation": "إقرار بسياسة",
+      "agentReview": "مراجعة وكيل"
     },
     "delegation": {
       "title": "أثناء غيابك",

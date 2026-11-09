@@ -257,6 +257,15 @@ public static class AuditActions
     public const string AgentToolDenied = "agent.tool_denied";
     public const string AgentActionConfirmed = "agent.action_confirmed";
     public const string AgentActionRejected = "agent.action_rejected";
+    public const string AgentVersionSubmitted = "agent.version_submitted";
+    public const string AgentVersionApproved = "agent.version_approved";
+    public const string AgentVersionRejected = "agent.version_rejected";
+    public const string AgentVersionPublished = "agent.version_published";
+    public const string AgentRolledBack = "agent.rolled_back";
+    public const string AgentSuspended = "agent.suspended";
+    public const string AgentResumed = "agent.resumed";
+    public const string AgentRetired = "agent.retired";
+    public const string AgentKillSwitch = "agent.kill_switch";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -301,6 +310,8 @@ public static class AuditActions
         SearchBestBetChanged, SearchSynonymsChanged,
         AssistantHistoryDeleted, AssistantRetentionChanged,
         AgentInstalledFromTemplate, AgentAudienceChanged, AgentPolicyChanged, AgentToolCalled, AgentToolDenied, AgentActionConfirmed, AgentActionRejected,
+        AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,
+        AgentRetired, AgentKillSwitch,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

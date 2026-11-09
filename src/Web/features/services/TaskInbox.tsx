@@ -39,6 +39,8 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
         return t("policyApproval");
       case "policy_attestation":
         return t("policyAttestation");
+      case "agent_review":
+        return t("agentReview");
       default:
         return i.name;
     }
