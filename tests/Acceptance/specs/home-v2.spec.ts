@@ -10,7 +10,7 @@ import { hostOrigin } from "../support/stack";
  * fresh tenant, which also checks the file against the component manifests, and the home shows the task summary and My
  * services of spec 016 next to news, the tool box and the call to action band, in English and Arabic with axe.
  */
-type Seed = { template: string; regions: Record<string, { id: string; componentRef: string; span?: number; props?: unknown }[]> };
+type Seed = { template: string; regions: Record<string, { id: string; componentRef: string; span?: number; props?: Record<string, unknown> }[]> };
 const seed = JSON.parse(readFileSync(new URL("../../../src/Api.DevHost/seeds/staging-home.json", import.meta.url), "utf8")) as Seed;
 
 async function seedHome(tenant: TestTenant) {
