@@ -499,7 +499,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         var data = Data(directoryId);
         var me = data.CurrentUsers().FirstOrDefault(u => u.Id == userId);
         // Tokens hold everything the fake needs, so a mailbox token still works after the host restarts (staging redeploys).
-        if (me.Id is null && UpnOf(bearer) is { Length: > 0 } upn && HasUpnMailbox(upn))
+        if (me.Id is null && UpnOf(bearer) is { Length: > 0 } upn)
         {
             return await UpnMailboxAsync(request, uri, scopes, upn, ct);
         }

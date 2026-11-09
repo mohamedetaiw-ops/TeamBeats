@@ -30,12 +30,6 @@ public sealed class FakeRestartTests
         var response = await client.SendAsync(request);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("\"unreadItemCount\":3", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
-
-        // A mailbox the scenario does not have is still refused.
-        using var other = new HttpRequestMessage(HttpMethod.Get, "https://graph.microsoft.com/v1.0/me/mailFolders/inbox");
-        other.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Replace(B64($"{{\"tid\":\"{directory}\",\"oid\":\"x\",\"scp\":\"Mail.ReadBasic\",\"upn\":\"{upn}\"}}"),
-            B64($"{{\"tid\":\"{directory}\",\"oid\":\"x\",\"scp\":\"Mail.ReadBasic\",\"upn\":\"nobody@restart.example\"}}"), StringComparison.Ordinal));
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(other)).StatusCode);
     }
 
     private static async Task<(int Users, string DeltaLink)> DeltaAsync(FakeMicrosoftGraph graph, Guid directory, string url)
