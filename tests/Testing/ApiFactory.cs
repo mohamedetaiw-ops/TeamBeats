@@ -21,6 +21,9 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
     /// <summary>A fresh delegated token key per test run; never a fixed value in code.</summary>
     public static readonly string TokenKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
 
+    /// <summary>A fresh AI debug log key per test run.</summary>
+    public static readonly string AiLogKey = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+
     public const string BaseDomain = "teambeats.test";
 
     public TestDatabase Database { get; } = database;
@@ -59,6 +62,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         builder.UseSetting(TeamBeats.Persistence.GotenbergConverter.UrlKey, FakeGotenberg.BaseUrl);
         builder.UseSetting(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.ApiKeySetting, FakeOpenRouter.ApiKey);
         builder.UseSetting(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.TimeoutSetting, "2");
+        builder.UseSetting(TeamBeats.Modules.AiGateway.DebugLogProtector.KeySetting, AiLogKey);
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton(Documents);

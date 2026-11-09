@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Modules.Tenancy.Contracts;
+using TeamBeats.Persistence;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -27,6 +29,10 @@ public sealed class AiGatewayService(
     ModelCatalogue catalogue,
     IEnumerable<IModelProvider> providers,
     ProviderCircuits circuits,
+    UsageRecorder usage,
+    IDbSession session,
+    IOrganizationHierarchy hierarchy,
+    IClock clock,
     ILogger<AiGatewayService> logger) : IAiGateway
 {
     /// <summary>Characters per token for the size estimate before a call; deliberately low so Arabic text is not underestimated.</summary>
@@ -41,7 +47,7 @@ public sealed class AiGatewayService(
 
     /// <summary>Steps 1 to 6: who may call, where the content may go, which models are left, and the parameters after limits.</summary>
     internal async Task<(RoutePlan? Plan, string? Denial)> PlanAsync(string useCase, string? model, DataClassification? classification, int inputTokens, int? maxTokens,
-        double? temperature, IReadOnlyCollection<string> needs, string? modelUnderTest, CancellationToken ct)
+        double? temperature, IReadOnlyCollection<string> needs, string? modelUnderTest, bool platformCharged, CancellationToken ct)
     {
         context.RequireTenant();
         if (!AiUseCases.All.Contains(useCase))
@@ -49,10 +55,16 @@ public sealed class AiGatewayService(
             return (null, AiDenials.InvalidRequest);
         }
 
-        // 1. Entitlement. The monthly request quota is counted from the call records of the metering step.
+        // 1. Entitlement and the monthly request quota, counted from the call records of the metering step. Judge calls of
+        // platform suites are charged to the platform and do not count.
         if (!await entitlements.IsEnabledAsync(Capabilities.AiAssistant, ct))
         {
             return (null, AiDenials.NotInPackage);
+        }
+        if (!platformCharged && await entitlements.GetLimitAsync(Capabilities.AiAssistantMonthlyRequests, ct) is { } limit &&
+            await UsageRecorder.MonthCountAsync(session, clock.UtcNow, ct) >= limit)
+        {
+            return (null, AiDenials.QuotaExhausted);
         }
 
         // 2. Budget: budgets are R2; the step stays here so the order does not change.
@@ -164,16 +176,17 @@ public sealed class AiGatewayService(
             return (null, AiDenials.InvalidRequest);
         }
         return await PlanAsync(request.UseCase, request.Model, request.Classification, Estimate(request), request.MaxTokens, request.Temperature, Needs(request),
-            request.ModelUnderTest, ct);
+            request.ModelUnderTest, request.UseCase == AiUseCases.Evaluation && request.PlatformCharged, ct);
     }
 
     public async Task<AiResult> ChatAsync(AiRequest request, CancellationToken ct = default)
     {
         var watch = Stopwatch.StartNew();
+        var meta = Meta(request);
         var (plan, denial) = await PlanChatAsync(request, ct);
         if (plan is null)
         {
-            Denied(request.UseCase, request.Model, request.Classification, denial!);
+            await DeniedAsync(meta, denial!, watch, ct);
             return AiResult.Denied(denial!);
         }
 
@@ -212,21 +225,22 @@ public sealed class AiGatewayService(
                     break;
                 }
                 var completion = new AiCompletion(reply.Content, calls, reply.Usage, entry.Model, provider.Key, entry != plan.Candidates[0], reply.Partial, reply.FinishReason);
-                Served(plan, completion, watch.Elapsed);
+                await ServedAsync(meta, plan, completion, watch, ct);
                 return AiResult.Ok(completion);
             }
         }
-        Denied(request.UseCase, request.Model, request.Classification, AiDenials.ProviderUnavailable);
+        await DeniedAsync(meta, AiDenials.ProviderUnavailable, watch, ct);
         return AiResult.Denied(AiDenials.ProviderUnavailable);
     }
 
     public async IAsyncEnumerable<AiStreamChunk> StreamChatAsync(AiRequest request, [EnumeratorCancellation] CancellationToken ct = default)
     {
         var watch = Stopwatch.StartNew();
+        var meta = Meta(request);
         var (plan, denial) = await PlanChatAsync(request, ct);
         if (plan is null)
         {
-            Denied(request.UseCase, request.Model, request.Classification, denial!);
+            await DeniedAsync(meta, denial!, watch, ct);
             yield return new AiStreamChunk(null, AiResult.Denied(denial!));
             yield break;
         }
@@ -280,7 +294,7 @@ public sealed class AiGatewayService(
                 {
                     var completion = new AiCompletion(text.ToString(), OfferedOnly(final.ToolCalls, request.Tools, entry.Model), final.Usage, entry.Model, provider.Key, fallback,
                         final.Partial, final.FinishReason);
-                    Served(plan, completion, watch.Elapsed);
+                    await ServedAsync(meta, plan, completion, watch, ct);
                     yield return new AiStreamChunk(null, AiResult.Ok(completion));
                     yield break;
                 }
@@ -288,7 +302,7 @@ public sealed class AiGatewayService(
                 {
                     // Cut off after the first words: the caller gets what arrived, flagged partial, metered for the tokens received.
                     var partial = new AiCompletion(text.ToString(), [], new AiUsage(input, Estimate([text.ToString()])), entry.Model, provider.Key, fallback, true, "cut");
-                    Served(plan, partial, watch.Elapsed);
+                    await ServedAsync(meta, plan, partial, watch, ct);
                     yield return new AiStreamChunk(null, AiResult.Ok(partial));
                     yield break;
                 }
@@ -299,21 +313,22 @@ public sealed class AiGatewayService(
                 break;
             }
         }
-        Denied(request.UseCase, request.Model, request.Classification, AiDenials.ProviderUnavailable);
+        await DeniedAsync(meta, AiDenials.ProviderUnavailable, watch, ct);
         yield return new AiStreamChunk(null, AiResult.Denied(AiDenials.ProviderUnavailable));
     }
 
     public async Task<EmbeddingResult> EmbedAsync(EmbeddingRequest request, CancellationToken ct = default)
     {
         var watch = Stopwatch.StartNew();
+        var meta = new CallMeta(AiUseCases.Embed, request.Model, request.Classification, null, null, request.ActingUnitId, false);
         if (request.Inputs.Count == 0)
         {
             return EmbeddingResult.Denied(AiDenials.InvalidRequest);
         }
-        var (plan, denial) = await PlanAsync(AiUseCases.Embed, request.Model, request.Classification, Estimate(request.Inputs), null, null, [ModelCapabilities.Embeddings], null, ct);
+        var (plan, denial) = await PlanAsync(AiUseCases.Embed, request.Model, request.Classification, Estimate(request.Inputs), null, null, [ModelCapabilities.Embeddings], null, false, ct);
         if (plan is null)
         {
-            Denied(AiUseCases.Embed, request.Model, request.Classification, denial!);
+            await DeniedAsync(meta, denial!, watch, ct);
             return EmbeddingResult.Denied(denial!);
         }
         foreach (var entry in plan.Candidates)
@@ -330,7 +345,7 @@ public sealed class AiGatewayService(
                     var result = await provider.EmbedAsync(entry.Model, request.Inputs, ct);
                     circuits.Record(provider.Key, failed: false);
                     var completion = new AiCompletion(string.Empty, [], result.Usage, entry.Model, provider.Key, entry != plan.Candidates[0], false, "stop");
-                    Served(plan, completion, watch.Elapsed);
+                    await ServedAsync(meta, plan, completion, watch, ct);
                     return new EmbeddingResult(result.Vectors, result.Usage, entry.Model, provider.Key, null);
                 }
                 catch (ProviderException ex)
@@ -344,7 +359,7 @@ public sealed class AiGatewayService(
                 }
             }
         }
-        Denied(AiUseCases.Embed, request.Model, request.Classification, AiDenials.ProviderUnavailable);
+        await DeniedAsync(meta, AiDenials.ProviderUnavailable, watch, ct);
         return EmbeddingResult.Denied(AiDenials.ProviderUnavailable);
     }
 
@@ -360,16 +375,52 @@ public sealed class AiGatewayService(
         return kept;
     }
 
-    // 10. Metering and telemetry: metadata only (US8 scenario 1). Call records for the usage view come with the metering slice.
-    private void Served(RoutePlan plan, AiCompletion completion, TimeSpan elapsed) =>
+    private sealed record CallMeta(string UseCase, string? ModelRequested, DataClassification? Classification, Guid? AgentId, int? AgentVersion, Guid? UnitId,
+        bool PlatformCharged, IReadOnlyList<AiMessage>? Messages = null);
+
+    private static CallMeta Meta(AiRequest r) => new(r.UseCase, r.Model, r.Classification, r.AgentId, r.AgentVersion, r.ActingUnitId,
+        r.UseCase == AiUseCases.Evaluation && r.PlatformCharged, r.Messages);
+
+    /// <summary>The acting unit (US7 scenario 3): the unit the calling module named for the resource, else the user's primary membership.</summary>
+    private async Task<Guid?> UnitAsync(CallMeta meta, CancellationToken ct)
+    {
+        if (meta.UnitId is { } unit)
+        {
+            return unit;
+        }
+        if (context.ActorType != ActorType.User || context.ActorId is not { } user)
+        {
+            return null;
+        }
+        var memberships = await hierarchy.GetActiveMembershipsAsync(user, ct);
+        return (memberships.FirstOrDefault(m => m.IsPrimary) ?? memberships.FirstOrDefault())?.OrgUnitId;
+    }
+
+    // 10. Metering and telemetry: one call record per request, metadata only (US8 scenario 1).
+    private async Task ServedAsync(CallMeta meta, RoutePlan plan, AiCompletion completion, Stopwatch watch, CancellationToken ct)
+    {
+        var latency = (int)watch.Elapsed.TotalMilliseconds;
+        var model = plan.Candidates.FirstOrDefault(c => c.Model == completion.Model);
         logger.LogInformation(
             "ai.call tenant {Tenant} user {User} use case {UseCase} model {Model} provider {Provider} input {Input} output {Output} latency {Latency} ms classification {Classification} fallback {Fallback} partial {Partial} correlation {Correlation}",
             context.TenantId, context.ActorId, plan.UseCase, completion.Model, completion.Provider, completion.Usage.InputTokens, completion.Usage.OutputTokens,
-            (int)elapsed.TotalMilliseconds, Classifications.Key(plan.Classification), completion.FallbackUsed, completion.Partial, Correlation.Id);
+            latency, Classifications.Key(plan.Classification), completion.FallbackUsed, completion.Partial, Correlation.Id);
+        await usage.RecordAsync(new CallRecord(meta.UseCase, await UnitAsync(meta, ct), meta.AgentId, meta.AgentVersion, completion.Model, meta.ModelRequested,
+            completion.Provider, completion.Usage, latency, UsageRecorder.Cost(model, completion.Usage), null, meta.Classification, completion.FallbackUsed,
+            completion.Partial, meta.PlatformCharged, meta.Messages, completion.Content), ct);
+    }
 
-    private void Denied(string useCase, string? model, DataClassification? classification, string reason) =>
+    private async Task DeniedAsync(CallMeta meta, string reason, Stopwatch watch, CancellationToken ct)
+    {
         logger.LogWarning("ai.call_denied tenant {Tenant} user {User} use case {UseCase} model requested {Model} classification {Classification} reason {Reason} correlation {Correlation}",
-            context.TenantId, context.ActorId, useCase, model, classification is { } c ? Classifications.Key(c) : null, reason, Correlation.Id);
+            context.TenantId, context.ActorId, meta.UseCase, meta.ModelRequested, meta.Classification is { } c ? Classifications.Key(c) : null, reason, Correlation.Id);
+        if (context.TenantId is null)
+        {
+            return;
+        }
+        await usage.RecordAsync(new CallRecord(meta.UseCase, await UnitAsync(meta, ct), meta.AgentId, meta.AgentVersion, null, meta.ModelRequested, null, AiUsage.None,
+            (int)watch.Elapsed.TotalMilliseconds, 0, reason, meta.Classification, false, false, meta.PlatformCharged), ct);
+    }
 }
 
 /// <summary>

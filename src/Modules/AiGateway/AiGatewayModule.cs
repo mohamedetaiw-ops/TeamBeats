@@ -18,6 +18,10 @@ public static class AiGatewayModule
         services.AddSingleton<ProviderCircuits>();
         services.AddScoped<ModelCatalogue>();
         services.AddScoped<ModelPolicies>();
+        services.AddSingleton<DebugLogProtector>();
+        services.AddScoped<DebugWindows>();
+        services.AddScoped<UsageRecorder>();
+        services.AddScoped<UsageReports>();
         services.AddScoped<AiGatewayService>();
         services.AddScoped<IAiGateway>(sp => sp.GetRequiredService<AiGatewayService>());
         return services;
@@ -45,6 +49,27 @@ public static class AiGatewayModule
             http.HttpContext.Response.Headers.ETag = result.Policy.ETag;
             return result.Applied ? Results.Ok(result) : Results.Accepted(value: result);
         });
+
+        ai.MapGet("/usage", async (DateOnly? from, DateOnly? to, string? groupBy, UsageReports reports, CancellationToken ct) =>
+            Results.Ok(await reports.ViewAsync(from, to, groupBy, ct)));
+
+        ai.MapGet("/debug-windows", async (DebugWindows windows, CancellationToken ct) => Results.Ok(await windows.ListAsync(ct)));
+
+        ai.MapPost("/debug-windows", async (DebugWindowRequest request, DebugWindows windows, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await windows.OpenAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/ai/debug-windows/{view.Id}", view);
+        });
+
+        ai.MapDelete("/debug-windows/{id:guid}", async (Guid id, DebugWindows windows, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await windows.CloseAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        ai.MapGet("/debug-windows/{id:guid}/entries", async (Guid id, DebugWindows windows, CancellationToken ct) => Results.Ok(await windows.EntriesAsync(id, ct)));
 
         ai.MapGet("/route-changes", async (ModelPolicies policies, CancellationToken ct) => Results.Ok(await policies.RouteChangesAsync(ct)));
 

@@ -332,6 +332,136 @@ public sealed class AiGatewayTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task Usage_is_recorded_per_call_and_shown_by_dimension_with_org_scope_and_the_five_person_minimum()
+    {
+        var t = await FreshAsync();
+        var gulf = await world.CreateUnitAsync(t, "Gulf", null, "subsidiary");
+        var egypt = await world.CreateUnitAsync(t, "Egypt", null, "subsidiary");
+        var people = new List<string>();
+        for (var i = 0; i < 5; i++)
+        {
+            await world.SeedUserAsync(t, $"g{i}", MembershipTypes.Employee);
+            await world.AddMembershipAsync(t, $"g{i}", "Gulf");
+            people.Add($"g{i}");
+        }
+        await world.SeedUserAsync(t, "e0", MembershipTypes.Employee);
+        await world.AddMembershipAsync(t, "e0", "Egypt");
+        await world.SeedUserAsync(t, "gadmin", MembershipTypes.Employee);
+        await world.AssignAsync(t, "gadmin", BuiltInRoles.AiPolicyAdministrator, "org_subtree", gulf);
+
+        foreach (var name in people.Append("e0"))
+        {
+            var r = await world.Factory.AsUserAsync(t.Id, t[name].Id, sp => sp.GetRequiredService<IAiGateway>()
+                .ChatAsync(new AiRequest(AiUseCases.Assistant, [new AiMessage(AiRoles.User, "How many leave days do I have?")], DataClassification.Internal)));
+            Assert.True(r.IsOk, r.Denial);
+        }
+        await world.Factory.AsUserAsync(t.Id, t["e0"].Id, sp => sp.GetRequiredService<IAiGateway>()
+            .ChatAsync(new AiRequest(AiUseCases.Assistant, [new AiMessage(AiRoles.User, "Salary")], DataClassification.Confidential)));
+        // The record survives a caller that never commits: it is written in its own transaction.
+        Assert.Equal(7, await world.Database.CountInTenantAsync(t.Id, "select count(*) from ai.usage_record"));
+        Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from ai.usage_record where model is not null and cost <= 0"));
+
+        var byModel = await OkAsync(t["layla"].Client.GetAsync("/api/v1/ai/usage?groupBy=model"));
+        Assert.Equal("tenant", byModel.GetProperty("scope").GetString());
+        var row = Assert.Single(byModel.GetProperty("rows").EnumerateArray());
+        Assert.Equal(Small, row.GetProperty("key").GetString());
+        Assert.Equal(6, row.GetProperty("requests").GetInt64());
+        Assert.True(row.GetProperty("cost").GetDecimal() > 0);
+        var denied = Assert.Single(byModel.GetProperty("denied").EnumerateArray());
+        Assert.Equal(AiDenials.ClassificationBlocked, denied.GetProperty("reason").GetString());
+        foreach (var group in new[] { "day", "use_case", "provider", "unit", "agent" })
+        {
+            await OkAsync(t["sec"].Client.GetAsync($"/api/v1/ai/usage?groupBy={group}"));
+        }
+        Assert.Equal(6, (await OkAsync(t["sec"].Client.GetAsync("/api/v1/ai/usage?groupBy=user"))).GetProperty("rows").GetArrayLength());
+
+        // The Gulf administrator sees Gulf only, never named users, and only groups of five people or more.
+        var scoped = await OkAsync(t["gadmin"].Client.GetAsync("/api/v1/ai/usage?groupBy=unit"));
+        Assert.Equal("units", scoped.GetProperty("scope").GetString());
+        var unit = Assert.Single(scoped.GetProperty("rows").EnumerateArray());
+        Assert.Equal(gulf.ToString(), unit.GetProperty("key").GetString());
+        Assert.Equal(5, scoped.GetProperty("totals").GetProperty("requests").GetInt64());
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["gadmin"].Client.GetAsync("/api/v1/ai/usage?groupBy=user")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["emp"].Client.GetAsync("/api/v1/ai/usage")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await t["layla"].Client.GetAsync("/api/v1/ai/usage?groupBy=colour")).StatusCode);
+        _ = egypt;
+
+        // Another tenant sees none of it.
+        var other = await FreshAsync();
+        Assert.Equal(0, (await OkAsync(other["layla"].Client.GetAsync("/api/v1/ai/usage"))).GetProperty("totals").GetProperty("requests").GetInt64());
+    }
+
+    [Fact]
+    public async Task The_monthly_request_quota_refuses_further_calls_once_reached()
+    {
+        var t = await FreshAsync();
+        // New tenants take the latest published version, so the package's capabilities are published again at the end.
+        var current = (await OkAsync(t["admin"].Client.GetAsync("/api/v1/tenant/entitlements"))).GetProperty("capabilities");
+        var capped = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(current.GetRawText())!
+            .ToDictionary(p => p.Key, p => (object)p.Value);
+        capped[TeamBeats.Entitlements.Contracts.Capabilities.AiAssistantMonthlyRequests] = new { enabled = true, limit = 2 };
+        var draft = await OkAsync(world.Platform.PostAsJsonAsync("/api/v1/platform/packages/workplace_plus/versions", new { capabilities = capped }), HttpStatusCode.Created);
+        var version = draft.GetProperty("version").GetInt32();
+        (await world.Platform.PostAsync($"/api/v1/platform/packages/workplace_plus/versions/{version}:publish", null)).EnsureSuccessStatusCode();
+        (await world.Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{t.Id}/subscription", new { packageKey = "workplace_plus", version })).EnsureSuccessStatusCode();
+        var restore = await OkAsync(world.Platform.PostAsJsonAsync("/api/v1/platform/packages/workplace_plus/versions", new { capabilities = current }), HttpStatusCode.Created);
+        (await world.Platform.PostAsync($"/api/v1/platform/packages/workplace_plus/versions/{restore.GetProperty("version").GetInt32()}:publish", null)).EnsureSuccessStatusCode();
+
+        Assert.True((await ChatAsync(t, "One")).IsOk);
+        Assert.True((await ChatAsync(t, "Two")).IsOk);
+        var before = Provider.Requests;
+        Assert.Equal(AiDenials.QuotaExhausted, (await ChatAsync(t, "Three")).Denial);
+        Assert.Equal(before, Provider.Requests);
+        // Judge calls of platform suites are charged to the platform and still run.
+        var judge = await AsAsync(t, g => g.ChatAsync(new AiRequest(AiUseCases.Evaluation, [new AiMessage(AiRoles.User, "Grade")], DataClassification.Internal, PlatformCharged: true)));
+        Assert.True(judge.IsOk, judge.Denial);
+        Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id, "select count(*) from ai.usage_record where charged_to = 'platform'"));
+    }
+
+    [Fact]
+    public async Task Debug_windows_store_Public_and_Internal_text_encrypted_for_security_officers_only()
+    {
+        var t = await FreshAsync();
+        // Metadata only by default: no text is stored without a window.
+        await ChatAsync(t, "Before the window");
+        Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from ai.debug_log"));
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await t["layla"].Client.PostAsJsonAsync("/api/v1/ai/debug-windows", new { useCase = "assistant", hours = 100 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["sec"].Client.PostAsJsonAsync("/api/v1/ai/debug-windows", new { useCase = "assistant", hours = 2 })).StatusCode);
+        var window = await OkAsync(t["layla"].Client.PostAsJsonAsync("/api/v1/ai/debug-windows", new { useCase = "assistant", hours = 2 }), HttpStatusCode.Created);
+        var id = window.GetProperty("id").GetGuid();
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.AiLoggingWindowOpened, id.ToString());
+        Assert.Equal(HttpStatusCode.Conflict, (await t["layla"].Client.PostAsJsonAsync("/api/v1/ai/debug-windows", new { useCase = "assistant", hours = 1 })).StatusCode);
+
+        await ChatAsync(t, "Where is the travel policy?");
+        await ChatAsync(t, "Public question", DataClassification.Public);
+        await ChatAsync(t, "Summarize this", useCase: AiUseCases.Summarize);
+        await ChatAsync(t, "Board minutes", DataClassification.Restricted);
+        Assert.Equal(2, await world.Database.CountInTenantAsync(t.Id, "select count(*) from ai.debug_log"));
+        // Stored encrypted: the plain question is not in the row.
+        Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from ai.debug_log where position(convert_to('travel policy', 'UTF8') in ciphertext) > 0"));
+
+        var entries = await OkAsync(t["sec"].Client.GetAsync($"/api/v1/ai/debug-windows/{id}/entries"));
+        Assert.Equal(2, entries.GetArrayLength());
+        Assert.Contains(entries.EnumerateArray(), e => e.GetProperty("text").GetString()!.Contains("Where is the travel policy?"));
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["layla"].Client.GetAsync($"/api/v1/ai/debug-windows/{id}/entries")).StatusCode);
+
+        var closed = await OkAsync(t["layla"].Client.DeleteAsync($"/api/v1/ai/debug-windows/{id}"));
+        Assert.False(closed.GetProperty("open").GetBoolean());
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.AiLoggingWindowClosed, id.ToString());
+        await ChatAsync(t, "After the window");
+        Assert.Equal(2, await world.Database.CountInTenantAsync(t.Id, "select count(*) from ai.debug_log"));
+
+        // Entries past 30 days are neither shown nor kept.
+        await world.Database.OwnerExecInTenantAsync(t.Id, "update ai.debug_log set at = at - interval '31 days'");
+        Assert.Equal(0, (await OkAsync(t["sec"].Client.GetAsync($"/api/v1/ai/debug-windows/{id}/entries"))).GetArrayLength());
+
+        var other = await FreshAsync();
+        Assert.Equal(HttpStatusCode.NotFound, (await other["sec"].Client.GetAsync($"/api/v1/ai/debug-windows/{id}/entries")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other["layla"].Client.DeleteAsync($"/api/v1/ai/debug-windows/{id}")).StatusCode);
+    }
+
+    [Fact]
     public async Task Platform_operator_maintains_the_catalogue_and_tenants_cannot()
     {
         var t = await FreshAsync();
