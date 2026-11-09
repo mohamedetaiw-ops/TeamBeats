@@ -874,3 +874,25 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Item | Note |
 |---|---|
 | Notice fan-out | Sending the notices to 100,000 people takes a few minutes through the spec 015 sender, which handles one person at a time. Tracking and the pop-up do not wait for it. A bulk send in spec 015 would shorten it; that is a spec 015 change and is left for its R2 work. |
+
+## Libraries, files and permissions (spec 011 T001 to T005)
+| Part | Where |
+|---|---|
+| Module | `src/Modules/Documents`, schema `documents` with forced RLS: settings, library, folder, document_type, document, document_version, saved_view, download_token |
+| Permissions | `doc.view` (reading; a `.view` key, so tenant libraries are open to every member), `doc.contribute`, `doc.manage`, `kb.edit`. Organization administrators get all four, content editors and publishers `kb.edit`. Managing includes contributing and contributing includes reading |
+| Scopes | Tenant libraries are visible to all members. Unit libraries, and site libraries on a site with a unit, are restricted and start with an ACL entry giving the unit's members `doc.view`. Site libraries find the site's unit through the new `ISiteDirectory` contract of Content |
+| Breaks | A folder or document breaks inheritance through `/permissions/break`, which copies the ACL it used so nobody gains or loses access at that moment; managers then edit it in the shared ACL editor (`doc_library`, `doc_folder`, `doc_document`). `/permissions/inherit` removes it again. Each document and folder stores the node whose permissions apply, so a library view is three batch decisions however many files it holds. A change reaching more than 500 documents asks for confirmation |
+| Uploads | The body streams to `tenants/{tenant}/documents/{library}/{document}/{version}` while it is hashed (SHA-256) and counted. Refused: a type outside the library list (which narrows the tenant list), a file over the size limit, an empty file, the same content already in the library, or a full `docs.storage_gb`. The file is scanned before anything else can use it |
+| Drafts | An upload missing required fields stays checked out to the uploader as a pending draft only they see. Filling the fields checks it in, as 1.0 when published or 0.1 otherwise. Readers see a document only once it has an effective major version |
+| Downloads | `/download-token` checks permissions and returns a token valid for five minutes, for that person, that version and that tenant; only its hash is stored. The file is served with `nosniff`, a sandbox CSP and no caching. Confidential and Restricted downloads are audited; every download publishes `DocumentDownloaded` |
+| Tests | `DocumentLibraryTests` |
+
+| Item | Note |
+|---|---|
+| Storage limit | Section 9 leaves `docs.storage_gb` as [TBD], so no package caps it yet; the check runs and refuses with `entitlement.quota_exhausted` once a package sets a limit. |
+| Quarantine notice | An infected file notifies the uploader and people holding `doc.manage` at tenant scope. Managers holding it only at a unit are not reached yet, because authorization lists holders at tenant scope only; a holders-at-resource query in authorization would close this. |
+| Unit readers | A unit library is read by the unit's own members, not those of its child units, following section 7 (a Holding library is not readable by Gulf members unless granted). Managers widen it with an `org_subtree` entry. |
+| Metadata history | Metadata belongs to the document, not to each version, in R1; changes are audited with before and after. |
+| Scope | A library keeps the scope it was created with; moving it would change who can read it. |
+| Download tokens | T003 says signed tokens; they are random values whose hash is stored with the person, version and expiry instead, so no signing key has to be managed and a token can be bound to one person and revoked. |
+| Knowledge feedback | The knowledge feedback table of T001 is added with the knowledge base (T012), where it is first used. |

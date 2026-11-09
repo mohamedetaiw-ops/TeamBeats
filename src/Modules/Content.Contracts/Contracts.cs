@@ -19,3 +19,13 @@ public sealed record AckReportRequested(Guid ReportId, Guid ItemId) : IIntegrati
 
 /// <summary>An item's review window opened and its owner got a review task (US3 scenario 2). IDs only.</summary>
 public sealed record ContentReviewDue(Guid ItemId, Guid SiteId, Guid OwnerId, DateTimeOffset DueAt) : IIntegrationEvent;
+
+/// <summary>An active site and the org unit it covers (null for the whole tenant).</summary>
+public sealed record SiteScope(Guid Id, Guid? OrgUnitId);
+
+/// <summary>Lets other modules place things on a site (spec 011 site libraries) without reading Content's tables.</summary>
+public interface ISiteDirectory
+{
+    /// <summary>The active site of the current tenant, or null when there is none with this ID.</summary>
+    Task<SiteScope?> FindAsync(Guid siteId, CancellationToken ct = default);
+}

@@ -344,3 +344,10 @@ public sealed class Sites(
         host.Length is > 3 and <= 253 && Uri.CheckHostName(host) == UriHostNameType.Dns && host.Contains('.')
         && host.Split('.').All(l => l.Length is > 0 and <= 63 && l.All(c => char.IsAsciiLetterOrDigit(c) || c == '-') && l[0] != '-' && l[^1] != '-');
 }
+
+/// <summary>The site contract for other modules: active sites only, in the current tenant.</summary>
+public sealed class SiteDirectory(Sites sites) : Contracts.ISiteDirectory
+{
+    public async Task<Contracts.SiteScope?> FindAsync(Guid siteId, CancellationToken ct = default) =>
+        await sites.RowAsync(siteId, false, ct) is { Status: "active" } row ? new Contracts.SiteScope(row.Id, row.OrgUnitId) : null;
+}

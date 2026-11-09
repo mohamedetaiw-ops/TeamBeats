@@ -16,6 +16,7 @@ public static class ContentModule
     public static IServiceCollection AddContentModule(this IServiceCollection services)
     {
         services.AddScoped<Sites>();
+        services.AddScoped<Contracts.ISiteDirectory, SiteDirectory>();
         services.AddScoped<Items>();
         services.AddScoped<AudienceFactsLoader>();
         services.AddScoped<ContentScheduler>();

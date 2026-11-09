@@ -137,6 +137,21 @@ public interface IAuthorizationProvisioning
 
     /// <summary>Whether removing access for this user would leave the tenant without an administrator.</summary>
     Task<bool> IsLastTenantAdministratorAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Adds an ACL entry on a resource the calling module owns, for defaults it sets on creation (a unit library readable
+    /// by the unit's members, spec 011). The owning module checks the caller's right first and audits the change.
+    /// </summary>
+    Task AddAclEntryAsync(string resourceType, Guid resourceId, string subjectType, Guid subjectId, string permission, CancellationToken ct = default);
+
+    /// <summary>
+    /// Replaces the ACL of one resource with a copy of another's, for a permission inheritance break (spec 011 FR-001:
+    /// the folder starts from what it inherited, so nobody loses or gains access at the moment of the break).
+    /// </summary>
+    Task CopyAclAsync(string fromType, Guid fromId, string toType, Guid toId, CancellationToken ct = default);
+
+    /// <summary>Removes every ACL entry of a resource (inheritance restored, or the resource is gone).</summary>
+    Task ClearAclAsync(string resourceType, Guid resourceId, CancellationToken ct = default);
 }
 
 public sealed record RoleAssignmentSummary(Guid AssignmentId, string RoleKey, ScopeType ScopeType, Guid? ScopeId);

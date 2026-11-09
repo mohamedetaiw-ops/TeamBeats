@@ -193,6 +193,17 @@ public static class AuditActions
     public const string SiteCreated = "site.created";
     public const string SiteChanged = "site.changed";
 
+    // 011 (R1): libraries, files and permission breaks (section 13).
+    public const string DocLibraryCreated = "doc.library_created";
+    public const string DocLibraryChanged = "doc.library_changed";
+    public const string DocTypeChanged = "doc.type_changed";
+    public const string DocSettingsChanged = "doc.settings_changed";
+    public const string DocUploaded = "doc.uploaded";
+    public const string DocMetadataChanged = "doc.metadata_changed";
+    public const string DocDownloaded = "doc.downloaded";
+    public const string DocPermissionsBroken = "doc.permissions_broken";
+    public const string DocPermissionsChanged = "doc.permissions_changed";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -226,6 +237,8 @@ public static class AuditActions
         ContentCriticalSent, ContentCriticalDenied, ContentAcknowledged, ContentAckReportExported,
         ContentReviewed, ContentOwnerReassigned, ContentVersionRestored, ContentCommentModerated,
         SiteCreated, SiteChanged,
+        DocLibraryCreated, DocLibraryChanged, DocTypeChanged, DocSettingsChanged, DocUploaded, DocMetadataChanged, DocDownloaded,
+        DocPermissionsBroken, DocPermissionsChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

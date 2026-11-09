@@ -7,3 +7,12 @@ namespace TeamBeats.Modules.Documents.Contracts;
 /// names or content. The Documents module publishes it once spec 011 downloads exist.
 /// </summary>
 public sealed record DocumentDownloaded(Guid DocumentId, Guid LibraryId, Guid UserId, long Bytes) : IIntegrationEvent;
+
+/// <summary>
+/// A version of a document became the one readers get (spec 011 section 12), for search, subscriptions and analytics.
+/// IDs and numbers only; consumers read the document through the module's contract with the reader's permissions.
+/// </summary>
+public sealed record DocumentVersionPublished(Guid DocumentId, Guid LibraryId, Guid VersionId, int Major, int Minor) : IIntegrationEvent;
+
+/// <summary>A folder or document gained or lost its own permissions, so search re-checks what sits under it.</summary>
+public sealed record DocumentPermissionsChanged(Guid LibraryId, string ResourceType, Guid ResourceId) : IIntegrationEvent;

@@ -55,6 +55,9 @@ public static class Capabilities
     public const string ContentCampaigns = "content.campaigns";
     public const string ContentAiTranslation = "content.ai_translation";
     public const string AiAuthoring = "ai.authoring";
+    public const string DocsCore = "docs.core";
+    public const string DocsControlled = "docs.controlled";
+    public const string DocsStorageGb = "docs.storage_gb";
 }
 
 /// <summary>Central entitlement check for the current tenant (spec 005). Unknown keys fail closed.</summary>

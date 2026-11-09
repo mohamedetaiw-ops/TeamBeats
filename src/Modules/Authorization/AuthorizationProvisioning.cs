@@ -207,4 +207,44 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
             """, new { u = userId, k = BuiltInRoles.TenantAdministrator }, r => (Mine: r.GetInt64(0), Total: r.GetInt64(1)), ct);
         return counts.Mine > 0 && counts.Total == counts.Mine;
     }
+
+    public async Task AddAclEntryAsync(string resourceType, Guid resourceId, string subjectType, Guid subjectId, string permission, CancellationToken ct = default)
+    {
+        if (subjectType is not ("user" or "group" or "org_unit" or "org_subtree") || !Permissions.All.Contains(permission))
+        {
+            throw new ArgumentException("Unknown ACL subject type or permission.");
+        }
+        await session.ExecAsync(
+            """
+            insert into authz.resource_acl (tenant_id, id, resource_type, resource_id, subject_type, subject_id, permission_key, granted_by)
+            select @t, @id, @rt, @rid, @st, @sid, @p, @by
+            where not exists (select 1 from authz.resource_acl where resource_type = @rt and resource_id = @rid and subject_type = @st
+              and subject_id = @sid and permission_key = @p and condition is null)
+            """, new { t = context.RequireTenant(), id = Ids.New(), rt = resourceType, rid = resourceId, st = subjectType, sid = subjectId, p = permission, by = context.ActorId }, ct);
+        await AclChangedAsync(resourceType, resourceId, ct);
+    }
+
+    public async Task CopyAclAsync(string fromType, Guid fromId, string toType, Guid toId, CancellationToken ct = default)
+    {
+        await session.ExecAsync("delete from authz.resource_acl where resource_type = @t and resource_id = @id", new { t = toType, id = toId }, ct);
+        await session.ExecAsync(
+            """
+            insert into authz.resource_acl (tenant_id, id, resource_type, resource_id, subject_type, subject_id, permission_key, granted_by, condition)
+            select tenant_id, gen_random_uuid(), @tt, @tid, subject_type, subject_id, permission_key, @by, condition
+            from authz.resource_acl where resource_type = @ft and resource_id = @fid
+            """, new { ft = fromType, fid = fromId, tt = toType, tid = toId, by = context.ActorId }, ct);
+        await AclChangedAsync(toType, toId, ct);
+    }
+
+    public async Task ClearAclAsync(string resourceType, Guid resourceId, CancellationToken ct = default)
+    {
+        await session.ExecAsync("delete from authz.resource_acl where resource_type = @t and resource_id = @id", new { t = resourceType, id = resourceId }, ct);
+        await AclChangedAsync(resourceType, resourceId, ct);
+    }
+
+    private async Task AclChangedAsync(string resourceType, Guid resourceId, CancellationToken ct)
+    {
+        await store.BumpAsync(ct);
+        await outbox.EnqueueAsync(new ResourcePermissionChanged(resourceType, resourceId), ct);
+    }
 }
