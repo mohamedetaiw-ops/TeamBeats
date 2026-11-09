@@ -1052,5 +1052,6 @@
   "notifications.template.content.analytics.reminder.body": "لم تقرأ هذا بعد. افتحه للاطلاع عليه.",
   "notifications.template.policies.analytics.reminder.title": "تذكير بسياسة تنطبق عليك",
   "notifications.template.policies.analytics.reminder.body": "افتح السياسة لقراءتها، وأكدها إذا طُلب منك ذلك.",
-  "validation.analytics.group": "اختر مجموعة من التوزيع."
+  "validation.analytics.group": "اختر مجموعة من التوزيع.",
+  "admin.nav.analytics": "التحليلات"
 }

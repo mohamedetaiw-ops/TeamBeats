@@ -11,7 +11,7 @@ namespace TeamBeats.Modules.Analytics;
 
 /// <summary>
 /// Analytics and insights (spec 021, module map: Analytics, a derived read model). R1: the event pipeline with
-/// declared schemas and pseudonymous keys, the tenant analytics policy, aggregation and retention, and item reach and acknowledgement.
+/// declared schemas and pseudonymous keys, the tenant analytics policy, aggregation and retention, item reach and acknowledgement, adoption basics and the frontend error list.
 /// </summary>
 public static class AnalyticsModule
 {
@@ -26,6 +26,8 @@ public static class AnalyticsModule
         services.AddScoped<AnalyticsAggregator>();
         services.AddScoped<AnalyticsRetention>();
         services.AddScoped<ItemAnalytics>();
+        services.AddScoped<Adoption>();
+        services.AddScoped<FrontendErrors>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
         return services;
@@ -59,6 +61,8 @@ public static class AnalyticsModule
         });
 
         var admin = analytics.MapGroup("").InAdminArea();
+        admin.MapGet("/adoption", async (Adoption adoption, CancellationToken ct) => Results.Ok(await adoption.GetAsync(ct)));
+        admin.MapGet("/errors", async (string? release, FrontendErrors errors, CancellationToken ct) => Results.Ok(await errors.ListAsync(release, ct)));
         admin.MapGet("/policy", async (AnalyticsPolicies policies, CancellationToken ct) => Results.Ok(await policies.ViewAsync(ct)));
         admin.MapPut("/policy", async (AnalyticsPolicyRequest request, AnalyticsPolicies policies, IDbSession session, CancellationToken ct) =>
         {

@@ -13,8 +13,8 @@ Depends on 004, 006, 008, 009, 025, 032; 010 (location breakdown), 015 (reminder
 - [x] T006 [US1] Item analytics endpoint and the analytics panel on content and policy pages
 
 ## Phase 3: Adoption and experience quality
-- [ ] T007 Adoption basics endpoint and admin page with table views
-- [ ] T008 [US9] Frontend error reports with release, component version and correlation ID; support list
+- [x] T007 Adoption basics endpoint and admin page with table views
+- [x] T008 [US9] Frontend error reports with release, component version and correlation ID; support list
 
 ## Final phase
-- [ ] T009 OpenAPI; R1 implementation notes (location breakdown); spec evidence
+- [x] T009 OpenAPI; R1 implementation notes (location breakdown); spec evidence

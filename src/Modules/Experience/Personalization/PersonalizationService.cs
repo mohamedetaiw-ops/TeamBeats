@@ -4,6 +4,7 @@ using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Localization;
+using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Modules.Experience.Catalogue;
 using TeamBeats.Modules.Experience.Components;
 using TeamBeats.Modules.Experience.Contracts;
@@ -67,7 +68,8 @@ public sealed partial class PersonalizationService(
     IClock clock,
     ILocalizer localizer,
     RequestLocale locale,
-    HomeDefaults homeDefaults)
+    HomeDefaults homeDefaults,
+    IAnalyticsEvents analytics)
 {
     public const int PreferenceSchemaVersion = 1;
     public const int LayoutSchemaVersion = 1;
@@ -178,19 +180,31 @@ public sealed partial class PersonalizationService(
               operations = excluded.operations, updated_at = excluded.updated_at
             """,
             new { t = context.RequireTenant(), u = context.RequireUser(), p = page.Id, v = LayoutSchemaVersion, rev = next, ops = Jsonb.From(operations), now = clock.UtcNow }, ct);
+        if (operations.Count > 0)
+        {
+            await PersonalizedAsync("customize", ct);
+        }
         return new LayoutView(page.Id, next, ETag(next), operations, [], rights.Values.ToList());
     }
+
+    /// <summary>Counts personal layout use for adoption basics (spec 021 T007): the action only, never the layout.</summary>
+    private Task PersonalizedAsync(string action, CancellationToken ct) =>
+        analytics.EmitAsync(AnalyticsEvents.PersonalizationChanged, new Dictionary<string, object?> { ["action"] = action }, ct);
 
     /// <summary>Reset this page to the organization default; other pages and the preference profile stay (FR-027).</summary>
     public async Task ResetLayoutAsync(Guid pageId, CancellationToken ct)
     {
         var page = await pages.PublishedForViewerAsync(pageId, ct);
         await session.ExecAsync("delete from experience.personal_layout where user_id = @u and page_id = @p", new { u = context.RequireUser(), p = page.Id }, ct);
+        await PersonalizedAsync("reset", ct);
     }
 
     /// <summary>Reset every page; the preference profile stays (FR-027).</summary>
-    public Task ResetAllLayoutsAsync(CancellationToken ct) =>
-        session.ExecAsync("delete from experience.personal_layout where user_id = @u", new { u = context.RequireUser() }, ct);
+    public async Task ResetAllLayoutsAsync(CancellationToken ct)
+    {
+        await session.ExecAsync("delete from experience.personal_layout where user_id = @u", new { u = context.RequireUser() }, ct);
+        await PersonalizedAsync("reset", ct);
+    }
 
     /// <summary>Components for the add panel of one region, with the reason each ineligible one cannot be added.</summary>
     public async Task<IReadOnlyList<AddPanelItem>> AddPanelAsync(Guid pageId, string? regionId, CancellationToken ct)

@@ -41,3 +41,23 @@ public sealed class ItemAnalyticsMergeTests
         Assert.Empty(Merge(5));
     }
 }
+
+/// <summary>Spec 021 T007: unit counts under the minimum are merged the same way, and weeks start on Monday (ISO).</summary>
+public sealed class AdoptionCountsTests
+{
+    [Fact]
+    public void Unit_counts_under_the_minimum_are_never_shown_alone()
+    {
+        var merged = Adoption.MergeCounts([("a", 6), ("b", 9), ("c", 2), ("d", 0)], 5);
+        Assert.Equal([("b", 9), (ItemAnalytics.Other, 8)], merged);
+        Assert.Empty(Adoption.MergeCounts([], 5));
+        Assert.Equal([(ItemAnalytics.Other, 4)], Adoption.MergeCounts([("a", 4)], 5));
+    }
+
+    [Theory]
+    [InlineData("2026-11-09", "2026-11-09")]
+    [InlineData("2026-11-15", "2026-11-09")]
+    [InlineData("2026-11-11", "2026-11-09")]
+    public void A_week_starts_on_monday(string day, string monday) =>
+        Assert.Equal(DateOnly.Parse(monday), Adoption.WeekOf(DateOnly.Parse(day)));
+}

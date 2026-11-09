@@ -29,6 +29,7 @@ public static class ExperienceModule
         services.AddSingleton<IComponentRegistration, PlatformComponents>();
         services.AddSingleton<ComponentRegistry>();
         services.AddScoped<ComponentEnablement>();
+        services.AddScoped<ITemplateUsage, Templates.TemplateUsageSource>();
         services.AddScoped<ComponentAvailability>();
         services.AddScoped<AudienceEvaluator>();
         services.AddScoped<LayoutEngine>();

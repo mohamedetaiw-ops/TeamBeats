@@ -65,3 +65,9 @@
   gap: var(--tb-space-sm);
   align-items: center;
 }
+
+.analytics-id {
+  display: inline-block;
+  margin-inline-end: var(--tb-space-xs);
+  font-size: var(--tb-font-size-sm);
+}

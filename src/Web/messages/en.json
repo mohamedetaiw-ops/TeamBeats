@@ -50,7 +50,8 @@
       "ai": "AI governance",
       "search": "Search",
       "agents": "Agents",
-      "evaluation": "Evaluation"
+      "evaluation": "Evaluation",
+      "analytics": "Analytics"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}"
   },
@@ -66,7 +67,10 @@
     "hi": "हिन्दी"
   },
   "errors": {
-    "generic": "Something went wrong. Try again in a moment."
+    "generic": "Something went wrong. Try again in a moment.",
+    "boundary": {
+      "retry": "Try again"
+    }
   },
   "signin_problem": {
     "no_access": {
@@ -3511,6 +3515,59 @@
       "reminded": "{count, plural, =0 {Everyone has already been reminded in the last hour.} one {Reminder sent to # person.} other {Reminder sent to # people.}}",
       "remindFailed": "The reminder could not be sent. Please try again.",
       "denied": "Only the people who look after this item can see its analytics."
+    },
+    "adoption": {
+      "title": "Adoption",
+      "intro": "Counts of active people, layout use and pages. Groups of fewer than {size} people are only shown together.",
+      "weeks": "Weekly active people",
+      "units": "Active people by unit",
+      "unitsOf": "Active people by unit, week of {week}",
+      "personalization": "Personal layouts",
+      "templates": "Pages per template",
+      "noData": "No activity yet.",
+      "noPages": "No pages yet.",
+      "hidden": "Fewer than {size}",
+      "other": "Other units (groups under {size})",
+      "noUnit": "No unit",
+      "column": {
+        "week": "Week of",
+        "active": "Active people",
+        "unit": "Unit",
+        "people": "People",
+        "customized": "Customized",
+        "reset": "Reset",
+        "template": "Template",
+        "version": "Version",
+        "pages": "Pages",
+        "published": "Published"
+      },
+      "errorsLink": "Frontend errors"
+    },
+    "errors": {
+      "title": "Frontend errors",
+      "intro": "Failures people met in the app in the last {days} days. Reports name the release, component and correlation ID, never what was on the screen.",
+      "back": "Back to adoption",
+      "release": "Release",
+      "allReleases": "All releases",
+      "releaseOption": "{release} ({count})",
+      "filter": "Show",
+      "none": "No frontend errors.",
+      "noComponent": "Whole page",
+      "kind": {
+        "render": "Component failed",
+        "boundary": "Page failed",
+        "network": "Network",
+        "chunk": "Code did not load"
+      },
+      "column": {
+        "release": "Release",
+        "kind": "Kind",
+        "component": "Component",
+        "area": "Area",
+        "count": "Reports",
+        "last": "Last seen",
+        "correlation": "Correlation IDs"
+      }
     }
   }
 }

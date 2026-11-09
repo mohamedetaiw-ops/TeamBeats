@@ -6,6 +6,9 @@ COPY src/Web/ .
 # next.config.ts reads the API origin at build time for the /api and /dev rewrites; deployments pass their private API address.
 ARG TEAMBEATS_API_ORIGIN=http://localhost:5080
 ENV TEAMBEATS_API_ORIGIN=$TEAMBEATS_API_ORIGIN
+# The release named in frontend error reports (spec 021 US9); deployments pass the commit.
+ARG TEAMBEATS_RELEASE=dev
+ENV TEAMBEATS_RELEASE=$TEAMBEATS_RELEASE
 RUN npm run build
 
 FROM node:22-alpine

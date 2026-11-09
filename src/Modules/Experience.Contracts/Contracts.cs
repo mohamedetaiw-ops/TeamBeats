@@ -134,3 +134,12 @@ public sealed record ExperienceLockChanged(Guid? ScopeOrgUnitId, IReadOnlyList<s
 public sealed record ShellPublished(int Version) : IIntegrationEvent;
 
 public sealed record NavigationPublished(Guid MenuId, string Kind, string Scope, int Version) : IIntegrationEvent;
+
+/// <summary>How many pages use one template version, and how many of them are published (spec 021 adoption basics, spec 032 inventory).</summary>
+public sealed record TemplateUsage(string TemplateId, string TemplateVersion, int Pages, int Published);
+
+/// <summary>Template adoption for analytics (spec 021 T007): counts only, for the whole tenant.</summary>
+public interface ITemplateUsage
+{
+    Task<IReadOnlyList<TemplateUsage>> UsageAsync(CancellationToken ct = default);
+}

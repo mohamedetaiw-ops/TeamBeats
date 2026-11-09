@@ -27,3 +27,30 @@ export const itemAnalyticsApi = (source: AnalyticsSource, id: string) => `/api/v
 
 export const otherGroup = "other";
 export const noUnitGroup = "none";
+
+/** Adoption basics (spec 021 T007). People counts under the minimum group size come back as null. */
+export type AdoptionView = {
+  minGroupSize: number;
+  weeks: { week: string; activeUsers: number }[];
+  unitsWeek: string | null;
+  units: { group: string; names: Record<string, string>; activeUsers: number }[];
+  personalization: { week: string; people: number | null; customized: number | null; reset: number | null }[];
+  templates: { templateId: string; templateVersion: string; pages: number; published: number }[];
+};
+
+/** The support list of frontend errors (spec 021 US9 scenario 6): no messages or payloads, only what support needs to look a failure up. */
+export type FrontendErrorsView = {
+  days: number;
+  release: string | null;
+  releases: { release: string; count: number; lastAt: string }[];
+  groups: {
+    release: string;
+    kind: "render" | "boundary" | "network" | "chunk";
+    component: string | null;
+    area: string | null;
+    count: number;
+    firstAt: string;
+    lastAt: string;
+    correlationIds: string[];
+  }[];
+};

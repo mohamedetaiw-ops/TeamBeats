@@ -1282,3 +1282,22 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 |---|---|
 | Groups by unit | The breakdown uses each person's unit now rather than at read time, so audience and readers are counted in the same group. Location breakdown waits for planned spec 010, as the plan says. |
 | Reminder rights | The spec leaves open whether "remind this group" needs its own right; it follows the right to see the item's analytics. |
+
+## Adoption basics and frontend errors (spec 021 T007 to T009)
+
+| Area | What was built |
+|---|---|
+| Adoption | `GET /api/v1/analytics/adoption` for `analytics.view` over the whole tenant: weekly active people for 12 ISO weeks, active people by unit in the latest week with units under the minimum merged into `other` (the same complementary rule as items), personal layout use per week from `personalization.changed`, and pages per template and version from Experience (`ITemplateUsage`, new in Experience.Contracts) |
+| Layout events | Experience emits `personalization.changed` with `customize` when a personal layout is saved with changes and `reset` when one page or all pages are reset. The event carries the action only, never the layout |
+| Frontend errors | The app error boundary (`app/error.tsx`) and the renderer's placement boundary report `ui.error` with the kind (`boundary`, `render`, `chunk`), the release, the component reference and version, the area (the first part of the path only) and the error digest as correlation ID. No message, stack or payload is sent |
+| Release | The web build reads `TEAMBEATS_RELEASE`; the staging deployment passes the commit, and local builds report `dev` |
+| Support list | `GET /api/v1/analytics/errors?release=` for `analytics.view`: the last 30 days grouped by release, kind, component and area, with counts, first and last time and the five latest correlation IDs, and the releases seen |
+| Pages | `/admin/analytics` (adoption tables) and `/admin/analytics/errors` (filter by release), in the admin navigation as `analytics` for the whole tenant |
+| Tests | `AdoptionTests` (both), `AdoptionCountsTests`, `analytics.spec.ts` (en and ar, axe), and `Analytics` added to the architecture test that keeps modules out of each other's tables |
+
+| Item | Note |
+|---|---|
+| Location breakdown | Item and adoption breakdowns are by org unit. Events already keep the location key at event time, so the location breakdown can be added once the people profile and its location list (spec 010) are part of analytics dashboards in R2. |
+| Layout use from raw events | Personal layout use is counted from raw events, so it follows raw retention (13 months by default). Twelve weeks are shown, well inside the shortest retention of 3 months. |
+| Who reads the error list | The spec names support; R1 has no support role, so `analytics.view` (tenant administrators) reads it. |
+| Network errors | The `network` kind is declared for the API client; R1 reports boundary, render and chunk failures, and a failed API call is already traceable by its correlation ID in the problem response. |

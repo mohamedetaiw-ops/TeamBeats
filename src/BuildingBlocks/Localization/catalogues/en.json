@@ -1052,5 +1052,6 @@
   "notifications.template.content.analytics.reminder.body": "You have not read this yet. Open it to catch up.",
   "notifications.template.policies.analytics.reminder.title": "A reminder about a policy that applies to you",
   "notifications.template.policies.analytics.reminder.body": "Open the policy to read it, and confirm it if you are asked to.",
-  "validation.analytics.group": "Choose a group from the breakdown."
+  "validation.analytics.group": "Choose a group from the breakdown.",
+  "admin.nav.analytics": "Analytics"
 }
