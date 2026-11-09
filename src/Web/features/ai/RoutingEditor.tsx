@@ -150,7 +150,7 @@ export function RoutingEditor({ catalogue, initial, canOverride }: { catalogue: 
       {pending ? (
         <section className="ai-section" aria-labelledby={`${reasonId}-pending`} data-testid="ai-pending-change">
           <h2 id={`${reasonId}-pending`}>{t("pending.title")}</h2>
-          <p>{t(pending.gateAvailable ? "pending.gate" : "pending.noGate")}</p>
+          <p data-testid="ai-pending-gate">{t(`pending.gateStatus.${pending.gateStatus ?? "running"}`)}</p>
           <ul>
             {pending.useCases.map((u) => (
               <li key={u}>
@@ -162,7 +162,19 @@ export function RoutingEditor({ catalogue, initial, canOverride }: { catalogue: 
               </li>
             ))}
           </ul>
-          {canOverride ? (
+          {pending.failures.length > 0 ? (
+            <>
+              <h3>{t("pending.failures")}</h3>
+              <ul data-testid="ai-pending-failures">
+                {pending.failures.map((f) => (
+                  <li key={f}>
+                    <bdi dir="ltr">{f}</bdi>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
+          {canOverride && pending.canOverride ? (
             <>
               <div className="field">
                 <label htmlFor={reasonId}>{t("pending.reason")}</label>

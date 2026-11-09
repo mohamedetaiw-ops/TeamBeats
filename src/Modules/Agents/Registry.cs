@@ -361,4 +361,19 @@ public sealed class AgentCatalog(IDbSession session) : IAgentCatalog
             new { agentId, number }, r => new AgentVersionFacts(r.GetInt32(0), r.GetString(1), r.GetString(2), r.GetGuid(3)), ct);
         return rows.Count == 0 ? null : rows[0];
     }
+
+    public async Task<IReadOnlyList<AgentFacts>> PublishedAsync(CancellationToken ct = default)
+    {
+        var ids = await session.QueryAsync("select id from agents.agent where status = 'published' and current_version is not null order by created_at, id limit 500", null,
+            r => r.GetGuid(0), ct);
+        var list = new List<AgentFacts>();
+        foreach (var id in ids)
+        {
+            if (await GetAsync(id, ct) is { } facts)
+            {
+                list.Add(facts);
+            }
+        }
+        return list;
+    }
 }

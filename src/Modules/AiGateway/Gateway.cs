@@ -47,7 +47,7 @@ public sealed class AiGatewayService(
 
     /// <summary>Steps 1 to 6: who may call, where the content may go, which models are left, and the parameters after limits.</summary>
     internal async Task<(RoutePlan? Plan, string? Denial)> PlanAsync(string useCase, string? model, DataClassification? classification, int inputTokens, int? maxTokens,
-        double? temperature, IReadOnlyCollection<string> needs, string? modelUnderTest, bool platformCharged, CancellationToken ct)
+        double? temperature, IReadOnlyCollection<string> needs, string? modelUnderTest, bool platformCharged, CancellationToken ct, Guid? routeChangeId = null)
     {
         context.RequireTenant();
         if (!AiUseCases.All.Contains(useCase))
@@ -81,6 +81,15 @@ public sealed class AiGatewayService(
             return (null, AiDenials.ClassificationBlocked);
         }
         var policy = (await policies.EffectiveAsync(ct)).Document;
+        if (routeChangeId is { } change)
+        {
+            // A release gate run (spec 034 US5 scenario 4) tries the proposed routes before they apply.
+            if (!AiUseCases.Gated.Contains(useCase) || await policies.ProposedDocumentAsync(change, ct) is not { } proposed)
+            {
+                return (null, AiDenials.InvalidRequest);
+            }
+            policy = proposed;
+        }
         var snapshot = await catalogue.SnapshotAsync(ct);
         bool Classified(CatalogueEntry e) => e.Ceiling >= level && (level < DataClassification.Confidential || (e.ConfidentialEligible && policy.Confidential.Contains(e.Model)));
         if (level == DataClassification.Confidential && !policy.Confidential.Any(m => snapshot.Models.TryGetValue(m, out var e) && e.ConfidentialEligible))
@@ -200,7 +209,7 @@ public sealed class AiGatewayService(
             return (null, AiDenials.InvalidRequest);
         }
         return await PlanAsync(request.UseCase, request.Model, request.Classification, Estimate(request), request.MaxTokens, request.Temperature, Needs(request),
-            request.ModelUnderTest, request.UseCase == AiUseCases.Evaluation && request.PlatformCharged, ct);
+            request.ModelUnderTest, request.UseCase == AiUseCases.Evaluation && request.PlatformCharged, ct, request.RouteChangeId);
     }
 
     public async Task<AiResult> ChatAsync(AiRequest request, CancellationToken ct = default)

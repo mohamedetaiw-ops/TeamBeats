@@ -7,6 +7,7 @@ using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.AiGateway;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
+using TeamBeats.Modules.Evaluation;
 using TeamBeats.Testing;
 using Xunit;
 
@@ -154,14 +155,16 @@ public sealed class AiGatewayTests(TenantWorld world)
     }
 
     [Fact]
-    public async Task A_change_to_the_assistant_route_is_held_for_the_gate_and_applies_with_an_audited_override()
+    public async Task A_change_to_the_assistant_route_is_held_for_the_gate_and_applies_with_an_audited_override_once_the_gate_cannot_test_it()
     {
         var t = await FreshAsync();
         var held = await SaveAsync(t, Policy([Small, Large, Embedding], Routes([Small, Large], assistant: [Large])), HttpStatusCode.Accepted);
         Assert.False(held.GetProperty("applied").GetBoolean());
         var change = held.GetProperty("routeChange");
         Assert.Equal("proposed", change.GetProperty("status").GetString());
-        Assert.False(change.GetProperty("gateAvailable").GetBoolean());
+        Assert.True(change.GetProperty("gateAvailable").GetBoolean());
+        Assert.Equal("running", change.GetProperty("gateStatus").GetString());
+        Assert.False(change.GetProperty("canOverride").GetBoolean());
         Assert.Contains("assistant", change.GetProperty("useCases").EnumerateArray().Select(u => u.GetString()));
         Assert.Equal(Large, change.GetProperty("after").GetProperty("assistant")[0].GetString());
         await world.Database.AssertAuditedAsync(t.Id, AuditActions.AiRouteChangeProposed);
@@ -170,6 +173,17 @@ public sealed class AiGatewayTests(TenantWorld world)
         // The current policy stays in force until the gate or an override.
         Assert.Equal(Small, (await ChatAsync(t, "Hello")).Completion!.Model);
         var id = change.GetProperty("id").GetGuid();
+        // While the gate runs nobody can apply it.
+        Assert.Equal(HttpStatusCode.Conflict,
+            (await t["layla"].Client.PostAsJsonAsync($"/api/v1/ai/route-changes/{id}/override", new { reason = "Applying before the gate decides." })).StatusCode);
+
+        // The assistant has no suites in R1, so the gate reports it incomplete and lists why (spec 034 US5 scenario 4).
+        await RouteGateFlow.StartAsync(world, t.Id, id);
+        await RouteGateFlow.DecideAsync(world, t.Id, id);
+        var pending = (await OkAsync(t["layla"].Client.GetAsync("/api/v1/ai/policy"))).GetProperty("pending");
+        Assert.Equal("incomplete", pending.GetProperty("gateStatus").GetString());
+        Assert.True(pending.GetProperty("canOverride").GetBoolean());
+        Assert.Contains(RouteGates.AssistantNotTested, pending.GetProperty("failures").EnumerateArray().Select(f => f.GetString()));
         Assert.Equal(HttpStatusCode.BadRequest, (await t["layla"].Client.PostAsJsonAsync($"/api/v1/ai/route-changes/{id}/override", new { reason = "short" })).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden,
             (await t["sec"].Client.PostAsJsonAsync($"/api/v1/ai/route-changes/{id}/override", new { reason = "The gate is not built yet." })).StatusCode);

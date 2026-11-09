@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Messaging;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
@@ -18,6 +19,7 @@ public static class AiGatewayModule
         services.AddSingleton<ProviderCircuits>();
         services.AddScoped<ModelCatalogue>();
         services.AddScoped<ModelPolicies>();
+        services.AddMessageHandler<Evaluation.Contracts.EvaluationRouteGateDecided, RouteGateDecisions>("ai.route_gate_decided");
         services.AddSingleton<DebugLogProtector>();
         services.AddScoped<DebugWindows>();
         services.AddScoped<UsageRecorder>();

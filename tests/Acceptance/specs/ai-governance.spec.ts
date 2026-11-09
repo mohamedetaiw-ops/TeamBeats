@@ -39,8 +39,13 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `ai-routing-${locale}`);
       await page.getByRole("button", { name: m("ai.routing.save") }).click();
       await expect(page.getByRole("status").filter({ hasText: m("ai.routing.held") })).toBeVisible();
+      // The assistant has no suites of its own yet, so the gate reports it as not tested and the change waits for a reason.
       const pending = page.getByTestId("ai-pending-change");
-      await expect(pending).toContainText(m("ai.routing.pending.noGate"));
+      await expect(async () => {
+        await page.reload();
+        await expect(page.getByTestId("ai-pending-gate")).toHaveText(m("ai.routing.pending.gateStatus.incomplete"), { timeout: 2_000 });
+      }).toPass({ timeout: 60_000 });
+      await expect(pending.getByTestId("ai-pending-failures")).toBeVisible();
       await pending.getByLabel(m("ai.routing.pending.reason")).fill(locale === "ar" ? "اختبار جودة النموذج الأكبر للمساعد" : "Pilot the larger model for the assistant");
       await pending.getByRole("button", { name: m("ai.routing.pending.override") }).click();
       await expect(page.getByRole("status").filter({ hasText: m("ai.routing.pending.applied") })).toBeVisible();

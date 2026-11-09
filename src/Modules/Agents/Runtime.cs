@@ -110,7 +110,8 @@ internal sealed class RunState
 }
 
 /// <summary>The definition, version and limits a run uses.</summary>
-internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefinition Definition, string Mode, AgentPolicy Policy)
+/// <param name="RouteChangeId">Set by a release gate run of a proposed model route change: model calls follow the proposed routes.</param>
+internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefinition Definition, string Mode, AgentPolicy Policy, Guid? RouteChangeId = null)
 {
     public int MaxToolCalls => Math.Min(Definition.MaxToolCalls ?? Policy.MaxToolCalls, Policy.MaxToolCalls);
 
@@ -235,7 +236,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     /// The audience is not checked, because a persona tests the agent whoever it will serve; the evaluation module
     /// checks who may start the run.
     /// </summary>
-    internal async Task<EvalRunRecord> EvaluateAsync(Guid agentId, int version, string message, string language, CancellationToken ct)
+    internal async Task<EvalRunRecord> EvaluateAsync(Guid agentId, int version, string message, string language, Guid? routeChangeId, CancellationToken ct)
     {
         var user = context.RequireUser();
         var row = await AgentRowAsync(agentId, ct);
@@ -249,7 +250,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         }
         await DemandNoKillSwitchAsync(ct);
         var definition = await VersionAsync(agentId, version, ct);
-        var run = new RunAgent(agentId, version, agent.Unit, definition, "eval", (await policies.CurrentAsync(ct)).Policy);
+        var run = new RunAgent(agentId, version, agent.Unit, definition, "eval", (await policies.CurrentAsync(ct)).Policy, routeChangeId);
         var watch = Stopwatch.StartNew();
         var view = await StartAsync(run, user, message.Length > MaxMessage ? message[..MaxMessage] : message, new RunRequest(message, language), null, ct);
         var duration = (int)Math.Min(int.MaxValue, watch.ElapsedMilliseconds);
@@ -380,7 +381,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             var watch = Stopwatch.StartNew();
             var level = AssistantPrompt.Highest([state.Classification], DataClassification.Internal);
             var result = await gateway.ChatAsync(new AiRequest(AiUseCases.Agent, state.Messages, level, offered.Count > 0 ? offered : null, MaxTokens: 1500,
-                Temperature: 0.2, AgentId: agent.Id, AgentVersion: agent.Version, ActingUnitId: agent.OrgUnitId), ct);
+                Temperature: 0.2, AgentId: agent.Id, AgentVersion: agent.Version, ActingUnitId: agent.OrgUnitId, RouteChangeId: agent.RouteChangeId), ct);
             await StepAsync(runId, state, "model", null, result.IsOk ? ToolDecisions.Executed : ToolDecisions.Refused, result.Denial, null, null,
                 state.Classification, watch, ct);
             if (result.Completion is not { } completion)
@@ -943,6 +944,6 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
 /// <summary>The runtime port evaluation uses (spec 034); see <see cref="IAgentEvaluationRuntime"/>.</summary>
 public sealed class AgentEvaluationRuntime(AgentRuns runs) : IAgentEvaluationRuntime
 {
-    public Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, CancellationToken ct = default) =>
-        runs.EvaluateAsync(agentId, version, message, language, ct);
+    public Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, Guid? routeChangeId = null, CancellationToken ct = default) =>
+        runs.EvaluateAsync(agentId, version, message, language, routeChangeId, ct);
 }

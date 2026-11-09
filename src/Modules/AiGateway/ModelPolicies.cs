@@ -76,7 +76,21 @@ public sealed record RouteChangeView(
     DateTimeOffset? DecidedAt,
     string? OverrideReason,
     IReadOnlyList<string> Failures,
-    bool GateAvailable);
+    bool GateAvailable,
+    string? GateStatus = null)
+{
+    /// <summary>Whether the AI Policy Administrator may apply it with a reason: only after the gate found no critical failure (FR-019).</summary>
+    public bool CanOverride => Status == "proposed" && GateStatus is RouteGateStatuses.Failed or RouteGateStatuses.Incomplete;
+}
+
+public static class RouteGateStatuses
+{
+    public const string Running = "running";
+    public const string Passed = "passed";
+    public const string Failed = "failed";
+    public const string Incomplete = "incomplete";
+    public const string FailedCritical = "failed_critical";
+}
 
 public sealed record ModelPolicyView(
     int Version,
@@ -97,8 +111,9 @@ public sealed record RouteOverrideRequest(string? Reason);
 /// <summary>
 /// Reads and changes the tenant model policy (spec 013 US1). The gateway reads the policy in force through a short
 /// per-tenant cache so a change applies to new calls within 60 seconds (US1 scenario 5). A change to the route behind the
-/// assistant or agents is held as a proposed route change for the release gate of spec 034 (FR-019); until that gate is
-/// built the AI Policy Administrator applies it with an audited override.
+/// assistant or agents is held as a proposed route change for the release gate of spec 034 (FR-019). A gate with no
+/// failure applies it; a critical failure rejects it; blocking failures or an incomplete gate leave it for the AI Policy
+/// Administrator to apply with an audited reason.
 /// </summary>
 public sealed class ModelPolicies(
     IDbSession session,
@@ -116,8 +131,8 @@ public sealed class ModelPolicies(
     public const int MinReason = 10;
     public const int MaxReason = 1000;
 
-    /// <summary>False until spec 034 publishes gate decisions; the page then says the gate is not available.</summary>
-    public const bool GateAvailable = false;
+    /// <summary>Spec 034 decides proposed route changes.</summary>
+    public const bool GateAvailable = true;
 
     private static readonly ConcurrentDictionary<Guid, (EffectivePolicy Policy, DateTimeOffset At)> Cache = new();
 
@@ -197,12 +212,12 @@ public sealed class ModelPolicies(
     private async Task<List<RouteChangeView>> ChangesAsync(string tail, object? args, CancellationToken ct) =>
         await session.QueryAsync(
             $"""
-            select id, status, base_version, use_cases, before::text, after::text, proposed_by, proposed_at, decided_at, override_reason, failures::text
+            select id, status, base_version, use_cases, before::text, after::text, proposed_by, proposed_at, decided_at, override_reason, failures::text, gate_status
             from ai.route_change {tail}
             """, args,
             r => new RouteChangeView(r.GetGuid(0), r.GetString(1), r.GetInt32(2), [.. r.GetFieldValue<string[]>(3)], Routes(r.GetString(4)), Routes(r.GetString(5)),
                 r.GetGuid(6), r.GetFieldValue<DateTimeOffset>(7), r.Get<DateTimeOffset?>("decided_at"), r.Get<string>("override_reason"),
-                JsonSerializer.Deserialize<List<string>>(r.GetString(10)) ?? [], GateAvailable), ct);
+                JsonSerializer.Deserialize<List<string>>(r.GetString(10)) ?? [], GateAvailable, r.Get<string?>("gate_status")), ct);
 
     private static Dictionary<string, IReadOnlyList<string>> Routes(string json) =>
         (JsonSerializer.Deserialize<Dictionary<string, List<string>>>(json) ?? []).ToDictionary(p => p.Key, p => (IReadOnlyList<string>)p.Value, StringComparer.Ordinal);
@@ -240,20 +255,72 @@ public sealed class ModelPolicies(
         var afterGated = gated.ToDictionary(u => u, u => after[u], StringComparer.Ordinal);
         await session.ExecAsync(
             """
-            insert into ai.route_change (tenant_id, id, base_version, document, use_cases, before, after, status, proposed_by, proposed_at)
-            values (platform.current_tenant_id(), @id, @base, @document, @useCases, @before, @after, 'proposed', @me, @at)
+            insert into ai.route_change (tenant_id, id, base_version, document, use_cases, before, after, status, proposed_by, proposed_at, gate_status)
+            values (platform.current_tenant_id(), @id, @base, @document, @useCases, @before, @after, 'proposed', @me, @at, 'running')
             """,
             new { id, @base = current.Version, document = Jsonb.From(next), useCases = gated.ToArray(), before = Jsonb.From(beforeGated), after = Jsonb.From(afterGated), me, at = clock.UtcNow },
             ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AiRouteChangeProposed, "ai_route_change", id.ToString(), Changes: new { useCases = gated, before = beforeGated, after = afterGated }), ct);
-        await outbox.EnqueueAsync(new AiModelRouteChangeProposed(id, gated, beforeGated, afterGated), ct);
+        await outbox.EnqueueAsync(new AiModelRouteChangeProposed(id, gated, beforeGated, afterGated, me), ct);
         var view = await ViewAsync(current, ct);
         return new PolicySaveResult(false, view, view.Pending);
     }
 
+    /// <summary>The policy a proposed route change would put in force, for release gate runs; null once it is decided.</summary>
+    public async Task<PolicyDocument?> ProposedDocumentAsync(Guid id, CancellationToken ct)
+    {
+        var rows = await session.QueryAsync("select document::text from ai.route_change where id = @id and status = 'proposed'", new { id },
+            r => JsonSerializer.Deserialize<PolicyDocument>(r.GetString(0), JsonDefaults.Options)!, ct);
+        return rows.Count == 0 ? null : rows[0];
+    }
+
     /// <summary>
-    /// Applies a held route change with a reason while the gate is not available or reported blocking failures
-    /// (FR-019). Refused when the policy changed since the change was proposed.
+    /// Takes the release gate decision of spec 034 for a proposed route change (FR-019): passed applies it as its
+    /// proposer, a critical failure rejects it, and blocking failures or an incomplete gate are listed and wait for an
+    /// override with a reason. A change replaced or decided in the meantime is left as it is.
+    /// </summary>
+    public async Task DecideAsync(Guid id, string result, IReadOnlyList<string> failures, CancellationToken ct)
+    {
+        var rows = await session.QueryAsync("select status, base_version, document::text, proposed_by from ai.route_change where id = @id for update", new { id },
+            r => (Status: r.GetString(0), Base: r.GetInt32(1), Document: JsonSerializer.Deserialize<PolicyDocument>(r.GetString(2), JsonDefaults.Options)!, By: r.GetGuid(3)), ct);
+        if (rows.Count == 0 || rows[0].Status != "proposed")
+        {
+            return;
+        }
+        var change = rows[0];
+        var at = clock.UtcNow;
+        var listed = Jsonb.From(failures.Take(100).ToList());
+        switch (result)
+        {
+            case RouteGateStatuses.Passed:
+                var snapshot = await catalogue.SnapshotAsync(ct);
+                var stored = await StoredAsync(ct, forUpdate: true);
+                var current = stored is { } s ? new EffectivePolicy(s.Version, "tenant", s.Document) : new EffectivePolicy(0, "platform", PolicyDocument.Platform(snapshot));
+                if (current.Version != change.Base)
+                {
+                    await session.ExecAsync("update ai.route_change set status = 'replaced', gate_status = 'passed', decided_at = @at where id = @id", new { id, at }, ct);
+                    return;
+                }
+                await session.ExecAsync("update ai.route_change set status = 'applied', gate_status = 'passed', failures = @listed, decided_at = @at where id = @id",
+                    new { id, at, listed }, ct);
+                await audit.WriteAsync(new AuditEntry(AuditActions.AiRouteChangeApplied, "ai_route_change", id.ToString(), Changes: new { gate = result }), ct);
+                await ApplyAsync(current, change.Document, ct, change.By);
+                break;
+            case RouteGateStatuses.FailedCritical:
+                await session.ExecAsync("update ai.route_change set status = 'rejected', gate_status = @result, failures = @listed, decided_at = @at where id = @id",
+                    new { id, at, result, listed }, ct);
+                await audit.WriteAsync(new AuditEntry(AuditActions.AiRouteChangeRejected, "ai_route_change", id.ToString(), Changes: new { gate = result, failures }), ct);
+                break;
+            default:
+                await session.ExecAsync("update ai.route_change set gate_status = @result, failures = @listed where id = @id",
+                    new { id, result = result == RouteGateStatuses.Failed ? RouteGateStatuses.Failed : RouteGateStatuses.Incomplete, listed }, ct);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Applies a held route change with a reason after the gate reported blocking failures or could not complete
+    /// (FR-019). Refused while the gate runs, and when the policy changed since the change was proposed.
     /// </summary>
     public async Task<PolicySaveResult> OverrideAsync(Guid id, RouteOverrideRequest request, CancellationToken ct)
     {
@@ -264,8 +331,9 @@ public sealed class ModelPolicies(
         {
             throw AppException.Validation("reason", "validation.ai.override_reason");
         }
-        var rows = await session.QueryAsync("select status, base_version, document::text from ai.route_change where id = @id for update", new { id },
-            r => (Status: r.GetString(0), Base: r.GetInt32(1), Document: JsonSerializer.Deserialize<PolicyDocument>(r.GetString(2), JsonDefaults.Options)!), ct);
+        var rows = await session.QueryAsync("select status, base_version, document::text, gate_status from ai.route_change where id = @id for update", new { id },
+            r => (Status: r.GetString(0), Base: r.GetInt32(1), Document: JsonSerializer.Deserialize<PolicyDocument>(r.GetString(2), JsonDefaults.Options)!,
+                Gate: r.Get<string?>("gate_status")), ct);
         if (rows.Count == 0)
         {
             throw AppException.NotFound();
@@ -274,6 +342,10 @@ public sealed class ModelPolicies(
         if (change.Status != "proposed")
         {
             throw AppException.Conflict("conflict.ai.route_change_decided");
+        }
+        if (change.Gate is not (RouteGateStatuses.Failed or RouteGateStatuses.Incomplete))
+        {
+            throw AppException.Conflict("conflict.ai.route_gate_running");
         }
         var snapshot = await catalogue.SnapshotAsync(ct);
         var stored = await StoredAsync(ct, forUpdate: true);
@@ -291,10 +363,10 @@ public sealed class ModelPolicies(
         return new PolicySaveResult(true, await ViewAsync(applied, ct), null);
     }
 
-    private async Task<EffectivePolicy> ApplyAsync(EffectivePolicy current, PolicyDocument next, CancellationToken ct)
+    private async Task<EffectivePolicy> ApplyAsync(EffectivePolicy current, PolicyDocument next, CancellationToken ct, Guid? actor = null)
     {
         var version = current.Version + 1;
-        var me = context.RequireUser();
+        var me = actor ?? context.RequireUser();
         await session.ExecAsync(
             """
             insert into ai.model_policy (tenant_id, version, document, updated_by, updated_at)
@@ -383,4 +455,11 @@ public sealed class ModelPolicies(
         errors.ThrowIfAny();
         return new PolicyDocument(allowlist, routes, confidential, maxTokens, minT, maxT, regions?.Distinct(StringComparer.Ordinal).ToList(), logging);
     }
+}
+
+/// <summary>Takes the release gate decisions of spec 034 for proposed route changes (FR-019).</summary>
+public sealed class RouteGateDecisions(ModelPolicies policies) : IMessageHandler<Evaluation.Contracts.EvaluationRouteGateDecided>
+{
+    public Task HandleAsync(Evaluation.Contracts.EvaluationRouteGateDecided message, CancellationToken ct) =>
+        policies.DecideAsync(message.RouteChangeId, message.Result, message.Failures, ct);
 }

@@ -19,8 +19,8 @@ Depends on 004, 006, 013 (`evaluation` use case), 020 and 027 (runtime, executio
 - [x] T010 [US4] Scoring
 
 ## Phase 4: User Story 5, release gates (P1)
-- [ ] T011 [P] [US5] Tests: agent version gate with diff; no override for critical; blocking override rules by risk class; model route change gate; tool version gate; platform suites in CI
-- [ ] T012 [US5] Gate requests and decisions for agent versions, model routes and tools; overrides; platform suites test project in CI
+- [x] T011 [P] [US5] Tests: agent version gate with diff; no override for critical; blocking override rules by risk class; model route change gate; tool version gate; platform suites in CI
+- [x] T012 [US5] Gate requests and decisions for agent versions, model routes and tools; overrides; platform suites test project in CI
 
 ## Phase 5: User Stories 6, 8 and 10, dashboard, calibration and settings (P1)
 - [ ] T013 [US6] Results, compare and case detail endpoints with org scope
