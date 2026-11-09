@@ -1,5 +1,5 @@
 {
-  "$comment": "Fictional scenario for the fake external systems (docs/testing/fake-systems.md). Every name, address, phone number and ID is invented. Addresses use the reserved .example domain. Generated once by hand; edit in place.",
+  "$comment": "Fictional scenario for the fake external systems (docs/testing/fake-systems.md). Every name, address, phone number and ID is invented. Addresses use the reserved .example domain. Edit in place. The fill section gives every enabled person generated mail and calendar on top of the hand-written items (src/DevFakes/ScenarioFiller.cs).",
   "name": "staging-demo",
   "directories": [
     {
@@ -33,6 +33,8 @@
           "employeeId": "E1001",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "hassan.ibrahim@staging.example",
+          "hireDate": "2014-03-02",
           "groups": [
             "10000000-0000-4000-8000-000000000001",
             "10000000-0000-4000-8000-000000000002",
@@ -58,6 +60,8 @@
           "employeeId": "E1002",
           "preferredLanguage": "ar-AE",
           "enabled": true,
+          "manager": "hassan.ibrahim@staging.example",
+          "hireDate": "2016-09-18",
           "groups": [
             "10000000-0000-4000-8000-000000000004",
             "10000000-0000-4000-8000-000000000007",
@@ -82,6 +86,8 @@
           "employeeId": "E1003",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "hassan.ibrahim@staging.example",
+          "hireDate": "2018-01-07",
           "groups": [
             "10000000-0000-4000-8000-000000000003",
             "10000000-0000-4000-8000-000000000007",
@@ -106,6 +112,8 @@
           "employeeId": "E1004",
           "preferredLanguage": "ar-SA",
           "enabled": true,
+          "manager": "layla.haddad@staging.example",
+          "hireDate": "2021-06-13",
           "groups": [
             "10000000-0000-4000-8000-000000000002",
             "10000000-0000-4000-8000-000000000006"
@@ -129,6 +137,8 @@
           "employeeId": "E1005",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "hassan.ibrahim@staging.example",
+          "hireDate": "2015-11-01",
           "groups": [
             "10000000-0000-4000-8000-000000000005",
             "10000000-0000-4000-8000-000000000007",
@@ -153,6 +163,8 @@
           "employeeId": "E1006",
           "preferredLanguage": "ar-EG",
           "enabled": true,
+          "manager": "ahmed.mansour@staging.example",
+          "hireDate": "2020-02-16",
           "groups": [
             "10000000-0000-4000-8000-000000000005",
             "10000000-0000-4000-8000-000000000006"
@@ -176,6 +188,8 @@
           "employeeId": "E1007",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "omar.alfarsi@staging.example",
+          "hireDate": "2022-08-21",
           "groups": [
             "10000000-0000-4000-8000-000000000004",
             "10000000-0000-4000-8000-000000000006"
@@ -199,6 +213,8 @@
           "employeeId": "E1008",
           "preferredLanguage": "ar-AE",
           "enabled": true,
+          "manager": "sarah.mitchell@staging.example",
+          "hireDate": "2019-04-07",
           "groups": [
             "10000000-0000-4000-8000-000000000003",
             "10000000-0000-4000-8000-000000000006"
@@ -222,6 +238,8 @@
           "employeeId": "E1009",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "hassan.ibrahim@staging.example",
+          "hireDate": "2017-10-15",
           "groups": [
             "10000000-0000-4000-8000-000000000006"
           ],
@@ -244,6 +262,8 @@
           "employeeId": "E1010",
           "preferredLanguage": "ar-SA",
           "enabled": true,
+          "manager": "hassan.ibrahim@staging.example",
+          "hireDate": "2013-05-05",
           "groups": [
             "10000000-0000-4000-8000-000000000007",
             "10000000-0000-4000-8000-000000000006"
@@ -267,6 +287,8 @@
           "employeeId": "E1011",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "khalid.alshammari@staging.example",
+          "hireDate": "2023-01-08",
           "groups": [
             "10000000-0000-4000-8000-000000000006"
           ],
@@ -289,6 +311,8 @@
           "employeeId": "E1012",
           "preferredLanguage": "ar-EG",
           "enabled": true,
+          "manager": "sarah.mitchell@staging.example",
+          "hireDate": "2021-11-14",
           "groups": [
             "10000000-0000-4000-8000-000000000003",
             "10000000-0000-4000-8000-000000000006"
@@ -312,6 +336,8 @@
           "employeeId": "E1013",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "omar.alfarsi@staging.example",
+          "hireDate": "2018-07-22",
           "groups": [
             "10000000-0000-4000-8000-000000000004",
             "10000000-0000-4000-8000-000000000006"
@@ -335,6 +361,8 @@
           "employeeId": "E1014",
           "preferredLanguage": "ar-AE",
           "enabled": true,
+          "manager": "layla.haddad@staging.example",
+          "hireDate": "2020-09-06",
           "groups": [
             "10000000-0000-4000-8000-000000000002",
             "10000000-0000-4000-8000-000000000006"
@@ -358,6 +386,8 @@
           "employeeId": "E1015",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "khalid.alshammari@staging.example",
+          "hireDate": "2024-02-11",
           "groups": [
             "10000000-0000-4000-8000-000000000006"
           ],
@@ -380,6 +410,8 @@
           "employeeId": "E1016",
           "preferredLanguage": "ar-EG",
           "enabled": true,
+          "manager": "youssef.khalil@staging.example",
+          "hireDate": "2022-03-27",
           "groups": [
             "10000000-0000-4000-8000-000000000006"
           ],
@@ -402,6 +434,7 @@
           "employeeId": "E1017",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "hireDate": "2012-01-15",
           "groups": [
             "10000000-0000-4000-8000-000000000007",
             "10000000-0000-4000-8000-000000000006"
@@ -425,6 +458,8 @@
           "employeeId": "E1018",
           "preferredLanguage": "ar-AE",
           "enabled": true,
+          "manager": "hassan.ibrahim@staging.example",
+          "hireDate": "2019-12-01",
           "groups": [
             "10000000-0000-4000-8000-000000000006"
           ],
@@ -447,6 +482,8 @@
           "employeeId": "E1019",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "khalid.alshammari@staging.example",
+          "hireDate": "2023-06-18",
           "groups": [
             "10000000-0000-4000-8000-000000000006"
           ],
@@ -469,6 +506,8 @@
           "employeeId": "E1020",
           "preferredLanguage": "ar-SA",
           "enabled": true,
+          "manager": "omar.alfarsi@staging.example",
+          "hireDate": "2024-09-01",
           "groups": [
             "10000000-0000-4000-8000-000000000004",
             "10000000-0000-4000-8000-000000000006"
@@ -492,6 +531,8 @@
           "employeeId": "E1021",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "layla.haddad@staging.example",
+          "hireDate": "2025-04-13",
           "groups": [
             "10000000-0000-4000-8000-000000000002",
             "10000000-0000-4000-8000-000000000006"
@@ -515,6 +556,8 @@
           "employeeId": "E1022",
           "preferredLanguage": "en-US",
           "enabled": false,
+          "manager": "khalid.alshammari@staging.example",
+          "hireDate": "2019-03-10",
           "groups": [
             "10000000-0000-4000-8000-000000000006"
           ],
@@ -532,6 +575,8 @@
           "employeeId": "E1023",
           "preferredLanguage": "en-US",
           "enabled": true,
+          "manager": "layla.haddad@staging.example",
+          "hireDate": "2026-11-02",
           "groups": [
             "10000000-0000-4000-8000-000000000006"
           ],
@@ -800,7 +845,8 @@
             "hassan.ibrahim@staging.example",
             "lina.alkhatib@staging.example",
             "marco.rossi@staging.example",
-            "abdulrahman.saleh@staging.example"
+            "abdulrahman.saleh@staging.example",
+            "admin@staging.example"
           ],
           "dayOffset": 2,
           "start": "15:00",
@@ -829,7 +875,8 @@
           "organizer": "sarah.mitchell@staging.example",
           "attendees": [
             "maryam.alabdullah@staging.example",
-            "huda.mansour@staging.example"
+            "huda.mansour@staging.example",
+            "admin@staging.example"
           ],
           "dayOffset": 1,
           "start": "14:00",
@@ -860,6 +907,233 @@
           "start": "16:00",
           "minutes": 30,
           "online": true
+        }
+      ],
+      "fill": {
+        "messages": [
+          {
+            "from": "manager",
+            "subject": {
+              "en": "Priorities for this week",
+              "ar": "أولويات هذا الأسبوع"
+            },
+            "preview": {
+              "en": "Hi {first}, can we go over your priorities in our one to one? I added two items to the agenda.",
+              "ar": "مرحبا {first}، هل يمكننا مراجعة أولوياتك في لقائنا الفردي؟ أضفت بندين إلى جدول الأعمال."
+            },
+            "hoursAgo": 1.5,
+            "isRead": false
+          },
+          {
+            "from": "report",
+            "subject": {
+              "en": "Leave request for next month",
+              "ar": "طلب إجازة للشهر القادم"
+            },
+            "preview": {
+              "en": "I submitted a leave request for five days next month. Could you approve it when you have a moment?",
+              "ar": "قدمت طلب إجازة لمدة خمسة أيام في الشهر القادم. أرجو الموافقة عليه عندما يتسنى لك ذلك."
+            },
+            "hoursAgo": 3,
+            "isRead": false
+          },
+          {
+            "from": "colleague",
+            "subject": {
+              "en": "Notes from yesterday's team meeting",
+              "ar": "ملاحظات اجتماع الفريق أمس"
+            },
+            "preview": {
+              "en": "Here are the notes and the three actions we agreed. Shout if I missed anything.",
+              "ar": "إليك الملاحظات والإجراءات الثلاثة التي اتفقنا عليها. أخبرني إن فاتني شيء."
+            },
+            "hoursAgo": 4.5,
+            "isRead": false,
+            "hasAttachments": true
+          },
+          {
+            "from": "it.servicedesk@staging.example",
+            "fromName": "IT Service Desk",
+            "subject": {
+              "en": "Your laptop update is scheduled",
+              "ar": "تم جدولة تحديث جهازك المحمول"
+            },
+            "preview": {
+              "en": "Security updates will install tonight at 22:00. Please leave your laptop on and connected to power.",
+              "ar": "سيتم تثبيت التحديثات الأمنية الليلة الساعة 22:00. يرجى ترك جهازك قيد التشغيل وموصولا بالكهرباء."
+            },
+            "hoursAgo": 7,
+            "isRead": true
+          },
+          {
+            "from": "people.services@staging.example",
+            "fromName": "People Services",
+            "subject": {
+              "en": "Health insurance enrolment closes on Friday",
+              "ar": "التسجيل في التأمين الصحي ينتهي يوم الجمعة"
+            },
+            "preview": {
+              "en": "Review your cover and add dependants before Friday. After that, changes wait until next year.",
+              "ar": "راجع تغطيتك وأضف أفراد عائلتك قبل يوم الجمعة. بعد ذلك تؤجل التغييرات إلى العام القادم."
+            },
+            "hoursAgo": 20,
+            "isRead": false,
+            "importance": "high"
+          },
+          {
+            "from": "internal.comms@staging.example",
+            "fromName": "Internal Communications",
+            "subject": {
+              "en": "This week at TeamBeats Demo: town hall and safety week",
+              "ar": "هذا الأسبوع في TeamBeats Demo: لقاء الموظفين وأسبوع السلامة"
+            },
+            "preview": {
+              "en": "Join the monthly town hall on Wednesday and see what's planned for safety week.",
+              "ar": "انضم إلى لقاء الموظفين الشهري يوم الأربعاء وتعرف على فعاليات أسبوع السلامة."
+            },
+            "hoursAgo": 26,
+            "isRead": true
+          },
+          {
+            "from": "anyone",
+            "subject": {
+              "en": "Lunch on Thursday?",
+              "ar": "غداء يوم الخميس؟"
+            },
+            "preview": {
+              "en": "A few of us are trying the new place near the office on Thursday. Want to join?",
+              "ar": "سنجرب بعضنا المطعم الجديد قرب المكتب يوم الخميس. هل تنضم إلينا؟"
+            },
+            "hoursAgo": 30,
+            "isRead": true
+          },
+          {
+            "from": "facilities@staging.example",
+            "fromName": "Facilities",
+            "subject": {
+              "en": "Parking level B2 closed on Sunday",
+              "ar": "إغلاق موقف السيارات B2 يوم الأحد"
+            },
+            "preview": {
+              "en": "Level B2 is closed for maintenance from 06:00 to 18:00. Please use level B3.",
+              "ar": "الطابق B2 مغلق للصيانة من 06:00 إلى 18:00. يرجى استخدام الطابق B3."
+            },
+            "hoursAgo": 48,
+            "isRead": true
+          },
+          {
+            "from": "colleague",
+            "subject": {
+              "en": "Draft for your review",
+              "ar": "مسودة للمراجعة"
+            },
+            "preview": {
+              "en": "Attached is the first draft. Comments by Wednesday would be great.",
+              "ar": "مرفق المسودة الأولى. يسعدني تلقي ملاحظاتك قبل يوم الأربعاء."
+            },
+            "hoursAgo": 52,
+            "isRead": true,
+            "hasAttachments": true
+          },
+          {
+            "from": "manager",
+            "subject": {
+              "en": "Great work on the quarterly report",
+              "ar": "عمل رائع في التقرير الربعي"
+            },
+            "preview": {
+              "en": "Thanks {first}, the leadership team found the summary very clear.",
+              "ar": "شكرا {first}، وجد فريق القيادة الملخص واضحا جدا."
+            },
+            "hoursAgo": 70,
+            "isRead": true
+          }
+        ],
+        "events": [
+          {
+            "pattern": "team",
+            "subject": {
+              "en": "Team stand-up",
+              "ar": "الاجتماع اليومي للفريق"
+            },
+            "dayOffsets": [
+              0,
+              2,
+              3
+            ],
+            "start": "08:45",
+            "minutes": 15,
+            "online": true
+          },
+          {
+            "pattern": "team",
+            "subject": {
+              "en": "Weekly team meeting",
+              "ar": "الاجتماع الأسبوعي للفريق"
+            },
+            "dayOffsets": [
+              1
+            ],
+            "start": "09:30",
+            "minutes": 45,
+            "location": "Majlis Room",
+            "online": true
+          },
+          {
+            "pattern": "oneToOne",
+            "subject": {
+              "en": "1:1 {sender} and {person}",
+              "ar": "لقاء فردي: {sender} و{person}"
+            },
+            "dayOffsets": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "start": "13:30",
+            "minutes": 30,
+            "online": true
+          },
+          {
+            "pattern": "personal",
+            "subject": {
+              "en": "Focus time",
+              "ar": "وقت للتركيز"
+            },
+            "dayOffsets": [
+              0,
+              3
+            ],
+            "start": "11:00",
+            "minutes": 60,
+            "showAs": "busy"
+          },
+          {
+            "pattern": "personal",
+            "subject": {
+              "en": "Lunch break",
+              "ar": "استراحة الغداء"
+            },
+            "dayOffsets": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ],
+            "start": "12:30",
+            "minutes": 45,
+            "showAs": "free"
+          }
+        ]
+      },
+      "extraMailboxes": [
+        {
+          "upn": "admin@staging.example",
+          "displayName": "Staging Test Admin",
+          "preferredLanguage": "en-US",
+          "manager": "hassan.ibrahim@staging.example"
         }
       ]
     }
