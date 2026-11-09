@@ -1,32 +1,34 @@
 /* Generated from the token schema (spec 033). Do not edit: run the unit tests with TEAMBEATS_UPDATE_TOKENS=1. */
 /* Platform defaults, used before a tenant theme loads and on signed-out pages. */
 :root{
-  --tb-color-surface-base:#ffffff;
-  --tb-color-surface-raised:#f8fafc;
-  --tb-color-surface-sunken:#f1f5f9;
-  --tb-color-shell-background:#312e81;
-  --tb-color-shell-text:#ffffff;
+  --tb-color-surface-base:#f3f2f8;
+  --tb-color-surface-raised:#ffffff;
+  --tb-color-surface-sunken:#e9e7f3;
+  --tb-color-shell-background:#ffffff;
+  --tb-color-shell-text:#17152e;
   --tb-color-nav-background:#ffffff;
-  --tb-color-nav-text:#1f2937;
-  --tb-color-nav-active:#4338ca;
-  --tb-color-text-primary:#111827;
-  --tb-color-text-secondary:#4b5563;
+  --tb-color-nav-text:#17152e;
+  --tb-color-nav-active:#3b2fc9;
+  --tb-color-text-primary:#17152e;
+  --tb-color-text-secondary:#55526e;
   --tb-color-text-inverse:#ffffff;
-  --tb-color-accent-base:#4338ca;
+  --tb-color-accent-base:#3b2fc9;
   --tb-color-accent-text:#ffffff;
-  --tb-color-accent-subtle:#e0e7ff;
-  --tb-color-highlight-base:#b45309;
-  --tb-color-link:#3730a3;
-  --tb-color-border-default:#e5e7eb;
-  --tb-color-border-strong:#6b7280;
-  --tb-color-state-success:#15803d;
-  --tb-color-state-warning:#b45309;
-  --tb-color-state-danger:#b91c1c;
-  --tb-color-state-info:#1d4ed8;
-  --tb-color-focus-ring:#4338ca;
-  --tb-color-focus-ring-inverse:#fbbf24;
-  --tb-font-family-latin:"Inter", "Noto Sans", system-ui, sans-serif;
-  --tb-font-family-arabic:"Noto Sans Arabic", "Noto Sans Arabic", "Noto Sans", system-ui, sans-serif;
+  --tb-color-accent-subtle:#e8e6fb;
+  --tb-color-highlight-base:#8f5b00;
+  --tb-color-link:#3b2fc9;
+  --tb-color-border-default:#e3e1ee;
+  --tb-color-border-strong:#6e6a89;
+  --tb-color-state-success:#157347;
+  --tb-color-state-warning:#8f5b00;
+  --tb-color-state-danger:#b42318;
+  --tb-color-state-info:#2f5bd3;
+  --tb-color-focus-ring:#3b2fc9;
+  --tb-color-focus-ring-inverse:#3b2fc9;
+  --tb-font-family-latin:"Readex Pro", "Noto Sans", system-ui, sans-serif;
+  --tb-font-family-arabic:"Readex Pro", "Noto Sans Arabic", "Noto Sans", system-ui, sans-serif;
+  --tb-font-family-heading-latin:"Alexandria", "Noto Sans", system-ui, sans-serif;
+  --tb-font-family-heading-arabic:"Alexandria", "Noto Sans Arabic", "Noto Sans", system-ui, sans-serif;
   --tb-font-family-urdu:"Noto Nastaliq Urdu", "Noto Nastaliq Urdu", "Noto Sans Arabic", system-ui, serif;
   --tb-font-family-devanagari:"Noto Sans Devanagari", "Noto Sans Devanagari", "Noto Sans", system-ui, sans-serif;
   --tb-font-size-xs:12px;
@@ -46,15 +48,15 @@
   --tb-space-lg:24px;
   --tb-space-xl:32px;
   --tb-space-xxl:48px;
-  --tb-radius-sm:4px;
-  --tb-radius-md:8px;
-  --tb-radius-lg:16px;
+  --tb-radius-sm:8px;
+  --tb-radius-md:14px;
+  --tb-radius-lg:24px;
   --tb-radius-full:999px;
   --tb-border-width-thin:1px;
   --tb-border-width-thick:2px;
   --tb-border-width-focus:2px;
-  --tb-shadow-sm:0px 1px 2px 0px #0000001f;
-  --tb-shadow-md:0px 4px 12px 0px #00000024;
+  --tb-shadow-sm:0px 1px 2px 0px #17152e14;
+  --tb-shadow-md:0px 8px 24px 0px #17152e1f;
   --tb-motion-duration-fast:100ms;
   --tb-motion-duration-normal:200ms;
   --tb-motion-duration-slow:300ms;
@@ -64,45 +66,51 @@
   --tb-state-pressed-opacity:0.12;
   --tb-state-disabled-opacity:0.38;
   --tb-font-family-body:var(--tb-font-family-latin);
+  --tb-font-family-heading:var(--tb-font-family-heading-latin);
 }
 :root:lang(ar){
   --tb-font-family-body:var(--tb-font-family-arabic);
+  --tb-font-family-heading:var(--tb-font-family-heading-arabic);
 }
 :root:lang(ur){
   --tb-font-family-body:var(--tb-font-family-urdu);
+  --tb-font-family-heading:var(--tb-font-family-body);
 }
 :root:lang(hi){
   --tb-font-family-body:var(--tb-font-family-devanagari);
+  --tb-font-family-heading:var(--tb-font-family-body);
 }
 
 @media (prefers-color-scheme: dark) {
   :root{
-    --tb-color-surface-base:#111827;
-    --tb-color-surface-raised:#1f2937;
-    --tb-color-surface-sunken:#0b1220;
-    --tb-color-shell-background:#1e1b4b;
-    --tb-color-shell-text:#f8fafc;
-    --tb-color-nav-background:#111827;
-    --tb-color-nav-text:#e5e7eb;
-    --tb-color-nav-active:#a5b4fc;
-    --tb-color-text-primary:#f9fafb;
-    --tb-color-text-secondary:#d1d5db;
-    --tb-color-text-inverse:#111827;
-    --tb-color-accent-base:#a5b4fc;
-    --tb-color-accent-text:#111827;
-    --tb-color-accent-subtle:#312e81;
-    --tb-color-highlight-base:#fbbf24;
-    --tb-color-link:#c7d2fe;
-    --tb-color-border-default:#374151;
-    --tb-color-border-strong:#9ca3af;
-    --tb-color-state-success:#4ade80;
-    --tb-color-state-warning:#fbbf24;
-    --tb-color-state-danger:#f87171;
-    --tb-color-state-info:#93c5fd;
-    --tb-color-focus-ring:#fbbf24;
-    --tb-color-focus-ring-inverse:#fbbf24;
-    --tb-font-family-latin:"Inter", "Noto Sans", system-ui, sans-serif;
-    --tb-font-family-arabic:"Noto Sans Arabic", "Noto Sans Arabic", "Noto Sans", system-ui, sans-serif;
+    --tb-color-surface-base:#0f0d24;
+    --tb-color-surface-raised:#1b1838;
+    --tb-color-surface-sunken:#0a0918;
+    --tb-color-shell-background:#16133d;
+    --tb-color-shell-text:#f5f4fb;
+    --tb-color-nav-background:#16133d;
+    --tb-color-nav-text:#e6e4f5;
+    --tb-color-nav-active:#b9b2ff;
+    --tb-color-text-primary:#f5f4fb;
+    --tb-color-text-secondary:#c9c6dc;
+    --tb-color-text-inverse:#17152e;
+    --tb-color-accent-base:#b9b2ff;
+    --tb-color-accent-text:#17152e;
+    --tb-color-accent-subtle:#2a2563;
+    --tb-color-highlight-base:#f4b740;
+    --tb-color-link:#c9c3ff;
+    --tb-color-border-default:#2e2a52;
+    --tb-color-border-strong:#9a96b8;
+    --tb-color-state-success:#5ad19a;
+    --tb-color-state-warning:#f4b740;
+    --tb-color-state-danger:#f97066;
+    --tb-color-state-info:#9db7ff;
+    --tb-color-focus-ring:#f4b740;
+    --tb-color-focus-ring-inverse:#f4b740;
+    --tb-font-family-latin:"Readex Pro", "Noto Sans", system-ui, sans-serif;
+    --tb-font-family-arabic:"Readex Pro", "Noto Sans Arabic", "Noto Sans", system-ui, sans-serif;
+    --tb-font-family-heading-latin:"Alexandria", "Noto Sans", system-ui, sans-serif;
+    --tb-font-family-heading-arabic:"Alexandria", "Noto Sans Arabic", "Noto Sans", system-ui, sans-serif;
     --tb-font-family-urdu:"Noto Nastaliq Urdu", "Noto Nastaliq Urdu", "Noto Sans Arabic", system-ui, serif;
     --tb-font-family-devanagari:"Noto Sans Devanagari", "Noto Sans Devanagari", "Noto Sans", system-ui, sans-serif;
     --tb-font-size-xs:12px;
@@ -122,15 +130,15 @@
     --tb-space-lg:24px;
     --tb-space-xl:32px;
     --tb-space-xxl:48px;
-    --tb-radius-sm:4px;
-    --tb-radius-md:8px;
-    --tb-radius-lg:16px;
+    --tb-radius-sm:8px;
+    --tb-radius-md:14px;
+    --tb-radius-lg:24px;
     --tb-radius-full:999px;
     --tb-border-width-thin:1px;
     --tb-border-width-thick:2px;
     --tb-border-width-focus:2px;
     --tb-shadow-sm:0px 1px 2px 0px #00000066;
-    --tb-shadow-md:0px 4px 12px 0px #00000080;
+    --tb-shadow-md:0px 8px 24px 0px #00000080;
     --tb-motion-duration-fast:100ms;
     --tb-motion-duration-normal:200ms;
     --tb-motion-duration-slow:300ms;
@@ -140,14 +148,18 @@
     --tb-state-pressed-opacity:0.12;
     --tb-state-disabled-opacity:0.38;
     --tb-font-family-body:var(--tb-font-family-latin);
+    --tb-font-family-heading:var(--tb-font-family-heading-latin);
   }
   :root:lang(ar){
     --tb-font-family-body:var(--tb-font-family-arabic);
+    --tb-font-family-heading:var(--tb-font-family-heading-arabic);
   }
   :root:lang(ur){
     --tb-font-family-body:var(--tb-font-family-urdu);
+    --tb-font-family-heading:var(--tb-font-family-body);
   }
   :root:lang(hi){
     --tb-font-family-body:var(--tb-font-family-devanagari);
+    --tb-font-family-heading:var(--tb-font-family-body);
   }
 }

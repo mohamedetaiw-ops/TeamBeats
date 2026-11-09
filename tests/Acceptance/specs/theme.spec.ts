@@ -31,7 +31,7 @@ test.describe("tenant theme", () => {
 
   test("signed-out pages use the platform tokens", async ({ page }) => {
     await page.goto(`${hostOrigin(tenant.key)}/signin`);
-    expect(await accent(page)).toBe("#4338ca");
+    expect(await accent(page)).toBe("#3b2fc9");
     await expect(page.locator('link[href*="theme.css"]')).toHaveCount(0);
   });
 

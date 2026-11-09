@@ -38,7 +38,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1, name: msg(locale, "brand.title") })).toBeVisible();
       await expect(page.locator("html")).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
       await expect(page.locator("figure.brand-preview")).toHaveCount(4);
-      expect(await paneAccent(page, "light", "ltr")).toBe("#4338ca");
+      expect(await paneAccent(page, "light", "ltr")).toBe("#3b2fc9");
 
       // Live preview: the accent changes in the light panes of both directions; the dark panes keep their own value.
       await tokenInput(page, locale, "color.accent.base", "light").fill("#0f766e");

@@ -94,7 +94,7 @@
   padding: var(--tb-space-xs);
   border-radius: var(--tb-radius-sm);
   background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-accent-text);
+  color: var(--tb-color-link);
   font-size: var(--tb-font-size-xs);
   text-overflow: ellipsis;
   white-space: nowrap;

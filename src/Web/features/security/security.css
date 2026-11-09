@@ -27,7 +27,7 @@
 
 .security-tabs a[aria-current="page"] {
   background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-accent-text);
+  color: var(--tb-color-link);
   font-weight: var(--tb-font-weight-bold);
 }
 

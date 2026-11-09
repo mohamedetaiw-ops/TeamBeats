@@ -111,7 +111,7 @@ public sealed class ThemeEngineTests
     {
         var layer = new ThemeLayer(0, null, "brand", null, null, new Dictionary<string, TokenValue>
         {
-            ["color.shell.text"] = V("#3b3f8f"),
+            ["color.shell.text"] = V("#c7c3f0"),
             ["color.accent.base"] = V("#fde68a", "#fde68a"),
         });
         var findings = ThemeEngine.Check(ThemeEngine.Resolve([layer], NoLocks), strict: false);
@@ -196,9 +196,9 @@ public sealed class ThemeEngineTests
         foreach (var variant in theme.Variants.Values)
         {
             var css = ThemeEngine.Css(variant);
-            Assert.Contains("--tb-color-accent-base:#4338ca;", ThemeEngine.Css(theme.Variants["light.comfortable"]));
-            Assert.Contains(":root:lang(ar){--tb-font-family-body:var(--tb-font-family-arabic);}", css);
-            Assert.Contains("--tb-font-family-arabic:\"Noto Sans Arabic\", \"Noto Sans Arabic\"", css);
+            Assert.Contains("--tb-color-accent-base:#3b2fc9;", ThemeEngine.Css(theme.Variants["light.comfortable"]));
+            Assert.Contains(":root:lang(ar){--tb-font-family-body:var(--tb-font-family-arabic);--tb-font-family-heading:var(--tb-font-family-heading-arabic);}", css);
+            Assert.Contains("--tb-font-family-arabic:\"Readex Pro\", \"Noto Sans Arabic\"", css);
             Assert.DoesNotContain("url(", css);
             using var buffer = new MemoryStream();
             using (var gzip = new GZipStream(buffer, CompressionLevel.Optimal, leaveOpen: true))

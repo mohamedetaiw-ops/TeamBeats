@@ -6,6 +6,13 @@ import { direction, isLocale } from "@/i18n/locales";
 import { getTheme } from "@/lib/experience/client";
 import { ThemeLinks } from "@/components/shell/ThemeLinks";
 import { getPreferences } from "@/lib/shell/client";
+// Default brand fonts (spec 033, ADR-0019): self-hosted, one file per script subset, fetched only when a page uses
+// characters of that script.
+import "@fontsource/readex-pro/400.css";
+import "@fontsource/readex-pro/500.css";
+import "@fontsource/readex-pro/700.css";
+import "@fontsource/alexandria/600.css";
+import "@fontsource/alexandria/700.css";
 import "./tokens.css";
 import "./globals.css";
 import "@/components/ui/ui.css";
