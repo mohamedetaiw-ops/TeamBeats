@@ -45,6 +45,9 @@ public static class ToolDecisions
     public const string Confirmed = "confirmed";
     public const string Cancelled = "cancelled";
     public const string WouldCall = "would_call";
+
+    /// <summary>A write tool in an evaluation run: recorded, answered by a sandbox double, nothing changed (spec 034 FR-007).</summary>
+    public const string Sandboxed = EvalStepDecisions.Sandboxed;
 }
 
 /// <summary>
@@ -114,7 +117,11 @@ internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefin
     /// <summary>Effective autonomy: the lower of the agent's level and the tenant cap (027 section 6).</summary>
     public int Autonomy => Math.Min(AgentAutonomy.Rank(Definition.Autonomy), AgentAutonomy.Rank(Policy.MaxAutonomy));
 
-    public bool DryRun => Mode == "test";
+    /// <summary>Test and evaluation runs never execute a write tool.</summary>
+    public bool DryRun => Mode is "test" or "eval";
+
+    /// <summary>Evaluation runs (spec 034): write tools go to recording sandbox doubles, and confirmations are taken as given so the trajectory continues.</summary>
+    public bool Sandbox => Mode == "eval";
 
     /// <summary>Tool names as the model sees them: provider function names allow no dots.</summary>
     public static string ModelName(string tool) => tool.Replace(".", "__", StringComparison.Ordinal);
@@ -221,6 +228,40 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         var latest = await session.ScalarAsync<int>("select max(number) from agents.agent_version where agent_id = @agentId", new { agentId }, ct);
         var run = new RunAgent(agentId, latest, agent.Unit, await VersionAsync(agentId, latest, ct), "test", (await policies.CurrentAsync(ct)).Policy);
         return await StartAsync(run, user, message, request, null, ct);
+    }
+
+    /// <summary>
+    /// One evaluation case (spec 034 US3 scenario 1): the given version, as the person in context, write tools sandboxed.
+    /// The audience is not checked, because a persona tests the agent whoever it will serve; the evaluation module
+    /// checks who may start the run.
+    /// </summary>
+    internal async Task<EvalRunRecord> EvaluateAsync(Guid agentId, int version, string message, string language, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var row = await AgentRowAsync(agentId, ct);
+        if (row is not { } agent)
+        {
+            throw AppException.NotFound();
+        }
+        if (agent.Status is AgentStatuses.Suspended or AgentStatuses.Retired)
+        {
+            throw AppException.Conflict("conflict.agent.unavailable");
+        }
+        await DemandNoKillSwitchAsync(ct);
+        var definition = await VersionAsync(agentId, version, ct);
+        var run = new RunAgent(agentId, version, agent.Unit, definition, "eval", (await policies.CurrentAsync(ct)).Policy);
+        var watch = Stopwatch.StartNew();
+        var view = await StartAsync(run, user, message.Length > MaxMessage ? message[..MaxMessage] : message, new RunRequest(message, language), null, ct);
+        var duration = (int)Math.Min(int.MaxValue, watch.ElapsedMilliseconds);
+        var steps = await session.QueryAsync(
+            "select n, kind, tool, decision, reason, parameters::text from agents.run_step where run_id = @id order by n", new { id = view.Id },
+            r => new EvalRunStep(r.GetInt32(0), r.GetString(1), r.Get<string?>("tool"), r.GetString(3), r.Get<string?>("reason"),
+                r.Get<string?>("parameters") is { } p ? JsonDocument.Parse(p).RootElement.Clone() : null), ct);
+        var usage = await session.QueryAsync("select sources::text, model, input_tokens, output_tokens from agents.run where id = @id", new { id = view.Id },
+            r => (Sources: r.GetString(0), Model: r.Get<string?>("model"), In: r.GetInt32(2), Out: r.GetInt32(3)), ct);
+        var read = (JsonSerializer.Deserialize<List<RunCitation>>(usage[0].Sources, Json) ?? []).Select(c => new EvalRunSource(c.N, c.Source, c.ItemId)).ToList();
+        return new EvalRunRecord(view.Id, view.Status, view.Outcome, view.Reason, view.Answer, view.Language, usage[0].Model, usage[0].In, usage[0].Out, duration,
+            steps, read, view.Citations.Select(c => new EvalRunSource(c.N, c.Source, c.ItemId)).ToList(), definition.Escalation?.GetValueOrDefault(view.Language));
     }
 
     private static string Message(RunRequest request)
@@ -394,6 +435,15 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
                     state.Messages.Add(ToolMessage(call.Id, call.Name, ToolResult.Failed(refusal)));
                     continue;
                 }
+                if (gate.Confirm && agent.Sandbox)
+                {
+                    // An evaluation run records that confirmation was asked and goes on as if given (spec 034 US3 scenario 5).
+                    await StepAsync(runId, state, "confirmation", gate.Tool, ToolDecisions.ConfirmationRequested, null, gate.Hash, gate.Arguments, state.Classification, watch, ct);
+                    state.Messages.Add(ToolMessage(call.Id, call.Name, gate.Sandbox
+                        ? await SandboxAsync(runId, state, gate.Tool!, gate.Arguments!.Value, gate.Hash!, watch, ct)
+                        : await ExecuteAsync(runId, agent, user, state, gate.Tool!, gate.Arguments!.Value, gate.Hash!, watch, ct, ToolDecisions.Confirmed)));
+                    continue;
+                }
                 if (gate.Confirm)
                 {
                     var pending = new PendingCall(Guid.NewGuid(), call.Id, gate.Tool!, call.Arguments, gate.Hash!, clock.UtcNow + ConfirmationTimeout,
@@ -411,7 +461,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         }
     }
 
-    private sealed record Gate(string? Tool, JsonElement? Arguments, string? Hash, string? Refusal = null, string? Stop = null, bool Confirm = false);
+    private sealed record Gate(string? Tool, JsonElement? Arguments, string? Hash, string? Refusal = null, string? Stop = null, bool Confirm = false, bool Sandbox = false);
 
     /// <summary>
     /// The tool gateway (027 US3 scenario 1), in order: agent state, the agent's allowlist and the registry, tenant policy,
@@ -472,13 +522,13 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             // Approver tasks come with L3 in R2 (027 US4); until then such a call is refused.
             return new Gate(granted, arguments, hash, Refusal: "tool.approval_not_available");
         }
-        if (agent.DryRun && ToolSideEffects.IsWrite(definition.SideEffect))
-        {
-            return new Gate(granted, arguments, hash, Refusal: "tool.test_mode");
-        }
         if (ToolSideEffects.IsWrite(definition.SideEffect) && state.Executed.Contains(hash))
         {
             return new Gate(granted, arguments, hash, Refusal: "tool.already_done");
+        }
+        if (agent.DryRun && ToolSideEffects.IsWrite(definition.SideEffect))
+        {
+            return agent.Sandbox ? new Gate(granted, arguments, hash, Confirm: true, Sandbox: true) : new Gate(granted, arguments, hash, Refusal: "tool.test_mode");
         }
         return new Gate(granted, arguments, hash, Confirm: rule == ToolApprovalRules.Confirm || ToolSideEffects.IsWrite(definition.SideEffect));
     }
@@ -543,6 +593,18 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
                 Changes: new { agent = agent.Id, version = agent.Version, tool = name, hash }), ct);
         }
         return result;
+    }
+
+    /// <summary>
+    /// The sandbox double of a write tool in an evaluation run (spec 034 FR-007, 034 plan): the call is recorded with its
+    /// parameters and a canned result goes back, so the trajectory goes on and nothing changes.
+    /// </summary>
+    private async Task<ToolResult> SandboxAsync(Guid runId, RunState state, string name, JsonElement arguments, string hash, Stopwatch watch, CancellationToken ct)
+    {
+        state.ToolCalls++;
+        state.Executed.Add(hash);
+        await StepAsync(runId, state, "tool", name, ToolDecisions.Sandboxed, null, hash, arguments, state.Classification, watch, ct);
+        return new ToolResult(true, JsonSerializer.Serialize(new { status = "accepted" }), "internal", []);
     }
 
     /// <summary>A tool result for the model, always inside the untrusted envelope; failures are a short key, never internal detail.</summary>
@@ -875,4 +937,11 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         await session.ExecAsync("delete from agents.route_decision where created_at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
         return await session.ExecAsync("delete from agents.run where created_at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
     }
+}
+
+/// <summary>The runtime port evaluation uses (spec 034); see <see cref="IAgentEvaluationRuntime"/>.</summary>
+public sealed class AgentEvaluationRuntime(AgentRuns runs) : IAgentEvaluationRuntime
+{
+    public Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, CancellationToken ct = default) =>
+        runs.EvaluateAsync(agentId, version, message, language, ct);
 }

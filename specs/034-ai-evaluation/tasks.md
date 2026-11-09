@@ -8,15 +8,15 @@ Depends on 004, 006, 013 (`evaluation` use case), 020 and 027 (runtime, executio
 - [x] T003 Synthetic persona identities in `Identity`, excluded from sign-in and the directory
 
 ## Phase 2: User Stories 1 and 2, suites and datasets (P1)
-- [ ] T004 [P] [US1] [US2] Tests: inherited read-only suites; new version on save; thresholds below a higher level refused; cases on Workplace; persona runs with only its permissions; dataset versions kept as evidence; import validates before confirm
+- [x] T004 [P] [US1] [US2] Tests: inherited read-only suites; new version on save; thresholds below a higher level refused; cases on Workplace; persona runs with only its permissions; dataset versions kept as evidence; import validates before confirm
 - [x] T005 [US1] Suites with levels and versions
 - [x] T006 [US2] Datasets, cases, personas and import
 
 ## Phase 3: User Stories 3 and 4, engine and scoring (P1)
-- [ ] T007 [P] [US3] Tests: real runtime with sandbox doubles; deterministic metrics; judge through the gateway and different from the model under test; "not evaluated" without an eligible judge; trajectory match; denied action attempt fails as critical; background run with progress and cancel
-- [ ] T008 [US3] Runner on workers; deterministic, trajectory and judged evaluators
-- [ ] T009 [P] [US4] Tests: per-locale results and weighted score; critical failure fails the run; locales not averaged; noise margin; insufficient data
-- [ ] T010 [US4] Scoring
+- [x] T007 [P] [US3] Tests: real runtime with sandbox doubles; deterministic metrics; judge through the gateway and different from the model under test; "not evaluated" without an eligible judge; trajectory match; denied action attempt fails as critical; background run with progress and cancel
+- [x] T008 [US3] Runner on workers; deterministic, trajectory and judged evaluators
+- [x] T009 [P] [US4] Tests: per-locale results and weighted score; critical failure fails the run; locales not averaged; noise margin; insufficient data
+- [x] T010 [US4] Scoring
 
 ## Phase 4: User Story 5, release gates (P1)
 - [ ] T011 [P] [US5] Tests: agent version gate with diff; no override for critical; blocking override rules by risk class; model route change gate; tool version gate; platform suites in CI

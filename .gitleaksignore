@@ -1,0 +1,6 @@
+# False positives of the generic-api-key rule on spec 034 metric names compared as strings ("latency_p95_increase"),
+# already in the history of the pull request branch. The code now compares against constants.
+fcf6622ae2d252d7f737f4b8a4d2c8bf734377a6:src/Modules/Evaluation/Scoring.cs:generic-api-key:408
+fcf6622ae2d252d7f737f4b8a4d2c8bf734377a6:src/Modules/Evaluation/Scoring.cs:generic-api-key:410
+fcf6622ae2d252d7f737f4b8a4d2c8bf734377a6:tests/Unit/EvaluationScoringTests.cs:generic-api-key:193
+fcf6622ae2d252d7f737f4b8a4d2c8bf734377a6:tests/Unit/EvaluationScoringTests.cs:generic-api-key:198

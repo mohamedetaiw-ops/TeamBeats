@@ -146,7 +146,7 @@ public sealed class SuiteService(IDbSession session, ITenantContext context, Eva
     public static PlatformSuiteView View(PlatformSuite s) =>
         new(s.Key, s.Mandatory, s.Template, s.Version, s.Names, s.Metrics, s.Cases.Count, s.Cases.Select(c => c.Locale).Distinct().Order().ToList());
 
-    private async Task<AgentSuiteView> CurrentAsync(Guid agentId, CancellationToken ct)
+    internal async Task<AgentSuiteView> CurrentAsync(Guid agentId, CancellationToken ct)
     {
         var rows = await session.QueryAsync(
             """

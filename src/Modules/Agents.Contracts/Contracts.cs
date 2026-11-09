@@ -139,3 +139,52 @@ public interface IAgentCatalog
 {
     Task<AgentFacts?> GetAsync(Guid agentId, CancellationToken ct = default);
 }
+
+/// <summary>A step of an evaluation run's execution record (spec 034 US3 scenario 5): what the agent did, in order.</summary>
+public sealed record EvalRunStep(int N, string Kind, string? Tool, string Decision, string? Reason, System.Text.Json.JsonElement? Parameters);
+
+/// <summary>A source the agent read in an evaluation run, numbered in the order it was read.</summary>
+public sealed record EvalRunSource(int N, string Source, Guid ItemId);
+
+/// <summary>
+/// What one evaluation case produced on the real runtime (spec 034 FR-007): the outcome, the answer, the ordered steps,
+/// every source the agent read, the ones its answer cited, and the model, tokens and time it took.
+/// </summary>
+public sealed record EvalRunRecord(
+    Guid RunId,
+    string Status,
+    string? Outcome,
+    string? Reason,
+    string? Answer,
+    string Language,
+    string? Model,
+    int InputTokens,
+    int OutputTokens,
+    int DurationMs,
+    IReadOnlyList<EvalRunStep> Steps,
+    IReadOnlyList<EvalRunSource> Read,
+    IReadOnlyList<EvalRunSource> Cited,
+    string? Escalation);
+
+/// <summary>Step decisions an evaluation reads from the execution record (spec 027 section 13).</summary>
+public static class EvalStepDecisions
+{
+    public const string Executed = "executed";
+    public const string Refused = "refused";
+    public const string ConfirmationRequested = "confirmation_requested";
+    public const string Confirmed = "confirmed";
+
+    /// <summary>A write tool in an evaluation run: the call was recorded and a sandbox double answered, so nothing changed.</summary>
+    public const string Sandboxed = "sandboxed";
+}
+
+/// <summary>
+/// Runs one evaluation case on the production runtime (spec 034 US3 scenario 1, ADR-0011): the given agent version, as
+/// the person in context (a synthetic test identity), through the AI Gateway and the tool gateway, with every write
+/// tool bound to a recording sandbox double. The run is kept as a normal execution record marked <c>eval</c>. The caller
+/// checks its own permission to evaluate the agent; a suspended or retired agent, or the kill switch, is a conflict.
+/// </summary>
+public interface IAgentEvaluationRuntime
+{
+    Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, CancellationToken ct = default);
+}

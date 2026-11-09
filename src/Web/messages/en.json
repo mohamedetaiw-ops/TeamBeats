@@ -2988,7 +2988,8 @@
       "unknownAgent": "Agent not visible to you",
       "modes": {
         "run": "Use",
-        "test": "Test"
+        "test": "Test",
+        "eval": "Evaluation"
       }
     },
     "timeline": {

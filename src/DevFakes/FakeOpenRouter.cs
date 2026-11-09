@@ -11,7 +11,7 @@ namespace TeamBeats.DevFakes;
 /// reply built from the last user message, in Arabic when that message is Arabic, and reports token usage.
 /// Failure cases are triggered by markers in the last user message, for the gateway's failure tests:
 /// <c>[fake:429]</c> rate limited, <c>[fake:500]</c> provider error, <c>[fake:fail:model]</c> provider error for that model only, <c>[fake:timeout]</c> no answer until cancelled,
-/// <c>[fake:refuse]</c> a content filter stop, <c>[fake:cut]</c> a stream that ends without a final chunk,
+/// <c>[fake:refuse]</c> a content filter stop, <c>[fake:judge:fail]</c> a failing verdict from an evaluation judge, <c>[fake:cut]</c> a stream that ends without a final chunk,
 /// <c>[fake:tool:name]</c> a call of tool <c>name</c> (with the arguments of <c>[fake:args:{...}]</c>, once, or on every turn with
 /// <c>[fake:loop]</c>), <c>[fake:route:N]</c> agent N from the assistant's routing call (0 without it), <c>[fake:badjson]</c> plain text even when a JSON schema was asked
 /// for. When the prompt holds numbered passages (the assistant of spec 014) the reply cites passage 1 as <c>[1]</c>, unless
@@ -111,7 +111,13 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
         }
         if (!refused && body["response_format"] is not null && !last.Contains("[fake:badjson]", StringComparison.Ordinal))
         {
-            reply = JsonSerializer.Serialize(new { answer = reply });
+            // An evaluation judge (spec 034) asks for a verdict: pass, unless the judged text carries [fake:judge:fail].
+            var judging = body["response_format"]?["json_schema"]?["schema"]?["properties"]?["verdict"] is not null;
+            reply = judging
+                ? JsonSerializer.Serialize(last.Contains("[fake:judge:fail]", StringComparison.Ordinal)
+                    ? new { verdict = "fail", score = 0.0, reason = "Fake judge: marked to fail." }
+                    : new { verdict = "pass", score = 1.0, reason = "Fake judge: passes by default." })
+                : JsonSerializer.Serialize(new { answer = reply });
         }
         // A tool is called once, in answer to the person's message; after its result comes back the fake answers, unless
         // [fake:loop] asks it to keep calling (for run limits).
