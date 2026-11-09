@@ -12,8 +12,8 @@ Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body docu
 - [x] T005 [US1] Libraries, folders, types, upload, metadata and query endpoints; permission breaks
 
 ## Phase 3: User Story 2, check-out and versions (P1)
-- [ ] T006 [P] [US2] Tests: exclusive check-out with holder shown; minor versions hidden from readers; forced check-in keeps a draft and is audited; compare for text formats; restore creates a version; recycle bin delete and restore
-- [ ] T007 [US2] Check-out, check-in, versions, compare, restore and recycle bin
+- [x] T006 [P] [US2] Tests: exclusive check-out with holder shown; minor versions hidden from readers; forced check-in keeps a draft and is audited; compare for text formats; restore creates a version; recycle bin delete and restore
+- [x] T007 [US2] Check-out, check-in, versions, compare, restore and recycle bin
 
 ## Phase 4: Preview
 - [ ] T008 Preview for PDF, image, video and text; `IDocumentConverter` port with the Gotenberg adapter for Office formats and a fake for tests

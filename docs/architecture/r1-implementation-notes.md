@@ -896,3 +896,22 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Scope | A library keeps the scope it was created with; moving it would change who can read it. |
 | Download tokens | T003 says signed tokens; they are random values whose hash is stored with the person, version and expiry instead, so no signing key has to be managed and a token can be bound to one person and revoked. |
 | Knowledge feedback | The knowledge feedback table of T001 is added with the knowledge base (T012), where it is first used. |
+
+## Check-out, versions and the recycle bin (spec 011 T006, T007)
+
+| Area | What was built |
+|---|---|
+| Check-out | `/checkout` gives one contributor the document; everyone sees who holds it and since when, and nobody else can check in, save over or delete it. `/working` saves a working copy that is not a version and only the holder sees. `/discard` lets go and removes the working copy |
+| Check-in | `/checkin` takes a new file in the body (named in the query) or the saved working copy. It makes the next minor version (1.1), or with `publish=true` the next major one (2.0), which becomes effective, supersedes the last and publishes `DocumentVersionPublished`. Someone who has not checked out may check in directly when nobody holds the document. Every new file is scanned first and refused unless clean |
+| Forced check-in | A library manager releases someone else's check-out with a reason. The holder's working copy moves to a new draft document that only the holder sees, so their changes are kept; the release is audited with the holder and the reason |
+| History | `/versions` lists every version for contributors and only the effective one for readers. `/compare` shows added and removed words between two versions of a text file (plain text, CSV, Markdown) up to 1 MB. `/restore` makes a new minor version with an older version's content and changes nothing earlier |
+| Recycle bin | Deleting moves a document to the library's bin and publishes `DocumentDeleted`. Managers see every entry and the deleter sees their own; either may restore. Documents stay for the tenant's period (`recycleDays`, 30 to 180, default 93) and are then purged with their versions, tokens and files |
+| Background | `DocumentMaintenanceWorker` runs every ten minutes per active tenant as the system actor: the purge, and a daily reminder to the holder and owner of check-outs older than 14 days |
+| Tests | `DocumentVersionTests` |
+
+| Item | Note |
+|---|---|
+| Minor version limit | The plan suggests keeping at most 50 minor versions per major one, but FR-004 says versions are never removed, so nothing is pruned in R1. If storage needs it later, a pruning rule needs a spec change first. |
+| Folders in the bin | Only documents go to the recycle bin in this slice. Deleting folders is not built yet; a folder can be emptied document by document. |
+| Shared files | Restoring an old version reuses its stored file rather than copying it, since versions never change. The purge deletes a file once no version of the document uses it. |
+| Restored names | A document restored from the bin keeps its name even if a new one with the same content arrived while it was deleted. |
