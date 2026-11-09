@@ -48,6 +48,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public TestEmailSender Email { get; } = new();
 
+    public TestAgentToolLog AgentTools { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Test");
@@ -75,6 +77,9 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddSingleton<ISecretStore>(Secrets);
             services.AddSingleton<TeamBeats.Persistence.IMalwareScanner, TeamBeats.Persistence.TestSignatureScanner>();
             services.AddScoped<TeamBeats.Modules.Notifications.IEmailSender>(_ => Email);
+            services.AddSingleton(AgentTools);
+            services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, TestNoteTool>();
+            services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, TestDraftTool>();
             services.AddHttpClient(HttpOidcProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => Idp);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Microsoft365.HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => Graph);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => Weather);

@@ -82,9 +82,11 @@ public sealed class KnowledgeSearchTool(ISearchRetrieval retrieval) : IAgentTool
         }
         var kinds = ToolJson.Strings(arguments, "kinds").Where(SearchKinds.All.Contains).Distinct().ToList();
         var result = await retrieval.RetrieveAsync(new RetrievalRequest(query, AiUseCases.Agent, TopK, kinds.Count > 0 ? kinds : null), ct);
-        var passages = result.Passages;
+        // Passages above the agent's classification cap are left out here, at retrieval (spec 027 FR-017).
+        var cap = Classifications.Rank(context.MaxClassification);
+        var passages = result.Passages.Where(p => Classifications.Rank(p.Classification) is var rank && rank >= 0 && rank <= cap).ToList();
         var classification = AssistantPrompt.Name(AssistantPrompt.Highest(passages.Select(p => p.Classification), DataClassification.Public));
         var sources = passages.Select(p => new ToolSource(p.Source, p.ItemId, p.Title, p.Anchor, p.Classification)).ToList();
-        return new ToolResult(true, passages.Count == 0 ? string.Empty : AssistantPrompt.Passages(passages), classification, sources);
+        return new ToolResult(true, passages.Count == 0 ? string.Empty : AssistantPrompt.Passages(passages, context.PassagesSoFar), classification, sources);
     }
 }

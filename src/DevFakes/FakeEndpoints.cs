@@ -8,9 +8,8 @@ namespace TeamBeats.DevFakes;
 
 /// <summary>The fakes one development or staging host uses, shared by the HTTP handlers and the browser pages.</summary>
 public sealed class FakeSystems(FakeScenario scenario, FakeIdentityProvider entra, FakeMicrosoftGraph graph, FakeOpenRouter openRouter,
-    FakeOpenMeteo? weather = null, FakeOfficeConverter? conversion = null)
+    FakeOpenMeteo? weather = null)
 {
-    public FakeOfficeConverter Conversion { get; } = conversion ?? new FakeOfficeConverter();
     public FakeScenario Scenario { get; } = scenario;
     public FakeIdentityProvider Entra { get; } = entra;
     public FakeMicrosoftGraph Graph { get; } = graph;
@@ -98,7 +97,6 @@ public static class FakeEndpoints
                 new { name = "graph", down = f.Graph.Unavailable },
                 new { name = "openrouter", down = f.OpenRouter.Unavailable },
                 new { name = "open-meteo", down = f.Weather.Unavailable },
-                new { name = "gotenberg", down = f.Conversion.Unavailable },
             },
             directories = f.Scenario.Directories.Select(d => new
             {
@@ -132,24 +130,6 @@ public static class FakeEndpoints
                 {
                     return Complete(directory, directoryId, key => q[key].ToString(), picked.ObjectId, f);
                 }
-            }
-            if (q["client_id"].ToString() == FakeMicrosoftGraph.ClientId && q["login_hint"].ToString() is { Length: > 0 } hint)
-            {
-                // Connect Outlook: the employee is already signed in to this directory, so Microsoft completes with the
-                // hinted account without showing a page, as it does for a single signed-in account.
-                var hinted = users.FirstOrDefault(u => string.Equals(u.Email, hint, StringComparison.OrdinalIgnoreCase));
-                if (hinted is not null)
-                {
-                    return Complete(directory, directoryId, key => q[key].ToString(), hinted.ObjectId, f);
-                }
-                if (f.Graph.HasUpnMailbox(hint))
-                {
-                    return CompleteForMailbox(directoryId, key => q[key].ToString(), hint, f);
-                }
-            }
-            if (q["prompt"].ToString() == "none")
-            {
-                return Results.Redirect(Append(q["redirect_uri"]!, $"error=login_required&error_description=interaction_required&state={Uri.EscapeDataString(q["state"].ToString())}"));
             }
             var ar = Arabic(request);
             var hidden = new StringBuilder();
@@ -255,7 +235,6 @@ public static class FakeEndpoints
                 case "graph": f.Graph.Unavailable = value; break;
                 case "openrouter": f.OpenRouter.Unavailable = value; break;
                 case "open-meteo": f.Weather.Unavailable = value; break;
-                case "gotenberg": f.Conversion.Unavailable = value; break;
                 default: return Results.NotFound();
             }
             return Results.Ok(new { system, down = value });
@@ -295,20 +274,6 @@ public static class FakeEndpoints
             code = f.Entra.Authenticate(authorizeUrl, user, app.ClientSecret);
         }
         return Results.Redirect(Append(redirect, $"code={Uri.EscapeDataString(code)}&state={Uri.EscapeDataString(field("state"))}"));
-    }
-
-    /// <summary>Delegated access for a person who has a fake mailbox but no directory account (the staging test admin).</summary>
-    private static IResult CompleteForMailbox(Guid directoryId, Func<string, string> field, string upn, FakeSystems f)
-    {
-        var redirect = field("redirect_uri");
-        var state = Uri.EscapeDataString(field("state"));
-        var query = new[] { "client_id", "scope", "code_challenge_method" }.ToDictionary(k => k, k => field(k));
-        if (f.Graph.DelegatedRefusal(directoryId.ToString("D"), query) is { } refusal)
-        {
-            return Results.Redirect(Append(redirect, $"error=consent_required&error_description={Uri.EscapeDataString(refusal)}&state={state}"));
-        }
-        var code = f.Graph.IssueDelegatedCode(directoryId, "mailbox:" + upn, field("client_id"), redirect, field("code_challenge"), field("scope"), upn);
-        return Results.Redirect(Append(redirect, $"code={Uri.EscapeDataString(code)}&state={state}"));
     }
 
     private static IResult Change(Action change)

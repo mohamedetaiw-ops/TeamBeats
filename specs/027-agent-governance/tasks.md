@@ -8,9 +8,9 @@ Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and ru
 - [x] T003 `IToolRegistration` contract and registry with versioned parameter schemas
 
 ## Phase 2: User Stories 1 to 3, autonomy, permissions and the tool gateway (P1)
-- [ ] T004 [P] Tests: L0 refuses write tools; L2 waits for confirmation and submits exactly the confirmed parameters; autonomy above the tenant cap refused; intersection of user and agent permissions; revoked permission refused at execution; cross-org without a grant refused; schema errors give a short message; idempotent retry; unknown tool recorded; 20 call limit
-- [ ] T005 Tool gateway with the ordered checks and execution record entries
-- [ ] T006 Confirmation cards, checkpoints and the parameter hash
+- [x] T004 [P] Tests: L0 refuses write tools; L2 waits for confirmation and submits exactly the confirmed parameters; autonomy above the tenant cap refused; intersection of user and agent permissions; revoked permission refused at execution; cross-org without a grant refused; schema errors give a short message; idempotent retry; unknown tool recorded; 20 call limit
+- [x] T005 Tool gateway with the ordered checks and execution record entries
+- [x] T006 Confirmation cards, checkpoints and the parameter hash
 
 ## Phase 3: User Story 5, untrusted content (P1)
 - [ ] T007 [P] Tests: injected document does not cause a tool call and records a detection; tool-like connector text cannot trigger a call; external images not loaded and unknown links shown as text; values from documents highlighted on the card

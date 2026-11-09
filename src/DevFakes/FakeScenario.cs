@@ -56,18 +56,6 @@ public sealed class FakeScenario
                     throw new InvalidOperationException($"Scenario address {mail} is not on a reserved example domain.");
                 }
             }
-            foreach (var upn in d.ExtraMailboxes.Select(m => m.Upn).Concat(d.Fill?.Messages.Select(m => m.From).Where(f => f.Contains('@')) ?? []))
-            {
-                if (!upn.EndsWith(".example", StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new InvalidOperationException($"Scenario address {upn} is not on a reserved example domain.");
-                }
-            }
-            var mails = d.Users.Select(u => u.Mail).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            foreach (var u in d.Users.Where(u => u.Manager is not null && !mails.Contains(u.Manager)))
-            {
-                throw new InvalidOperationException($"Scenario user {u.Mail} has unknown manager {u.Manager}.");
-            }
             var known = ids.ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var u in d.Users)
             {
@@ -111,17 +99,11 @@ public sealed class FakeScenario
                     ["businessPhones"] = u.MobilePhone is null ? Array.Empty<string>() : new[] { u.MobilePhone },
                     ["employeeId"] = u.EmployeeId,
                     ["preferredLanguage"] = u.PreferredLanguage,
-                    ["employeeHireDate"] = u.HireDate is null ? null : u.HireDate + "T00:00:00Z",
                 });
                 foreach (var g in u.Groups.Concat(u.AdminUnits))
                 {
                     data.AddMember(g, u.Id);
                 }
-            }
-            var idByMail = d.Users.ToDictionary(u => u.Mail, u => u.Id, StringComparer.OrdinalIgnoreCase);
-            foreach (var u in d.Users.Where(u => u.Manager is not null))
-            {
-                data.SetManager(u.Id, idByMail[u.Manager!]);
             }
             if (d.Consented)
             {
@@ -144,18 +126,14 @@ public sealed class FakeScenario
                 graph.MailboxOf(directoryId, to.Id).Messages.Add(new FakeMicrosoftGraph.Message($"msg-{++n:D4}", m.Subject, from?.DisplayName ?? m.FromName ?? m.From,
                     m.From, now - TimeSpan.FromHours(m.HoursAgo), m.Preview, m.IsRead, m.Importance));
             }
-            // A meeting in a room books the room too, so room free/busy (spec 018 US5) shows it.
-            var roomByName = d.Rooms.ToDictionary(r => r.DisplayName, r => r.EmailAddress, StringComparer.OrdinalIgnoreCase);
             foreach (var e in d.Events)
             {
                 var organizer = byMail[e.Organizer];
                 var start = today.AddDays(e.DayOffset) + TimeSpan.Parse(e.Start, CultureInfo.InvariantCulture);
-                var attendees = e.Location is not null && roomByName.TryGetValue(e.Location, out var room) ? [.. e.Attendees, room] : e.Attendees;
                 var ev = new FakeMicrosoftGraph.Event(e.Id, e.Subject, start, start.AddMinutes(e.Minutes), e.Location, organizer.DisplayName, organizer.Mail,
-                    attendees, e.Online, e.ShowAs);
+                    e.Attendees, e.Online, e.ShowAs);
                 graph.MailboxOf(directoryId, organizer.Id).Events.Add(ev);
             }
-            ScenarioFiller.Fill(d, graph, directoryId, now, today);
         }
     }
 
@@ -195,15 +173,6 @@ public sealed class ScenarioDirectory
     public List<ScenarioRoom> Rooms { get; set; } = [];
     public List<ScenarioMessage> Messages { get; set; } = [];
     public List<ScenarioEvent> Events { get; set; } = [];
-
-    /// <summary>Generated mail and calendar for every enabled person, so no Outlook card is ever empty.</summary>
-    public ScenarioFill? Fill { get; set; }
-
-    /// <summary>
-    /// Mailboxes of people who sign in without a directory account (the staging test admin), served by the fake Graph
-    /// when Outlook is connected with their address as the login hint.
-    /// </summary>
-    public List<ScenarioMailbox> ExtraMailboxes { get; set; } = [];
 }
 
 public sealed class ScenarioSsoApp
@@ -233,13 +202,6 @@ public sealed class ScenarioUser
     public string? EmployeeId { get; set; }
     public string? PreferredLanguage { get; set; }
     public bool Enabled { get; set; } = true;
-
-    /// <summary>Mail of the person's manager in the same directory, served as <c>manager@delta</c> (spec 010 reporting lines).</summary>
-    public string? Manager { get; set; }
-
-    /// <summary>Hire date as yyyy-MM-dd, served as <c>employeeHireDate</c>.</summary>
-    public string? HireDate { get; set; }
-
     public List<string> Groups { get; set; } = [];
     public List<string> AdminUnits { get; set; } = [];
 }

@@ -12,7 +12,8 @@ namespace TeamBeats.DevFakes;
 /// Failure cases are triggered by markers in the last user message, for the gateway's failure tests:
 /// <c>[fake:429]</c> rate limited, <c>[fake:500]</c> provider error, <c>[fake:fail:model]</c> provider error for that model only, <c>[fake:timeout]</c> no answer until cancelled,
 /// <c>[fake:refuse]</c> a content filter stop, <c>[fake:cut]</c> a stream that ends without a final chunk,
-/// <c>[fake:tool:name]</c> a call of tool <c>name</c>, <c>[fake:badjson]</c> plain text even when a JSON schema was asked
+/// <c>[fake:tool:name]</c> a call of tool <c>name</c> (with the arguments of <c>[fake:args:{...}]</c>, once, or on every turn with
+/// <c>[fake:loop]</c>), <c>[fake:badjson]</c> plain text even when a JSON schema was asked
 /// for. When the prompt holds numbered passages (the assistant of spec 014) the reply cites passage 1 as <c>[1]</c>, unless
 /// the question holds <c>[fake:nocite]</c>. With a <c>response_format</c> the reply is the JSON object <c>{"answer": ...}</c>. Streaming
 /// (<c>stream: true</c>) returns server-sent events. Embeddings are a bag of words (see <see cref="Embed"/>).
@@ -21,6 +22,9 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
 {
     [System.Text.RegularExpressions.GeneratedRegex(@"\[fake:tool:([a-z_]+)\]")]
     private static partial System.Text.RegularExpressions.Regex ToolMarker();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"\[fake:args:(\{.*?\})\]")]
+    private static partial System.Text.RegularExpressions.Regex ArgsMarker();
 
     public const string BaseUrl = "https://openrouter.ai/api/v1";
     public const string ApiKey = "fictional-openrouter-key";
@@ -103,9 +107,13 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
         {
             reply = JsonSerializer.Serialize(new { answer = reply });
         }
+        // A tool is called once, in answer to the person's message; after its result comes back the fake answers, unless
+        // [fake:loop] asks it to keep calling (for run limits).
         var tool = ToolMarker().Match(last);
-        var toolCalls = tool.Success
-            ? new[] { new { id = "call-fake-1", type = "function", function = new { name = tool.Groups[1].Value, arguments = "{}" } } }
+        var lastRole = messages.LastOrDefault()?["role"]?.GetValue<string>();
+        var arguments = ArgsMarker().Match(last) is { Success: true } args ? args.Groups[1].Value : "{}";
+        var toolCalls = tool.Success && (lastRole == "user" || last.Contains("[fake:loop]", StringComparison.Ordinal))
+            ? new[] { new { id = "call-fake-" + messages.Count, type = "function", function = new { name = tool.Groups[1].Value, arguments } } }
             : null;
         var finish = refused ? "content_filter" : "stop";
         var id = "gen-fake-" + Guid.NewGuid().ToString("N")[..12];

@@ -253,6 +253,10 @@ public static class AuditActions
     public const string AgentInstalledFromTemplate = "agent.installed_from_template";
     public const string AgentAudienceChanged = "agent.audience_changed";
     public const string AgentPolicyChanged = "agent.policy_changed";
+    public const string AgentToolCalled = "agent.tool_called";
+    public const string AgentToolDenied = "agent.tool_denied";
+    public const string AgentActionConfirmed = "agent.action_confirmed";
+    public const string AgentActionRejected = "agent.action_rejected";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -296,7 +300,7 @@ public static class AuditActions
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged,
         AssistantHistoryDeleted, AssistantRetentionChanged,
-        AgentInstalledFromTemplate, AgentAudienceChanged, AgentPolicyChanged,
+        AgentInstalledFromTemplate, AgentAudienceChanged, AgentPolicyChanged, AgentToolCalled, AgentToolDenied, AgentActionConfirmed, AgentActionRejected,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

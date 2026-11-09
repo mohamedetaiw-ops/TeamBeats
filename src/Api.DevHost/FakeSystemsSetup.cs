@@ -10,7 +10,7 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Api.DevHost;
 
 /// <summary>
-/// Puts fake external systems in place of the real ones (Microsoft Entra ID, Microsoft Graph, OpenRouter, Open-Meteo, Gotenberg) when
+/// Puts fake external systems in place of the real ones (Microsoft Entra ID, Microsoft Graph, OpenRouter, Open-Meteo) when
 /// <c>Dev:Fakes:Enabled</c> is true. The real adapters keep running; only their HTTP clients are pointed at in-process
 /// fakes, and browser redirects to Microsoft are rewritten to the fake pages on the same host. Staging must run with
 /// fakes on, so it can never reach a real directory, mailbox or weather service. Development host only (ADR-0004).
@@ -124,15 +124,6 @@ public static class FakeSystemsSetup
         services.AddHttpClient(HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Graph);
         services.AddHttpClient(OpenRouterClient).ConfigurePrimaryHttpMessageHandler(() => systems.OpenRouter);
         services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Weather);
-
-        // Office previews (spec 011 FR-009): without a real Gotenberg, the real converter talks to the fake one.
-        if (string.IsNullOrEmpty(builder.Configuration[TeamBeats.Persistence.GotenbergConverter.UrlKey]))
-        {
-            services.AddHttpClient(TeamBeats.Persistence.GotenbergConverter.ClientName, c => c.Timeout = TeamBeats.Persistence.GotenbergConverter.Timeout)
-                .ConfigurePrimaryHttpMessageHandler(() => systems.Conversion);
-            services.AddSingleton<TeamBeats.Persistence.IDocumentConverter>(sp => new TeamBeats.Persistence.GotenbergConverter(
-                sp.GetRequiredService<IHttpClientFactory>(), new Uri(FakeOfficeConverter.BaseUrl)));
-        }
 
         // Single sign-on client secrets named in the scenario resolve to their fictional values.
         var inner = services.LastOrDefault(d => d.ServiceType == typeof(ISecretStore));

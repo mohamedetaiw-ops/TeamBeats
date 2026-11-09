@@ -162,10 +162,10 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
     /// The user signed in at the fake authorize page and agreed to the delegated scopes. Returns the authorization code
     /// the token endpoint redeems (with PKCE when a challenge was sent).
     /// </summary>
-    public string IssueDelegatedCode(Guid directoryId, string userId, string clientId, string redirectUri, string? codeChallenge, string scope, string? upn = null)
+    public string IssueDelegatedCode(Guid directoryId, string userId, string clientId, string redirectUri, string? codeChallenge, string scope)
     {
         var code = "dc-" + Guid.NewGuid().ToString("N");
-        _delegatedCodes[code] = new DelegatedCode(directoryId.ToString("D"), userId, clientId, redirectUri, codeChallenge, scope, upn);
+        _delegatedCodes[code] = new DelegatedCode(directoryId.ToString("D"), userId, clientId, redirectUri, codeChallenge, scope);
         return code;
     }
 
@@ -500,8 +500,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
 
         if (path == "/v1.0/me")
         {
-            // Navigation properties such as manager@delta belong to delta queries, not to /me.
-            return Json(new Dictionary<string, object?>(me.Properties.Where(p => !p.Key.Contains('@', StringComparison.Ordinal))) { ["id"] = userId });
+            return Json(new Dictionary<string, object?>(me.Properties) { ["id"] = userId });
         }
         if (path == "/v1.0/me/mailFolders/inbox")
         {
@@ -679,12 +678,6 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         }
         return new HttpResponseMessage(HttpStatusCode.NotFound);
     }
-
-    /// <summary>Every calendar event of a directory's mailboxes, once each.</summary>
-    public IReadOnlyList<Event> DirectoryEvents(Guid directoryId) => AllEvents(directoryId);
-
-    /// <summary>True when a UPN mailbox was set up for this address (a person without a directory account).</summary>
-    public bool HasUpnMailbox(string upn) => _upnMailboxes.ContainsKey(upn);
 
     private List<Event> AllEvents(Guid directoryId)
     {
