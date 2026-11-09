@@ -693,6 +693,8 @@
   "validation.policies.code": "اكتب رمزًا للسياسة حتى 40 حرفًا.",
   "validation.policies.code_taken": "توجد سياسة أخرى بهذا الرمز.",
   "validation.policies.comment": "اكتب تعليقًا حتى 2000 حرف.",
+  "validation.policies.compliance_filter": "اختر حالة أو موقعًا أو مديرًا من القائمة.",
+  "validation.policies.compliance_page": "اطلب ما بين شخص و200 شخص في المرة الواحدة.",
   "validation.policies.deadline": "اختر موعدًا نهائيًا بعد اليوم.",
   "validation.policies.effective_on": "اختر تاريخ اليوم أو تاريخًا لاحقًا.",
   "validation.policies.late_joiner_days": "امنح المنضمين لاحقًا بين يوم و365 يومًا.",

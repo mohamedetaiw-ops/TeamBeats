@@ -35,10 +35,18 @@ public sealed record VisibleProfile(Guid UserId, string DisplayName, bool Active
     public string? Field(string key) => Fields.FirstOrDefault(f => f.Key == key)?.Value;
 }
 
+public sealed record PersonPlacement(Guid UserId, string? LocationKey, Guid? ManagerId);
+
 /// <summary>Profiles for other modules and agent tools (spec 010 section 11, spec 027): always as the given viewer.</summary>
 public interface IProfiles
 {
     Task<IReadOnlyList<VisibleProfile>> ViewAsync(Guid viewerId, IReadOnlyCollection<Guid> userIds, CancellationToken ct = default);
+
+    /// <summary>
+    /// Location key and current line manager of many people in one read, for breakdowns such as the policy compliance
+    /// view (spec 025 US3). Both are directory facts every member may see; people without a profile are left out.
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, PersonPlacement>> PlacementsAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct = default);
 }
 
 /// <summary>Field names only, never values (FR-012).</summary>

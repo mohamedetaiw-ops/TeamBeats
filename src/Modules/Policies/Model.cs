@@ -239,3 +239,48 @@ public sealed record MyAttestation(AttestationDue? Due, int? LastVersion, DateTi
 
 /// <summary>One line of My policies: action needed when <see cref="Due"/> is set, accepted when the last attestation is for the version in force.</summary>
 public sealed record MyPolicyItem(PolicySummary Policy, int? CurrentVersion, DateTimeOffset? EffectiveFrom, AttestationDue? Due, int? AttestedVersion, DateTimeOffset? AttestedAt);
+
+/// <summary>Whose people a compliance view covers: the whole tenant, the viewer's units, or their reports as line manager.</summary>
+public static class ComplianceScopes
+{
+    public const string Tenant = "tenant";
+    public const string Units = "units";
+    public const string Reports = "reports";
+}
+
+public sealed record ComplianceCampaign(Guid Id, int Version, DateTimeOffset Deadline, string Status);
+
+/// <summary>Counts for a group, with the share attested of everyone still in the audience.</summary>
+public sealed record ComplianceCounts(int Members, int Attested, int Open, int Overdue, int LeftAudience, double Percent);
+
+/// <summary>
+/// One line of a breakdown. By unit: <see cref="UnitId"/> with its names, rolled up over its subtree, or
+/// <see cref="Direct"/> for people placed in the unit itself. By location: the location key. By manager: the manager.
+/// A null key collects people with no unit, location or manager.
+/// </summary>
+public sealed record ComplianceGroup(Guid? UnitId, IReadOnlyDictionary<string, string>? UnitNames, bool Direct, string? Location, PolicyPerson? Manager, ComplianceCounts Counts);
+
+public sealed record ComplianceView(
+    Guid PolicyId,
+    int? CurrentVersion,
+    ComplianceCampaign? Campaign,
+    IReadOnlyList<ComplianceCampaign> Campaigns,
+    string Scope,
+    Guid? Unit,
+    IReadOnlyList<Guid> UnitPath,
+    ComplianceCounts Totals,
+    IReadOnlyList<ComplianceGroup> ByUnit,
+    IReadOnlyList<ComplianceGroup> ByLocation,
+    IReadOnlyList<ComplianceGroup> ByManager);
+
+public sealed record CompliancePerson(PolicyPerson Person, Guid? UnitId, string? Location, Guid? ManagerId, string Status, DateTimeOffset DueAt, DateTimeOffset? AttestedAt,
+    DateTimeOffset? LeftAt);
+
+public sealed record CompliancePeople(IReadOnlyList<CompliancePerson> Items, int Total, int Offset, int Limit);
+
+/// <summary>The per-person view (US3 scenario 2): every policy that applies to them with the last version attested and when.</summary>
+public sealed record PersonCompliance(PolicyPerson Person, IReadOnlyList<MyPolicyItem> Policies);
+
+public sealed record ComplianceRemindRequest(Guid? CampaignId, IReadOnlyList<Guid>? UserIds);
+
+public sealed record ComplianceRemindResult(Guid CampaignId, int Recipients);

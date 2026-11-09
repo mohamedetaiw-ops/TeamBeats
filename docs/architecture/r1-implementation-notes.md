@@ -1034,3 +1034,22 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | One campaign on `policy.core` | Without `policy.campaigns` a tenant has at most one open campaign at a time and no manager escalation. |
 | Re-attestation cycles | A person attests once per campaign, so a later campaign for the same version can ask again. Automatic yearly cycles are not built; a compliance officer relaunches by hand. |
 | Material revision | The open campaign is not closed automatically; the spec leaves the choice to compliance, so they are told and choose. |
+
+## Compliance view (spec 025 T007, T008)
+
+| Area | What was built |
+|---|---|
+| Completion | `GET /api/v1/policies/{id}/compliance?campaign=&unit=`: counts and the share attested for a campaign (by default the open one for the version in force, else the latest for it), by org unit with subtree roll-up, by location and by line manager. Without a unit it opens on the deepest unit everyone sits under, so one root organization opens on its subsidiaries; people with no unit are a line of their own |
+| Drill-down | `GET /api/v1/policies/{id}/compliance/people` filters by unit (subtree, or `direct=true` for the unit itself), location, manager (`none` for neither) and status, overdue first, in pages of up to 200 |
+| Per person | `GET /api/v1/policies/compliance/people/{userId}` lists every policy that applies to the person with what they owe and the last version attested and when |
+| Scope | Compliance officers see people placed in the units where they hold `policy.manage` (everyone at tenant scope); line managers see their direct and indirect reports. Anyone else is refused; a person outside the viewer's people is not found |
+| Remind | `POST /api/v1/policies/{id}/compliance/remind` reminds the viewer's people who still owe in an open campaign, all or the ones named, and is audited with the viewer's scope |
+| Contracts | `IOrganizationHierarchy.GetPathsAsync` gives unit paths in one read; `IProfiles.PlacementsAsync` gives location keys and current managers in one read |
+| Tests | `PolicyComplianceTests` (unit roll-up and drill-down, location and manager breakdowns, paging and filter validation, per-person view, org-scoped officer, line manager with remind, employee refusal, closed campaign, cross-tenant) |
+
+| Item | Note |
+|---|---|
+| Placement | A person counts under their primary unit, or their first membership without one; an org-scoped officer sees anyone with a membership in their units. |
+| Location labels | Breakdowns return location keys; the page shows the labels from `/api/v1/people/locations`. |
+| Comprehension answers | Comprehension checks are R2, so there are no answers to hide from managers yet. |
+| Scale | The view groups members in memory after three bulk reads. The 100,000 people target (section 14) gets a performance test with the pages slice; a stored summary can follow if it misses. |

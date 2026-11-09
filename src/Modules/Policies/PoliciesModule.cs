@@ -21,6 +21,7 @@ public static class PoliciesModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<PolicyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
         services.AddScoped<PolicyCampaigns>();
+        services.AddScoped<PolicyCompliance>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<PolicyCampaigns>());
         services.AddMessageHandler<AttestationNoticeBatch, PolicyCampaigns>("policies.attestation_notice");
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, PolicyCampaigns>("policies.campaign_membership");
@@ -153,6 +154,23 @@ public static class PoliciesModule
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/policies/{id}/attestations/{view.Id}", view);
         });
+
+        root.MapGet("/{id:guid}/compliance", async (Guid id, Guid? campaign, Guid? unit, PolicyCompliance compliance, CancellationToken ct) =>
+            Results.Ok(await compliance.ViewAsync(id, campaign, unit, ct)));
+
+        root.MapGet("/{id:guid}/compliance/people", async (Guid id, Guid? campaign, Guid? unit, bool? direct, string? location, string? manager, string? status, int? offset,
+            int? limit, PolicyCompliance compliance, CancellationToken ct) =>
+            Results.Ok(await compliance.PeopleAsync(id, campaign, unit, direct ?? false, location, manager, status, offset, limit, ct)));
+
+        root.MapPost("/{id:guid}/compliance/remind", async (Guid id, ComplianceRemindRequest request, PolicyCompliance compliance, IDbSession session, CancellationToken ct) =>
+        {
+            var result = await compliance.RemindAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(result);
+        });
+
+        root.MapGet("/compliance/people/{userId:guid}", async (Guid userId, PolicyCompliance compliance, CancellationToken ct) =>
+            Results.Ok(await compliance.PersonAsync(userId, ct)));
 
         app.MapGet("/api/v1/me/policies", async (PolicyCampaigns campaigns, CancellationToken ct) => Results.Ok(await campaigns.MyPoliciesAsync(ct)))
             .RequireTenantUser().WithTags("Policies");

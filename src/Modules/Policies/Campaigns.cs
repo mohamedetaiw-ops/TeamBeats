@@ -354,7 +354,12 @@ public sealed class PolicyCampaigns(
     public async Task<IReadOnlyList<MyPolicyItem>> MyPoliciesAsync(CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.PolicyCore, ct);
-        var user = context.RequireUser();
+        return await PoliciesOfAsync(context.RequireUser(), ct);
+    }
+
+    /// <summary>The policies that apply to one person with what they owe and last attested; the caller checks who may see it.</summary>
+    internal async Task<IReadOnlyList<MyPolicyItem>> PoliciesOfAsync(Guid user, CancellationToken ct)
+    {
         var owed = (await OwedAsync(user, null, ct)).GroupBy(o => o.Campaign.PolicyId).ToDictionary(g => g.Key, g => g.First());
         var rows = await session.QueryAsync($"select {PolicyRow.Columns} from policies.policy where (current_version is not null and status <> 'retired') or id = any(@owed) order by lower(code), id",
             new { owed = owed.Keys.ToArray() }, PolicyRow.Read, ct);
@@ -365,7 +370,7 @@ public sealed class PolicyCampaigns(
         foreach (var p in rows)
         {
             var due = owed.TryGetValue(p.Id, out var o) ? Due(o.Campaign, o.DueAt, o.Status) : null;
-            if (due is null && !await register.AppliesToMeAsync(p, ct))
+            if (due is null && !await audiences.IncludesAsync(p.AppliesTo, user, ct))
             {
                 continue;
             }

@@ -15,8 +15,8 @@ Depends on 004, 005, 006, 007, 009 (body document, audience model), 011 (control
 - [x] T006 [US2] Campaigns, members, attestation, scheduler and task source
 
 ## Phase 4: User Story 3, compliance view (P1)
-- [ ] T007 [P] [US3] Tests: completion by unit with drill-down; per-person view; scoped compliance officer
-- [ ] T008 [US3] Compliance endpoints; manager breakdown once the reporting line exists
+- [x] T007 [P] [US3] Tests: completion by unit with drill-down; per-person view; scoped compliance officer
+- [x] T008 [US3] Compliance endpoints; manager breakdown once the reporting line exists
 
 ## Phase 5: User Story 4, policy Q&A (P1)
 - [ ] T009 [US4] Clause units published for search with stable anchors; superseded excluded by default

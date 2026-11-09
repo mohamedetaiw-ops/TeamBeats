@@ -693,6 +693,8 @@
   "validation.policies.code": "Give the policy an ID of up to 40 characters.",
   "validation.policies.code_taken": "Another policy already has this ID.",
   "validation.policies.comment": "Write a comment of up to 2,000 characters.",
+  "validation.policies.compliance_filter": "Choose a status, location or manager from the list.",
+  "validation.policies.compliance_page": "Ask for between 1 and 200 people at a time.",
   "validation.policies.deadline": "Choose a deadline after today.",
   "validation.policies.effective_on": "Choose today or a later date.",
   "validation.policies.late_joiner_days": "Give late joiners between 1 and 365 days.",

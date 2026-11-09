@@ -1,3 +1,4 @@
+using TeamBeats.Persistence;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
@@ -114,8 +115,24 @@ public sealed class VisibilityResolver(IAuthorizationService authz, IOrganizatio
 }
 
 /// <summary>Profiles for other modules and agent tools, always reduced to what the viewer may see.</summary>
-public sealed class Profiles(ProfileStore store, VisibilityResolver visibility) : IProfiles
+public sealed class Profiles(ProfileStore store, VisibilityResolver visibility, IDbSession session) : IProfiles
 {
+    public async Task<IReadOnlyDictionary<Guid, PersonPlacement>> PlacementsAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct = default)
+    {
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<Guid, PersonPlacement>();
+        }
+        await store.EnsureFreshAsync(ct);
+        return (await session.QueryAsync(
+            """
+            select p.user_id, p.location_key, l.manager_user_id from people.profile p
+            left join people.reporting_line l on l.user_id = p.user_id and l.valid_to is null
+            where p.user_id = any(@ids)
+            """, new { ids = userIds.Distinct().ToArray() },
+            r => new PersonPlacement(r.GetGuid(0), r.Get<string>("location_key"), r.Get<Guid?>("manager_user_id")), ct)).ToDictionary(p => p.UserId);
+    }
+
     public async Task<IReadOnlyList<VisibleProfile>> ViewAsync(Guid viewerId, IReadOnlyCollection<Guid> userIds, CancellationToken ct = default)
     {
         await store.EnsureFreshAsync(ct);
