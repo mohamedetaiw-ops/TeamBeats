@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { PreferenceKey } from "@/lib/shell/types";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
+import { Icon } from "@/components/ui/Icon";
 import { OutlookSettings } from "./OutlookSettings";
 
 const options: Record<PreferenceKey, string[]> = {
@@ -48,8 +49,9 @@ export function SettingsPanel({ locales, locale, values }: { locales: string[]; 
 
   return (
     <div className="shell-settings" onKeyDown={onKeyDown}>
-      <button ref={button} type="button" className="button button-quiet" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen((x) => !x)}>
-        {t("open")}
+      <button ref={button} type="button" className="button button-quiet shell-icon-button" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen((x) => !x)}>
+        <Icon name="settings" size={20} />
+        <span className="visually-hidden">{t("open")}</span>
       </button>
       <div className="shell-settings-panel" id={panelId} hidden={!open} aria-busy={saving || undefined}>
         {locales.length > 1 ? (

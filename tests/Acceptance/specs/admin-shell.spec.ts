@@ -67,6 +67,11 @@ test.describe("language and keyboard", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(`${hostOrigin(tenant.key)}/admin`);
 
+    // Sign out sits in the account menu behind the avatar button.
+    const account = page.getByRole("button", { name: new RegExp(`^${escapeRegExp(msg("en", "shell.account", { name: "" }))}`) });
+    await account.focus();
+    await page.keyboard.press("Enter");
+    await expect(account).toHaveAttribute("aria-expanded", "true");
     await page.getByRole("button", { name: msg("en", "shell.signOut") }).focus();
     await page.keyboard.press("Enter");
     await page.waitForURL(`${hostOrigin(tenant.key)}/signin`);
@@ -76,3 +81,7 @@ test.describe("language and keyboard", () => {
     await expect(page).toHaveURL(`${hostOrigin(tenant.key)}/signin`);
   });
 });
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

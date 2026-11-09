@@ -77,7 +77,8 @@ public interface ITenantMemberships
     Task<IReadOnlyDictionary<string, bool>> GetMembershipTypePoliciesAsync(CancellationToken ct = default);
 }
 
-public sealed record TenantBranding(string? PrimaryColor, bool HasLogo);
+/// <summary>Spec 001 branding: primary color, whether a logo is uploaded, and the tenant display name the shell shows.</summary>
+public sealed record TenantBranding(string? PrimaryColor, bool HasLogo, string DisplayName = "");
 
 public interface ITenantSettingsReader
 {

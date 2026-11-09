@@ -60,4 +60,4 @@ export type PreferenceSetting = { key: PreferenceKey; values: string[]; default:
 
 export type PreferenceProfile = { schemaVersion: number; values: Record<PreferenceKey, string>; schema: PreferenceSetting[] };
 
-export const defaultPreferences: Record<PreferenceKey, string> = { mode: "system", density: "comfortable", motion: "system", text_scale: "100" };
+export const defaultPreferences: Record<PreferenceKey, string> = { mode: "light", density: "comfortable", motion: "system", text_scale: "100" };

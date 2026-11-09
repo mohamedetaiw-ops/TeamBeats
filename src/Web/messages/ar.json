@@ -328,7 +328,11 @@
       "resetLayoutsQuestion": "هل تريد إعادة كل صفحة خصصتها إلى تخطيط مؤسستك؟ تبقى لغتك وإعداداتك الأخرى.",
       "resetLayoutsConfirm": "إعادة ضبط كل الصفحات",
       "resetLayoutsCancel": "إلغاء"
-    }
+    },
+    "homeOf": "الصفحة الرئيسية لـ {name}",
+    "account": "الحساب: {name}",
+    "profile": "ملفي الشخصي",
+    "switchLanguage": "التبديل إلى {language}"
   },
   "personalization": {
     "toolbar": "خصّص صفحتك",

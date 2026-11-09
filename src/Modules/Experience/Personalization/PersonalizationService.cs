@@ -75,7 +75,7 @@ public sealed partial class PersonalizationService(
     /// <summary>The preference schema (FR-021, FR-032). Every R1 preference is cross-device; language stays on the user account.</summary>
     public static readonly IReadOnlyList<PreferenceSetting> PreferenceSchema =
     [
-        new("mode", ["system", "light", "dark"], "system", "cross_device"),
+        new("mode", ["system", "light", "dark"], "light", "cross_device"),
         new("density", ["comfortable", "compact"], "comfortable", "cross_device"),
         new("motion", ["system", "reduced"], "system", "cross_device"),
         new("text_scale", ["100", "125", "150", "200"], "100", "cross_device"),

@@ -8,10 +8,20 @@ import { hostOrigin } from "../support/stack";
 /**
  * The v2 home as staging seeds it (src/Api.DevHost/seeds/staging-home.json): the file's placements are published on a
  * fresh tenant, which also checks the file against the component manifests, and the home shows the task summary and My
- * services of spec 016 next to news, the tool box and the call to action band, in English and Arabic with axe.
+ * services of spec 016 next to news, the tool box and the call to action band (the news, services and menu the seeder
+ * also publishes are covered by tests/Integration/StagingHomeSeedTests.cs), in English and Arabic with axe.
  */
 type Seed = { template: string; regions: Record<string, { id: string; componentRef: string; span?: number; props?: Record<string, unknown> }[]> };
 const seed = JSON.parse(readFileSync(new URL("../../../src/Api.DevHost/seeds/staging-home.json", import.meta.url), "utf8")) as Seed;
+// The seeder swaps "seed:news:<key>" for the address of the story it published; this test publishes no news, so the
+// placement links to the home page instead.
+for (const placements of Object.values(seed.regions)) {
+  for (const p of placements) {
+    for (const [key, value] of Object.entries(p.props ?? {})) {
+      if (typeof value === "string" && value.startsWith("seed:news:")) p.props![key] = "/";
+    }
+  }
+}
 
 async function seedHome(tenant: TestTenant) {
   const api = await tenantApi(tenant);

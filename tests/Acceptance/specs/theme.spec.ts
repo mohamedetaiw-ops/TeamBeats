@@ -1,6 +1,7 @@
 import { expect, signInWithDevForm, test } from "../support/fixtures";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
+import { msg } from "../support/messages";
 import { hostOrigin } from "../support/stack";
 
 /**
@@ -58,7 +59,11 @@ test.describe("tenant theme", () => {
     );
     expect(shift).toBeLessThan(0.1);
 
+    // Light is the default mode, so a dark system setting changes nothing until the person picks "system" or "dark".
     await page.emulateMedia({ colorScheme: "dark" });
-    expect(await accent(page)).toBe("#5eead4");
+    expect(await accent(page)).toBe("#0f766e");
+    await page.getByRole("button", { name: msg("en", "shell.settings.open") }).click();
+    await page.getByLabel(msg("en", "shell.settings.mode.label")).selectOption("system");
+    await expect.poll(() => accent(page)).toBe("#5eead4");
   });
 });

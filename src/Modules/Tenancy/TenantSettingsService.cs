@@ -61,7 +61,7 @@ public sealed class TenantSettingsService(
     public async Task<TenantBranding> GetBrandingAsync(CancellationToken ct = default)
     {
         var s = await GetAsync(ct);
-        return new TenantBranding(s.PrimaryColor, s.HasLogo);
+        return new TenantBranding(s.PrimaryColor, s.HasLogo, s.DisplayName);
     }
 
     public async Task<TenantSettingsView> UpdateAsync(UpdateTenantSettingsRequest request, CancellationToken ct)

@@ -1120,3 +1120,12 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | People freshness | The people projection refreshes on demand. The people source refreshes a person before indexing them and refreshes everyone at the start of a rebuild; membership, provisioning and profile events reindex the person. |
 | Rebuild size | A rebuild runs in one transaction per tenant. Paging rebuilds over several transactions comes with the performance tests at 1 million units. |
 | Query events | FR-013 query analytics events are not emitted yet; they come with the analytics feed for spec 021. |
+
+## Shell and home closer to the v2 mockup (spec 008)
+
+- The shell now follows the v2 mockup: a brand mark and the workspace name in the identity region, a wide search box, a language button when the tenant offers exactly two languages, a settings gear and an avatar button whose menu holds the name, a link to the profile and sign out. On wide screens the global menu is a left rail with an icon per entry; on narrow screens it stays the menu button. Labels and order still come from the API, and the icon is chosen in the web app from where the link goes, with a neutral icon for anything it does not know.
+- Gap: spec 008 is silent on the default colour mode. The default is now `light`, as in the mockup, instead of following the operating system; people can still pick system or dark in settings.
+- The workspace name shown in the header is the tenant display name, added to the tenant branding contract and to `/api/v1/me`. The logo image is not shown yet, because the logo is only served from the admin area.
+- Inputs, selects and text areas share one global style from the design tokens.
+- The night "AI briefing" hero of the mockup waits on specs 012 and 014; until then the brand hero links to the pinned news story.
+

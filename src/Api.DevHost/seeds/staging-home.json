@@ -1,20 +1,455 @@
 {
-  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md), laid out after the v2 home mockup: news and the task summary side by side, My services next to the weather, the tool box, then a call to action band. A page from the home template H01, published and set as the shell home. Staging web builds leave out the reference packs, so only product components are placed. Mail and calendar join the personal area by themselves (spec 008 FR-051). Raise the revision when this file changes: a home seeded from an older revision that nobody edited is brought up to date, and a home an administrator changed is never replaced.",
+  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md), laid out after the v2 home mockup: a brand hero and Your day at the top, news next to the weather, My services next to the world clock, mail and calendar side by side, the tool box, then a call to action. A page from the home template H01, published and set as the shell home, with fictional news, form services and a global menu so the rail and the cards have something to show. Every name in it is invented. Mail and calendar are placed with the IDs the home suggestions use, so they appear here and not at the top. Raise the revision when this file changes: a home seeded from an older revision that nobody edited is brought up to date, and a home an administrator changed is never replaced. News and services are added only when their English title is new; the menu only while the tenant has none.",
   "template": "H01",
   "slug": "home",
   "variant": "balanced",
-  "revision": 2,
+  "revision": 3,
+  "navigation": [
+    {
+      "slug": "nav-home",
+      "labels": {
+        "en": "Home",
+        "ar": "الرئيسية"
+      },
+      "url": "/"
+    },
+    {
+      "slug": "nav-services",
+      "labels": {
+        "en": "Services",
+        "ar": "الخدمات"
+      },
+      "url": "/services"
+    },
+    {
+      "slug": "nav-tasks",
+      "labels": {
+        "en": "Tasks",
+        "ar": "المهام"
+      },
+      "url": "/tasks"
+    },
+    {
+      "slug": "nav-people",
+      "labels": {
+        "en": "People",
+        "ar": "الأشخاص"
+      },
+      "url": "/people"
+    },
+    {
+      "slug": "nav-files",
+      "labels": {
+        "en": "Files",
+        "ar": "الملفات"
+      },
+      "url": "/documents"
+    },
+    {
+      "slug": "nav-knowledge",
+      "labels": {
+        "en": "Knowledge",
+        "ar": "المعرفة"
+      },
+      "url": "/kb"
+    },
+    {
+      "slug": "nav-policies",
+      "labels": {
+        "en": "Policies",
+        "ar": "السياسات"
+      },
+      "url": "/policies"
+    }
+  ],
+  "news": [
+    {
+      "key": "safety-week",
+      "variants": {
+        "en": {
+          "title": "Safety Week starts on 16 November",
+          "summary": "Five days, five habits: daily drills, a quiz with prizes and a visit from Civil Defence at every site.",
+          "body": {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "Safety Week runs from 16 to 20 November at every site."
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "Each day focuses on one habit, with a short drill in the morning and a quiz at lunch. Civil Defence visits each site during the week."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "ar": {
+          "title": "أسبوع السلامة يبدأ في 16 نوفمبر",
+          "summary": "خمسة أيام وخمس عادات: تدريبات يومية ومسابقة بجوائز وزيارة من الدفاع المدني لكل موقع.",
+          "body": {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "يقام أسبوع السلامة من 16 إلى 20 نوفمبر في جميع المواقع."
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "يركز كل يوم على عادة واحدة، مع تدريب قصير صباحًا ومسابقة وقت الغداء. ويزور الدفاع المدني كل موقع خلال الأسبوع."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      },
+      "pinned": true,
+      "featured": true
+    },
+    {
+      "key": "hub",
+      "variants": {
+        "en": {
+          "title": "One roof for three warehouses: inside the Jebel Ali hub",
+          "summary": "Operations moved three warehouses into one hub. Here is what changes for drivers and the dock teams.",
+          "body": {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "The new hub brings three warehouses under one roof, with 42 loading docks and one gate system."
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "Drivers use Gate 3 from Sunday. Dock teams get new shift times, published on the Operations site."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "ar": {
+          "title": "سقف واحد لثلاثة مستودعات: جولة في مركز جبل علي",
+          "summary": "نقلت العمليات ثلاثة مستودعات إلى مركز واحد. إليكم ما يتغير للسائقين وفرق الأرصفة.",
+          "body": {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "يجمع المركز الجديد ثلاثة مستودعات تحت سقف واحد، مع 42 رصيف تحميل ونظام بوابات واحد."
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "يستخدم السائقون البوابة 3 ابتداءً من يوم الأحد، وتحصل فرق الأرصفة على مواعيد نوبات جديدة منشورة في موقع العمليات."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "town-hall",
+      "variants": {
+        "en": {
+          "title": "October town hall in 12 minutes",
+          "summary": "Missed the town hall? The replay covers results, the hub move and your questions.",
+          "body": {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "The leadership team shared third quarter results, the plan for the Jebel Ali hub and answers to 30 questions from the room and online."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "ar": {
+          "title": "اجتماع أكتوبر العام في 12 دقيقة",
+          "summary": "فاتك الاجتماع العام؟ يغطي التسجيل النتائج ونقل المركز وأسئلتكم.",
+          "body": {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "شاركت القيادة نتائج الربع الثالث وخطة مركز جبل علي وأجابت عن 30 سؤالًا من الحضور وعبر الإنترنت."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "key": "shuttle",
+      "variants": {
+        "en": {
+          "title": "Shuttle to Al Quoz moves to 18:20 from Monday",
+          "summary": "The evening shuttle leaves Gate 1 ten minutes later to match the new shift end.",
+          "body": {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "From Monday the evening shuttle to Al Quoz leaves Gate 1 at 18:20 instead of 18:10."
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "ar": {
+          "title": "حافلة القوز تتحرك الساعة 18:20 ابتداءً من الاثنين",
+          "summary": "تغادر الحافلة المسائية البوابة 1 بعد عشر دقائق لتتوافق مع نهاية النوبة الجديدة.",
+          "body": {
+            "blocks": [
+              {
+                "type": "paragraph",
+                "children": [
+                  {
+                    "text": "ابتداءً من يوم الاثنين تغادر الحافلة المسائية إلى القوز من البوابة 1 الساعة 18:20 بدلًا من 18:10."
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "services": [
+    {
+      "names": {
+        "en": "Salary letter",
+        "ar": "خطاب راتب"
+      },
+      "descriptions": {
+        "en": "A letter that confirms your salary, for a bank, embassy or landlord.",
+        "ar": "خطاب يؤكد راتبك لتقديمه إلى بنك أو سفارة أو مالك عقار."
+      },
+      "synonyms": {
+        "en": [
+          "salary certificate",
+          "employment letter"
+        ],
+        "ar": [
+          "شهادة راتب",
+          "خطاب تعريف"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "addressee",
+            "type": "text",
+            "labels": {
+              "en": "Addressed to",
+              "ar": "موجه إلى"
+            },
+            "required": true
+          },
+          {
+            "key": "needed_by",
+            "type": "date",
+            "labels": {
+              "en": "Needed by",
+              "ar": "مطلوب بحلول"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "names": {
+        "en": "IT support",
+        "ar": "الدعم التقني"
+      },
+      "descriptions": {
+        "en": "Report a problem with your laptop, phone, printer or an app.",
+        "ar": "أبلغ عن مشكلة في حاسوبك أو هاتفك أو الطابعة أو أحد التطبيقات."
+      },
+      "synonyms": {
+        "en": [
+          "helpdesk",
+          "laptop",
+          "printer"
+        ],
+        "ar": [
+          "مكتب المساعدة",
+          "حاسوب",
+          "طابعة"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "problem",
+            "type": "text",
+            "labels": {
+              "en": "What is not working?",
+              "ar": "ما الذي لا يعمل؟"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "names": {
+        "en": "System access",
+        "ar": "صلاحية نظام"
+      },
+      "descriptions": {
+        "en": "Ask for access to a business system, approved by your manager.",
+        "ar": "اطلب صلاحية الوصول إلى نظام عمل بموافقة مديرك."
+      },
+      "synonyms": {
+        "en": [
+          "permissions",
+          "account"
+        ],
+        "ar": [
+          "صلاحيات",
+          "حساب"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "system",
+            "type": "text",
+            "labels": {
+              "en": "System",
+              "ar": "النظام"
+            },
+            "required": true
+          },
+          {
+            "key": "reason",
+            "type": "text",
+            "labels": {
+              "en": "Why you need it",
+              "ar": "سبب الحاجة"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "names": {
+        "en": "Parking permit",
+        "ar": "تصريح موقف"
+      },
+      "descriptions": {
+        "en": "A parking permit for the head office car park.",
+        "ar": "تصريح موقف لمواقف المكتب الرئيسي."
+      },
+      "synonyms": {
+        "en": [
+          "car park"
+        ],
+        "ar": [
+          "مواقف السيارات"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "plate",
+            "type": "text",
+            "labels": {
+              "en": "Plate number",
+              "ar": "رقم اللوحة"
+            },
+            "required": true
+          }
+        ]
+      }
+    },
+    {
+      "names": {
+        "en": "Business cards",
+        "ar": "بطاقات العمل"
+      },
+      "descriptions": {
+        "en": "Order business cards with your name and job title.",
+        "ar": "اطلب بطاقات عمل تحمل اسمك ومسماك الوظيفي."
+      },
+      "synonyms": {
+        "en": [
+          "visiting cards"
+        ],
+        "ar": [
+          "كروت شخصية"
+        ]
+      },
+      "form": {
+        "fields": [
+          {
+            "key": "quantity",
+            "type": "number",
+            "labels": {
+              "en": "How many boxes",
+              "ar": "عدد العلب"
+            },
+            "required": true
+          }
+        ]
+      }
+    }
+  ],
   "regions": {
-    "hero": [],
-    "grid": [
+    "hero": [
       {
-        "id": "news",
-        "componentRef": "content.news_feed@1",
+        "id": "campaign-hero",
+        "componentRef": "content.call_to_action@1",
         "span": 8,
         "props": {
-          "title": { "en": "News", "ar": "الأخبار" },
-          "type": "all",
-          "top": 4
+          "heading": {
+            "en": "Safety Week: five days, five habits",
+            "ar": "أسبوع السلامة: خمسة أيام وخمس عادات"
+          },
+          "body": {
+            "en": "Daily drills, a quiz with prizes and a visit from Civil Defence at every site, 16 to 20 November.",
+            "ar": "تدريبات يومية ومسابقة بجوائز وزيارة من الدفاع المدني لكل موقع، من 16 إلى 20 نوفمبر."
+          },
+          "label": {
+            "en": "See the programme",
+            "ar": "اطلع على البرنامج"
+          },
+          "link": "seed:news:safety-week",
+          "emphasis": "primary"
         }
       },
       {
@@ -22,16 +457,26 @@
         "componentRef": "services.task_summary@1",
         "span": 4,
         "props": {
-          "title": { "en": "Your day", "ar": "يومك" },
+          "title": {
+            "en": "Your day",
+            "ar": "يومك"
+          },
           "top": 3
         }
-      },
+      }
+    ],
+    "grid": [
       {
-        "id": "services",
-        "componentRef": "services.my_services@1",
+        "id": "news",
+        "componentRef": "content.news_feed@1",
         "span": 8,
         "props": {
-          "top": 5
+          "title": {
+            "en": "News",
+            "ar": "الأخبار"
+          },
+          "type": "all",
+          "top": 4
         }
       },
       {
@@ -43,9 +488,17 @@
         }
       },
       {
+        "id": "services",
+        "componentRef": "services.my_services@1",
+        "span": 8,
+        "props": {
+          "top": 5
+        }
+      },
+      {
         "id": "world-clock",
         "componentRef": "toolbox.world_clock@1",
-        "span": 6,
+        "span": 4,
         "props": {
           "zones": [
             "Asia/Dubai",
@@ -56,6 +509,16 @@
         }
       },
       {
+        "id": "home-outlook-my-calendar",
+        "componentRef": "outlook.my_calendar@1",
+        "span": 6
+      },
+      {
+        "id": "home-outlook-my-mail",
+        "componentRef": "outlook.my_mail@1",
+        "span": 6
+      },
+      {
         "id": "time-converter",
         "componentRef": "toolbox.time_converter@1",
         "span": 6
@@ -63,13 +526,22 @@
       {
         "id": "campaign",
         "componentRef": "content.call_to_action@1",
-        "span": 12,
+        "span": 6,
         "props": {
-          "heading": { "en": "Every service in one place", "ar": "كل الخدمات في مكان واحد" },
-          "body": { "en": "Leave, IT help, letters and more, with every request tracked from start to finish.", "ar": "الإجازات والدعم التقني والخطابات وغيرها، مع متابعة كل طلب من بدايته حتى نهايته." },
-          "label": { "en": "Browse services", "ar": "تصفح الخدمات" },
+          "heading": {
+            "en": "Every service in one place",
+            "ar": "كل الخدمات في مكان واحد"
+          },
+          "body": {
+            "en": "Leave, IT help, letters and more, with every request tracked from start to finish.",
+            "ar": "الإجازات والدعم التقني والخطابات وغيرها، مع متابعة كل طلب من بدايته حتى نهايته."
+          },
+          "label": {
+            "en": "Browse services",
+            "ar": "تصفح الخدمات"
+          },
           "link": "/services",
-          "emphasis": "primary"
+          "emphasis": "secondary"
         }
       }
     ]

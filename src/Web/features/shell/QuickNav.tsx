@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { QuickNavItem } from "@/lib/shell/types";
+import { Icon } from "@/components/ui/Icon";
 
 /**
  * Quick navigation (spec 008 FR-016): destinations the viewer may open, from the API, as they type. Results are a
@@ -40,6 +41,9 @@ export function QuickNav() {
       <label htmlFor={inputId} className="visually-hidden">
         {t("label")}
       </label>
+      <span className="shell-search-icon">
+        <Icon name="search" size={18} />
+      </span>
       <input
         id={inputId}
         type="search"
