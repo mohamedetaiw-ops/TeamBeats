@@ -8282,6 +8282,159 @@
         }
       }
     },
+    "/api/v1/ai/catalogue": {
+      "get": {
+        "tags": [
+          "AI gateway"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/ai/policy": {
+      "get": {
+        "tags": [
+          "AI gateway"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "AI gateway"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelPolicyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/ai/route-changes": {
+      "get": {
+        "tags": [
+          "AI gateway"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/ai/route-changes/{id}/override": {
+      "post": {
+        "tags": [
+          "AI gateway"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteOverrideRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/platform/ai/catalogue": {
+      "get": {
+        "tags": [
+          "Platform: AI"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Platform: AI"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CatalogueEntryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/platform/ai/routes/{useCase}": {
+      "put": {
+        "tags": [
+          "Platform: AI"
+        ],
+        "parameters": [
+          {
+            "name": "useCase",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformRouteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/people": {
       "get": {
         "tags": [
@@ -9553,6 +9706,123 @@
               "string"
             ],
             "format": "int64"
+          }
+        }
+      },
+      "CatalogueEntryRequest": {
+        "required": [
+          "model",
+          "provider",
+          "names",
+          "capabilities",
+          "contextTokens",
+          "regions",
+          "zeroRetention",
+          "noTraining",
+          "maxClassification",
+          "inputPrice",
+          "outputPrice",
+          "status",
+          "deprecatedOn"
+        ],
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "provider": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "names": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "capabilities": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "contextTokens": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "regions": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "zeroRetention": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "noTraining": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "maxClassification": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "inputPrice": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "outputPrice": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "status": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "deprecatedOn": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
           }
         }
       },
@@ -11474,6 +11744,93 @@
           }
         }
       },
+      "ModelPolicyRequest": {
+        "required": [
+          "allowlist",
+          "routes",
+          "confidential",
+          "maxOutputTokens",
+          "minTemperature",
+          "maxTemperature",
+          "regions",
+          "logging"
+        ],
+        "type": "object",
+        "properties": {
+          "allowlist": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "routes": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "confidential": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "maxOutputTokens": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "minTemperature": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "maxTemperature": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "regions": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "logging": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "MoveOrgUnitRequest": {
         "required": [
           "newParentId"
@@ -11803,6 +12160,23 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "PlatformRouteRequest": {
+        "required": [
+          "models"
+        ],
+        "type": "object",
+        "properties": {
+          "models": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -12205,6 +12579,20 @@
             ],
             "format": "int32"
           },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RouteOverrideRequest": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
           "reason": {
             "type": [
               "null",
@@ -13390,6 +13778,12 @@
     },
     {
       "name": "Knowledge base"
+    },
+    {
+      "name": "AI gateway"
+    },
+    {
+      "name": "Platform: AI"
     },
     {
       "name": "People"

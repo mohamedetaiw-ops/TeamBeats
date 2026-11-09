@@ -1073,3 +1073,26 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 |---|---|
 | Clause blocks | The editor reuses the spec 009 block editor; headings and embeds are refused by the API for clauses with a message, since the clause title is the heading. |
 | No unit line | "See people" on the no unit line lists everyone, because the people filter has no "no unit" option yet. |
+
+## AI gateway pipeline, catalogue and model policy (spec 013 T001 to T010)
+
+| Area | What was built |
+|---|---|
+| Projects | `AiGateway.Contracts` (`IAiGateway`, requests, typed results, use cases, denial reasons, events), `AiGateway` (pipeline, catalogue, tenant policy, circuit breakers) and `AiGateway.OpenRouter` (the only code with OpenRouter's URL and wire format). The adapter implements the gateway's provider port, the one documented module to module reference besides DevAuth |
+| Catalogue | Platform tables `ai.model_catalogue` and `ai.platform_route` (no tenant column). Seeded with three OpenRouter models, all treated as keeping data and limited to Internal until the operator records other terms. `GET /api/v1/platform/ai/catalogue`, `PUT /api/v1/platform/ai/catalogue`, `PUT /api/v1/platform/ai/routes/{useCase}`, audited `ai.catalogue_changed` on the platform stream. A 30 second cache keeps the 60 second rule |
+| Tenant policy | `ai.model_policy` (forced RLS): allowlist, route per use case (default then fallbacks), Confidential models, maximum output tokens, temperature range, region rule, logging setting. `GET/PUT /api/v1/ai/policy` with `If-Match`; `ai.policy_manage` changes it, `ai.policy_view` (new, for security officers) reads it. Without `ai.model_choice` the platform default set applies and the page is read-only |
+| Route changes | A save that changes the assistant or agent route is stored in `ai.route_change` as proposed, publishes `AiModelRouteChangeProposed` and leaves the current policy in force (HTTP 202). Until spec 034 publishes gate decisions, the AI Policy Administrator applies it with `POST /api/v1/ai/route-changes/{id}/override` and a reason (audited `ai.route_change_overridden`) |
+| Pipeline | Entitlement, budget (pass-through), classification, allowlist and defaults, region and egress, context and parameter limits, routing with one retry and fallback, the call, output checks (unoffered tool calls dropped, structured output checked), then metadata logging. Each refusal is a reason from `AiDenials` and nothing is sent |
+| Classification | Missing is refused and logged for engineering. Restricted is always refused (no private endpoints in R1). Confidential needs a model the tenant listed for it that the catalogue marks zero retention, no training and Confidential ceiling. Fallback models must pass the same checks |
+| Adapter | Chat, tools, structured output (`json_schema`), streaming (server-sent events, a cut stream flagged partial), embeddings. Timeouts, 429 and 5xx are retryable. Key `Ai:OpenRouter:ApiKey`, base URL `Ai:OpenRouter:BaseUrl`, timeout `Ai:OpenRouter:TimeoutSeconds`, and `Ai:EgressBlocked` for installs that cannot reach it |
+| Circuit breaker | Per provider: opens when half of at least 20 calls in a minute failed, one trial after 30 seconds, closes on success. Opening is logged at error level for alerts |
+| Tests | `AiGatewayTests` (catalogue, read-only default set, defaults per use case, allowlist sends nothing, held route change and override, classification routing and SC-001, retry and fallback, weaker fallback skipped, output checks, streaming, embeddings, judge rule, cross-tenant), `AiGatewayRulesTests` (circuit breaker, policy validation, schema check), the architecture test that no provider URL or SDK is used outside the adapter, and the `0016` permission backfill |
+
+| Item | Note |
+|---|---|
+| Quota and metering | The monthly request quota is checked from call records, which come with the metering slice (T011, T012). Until then calls are logged as metadata only and the quota is not counted. |
+| Stub adapter | Tests and development use the fake OpenRouter in `DevFakes` through the real adapter, so no separate stub adapter was added; the overhead performance test will use it. |
+| Gated use cases | Both the assistant and agent routes are gated, since there is no record of published agents before spec 020. |
+| Gate decisions | `EvaluationGateDecided` is consumed when spec 034 defines it; the page says the gate is not available until then. |
+| Circuit events | `AiProviderCircuitOpened` and `AiProviderCircuitClosed` are logged now; publishing them as platform events comes with the metering slice and its outbox records. |
+| Policy editing | The whole policy needs `ai.model_choice`, including parameter limits and the region rule; spec section 9 only names the allowlist, defaults and fallbacks, so this is the smaller default. |

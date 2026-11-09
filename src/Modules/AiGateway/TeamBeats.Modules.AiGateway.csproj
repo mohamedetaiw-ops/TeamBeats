@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+  <PropertyGroup><RootNamespace>TeamBeats.Modules.AiGateway</RootNamespace><AssemblyName>TeamBeats.Modules.AiGateway</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlocks/Persistence/TeamBeats.Persistence.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Messaging/TeamBeats.Messaging.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Authorization.Contracts/TeamBeats.Authorization.Contracts.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Entitlements.Contracts/TeamBeats.Entitlements.Contracts.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Audit.Contracts/TeamBeats.Audit.Contracts.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/TenantContext/TeamBeats.TenantContext.csproj" />
+    <ProjectReference Include="../AiGateway.Contracts/TeamBeats.Modules.AiGateway.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="TeamBeats.Unit.Tests" />
+    <InternalsVisibleTo Include="TeamBeats.Modules.AiGateway.OpenRouter" />
+    <EmbeddedResource Include="Migrations/*.sql" />
+  </ItemGroup>
+</Project>

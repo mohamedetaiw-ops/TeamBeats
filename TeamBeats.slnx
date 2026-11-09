@@ -80,6 +80,15 @@
   <Folder Name="/src/Modules/Documents/">
     <Project Path="src/Modules/Documents/TeamBeats.Modules.Documents.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/AiGateway/">
+    <Project Path="src/Modules/AiGateway/TeamBeats.Modules.AiGateway.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/AiGateway.Contracts/">
+    <Project Path="src/Modules/AiGateway.Contracts/TeamBeats.Modules.AiGateway.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/AiGateway.OpenRouter/">
+    <Project Path="src/Modules/AiGateway.OpenRouter/TeamBeats.Modules.AiGateway.OpenRouter.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Policies/">
     <Project Path="src/Modules/Policies/TeamBeats.Modules.Policies.csproj" />
   </Folder>

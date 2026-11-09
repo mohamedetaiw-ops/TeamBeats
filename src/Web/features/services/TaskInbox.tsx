@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { useFormatter, useLocale, useNow, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useNow } from "@/lib/clock";
 import { StateView } from "@/components/ui/StateView";
 import { pick, type InboxItem } from "@/lib/services/types";
 import "./services.css";
@@ -90,10 +91,13 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
                   {i.requester ? <> · {t("from", { name: i.requester.displayName })}</> : null}
                   {i.requestedFor ? <> · {t("for", { name: i.requestedFor.displayName })}</> : null}
                 </span>
-                <span className="services-meta">
-                  {t("age", { when: format.relativeTime(new Date(i.createdAt), now) })}
-                  {i.dueAt ? <> · {t("due", { when: format.dateTime(new Date(i.dueAt), { dateStyle: "medium" }) })}</> : null}
-                </span>
+                {now === null ? null : (
+                  // Age and due date wait for the browser: the server has neither the viewer's clock nor time zone.
+                  <span className="services-meta">
+                    {t("age", { when: format.relativeTime(new Date(i.createdAt), now) })}
+                    {i.dueAt ? <> · {t("due", { when: format.dateTime(new Date(i.dueAt), { dateStyle: "medium" }) })}</> : null}
+                  </span>
+                )}
                 {i.onBehalfOf ? <span className="services-status">{t("onBehalfOf", { name: i.onBehalfOf.displayName })}</span> : null}
               </li>
             );

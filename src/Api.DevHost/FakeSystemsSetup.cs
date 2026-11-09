@@ -106,6 +106,7 @@ public static class FakeSystemsSetup
         {
             ["Integrations:Microsoft365:ClientId"] = FakeMicrosoftGraph.ClientId,
             ["Integrations:Microsoft365:ClientSecret"] = FakeMicrosoftGraph.ClientSecret,
+            ["Ai:OpenRouter:ApiKey"] = FakeOpenRouter.ApiKey,
         });
 
         var services = builder.Services;

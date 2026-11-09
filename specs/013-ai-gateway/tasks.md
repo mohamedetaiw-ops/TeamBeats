@@ -4,19 +4,19 @@ Depends on 004, 005, 006, 007; 034 for the release gate on route changes. R1 cov
 
 ## Phase 1: Foundations
 - [ ] T001 `AiGateway`, `AiGateway.Contracts` and `AiGateway.OpenRouter` projects; migration for catalogue (platform, RLS exception), policy, route changes, usage, debug windows (forced RLS)
-- [ ] T002 Permissions `ai.policy_view` with `ai.policy_manage`; audit actions of section 13; capability keys `ai.assistant`, `ai.assistant.monthly_requests`, `ai.model_choice`
+- [x] T002 Permissions `ai.policy_view` with `ai.policy_manage`; audit actions of section 13; capability keys `ai.assistant`, `ai.assistant.monthly_requests`, `ai.model_choice`
 - [ ] T003 `IAiGateway` contract, typed results, stub adapter, `FakeOpenRouter` in `DevFakes`
-- [ ] T004 Architecture test: provider URLs and SDKs only inside the adapter project
+- [x] T004 Architecture test: provider URLs and SDKs only inside the adapter project
 
 ## Phase 2: User Stories 1 and 2, policy and classification routing (P1)
-- [ ] T005 [P] [US1] Tests: catalogue view; allowlist denial sends nothing; defaults per use case; read-only without `ai.model_choice`; change effective within 60 seconds and audited; route change held for the gate
-- [ ] T006 [P] [US2] Tests: Confidential blocked by default and allowed only for zero retention models; Restricted never to OpenRouter; highest classification decides; missing classification rejected; localized denial keys
-- [ ] T007 [US1] Pipeline steps 1 to 7 and 9; policy cache; policy endpoints with `If-Match`
+- [x] T005 [P] [US1] Tests: catalogue view; allowlist denial sends nothing; defaults per use case; read-only without `ai.model_choice`; change effective within 60 seconds and audited; route change held for the gate
+- [x] T006 [P] [US2] Tests: Confidential blocked by default and allowed only for zero retention models; Restricted never to OpenRouter; highest classification decides; missing classification rejected; localized denial keys
+- [x] T007 [US1] Pipeline steps 1 to 7 and 9; policy cache; policy endpoints with `If-Match`
 - [ ] T008 [US1] Route change proposals, `AiModelRouteChangeProposed`, apply on `EvaluationGateDecided`, audited override
 
 ## Phase 3: User Story 3, fallback (P1)
-- [ ] T009 [P] [US3] Tests: retry then fallback; weaker fallback skipped; all fail gives `provider_unavailable`; circuit opens and closes with events
-- [ ] T010 [US3] OpenRouter adapter (chat, tools, structured output, streaming, embeddings), retries and circuit breaker
+- [x] T009 [P] [US3] Tests: retry then fallback; weaker fallback skipped; all fail gives `provider_unavailable`; circuit opens and closes with events
+- [x] T010 [US3] OpenRouter adapter (chat, tools, structured output, streaming, embeddings), retries and circuit breaker
 
 ## Phase 4: User Stories 4 and 8, usage and logging (P1, P2)
 - [ ] T011 [P] [US4] Tests: usage by the six dimensions and denied calls; org scope; 5 user minimum for named users; no call lost on worker restart

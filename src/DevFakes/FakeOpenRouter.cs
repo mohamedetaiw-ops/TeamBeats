@@ -10,15 +10,26 @@ namespace TeamBeats.DevFakes;
 /// provider account or cost. It answers the OpenAI-compatible chat completions and models endpoints with a deterministic
 /// reply built from the last user message, in Arabic when that message is Arabic, and reports token usage.
 /// Failure cases are triggered by markers in the last user message, for the gateway's failure tests:
-/// <c>[fake:429]</c> rate limited, <c>[fake:500]</c> provider error, <c>[fake:timeout]</c> no answer until cancelled,
-/// <c>[fake:refuse]</c> a content filter stop. Streaming (<c>stream: true</c>) returns server-sent events.
+/// <c>[fake:429]</c> rate limited, <c>[fake:500]</c> provider error, <c>[fake:fail:model]</c> provider error for that model only, <c>[fake:timeout]</c> no answer until cancelled,
+/// <c>[fake:refuse]</c> a content filter stop, <c>[fake:cut]</c> a stream that ends without a final chunk,
+/// <c>[fake:tool:name]</c> a call of tool <c>name</c>, <c>[fake:badjson]</c> plain text even when a JSON schema was asked
+/// for. With a <c>response_format</c> the reply is the JSON object <c>{"answer": ...}</c>. Streaming
+/// (<c>stream: true</c>) returns server-sent events.
 /// </summary>
-public sealed class FakeOpenRouter : HttpMessageHandler
+public sealed partial class FakeOpenRouter : HttpMessageHandler
 {
+    [System.Text.RegularExpressions.GeneratedRegex(@"\[fake:tool:([a-z_]+)\]")]
+    private static partial System.Text.RegularExpressions.Regex ToolMarker();
+
     public const string BaseUrl = "https://openrouter.ai/api/v1";
     public const string ApiKey = "fictional-openrouter-key";
 
-    public static readonly IReadOnlyList<string> Models = ["fake/teambeats-small", "fake/teambeats-large", "fake/teambeats-embed"];
+    /// <summary>Fake models plus the models the platform catalogue starts with, so the default policy works against the fake.</summary>
+    public static readonly IReadOnlyList<string> Models =
+        ["fake/teambeats-small", "fake/teambeats-large", "fake/teambeats-embed", "openai/gpt-4o-mini", "openai/gpt-4o", "openai/text-embedding-3-small"];
+
+    /// <summary>The model of the last chat or embedding request, for tests that check routing.</summary>
+    public string? LastModel { get; private set; }
 
     public bool Unavailable { get; set; }
 
@@ -42,7 +53,9 @@ public sealed class FakeOpenRouter : HttpMessageHandler
         }
         if (path == "/api/v1/embeddings" && request.Method == HttpMethod.Post)
         {
-            var input = JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellationToken))?["input"];
+            var embedBody = JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellationToken));
+            LastModel = embedBody?["model"]?.GetValue<string>();
+            var input = embedBody?["input"];
             var texts = input is JsonArray a ? a.Select(x => x?.GetValue<string>() ?? string.Empty).ToList() : [input?.GetValue<string>() ?? string.Empty];
             return Json(new
             {
@@ -57,6 +70,7 @@ public sealed class FakeOpenRouter : HttpMessageHandler
 
         var body = JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellationToken))!;
         var model = body["model"]?.GetValue<string>() ?? Models[0];
+        LastModel = model;
         if (!Models.Contains(model))
         {
             return Error(HttpStatusCode.BadRequest, $"{model} is not a valid model ID");
@@ -69,7 +83,7 @@ public sealed class FakeOpenRouter : HttpMessageHandler
         {
             return Error((HttpStatusCode)429, "Rate limit exceeded");
         }
-        if (last.Contains("[fake:500]", StringComparison.Ordinal))
+        if (last.Contains("[fake:500]", StringComparison.Ordinal) || last.Contains($"[fake:fail:{model}]", StringComparison.Ordinal))
         {
             return Error(HttpStatusCode.InternalServerError, "Provider returned error");
         }
@@ -79,6 +93,14 @@ public sealed class FakeOpenRouter : HttpMessageHandler
         }
         var refused = last.Contains("[fake:refuse]", StringComparison.Ordinal);
         var reply = refused ? string.Empty : Reply(last);
+        if (!refused && body["response_format"] is not null && !last.Contains("[fake:badjson]", StringComparison.Ordinal))
+        {
+            reply = JsonSerializer.Serialize(new { answer = reply });
+        }
+        var tool = ToolMarker().Match(last);
+        var toolCalls = tool.Success
+            ? new[] { new { id = "call-fake-1", type = "function", function = new { name = tool.Groups[1].Value, arguments = "{}" } } }
+            : null;
         var finish = refused ? "content_filter" : "stop";
         var id = "gen-fake-" + Guid.NewGuid().ToString("N")[..12];
         var usage = new { prompt_tokens = Tokens(prompt), completion_tokens = Tokens(reply), total_tokens = Tokens(prompt) + Tokens(reply) };
@@ -91,8 +113,11 @@ public sealed class FakeOpenRouter : HttpMessageHandler
                 var chunk = new { id, model, @object = "chat.completion.chunk", choices = new[] { new { index = 0, delta = new { content = word + " " }, finish_reason = (string?)null } } };
                 sse.Append("data: ").Append(JsonSerializer.Serialize(chunk)).Append("\n\n");
             }
-            var final = new { id, model, @object = "chat.completion.chunk", choices = new[] { new { index = 0, delta = new { content = string.Empty }, finish_reason = (string?)finish } }, usage };
-            sse.Append("data: ").Append(JsonSerializer.Serialize(final)).Append("\n\ndata: [DONE]\n\n");
+            if (!last.Contains("[fake:cut]", StringComparison.Ordinal))
+            {
+                var final = new { id, model, @object = "chat.completion.chunk", choices = new[] { new { index = 0, delta = new { content = string.Empty }, finish_reason = (string?)finish } }, usage };
+                sse.Append("data: ").Append(JsonSerializer.Serialize(final)).Append("\n\ndata: [DONE]\n\n");
+            }
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(sse.ToString(), Encoding.UTF8, "text/event-stream") };
         }
 
@@ -102,7 +127,7 @@ public sealed class FakeOpenRouter : HttpMessageHandler
             model,
             @object = "chat.completion",
             created = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            choices = new[] { new { index = 0, message = new { role = "assistant", content = reply }, finish_reason = finish } },
+            choices = new[] { new { index = 0, message = new { role = "assistant", content = reply, tool_calls = toolCalls }, finish_reason = toolCalls is null ? finish : "tool_calls" } },
             usage,
         });
     }

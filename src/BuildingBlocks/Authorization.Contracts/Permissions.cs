@@ -38,6 +38,9 @@ public static class Permissions
     public const string IntegrationManage = "integration.manage";
     public const string AiPolicyManage = "ai.policy_manage";
 
+    // Spec 013 (R1): security officers view the model policy, route changes and AI usage.
+    public const string AiPolicyView = "ai.policy_view";
+
     public const string PageView = "page.view";
     public const string PageEdit = "page.edit";
     public const string PagePublish = "page.publish";
@@ -106,7 +109,7 @@ public static class Permissions
         UsersView, UsersManage, IdentityConfigManage,
         EntitlementsView,
         AuditView, AuditExport, AuditRetentionManage,
-        ContentView, ContentEdit, ContentPublish, WorkflowDesign, WorkflowApprove, IntegrationManage, AiPolicyManage,
+        ContentView, ContentEdit, ContentPublish, WorkflowDesign, WorkflowApprove, IntegrationManage, AiPolicyManage, AiPolicyView,
         PageView, PageEdit, PagePublish, TemplateEdit, TemplateDistribute, ComponentEnable, ConfigHistoryView,
         ThemeEdit, ThemePublish, ConfigLockManage,
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
