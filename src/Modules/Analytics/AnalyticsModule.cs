@@ -10,8 +10,8 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Analytics;
 
 /// <summary>
-/// Analytics and insights (spec 021, module map: Analytics, a derived read model). R1 slice 1: the event pipeline with
-/// declared schemas and pseudonymous keys, the tenant analytics policy, aggregation and retention.
+/// Analytics and insights (spec 021, module map: Analytics, a derived read model). R1: the event pipeline with
+/// declared schemas and pseudonymous keys, the tenant analytics policy, aggregation and retention, and item reach and acknowledgement.
 /// </summary>
 public static class AnalyticsModule
 {
@@ -25,6 +25,7 @@ public static class AnalyticsModule
         services.AddScoped<AnalyticsCollector>();
         services.AddScoped<AnalyticsAggregator>();
         services.AddScoped<AnalyticsRetention>();
+        services.AddScoped<ItemAnalytics>();
         services.AddScoped<IAnalyticsEvents, AnalyticsEventsEmitter>();
         services.AddMessageHandler<AnalyticsEventEmitted, AnalyticsEventHandler>("analytics.write_event");
         return services;
@@ -40,6 +41,21 @@ public static class AnalyticsModule
             var accepted = await collector.CollectAsync(batch, ct);
             await session.CommitAsync(ct);
             return Results.Accepted(value: accepted);
+        });
+
+        // Reach and acknowledgement of one item, for the people who look after it (spec 021 US1).
+        analytics.MapGet("/items/{source}/{id:guid}", async (string source, Guid id, ItemAnalytics items, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await items.GetAsync(source, id, ct);
+            await session.CommitAsync(ct); // The tenant salt is created on first use.
+            return Results.Ok(view);
+        });
+        analytics.MapPost("/items/{source}/{id:guid}/remind", async (string source, Guid id, RemindGroupRequest request, ItemAnalytics items, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var result = await items.RemindAsync(source, id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(result);
         });
 
         var admin = analytics.MapGroup("").InAdminArea();

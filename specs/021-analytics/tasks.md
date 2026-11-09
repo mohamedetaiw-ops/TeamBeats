@@ -9,8 +9,8 @@ Depends on 004, 006, 008, 009, 025, 032; 010 (location breakdown), 015 (reminder
 - [x] T004 Event contract, web batch endpoint, aggregation job
 
 ## Phase 2: User Story 1, item reach and acknowledgement (P1, R1 counts)
-- [ ] T005 [P] [US1] Tests: counts and trend; minimum group size merged into "other"; remind this group only reaches non-readers; rights checked through the owning module
-- [ ] T006 [US1] Item analytics endpoint and the analytics panel on content and policy pages
+- [x] T005 [P] [US1] Tests: counts and trend; minimum group size merged into "other"; remind this group only reaches non-readers; rights checked through the owning module
+- [x] T006 [US1] Item analytics endpoint and the analytics panel on content and policy pages
 
 ## Phase 3: Adoption and experience quality
 - [ ] T007 Adoption basics endpoint and admin page with table views

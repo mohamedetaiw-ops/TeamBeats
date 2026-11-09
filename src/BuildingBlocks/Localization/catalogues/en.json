@@ -1047,5 +1047,10 @@
   "validation.workflow.step_id": "Each step needs its own ID made of letters, digits and underscores, starting with a letter.",
   "validation.workflow.steps": "A route needs between 1 and 10 approval steps.",
   "validation.workflow.users": "A step can name up to 50 people.",
-  "warning.org.unusual_placement": "This unit type usually sits higher in the hierarchy"
+  "warning.org.unusual_placement": "This unit type usually sits higher in the hierarchy",
+  "notifications.template.content.analytics.reminder.title": "A reminder to read an announcement",
+  "notifications.template.content.analytics.reminder.body": "You have not read this yet. Open it to catch up.",
+  "notifications.template.policies.analytics.reminder.title": "A reminder about a policy that applies to you",
+  "notifications.template.policies.analytics.reminder.body": "Open the policy to read it, and confirm it if you are asked to.",
+  "validation.analytics.group": "Choose a group from the breakdown."
 }

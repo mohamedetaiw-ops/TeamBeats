@@ -102,6 +102,14 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `policies-ask-${locale}`);
       await page.goto(policyUrl);
 
+      // Spec 021 US1: the owner sees reach and attestation, with the small audience shown only inside "other".
+      await page.getByRole("link", { name: msg(locale, "policies.manage.analytics") }).click();
+      await page.waitForURL(/\/analytics$/);
+      await expect(page.getByTestId("analytics-acknowledged")).toBeVisible();
+      await expect(page.getByTestId("analytics-groups").locator("tbody tr")).toHaveAttribute("data-group", "other");
+      await expectAccessible(page, testInfo, `policies-analytics-${locale}`);
+      await page.goto(policyUrl);
+
       // The version history and the numbered version page.
       await page.getByTestId("policy-versions").getByRole("link").first().click();
       await page.waitForURL(/\/versions\/1$/);

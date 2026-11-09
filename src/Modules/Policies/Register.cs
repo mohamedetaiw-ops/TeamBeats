@@ -485,7 +485,8 @@ public sealed class PolicyRegister(
             policy.EffectiveFrom, policy.NextReviewAt,
             working is null ? null : new WorkingVersion(working.Id, working.State, working.RequestedEffectiveFrom, working.SubmittedAt, working.UpdatedAt),
             scheduled is { Number: { } n, EffectiveFrom: { } from } && (edit || manage || history) ? new ScheduledVersion(scheduled.Id, n, from) : null,
-            new PolicyRights(manage, edit && policy.Status != PolicyStatuses.Retired, review, history, await FollowsPeopleAsync(ct), await AsksAsync(policy, ct)),
+            new PolicyRights(manage, edit && policy.Status != PolicyStatuses.Retired, review, history, await FollowsPeopleAsync(ct), await AsksAsync(policy, ct),
+                history && policy.CurrentVersion is not null && await entitlements.IsEnabledAsync(Capabilities.AnalyticsCore, ct)),
             policy.CreatedAt, policy.UpdatedAt);
     }
 

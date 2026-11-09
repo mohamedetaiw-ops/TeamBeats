@@ -7,12 +7,13 @@ import { BodyView } from "@/features/content/BodyView";
 import { ContentSocial } from "@/features/content/ContentSocial";
 import { ItemActions } from "@/features/assistant/TextActions";
 import { AskAgentLink } from "@/features/agents/AskAgentLink";
+import { ViewBeacon } from "@/features/analytics/ViewBeacon";
 import "@/features/assistant/assistant.css";
 import "@/features/content/content.css";
 
 /**
  * Reading a content item (spec 009 US5 scenario 2, US3 scenario 3, US9): the live version in the reader's language or
- * the fallback with a note, the expired and under review labels, then reactions and comments. Items the reader may not
+ * the fallback with a note, the expired and under review labels, then reactions and comments. Opening it counts as a view (spec 021). Items the reader may not
  * view are not found.
  */
 export default async function ReadPage({ params }: { params: Promise<{ id: string }> }) {
@@ -54,6 +55,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
           ) : null}
           <BodyView body={v.body} embedTitle={t("embed")} anchors={v.anchors} />
         </article>
+        <ViewBeacon source="content" itemId={v.id} />
         <ItemActions source="content" itemId={v.id} itemLocale={v.locale} uiLocale={locale} />
         <AskAgentLink source="content" itemId={v.id} />
         <ContentSocial itemId={v.id} />

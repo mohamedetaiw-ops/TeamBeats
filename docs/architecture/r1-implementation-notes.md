@@ -1264,3 +1264,21 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Key salt | The plan names a per-tenant secret from platform configuration. The salt is generated per tenant and kept in a table only the app reads, so no tenant needs a secret to be configured before analytics works. A platform pepper can be added to the HMAC later; keys would change from that date, so first reads before and after it would count twice. |
 | Audit name | Tasks name `analytics.policy_changed`; section 13 of the spec names `analytics.privacy_setting_changed`, which is used. |
 | Who changes the policy | The spec gives no permission for the policy; tenant settings managers (tenant administrators) change it, and `analytics.view` holders read it. |
+
+## Item reach and acknowledgement (spec 021 T005 and T006)
+
+| Area | What was built |
+|---|---|
+| Owner contract | `IAnalyticsItemSource` in `Analytics.Contracts`: the owning module describes an item (titles, live date, the people it targets now, whether it asks for acknowledgement and who gave it, reactions, comments) and sends reminders. Analytics never reads the owner's tables. `ContentAnalyticsSource` (spec 009) and `PolicyAnalyticsSource` (spec 025) implement it |
+| Rights | Decided by the owner. Content: the author, the owner or backup owner, or `content.edit` or `content.publish` at the site; a reader without those rights is denied, anyone else gets not found, and drafts have no analytics. Policies: the owner and holders of `policy.manage` at the policy's unit; a person the policy applies to is denied |
+| Audience | Content: the item's audience now; for a critical announcement, its counted audience and their confirmations. Policies: while a campaign is open for the version in force, its members still in the audience with attestation as acknowledgement; otherwise the people the policy applies to |
+| Endpoint | `GET /api/v1/analytics/items/{source}/{id}`: audience size, unique readers in the audience (keys of the audience matched against first reads), reach, acknowledgement count and share when asked for, reactions, comments, the daily trend for 90 days and the breakdown by each person's current primary unit |
+| Minimum group size | Groups under the tenant's minimum are merged into `other`; when `other` would still be under the minimum, the smallest shown groups join it until it is not (complementary suppression). Unit names are given only for groups shown |
+| Remind this group | `POST .../remind {group}` gives the owner the people in that group who have not read the item, or not acknowledged it when it asks for that; the owner sends `content.analytics.reminder` or `policies.analytics.reminder` through notifications, at most once an hour per person. The author never sees who they are |
+| Web | `content.viewed` from the content reading page and the policy page; an analytics page linked from the item editor and from the policy page (right `analytics` on the policy) with the totals, the breakdown with a reminder per group, and the trend as a table |
+| Tests | `ItemAnalyticsTests` (counts, trend, groups merged into `other`, reminders only to non-readers and non-confirmers, rights from Content and Policies, campaign audience, cross-tenant), `ItemAnalyticsMergeTests`, the analytics steps in `content-authoring.spec.ts` and `policies.spec.ts` |
+
+| Item | Note |
+|---|---|
+| Groups by unit | The breakdown uses each person's unit now rather than at read time, so audience and readers are counted in the same group. Location breakdown waits for planned spec 010, as the plan says. |
+| Reminder rights | The spec leaves open whether "remind this group" needs its own right; it follows the right to see the item's analytics. |

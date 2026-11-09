@@ -166,7 +166,7 @@ public sealed class Items(
         session.QuerySingleOrDefaultAsync($"select {VersionColumns} from content.content_version where item_id = @item and number = @number",
             new { item, number }, ReadVersion, ct);
 
-    private async Task<bool> HoldsAsync(string permission, SiteRow site, CancellationToken ct) => (await authz.CheckAsync(permission, site.Target, ct)).Allowed;
+    internal async Task<bool> HoldsAsync(string permission, SiteRow site, CancellationToken ct) => (await authz.CheckAsync(permission, site.Target, ct)).Allowed;
 
     public const string ResourceType = "content.item";
 
