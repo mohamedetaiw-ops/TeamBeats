@@ -151,6 +151,7 @@ jobs:
           flyctl deploy . --app "$WEB_APP" --config deploy/fly/staging/web.toml
           --dockerfile deploy/docker/web.Dockerfile
           --build-arg "TEAMBEATS_API_ORIGIN=http://$API_APP.internal:8080"
+          --build-arg "TEAMBEATS_RELEASE=${{ github.sha }}"
           --env "TEAMBEATS_API_ORIGIN=http://$API_APP.internal:8080"
           --remote-only --ha=false --wait-timeout 10m
 

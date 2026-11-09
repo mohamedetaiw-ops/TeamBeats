@@ -12,6 +12,7 @@
     <ProjectReference Include="../Tenancy.Contracts/TeamBeats.Modules.Tenancy.Contracts.csproj" />
     <ProjectReference Include="../People.Contracts/TeamBeats.Modules.People.Contracts.csproj" />
     <ProjectReference Include="../Analytics.Contracts/TeamBeats.Modules.Analytics.Contracts.csproj" />
+    <ProjectReference Include="../Experience.Contracts/TeamBeats.Modules.Experience.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="TeamBeats.Unit.Tests" />

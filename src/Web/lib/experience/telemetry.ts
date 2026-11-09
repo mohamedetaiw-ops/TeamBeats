@@ -1,3 +1,5 @@
+import { reportUiError } from "@/lib/analytics/errors";
+
 /**
  * Renderer telemetry (spec 032 section 13, FR-058, FR-066). Events carry identifiers, kinds and numbers only, never page
  * content or user data, and the API drops anything outside that shape. They are queued and sent in small batches with
@@ -66,4 +68,6 @@ export function reportPlacementFailure(failure: PlacementFailure): void {
     placementId: failure.placementId,
     kind: failure.kind,
   });
+  // A placement that throws is also a frontend error for support, with its component reference and version (spec 021 US9).
+  if (failure.kind === "error") reportUiError({ kind: "render", component: failure.componentRef, area: "pages" });
 }

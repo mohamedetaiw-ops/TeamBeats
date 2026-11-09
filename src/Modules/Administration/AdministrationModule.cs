@@ -46,6 +46,7 @@ public static class AdministrationModule
         ("search", Permissions.SearchManage, "/admin/search"),
         ("agents", Permissions.AgentView, "/admin/agents"),
         ("evaluation", Permissions.EvalView, "/admin/evaluation"),
+        ("analytics", Permissions.AnalyticsView, "/admin/analytics"),
     ];
 
     /// <summary>A second permission that also opens a section: security officers read the AI pages with <c>ai.policy_view</c> (spec 013).</summary>
@@ -63,8 +64,8 @@ public static class AdministrationModule
         ["evaluation"] = [Permissions.EvalDesign, Permissions.EvalReview, Permissions.EvalPolicyManage],
     };
 
-    /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) the people directory policy (spec 010 US1) and search tuning (spec 012 US4) are for the whole tenant.</summary>
-    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications", "people", "security", "search" };
+    /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) the people directory policy (spec 010 US1) search tuning (spec 012 US4) and adoption basics (spec 021) are for the whole tenant.</summary>
+    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications", "people", "security", "search", "analytics" };
 
     public static IServiceCollection AddAdministrationModule(this IServiceCollection services) => services;
 
