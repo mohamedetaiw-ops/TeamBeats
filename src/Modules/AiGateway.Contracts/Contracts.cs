@@ -147,6 +147,17 @@ public interface IAiGateway
     Task<EmbeddingResult> EmbedAsync(EmbeddingRequest request, CancellationToken ct = default);
 }
 
+/// <summary>
+/// Which content the gateway would accept now for a use case (spec 012 US3 scenario 2, spec 013 FR-002 step 3). Callers
+/// that gather content for a model, such as search retrieval, drop what is above the ceiling before they build the
+/// request and tell the person evidence was withheld, instead of having the whole call refused.
+/// </summary>
+public interface IAiClassificationPolicy
+{
+    /// <summary>The highest classification a call of <paramref name="useCase"/> could carry now, or null when no call of it can be made now or even public content would be refused.</summary>
+    Task<DataClassification?> CeilingAsync(string useCase, CancellationToken ct = default);
+}
+
 /// <summary>The tenant model policy changed and applies to new calls (spec 013 section 12).</summary>
 public sealed record AiPolicyChanged(int Version) : IIntegrationEvent;
 
