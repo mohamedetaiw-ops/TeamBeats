@@ -15,13 +15,13 @@ function Runs({ runs }: { runs: Inline[] | null | undefined }) {
   );
 }
 
-function BlockView({ block, embedTitle }: { block: Block; embedTitle: string }) {
+function BlockView({ block, embedTitle, anchor }: { block: Block; embedTitle: string; anchor?: string }) {
   switch (block.type) {
     case "heading": {
       const level = Math.min(Math.max(block.level ?? 2, 2), 4);
       const Tag = `h${level}` as "h2" | "h3" | "h4";
       return (
-        <Tag>
+        <Tag id={anchor}>
           <Runs runs={block.children} />
         </Tag>
       );
@@ -91,12 +91,16 @@ function BlockView({ block, embedTitle }: { block: Block; embedTitle: string }) 
   }
 }
 
-/** A content body (spec 009 plan, body format) rendered as plain elements; the layout follows the document direction. */
-export function BodyView({ body, embedTitle }: { body: BodyDocument; embedTitle: string }) {
+/**
+ * A content body (spec 009 plan, body format) rendered as plain elements; the layout follows the document direction.
+ * Anchors, when the API gives them, go on the headings in order, so a citation link (spec 011 US4) lands on its section.
+ */
+export function BodyView({ body, embedTitle, anchors }: { body: BodyDocument; embedTitle: string; anchors?: string[] | null }) {
+  const headingIndex = body.blocks.map((b, i) => body.blocks.slice(0, i).filter((x) => x.type === "heading").length);
   return (
     <div className="content-body">
       {body.blocks.map((b, i) => (
-        <BlockView key={i} block={b} embedTitle={embedTitle} />
+        <BlockView key={i} block={b} embedTitle={embedTitle} anchor={b.type === "heading" ? (anchors?.[headingIndex[i] ?? -1] ?? undefined) : undefined} />
       ))}
     </div>
   );

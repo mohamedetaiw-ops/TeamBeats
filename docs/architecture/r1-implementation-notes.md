@@ -975,3 +975,19 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Anonymous comments | The spec says the owner sees the score and is silent on who wrote a comment; the smallest safe default shows comments without names. |
 | Reader anchors | The reader view returns the anchor of each heading in order; the reader page sets them in slice 6, so citation links land on the pair. |
 | News feed | Spec 009 is silent on knowledge articles in the feed; the smallest safe default keeps them out of the unfiltered feed, and `type=knowledge` lists them. |
+
+## Document and knowledge pages (spec 011 T013, T014)
+
+| Area | What was built |
+|---|---|
+| Libraries | `/documents` lists the libraries the person may open; `/documents/libraries/{id}` is the library view with folders, type, search, choice and yes or no filters of the type, sorting, saved views (managers save them) and the upload dialog for contributors |
+| Document | `/documents/{id}` shows the metadata, the number and review date of controlled documents, the preview (PDF and video inline, images, text), download per version, check-out and check-in with a new file and a note, discard, restore, the release form and withdraw, read confirmation and the controlled copy. Buttons follow the rights and state the API returns |
+| Knowledge base | `/kb` lists articles; `/kb/new` starts one from a template with a title per language and opens the content editor; `/kb/{id}` shows the sections with contents and anchors, related links, the helpfulness question, and the score and comments for the owner and knowledge editors |
+| Reader anchors | The content reader page sets the heading anchors the API returns, so citation links land on their section |
+| Component | `documents.recent@1` (spec 032) shows the newest documents of one library for the viewer; it needs `docs.core` |
+| Tests | `documents.spec.ts`, `knowledge.spec.ts` (en and ar, axe), `ExperienceValidationTests.The_documents_component_needs_the_document_capability_and_a_library`; spec evidence in `specs/011-document-management/evidence.md` |
+
+| Item | Note |
+|---|---|
+| Picking a library | The component takes the library ID as a property, like the rich text component takes an item ID; a picker in the builder can come with the builder's data pickers. |
+| Compare view | Text compare exists in the API (`/compare`); the page lists versions with download and restore, and a side by side compare view can follow. |

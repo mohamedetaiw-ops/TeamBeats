@@ -1,0 +1,206 @@
+/* Spec 011 documents and knowledge base. Colors and spacing come from tokens; logical properties keep the layout right in RTL. */
+.documents-nav ul,
+.documents-actions,
+.documents-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.documents-toolbar .field {
+  flex: 1 1 12rem;
+}
+
+.documents-search {
+  display: flex;
+  flex: 2 1 18rem;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.documents-search .field {
+  flex: 1 1 auto;
+}
+
+.documents-browser,
+.documents-document,
+.documents-article {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.documents-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.documents-card {
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+.documents-card h2,
+.documents-article h1,
+.documents-document h1 {
+  margin: 0;
+}
+
+.documents-meta {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.documents-badge {
+  display: inline-block;
+  margin-inline-end: var(--tb-space-sm);
+  padding-inline: var(--tb-space-xs);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-text-primary);
+}
+
+.documents-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+}
+
+.documents-folders ul,
+.documents-list,
+.documents-comments {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.documents-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--tb-space-sm);
+}
+
+.documents-table {
+  overflow-x: auto;
+}
+
+.documents-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.documents-table th,
+.documents-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+}
+
+.documents-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+}
+
+.documents-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  margin: 0;
+}
+
+.documents-fact {
+  display: contents;
+}
+
+.documents-facts dt {
+  color: var(--tb-color-text-secondary);
+}
+
+.documents-facts dd {
+  margin: 0;
+}
+
+.documents-preview iframe,
+.documents-preview video,
+.documents-preview img {
+  inline-size: 100%;
+  max-block-size: 80vh;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.documents-preview iframe {
+  block-size: 70vh;
+}
+
+.documents-preview pre {
+  overflow: auto;
+  max-block-size: 60vh;
+  padding: var(--tb-space-md);
+  background: var(--tb-color-surface-raised);
+  white-space: pre-wrap;
+}
+
+.documents-dialog {
+  inline-size: min(36rem, 100% - 2 * var(--tb-space-md));
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-base);
+  color: var(--tb-color-text-primary);
+}
+
+.documents-dialog form {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.documents-templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.documents-toc ol {
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.documents-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  line-height: var(--tb-font-line-height-body);
+}
+
+.documents-section > * {
+  margin: 0;
+}
+
+.documents-feedback fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
