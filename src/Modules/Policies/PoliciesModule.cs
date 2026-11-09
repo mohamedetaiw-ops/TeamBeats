@@ -20,6 +20,12 @@ public static class PoliciesModule
         services.AddScoped<PolicyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<PolicyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
+        services.AddScoped<PolicyCampaigns>();
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<PolicyCampaigns>());
+        services.AddMessageHandler<AttestationNoticeBatch, PolicyCampaigns>("policies.attestation_notice");
+        services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, PolicyCampaigns>("policies.campaign_membership");
+        services.AddMessageHandler<Tenancy.Contracts.TenantMembershipDisabled, PolicyCampaigns>("policies.campaign_disabled");
+        services.AddMessageHandler<Contracts.PolicyPublished, PolicyCampaigns>("policies.campaign_outdated");
         return services;
     }
 
@@ -112,6 +118,44 @@ public static class PoliciesModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        root.MapGet("/{id:guid}/campaigns", async (Guid id, PolicyCampaigns campaigns, CancellationToken ct) => Results.Ok(await campaigns.ListAsync(id, ct)));
+
+        root.MapPost("/{id:guid}/campaigns", async (Guid id, CampaignRequest request, PolicyCampaigns campaigns, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await campaigns.LaunchAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/policies/{id}/campaigns/{view.Id}", view);
+        });
+
+        root.MapGet("/{id:guid}/campaigns/{campaignId:guid}", async (Guid id, Guid campaignId, PolicyCampaigns campaigns, CancellationToken ct) =>
+            Results.Ok(await campaigns.GetAsync(id, campaignId, ct)));
+
+        root.MapPost("/{id:guid}/campaigns/{campaignId:guid}/remind", async (Guid id, Guid campaignId, PolicyCampaigns campaigns, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await campaigns.RemindAsync(id, campaignId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/{id:guid}/campaigns/{campaignId:guid}/close", async (Guid id, Guid campaignId, PolicyCampaigns campaigns, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await campaigns.CloseAsync(id, campaignId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/{id:guid}/attestation", async (Guid id, PolicyCampaigns campaigns, CancellationToken ct) => Results.Ok(await campaigns.MineAsync(id, ct)));
+
+        root.MapPost("/{id:guid}/attest", async (Guid id, AttestRequest request, PolicyCampaigns campaigns, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await campaigns.AttestAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/policies/{id}/attestations/{view.Id}", view);
+        });
+
+        app.MapGet("/api/v1/me/policies", async (PolicyCampaigns campaigns, CancellationToken ct) => Results.Ok(await campaigns.MyPoliciesAsync(ct)))
+            .RequireTenantUser().WithTags("Policies");
 
         return app;
     }

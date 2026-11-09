@@ -1014,3 +1014,23 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Controlled document format | Policies kept as a signed PDF (FR-003, second half) link a released spec 011 document in a later slice of this spec. |
 | One version at a time | A new version cannot be submitted while an approved one waits for its date. |
 | Owner leaves | Moving ownership to the compliance officer of the scope (edge case) comes with the people events in the campaign slice. |
+
+## Attestation campaigns (spec 025 T002, T005, T006)
+
+| Area | What was built |
+|---|---|
+| Launch | `POST /api/v1/policies/{id}/campaigns`: the owner or a compliance officer launches a campaign for the version in force with a deadline (30 days by default), the attestation text in every language of the version (the standard text by default), reminder days (7 and 2), late joiner days (14), excluded membership types and an audience inside the policy's own |
+| Members | Every person in the audience gets a member row, an inbox item (source `policy_attestation`) and a notice. Notices go out in batches of 500 through the outbox |
+| Attest | `POST /api/v1/policies/{id}/attest` records the version, campaign, language, text shown, channel (web or mobile) and a SHA-256 hash of the title, clauses and attestation text. Records have only select and insert grants, so the app role can neither change nor delete one |
+| Scheduler | The maintenance worker sends reminders on each reminder day, marks members overdue at their due date with `AttestationOverdue`, tells the person, and with `policy.campaigns` sends each manager one list of their people |
+| Audience changes | People who join the audience while a campaign is open get their own due date (now plus the late joiner days); people who leave are kept as left audience and drop out of the open list |
+| Revisions | When a material revision comes into force, compliance officers and the owner are told the open campaign is for the earlier version; they close it and launch one for the new version |
+| My policies | `GET /api/v1/me/policies` lists what applies to the person with action needed or accepted; `GET /api/v1/policies/{id}/attestation` gives the state for the policy page |
+| Inbox | Workflow contracts gain `IPersonalTaskSource`, so modules outside the engine add items to the unified inbox and its count |
+| Tests | `PolicyCampaignTests` (launch, exclusions, inbox and My policies, Arabic mobile attestation with hash, immutability, reminders, overdue with manager list, counts, remind, close, late joiner, leaver, material revision, one open campaign on `policy.core`, employee denial, cross-tenant) |
+
+| Item | Note |
+|---|---|
+| One campaign on `policy.core` | Without `policy.campaigns` a tenant has at most one open campaign at a time and no manager escalation. |
+| Re-attestation cycles | A person attests once per campaign, so a later campaign for the same version can ask again. Automatic yearly cycles are not built; a compliance officer relaunches by hand. |
+| Material revision | The open campaign is not closed automatically; the spec leaves the choice to compliance, so they are told and choose. |

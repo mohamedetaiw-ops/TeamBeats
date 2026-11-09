@@ -179,3 +179,63 @@ internal static class PolicyJson
 
     public static string Write<T>(T value) => JsonSerializer.Serialize(value, Options);
 }
+
+public static class MemberStatuses
+{
+    public const string Open = "open";
+    public const string Attested = "attested";
+    public const string Overdue = "overdue";
+    public const string LeftAudience = "left_audience";
+}
+
+public static class AttestationChannels
+{
+    public const string Web = "web";
+    public const string Mobile = "mobile";
+
+    public static readonly IReadOnlySet<string> Online = new HashSet<string>(StringComparer.Ordinal) { Web, Mobile };
+}
+
+/// <summary>
+/// A campaign launch (US2). Leave fields out for the defaults: a deadline 30 days on, the standard attestation text in
+/// every language of the version, reminders 7 and 2 days before, 14 days for late joiners, the policy's own audience.
+/// </summary>
+public sealed record CampaignRequest(
+    DateOnly? Deadline,
+    IReadOnlyDictionary<string, string>? AttestationText,
+    IReadOnlyList<int>? ReminderDays,
+    int? LateJoinerDays,
+    IReadOnlyList<string>? ExcludedMembershipTypes,
+    ContentAudience? Audience);
+
+public sealed record CampaignCounts(int Members, int Attested, int Open, int Overdue, int LeftAudience);
+
+public sealed record CampaignView(
+    Guid Id,
+    Guid PolicyId,
+    int Version,
+    ContentAudience Audience,
+    DateTimeOffset Deadline,
+    IReadOnlyDictionary<string, string> AttestationText,
+    IReadOnlyList<int> ReminderDays,
+    int LateJoinerDays,
+    IReadOnlyList<string> ExcludedMembershipTypes,
+    string Status,
+    PolicyPerson LaunchedBy,
+    DateTimeOffset LaunchedAt,
+    DateTimeOffset? ClosedAt,
+    CampaignCounts Counts);
+
+public sealed record AttestRequest(Guid? CampaignId, string? Locale, string? Channel);
+
+public sealed record AttestationView(Guid Id, Guid PolicyId, int Version, Guid? CampaignId, string Locale, string AttestationText, string TextHash, string Channel,
+    DateTimeOffset AttestedAt);
+
+/// <summary>An attestation the person still owes: the campaign, the version, the due date and the text to confirm.</summary>
+public sealed record AttestationDue(Guid CampaignId, int Version, DateTimeOffset DueAt, bool Overdue, IReadOnlyDictionary<string, string> Text);
+
+/// <summary>The current user's attestation state for one policy, for the policy page.</summary>
+public sealed record MyAttestation(AttestationDue? Due, int? LastVersion, DateTimeOffset? LastAt);
+
+/// <summary>One line of My policies: action needed when <see cref="Due"/> is set, accepted when the last attestation is for the version in force.</summary>
+public sealed record MyPolicyItem(PolicySummary Policy, int? CurrentVersion, DateTimeOffset? EffectiveFrom, AttestationDue? Due, int? AttestedVersion, DateTimeOffset? AttestedAt);

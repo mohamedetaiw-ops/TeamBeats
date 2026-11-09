@@ -89,6 +89,18 @@
         }
       }
     },
+    "/api/v1/me/policies": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/platform/tenants": {
       "post": {
         "tags": [
@@ -7866,6 +7878,212 @@
         }
       }
     },
+    "/api/v1/policies/{id}/campaigns": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/policies/{id}/campaigns/{campaignId}": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/policies/{id}/campaigns/{campaignId}/remind": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/policies/{id}/campaigns/{campaignId}/close": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "campaignId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/policies/{id}/attestation": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/policies/{id}/attest": {
+      "post": {
+        "tags": [
+          "Policies"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/people": {
       "get": {
         "tags": [
@@ -8673,6 +8891,35 @@
           "condition": {}
         }
       },
+      "AttestRequest": {
+        "required": [
+          "campaignId",
+          "locale",
+          "channel"
+        ],
+        "type": "object",
+        "properties": {
+          "campaignId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "locale": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "channel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AudienceClause": {
         "type": "object",
         "properties": {
@@ -9016,6 +9263,77 @@
               "string"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "CampaignRequest": {
+        "required": [
+          "deadline",
+          "attestationText",
+          "reminderDays",
+          "lateJoinerDays",
+          "excludedMembershipTypes",
+          "audience"
+        ],
+        "type": "object",
+        "properties": {
+          "deadline": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "attestationText": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "reminderDays": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "lateJoinerDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "excludedMembershipTypes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "audience": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ContentAudience"
+              }
+            ]
           }
         }
       },
@@ -12751,6 +13069,9 @@
       "name": "Integrations: mail and calendar"
     },
     {
+      "name": "Policies"
+    },
+    {
       "name": "Platform: tenants"
     },
     {
@@ -12845,9 +13166,6 @@
     },
     {
       "name": "Knowledge base"
-    },
-    {
-      "name": "Policies"
     },
     {
       "name": "People"

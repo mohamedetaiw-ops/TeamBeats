@@ -177,3 +177,15 @@ public interface ITaskSource
     /// <summary>Called after the engine completed the task; <paramref name="done"/> carries the outcome and comment.</summary>
     Task DecidedAsync(UserTaskInfo task, UserTaskInfo done, CancellationToken ct = default);
 }
+
+/// <summary>
+/// A task in the spec 016 inbox that is not an engine task: something only the person can do themselves, such as a
+/// policy attestation (spec 025 US2). It never moves to a delegate and is done from its link, not from the inbox.
+/// </summary>
+public sealed record PersonalTask(string Source, Guid Id, IReadOnlyDictionary<string, string> Title, string Link, DateTimeOffset CreatedAt, DateTimeOffset? DueAt);
+
+/// <summary>A module that puts personal tasks in the inbox. Asked for the signed-in person only.</summary>
+public interface IPersonalTaskSource
+{
+    Task<IReadOnlyList<PersonalTask>> OpenForAsync(Guid userId, CancellationToken ct = default);
+}

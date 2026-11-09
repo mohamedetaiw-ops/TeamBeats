@@ -4,15 +4,15 @@ Depends on 004, 005, 006, 007, 009 (body document, audience model), 011 (control
 
 ## Phase 1: Foundations
 - [x] T001 `Policies` and `Policies.Contracts` projects; migration for policies, versions, clause comments, campaigns, members and attestations (forced RLS; attestations insert only for the app role)
-- [ ] T002 Permissions `policy.author`, `policy.manage`; audit actions of section 13 for R1; capability keys `policy.core`, `policy.campaigns`, `ai.policy_qa`
+- [x] T002 Permissions `policy.author`, `policy.manage`; audit actions of section 13 for R1; capability keys `policy.core`, `policy.campaigns`, `ai.policy_qa`
 
 ## Phase 2: User Story 1, publish through approval (P1)
 - [x] T003 [P] [US1] Tests: sequential route with compare; clause comments; numbering, effective date and superseded on the date; binding language note and joint approval of variants; superseded banner; no self-approval
 - [x] T004 [US1] Register, versions with clauses, route and publishing
 
 ## Phase 3: User Story 2, attestation campaigns (P1)
-- [ ] T005 [P] [US2] Tests: launch creates tasks and My policies entries; immutable record with hash; reminders and overdue; late joiner and leaver; material revision choice; excluded membership type; one open campaign on `policy.core`
-- [ ] T006 [US2] Campaigns, members, attestation, scheduler and task source
+- [x] T005 [P] [US2] Tests: launch creates tasks and My policies entries; immutable record with hash; reminders and overdue; late joiner and leaver; material revision choice; excluded membership type; one open campaign on `policy.core`
+- [x] T006 [US2] Campaigns, members, attestation, scheduler and task source
 
 ## Phase 4: User Story 3, compliance view (P1)
 - [ ] T007 [P] [US3] Tests: completion by unit with drill-down; per-person view; scoped compliance officer
