@@ -2,6 +2,8 @@
 
 The demo data package fills a tenant with realistic, fictional Arabic and English content so that every in-app area of the intranet has something to show in a product demo or a test session. It sits beside the fake connections ([fake-systems.md](fake-systems.md)): the fakes give the connector data (directory, Outlook mail and calendar, rooms), and this package gives the data that lives in TeamBeats itself.
 
+It adds no product behavior: every item goes in through the existing use cases of spec 002 (org units), spec 004 (roles), spec 009 (news and knowledge), spec 010 (profiles), spec 011 (documents), spec 012 (search tuning), spec 014 (assistant), spec 016 (services and requests), spec 022 (working calendars) and spec 025 (policies and attestations).
+
 ## Where it lives
 
 - Files: `src/Api.DevHost/seeds/demo/*.json`. The host reads every file in the folder in name order and merges them, so a new area can be added as a new file.
