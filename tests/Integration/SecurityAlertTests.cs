@@ -47,7 +47,14 @@ public sealed class SecurityAlertTests(TenantWorld world)
         await DispatchAsync();
     }
 
-    private Task DispatchAsync() => world.Factory.Services.GetRequiredService<OutboxDispatcher>().DispatchBatchAsync(500, CancellationToken.None);
+    /// <summary>Delivers every pending message, including any backlog other tests left in the shared database.</summary>
+    private async Task DispatchAsync()
+    {
+        var dispatcher = world.Factory.Services.GetRequiredService<OutboxDispatcher>();
+        while (await dispatcher.DispatchBatchAsync(500, CancellationToken.None) > 0)
+        {
+        }
+    }
 
     private static async Task<JsonElement[]> AlertsAsync(HttpClient client, string? status = null)
     {
