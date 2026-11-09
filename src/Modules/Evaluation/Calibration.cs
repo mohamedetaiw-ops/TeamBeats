@@ -26,7 +26,8 @@ public sealed record CalibrationView(Guid Id, string Metric, string RubricVersio
     DateTimeOffset CreatedAt, DateTimeOffset? FinishedAt);
 
 /// <summary>A judged rubric in the tenant: platform calibrated, calibrated by the tenant, or demoted to warning severity.</summary>
-public sealed record RubricState(string Metric, string RubricVersion, string State, IReadOnlyDictionary<string, int> Labels, CalibrationView? Latest, bool Running);
+public sealed record RubricState(string Metric, string RubricVersion, string State, IReadOnlyDictionary<string, int> Labels, CalibrationView? Latest, bool Running,
+    bool CanLabel = false, bool CanCalibrate = false);
 
 public static class RubricStates
 {
@@ -98,6 +99,8 @@ public sealed class CalibrationService(IDbSession session, ITenantContext contex
         await DemandReadAsync(ct);
         var counts = await session.QueryAsync("select metric, locale, count(*) from evaluation.calibration_label group by metric, locale", null,
             r => (Metric: r.GetString(0), Locale: r.GetString(1), Count: (int)r.GetInt64(2)), ct);
+        var canLabel = await MayAsync(Permissions.EvalReview, ct);
+        var canCalibrate = await MayAsync(Permissions.EvalPolicyManage, ct);
         var list = new List<RubricState>();
         foreach (var rubric in Rubrics.All)
         {
@@ -106,7 +109,7 @@ public sealed class CalibrationService(IDbSession session, ITenantContext contex
             var state = decided?.Outcome == CalibrationOutcomes.Demoted ? RubricStates.Demoted : decided is null ? RubricStates.Platform : RubricStates.Calibrated;
             list.Add(new RubricState(rubric.Metric, rubric.Version, state,
                 Locales.ToDictionary(l => l, l => counts.FirstOrDefault(c => c.Metric == rubric.Metric && c.Locale == l).Count),
-                mine.FirstOrDefault(c => c.Status == "completed"), mine.Any(c => c.Status == "running")));
+                mine.FirstOrDefault(c => c.Status == "completed"), mine.Any(c => c.Status == "running"), canLabel, canCalibrate));
         }
         return list;
     }
@@ -292,7 +295,7 @@ public sealed class CalibrationRunner(IServiceScopeFactory scopes, ITenantContex
         if (outcome == CalibrationOutcomes.Demoted)
         {
             await sp.GetRequiredService<INotificationSender>().SendAsync(new NotificationRequest([by], NotificationCategories.System, DemotedTemplate,
-                "/admin/agents/evaluation/calibration", DedupeKey: $"{DemotedTemplate}:{message.CalibrationId:N}"), ct);
+                "/admin/evaluation/calibration", DedupeKey: $"{DemotedTemplate}:{message.CalibrationId:N}"), ct);
         }
         await session.CommitAsync(ct);
         logger.LogInformation("eval.calibration_completed tenant {Tenant} metric {Metric} outcome {Outcome}", tenant, metric, outcome);

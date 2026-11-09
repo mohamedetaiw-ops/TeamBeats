@@ -135,7 +135,11 @@ public sealed class EvaluationRegistryTests(TenantWorld world)
         var settings = await OkAsync(t["aip"].Client.PutAsJsonAsync($"{Eval}/settings", new { version = 0, thresholds = new[] { Metric("groundedness", 0.95) } }));
         Assert.Equal(1, settings.GetProperty("version").GetInt32());
         Assert.Equal(1, await AuditCountAsync(t, AuditActions.EvalPolicyChanged));
-        Assert.Equal(1, (await OkAsync(t["sec"].Client.GetAsync($"{Eval}/settings"))).GetProperty("version").GetInt32());
+        var read = await OkAsync(t["sec"].Client.GetAsync($"{Eval}/settings"));
+        Assert.Equal(1, read.GetProperty("version").GetInt32());
+        // The security officer reads the settings; only the AI Policy Administrator may change them.
+        Assert.False(read.GetProperty("canEdit").GetBoolean());
+        Assert.True((await OkAsync(t["aip"].Client.GetAsync($"{Eval}/settings"))).GetProperty("canEdit").GetBoolean());
         Assert.Equal("validation.eval.threshold_below_tenant",
             await ProblemAsync(t["sara"].Client.PutAsJsonAsync(suite, new { version = 0, metrics = new[] { Metric("groundedness", 0.92) } }), HttpStatusCode.BadRequest));
         var saved = await OkAsync(t["sara"].Client.PutAsJsonAsync(suite, new { version = 0, metrics = new[] { Metric("groundedness", 0.97) } }));
@@ -181,6 +185,9 @@ public sealed class EvaluationRegistryTests(TenantWorld world)
         var error = preview.GetProperty("errors").EnumerateArray().Single();
         Assert.Equal(2, error.GetProperty("row").GetInt32());
         Assert.Equal("validation.eval.case_locale", error.GetProperty("key").GetString());
+        // The reason reads in the person's language, so the import page shows it as it is.
+        Assert.False(string.IsNullOrWhiteSpace(error.GetProperty("message").GetString()));
+        Assert.NotEqual("validation.eval.case_locale", error.GetProperty("message").GetString());
         Assert.Equal(2, (await OkAsync(t["sara"].Client.GetAsync($"{Eval}/datasets/{dataset}"))).GetProperty("version").GetInt32());
         var importId = preview.GetProperty("importId").GetGuid();
         Assert.Equal(HttpStatusCode.NotFound, (await t["fadi"].Client.PostAsync($"{Eval}/datasets/{dataset}/imports/{importId}/confirm", null)).StatusCode);

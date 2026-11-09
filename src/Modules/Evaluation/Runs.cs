@@ -29,7 +29,7 @@ public sealed record RunDetailView(RunSummaryView Run, IReadOnlyList<RunSuite> S
 
 public sealed record CaseResultView(int N, string Suite, Guid? DatasetId, int? DatasetVersion, int CaseN, string Locale, string Input, CaseExpectations Expect,
     Guid PersonaId, string Severity, string Status, Guid? AgentRunId, string? Outcome, string? Answer, IReadOnlyDictionary<string, CaseMetric>? Metrics,
-    IReadOnlyList<JudgeVerdict>? Verdicts, string? Error, string? Model, int? LatencyMs, int? Tokens);
+    IReadOnlyList<JudgeVerdict>? Verdicts, string? Error, string? Model, int? LatencyMs, int? Tokens, bool Failed);
 
 /// <summary>
 /// Evaluation runs (US3 scenario 7): a person with <c>eval.design</c> on the agent's unit starts a run of a version
@@ -248,12 +248,17 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
               metrics::text, verdicts::text, error, model, latency_ms, tokens
             from evaluation.case_result where run_id = @id order by n
             """, new { id },
-            r => new CaseResultView(r.GetInt32(0), r.GetString(1), r.Get<Guid?>("dataset_id"), r.Get<int?>("dataset_version"), r.GetInt32(4), r.GetString(5), r.GetString(6),
-                JsonSerializer.Deserialize<CaseExpectations>(r.GetString(7), EvalJson.Options)!, r.GetGuid(8), r.GetString(9), r.GetString(10), r.Get<Guid?>("agent_run_id"),
-                r.Get<string?>("outcome"), r.Get<string?>("answer"),
-                r.Get<string?>("metrics") is { } m ? JsonSerializer.Deserialize<Dictionary<string, CaseMetric>>(m, EvalJson.Options) : null,
-                r.Get<string?>("verdicts") is { } v ? JsonSerializer.Deserialize<List<JudgeVerdict>>(v, EvalJson.Options) : null,
-                r.Get<string?>("error"), r.Get<string?>("model"), r.Get<int?>("latency_ms"), r.Get<int?>("tokens")), ct);
+            r =>
+            {
+                var metrics = r.Get<string?>("metrics") is { } m ? JsonSerializer.Deserialize<Dictionary<string, CaseMetric>>(m, EvalJson.Options) : null;
+                var status = r.GetString(10);
+                return new CaseResultView(r.GetInt32(0), r.GetString(1), r.Get<Guid?>("dataset_id"), r.Get<int?>("dataset_version"), r.GetInt32(4), r.GetString(5), r.GetString(6),
+                    JsonSerializer.Deserialize<CaseExpectations>(r.GetString(7), EvalJson.Options)!, r.GetGuid(8), r.GetString(9), status, r.Get<Guid?>("agent_run_id"),
+                    r.Get<string?>("outcome"), r.Get<string?>("answer"), metrics,
+                    r.Get<string?>("verdicts") is { } v ? JsonSerializer.Deserialize<List<JudgeVerdict>>(v, EvalJson.Options) : null,
+                    r.Get<string?>("error"), r.Get<string?>("model"), r.Get<int?>("latency_ms"), r.Get<int?>("tokens"),
+                    status == "error" || (metrics is not null && GateService.Fails(metrics)));
+            }, ct);
     }
 
     /// <summary>Stops a queued or running run (US3 scenario 7). Cases already scored stay; the rest are skipped.</summary>

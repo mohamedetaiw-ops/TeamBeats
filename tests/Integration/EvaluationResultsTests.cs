@@ -138,6 +138,7 @@ public sealed class EvaluationResultsTests(TenantWorld world)
         // A case opens with its evidence and the link to its execution record.
         var item = await OkAsync(t["sara"].Client.GetAsync($"{Eval}/runs/{second}/cases/{failing.GetProperty("caseInB").GetInt32()}"));
         Assert.True(item.TryGetProperty("agentRunId", out var runLink) && runLink.ValueKind != JsonValueKind.Null, item.GetRawText());
+        Assert.True(item.GetProperty("failed").GetBoolean());
         Assert.Equal(HttpStatusCode.NotFound, (await t["sara"].Client.GetAsync($"{Eval}/runs/{second}/cases/9999")).StatusCode);
 
         // The overview lists agents in the viewer's scope only; others see nothing of this agent.
@@ -150,5 +151,23 @@ public sealed class EvaluationResultsTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.NotFound, (await other["aip"].Client.GetAsync($"{Eval}/agents/{agent}/dashboard")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await other["aip"].Client.GetAsync($"{Eval}/runs/{second}/cases/1")).StatusCode);
         Assert.Empty((await OkAsync(other["aip"].Client.GetAsync($"{Eval}/agents"))).EnumerateArray());
+    }
+
+    [Fact]
+    public async Task The_evaluation_section_opens_for_designers_reviewers_and_readers_only()
+    {
+        var t = await FreshAsync();
+        await world.SeedUserAsync(t, "rev", MembershipTypes.Employee);
+        await world.AssignAsync(t, "rev", BuiltInRoles.EvaluationReviewer, "org_subtree", t.Unit("Hr"));
+        async Task<JsonElement?> Section(string user) =>
+            (await OkAsync(t[user].Client.GetAsync("/api/v1/admin/navigation"))).EnumerateArray().Cast<JsonElement?>().FirstOrDefault(s => s!.Value.GetProperty("key").GetString() == "evaluation");
+
+        var sara = await Section("sara");
+        Assert.NotNull(sara);
+        Assert.False(sara.Value.GetProperty("wholeTenant").GetBoolean());
+        Assert.Equal("/admin/evaluation", sara.Value.GetProperty("path").GetString());
+        Assert.NotNull(await Section("rev"));
+        Assert.True((await Section("aip"))!.Value.GetProperty("wholeTenant").GetBoolean());
+        Assert.Null(await Section("emp"));
     }
 }

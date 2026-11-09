@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using TeamBeats.Localization;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Evaluation.Contracts;
 using TeamBeats.Persistence;
@@ -85,11 +86,12 @@ public static class EvaluationModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
-        root.MapPost("/datasets/{id:guid}/import", async (Guid id, ImportRequest request, DatasetService datasets, IDbSession session, CancellationToken ct) =>
+        root.MapPost("/datasets/{id:guid}/import", async (Guid id, ImportRequest request, DatasetService datasets, IDbSession session, ILocalizer localizer,
+            RequestLocale locale, CancellationToken ct) =>
         {
             var preview = await datasets.ImportAsync(id, request, ct);
             await session.CommitAsync(ct);
-            return Results.Ok(preview);
+            return Results.Ok(preview with { Errors = preview.Errors.Select(e => e with { Message = localizer.Get(e.Key, locale.Locale) }).ToList() });
         });
         root.MapPost("/datasets/{id:guid}/imports/{importId:guid}/confirm", async (Guid id, Guid importId, DatasetService datasets, IDbSession session, CancellationToken ct) =>
         {

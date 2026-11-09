@@ -93,6 +93,13 @@ public sealed class EvaluationCalibrationTests(TenantWorld world)
         Assert.Equal(CalibrationOutcomes.Insufficient, result.GetProperty("outcome").GetString());
         Assert.Equal(RubricStates.Platform, (await StateAsync(t, "relevance")).GetProperty("state").GetString());
         Assert.Equal(10, (await StateAsync(t, "relevance")).GetProperty("labels").GetProperty("en").GetInt32());
+        // The page offers each person only what they may do: reviewers label, the AI Policy Administrator calibrates.
+        var forAip = await StateAsync(t, "relevance");
+        Assert.True(forAip.GetProperty("canCalibrate").GetBoolean());
+        Assert.False(forAip.GetProperty("canLabel").GetBoolean());
+        var forReviewer = (await OkAsync(t["rev"].Client.GetAsync($"{Eval}/calibration"))).EnumerateArray().Single(r => r.GetProperty("metric").GetString() == "relevance");
+        Assert.True(forReviewer.GetProperty("canLabel").GetBoolean());
+        Assert.False(forReviewer.GetProperty("canCalibrate").GetBoolean());
         Assert.Equal(0, await AuditCountAsync(t, AuditActions.EvalRubricCalibrated));
 
         // Labels and calibrations belong to their tenant.
@@ -132,7 +139,7 @@ public sealed class EvaluationCalibrationTests(TenantWorld world)
         Assert.Equal(RubricStates.Demoted, (await StateAsync(t, "answer_correctness")).GetProperty("state").GetString());
         Assert.Equal(1, await AuditCountAsync(t, AuditActions.EvalRubricDemoted));
         var links = (await OkAsync(t["aip"].Client.GetAsync("/api/v1/me/notifications"))).GetProperty("items").EnumerateArray().Select(n => n.GetProperty("link").GetString());
-        Assert.Contains("/admin/agents/evaluation/calibration", links);
+        Assert.Contains("/admin/evaluation/calibration", links);
 
         // New runs count the demoted rubric's blocking threshold as a warning.
         var detail = await OkAsync(t["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "hr_assistant", orgUnitId = t.Unit("Hr") }), HttpStatusCode.Created);
