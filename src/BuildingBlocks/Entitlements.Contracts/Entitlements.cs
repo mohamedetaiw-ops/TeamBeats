@@ -30,6 +30,7 @@ public static class Capabilities
     public const string IntegrationMicrosoft365 = "integration.microsoft365";
     public const string IntegrationOracleFusion = "integration.oracle_fusion";
     public const string IntegrationSap = "integration.sap";
+    public const string AnalyticsCore = "analytics.core";
     public const string AnalyticsAdvanced = "analytics.advanced";
     public const string AnalyticsExport = "analytics.export";
     public const string DeploymentOnPrem = "deployment.on_prem";

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using TeamBeats.Localization;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Administration;
+using TeamBeats.Modules.Analytics;
 using TeamBeats.Modules.Audit;
 using TeamBeats.Modules.Authorization;
 using TeamBeats.Modules.Entitlements;
@@ -62,6 +63,7 @@ public static class TeamBeatsModules
         SearchModule.Migrations,
         AgentsModule.Migrations,
         EvaluationModule.Migrations,
+        AnalyticsModule.Migrations,
     ];
 
     public static IServiceCollection AddTeamBeatsCore(this IServiceCollection services, IConfiguration configuration)
@@ -124,6 +126,7 @@ public static class TeamBeatsModules
         services.AddSearchModule();
         services.AddAgentsModule();
         services.AddEvaluationModule();
+        services.AddAnalyticsModule();
         return services;
     }
 }
@@ -202,6 +205,7 @@ public static class ApiComposition
         app.MapSearchEndpoints();
         app.MapAgentsEndpoints();
         app.MapEvaluationEndpoints();
+        app.MapAnalyticsEndpoints();
         app.MapPeopleEndpoints();
         app.MapSecurityEndpoints();
         extraEndpoints?.Invoke(app);
