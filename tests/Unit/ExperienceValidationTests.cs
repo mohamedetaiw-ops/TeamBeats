@@ -195,6 +195,19 @@ public sealed class ExperienceValidationTests
     }
 
     [Fact]
+    public void The_documents_component_needs_the_document_capability_and_a_library()
+    {
+        var registry = new ComponentRegistry([new TeamBeats.Modules.Documents.DocumentsComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        Assert.Empty(registry.Rejected);
+        var recent = Assert.Single(registry.All);
+        Assert.Equal("documents.recent@1", recent.Reference);
+        Assert.Equal([TeamBeats.Entitlements.Contracts.Capabilities.DocsCore], recent.Requires.Capabilities);
+        Assert.NotEmpty(PropertyValidator.Validate(recent.Properties, null));
+        Assert.Empty(PropertyValidator.Validate(recent.Properties, JsonSerializer.SerializeToElement(new { library = Guid.NewGuid().ToString() })));
+        Assert.NotEmpty(PropertyValidator.Validate(recent.Properties, JsonSerializer.SerializeToElement(new { library = Guid.NewGuid().ToString(), top = 21 })));
+    }
+
+    [Fact]
     public void Content_components_register_with_the_content_capability_and_validate_their_properties()
     {
         var registry = new ComponentRegistry([new TeamBeats.Modules.Content.ContentComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);

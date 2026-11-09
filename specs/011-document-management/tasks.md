@@ -27,7 +27,7 @@ Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body docu
 - [x] T012 [US4] Knowledge articles on the spec 009 content contract; feedback
 
 ## Phase 7: Experience
-- [ ] T013 Library browser with filters and saved views, document page with versions and preview, upload dialog, knowledge base pages, documents component for spec 032, in English and Arabic, RTL; e2e with axe
+- [x] T013 Library browser with filters and saved views, document page with versions and preview, upload dialog, knowledge base pages, documents component for spec 032, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
-- [ ] T014 OpenAPI; R1 implementation notes (scanner, converter, controlled routes); spec evidence
+- [x] T014 OpenAPI; R1 implementation notes (scanner, converter, controlled routes); spec evidence

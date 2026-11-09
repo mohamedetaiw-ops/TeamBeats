@@ -30,6 +30,7 @@ public static class DocumentsModule
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, DocumentTaskSource>("documents.notify_release");
         services.AddScoped<DocumentReadConfirmations>();
         services.AddMessageHandler<Contracts.DocumentVersionPublished, DocumentReadConfirmations>("documents.read_confirmation");
+        services.AddSingleton<Experience.Contracts.IComponentRegistration, DocumentsComponents>();
         services.AddScoped<KnowledgeBase>();
         services.AddScoped<Contracts.IKnowledgeIndex>(sp => sp.GetRequiredService<KnowledgeBase>());
         services.AddScoped<IResourceDescriptorProvider, LibraryDescriptorProvider>();

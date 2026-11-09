@@ -25,6 +25,8 @@ const product: Record<string, Loader> = {
   "content.links@1": () => import("@/components/placements/content.links"),
   "content.call_to_action@1": () => import("@/components/placements/content.call_to_action"),
   "content.announcement_banner@1": () => import("@/components/placements/content.announcement_banner"),
+  // Documents (spec 011 plan, pages).
+  "documents.recent@1": () => import("@/components/placements/documents.recent"),
 };
 
 const reference: Record<string, Loader> =

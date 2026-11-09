@@ -49,7 +49,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
               <bdi>{v.summary}</bdi>
             </p>
           ) : null}
-          <BodyView body={v.body} embedTitle={t("embed")} />
+          <BodyView body={v.body} embedTitle={t("embed")} anchors={v.anchors} />
         </article>
         <ContentSocial itemId={v.id} />
       </main>

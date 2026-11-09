@@ -1,0 +1,22 @@
+# Spec 011 evidence (R1)
+
+The spec stays Approved, not Implemented, until its R2 parts are built: Office editing in the browser (FR-010), the brand asset portal (US5, FR-012), retention and disposition (US6, FR-013, FR-014), legal hold (US7, FR-015), view-only watermark (FR-016), guest sharing (FR-017), search and OCR indexing (FR-020, with spec 012 and spec 029), follows (FR-021), bulk import (FR-022) and SharePoint connected libraries (FR-024 to FR-033). Defaults and gaps of each R1 slice are in `docs/architecture/r1-implementation-notes.md`.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-001 libraries at tenant, unit and site scope, folders, explicit permission breaks | Met | `DocumentLibraryTests.A_unit_library_is_read_by_its_members_and_hidden_from_siblings_...`, `A_permission_break_on_a_folder_or_document_starts_from_a_copy_...`, `Library_and_type_changes_need_the_current_version_...` |
+| FR-002 document types with typed metadata, required fields, defaults, term sets | Met | `DocumentLibraryTests.An_upload_missing_required_fields_stays_a_draft_...`, `Readers_filter_and_sort_by_metadata_and_use_saved_views_...` |
+| FR-003 allowlist, size limit, malware scan before use, duplicates | Met | `DocumentLibraryTests.Uploads_outside_the_allowlist_over_the_size_limit_empty_or_duplicate_are_refused_and_infected_files_are_quarantined`, `DocumentPreviewTests.An_infected_file_is_never_previewed` |
+| FR-004 minor and major versions, compare for text, restore as a new version | Met | `DocumentVersionTests.Check_out_is_exclusive_and_minor_versions_stay_hidden_...`, `Contributors_compare_text_versions_and_restore_an_old_one_...`, `documents.spec.ts` |
+| FR-005 exclusive check-out, check-in with note, discard, forced check-in | Met | `DocumentVersionTests.Check_out_is_exclusive_...`, `A_manager_forces_a_check_in_with_a_reason_...`, `Long_check_outs_remind_the_holder_...`, `documents.spec.ts` |
+| FR-006 readers see only the effective major version | Met | `DocumentVersionTests.Check_out_is_exclusive_and_minor_versions_stay_hidden_from_readers_until_the_next_major_is_published` |
+| FR-007 controlled types: numbering, route on spec 024, effective date, superseded, review tasks, PDF footer | Met | `DocumentControlledTests.A_release_runs_its_route_in_the_inbox_...`, `Authors_never_approve_their_own_revision_...`, `The_owner_gets_a_review_task_...`, `A_controlled_copy_carries_the_number_version_effective_date_...` |
+| FR-008 read confirmation on each new major version | Met with the documents' own record | `DocumentControlledTests.A_release_runs_its_route_in_the_inbox_...`; spec 009 has no shared acknowledgement contract yet, see the implementation notes |
+| FR-009 preview of PDF, Office, image, video and text | Met | `DocumentPreviewTests` (all), `PreviewRulesTests`, `documents.spec.ts` (text preview); Office conversion needs Gotenberg, which staging does not run yet |
+| FR-011 knowledge base: templates, spec 009 lifecycle, related articles, helpfulness, FAQ units | Met | `KnowledgeBaseTests` (all), `KnowledgeRulesTests`, `knowledge.spec.ts`; unanswered question logging (US4 scenario 4) waits for specs 013 and 014 |
+| FR-018 recycle bin with the tenant period | Met | `DocumentVersionTests.Deleted_documents_wait_in_the_recycle_bin_until_restored_or_purged_...` |
+| FR-019 classification on every document | Met | `DocumentLibraryTests.A_unit_library_is_read_by_its_members_...`; AI and guest limits apply when specs 013 and 026 R2 use it |
+| FR-023 TeamBeats libraries are the default store with no external connection | Met | Every R1 test above runs with no connection |
+| Pages: library browser, document page, upload, knowledge base, documents component (T013) | Met | `documents.spec.ts`, `knowledge.spec.ts` (en and ar, axe), `ExperienceValidationTests.The_documents_component_needs_the_document_capability_and_a_library` |
+| Tenant and org boundaries | Met | `DocumentLibraryTests.A_unit_library_is_read_by_its_members_and_hidden_from_siblings_other_tenants_...`, `DocumentControlledTests.Controlled_types_need_the_capability_and_other_tenants_reach_nothing`, `KnowledgeBaseTests.Writing_needs_kb_edit_restricted_articles_and_other_tenants_get_not_found`, `CrossTenantSuite` |
+| Entitlements | Met | `DocumentLibraryTests.Without_the_document_capability_everything_is_refused_...`, `DocumentControlledTests.Controlled_types_need_the_capability_...`, `KnowledgeBaseTests.Without_the_document_capability_the_knowledge_base_is_refused` |

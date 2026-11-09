@@ -48,6 +48,8 @@ export type ReaderView = {
   pinned: boolean;
   featured: boolean;
   underReview: boolean;
+  /** The anchor of each heading in order, for citation links. */
+  anchors?: string[] | null;
 };
 
 export type CriticalNotice = {
