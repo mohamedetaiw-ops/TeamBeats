@@ -2668,7 +2668,7 @@
       "primary": "Submit request",
       "secondary": "Save draft",
       "quiet": "Cancel",
-      "destructive": "Delete",
+      "destructive": "Delete file",
       "busy": "Submitting…",
       "link": "Download the handbook"
     },

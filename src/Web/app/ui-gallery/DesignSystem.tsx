@@ -84,7 +84,7 @@ export function DesignSystem() {
         </ul>
       </section>
 
-      <section aria-labelledby="ds-actions" data-context="actions">
+      <section aria-labelledby="ds-actions">
         <h2 id="ds-actions">{t("actions.title")}</h2>
         <p className="notice">{t("actions.intro")}</p>
         <div className="gallery-row">

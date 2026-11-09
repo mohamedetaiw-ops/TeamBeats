@@ -1,4 +1,5 @@
 import { mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
 import type { Page, TestInfo } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
@@ -22,6 +23,9 @@ const designs = [
   { key: "atlas", navigation: "top", accent: "#0b6e4f", font: "IBM Plex Sans" },
   { key: "pulse", navigation: "sidebar", accent: "#c2185b", font: "Cairo" },
 ] as const;
+
+/** Hides what the development server draws over the page, so baselines hold only the design. */
+const screenshotStyle = fileURLToPath(new URL("../support/screenshot.css", import.meta.url));
 
 const viewports = [
   { name: "phone", width: 375, height: 812 },
@@ -120,8 +124,11 @@ for (const design of designs) {
         expect(small, "controls smaller than 24 by 24 pixels").toEqual([]);
 
         for (const id of ["ds-actions", "ds-feedback", "ds-cards"]) {
-          await expect(page.locator(`section:has(> h2#${id})`)).toHaveScreenshot(`${id}-${design.key}-${locale}.png`, {
+          // Soft, so one run reports every section that moved.
+          await expect.soft(page.locator(`section:has(> h2#${id})`)).toHaveScreenshot(`${id}-${design.key}-${locale}.png`, {
             animations: "disabled",
+            caret: "hide",
+            stylePath: screenshotStyle,
             maxDiffPixelRatio: 0.02,
           });
         }
