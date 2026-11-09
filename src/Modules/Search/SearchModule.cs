@@ -27,6 +27,8 @@ public static class SearchModule
         services.AddScoped<SearchRebuilds>();
         services.AddScoped<SearchTuning>();
         services.AddScoped<ISearchRetrieval, SearchRetrieval>();
+        // Changes and deletions reach the index within 5 minutes (FR-006); later ones are counted for the operators' alert.
+        services.AddConsumerLagObjective("search.index_", SearchIndexer.LagObjective);
         services.AddMessageHandler<SearchItemChanged, SearchIndexer>("search.index_item");
         services.AddMessageHandler<C.ContentPublished, SearchIndexer>("search.index_content_published");
         services.AddMessageHandler<C.ContentUnpublished, SearchIndexer>("search.index_content_unpublished");
@@ -51,8 +53,13 @@ public static class SearchModule
     {
         var root = app.MapGroup("/api/v1/search").RequireTenantUser().WithTags("Search");
 
-        root.MapGet("", async (string? q, string? kind, DateTimeOffset? from, DateTimeOffset? to, int? page, SearchService search, CancellationToken ct) =>
-            Results.Ok(await search.SearchAsync(q, kind, from, to, page, ct)));
+        root.MapGet("", async (string? q, string? kind, DateTimeOffset? from, DateTimeOffset? to, int? page, SearchService search, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var results = await search.SearchAsync(q, kind, from, to, page, ct);
+            await session.CommitAsync(ct); // The query event is queued through the outbox.
+            return Results.Ok(results);
+        });
 
         root.MapGet("/suggest", async (string? q, SearchService search, CancellationToken ct) => Results.Ok(await search.SuggestAsync(q, ct)));
 

@@ -28,6 +28,13 @@ public static class MessagingServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>Sets how soon consumers named with this prefix should handle their messages (see <see cref="ConsumerLagObjective"/>).</summary>
+    public static IServiceCollection AddConsumerLagObjective(this IServiceCollection services, string prefix, TimeSpan objective)
+    {
+        services.AddSingleton(new ConsumerLagObjective(prefix, objective));
+        return services;
+    }
+
     /// <summary>Selects the transport from <c>Messaging:Transport</c> (RabbitMq or InMemory).</summary>
     public static IServiceCollection AddMessageTransport(this IServiceCollection services, IConfiguration configuration)
     {

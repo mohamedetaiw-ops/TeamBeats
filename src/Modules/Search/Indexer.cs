@@ -41,6 +41,9 @@ public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource>
       IMessageHandler<Pe.ProfileUpdated>, IMessageHandler<T.TenantMembershipDisabled>, IMessageHandler<T.OrganizationMembershipChanged>,
       IMessageHandler<I.UserProvisioned>, IMessageHandler<I.UserDeprovisioned>
 {
+    /// <summary>How soon a change or deletion should be in the index (FR-006, section 15 objective).</summary>
+    public static readonly TimeSpan LagObjective = TimeSpan.FromMinutes(5);
+
     /// <summary>Passages embedded per item; the rest of a very large item is found by keyword only (edge cases).</summary>
     public const int MaxEmbeddedPassages = 64;
 
