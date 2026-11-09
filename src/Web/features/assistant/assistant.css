@@ -1,0 +1,179 @@
+/* Spec 014 assistant. Colors and spacing come from tokens; logical properties keep the layout right in RTL. */
+.assistant-page {
+  display: grid;
+  gap: var(--tb-space-lg);
+  max-inline-size: 72rem;
+}
+
+.assistant-page h1 {
+  margin: 0;
+}
+
+.assistant {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: var(--tb-space-lg);
+  align-items: start;
+}
+
+@media (width <= 48rem) {
+  .assistant {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.assistant-history,
+.assistant-main {
+  display: grid;
+  gap: var(--tb-space-md);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.assistant-history h2,
+.assistant-main h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.assistant-history p {
+  margin: 0;
+}
+
+.assistant-history ul {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assistant-history li {
+  display: grid;
+}
+
+.assistant-history li a {
+  overflow-wrap: anywhere;
+}
+
+.assistant-history li a[aria-current="page"] {
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.assistant-history time,
+.assistant-retention {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.assistant-main-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+}
+
+.assistant-intro {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+}
+
+.assistant-turns {
+  display: grid;
+  gap: var(--tb-space-lg);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assistant-turn {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.assistant-question {
+  justify-self: end;
+  max-inline-size: 85%;
+  padding: var(--tb-space-sm) var(--tb-space-md);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-text-primary);
+}
+
+.assistant-question p,
+.assistant-answer p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.assistant-answer {
+  display: grid;
+  gap: var(--tb-space-sm);
+  max-inline-size: 95%;
+  padding: var(--tb-space-sm) var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-base);
+}
+
+.assistant-label,
+.assistant-note,
+.assistant-source-meta {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.assistant-marker {
+  padding-inline: 0.125rem;
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.assistant-sources {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.assistant-sources h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-sm);
+}
+
+.assistant-sources ol {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.assistant-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  font-size: var(--tb-font-size-sm);
+}
+
+.assistant-feedback-reason {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs);
+}
+
+.assistant-thanks {
+  color: var(--tb-color-text-secondary);
+}
+
+.assistant-composer {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.assistant-composer textarea {
+  inline-size: 100%;
+  resize: vertical;
+}

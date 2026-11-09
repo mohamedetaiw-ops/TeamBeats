@@ -245,6 +245,10 @@ public static class AuditActions
     public const string SearchBestBetChanged = "search.best_bet_changed";
     public const string SearchSynonymsChanged = "search.synonyms_changed";
 
+    // 014
+    public const string AssistantHistoryDeleted = "assistant.history_deleted";
+    public const string AssistantRetentionChanged = "assistant.retention_changed";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -286,6 +290,7 @@ public static class AuditActions
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested,
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged,
+        AssistantHistoryDeleted, AssistantRetentionChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

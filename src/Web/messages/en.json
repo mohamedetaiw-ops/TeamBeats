@@ -2364,7 +2364,8 @@
       "policy": "Model policy",
       "routing": "Routing rules",
       "usage": "AI usage",
-      "debug": "Debug windows"
+      "debug": "Debug windows",
+      "assistant": "Assistant"
     },
     "denials": {
       "not_in_package": "Not in the plan",
@@ -2613,5 +2614,75 @@
         "done": "{items} items, {units} passages"
       }
     }
+  },
+  "assistant": {
+    "title": "Assistant",
+    "intro": "Ask about policies, services, documents and news. Answers come only from content you can open, with links to the sources.",
+    "newConversation": "New conversation",
+    "label": "Your question",
+    "hint": "Up to 2,000 characters. Press Enter to send, Shift and Enter for a new line.",
+    "ask": "Ask",
+    "thinking": "Finding an answer",
+    "answerReady": "The answer is ready.",
+    "you": "You asked:",
+    "generated": "AI generated answer. Check the sources before you rely on it.",
+    "citation": "Source {n}: {title}",
+    "sources": "Sources",
+    "version": "version {version}",
+    "uncited": "This answer cites no sources. Check it before you rely on it.",
+    "withheld": "Some content you can open was not used, because your organization's AI policy keeps it from the assistant.",
+    "degraded": "Search by meaning was not available, so only exact words were matched.",
+    "notAvailable": "The assistant is not available to you.",
+    "notFound": "That conversation was not found. It may have been deleted.",
+    "failed": "The assistant did not answer. Try again in a moment.",
+    "outcomes": {
+      "no_evidence": "I found nothing you can see that answers this. Try other words, or look for a service that can help.",
+      "policy_blocked": "Some content that may answer this cannot be processed by AI under your organization's policy."
+    },
+    "unavailable": {
+      "quota_exhausted": "You have used your assistant requests for this month.",
+      "budget_exhausted": "Your organization has used its AI budget for this period.",
+      "not_in_package": "The assistant is not part of your organization's plan.",
+      "provider_unavailable": "The AI service is not available right now. Try again in a moment.",
+      "context_too_large": "This conversation is too long. Start a new one.",
+      "refused": "The AI service did not give an answer to this question.",
+      "other": "The assistant could not answer this right now."
+    },
+    "feedback": {
+      "question": "Was this helpful?",
+      "helpful": "Helpful",
+      "notHelpful": "Not helpful",
+      "reason": "What was wrong?",
+      "choose": "Choose a reason",
+      "thanks": "Thank you for your feedback.",
+      "reasons": {
+        "incorrect": "It is wrong",
+        "not_relevant": "It does not answer my question",
+        "incomplete": "Something is missing",
+        "unclear": "It is hard to understand",
+        "other": "Something else"
+      }
+    },
+    "history": {
+      "title": "Your conversations",
+      "new": "New conversation",
+      "empty": "No conversations yet.",
+      "delete": "Delete conversation",
+      "deleteAll": "Delete all conversations",
+      "confirmOne": "Delete this conversation? This cannot be undone.",
+      "confirmAll": "Delete all your conversations? This cannot be undone.",
+      "retention": "Only you can see your conversations. They are deleted after the period your organization sets."
+    },
+    "admin": {
+      "title": "Assistant",
+      "intro": "Choose how long the assistant keeps conversations. People can delete their own at any time.",
+      "retention": "Keep conversations for (days)",
+      "retentionHint": "From 1 to 365 days. The default is 30.",
+      "save": "Save",
+      "busy": "Saving",
+      "saved": "Saved.",
+      "failed": "That did not work. Try again in a moment."
+    },
+    "marker": "[{n}]"
   }
 }

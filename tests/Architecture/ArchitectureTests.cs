@@ -129,6 +129,7 @@ public sealed partial class ArchitectureTests
             ["Policies"] = "policies",
             ["AiGateway"] = "ai",
             ["Search"] = "search",
+            ["Agents"] = "agents",
         };
         var violations = new List<string>();
         foreach (var (module, own) in schemas)

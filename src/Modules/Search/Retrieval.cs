@@ -48,7 +48,7 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
         var topK = request.TopK ?? ISearchRetrieval.DefaultTopK;
         var ceiling = await classification.CeilingAsync(request.UseCase, ct);
 
-        var terms = SearchText.Terms(query);
+        var terms = SearchText.Meaningful(SearchText.Terms(query));
         var groups = await search.GroupsAsync(terms, SearchText.QueryLanguage(query), ct);
         var keyword = terms.Count == 0 ? [] : await KeywordAsync(SearchText.TsQuery(groups, all: false), request.Kinds, ct);
         var (semantic, degraded) = await SemanticAsync(query, request.Kinds, ct);
