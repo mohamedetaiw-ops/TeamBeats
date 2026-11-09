@@ -100,4 +100,30 @@ public sealed class PersonaService(IDbSession session, ITenantContext context, I
             Changes: new { roles = roleKeys, membershipType = request.MembershipType, identity }), ct);
         return new PersonaView(id, names, unit, roleKeys, request.MembershipType!, now);
     }
+
+    /// <summary>
+    /// The default persona of a unit: an employee of it with no extra roles, used for platform cases and cases that name
+    /// no persona. Made on first use by the person who starts the run, who already holds <c>eval.design</c> on the unit.
+    /// </summary>
+    internal async Task<(Guid Id, Guid UserId)> DefaultAsync(Guid unit, CancellationToken ct)
+    {
+        var found = await session.QueryAsync("select id, user_id from evaluation.persona where is_default and org_unit_id = @unit", new { unit },
+            r => (r.GetGuid(0), r.GetGuid(1)), ct);
+        if (found.Count > 0)
+        {
+            return found[0];
+        }
+        var id = Ids.New();
+        var names = new Dictionary<string, string> { ["en"] = "Employee of the unit", ["ar"] = "موظف في الوحدة" };
+        var identity = await identities.CreateAsync(names["en"], ct);
+        await memberships.AddAsync(identity, MembershipTypes.Employee, unit, ct);
+        await session.ExecAsync(
+            """
+            insert into evaluation.persona (tenant_id, id, names, org_unit_id, roles, membership_type, user_id, created_by, created_at, is_default)
+            values (platform.current_tenant_id(), @id, @names, @unit, '{}', @type, @identity, @user, @now, true)
+            """, new { id, names = Jsonb.From(names), unit, type = MembershipTypes.Employee, identity, user = context.RequireUser(), now = clock.UtcNow }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.EvalPersonaCreated, "eval_persona", id.ToString(), TargetOrgUnitId: unit,
+            Changes: new { roles = Array.Empty<string>(), membershipType = MembershipTypes.Employee, identity, isDefault = true }), ct);
+        return (id, identity);
+    }
 }

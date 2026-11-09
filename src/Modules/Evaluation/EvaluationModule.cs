@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Messaging;
+using TeamBeats.Modules.Evaluation.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -11,7 +13,8 @@ namespace TeamBeats.Modules.Evaluation;
 /// <summary>
 /// The AI Evaluation Layer (spec 034, ADR-0015, module map: Evaluation). R1 slice 1 is the control plane: platform and
 /// mandatory suites, an agent's own suite with versions and thresholds, golden datasets with import, personas backed by
-/// synthetic test identities, and the tenant's thresholds. Runs, scoring and gates follow.
+/// synthetic test identities, and the tenant's thresholds. Slice 2 adds runs on the workers, the evaluators, the judge
+/// and scoring. Gates follow.
 /// </summary>
 public static class EvaluationModule
 {
@@ -24,6 +27,11 @@ public static class EvaluationModule
         services.AddScoped<SuiteService>();
         services.AddScoped<DatasetService>();
         services.AddScoped<PersonaService>();
+        services.AddScoped<RunService>();
+        services.AddScoped<RunStore>();
+        services.AddScoped<CaseExecutor>();
+        services.AddScoped<EvaluationJudge>();
+        services.AddMessageHandler<EvaluationRunRequested, EvaluationRunner>("evaluation.run");
         return services;
     }
 
@@ -86,6 +94,22 @@ public static class EvaluationModule
             var view = await personas.CreateAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/evaluation/personas/{view.Id}", view);
+        });
+
+        root.MapPost("/runs", async (RunStartRequest request, RunService runs, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await runs.StartAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/evaluation/runs/{view.Run.Id}", view);
+        });
+        root.MapGet("/runs", async (Guid agentId, RunService runs, CancellationToken ct) => Results.Ok(await runs.ListAsync(agentId, ct)));
+        root.MapGet("/runs/{id:guid}", async (Guid id, RunService runs, CancellationToken ct) => Results.Ok(await runs.GetAsync(id, ct)));
+        root.MapGet("/runs/{id:guid}/cases", async (Guid id, RunService runs, CancellationToken ct) => Results.Ok(await runs.CasesAsync(id, ct)));
+        root.MapPost("/runs/{id:guid}/cancel", async (Guid id, RunService runs, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await runs.CancelAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
         return app;
     }

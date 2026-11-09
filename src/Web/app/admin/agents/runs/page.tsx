@@ -94,7 +94,7 @@ export default async function AgentRunsPage({ searchParams }: { searchParams: Pr
                       <td>
                         <bdi>{names.get(r.agentId) ?? t("runs.unknownAgent")}</bdi>
                       </td>
-                      <td>{t(`runs.modes.${r.mode === "test" ? "test" : "run"}`)}</td>
+                      <td>{t(`runs.modes.${r.mode === "test" || r.mode === "eval" ? r.mode : "run"}`)}</td>
                       <td>{r.outcome && t.has(`outcomes.${r.outcome}`) ? t(`outcomes.${r.outcome}`) : t(`runStatus.${r.status}`)}</td>
                       <td data-number>{format.number(r.toolCalls)}</td>
                       <td data-number>{format.number(r.denials)}</td>
