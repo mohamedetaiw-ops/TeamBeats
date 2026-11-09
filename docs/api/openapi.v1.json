@@ -7388,6 +7388,18 @@
         }
       }
     },
+    "/api/v1/policies/rights": {
+      "get": {
+        "tags": [
+          "Policies"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/policies/categories": {
       "get": {
         "tags": [

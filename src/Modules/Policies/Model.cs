@@ -105,8 +105,14 @@ public sealed record WorkingVersion(Guid Id, string State, DateTimeOffset? Reque
 
 public sealed record ScheduledVersion(Guid Id, int Number, DateTimeOffset EffectiveFrom);
 
-/// <summary>What the current user may do with a policy, so the page shows the right actions; the API checks again.</summary>
-public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History);
+/// <summary>
+/// What the current user may do with a policy, so the page shows the right actions; the API checks again.
+/// <see cref="Compliance"/>: they have people to follow in the compliance view, as a compliance officer or line manager.
+/// </summary>
+public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance);
+
+/// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>.</summary>
+public sealed record RegisterRights(bool Create);
 
 public sealed record PolicyView(
     Guid Id,

@@ -34,6 +34,8 @@ public static class PoliciesModule
     {
         var root = app.MapGroup("/api/v1/policies").RequireTenantUser().WithTags("Policies");
 
+        root.MapGet("/rights", async (PolicyRegister register, CancellationToken ct) => Results.Ok(await register.RightsAsync(ct)));
+
         root.MapGet("/categories", async (PolicyRegister register, CancellationToken ct) => Results.Ok(await register.CategoriesAsync(ct)));
 
         root.MapPost("/categories", async (CategoryRequest request, PolicyRegister register, IDbSession session, CancellationToken ct) =>

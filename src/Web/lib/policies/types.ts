@@ -35,7 +35,9 @@ export type PolicyReading = { policy: PolicySummary; version: VersionView; super
 
 export type RouteStep = { names?: Names | null; approvers?: string[] | null; complianceOfficers?: boolean };
 
-export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean };
+export type PolicyRights = { manage: boolean; edit: boolean; review: boolean; history: boolean; compliance: boolean };
+
+export type RegisterRights = { create: boolean };
 
 export type PolicyView = {
   id: string;
@@ -119,3 +121,86 @@ export function shownLocale(version: VersionView, locale: string, binding: strin
   if (binding && version.locales.includes(binding)) return binding;
   return version.locales[0] ?? locale;
 }
+
+export type ClauseChange = { key: string; change: "added" | "removed" | "changed" | "unchanged"; before: ClauseView | null; after: ClauseView | null };
+
+export type CompareView = { base: number | null; versionId: string; number: number | null; clauses: ClauseChange[]; titlesChanged: boolean };
+
+export type CommentView = {
+  id: string;
+  versionId: string;
+  clauseKey: string;
+  author: PolicyPerson;
+  text: string;
+  createdAt: string;
+  resolvedAt: string | null;
+  resolvedBy: PolicyPerson | null;
+};
+
+export type CampaignCounts = { members: number; attested: number; open: number; overdue: number; leftAudience: number };
+
+export type CampaignView = {
+  id: string;
+  policyId: string;
+  version: number;
+  deadline: string;
+  attestationText: Names;
+  reminderDays: number[];
+  lateJoinerDays: number;
+  excludedMembershipTypes: string[];
+  status: "open" | "closed";
+  launchedBy: PolicyPerson;
+  launchedAt: string;
+  closedAt: string | null;
+  counts: CampaignCounts;
+};
+
+export type ComplianceCampaign = { id: string; version: number; deadline: string; status: string };
+
+export type ComplianceCounts = CampaignCounts & { percent: number };
+
+export type ComplianceGroup = {
+  unitId: string | null;
+  unitNames: Names | null;
+  direct: boolean;
+  location: string | null;
+  manager: PolicyPerson | null;
+  counts: ComplianceCounts;
+};
+
+export type ComplianceView = {
+  policyId: string;
+  currentVersion: number | null;
+  campaign: ComplianceCampaign | null;
+  campaigns: ComplianceCampaign[];
+  scope: "tenant" | "units" | "reports";
+  unit: string | null;
+  unitPath: string[];
+  totals: ComplianceCounts;
+  byUnit: ComplianceGroup[];
+  byLocation: ComplianceGroup[];
+  byManager: ComplianceGroup[];
+};
+
+export type MemberStatus = "open" | "attested" | "overdue" | "left_audience";
+
+export type CompliancePerson = {
+  person: PolicyPerson;
+  unitId: string | null;
+  location: string | null;
+  managerId: string | null;
+  status: MemberStatus;
+  dueAt: string;
+  attestedAt: string | null;
+  leftAt: string | null;
+};
+
+export type CompliancePeople = { items: CompliancePerson[]; total: number; offset: number; limit: number };
+
+export type PersonCompliance = { person: PolicyPerson; policies: MyPolicyItem[] };
+
+export const editHref = (id: string) => `/policies/${encodeURIComponent(id)}/edit`;
+export const reviewHref = (id: string) => `/policies/${encodeURIComponent(id)}/review`;
+export const campaignsHref = (id: string) => `/policies/${encodeURIComponent(id)}/campaigns`;
+export const complianceHref = (id: string) => `/policies/${encodeURIComponent(id)}/compliance`;
+export const personComplianceHref = (userId: string) => `/policies/compliance/people/${encodeURIComponent(userId)}`;

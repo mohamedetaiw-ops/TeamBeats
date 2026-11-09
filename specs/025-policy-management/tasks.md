@@ -23,7 +23,7 @@ Depends on 004, 005, 006, 007, 009 (body document, audience model), 011 (control
 - [ ] T010 [US4] Assistant answers with clause citations and the policy-scoped entry, with the assistant spec; tests for scenarios 1 to 6
 
 ## Phase 6: Experience
-- [ ] T011 Register, editor with clauses, policy page with anchors, My policies, campaign and compliance pages, in English and Arabic, RTL; e2e with axe
+- [x] T011 Register, editor with clauses, policy page with anchors, My policies, campaign and compliance pages, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
 - [ ] T012 OpenAPI; R1 implementation notes (location and manager breakdowns); spec evidence

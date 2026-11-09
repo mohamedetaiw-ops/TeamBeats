@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { nameIn, policyHref, type PolicyListItem } from "@/lib/policies/types";
+import { nameIn, policyHref, type PolicyListItem, type RegisterRights } from "@/lib/policies/types";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
@@ -22,7 +22,10 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
   const query = new URLSearchParams();
   if (q?.trim()) query.set("q", q.trim());
   if (status && (statuses as readonly string[]).includes(status)) query.set("status", status);
-  const list = await apiGet<PolicyListItem[]>(`/api/v1/policies${query.size > 0 ? `?${query}` : ""}`);
+  const [list, rights] = await Promise.all([
+    apiGet<PolicyListItem[]>(`/api/v1/policies${query.size > 0 ? `?${query}` : ""}`),
+    apiGet<RegisterRights>("/api/v1/policies/rights"),
+  ]);
   const t = await getTranslations("policies.register");
   const ts = await getTranslations("policies.status");
   const locale = await getLocale();
@@ -34,6 +37,13 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
       <main id="main" className="page policies-page">
         <h1>{t("title")}</h1>
         <PoliciesNav current="register" />
+        {rights.ok && rights.data.create ? (
+          <p>
+            <Link href="/policies/new" className="button button-primary">
+              {t("create")}
+            </Link>
+          </p>
+        ) : null}
         <form className="policies-toolbar" method="get" role="search" aria-label={t("search")}>
           <div className="field">
             <label htmlFor="policy-q">{t("search")}</label>

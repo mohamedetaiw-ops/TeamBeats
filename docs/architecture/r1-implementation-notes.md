@@ -1053,3 +1053,23 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Location labels | Breakdowns return location keys; the page shows the labels from `/api/v1/people/locations`. |
 | Comprehension answers | Comprehension checks are R2, so there are no answers to hide from managers yet. |
 | Scale | The view groups members in memory after three bulk reads. The 100,000 people target (section 14) gets a performance test with the pages slice; a stored summary can follow if it misses. |
+
+## Policy pages (spec 025 T011)
+
+| Area | What was built |
+|---|---|
+| Register | `/policies` lists what the person may see with ID, name, status, version in force, effective date, next review and owner, with search and a status filter. Compliance officers get "New policy" (`GET /api/v1/policies/rights`) |
+| New policy | `/policies/new`: ID, name per language, binding language, review cycle and an optional named approver; without one the compliance officers of the scope approve |
+| Editor | `/policies/{id}/edit`: title and clauses per language in tabs, levels 1 to 3, move up or down, material or minor, change note and effective date; save, submit, withdraw. A revision starts from the version in force with its clause keys |
+| Review | `/policies/{id}/review`, where the approval task links: each clause marked added, changed, unchanged or removed with the earlier text, clause comments, resolve for editors, and the decision for the task holder |
+| Policy page | `/policies/{id}` and `/policies/{id}/versions/{n}`: numbered clauses with anchors and contents, the binding language note, links to other languages, the superseded banner, the attest panel, version history, and the actions the API allows (`PolicyRights`, now with `compliance`) |
+| Campaigns | `/policies/{id}/campaigns` (and `/campaigns/{campaignId}` from notices): launch with deadline, reminder days and late joiner days, counts, remind, close |
+| Compliance | `/policies/{id}/compliance`: totals, breakdowns by unit (drill-down by unit), location and manager, the people list with status filter and paging, remind; `/policies/compliance/people/{userId}` for one person |
+| My policies | `/policies/my`: what to accept first with due dates, then everything else with the version accepted |
+| Inbox | Items of other modules now link to the page their source names; policy approval and attestation have their own type names |
+| Tests | `policies.spec.ts` (inbox link, My policies, reading with anchors and binding note, attest, version page, register) and `policy-authoring.spec.ts` (create, write in both languages, review with a comment, approve, launch, compliance down to one person), in English and Arabic with axe |
+
+| Item | Note |
+|---|---|
+| Clause blocks | The editor reuses the spec 009 block editor; headings and embeds are refused by the API for clauses with a message, since the clause title is the heading. |
+| No unit line | "See people" on the no unit line lists everyone, because the people filter has no "no unit" option yet. |

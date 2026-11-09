@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { nameIn, policyHref, shownLocale, type MyAttestation, type PolicyReading, type PolicyView, type VersionHistoryItem } from "@/lib/policies/types";
+import { campaignsHref, complianceHref, editHref, nameIn, policyHref, reviewHref, shownLocale, type MyAttestation, type PolicyReading, type PolicyView, type VersionHistoryItem } from "@/lib/policies/types";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
@@ -35,6 +36,16 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
   const locale = await getLocale();
   const wanted = lang && me.data.tenant.enabledLocales.includes(lang) ? lang : locale;
   const shown = reading?.ok ? shownLocale(reading.data.version, wanted, reading.data.bindingLocale) : wanted;
+  const tm = await getTranslations("policies.manage");
+  const format = await getFormatter();
+  const actions = [
+    p.rights.edit || p.rights.manage
+      ? { href: editHref(p.id), label: tm(p.working ? (p.working.state === "in_review" ? "inReview" : "continueDraft") : p.currentVersion ? "revise" : "write") }
+      : null,
+    p.working?.state === "in_review" && (p.rights.review || p.rights.edit || p.rights.manage) ? { href: reviewHref(p.id), label: tm("review") } : null,
+    p.rights.history ? { href: campaignsHref(p.id), label: tm("campaigns") } : null,
+    p.rights.compliance && p.currentVersion ? { href: complianceHref(p.id), label: tm("compliance") } : null,
+  ].filter((a): a is { href: string; label: string } => a !== null);
   return (
     <>
       <Header
@@ -46,6 +57,18 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
       />
       <main id="main" className="page policies-page">
         <PoliciesNav current={null} />
+        {actions.length > 0 ? (
+          <nav aria-label={tm("label")} className="policies-nav">
+            <ul>
+              {actions.map((a) => (
+                <li key={a.href}>
+                  <Link href={a.href}>{a.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ) : null}
+        {p.scheduled ? <p className="policies-banner">{tm("scheduled", { number: p.scheduled.number, date: format.dateTime(new Date(p.scheduled.effectiveFrom), { dateStyle: "long" }) })}</p> : null}
         {reading?.ok ? (
           <PolicyDocument reading={reading.data} locale={shown} />
         ) : (
