@@ -47,7 +47,8 @@
       "people": "People directory",
       "security": "Security",
       "services": "Services",
-      "ai": "AI governance"
+      "ai": "AI governance",
+      "search": "Search"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}"
   },
@@ -289,9 +290,18 @@
     "breadcrumbs": "Breadcrumb",
     "sectionNav": "In this section",
     "search": {
-      "label": "Go to a page",
-      "placeholder": "Go to a page",
-      "count": "{count, plural, =0 {No pages found} one {# page found} other {# pages found}}"
+      "label": "Search",
+      "placeholder": "Search people, news, files and services",
+      "count": "{count, plural, =0 {No suggestions} one {# suggestion} other {# suggestions}}",
+      "all": "See all results for {term}",
+      "kinds": {
+        "person": "Person",
+        "content": "News and pages",
+        "document": "Document",
+        "knowledge": "Article",
+        "policy": "Policy",
+        "service": "Service"
+      }
     },
     "recovery": {
       "title": "This page is not available",
@@ -2525,6 +2535,83 @@
       "noEntries": "No entries",
       "keepNote": "Entries are kept for 30 days.",
       "unreadable": "This entry can no longer be read."
+    }
+  },
+  "search": {
+    "title": "Search",
+    "titleFor": "Results for {q}",
+    "label": "Search for",
+    "submit": "Search",
+    "count": "{count, plural, =0 {No results} one {# result} other {# results}}",
+    "countMore": "More than {count} results",
+    "degraded": "Search by meaning is not available right now, so only exact words are matched.",
+    "filters": "Filter by source",
+    "allKinds": "All",
+    "recommended": "Recommended",
+    "none": "Nothing matches {q}.",
+    "alternatives": "You might be looking for",
+    "pages": "Result pages",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {pages}",
+    "notAvailable": "Search is not available in your plan.",
+    "failed": "Search did not answer. Try again in a moment.",
+    "kinds": {
+      "person": "Person",
+      "content": "News and pages",
+      "document": "Document",
+      "knowledge": "Article",
+      "policy": "Policy",
+      "service": "Service"
+    },
+    "admin": {
+      "title": "Search",
+      "intro": "Point people to the right answer for common searches and teach search the words your organization uses.",
+      "locale": "Language",
+      "locales": {
+        "any": "Every language",
+        "ar": "Arabic",
+        "en": "English"
+      },
+      "busy": "Saving",
+      "failed": "That did not work. Try again in a moment.",
+      "remove": "Remove",
+      "bestBets": {
+        "title": "Best bets",
+        "intro": "A best bet shows an item first, marked as recommended, when people search these words and may open it.",
+        "query": "Search words",
+        "find": "Find the item",
+        "results": "Items found",
+        "picked": "Item:",
+        "pickFirst": "Find and choose the item first.",
+        "add": "Add best bet",
+        "added": "Best bet added.",
+        "removed": "Best bet removed.",
+        "empty": "No best bets yet.",
+        "gone": "Item no longer in search",
+        "remove": "Remove the best bet for {query}"
+      },
+      "synonyms": {
+        "title": "Synonyms",
+        "intro": "Words in a set find each other, so a search for one also finds items with the others.",
+        "words": "Words",
+        "hint": "Single words separated by commas, for example leave, vacation, إجازة",
+        "add": "Add synonyms",
+        "added": "Synonyms added.",
+        "removed": "Synonyms removed.",
+        "empty": "No synonyms yet.",
+        "remove": "Remove the synonyms {words}"
+      },
+      "rebuilds": {
+        "title": "Rebuild the index",
+        "intro": "Reads every item again from where it is kept. Use it after a large import or if results look out of date.",
+        "start": "Rebuild now",
+        "started": "Rebuild started.",
+        "empty": "No rebuilds yet.",
+        "queued": "Waiting to start",
+        "running": "Running",
+        "done": "{items} items, {units} passages"
+      }
     }
   }
 }
