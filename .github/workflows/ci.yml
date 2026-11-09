@@ -144,16 +144,34 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Install gitleaks
+      # Scanner binaries come from GitHub release downloads, which return 504 for long stretches. They are cached by
+      # version so an outage there does not fail the job; a cache miss downloads them once and checks their hashes.
+      - name: Restore governance tools
+        id: tools
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/tools
+          key: governance-tools-gitleaks-8.24.3-syft-1.18.1
+      - name: Download governance tools
+        if: steps.tools.outputs.cache-hit != 'true'
         run: |
-          version=8.24.3
-          sha256=9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c
-          file="gitleaks_${version}_linux_x64.tar.gz"
-          curl -sSfL --retry 5 --retry-delay 5 --retry-all-errors -o "$RUNNER_TEMP/$file" "https://github.com/gitleaks/gitleaks/releases/download/v$version/$file"
-          echo "$sha256  $RUNNER_TEMP/$file" | sha256sum -c -
-          mkdir -p "$RUNNER_TEMP/gitleaks"
-          tar -xzf "$RUNNER_TEMP/$file" -C "$RUNNER_TEMP/gitleaks" gitleaks
-          echo "$RUNNER_TEMP/gitleaks" >> "$GITHUB_PATH"
+          mkdir -p "$RUNNER_TEMP/tools"
+          get() {
+            curl -sSfL --retry 10 --retry-delay 15 --retry-all-errors --retry-max-time 600 -o "$RUNNER_TEMP/tools/$2" "$1"
+            echo "$3  $RUNNER_TEMP/tools/$2" | sha256sum -c -
+          }
+          get https://github.com/gitleaks/gitleaks/releases/download/v8.24.3/gitleaks_8.24.3_linux_x64.tar.gz gitleaks.tar.gz \
+            9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c
+          get https://github.com/anchore/syft/releases/download/v1.18.1/syft_1.18.1_linux_amd64.tar.gz syft.tar.gz \
+            066c251652221e4d44fcc4d115ce3df33a91769da38c830a8533199db2f65aab
+      - name: Install governance tools
+        run: |
+          echo "9991e0b2903da4c8f6122b5c3186448b927a5da4deef1fe45271c3793f4ee29c  $RUNNER_TEMP/tools/gitleaks.tar.gz" | sha256sum -c -
+          echo "066c251652221e4d44fcc4d115ce3df33a91769da38c830a8533199db2f65aab  $RUNNER_TEMP/tools/syft.tar.gz" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/bin"
+          tar -xzf "$RUNNER_TEMP/tools/gitleaks.tar.gz" -C "$RUNNER_TEMP/bin" gitleaks
+          tar -xzf "$RUNNER_TEMP/tools/syft.tar.gz" -C "$RUNNER_TEMP/bin" syft
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Secret scan
         # Scans the commits of the pull request or push. Findings fail the job and appear in the log.
         env:
@@ -168,12 +186,8 @@ jobs:
           fi
           gitleaks git --config .gitleaks.toml --redact --verbose --log-opts="$range" .
       - name: SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          format: spdx-json
-          output-file: teambeats-sbom.spdx.json
-          # Generated on every run; uploading is off until artifact storage is budgeted (release builds will attach it).
-          upload-artifact: false
+        # Generated on every run; uploading is off until artifact storage is budgeted (release builds will attach it).
+        run: syft scan dir:. -o spdx-json=teambeats-sbom.spdx.json
       - name: Deployment manifest lint (constitution V, ADR-0004)
         run: tools/deploy-lint.sh
       - name: spec-lint
