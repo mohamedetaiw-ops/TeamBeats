@@ -17,9 +17,9 @@ Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and ru
 - [ ] T008 Data envelope, detector and safe answer rendering
 
 ## Phase 4: User Stories 6 to 9, records, controls, policy and risk (P1)
-- [ ] T009 [P] Tests: execution record fields and masking; scoped run search; suspend and kill switch timings; rollback within 60 seconds; policy changes suspend breaking agents; risk class computed and not lowered
-- [ ] T010 Execution records and search; suspend, resume, kill switch and the platform switch
-- [ ] T011 Tenant agent policy with cache and auto-suspension; risk class computation
+- [x] T009 [P] Tests: execution record fields and masking; scoped run search; suspend and kill switch timings; rollback within 60 seconds; policy changes suspend breaking agents; risk class computed and not lowered
+- [x] T010 Execution records and search; suspend, resume, kill switch and the platform switch
+- [x] T011 Tenant agent policy with cache and auto-suspension; risk class computation
 - [ ] T012 Mandatory safety suites wired into the spec 034 gate as critical
 
 ## Phase 5: Experience

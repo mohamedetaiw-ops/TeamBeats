@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
@@ -28,6 +29,9 @@ public static class AgentsModule
         services.AddScoped<AgentPolicyService>();
         services.AddScoped<AgentRegistry>();
         services.AddScoped<AgentRuns>();
+        services.AddScoped<AgentLifecycle>();
+        services.TryAddScoped<IAgentReleaseGate, NoReleaseGate>();
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AgentReviewTasks>();
         return services;
     }
 
@@ -190,11 +194,75 @@ public static class AgentsModule
 
         agents.MapGet("/runs/{id:guid}", async (Guid id, AgentRuns runs, CancellationToken ct) => Results.Ok(await runs.RecordAsync(id, ct)));
 
+        // The lifecycle (020 T008 to T011, 027 T010, T011): submit, review, publish with separation of duties, reject,
+        // rollback, suspend, resume, retire and the tenant kill switch.
+        agents.MapPost("/{id:guid}/submit", async (Guid id, SubmitRequest request, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await lifecycle.SubmitAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        agents.MapGet("/{id:guid}/review", async (Guid id, AgentLifecycle lifecycle, CancellationToken ct) => Results.Ok(await lifecycle.ReviewAsync(id, ct)));
+
+        agents.MapPost("/{id:guid}/publish", async (Guid id, DecisionRequest request, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await lifecycle.PublishAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        agents.MapPost("/{id:guid}/reject", async (Guid id, DecisionRequest request, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await lifecycle.RejectAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        agents.MapPost("/{id:guid}/rollback", async (Guid id, RollbackRequest request, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await lifecycle.RollbackAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        agents.MapPost("/{id:guid}/suspend", async (Guid id, ReasonRequest request, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await lifecycle.SuspendAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        agents.MapPost("/{id:guid}/resume", async (Guid id, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await lifecycle.ResumeAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        agents.MapPost("/{id:guid}/retire", async (Guid id, ReasonRequest request, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await lifecycle.RetireAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        agents.MapGet("/kill-switch", async (AgentLifecycle lifecycle, CancellationToken ct) => Results.Ok(await lifecycle.KillSwitchAsync(ct)));
+
+        agents.MapPut("/kill-switch", async (KillSwitchRequest request, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await lifecycle.ChangeKillSwitchAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
         agents.MapGet("/policy", async (AgentPolicyService policies, CancellationToken ct) => Results.Ok(await policies.GetAsync(ct)));
 
-        agents.MapPut("/policy", async (AgentPolicyRequest request, AgentPolicyService policies, IDbSession session, CancellationToken ct) =>
+        agents.MapPut("/policy", async (AgentPolicyRequest request, AgentPolicyService policies, AgentLifecycle lifecycle, IDbSession session, CancellationToken ct) =>
         {
             var view = await policies.ChangeAsync(request, ct);
+            // Published agents that break the new policy are suspended in the same transaction (027 FR-018).
+            await lifecycle.SuspendBreakingAsync(view.Policy, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

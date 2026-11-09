@@ -1350,7 +1350,8 @@
       "contentOwnerReview": "Content owner review",
       "contentRetire": "Content retirement",
       "policyApproval": "Policy approval",
-      "policyAttestation": "Policy attestation"
+      "policyAttestation": "Policy attestation",
+      "agentReview": "Agent review"
     },
     "delegation": {
       "title": "While you are away",

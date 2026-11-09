@@ -27,7 +27,7 @@ public sealed class AgentRuntimeTests(TenantWorld world)
     private async Task<TestTenant> FreshAsync()
     {
         var t = await world.CreateTenantAsync("ar-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus", "en", ["en", "ar"]);
-        foreach (var name in new[] { "sara", "emp", "out", "sec", "pia", "fadi" })
+        foreach (var name in new[] { "sara", "emp", "out", "sec", "pia", "fadi", "aip" })
         {
             await world.SeedUserAsync(t, name, MembershipTypes.Employee);
         }
@@ -39,6 +39,7 @@ public sealed class AgentRuntimeTests(TenantWorld world)
         await world.AssignAsync(t, "fadi", BuiltInRoles.AgentDesigner, "org_subtree", finance);
         await world.AssignAsync(t, "sec", BuiltInRoles.SecurityOfficer, "tenant", null);
         await world.AssignAsync(t, "pia", BuiltInRoles.ContentPublisher, "tenant", null);
+        await world.AssignAsync(t, "aip", BuiltInRoles.AiPolicyAdministrator, "tenant", null);
         return t;
     }
 
@@ -78,12 +79,9 @@ public sealed class AgentRuntimeTests(TenantWorld world)
         await OkAsync(t["sara"].Client.PutAsJsonAsync($"{Agents}/{id}/draft", new { revision = 1, definition }));
         if (publish)
         {
-            // Review and publishing come with the lifecycle slice; until then the version is published directly.
-            await world.Database.TenantScalarAsync<int>(t.Id,
-                """
-                with v as (update agents.agent_version set state = 'published', published_at = now() where agent_id = @id and number = 1 returning 1)
-                update agents.agent set status = 'published', current_version = 1 where id = @id returning 1
-                """, ("id", id));
+            // Sara submits the version and the AI policy administrator publishes it (separation of duties).
+            await OkAsync(t["sara"].Client.PostAsJsonAsync($"{Agents}/{id}/submit", new { revision = 2 }));
+            await OkAsync(t["aip"].Client.PostAsJsonAsync($"{Agents}/{id}/publish", new { version = 1 }));
         }
         return id;
     }
