@@ -277,6 +277,9 @@ public static class RunScorer
 {
     public const int MinCasesForBlocking = 20;
 
+    /// <summary>The measured metric compared on p95 latency; the other measured metric compares tokens per successful task.</summary>
+    public const string LatencyMetric = "latency_p95_increase";
+
     /// <summary>The noise margin when the baseline version has only one run, so it could not be measured.</summary>
     public const double DefaultNoise = 0.02;
 
@@ -405,9 +408,10 @@ public static class RunScorer
     private static LocaleScore Measured(MetricDefinition def, EffectiveRule? rule, string locale, IReadOnlyDictionary<string, int?> latency,
         IReadOnlyDictionary<string, double?> tokens, RunResult? baseline)
     {
-        double? now = def.Key == "latency_p95_increase" ? latency.GetValueOrDefault(locale) : tokens.GetValueOrDefault(locale);
+        var isLatency = string.Equals(def.Key, LatencyMetric, StringComparison.Ordinal);
+        double? now = isLatency ? latency.GetValueOrDefault(locale) : tokens.GetValueOrDefault(locale);
         double? before = baseline is null ? null
-            : def.Key == "latency_p95_increase" ? baseline.LatencyP95.GetValueOrDefault(locale) : baseline.TokensPerSuccess.GetValueOrDefault(locale);
+            : isLatency ? baseline.LatencyP95.GetValueOrDefault(locale) : baseline.TokensPerSuccess.GetValueOrDefault(locale);
         if (now is null || before is not > 0)
         {
             return new LocaleScore(locale, 0, null, 0, 0, MetricStates.NoBaseline);

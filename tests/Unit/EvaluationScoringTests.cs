@@ -9,6 +9,7 @@ namespace TeamBeats.Unit.Tests;
 /// <summary>Spec 034 T007 and T009: deterministic and trajectory evaluators, and scoring per locale against thresholds.</summary>
 public sealed class EvaluationScoringTests
 {
+    private const string TaskSuccess = "task_success";
     private static readonly Guid Policy = Guid.NewGuid();
     private static readonly Guid Salaries = Guid.NewGuid();
 
@@ -156,7 +157,7 @@ public sealed class EvaluationScoringTests
         var result = RunScorer.Score([suite], cases, ["en"], null, [], null);
         Assert.Equal(EvalVerdicts.Failed, result.Verdict);
         Assert.Equal(["agent:unauthorized_attempts:en"], result.CriticalFailures);
-        var task = result.Suites.Single().Metrics.Single(m => m.Key == "task_success").Locales.Single();
+        var task = result.Suites.Single().Metrics.Single(m => m.Key == TaskSuccess).Locales.Single();
         Assert.Equal(MetricStates.InsufficientData, task.Status);
         Assert.Equal(5, task.Cases);
 
@@ -190,12 +191,12 @@ public sealed class EvaluationScoringTests
         Assert.Equal(0.1, regression.Noise);
         Assert.Equal(20, regression.Cases);
         // p95 latency 1000 to 1300 ms is a 30% increase, over the 20% warning threshold.
-        var latency = worse.Suites.Single().Metrics.Single(m => m.Key == "latency_p95_increase").Locales.Single();
+        var latency = worse.Suites.Single().Metrics.Single(m => m.Key == RunScorer.LatencyMetric).Locales.Single();
         Assert.Equal(0.3, latency.Value);
         Assert.Equal(MetricStates.Fail, latency.Status);
         Assert.Contains("agent:latency_p95_increase:en", worse.Warnings);
         // Warnings alone do not fail a run; without a baseline the measured metrics say so.
-        Assert.Equal(MetricStates.NoBaseline, baseline.Suites.Single().Metrics.Single(m => m.Key == "latency_p95_increase").Locales.Single().Status);
+        Assert.Equal(MetricStates.NoBaseline, baseline.Suites.Single().Metrics.Single(m => m.Key == RunScorer.LatencyMetric).Locales.Single().Status);
         Assert.NotEqual(EvalVerdicts.Failed, worse.Verdict);
     }
 }
