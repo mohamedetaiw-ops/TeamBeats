@@ -319,6 +319,8 @@
   "notifications.email.open": "فتح في TeamBeats",
   "notifications.email.test_body": "إعدادات الإشعارات لديك قادرة على إرسال البريد الإلكتروني.",
   "notifications.email.test_subject": "رسالة اختبار من TeamBeats",
+  "notifications.template.agents.auto_suspended.body": "أدى تغيير في سياسة الوكلاء إلى إيقاف وكيل تملكه. افتحه لترى ما يخالف القواعد الجديدة، ثم عدّله وأرسله للمراجعة.",
+  "notifications.template.agents.auto_suspended.title": "تم إيقاف وكيل تملكه",
   "notifications.template.content.comment.new.body": "علّق أحدهم على عنصر تملكه. افتحه لقراءة التعليق.",
   "notifications.template.content.comment.new.title": "تعليق جديد على المحتوى الخاص بك",
   "notifications.template.content.critical.deadline_passed.body": "انتهى الموعد النهائي. افتحه لقراءته وتأكيده.",

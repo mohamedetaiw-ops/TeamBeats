@@ -319,6 +319,8 @@
   "notifications.email.open": "Open in TeamBeats",
   "notifications.email.test_body": "Your notification settings can send email.",
   "notifications.email.test_subject": "TeamBeats test email",
+  "notifications.template.agents.auto_suspended.body": "A change to the agent policy suspended an agent you own. Open it to see what breaks the new rules, then change it and send it for review.",
+  "notifications.template.agents.auto_suspended.title": "An agent you own was suspended",
   "notifications.template.content.comment.new.body": "Someone commented on an item you own. Open it to read the comment.",
   "notifications.template.content.comment.new.title": "New comment on your content",
   "notifications.template.content.critical.deadline_passed.body": "The deadline has passed. Open it to read it and confirm.",

@@ -213,6 +213,12 @@ public sealed class AgentLifecycleTests(TenantWorld world)
         Assert.Equal(AgentStatuses.Published, (await OkAsync(t["aip"].Client.GetAsync($"{Agents}/{other}"))).GetProperty("agent").GetProperty("status").GetString());
         Assert.Equal("conflict.agent.suspended", await ProblemAsync(t["emp"].Client.PostAsJsonAsync($"{Agents}/{id}/runs", new { message = "Hi" }), HttpStatusCode.Conflict));
 
+        // The owner is told (027 FR-018), with a link to the agent; the agent that still fits sends nothing.
+        var links = (await OkAsync(t["sara"].Client.GetAsync("/api/v1/me/notifications"))).GetProperty("items").EnumerateArray().Select(n => n.GetProperty("link").GetString()).ToArray();
+        Assert.Contains($"/admin/agents/{id}", links);
+        Assert.DoesNotContain($"/admin/agents/{other}", links);
+        Assert.Empty((await OkAsync(t["emp"].Client.GetAsync("/api/v1/me/notifications"))).GetProperty("items").EnumerateArray());
+
         // It cannot come back on that version, and rolling back to version 1 is now blocked by the policy.
         Assert.Equal("validation.agent.autonomy_above_policy", await ProblemAsync(t["sec"].Client.PostAsync($"{Agents}/{id}/resume", null), HttpStatusCode.BadRequest));
         await OkAsync(t["aip"].Client.PostAsJsonAsync($"{Agents}/{id}/rollback", new { version = 2 }));

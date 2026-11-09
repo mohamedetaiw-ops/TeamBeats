@@ -2,6 +2,7 @@ using System.Text.Json;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Persistence;
@@ -53,9 +54,12 @@ public sealed record AgentReview(AgentSummary Agent, AgentVersionView Version, A
 /// </summary>
 public sealed class AgentLifecycle(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
     IAuditWriter audit, IClock clock, ToolRegistry tools, AgentPolicyService policies, AgentRegistry registry, IAgentReleaseGate gate,
-    ITenantSettingsReader tenant)
+    ITenantSettingsReader tenant, INotificationSender notifications)
 {
     public const int MaxReason = 500;
+
+    /// <summary>The notice an owner gets when a policy change suspends their agent (027 FR-018).</summary>
+    public const string AutoSuspendedTemplate = "agents.auto_suspended";
     private static readonly JsonSerializerOptions Json = AgentPolicyService.Json;
 
     internal static AgentDefinition Definition(string json) => JsonSerializer.Deserialize<AgentDefinition>(json, Json)!;
@@ -390,10 +394,10 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
     {
         var rows = await session.QueryAsync(
             """
-            select a.id, a.org_unit_id, v.definition::text from agents.agent a
+            select a.id, a.org_unit_id, v.definition::text, a.owner_user_id from agents.agent a
             join agents.agent_version v on v.agent_id = a.id and v.number = a.current_version
             where a.status = 'published'
-            """, null, r => (Id: r.GetGuid(0), Unit: r.GetGuid(1), Definition: r.GetString(2)), ct);
+            """, null, r => (Id: r.GetGuid(0), Unit: r.GetGuid(1), Definition: r.GetString(2), Owner: r.GetGuid(3)), ct);
         var suspended = new List<Guid>();
         foreach (var row in rows)
         {
@@ -404,6 +408,8 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
             catch (AppException)
             {
                 await SuspendRowAsync(row.Id, row.Unit, "policy_changed", ct);
+                await notifications.SendAsync(new NotificationRequest([row.Owner], NotificationCategories.System, AutoSuspendedTemplate,
+                    $"/admin/agents/{row.Id}", DedupeKey: $"agents.auto_suspended:{row.Id:N}"), ct);
                 suspended.Add(row.Id);
             }
         }

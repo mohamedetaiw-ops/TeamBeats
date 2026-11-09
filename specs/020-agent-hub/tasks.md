@@ -24,7 +24,7 @@ Depends on 004, 005, 006, 013, 016, 027 (same module), 034; 012 (search source),
 - [x] T013 [US8] Prepared drafts as inbox tasks marked "prepared by AI"
 
 ## Phase 5: Experience
-- [ ] T014 Registry, template library, agent editor with test panel, review page and the conversation component, in English and Arabic, RTL; e2e with axe
+- [x] T014 Registry, template library, agent editor with test panel, review page and the conversation component, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
 - [ ] T015 OpenAPI; R1 implementation notes; spec evidence

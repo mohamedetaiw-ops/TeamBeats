@@ -9,6 +9,7 @@ import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { PolicyDocument } from "@/features/policies/PolicyDocument";
 import { AttestPanel } from "@/features/policies/AttestPanel";
 import { VersionList } from "@/features/policies/VersionList";
+import { AskAgentLink } from "@/features/agents/AskAgentLink";
 
 /**
  * A policy page (spec 025 US1 and US2): the version in force with numbered clauses and anchors, the attest panel when
@@ -68,6 +69,7 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
             </ul>
           </nav>
         ) : null}
+        {reading?.ok ? <AskAgentLink source="policies" itemId={p.id} /> : null}
         {p.scheduled ? <p className="policies-banner">{tm("scheduled", { number: p.scheduled.number, date: format.dateTime(new Date(p.scheduled.effectiveFrom), { dateStyle: "long" }) })}</p> : null}
         {reading?.ok ? (
           <PolicyDocument reading={reading.data} locale={shown} />

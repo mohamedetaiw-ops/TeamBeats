@@ -44,6 +44,7 @@ public static class AdministrationModule
         ("security", Permissions.SecurityView, "/admin/security"),
         ("ai", Permissions.AiPolicyManage, "/admin/ai"),
         ("search", Permissions.SearchManage, "/admin/search"),
+        ("agents", Permissions.AgentView, "/admin/agents"),
     ];
 
     /// <summary>A second permission that also opens a section: security officers read the AI pages with <c>ai.policy_view</c> (spec 013).</summary>
