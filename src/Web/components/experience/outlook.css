@@ -2,10 +2,10 @@
 .outlook {
   display: grid;
   gap: var(--tb-space-sm);
-  padding: var(--tb-space-md);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-md);
+  padding: var(--tb-space-lg);
+  border-radius: var(--tb-radius-lg);
   background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
 }
 
 .outlook-header,

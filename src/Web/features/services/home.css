@@ -1,0 +1,124 @@
+/* Spec 016 home components in the v2 card style. Tokens only; logical properties keep RTL working. */
+.home-card {
+  display: grid;
+  gap: var(--tb-space-md);
+  block-size: 100%;
+  padding: var(--tb-space-lg);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-text-primary);
+  align-content: start;
+}
+
+.home-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+}
+
+.home-card-head h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.home-card-head a {
+  color: var(--tb-color-link);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.home-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-stats li {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-md);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+}
+
+.home-stats li[data-tone="accent"] {
+  background: var(--tb-color-accent-subtle);
+}
+
+.home-stats strong {
+  font-family: var(--tb-font-family-heading);
+  font-size: var(--tb-font-size-xl);
+  line-height: var(--tb-font-line-height-heading);
+}
+
+.home-stats li[data-tone="accent"] strong {
+  color: var(--tb-color-link);
+}
+
+.home-stats li[data-tone="highlight"] strong {
+  color: var(--tb-color-highlight-base);
+}
+
+.home-stats li[data-tone="success"] strong {
+  color: var(--tb-color-state-success);
+}
+
+.home-stats span,
+.home-meta {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.home-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-list li {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.home-list li:last-child {
+  border-block-end: 0;
+}
+
+.home-list a {
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.home-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-tiles a {
+  display: grid;
+  gap: var(--tb-space-xs);
+  align-content: end;
+  min-block-size: 6rem;
+  padding: var(--tb-space-md);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-medium);
+  text-decoration: none;
+}
+
+.home-tiles a:hover {
+  background: var(--tb-color-accent-subtle);
+}

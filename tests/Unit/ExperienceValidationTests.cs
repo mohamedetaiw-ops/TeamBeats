@@ -208,6 +208,21 @@ public sealed class ExperienceValidationTests
     }
 
     [Fact]
+    public void The_services_home_components_need_the_service_catalogue_and_bound_their_counts()
+    {
+        var registry = new ComponentRegistry([new TeamBeats.Modules.Services.ServicesComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        Assert.Empty(registry.Rejected);
+        Assert.Equal(["services.my_services@1", "services.task_summary@1"], registry.All.Select(c => c.Reference).Order().ToArray());
+        foreach (var component in registry.All)
+        {
+            Assert.Equal([TeamBeats.Entitlements.Contracts.Capabilities.WorkflowCatalogue], component.Requires.Capabilities);
+            Assert.Empty(PropertyValidator.Validate(component.Properties, null));
+            Assert.Empty(PropertyValidator.Validate(component.Properties, JsonSerializer.SerializeToElement(new { title = new { en = "Your day", ar = "يومك" }, top = 3 })));
+            Assert.NotEmpty(PropertyValidator.Validate(component.Properties, JsonSerializer.SerializeToElement(new { top = 11 })));
+        }
+    }
+
+    [Fact]
     public void Content_components_register_with_the_content_capability_and_validate_their_properties()
     {
         var registry = new ComponentRegistry([new TeamBeats.Modules.Content.ContentComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);

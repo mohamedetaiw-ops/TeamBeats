@@ -1,11 +1,39 @@
 {
-  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md): a page from the home template H01, published and set as the shell home. Staging web builds leave out the reference packs, so only product components are placed. Mail and calendar join the personal area by themselves (spec 008 FR-051). Edit in place; a home that is already set is never replaced.",
+  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md), laid out after the v2 home mockup: news and the task summary side by side, My services next to the weather, the tool box, then a call to action band. A page from the home template H01, published and set as the shell home. Staging web builds leave out the reference packs, so only product components are placed. Mail and calendar join the personal area by themselves (spec 008 FR-051). Raise the revision when this file changes: a home seeded from an older revision that nobody edited is brought up to date, and a home an administrator changed is never replaced.",
   "template": "H01",
   "slug": "home",
   "variant": "balanced",
+  "revision": 2,
   "regions": {
     "hero": [],
     "grid": [
+      {
+        "id": "news",
+        "componentRef": "content.news_feed@1",
+        "span": 8,
+        "props": {
+          "title": { "en": "News", "ar": "الأخبار" },
+          "type": "all",
+          "top": 4
+        }
+      },
+      {
+        "id": "tasks",
+        "componentRef": "services.task_summary@1",
+        "span": 4,
+        "props": {
+          "title": { "en": "Your day", "ar": "يومك" },
+          "top": 3
+        }
+      },
+      {
+        "id": "services",
+        "componentRef": "services.my_services@1",
+        "span": 8,
+        "props": {
+          "top": 5
+        }
+      },
       {
         "id": "weather",
         "componentRef": "toolbox.weather@1",
@@ -17,7 +45,7 @@
       {
         "id": "world-clock",
         "componentRef": "toolbox.world_clock@1",
-        "span": 4,
+        "span": 6,
         "props": {
           "zones": [
             "Asia/Dubai",
@@ -30,7 +58,19 @@
       {
         "id": "time-converter",
         "componentRef": "toolbox.time_converter@1",
-        "span": 4
+        "span": 6
+      },
+      {
+        "id": "campaign",
+        "componentRef": "content.call_to_action@1",
+        "span": 12,
+        "props": {
+          "heading": { "en": "Every service in one place", "ar": "كل الخدمات في مكان واحد" },
+          "body": { "en": "Leave, IT help, letters and more, with every request tracked from start to finish.", "ar": "الإجازات والدعم التقني والخطابات وغيرها، مع متابعة كل طلب من بدايته حتى نهايته." },
+          "label": { "en": "Browse services", "ar": "تصفح الخدمات" },
+          "link": "/services",
+          "emphasis": "primary"
+        }
       }
     ]
   }

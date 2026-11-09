@@ -21,9 +21,13 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
 {
     public const string FileKey = "Dev:SeedHome:File";
 
+    private const string SeedReason = "Staging home seed";
+
     public sealed record HomePlacement(string Id, string ComponentRef, int? Span = null, JsonElement? Props = null);
 
-    public sealed record HomeFile(string Template, string Slug, string? Variant, IReadOnlyDictionary<string, IReadOnlyList<HomePlacement>> Regions)
+    /// <param name="Revision">Raised when the file changes. A home this seeder published from an older revision, and that nobody
+    /// edited since, is brought up to date; a home an administrator changed or replaced is left alone.</param>
+    public sealed record HomeFile(string Template, string Slug, string? Variant, IReadOnlyDictionary<string, IReadOnlyList<HomePlacement>> Regions, int Revision = 1)
     {
         [JsonPropertyName("$comment")]
         public string? Comment { get; init; }
@@ -93,13 +97,25 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
 
         var shells = sp.GetRequiredService<ShellService>();
         var shell = await shells.GetShellAdminAsync(ct);
-        if (shell.Definition.HomePageId is not null)
+        var pages = sp.GetRequiredService<PageService>();
+        var reason = $"{SeedReason} r{file.Revision}";
+        var list = await pages.ListAsync(ct);
+        if (shell.Definition.HomePageId is { } homeId)
         {
-            return true;
+            // Only a home this seeder published from an older revision, untouched since, is refreshed.
+            var home = list.FirstOrDefault(p => p.Id == homeId);
+            if (home is null || home.Slug != file.Slug || home.PublishedAt is not { } published || home.DraftUpdatedAt > published)
+            {
+                return true;
+            }
+            var last = (await pages.ReleasesAsync(homeId, ct)).OrderByDescending(r => r.Release).FirstOrDefault();
+            if (last?.Reason is not { } lastReason || !lastReason.StartsWith(SeedReason, StringComparison.Ordinal) || lastReason == reason)
+            {
+                return true;
+            }
         }
 
-        var pages = sp.GetRequiredService<PageService>();
-        var page = (await pages.ListAsync(ct)).FirstOrDefault(p => p.Slug == file.Slug) is { } existing
+        var page = list.FirstOrDefault(p => p.Slug == file.Slug) is { } existing
             ? await pages.GetAsync(existing.Id, ct)
             : await pages.CreateAsync(new CreatePageRequest(file.Template, file.Slug, null, file.Variant), ct);
         var regions = page.Draft.Regions
@@ -108,8 +124,11 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
                 : r.Placements))
             .ToList();
         page = await pages.SaveDraftAsync(page.Id, page.ETag, new SaveDraftRequest(page.Draft with { Regions = regions }), ct);
-        await pages.PublishAsync(page.Id, new PublishRequest("Staging home seed"), ct);
-        await shells.PublishShellAsync(shell.Definition with { HomePageId = page.Id }, ct);
+        await pages.PublishAsync(page.Id, new PublishRequest(reason), ct);
+        if (shell.Definition.HomePageId != page.Id)
+        {
+            await shells.PublishShellAsync(shell.Definition with { HomePageId = page.Id }, ct);
+        }
         await sp.GetRequiredService<IDbSession>().CommitAsync(ct);
         logger.LogInformation("Home seed: page {Slug} published as the home of {Tenant}", file.Slug, key);
         return true;

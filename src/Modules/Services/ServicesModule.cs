@@ -17,6 +17,7 @@ public static class ServicesModule
     public static IServiceCollection AddServicesModule(this IServiceCollection services)
     {
         services.AddScoped<Catalogue>();
+        services.AddSingleton<Experience.Contracts.IComponentRegistration, ServicesComponents>();
         services.AddScoped<ServiceAdmin>();
         services.AddScoped<Requests>();
         services.AddScoped<Attachments>();

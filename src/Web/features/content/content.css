@@ -10,10 +10,10 @@
 .content-card {
   display: grid;
   gap: var(--tb-space-sm);
-  padding: var(--tb-space-md);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-md);
+  padding: var(--tb-space-lg);
+  border-radius: var(--tb-radius-lg);
   background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
   color: var(--tb-color-text-primary);
 }
 
@@ -122,8 +122,24 @@
   gap: var(--tb-space-xs);
 }
 
+/* The primary call to action is the campaign band of the v2 home: accent surface, large heading, inverted button. */
 .content-cta[data-emphasis="primary"] {
-  border-color: var(--tb-color-accent-base);
+  gap: var(--tb-space-md);
+  padding-block: var(--tb-space-xl);
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
+}
+
+.content-cta[data-emphasis="primary"] h2 {
+  font-size: var(--tb-font-size-xxl);
+}
+
+.content-cta[data-emphasis="primary"] .content-meta {
+  color: inherit;
+}
+
+.content-cta[data-emphasis="primary"] :focus-visible {
+  outline-color: var(--tb-color-accent-text);
 }
 
 .content-banner {
@@ -152,8 +168,12 @@
 }
 
 .content-cta-link[data-emphasis="primary"] {
-  background: var(--tb-color-accent-base);
-  color: var(--tb-color-accent-text);
+  padding-block: var(--tb-space-sm);
+  padding-inline: var(--tb-space-lg);
+  border-color: var(--tb-color-surface-raised);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-link);
 }
 
 .content-cta-link[data-emphasis="secondary"] {
