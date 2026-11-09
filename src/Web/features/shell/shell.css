@@ -137,7 +137,12 @@
 }
 
 .shell-search input {
-  inline-size: min(100%, 18rem);
+  inline-size: min(100%, 28rem);
+  padding-inline: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-surface-base);
+  color: var(--tb-color-text-primary);
 }
 
 .shell-owner {

@@ -20,6 +20,14 @@ body {
   line-height: var(--tb-font-line-height-body);
 }
 
+h1,
+h2,
+h3 {
+  font-family: var(--tb-font-family-heading);
+  font-weight: var(--tb-font-weight-bold);
+  line-height: var(--tb-font-line-height-heading);
+}
+
 .skip-link {
   position: absolute;
   inset-inline-start: var(--tb-space-md);
@@ -106,7 +114,7 @@ body {
   padding-inline: var(--tb-space-sm);
   border-radius: var(--tb-radius-full);
   background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-accent-text);
+  color: var(--tb-color-link);
   font-size: var(--tb-font-size-sm);
   font-weight: var(--tb-font-weight-bold);
 }
