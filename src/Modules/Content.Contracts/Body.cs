@@ -1,8 +1,6 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using TeamBeats.Primitives;
 
-namespace TeamBeats.Modules.Content;
+namespace TeamBeats.Modules.Content.Contracts;
 
 /// <summary>
 /// The body of a content variant: a structured document of blocks with inline runs, never HTML (spec 009 plan, spec 026
@@ -295,17 +293,4 @@ public static class BodyValidator
 
         static string Runs(IReadOnlyList<Inline> runs) => string.Concat(runs.Select(r => r.Text));
     }
-}
-
-/// <summary>JSON options for stored content: camelCase, nulls left out so the stored body stays small and stable.</summary>
-internal static class ContentJson
-{
-    public static readonly JsonSerializerOptions Options = new(JsonSerializerDefaults.Web)
-    {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
-    public static T Read<T>(string json) => JsonSerializer.Deserialize<T>(json, Options)!;
-
-    public static string Write<T>(T value) => JsonSerializer.Serialize(value, Options);
 }

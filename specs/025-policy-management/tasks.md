@@ -3,12 +3,12 @@
 Depends on 004, 005, 006, 007, 009 (body document, audience model), 011 (controlled documents), 016 (task inbox source), 024 (sequential steps); 010 (reporting line), 012 (search), 014 (assistant), 015 (notifications). R1 covers User Stories 1 to 4.
 
 ## Phase 1: Foundations
-- [ ] T001 `Policies` and `Policies.Contracts` projects; migration for policies, versions, clause comments, campaigns, members and attestations (forced RLS; attestations insert only for the app role)
+- [x] T001 `Policies` and `Policies.Contracts` projects; migration for policies, versions, clause comments, campaigns, members and attestations (forced RLS; attestations insert only for the app role)
 - [ ] T002 Permissions `policy.author`, `policy.manage`; audit actions of section 13 for R1; capability keys `policy.core`, `policy.campaigns`, `ai.policy_qa`
 
 ## Phase 2: User Story 1, publish through approval (P1)
-- [ ] T003 [P] [US1] Tests: sequential route with compare; clause comments; numbering, effective date and superseded on the date; binding language note and joint approval of variants; superseded banner; no self-approval
-- [ ] T004 [US1] Register, versions with clauses, route and publishing
+- [x] T003 [P] [US1] Tests: sequential route with compare; clause comments; numbering, effective date and superseded on the date; binding language note and joint approval of variants; superseded banner; no self-approval
+- [x] T004 [US1] Register, versions with clauses, route and publishing
 
 ## Phase 3: User Story 2, attestation campaigns (P1)
 - [ ] T005 [P] [US2] Tests: launch creates tasks and My policies entries; immutable record with hash; reminders and overdue; late joiner and leaver; material revision choice; excluded membership type; one open campaign on `policy.core`

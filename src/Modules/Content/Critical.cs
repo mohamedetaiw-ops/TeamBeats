@@ -428,7 +428,7 @@ public sealed class CriticalAudience(
     Sites sites,
     AudienceFactsLoader facts,
     ITenantMemberships memberships,
-    IOrganizationHierarchy hierarchy,
+    Audiences audiences,
     INotificationSender notifications,
     IOutbox outbox,
     IAuditWriter audit) : IMessageHandler<ContentPublished>, IMessageHandler<OrganizationMembershipChanged>, IMessageHandler<CriticalNoticeBatch>
@@ -440,7 +440,7 @@ public sealed class CriticalAudience(
         {
             return;
         }
-        var targets = await TargetsAsync(item.Audience, ct);
+        var targets = await audiences.MembersAsync(item.Audience, ct);
         var users = targets.ToArray();
         await session.ExecAsync(
             """
@@ -507,37 +507,6 @@ public sealed class CriticalAudience(
                 ? "insert into content.audience_member (tenant_id, item_id, user_id) values (platform.current_tenant_id(), @id, @user) on conflict do nothing"
                 : "delete from content.audience_member where item_id = @id and user_id = @user", new { id = item.Id, user = message.UserId }, ct);
         }
-    }
-
-    /// <summary>
-    /// Active members the audience matches. When every clause names org units, only members of those units are
-    /// evaluated; otherwise every active member is.
-    /// </summary>
-    private async Task<HashSet<Guid>> TargetsAsync(ContentAudience audience, CancellationToken ct)
-    {
-        var active = (await memberships.ListAsync(ct)).Where(m => m.Status == MembershipStatus.Active).Select(m => m.UserId).ToHashSet();
-        if (audience.IsEveryone)
-        {
-            return active;
-        }
-        IEnumerable<Guid> candidates = active;
-        if (audience.AnyOf!.All(c => c.OrgUnits is { Count: > 0 }))
-        {
-            var units = audience.AnyOf!.SelectMany(c => c.OrgUnits!).ToList();
-            var subtrees = await hierarchy.GetSubtreesAsync(units.Where(u => u.Subtree).Select(u => u.Id), ct);
-            var all = subtrees.Concat(units.Where(u => !u.Subtree).Select(u => u.Id)).Distinct().ToList();
-            var members = await hierarchy.GetMemberUserIdsAsync(all, ct);
-            candidates = active.Where(members.Contains);
-        }
-        var result = new HashSet<Guid>();
-        foreach (var user in candidates)
-        {
-            if (AudienceRules.Matches(audience, await facts.ForAsync(user, ct)))
-            {
-                result.Add(user);
-            }
-        }
-        return result;
     }
 }
 

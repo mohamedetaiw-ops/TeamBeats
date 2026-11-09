@@ -20,5 +20,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="TeamBeats.Unit.Tests" />
     <EmbeddedResource Include="Migrations/*.sql" />
+    <Using Include="TeamBeats.Modules.Content.Contracts" />
   </ItemGroup>
 </Project>

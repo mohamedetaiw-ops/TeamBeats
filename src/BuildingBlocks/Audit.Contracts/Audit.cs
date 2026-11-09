@@ -218,6 +218,16 @@ public static class AuditActions
     public const string DocVersionEffective = "doc.version_effective";
     public const string DocReviewed = "doc.reviewed";
     public const string DocReadConfirmed = "doc.read_confirmed";
+    public const string PolicyCreated = "policy.created";
+    public const string PolicyChanged = "policy.changed";
+    public const string PolicyDraftSaved = "policy.draft_saved";
+    public const string PolicySubmitted = "policy.submitted";
+    public const string PolicyWithdrawn = "policy.withdrawn";
+    public const string PolicyApproved = "policy.approved";
+    public const string PolicyReturned = "policy.returned";
+    public const string PolicyPublished = "policy.published";
+    public const string PolicySuperseded = "policy.superseded";
+    public const string PolicyRetired = "policy.retired";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -256,6 +266,8 @@ public static class AuditActions
         DocPermissionsBroken, DocPermissionsChanged, DocCheckedOut, DocCheckedIn, DocForcedCheckIn, DocVersionCreated, DocRestored, DocDeleted,
         DocRestoredFromBin, DocPurged, DocReleaseSubmitted, DocReleaseWithdrawn, DocReleaseApproved, DocReleaseReturned, DocVersionEffective, DocReviewed,
         DocReadConfirmed,
+        PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
+        PolicyRetired,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

@@ -20,6 +20,8 @@ public static class ContentModule
         services.AddScoped<Contracts.IKnowledgeContent, KnowledgeContent>();
         services.AddScoped<Items>();
         services.AddScoped<AudienceFactsLoader>();
+        services.AddScoped<Audiences>();
+        services.AddScoped<Contracts.IAudiences>(sp => sp.GetRequiredService<Audiences>());
         services.AddScoped<ContentScheduler>();
         services.AddScoped<ContentReviews>();
         services.AddScoped<ContentFeed>();
