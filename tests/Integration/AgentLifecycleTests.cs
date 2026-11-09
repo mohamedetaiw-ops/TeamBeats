@@ -22,9 +22,9 @@ public sealed class AgentLifecycleTests(TenantWorld world)
 {
     private const string Agents = "/api/v1/agents";
 
-    private async Task<TestTenant> FreshAsync()
+    private async Task<TestTenant> FreshAsync(string package = "workplace_plus")
     {
-        var t = await world.CreateTenantAsync("al-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus", "en", ["en", "ar"]);
+        var t = await world.CreateTenantAsync("al-" + Guid.NewGuid().ToString("N")[..8], package, "en", ["en", "ar"]);
         foreach (var name in new[] { "sara", "emp", "aip", "sec", "fadi" })
         {
             await world.SeedUserAsync(t, name, MembershipTypes.Employee);
@@ -318,5 +318,41 @@ public sealed class AgentLifecycleTests(TenantWorld world)
         // A designer of another unit cannot see or submit it.
         Assert.Equal("not_found", await ProblemAsync(t["fadi"].Client.PostAsJsonAsync($"{Agents}/{id}/submit", new { revision = 1 }), HttpStatusCode.NotFound));
         Assert.Equal("not_found", await ProblemAsync(t["fadi"].Client.GetAsync($"{Agents}/{id}/review"), HttpStatusCode.NotFound));
+    }
+
+    [Fact]
+    public async Task The_package_limits_published_agents_and_a_new_version_or_a_retirement_never_needs_a_place()
+    {
+        // Workplace allows six published agents (020 FR-019, ai.agents.max_published). Other tests publish stripped
+        // Workplace versions, so the tenant is held on the shipped version 1.
+        var t = await FreshAsync("workplace");
+        (await world.Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{t.Id}/subscription", new { packageKey = "workplace", version = 1 })).EnsureSuccessStatusCode();
+        var published = new List<Guid>();
+        for (var i = 0; i < 6; i++)
+        {
+            published.Add(await PublishedAgentAsync(t, "enterprise_knowledge", ["knowledge.search"], "L0"));
+        }
+        var seventh = await InstallAsync(t, "enterprise_knowledge");
+        await SaveAsync(t, seventh, ["knowledge.search"], "L0");
+        var number = await SubmitAsync(t, seventh);
+        Assert.Equal("validation.agent.published_limit", await ProblemAsync(t["aip"].Client.PostAsJsonAsync($"{Agents}/{seventh}/publish", new { version = number }),
+            HttpStatusCode.Forbidden));
+        Assert.Equal(AgentVersionStates.InReview, (await OkAsync(t["sara"].Client.GetAsync($"{Agents}/{seventh}"))).GetProperty("latest").GetProperty("state").GetString());
+
+        // A new version of an agent that is already published does not need a place.
+        await SaveAsync(t, published[0], ["knowledge.search"], "L0");
+        await PublishAsync(t, published[0], await SubmitAsync(t, published[0]));
+
+        // Retiring one frees its place.
+        await OkAsync(t["aip"].Client.PostAsJsonAsync($"{Agents}/{published[1]}/retire", new { reason = "Replaced" }));
+        var now = await PublishAsync(t, seventh, number);
+        Assert.Equal(AgentStatuses.Published, now.GetProperty("agent").GetProperty("status").GetString());
+
+        // Workplace Plus has no limit set, so the same count publishes freely there.
+        var plus = await FreshAsync();
+        for (var i = 0; i < 7; i++)
+        {
+            await PublishedAgentAsync(plus, "enterprise_knowledge", ["knowledge.search"], "L0");
+        }
     }
 }

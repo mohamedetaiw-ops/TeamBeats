@@ -1,0 +1,27 @@
+# Spec 020 evidence (R1)
+
+The spec stays Approved, not Implemented. R1 still lacks: the backup owner and business purpose in the registry (FR-002), template updates offered to installed agents (FR-005), contextual actions configured per content type (FR-012 shows them on news, page, policy and document reading for anyone who may use an agent), basic agent analytics (FR-018), the worker that resumes a run interrupted mid-step and streamed agent answers (T004, T005). The R2 and R3 parts are not built: the marketplace (FR-010), proactive agents (FR-014), memory (FR-015) and handoffs (FR-016). The spec 020 and 027 section of `docs/architecture/r1-implementation-notes.md` holds the defaults, deviations and gaps.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| FR-001 versioned definitions on one runtime, no code to add an agent | Met | `AgentRegistryTests.Installing_creates_a_draft_agent_in_the_designers_unit_with_a_computed_risk_class`, `AgentLifecycleTests` (versions) |
+| FR-002 registry fields | Partly met | Names, descriptions, icon, category, unit, owner, template origin and version, current version, state, risk class and autonomy: `AgentRegistryTests`. Backup owner and business purpose are open |
+| FR-003 definition areas, checked on every save and at publish | Met | `AgentDefinitionTests` (unit), `AgentRegistryTests.Every_save_is_checked_against_the_schema_the_tool_registry_and_the_tenant_policy`, `AgentLifecycleTests.Rollback_is_checked_against_todays_policy_and_a_stricter_policy_suspends_agents_that_break_it` |
+| FR-004 business configuration cannot raise autonomy, tools or scope | Met | `AgentDefinitionTests`, `AgentRegistryTests.Every_save_is_checked_against_the_schema_the_tool_registry_and_the_tenant_policy` |
+| FR-005 template library, installs linked to the template version | Partly met (deviation: embedded templates) | `AgentRegistryTests.The_template_library_shows_package_templates_with_not_ready_when_policy_blocks_a_tool`, `Installing_creates_a_draft_agent_in_the_designers_unit_with_a_computed_risk_class`. Offering template updates is open |
+| FR-006 lifecycle states, test panel in Draft, immutable published versions | Met | `AgentLifecycleTests`, `AgentRuntimeTests.The_test_panel_runs_the_draft_as_the_designer_and_never_executes_a_write` |
+| FR-007 publishing needs `agent.publish`, the gate, and another approver for Medium and High risk | Met | `AgentLifecycleTests.A_submitted_version_waits_in_the_publishers_inbox_and_the_last_editor_cannot_approve_a_medium_risk_agent`, `EvaluationGateTests` |
+| FR-008 rollback after a policy check | Met | `AgentLifecycleTests.Rollback_is_checked_against_todays_policy_and_a_stricter_policy_suspends_agents_that_break_it` |
+| FR-009 suites per version, publishing and route or retrieval changes wait for the gate | Met | `EvaluationGateTests`, `EvaluationRouteGateTests`, `SearchRetrievalGateTests`, `EvaluationRegistryTests` |
+| FR-011 the assistant routes to at most one agent and records the decision | Met | `AgentRoutingTests.The_assistant_routes_to_one_agent_the_person_may_use_and_records_the_decision_in_the_run`, `People_outside_the_audience_get_no_routing_and_cannot_pick_the_agent` |
+| FR-012 contextual actions under the item's permissions | Partly met | `AgentRoutingTests.A_contextual_action_reads_the_item_with_the_persons_permissions_and_cites_it`, `agents.spec.ts`; configuration per content type is open |
+| FR-013 prepared drafts in the task inbox, nothing until a person acts | Met | `AgentPreparedRequestTests.A_prepared_request_waits_in_the_inbox_and_is_submitted_only_by_the_person`, `A_draft_can_be_discarded_and_the_test_panel_or_an_unknown_service_stores_nothing` |
+| FR-017 answers in the person's language, Arabic and English launch templates | Met | `AgentPreparedRequestTests.Platform_rules_come_before_the_agents_instructions_and_the_answer_language_is_set`, `EvaluationGateTests.The_platform_suites_of_each_launch_template_run_without_a_critical_failure` (en and ar cases), `agents.spec.ts` in both languages |
+| FR-018 basic agent analytics | Not met | Open |
+| FR-019 package limits on published agents | Met for `ai.agents.max_published` | `AgentLifecycleTests.The_package_limits_published_agents_and_a_new_version_or_a_retirement_never_needs_a_place`; `ai.agents.max_custom` applies when customer-built agents come |
+| FR-020 templates declare capability, connectors and minimum autonomy | Met for R1 (capability and autonomy; no launch template needs a connector, so connectors come with spec 017 in R2) | `AgentRegistryTests.The_template_library_shows_package_templates_with_not_ready_when_policy_blocks_a_tool` |
+| SC-002 owner, version and risk class for every agent, checked by a test | Met | `AgentRegistryTests.Installing_creates_a_draft_agent_in_the_designers_unit_with_a_computed_risk_class`, `Agents_are_seen_only_by_their_owner_their_units_designers_and_overseers_never_across_tenants` |
+| SC-003 a new template needs only its definition and tests | Met | Templates are embedded JSON under `src/Modules/Agents/Templates/` read by the runtime unchanged |
+| SC-001 six templates adapted and published in one working day | Not measured | Needs a timed walkthrough with a tenant |
+| Cross-tenant cases | Met | `AgentRegistryTests`, `AgentLifecycleTests.Lifecycle_actions_never_reach_another_tenants_agent_or_one_outside_the_publishers_scope`, `AgentRuntimeTests`, `AgentInjectionTests` |
+| Pages (T014) | Met | `agents.spec.ts` (en and ar, axe) |

@@ -1063,5 +1063,6 @@
   "validation.search.overlap": "استخدم تداخلًا من 0 إلى 50 بالمئة.",
   "validation.search.embedding_model": "أدخل معرّف نموذج حتى 100 حرف من الأحرف والأرقام والرموز . _ : / -",
   "validation.search.retrieval_unchanged": "غيّر إعدادًا واحدًا على الأقل.",
-  "validation.search.override_reason": "اكتب سببًا من 10 إلى 1000 حرف."
+  "validation.search.override_reason": "اكتب سببًا من 10 إلى 1000 حرف.",
+  "validation.agent.published_limit": "لا تسمح باقتك بنشر مزيد من الوكلاء. أوقف أحد الوكلاء نهائيا أولا، أو اسأل عن باقة أكبر."
 }
