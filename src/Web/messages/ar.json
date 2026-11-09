@@ -1260,6 +1260,7 @@
         "failed": "تعذر الفحص"
       },
       "needsApproval": "يذهب هذا الطلب إلى معتمد قبل إنجازه.",
+      "prepared": "أعد وكيل ذكاء اصطناعي هذا الطلب لك. راجع كل القيم قبل إرساله، فلن يرسل شيء حتى تفعل ذلك.",
       "previewOnly": "معاينة فقط. لن يرسل شيء.",
       "changeTitle": "تعديل {name}",
       "returnedWith": "أعيد مع هذا التعليق:",
@@ -1351,7 +1352,8 @@
       "contentRetire": "إيقاف محتوى",
       "policyApproval": "اعتماد سياسة",
       "policyAttestation": "إقرار بسياسة",
-      "agentReview": "مراجعة وكيل"
+      "agentReview": "مراجعة وكيل",
+      "preparedByAi": "أعده الذكاء الاصطناعي"
     },
     "delegation": {
       "title": "أثناء غيابك",

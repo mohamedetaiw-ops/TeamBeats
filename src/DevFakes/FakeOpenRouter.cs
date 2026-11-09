@@ -13,7 +13,7 @@ namespace TeamBeats.DevFakes;
 /// <c>[fake:429]</c> rate limited, <c>[fake:500]</c> provider error, <c>[fake:fail:model]</c> provider error for that model only, <c>[fake:timeout]</c> no answer until cancelled,
 /// <c>[fake:refuse]</c> a content filter stop, <c>[fake:cut]</c> a stream that ends without a final chunk,
 /// <c>[fake:tool:name]</c> a call of tool <c>name</c> (with the arguments of <c>[fake:args:{...}]</c>, once, or on every turn with
-/// <c>[fake:loop]</c>), <c>[fake:badjson]</c> plain text even when a JSON schema was asked
+/// <c>[fake:loop]</c>), <c>[fake:route:N]</c> agent N from the assistant's routing call (0 without it), <c>[fake:badjson]</c> plain text even when a JSON schema was asked
 /// for. When the prompt holds numbered passages (the assistant of spec 014) the reply cites passage 1 as <c>[1]</c>, unless
 /// the question holds <c>[fake:nocite]</c>. With a <c>response_format</c> the reply is the JSON object <c>{"answer": ...}</c>. Streaming
 /// (<c>stream: true</c>) returns server-sent events. Embeddings are a bag of words (see <see cref="Embed"/>).
@@ -23,8 +23,8 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
     [System.Text.RegularExpressions.GeneratedRegex(@"\[fake:tool:([a-z_]+)\]")]
     private static partial System.Text.RegularExpressions.Regex ToolMarker();
 
-    [System.Text.RegularExpressions.GeneratedRegex(@"\[fake:args:(\{.*?\})\]")]
-    private static partial System.Text.RegularExpressions.Regex ArgsMarker();
+    [System.Text.RegularExpressions.GeneratedRegex(@"\[fake:route:(\d+)\]")]
+    private static partial System.Text.RegularExpressions.Regex RouteMarker();
 
     public const string BaseUrl = "https://openrouter.ai/api/v1";
     public const string ApiKey = "fictional-openrouter-key";
@@ -98,6 +98,12 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
         }
         var refused = last.Contains("[fake:refuse]", StringComparison.Ordinal);
         var reply = refused ? string.Empty : Reply(last);
+        // The assistant's routing call (spec 020 US7) answers with the agent number from [fake:route:N], or 0 without it.
+        var routing = messages.FirstOrDefault()?["role"]?.GetValue<string>() == "system" && Text(messages[0]?["content"]).Contains("route an employee's message", StringComparison.Ordinal);
+        if (!refused && routing)
+        {
+            reply = RouteMarker().Match(last) is { Success: true } route ? route.Groups[1].Value : "0";
+        }
         // Like a grounded model, cite the first passage when the prompt carries numbered passages (spec 014).
         if (!refused && prompt.Contains("<passage n=\"1\"", StringComparison.Ordinal) && !last.Contains("[fake:nocite]", StringComparison.Ordinal))
         {
@@ -111,7 +117,7 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
         // [fake:loop] asks it to keep calling (for run limits).
         var tool = ToolMarker().Match(last);
         var lastRole = messages.LastOrDefault()?["role"]?.GetValue<string>();
-        var arguments = ArgsMarker().Match(last) is { Success: true } args ? args.Groups[1].Value : "{}";
+        var arguments = Arguments(last);
         var toolCalls = tool.Success && (lastRole == "user" || last.Contains("[fake:loop]", StringComparison.Ordinal))
             ? new[] { new { id = "call-fake-" + messages.Count, type = "function", function = new { name = tool.Groups[1].Value, arguments } } }
             : null;
@@ -168,6 +174,33 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
     };
 
     /// <summary>A deterministic 8-dimension vector, so similar inputs are equal and different inputs differ.</summary>
+    /// <summary>
+    /// The JSON object of <c>[fake:args:{...}]</c>: the shortest text from the brace to a <c>}]</c> that parses as JSON, so
+    /// arguments may hold nested objects and arrays.
+    /// </summary>
+    private static string Arguments(string message)
+    {
+        var start = message.IndexOf("[fake:args:{", StringComparison.Ordinal);
+        if (start < 0)
+        {
+            return "{}";
+        }
+        start += "[fake:args:".Length;
+        for (var end = message.IndexOf("}]", start, StringComparison.Ordinal); end >= 0; end = message.IndexOf("}]", end + 1, StringComparison.Ordinal))
+        {
+            var candidate = message[start..(end + 1)];
+            try
+            {
+                using var _ = JsonDocument.Parse(candidate);
+                return candidate;
+            }
+            catch (JsonException)
+            {
+            }
+        }
+        return "{}";
+    }
+
     /// <summary>Embedding dimensions of the fake: small, and different from the 1536 of the real model, so both paths run.</summary>
     public const int EmbeddingDimensions = 512;
 

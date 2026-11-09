@@ -63,7 +63,7 @@
   },
   {
     "id": "it_service_desk",
-    "version": 1,
+    "version": 2,
     "capability": "ai.agents.basic",
     "definition": {
       "name": { "en": "IT Service Desk", "ar": "مكتب خدمات تقنية المعلومات" },
@@ -80,7 +80,7 @@
       "tone": "neutral",
       "outputFormat": "steps",
       "knowledge": ["knowledge", "service", "document"],
-      "tools": ["knowledge.search", "requests.status"],
+      "tools": ["knowledge.search", "requests.status", "requests.prepare"],
       "audience": { "scope": "org_units", "orgUnits": [] },
       "languages": ["ar", "en"],
       "escalation": {
@@ -125,7 +125,7 @@
   },
   {
     "id": "workflow_requests",
-    "version": 1,
+    "version": 2,
     "capability": "ai.agents.basic",
     "definition": {
       "name": { "en": "Workflow and Requests", "ar": "سير العمل والطلبات" },
@@ -142,7 +142,7 @@
       "tone": "friendly",
       "outputFormat": "steps",
       "knowledge": ["service", "knowledge"],
-      "tools": ["knowledge.search", "requests.status", "tasks.inbox"],
+      "tools": ["knowledge.search", "requests.status", "tasks.inbox", "requests.prepare"],
       "audience": { "scope": "org_units", "orgUnits": [] },
       "languages": ["ar", "en"],
       "escalation": {

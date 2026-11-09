@@ -30,7 +30,8 @@ public static class RequestStatuses
     public static readonly IReadOnlySet<string> Cancellable = new HashSet<string> { Submitted, InApproval, Returned };
 }
 
-public sealed record RequestSubmit(Guid ServiceId, Dictionary<string, JsonElement>? Data, Guid? OnBehalfOf, string? IdempotencyKey);
+/// <summary>A new request. <paramref name="PreparedId"/> names the agent-prepared draft it was made from (spec 020 US8), which then leaves the inbox.</summary>
+public sealed record RequestSubmit(Guid ServiceId, Dictionary<string, JsonElement>? Data, Guid? OnBehalfOf, string? IdempotencyKey, Guid? PreparedId = null);
 
 public sealed record RequestResubmit(Dictionary<string, JsonElement>? Data);
 

@@ -41,6 +41,8 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
         return t("policyAttestation");
       case "agent_review":
         return t("agentReview");
+      case "agent_prepared":
+        return t("preparedByAi");
       default:
         return i.name;
     }

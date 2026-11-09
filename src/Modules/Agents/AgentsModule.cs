@@ -30,6 +30,7 @@ public static class AgentsModule
         services.AddScoped<AgentRegistry>();
         services.AddScoped<AgentRuns>();
         services.AddScoped<AgentLifecycle>();
+        services.AddScoped<AgentRouter>();
         services.TryAddScoped<IAgentReleaseGate, NoReleaseGate>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AgentReviewTasks>();
         return services;
@@ -145,6 +146,16 @@ public static class AgentsModule
             var detail = await registry.InstallAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/agents/{detail.Agent.Id}", detail);
+        });
+
+        // Routing (020 T012, 014 T004): the agents the person may use, and a routing decision for a message.
+        agents.MapGet("/available", async (AgentRouter router, CancellationToken ct) => Results.Ok(new { agents = await router.AvailableAsync(ct) }));
+
+        agents.MapPost("/route", async (RouteRequest request, AgentRouter router, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await router.RouteAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         agents.MapGet("", async (AgentRegistry registry, CancellationToken ct) => Results.Ok(new { agents = await registry.ListAsync(ct) }));
