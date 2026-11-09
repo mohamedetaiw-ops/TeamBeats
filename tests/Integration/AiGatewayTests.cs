@@ -177,7 +177,7 @@ public sealed class AiGatewayTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.Conflict,
             (await t["layla"].Client.PostAsJsonAsync($"/api/v1/ai/route-changes/{id}/override", new { reason = "Applying before the gate decides." })).StatusCode);
 
-        // The assistant has no suites in R1, so the gate reports it incomplete and lists why (spec 034 US5 scenario 4).
+        // The proposer belongs to no unit, so the assistant has no test identity to run as: the gate reports it incomplete and lists why (spec 034 US5 scenario 4).
         await RouteGateFlow.StartAsync(world, t.Id, id);
         await RouteGateFlow.DecideAsync(world, t.Id, id);
         var pending = (await OkAsync(t["layla"].Client.GetAsync("/api/v1/ai/policy"))).GetProperty("pending");

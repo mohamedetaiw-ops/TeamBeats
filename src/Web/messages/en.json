@@ -3273,7 +3273,9 @@
       "suite": "Suite",
       "input": "Input",
       "caseFailed": "Failed",
-      "casePassed": "Passed"
+      "casePassed": "Passed",
+      "titleAssistant": "Evaluation of the assistant",
+      "backOverview": "Back to evaluation"
     },
     "case": {
       "title": "Case {n}",
@@ -3312,7 +3314,8 @@
       "judge": "Judge verdicts",
       "verdict": "Verdict",
       "reason": "Reason",
-      "rubric": "Rubric"
+      "rubric": "Rubric",
+      "context": "Passages given to the assistant"
     },
     "compare": {
       "title": "Version {a} compared with version {b}",
@@ -3457,6 +3460,13 @@
       "noRules": "Your organization uses the platform defaults.",
       "save": "Save the rules",
       "saved": "Rules saved."
+    },
+    "assistantName": "the assistant",
+    "assistant": {
+      "title": "The assistant",
+      "intro": "The assistant's platform suites check grounded answers with citations, the answer language and resistance to instructions hidden in passages, in each of your organization's languages. A change to the assistant's model route runs them first.",
+      "start": "Evaluate the assistant",
+      "noRuns": "The assistant has not been evaluated yet."
     }
   }
 }

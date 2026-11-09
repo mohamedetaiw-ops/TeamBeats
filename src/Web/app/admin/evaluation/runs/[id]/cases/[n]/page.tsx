@@ -76,6 +76,23 @@ export default async function EvaluationCasePage({ params }: { params: Promise<{
             </div>
           </dl>
         </section>
+        {c.context && c.context.length > 0 ? (
+          <section className="agents-section" aria-labelledby="eval-case-context">
+            <h2 id="eval-case-context">{t("case.context")}</h2>
+            <ol data-testid="eval-case-context">
+              {c.context.map((p, i) => (
+                <li key={i}>
+                  <strong>
+                    <bdi>{p.title}</bdi>
+                  </strong>
+                  <p className="agents-answer">
+                    <bdi>{p.text}</bdi>
+                  </p>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ) : null}
         <section className="agents-section" aria-labelledby="eval-case-expect">
           <h2 id="eval-case-expect">{t("case.expected")}</h2>
           <dl>

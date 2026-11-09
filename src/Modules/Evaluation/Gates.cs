@@ -168,7 +168,7 @@ public sealed class GateService(IDbSession session, ITenantContext context, IAge
         {
             throw AppException.Validation("reason", "validation.eval.override_reason");
         }
-        var rows = await session.QueryAsync("select agent_id, agent_version from evaluation.run where id = @runId", new { runId },
+        var rows = await session.QueryAsync("select agent_id, agent_version from evaluation.run where id = @runId and agent_id is not null", new { runId },
             r => (Agent: r.GetGuid(0), Version: r.GetInt32(1)), ct);
         if (rows.Count == 0 || await agents.GetAsync(rows[0].Agent, ct) is not { } agent)
         {

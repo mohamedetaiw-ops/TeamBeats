@@ -30,6 +30,7 @@ public static class AgentsModule
         services.AddScoped<AgentRegistry>();
         services.AddScoped<Contracts.IAgentCatalog, AgentCatalog>();
         services.AddScoped<Contracts.IAgentEvaluationRuntime, AgentEvaluationRuntime>();
+        services.AddScoped<Contracts.IAssistantEvaluationRuntime, AssistantEvaluationRuntime>();
         services.AddScoped<AgentRuns>();
         services.AddScoped<AgentLifecycle>();
         services.AddScoped<AgentRouter>();

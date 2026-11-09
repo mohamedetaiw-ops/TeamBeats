@@ -9,7 +9,7 @@ Depends on 008, 012, 013, 020, 027, 034. R1: US1 to US4. R2: US5 to US8.
 - [x] T005 [US3] Summarize, explain, translate, rewrite and draft on permitted items and pasted text
 - [x] T006 [US4] History, delete, retention, feedback and degraded states
 - [ ] T007 Assistant panel and page with streaming, citations and feedback, in English and Arabic, RTL; e2e with axe
-- [ ] T008 Platform evaluation suite for the assistant in spec 034; OpenAPI; R1 implementation notes; spec evidence
+- [x] T008 Platform evaluation suite for the assistant in spec 034; OpenAPI; R1 implementation notes; spec evidence
 
 ## R2
 - [ ] T013 [P] [US5] Tests: scan, classification ceiling, deletion with the conversation

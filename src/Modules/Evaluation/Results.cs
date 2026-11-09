@@ -19,7 +19,7 @@ public sealed record EvalAgentRow(Guid AgentId, IReadOnlyDictionary<string, stri
 
 public sealed record CompareMetric(string Metric, string Locale, double? A, double? B, double? Delta);
 
-public sealed record CompareSide(Guid RunId, Guid AgentId, int Version, string? Verdict, IReadOnlyList<string> Models, IReadOnlyDictionary<string, double?> TokensPerSuccess,
+public sealed record CompareSide(Guid RunId, Guid? AgentId, int? Version, string? Verdict, IReadOnlyList<string> Models, IReadOnlyDictionary<string, double?> TokensPerSuccess,
     IReadOnlyDictionary<string, int?> LatencyP50, IReadOnlyDictionary<string, int?> LatencyP95);
 
 /// <summary>A case that passed in one run and failed in the other, matched by suite, dataset, case and locale.</summary>

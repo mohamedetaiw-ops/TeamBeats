@@ -115,6 +115,7 @@ public static class EvaluationModule
             return Results.Created($"/api/v1/evaluation/runs/{view.Run.Id}", view);
         });
         root.MapGet("/runs", async (Guid agentId, RunService runs, CancellationToken ct) => Results.Ok(await runs.ListAsync(agentId, ct)));
+        root.MapGet("/assistant/runs", async (RunService runs, CancellationToken ct) => Results.Ok(await runs.AssistantRunsAsync(ct)));
         root.MapGet("/runs/{id:guid}", async (Guid id, RunService runs, CancellationToken ct) => Results.Ok(await runs.GetAsync(id, ct)));
         root.MapGet("/runs/{id:guid}/cases", async (Guid id, RunService runs, CancellationToken ct) => Results.Ok(await runs.CasesAsync(id, ct)));
         root.MapPost("/runs/{id:guid}/cancel", async (Guid id, RunService runs, IDbSession session, CancellationToken ct) =>

@@ -49,3 +49,35 @@ export function StartRun({ agentId, versions, latest }: { agentId: string; versi
     </div>
   );
 }
+
+/** Starts a run of the assistant's platform suites (spec 014 T008) and opens it; the API decides who may. */
+export function StartAssistantRun() {
+  const t = useTranslations("evaluation");
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [messages, setMessages] = useState<string[]>([]);
+
+  async function start() {
+    setBusy(true);
+    setMessages([]);
+    const result = await send<{ run: { id: string } }>("/api/v1/evaluation/runs", "POST", { capability: "assistant" }, t("failed"));
+    setBusy(false);
+    if (result.ok) router.push(`/admin/evaluation/runs/${result.data.run.id}`);
+    else setMessages(result.messages);
+  }
+
+  return (
+    <div className="agents-row">
+      <Button variant="primary" busy={busy} busyLabel={t("working")} onClick={() => void start()} data-testid="eval-assistant-start">
+        {t("assistant.start")}
+      </Button>
+      {messages.length > 0 ? (
+        <div role="alert" className="notice notice-error">
+          {messages.map((m) => (
+            <p key={m}>{m}</p>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
