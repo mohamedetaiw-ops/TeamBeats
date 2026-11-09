@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TeamBeats.Persistence;
@@ -19,16 +20,48 @@ public enum ProcessResult
 public sealed record ConsumerRegistration(string Name, string MessageType, Type EventType, Type HandlerType);
 
 /// <summary>
+/// How soon the consumers whose names start with <see cref="Prefix"/> should handle a message after it happened, such as
+/// search indexing within 5 minutes (spec 012 FR-006). A message handled later counts on <c>messaging.consumer.lag_exceeded</c>
+/// and is logged, which is what operators alert on.
+/// </summary>
+public sealed record ConsumerLagObjective(string Prefix, TimeSpan Objective);
+
+/// <summary>
 /// Shared consumer pipeline: tenant header check, tenant status gate (spec 001 T031), inbox de-duplication,
 /// transaction per message with tenant context, retries, and dead-lettering (constitution XVIII).
 /// </summary>
 public sealed class MessageProcessor(
     IServiceScopeFactory scopes,
     IEnumerable<ConsumerRegistration> registrations,
+    IEnumerable<ConsumerLagObjective> objectives,
     ILogger<MessageProcessor> logger)
 {
     public const int MaxAttempts = 5;
     private readonly List<ConsumerRegistration> _registrations = registrations.ToList();
+    private readonly List<ConsumerLagObjective> _objectives = objectives.OrderByDescending(o => o.Prefix.Length).ToList();
+
+    private static readonly Meter Meter = new("TeamBeats.Messaging");
+
+    /// <summary>Seconds from when a message happened to when its consumer committed, per consumer (spec 012 FR-006 lag metric).</summary>
+    private static readonly Histogram<double> Lag = Meter.CreateHistogram<double>("messaging.consumer.lag", "s");
+
+    private static readonly Counter<long> LagExceeded = Meter.CreateCounter<long>("messaging.consumer.lag_exceeded");
+
+    /// <summary>The objective that applies to a consumer: the one with the longest matching prefix, if any.</summary>
+    public TimeSpan? ObjectiveFor(string consumer) => _objectives.FirstOrDefault(o => consumer.StartsWith(o.Prefix, StringComparison.Ordinal))?.Objective;
+
+    private void RecordLag(ConsumerRegistration consumer, Envelope envelope)
+    {
+        var lag = DateTimeOffset.UtcNow - envelope.OccurredAt;
+        var tag = new KeyValuePair<string, object?>("consumer", consumer.Name);
+        Lag.Record(Math.Max(0, lag.TotalSeconds), tag);
+        if (ObjectiveFor(consumer.Name) is { } objective && lag > objective)
+        {
+            LagExceeded.Add(1, tag);
+            logger.LogWarning("Consumer {Consumer} handled {MessageId} for tenant {TenantId} {Lag} after it happened, over its objective of {Objective}",
+                consumer.Name, envelope.MessageId, envelope.TenantId, lag, objective);
+        }
+    }
 
     public IEnumerable<ConsumerRegistration> Consumers => _registrations;
 
@@ -88,6 +121,7 @@ public sealed class MessageProcessor(
             var handleMethod = typeof(IMessageHandler<>).MakeGenericType(consumer.EventType).GetMethod("HandleAsync")!;
             await (Task)handleMethod.Invoke(handler, [message, ct])!;
             await session.CommitAsync(ct);
+            RecordLag(consumer, envelope);
             return ProcessResult.Done;
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
+using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Modules.Search.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -32,7 +33,7 @@ internal sealed record Candidate(string Source, Guid ItemId, string Kind, DateTi
 /// any number (two-stage permission filtering of the plan).
 /// </summary>
 public sealed class SearchService(IDbSession session, ITenantContext context, IEntitlementService entitlements, IEnumerable<ISearchSource> sources,
-    IAiGateway gateway, SearchTuning tuning, ILogger<SearchService> logger)
+    IAiGateway gateway, SearchTuning tuning, IAnalyticsEvents analytics, ILogger<SearchService> logger)
 {
     public const int PageSize = 20;
     public const int MaxPages = 50;
@@ -103,6 +104,16 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
             var any = await KeywordAsync(SearchText.TsQuery(groups, all: false), null, null, 100, ct);
             var offered = (await PermittedAsync([.. any.Where(c => c.Kind is SearchKinds.Service or SearchKinds.Person)], ct)).Take(5).ToList();
             alternatives = await ResultsAsync(offered, terms, ct);
+        }
+        if (number == 1)
+        {
+            // A query event for analytics (FR-013, spec 021): the number of results and the filter, never the query text.
+            var fields = new Dictionary<string, object?> { ["results"] = filtered.Count };
+            if (kind is not null)
+            {
+                fields["kind"] = kind;
+            }
+            await analytics.EmitAsync(AnalyticsEvents.SearchQueried, fields, ct);
         }
         return new SearchPage(query, filtered.Count, more, number, PageSize, results, facets, degraded, alternatives);
     }
