@@ -94,6 +94,14 @@ public static class Permissions
     /// <summary>Best bets, synonyms, rebuilds and later the search settings of spec 012 (search administrator, tenant scope).</summary>
     public const string SearchManage = "search.manage";
 
+    // Specs 020 and 027 (R1): agent designers adapt agents in their org scope; publishers review and publish them;
+    // security officers see agents and their runs and can suspend them.
+    public const string AgentDesign = "agent.design";
+    public const string AgentPublish = "agent.publish";
+    public const string AgentView = "agent.view";
+    public const string AgentSecurityView = "agent.security_view";
+    public const string AgentSuspend = "agent.suspend";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -125,6 +133,7 @@ public static class Permissions
         DocView, DocContribute, DocManage, KbEdit,
         PolicyAuthor, PolicyManage,
         SearchManage,
+        AgentDesign, AgentPublish, AgentView, AgentSecurityView, AgentSuspend,
     ];
 }
 
@@ -146,5 +155,6 @@ public static class BuiltInRoles
     public const string BrandManager = "brand_manager";
     public const string HrOfficer = "hr_officer";
     public const string ComplianceOfficer = "compliance_officer";
+    public const string AgentDesigner = "agent_designer";
 
 }

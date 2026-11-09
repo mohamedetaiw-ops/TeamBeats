@@ -4,8 +4,8 @@ Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and ru
 
 ## Phase 1: Foundations
 - [ ] T001 Migration in `Agents` for tool definitions, agent policy, runs and run steps (forced RLS)
-- [ ] T002 Permissions `agent.security_view`, `agent.suspend` for security officers alongside `ai.policy_manage`; audit actions of section 13 for R1; capability `ai.agents.basic`
-- [ ] T003 `IToolRegistration` contract and registry with versioned parameter schemas
+- [x] T002 Permissions `agent.security_view`, `agent.suspend` for security officers alongside `ai.policy_manage`; audit actions of section 13 for R1; capability `ai.agents.basic`
+- [x] T003 `IToolRegistration` contract and registry with versioned parameter schemas
 
 ## Phase 2: User Stories 1 to 3, autonomy, permissions and the tool gateway (P1)
 - [ ] T004 [P] Tests: L0 refuses write tools; L2 waits for confirmation and submits exactly the confirmed parameters; autonomy above the tenant cap refused; intersection of user and agent permissions; revoked permission refused at execution; cross-org without a grant refused; schema errors give a short message; idempotent retry; unknown tool recorded; 20 call limit

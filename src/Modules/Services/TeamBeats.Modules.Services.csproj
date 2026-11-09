@@ -18,6 +18,7 @@
     <ProjectReference Include="../Workflow.Contracts/TeamBeats.Modules.Workflow.Contracts.csproj" />
     <ProjectReference Include="../Services.Contracts/TeamBeats.Modules.Services.Contracts.csproj" />
     <ProjectReference Include="../Search.Contracts/TeamBeats.Modules.Search.Contracts.csproj" />
+    <ProjectReference Include="../Agents.Contracts/TeamBeats.Modules.Agents.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Migrations/*.sql" />

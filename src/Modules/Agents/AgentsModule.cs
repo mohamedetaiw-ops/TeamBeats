@@ -23,6 +23,10 @@ public static class AgentsModule
         services.AddScoped<AssistantService>();
         services.AddScoped<AssistantHistory>();
         services.AddScoped<AssistantTextActions>();
+        services.AddScoped<Contracts.IAgentTool, KnowledgeSearchTool>();
+        services.AddScoped<ToolRegistry>();
+        services.AddScoped<AgentPolicyService>();
+        services.AddScoped<AgentRegistry>();
         return services;
     }
 
@@ -120,6 +124,40 @@ public static class AgentsModule
         root.MapPut("/settings", async (AssistantSettingsRequest request, AssistantHistory history, IDbSession session, CancellationToken ct) =>
         {
             var view = await history.ChangeSettingsAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // The agent registry, templates, tools and tenant agent policy (specs 020 and 027, R1 foundations).
+        var agents = app.MapGroup("/api/v1/agents").RequireTenantUser().WithTags("Agents");
+
+        agents.MapGet("/templates", async (AgentRegistry registry, CancellationToken ct) => Results.Ok(new { templates = await registry.TemplatesAsync(ct) }));
+
+        agents.MapGet("/tools", async (AgentRegistry registry, CancellationToken ct) => Results.Ok(new { tools = await registry.ToolsAsync(ct) }));
+
+        agents.MapPost("", async (InstallRequest request, AgentRegistry registry, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await registry.InstallAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/agents/{detail.Agent.Id}", detail);
+        });
+
+        agents.MapGet("", async (AgentRegistry registry, CancellationToken ct) => Results.Ok(new { agents = await registry.ListAsync(ct) }));
+
+        agents.MapGet("/{id:guid}", async (Guid id, AgentRegistry registry, CancellationToken ct) => Results.Ok(await registry.GetAsync(id, ct)));
+
+        agents.MapPut("/{id:guid}/draft", async (Guid id, DraftRequest request, AgentRegistry registry, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await registry.SaveDraftAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        agents.MapGet("/policy", async (AgentPolicyService policies, CancellationToken ct) => Results.Ok(await policies.GetAsync(ct)));
+
+        agents.MapPut("/policy", async (AgentPolicyRequest request, AgentPolicyService policies, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await policies.ChangeAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
