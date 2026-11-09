@@ -68,7 +68,7 @@ public sealed class EvaluationRunTests(TenantWorld world)
     private static string Call(string tool, string? args = null) => $"[fake:tool:{tool.Replace(".", "__")}]" + (args is null ? string.Empty : $" [fake:args:{args}]");
 
     /// <summary>The HR template in Hr with the test write tool at L2, published as version 1.</summary>
-    private static async Task<Guid> AgentAsync(TestTenant t, string[]? tools = null)
+    private async Task<Guid> AgentAsync(TestTenant t, string[]? tools = null)
     {
         var detail = await OkAsync(t["sara"].Client.PostAsJsonAsync(Agents, new { templateId = "hr_assistant", orgUnitId = t.Unit("Hr") }), HttpStatusCode.Created);
         var id = detail.GetProperty("agent").GetProperty("id").GetGuid();
@@ -77,6 +77,7 @@ public sealed class EvaluationRunTests(TenantWorld world)
         definition["autonomy"] = "L2";
         await OkAsync(t["sara"].Client.PutAsJsonAsync($"{Agents}/{id}/draft", new { revision = 1, definition }));
         await OkAsync(t["sara"].Client.PostAsJsonAsync($"{Agents}/{id}/submit", new { revision = 2 }));
+        await world.Database.PassGateAsync(t.Id, id, 1);
         await OkAsync(t["aip"].Client.PostAsJsonAsync($"{Agents}/{id}/publish", new { version = 1 }));
         return id;
     }
@@ -145,7 +146,8 @@ public sealed class EvaluationRunTests(TenantWorld world)
         // Five mandatory suites and the HR template suite with two cases in each language, and the agent's three.
         Assert.Equal(27, started.GetProperty("run").GetProperty("total").GetInt32());
         Assert.True(started.GetProperty("canCancel").GetBoolean());
-        Assert.Equal(1, await world.Database.OutboxCountAsync("EvaluationRunRequested", t.Id));
+        // One request for this run and one for the gate run that submitting the version started.
+        Assert.Equal(2, await world.Database.OutboxCountAsync("EvaluationRunRequested", t.Id));
         // A second run of the same version waits for this one.
         Assert.Equal("conflict.eval.run_active", await ProblemAsync(t["sara"].Client.PostAsJsonAsync($"{Eval}/runs", new { agentId = agent }), HttpStatusCode.Conflict));
 
@@ -244,7 +246,7 @@ public sealed class EvaluationRunTests(TenantWorld world)
             .GetProperty("metrics").EnumerateArray().Single(m => m.GetProperty("key").GetString() == "answer_correctness");
         Assert.Equal(MetricStates.NotEvaluated, metric.GetProperty("locales").EnumerateArray().Single(l => l.GetProperty("locale").GetString() == "en").GetProperty("status").GetString());
         // A blocking judged metric that could not be judged keeps the run from passing.
-        Assert.Contains("agent:answer_correctness:en", done.GetProperty("result").GetProperty("incomplete").EnumerateArray().Select(x => x.GetString()));
+        Assert.Contains("answer_correctness:en", done.GetProperty("result").GetProperty("incomplete").EnumerateArray().Select(x => x.GetString()));
     }
 
     [Fact]
@@ -259,7 +261,7 @@ public sealed class EvaluationRunTests(TenantWorld world)
         var started = await StartAsync(t, agent);
         var done = await FinishAsync(t, started);
         Assert.Equal(EvalVerdicts.Failed, done.GetProperty("result").GetProperty("verdict").GetString());
-        Assert.Contains("agent:unauthorized_attempts:en", done.GetProperty("result").GetProperty("criticalFailures").EnumerateArray().Select(x => x.GetString()));
+        Assert.Contains("unauthorized_attempts:en", done.GetProperty("result").GetProperty("criticalFailures").EnumerateArray().Select(x => x.GetString()));
         Assert.DoesNotContain(world.Factory.AgentTools.Calls, c => c.Tool == "test.secret");
         var c = AgentCase(await OkAsync(t["sara"].Client.GetAsync($"{Eval}/runs/{started}/cases")), 1);
         Assert.Equal(1, Value(c, "unauthorized_attempts"));
@@ -297,7 +299,8 @@ public sealed class EvaluationRunTests(TenantWorld world)
 
         // Viewers with eval.view see runs; people outside the agent's scope and other tenants do not.
         Assert.Equal(HttpStatusCode.OK, (await t["aip"].Client.GetAsync($"{Eval}/runs/{run}")).StatusCode);
-        Assert.Equal(1, (await OkAsync(t["sec"].Client.GetAsync($"{Eval}/runs?agentId={agent}"))).GetArrayLength());
+        // This run and the gate run of the submitted version.
+        Assert.Equal(2, (await OkAsync(t["sec"].Client.GetAsync($"{Eval}/runs?agentId={agent}"))).GetArrayLength());
         Assert.Equal(HttpStatusCode.NotFound, (await t["emp"].Client.GetAsync($"{Eval}/runs/{run}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await t["fadi"].Client.GetAsync($"{Eval}/runs/{run}/cases")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await other["sara"].Client.GetAsync($"{Eval}/runs/{run}")).StatusCode);

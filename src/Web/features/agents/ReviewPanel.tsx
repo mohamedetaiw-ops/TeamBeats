@@ -18,7 +18,9 @@ function show(value: unknown): string {
 /**
  * The review of a version (spec 020 US2): what changed against the published version, the risk class and the gate
  * result, with approve and publish, or reject with a reason. The API refuses an approval by the last editor of a
- * Medium or High risk version and one the gate blocks; the page says why when approval is not possible.
+ * Medium or High risk version and one the gate blocks; the page says why when approval is not possible. The gate
+ * section lists failures by severity, failing cases and scores against the published version, and offers an override
+ * with a reason when the API says the reader may give one (spec 034 US5).
  */
 export function ReviewPanel({ review }: { review: AgentReview }) {
   const t = useTranslations("agents.review");
@@ -29,6 +31,8 @@ export function ReviewPanel({ review }: { review: AgentReview }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<Result>(null);
   const [done, setDone] = useState(false);
+  const [overrideReason, setOverrideReason] = useState("");
+  const [overridden, setOverridden] = useState(false);
 
   async function decide(kind: "publish" | "reject") {
     setBusy(kind);
@@ -53,6 +57,38 @@ export function ReviewPanel({ review }: { review: AgentReview }) {
     }
   }
 
+  async function override(runId: string) {
+    setBusy("override");
+    setResult(null);
+    try {
+      const response = await fetch(`/api/v1/evaluation/gates/${runId}/override`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ reason: overrideReason }),
+      });
+      if (response.ok) {
+        setOverridden(true);
+        setResult({ ok: true, messages: [t("overridden")] });
+        router.refresh();
+      } else {
+        setResult({ ok: false, messages: await problemMessages(response) });
+      }
+    } catch {
+      setResult({ ok: false, messages: [t("failed")] });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const gate = review.gate;
+  const failures: [string, string[]][] = [
+    ["critical", gate.criticalFailures ?? []],
+    ["blocking", gate.blockingFailures ?? []],
+    ["incomplete", gate.incomplete ?? []],
+    ["cases", gate.failingCases ?? []],
+  ];
+  const diff = gate.diff ?? [];
+  const score = (value: number | null) => (value === null ? "" : `${Math.round(value * 1000) / 10}%`);
   const cannot = (review.cannotApproveReason ?? "agent.publish_permission").replace("agent.", "");
   // A designer without agent.publish reads the review; deciding is for publishers, whom the API checks again.
   const mayDecide = review.canApprove || cannot !== "publish_permission";
@@ -67,7 +103,73 @@ export function ReviewPanel({ review }: { review: AgentReview }) {
       </p>
       <section className="agents-section" aria-labelledby={`${ids}-gate`}>
         <h2 id={`${ids}-gate`}>{t("gate")}</h2>
-        <p data-testid="review-gate">{t.has(`gateStatus.${review.gate.status}`) ? t(`gateStatus.${review.gate.status}`) : review.gate.status}</p>
+        <p data-testid="review-gate">{t.has(`gateStatus.${gate.status}`) ? t(`gateStatus.${gate.status}`) : gate.status}</p>
+        {failures.map(([kind, list]) =>
+          list.length > 0 ? (
+            <div key={kind}>
+              <h3>{t(`gateLists.${kind}`)}</h3>
+              <ul data-testid={`review-gate-${kind}`}>
+                {list.map((label) => (
+                  <li key={label}>
+                    <bdi dir="ltr">{label}</bdi>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null,
+        )}
+        {gate.overrideReason ? (
+          <p data-testid="review-gate-override-reason">
+            {t("overrideReasonShown")} <bdi>{gate.overrideReason}</bdi>
+          </p>
+        ) : null}
+        {diff.length > 0 ? (
+          <div className="agents-table">
+            <table data-testid="review-gate-diff">
+              <caption>{review.publishedVersion === null ? t("scores") : t("scoresAgainst", { number: String(review.publishedVersion) })}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{t("metric")}</th>
+                  <th scope="col">{t("locale")}</th>
+                  <th scope="col">{t("publishedScore")}</th>
+                  <th scope="col">{t("thisScore")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {diff.map((d) => (
+                  <tr key={`${d.metric}:${d.locale}`}>
+                    <th scope="row">
+                      <bdi dir="ltr">{d.metric}</bdi>
+                    </th>
+                    <td>{d.locale}</td>
+                    <td>{score(d.published)}</td>
+                    <td>{score(d.value)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+        {gate.canOverride && gate.runId && !overridden ? (
+          <div className="field">
+            <label htmlFor={`${ids}-override`}>{t("overrideReason")}</label>
+            <p id={`${ids}-override-hint`} className="field-hint">
+              {t("overrideHint")}
+            </p>
+            <textarea
+              id={`${ids}-override`}
+              aria-describedby={`${ids}-override-hint`}
+              rows={3}
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value)}
+            />
+            <div className="agents-row">
+              <Button busy={busy === "override"} busyLabel={t("working")} onClick={() => void override(gate.runId!)}>
+                {t("override")}
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </section>
       <section className="agents-section" aria-labelledby={`${ids}-changes`}>
         <h2 id={`${ids}-changes`}>{review.publishedVersion === null ? t("firstVersion") : t("changes", { number: String(review.publishedVersion) })}</h2>

@@ -81,6 +81,7 @@ public sealed class AgentRuntimeTests(TenantWorld world)
         {
             // Sara submits the version and the AI policy administrator publishes it (separation of duties).
             await OkAsync(t["sara"].Client.PostAsJsonAsync($"{Agents}/{id}/submit", new { revision = 2 }));
+            await world.Database.PassGateAsync(t.Id, id, 1);
             await OkAsync(t["aip"].Client.PostAsJsonAsync($"{Agents}/{id}/publish", new { version = 1 }));
         }
         return id;

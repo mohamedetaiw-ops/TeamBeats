@@ -1354,7 +1354,8 @@
       "policyApproval": "Policy approval",
       "policyAttestation": "Policy attestation",
       "agentReview": "Agent review",
-      "preparedByAi": "Prepared by AI"
+      "preparedByAi": "Prepared by AI",
+      "evalFollowUp": "Evaluation follow-up"
     },
     "delegation": {
       "title": "While you are away",
@@ -2890,7 +2891,14 @@
       "gateStatus": {
         "not_built": "Evaluation checks are not available yet, so they do not block publishing.",
         "passed": "Passed",
-        "failed": "Failed"
+        "failed": "Failed",
+        "not_run": "The evaluation has not run for this version.",
+        "running": "The evaluation is running. Publishing waits for it.",
+        "failed_critical": "Failed a critical check. This version cannot be published.",
+        "incomplete": "Incomplete: some checks could not be measured, so the result is not a pass.",
+        "overridden": "Overridden by a publisher",
+        "stale": "The suites or datasets changed after the evaluation ran. Run it again.",
+        "cancelled": "The evaluation was cancelled. Run it again."
       },
       "firstVersion": "First version: every setting is new",
       "changes": "Changes against version {number}",
@@ -2917,7 +2925,9 @@
       "cannot": {
         "publish_permission": "You can read this review, but publishing needs a publisher.",
         "last_editor": "You made the last change to this version, so another person has to approve it.",
-        "gate_failed": "The evaluation checks failed, so this version cannot be published."
+        "gate_failed": "The evaluation checks failed, so this version cannot be published.",
+        "gate_running": "The evaluation is still running, so this version cannot be published yet.",
+        "gate_not_run": "This version has no current evaluation result, so it cannot be published until the evaluation runs again."
       },
       "published": "Approved and published.",
       "rejected": "Rejected. The designer can change it and send it again.",
@@ -2927,7 +2937,24 @@
       "reasonHint": "Needed when you reject. The designer sees it.",
       "approve": "Approve and publish",
       "reject": "Reject",
-      "working": "Working…"
+      "working": "Working…",
+      "gateLists": {
+        "critical": "Critical failures",
+        "blocking": "Blocking failures",
+        "incomplete": "Not measured",
+        "cases": "Failing cases"
+      },
+      "scores": "Scores",
+      "scoresAgainst": "Scores against version {number}",
+      "metric": "Metric",
+      "locale": "Language",
+      "publishedScore": "Published",
+      "thisScore": "This version",
+      "overrideReason": "Reason for the override",
+      "overrideHint": "Only for blocking or incomplete checks on Low or Medium risk versions. The owner is told and gets a follow-up task.",
+      "override": "Override and allow publishing",
+      "overridden": "Overridden. You can publish this version now.",
+      "overrideReasonShown": "Override reason:"
     },
     "policy": {
       "title": "Agent policy",

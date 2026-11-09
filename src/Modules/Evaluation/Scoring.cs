@@ -249,7 +249,8 @@ public sealed record RunResult(
     IReadOnlyDictionary<string, int?> LatencyP95,
     IReadOnlyDictionary<string, double?> TokensPerSuccess,
     Guid? BaselineRunId,
-    IReadOnlyList<Regression> Regressions);
+    IReadOnlyList<Regression> Regressions,
+    IReadOnlyList<MetricScore>? Metrics = null);
 
 /// <summary>A suite as it was tested: the metrics with their effective rules, and the dataset versions used.</summary>
 public sealed record RunSuite(string Key, string Kind, int Version, IReadOnlyList<SuiteMetric> Metrics, IReadOnlyList<EffectiveRule> Rules,
@@ -319,76 +320,20 @@ public static class RunScorer
             return successes == 0 ? null : (double?)Math.Round(inLocale.Sum(c => c.Tokens ?? 0) / (double)successes, 2);
         });
 
+        // Each suite is shown on its own (US4 scenario 1). The verdict reads each metric over every suite of the run in
+        // each locale, under the strictest rule any suite gives it (FR-020), so cases of the agent's own suite add to the
+        // inherited ones and a mandatory safety metric fails the run wherever it breaks.
         var scored = new List<SuiteScore>();
         foreach (var suite in suites)
         {
-            var metrics = new List<MetricScore>();
             var inSuite = cases.Where(c => c.Suite == suite.Key && c.Status == "done").ToList();
+            var metrics = new List<MetricScore>();
             foreach (var metric in suite.Metrics)
             {
-                var def = MetricCatalog.Find(metric.Key);
-                if (def is null)
+                if (MetricCatalog.Find(metric.Key) is { } def)
                 {
-                    continue;
+                    metrics.Add(Metric(def, metric.Weight, suite.Rules.FirstOrDefault(r => r.Key == metric.Key), inSuite, locales, latency, tokens, baseline));
                 }
-                var rule = suite.Rules.FirstOrDefault(r => r.Key == metric.Key);
-                var perLocale = new List<LocaleScore>();
-                foreach (var locale in locales)
-                {
-                    LocaleScore score;
-                    if (def.Method == EvalMethods.Measured)
-                    {
-                        score = Measured(def, rule, locale, latency, tokens, baseline);
-                    }
-                    else
-                    {
-                        var values = inSuite.Where(c => c.Locale == locale && c.Metrics.ContainsKey(metric.Key)).Select(c => c.Metrics[metric.Key]).ToList();
-                        var scoredValues = values.Where(v => v.State == CaseMetricStates.Scored && v.Value is not null).Select(v => v.Value!.Value).ToList();
-                        var notEvaluated = values.Count(v => v.State == CaseMetricStates.NotEvaluated);
-                        double? value = scoredValues.Count == 0 ? null : Math.Round(scoredValues.Average(), 4);
-                        var failures = def.HigherIsBetter ? scoredValues.Count(v => v < 1) : scoredValues.Count(v => v > 0);
-                        string status;
-                        if (value is null)
-                        {
-                            status = notEvaluated > 0 ? MetricStates.NotEvaluated : MetricStates.InsufficientData;
-                        }
-                        else if (rule?.Threshold is not { } threshold)
-                        {
-                            status = MetricStates.NoThreshold;
-                        }
-                        else if (rule.Severity == EvalSeverities.Blocking && scoredValues.Count < MinCasesForBlocking)
-                        {
-                            // A critical breach still fails on a single case; a blocking metric needs enough cases to pass or fail (US4 scenario 5).
-                            status = MetricStates.InsufficientData;
-                        }
-                        else
-                        {
-                            status = Meets(def, value.Value, threshold) ? MetricStates.Pass : MetricStates.Fail;
-                        }
-                        score = new LocaleScore(locale, scoredValues.Count, value, failures, notEvaluated, status);
-                    }
-                    perLocale.Add(score);
-                    var label = $"{suite.Key}:{metric.Key}:{locale}";
-                    switch (score.Status, rule?.Severity)
-                    {
-                        case (MetricStates.Fail, EvalSeverities.Critical):
-                            critical.Add(label);
-                            break;
-                        case (MetricStates.Fail, EvalSeverities.Blocking):
-                            blocking.Add(label);
-                            break;
-                        case (MetricStates.Fail, _):
-                            warnings.Add(label);
-                            break;
-                        case (MetricStates.InsufficientData or MetricStates.NotEvaluated, EvalSeverities.Blocking or EvalSeverities.Critical):
-                            incomplete.Add(label);
-                            break;
-                    }
-                }
-                var all = inSuite.Where(c => c.Metrics.TryGetValue(metric.Key, out var v) && v.State == CaseMetricStates.Scored && v.Value is not null)
-                    .Select(c => c.Metrics[metric.Key].Value!.Value).ToList();
-                metrics.Add(new MetricScore(metric.Key, metric.Weight, rule?.Threshold, rule?.Severity, rule?.ThresholdLevel, perLocale,
-                    all.Count == 0 ? null : Math.Round(all.Average(), 4)));
             }
             var weighted = locales.ToDictionary(l => l, l =>
             {
@@ -400,9 +345,96 @@ public static class RunScorer
             scored.Add(new SuiteScore(suite.Key, metrics, weighted));
         }
 
+        var done = cases.Where(c => c.Status == "done").ToList();
+        var overall = new List<MetricScore>();
+        foreach (var key in suites.SelectMany(s => s.Metrics.Select(m => m.Key)).Distinct())
+        {
+            if (MetricCatalog.Find(key) is not { } def)
+            {
+                continue;
+            }
+            var rule = Strictest(def, suites.SelectMany(s => s.Rules).Where(r => r.Key == key));
+            var score = Metric(def, 1, rule, done, locales, latency, tokens, baseline);
+            overall.Add(score);
+            foreach (var locale in score.Locales)
+            {
+                var label = $"{key}:{locale.Locale}";
+                switch (locale.Status, rule?.Severity)
+                {
+                    case (MetricStates.Fail, EvalSeverities.Critical):
+                        critical.Add(label);
+                        break;
+                    case (MetricStates.Fail, EvalSeverities.Blocking):
+                        blocking.Add(label);
+                        break;
+                    case (MetricStates.Fail, _):
+                        warnings.Add(label);
+                        break;
+                    case (MetricStates.InsufficientData or MetricStates.NotEvaluated, EvalSeverities.Blocking or EvalSeverities.Critical):
+                        incomplete.Add(label);
+                        break;
+                }
+            }
+        }
+
         var regressions = baseline is null ? [] : Regressions(scored, baseline, baselineRepeats);
         var verdict = critical.Count > 0 || blocking.Count > 0 ? EvalVerdicts.Failed : incomplete.Count > 0 ? EvalVerdicts.Incomplete : EvalVerdicts.Passed;
-        return new RunResult(verdict, scored, critical, blocking, warnings, incomplete, latency, tokens, baselineRunId, regressions);
+        return new RunResult(verdict, scored, critical, blocking, warnings, incomplete, latency, tokens, baselineRunId, regressions, overall);
+    }
+
+    /// <summary>The strictest rule for a metric across suites: the strictest threshold and the highest severity.</summary>
+    public static EffectiveRule? Strictest(MetricDefinition def, IEnumerable<EffectiveRule> rules)
+    {
+        var list = rules.ToList();
+        if (list.Count == 0)
+        {
+            return null;
+        }
+        var withThreshold = list.Where(r => r.Threshold is not null).ToList();
+        var threshold = withThreshold.Count == 0 ? null : def.HigherIsBetter ? withThreshold.MaxBy(r => r.Threshold) : withThreshold.MinBy(r => r.Threshold);
+        var severity = list.Where(r => r.Severity is not null).MaxBy(r => EvalSeverities.Rank(r.Severity!));
+        return new EffectiveRule(def.Key, threshold?.Threshold, severity?.Severity, threshold?.ThresholdLevel, severity?.SeverityLevel);
+    }
+
+    private static MetricScore Metric(MetricDefinition def, double weight, EffectiveRule? rule, IReadOnlyList<ScoredCase> cases, IReadOnlyList<string> locales,
+        IReadOnlyDictionary<string, int?> latency, IReadOnlyDictionary<string, double?> tokens, RunResult? baseline)
+    {
+        var perLocale = new List<LocaleScore>();
+        foreach (var locale in locales)
+        {
+            if (def.Method == EvalMethods.Measured)
+            {
+                perLocale.Add(Measured(def, rule, locale, latency, tokens, baseline));
+                continue;
+            }
+            var values = cases.Where(c => c.Locale == locale && c.Metrics.ContainsKey(def.Key)).Select(c => c.Metrics[def.Key]).ToList();
+            var scoredValues = values.Where(v => v.State == CaseMetricStates.Scored && v.Value is not null).Select(v => v.Value!.Value).ToList();
+            var notEvaluated = values.Count(v => v.State == CaseMetricStates.NotEvaluated);
+            double? value = scoredValues.Count == 0 ? null : Math.Round(scoredValues.Average(), 4);
+            var failures = def.HigherIsBetter ? scoredValues.Count(v => v < 1) : scoredValues.Count(v => v > 0);
+            string status;
+            if (value is null)
+            {
+                status = notEvaluated > 0 ? MetricStates.NotEvaluated : MetricStates.InsufficientData;
+            }
+            else if (rule?.Threshold is not { } threshold)
+            {
+                status = MetricStates.NoThreshold;
+            }
+            else if (rule.Severity == EvalSeverities.Blocking && scoredValues.Count < MinCasesForBlocking)
+            {
+                // A critical breach still fails on a single case; a blocking metric needs enough cases to pass or fail (US4 scenario 5).
+                status = MetricStates.InsufficientData;
+            }
+            else
+            {
+                status = Meets(def, value.Value, threshold) ? MetricStates.Pass : MetricStates.Fail;
+            }
+            perLocale.Add(new LocaleScore(locale, scoredValues.Count, value, failures, notEvaluated, status));
+        }
+        var all = cases.Where(c => c.Metrics.TryGetValue(def.Key, out var v) && v.State == CaseMetricStates.Scored && v.Value is not null)
+            .Select(c => c.Metrics[def.Key].Value!.Value).ToList();
+        return new MetricScore(def.Key, weight, rule?.Threshold, rule?.Severity, rule?.ThresholdLevel, perLocale, all.Count == 0 ? null : Math.Round(all.Average(), 4));
     }
 
     private static LocaleScore Measured(MetricDefinition def, EffectiveRule? rule, string locale, IReadOnlyDictionary<string, int?> latency,

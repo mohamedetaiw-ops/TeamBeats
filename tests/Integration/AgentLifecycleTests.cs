@@ -7,6 +7,7 @@ using TeamBeats.Modules.Agents;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Testing;
 using Xunit;
+using TeamBeats.Modules.Agents.Contracts;
 
 namespace TeamBeats.Integration.Tests;
 
@@ -83,19 +84,22 @@ public sealed class AgentLifecycleTests(TenantWorld world)
         return await OkAsync(t["sara"].Client.PutAsJsonAsync($"{Agents}/{id}/draft", new { revision, definition }));
     }
 
-    private static async Task<int> SubmitAsync(TestTenant t, Guid id, string by = "sara")
+    /// <summary>Submits the latest draft; the gate run it starts is then marked passed, since these tests are about the lifecycle (EvaluationGateTests covers the gate).</summary>
+    private async Task<int> SubmitAsync(TestTenant t, Guid id, string by = "sara")
     {
         var detail = await OkAsync(t[by].Client.GetAsync($"{Agents}/{id}"));
         var latest = detail.GetProperty("latest");
         var submitted = await OkAsync(t[by].Client.PostAsJsonAsync($"{Agents}/{id}/submit", new { revision = latest.GetProperty("revision").GetInt32() }));
         Assert.Equal(AgentVersionStates.InReview, submitted.GetProperty("latest").GetProperty("state").GetString());
-        return latest.GetProperty("number").GetInt32();
+        var number = latest.GetProperty("number").GetInt32();
+        await world.Database.PassGateAsync(t.Id, id, number);
+        return number;
     }
 
     private static async Task<JsonElement> PublishAsync(TestTenant t, Guid id, int version, string by = "aip") =>
         await OkAsync(t[by].Client.PostAsJsonAsync($"{Agents}/{id}/publish", new { version }));
 
-    private static async Task<Guid> PublishedAgentAsync(TestTenant t, string template, string[] tools, string autonomy)
+    private async Task<Guid> PublishedAgentAsync(TestTenant t, string template, string[] tools, string autonomy)
     {
         var id = await InstallAsync(t, template);
         await SaveAsync(t, id, tools, autonomy);
@@ -131,12 +135,12 @@ public sealed class AgentLifecycleTests(TenantWorld world)
         Assert.Equal(AgentReviewTasks.ReviewLink(id), task.GetProperty("link").GetString());
         Assert.False(HasReviewTask(await InboxAsync(t, "emp"), id));
 
-        // The review shows what changed, the risk class and the gate result, which is not built yet and does not block.
+        // The review shows what changed, the risk class and the gate result.
         var review = await OkAsync(t["aip"].Client.GetAsync($"{Agents}/{id}/review"));
         Assert.Equal(number, review.GetProperty("version").GetProperty("number").GetInt32());
         Assert.Equal(AgentRiskClasses.Medium, review.GetProperty("version").GetProperty("riskClass").GetString());
         Assert.Contains(review.GetProperty("changes").EnumerateArray(), c => c.GetProperty("field").GetString() == "tools");
-        Assert.Equal("not_built", review.GetProperty("gate").GetProperty("status").GetString());
+        Assert.Equal(GateStatuses.Passed, review.GetProperty("gate").GetProperty("status").GetString());
         Assert.True(review.GetProperty("canApprove").GetBoolean());
         Assert.Equal("agent.publish_permission", (await OkAsync(t["sara"].Client.GetAsync($"{Agents}/{id}/review"))).GetProperty("cannotApproveReason").GetString());
 

@@ -354,4 +354,11 @@ public sealed class AgentCatalog(IDbSession session) : IAgentCatalog
         var d = System.Text.Json.JsonSerializer.Deserialize<AgentDefinition>(row.Definition, AgentPolicyService.Json)!;
         return new AgentFacts(row.Id, row.Unit, row.Owner, row.Template, row.Status, row.Risk, row.Current, row.Latest, d.Languages ?? [], d.Name);
     }
+
+    public async Task<AgentVersionFacts?> VersionAsync(Guid agentId, int number, CancellationToken ct = default)
+    {
+        var rows = await session.QueryAsync("select number, state, risk_class, last_editor from agents.agent_version where agent_id = @agentId and number = @number",
+            new { agentId, number }, r => new AgentVersionFacts(r.GetInt32(0), r.GetString(1), r.GetString(2), r.GetGuid(3)), ct);
+        return rows.Count == 0 ? null : rows[0];
+    }
 }

@@ -43,13 +43,6 @@ public static class AgentAutonomy
     public static int Rank(string? level) => level is null ? -1 : Levels.ToList().IndexOf(level);
 }
 
-public static class AgentRiskClasses
-{
-    public const string Low = "low";
-    public const string Medium = "medium";
-    public const string High = "high";
-}
-
 public static class Classifications
 {
     public static readonly IReadOnlyList<string> Ordered = ["public", "internal", "confidential", "restricted"];

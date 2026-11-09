@@ -138,6 +138,8 @@ public sealed record AgentFacts(
 public interface IAgentCatalog
 {
     Task<AgentFacts?> GetAsync(Guid agentId, CancellationToken ct = default);
+
+    Task<AgentVersionFacts?> VersionAsync(Guid agentId, int number, CancellationToken ct = default);
 }
 
 /// <summary>A step of an evaluation run's execution record (spec 034 US3 scenario 5): what the agent did, in order.</summary>
@@ -187,4 +189,61 @@ public static class EvalStepDecisions
 public interface IAgentEvaluationRuntime
 {
     Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, CancellationToken ct = default);
+}
+
+/// <summary>Where the release gate of a version stands (spec 034 US5, spec 020 US5).</summary>
+public static class GateStatuses
+{
+    public const string NotBuilt = "not_built";
+    public const string NotRun = "not_run";
+    public const string Running = "running";
+    public const string Passed = "passed";
+    public const string Failed = "failed";
+    public const string FailedCritical = "failed_critical";
+    public const string Incomplete = "incomplete";
+    public const string Overridden = "overridden";
+    public const string Stale = "stale";
+    public const string Cancelled = "cancelled";
+}
+
+/// <summary>A metric of the version under review next to the published version's, in one locale (US5 scenario 1).</summary>
+public sealed record GateMetricDiff(string Metric, string Locale, double? Published, double? Value);
+
+/// <summary>
+/// The release gate result of a version as the review page shows it (spec 034 US5): the status, whether it blocks
+/// publishing, the failing cases, the failing metrics by severity, the score differences against the published
+/// version, and whether the person asking may override a blocking failure.
+/// </summary>
+public sealed record AgentGateResult(
+    string Status,
+    bool Blocking,
+    IReadOnlyList<string> FailingCases,
+    Guid? RunId = null,
+    bool CanOverride = false,
+    IReadOnlyList<string>? CriticalFailures = null,
+    IReadOnlyList<string>? BlockingFailures = null,
+    IReadOnlyList<string>? Incomplete = null,
+    IReadOnlyList<GateMetricDiff>? Diff = null,
+    string? OverrideReason = null);
+
+/// <summary>
+/// The release gate of spec 034 as the Agent Hub uses it (spec 020 FR-009): a submitted version asks for a gate run,
+/// and publishing reads the result. The evaluation module implements it.
+/// </summary>
+public interface IAgentReleaseGate
+{
+    Task RequestAsync(Guid agentId, int version, CancellationToken ct);
+
+    Task<AgentGateResult> ResultAsync(Guid agentId, int version, CancellationToken ct);
+}
+
+/// <summary>What other modules may know about one version of an agent: its state, risk class and last editor (spec 034 overrides).</summary>
+public sealed record AgentVersionFacts(int Number, string State, string RiskClass, Guid LastEditor);
+
+/// <summary>The risk classes of an agent version (spec 020 FR-006).</summary>
+public static class AgentRiskClasses
+{
+    public const string Low = "low";
+    public const string Medium = "medium";
+    public const string High = "high";
 }

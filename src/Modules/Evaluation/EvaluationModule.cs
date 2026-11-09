@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Evaluation.Contracts;
 using TeamBeats.Persistence;
@@ -14,7 +15,7 @@ namespace TeamBeats.Modules.Evaluation;
 /// The AI Evaluation Layer (spec 034, ADR-0015, module map: Evaluation). R1 slice 1 is the control plane: platform and
 /// mandatory suites, an agent's own suite with versions and thresholds, golden datasets with import, personas backed by
 /// synthetic test identities, and the tenant's thresholds. Slice 2 adds runs on the workers, the evaluators, the judge
-/// and scoring. Gates follow.
+/// and scoring. Slice 3 adds the release gate for agent versions, with overrides and the owner's follow-up task.
 /// </summary>
 public static class EvaluationModule
 {
@@ -31,6 +32,10 @@ public static class EvaluationModule
         services.AddScoped<RunStore>();
         services.AddScoped<CaseExecutor>();
         services.AddScoped<EvaluationJudge>();
+        services.AddScoped<GateService>();
+        services.RemoveAll<Agents.Contracts.IAgentReleaseGate>();
+        services.AddScoped<Agents.Contracts.IAgentReleaseGate>(sp => sp.GetRequiredService<GateService>());
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource, GateFollowUpTasks>();
         services.AddMessageHandler<EvaluationRunRequested, EvaluationRunner>("evaluation.run");
         return services;
     }
@@ -108,6 +113,14 @@ public static class EvaluationModule
         root.MapPost("/runs/{id:guid}/cancel", async (Guid id, RunService runs, IDbSession session, CancellationToken ct) =>
         {
             var view = await runs.CancelAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/gates", async (Guid agentId, int version, GateService gates, CancellationToken ct) => Results.Ok(await gates.GetAsync(agentId, version, ct)));
+        root.MapPost("/gates/{runId:guid}/override", async (Guid runId, GateOverrideRequest request, GateService gates, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await gates.OverrideAsync(runId, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

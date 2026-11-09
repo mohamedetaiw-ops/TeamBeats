@@ -2,6 +2,7 @@ using System.Text.Json;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
@@ -11,21 +12,12 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Agents;
 
-/// <summary>The release gate result of spec 034 for a version, as the review page shows it.</summary>
-public sealed record AgentGateResult(string Status, bool Blocking, IReadOnlyList<string> FailingCases);
-
-/// <summary>
-/// The release gate of spec 034 as the Hub asks it (020 FR-009). Spec 034 provides the implementation; until it is
-/// built the default reports <c>not_built</c> without blocking, and the review page says so.
-/// </summary>
-public interface IAgentReleaseGate
-{
-    Task<AgentGateResult> ResultAsync(Guid agentId, int version, CancellationToken ct);
-}
-
+/// <summary>Used until spec 034 is wired in: reports <c>not_built</c> without blocking, and the review page says so.</summary>
 public sealed class NoReleaseGate : IAgentReleaseGate
 {
-    public Task<AgentGateResult> ResultAsync(Guid agentId, int version, CancellationToken ct) => Task.FromResult(new AgentGateResult("not_built", false, []));
+    public Task RequestAsync(Guid agentId, int version, CancellationToken ct) => Task.CompletedTask;
+
+    public Task<AgentGateResult> ResultAsync(Guid agentId, int version, CancellationToken ct) => Task.FromResult(new AgentGateResult(GateStatuses.NotBuilt, false, []));
 }
 
 public sealed record SubmitRequest(int? Revision);
@@ -110,6 +102,8 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
             """, new { id, number = agent.Latest.Number, user, now }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentVersionSubmitted, "agent", id.ToString(), TargetOrgUnitId: agent.Agent.OrgUnitId,
             Changes: new { version = agent.Latest.Number, riskClass = agent.Latest.RiskClass }), ct);
+        // The release gate of spec 034 starts on the submitted version at once (020 US5 scenario 3).
+        await gate.RequestAsync(id, agent.Latest.Number, ct);
         return await registry.GetAsync(id, ct);
     }
 
@@ -129,9 +123,17 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         var result = await gate.ResultAsync(id, version.Number, ct);
         var reason = !canPublish ? "agent.publish_permission"
             : RequiresOtherApprover(version.RiskClass) && version.LastEditor == user ? "agent.last_editor"
-            : result.Blocking ? "agent.gate_failed" : null;
+            : result.Blocking ? GateReason(result) : null;
         return new AgentReview(agent.Agent, version, definition, agent.Agent.CurrentVersion, Diff(published, definition), result, reason is null, reason);
     }
+
+    /// <summary>Why the gate keeps a version from being published, as the review page and the publish refusal say it.</summary>
+    internal static string GateReason(AgentGateResult result) => result.Status switch
+    {
+        GateStatuses.Running => "agent.gate_running",
+        GateStatuses.NotRun or GateStatuses.Stale or GateStatuses.Cancelled => "agent.gate_not_run",
+        _ => "agent.gate_failed",
+    };
 
     internal static bool RequiresOtherApprover(string risk) => risk is AgentRiskClasses.Medium or AgentRiskClasses.High;
 
@@ -176,7 +178,12 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
         var result = await gate.ResultAsync(id, number, ct);
         if (result.Blocking)
         {
-            throw AppException.Conflict("conflict.agent.gate_failed");
+            throw AppException.Conflict(result.Status switch
+            {
+                GateStatuses.Running => "conflict.agent.gate_running",
+                GateStatuses.NotRun or GateStatuses.Stale or GateStatuses.Cancelled => "conflict.agent.gate_not_run",
+                _ => "conflict.agent.gate_failed",
+            });
         }
         var definition = Definition((await VersionDefinitionAsync(id, number, ct))!);
         AgentDefinitions.Validate(definition, tools, (await policies.CurrentAsync(ct)).Policy);
@@ -253,6 +260,11 @@ public sealed class AgentLifecycle(IDbSession session, ITenantContext context, I
             new { id, number, risk, now }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentRolledBack, "agent", id.ToString(), TargetOrgUnitId: agent.Agent.OrgUnitId,
             Changes: new { from = agent.Agent.CurrentVersion, to = number }), ct);
+        // Rollback never waits for evaluation; when the restored version has no current gate result, the gate runs right after (020 FR-009).
+        if ((await gate.ResultAsync(id, number, ct)).Status is GateStatuses.NotRun or GateStatuses.Stale or GateStatuses.Cancelled)
+        {
+            await gate.RequestAsync(id, number, ct);
+        }
         return await registry.GetAsync(id, ct);
     }
 

@@ -79,9 +79,23 @@ export type AgentReview = {
   definition: AgentDefinition;
   publishedVersion: number | null;
   changes: FieldChange[];
-  gate: { status: string; blocking: boolean; failingCases: string[] };
+  gate: AgentGate;
   canApprove: boolean;
   cannotApproveReason: string | null;
+};
+
+/** The release gate of a version (spec 034 US5): status, failures by severity, failing cases and the score diff. */
+export type AgentGate = {
+  status: string;
+  blocking: boolean;
+  failingCases: string[];
+  runId?: string | null;
+  canOverride?: boolean;
+  criticalFailures?: string[] | null;
+  blockingFailures?: string[] | null;
+  incomplete?: string[] | null;
+  diff?: { metric: string; locale: string; published: number | null; value: number | null }[] | null;
+  overrideReason?: string | null;
 };
 
 export type AgentPolicy = {
