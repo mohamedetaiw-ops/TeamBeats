@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Npgsql;
+using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.Authorization;
 using TeamBeats.Testing;
 using Xunit;
@@ -136,6 +137,28 @@ public sealed class PermissionBackfillTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.OK, (await employee.Client.GetAsync("/api/v1/people")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await old["admin"].Client.GetAsync("/api/v1/people/policy")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await employee.Client.GetAsync("/api/v1/people/policy")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Ai_backfill_gives_an_older_tenants_security_officer_the_model_policy_view()
+    {
+        var old = await world.CreateTenantAsync("bfai-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        await world.SeedUserAsync(old, "sec", TeamBeats.Modules.Tenancy.Contracts.MembershipTypes.Employee);
+        await world.AssignAsync(old, "sec", BuiltInRoles.SecurityOfficer, "tenant", null);
+        await world.Database.OwnerExecAsync(
+            """
+            select set_config('app.tenant_id', @t, false);
+            delete from authz.role_permission where permission_key = 'ai.policy_view';
+            update authz.grants_version set version = version + 1;
+            """, ("t", old.Id.ToString()));
+        Assert.Equal(HttpStatusCode.Forbidden, (await old["sec"].Client.GetAsync("/api/v1/ai/policy")).StatusCode);
+
+        var script = AuthorizationModule.Migrations.Scripts().Single(s => s.Name.StartsWith("0016_", StringComparison.Ordinal)).Sql;
+        await world.Database.OwnerExecAsync(script);
+        await world.Database.OwnerExecAsync(script);
+
+        Assert.Equal(HttpStatusCode.OK, (await old["sec"].Client.GetAsync("/api/v1/ai/policy")).StatusCode);
+        Assert.Equal(3, await CountAsync(old.Id, "select count(*) from authz.role_permission where permission_key = 'ai.policy_view'"));
     }
 
     /// <summary>Counts as the table owner with one tenant set, on one connection, as row-level security requires.</summary>

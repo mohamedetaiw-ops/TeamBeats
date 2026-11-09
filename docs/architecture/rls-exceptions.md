@@ -9,4 +9,4 @@ Every table with a `tenant_id` column has RLS enabled and forced (`platform.enab
 | `messaging.dead_letter` | Written when tenant context is missing or invalid, which is exactly when RLS context cannot be set. | Operator-only diagnostics; no tenant API reads it. |
 | `identity.verified_domain` | One tenant per verified email domain per installation (spec 003 section 6) must be enforced across tenants. | `tb_app` has SELECT only; writes are platform operations. Holds only the domain and the owning tenant ID. |
 
-Platform tables without a `tenant_id` column (`tenancy.tenant`, `entitlements.package*`, `audit.platform_audit_event`, `identity.platform_*`) are platform data by design and are reached only through platform-host endpoints guarded by `RequirePlatformOperator`.
+Platform tables without a `tenant_id` column (`tenancy.tenant`, `entitlements.package*`, `ai.model_catalogue`, `ai.platform_route`, `audit.platform_audit_event`, `identity.platform_*`) are platform data by design and are reached only through platform-host endpoints guarded by `RequirePlatformOperator`.

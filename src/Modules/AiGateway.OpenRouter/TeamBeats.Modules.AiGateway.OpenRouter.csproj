@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+  <PropertyGroup><RootNamespace>TeamBeats.Modules.AiGateway.OpenRouter</RootNamespace><AssemblyName>TeamBeats.Modules.AiGateway.OpenRouter</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../AiGateway/TeamBeats.Modules.AiGateway.csproj" />
+  </ItemGroup>
+</Project>

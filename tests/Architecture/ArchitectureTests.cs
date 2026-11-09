@@ -38,7 +38,12 @@ public sealed partial class ArchitectureTests
     public void Modules_reference_only_building_blocks_and_contracts()
     {
         // Documented exception: development sign-in extends the Identity module it belongs to (ADR-0004).
-        var allowed = new HashSet<string> { "TeamBeats.Modules.Identity.DevAuth->TeamBeats.Modules.Identity" };
+        // Provider adapters implement the AI gateway's provider port (spec 013 FR-004).
+        var allowed = new HashSet<string>
+        {
+            "TeamBeats.Modules.Identity.DevAuth->TeamBeats.Modules.Identity",
+            "TeamBeats.Modules.AiGateway.OpenRouter->TeamBeats.Modules.AiGateway",
+        };
         var violations = new List<string>();
         foreach (var csproj in SourceFiles("src/Modules", "*.csproj"))
         {
@@ -53,6 +58,32 @@ public sealed partial class ArchitectureTests
             }
         }
         Assert.True(violations.Count == 0, "Module implementation references: " + string.Join(", ", violations));
+    }
+
+    [Fact]
+    public void Model_providers_are_reached_only_through_their_adapter()
+    {
+        // Spec 013 FR-001 and constitution VIII: provider URLs and SDKs stay inside the adapter projects; every other
+        // module calls IAiGateway from AiGateway.Contracts. The fake provider in DevFakes stands in for the real one.
+        string[] adapters = ["src/Modules/AiGateway.OpenRouter/", "src/DevFakes/"];
+        var markers = new[] { "openrouter.ai", "api.openai.com", "api.anthropic.com", "generativelanguage.googleapis.com", "using OpenAI", "using Anthropic", "Azure.AI.OpenAI" };
+        var violations = SourceFiles("src")
+            .Where(f => !adapters.Any(a => Rel(f).StartsWith(a, StringComparison.Ordinal)))
+            .SelectMany(f => markers.Where(m => File.ReadAllText(f).Contains(m, StringComparison.OrdinalIgnoreCase)).Select(m => $"{Rel(f)}: {m}"))
+            .ToList();
+        var packages = SourceFiles("src", "*.csproj")
+            .Where(f => !adapters.Any(a => Rel(f).StartsWith(a, StringComparison.Ordinal)))
+            .SelectMany(f => XDocument.Load(f).Descendants("PackageReference").Select(e => (File: Rel(f), Package: e.Attribute("Include")?.Value ?? string.Empty)))
+            .Where(p => p.Package.Contains("OpenAI", StringComparison.OrdinalIgnoreCase) || p.Package.Contains("Anthropic", StringComparison.OrdinalIgnoreCase))
+            .Select(p => $"{p.File}: {p.Package}");
+        violations.AddRange(packages);
+        Assert.True(violations.Count == 0, "Provider code outside an adapter: " + string.Join(", ", violations));
+
+        var callers = SourceFiles("src/Modules", "*.csproj")
+            .Where(f => !Rel(f).StartsWith("src/Modules/AiGateway", StringComparison.Ordinal))
+            .Where(f => ProjectReferences(f).Any(r => r is "TeamBeats.Modules.AiGateway" or "TeamBeats.Modules.AiGateway.OpenRouter"))
+            .Select(Rel).ToList();
+        Assert.True(callers.Count == 0, "Modules must call the gateway through AiGateway.Contracts only: " + string.Join(", ", callers));
     }
 
     [Fact]
@@ -96,6 +127,7 @@ public sealed partial class ArchitectureTests
             ["Content"] = "content",
             ["Documents"] = "documents",
             ["Policies"] = "policies",
+            ["AiGateway"] = "ai",
         };
         var violations = new List<string>();
         foreach (var (module, own) in schemas)

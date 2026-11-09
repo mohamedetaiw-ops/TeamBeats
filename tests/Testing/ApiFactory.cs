@@ -37,6 +37,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public FakeOpenMeteo Weather { get; } = new();
 
+    public FakeOpenRouter OpenRouter { get; } = new();
+
     public FakeGotenberg Gotenberg { get; } = new();
 
     public TestUserAttributes UserAttributes { get; } = new();
@@ -55,6 +57,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         builder.UseSetting("Integrations:Microsoft365:ClientSecret", FakeMicrosoftGraph.ClientSecret);
         builder.UseSetting(TeamBeats.Modules.Integrations.Microsoft365.TokenProtector.KeySetting, TokenKey);
         builder.UseSetting(TeamBeats.Persistence.GotenbergConverter.UrlKey, FakeGotenberg.BaseUrl);
+        builder.UseSetting(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.ApiKeySetting, FakeOpenRouter.ApiKey);
+        builder.UseSetting(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.TimeoutSetting, "2");
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton(Documents);
@@ -71,6 +75,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddHttpClient(TeamBeats.Modules.Integrations.Microsoft365.HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => Graph);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => Weather);
             services.AddHttpClient(TeamBeats.Persistence.GotenbergConverter.ClientName).ConfigurePrimaryHttpMessageHandler(() => Gotenberg);
+            services.AddHttpClient(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => OpenRouter);
         });
     }
 
@@ -99,6 +104,16 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         var ctx = scope.ServiceProvider.GetRequiredService<TenantContextAccessor>();
         ctx.SetTenant(tenantId);
         ctx.SetActor(ActorType.System, null);
+        return await action(scope.ServiceProvider);
+    }
+
+    /// <summary>Runs code as a tenant user, as an HTTP request of theirs would.</summary>
+    public async Task<T> AsUserAsync<T>(Guid tenantId, Guid userId, Func<IServiceProvider, Task<T>> action)
+    {
+        await using var scope = Services.CreateAsyncScope();
+        var ctx = scope.ServiceProvider.GetRequiredService<TenantContextAccessor>();
+        ctx.SetTenant(tenantId);
+        ctx.SetActor(ActorType.User, userId);
         return await action(scope.ServiceProvider);
     }
 
