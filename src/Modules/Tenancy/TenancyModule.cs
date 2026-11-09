@@ -32,6 +32,7 @@ public static class TenancyModule
         services.AddScoped<TenancyContracts>();
         services.AddScoped<IOrganizationHierarchy>(sp => sp.GetRequiredService<TenancyContracts>());
         services.AddScoped<ITenantMemberships>(sp => sp.GetRequiredService<TenancyContracts>());
+        services.AddScoped<ITestIdentityMemberships, TestIdentityMemberships>();
         return services;
     }
 

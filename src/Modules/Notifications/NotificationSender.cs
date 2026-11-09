@@ -47,6 +47,12 @@ public sealed class NotificationSender(
                 skipped++;
                 continue;
             }
+            if ((await users.GetAsync(userId, ct))?.IsTest == true)
+            {
+                // A synthetic evaluation persona is never notified (spec 034 FR-006).
+                skipped++;
+                continue;
+            }
 
             if (request.DedupeKey is { } dedupe && await session.ScalarAsync<bool>(
                     """

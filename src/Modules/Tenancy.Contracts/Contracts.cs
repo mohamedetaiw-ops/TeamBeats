@@ -77,6 +77,15 @@ public interface ITenantMemberships
     Task<IReadOnlyDictionary<string, bool>> GetMembershipTypePoliciesAsync(CancellationToken ct = default);
 }
 
+/// <summary>
+/// Memberships the platform makes for synthetic test identities of evaluation personas (spec 034 FR-006): a tenant
+/// membership and one primary org membership. The calling module checks the person's right and audits the persona.
+/// </summary>
+public interface ITestIdentityMemberships
+{
+    Task AddAsync(Guid userId, string membershipType, Guid orgUnitId, CancellationToken ct = default);
+}
+
 /// <summary>Spec 001 branding: primary color, whether a logo is uploaded, and the tenant display name the shell shows.</summary>
 public sealed record TenantBranding(string? PrimaryColor, bool HasLogo, string DisplayName = "");
 

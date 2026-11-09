@@ -102,6 +102,13 @@ public static class Permissions
     public const string AgentSecurityView = "agent.security_view";
     public const string AgentSuspend = "agent.suspend";
 
+    // Spec 034 (R1): designers build suites and datasets for agents in their scope, reviewers label calibration sets,
+    // the AI Policy Administrator sets the tenant evaluation policy, and security officers read every result.
+    public const string EvalDesign = "eval.design";
+    public const string EvalReview = "eval.review";
+    public const string EvalPolicyManage = "eval.policy_manage";
+    public const string EvalView = "eval.view";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -134,6 +141,7 @@ public static class Permissions
         PolicyAuthor, PolicyManage,
         SearchManage,
         AgentDesign, AgentPublish, AgentView, AgentSecurityView, AgentSuspend,
+        EvalDesign, EvalReview, EvalPolicyManage, EvalView,
     ];
 }
 
@@ -156,5 +164,6 @@ public static class BuiltInRoles
     public const string HrOfficer = "hr_officer";
     public const string ComplianceOfficer = "compliance_officer";
     public const string AgentDesigner = "agent_designer";
+    public const string EvaluationReviewer = "evaluation_reviewer";
 
 }

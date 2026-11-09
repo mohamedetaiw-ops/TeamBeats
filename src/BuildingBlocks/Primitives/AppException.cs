@@ -62,6 +62,12 @@ public sealed class ValidationErrors
 
     public bool Any => _errors.Count > 0;
 
+    /// <summary>How many errors were added, over all fields.</summary>
+    public int Count => _errors.Values.Sum(v => v.Count);
+
+    /// <summary>Every error as a field and resource key, in the order fields were first added.</summary>
+    public IEnumerable<(string Field, string Key)> Entries => _errors.SelectMany(e => e.Value.Select(k => (e.Key, k)));
+
     public void ThrowIfAny()
     {
         if (Any)

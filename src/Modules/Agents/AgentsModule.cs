@@ -28,6 +28,7 @@ public static class AgentsModule
         services.AddScoped<ToolRegistry>();
         services.AddScoped<AgentPolicyService>();
         services.AddScoped<AgentRegistry>();
+        services.AddScoped<Contracts.IAgentCatalog, AgentCatalog>();
         services.AddScoped<AgentRuns>();
         services.AddScoped<AgentLifecycle>();
         services.AddScoped<AgentRouter>();

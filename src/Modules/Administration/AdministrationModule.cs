@@ -108,7 +108,7 @@ public static class AdministrationModule
         admin.MapGet("/users/{id:guid}", async (Guid id, IAuthorizationService authz, IUserDirectory users, IOrganizationHierarchy hierarchy,
             ITenantMemberships memberships, IAuthorizationProvisioning roles, CancellationToken ct) =>
         {
-            var user = await users.GetAsync(id, ct) ?? throw AppException.NotFound();
+            var user = await users.GetAsync(id, ct) is { IsTest: false } found ? found : throw AppException.NotFound();
             var orgMemberships = await hierarchy.GetActiveMembershipsAsync(id, ct);
             var coverage = await authz.CoverageAsync(Permissions.UsersView, ct);
             if (!coverage.WholeTenant && !orgMemberships.Any(m => coverage.Units.Contains(m.OrgUnitId)))

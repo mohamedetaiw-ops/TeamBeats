@@ -161,6 +161,34 @@ public sealed class PermissionBackfillTests(TenantWorld world)
         Assert.Equal(3, await CountAsync(old.Id, "select count(*) from authz.role_permission where permission_key = 'ai.policy_view'"));
     }
 
+    [Fact]
+    public async Task Eval_backfill_adds_the_evaluation_reviewer_role_and_eval_permissions_to_an_older_tenant()
+    {
+        var old = await world.CreateTenantAsync("bfev-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        await world.SeedUserAsync(old, "sec", TeamBeats.Modules.Tenancy.Contracts.MembershipTypes.Employee);
+        await world.AssignAsync(old, "sec", BuiltInRoles.SecurityOfficer, "tenant", null);
+        await world.Database.OwnerExecAsync(
+            """
+            select set_config('app.tenant_id', @t, false);
+            delete from authz.role_permission where permission_key like 'eval.%';
+            delete from authz.role_permission where role_id in (select id from authz.role where key = 'evaluation_reviewer');
+            delete from authz.role where key = 'evaluation_reviewer';
+            update authz.grants_version set version = version + 1;
+            """, ("t", old.Id.ToString()));
+        Assert.Equal(HttpStatusCode.Forbidden, (await old["sec"].Client.GetAsync("/api/v1/evaluation/settings")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await old["admin"].Client.PutAsJsonAsync("/api/v1/evaluation/settings", new { version = 0, metrics = Array.Empty<object>() })).StatusCode);
+
+        var script = AuthorizationModule.Migrations.Scripts().Single(s => s.Name.StartsWith("0019_", StringComparison.Ordinal)).Sql;
+        await world.Database.OwnerExecAsync(script);
+        await world.Database.OwnerExecAsync(script);
+
+        Assert.Equal(HttpStatusCode.OK, (await old["sec"].Client.GetAsync("/api/v1/evaluation/settings")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await old["admin"].Client.GetAsync("/api/v1/evaluation/settings")).StatusCode);
+        Assert.Equal(1, await CountAsync(old.Id, "select count(*) from authz.role where key = 'evaluation_reviewer'"));
+        Assert.Equal(2, await CountAsync(old.Id,
+            "select count(*) from authz.role_permission p join authz.role r on r.id = p.role_id where r.key = 'evaluation_reviewer'"));
+    }
+
     /// <summary>Counts as the table owner with one tenant set, on one connection, as row-level security requires.</summary>
     private async Task<long> CountAsync(Guid tenant, string sql = "select count(*) from authz.role_permission")
     {

@@ -8,6 +8,14 @@ public static class Capabilities
     public const string AiAgentsBasic = "ai.agents.basic";
     public const string AiAgentsWriteTools = "ai.agents.write_tools";
     public const string AiModelChoice = "ai.model_choice";
+
+    // Spec 034 section 9: the evaluation baseline has no key; these add depth (production, experiments, business
+    // outcomes and trace export are R2 and refuse until built).
+    public const string AiEvalsAdvanced = "ai.evals.advanced";
+    public const string AiEvalsProduction = "ai.evals.production";
+    public const string AiEvalsExperiments = "ai.evals.experiments";
+    public const string AiEvalsBusinessOutcomes = "ai.evals.business_outcomes";
+    public const string AiEvalsTraceExport = "ai.evals.trace_export";
     public const string OrgHierarchy = "org.hierarchy";
     public const string OrgDelegatedAdmin = "org.delegated_admin";
     public const string OrgMaxUnits = "org.max_units";

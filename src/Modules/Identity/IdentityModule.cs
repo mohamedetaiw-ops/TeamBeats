@@ -34,6 +34,7 @@ public static class IdentityModule
         services.AddScoped<Sso.SsoService>();
         services.AddScoped<UserDirectory>();
         services.AddScoped<IUserDirectory>(sp => sp.GetRequiredService<UserDirectory>());
+        services.AddScoped<ITestIdentities, TestIdentities>();
         services.AddScoped<RequestLocale>();
         services.AddMessageHandler<TenantSuspended, RevokeSessionsOnSuspension>("identity.revoke_on_suspend");
         services.AddScoped<Directory.DirectorySyncService>();
@@ -124,30 +125,45 @@ public sealed class UserDirectory(IDbSession session) : IUserDirectory
     private const string Select =
         """
         select u.id, u.display_name, u.email, u.status, u.preferred_locale,
-               (select max(created_at) from identity.user_session s where s.user_id = u.id) as last_sign_in
+               (select max(created_at) from identity.user_session s where s.user_id = u.id) as last_sign_in, u.test_identity
         from identity.user_account u
         """;
 
     private static UserInfo Map(Npgsql.NpgsqlDataReader r) =>
-        new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.Get<string>("preferred_locale"), r.Get<DateTimeOffset?>("last_sign_in"));
+        new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.Get<string>("preferred_locale"), r.Get<DateTimeOffset?>("last_sign_in"), r.GetBoolean(6));
 
     public Task<UserInfo?> GetAsync(Guid userId, CancellationToken ct = default) =>
         session.QuerySingleOrDefaultAsync(Select + " where u.id = @id", new { id = userId }, Map, ct);
 
     public Task<UserInfo?> FindByEmailAsync(string email, CancellationToken ct = default) =>
-        session.QuerySingleOrDefaultAsync(Select + " where lower(u.email) = lower(@e)", new { e = email.Trim() }, Map, ct);
+        session.QuerySingleOrDefaultAsync(Select + " where lower(u.email) = lower(@e) and not u.test_identity", new { e = email.Trim() }, Map, ct);
 
     public Task<bool> IsDisabledByDirectoryAsync(Guid userId, CancellationToken ct = default) =>
         session.ScalarAsync<bool>("select exists (select 1 from identity.directory_user_link where user_id = @u and disabled_by_directory)", new { u = userId }, ct);
 
     public async Task<IReadOnlyList<UserInfo>> ListAsync(string? search, int limit, CancellationToken ct = default) =>
         await session.QueryAsync(
-            Select + " where (@q::text is null or u.display_name ilike '%' || @q || '%' or u.email ilike '%' || @q || '%') order by u.display_name limit @n",
+            Select + " where not u.test_identity and (@q::text is null or u.display_name ilike '%' || @q || '%' or u.email ilike '%' || @q || '%') order by u.display_name limit @n",
             new { q = search?.Replace("%", string.Empty, StringComparison.Ordinal), n = Math.Clamp(limit, 1, 500) }, Map, ct);
 
     public async Task<IReadOnlyList<UserInfo>> ListAllAsync(CancellationToken ct = default) =>
-        await session.QueryAsync("select id, display_name, email, status, preferred_locale from identity.user_account", null,
+        await session.QueryAsync("select id, display_name, email, status, preferred_locale from identity.user_account where not test_identity", null,
             r => new UserInfo(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.Get<string>("preferred_locale"), null), ct);
+}
+
+/// <summary>Spec 034 FR-006: a test identity is a user row with no external identity, so no sign-in can reach it.</summary>
+public sealed class TestIdentities(IDbSession session, ITenantContext context) : ITestIdentities
+{
+    public async Task<Guid> CreateAsync(string displayName, CancellationToken ct = default)
+    {
+        var id = Ids.New();
+        await session.ExecAsync(
+            """
+            insert into identity.user_account (tenant_id, id, display_name, email, status, created_via, test_identity)
+            values (@t, @id, @name, @email, 'active', 'test', true)
+            """, new { t = context.RequireTenant(), id, name = displayName, email = $"persona-{id:N}@test-identity.invalid" }, ct);
+        return id;
+    }
 }
 
 /// <summary>Revokes all sessions of a suspended tenant (spec 001 plan "Key behaviors"). Runs even though the tenant is inactive.</summary>

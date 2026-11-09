@@ -331,3 +331,27 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         }
     }
 }
+
+/// <summary>Agent facts for other modules (<see cref="IAgentCatalog"/>), read without a permission check of its own.</summary>
+public sealed class AgentCatalog(IDbSession session) : IAgentCatalog
+{
+    public async Task<AgentFacts?> GetAsync(Guid agentId, CancellationToken ct = default)
+    {
+        var rows = await session.QueryAsync(
+            """
+            select a.id, a.org_unit_id, a.owner_user_id, a.template_id, a.status, a.risk_class, a.current_version, v.number, v.definition::text
+            from agents.agent a
+            join agents.agent_version v on v.agent_id = a.id and v.number = (select max(number) from agents.agent_version x where x.agent_id = a.id)
+            where a.id = @id
+            """, new { id = agentId },
+            r => (Id: r.GetGuid(0), Unit: r.GetGuid(1), Owner: r.GetGuid(2), Template: r.Get<string?>("template_id"), Status: r.GetString(4), Risk: r.GetString(5),
+                Current: r.Get<int?>("current_version"), Latest: r.GetInt32(7), Definition: r.GetString(8)), ct);
+        if (rows.Count == 0)
+        {
+            return null;
+        }
+        var row = rows[0];
+        var d = System.Text.Json.JsonSerializer.Deserialize<AgentDefinition>(row.Definition, AgentPolicyService.Json)!;
+        return new AgentFacts(row.Id, row.Unit, row.Owner, row.Template, row.Status, row.Risk, row.Current, row.Latest, d.Languages ?? [], d.Name);
+    }
+}

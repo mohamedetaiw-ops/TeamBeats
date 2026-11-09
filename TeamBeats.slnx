@@ -86,6 +86,12 @@
   <Folder Name="/src/Modules/Agents.Contracts/">
     <Project Path="src/Modules/Agents.Contracts/TeamBeats.Modules.Agents.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Evaluation/">
+    <Project Path="src/Modules/Evaluation/TeamBeats.Modules.Evaluation.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Evaluation.Contracts/">
+    <Project Path="src/Modules/Evaluation.Contracts/TeamBeats.Modules.Evaluation.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/AiGateway/">
     <Project Path="src/Modules/AiGateway/TeamBeats.Modules.AiGateway.csproj" />
   </Folder>
