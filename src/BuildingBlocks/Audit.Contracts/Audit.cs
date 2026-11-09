@@ -249,6 +249,11 @@ public static class AuditActions
     public const string AssistantHistoryDeleted = "assistant.history_deleted";
     public const string AssistantRetentionChanged = "assistant.retention_changed";
 
+    // Specs 020 and 027 (R1): agents and the tenant agent policy.
+    public const string AgentInstalledFromTemplate = "agent.installed_from_template";
+    public const string AgentAudienceChanged = "agent.audience_changed";
+    public const string AgentPolicyChanged = "agent.policy_changed";
+
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
     [
@@ -291,6 +296,7 @@ public static class AuditActions
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged,
         AssistantHistoryDeleted, AssistantRetentionChanged,
+        AgentInstalledFromTemplate, AgentAudienceChanged, AgentPolicyChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

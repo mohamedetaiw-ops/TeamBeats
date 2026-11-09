@@ -24,6 +24,8 @@ public static class ServicesModule
         services.AddScoped<Attachments>();
         services.AddScoped<Tasks>();
         services.AddScoped<Delegations>();
+        services.AddScoped<Agents.Contracts.IAgentTool, RequestStatusTool>();
+        services.AddScoped<Agents.Contracts.IAgentTool, TaskInboxTool>();
         services.AddScoped<Workflow.Contracts.IDelegations>(sp => sp.GetRequiredService<Delegations>());
         services.AddMessageHandler<RequestCompleted, RequestNotifier>("services.notify_completed");
         services.AddMessageHandler<RequestReturned, RequestNotifier>("services.notify_returned");
