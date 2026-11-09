@@ -38,3 +38,10 @@ public sealed record EvaluationRunCompleted(Guid RunId, Guid AgentId, int AgentV
 
 /// <summary>A release gate decided for an agent version (spec 034 section 13): passed, failed or incomplete, and later overridden.</summary>
 public sealed record EvaluationGateDecided(Guid RunId, Guid AgentId, int AgentVersion, string Result) : TeamBeats.Primitives.IIntegrationEvent;
+
+/// <summary>
+/// The release gate decided a proposed model route change (spec 034 US5 scenario 4, spec 013 FR-019): every published
+/// agent on the changed use cases ran against the proposed routes. <paramref name="Result"/> is passed, failed (blocking
+/// failures only), incomplete or failed_critical; <paramref name="Failures"/> names them as "agentId/metric:locale".
+/// </summary>
+public sealed record EvaluationRouteGateDecided(Guid RouteChangeId, string Result, IReadOnlyList<string> Failures) : TeamBeats.Primitives.IIntegrationEvent;

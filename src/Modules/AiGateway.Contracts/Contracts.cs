@@ -79,6 +79,8 @@ public sealed record AiToolCall(string Id, string Name, string Arguments);
 /// object. <paramref name="Classification"/> is the highest classification of the content in the request and is
 /// required: a missing one is refused. <paramref name="Model"/> optionally names a model, which must be allowed by the
 /// tenant policy. <paramref name="ModelUnderTest"/> is set on evaluation calls so the judge is never the same model.
+/// <paramref name="RouteChangeId"/> is set by release gate runs of spec 034: an assistant or agent call then follows the
+/// policy of that proposed route change instead of the one in force, and is refused once the change is decided.
 /// </summary>
 public sealed record AiRequest(
     string UseCase,
@@ -93,7 +95,8 @@ public sealed record AiRequest(
     int? AgentVersion = null,
     string? ModelUnderTest = null,
     Guid? ActingUnitId = null,
-    bool PlatformCharged = false);
+    bool PlatformCharged = false,
+    Guid? RouteChangeId = null);
 
 public sealed record AiUsage(int InputTokens, int OutputTokens)
 {
@@ -165,5 +168,6 @@ public sealed record AiPolicyChanged(int Version) : IIntegrationEvent;
 /// A policy change alters the route behind the assistant or agents (FR-019). It waits for the release gate of spec 034,
 /// which answers with its gate decision for <paramref name="RouteChangeId"/>.
 /// </summary>
+/// <param name="ProposedBy">Who saved the change; the gate runs on their behalf.</param>
 public sealed record AiModelRouteChangeProposed(Guid RouteChangeId, IReadOnlyList<string> UseCases, IReadOnlyDictionary<string, IReadOnlyList<string>> Before,
-    IReadOnlyDictionary<string, IReadOnlyList<string>> After) : IIntegrationEvent;
+    IReadOnlyDictionary<string, IReadOnlyList<string>> After, Guid? ProposedBy = null) : IIntegrationEvent;

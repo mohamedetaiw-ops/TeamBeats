@@ -38,7 +38,7 @@ public sealed record CaseResultView(int N, string Suite, Guid? DatasetId, int? D
 /// and can be cancelled. Results follow the viewer's scope like the suites.
 /// </summary>
 public sealed class RunService(IDbSession session, ITenantContext context, EvalAccess access, SuiteService suites, DatasetService datasets,
-    EvalSettingsService settings, PersonaService personas, IOutbox outbox, IClock clock, ILogger<RunService> logger)
+    EvalSettingsService settings, PersonaService personas, RouteGates routes, IOutbox outbox, IClock clock, ILogger<RunService> logger)
 {
     public const int MaxCases = 5000;
 
@@ -71,7 +71,7 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
             new { agentId, version }, ct) > 0;
 
     /// <summary>Fixes the cases and versions of a run and queues it. The caller has checked who may start it.</summary>
-    internal async Task<Guid> CreateAsync(AgentFacts agent, int version, string trigger, CancellationToken ct)
+    internal async Task<Guid> CreateAsync(AgentFacts agent, int version, string trigger, CancellationToken ct, Guid? routeChangeId = null)
     {
         var agentId = agent.Id;
         var user = context.RequireUser();
@@ -89,9 +89,9 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into evaluation.run (tenant_id, id, agent_id, agent_version, org_unit_id, trigger, status, suites, total, requested_by, created_at)
-            values (platform.current_tenant_id(), @id, @agentId, @version, @unit, @trigger, 'queued', @suites, @total, @user, @now)
-            """, new { id, agentId, version, unit = agent.OrgUnitId, trigger, suites = Jsonb.From(suiteList), total = cases.Count, user, now }, ct);
+            insert into evaluation.run (tenant_id, id, agent_id, agent_version, org_unit_id, trigger, status, suites, total, requested_by, created_at, route_change_id)
+            values (platform.current_tenant_id(), @id, @agentId, @version, @unit, @trigger, 'queued', @suites, @total, @user, @now, @routeChangeId)
+            """, new { id, agentId, version, unit = agent.OrgUnitId, trigger, suites = Jsonb.From(suiteList), total = cases.Count, user, now, routeChangeId }, ct);
         for (var i = 0; i < cases.Count; i++)
         {
             var c = cases[i];
@@ -273,6 +273,8 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
             throw AppException.Conflict("conflict.eval.run_finished");
         }
         await session.ExecAsync("update evaluation.case_result set status = 'skipped' where run_id = @id and status = 'pending'", new { id }, ct);
+        // A cancelled run of a route gate counts as not tested, so the route gate can still decide (incomplete).
+        await routes.TryDecideAsync(id, ct);
         logger.LogInformation("eval.run_cancelled tenant {Tenant} run {Run} agent {Agent} done {Done} of {Total}", context.TenantId, id, run.AgentId, run.Done, run.Total);
         return await GetAsync(id, ct);
     }
@@ -280,10 +282,10 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
 
 /// <summary>A case claimed for running, with the identity of its persona.</summary>
 internal sealed record CaseWork(Guid RunId, int N, Guid AgentId, int AgentVersion, string Suite, string Locale, string Input, CaseExpectations Expect, Guid PersonaUserId,
-    string Classification, IReadOnlyList<string> Metrics);
+    string Classification, IReadOnlyList<string> Metrics, Guid? RouteChangeId = null);
 
 /// <summary>The run's bookkeeping, each call in its own short transaction so a cancel is never blocked by a running case.</summary>
-public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, ITenantContext context, IAuditWriter audit, ILogger<RunStore> logger)
+public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, ITenantContext context, IAuditWriter audit, RouteGates routes, ILogger<RunStore> logger)
 {
     /// <summary>Marks the run started; false when it is finished or cancelled.</summary>
     internal async Task<bool> BeginAsync(Guid runId, CancellationToken ct)
@@ -295,8 +297,8 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
     /// <summary>Claims the next pending case, or null when the run is done, cancelled or another worker has the rest.</summary>
     internal async Task<CaseWork?> ClaimAsync(Guid runId, CancellationToken ct)
     {
-        var run = await session.QueryAsync("select agent_id, agent_version, status, suites::text from evaluation.run where id = @runId", new { runId },
-            r => (Agent: r.GetGuid(0), Version: r.GetInt32(1), Status: r.GetString(2), Suites: r.GetString(3)), ct);
+        var run = await session.QueryAsync("select agent_id, agent_version, status, suites::text, route_change_id from evaluation.run where id = @runId", new { runId },
+            r => (Agent: r.GetGuid(0), Version: r.GetInt32(1), Status: r.GetString(2), Suites: r.GetString(3), Route: r.Get<Guid?>("route_change_id")), ct);
         if (run.Count == 0 || run[0].Status != RunStatuses.Running)
         {
             return null;
@@ -318,7 +320,7 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
         var suites = JsonSerializer.Deserialize<List<RunSuite>>(run[0].Suites, EvalJson.Options)!;
         var metrics = suites.FirstOrDefault(s => s.Key == c.Suite)?.Metrics.Select(m => m.Key).ToList() ?? [];
         return new CaseWork(runId, c.N, run[0].Agent, run[0].Version, c.Suite, c.Locale, c.Input, JsonSerializer.Deserialize<CaseExpectations>(c.Expect, EvalJson.Options)!,
-            user, c.Classification, metrics);
+            user, c.Classification, metrics, run[0].Route);
     }
 
     internal async Task ErrorAsync(Guid runId, int n, string error, CancellationToken ct)
@@ -377,6 +379,10 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
                     incomplete = result.Incomplete, suites = RunService.Signature(suites) }), ct);
             await outbox.EnqueueAsync(new EvaluationGateDecided(runId, agent, version, result.Verdict), ct);
         }
+        if (trigger == RunTriggers.Route)
+        {
+            await routes.TryDecideAsync(runId, ct);
+        }
         if (result.Verdict == EvalVerdicts.Passed)
         {
             // A later version that passes closes the owner's follow-up of an earlier override (US5 scenario 3).
@@ -397,7 +403,7 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
         var runs = await session.QueryAsync(
             """
             select id, agent_version, result::text from evaluation.run
-            where agent_id = @agent and agent_version <> @version and status = 'completed' and result is not null
+            where agent_id = @agent and agent_version <> @version and status = 'completed' and result is not null and trigger <> 'route'
             order by finished_at desc limit 20
             """, new { agent, version }, r => (Id: r.GetGuid(0), Version: r.GetInt32(1), Result: r.GetString(2)), ct);
         if (runs.Count == 0)
@@ -419,7 +425,7 @@ public sealed class CaseExecutor(IDbSession session, IAgentEvaluationRuntime run
         EvalRunRecord record;
         try
         {
-            record = await runtime.RunCaseAsync(work.AgentId, work.AgentVersion, work.Input, work.Locale, ct);
+            record = await runtime.RunCaseAsync(work.AgentId, work.AgentVersion, work.Input, work.Locale, work.RouteChangeId, ct);
         }
         catch (AppException e) when (e.Status is 404 or 409)
         {

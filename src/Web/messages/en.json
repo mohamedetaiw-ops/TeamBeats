@@ -2466,14 +2466,18 @@
       "addButton": "Add",
       "pending": {
         "title": "Change waiting for the release gate",
-        "gate": "The release gate is checking this change. It applies when the checks pass.",
-        "noGate": "The release gate is not available yet. The current routes stay in force until the change is applied with a reason.",
         "change": "{useCase}: {before} becomes {after}",
         "none": "no model",
-        "reason": "Reason for applying without the gate",
+        "reason": "Reason for applying it anyway",
         "reasonHint": "10 to 1000 characters. The reason is kept in the audit log.",
         "override": "Apply with this reason",
-        "applied": "Change applied and recorded in the audit log."
+        "applied": "Change applied and recorded in the audit log.",
+        "gateStatus": {
+          "running": "The release gate is running every published agent on the new routes. The change applies on its own if nothing fails.",
+          "failed": "The release gate found blocking failures. The current routes stay in force until you apply the change with a reason or replace it.",
+          "incomplete": "The release gate could not test everything. The current routes stay in force until you apply the change with a reason or replace it."
+        },
+        "failures": "What failed or was not tested"
       }
     },
     "usage": {

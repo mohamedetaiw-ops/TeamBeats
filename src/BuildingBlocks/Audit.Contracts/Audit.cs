@@ -237,6 +237,8 @@ public static class AuditActions
     public const string AiPolicyChanged = "ai.policy_changed";
     public const string AiRouteChangeProposed = "ai.route_change_proposed";
     public const string AiRouteChangeOverridden = "ai.route_change_overridden";
+    public const string AiRouteChangeApplied = "ai.route_change_applied";
+    public const string AiRouteChangeRejected = "ai.route_change_rejected";
     public const string AiCatalogueChanged = "ai.catalogue_changed";
     public const string AiLoggingWindowOpened = "ai.logging_window_opened";
     public const string AiLoggingWindowClosed = "ai.logging_window_closed";
@@ -314,7 +316,7 @@ public static class AuditActions
         DocReadConfirmed,
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested,
-        AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
+        AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged,
         AssistantHistoryDeleted, AssistantRetentionChanged,
         AgentInstalledFromTemplate, AgentAudienceChanged, AgentPolicyChanged, AgentToolCalled, AgentToolDenied, AgentActionConfirmed, AgentActionRejected,

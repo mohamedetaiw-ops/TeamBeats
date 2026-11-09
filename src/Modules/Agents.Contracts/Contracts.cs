@@ -140,6 +140,9 @@ public interface IAgentCatalog
     Task<AgentFacts?> GetAsync(Guid agentId, CancellationToken ct = default);
 
     Task<AgentVersionFacts?> VersionAsync(Guid agentId, int number, CancellationToken ct = default);
+
+    /// <summary>The agents in use now: published, with a version in force.</summary>
+    Task<IReadOnlyList<AgentFacts>> PublishedAsync(CancellationToken ct = default);
 }
 
 /// <summary>A step of an evaluation run's execution record (spec 034 US3 scenario 5): what the agent did, in order.</summary>
@@ -188,7 +191,8 @@ public static class EvalStepDecisions
 /// </summary>
 public interface IAgentEvaluationRuntime
 {
-    Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, CancellationToken ct = default);
+    /// <param name="routeChangeId">For a release gate run of a proposed model route change: the agent's model calls follow the proposed routes.</param>
+    Task<EvalRunRecord> RunCaseAsync(Guid agentId, int version, string message, string language, Guid? routeChangeId = null, CancellationToken ct = default);
 }
 
 /// <summary>Where the release gate of a version stands (spec 034 US5, spec 020 US5).</summary>

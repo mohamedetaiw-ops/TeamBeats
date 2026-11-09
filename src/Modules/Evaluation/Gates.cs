@@ -52,7 +52,7 @@ public sealed class GateService(IDbSession session, ITenantContext context, IAge
     private async Task<LatestRun?> LatestAsync(Guid agentId, int version, CancellationToken ct)
     {
         var rows = await session.QueryAsync(
-            "select id, status, suites::text, result::text from evaluation.run where agent_id = @agentId and agent_version = @version order by created_at desc, id limit 1",
+            "select id, status, suites::text, result::text from evaluation.run where agent_id = @agentId and agent_version = @version and trigger <> 'route' order by created_at desc, id limit 1",
             new { agentId, version }, r => new LatestRun(r.GetGuid(0), r.GetString(1), r.GetString(2), r.Get<string?>("result")), ct);
         return rows.Count == 0 ? null : rows[0];
     }
@@ -135,6 +135,7 @@ public sealed class GateService(IDbSession session, ITenantContext context, IAge
             var text = await session.ScalarAsync<string?>(
                 """
                 select result::text from evaluation.run where agent_id = @agent and agent_version = @current and status = 'completed' and result is not null
+                  and trigger <> 'route'
                 order by finished_at desc limit 1
                 """, new { agent = agent.Id, current }, ct);
             if (text is not null)
@@ -210,6 +211,7 @@ public static class RunTriggers
 {
     public const string Manual = "manual";
     public const string Gate = "gate";
+    public const string Route = "route";
 }
 
 /// <summary>

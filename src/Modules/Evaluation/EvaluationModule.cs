@@ -36,7 +36,9 @@ public static class EvaluationModule
         services.RemoveAll<Agents.Contracts.IAgentReleaseGate>();
         services.AddScoped<Agents.Contracts.IAgentReleaseGate>(sp => sp.GetRequiredService<GateService>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, GateFollowUpTasks>();
+        services.AddScoped<RouteGates>();
         services.AddMessageHandler<EvaluationRunRequested, EvaluationRunner>("evaluation.run");
+        services.AddMessageHandler<AiGateway.Contracts.AiModelRouteChangeProposed, RouteGateStarter>("evaluation.route_gate");
         return services;
     }
 

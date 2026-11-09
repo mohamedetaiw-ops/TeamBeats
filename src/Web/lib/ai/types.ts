@@ -43,6 +43,8 @@ export type RouteChange = {
   overrideReason: string | null;
   failures: string[];
   gateAvailable: boolean;
+  gateStatus: string | null;
+  canOverride: boolean;
 };
 
 export type ModelPolicyView = {

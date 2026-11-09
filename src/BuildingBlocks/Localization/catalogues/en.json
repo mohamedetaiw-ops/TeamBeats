@@ -30,6 +30,7 @@
   "conflict.ai.debug_window_open": "A debug window is already open for this use case. Close it first.",
   "conflict.ai.policy_changed": "Someone else changed the model policy. Reload it and try again.",
   "conflict.ai.route_change_decided": "This route change was already decided. Reload the list.",
+  "conflict.ai.route_gate_running": "The release gate is still checking this change. You can apply it with a reason once the gate reports blocking failures or cannot complete.",
   "conflict.calendar.changed": "Someone else changed this calendar. Reload it and try again.",
   "conflict.calendar.default": "The organization's default calendar cannot be deleted.",
   "conflict.calendar.in_use": "This calendar still applies to some units. Remove it from them first.",
