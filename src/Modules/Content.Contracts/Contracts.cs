@@ -29,3 +29,40 @@ public interface ISiteDirectory
     /// <summary>The active site of the current tenant, or null when there is none with this ID.</summary>
     Task<SiteScope?> FindAsync(Guid siteId, CancellationToken ct = default);
 }
+
+/// <summary>
+/// A new knowledge article draft: the site (the default site when null), its titles per locale, its owner and, per
+/// locale, the level 2 headings of the template to start with.
+/// </summary>
+public sealed record KnowledgeDraft(Guid? SiteId, IReadOnlyDictionary<string, string> Titles, Guid? OwnerId,
+    IReadOnlyDictionary<string, IReadOnlyList<string>> Headings, string? Classification = null);
+
+/// <summary>A published knowledge article the caller may read.</summary>
+public sealed record KnowledgeArticle(Guid ItemId, Guid SiteId, Guid? SiteOrgUnitId, IReadOnlyDictionary<string, string> Titles, Guid? OwnerId, int Version,
+    DateTimeOffset PublishedAt, DateTimeOffset? ReviewDueAt);
+
+/// <summary>One heading of a published article with the text under it, per locale, and the anchor the reader page uses.</summary>
+public sealed record ContentSection(string Locale, string Anchor, int Level, string Heading, string Text);
+
+/// <summary>
+/// Knowledge articles are content items of type <c>knowledge</c> (spec 011 plan): the knowledge base of the
+/// <c>Documents</c> module creates them, lists them and reads their sections through this contract, and they follow the
+/// spec 009 draft, review, publish and version lifecycle. Every call is in the current tenant, as the current user.
+/// </summary>
+public interface IKnowledgeContent
+{
+    /// <summary>Creates the draft with the template headings in each title's locale. Needs authoring rights on the site and <c>kb.edit</c> there.</summary>
+    Task<Guid> CreateDraftAsync(KnowledgeDraft draft, CancellationToken ct = default);
+
+    /// <summary>The article when it is published and the caller may read it; otherwise null.</summary>
+    Task<KnowledgeArticle?> ReadableAsync(Guid itemId, CancellationToken ct = default);
+
+    /// <summary>Published articles the caller may read, the most recent first.</summary>
+    Task<IReadOnlyList<KnowledgeArticle>> ReadableListAsync(int limit, CancellationToken ct = default);
+
+    /// <summary>Whether the caller owns the article or holds <c>kb.edit</c> on its site.</summary>
+    Task<bool> MayManageAsync(Guid itemId, CancellationToken ct = default);
+
+    /// <summary>The sections of the published version in every locale, or empty when the caller may not read it.</summary>
+    Task<IReadOnlyList<ContentSection>> SectionsAsync(Guid itemId, CancellationToken ct = default);
+}

@@ -23,8 +23,8 @@ Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body docu
 - [x] T010 [US3] Numbering, route, effective scheduler, superseded state, review tasks, read confirmation and footer
 
 ## Phase 6: User Story 4, knowledge base (P1)
-- [ ] T011 [P] [US4] Tests: SOP template sections and lifecycle; helpfulness score; FAQ pairs as separate index units with citation anchors
-- [ ] T012 [US4] Knowledge articles on the spec 009 content contract; feedback
+- [x] T011 [P] [US4] Tests: SOP template sections and lifecycle; helpfulness score; FAQ pairs as separate index units with citation anchors
+- [x] T012 [US4] Knowledge articles on the spec 009 content contract; feedback
 
 ## Phase 7: Experience
 - [ ] T013 Library browser with filters and saved views, document page with versions and preview, upload dialog, knowledge base pages, documents component for spec 032, in English and Arabic, RTL; e2e with axe

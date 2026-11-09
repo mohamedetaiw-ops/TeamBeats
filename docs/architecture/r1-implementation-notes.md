@@ -954,3 +954,24 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Footer language | The stamped footer is in English: the conversion service draws standard PDF fonts, which do not join Arabic letters. The page shows the footer in the reader's language. |
 | Stamp options | The stamp options follow Gotenberg 8 (pdfcpu); the exact placement needs a check against the real service when staging gets Gotenberg. |
 | Knowledge health | Overdue reviews show on the knowledge health dashboard of spec 021; until then the reviews list and the overdue notice cover it. |
+
+## Knowledge base (spec 011 T011, T012)
+
+| Area | What was built |
+|---|---|
+| Articles | Knowledge articles are content items of the new `knowledge` content type (owner required, review after 12 months). `Content` exposes `IKnowledgeContent` (create a draft, read a published article, list readable ones, sections, may manage) so `Documents` never reads content tables. Drafts, review routes, publishing, versions, compare and restore are the spec 009 lifecycle and its pages |
+| Templates | `GET /api/v1/kb/templates`: SOP (purpose, scope, responsibilities, steps, related documents), how-to (overview, before you start, steps, result), FAQ (empty; each heading is a question) and troubleshooting (symptoms, causes, resolution, escalation). `POST /api/v1/kb/articles` creates the draft with the template's headings in each title's language from the `kb.section.*` keys and returns the edit link |
+| Writing | Writing a knowledge item needs `kb.edit` at the site on top of the content authoring rights, in the content API as well, so the rule cannot be bypassed |
+| Reading | `GET /api/v1/kb/articles` lists published articles the reader may read; `GET /api/v1/kb/articles/{id}` gives the sections in the reader's language with their anchors and links, related articles and documents the reader can open, the reader's own feedback, and the score for the owner and knowledge editors |
+| Related | `PUT /api/v1/kb/articles/{id}/related` links up to 20 articles and 20 documents; each must be one the editor can read |
+| Feedback | `POST /api/v1/kb/articles/{id}/feedback` records helpful or not with an optional comment (1,000 characters), one answer per reader, with the version it was given on. `GET .../feedback` gives the owner the score and the comments without who wrote them. `KnowledgeFeedbackGiven` carries the analytics event of section 13 (article, answer, comment present) |
+| Index units | `IKnowledgeIndex.UnitsAsync` and `GET .../units` give one unit per FAQ question and answer with a link to its anchor (`/content/read/{id}#anchor`), and one unit per language for other templates. Anchors are the heading's words in lower case joined by hyphens, numbered when repeated (`BodyValidator.Sections`) |
+| Tests | `KnowledgeBaseTests`, `KnowledgeRulesTests` |
+
+| Item | Note |
+|---|---|
+| Unanswered questions | US4 scenario 4 logs questions the assistant cannot answer; it lands with the assistant (specs 013 and 014) and the gaps view of spec 021. |
+| Search indexing | Spec 029 search is not built yet; it will read `IKnowledgeIndex` when content is published. |
+| Anonymous comments | The spec says the owner sees the score and is silent on who wrote a comment; the smallest safe default shows comments without names. |
+| Reader anchors | The reader view returns the anchor of each heading in order; the reader page sets them in slice 6, so citation links land on the pair. |
+| News feed | Spec 009 is silent on knowledge articles in the feed; the smallest safe default keeps them out of the unfiltered feed, and `type=knowledge` lists them. |

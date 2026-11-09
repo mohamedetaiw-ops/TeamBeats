@@ -17,6 +17,7 @@ public static class ContentModule
     {
         services.AddScoped<Sites>();
         services.AddScoped<Contracts.ISiteDirectory, SiteDirectory>();
+        services.AddScoped<Contracts.IKnowledgeContent, KnowledgeContent>();
         services.AddScoped<Items>();
         services.AddScoped<AudienceFactsLoader>();
         services.AddScoped<ContentScheduler>();

@@ -205,10 +205,69 @@ public static class BodyValidator
         && hosts.Any(h => uri.Host.Equals(h, StringComparison.OrdinalIgnoreCase) || uri.Host.EndsWith("." + h, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>The visible text of a body, for hashes of what a reader was shown and for compare.</summary>
-    public static string PlainText(BodyDocument body)
+    public static string PlainText(BodyDocument body) => PlainText(body.Blocks);
+
+    /// <summary>
+    /// The body cut at each heading: the heading's anchor, level and text, and the text of the blocks under it up to the
+    /// next heading. Anchors are the heading's words in lower case joined by hyphens, numbered when two are the same,
+    /// so the reader page and a citation link point at the same place.
+    /// </summary>
+    public static IReadOnlyList<(string Anchor, int Level, string Heading, string Text)> Sections(BodyDocument body)
+    {
+        var sections = new List<(string, int, string, string)>();
+        var used = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (var i = 0; i < body.Blocks.Count; i++)
+        {
+            var block = body.Blocks[i];
+            if (block.Type != BlockTypes.Heading)
+            {
+                continue;
+            }
+            var heading = string.Concat((block.Children ?? []).Select(r => r.Text)).Trim();
+            var end = i + 1;
+            while (end < body.Blocks.Count && body.Blocks[end].Type != BlockTypes.Heading)
+            {
+                end++;
+            }
+            var anchor = Anchor(heading);
+            used[anchor] = used.GetValueOrDefault(anchor) + 1;
+            if (used[anchor] > 1)
+            {
+                anchor += "-" + used[anchor];
+            }
+            sections.Add((anchor, block.Level ?? 2, heading, PlainText(body.Blocks.Skip(i + 1).Take(end - i - 1).ToList()).Trim()));
+        }
+        return sections;
+    }
+
+    public static string Anchor(string heading)
+    {
+        var words = new List<string>();
+        var current = new System.Text.StringBuilder();
+        foreach (var c in heading.ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(c))
+            {
+                current.Append(c);
+            }
+            else if (current.Length > 0)
+            {
+                words.Add(current.ToString());
+                current.Clear();
+            }
+        }
+        if (current.Length > 0)
+        {
+            words.Add(current.ToString());
+        }
+        var slug = string.Join('-', words);
+        return slug.Length == 0 ? "section" : slug.Length > 60 ? slug[..60].TrimEnd('-') : slug;
+    }
+
+    private static string PlainText(IReadOnlyList<Block> blocks)
     {
         var parts = new List<string>();
-        foreach (var b in body.Blocks)
+        foreach (var b in blocks)
         {
             switch (b.Type)
             {
