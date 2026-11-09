@@ -20,6 +20,7 @@ export type AgentDefinition = {
   autonomy: string | null;
   maxClassification: string | null;
   maxToolCalls: number | null;
+  purpose?: Localized | null;
 };
 
 export type AgentStatus = "draft" | "in_review" | "published" | "suspended" | "retired";
@@ -39,6 +40,8 @@ export type AgentSummary = {
   currentVersion: number | null;
   latestVersion: number;
   updatedAt: string;
+  backupOwnerUserId: string | null;
+  ownerFlaggedAt: string | null;
 };
 
 export type AgentVersion = {

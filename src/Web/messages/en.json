@@ -2937,6 +2937,15 @@
         "version": "Version {number}",
         "rollback": "Roll back",
         "rolledBack": "The earlier version is in use again."
+      },
+      "purpose": "Business purpose",
+      "owners": {
+        "title": "Owners",
+        "owner": "Owner",
+        "backup": "Backup owner",
+        "save": "Save owners",
+        "saved": "Owners saved.",
+        "flagged": "The previous owner left the organization, so this agent was handed to its current owner. Check it and name a backup owner."
       }
     },
     "review": {

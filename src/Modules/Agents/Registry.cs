@@ -47,6 +47,8 @@ public sealed record InstallRequest(string? TemplateId, Guid? OrgUnitId);
 
 public sealed record DraftRequest(int? Revision, AgentDefinition? Definition);
 
+public sealed record OwnersRequest(Guid? OwnerUserId, Guid? BackupOwnerUserId);
+
 public sealed record AgentSummary(
     Guid Id,
     Dictionary<string, string>? Name,
@@ -61,7 +63,9 @@ public sealed record AgentSummary(
     int? TemplateVersion,
     int? CurrentVersion,
     int LatestVersion,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    Guid? BackupOwnerUserId = null,
+    DateTimeOffset? OwnerFlaggedAt = null);
 
 public sealed record AgentVersionView(int Number, string State, string RiskClass, int Revision, Guid LastEditor, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt,
     DateTimeOffset? PublishedAt);
@@ -76,7 +80,7 @@ public sealed record AgentDetail(AgentSummary Agent, AgentDefinition Definition,
 /// people without a covering permission do not learn the agent exists.
 /// </summary>
 public sealed class AgentRegistry(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
-    IOrganizationHierarchy org, IAuditWriter audit, IClock clock, ToolRegistry tools, AgentPolicyService policies)
+    IOrganizationHierarchy org, IAuditWriter audit, IClock clock, ToolRegistry tools, AgentPolicyService policies, ITenantMemberships memberships)
 {
     private static string Json(object value) => JsonSerializer.Serialize(value, AgentPolicyService.Json);
 
@@ -189,7 +193,7 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
     private const string SummarySql =
         """
         select a.id, a.status, a.risk_class, a.org_unit_id, a.owner_user_id, a.template_id, a.template_version, a.current_version, a.updated_at,
-          v.number, v.definition::text
+          v.number, v.definition::text, a.backup_owner_user_id, a.owner_flagged_at
         from agents.agent a
         join agents.agent_version v on v.agent_id = a.id and v.number = (select max(number) from agents.agent_version x where x.agent_id = a.id)
         """;
@@ -198,7 +202,8 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
     {
         var d = Definition(r.GetString(10));
         return new AgentSummary(r.GetGuid(0), d.Name, d.Description, d.Icon, d.Category, r.GetString(1), r.GetString(2), r.GetGuid(3), r.GetGuid(4),
-            r.Get<string?>("template_id"), r.Get<int?>("template_version"), r.Get<int?>("current_version"), r.GetInt32(9), r.GetFieldValue<DateTimeOffset>(8));
+            r.Get<string?>("template_id"), r.Get<int?>("template_version"), r.Get<int?>("current_version"), r.GetInt32(9), r.GetFieldValue<DateTimeOffset>(8),
+            r.Get<Guid?>("backup_owner_user_id"), r.Get<DateTimeOffset?>("owner_flagged_at"));
     }
 
     /// <summary>Agents the person owns or oversees: their own, and those of units where they hold <c>agent.view</c> or <c>agent.design</c>.</summary>
@@ -210,7 +215,7 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         var all = view.WholeTenant || design.WholeTenant;
         var units = view.Units.Concat(design.Units).Distinct().ToArray();
         return await session.QueryAsync(
-            $"{SummarySql} where @all or a.owner_user_id = @user or a.org_unit_id = any(@units) order by a.updated_at desc, a.id limit 500",
+            $"{SummarySql} where @all or a.owner_user_id = @user or a.backup_owner_user_id = @user or a.org_unit_id = any(@units) order by a.updated_at desc, a.id limit 500",
             new { all, user, units }, ReadSummary, ct);
     }
 
@@ -230,7 +235,7 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         }
         var agent = rows[0];
         var canEdit = (await authz.CheckAsync(Permissions.AgentDesign, AuthzTarget.OrgUnit(agent.OrgUnitId), ct)).Allowed;
-        if (agent.OwnerUserId != user && !canEdit && !(await authz.CheckAsync(Permissions.AgentView, AuthzTarget.OrgUnit(agent.OrgUnitId), ct)).Allowed)
+        if (agent.OwnerUserId != user && agent.BackupOwnerUserId != user && !canEdit && !(await authz.CheckAsync(Permissions.AgentView, AuthzTarget.OrgUnit(agent.OrgUnitId), ct)).Allowed)
         {
             throw AppException.NotFound();
         }
@@ -307,6 +312,46 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         }
         return await DetailAsync(id, ct);
     }
+
+    /// <summary>
+    /// Names the owner and the backup owner (FR-002, section 4 "Agent owner"): both active members of the tenant, and not
+    /// the same person. Setting them clears the mark left when an owner
+    /// left. Audited <c>agent.owner_changed</c> with the old and new names.
+    /// </summary>
+    public async Task<AgentDetail> SetOwnersAsync(Guid id, OwnersRequest request, CancellationToken ct)
+    {
+        await DesignerAsync(ct);
+        var current = await DetailAsync(id, ct);
+        if (!current.CanEdit)
+        {
+            throw AppException.Denied();
+        }
+        var owner = request.OwnerUserId ?? current.Agent.OwnerUserId;
+        if (!await QualifiesAsync(owner, ct))
+        {
+            throw AppException.Validation("ownerUserId", "validation.agent.owner");
+        }
+        if (request.BackupOwnerUserId is { } backup && (backup == owner || !await QualifiesAsync(backup, ct)))
+        {
+            throw AppException.Validation("backupOwnerUserId", "validation.agent.backup_owner");
+        }
+        await session.ExecAsync(
+            "update agents.agent set owner_user_id = @owner, backup_owner_user_id = @backup, owner_flagged_at = null, updated_at = @now where id = @id",
+            new { id, owner, backup = request.BackupOwnerUserId, now = clock.UtcNow }, ct);
+        if (owner != current.Agent.OwnerUserId || request.BackupOwnerUserId != current.Agent.BackupOwnerUserId)
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.AgentOwnerChanged, "agent", id.ToString(), TargetOrgUnitId: current.Agent.OrgUnitId,
+                Changes: new
+                {
+                    from = new { owner = current.Agent.OwnerUserId, backup = current.Agent.BackupOwnerUserId },
+                    to = new { owner, backup = request.BackupOwnerUserId },
+                }), ct);
+        }
+        return await DetailAsync(id, ct);
+    }
+
+    // Owners are active members of the tenant. Naming someone grants nothing: editing still needs agent.design on the unit.
+    private async Task<bool> QualifiesAsync(Guid user, CancellationToken ct) => (await memberships.GetAsync(user, ct))?.Status == MembershipStatus.Active;
 
     private static bool SameAudience(AgentAudience? a, AgentAudience? b) =>
         a?.Scope == b?.Scope && (a?.OrgUnits ?? []).Order().SequenceEqual((b?.OrgUnits ?? []).Order());

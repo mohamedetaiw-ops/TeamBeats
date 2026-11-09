@@ -9245,6 +9245,39 @@
         }
       }
     },
+    "/api/v1/agents/{id}/owners": {
+      "put": {
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OwnersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/agents/{id}/runs": {
       "post": {
         "tags": [
@@ -14971,6 +15004,29 @@
               "string"
             ],
             "format": "date"
+          }
+        }
+      },
+      "OwnersRequest": {
+        "required": [
+          "ownerUserId",
+          "backupOwnerUserId"
+        ],
+        "type": "object",
+        "properties": {
+          "ownerUserId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "backupOwnerUserId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
