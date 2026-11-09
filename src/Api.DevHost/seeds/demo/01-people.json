@@ -1,0 +1,317 @@
+{
+  "$comment": "Demo data package (docs/testing/demo-data.md), part 1: who is who. Personas name the people of the fake directory in scenarios/staging-demo.json; 'admin' is always the first configured test administrator. Every name and address is invented. The organization is built from the directory's company and department attributes; unit names get their Arabic form here. Roles: department heads own policies (a custom policy_owner role), Legal is the compliance officer, communications and the knowledge authors publish as themselves.",
+  "people": {
+    "layla": "layla.haddad@staging.example",
+    "omar": "omar.alfarsi@staging.example",
+    "sarah": "sarah.mitchell@staging.example",
+    "noura": "noura.alqahtani@staging.example",
+    "ahmed": "ahmed.mansour@staging.example",
+    "fatima": "fatima.alzahraa@staging.example",
+    "daniel": "daniel.okafor@staging.example",
+    "maryam": "maryam.alabdullah@staging.example",
+    "youssef": "youssef.khalil@staging.example",
+    "khalid": "khalid.alshammari@staging.example",
+    "priya": "priya.raman@staging.example",
+    "huda": "huda.mansour@staging.example",
+    "tariq": "tariq.aziz@staging.example",
+    "reem": "reem.alhusseini@staging.example",
+    "james": "james.carter@staging.example",
+    "salma": "salma.youssef@staging.example",
+    "hassan": "hassan.ibrahim@staging.example",
+    "lina": "lina.alkhatib@staging.example",
+    "marco": "marco.rossi@staging.example",
+    "abdulrahman": "abdulrahman.saleh@staging.example",
+    "emily": "emily.chen@staging.example"
+  },
+  "roles": [
+    {
+      "key": "policy_owner",
+      "names": {
+        "en": "Policy owner",
+        "ar": "مالك السياسة"
+      },
+      "permissions": [
+        "policy.author"
+      ]
+    }
+  ],
+  "assignments": [
+    {
+      "person": "layla",
+      "role": "policy_owner"
+    },
+    {
+      "person": "omar",
+      "role": "policy_owner"
+    },
+    {
+      "person": "ahmed",
+      "role": "policy_owner"
+    },
+    {
+      "person": "khalid",
+      "role": "policy_owner"
+    },
+    {
+      "person": "youssef",
+      "role": "compliance_officer"
+    },
+    {
+      "person": "sarah",
+      "role": "content_publisher"
+    },
+    {
+      "person": "maryam",
+      "role": "content_publisher"
+    },
+    {
+      "person": "huda",
+      "role": "content_publisher"
+    },
+    {
+      "person": "daniel",
+      "role": "content_publisher"
+    },
+    {
+      "person": "tariq",
+      "role": "content_publisher"
+    },
+    {
+      "person": "emily",
+      "role": "content_publisher"
+    },
+    {
+      "person": "layla",
+      "role": "approver"
+    },
+    {
+      "person": "omar",
+      "role": "approver"
+    },
+    {
+      "person": "ahmed",
+      "role": "approver"
+    },
+    {
+      "person": "khalid",
+      "role": "approver"
+    },
+    {
+      "person": "reem",
+      "role": "approver"
+    },
+    {
+      "person": "emily",
+      "role": "approver"
+    },
+    {
+      "person": "sarah",
+      "role": "approver"
+    }
+  ],
+  "orgMapping": {
+    "levels": [
+      "company",
+      "department"
+    ],
+    "aliases": {
+      "HR": "Human Resources"
+    },
+    "unitNames": {
+      "TeamBeats Demo Holding": {
+        "ar": "مجموعة تيم بيتس التجريبية القابضة"
+      },
+      "Human Resources": {
+        "ar": "الموارد البشرية"
+      },
+      "Information Technology": {
+        "ar": "تقنية المعلومات"
+      },
+      "Corporate Communications": {
+        "ar": "الاتصال المؤسسي"
+      },
+      "Finance": {
+        "ar": "المالية"
+      },
+      "Legal Affairs": {
+        "ar": "الشؤون القانونية"
+      },
+      "Operations": {
+        "ar": "العمليات"
+      },
+      "Executive Office": {
+        "ar": "المكتب التنفيذي"
+      }
+    }
+  },
+  "profiles": [
+    {
+      "person": "layla",
+      "names": {
+        "en": "Layla Haddad",
+        "ar": "ليلى حداد"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "omar",
+      "names": {
+        "en": "Omar Al Farsi",
+        "ar": "عمر الفارسي"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "sarah",
+      "names": {
+        "en": "Sarah Mitchell",
+        "ar": "سارة ميتشل"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "noura",
+      "names": {
+        "en": "Noura Al Qahtani",
+        "ar": "نورة القحطاني"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "ahmed",
+      "names": {
+        "en": "Ahmed Mansour",
+        "ar": "أحمد منصور"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "fatima",
+      "names": {
+        "en": "Fatima Al Zahraa",
+        "ar": "فاطمة الزهراء"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "daniel",
+      "names": {
+        "en": "Daniel Okafor",
+        "ar": "دانيال أوكافور"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "maryam",
+      "names": {
+        "en": "Maryam Al Abdullah",
+        "ar": "مريم العبدالله"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "youssef",
+      "names": {
+        "en": "Youssef Khalil",
+        "ar": "يوسف خليل"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "khalid",
+      "names": {
+        "en": "Khalid Al Shammari",
+        "ar": "خالد الشمري"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "priya",
+      "names": {
+        "en": "Priya Raman",
+        "ar": "بريا رامان"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "huda",
+      "names": {
+        "en": "Huda Mansour",
+        "ar": "هدى منصور"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "tariq",
+      "names": {
+        "en": "Tariq Aziz",
+        "ar": "طارق عزيز"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "reem",
+      "names": {
+        "en": "Reem Al Husseini",
+        "ar": "ريم الحسيني"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "james",
+      "names": {
+        "en": "James Carter",
+        "ar": "جيمس كارتر"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "salma",
+      "names": {
+        "en": "Salma Youssef",
+        "ar": "سلمى يوسف"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "hassan",
+      "names": {
+        "en": "Hassan Ibrahim",
+        "ar": "حسن إبراهيم"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "lina",
+      "names": {
+        "en": "Lina Al Khatib",
+        "ar": "لينا الخطيب"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "marco",
+      "names": {
+        "en": "Marco Rossi",
+        "ar": "ماركو روسي"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "abdulrahman",
+      "names": {
+        "en": "Abdulrahman Saleh",
+        "ar": "عبدالرحمن صالح"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "emily",
+      "names": {
+        "en": "Emily Chen",
+        "ar": "إيميلي تشين"
+      },
+      "timeZone": "Asia/Dubai"
+    }
+  ]
+}

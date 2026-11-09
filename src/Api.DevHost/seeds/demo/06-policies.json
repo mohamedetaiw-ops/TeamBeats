@@ -1,0 +1,387 @@
+{
+  "$comment": "Demo data package, part 6: the policy register. Each policy is written in Arabic and English (English binding), approved by Legal through the task inbox and in force. The Code of conduct has an open attestation campaign that most people have answered. Fictional; found again by code.",
+  "policyCategories": [
+    {
+      "key": "people",
+      "names": {
+        "en": "People",
+        "ar": "الموظفون"
+      }
+    },
+    {
+      "key": "security",
+      "names": {
+        "en": "Security and data",
+        "ar": "الأمن والبيانات"
+      }
+    },
+    {
+      "key": "finance",
+      "names": {
+        "en": "Finance",
+        "ar": "المالية"
+      }
+    },
+    {
+      "key": "operations",
+      "names": {
+        "en": "Operations",
+        "ar": "العمليات"
+      }
+    }
+  ],
+  "policies": [
+    {
+      "code": "HR-001",
+      "category": "people",
+      "names": {
+        "en": "Code of conduct",
+        "ar": "مدونة السلوك"
+      },
+      "owner": "layla",
+      "approver": "youssef",
+      "daysAgo": 20,
+      "clauses": [
+        {
+          "level": 1,
+          "title": {
+            "en": "Purpose",
+            "ar": "الغرض"
+          },
+          "body": {
+            "en": "This code sets out how we behave with colleagues, customers and suppliers. It applies to everyone who works for the group.",
+            "ar": "تحدد هذه المدونة طريقة تعاملنا مع الزملاء والعملاء والموردين، وتنطبق على كل من يعمل لدى المجموعة."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Respect at work",
+            "ar": "الاحترام في العمل"
+          },
+          "body": {
+            "en": "We treat everyone with respect. Harassment, bullying and discrimination are not tolerated.\nRaise concerns with your manager, HR or the confidential speak-up line.",
+            "ar": "نعامل الجميع باحترام. لا نتسامح مع التحرش أو التنمر أو التمييز.\nارفع أي مخاوف إلى مديرك أو الموارد البشرية أو خط الإبلاغ السري."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Conflicts of interest",
+            "ar": "تعارض المصالح"
+          },
+          "body": {
+            "en": "Declare any personal interest that could influence a business decision before you take part in it.",
+            "ar": "أفصح عن أي مصلحة شخصية قد تؤثر على قرار عمل قبل المشاركة فيه."
+          }
+        },
+        {
+          "level": 2,
+          "title": {
+            "en": "Gifts and hospitality",
+            "ar": "الهدايا والضيافة"
+          },
+          "body": {
+            "en": "You may accept gifts worth up to 200 AED. Declare anything above that through your manager.",
+            "ar": "يجوز قبول الهدايا التي لا تتجاوز قيمتها 200 درهم، وأفصح عما يزيد عن ذلك عبر مديرك."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Speaking up",
+            "ar": "الإبلاغ"
+          },
+          "body": {
+            "en": "Nobody is penalised for raising a concern in good faith.",
+            "ar": "لا يُعاقب أحد على الإبلاغ عن مخاوف بحسن نية."
+          }
+        }
+      ],
+      "campaign": {
+        "text": {
+          "en": "I have read the Code of conduct and I will follow it.",
+          "ar": "اطلعت على مدونة السلوك وألتزم بها."
+        },
+        "deadlineDays": 12,
+        "attestedBy": [
+          "layla",
+          "omar",
+          "sarah",
+          "ahmed",
+          "daniel",
+          "maryam",
+          "youssef",
+          "khalid",
+          "reem",
+          "james",
+          "hassan",
+          "lina"
+        ]
+      }
+    },
+    {
+      "code": "SEC-001",
+      "category": "security",
+      "names": {
+        "en": "Information security policy",
+        "ar": "سياسة أمن المعلومات"
+      },
+      "owner": "omar",
+      "approver": "youssef",
+      "daysAgo": 25,
+      "clauses": [
+        {
+          "level": 1,
+          "title": {
+            "en": "Scope",
+            "ar": "النطاق"
+          },
+          "body": {
+            "en": "This policy covers all company information, devices and accounts.",
+            "ar": "تشمل هذه السياسة جميع معلومات الشركة وأجهزتها وحساباتها."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Accounts and passwords",
+            "ar": "الحسابات وكلمات المرور"
+          },
+          "body": {
+            "en": "Use sign-in approval on your phone. Never share your password, not even with IT.",
+            "ar": "استخدم الموافقة على تسجيل الدخول من هاتفك، ولا تشارك كلمة المرور مع أحد حتى فريق تقنية المعلومات."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Classifying information",
+            "ar": "تصنيف المعلومات"
+          },
+          "body": {
+            "en": "Every document is Public, Internal, Confidential or Restricted. Confidential and Restricted information never leaves company systems.",
+            "ar": "يُصنف كل مستند إلى عام أو داخلي أو سري أو مقيد. لا تغادر المعلومات السرية والمقيدة أنظمة الشركة."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Reporting incidents",
+            "ar": "الإبلاغ عن الحوادث"
+          },
+          "body": {
+            "en": "Report a lost device or a suspicious email to the service desk at once.",
+            "ar": "أبلغ مكتب الخدمة فورًا عن أي جهاز مفقود أو بريد مشبوه."
+          }
+        }
+      ]
+    },
+    {
+      "code": "HR-002",
+      "category": "people",
+      "names": {
+        "en": "Leave and holidays policy",
+        "ar": "سياسة الإجازات والعطل"
+      },
+      "owner": "layla",
+      "approver": "youssef",
+      "daysAgo": 18,
+      "clauses": [
+        {
+          "level": 1,
+          "title": {
+            "en": "Annual leave",
+            "ar": "الإجازة السنوية"
+          },
+          "body": {
+            "en": "Employees receive 30 calendar days of annual leave each year, earned monthly.",
+            "ar": "يستحق الموظف 30 يومًا تقويميًا من الإجازة السنوية سنويًا، تُكتسب شهريًا."
+          }
+        },
+        {
+          "level": 2,
+          "title": {
+            "en": "Carrying leave over",
+            "ar": "ترحيل الإجازة"
+          },
+          "body": {
+            "en": "Up to 10 unused days carry over and must be used by 31 March.",
+            "ar": "يُرحّل ما يصل إلى 10 أيام غير مستخدمة، ويجب استخدامها قبل 31 مارس."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Public holidays",
+            "ar": "العطل الرسمية"
+          },
+          "body": {
+            "en": "Public holidays follow the working calendar of your office and are not deducted from annual leave.",
+            "ar": "تتبع العطل الرسمية تقويم العمل الخاص بمكتبك ولا تُخصم من الإجازة السنوية."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Sick leave",
+            "ar": "الإجازة المرضية"
+          },
+          "body": {
+            "en": "Tell your manager before 9:00. A medical certificate is needed after two consecutive days.",
+            "ar": "أبلغ مديرك قبل الساعة 9:00. يلزم تقرير طبي بعد يومين متتاليين."
+          }
+        }
+      ]
+    },
+    {
+      "code": "FIN-001",
+      "category": "finance",
+      "names": {
+        "en": "Travel and expenses policy",
+        "ar": "سياسة السفر والمصروفات"
+      },
+      "owner": "ahmed",
+      "approver": "youssef",
+      "daysAgo": 15,
+      "clauses": [
+        {
+          "level": 1,
+          "title": {
+            "en": "Approval before travel",
+            "ar": "الموافقة قبل السفر"
+          },
+          "body": {
+            "en": "All business travel is approved by your manager before booking.",
+            "ar": "يعتمد مديرك كل سفر عمل قبل الحجز."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Class of travel",
+            "ar": "درجة السفر"
+          },
+          "body": {
+            "en": "Economy class for flights under six hours. Business class above six hours for director grades and above.",
+            "ar": "الدرجة السياحية للرحلات الأقل من ست ساعات، ودرجة رجال الأعمال لما يزيد عن ست ساعات لدرجة مدير فأعلى."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Daily allowances",
+            "ar": "البدلات اليومية"
+          },
+          "body": {
+            "en": "Meals are covered up to 250 AED a day in the GCC and 60 USD a day elsewhere.",
+            "ar": "تُغطى الوجبات حتى 250 درهمًا يوميًا في دول الخليج و60 دولارًا يوميًا في غيرها."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Claiming expenses",
+            "ar": "المطالبة بالمصروفات"
+          },
+          "body": {
+            "en": "Submit claims with receipts within 60 days through the Expense claim service.",
+            "ar": "قدّم المطالبات مع الإيصالات خلال 60 يومًا عبر خدمة مطالبة المصروفات."
+          }
+        }
+      ]
+    },
+    {
+      "code": "OPS-001",
+      "category": "operations",
+      "names": {
+        "en": "Health and safety policy",
+        "ar": "سياسة الصحة والسلامة"
+      },
+      "owner": "khalid",
+      "approver": "youssef",
+      "daysAgo": 30,
+      "clauses": [
+        {
+          "level": 1,
+          "title": {
+            "en": "Our commitment",
+            "ar": "التزامنا"
+          },
+          "body": {
+            "en": "Everyone goes home safe, every day. Any person may stop work they believe is unsafe.",
+            "ar": "يعود الجميع إلى منازلهم سالمين كل يوم. يحق لأي شخص إيقاف العمل إذا رأى أنه غير آمن."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Personal protective equipment",
+            "ar": "معدات الوقاية الشخصية"
+          },
+          "body": {
+            "en": "Safety shoes and high-visibility vests are required in every warehouse area.",
+            "ar": "يلزم ارتداء أحذية السلامة والسترات العاكسة في جميع مناطق المستودعات."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Reporting",
+            "ar": "الإبلاغ"
+          },
+          "body": {
+            "en": "Report every incident and near miss within 24 hours through your supervisor.",
+            "ar": "أبلغ عن كل حادث أو حادث وشيك خلال 24 ساعة عبر مشرفك."
+          }
+        }
+      ]
+    },
+    {
+      "code": "LEG-001",
+      "category": "security",
+      "names": {
+        "en": "Data protection policy",
+        "ar": "سياسة حماية البيانات"
+      },
+      "owner": "youssef",
+      "approver": "salma",
+      "daysAgo": 22,
+      "clauses": [
+        {
+          "level": 1,
+          "title": {
+            "en": "Personal data",
+            "ar": "البيانات الشخصية"
+          },
+          "body": {
+            "en": "We collect only the personal data we need and keep it no longer than necessary.",
+            "ar": "نجمع البيانات الشخصية الضرورية فقط ولا نحتفظ بها أطول من اللازم."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Your rights",
+            "ar": "حقوقك"
+          },
+          "body": {
+            "en": "You may ask to see, correct or delete the personal data we hold about you.",
+            "ar": "يحق لك طلب الاطلاع على بياناتك الشخصية المحفوظة لدينا أو تصحيحها أو حذفها."
+          }
+        },
+        {
+          "level": 1,
+          "title": {
+            "en": "Sharing data",
+            "ar": "مشاركة البيانات"
+          },
+          "body": {
+            "en": "Personal data is shared with suppliers only under a written data processing agreement.",
+            "ar": "لا تُشارك البيانات الشخصية مع الموردين إلا بموجب اتفاقية معالجة بيانات مكتوبة."
+          }
+        }
+      ]
+    }
+  ]
+}

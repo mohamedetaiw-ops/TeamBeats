@@ -1,0 +1,198 @@
+{
+  "$comment": "Demo data package, part 5: document libraries for the whole company with folders and files. English documents are generated as one-page PDFs, Arabic ones as Markdown (the PDF standard fonts carry no Arabic). Fictional; files are found again by name.",
+  "libraries": [
+    {
+      "key": "hr",
+      "names": { "en": "HR documents", "ar": "مستندات الموارد البشرية" },
+      "folders": [ "Handbooks", "Forms", "Benefits" ],
+      "documents": [
+        {
+          "name": "Employee handbook 2026.pdf",
+          "folder": "Handbooks",
+          "author": "layla",
+          "title": { "en": "Employee handbook 2026" },
+          "lines": [
+            "Welcome to TeamBeats Demo Holding. This handbook explains how we work together.",
+            "1. Working hours: Monday to Friday, 8:00 to 17:00 in the UAE and Egypt; Sunday to Thursday in Saudi Arabia.",
+            "2. Leave: 30 calendar days of annual leave a year, booked through the Leave request service.",
+            "3. Sick leave: tell your manager before 9:00 and add a medical certificate after two days.",
+            "4. Conduct: read and confirm the Code of conduct in your first week.",
+            "5. Your data: HR keeps your records private; see the Data protection policy."
+          ]
+        },
+        {
+          "name": "دليل الموظف 2026.md",
+          "folder": "Handbooks",
+          "author": "noura",
+          "title": { "en": "دليل الموظف 2026" },
+          "lines": [
+            "مرحبًا بك في مجموعة تيم بيتس التجريبية القابضة. يشرح هذا الدليل طريقة عملنا معًا.",
+            "",
+            "1. ساعات العمل: من الاثنين إلى الجمعة من 8:00 حتى 17:00 في الإمارات ومصر، ومن الأحد إلى الخميس في السعودية.",
+            "2. الإجازات: 30 يومًا تقويميًا للإجازة السنوية، تُحجز عبر خدمة طلب إجازة.",
+            "3. الإجازة المرضية: أبلغ مديرك قبل 9:00 وأرفق تقريرًا طبيًا بعد يومين.",
+            "4. السلوك المهني: اقرأ مدونة السلوك وأكّد اطلاعك عليها في أسبوعك الأول.",
+            "5. بياناتك: تحافظ الموارد البشرية على سرية سجلاتك؛ راجع سياسة حماية البيانات."
+          ]
+        },
+        {
+          "name": "Medical insurance summary.pdf",
+          "folder": "Benefits",
+          "author": "reem",
+          "title": { "en": "Medical insurance summary 2026" },
+          "lines": [
+            "Cover: in-patient and out-patient care in the GCC and Egypt, with emergency cover worldwide.",
+            "Network: present your card at any network clinic; no payment up front.",
+            "Dependants: spouse and up to three children under 21.",
+            "Dental and optical: up to 2,500 AED a year each.",
+            "Claims outside the network: submit receipts within 90 days through the insurer's app."
+          ]
+        },
+        {
+          "name": "Leave policy at a glance.pdf",
+          "folder": "Forms",
+          "author": "noura",
+          "title": { "en": "Leave policy at a glance" },
+          "lines": [
+            "Annual leave: 30 days. Carry over up to 10 days to the end of March.",
+            "Sick leave: up to 90 days a year on the terms of local law.",
+            "Compassionate leave: 5 days for close family.",
+            "Parental leave: 90 days for mothers, 10 days for fathers.",
+            "Public holidays follow the working calendar of your office."
+          ]
+        }
+      ]
+    },
+    {
+      "key": "finance",
+      "names": { "en": "Finance", "ar": "المالية" },
+      "folders": [ "Templates", "Reports" ],
+      "documents": [
+        {
+          "name": "Q3 2026 management report.pdf",
+          "folder": "Reports",
+          "author": "ahmed",
+          "classification": "confidential",
+          "title": { "en": "Q3 2026 management report" },
+          "lines": [
+            "Revenue: up 11 percent year on year.",
+            "Operating margin: 14.2 percent, up 1.1 points.",
+            "On-time delivery: 97 percent.",
+            "Headcount: 412 at 30 September.",
+            "Outlook: three new Riyadh contracts start in Q1 2027."
+          ]
+        },
+        {
+          "name": "Supplier invoice checklist.pdf",
+          "folder": "Templates",
+          "author": "fatima",
+          "title": { "en": "Supplier invoice checklist" },
+          "lines": [
+            "Before you send an invoice to Finance, check:",
+            "- It shows our legal name and tax registration number.",
+            "- It quotes the purchase order number.",
+            "- Amounts match the approved purchase request.",
+            "- The bank details match the supplier record."
+          ]
+        },
+        {
+          "name": "دليل مطالبات المصروفات.md",
+          "folder": "Templates",
+          "author": "fatima",
+          "title": { "en": "دليل مطالبات المصروفات" },
+          "lines": [
+            "- قدّم المطالبة خلال 60 يومًا من تاريخ الصرف.",
+            "- أرفق إيصالًا لكل بند، صورة أو ملف PDF.",
+            "- يعتمد المدير المباشر المطالبة خلال يومي عمل.",
+            "- تُدفع المطالبات المعتمدة في الدفعة الأسبوعية كل يوم خميس."
+          ]
+        }
+      ]
+    },
+    {
+      "key": "operations",
+      "names": { "en": "Operations", "ar": "العمليات" },
+      "folders": [ "Site plans", "Safety" ],
+      "documents": [
+        {
+          "name": "Jebel Ali hub site guide.pdf",
+          "folder": "Site plans",
+          "author": "khalid",
+          "title": { "en": "Jebel Ali hub site guide" },
+          "lines": [
+            "Gate 1: staff and visitors. Gate 2: trucks only.",
+            "Warehouses A, B and C now share one roof under the hub.",
+            "Assembly point: car park P3, next to the fuel station.",
+            "Shuttle: leaves Gate 1 at 06:15, 06:45 and 18:20."
+          ]
+        },
+        {
+          "name": "Riyadh office move plan.pdf",
+          "folder": "Site plans",
+          "author": "priya",
+          "title": { "en": "Riyadh office move plan" },
+          "lines": [
+            "Move date: Sunday 11 January.",
+            "1 to 14 December: pack desks using Facilities crates.",
+            "8 January: IT moves network and printers.",
+            "New address: Building 4, King Abdullah Financial District (fictional)."
+          ]
+        },
+        {
+          "name": "Forklift safety checklist.pdf",
+          "folder": "Safety",
+          "author": "marco",
+          "title": { "en": "Forklift safety checklist" },
+          "lines": [
+            "Before every shift: brakes, horn, lights, forks, chains and tyres.",
+            "Never lift people on the forks.",
+            "Keep loads low when moving and look in the direction of travel.",
+            "Report any fault to the shift supervisor before use."
+          ]
+        },
+        {
+          "name": "إجراءات الإخلاء في حالات الطوارئ.md",
+          "folder": "Safety",
+          "author": "khalid",
+          "title": { "en": "إجراءات الإخلاء في حالات الطوارئ" },
+          "lines": [
+            "1. عند سماع الإنذار، أوقف العمل واترك أغراضك.",
+            "2. اتجه إلى أقرب مخرج طوارئ دون استخدام المصاعد.",
+            "3. توجه إلى نقطة التجمع وانتظر تعليمات مسؤول الإخلاء.",
+            "4. لا تعد إلى المبنى حتى يُعلن أنه آمن."
+          ]
+        }
+      ]
+    },
+    {
+      "key": "it",
+      "names": { "en": "IT guides", "ar": "أدلة تقنية المعلومات" },
+      "folders": [ "How-to", "Standards" ],
+      "documents": [
+        {
+          "name": "Approved software list.pdf",
+          "folder": "Standards",
+          "author": "omar",
+          "title": { "en": "Approved software list" },
+          "lines": [
+            "Office suite, email and calendar: installed on every laptop.",
+            "Diagram editor, PDF editor, screen recorder: on request through the Software request service.",
+            "Developer tools: for IT and approved analysts only.",
+            "Anything else: ask the service desk before installing."
+          ]
+        },
+        {
+          "name": "Printer setup.txt",
+          "folder": "How-to",
+          "author": "tariq",
+          "title": { "en": "Printer setup" },
+          "lines": [
+            "1. Open Settings, then Printers.",
+            "2. Choose Add printer and pick the one named after your floor, for example DXB-F14.",
+            "3. Print a test page. Badge in at the printer to release your documents."
+          ]
+        }
+      ]
+    }
+  ]
+}

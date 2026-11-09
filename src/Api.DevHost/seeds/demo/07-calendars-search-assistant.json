@@ -1,0 +1,813 @@
+{
+  "$comment": "Demo data package, part 7: working calendars with 2026 and 2027 public holidays for the UAE (the tenant default), Saudi Arabia and Egypt (dates are indicative; Islamic holidays move with the moon sighting), search best bets and synonyms in both languages, and a few assistant conversations so history and AI usage are not empty. Fictional.",
+  "calendars": [
+    {
+      "key": "default",
+      "names": {
+        "en": "United Arab Emirates",
+        "ar": "الإمارات العربية المتحدة"
+      },
+      "country": "AE",
+      "weekDays": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "year": 2026,
+      "holidays": [
+        {
+          "date": "2026-01-01",
+          "names": {
+            "en": "New Year's Day",
+            "ar": "رأس السنة الميلادية"
+          }
+        },
+        {
+          "date": "2026-03-20",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2026-03-21",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2026-03-22",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2026-05-26",
+          "names": {
+            "en": "Arafat Day",
+            "ar": "يوم عرفة"
+          }
+        },
+        {
+          "date": "2026-05-27",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-05-28",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-05-29",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-06-16",
+          "names": {
+            "en": "Islamic New Year",
+            "ar": "رأس السنة الهجرية"
+          }
+        },
+        {
+          "date": "2026-08-25",
+          "names": {
+            "en": "Prophet's Birthday",
+            "ar": "المولد النبوي الشريف"
+          }
+        },
+        {
+          "date": "2026-12-01",
+          "names": {
+            "en": "Commemoration Day",
+            "ar": "يوم الشهيد"
+          }
+        },
+        {
+          "date": "2026-12-02",
+          "names": {
+            "en": "National Day",
+            "ar": "اليوم الوطني"
+          }
+        },
+        {
+          "date": "2026-12-03",
+          "names": {
+            "en": "National Day",
+            "ar": "اليوم الوطني"
+          }
+        }
+      ]
+    },
+    {
+      "key": "ksa",
+      "names": {
+        "en": "Saudi Arabia",
+        "ar": "المملكة العربية السعودية"
+      },
+      "country": "SA",
+      "weekDays": [
+        1,
+        2,
+        3,
+        4,
+        7
+      ],
+      "year": 2026,
+      "holidays": [
+        {
+          "date": "2026-02-22",
+          "names": {
+            "en": "Founding Day",
+            "ar": "يوم التأسيس"
+          }
+        },
+        {
+          "date": "2026-03-19",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2026-03-20",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2026-03-21",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2026-03-22",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2026-05-26",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-05-27",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-05-28",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-05-29",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-09-23",
+          "names": {
+            "en": "Saudi National Day",
+            "ar": "اليوم الوطني السعودي"
+          }
+        }
+      ]
+    },
+    {
+      "key": "egypt",
+      "names": {
+        "en": "Egypt",
+        "ar": "مصر"
+      },
+      "country": "EG",
+      "weekDays": [
+        1,
+        2,
+        3,
+        4,
+        7
+      ],
+      "year": 2026,
+      "holidays": [
+        {
+          "date": "2026-01-07",
+          "names": {
+            "en": "Coptic Christmas",
+            "ar": "عيد الميلاد المجيد"
+          }
+        },
+        {
+          "date": "2026-01-25",
+          "names": {
+            "en": "Revolution Day (25 January)",
+            "ar": "عيد ثورة 25 يناير"
+          }
+        },
+        {
+          "date": "2026-03-20",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2026-03-21",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2026-03-22",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2026-04-13",
+          "names": {
+            "en": "Sham El Nessim",
+            "ar": "شم النسيم"
+          }
+        },
+        {
+          "date": "2026-04-25",
+          "names": {
+            "en": "Sinai Liberation Day",
+            "ar": "عيد تحرير سيناء"
+          }
+        },
+        {
+          "date": "2026-05-01",
+          "names": {
+            "en": "Labour Day",
+            "ar": "عيد العمال"
+          }
+        },
+        {
+          "date": "2026-05-26",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-05-27",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-05-28",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-05-29",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2026-06-16",
+          "names": {
+            "en": "Islamic New Year",
+            "ar": "رأس السنة الهجرية"
+          }
+        },
+        {
+          "date": "2026-06-30",
+          "names": {
+            "en": "30 June Revolution",
+            "ar": "ذكرى ثورة 30 يونيو"
+          }
+        },
+        {
+          "date": "2026-07-23",
+          "names": {
+            "en": "Revolution Day (23 July)",
+            "ar": "عيد ثورة 23 يوليو"
+          }
+        },
+        {
+          "date": "2026-08-25",
+          "names": {
+            "en": "Prophet's Birthday",
+            "ar": "المولد النبوي الشريف"
+          }
+        },
+        {
+          "date": "2026-10-06",
+          "names": {
+            "en": "Armed Forces Day",
+            "ar": "عيد القوات المسلحة"
+          }
+        }
+      ]
+    },
+    {
+      "key": "default",
+      "names": {
+        "en": "United Arab Emirates",
+        "ar": "الإمارات العربية المتحدة"
+      },
+      "country": "AE",
+      "weekDays": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "year": 2027,
+      "holidays": [
+        {
+          "date": "2027-01-01",
+          "names": {
+            "en": "New Year's Day",
+            "ar": "رأس السنة الميلادية"
+          }
+        },
+        {
+          "date": "2027-03-10",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2027-03-11",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2027-03-12",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2027-05-16",
+          "names": {
+            "en": "Arafat Day",
+            "ar": "يوم عرفة"
+          }
+        },
+        {
+          "date": "2027-05-17",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-05-18",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-05-19",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-06-06",
+          "names": {
+            "en": "Islamic New Year",
+            "ar": "رأس السنة الهجرية"
+          }
+        },
+        {
+          "date": "2027-08-15",
+          "names": {
+            "en": "Prophet's Birthday",
+            "ar": "المولد النبوي الشريف"
+          }
+        },
+        {
+          "date": "2027-12-01",
+          "names": {
+            "en": "Commemoration Day",
+            "ar": "يوم الشهيد"
+          }
+        },
+        {
+          "date": "2027-12-02",
+          "names": {
+            "en": "National Day",
+            "ar": "اليوم الوطني"
+          }
+        },
+        {
+          "date": "2027-12-03",
+          "names": {
+            "en": "National Day",
+            "ar": "اليوم الوطني"
+          }
+        }
+      ]
+    },
+    {
+      "key": "ksa",
+      "names": {
+        "en": "Saudi Arabia",
+        "ar": "المملكة العربية السعودية"
+      },
+      "country": "SA",
+      "weekDays": [
+        1,
+        2,
+        3,
+        4,
+        7
+      ],
+      "year": 2027,
+      "holidays": [
+        {
+          "date": "2027-02-22",
+          "names": {
+            "en": "Founding Day",
+            "ar": "يوم التأسيس"
+          }
+        },
+        {
+          "date": "2027-03-09",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2027-03-10",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2027-03-11",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2027-03-12",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2027-05-16",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-05-17",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-05-18",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-05-19",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-09-23",
+          "names": {
+            "en": "Saudi National Day",
+            "ar": "اليوم الوطني السعودي"
+          }
+        }
+      ]
+    },
+    {
+      "key": "egypt",
+      "names": {
+        "en": "Egypt",
+        "ar": "مصر"
+      },
+      "country": "EG",
+      "weekDays": [
+        1,
+        2,
+        3,
+        4,
+        7
+      ],
+      "year": 2027,
+      "holidays": [
+        {
+          "date": "2027-01-07",
+          "names": {
+            "en": "Coptic Christmas",
+            "ar": "عيد الميلاد المجيد"
+          }
+        },
+        {
+          "date": "2027-01-25",
+          "names": {
+            "en": "Revolution Day (25 January)",
+            "ar": "عيد ثورة 25 يناير"
+          }
+        },
+        {
+          "date": "2027-03-10",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2027-03-11",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2027-03-12",
+          "names": {
+            "en": "Eid al Fitr",
+            "ar": "عيد الفطر"
+          }
+        },
+        {
+          "date": "2027-05-03",
+          "names": {
+            "en": "Sham El Nessim",
+            "ar": "شم النسيم"
+          }
+        },
+        {
+          "date": "2027-04-25",
+          "names": {
+            "en": "Sinai Liberation Day",
+            "ar": "عيد تحرير سيناء"
+          }
+        },
+        {
+          "date": "2027-05-01",
+          "names": {
+            "en": "Labour Day",
+            "ar": "عيد العمال"
+          }
+        },
+        {
+          "date": "2027-05-16",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-05-17",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-05-18",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-05-19",
+          "names": {
+            "en": "Eid al Adha",
+            "ar": "عيد الأضحى"
+          }
+        },
+        {
+          "date": "2027-06-06",
+          "names": {
+            "en": "Islamic New Year",
+            "ar": "رأس السنة الهجرية"
+          }
+        },
+        {
+          "date": "2027-06-30",
+          "names": {
+            "en": "30 June Revolution",
+            "ar": "ذكرى ثورة 30 يونيو"
+          }
+        },
+        {
+          "date": "2027-07-23",
+          "names": {
+            "en": "Revolution Day (23 July)",
+            "ar": "عيد ثورة 23 يوليو"
+          }
+        },
+        {
+          "date": "2027-08-15",
+          "names": {
+            "en": "Prophet's Birthday",
+            "ar": "المولد النبوي الشريف"
+          }
+        },
+        {
+          "date": "2027-10-06",
+          "names": {
+            "en": "Armed Forces Day",
+            "ar": "عيد القوات المسلحة"
+          }
+        }
+      ]
+    }
+  ],
+  "search": {
+    "bestBets": [
+      {
+        "query": "leave",
+        "locale": null,
+        "ref": "service:annual-leave"
+      },
+      {
+        "query": "إجازة",
+        "locale": "ar",
+        "ref": "service:annual-leave"
+      },
+      {
+        "query": "expenses",
+        "locale": null,
+        "ref": "service:expense-claim"
+      },
+      {
+        "query": "مصروفات",
+        "locale": "ar",
+        "ref": "service:expense-claim"
+      },
+      {
+        "query": "vpn",
+        "locale": null,
+        "ref": "kb:vpn"
+      },
+      {
+        "query": "code of conduct",
+        "locale": null,
+        "ref": "policy:HR-001"
+      },
+      {
+        "query": "مدونة السلوك",
+        "locale": "ar",
+        "ref": "policy:HR-001"
+      },
+      {
+        "query": "travel",
+        "locale": null,
+        "ref": "policy:FIN-001"
+      },
+      {
+        "query": "national day",
+        "locale": null,
+        "ref": "news:national-day"
+      },
+      {
+        "query": "salary letter",
+        "locale": null,
+        "ref": "service:salary-letter"
+      }
+    ],
+    "synonyms": [
+      {
+        "locale": "en",
+        "terms": [
+          "leave",
+          "vacation",
+          "holiday"
+        ]
+      },
+      {
+        "locale": "en",
+        "terms": [
+          "expenses",
+          "reimbursement",
+          "claim"
+        ]
+      },
+      {
+        "locale": "en",
+        "terms": [
+          "laptop",
+          "computer",
+          "notebook"
+        ]
+      },
+      {
+        "locale": "en",
+        "terms": [
+          "wfh",
+          "remote"
+        ]
+      },
+      {
+        "locale": "ar",
+        "terms": [
+          "إجازة",
+          "عطلة",
+          "اجازة"
+        ]
+      },
+      {
+        "locale": "ar",
+        "terms": [
+          "راتب",
+          "مرتب",
+          "معاش"
+        ]
+      },
+      {
+        "locale": "ar",
+        "terms": [
+          "سياسة",
+          "لائحة",
+          "نظام"
+        ]
+      }
+    ]
+  },
+  "assistant": [
+    {
+      "person": "admin",
+      "questions": [
+        "How many days of annual leave do I get?",
+        "Can I carry unused leave over to next year?",
+        "How do I claim back a client lunch?"
+      ]
+    },
+    {
+      "person": "ahmed",
+      "questions": [
+        "What is the daily meal allowance when travelling in the GCC?",
+        "متى تُدفع مطالبات المصروفات المعتمدة؟"
+      ]
+    },
+    {
+      "person": "fatima",
+      "questions": [
+        "ما هي عطلة اليوم الوطني هذا العام؟"
+      ]
+    },
+    {
+      "person": "marco",
+      "questions": [
+        "What do I check on a forklift before my shift?"
+      ]
+    }
+  ]
+}

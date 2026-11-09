@@ -23,6 +23,9 @@ public sealed class DevHostProgram
         builder.Services.AddDevAuth(builder.Configuration, builder.Environment);
         builder.Services.AddScoped<TestTenantSeeder>();
         builder.Services.AddSingleton<StagingHomeSeeder>();
+        builder.Services.AddSingleton<Demo.DemoDataSeeder>();
+        // The demo data seeder dates what it seeds over the past weeks; outside it this is the system clock.
+        builder.Services.AddSingleton<TeamBeats.Primitives.IClock, Demo.DemoClock>();
         builder.Services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, ReferencePacks>();
         builder.AddFakeExternalSystems();
         if (builder.Configuration[TeamBeats.Persistence.ClamAvScanner.HostKey] is not { Length: > 0 })
@@ -93,6 +96,7 @@ public sealed class DevHostProgram
                     await app.Services.GetRequiredService<ScenarioSeeder>().SeedAsync(tenant.Key, CancellationToken.None);
                 }
                 await app.Services.GetRequiredService<StagingHomeSeeder>().SeedAsync(tenant.Key, CancellationToken.None);
+                await app.Services.GetRequiredService<Demo.DemoDataSeeder>().SeedAsync(tenant.Key, CancellationToken.None);
             }
         }
 

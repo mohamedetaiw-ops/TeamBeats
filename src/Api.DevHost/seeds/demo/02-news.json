@@ -1,0 +1,432 @@
+{
+  "$comment": "Demo data package, part 2: news and announcements in English and Arabic, dated over the past three weeks, with reactions and comments from colleagues. Every person, place and number is invented. Found again by English title; the four stories of seeds/staging-home.json are not repeated here.",
+  "news": [
+    {
+      "key": "q3-results",
+      "author": "hassan",
+      "daysAgo": 2,
+      "featured": true,
+      "title": { "en": "Q3 results: what they mean for our teams", "ar": "نتائج الربع الثالث: ماذا تعني لفرقنا" },
+      "summary": {
+        "en": "Revenue up 11 percent, on-time delivery at 97 percent and three new contracts in Riyadh. Hassan Ibrahim explains what comes next.",
+        "ar": "نمو الإيرادات بنسبة 11 بالمئة، والتسليم في الموعد بنسبة 97 بالمئة، وثلاثة عقود جديدة في الرياض. حسن إبراهيم يشرح ما هو قادم."
+      },
+      "body": {
+        "en": [
+          "Thank you all for a strong third quarter. Here are the three things I want every team to know.",
+          "## Key takeaways in 3 points",
+          "- Revenue grew 11 percent on the same quarter last year, led by logistics and facilities contracts.",
+          "- On-time delivery reached 97 percent, our best result since the Jebel Ali hub opened.",
+          "- We signed three new contracts in Riyadh, which is why the Riyadh office is moving to a bigger space.",
+          "## What it means for you",
+          "Annual performance reviews open on 1 December, and the bonus pool is funded in full. Your manager will share timelines this week.",
+          "> We grew because every team kept its promises to customers. Let us finish the year the same way.",
+          "Questions? Ask them in the comments or at the November town hall."
+        ],
+        "ar": [
+          "شكرًا لكم جميعًا على ربع ثالث قوي. إليكم ثلاثة أمور أريد أن يعرفها كل فريق.",
+          "## أهم ما جاء في ثلاث نقاط",
+          "- نمت الإيرادات بنسبة 11 بالمئة مقارنة بالربع نفسه من العام الماضي، بقيادة عقود الخدمات اللوجستية وإدارة المرافق.",
+          "- بلغت نسبة التسليم في الموعد 97 بالمئة، وهي أفضل نتيجة منذ افتتاح مركز جبل علي.",
+          "- وقعنا ثلاثة عقود جديدة في الرياض، ولهذا ينتقل مكتب الرياض إلى مساحة أكبر.",
+          "## ماذا يعني ذلك لك",
+          "تبدأ تقييمات الأداء السنوية في 1 ديسمبر، وتم تمويل المكافآت بالكامل. سيشارككم مديروكم الجدول الزمني هذا الأسبوع.",
+          "> نمونا لأن كل فريق وفى بوعوده للعملاء. لنختم العام بالطريقة نفسها.",
+          "لديك سؤال؟ اكتبه في التعليقات أو اطرحه في لقاء نوفمبر المفتوح."
+        ]
+      },
+      "reactions": [
+        { "person": "layla", "kind": "celebrate" },
+        { "person": "omar", "kind": "like" },
+        { "person": "sarah", "kind": "celebrate" },
+        { "person": "ahmed", "kind": "insightful" },
+        { "person": "khalid", "kind": "celebrate" },
+        { "person": "priya", "kind": "like" },
+        { "person": "marco", "kind": "celebrate" },
+        { "person": "fatima", "kind": "like" },
+        { "person": "noura", "kind": "support" },
+        { "person": "james", "kind": "like" }
+      ],
+      "comments": [
+        { "person": "khalid", "text": "Proud of the Riyadh team. Three contracts in one quarter is a first for us." },
+        { "person": "fatima", "text": "شكرًا على الشفافية. هل سيشمل جدول التقييمات الموظفين الجدد؟" },
+        { "person": "priya", "text": "97 percent on time with the hub move in the same quarter. Great work, everyone." }
+      ]
+    },
+    {
+      "key": "national-day",
+      "author": "layla",
+      "type": "announcement",
+      "daysAgo": 1,
+      "pinned": true,
+      "title": { "en": "National Day holiday on 2 and 3 December", "ar": "عطلة اليوم الوطني يومي 2 و3 ديسمبر" },
+      "summary": {
+        "en": "Offices in the UAE close on Tuesday 2 and Wednesday 3 December. Riyadh and Cairo work as usual.",
+        "ar": "تغلق المكاتب في الإمارات يومي الثلاثاء 2 والأربعاء 3 ديسمبر. يعمل مكتبا الرياض والقاهرة كالمعتاد."
+      },
+      "body": {
+        "en": [
+          "Our UAE offices close for National Day on Tuesday 2 and Wednesday 3 December and reopen on Thursday 4 December.",
+          "- Shift teams at the Jebel Ali hub follow the holiday roster their supervisor shares.",
+          "- The service desk stays available for urgent incidents on extension 4000.",
+          "- Leave requests that overlap the holiday are adjusted automatically by the working calendar.",
+          "Happy National Day to everyone celebrating."
+        ],
+        "ar": [
+          "تغلق مكاتبنا في الإمارات بمناسبة اليوم الوطني يومي الثلاثاء 2 والأربعاء 3 ديسمبر، ويُستأنف العمل يوم الخميس 4 ديسمبر.",
+          "- تعمل فرق المناوبات في مركز جبل علي وفق جدول العطلة الذي يشاركه المشرف.",
+          "- يبقى مكتب الخدمة متاحًا للحالات العاجلة على التحويلة 4000.",
+          "- تُعدَّل طلبات الإجازة التي تتداخل مع العطلة تلقائيًا وفق تقويم العمل.",
+          "كل عام وأنتم بخير."
+        ]
+      },
+      "reactions": [
+        { "person": "reem", "kind": "celebrate" },
+        { "person": "daniel", "kind": "like" },
+        { "person": "lina", "kind": "celebrate" }
+      ]
+    },
+    {
+      "key": "expenses-move",
+      "author": "ahmed",
+      "daysAgo": 3,
+      "title": { "en": "Expense claims move to TeamBeats on 1 December", "ar": "مطالبات المصروفات تنتقل إلى تيم بيتس في 1 ديسمبر" },
+      "summary": {
+        "en": "No more spreadsheets: submit claims with receipts from your phone and follow every step until payment.",
+        "ar": "لا مزيد من جداول البيانات: قدّم مطالباتك مع الإيصالات من هاتفك وتابع كل خطوة حتى الدفع."
+      },
+      "body": {
+        "en": [
+          "From 1 December, every expense claim goes through the Expense claim service in TeamBeats.",
+          "## What changes",
+          "- Attach photos of receipts instead of scanning them.",
+          "- Your line manager approves in the task inbox, usually within two working days.",
+          "- Finance pays approved claims in the next weekly run.",
+          "Claims submitted on the old form until 30 November are still paid. Questions go to the Finance team through the Finance enquiry service."
+        ],
+        "ar": [
+          "اعتبارًا من 1 ديسمبر، تمر جميع مطالبات المصروفات عبر خدمة مطالبة المصروفات في تيم بيتس.",
+          "## ما الذي يتغير",
+          "- أرفق صور الإيصالات بدلًا من مسحها ضوئيًا.",
+          "- يعتمد مديرك المباشر الطلب من صندوق المهام، عادةً خلال يومي عمل.",
+          "- تدفع المالية المطالبات المعتمدة في الدفعة الأسبوعية التالية.",
+          "تُدفع المطالبات المقدمة على النموذج القديم حتى 30 نوفمبر. أرسل أسئلتك إلى فريق المالية عبر خدمة استفسارات المالية."
+        ]
+      },
+      "reactions": [
+        { "person": "marco", "kind": "celebrate" },
+        { "person": "james", "kind": "like" },
+        { "person": "priya", "kind": "like" },
+        { "person": "tariq", "kind": "support" }
+      ],
+      "comments": [
+        { "person": "marco", "text": "Finally. I travel to site every week, this will save me hours." },
+        { "person": "james", "text": "Can we attach PDF invoices as well as photos?" },
+        { "person": "fatima", "text": "Yes, PDF and image files both work, up to three per claim." }
+      ]
+    },
+    {
+      "key": "wellbeing-month",
+      "author": "layla",
+      "daysAgo": 4,
+      "title": { "en": "November is wellbeing month", "ar": "نوفمبر شهر الرفاهية" },
+      "summary": {
+        "en": "Free health checks, a step challenge between offices and quiet rooms at every site.",
+        "ar": "فحوصات صحية مجانية، وتحدي خطوات بين المكاتب، وغرف هادئة في كل موقع."
+      },
+      "body": {
+        "en": [
+          "This month we are putting health first, with something for every office.",
+          "- Free health checks in Dubai HQ on 18 November and in Cairo on 25 November.",
+          "- The step challenge: Dubai, Riyadh and Cairo compete for the most steps per person.",
+          "- Quiet rooms are open on floor 12 in Dubai HQ and next to reception in Riyadh and Cairo.",
+          "Book a health check through the Wellbeing session service. Results stay private between you and the clinic."
+        ],
+        "ar": [
+          "نضع الصحة أولًا هذا الشهر، مع فعاليات لكل مكتب.",
+          "- فحوصات صحية مجانية في المقر الرئيسي بدبي يوم 18 نوفمبر وفي القاهرة يوم 25 نوفمبر.",
+          "- تحدي الخطوات: تتنافس دبي والرياض والقاهرة على أكبر عدد خطوات للفرد.",
+          "- الغرف الهادئة متاحة في الطابق 12 بالمقر الرئيسي، وبجوار الاستقبال في الرياض والقاهرة.",
+          "احجز فحصك عبر خدمة جلسات الرفاهية. تبقى النتائج سرية بينك وبين العيادة."
+        ]
+      },
+      "reactions": [
+        { "person": "emily", "kind": "celebrate" },
+        { "person": "noura", "kind": "like" },
+        { "person": "huda", "kind": "support" },
+        { "person": "abdulrahman", "kind": "like" }
+      ],
+      "comments": [
+        { "person": "abdulrahman", "text": "فريق الرياض مستعد لتحدي الخطوات!" },
+        { "person": "tariq", "text": "Cairo is taking this one. See you on the leaderboard." }
+      ]
+    },
+    {
+      "key": "blood-drive",
+      "author": "huda",
+      "daysAgo": 5,
+      "title": { "en": "Blood donation drive at Dubai HQ on 20 November", "ar": "حملة التبرع بالدم في المقر الرئيسي بدبي يوم 20 نوفمبر" },
+      "summary": {
+        "en": "The mobile unit is in the car park from 9:00 to 15:00. Every donation can help three patients.",
+        "ar": "تتواجد الوحدة المتنقلة في موقف السيارات من 9:00 حتى 15:00. كل تبرع قد يساعد ثلاثة مرضى."
+      },
+      "body": {
+        "en": [
+          "The Dubai Blood Donation Centre mobile unit visits Dubai HQ on Thursday 20 November.",
+          "- Bring your Emirates ID and eat a light meal before you donate.",
+          "- Donation takes about 30 minutes including a short health check.",
+          "- Your manager has already approved one hour away from your desk."
+        ],
+        "ar": [
+          "تزور الوحدة المتنقلة لمركز دبي للتبرع بالدم المقر الرئيسي يوم الخميس 20 نوفمبر.",
+          "- أحضر بطاقة الهوية الإماراتية وتناول وجبة خفيفة قبل التبرع.",
+          "- يستغرق التبرع نحو 30 دقيقة بما في ذلك فحص صحي قصير.",
+          "- وافق مديرك مسبقًا على ساعة واحدة بعيدًا عن مكتبك."
+        ]
+      },
+      "reactions": [
+        { "person": "sarah", "kind": "support" },
+        { "person": "lina", "kind": "like" }
+      ]
+    },
+    {
+      "key": "riyadh-office",
+      "author": "khalid",
+      "daysAgo": 6,
+      "title": { "en": "Riyadh office moves to a bigger home in January", "ar": "مكتب الرياض ينتقل إلى مقر أكبر في يناير" },
+      "summary": {
+        "en": "Three floors, a training room and parking for 80 cars, ten minutes from the current office.",
+        "ar": "ثلاثة طوابق وقاعة تدريب ومواقف لثمانين سيارة، على بعد عشر دقائق من المكتب الحالي."
+      },
+      "body": {
+        "en": [
+          "With three new contracts this year, the Riyadh team has outgrown its office. We move on 11 January.",
+          "## The plan",
+          "- Weeks 1 and 2 of December: pack your desk using the crates Facilities brings.",
+          "- 8 January: IT moves the network and printers over the weekend.",
+          "- 11 January: first day in the new office. Access cards work from 7:00.",
+          "A floor plan and parking map are in the Operations library."
+        ],
+        "ar": [
+          "مع ثلاثة عقود جديدة هذا العام، أصبح مكتب الرياض أصغر من حجم الفريق. ننتقل في 11 يناير.",
+          "## الخطة",
+          "- الأسبوعان الأول والثاني من ديسمبر: جهّز مكتبك باستخدام الصناديق التي توفرها إدارة المرافق.",
+          "- 8 يناير: تنقل تقنية المعلومات الشبكة والطابعات خلال عطلة نهاية الأسبوع.",
+          "- 11 يناير: أول يوم في المكتب الجديد. تعمل بطاقات الدخول من الساعة 7:00.",
+          "مخطط الطوابق وخريطة المواقف متاحان في مكتبة العمليات."
+        ]
+      },
+      "reactions": [
+        { "person": "noura", "kind": "celebrate" },
+        { "person": "abdulrahman", "kind": "celebrate" },
+        { "person": "marco", "kind": "like" }
+      ],
+      "comments": [
+        { "person": "noura", "text": "أخيرًا قاعة تدريب خاصة بنا. شكرًا خالد." },
+        { "person": "abdulrahman", "text": "IT will publish the move checklist next week so nobody loses a monitor." }
+      ]
+    },
+    {
+      "key": "sustainability",
+      "author": "maryam",
+      "daysAgo": 8,
+      "title": { "en": "Paper use down 38 percent since we went digital", "ar": "انخفاض استخدام الورق بنسبة 38 بالمئة منذ التحول الرقمي" },
+      "summary": {
+        "en": "Digital forms and e-signatures saved about 410,000 sheets this year. Here is where the rest still goes.",
+        "ar": "وفّرت النماذج الرقمية والتوقيع الإلكتروني نحو 410 آلاف ورقة هذا العام. إليكم أين يذهب الباقي."
+      },
+      "body": {
+        "en": [
+          "Moving services and approvals into TeamBeats cut our printing by 38 percent compared with last year.",
+          "- Salary letters and certificates are now signed digitally.",
+          "- Finance prints 70 percent fewer invoices.",
+          "- The biggest remaining use is delivery notes at the hub, which Operations is moving to tablets in Q1.",
+          "The Sustainability community is collecting ideas to cut packaging waste next. Share yours with the Green team."
+        ],
+        "ar": [
+          "أدى نقل الخدمات والموافقات إلى تيم بيتس إلى خفض الطباعة بنسبة 38 بالمئة مقارنة بالعام الماضي.",
+          "- أصبحت خطابات الراتب والشهادات تُوقّع رقميًا.",
+          "- تطبع المالية فواتير أقل بنسبة 70 بالمئة.",
+          "- أكبر استخدام متبقٍ هو إشعارات التسليم في المركز، وستنقلها العمليات إلى الأجهزة اللوحية في الربع الأول.",
+          "يجمع مجتمع الاستدامة أفكارًا لتقليل نفايات التغليف. شارك أفكارك مع الفريق الأخضر."
+        ]
+      },
+      "reactions": [
+        { "person": "priya", "kind": "insightful" },
+        { "person": "emily", "kind": "like" },
+        { "person": "daniel", "kind": "like" }
+      ]
+    },
+    {
+      "key": "phishing-test",
+      "author": "omar",
+      "daysAgo": 9,
+      "title": { "en": "Spot the phish: results of our October test", "ar": "اكتشف التصيد: نتائج اختبار أكتوبر" },
+      "summary": {
+        "en": "84 percent of you reported the fake parcel email. Here is how to catch the other 16 percent next time.",
+        "ar": "أبلغ 84 بالمئة منكم عن رسالة الطرد المزيفة. إليكم كيف نكتشف الـ16 بالمئة المتبقية في المرة القادمة."
+      },
+      "body": {
+        "en": [
+          "In October we sent a harmless fake email about a missed parcel delivery. Most of you reported it within an hour.",
+          "## Three signs to look for",
+          "- The sender address does not match the company it claims to be.",
+          "- It creates urgency: pay a small fee today or the parcel is returned.",
+          "- The link goes to a site you do not recognise when you hover over it.",
+          "Use the Report phishing button in Outlook. If you clicked, tell the service desk straight away; nobody gets in trouble for reporting."
+        ],
+        "ar": [
+          "أرسلنا في أكتوبر رسالة مزيفة غير ضارة عن طرد لم يُسلَّم. أبلغ معظمكم عنها خلال ساعة.",
+          "## ثلاث علامات يجب الانتباه لها",
+          "- عنوان المرسل لا يطابق الشركة التي يدعي تمثيلها.",
+          "- تخلق شعورًا بالاستعجال: ادفع رسومًا بسيطة اليوم وإلا أُعيد الطرد.",
+          "- يقود الرابط إلى موقع لا تعرفه عند تمرير المؤشر فوقه.",
+          "استخدم زر الإبلاغ عن التصيد في أوتلوك. إذا نقرت على الرابط، أبلغ مكتب الخدمة فورًا؛ لن يُحاسب أحد على الإبلاغ."
+        ]
+      },
+      "reactions": [
+        { "person": "tariq", "kind": "insightful" },
+        { "person": "youssef", "kind": "like" },
+        { "person": "salma", "kind": "insightful" }
+      ],
+      "comments": [
+        { "person": "salma", "text": "اعترف أنني كدت أنقر عليها. التنبيه مفيد جدًا." }
+      ]
+    },
+    {
+      "key": "graduates",
+      "author": "emily",
+      "daysAgo": 12,
+      "title": { "en": "Twelve graduates join the 2026 programme", "ar": "اثنا عشر خريجًا ينضمون إلى برنامج 2026" },
+      "summary": {
+        "en": "They rotate through Operations, Finance and IT for 18 months. Say hello if you see a new face.",
+        "ar": "يتنقلون بين العمليات والمالية وتقنية المعلومات لمدة 18 شهرًا. رحّب بهم إذا رأيت وجهًا جديدًا."
+      },
+      "body": {
+        "en": [
+          "Our largest graduate class yet started this week: seven in Dubai, three in Riyadh and two in Cairo.",
+          "Each graduate has a buddy and spends six months in each of three departments.",
+          "Managers who want to host a graduate in the next rotation can apply through Talent Acquisition by 15 December."
+        ],
+        "ar": [
+          "بدأت هذا الأسبوع أكبر دفعة خريجين لدينا حتى الآن: سبعة في دبي وثلاثة في الرياض واثنان في القاهرة.",
+          "لكل خريج زميل مرشد، ويقضي ستة أشهر في كل قسم من ثلاثة أقسام.",
+          "يمكن للمديرين الراغبين في استضافة خريج في الدورة القادمة التقديم عبر فريق استقطاب المواهب قبل 15 ديسمبر."
+        ]
+      },
+      "reactions": [
+        { "person": "layla", "kind": "celebrate" },
+        { "person": "hassan", "kind": "celebrate" },
+        { "person": "reem", "kind": "like" }
+      ]
+    },
+    {
+      "key": "logistics-award",
+      "author": "khalid",
+      "daysAgo": 15,
+      "title": { "en": "Operations wins the regional logistics award", "ar": "العمليات تفوز بجائزة الخدمات اللوجستية الإقليمية" },
+      "summary": {
+        "en": "The Gulf Supply Chain Awards named our Jebel Ali hub the best new facility of the year.",
+        "ar": "اختارت جوائز سلاسل الإمداد الخليجية مركزنا في جبل علي أفضل منشأة جديدة لهذا العام."
+      },
+      "body": {
+        "en": [
+          "The judges pointed to the hub's 97 percent on-time rate and zero lost-time injuries since it opened.",
+          "The award belongs to every driver, picker and planner who made the move from three warehouses to one roof work.",
+          "The trophy visits each site in turn, starting with Warehouse B."
+        ],
+        "ar": [
+          "أشادت لجنة التحكيم بنسبة التسليم في الموعد البالغة 97 بالمئة في المركز، وبعدم تسجيل أي إصابة عمل منذ افتتاحه.",
+          "الجائزة لكل سائق ومنسق مخزن ومخطط جعل الانتقال من ثلاثة مستودعات إلى سقف واحد ناجحًا.",
+          "ستزور الكأس كل موقع بالتناوب، بدءًا من المستودع ب."
+        ]
+      },
+      "reactions": [
+        { "person": "hassan", "kind": "celebrate" },
+        { "person": "marco", "kind": "celebrate" },
+        { "person": "priya", "kind": "celebrate" },
+        { "person": "james", "kind": "celebrate" },
+        { "person": "sarah", "kind": "like" }
+      ],
+      "comments": [
+        { "person": "hassan", "text": "Well deserved. Thank you to every shift that made it happen." },
+        { "person": "marco", "text": "Grazie! The night shift is very proud today." }
+      ]
+    },
+    {
+      "key": "cairo-ten-years",
+      "author": "huda",
+      "daysAgo": 18,
+      "title": { "en": "Cairo office celebrates ten years", "ar": "مكتب القاهرة يحتفل بعشر سنوات" },
+      "summary": {
+        "en": "From four people in a shared space to sixty across Finance, Legal and the service desk.",
+        "ar": "من أربعة أشخاص في مساحة مشتركة إلى ستين موظفًا في المالية والشؤون القانونية ومكتب الخدمة."
+      },
+      "body": {
+        "en": [
+          "Ten years ago our Cairo office opened with four people and one printer. Today it is home to sixty colleagues.",
+          "We celebrated with breakfast on the terrace and a photo wall of the last decade.",
+          "Thank you to the founding team, two of whom still work with us today."
+        ],
+        "ar": [
+          "قبل عشر سنوات افتُتح مكتب القاهرة بأربعة أشخاص وطابعة واحدة. اليوم يضم ستين زميلًا.",
+          "احتفلنا بإفطار على السطح وجدار صور يروي العقد الماضي.",
+          "شكرًا للفريق المؤسس، ولا يزال اثنان منهم يعملان معنا حتى اليوم."
+        ]
+      },
+      "reactions": [
+        { "person": "ahmed", "kind": "celebrate" },
+        { "person": "fatima", "kind": "celebrate" },
+        { "person": "tariq", "kind": "celebrate" },
+        { "person": "salma", "kind": "like" }
+      ],
+      "comments": [
+        { "person": "ahmed", "text": "عشر سنوات من العمل الجميل. فخور بهذا الفريق." }
+      ]
+    },
+    {
+      "key": "welcome-intranet",
+      "author": "sarah",
+      "daysAgo": 21,
+      "title": { "en": "Welcome to TeamBeats, our new intranet", "ar": "مرحبًا بكم في تيم بيتس، شبكتنا الداخلية الجديدة" },
+      "summary": {
+        "en": "News, services, documents, policies and people in one place, in Arabic and English, on any device.",
+        "ar": "الأخبار والخدمات والمستندات والسياسات والزملاء في مكان واحد، بالعربية والإنجليزية، وعلى أي جهاز."
+      },
+      "body": {
+        "en": [
+          "TeamBeats replaces the old portal, the shared drive links and most of the paper forms.",
+          "## Five things to try today",
+          "- Make the home page yours with Personalize this page.",
+          "- Request a salary letter or IT help from Services and follow it to the end.",
+          "- Find anyone by name, team or skill in People.",
+          "- Ask the assistant a question about a policy and see where the answer comes from.",
+          "- Switch to Arabic with one click in the header.",
+          "Tell us what you think through the Intranet feedback service."
+        ],
+        "ar": [
+          "تحل تيم بيتس محل البوابة القديمة وروابط المجلدات المشتركة ومعظم النماذج الورقية.",
+          "## خمسة أشياء جرّبها اليوم",
+          "- اجعل الصفحة الرئيسية خاصة بك عبر تخصيص هذه الصفحة.",
+          "- اطلب خطاب راتب أو دعمًا تقنيًا من الخدمات وتابع طلبك حتى النهاية.",
+          "- ابحث عن أي زميل بالاسم أو الفريق أو المهارة في دليل الأشخاص.",
+          "- اسأل المساعد عن سياسة ما وشاهد مصدر الإجابة.",
+          "- انتقل إلى العربية بنقرة واحدة من أعلى الصفحة.",
+          "شاركنا رأيك عبر خدمة ملاحظات الشبكة الداخلية."
+        ]
+      },
+      "reactions": [
+        { "person": "hassan", "kind": "like" },
+        { "person": "layla", "kind": "celebrate" },
+        { "person": "omar", "kind": "celebrate" },
+        { "person": "maryam", "kind": "celebrate" },
+        { "person": "daniel", "kind": "like" },
+        { "person": "noura", "kind": "like" }
+      ],
+      "comments": [
+        { "person": "omar", "text": "IT is on hand all week for questions. Look for the people in green shirts." },
+        { "person": "noura", "text": "الواجهة العربية ممتازة. شكرًا لفريق الاتصال." }
+      ]
+    }
+  ]
+}
