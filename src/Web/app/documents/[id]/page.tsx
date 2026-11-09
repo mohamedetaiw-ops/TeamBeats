@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
+import { AskAgentLink } from "@/features/agents/AskAgentLink";
 import {
   documentHref,
   libraryHref,
@@ -58,6 +59,7 @@ export default async function DocumentPage({
       />
       <main id="main" className="page">
         <DocumentsNav current="libraries" />
+        <AskAgentLink source="documents" itemId={id} />
         <DocumentPanel
           initial={doc.data}
           versions={versions.ok ? versions.data : []}

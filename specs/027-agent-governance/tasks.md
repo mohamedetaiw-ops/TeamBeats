@@ -23,7 +23,7 @@ Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and ru
 - [ ] T012 Mandatory safety suites wired into the spec 034 gate as critical
 
 ## Phase 5: Experience
-- [ ] T013 Agent policy page, runs search and run timeline, confirmation card component, kill switch control, in English and Arabic, RTL; e2e with axe
+- [x] T013 Agent policy page, runs search and run timeline, confirmation card component, kill switch control, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
 - [ ] T014 Kill tests (worker restart mid-run); OpenAPI; R1 implementation notes; spec evidence

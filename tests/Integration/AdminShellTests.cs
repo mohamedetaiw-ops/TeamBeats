@@ -20,7 +20,7 @@ public sealed class AdminShellTests(TenantWorld world)
     public async Task Navigation_is_server_driven_per_permission()
     {
         var admin = await Sections(world.A["admin"]);
-        Assert.Superset(new HashSet<string> { "tenant_settings", "organization", "users", "roles", "plan", "audit", "pages", "templates", "notifications", "services", "ai" }, admin);
+        Assert.Superset(new HashSet<string> { "tenant_settings", "organization", "users", "roles", "plan", "audit", "pages", "templates", "notifications", "services", "ai", "agents" }, admin);
 
         var orgadmin = await Sections(world.A["orgadmin"]);
         Assert.Contains("organization", orgadmin);
@@ -34,6 +34,7 @@ public sealed class AdminShellTests(TenantWorld world)
         var security = await Sections(world.A["security"]);
         Assert.Contains("audit", security);
         Assert.Contains("ai", security); // Security officers read the AI pages with ai.policy_view (spec 013).
+        Assert.Contains("agents", security); // Security officers watch agents and hold the suspend right (spec 027).
         Assert.DoesNotContain("services", security);
         Assert.DoesNotContain("organization", security);
 

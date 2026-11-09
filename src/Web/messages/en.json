@@ -48,7 +48,8 @@
       "security": "Security",
       "services": "Services",
       "ai": "AI governance",
-      "search": "Search"
+      "search": "Search",
+      "agents": "Agents"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}"
   },
@@ -2711,6 +2712,326 @@
         "ar": "Arabic",
         "en": "English"
       }
+    }
+  },
+  "agents": {
+    "tabsLabel": "Agent pages",
+    "tabs": {
+      "agents": "Agents",
+      "policy": "Policy and kill switch",
+      "runs": "Runs"
+    },
+    "status": {
+      "draft": "Draft",
+      "in_review": "In review",
+      "published": "Published",
+      "suspended": "Suspended",
+      "retired": "Retired"
+    },
+    "risk": {
+      "low": "Low risk",
+      "medium": "Medium risk",
+      "high": "High risk"
+    },
+    "versionState": {
+      "draft": "draft",
+      "in_review": "in review",
+      "published": "published",
+      "rejected": "rejected"
+    },
+    "generated": "Written by AI. Check important details before you rely on them.",
+    "toolNames": {
+      "knowledge": {
+        "search": "Search the intranet"
+      },
+      "requests": {
+        "status": "My request status",
+        "prepare": "Prepare a request"
+      },
+      "tasks": {
+        "inbox": "My task inbox"
+      }
+    },
+    "classifications": {
+      "public": "Public",
+      "internal": "Internal",
+      "confidential": "Confidential",
+      "restricted": "Restricted"
+    },
+    "outcomes": {
+      "answered": "Answered",
+      "limit_reached": "Stopped at a limit",
+      "policy_blocked": "Blocked by policy",
+      "unavailable": "Not available right now",
+      "suspended": "Agent suspended",
+      "stopped": "Stopped",
+      "expired": "Expired",
+      "none": "No answer"
+    },
+    "runStatus": {
+      "running": "Running",
+      "waiting": "Waiting for confirmation",
+      "completed": "Completed",
+      "stopped": "Stopped",
+      "failed": "Failed"
+    },
+    "decisions": {
+      "executed": "done",
+      "refused": "refused",
+      "confirmation_requested": "waiting for confirmation",
+      "confirmed": "confirmed",
+      "cancelled": "cancelled",
+      "would_call": "would run (test)"
+    },
+    "registry": {
+      "title": "Agents",
+      "heading": "Your organization's agents",
+      "empty": "There are no agents yet. Start from a template below.",
+      "name": "Name",
+      "status": "Status",
+      "risk": "Risk",
+      "version": "Version in use",
+      "notPublished": "Not published"
+    },
+    "templates": {
+      "title": "Template library",
+      "intro": "Start an agent from a template, then adapt it and send it for review.",
+      "unit": "Org unit that owns the agent",
+      "autonomy": "Autonomy {level}",
+      "notReady": "Not ready",
+      "notReadyPolicy": "Its autonomy is above what your agent policy allows.",
+      "notReadyTools": "A tool it needs is missing or not allowed by your agent policy.",
+      "install": "Use template",
+      "installNamed": "Use the {name} template",
+      "installing": "Creating…",
+      "failed": "Something went wrong. Try again."
+    },
+    "editor": {
+      "untitled": "New agent",
+      "inLanguage": "{field} ({language})",
+      "languages": {
+        "en": "English",
+        "ar": "Arabic"
+      },
+      "versionOf": "Version {latest}, {state}",
+      "inReview": "This version is waiting for review and cannot be changed.",
+      "openReview": "Open the review",
+      "readOnly": "You can read this agent but not change it.",
+      "about": "About the agent",
+      "name": "Name",
+      "description": "Description",
+      "instructions": "Instructions",
+      "tone": "Tone",
+      "tones": {
+        "neutral": "Neutral",
+        "friendly": "Friendly",
+        "formal": "Formal"
+      },
+      "outputFormat": "Answer format",
+      "formats": {
+        "text": "Short paragraphs",
+        "bullets": "Bullet points",
+        "steps": "Numbered steps"
+      },
+      "abilities": "What it can do",
+      "autonomy": "Autonomy",
+      "autonomyLevels": {
+        "L0": "L0: answers only",
+        "L1": "L1: drafts for the person",
+        "L2": "L2: acts for the person after they confirm"
+      },
+      "maxToolCalls": "Tool calls per run",
+      "tools": "Tools",
+      "sideEffects": {
+        "read": "Reads",
+        "draft": "Drafts",
+        "write_self": "Changes the person's own data",
+        "write_external": "Changes other systems"
+      },
+      "toolBlocked": "Not allowed by policy",
+      "escalation": "When it cannot help, say",
+      "audience": "Who can use it",
+      "audienceTenant": "Everyone in the organization.",
+      "audienceUnits": "Org units",
+      "save": "Save draft",
+      "saving": "Saving…",
+      "saved": "Saved.",
+      "submit": "Send for review",
+      "submitted": "Sent for review. Publishers have a task in their inbox.",
+      "failed": "Something went wrong. Try again.",
+      "test": {
+        "title": "Test panel",
+        "intro": "Try the latest version as yourself. Actions that change something never run here.",
+        "message": "Message",
+        "run": "Run test",
+        "running": "Running…",
+        "outcome": "Result: {outcome}"
+      },
+      "lifecycle": {
+        "title": "Use and history",
+        "reason": "Reason",
+        "suspend": "Suspend",
+        "suspended": "The agent is suspended.",
+        "resume": "Resume",
+        "resumed": "The agent is available again.",
+        "retire": "Retire",
+        "retired": "The agent is retired.",
+        "rollbackTo": "Go back to version",
+        "choose": "Choose a version",
+        "version": "Version {number}",
+        "rollback": "Roll back",
+        "rolledBack": "The earlier version is in use again."
+      }
+    },
+    "review": {
+      "title": "Review {name}",
+      "version": "Version {number}",
+      "gate": "Evaluation checks",
+      "gateStatus": {
+        "not_built": "Evaluation checks are not available yet, so they do not block publishing.",
+        "passed": "Passed",
+        "failed": "Failed"
+      },
+      "firstVersion": "First version: every setting is new",
+      "changes": "Changes against version {number}",
+      "field": "Setting",
+      "before": "Before",
+      "after": "After",
+      "fields": {
+        "name": "Name",
+        "description": "Description",
+        "icon": "Icon",
+        "category": "Category",
+        "instructions": "Instructions",
+        "tone": "Tone",
+        "outputFormat": "Answer format",
+        "knowledge": "Knowledge",
+        "tools": "Tools",
+        "audience": "Audience",
+        "languages": "Languages",
+        "escalation": "Escalation text",
+        "autonomy": "Autonomy",
+        "maxClassification": "Highest classification",
+        "maxToolCalls": "Tool calls per run"
+      },
+      "cannot": {
+        "publish_permission": "You can read this review, but publishing needs a publisher.",
+        "last_editor": "You made the last change to this version, so another person has to approve it.",
+        "gate_failed": "The evaluation checks failed, so this version cannot be published."
+      },
+      "published": "Approved and published.",
+      "rejected": "Rejected. The designer can change it and send it again.",
+      "failed": "Something went wrong. Try again.",
+      "decide": "Decision",
+      "reason": "Reason",
+      "reasonHint": "Needed when you reject. The designer sees it.",
+      "approve": "Approve and publish",
+      "reject": "Reject",
+      "working": "Working…"
+    },
+    "policy": {
+      "title": "Agent policy",
+      "heading": "Rules for every agent",
+      "intro": "These rules apply to every agent and tool call. Saving suspends published agents that break the new rules.",
+      "maxAutonomy": "Highest autonomy",
+      "maxClassification": "Highest data classification agents may read",
+      "maxToolCalls": "Tool calls per run",
+      "maxSteps": "Steps per run",
+      "tools": "Tools agents may hold",
+      "allTools": "Allow every tool",
+      "tool": "Tool",
+      "allowed": "Allowed",
+      "rule": "Approval rule",
+      "allowTool": "Allow {tool}",
+      "ruleFor": "Approval rule for {tool}",
+      "rules": {
+        "execute": "Runs directly",
+        "draft_only": "Drafts only",
+        "confirm": "Person confirms",
+        "approval": "Needs approval",
+        "block": "Blocked"
+      },
+      "saved": "Policy saved.",
+      "failed": "Something went wrong. Try again.",
+      "saving": "Saving…",
+      "save": "Save policy"
+    },
+    "killSwitch": {
+      "title": "Kill switch",
+      "on": "All agents are switched off.",
+      "off": "Agents are running normally.",
+      "intro": "Switching off stops every agent in your organization at its next step and cancels actions waiting for confirmation. The rest of the intranet keeps working.",
+      "reason": "Reason",
+      "confirmation": "Organization name",
+      "confirmationHint": "Type your organization's name exactly to switch off all agents.",
+      "turnedOn": "All agents are switched off.",
+      "turnedOff": "Agents are switched on again.",
+      "failed": "Something went wrong. Try again.",
+      "working": "Working…",
+      "turnOff": "Switch agents back on",
+      "turnOn": "Switch off all agents"
+    },
+    "runs": {
+      "title": "Agent runs",
+      "filters": "Filters",
+      "agent": "Agent",
+      "any": "Any",
+      "outcome": "Outcome",
+      "tool": "Tool",
+      "apply": "Apply",
+      "list": "Runs",
+      "empty": "No runs match.",
+      "when": "When",
+      "mode": "Mode",
+      "toolCalls": "Tool calls",
+      "denials": "Refused calls",
+      "unknownAgent": "Agent not visible to you",
+      "modes": {
+        "run": "Use",
+        "test": "Test"
+      }
+    },
+    "timeline": {
+      "title": "Run timeline",
+      "summary": "Summary",
+      "facts": "Started {when} on version {version}. {outcome}.",
+      "route": {
+        "model": "The assistant chose this agent among {candidates} the person could use.",
+        "chosen": "The person picked this agent.",
+        "knowledge": "The person went back to the knowledge assistant.",
+        "none": "Routing could not decide."
+      },
+      "item": "This run worked on one page or document the person opened.",
+      "steps": "Steps",
+      "kinds": {
+        "model": "Model turn",
+        "tool": "Tool {tool}",
+        "confirmation": "Confirmation for {tool}"
+      },
+      "duration": "{ms} ms",
+      "sources": "Sources"
+    },
+    "use": {
+      "title": "Agents",
+      "empty": "No agents are available to you yet.",
+      "withItem": "The agent will work with the page or document you came from.",
+      "conversation": "Conversation",
+      "you": "You:",
+      "sources": "Sources",
+      "message": "Your message",
+      "send": "Send",
+      "working": "Working…",
+      "failed": "Something went wrong. Try again.",
+      "ask": "Ask an agent about this",
+      "chooseForItem": "Choose an agent to work with the page or document you came from."
+    },
+    "card": {
+      "title": "Confirm this action",
+      "intro": "The agent asks to run {tool} with these values. Nothing happens until you confirm.",
+      "fromContent": "Came from content the agent read",
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "working": "Working…"
     }
   }
 }

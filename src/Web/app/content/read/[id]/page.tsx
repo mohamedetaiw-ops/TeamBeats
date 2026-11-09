@@ -6,6 +6,7 @@ import { Header } from "@/components/shell/Header";
 import { BodyView } from "@/features/content/BodyView";
 import { ContentSocial } from "@/features/content/ContentSocial";
 import { ItemActions } from "@/features/assistant/TextActions";
+import { AskAgentLink } from "@/features/agents/AskAgentLink";
 import "@/features/assistant/assistant.css";
 import "@/features/content/content.css";
 
@@ -54,6 +55,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
           <BodyView body={v.body} embedTitle={t("embed")} anchors={v.anchors} />
         </article>
         <ItemActions source="content" itemId={v.id} itemLocale={v.locale} uiLocale={locale} />
+        <AskAgentLink source="content" itemId={v.id} />
         <ContentSocial itemId={v.id} />
       </main>
     </>
