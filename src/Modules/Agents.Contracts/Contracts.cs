@@ -141,6 +141,9 @@ public interface IAgentCatalog
 
     Task<AgentVersionFacts?> VersionAsync(Guid agentId, int number, CancellationToken ct = default);
 
+    /// <summary>Every agent of the tenant that is not retired, without a permission check; callers filter by scope.</summary>
+    Task<IReadOnlyList<AgentFacts>> ListAsync(CancellationToken ct = default);
+
     /// <summary>The agents in use now: published, with a version in force.</summary>
     Task<IReadOnlyList<AgentFacts>> PublishedAsync(CancellationToken ct = default);
 }

@@ -23,9 +23,9 @@ Depends on 004, 006, 013 (`evaluation` use case), 020 and 027 (runtime, executio
 - [x] T012 [US5] Gate requests and decisions for agent versions, model routes and tools; overrides; platform suites test project in CI
 
 ## Phase 5: User Stories 6, 8 and 10, dashboard, calibration and settings (P1)
-- [ ] T013 [US6] Results, compare and case detail endpoints with org scope
-- [ ] T014 [US8] Calibration sets, agreement and demotion of rubrics
-- [ ] T015 [US10] Settings at platform, tenant and agent level with the strictest rule
+- [x] T013 [US6] Results, compare and case detail endpoints with org scope
+- [x] T014 [US8] Calibration sets, agreement and demotion of rubrics
+- [x] T015 [US10] Settings at platform, tenant and agent level with the strictest rule
 - [ ] T016 Suite and dataset editors, run and compare views with table views, settings page, in English and Arabic, RTL; e2e with axe
 
 ## Final phase

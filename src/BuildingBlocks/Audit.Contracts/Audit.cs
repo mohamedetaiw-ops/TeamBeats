@@ -276,6 +276,8 @@ public static class AuditActions
     public const string EvalPersonaCreated = "eval.persona_created";
     public const string EvalGateDecided = "eval.gate_decided";
     public const string EvalGateOverridden = "eval.gate_overridden";
+    public const string EvalRubricCalibrated = "eval.rubric_calibrated";
+    public const string EvalRubricDemoted = "eval.rubric_demoted";
 
     /// <summary>Events that R0 must emit and test. R2 items (add-ons, overrides, quotas, IdP config UI) are listed separately.</summary>
     public static readonly IReadOnlyList<string> RequiredInR0 =
@@ -323,6 +325,7 @@ public static class AuditActions
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,
         AgentRetired, AgentKillSwitch,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
+        EvalRubricCalibrated, EvalRubricDemoted,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

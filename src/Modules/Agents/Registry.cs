@@ -362,10 +362,15 @@ public sealed class AgentCatalog(IDbSession session) : IAgentCatalog
         return rows.Count == 0 ? null : rows[0];
     }
 
-    public async Task<IReadOnlyList<AgentFacts>> PublishedAsync(CancellationToken ct = default)
+    public Task<IReadOnlyList<AgentFacts>> PublishedAsync(CancellationToken ct = default) =>
+        FactsAsync("select id from agents.agent where status = 'published' and current_version is not null order by created_at, id limit 500", ct);
+
+    public Task<IReadOnlyList<AgentFacts>> ListAsync(CancellationToken ct = default) =>
+        FactsAsync("select id from agents.agent where status <> 'retired' order by created_at, id limit 500", ct);
+
+    private async Task<IReadOnlyList<AgentFacts>> FactsAsync(string sql, CancellationToken ct)
     {
-        var ids = await session.QueryAsync("select id from agents.agent where status = 'published' and current_version is not null order by created_at, id limit 500", null,
-            r => r.GetGuid(0), ct);
+        var ids = await session.QueryAsync(sql, null, r => r.GetGuid(0), ct);
         var list = new List<AgentFacts>();
         foreach (var id in ids)
         {
