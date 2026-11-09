@@ -99,7 +99,7 @@ public sealed class SignInService(
             await outbox.EnqueueAsync(new UserProvisioned(userId.Value, createdVia), ct);
         }
 
-        var status = await session.ScalarAsync<string?>("select status from identity.user_account where id = @u", new { u = userId }, ct);
+        var status = await session.ScalarAsync<string?>("select status from identity.user_account where id = @u and not test_identity", new { u = userId }, ct);
         var membership = await memberships.GetAsync(userId.Value, ct);
         if (status != "active" || membership is null || membership.Status != MembershipStatus.Active)
         {

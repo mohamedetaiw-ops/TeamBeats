@@ -118,3 +118,24 @@ public interface IAgentTool
 
     Task<ToolResult> ExecuteAsync(System.Text.Json.JsonElement arguments, ToolCallContext context, CancellationToken ct);
 }
+
+/// <summary>
+/// What other modules may know about an agent (spec 034 evaluates agents): its owning unit, owner, template, state,
+/// risk and the languages of its latest version. The caller checks its own permissions on <see cref="OrgUnitId"/>.
+/// </summary>
+public sealed record AgentFacts(
+    Guid Id,
+    Guid OrgUnitId,
+    Guid OwnerUserId,
+    string? TemplateId,
+    string Status,
+    string RiskClass,
+    int? CurrentVersion,
+    int LatestVersion,
+    IReadOnlyList<string> Languages,
+    IReadOnlyDictionary<string, string>? Name);
+
+public interface IAgentCatalog
+{
+    Task<AgentFacts?> GetAsync(Guid agentId, CancellationToken ct = default);
+}

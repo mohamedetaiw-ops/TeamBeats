@@ -2,7 +2,8 @@ using TeamBeats.Primitives;
 
 namespace TeamBeats.Modules.Identity.Contracts;
 
-public sealed record UserInfo(Guid Id, string DisplayName, string Email, string Status, string? PreferredLocale, DateTimeOffset? LastSignInAt);
+/// <param name="IsTest">A synthetic test identity of an evaluation persona (spec 034 FR-006): never signs in, is never listed and is never notified.</param>
+public sealed record UserInfo(Guid Id, string DisplayName, string Email, string Status, string? PreferredLocale, DateTimeOffset? LastSignInAt, bool IsTest = false);
 
 public interface IUserDirectory
 {
@@ -17,6 +18,15 @@ public interface IUserDirectory
 
     /// <summary>True while the directory has the account disabled; product admins cannot re-enable it (spec 003 FR-013).</summary>
     Task<bool> IsDisabledByDirectoryAsync(Guid userId, CancellationToken ct = default);
+}
+
+/// <summary>
+/// Synthetic test identities for evaluation personas (spec 034 FR-006). They have no sign-in identity, are left out of
+/// every user list and search, cannot hold a session, and are skipped by notifications.
+/// </summary>
+public interface ITestIdentities
+{
+    Task<Guid> CreateAsync(string displayName, CancellationToken ct = default);
 }
 
 /// <summary>Where members signed in from (spec 026 lock-out preview). Addresses only, no other session data.</summary>

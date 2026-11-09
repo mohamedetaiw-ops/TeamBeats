@@ -4,6 +4,7 @@ using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -45,7 +46,8 @@ public sealed class AuthorizationAdmin(
     IEnumerable<IResourceDescriptorProvider> providers,
     IAuditWriter audit,
     IOutbox outbox,
-    AssignmentStore store)
+    AssignmentStore store,
+    IUserDirectory users)
 {
     public async Task<IReadOnlyList<RoleView>> ListRolesAsync(CancellationToken ct)
     {
@@ -144,6 +146,11 @@ public sealed class AuthorizationAdmin(
         if (request.SubjectType is not ("user" or "group"))
         {
             throw AppException.Validation("subjectType", "validation.role.subject_type");
+        }
+        if (request.SubjectType == "user" && (await users.GetAsync(request.SubjectId, ct))?.IsTest == true)
+        {
+            // Evaluation personas get their roles only from their persona definition (spec 034 FR-006).
+            throw AppException.Validation("subjectId", "validation.role.test_identity");
         }
         var conditionErrors = new ValidationErrors();
         var condition = await ParseConditionAsync(request.Condition, conditionErrors, "condition", ct);
