@@ -1333,7 +1333,9 @@
       "onBehalfOf": "On behalf of {name}",
       "contentReview": "Content review",
       "contentOwnerReview": "Content owner review",
-      "contentRetire": "Content retirement"
+      "contentRetire": "Content retirement",
+      "policyApproval": "Policy approval",
+      "policyAttestation": "Policy attestation"
     },
     "delegation": {
       "title": "While you are away",
@@ -2028,6 +2030,99 @@
       "titleIn": "Title in {language}",
       "busy": "Creating",
       "create": "Create the draft"
+    }
+  },
+  "policies": {
+    "nav": {
+      "label": "Policies",
+      "my": "My policies",
+      "register": "Policy register"
+    },
+    "status": {
+      "draft": "Draft",
+      "in_review": "In review",
+      "approved": "Approved",
+      "published": "Published",
+      "retired": "Retired"
+    },
+    "versionState": {
+      "draft": "Draft",
+      "in_review": "In review",
+      "approved": "Approved, waiting for its date",
+      "effective": "In force",
+      "superseded": "Superseded"
+    },
+    "register": {
+      "title": "Policy register",
+      "search": "Search policies",
+      "statusFilter": "Status",
+      "allStatuses": "All statuses",
+      "apply": "Apply",
+      "failed": "The register could not be loaded. Try again.",
+      "empty": "No policies match.",
+      "code": "ID",
+      "name": "Name",
+      "status": "Status",
+      "version": "Version in force",
+      "effective": "Effective",
+      "review": "Next review",
+      "owner": "Owner",
+      "none": "None",
+      "working": "new version {state}"
+    },
+    "my": {
+      "title": "My policies",
+      "failed": "Your policies could not be loaded. Try again.",
+      "empty": "No policies apply to you yet.",
+      "dueTitle": "{count, plural, =0 {Nothing to accept} one {# policy to accept} other {# policies to accept}}",
+      "nothingDue": "You have accepted everything that was asked of you.",
+      "due": "Accept version {number} by {date}",
+      "overdue": "Version {number} was due on {date}",
+      "allTitle": "All my policies",
+      "accepted": "Accepted version {number} on {date}",
+      "acceptedEarlier": "Accepted version {number} on {date}; a newer version is in force",
+      "inForce": "Version {number} in force"
+    },
+    "reading": {
+      "register": "Policies",
+      "version": "Version {number}",
+      "effective": "in force from {date}",
+      "owner": "owned by {name}",
+      "superseded": "Version {number} has been superseded.",
+      "readCurrent": "Read version {number}, which is in force.",
+      "binding": "This translation is for reference. The {language} version is the legally binding one.",
+      "otherLanguages": "Also in:",
+      "contents": "Clauses",
+      "noVersion": "No version of this policy is in force yet.",
+      "language": {
+        "en": "English",
+        "ar": "Arabic",
+        "fr": "French",
+        "hi": "Hindi",
+        "ur": "Urdu"
+      }
+    },
+    "attest": {
+      "title": "Your attestation",
+      "due": "Please accept version {number} by {date}.",
+      "overdue": "Accepting version {number} was due on {date}.",
+      "confirm": "I confirm the statement above.",
+      "confirmFirst": "Tick the box to confirm the statement first.",
+      "submit": "Accept",
+      "busy": "Saving",
+      "failed": "Your attestation could not be saved. Try again.",
+      "given": "You accepted version {number} on {date}."
+    },
+    "history": {
+      "title": "Versions",
+      "number": "Version",
+      "state": "State",
+      "change": "Change",
+      "effective": "In force from",
+      "approvedBy": "Approved by",
+      "version": "Version {number}",
+      "material": "Material",
+      "minor": "Minor"
     }
   }
 }

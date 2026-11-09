@@ -1333,7 +1333,9 @@
       "onBehalfOf": "نيابة عن {name}",
       "contentReview": "مراجعة محتوى",
       "contentOwnerReview": "مراجعة مالك المحتوى",
-      "contentRetire": "إيقاف محتوى"
+      "contentRetire": "إيقاف محتوى",
+      "policyApproval": "اعتماد سياسة",
+      "policyAttestation": "إقرار بسياسة"
     },
     "delegation": {
       "title": "أثناء غيابك",
@@ -2028,6 +2030,99 @@
       "titleIn": "العنوان باللغة {language}",
       "busy": "جارٍ الإنشاء",
       "create": "إنشاء المسودة"
+    }
+  },
+  "policies": {
+    "nav": {
+      "label": "السياسات",
+      "my": "سياساتي",
+      "register": "سجل السياسات"
+    },
+    "status": {
+      "draft": "مسودة",
+      "in_review": "قيد المراجعة",
+      "approved": "معتمدة",
+      "published": "منشورة",
+      "retired": "متقاعدة"
+    },
+    "versionState": {
+      "draft": "مسودة",
+      "in_review": "قيد المراجعة",
+      "approved": "معتمدة بانتظار تاريخها",
+      "effective": "سارية",
+      "superseded": "مستبدلة"
+    },
+    "register": {
+      "title": "سجل السياسات",
+      "search": "البحث في السياسات",
+      "statusFilter": "الحالة",
+      "allStatuses": "كل الحالات",
+      "apply": "تطبيق",
+      "failed": "تعذر تحميل السجل. حاول مرة أخرى.",
+      "empty": "لا توجد سياسات مطابقة.",
+      "code": "المعرّف",
+      "name": "الاسم",
+      "status": "الحالة",
+      "version": "الإصدار الساري",
+      "effective": "تاريخ السريان",
+      "review": "المراجعة التالية",
+      "owner": "المالك",
+      "none": "لا يوجد",
+      "working": "إصدار جديد {state}"
+    },
+    "my": {
+      "title": "سياساتي",
+      "failed": "تعذر تحميل سياساتك. حاول مرة أخرى.",
+      "empty": "لا تنطبق عليك أي سياسات بعد.",
+      "dueTitle": "{count, plural, =0 {لا شيء للإقرار به} one {سياسة واحدة للإقرار بها} two {سياستان للإقرار بهما} few {# سياسات للإقرار بها} many {# سياسة للإقرار بها} other {# سياسة للإقرار بها}}",
+      "nothingDue": "لقد أقررت بكل ما طُلب منك.",
+      "due": "أقرّ بالإصدار {number} قبل {date}",
+      "overdue": "كان الإقرار بالإصدار {number} مستحقًا في {date}",
+      "allTitle": "كل سياساتي",
+      "accepted": "أقررت بالإصدار {number} في {date}",
+      "acceptedEarlier": "أقررت بالإصدار {number} في {date}، ويسري الآن إصدار أحدث",
+      "inForce": "الإصدار {number} ساري"
+    },
+    "reading": {
+      "register": "السياسات",
+      "version": "الإصدار {number}",
+      "effective": "ساري من {date}",
+      "owner": "المالك {name}",
+      "superseded": "تم استبدال الإصدار {number}.",
+      "readCurrent": "اقرأ الإصدار {number} الساري.",
+      "binding": "هذه الترجمة للاسترشاد. النسخة الملزمة قانونًا هي النسخة {language}.",
+      "otherLanguages": "متوفرة أيضًا بـ:",
+      "contents": "البنود",
+      "noVersion": "لا يوجد إصدار ساري من هذه السياسة بعد.",
+      "language": {
+        "en": "الإنجليزية",
+        "ar": "العربية",
+        "fr": "الفرنسية",
+        "hi": "الهندية",
+        "ur": "الأردية"
+      }
+    },
+    "attest": {
+      "title": "إقرارك",
+      "due": "يرجى الإقرار بالإصدار {number} قبل {date}.",
+      "overdue": "كان الإقرار بالإصدار {number} مستحقًا في {date}.",
+      "confirm": "أؤكد العبارة أعلاه.",
+      "confirmFirst": "ضع علامة في المربع لتأكيد العبارة أولًا.",
+      "submit": "إقرار",
+      "busy": "جارٍ الحفظ",
+      "failed": "تعذر حفظ إقرارك. حاول مرة أخرى.",
+      "given": "أقررت بالإصدار {number} في {date}."
+    },
+    "history": {
+      "title": "الإصدارات",
+      "number": "الإصدار",
+      "state": "الحالة",
+      "change": "التغيير",
+      "effective": "ساري من",
+      "approvedBy": "اعتمده",
+      "version": "الإصدار {number}",
+      "material": "جوهري",
+      "minor": "طفيف"
     }
   }
 }
