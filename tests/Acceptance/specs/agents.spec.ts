@@ -113,9 +113,12 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `agents-available-${locale}`);
       await page.getByTestId("agents-available").getByRole("link", { name: newName }).click();
       await page.waitForURL(/\/agents\/[0-9a-f-]{36}$/);
-      await page.getByLabel(m("agents.use.message"), { exact: true }).fill(locale === "ar" ? "كم يوما للإجازة السنوية؟" : "How many days of annual leave do I have?");
+      await page.getByLabel(m("agents.use.message"), { exact: true }).fill(locale === "ar" ? "كم يوما للإجازة السنوية؟ www.example.org/leave" : "How many days of annual leave do I have? www.example.org/leave");
       await page.getByRole("button", { name: m("agents.use.send") }).click();
       await expect(page.getByTestId("agent-answer")).toBeVisible();
+      // A web address in an answer stays text, with a warning (spec 027 US5 scenario 3).
+      await expect(page.getByText(m("agents.use.linksAsText"))).toBeVisible();
+      await expect(page.getByTestId("agent-answer").locator("a, img")).toHaveCount(0);
       await expectAccessible(page, testInfo, `agents-conversation-${locale}`);
 
       // The contextual action on a news item passes the item to the agent the person picks.

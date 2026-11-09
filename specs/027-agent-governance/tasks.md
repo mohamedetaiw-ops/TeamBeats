@@ -13,8 +13,8 @@ Depends on 004, 005, 006, 013 (AI Gateway), 016 (inbox), 020 (definitions and ru
 - [x] T006 Confirmation cards, checkpoints and the parameter hash
 
 ## Phase 3: User Story 5, untrusted content (P1)
-- [ ] T007 [P] Tests: injected document does not cause a tool call and records a detection; tool-like connector text cannot trigger a call; external images not loaded and unknown links shown as text; values from documents highlighted on the card
-- [ ] T008 Data envelope, detector and safe answer rendering
+- [x] T007 [P] Tests: injected document does not cause a tool call and records a detection; tool-like connector text cannot trigger a call; external images not loaded and unknown links shown as text; values from documents highlighted on the card
+- [x] T008 Data envelope, detector and safe answer rendering
 
 ## Phase 4: User Stories 6 to 9, records, controls, policy and risk (P1)
 - [x] T009 [P] Tests: execution record fields and masking; scoped run search; suspend and kill switch timings; rollback within 60 seconds; policy changes suspend breaking agents; risk class computed and not lowered
