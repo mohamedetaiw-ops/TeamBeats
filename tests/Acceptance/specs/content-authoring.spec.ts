@@ -28,6 +28,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByLabel(msg(locale, "content.items.title")).fill(title);
       await page.getByRole("button", { name: msg(locale, "content.items.create") }).click();
       await page.waitForURL(/\/content\/items\/[0-9a-f-]{36}$/);
+      const itemUrl = page.url();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
 
       // The body, written with the keyboard and the toolbar.
@@ -57,8 +58,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("main").getByRole("status")).toContainText(msg(locale, "content.items.published"));
       await expect(page.getByTestId("item-status")).toContainText(msg(locale, "content.items.status.published"));
 
+      // Opening the item as a reader reports a view (spec 021).
+      const viewed = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/api/v1/analytics/events"));
       await page.getByRole("link", { name: msg(locale, "content.items.openReader") }).click();
       await page.waitForURL(/\/content\/read\//);
+      expect((await viewed).postDataJSON()).toMatchObject({ events: [{ name: "content.viewed", fields: { source: "content" } }] });
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
       await expect(page.getByRole("article").getByRole("listitem")).toHaveText(point);
       await expect(page.getByRole("article").locator("strong")).toHaveText(point);
@@ -73,6 +77,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/content/items`);
       await expect(page.getByRole("link", { name: title })).toBeVisible();
       await expectAccessible(page, testInfo, `content-list-${locale}`);
+
+      // Spec 021 US1: the item's analytics, with the one-person audience shown only inside "other".
+      await page.goto(itemUrl);
+      await page.getByRole("link", { name: msg(locale, "content.items.analytics") }).click();
+      await page.waitForURL(/\/analytics$/);
+      await expect(page.getByTestId("item-analytics")).toBeVisible();
+      await expect(page.getByTestId("analytics-audience")).toHaveText(/^(1|١)$/);
+      await expect(page.getByTestId("analytics-groups").locator("tbody tr")).toHaveCount(1);
+      await expect(page.getByTestId("analytics-groups").locator("tbody tr")).toHaveAttribute("data-group", "other");
+      await expectAccessible(page, testInfo, `content-analytics-${locale}`);
     });
   });
 }

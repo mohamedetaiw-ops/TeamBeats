@@ -1777,7 +1777,8 @@
       "previewTargeted": "Shown to people in {units, plural, =0 {any unit} one {# chosen unit} other {# chosen units}} with {types, plural, =0 {any membership type} one {# chosen membership type} other {# chosen membership types}}.",
       "previewOf": "Preview of {title}",
       "embed": "Embedded content",
-      "modalHint": "A window must always be answered: people confirm it or ask to be reminded later."
+      "modalHint": "A window must always be answered: people confirm it or ask to be reminded later.",
+      "analytics": "Analytics"
     },
     "history": {
       "title": "History",
@@ -2178,7 +2179,8 @@
       "review": "Review the version",
       "campaigns": "Attestation campaigns",
       "compliance": "Compliance",
-      "scheduled": "Version {number} is approved and comes into force on {date}."
+      "scheduled": "Version {number} is approved and comes into force on {date}.",
+      "analytics": "Analytics"
     },
     "create": {
       "title": "New policy",
@@ -3472,6 +3474,43 @@
       "intro": "The assistant's platform suites check grounded answers with citations, the answer language and resistance to instructions hidden in passages, in each of your organization's languages. A change to the assistant's model route runs them first.",
       "start": "Evaluate the assistant",
       "noRuns": "The assistant has not been evaluated yet."
+    }
+  },
+  "analytics": {
+    "item": {
+      "title": "Analytics",
+      "heading": "Reach of",
+      "totals": "Totals",
+      "audience": "Audience",
+      "readers": "Unique readers",
+      "reach": "Reach",
+      "acknowledged": "Confirmed",
+      "reactions": "Reactions",
+      "comments": "Comments",
+      "groups": "By unit",
+      "privacy": "Groups of fewer than {size} people are only shown together as \"other\", so no one can be singled out.",
+      "noAudience": "Nobody is in the audience yet.",
+      "other": "Other units (groups under {size})",
+      "noUnit": "No unit",
+      "trend": "Daily trend",
+      "noViews": "No views yet.",
+      "column": {
+        "group": "Group",
+        "audience": "Audience",
+        "readers": "Readers",
+        "reach": "Reach",
+        "acknowledged": "Confirmed",
+        "actions": "Actions",
+        "day": "Day",
+        "views": "Views",
+        "newReaders": "New readers"
+      },
+      "remind": "Remind this group",
+      "remindGroup": "Remind {group}",
+      "busy": "Sending",
+      "reminded": "{count, plural, =0 {Everyone has already been reminded in the last hour.} one {Reminder sent to # person.} other {Reminder sent to # people.}}",
+      "remindFailed": "The reminder could not be sent. Please try again.",
+      "denied": "Only the people who look after this item can see its analytics."
     }
   }
 }

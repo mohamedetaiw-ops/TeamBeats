@@ -1047,5 +1047,10 @@
   "validation.workflow.step_id": "تحتاج كل خطوة إلى معرّف خاص بها من حروف وأرقام وشرطات سفلية، يبدأ بحرف.",
   "validation.workflow.steps": "يحتاج المسار إلى خطوة موافقة واحدة على الأقل و10 خطوات على الأكثر.",
   "validation.workflow.users": "يمكن أن تسمي الخطوة 50 شخصًا على الأكثر.",
-  "warning.org.unusual_placement": "يقع هذا النوع من الوحدات عادةً في مستوى أعلى من الهيكل"
+  "warning.org.unusual_placement": "يقع هذا النوع من الوحدات عادةً في مستوى أعلى من الهيكل",
+  "notifications.template.content.analytics.reminder.title": "تذكير بقراءة إعلان",
+  "notifications.template.content.analytics.reminder.body": "لم تقرأ هذا بعد. افتحه للاطلاع عليه.",
+  "notifications.template.policies.analytics.reminder.title": "تذكير بسياسة تنطبق عليك",
+  "notifications.template.policies.analytics.reminder.body": "افتح السياسة لقراءتها، وأكدها إذا طُلب منك ذلك.",
+  "validation.analytics.group": "اختر مجموعة من التوزيع."
 }

@@ -1,0 +1,67 @@
+.analytics-item {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.analytics-card {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.analytics-card h2 {
+  margin: 0;
+}
+
+.analytics-meta {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.analytics-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-lg);
+  margin: 0;
+}
+
+.analytics-stats dt {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.analytics-stats dd {
+  margin: 0;
+  font-size: var(--tb-font-size-xl);
+  font-weight: var(--tb-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-table {
+  overflow-x: auto;
+}
+
+.analytics-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.analytics-table th,
+.analytics-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.analytics-table td[data-number] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-remind {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+}

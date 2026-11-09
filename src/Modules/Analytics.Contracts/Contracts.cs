@@ -118,3 +118,34 @@ public interface IAnalyticsEvents
 /// </summary>
 public sealed record AnalyticsEventEmitted(string Name, Guid? UserId, string Channel, string? Locale, DateTimeOffset OccurredAt,
     IReadOnlyDictionary<string, string> Fields) : IIntegrationEvent;
+
+/// <summary>
+/// What an owning module tells Analytics about one of its items (spec 021 US1, plan "Item reach and acknowledgement"):
+/// its titles, when it went live, the people it targets now, whether it asks for acknowledgement and who has given it,
+/// and its reaction and comment counts. Analytics never reads the owner's tables.
+/// </summary>
+public sealed record AnalyticsItem(
+    Guid ItemId,
+    IReadOnlyDictionary<string, string> Titles,
+    DateTimeOffset? LiveFrom,
+    IReadOnlySet<Guid> Audience,
+    bool AcknowledgementRequired,
+    IReadOnlySet<Guid> Acknowledged,
+    int Reactions,
+    int Comments);
+
+/// <summary>
+/// An owning module whose items have analytics (content items of spec 009, policies of spec 025). The owner decides who
+/// may see an item's analytics: an item the person may not read is not found, and one they read without rights on it
+/// is denied. Reminders go out through the owner, which sends them through notifications (spec 015).
+/// </summary>
+public interface IAnalyticsItemSource
+{
+    /// <summary>The source name, as in <c>content.viewed</c> events (<c>content</c>, <c>policies</c>).</summary>
+    string Source { get; }
+
+    Task<AnalyticsItem> DescribeAsync(Guid itemId, CancellationToken ct = default);
+
+    /// <summary>Reminds the given people of the item, after checking again that the person asking may; returns how many were sent.</summary>
+    Task<int> RemindAsync(Guid itemId, IReadOnlyCollection<Guid> people, CancellationToken ct = default);
+}

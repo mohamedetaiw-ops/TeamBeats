@@ -10,6 +10,7 @@ import { PolicyDocument } from "@/features/policies/PolicyDocument";
 import { AttestPanel } from "@/features/policies/AttestPanel";
 import { VersionList } from "@/features/policies/VersionList";
 import { AskAgentLink } from "@/features/agents/AskAgentLink";
+import { ViewBeacon } from "@/features/analytics/ViewBeacon";
 
 /**
  * A policy page (spec 025 US1 and US2): the version in force with numbered clauses and anchors, the attest panel when
@@ -46,6 +47,7 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
     p.working?.state === "in_review" && (p.rights.review || p.rights.edit || p.rights.manage) ? { href: reviewHref(p.id), label: tm("review") } : null,
     p.rights.history ? { href: campaignsHref(p.id), label: tm("campaigns") } : null,
     p.rights.compliance && p.currentVersion ? { href: complianceHref(p.id), label: tm("compliance") } : null,
+    p.rights.analytics ? { href: `${policyHref(p.id)}/analytics`, label: tm("analytics") } : null,
   ].filter((a): a is { href: string; label: string } => a !== null);
   return (
     <>
@@ -78,6 +80,7 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
         ) : null}
         {reading?.ok ? <AskAgentLink source="policies" itemId={p.id} /> : null}
         {p.scheduled ? <p className="policies-banner">{tm("scheduled", { number: p.scheduled.number, date: format.dateTime(new Date(p.scheduled.effectiveFrom), { dateStyle: "long" }) })}</p> : null}
+        {reading?.ok ? <ViewBeacon source="policies" itemId={p.id} /> : null}
         {reading?.ok ? (
           <PolicyDocument reading={reading.data} locale={shown} />
         ) : (

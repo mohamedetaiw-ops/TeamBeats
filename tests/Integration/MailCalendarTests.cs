@@ -440,8 +440,8 @@ public sealed class MailCalendarTests(TenantWorld world)
             new FakeScheduleItem("busy", now.AddMinutes(5), now.AddMinutes(10)),
             new FakeScheduleItem("free", now.AddMinutes(10), now.AddMinutes(15)),
             new FakeScheduleItem("oof", now.AddMinutes(15), now.AddMinutes(20)));
-        // Blocks after midnight in the tenant's time zone are not today.
-        string[] expected = TodayDubai().AddDays(1) - now > TimeSpan.FromMinutes(21) ? ["busy", "oof"] : ["busy"];
+        // Blocks that start after midnight in the tenant's time zone are not today; one that starts before it is cut at midnight.
+        string[] expected = TodayDubai().AddDays(1) - now > TimeSpan.FromMinutes(15) ? ["busy", "oof"] : ["busy"];
 
         var sara = await GetAsync(s.Tenant, $"/api/v1/people/{s.Tenant["sara"].Id}/availability");
         Assert.Equal("ok", State(sara));
