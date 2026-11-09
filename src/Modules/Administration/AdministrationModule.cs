@@ -45,12 +45,22 @@ public static class AdministrationModule
         ("ai", Permissions.AiPolicyManage, "/admin/ai"),
         ("search", Permissions.SearchManage, "/admin/search"),
         ("agents", Permissions.AgentView, "/admin/agents"),
+        ("evaluation", Permissions.EvalView, "/admin/evaluation"),
     ];
 
     /// <summary>A second permission that also opens a section: security officers read the AI pages with <c>ai.policy_view</c> (spec 013).</summary>
     public static readonly IReadOnlyDictionary<string, string> AlsoOpenedBy = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["ai"] = Permissions.AiPolicyView,
+    };
+
+    /// <summary>
+    /// Further permissions that each open a section in their own scope: evaluation pages (spec 034) serve agent designers
+    /// on their units, evaluation reviewers who label calibration sets, and those who read results.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string[]> AlsoOpenedInScopeBy = new Dictionary<string, string[]>(StringComparer.Ordinal)
+    {
+        ["evaluation"] = [Permissions.EvalDesign, Permissions.EvalReview, Permissions.EvalPolicyManage],
     };
 
     /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) the people directory policy (spec 010 US1) and search tuning (spec 012 US4) are for the whole tenant.</summary>
@@ -71,6 +81,17 @@ public static class AdministrationModule
                 if (!coverage.WholeTenant && AlsoOpenedBy.TryGetValue(key, out var other) && await authz.CoverageAsync(other, ct) is { WholeTenant: true } wide)
                 {
                     coverage = wide;
+                }
+                if (AlsoOpenedInScopeBy.TryGetValue(key, out var others))
+                {
+                    foreach (var also in others)
+                    {
+                        var more = await authz.CoverageAsync(also, ct);
+                        if (more.WholeTenant || (more.Any && !coverage.Any))
+                        {
+                            coverage = more;
+                        }
+                    }
                 }
                 if (TenantOnly.Contains(key) ? coverage.WholeTenant : coverage.Any)
                 {

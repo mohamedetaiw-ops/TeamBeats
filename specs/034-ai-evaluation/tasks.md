@@ -26,7 +26,7 @@ Depends on 004, 006, 013 (`evaluation` use case), 020 and 027 (runtime, executio
 - [x] T013 [US6] Results, compare and case detail endpoints with org scope
 - [x] T014 [US8] Calibration sets, agreement and demotion of rubrics
 - [x] T015 [US10] Settings at platform, tenant and agent level with the strictest rule
-- [ ] T016 Suite and dataset editors, run and compare views with table views, settings page, in English and Arabic, RTL; e2e with axe
+- [x] T016 Suite and dataset editors, run and compare views with table views, settings page, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
 - [ ] T017 Run time performance test; OpenAPI; R1 implementation notes; spec evidence

@@ -13,7 +13,8 @@ public sealed record DatasetCasesRequest(int? Version, List<CaseInput>? Cases);
 
 public sealed record ImportRequest(string? Format, string? Content);
 
-public sealed record ImportError(int Row, string Field, string Key);
+/// <summary>A refused import row; <see cref="Message"/> is the key in the reader's language, filled in when the preview is returned.</summary>
+public sealed record ImportError(int Row, string Field, string Key, string? Message = null);
 
 /// <summary>An import checked and waiting (US2 scenario 4): how many rows are valid, and every refused row with its reason.</summary>
 public sealed record ImportPreview(Guid ImportId, int BaseVersion, int Valid, IReadOnlyList<ImportError> Errors, IReadOnlyList<CaseInput> Sample);

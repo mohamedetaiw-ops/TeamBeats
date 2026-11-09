@@ -9,7 +9,7 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Evaluation;
 
-public sealed record SettingsView(int Version, IReadOnlyList<SuiteMetric> Thresholds, IReadOnlyList<EffectiveRule> Platform, DateTimeOffset? UpdatedAt);
+public sealed record SettingsView(int Version, IReadOnlyList<SuiteMetric> Thresholds, IReadOnlyList<EffectiveRule> Platform, DateTimeOffset? UpdatedAt, bool CanEdit = false);
 
 public sealed record SettingsRequest(int? Version, List<SuiteMetric>? Thresholds);
 
@@ -75,11 +75,12 @@ public sealed class EvalSettingsService(IDbSession session, ITenantContext conte
 
     public async Task<SettingsView> GetAsync(CancellationToken ct)
     {
-        if (!(await authz.CheckAsync(Permissions.EvalPolicyManage, AuthzTarget.Tenant, ct)).Allowed && !(await authz.CheckAsync(Permissions.EvalView, AuthzTarget.Tenant, ct)).Allowed)
+        var manage = (await authz.CheckAsync(Permissions.EvalPolicyManage, AuthzTarget.Tenant, ct)).Allowed;
+        if (!manage && !(await authz.CheckAsync(Permissions.EvalView, AuthzTarget.Tenant, ct)).Allowed)
         {
             throw AppException.Denied();
         }
-        return await LoadAsync(ct);
+        return await LoadAsync(ct) with { CanEdit = manage };
     }
 
     public async Task<SettingsView> SaveAsync(SettingsRequest request, CancellationToken ct)
@@ -107,7 +108,7 @@ public sealed class EvalSettingsService(IDbSession session, ITenantContext conte
             """, new { version = current.Version + 1, thresholds = Jsonb.From(normalized), user = context.RequireUser(), now }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.EvalPolicyChanged, "eval_settings", null,
             Changes: new { level = EvalLevels.Tenant, from = current.Thresholds, to = normalized }), ct);
-        return await LoadAsync(ct);
+        return await LoadAsync(ct) with { CanEdit = true };
     }
 }
 
