@@ -37,6 +37,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public FakeOpenMeteo Weather { get; } = new();
 
+    public FakeGotenberg Gotenberg { get; } = new();
+
     public TestUserAttributes UserAttributes { get; } = new();
 
     public TestEmailSender Email { get; } = new();
@@ -52,6 +54,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         builder.UseSetting("Integrations:Microsoft365:ClientId", FakeMicrosoftGraph.ClientId);
         builder.UseSetting("Integrations:Microsoft365:ClientSecret", FakeMicrosoftGraph.ClientSecret);
         builder.UseSetting(TeamBeats.Modules.Integrations.Microsoft365.TokenProtector.KeySetting, TokenKey);
+        builder.UseSetting(TeamBeats.Persistence.GotenbergConverter.UrlKey, FakeGotenberg.BaseUrl);
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton(Documents);
@@ -67,6 +70,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddHttpClient(HttpOidcProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => Idp);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Microsoft365.HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => Graph);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => Weather);
+            services.AddHttpClient(TeamBeats.Persistence.GotenbergConverter.ClientName).ConfigurePrimaryHttpMessageHandler(() => Gotenberg);
         });
     }
 

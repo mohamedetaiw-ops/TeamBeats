@@ -915,3 +915,19 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Folders in the bin | Only documents go to the recycle bin in this slice. Deleting folders is not built yet; a folder can be emptied document by document. |
 | Shared files | Restoring an old version reuses its stored file rather than copying it, since versions never change. The purge deletes a file once no version of the document uses it. |
 | Restored names | A document restored from the bin keeps its name even if a new one with the same content arrived while it was deleted. |
+
+## Preview (spec 011 T008)
+
+| Area | What was built |
+|---|---|
+| Formats | `/preview` answers the kind (`pdf`, `image`, `video`, `text` or `unavailable` with a reason) and a short-lived URL. PDF, images, video and text open from the file itself; Office formats (Word, Excel, PowerPoint, OpenDocument, RTF) are converted to PDF |
+| Conversion | `IDocumentConverter` in Persistence, next to the malware scanner port. `GotenbergConverter` posts the file to Gotenberg's LibreOffice route when `Conversion:Gotenberg:Url` is set; otherwise `UnavailableConverter` applies and Office files show "preview not available" with the download. The file name is not sent, only its extension. The PDF is stored next to the version (`{version}.preview.pdf`) and reused; a failed conversion is remembered per version |
+| Access | The same rules as downloads choose the version (readers get the effective one), and only clean files preview. Preview tokens are their own purpose in the token table: they open only `/previews/{token}`, inline, sandboxed and with range requests for video, and are not downloads (no audit, no `DocumentDownloaded`) |
+| Infrastructure | Gotenberg (MIT, LibreOffice inside its own container) is in `deploy/compose/compose.yaml`, as the approved plan lists. Tests use the real adapter against `FakeGotenberg` |
+| Tests | `DocumentPreviewTests`, `PreviewRulesTests` |
+
+| Item | Note |
+|---|---|
+| Staging | Staging has no Gotenberg app yet, so Office previews there show "preview not available". Adding a Fly app for it is a deployment change made with the rest of the staging work for spec 011. |
+| Conversion time | Conversion runs on the first request, inside its 60 second timeout. Section 15 asks for 10 seconds for a 50 page document; Gotenberg normally meets this, and converting at upload in the background is the fallback if staging shows otherwise. |
+| Preview audit | Opening a preview is not audited, as the spec asks only for downloads of Confidential and Restricted files. View-only libraries with watermarks are R2. |

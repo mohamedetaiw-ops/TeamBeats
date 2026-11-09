@@ -22,6 +22,7 @@ public static class DocumentsModule
         services.AddScoped<DocumentFiles>();
         services.AddScoped<DocumentAccess>();
         services.AddScoped<DocumentVersions>();
+        services.AddScoped<DocumentPreviews>();
         services.AddScoped<IResourceDescriptorProvider, LibraryDescriptorProvider>();
         services.AddScoped<IResourceDescriptorProvider, FolderDescriptorProvider>();
         services.AddScoped<IResourceDescriptorProvider, DocumentDescriptorProviderForFiles>();
@@ -234,6 +235,23 @@ public static class DocumentsModule
             var token = await files.DownloadTokenAsync(id, version, ct);
             await session.CommitAsync(ct);
             return Results.Ok(token);
+        });
+
+        root.MapGet("/{id:guid}/preview", async (Guid id, Guid? version, DocumentPreviews previews, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await previews.PreviewAsync(id, version, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/previews/{token}", async (string token, DocumentPreviews previews, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, type) = await previews.OpenAsync(token, ct);
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            response.Headers.ContentSecurityPolicy = "default-src 'none'; img-src 'self'; media-src 'self'; sandbox";
+            response.Headers.CacheControl = "private, no-store";
+            response.Headers.ContentDisposition = "inline";
+            return Results.File(content, type, enableRangeProcessing: true);
         });
 
         root.MapGet("/files/{token}", async (string token, DocumentFiles files, IDbSession session, HttpResponse response, CancellationToken ct) =>

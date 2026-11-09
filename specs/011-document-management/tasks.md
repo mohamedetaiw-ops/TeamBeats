@@ -16,7 +16,7 @@ Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body docu
 - [x] T007 [US2] Check-out, check-in, versions, compare, restore and recycle bin
 
 ## Phase 4: Preview
-- [ ] T008 Preview for PDF, image, video and text; `IDocumentConverter` port with the Gotenberg adapter for Office formats and a fake for tests
+- [x] T008 Preview for PDF, image, video and text; `IDocumentConverter` port with the Gotenberg adapter for Office formats and a fake for tests
 
 ## Phase 5: User Story 3, controlled documents (P1)
 - [ ] T009 [P] [US3] Tests: route on submit with an inbox task; major version with effective date and notice; superseded banner; read confirmation on effective; review task; PDF footer; no self-approval; refused without `docs.controlled`

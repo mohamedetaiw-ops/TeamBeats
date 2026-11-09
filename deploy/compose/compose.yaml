@@ -28,6 +28,12 @@ services:
     image: clamav/clamav:1.4
     ports: ["3310:3310"]
 
+  # Office to PDF conversion for document previews (spec 011 FR-009). Set Conversion__Gotenberg__Url=http://localhost:3000.
+  # Gotenberg is MIT licensed and runs LibreOffice in its own container, so active content never runs in the product.
+  gotenberg:
+    image: gotenberg/gotenberg:8.32.0
+    ports: ["3000:3000"]
+
   # Object storage: R0 uses the file-system adapter. MinIO joins with the S3 adapter in R1.
 
 volumes:
