@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
@@ -64,23 +64,7 @@ export function connectHref(returnTo: string): string {
   return `/api/v1/me/outlook/connect?returnTo=${encodeURIComponent(returnTo)}`;
 }
 
-const never = () => () => {};
-const minute = (callback: () => void) => {
-  const timer = setInterval(callback, 30_000);
-  return () => clearInterval(timer);
-};
-const nowMinute = () => Math.floor(Date.now() / 60_000) * 60_000;
-const none = () => null;
-
-/** The current time to the minute, or null while rendering on the server, so time-based markers never mismatch. */
-export function useNow(): number | null {
-  return useSyncExternalStore(minute, nowMinute, none);
-}
-
-/** True once the browser has hydrated: the server render has no time zone of the viewer. */
-export function useHydrated(): boolean {
-  return useSyncExternalStore(never, () => true, () => false);
-}
+export { useHydrated, useNow } from "@/lib/clock";
 
 /**
  * The shared state view for every answer that is not data (spec 018 section 10, spec 008 FR-006). Returns null for
