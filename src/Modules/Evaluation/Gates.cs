@@ -212,6 +212,7 @@ public static class RunTriggers
     public const string Manual = "manual";
     public const string Gate = "gate";
     public const string Route = "route";
+    public const string Retrieval = "retrieval";
 }
 
 /// <summary>

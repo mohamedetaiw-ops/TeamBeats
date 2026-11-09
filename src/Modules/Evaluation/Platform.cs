@@ -14,6 +14,7 @@ public static class EvalCapabilities
 {
     public const string Agent = "agent";
     public const string Assistant = "assistant";
+    public const string Retrieval = "retrieval";
 }
 
 /// <summary>

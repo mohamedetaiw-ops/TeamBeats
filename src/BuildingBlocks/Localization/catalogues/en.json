@@ -1053,5 +1053,15 @@
   "notifications.template.policies.analytics.reminder.title": "A reminder about a policy that applies to you",
   "notifications.template.policies.analytics.reminder.body": "Open the policy to read it, and confirm it if you are asked to.",
   "validation.analytics.group": "Choose a group from the breakdown.",
-  "admin.nav.analytics": "Analytics"
+  "admin.nav.analytics": "Analytics",
+  "conflict.search.retrieval_change_open": "A retrieval change is already waiting. Apply or cancel it before proposing another.",
+  "conflict.search.retrieval_gate_running": "The release gate is still checking this change. You can apply it with a reason once the gate reports blocking failures or cannot complete.",
+  "conflict.search.retrieval_gate_critical": "The release gate found a critical failure, so this change cannot be applied.",
+  "conflict.search.retrieval_change_decided": "This change has already been decided.",
+  "conflict.search.retrieval_change_not_gating": "This retrieval change is not waiting for its release gate.",
+  "validation.search.passage_tokens": "Use a passage size of 100 to 1000 tokens.",
+  "validation.search.overlap": "Use an overlap of 0 to 50 percent.",
+  "validation.search.embedding_model": "Enter a model ID of up to 100 letters, digits and the characters . _ : / -",
+  "validation.search.retrieval_unchanged": "Change at least one setting.",
+  "validation.search.override_reason": "Give a reason of 10 to 1000 characters."
 }

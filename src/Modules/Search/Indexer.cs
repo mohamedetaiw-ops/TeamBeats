@@ -31,8 +31,8 @@ public static class SearchSources
 /// the index in the same step. Passages are embedded through the AI gateway with the unit's classification; Restricted
 /// units and tenants without <c>search.semantic</c> are keyword only, and a failed embedding leaves the passage keyword only.
 /// </summary>
-public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource> sources, IAiGateway gateway, IEntitlementService entitlements, IClock clock,
-    ILogger<SearchIndexer> logger)
+public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource> sources, IAiGateway gateway, IEntitlementService entitlements, RetrievalStore store,
+    IClock clock, ILogger<SearchIndexer> logger)
     : IMessageHandler<SearchItemChanged>,
       IMessageHandler<C.ContentPublished>, IMessageHandler<C.ContentUnpublished>, IMessageHandler<C.ContentExpired>,
       IMessageHandler<D.DocumentVersionPublished>, IMessageHandler<D.DocumentDeleted>, IMessageHandler<D.DocumentWithdrawn>,
@@ -83,7 +83,14 @@ public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource>
 
     public Task HandleAsync(I.UserDeprovisioned message, CancellationToken ct) => IndexAsync(SearchSources.People, message.UserId, ct);
 
-    /// <summary>Reads one item from its owner and replaces its rows. Returns the number of passages stored.</summary>
+    /// <summary>The live index and the shadow index of an open retrieval change (spec 012 US3 scenario 3).</summary>
+    internal const string Live = "search.unit";
+    internal const string Shadow = "search.shadow_unit";
+
+    /// <summary>
+    /// Reads one item from its owner and replaces its rows with the configuration in force, and in the shadow index too
+    /// while a retrieval change is open, so the shadow index never falls behind. Returns the number of live passages stored.
+    /// </summary>
     public async Task<int> IndexAsync(string source, Guid itemId, CancellationToken ct)
     {
         if (!bySource.TryGetValue(source, out var owner))
@@ -93,26 +100,53 @@ public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource>
         }
         var units = await owner.UnitsAsync(itemId, ct);
         var now = clock.UtcNow;
-        await session.ExecAsync("delete from search.unit where source = @source and item_id = @itemId", new { source, itemId }, ct);
+        var count = await WriteAsync(Live, source, itemId, units, await store.ActiveAsync(ct), now, ct);
+        await session.ExecAsync(
+            """
+            insert into search.item_state (tenant_id, source, item_id, changed_at, synced_at, units)
+            values (platform.current_tenant_id(), @source, @itemId, @now, @now, @count)
+            on conflict (tenant_id, source, item_id) do update set synced_at = excluded.synced_at, units = excluded.units
+            """, new { source, itemId, now, count }, ct);
+        if (await store.OpenAsync(ct) is { } open)
+        {
+            await WriteAsync(Shadow, source, itemId, units, open.Settings, now, ct);
+        }
+        return count;
+    }
+
+    /// <summary>Reads one item from its owner into the shadow index only, with the proposed settings. Returns the number of passages stored.</summary>
+    internal async Task<int> IndexShadowAsync(string source, Guid itemId, RetrievalSettings settings, CancellationToken ct)
+    {
+        if (!bySource.TryGetValue(source, out var owner))
+        {
+            return 0;
+        }
+        return await WriteAsync(Shadow, source, itemId, await owner.UnitsAsync(itemId, ct), settings, clock.UtcNow, ct);
+    }
+
+    private async Task<int> WriteAsync(string table, string source, Guid itemId, IReadOnlyList<SearchUnit> units, RetrievalSettings settings, DateTimeOffset now,
+        CancellationToken ct)
+    {
+        await session.ExecAsync($"delete from {table} where source = @source and item_id = @itemId", new { source, itemId }, ct);
 
         var rows = new List<Row>();
         foreach (var unit in units.Where(u => SearchKinds.All.Contains(u.Kind)))
         {
-            var passages = SearchText.Passages(unit.Text);
+            var passages = SearchText.Passages(unit.Text, settings.PassageChars, settings.OverlapChars);
             if (passages.Count == 0)
             {
                 passages = [string.Empty];
             }
             rows.AddRange(passages.Select((p, i) => new Row(Ids.New(), unit, i, p)));
         }
-        await EmbedAsync(rows, ct);
+        await EmbedAsync(rows, settings.EmbeddingModel, ct);
         foreach (var row in rows)
         {
             var u = row.Unit;
             var english = !SearchText.IsArabic(u.Title + " " + row.Body) && u.Locale.StartsWith("en", StringComparison.Ordinal);
             await session.ExecAsync(
-                """
-                insert into search.unit (tenant_id, id, source, item_id, unit_key, position, kind, locale, title, body, link, classification, org_unit_id,
+                $"""
+                insert into {table} (tenant_id, id, source, item_id, unit_key, position, kind, locale, title, body, link, classification, org_unit_id,
                   version, updated_at, synced_at, tsv, embedding, embedding_dims, embedding_model)
                 values (platform.current_tenant_id(), @id, @source, @itemId, @key, @position, @kind, @locale, @title, @body, @link, @classification, @unit,
                   @version, @updated, @now,
@@ -130,12 +164,6 @@ public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource>
                     embedding = row.Embedding, dims = row.Embedding?.Length, model = row.Model,
                 }, ct);
         }
-        await session.ExecAsync(
-            """
-            insert into search.item_state (tenant_id, source, item_id, changed_at, synced_at, units)
-            values (platform.current_tenant_id(), @source, @itemId, @now, @now, @count)
-            on conflict (tenant_id, source, item_id) do update set synced_at = excluded.synced_at, units = excluded.units
-            """, new { source, itemId, now, count = rows.Count }, ct);
         return rows.Count;
     }
 
@@ -149,7 +177,7 @@ public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource>
         public string? Model { get; set; }
     }
 
-    private async Task EmbedAsync(List<Row> rows, CancellationToken ct)
+    private async Task EmbedAsync(List<Row> rows, string? model, CancellationToken ct)
     {
         if (rows.Count == 0 || !await entitlements.IsEnabledAsync(Capabilities.SearchSemantic, ct))
         {
@@ -160,7 +188,7 @@ public sealed class SearchIndexer(IDbSession session, IEnumerable<ISearchSource>
         {
             foreach (var batch in group.Chunk(EmbedBatch))
             {
-                var result = await gateway.EmbedAsync(new EmbeddingRequest([.. batch.Select(r => (r.Unit.Title + "\n" + r.Body).Trim())], group.Key), ct);
+                var result = await gateway.EmbedAsync(new EmbeddingRequest([.. batch.Select(r => (r.Unit.Title + "\n" + r.Body).Trim())], group.Key, model), ct);
                 if (!result.IsOk || result.Vectors!.Count != batch.Length)
                 {
                     logger.LogInformation("Search passages left keyword only: embedding refused with {Denial}", result.Denial);

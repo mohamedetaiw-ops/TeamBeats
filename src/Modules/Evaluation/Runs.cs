@@ -7,6 +7,7 @@ using TeamBeats.Messaging;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Modules.Evaluation.Contracts;
+using TeamBeats.Modules.Search.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -48,7 +49,7 @@ public sealed record CaseResultView(int N, string Suite, Guid? DatasetId, int? D
 /// <c>eval.view</c> across the tenant reads it.
 /// </summary>
 public sealed class RunService(IDbSession session, ITenantContext context, EvalAccess access, SuiteService suites, DatasetService datasets,
-    EvalSettingsService settings, PersonaService personas, RouteGates routes, CalibrationService calibration, IOrganizationHierarchy organization,
+    EvalSettingsService settings, PersonaService personas, RouteGates routes, RetrievalGates retrievals, CalibrationService calibration, IOrganizationHierarchy organization,
     ITenantSettingsReader tenantSettings, IOutbox outbox, IClock clock, ILogger<RunService> logger)
 {
     public const int MaxCases = 5000;
@@ -180,6 +181,74 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
         await InsertCasesAsync(id, cases, ct);
         await outbox.EnqueueAsync(new EvaluationRunRequested(id), ct);
         logger.LogInformation("eval.run_started tenant {Tenant} run {Run} assistant cases {Cases} trigger {Trigger}", context.TenantId, id, cases.Count, trigger);
+        return id;
+    }
+
+    /// <summary>The metrics of a retrieval gate (spec 034 section 12, retrieval quality), with the platform and tenant rules.</summary>
+    public static readonly IReadOnlyList<string> RetrievalMetrics = ["recall_at_5", "precision_at_5", "reciprocal_rank", "forbidden_source_rate"];
+
+    /// <summary>The key of the one suite of a retrieval gate run.</summary>
+    public const string RetrievalSuiteKey = "retrieval";
+
+    /// <summary>
+    /// Fixes the cases of a retrieval gate run (US5 scenario 5) and queues it: every case of the published agents' own
+    /// datasets that names expected or forbidden sources, in the agent's languages, as its persona or the default
+    /// persona of the agent's unit. Returns null when there is no such case. The caller has checked who may start it.
+    /// </summary>
+    internal async Task<Guid?> CreateRetrievalAsync(Guid changeId, IReadOnlyList<AgentFacts> agents, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var tenant = await settings.TenantRulesAsync(ct);
+        var metrics = RetrievalMetrics.Select(k => new SuiteMetric(k)).ToList();
+        var rules = ThresholdRules.Effective(RetrievalMetrics, [(EvalLevels.Platform, ThresholdRules.PlatformRules), (EvalLevels.Tenant, tenant)]);
+        var uses = new List<DatasetUse>();
+        var cases = new List<PlannedCase>();
+        foreach (var agent in agents)
+        {
+            var languages = agent.Languages.Count > 0 ? agent.Languages : ["en"];
+            var own = await suites.CurrentAsync(agent.Id, ct);
+            Guid? fallback = null;
+            foreach (var datasetId in own.Datasets)
+            {
+                var current = await session.ScalarAsync<int?>("select current_version from evaluation.dataset where id = @datasetId and agent_id = @agent",
+                    new { datasetId, agent = agent.Id }, ct);
+                if (current is not > 0 || uses.Any(u => u.Id == datasetId))
+                {
+                    continue;
+                }
+                var picked = (await datasets.CasesAsync(datasetId, current.Value, ct))
+                    .Where(c => languages.Contains(c.Locale) && ((c.Expect.Sources?.Count ?? 0) > 0 || (c.Expect.ForbiddenSources?.Count ?? 0) > 0))
+                    .ToList();
+                if (picked.Count == 0)
+                {
+                    continue;
+                }
+                uses.Add(new DatasetUse(datasetId, current.Value));
+                foreach (var c in picked)
+                {
+                    var persona = c.PersonaId ?? (fallback ??= (await personas.DefaultAsync(agent.OrgUnitId, ct)).Id);
+                    cases.Add(new PlannedCase(RetrievalSuiteKey, datasetId, current.Value, c.N, c.Locale, c.Input, c.Expect, persona, c.Severity, c.Classification));
+                }
+            }
+        }
+        if (cases.Count == 0)
+        {
+            return null;
+        }
+        if (cases.Count > MaxCases)
+        {
+            cases = cases.Take(MaxCases).ToList();
+        }
+        var id = Ids.New();
+        var suiteList = new List<RunSuite> { new(RetrievalSuiteKey, "platform", 1, metrics, rules, uses) };
+        await session.ExecAsync(
+            """
+            insert into evaluation.run (tenant_id, id, capability, trigger, status, suites, total, requested_by, created_at, retrieval_change_id)
+            values (platform.current_tenant_id(), @id, 'retrieval', 'retrieval', 'queued', @suites, @total, @user, @now, @changeId)
+            """, new { id, suites = Jsonb.From(suiteList), total = cases.Count, user, now = clock.UtcNow, changeId }, ct);
+        await InsertCasesAsync(id, cases, ct);
+        await outbox.EnqueueAsync(new EvaluationRunRequested(id), ct);
+        logger.LogInformation("eval.run_started tenant {Tenant} run {Run} retrieval change {Change} cases {Cases}", context.TenantId, id, changeId, cases.Count);
         return id;
     }
 
@@ -391,6 +460,7 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
         await session.ExecAsync("update evaluation.case_result set status = 'skipped' where run_id = @id and status = 'pending'", new { id }, ct);
         // A cancelled run of a route gate counts as not tested, so the route gate can still decide (incomplete).
         await routes.TryDecideAsync(id, ct);
+        await retrievals.TryDecideAsync(id, ct);
         logger.LogInformation("eval.run_cancelled tenant {Tenant} run {Run} agent {Agent} capability {Capability} done {Done} of {Total}", context.TenantId, id, run.AgentId,
             run.Capability, run.Done, run.Total);
         return await GetAsync(id, ct);
@@ -399,10 +469,11 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
 
 /// <summary>A case claimed for running, with the identity of its persona.</summary>
 internal sealed record CaseWork(Guid RunId, int N, Guid? AgentId, int? AgentVersion, string Suite, string Locale, string Input, CaseExpectations Expect, Guid PersonaUserId,
-    string Classification, IReadOnlyList<string> Metrics, Guid? RouteChangeId = null, IReadOnlyList<EvalPassage>? Context = null);
+    string Classification, IReadOnlyList<string> Metrics, Guid? RouteChangeId = null, IReadOnlyList<EvalPassage>? Context = null, Guid? RetrievalChangeId = null);
 
 /// <summary>The run's bookkeeping, each call in its own short transaction so a cancel is never blocked by a running case.</summary>
-public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, ITenantContext context, IAuditWriter audit, RouteGates routes, ILogger<RunStore> logger)
+public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, ITenantContext context, IAuditWriter audit, RouteGates routes, RetrievalGates retrievals,
+    ILogger<RunStore> logger)
 {
     /// <summary>Marks the run started; false when it is finished or cancelled.</summary>
     internal async Task<bool> BeginAsync(Guid runId, CancellationToken ct)
@@ -414,8 +485,9 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
     /// <summary>Claims the next pending case, or null when the run is done, cancelled or another worker has the rest.</summary>
     internal async Task<CaseWork?> ClaimAsync(Guid runId, CancellationToken ct)
     {
-        var run = await session.QueryAsync("select agent_id, agent_version, status, suites::text, route_change_id from evaluation.run where id = @runId", new { runId },
-            r => (Agent: r.Get<Guid?>("agent_id"), Version: r.Get<int?>("agent_version"), Status: r.GetString(2), Suites: r.GetString(3), Route: r.Get<Guid?>("route_change_id")), ct);
+        var run = await session.QueryAsync("select agent_id, agent_version, status, suites::text, route_change_id, retrieval_change_id from evaluation.run where id = @runId", new { runId },
+            r => (Agent: r.Get<Guid?>("agent_id"), Version: r.Get<int?>("agent_version"), Status: r.GetString(2), Suites: r.GetString(3), Route: r.Get<Guid?>("route_change_id"),
+                Retrieval: r.Get<Guid?>("retrieval_change_id")), ct);
         if (run.Count == 0 || run[0].Status != RunStatuses.Running)
         {
             return null;
@@ -438,7 +510,7 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
         var suites = JsonSerializer.Deserialize<List<RunSuite>>(run[0].Suites, EvalJson.Options)!;
         var metrics = suites.FirstOrDefault(s => s.Key == c.Suite)?.Metrics.Select(m => m.Key).ToList() ?? [];
         return new CaseWork(runId, c.N, run[0].Agent, run[0].Version, c.Suite, c.Locale, c.Input, JsonSerializer.Deserialize<CaseExpectations>(c.Expect, EvalJson.Options)!,
-            user, c.Classification, metrics, run[0].Route, c.Context is null ? null : JsonSerializer.Deserialize<List<EvalPassage>>(c.Context, EvalJson.Options));
+            user, c.Classification, metrics, run[0].Route, c.Context is null ? null : JsonSerializer.Deserialize<List<EvalPassage>>(c.Context, EvalJson.Options), run[0].Retrieval);
     }
 
     internal async Task ErrorAsync(Guid runId, int n, string error, CancellationToken ct)
@@ -486,7 +558,7 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
         var locales = cases.Select(c => c.Locale).Distinct().Order().ToList();
         if (agent is null || version is null)
         {
-            // An assistant run has no agent baseline, release gate or Agent Hub follow-up; a route gate reads its result.
+            // An assistant or retrieval run has no agent baseline, release gate or Agent Hub follow-up; a route or retrieval gate reads its result.
             var scored = RunScorer.Score(suites, cases, locales, null, [], null);
             await session.ExecAsync(
                 "update evaluation.run set status = 'completed', verdict = @verdict, result = @result, finished_at = @now where id = @runId",
@@ -495,7 +567,11 @@ public sealed class RunStore(IDbSession session, IOutbox outbox, IClock clock, I
             {
                 await routes.TryDecideAsync(runId, ct);
             }
-            logger.LogInformation("eval.run_completed tenant {Tenant} run {Run} assistant verdict {Verdict}", context.TenantId, runId, scored.Verdict);
+            if (trigger == RunTriggers.Retrieval)
+            {
+                await retrievals.TryDecideAsync(runId, ct);
+            }
+            logger.LogInformation("eval.run_completed tenant {Tenant} run {Run} capability without agent verdict {Verdict}", context.TenantId, runId, scored.Verdict);
             return;
         }
         var (baselineId, baseline, repeats) = await BaselineAsync(agent.Value, version.Value, ct);
@@ -573,21 +649,35 @@ public static class EvalTelemetry
 }
 
 /// <summary>Runs one case as its persona and scores it (US3): the agent on the real runtime, then the judge, then the deterministic and trajectory evaluators.</summary>
-public sealed class CaseExecutor(IDbSession session, IAgentEvaluationRuntime runtime, IAssistantEvaluationRuntime assistant, EvaluationJudge judge, RunStore store,
-    IClock clock)
+public sealed class CaseExecutor(IDbSession session, IAgentEvaluationRuntime runtime, IAssistantEvaluationRuntime assistant, IRetrievalEvaluation retrieval,
+    EvaluationJudge judge, RunStore store, IClock clock)
 {
+    /// <summary>
+    /// A retrieval case (US5 scenario 5): the shadow index of the change answers the case's input as the persona, and the
+    /// passages, best first, become the record's read sources for the retrieval metrics. No model answers.
+    /// </summary>
+    private async Task<EvalRunRecord> RetrieveAsync(Guid change, CaseWork work, CancellationToken ct)
+    {
+        var started = Stopwatch.GetTimestamp();
+        var result = await retrieval.RetrieveProposedAsync(change, work.Input, AiUseCases.Agent, ct);
+        var read = result.Passages.Select((p, i) => new EvalRunSource(i + 1, p.Source, p.ItemId)).ToList();
+        return new EvalRunRecord(Guid.Empty, "completed", "retrieved", null, null, work.Locale, null, 0, 0, (int)Stopwatch.GetElapsedTime(started).TotalMilliseconds, [],
+            read, [], null);
+    }
+
     internal async Task RunAsync(CaseWork work, CancellationToken ct)
     {
         using var span = EvalTelemetry.Start("eval.case", work.RunId);
         span?.SetTag("eval.case", work.N);
         span?.SetTag("eval.suite", work.Suite);
         span?.SetTag("eval.locale", work.Locale);
-        span?.SetTag("gen_ai.operation.name", work.AgentId is null ? "chat" : "invoke_agent");
-        span?.SetTag("gen_ai.agent.id", work.AgentId?.ToString() ?? EvalCapabilities.Assistant);
+        span?.SetTag("gen_ai.operation.name", work.RetrievalChangeId is not null ? "retrieval" : work.AgentId is null ? "chat" : "invoke_agent");
+        span?.SetTag("gen_ai.agent.id", work.AgentId?.ToString() ?? (work.RetrievalChangeId is null ? EvalCapabilities.Assistant : EvalCapabilities.Retrieval));
         EvalRunRecord record;
         try
         {
-            record = work.AgentId is { } agentId && work.AgentVersion is { } version
+            record = work.RetrievalChangeId is { } change ? await RetrieveAsync(change, work, ct)
+                : work.AgentId is { } agentId && work.AgentVersion is { } version
                 ? await runtime.RunCaseAsync(agentId, version, work.Input, work.Locale, work.RouteChangeId, ct)
                 : await assistant.RunCaseAsync(work.Input, work.Locale, work.Context ?? [], work.RouteChangeId, ct);
         }

@@ -182,3 +182,26 @@
   padding: 0;
   list-style: none;
 }
+
+.search-admin-settings {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  margin: 0 0 var(--tb-space-md);
+}
+
+.search-admin-settings dt {
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.search-admin-settings dd {
+  margin: 0;
+}
+
+.search-admin-change {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+}

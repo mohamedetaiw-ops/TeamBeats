@@ -2629,6 +2629,45 @@
         "queued": "Waiting to start",
         "running": "Running",
         "done": "{items} items, {units} passages"
+      },
+      "retrieval": {
+        "title": "Retrieval settings",
+        "intro": "How items are cut into passages for the assistant and agents, how many passages a question gets, and which embedding model is used. A change is tested on a copy of the index by the release gate before it replaces the index in use.",
+        "active": "In use: version {version}",
+        "open": "Proposed: version {version}",
+        "propose": "Propose a change",
+        "passageTokens": "Passage size in tokens",
+        "overlapPercent": "Overlap between passages, percent",
+        "topK": "Passages per question",
+        "embeddingModel": "Embedding model",
+        "modelDefault": "Chosen by the AI policy",
+        "modelHint": "Leave empty to let the AI policy choose. The model must be allowed by the AI policy.",
+        "submit": "Propose and test",
+        "proposed": "Change proposed. The copy of the index is being built.",
+        "shadowUnits": "Copy of the index: {units} passages",
+        "failures": "What the release gate reported:",
+        "reason": "Reason for applying anyway",
+        "apply": "Apply with this reason",
+        "applied": "Change applied.",
+        "cancel": "Cancel the change",
+        "cancelled": "Change cancelled.",
+        "history": "Earlier changes",
+        "version": "Version {version}",
+        "status": {
+          "building": "Building the copy of the index.",
+          "gating": "The release gate is testing it.",
+          "held": "Waiting for a decision.",
+          "active": "In use.",
+          "rejected": "Rejected.",
+          "cancelled": "Cancelled.",
+          "superseded": "Replaced by a later version."
+        },
+        "gate": {
+          "passed": "The gate passed.",
+          "failed": "The gate found blocking failures.",
+          "incomplete": "The gate could not complete.",
+          "failed_critical": "The gate found a critical failure."
+        }
       }
     }
   },

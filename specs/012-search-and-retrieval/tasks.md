@@ -8,7 +8,7 @@ Depends on 004, 009, 010, 011, 013, 016, 025, 034. R1: US1 to US4. R2: US5 to US
 - [x] T004 Indexing consumers per source with passages and embeddings; lag metric and alert; rebuild job
 - [x] T005 [P] [US1] [US2] Tests: one list across sources; hidden items absent from results, counts and suggestions; superseded excluded; deletion and permission change within 5 minutes; keyword-only when embeddings fail; cross-tenant
 - [x] T006 [US1] Search and suggest endpoints with two-stage permission filtering
-- [ ] T007 [US3] Retrieval contract with citation anchors and AI classification filter; retrieval configuration with shadow index and gate
+- [x] T007 [US3] Retrieval contract with citation anchors and AI classification filter; retrieval configuration with shadow index and gate
 - [x] T008 [US4] Best bets and synonyms
 - [x] T009 Search box in the shell, results page with filters, admin pages, in English and Arabic, RTL; e2e with axe
 - [ ] T010 SC-001 suite in CI; performance tests; OpenAPI; R1 implementation notes; spec evidence

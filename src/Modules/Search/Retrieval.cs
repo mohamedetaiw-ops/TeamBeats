@@ -11,10 +11,12 @@ namespace TeamBeats.Modules.Search;
 /// The retrieval contract (spec 012 US3, FR-007). Passages, not items, are ranked: keyword and semantic passage lists
 /// are fused by reciprocal rank, each owner keeps only what the person may read now, and the AI classification policy
 /// of the use case keeps back passages above its ceiling, counted as withheld (US3 scenario 2). At most
-/// <see cref="PerItem"/> passages come from one item, so one long document does not crowd out the rest.
+/// <see cref="PerItem"/> passages come from one item, so one long document does not crowd out the rest. The number of
+/// passages and the embedding model come from the retrieval configuration in force; a release gate retrieves the same
+/// way over the shadow index of the proposed configuration (<see cref="IRetrievalEvaluation"/>).
 /// </summary>
 public sealed class SearchRetrieval(IDbSession session, ITenantContext context, IEntitlementService entitlements, SearchService search,
-    IAiClassificationPolicy classification) : ISearchRetrieval
+    IAiClassificationPolicy classification, RetrievalStore store) : ISearchRetrieval, IRetrievalEvaluation
 {
     public const int Candidates = 200;
     public const int PerItem = 2;
@@ -23,6 +25,23 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
         int? Version, DateTimeOffset? UpdatedAt);
 
     public async Task<RetrievalResult> RetrieveAsync(RetrievalRequest request, CancellationToken ct = default)
+    {
+        Validate(request);
+        return await RetrieveFromAsync(SearchIndexer.Live, await store.ActiveAsync(ct), request, ct);
+    }
+
+    public async Task<RetrievalResult> RetrieveProposedAsync(Guid changeId, string query, string useCase, CancellationToken ct = default)
+    {
+        var request = new RetrievalRequest(query, useCase);
+        Validate(request);
+        if (await store.OpenAsync(ct) is not { Status: RetrievalChangeStatuses.Gating } open || open.Id != changeId)
+        {
+            throw AppException.Conflict("conflict.search.retrieval_change_not_gating");
+        }
+        return await RetrieveFromAsync(SearchIndexer.Shadow, open.Settings, request, ct);
+    }
+
+    private static void Validate(RetrievalRequest request)
     {
         var errors = new ValidationErrors();
         var query = (request.Query ?? string.Empty).Trim();
@@ -47,16 +66,21 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
             errors.Add("itemId", "validation.search.item");
         }
         errors.ThrowIfAny();
+    }
+
+    private async Task<RetrievalResult> RetrieveFromAsync(string table, RetrievalSettings settings, RetrievalRequest request, CancellationToken ct)
+    {
         await entitlements.DemandAsync(Capabilities.SearchCore, ct);
         context.RequireUser();
-        var topK = request.TopK ?? ISearchRetrieval.DefaultTopK;
+        var query = request.Query.Trim();
+        var topK = request.TopK ?? settings.TopK;
         var ceiling = await classification.CeilingAsync(request.UseCase, ct);
 
         var terms = SearchText.Meaningful(SearchText.Terms(query));
         var groups = await search.GroupsAsync(terms, SearchText.QueryLanguage(query), ct);
         var item = new ItemFilter(request.Source, request.ItemId);
-        var keyword = terms.Count == 0 ? [] : await KeywordAsync(SearchText.TsQuery(groups, all: false), request.Kinds, item, ct);
-        var (semantic, degraded) = await SemanticAsync(query, request.Kinds, item, ct);
+        var keyword = terms.Count == 0 ? [] : await KeywordAsync(table, SearchText.TsQuery(groups, all: false), request.Kinds, item, ct);
+        var (semantic, degraded) = await SemanticAsync(table, settings.EmbeddingModel, query, request.Kinds, item, ct);
         var perItemCap = request.ItemId is null ? PerItem : topK;
 
         var byId = keyword.Concat(semantic).GroupBy(p => p.Id).ToDictionary(g => g.Key, g => g.First());
@@ -147,23 +171,23 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
 
     private const string ItemClause = "(@source::text is null or (source = @source and item_id = @item))";
 
-    private Task<List<Passage>> KeywordAsync(string tsquery, IReadOnlyList<string>? kinds, ItemFilter item, CancellationToken ct) =>
+    private Task<List<Passage>> KeywordAsync(string table, string tsquery, IReadOnlyList<string>? kinds, ItemFilter item, CancellationToken ct) =>
         session.QueryAsync(
             $"""
             with q as (select to_tsquery('simple', @tsquery) as s, to_tsquery('english', @tsquery) as e)
-            select {Columns} from search.unit u, q
+            select {Columns} from {table} u, q
             where (u.tsv @@ q.s or u.tsv @@ q.e) and (@kinds::text[] is null or u.kind = any(@kinds)) and {ItemClause}
             order by greatest(ts_rank_cd(u.tsv, q.s), ts_rank_cd(u.tsv, q.e)) desc, u.id
             limit @limit
             """, new { tsquery, kinds = kinds?.ToArray(), source = item.Source, item = item.ItemId, limit = Candidates }, Map, ct);
 
-    private async Task<(List<Passage> Passages, bool Degraded)> SemanticAsync(string query, IReadOnlyList<string>? kinds, ItemFilter item, CancellationToken ct)
+    private async Task<(List<Passage> Passages, bool Degraded)> SemanticAsync(string table, string? model, string query, IReadOnlyList<string>? kinds, ItemFilter item, CancellationToken ct)
     {
         if (!await entitlements.IsEnabledAsync(Capabilities.SearchSemantic, ct))
         {
             return ([], false);
         }
-        var (embedded, degraded) = await search.EmbedQueryAsync(query, ct);
+        var (embedded, degraded) = await search.EmbedQueryAsync(query, model, ct);
         if (embedded is null)
         {
             return ([], degraded);
@@ -171,7 +195,7 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
         var distance = SearchService.Distance(embedded.Value.Vector);
         var rows = await session.QueryAsync(
             $"""
-            select {Columns} from search.unit
+            select {Columns} from {table}
             where embedding_model = @model and embedding_dims = @dims and {distance} <= @maxDistance and (@kinds::text[] is null or kind = any(@kinds))
               and {ItemClause}
             order by {distance}
