@@ -1074,7 +1074,7 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Clause blocks | The editor reuses the spec 009 block editor; headings and embeds are refused by the API for clauses with a message, since the clause title is the heading. |
 | No unit line | "See people" on the no unit line lists everyone, because the people filter has no "no unit" option yet. |
 
-## AI gateway pipeline, catalogue and model policy (spec 013 T001 to T014, T016)
+## AI gateway pipeline, catalogue and model policy (spec 013 T001 to T016, T017 in part)
 
 | Area | What was built |
 |---|---|
@@ -1103,5 +1103,8 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Circuit events | `AiProviderCircuitOpened` and `AiProviderCircuitClosed` are logged now; publishing them as platform events comes with the metering slice and the platform event stream. |
 | Clearing limits | The policy API keeps the current value of a field that is left out, so a maximum answer length or temperature, once set, can be changed but not cleared from the page. Clearing needs an explicit field in the API; recorded until the spec says limits can be removed. |
 | Usage chart | The AI usage page draws one bar per row next to the numbers in the same table, which is the chart's table view; a separate chart over time comes with the R2 usage export. |
-| Debug key in development | The dev host and staging generate a random `Ai:DebugLog:Key` per process when none is configured, so entries from before a restart show as unreadable. Production takes the key from the secret store and opens no window without it. |
+| Debug key in development | The dev host generates a random `Ai:DebugLog:Key` per process when none is configured, so entries from before a restart show as unreadable. The staging deploy creates `Ai__DebugLog__Key` once as a Fly secret on the API and workers, next to the Microsoft 365 token key. Production takes the key from the secret store and opens no window without it. |
+| Overhead | `AiGatewayOverheadTests` makes 100 assistant calls after a warm up through the real pipeline and the in-process fake OpenRouter, which answers without delay, and requires the p95 under 50 ms; the time includes the call record, so it bounds the overhead from above. Locally the p95 is about 4 ms. |
+| SC-001 in CI | The SC-001 case in `AiGatewayTests` and the classification tests run in the backend job's Integration suite on every pull request and push to `main`. |
+| Staging provider | Staging runs with fakes, so the gateway talks to the fake OpenRouter. Using the real one needs an OpenRouter key stored as the Fly secret `Ai__OpenRouter__ApiKey` and the fake turned off for AI only, which waits on the key. |
 | Policy editing | The whole policy needs `ai.model_choice`, including parameter limits and the region rule; spec section 9 only names the allowlist, defaults and fallbacks, so this is the smaller default. |

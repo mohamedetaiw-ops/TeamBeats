@@ -93,19 +93,21 @@ jobs:
       - name: Generate app keys on first run
         run: |
           # Integrations__Microsoft365__TokenKey encrypts stored Microsoft 365 tokens (staging uses the fake Microsoft 365).
-          # API and workers share one key; if either lacks it, both get a new one (stored staging tokens become unreadable).
+          # Ai__DebugLog__Key encrypts AI debug window entries (spec 013 US8), so they stay readable across restarts.
+          # API and workers share each key; if either lacks it, both get a new one (data under the old key becomes unreadable).
           has_secret() { flyctl secrets list --app "$1" --json | jq -e --arg n "$2" 'map(.Name // .name) | index($n)' >/dev/null; }
-          name=Integrations__Microsoft365__TokenKey
-          if has_secret "$API_APP" "$name" && has_secret "$WORKERS_APP" "$name"; then
-            echo "$name already set"
-            exit 0
-          fi
-          key=$(openssl rand -base64 32)
-          echo "::add-mask::$key"
-          for app in "$API_APP" "$WORKERS_APP"; do
-            printf '%s=%s\n' "$name" "$key" | flyctl secrets import --app "$app" --stage
+          for name in Integrations__Microsoft365__TokenKey Ai__DebugLog__Key; do
+            if has_secret "$API_APP" "$name" && has_secret "$WORKERS_APP" "$name"; then
+              echo "$name already set"
+              continue
+            fi
+            key=$(openssl rand -base64 32)
+            echo "::add-mask::$key"
+            for app in "$API_APP" "$WORKERS_APP"; do
+              printf '%s=%s\n' "$name" "$key" | flyctl secrets import --app "$app" --stage
+            done
+            echo "Generated $name"
           done
-          echo "Generated $name"
 
       - name: Deploy database
         run: >-

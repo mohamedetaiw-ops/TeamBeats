@@ -3,9 +3,9 @@
 Depends on 004, 005, 006, 007; 034 for the release gate on route changes. R1 covers User Stories 1 to 3, 4 (basic) and 8, FR-017 and FR-019.
 
 ## Phase 1: Foundations
-- [ ] T001 `AiGateway`, `AiGateway.Contracts` and `AiGateway.OpenRouter` projects; migration for catalogue (platform, RLS exception), policy, route changes, usage, debug windows (forced RLS)
+- [x] T001 `AiGateway`, `AiGateway.Contracts` and `AiGateway.OpenRouter` projects; migration for catalogue (platform, RLS exception), policy, route changes, usage, debug windows (forced RLS)
 - [x] T002 Permissions `ai.policy_view` with `ai.policy_manage`; audit actions of section 13; capability keys `ai.assistant`, `ai.assistant.monthly_requests`, `ai.model_choice`
-- [ ] T003 `IAiGateway` contract, typed results, stub adapter, `FakeOpenRouter` in `DevFakes`
+- [x] T003 `IAiGateway` contract, typed results, stub adapter, `FakeOpenRouter` in `DevFakes`
 - [x] T004 Architecture test: provider URLs and SDKs only inside the adapter project
 
 ## Phase 2: User Stories 1 and 2, policy and classification routing (P1)
@@ -25,7 +25,7 @@ Depends on 004, 005, 006, 007; 034 for the release gate on route changes. R1 cov
 - [x] T014 [US8] Debug windows and encrypted logs
 
 ## Phase 5: Evaluation use case and pages
-- [ ] T015 `evaluation` use case with the judge rule of FR-017 and platform or tenant charging
+- [x] T015 `evaluation` use case with the judge rule of FR-017 and platform or tenant charging
 - [x] T016 Model policy, routing rules and AI usage pages with table views, in English and Arabic, RTL; e2e with axe
 
 ## Final phase
