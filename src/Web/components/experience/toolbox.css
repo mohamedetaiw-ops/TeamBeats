@@ -1,6 +1,8 @@
 /* Tool box utilities (spec 008 FR-050). Tokens only, logical properties only, so RTL and themes need nothing extra. */
 .toolbox {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  min-inline-size: 0;
   gap: var(--tb-space-sm);
   padding: var(--tb-space-lg);
   border-radius: var(--tb-radius-lg);
@@ -37,14 +39,18 @@
   font-size: var(--tb-font-size-sm);
 }
 
+/* Single column that may shrink below the intrinsic width of a date and time input, so phones never scroll sideways. */
 .toolbox-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--tb-space-xs);
 }
 
 .toolbox-form input,
 .toolbox-form select {
   min-block-size: 2.75rem;
+  inline-size: 100%;
+  min-inline-size: 0;
   max-inline-size: 100%;
   font: inherit;
 }

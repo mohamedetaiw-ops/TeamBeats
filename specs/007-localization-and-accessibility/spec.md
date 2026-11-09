@@ -144,6 +144,7 @@ Tenant-enabled locales and default are tenant settings (spec 001). An organizati
 All five locales and accessibility are available in every package. No capability key.
 
 ## 10. UX
+- Every screen follows the TeamBeats Design System (spec 036, `docs/design-system`), whose accessibility and content guidelines implement this spec; its design suite runs axe, reflow and target size checks in all three designs in Arabic and English.
 - Language switcher in the header and profile.
 - Pseudo-localization locale for testing (long strings, accented characters, forced RTL).
 

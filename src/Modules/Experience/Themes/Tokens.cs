@@ -16,6 +16,9 @@ public static class TokenTypes
     public const string Duration = "duration";
     public const string Easing = "easing";
     public const string Shadow = "shadow";
+
+    /// <summary>A keyword from a fixed list, such as the design preset or the navigation style (spec 033 FR-029).</summary>
+    public const string Choice = "choice";
 }
 
 /// <summary>
@@ -27,7 +30,8 @@ public sealed record TokenValue(
     [property: JsonPropertyName("$value")] string? Value,
     [property: JsonPropertyName("$modes")] IReadOnlyDictionary<string, string>? Modes = null);
 
-public sealed record TokenDefinition(string Name, string Type, string Light, string? Dark = null, string? Compact = null, string? Script = null)
+public sealed record TokenDefinition(string Name, string Type, string Light, string? Dark = null, string? Compact = null, string? Script = null,
+    IReadOnlyList<string>? Choices = null)
 {
     /// <summary>CSS custom property name, <c>--tb-</c> plus the token name with dots and underscores as hyphens.</summary>
     public string CssName => "--tb-" + Name.Replace('.', '-').Replace('_', '-');
@@ -56,7 +60,7 @@ public static partial class TokenSchema
 {
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> ApprovedFonts = new Dictionary<string, IReadOnlyList<string>>
     {
-        ["latin"] = ["Readex Pro", "Alexandria", "Inter", "IBM Plex Sans", "Noto Sans", "Source Sans 3", "Roboto"],
+        ["latin"] = ["Readex Pro", "Alexandria", "Inter", "IBM Plex Sans", "Cairo", "Noto Sans", "Source Sans 3", "Roboto"],
         ["arabic"] = ["Readex Pro", "Alexandria", "Noto Sans Arabic", "IBM Plex Sans Arabic", "Cairo", "Tajawal"],
         ["urdu"] = ["Noto Nastaliq Urdu", "Noto Sans Arabic"],
         ["devanagari"] = ["Noto Sans Devanagari", "Hind"],
@@ -84,8 +88,14 @@ public static partial class TokenSchema
 
     private static TokenDefinition D(string name, string value, string? compact = null) => new(name, TokenTypes.Dimension, value, Compact: compact);
 
+    private static TokenDefinition Choice(string name, params string[] choices) => new(name, TokenTypes.Choice, choices[0], Choices: choices);
+
     public static readonly IReadOnlyList<TokenDefinition> All =
     [
+        // The design language (docs/design-system/designs.md): the preset supplies a complete look, and the navigation style
+        // is the structural part of it that CSS cannot express as a value.
+        Choice("design.preset", DesignPresets.Beats, DesignPresets.Atlas, DesignPresets.Pulse),
+        Choice("layout.navigation", "rail", "top", "sidebar"),
         C("color.surface.base", "#f3f2f8", "#0f0d24"),
         C("color.surface.raised", "#ffffff", "#1b1838"),
         C("color.surface.sunken", "#e9e7f3", "#0a0918"),
@@ -192,6 +202,7 @@ public static partial class TokenSchema
                 ? null : "validation.theme.duration_invalid",
             TokenTypes.Easing => Easings.ContainsKey(value) ? null : "validation.theme.easing_invalid",
             TokenTypes.Shadow => ShadowOk(value) ? null : "validation.theme.shadow_invalid",
+            TokenTypes.Choice => token.Choices!.Contains(value) ? null : "validation.theme.choice_invalid",
             _ => "validation.theme.token_value_invalid",
         };
     }
