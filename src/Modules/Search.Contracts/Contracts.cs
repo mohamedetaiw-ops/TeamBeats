@@ -111,4 +111,12 @@ public interface ISearchRetrieval
     const int MaxTopK = 20;
 
     Task<RetrievalResult> RetrieveAsync(RetrievalRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// The passages of one item, in order, for work on that item only (spec 014 US3: summarize, explain, translate).
+    /// Empty when the item is not in the index or the person may not read it; passages above the use case's
+    /// classification ceiling are withheld and counted. <paramref name="locale"/> picks the language version when the
+    /// item has several, otherwise the first one indexed.
+    /// </summary>
+    Task<RetrievalResult> ItemAsync(string source, Guid itemId, string useCase, string? locale = null, CancellationToken ct = default);
 }

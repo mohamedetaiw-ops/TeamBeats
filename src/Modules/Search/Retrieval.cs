@@ -87,6 +87,43 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
         return new RetrievalResult(passages, withheld, degraded);
     }
 
+    public const int MaxItemPassages = 40;
+
+    public async Task<RetrievalResult> ItemAsync(string source, Guid itemId, string useCase, string? locale = null, CancellationToken ct = default)
+    {
+        if (!AiUseCases.All.Contains(useCase))
+        {
+            throw AppException.Validation("useCase", "validation.search.use_case");
+        }
+        await entitlements.DemandAsync(Capabilities.SearchCore, ct);
+        context.RequireUser();
+        var rows = await session.QueryAsync(
+            $"""
+            select {Columns} from search.unit
+            where source = @source and item_id = @item
+            order by (locale = coalesce(@locale, locale)) desc, locale, position, unit_key
+            limit @limit
+            """, new { source, item = itemId, locale, limit = MaxItemPassages * 4 }, Map, ct);
+        if (rows.Count == 0 || !(await search.ReadableAsync([(source, itemId)], ct)).Contains((source, itemId)))
+        {
+            return new RetrievalResult([], 0, false);
+        }
+        var chosen = rows[0].Locale;
+        var ceiling = await classification.CeilingAsync(useCase, ct);
+        var passages = new List<RetrievedPassage>();
+        var withheld = 0;
+        foreach (var p in rows.Where(r => r.Locale == chosen).Take(MaxItemPassages))
+        {
+            if (ceiling is not { } max || Level(p.Classification) > max)
+            {
+                withheld++;
+                continue;
+            }
+            passages.Add(new RetrievedPassage(p.Source, p.ItemId, p.Kind, p.Title, p.Body, p.Link, p.Locale, p.Classification, p.Version, p.UpdatedAt, 1));
+        }
+        return new RetrievalResult(passages, withheld, false);
+    }
+
     private static DataClassification Level(string value) => value switch
     {
         "public" => DataClassification.Public,

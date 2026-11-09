@@ -271,6 +271,57 @@ public sealed class AssistantTests(TenantWorld world)
         Assert.Equal((0, 1), await PurgeAsync(t, DateTimeOffset.UtcNow.AddMonths(26)));
     }
 
+    [Fact]
+    public async Task Text_actions_work_only_on_items_the_person_may_read_or_on_their_own_text()
+    {
+        var t = await FreshAsync();
+        var open = await NewsAsync(t["pia"].Client, "Fire drill on Thursday", "The fire drill starts at ten. Leave by the nearest stairs.",
+            arabic: ("تمرين الحريق يوم الخميس", "يبدأ تمرين الحريق الساعة العاشرة."));
+        var closed = await NewsAsync(t["pia"].Client, "Merger plans", "Confidential merger plans.", "confidential");
+        await DispatchAsync();
+        var actions = $"{Assistant}/actions";
+
+        // Summarize a readable item: the result is labelled and cites the item, in the language asked for.
+        var summary = await OkAsync(t["emp"].Client.PostAsJsonAsync(actions, new { action = "summarize", source = "content", itemId = open, language = "ar" }));
+        Assert.Equal(AssistantOutcomes.Answered, summary.GetProperty("outcome").GetString());
+        Assert.True(summary.GetProperty("generated").GetBoolean());
+        Assert.Equal("ar", summary.GetProperty("language").GetString());
+        Assert.Equal(open, summary.GetProperty("source").GetProperty("itemId").GetGuid());
+        Assert.Equal("تمرين الحريق يوم الخميس", summary.GetProperty("source").GetProperty("title").GetString());
+        Assert.DoesNotContain("[1]", summary.GetProperty("text").GetString());
+
+        // An item the person cannot read is not found; one the AI policy keeps back is blocked without being shown.
+        await OkAsync(t["emp"].Client.PostAsJsonAsync(actions, new { action = "explain", source = "content", itemId = closed }), HttpStatusCode.NotFound);
+        await OkAsync(t["emp"].Client.PostAsJsonAsync(actions, new { action = "explain", source = "content", itemId = Guid.NewGuid() }), HttpStatusCode.NotFound);
+        var blocked = await OkAsync(t["ed"].Client.PostAsJsonAsync(actions, new { action = "explain", source = "content", itemId = closed }));
+        Assert.Equal(AssistantOutcomes.PolicyBlocked, blocked.GetProperty("outcome").GetString());
+        Assert.Equal(JsonValueKind.Null, blocked.GetProperty("text").ValueKind);
+
+        // Pasted text: rewrite, translate and draft; nothing is stored as history.
+        var rewrite = await OkAsync(t["emp"].Client.PostAsJsonAsync(actions, new { action = "rewrite", text = "pls send me report by friday thx", instructions = "formal" }));
+        Assert.Equal(AssistantOutcomes.Answered, rewrite.GetProperty("outcome").GetString());
+        Assert.Equal(JsonValueKind.Null, rewrite.GetProperty("source").ValueKind);
+        var draft = await OkAsync(t["emp"].Client.PostAsJsonAsync(actions, new { action = "draft", instructions = "A short note inviting the team to lunch" }));
+        Assert.True(draft.GetProperty("generated").GetBoolean());
+        Assert.Equal(0, (await OkAsync(t["emp"].Client.GetAsync($"{Assistant}/conversations"))).GetProperty("conversations").GetArrayLength());
+
+        // Validation: a known action, a language to translate into, rewrite only on the person's own text, limits.
+        Assert.Equal("validation.assistant.action", await ProblemKeyAsync(t["emp"].Client.PostAsJsonAsync(actions, new { action = "publish", text = "x" }),
+            HttpStatusCode.BadRequest));
+        Assert.Equal("validation.assistant.language", await ProblemKeyAsync(t["emp"].Client.PostAsJsonAsync(actions, new { action = "translate", text = "hello" }),
+            HttpStatusCode.BadRequest));
+        Assert.Equal("validation.assistant.item", await ProblemKeyAsync(t["emp"].Client.PostAsJsonAsync(actions,
+            new { action = "rewrite", source = "content", itemId = open }), HttpStatusCode.BadRequest));
+        Assert.Equal("validation.assistant.text", await ProblemKeyAsync(t["emp"].Client.PostAsJsonAsync(actions,
+            new { action = "summarize", text = new string('a', 20_001) }), HttpStatusCode.BadRequest));
+        Assert.Equal("validation.assistant.text", await ProblemKeyAsync(t["emp"].Client.PostAsJsonAsync(actions, new { action = "rewrite" }),
+            HttpStatusCode.BadRequest));
+
+        // Another tenant cannot work on this tenant's item.
+        var other = await world.CreateTenantAsync("as-z-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");
+        await OkAsync(other["admin"].Client.PostAsJsonAsync(actions, new { action = "summarize", source = "content", itemId = open }), HttpStatusCode.NotFound);
+    }
+
     private Task<(int, int)> PurgeAsync(TestTenant t, DateTimeOffset now) =>
         world.Factory.InScopeAsync(t.Id, async sp =>
         {
