@@ -1074,6 +1074,24 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Clause blocks | The editor reuses the spec 009 block editor; headings and embeds are refused by the API for clauses with a message, since the clause title is the heading. |
 | No unit line | "See people" on the no unit line lists everyone, because the people filter has no "no unit" option yet. |
 
+## Policy questions (spec 025 T009, T010, T012)
+
+| Area | What was built |
+|---|---|
+| Search units | `PolicySearchSource` gives one unit per clause of the version in force with its number, title, anchor (`/policies/{id}#clause-{key}`) and version, plus one for the title and code. A new version in force replaces every unit, so a superseded version is never retrieved (FR-018) |
+| Assistant answers | Policy clauses come to the knowledge agent like any passage, filtered as the person by the policy's readers. Prompt `knowledge.v2` adds the policy rules: name the policy title, version and clause, quote where it can, name each policy when more than one answers, say when they disagree and suggest the owner without choosing, and say when no policy answers. Citations carry kind `policy`, the version and the clause anchor |
+| Ask about this policy | `POST /api/v1/assistant/turns` takes `scope: { source: "policies", itemId }` on the first turn. The conversation keeps it (`agents.conversation.scope_source`, `scope_item_id`) for every later turn, is never routed to an agent, and retrieves only that policy's passages, ranked by the question (`RetrievalRequest.Source` and `ItemId`). It needs `ai.policy_qa`; a policy the person may not read is not found. `GET /assistant/conversations/{id}` returns the scope |
+| Pages | The policy page links "Ask about this policy" when `rights.ask` is true (a version in force the person reads, with `ai.assistant` and `ai.policy_qa`). `/assistant?policy={id}` shows which policy answers come from |
+| Tests | `PolicyQuestionTests` (scenarios 1 to 6, superseded units, scoped conversations, unreadable and unknown scopes, cross-tenant), `AssistantPromptTests`, `SearchTuningTests` (item filter validation), `policies.spec.ts` (ask link and scoped page, en and ar, axe) |
+
+| Item | Note |
+|---|---|
+| Which policy applies | Retrieval only returns policies whose audience includes the person, so every policy named applies to them; the answer does not name the person's unit. |
+| Owner contact when nothing answers | Scenario 3 asks for the owner contact of the closest category. Categories have no owner contact yet, so the turn says nothing was found and the policy page shows the owner. |
+| Past dates | Superseded versions are not indexed, so a question about a past date (scenario 5) is not answered from an older version in R1; the version history on the policy page holds them. |
+| Linked documents | FR-011 includes a policy's linked documents; they come with controlled document policies (FR-003). Related policies are not included in the scope. |
+| Location and manager breakdowns | Built with the compliance view (T008), see above. |
+
 ## AI gateway pipeline, catalogue and model policy (spec 013 T001 to T016, T017 in part)
 
 | Area | What was built |

@@ -485,8 +485,13 @@ public sealed class PolicyRegister(
             policy.EffectiveFrom, policy.NextReviewAt,
             working is null ? null : new WorkingVersion(working.Id, working.State, working.RequestedEffectiveFrom, working.SubmittedAt, working.UpdatedAt),
             scheduled is { Number: { } n, EffectiveFrom: { } from } && (edit || manage || history) ? new ScheduledVersion(scheduled.Id, n, from) : null,
-            new PolicyRights(manage, edit && policy.Status != PolicyStatuses.Retired, review, history, await FollowsPeopleAsync(ct)), policy.CreatedAt, policy.UpdatedAt);
+            new PolicyRights(manage, edit && policy.Status != PolicyStatuses.Retired, review, history, await FollowsPeopleAsync(ct), await AsksAsync(policy, ct)),
+            policy.CreatedAt, policy.UpdatedAt);
     }
+
+    private async Task<bool> AsksAsync(PolicyRow policy, CancellationToken ct) =>
+        policy.CurrentVersion is not null && policy.Status != PolicyStatuses.Retired && await ReadsPublishedAsync(policy, ct)
+        && await entitlements.IsEnabledAsync(Capabilities.AiAssistant, ct) && await entitlements.IsEnabledAsync(Capabilities.AiPolicyQa, ct);
 
     /// <summary>Whether the user has people in the compliance view: <c>policy.manage</c> somewhere, or reports.</summary>
     internal async Task<bool> FollowsPeopleAsync(CancellationToken ct) =>

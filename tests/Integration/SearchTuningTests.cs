@@ -220,6 +220,11 @@ public sealed class SearchTuningTests(TenantWorld world)
         Assert.Equal(ProblemCodes.ValidationFailed, invalid.Code);
         Assert.Equal(["topK", "useCase"], invalid.Errors!.Keys.Order().ToArray());
 
+        // An item filter names both the source and the item (spec 025 FR-011).
+        var half = await Assert.ThrowsAsync<AppException>(() => world.Factory.AsUserAsync(t.Id, t["emp"].Id,
+            sp => sp.GetRequiredService<ISearchRetrieval>().RetrieveAsync(new RetrievalRequest("forklift", "assistant", ItemId: Guid.NewGuid()))));
+        Assert.Equal(["itemId"], half.Errors!.Keys.ToArray());
+
         // Another tenant retrieves nothing of this one.
         var other = await world.CreateTenantAsync("st-z-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");
         var foreign = await RetrieveAsync(other, "admin", "forklift brakes horn mast chains");

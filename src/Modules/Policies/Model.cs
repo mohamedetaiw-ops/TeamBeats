@@ -109,7 +109,11 @@ public sealed record ScheduledVersion(Guid Id, int Number, DateTimeOffset Effect
 /// What the current user may do with a policy, so the page shows the right actions; the API checks again.
 /// <see cref="Compliance"/>: they have people to follow in the compliance view, as a compliance officer or line manager.
 /// </summary>
-public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance);
+/// <summary>
+/// What the current user may do on a policy. <paramref name="Ask"/> offers "Ask about this policy" (FR-011): a version is in
+/// force and the package includes the assistant and policy Q&amp;A.
+/// </summary>
+public sealed record PolicyRights(bool Manage, bool Edit, bool Review, bool History, bool Compliance, bool Ask = false);
 
 /// <summary>What the current user may do in the register: create policies where they hold <c>policy.manage</c>.</summary>
 public sealed record RegisterRights(bool Create);

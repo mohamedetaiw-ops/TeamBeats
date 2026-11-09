@@ -42,6 +42,10 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
         {
             errors.Add("kinds", "validation.search.kind");
         }
+        if ((request.Source is null) != (request.ItemId is null) || request.Source is { Length: 0 })
+        {
+            errors.Add("itemId", "validation.search.item");
+        }
         errors.ThrowIfAny();
         await entitlements.DemandAsync(Capabilities.SearchCore, ct);
         context.RequireUser();
@@ -50,8 +54,10 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
 
         var terms = SearchText.Meaningful(SearchText.Terms(query));
         var groups = await search.GroupsAsync(terms, SearchText.QueryLanguage(query), ct);
-        var keyword = terms.Count == 0 ? [] : await KeywordAsync(SearchText.TsQuery(groups, all: false), request.Kinds, ct);
-        var (semantic, degraded) = await SemanticAsync(query, request.Kinds, ct);
+        var item = new ItemFilter(request.Source, request.ItemId);
+        var keyword = terms.Count == 0 ? [] : await KeywordAsync(SearchText.TsQuery(groups, all: false), request.Kinds, item, ct);
+        var (semantic, degraded) = await SemanticAsync(query, request.Kinds, item, ct);
+        var perItemCap = request.ItemId is null ? PerItem : topK;
 
         var byId = keyword.Concat(semantic).GroupBy(p => p.Id).ToDictionary(g => g.Key, g => g.First());
         var scores = SearchText.Fuse([[.. keyword.Select(p => p.Id)], [.. semantic.Select(p => p.Id)]]);
@@ -72,7 +78,7 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
                 continue;
             }
             var key = (p.Source, p.ItemId);
-            if (perItem.GetValueOrDefault(key) >= PerItem)
+            if (perItem.GetValueOrDefault(key) >= perItemCap)
             {
                 continue;
             }
@@ -137,17 +143,21 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
     private static Passage Map(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.GetGuid(2), r.GetString(3), r.GetString(4), r.GetString(5),
         r.GetString(6), r.GetString(7), r.GetString(8), r.Get<int?>("version"), r.Get<DateTimeOffset?>("updated_at"));
 
-    private Task<List<Passage>> KeywordAsync(string tsquery, IReadOnlyList<string>? kinds, CancellationToken ct) =>
+    private sealed record ItemFilter(string? Source, Guid? ItemId);
+
+    private const string ItemClause = "(@source::text is null or (source = @source and item_id = @item))";
+
+    private Task<List<Passage>> KeywordAsync(string tsquery, IReadOnlyList<string>? kinds, ItemFilter item, CancellationToken ct) =>
         session.QueryAsync(
             $"""
             with q as (select to_tsquery('simple', @tsquery) as s, to_tsquery('english', @tsquery) as e)
             select {Columns} from search.unit u, q
-            where (u.tsv @@ q.s or u.tsv @@ q.e) and (@kinds::text[] is null or u.kind = any(@kinds))
+            where (u.tsv @@ q.s or u.tsv @@ q.e) and (@kinds::text[] is null or u.kind = any(@kinds)) and {ItemClause}
             order by greatest(ts_rank_cd(u.tsv, q.s), ts_rank_cd(u.tsv, q.e)) desc, u.id
             limit @limit
-            """, new { tsquery, kinds = kinds?.ToArray(), limit = Candidates }, Map, ct);
+            """, new { tsquery, kinds = kinds?.ToArray(), source = item.Source, item = item.ItemId, limit = Candidates }, Map, ct);
 
-    private async Task<(List<Passage> Passages, bool Degraded)> SemanticAsync(string query, IReadOnlyList<string>? kinds, CancellationToken ct)
+    private async Task<(List<Passage> Passages, bool Degraded)> SemanticAsync(string query, IReadOnlyList<string>? kinds, ItemFilter item, CancellationToken ct)
     {
         if (!await entitlements.IsEnabledAsync(Capabilities.SearchSemantic, ct))
         {
@@ -163,10 +173,11 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
             $"""
             select {Columns} from search.unit
             where embedding_model = @model and embedding_dims = @dims and {distance} <= @maxDistance and (@kinds::text[] is null or kind = any(@kinds))
+              and {ItemClause}
             order by {distance}
             limit @limit
             """, new { model = embedded.Value.Model, dims = embedded.Value.Vector.Length, vector = embedded.Value.Vector, maxDistance = SearchService.MaxSemanticDistance,
-                kinds = kinds?.ToArray(), limit = Candidates }, Map, ct);
+                kinds = kinds?.ToArray(), source = item.Source, item = item.ItemId, limit = Candidates }, Map, ct);
         return (rows, false);
     }
 }

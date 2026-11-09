@@ -94,6 +94,14 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(panel.getByRole("status")).toBeVisible();
       await expectAccessible(page, testInfo, `policies-accepted-${locale}`);
 
+      // "Ask about this policy" opens the assistant kept to this policy (spec 025 FR-011).
+      const policyUrl = page.url();
+      await page.getByTestId("policy-ask").click();
+      await page.waitForURL(/\/assistant\?policy=[0-9a-f-]{36}$/);
+      await expect(page.getByTestId("assistant-scope").getByRole("link", { name: names[locale] })).toBeVisible();
+      await expectAccessible(page, testInfo, `policies-ask-${locale}`);
+      await page.goto(policyUrl);
+
       // The version history and the numbered version page.
       await page.getByTestId("policy-versions").getByRole("link").first().click();
       await page.waitForURL(/\/versions\/1$/);
