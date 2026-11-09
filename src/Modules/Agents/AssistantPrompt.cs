@@ -55,15 +55,15 @@ internal static partial class AssistantPrompt
     private static string Escape(string text) => text.Replace("&", "&amp;", StringComparison.Ordinal).Replace("<", "&lt;", StringComparison.Ordinal)
         .Replace(">", "&gt;", StringComparison.Ordinal).Replace("\"", "&quot;", StringComparison.Ordinal);
 
-    /// <summary>The passages as one user message, numbered from 1 in the order given.</summary>
-    public static string Passages(IReadOnlyList<RetrievedPassage> passages)
+    /// <summary>The passages as one user message, numbered from <paramref name="start"/> + 1 in the order given.</summary>
+    public static string Passages(IReadOnlyList<RetrievedPassage> passages, int start = 0)
     {
         var text = new StringBuilder();
         text.Append('<').Append(Envelope).Append(">\n");
         for (var i = 0; i < passages.Count; i++)
         {
             var p = passages[i];
-            text.Append("<passage n=\"").Append(i + 1).Append("\" title=\"").Append(Escape(p.Title)).Append("\" kind=\"").Append(p.Kind)
+            text.Append("<passage n=\"").Append(start + i + 1).Append("\" title=\"").Append(Escape(p.Title)).Append("\" kind=\"").Append(p.Kind)
                 .Append("\" language=\"").Append(p.Locale).Append('"');
             if (p.Version is { } version)
             {

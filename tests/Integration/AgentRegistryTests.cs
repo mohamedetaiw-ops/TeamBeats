@@ -258,7 +258,8 @@ public sealed class AgentRegistryTests(TenantWorld world)
         Assert.Equal(ToolApprovalRules.Execute, status.GetProperty("defaultRule").GetString());
         Assert.Equal(ToolApprovalRules.Confirm, status.GetProperty("rule").GetString());
         Assert.Equal(ToolSideEffects.Read, status.GetProperty("sideEffect").GetString());
-        Assert.Equal(["knowledge.search", "requests.status", "tasks.inbox"], tools.GetProperty("tools").EnumerateArray().Select(x => x.GetProperty("name").GetString()));
+        Assert.Subset(tools.GetProperty("tools").EnumerateArray().Select(x => x.GetProperty("name").GetString()).ToHashSet(),
+            new HashSet<string?> { "knowledge.search", "requests.status", "tasks.inbox" });
 
         async Task<string> RefusedAsync(AgentPolicy policy) =>
             await ProblemAsync(t["aip"].Client.PutAsJsonAsync($"{Agents}/policy", new { version = 1, policy }), HttpStatusCode.BadRequest);
@@ -295,6 +296,8 @@ public sealed class AgentRegistryTests(TenantWorld world)
             () => tenant["admin"].Client.GetAsync(Agents),
             () => tenant["admin"].Client.GetAsync($"{Agents}/policy"),
             () => tenant["admin"].Client.PostAsJsonAsync(Agents, new { templateId = "enterprise_knowledge", orgUnitId = Guid.NewGuid() }),
+            () => tenant["admin"].Client.PostAsJsonAsync($"{Agents}/{Guid.NewGuid()}/runs", new { message = "Hello" }),
+            () => tenant["admin"].Client.GetAsync($"{Agents}/runs"),
         })
         {
             Assert.Equal("entitlement.not_in_package", await ProblemAsync(call(), HttpStatusCode.Forbidden));

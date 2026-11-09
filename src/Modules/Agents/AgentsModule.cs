@@ -27,6 +27,7 @@ public static class AgentsModule
         services.AddScoped<ToolRegistry>();
         services.AddScoped<AgentPolicyService>();
         services.AddScoped<AgentRegistry>();
+        services.AddScoped<AgentRuns>();
         return services;
     }
 
@@ -152,6 +153,42 @@ public static class AgentsModule
             await session.CommitAsync(ct);
             return Results.Ok(detail);
         });
+
+        // Runs (020 T005, 027 T005, T006, T010): a turn with a published agent, the designer's test panel, confirmation
+        // cards, stopping a run, and the execution records.
+        agents.MapPost("/{id:guid}/runs", async (Guid id, RunRequest request, AgentRuns runs, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await runs.RunAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        agents.MapPost("/{id:guid}/test", async (Guid id, RunRequest request, AgentRuns runs, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await runs.TestAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        agents.MapPost("/runs/{id:guid}/confirmations/{confirmation:guid}", async (Guid id, Guid confirmation, ConfirmRequest request, AgentRuns runs, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await runs.ConfirmAsync(id, confirmation, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        agents.MapPost("/runs/{id:guid}/stop", async (Guid id, AgentRuns runs, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await runs.StopAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        agents.MapGet("/runs", async (Guid? agent, Guid? user, string? tool, string? outcome, int? limit, AgentRuns runs, CancellationToken ct) =>
+            Results.Ok(new { runs = await runs.SearchAsync(agent, user, tool, outcome, limit ?? 50, ct) }));
+
+        agents.MapGet("/runs/{id:guid}", async (Guid id, AgentRuns runs, CancellationToken ct) => Results.Ok(await runs.RecordAsync(id, ct)));
 
         agents.MapGet("/policy", async (AgentPolicyService policies, CancellationToken ct) => Results.Ok(await policies.GetAsync(ct)));
 

@@ -83,8 +83,14 @@ public sealed record ToolDefinition(
     string Description,
     string? RequiredCapability = null);
 
-/// <summary>Who a tool call runs for: the person, through an agent, in a run. Authorization is the person's at the time of the call.</summary>
-public sealed record ToolCallContext(Guid RunId, Guid AgentId, int AgentVersion, Guid UserId, bool DryRun);
+/// <summary>
+/// Who a tool call runs for: the person, through an agent, in a run. Authorization is the person's at the time of the
+/// call. <paramref name="MaxClassification"/> is the agent's data cap: a tool leaves out anything above it (spec 027
+/// FR-017). <paramref name="IdempotencyKey"/> is the hash of the call, the same on a retry. <paramref name="PassagesSoFar"/>
+/// is how many passages the run has numbered already, so citations stay unique across tool calls.
+/// </summary>
+public sealed record ToolCallContext(Guid RunId, Guid AgentId, int AgentVersion, Guid UserId, bool DryRun, string MaxClassification = "internal",
+    string? IdempotencyKey = null, int PassagesSoFar = 0);
 
 /// <summary>A source a tool read, for citations and the execution record.</summary>
 public sealed record ToolSource(string Source, Guid ItemId, string Title, string Link, string Classification);
