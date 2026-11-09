@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { msg, type LaunchLocale } from "../support/messages";
-import { createPage, saveAndPublish, tenantApi } from "../support/pages";
+import { seedHome } from "../support/home";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
 
@@ -11,29 +10,6 @@ import { hostOrigin } from "../support/stack";
  * services of spec 016 next to news, the tool box and the call to action band (the news, services and menu the seeder
  * also publishes are covered by tests/Integration/StagingHomeSeedTests.cs), in English and Arabic with axe.
  */
-type Seed = { template: string; regions: Record<string, { id: string; componentRef: string; span?: number; props?: Record<string, unknown> }[]> };
-const seed = JSON.parse(readFileSync(new URL("../../../src/Api.DevHost/seeds/staging-home.json", import.meta.url), "utf8")) as Seed;
-// The seeder swaps "seed:news:<key>" for the address of the story it published; this test publishes no news, so the
-// placement links to the home page instead.
-for (const placements of Object.values(seed.regions)) {
-  for (const p of placements) {
-    for (const [key, value] of Object.entries(p.props ?? {})) {
-      if (typeof value === "string" && value.startsWith("seed:news:")) p.props![key] = "/";
-    }
-  }
-}
-
-async function seedHome(tenant: TestTenant) {
-  const api = await tenantApi(tenant);
-  const page = await createPage(api, seed.template, `home-${Date.now().toString(36)}`);
-  await saveAndPublish(api, page, page.draft.regions.map((r) => ({ ...r, placements: seed.regions[r.id] ?? [] })));
-  const shell = await api.put("/api/v1/experience/shell/definition", {
-    data: { start: ["identity", "global_navigation"], center: ["search"], end: ["settings"], below: ["breadcrumbs"], utilities: [], homePageId: page.id },
-  });
-  expect(shell.ok(), await shell.text()).toBe(true);
-  await api.dispose();
-}
-
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`v2 home in ${locale}`, () => {
     test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });

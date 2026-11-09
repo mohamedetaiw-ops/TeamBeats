@@ -23,5 +23,8 @@ Depends on 032 (`Experience` module), 001 (tenant logo and color), 002 (org hier
 - [x] T010 Web app reads only `--tb-*` variables generated from the token schema, with a lint rule against raw colors and sizes; theme switches by scope, mode and density with no layout shift
 - [x] T011 Brand manager page with token groups, contrast table, asset upload and live preview in both modes and directions, in English and Arabic
 
+## Designs (spec 036)
+- [x] T013 Choice tokens `design.preset` and `layout.navigation`, the Atlas and Pulse presets in the resolver, design picker in the brand manager (FR-029 to FR-031)
+
 ## Final phase
 - [ ] T012 OpenAPI, R1 implementation notes, spec evidence

@@ -47,6 +47,16 @@ public static class ThemeEngine
             provenance[token.Name] = new TokenSource("platform", null, null, null, null, false);
         }
 
+        // The design preset (spec 033 FR-030) is a layer between the platform and the first brand: the last layer that
+        // may set it wins, as for any token, and its values then stand in for the platform defaults.
+        var preset = EffectivePreset(layers, locks);
+        foreach (var (name, value) in DesignPresets.Tokens(preset))
+        {
+            var token = TokenSchema.ByName[name];
+            raw[name] = VariantKeys().ToDictionary(v => v.Key, v => Pick(value, v.Mode, v.Density) ?? PlatformValue(token, v.Mode, v.Density));
+            provenance[name] = new TokenSource("design", null, null, null, null, false);
+        }
+
         foreach (var layer in layers.OrderBy(l => l.Depth).ThenBy(l => l.Kind == "brand" ? 0 : 1))
         {
             foreach (var (name, value) in layer.Tokens)
@@ -102,6 +112,26 @@ public static class ThemeEngine
             variants[key] = resolved;
         }
         return new ResolvedTheme(variants, provenance, invalid.ToList());
+    }
+
+    /// <summary>The design preset the layers choose, respecting locks; the default design when none sets a valid one.</summary>
+    public static string EffectivePreset(IReadOnlyList<ThemeLayer> layers, IReadOnlyDictionary<string, (int Depth, Guid? Scope)> locks)
+    {
+        var preset = DesignPresets.Beats;
+        var token = TokenSchema.ByName[DesignPresets.PresetToken];
+        foreach (var layer in layers.OrderBy(l => l.Depth).ThenBy(l => l.Kind == "brand" ? 0 : 1))
+        {
+            if (!layer.Tokens.TryGetValue(DesignPresets.PresetToken, out var value) || value.Value is not { } v || TokenSchema.Check(token, v) is not null)
+            {
+                continue;
+            }
+            if (locks.TryGetValue(DesignPresets.PresetToken, out var lockAt) && layer.Depth > lockAt.Depth)
+            {
+                continue;
+            }
+            preset = v;
+        }
+        return preset;
     }
 
     /// <summary>Alias cycles in a candidate token set, by token name. Used at save time to refuse them.</summary>
