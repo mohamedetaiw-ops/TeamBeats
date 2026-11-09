@@ -328,7 +328,11 @@
       "resetLayoutsQuestion": "Return every page you personalized to your organization's layout? Your language and other settings stay.",
       "resetLayoutsConfirm": "Reset all pages",
       "resetLayoutsCancel": "Cancel"
-    }
+    },
+    "homeOf": "{name} home",
+    "account": "Account: {name}",
+    "profile": "My profile",
+    "switchLanguage": "Switch to {language}"
   },
   "personalization": {
     "toolbar": "Personalize your page",

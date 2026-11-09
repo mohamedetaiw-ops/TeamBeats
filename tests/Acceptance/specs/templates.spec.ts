@@ -36,7 +36,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const origin = hostOrigin(tenant.key);
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${origin}/admin`);
-      await page.getByRole("link", { name: msg(locale, "admin.nav.templates") }).click();
+      await page.getByRole("link", { name: msg(locale, "admin.nav.templates"), exact: true }).click();
       await page.waitForURL(`${origin}/admin/templates`);
       await expect(page.getByRole("heading", { level: 1, name: msg(locale, "templates.title") })).toBeVisible();
       await expect(page.getByText(msg(locale, "templates.empty"))).toBeVisible();

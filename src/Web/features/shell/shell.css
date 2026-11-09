@@ -1,6 +1,10 @@
 /* The spec 008 shell. Colors come from the shell and navigation tokens, so a tenant brand restyles it. */
 .shell {
+  --xp-rail-size: 5.75rem;
+  --xp-bar-size: 4.5rem;
+
   border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  background: var(--tb-color-shell-background);
 }
 
 .shell-bar {
@@ -9,8 +13,9 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--tb-space-md);
+  min-block-size: var(--xp-bar-size);
   padding-block: var(--tb-space-sm);
-  padding-inline: var(--tb-space-md);
+  padding-inline: var(--tb-space-lg);
   background: var(--tb-color-shell-background);
   color: var(--tb-color-shell-text);
 }
@@ -137,9 +142,9 @@
 }
 
 .shell-search input {
-  inline-size: min(100%, 28rem);
-  padding-inline: var(--tb-space-md);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  inline-size: 100%;
+  padding-inline: 2.75rem var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid transparent;
   border-radius: var(--tb-radius-full);
   background: var(--tb-color-surface-base);
   color: var(--tb-color-text-primary);
@@ -258,5 +263,208 @@
 
   .shell-search input {
     inline-size: 100%;
+  }
+}
+
+/* v2 shell (ADR-0019 brand): white bar with the brand mark, a wide search, icon actions and the avatar; the global menu
+   is a side rail with icons on wide screens and the same menu behind one button on phones. */
+
+.shell-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  min-block-size: 2.75rem;
+  font-family: var(--tb-font-family-heading);
+  font-size: var(--tb-font-size-lg);
+  text-decoration: none;
+}
+
+.shell-mark rect {
+  fill: var(--tb-color-accent-base);
+}
+
+.shell-mark path {
+  fill: var(--tb-color-accent-text);
+}
+
+.shell-tenant {
+  overflow-wrap: anywhere;
+}
+
+.shell-slot[data-slot="center"] {
+  flex: 1 1 20rem;
+  justify-content: center;
+}
+
+.shell-search {
+  inline-size: min(100%, 40rem);
+}
+
+.shell-search-icon {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: var(--tb-space-md);
+  display: flex;
+  align-items: center;
+  color: var(--tb-color-text-secondary);
+  pointer-events: none;
+}
+
+.shell-search-results {
+  inline-size: 100%;
+}
+
+.shell-icon-button,
+.shell-bar .notification-bell-button,
+.shell-bar .task-badge {
+  border-radius: var(--tb-radius-full);
+}
+
+.shell-settings-group {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+}
+
+.shell-language {
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.shell-account {
+  position: relative;
+}
+
+.shell-avatar {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border: 0;
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
+  font: inherit;
+  font-weight: var(--tb-font-weight-bold);
+  cursor: pointer;
+}
+
+.shell-account-panel {
+  position: absolute;
+  z-index: 10;
+  inset-inline-end: 0;
+  inset-block-start: calc(100% + var(--tb-space-xs));
+  display: grid;
+  gap: var(--tb-space-sm);
+  min-inline-size: 14rem;
+  max-inline-size: min(90vw, 20rem);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-nav-background);
+  box-shadow: var(--tb-shadow-md);
+  color: var(--tb-color-nav-text);
+}
+
+.shell-account-panel[hidden] {
+  display: none;
+}
+
+.shell-account-panel .shell-user {
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.shell-rail {
+  padding-inline: var(--tb-space-md);
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  background: var(--tb-color-nav-background);
+  color: var(--tb-color-nav-text);
+}
+
+.shell > .shell-rail a,
+.shell > .shell-rail .button-quiet {
+  color: var(--tb-color-nav-text);
+  text-decoration: none;
+}
+
+.shell-rail .shell-menu-item > a {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  border-radius: var(--tb-radius-md);
+}
+
+.shell-rail .shell-menu-item > a[aria-current="page"] {
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-nav-active);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+/* Wide screens: the rail sits down the start edge, under the bar, and the page moves over to make room. */
+@media (width > 64rem) {
+  body:has(.shell-rail) {
+    position: relative;
+    min-block-size: 100vh;
+    padding-inline-start: 5.75rem; /* the rail size, set on .shell as --xp-rail-size */
+  }
+
+  .shell:has(.shell-rail) {
+    margin-inline-start: calc(-1 * var(--xp-rail-size));
+  }
+
+  .shell:has(.shell-rail) > :not(.shell-bar, .shell-rail) {
+    margin-inline-start: var(--xp-rail-size);
+  }
+
+  .shell-bar {
+    flex-wrap: nowrap;
+    block-size: var(--xp-bar-size);
+  }
+
+  .shell-rail {
+    position: absolute;
+    inset-block-start: var(--xp-bar-size);
+    inset-inline-start: 0;
+    z-index: 4;
+    inline-size: var(--xp-rail-size);
+    block-size: calc(100% - var(--xp-bar-size));
+    padding: var(--tb-space-md) var(--tb-space-xs);
+    border-block-start: 0;
+    border-inline-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  }
+
+  .shell-rail .shell-menu-list {
+    flex-flow: column nowrap;
+    align-items: stretch;
+    gap: var(--tb-space-xs);
+  }
+
+  .shell-rail .shell-menu-item {
+    flex-direction: column;
+  }
+
+  .shell-rail .shell-menu-item > a {
+    flex-direction: column;
+    inline-size: 100%;
+    padding-block: var(--tb-space-sm);
+    padding-inline: var(--tb-space-xs);
+    font-size: var(--tb-font-size-xs);
+    text-align: center;
+  }
+
+  .shell-rail .shell-submenu-toggle {
+    min-block-size: 1.5rem;
+    padding: 0;
+  }
+
+  .shell-rail .shell-submenu {
+    inset-block-start: 0;
+    inset-inline-start: 100%;
+  }
+}
+
+/* Between phones and wide screens the bar wraps and the menu is a row under it. */
+@media (width <= 64rem) {
+  .shell-tenant {
+    display: none;
   }
 }

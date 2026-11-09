@@ -3,11 +3,12 @@ import { getTranslations } from "next-intl/server";
 import type { Me } from "@/lib/api";
 import { getPreferences, getShell } from "@/lib/shell/client";
 import type { Crumb, NavLink, ShellLayout, ShellRegion } from "@/lib/shell/types";
-import { SignOutButton } from "@/components/shell/SignOutButton";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { TaskBadge } from "@/features/services/TaskBadge";
 import { CriticalNotices } from "@/features/content/CriticalNotices";
+import { AccountMenu } from "./AccountMenu";
 import { GlobalMenu } from "./GlobalMenu";
+import { LanguageSwitch } from "./LanguageSwitch";
 import { QuickNav } from "./QuickNav";
 import { SettingsPanel } from "./SettingsPanel";
 import "./shell.css";
@@ -31,21 +32,25 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
   const layout = shell.ok ? shell.data.layout : fallbackLayout;
   const locales = me.tenant.enabledLocales.filter((l) => l === "ar" || l === "en");
   const orgMenus = shell.ok ? shell.data.organizationMenus.filter((m) => m.items.length > 0) : [];
+  const tenantName = me.tenant.displayName || me.tenant.key;
+  const regions = [...layout.start, ...layout.center, ...layout.end, ...layout.below];
+  const rail = shell.ok && regions.includes("global_navigation") && shell.data.globalMenu.length > 0;
 
   const render = (region: ShellRegion) => {
     switch (region) {
       case "identity":
         return (
-          <div key={region} className="shell-identity">
-            <Link className="brand" href="/">
-              {t("home")}
-            </Link>
-            <bdi className="shell-user">{me.displayName}</bdi>
-            <SignOutButton label={t("signOut")} />
-          </div>
+          <Link key={region} className="brand shell-brand" href="/" aria-label={t("homeOf", { name: tenantName })}>
+            <svg className="shell-mark" viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" focusable="false">
+              <rect width="24" height="24" rx="7" />
+              <path d="M12 4.5c.45 3.6 1.65 4.8 5.25 5.25-3.6.45-4.8 1.65-5.25 5.25-.45-3.6-1.65-4.8-5.25-5.25 3.6-.45 4.8-1.65 5.25-5.25z" />
+            </svg>
+            <bdi className="shell-tenant">{tenantName}</bdi>
+          </Link>
         );
       case "global_navigation":
-        return shell.ok ? <GlobalMenu key={region} id="global-navigation" label={t("globalNav")} links={shell.data.globalMenu} /> : null;
+        // Drawn as the side rail below the bar, not inside a slot.
+        return null;
       case "search":
         return <QuickNav key={region} />;
       case "notifications":
@@ -53,7 +58,12 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
       case "task_badge":
         return <TaskBadge key={region} />;
       case "settings":
-        return <SettingsPanel key={region} locales={locales} locale={me.locale} values={values} />;
+        return (
+          <div key={region} className="shell-settings-group">
+            <LanguageSwitch locales={locales} locale={me.locale} />
+            <SettingsPanel locales={locales} locale={me.locale} values={values} />
+          </div>
+        );
       case "organization_indicator":
         return shell.ok && shell.data.canSwitchOrganization ? (
           <p key={region} className="shell-organization">
@@ -78,8 +88,14 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
         </div>
         <div className="shell-slot" data-slot="end">
           {layout.end.map(render)}
+          {regions.includes("identity") ? <AccountMenu name={me.displayName} /> : null}
         </div>
       </div>
+      {rail && shell.ok ? (
+        <div className="shell-rail">
+          <GlobalMenu id="global-navigation" label={t("globalNav")} links={shell.data.globalMenu} icons />
+        </div>
+      ) : null}
       {orgMenus.map((menu) => (
         <GlobalMenu key={menu.orgUnitId} id={`organization-${menu.orgUnitId}`} label={t("organizationNav", { name: menu.name })} links={menu.items} />
       ))}

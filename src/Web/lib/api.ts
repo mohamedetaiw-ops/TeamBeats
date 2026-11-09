@@ -62,7 +62,7 @@ export type Me = {
   displayName: string;
   locale: string;
   dir: "rtl" | "ltr";
-  tenant: { id: string; key: string; enabledLocales: string[]; defaultLocale: string };
+  tenant: { id: string; key: string; displayName?: string; enabledLocales: string[]; defaultLocale: string };
 };
 
 /** An admin shell section; badge counts items that need attention, such as open security alerts (spec 026). */

@@ -64,6 +64,7 @@ public static class IdentityModule
         {
             var user = await users.GetAsync(context.RequireUser(), ct) ?? throw AppException.NotFound();
             var tenant = await settings.GetLocaleSettingsAsync(ct);
+            var branding = await settings.GetBrandingAsync(ct);
             return Results.Ok(new
             {
                 user.Id,
@@ -72,7 +73,7 @@ public static class IdentityModule
                 user.PreferredLocale,
                 locale = locale.Locale,
                 dir = locale.Direction,
-                tenant = new { id = context.TenantId, key = context.Host.Tenant?.Key, tenant.EnabledLocales, tenant.DefaultLocale, tenant.TimeZone, tenant.NumberingSystem },
+                tenant = new { id = context.TenantId, key = context.Host.Tenant?.Key, branding.DisplayName, tenant.EnabledLocales, tenant.DefaultLocale, tenant.TimeZone, tenant.NumberingSystem },
             });
         });
 

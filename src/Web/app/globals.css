@@ -7,6 +7,15 @@
   color-scheme: light dark;
 }
 
+/* A personal mode choice also sets the browser's own controls, scrollbars and date pickers to match. */
+:root[data-mode="light"] {
+  color-scheme: light;
+}
+
+:root[data-mode="dark"] {
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -141,14 +150,38 @@ h3 {
   margin-block-end: var(--tb-space-md);
 }
 
-.field input,
-.field select,
-.field textarea {
-  padding: var(--tb-space-sm);
+/* Form controls share one look everywhere: raised surface, soft border, rounded, and a clear focus ring. */
+input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]),
+select,
+textarea {
+  min-block-size: 2.75rem;
+  padding-block: var(--tb-space-sm);
+  padding-inline: var(--tb-space-md);
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-sm);
+  background-color: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
   font: inherit;
   text-align: start;
+  transition: border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
+}
+
+input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]):hover,
+select:hover,
+textarea:hover {
+  border-color: var(--tb-color-border-strong);
+}
+
+input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="color"]):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--tb-color-accent-base);
+  outline-offset: 0;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--tb-color-accent-base);
 }
 
 .field-error {
