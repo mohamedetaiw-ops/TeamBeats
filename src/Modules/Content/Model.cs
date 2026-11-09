@@ -29,11 +29,15 @@ public static class ContentTypes
     public const string Announcement = "announcement";
     public const string Page = "page";
 
+    /// <summary>Knowledge articles (spec 009 content types, spec 011 US4), created from the knowledge base templates.</summary>
+    public const string Knowledge = "knowledge";
+
     public static readonly IReadOnlyDictionary<string, ContentTypeSettings> Defaults = new Dictionary<string, ContentTypeSettings>(StringComparer.Ordinal)
     {
         [News] = new(News, RequiresOwner: false, ReviewMonths: null, ShowHistoryToReaders: false, UnderReviewLabel: true),
         [Announcement] = new(Announcement, RequiresOwner: false, ReviewMonths: null, ShowHistoryToReaders: false, UnderReviewLabel: true),
         [Page] = new(Page, RequiresOwner: true, ReviewMonths: 12, ShowHistoryToReaders: false, UnderReviewLabel: true),
+        [Knowledge] = new(Knowledge, RequiresOwner: true, ReviewMonths: 12, ShowHistoryToReaders: false, UnderReviewLabel: true),
     };
 }
 

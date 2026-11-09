@@ -181,6 +181,15 @@ public sealed class Items(
         return (await authz.CheckAsync(Permissions.ContentView, AuthzTarget.Resource(descriptor), ct)).Allowed;
     }
 
+    /// <summary>Knowledge articles are written by knowledge editors (<c>kb.edit</c> at the site, spec 011 US4), on top of the authoring rights.</summary>
+    private async Task DemandKnowledgeEditorAsync(string type, SiteRow site, CancellationToken ct)
+    {
+        if (type == ContentTypes.Knowledge && !await HoldsAsync(Permissions.KbEdit, site, ct))
+        {
+            throw AppException.Denied();
+        }
+    }
+
     private async Task<bool> MayWriteAsync(SiteRow site, ItemRow? item, Guid user, CancellationToken ct) =>
         await HoldsAsync(Permissions.ContentEdit, site, ct)
         || (await HoldsAsync(Permissions.ContentAuthor, site, ct) && (item is null || item.CreatedBy == user));
@@ -401,6 +410,7 @@ public sealed class Items(
         }
         var errors = new ValidationErrors();
         var type = request.Type ?? string.Empty;
+        await DemandKnowledgeEditorAsync(type, site, ct);
         var settings = await sites.TypeAsync(type, ct);
         if (settings is null)
         {
@@ -461,6 +471,7 @@ public sealed class Items(
         {
             throw AppException.Denied();
         }
+        await DemandKnowledgeEditorAsync(item.Type, site, ct);
         if (request.Version is { } expected && expected != item.Version)
         {
             throw AppException.Conflict("conflict.content.changed");

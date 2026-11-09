@@ -7185,6 +7185,197 @@
         }
       }
     },
+    "/api/v1/kb/templates": {
+      "get": {
+        "tags": [
+          "Knowledge base"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/kb/articles": {
+      "get": {
+        "tags": [
+          "Knowledge base"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Knowledge base"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArticleRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/kb/articles/{id}": {
+      "get": {
+        "tags": [
+          "Knowledge base"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/kb/articles/{id}/related": {
+      "put": {
+        "tags": [
+          "Knowledge base"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RelatedRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/kb/articles/{id}/feedback": {
+      "post": {
+        "tags": [
+          "Knowledge base"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeedbackRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Knowledge base"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/kb/articles/{id}/units": {
+      "get": {
+        "tags": [
+          "Knowledge base"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/people": {
       "get": {
         "tags": [
@@ -7873,6 +8064,53 @@
             }
           },
           "permission": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ArticleRequest": {
+        "required": [
+          "siteId",
+          "template",
+          "titles",
+          "ownerId",
+          "classification"
+        ],
+        "type": "object",
+        "properties": {
+          "siteId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "template": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "titles": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "ownerId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "classification": {
             "type": [
               "null",
               "string"
@@ -9182,6 +9420,27 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "FeedbackRequest": {
+        "required": [
+          "helpful",
+          "comment"
+        ],
+        "type": "object",
+        "properties": {
+          "helpful": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "comment": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -10647,6 +10906,35 @@
           }
         }
       },
+      "RelatedRequest": {
+        "required": [
+          "articleIds",
+          "documentIds"
+        ],
+        "type": "object",
+        "properties": {
+          "articleIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "documentIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
       "RelaySettings": {
         "required": [
           "host",
@@ -11964,6 +12252,9 @@
     },
     {
       "name": "Documents: libraries"
+    },
+    {
+      "name": "Knowledge base"
     },
     {
       "name": "People"

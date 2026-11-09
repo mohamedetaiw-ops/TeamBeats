@@ -25,3 +25,22 @@ public sealed record DocumentWithdrawn(Guid DocumentId, Guid LibraryId) : IInteg
 
 /// <summary>A reader confirmed reading a controlled document's version in force (spec 011 FR-008), for spec 025 attestation.</summary>
 public sealed record DocumentReadConfirmed(Guid DocumentId, Guid VersionId, Guid UserId) : IIntegrationEvent;
+
+/// <summary>
+/// A reader marked a knowledge article helpful or not (spec 011 section 13, <c>kb.article_feedback</c>), for analytics
+/// in spec 021. The article, the answer and whether a comment came with it; never the comment or the reader.
+/// </summary>
+public sealed record KnowledgeFeedbackGiven(Guid ArticleId, bool Helpful, bool CommentPresent) : IIntegrationEvent;
+
+/// <summary>
+/// One unit of a knowledge article for the search index (spec 029) and the assistant (spec 014): each question and
+/// answer pair of an FAQ article, or the whole article in one locale for the other templates. The link opens the reader
+/// page at the exact pair, so a citation points where the answer is.
+/// </summary>
+public sealed record KnowledgeUnit(Guid ArticleId, string Locale, string? Anchor, string Title, string Text, string Link);
+
+/// <summary>Knowledge base units for indexing, read as the current user: an article the caller may not read has none.</summary>
+public interface IKnowledgeIndex
+{
+    Task<IReadOnlyList<KnowledgeUnit>> UnitsAsync(Guid articleId, CancellationToken ct = default);
+}

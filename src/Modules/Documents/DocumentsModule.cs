@@ -30,6 +30,8 @@ public static class DocumentsModule
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, DocumentTaskSource>("documents.notify_release");
         services.AddScoped<DocumentReadConfirmations>();
         services.AddMessageHandler<Contracts.DocumentVersionPublished, DocumentReadConfirmations>("documents.read_confirmation");
+        services.AddScoped<KnowledgeBase>();
+        services.AddScoped<Contracts.IKnowledgeIndex>(sp => sp.GetRequiredService<KnowledgeBase>());
         services.AddScoped<IResourceDescriptorProvider, LibraryDescriptorProvider>();
         services.AddScoped<IResourceDescriptorProvider, FolderDescriptorProvider>();
         services.AddScoped<IResourceDescriptorProvider, DocumentDescriptorProviderForFiles>();
@@ -323,6 +325,39 @@ public static class DocumentsModule
             response.Headers.CacheControl = "private, no-store";
             return Results.File(content, type, fileName);
         });
+
+        var kb = app.MapGroup("/api/v1/kb").RequireTenantUser().WithTags("Knowledge base");
+
+        kb.MapGet("/templates", () => Results.Ok(KnowledgeBase.Templates()));
+
+        kb.MapGet("/articles", async (int? limit, KnowledgeBase service, CancellationToken ct) => Results.Ok(await service.ListAsync(limit ?? 50, ct)));
+
+        kb.MapPost("/articles", async (ArticleRequest request, KnowledgeBase service, IDbSession session, CancellationToken ct) =>
+        {
+            var created = await service.CreateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/kb/articles/{created.Id}", created);
+        });
+
+        kb.MapGet("/articles/{id:guid}", async (Guid id, KnowledgeBase service, CancellationToken ct) => Results.Ok(await service.GetAsync(id, ct)));
+
+        kb.MapPut("/articles/{id:guid}/related", async (Guid id, RelatedRequest request, KnowledgeBase service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.SetRelatedAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        kb.MapPost("/articles/{id:guid}/feedback", async (Guid id, FeedbackRequest request, KnowledgeBase service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.FeedbackAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        kb.MapGet("/articles/{id:guid}/feedback", async (Guid id, KnowledgeBase service, CancellationToken ct) => Results.Ok(await service.ReportAsync(id, ct)));
+
+        kb.MapGet("/articles/{id:guid}/units", async (Guid id, KnowledgeBase service, CancellationToken ct) => Results.Ok(await service.ReaderUnitsAsync(id, ct)));
 
         return app;
     }
