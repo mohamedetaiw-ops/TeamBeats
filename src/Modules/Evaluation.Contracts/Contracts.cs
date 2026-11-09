@@ -45,3 +45,6 @@ public sealed record EvaluationGateDecided(Guid RunId, Guid AgentId, int AgentVe
 /// failures only), incomplete or failed_critical; <paramref name="Failures"/> names them as "agentId/metric:locale".
 /// </summary>
 public sealed record EvaluationRouteGateDecided(Guid RouteChangeId, string Result, IReadOnlyList<string> Failures) : TeamBeats.Primitives.IIntegrationEvent;
+
+/// <summary>A judge calibration was asked for (spec 034 US8); the worker measures it in the background.</summary>
+public sealed record CalibrationRequested(Guid CalibrationId) : TeamBeats.Primitives.IIntegrationEvent;

@@ -37,6 +37,9 @@ public static class EvaluationModule
         services.AddScoped<Agents.Contracts.IAgentReleaseGate>(sp => sp.GetRequiredService<GateService>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, GateFollowUpTasks>();
         services.AddScoped<RouteGates>();
+        services.AddScoped<ResultsService>();
+        services.AddScoped<CalibrationService>();
+        services.AddMessageHandler<CalibrationRequested, CalibrationRunner>("evaluation.calibration");
         services.AddMessageHandler<EvaluationRunRequested, EvaluationRunner>("evaluation.run");
         services.AddMessageHandler<AiGateway.Contracts.AiModelRouteChangeProposed, RouteGateStarter>("evaluation.route_gate");
         return services;
@@ -118,6 +121,35 @@ public static class EvaluationModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        root.MapGet("/agents", async (ResultsService results, CancellationToken ct) => Results.Ok(await results.AgentsAsync(ct)));
+        root.MapGet("/agents/{agentId:guid}/dashboard", async (Guid agentId, ResultsService results, CancellationToken ct) =>
+            Results.Ok(await results.DashboardAsync(agentId, ct)));
+        root.MapGet("/runs/compare", async (Guid a, Guid b, ResultsService results, CancellationToken ct) => Results.Ok(await results.CompareAsync(a, b, ct)));
+        root.MapGet("/runs/{id:guid}/cases/{n:int}", async (Guid id, int n, ResultsService results, CancellationToken ct) => Results.Ok(await results.CaseAsync(id, n, ct)));
+
+        root.MapGet("/calibration", async (CalibrationService calibration, CancellationToken ct) => Results.Ok(await calibration.RubricsAsync(ct)));
+        root.MapGet("/calibration/{metric}/labels", async (string metric, CalibrationService calibration, CancellationToken ct) =>
+            Results.Ok(await calibration.LabelsAsync(metric, ct)));
+        root.MapPost("/calibration/{metric}/labels", async (string metric, CalibrationLabelRequest request, CalibrationService calibration, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await calibration.AddLabelAsync(metric, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/evaluation/calibration/labels/{view.Id}", view);
+        });
+        root.MapDelete("/calibration/labels/{id:guid}", async (Guid id, CalibrationService calibration, IDbSession session, CancellationToken ct) =>
+        {
+            await calibration.DeleteLabelAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        root.MapPost("/calibration/{metric}/runs", async (string metric, CalibrationService calibration, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await calibration.StartAsync(metric, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/evaluation/calibration/runs/{view.Id}", view);
+        });
+        root.MapGet("/calibration/runs/{id:guid}", async (Guid id, CalibrationService calibration, CancellationToken ct) => Results.Ok(await calibration.GetAsync(id, ct)));
 
         root.MapGet("/gates", async (Guid agentId, int version, GateService gates, CancellationToken ct) => Results.Ok(await gates.GetAsync(agentId, version, ct)));
         root.MapPost("/gates/{runId:guid}/override", async (Guid runId, GateOverrideRequest request, GateService gates, IDbSession session, CancellationToken ct) =>

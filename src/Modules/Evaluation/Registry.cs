@@ -35,13 +35,12 @@ public sealed class EvalAccess(IAgentCatalog agents, IAuthorizationService authz
     public async Task<AgentFacts> ReadableAgentAsync(Guid agentId, CancellationToken ct)
     {
         var agent = await agents.GetAsync(agentId, ct) ?? throw AppException.NotFound();
-        if (agent.OwnerUserId == context.RequireUser() || await CanDesignAsync(agent, ct)
-            || (await authz.CheckAsync(Permissions.EvalView, AuthzTarget.OrgUnit(agent.OrgUnitId), ct)).Allowed)
-        {
-            return agent;
-        }
-        throw AppException.NotFound();
+        return await MayReadAsync(agent, ct) ? agent : throw AppException.NotFound();
     }
+
+    public async Task<bool> MayReadAsync(AgentFacts agent, CancellationToken ct) =>
+        agent.OwnerUserId == context.RequireUser() || await CanDesignAsync(agent, ct)
+        || (await authz.CheckAsync(Permissions.EvalView, AuthzTarget.OrgUnit(agent.OrgUnitId), ct)).Allowed;
 
     public async Task<AgentFacts> DesignableAgentAsync(Guid agentId, CancellationToken ct)
     {

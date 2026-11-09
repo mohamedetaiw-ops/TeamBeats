@@ -38,7 +38,7 @@ public sealed record CaseResultView(int N, string Suite, Guid? DatasetId, int? D
 /// and can be cancelled. Results follow the viewer's scope like the suites.
 /// </summary>
 public sealed class RunService(IDbSession session, ITenantContext context, EvalAccess access, SuiteService suites, DatasetService datasets,
-    EvalSettingsService settings, PersonaService personas, RouteGates routes, IOutbox outbox, IClock clock, ILogger<RunService> logger)
+    EvalSettingsService settings, PersonaService personas, RouteGates routes, CalibrationService calibration, IOutbox outbox, IClock clock, ILogger<RunService> logger)
 {
     public const int MaxCases = 5000;
 
@@ -130,6 +130,7 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
     {
         var languages = agent.Languages.Count > 0 ? agent.Languages : ["en"];
         var tenant = await settings.TenantRulesAsync(ct);
+        var demoted = withCases ? await calibration.DemotedAsync(ct) : new HashSet<string>();
         var list = new List<RunSuite>();
         var cases = new List<PlannedCase>();
         Guid? fallback = null;
@@ -161,7 +162,7 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
         {
             var rules = ThresholdRules.Effective(suite.Metrics.Select(m => m.Key),
                 [(EvalLevels.Platform, ThresholdRules.PlatformRules), (EvalLevels.Platform, ThresholdRules.Rules(suite.Metrics)), (EvalLevels.Tenant, tenant)]);
-            list.Add(new RunSuite(suite.Key, "platform", suite.Version, suite.Metrics, rules, []));
+            list.Add(new RunSuite(suite.Key, "platform", suite.Version, suite.Metrics, CalibrationService.Demote(rules, demoted), []));
             for (var i = 0; i < suite.Cases.Count; i++)
             {
                 var c = suite.Cases[i];
@@ -196,7 +197,7 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
                     }
                 }
             }
-            list.Add(new RunSuite(AgentSuiteKey, "agent", own.Version, own.Metrics, rules, uses));
+            list.Add(new RunSuite(AgentSuiteKey, "agent", own.Version, own.Metrics, CalibrationService.Demote(rules, demoted), uses));
         }
         return (list, cases);
     }
