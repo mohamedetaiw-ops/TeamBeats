@@ -21,7 +21,60 @@
     "lina": "lina.alkhatib@staging.example",
     "marco": "marco.rossi@staging.example",
     "abdulrahman": "abdulrahman.saleh@staging.example",
-    "emily": "emily.chen@staging.example"
+    "emily": "emily.chen@staging.example",
+    "faisal": "faisal.almutairi@staging.example",
+    "rania": "rania.fawzy@staging.example",
+    "george": "george.haddad@staging.example",
+    "sultan": "sultan.aldosari@staging.example",
+    "nasser": "nasser.alharbi@staging.example",
+    "ravi": "ravi.menon@staging.example",
+    "ibrahim": "ibrahim.alzahrani@staging.example",
+    "mahmoud": "mahmoud.abdelaziz@staging.example",
+    "yasmin": "yasmin.adel@staging.example",
+    "karim": "karim.samir@staging.example",
+    "mostafa": "mostafa.hegazy@staging.example",
+    "arjun": "arjun.nair@staging.example",
+    "joseph": "joseph.mensah@staging.example",
+    "anna": "anna.kowalski@staging.example",
+    "rashid": "rashid.alnuaimi@staging.example",
+    "carlos": "carlos.mendes@staging.example",
+    "aisha": "aisha.alsuwaidi@staging.example",
+    "thomas": "thomas.wright@staging.example",
+    "hana": "hana.kamal@staging.example",
+    "vikram": "vikram.shah@staging.example",
+    "ziad": "ziad.barakat@staging.example",
+    "sophie": "sophie.laurent@staging.example",
+    "mona": "mona.shawky@staging.example",
+    "ahmad": "ahmad.fathi@staging.example",
+    "ben": "ben.turner@staging.example",
+    "leila": "leila.nasser@staging.example",
+    "samir": "samir.qasim@staging.example",
+    "nadia": "nadia.petrova@staging.example",
+    "fahad": "fahad.alotaibi@staging.example",
+    "mariam": "mariam.gamal@staging.example",
+    "osama": "osama.ragab@staging.example",
+    "dina": "dina.lotfy@staging.example",
+    "peter": "peter.ivanov@staging.example",
+    "hamad": "hamad.alkaabi@staging.example",
+    "grace": "grace.lim@staging.example",
+    "waleed": "waleed.alghamdi@staging.example",
+    "dalia": "dalia.farouk@staging.example",
+    "abdullah": "abdullah.alqahtani@staging.example",
+    "olivia": "olivia.brown@staging.example",
+    "hessa": "hessa.almazrouei@staging.example",
+    "rohan": "rohan.pillai@staging.example",
+    "shaima": "shaima.alhammadi@staging.example",
+    "tamer": "tamer.saad@staging.example",
+    "chloe": "chloe.martin@staging.example",
+    "majed": "majed.alshehri@staging.example",
+    "noor": "noor.haidar@staging.example",
+    "laura": "laura.fischer@staging.example",
+    "adel": "adel.albalushi@staging.example",
+    "heba": "heba.mostafa@staging.example",
+    "mark": "mark.davies@staging.example",
+    "amal": "amal.alrashid@staging.example",
+    "zaid": "zaid.haddadin@staging.example",
+    "julia": "julia.romano@staging.example"
   },
   "roles": [
     {
@@ -106,6 +159,42 @@
     },
     {
       "person": "sarah",
+      "role": "approver"
+    },
+    {
+      "person": "olivia",
+      "role": "content_publisher"
+    },
+    {
+      "person": "laura",
+      "role": "content_publisher"
+    },
+    {
+      "person": "faisal",
+      "role": "approver"
+    },
+    {
+      "person": "rania",
+      "role": "approver"
+    },
+    {
+      "person": "george",
+      "role": "approver"
+    },
+    {
+      "person": "hana",
+      "role": "approver"
+    },
+    {
+      "person": "mariam",
+      "role": "approver"
+    },
+    {
+      "person": "peter",
+      "role": "approver"
+    },
+    {
+      "person": "amal",
       "role": "approver"
     }
   ],
@@ -310,6 +399,430 @@
       "names": {
         "en": "Emily Chen",
         "ar": "إيميلي تشين"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "faisal",
+      "names": {
+        "en": "Faisal Al Mutairi",
+        "ar": "فيصل المطيري"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "rania",
+      "names": {
+        "en": "Rania Fawzy",
+        "ar": "رانيا فوزي"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "george",
+      "names": {
+        "en": "George Haddad",
+        "ar": "جورج حداد"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "sultan",
+      "names": {
+        "en": "Sultan Al Dosari",
+        "ar": "سلطان الدوسري"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "nasser",
+      "names": {
+        "en": "Nasser Al Harbi",
+        "ar": "ناصر الحربي"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "ravi",
+      "names": {
+        "en": "Ravi Menon",
+        "ar": "رافي مينون"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "ibrahim",
+      "names": {
+        "en": "Ibrahim Al Zahrani",
+        "ar": "إبراهيم الزهراني"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "mahmoud",
+      "names": {
+        "en": "Mahmoud Abdelaziz",
+        "ar": "محمود عبدالعزيز"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "yasmin",
+      "names": {
+        "en": "Yasmin Adel",
+        "ar": "ياسمين عادل"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "karim",
+      "names": {
+        "en": "Karim Samir",
+        "ar": "كريم سمير"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "mostafa",
+      "names": {
+        "en": "Mostafa Hegazy",
+        "ar": "مصطفى حجازي"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "arjun",
+      "names": {
+        "en": "Arjun Nair",
+        "ar": "أرجون ناير"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "joseph",
+      "names": {
+        "en": "Joseph Mensah",
+        "ar": "جوزيف منساه"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "anna",
+      "names": {
+        "en": "Anna Kowalski",
+        "ar": "آنا كوفالسكي"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "rashid",
+      "names": {
+        "en": "Rashid Al Nuaimi",
+        "ar": "راشد النعيمي"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "carlos",
+      "names": {
+        "en": "Carlos Mendes",
+        "ar": "كارلوس منديز"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "aisha",
+      "names": {
+        "en": "Aisha Al Suwaidi",
+        "ar": "عائشة السويدي"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "thomas",
+      "names": {
+        "en": "Thomas Wright",
+        "ar": "توماس رايت"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "hana",
+      "names": {
+        "en": "Hana Kamal",
+        "ar": "هناء كمال"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "vikram",
+      "names": {
+        "en": "Vikram Shah",
+        "ar": "فيكرام شاه"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "ziad",
+      "names": {
+        "en": "Ziad Barakat",
+        "ar": "زياد بركات"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "sophie",
+      "names": {
+        "en": "Sophie Laurent",
+        "ar": "صوفي لوران"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "mona",
+      "names": {
+        "en": "Mona Shawky",
+        "ar": "منى شوقي"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "ahmad",
+      "names": {
+        "en": "Ahmad Fathi",
+        "ar": "أحمد فتحي"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "ben",
+      "names": {
+        "en": "Ben Turner",
+        "ar": "بن تيرنر"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "leila",
+      "names": {
+        "en": "Leila Nasser",
+        "ar": "ليلى ناصر"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "samir",
+      "names": {
+        "en": "Samir Qasim",
+        "ar": "سمير قاسم"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "nadia",
+      "names": {
+        "en": "Nadia Petrova",
+        "ar": "ناديا بتروفا"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "fahad",
+      "names": {
+        "en": "Fahad Al Otaibi",
+        "ar": "فهد العتيبي"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "mariam",
+      "names": {
+        "en": "Mariam Gamal",
+        "ar": "مريم جمال"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "osama",
+      "names": {
+        "en": "Osama Ragab",
+        "ar": "أسامة رجب"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "dina",
+      "names": {
+        "en": "Dina Lotfy",
+        "ar": "دينا لطفي"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "peter",
+      "names": {
+        "en": "Peter Ivanov",
+        "ar": "بيتر إيفانوف"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "hamad",
+      "names": {
+        "en": "Hamad Al Kaabi",
+        "ar": "حمد الكعبي"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "grace",
+      "names": {
+        "en": "Grace Lim",
+        "ar": "غريس ليم"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "waleed",
+      "names": {
+        "en": "Waleed Al Ghamdi",
+        "ar": "وليد الغامدي"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "dalia",
+      "names": {
+        "en": "Dalia Farouk",
+        "ar": "داليا فاروق"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "abdullah",
+      "names": {
+        "en": "Abdullah Al Qahtani",
+        "ar": "عبدالله القحطاني"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "olivia",
+      "names": {
+        "en": "Olivia Brown",
+        "ar": "أوليفيا براون"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "hessa",
+      "names": {
+        "en": "Hessa Al Mazrouei",
+        "ar": "حصة المزروعي"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "rohan",
+      "names": {
+        "en": "Rohan Pillai",
+        "ar": "روهان بيلاي"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "shaima",
+      "names": {
+        "en": "Shaima Al Hammadi",
+        "ar": "شيماء الحمادي"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "tamer",
+      "names": {
+        "en": "Tamer Saad",
+        "ar": "تامر سعد"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "chloe",
+      "names": {
+        "en": "Chloe Martin",
+        "ar": "كلوي مارتن"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "majed",
+      "names": {
+        "en": "Majed Al Shehri",
+        "ar": "ماجد الشهري"
+      },
+      "timeZone": "Asia/Riyadh"
+    },
+    {
+      "person": "noor",
+      "names": {
+        "en": "Noor Haidar",
+        "ar": "نور حيدر"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "laura",
+      "names": {
+        "en": "Laura Fischer",
+        "ar": "لورا فيشر"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "adel",
+      "names": {
+        "en": "Adel Al Balushi",
+        "ar": "عادل البلوشي"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "heba",
+      "names": {
+        "en": "Heba Mostafa",
+        "ar": "هبة مصطفى"
+      },
+      "timeZone": "Africa/Cairo"
+    },
+    {
+      "person": "mark",
+      "names": {
+        "en": "Mark Davies",
+        "ar": "مارك ديفيز"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "amal",
+      "names": {
+        "en": "Amal Al Rashid",
+        "ar": "أمل الراشد"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "zaid",
+      "names": {
+        "en": "Zaid Haddadin",
+        "ar": "زيد حدادين"
+      },
+      "timeZone": "Asia/Dubai"
+    },
+    {
+      "person": "julia",
+      "names": {
+        "en": "Julia Romano",
+        "ar": "جوليا رومانو"
       },
       "timeZone": "Asia/Dubai"
     }
