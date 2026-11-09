@@ -121,4 +121,11 @@ public sealed class SearchTextTests
         Assert.Equal("('leave' | 'vacation' | 'اجازه') & ('form' | 'request') & '2026'", SearchText.TsQuery(groups, all: true));
         Assert.Equal(["vacation"], SearchText.Expand(["vacation"], [])[0]);
     }
+
+    [Fact]
+    public void Retrieval_ignores_words_that_say_nothing_about_a_topic()
+    {
+        Assert.Equal(["forklift", "check"], SearchText.Meaningful(SearchText.Terms("What do I need to check on the forklift?")).Order().Reverse().ToArray());
+        Assert.Equal(["تصريح"], SearchText.Meaningful(SearchText.Terms("كيف أطلب تصريح في هذا")).Except(["اطلب"]).ToArray());
+    }
 }

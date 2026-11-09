@@ -13,7 +13,8 @@ namespace TeamBeats.DevFakes;
 /// <c>[fake:429]</c> rate limited, <c>[fake:500]</c> provider error, <c>[fake:fail:model]</c> provider error for that model only, <c>[fake:timeout]</c> no answer until cancelled,
 /// <c>[fake:refuse]</c> a content filter stop, <c>[fake:cut]</c> a stream that ends without a final chunk,
 /// <c>[fake:tool:name]</c> a call of tool <c>name</c>, <c>[fake:badjson]</c> plain text even when a JSON schema was asked
-/// for. With a <c>response_format</c> the reply is the JSON object <c>{"answer": ...}</c>. Streaming
+/// for. When the prompt holds numbered passages (the assistant of spec 014) the reply cites passage 1 as <c>[1]</c>, unless
+/// the question holds <c>[fake:nocite]</c>. With a <c>response_format</c> the reply is the JSON object <c>{"answer": ...}</c>. Streaming
 /// (<c>stream: true</c>) returns server-sent events. Embeddings are a bag of words (see <see cref="Embed"/>).
 /// </summary>
 public sealed partial class FakeOpenRouter : HttpMessageHandler
@@ -93,6 +94,11 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
         }
         var refused = last.Contains("[fake:refuse]", StringComparison.Ordinal);
         var reply = refused ? string.Empty : Reply(last);
+        // Like a grounded model, cite the first passage when the prompt carries numbered passages (spec 014).
+        if (!refused && prompt.Contains("<passage n=\"1\"", StringComparison.Ordinal) && !last.Contains("[fake:nocite]", StringComparison.Ordinal))
+        {
+            reply += " [1]";
+        }
         if (!refused && body["response_format"] is not null && !last.Contains("[fake:badjson]", StringComparison.Ordinal))
         {
             reply = JsonSerializer.Serialize(new { answer = reply });

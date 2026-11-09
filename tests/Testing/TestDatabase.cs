@@ -96,6 +96,25 @@ public sealed class TestDatabase : IAsyncDisposable
         return result is null or DBNull ? default : (T)result;
     }
 
+    /// <summary>Reads one value as the table owner inside one tenant, for tables with forced row level security.</summary>
+    public async Task<T?> TenantScalarAsync<T>(Guid tenantId, string sql, params (string Name, object Value)[] args)
+    {
+        await using var conn = new NpgsqlConnection(OwnerConnectionString);
+        await conn.OpenAsync();
+        await using (var set = new NpgsqlCommand("select set_config('app.tenant_id', @t, false)", conn))
+        {
+            set.Parameters.AddWithValue("t", tenantId.ToString());
+            await set.ExecuteNonQueryAsync();
+        }
+        await using var cmd = new NpgsqlCommand(sql, conn);
+        foreach (var (n, v) in args)
+        {
+            cmd.Parameters.AddWithValue(n, v);
+        }
+        var result = await cmd.ExecuteScalarAsync();
+        return result is null or DBNull ? default : (T)result;
+    }
+
     public async Task<int> OwnerExecAsync(string sql, params (string Name, object Value)[] args)
     {
         await using var conn = new NpgsqlConnection(OwnerConnectionString);

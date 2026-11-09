@@ -19,6 +19,7 @@ using TeamBeats.Modules.AiGateway;
 using TeamBeats.Modules.AiGateway.OpenRouter;
 using TeamBeats.Modules.Policies;
 using TeamBeats.Modules.Search;
+using TeamBeats.Modules.Agents;
 using TeamBeats.Modules.Services;
 using TeamBeats.Modules.Workflow;
 using TeamBeats.Modules.Identity;
@@ -58,6 +59,7 @@ public static class TeamBeatsModules
         PoliciesModule.Migrations,
         AiGatewayModule.Migrations,
         SearchModule.Migrations,
+        AgentsModule.Migrations,
     ];
 
     public static IServiceCollection AddTeamBeatsCore(this IServiceCollection services, IConfiguration configuration)
@@ -118,6 +120,7 @@ public static class TeamBeatsModules
         services.AddAiGatewayModule();
         services.AddOpenRouterAdapter();
         services.AddSearchModule();
+        services.AddAgentsModule();
         return services;
     }
 }
@@ -194,6 +197,7 @@ public static class ApiComposition
         app.MapPoliciesEndpoints();
         app.MapAiGatewayEndpoints();
         app.MapSearchEndpoints();
+        app.MapAgentsEndpoints();
         app.MapPeopleEndpoints();
         app.MapSecurityEndpoints();
         extraEndpoints?.Invoke(app);

@@ -69,6 +69,21 @@ public static class SearchText
     public static IReadOnlyList<string> Terms(string? query) => [.. Words(Normalize(query)).Distinct(StringComparer.Ordinal).Take(MaxTerms)];
 
     /// <summary>The words of a query as one normalized phrase, the key best bets are matched on (US4 scenario 1).</summary>
+    /// <summary>
+    /// Common English and Arabic words that say nothing about a topic. Retrieval matches any word of a question, so
+    /// without this list "the" or "في" would make every passage look like evidence (spec 014 US1 scenario 2).
+    /// </summary>
+    private static readonly HashSet<string> Stopwords = new(
+        ("a an and are as at be but by can could do does for from had has have how i if in into is it its me my of on or our should so " +
+         "than that the their them then there these they this to was we were what when where which who why will with would you your " +
+         "about after all also any before did get got just more most need not now only other same some such tell very want " +
+         "في من على الى إلى عن مع هل ما ماذا متى كيف أين اين لماذا هذا هذه ذلك تلك التي الذي الذين هو هي هم انا أنا نحن انت أنت " +
+         "كان كانت يكون او أو ثم قد لا لم لن ان أن إن كل بعد قبل عند حتى اذا إذا لي لك له لنا")
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(Normalize), StringComparer.Ordinal);
+
+    /// <summary>The terms of a question that carry meaning, for retrieval that matches any of them.</summary>
+    public static IReadOnlyList<string> Meaningful(IReadOnlyList<string> terms) => [.. terms.Where(t => !Stopwords.Contains(t))];
+
     public static string QueryKey(string? query) => string.Join(' ', Terms(query));
 
     /// <summary>The language a query is treated as for locale specific best bets and synonyms: Arabic by its letters, else English.</summary>
