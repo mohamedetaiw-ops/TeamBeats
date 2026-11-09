@@ -61,7 +61,8 @@ function Mounted({ placement, Loaded }: { placement: RenderedPlacement; Loaded: 
   const ready = useSyncExternalStore(noSubscription, () => true, () => false);
   return (
     <div className="xp-channel" data-placement-ready={ready}>
-      <Loaded placementId={placement.id} props={placement.props} context={{ locale, ...placement.context }} events={events} />
+      {/* Keyed by language: a language switch mounts the component again, so it fetches server text in the new language. */}
+      <Loaded key={locale} placementId={placement.id} props={placement.props} context={{ locale, ...placement.context }} events={events} />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import type { APIRequestContext } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { msg, type LaunchLocale } from "../support/messages";
 import { createPage, saveAndPublish, tenantApi } from "../support/pages";
@@ -60,3 +61,37 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     });
   });
 }
+
+const paragraph = (text: string) => ({ blocks: [{ type: "paragraph", children: [{ text }] }] });
+
+async function publishNews(api: APIRequestContext, en: string, ar: string) {
+  const created = await api.post("/api/v1/content/items", {
+    data: { type: "news", variants: { en: { title: en, body: paragraph(en) }, ar: { title: ar, body: paragraph(ar) } } },
+  });
+  expect(created.status(), await created.text()).toBe(201);
+  const id = ((await created.json()) as { id: string }).id;
+  const published = await api.post(`/api/v1/content/items/${id}/publish`, { data: {} });
+  expect(published.ok(), await published.text()).toBe(true);
+}
+
+test.describe("v2 home language switch", () => {
+  test.use({ locale: "en-US" });
+  let tenant: TestTenant;
+
+  test.beforeAll(async () => {
+    tenant = await createTenant("v2home-switch", "en", "workplace_plus");
+    await seedHome(tenant);
+    const api = await tenantApi(tenant);
+    await publishNews(api, "Shuttle times change on Monday", "تتغير مواعيد الحافلة يوم الاثنين");
+    await api.dispose();
+  });
+
+  test("switching language shows the news in the new language without a reload", async ({ page }) => {
+    await signInWithDevForm(page, tenant.key, tenant.adminEmail, "en");
+    await page.goto(`${hostOrigin(tenant.key)}/`);
+    await expect(page.getByRole("link", { name: "Shuttle times change on Monday" })).toBeVisible();
+    await page.getByRole("button", { name: msg("en", "shell.switchLanguage", { language: msg("en", "locale.ar") }) }).click();
+    await expect(page.getByRole("link", { name: "تتغير مواعيد الحافلة يوم الاثنين" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Shuttle times change on Monday" })).toHaveCount(0);
+  });
+});

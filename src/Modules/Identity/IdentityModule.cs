@@ -40,7 +40,7 @@ public static class IdentityModule
         services.AddScoped<IDirectoryReader, Directory.DirectoryReader>();
         services.AddScoped<TeamBeats.Authorization.Contracts.IUserAttributeProvider, Directory.DirectoryUserAttributes>();
         services.AddScoped<Integrations.Contracts.IConnectionDependents, Directory.DirectoryConnectionDependents>();
-        services.AddMessageHandler<Directory.DirectorySyncRequested, Directory.RunRequestedDirectorySync>("identity.directory_sync_now");
+        services.AddMessageHandler<Directory.DirectorySyncRequested, Directory.RunRequestedDirectorySync>(Directory.RunRequestedDirectorySync.ConsumerName);
         services.AddMessageHandler<Integrations.Contracts.ConnectionDeleted, Directory.RemoveDirectoryOnConnectionDeleted>("identity.directory_connection_deleted");
         return services;
     }

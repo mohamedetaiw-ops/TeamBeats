@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
@@ -57,7 +58,35 @@ public sealed record DirectoryView(Guid? ConnectionId, bool ConnectionUsable, Di
 /// <summary>Runs a requested sync on the worker.</summary>
 public sealed class RunRequestedDirectorySync(DirectorySyncService sync) : IMessageHandler<DirectorySyncRequested>
 {
+    public const string ConsumerName = "identity.directory_sync_now";
+
     public async Task HandleAsync(DirectorySyncRequested message, CancellationToken ct) => await sync.RunAsync(message.ConnectionId, ct);
+}
+
+/// <summary>
+/// Hands a requested sync to the host that can reach the directory: the run becomes due now and that host's scheduler
+/// starts it within a minute. Used by worker hosts that run without the directory scheduler (staging workers, whose
+/// production image has no fake Microsoft 365, see <see cref="DirectorySyncHandOff"/>).
+/// </summary>
+public sealed class DeferRequestedDirectorySync(DirectorySyncService sync) : IMessageHandler<DirectorySyncRequested>
+{
+    public async Task HandleAsync(DirectorySyncRequested message, CancellationToken ct) => await sync.MarkDueAsync(message.ConnectionId, ct);
+}
+
+public static class DirectorySyncHandOff
+{
+    /// <summary>Replaces the "sync now" consumer with <see cref="DeferRequestedDirectorySync"/>, keeping its consumer name.</summary>
+    public static IServiceCollection DeferDirectorySyncRequests(this IServiceCollection services)
+    {
+        var name = RunRequestedDirectorySync.ConsumerName;
+        var existing = services.Where(d => d.ImplementationInstance is ConsumerRegistration r && r.Name == name).ToList();
+        foreach (var descriptor in existing)
+        {
+            services.Remove(descriptor);
+        }
+        services.AddMessageHandler<DirectorySyncRequested, DeferRequestedDirectorySync>(name);
+        return services;
+    }
 }
 
 /// <summary>Removes sync data when the Microsoft 365 connection is deleted; users are kept.</summary>
