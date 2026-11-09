@@ -24,6 +24,18 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
     /// <summary>Users per delta page, so paging with nextLink is exercised.</summary>
     public int PageSize { get; set; } = 2;
 
+    // Delta tokens name this instance, because its versions start again when the host restarts. A token from an earlier
+    // instance (staging after a redeploy) reads everything again, so scenario changes reach the next sync.
+    private readonly string _instance = Guid.NewGuid().ToString("N")[..8];
+
+    private string DeltaToken(long version) => $"{_instance}-{version}";
+
+    private long SinceVersion(string token)
+    {
+        var parts = token.Split('-');
+        return parts.Length == 2 && parts[0] == _instance && long.TryParse(parts[1], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0;
+    }
+
     public sealed record Directory(IReadOnlyList<string> Roles, long Users, long Groups);
 
     /// <summary>The customer's admin granted these application permissions to the TeamBeats application.</summary>
@@ -399,7 +411,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             }
             var data = _data.GetOrAdd(directory, _ => new DirectoryData());
             var query = FakeIdentityProvider.ParseQuery(uri.Query);
-            var since = query.TryGetValue("$deltatoken", out var token) ? long.Parse(token, System.Globalization.CultureInfo.InvariantCulture) : 0;
+            var since = query.TryGetValue("$deltatoken", out var token) ? SinceVersion(token) : 0;
             var skip = query.TryGetValue("$skiptoken", out var skipToken) ? int.Parse(skipToken, System.Globalization.CultureInfo.InvariantCulture) : 0;
             var isUsers = uri.AbsolutePath.EndsWith("/users/delta", StringComparison.Ordinal);
             var isUnits = uri.AbsolutePath.EndsWith("/administrativeUnits/delta", StringComparison.Ordinal);
@@ -409,11 +421,11 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             var body = new Dictionary<string, object?> { ["value"] = page };
             if (isUsers && skip + PageSize < items.Count)
             {
-                body["@odata.nextLink"] = $"{basePath}?$deltatoken={since}&$skiptoken={skip + PageSize}";
+                body["@odata.nextLink"] = $"{basePath}?$deltatoken={DeltaToken(since)}&$skiptoken={skip + PageSize}";
             }
             else
             {
-                body["@odata.deltaLink"] = $"{basePath}?$deltatoken={version}";
+                body["@odata.deltaLink"] = $"{basePath}?$deltatoken={DeltaToken(version)}";
             }
             return Json(body);
         }
@@ -486,7 +498,8 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         var scopes = parts[2].Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
         var data = Data(directoryId);
         var me = data.CurrentUsers().FirstOrDefault(u => u.Id == userId);
-        if (me.Id is null && IssuedDelegatedTokens.Contains(bearer) && UpnOf(bearer) is { Length: > 0 } upn)
+        // Tokens hold everything the fake needs, so a mailbox token still works after the host restarts (staging redeploys).
+        if (me.Id is null && UpnOf(bearer) is { Length: > 0 } upn)
         {
             return await UpnMailboxAsync(request, uri, scopes, upn, ct);
         }

@@ -36,6 +36,12 @@ export function DevSignInForm({ mode, testAccount = "admin" }: { mode: DevSignIn
     });
     setBusy(false);
     if (response.ok) {
+      // A test account may name a page on this site to open next (staging connects the fake Outlook this way).
+      const { next } = ((await response.json().catch(() => null)) ?? {}) as { next?: string | null };
+      if (typeof next === "string" && /^\/(?![/\\])/.test(next)) {
+        window.location.assign(next);
+        return;
+      }
       router.push("/");
       router.refresh();
       return;
