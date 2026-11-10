@@ -12,7 +12,8 @@ namespace TeamBeats.Modules.Agents;
 /// <summary>
 /// The tenant agent policy (spec 027 US8 scenario 1, FR-018), R1 settings: the autonomy cap, the tools agents may hold
 /// (null means every registered tool), stricter approval rules per tool, the highest classification agents may use,
-/// scheduled agents and persistent memory (both off until R2 builds them) and run limits. Who may design and publish is
+/// scheduled agents and persistent memory (both off until R2 builds them) and run limits (tool calls, steps, duration of
+/// one run and runs per agent per day, FR-015). Who may design and publish is
 /// set with roles (spec 004); the external AI client settings come with spec 035.
 /// </summary>
 public sealed record AgentPolicy(
@@ -23,13 +24,24 @@ public sealed record AgentPolicy(
     bool ScheduledAgents,
     bool PersistentMemory,
     int MaxToolCalls,
-    int MaxSteps)
+    int MaxSteps,
+    int MaxRunSeconds = AgentPolicy.DefaultRunSeconds,
+    int MaxDailyRunsPerAgent = AgentPolicy.DefaultDailyRuns)
 {
     /// <summary>The platform default, used until the tenant saves a policy.</summary>
     public static readonly AgentPolicy Default = new(AgentAutonomy.HighestBuilt, "internal", null, [], false, false, 20, 40);
 
     public const int PlatformMaxToolCalls = 50;
     public const int PlatformMaxSteps = 100;
+
+    /// <summary>Interactive runs stop after five minutes of work (027 FR-015); L4 runs with longer limits come in R2.</summary>
+    public const int DefaultRunSeconds = 300;
+    public const int PlatformMaxRunSeconds = 300;
+    public const int MinRunSeconds = 30;
+
+    /// <summary>Runs each agent may start in a UTC day. The spec names no figure; this default is recorded in the R1 notes.</summary>
+    public const int DefaultDailyRuns = 1000;
+    public const int PlatformMaxDailyRuns = 100000;
 
     public bool Allows(string tool) => AllowedTools is null || AllowedTools.Contains(tool);
 
@@ -139,6 +151,14 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
         if (p.MaxSteps < p.MaxToolCalls || p.MaxSteps > AgentPolicy.PlatformMaxSteps)
         {
             errors.Add("maxSteps", "validation.agent_policy.max_steps");
+        }
+        if (p.MaxRunSeconds is < AgentPolicy.MinRunSeconds or > AgentPolicy.PlatformMaxRunSeconds)
+        {
+            errors.Add("maxRunSeconds", "validation.agent_policy.max_run_seconds");
+        }
+        if (p.MaxDailyRunsPerAgent is < 1 or > AgentPolicy.PlatformMaxDailyRuns)
+        {
+            errors.Add("maxDailyRunsPerAgent", "validation.agent_policy.max_daily_runs");
         }
         errors.ThrowIfAny();
         return p with

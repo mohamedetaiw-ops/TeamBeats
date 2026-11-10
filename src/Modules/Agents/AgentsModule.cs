@@ -179,6 +179,13 @@ public static class AgentsModule
         agents.MapGet("/{id:guid}/analytics", async (Guid id, int? days, AgentAnalytics analytics, CancellationToken ct) =>
             Results.Ok(await analytics.ForAgentAsync(id, days, ct)));
 
+        agents.MapPost("/{id:guid}/template-update", async (Guid id, TemplateUpdateRequest request, AgentRegistry registry, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await registry.ApplyTemplateUpdateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
         agents.MapPut("/{id:guid}/owners", async (Guid id, OwnersRequest request, AgentRegistry registry, IDbSession session, CancellationToken ct) =>
         {
             var detail = await registry.SetOwnersAsync(id, request, ct);

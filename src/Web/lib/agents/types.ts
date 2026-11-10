@@ -55,7 +55,14 @@ export type AgentVersion = {
   publishedAt: string | null;
 };
 
-export type AgentDetail = { agent: AgentSummary; definition: AgentDefinition; latest: AgentVersion; versions: AgentVersion[]; canEdit: boolean };
+export type AgentDetail = {
+  agent: AgentSummary;
+  definition: AgentDefinition;
+  latest: AgentVersion;
+  versions: AgentVersion[];
+  canEdit: boolean;
+  templateUpdate: number | null;
+};
 
 export type TemplateView = {
   id: string;
@@ -110,6 +117,8 @@ export type AgentPolicy = {
   persistentMemory: boolean;
   maxToolCalls: number;
   maxSteps: number;
+  maxRunSeconds: number;
+  maxDailyRunsPerAgent: number;
 };
 
 export type AgentPolicyView = { version: number; policy: AgentPolicy; updatedAt: string | null };

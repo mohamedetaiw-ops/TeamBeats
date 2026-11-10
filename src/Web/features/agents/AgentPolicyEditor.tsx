@@ -87,6 +87,28 @@ export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView
           <label htmlFor={`${ids}-steps`}>{t("maxSteps")}</label>
           <input id={`${ids}-steps`} type="number" min={10} max={100} value={policy.maxSteps} onChange={(e) => set({ maxSteps: Number(e.target.value) })} />
         </div>
+        <div className="field">
+          <label htmlFor={`${ids}-seconds`}>{t("maxRunSeconds")}</label>
+          <input
+            id={`${ids}-seconds`}
+            type="number"
+            min={30}
+            max={300}
+            value={policy.maxRunSeconds}
+            onChange={(e) => set({ maxRunSeconds: Number(e.target.value) })}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor={`${ids}-daily`}>{t("maxDailyRunsPerAgent")}</label>
+          <input
+            id={`${ids}-daily`}
+            type="number"
+            min={1}
+            max={100000}
+            value={policy.maxDailyRunsPerAgent}
+            onChange={(e) => set({ maxDailyRunsPerAgent: Number(e.target.value) })}
+          />
+        </div>
       </div>
       <fieldset className="agents-checks">
         <legend>{t("tools")}</legend>

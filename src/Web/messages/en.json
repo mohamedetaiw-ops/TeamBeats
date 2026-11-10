@@ -2822,7 +2822,8 @@
       "suspended": "Agent suspended",
       "stopped": "Stopped",
       "expired": "Expired",
-      "none": "No answer"
+      "none": "No answer",
+      "interrupted": "Interrupted"
     },
     "runStatus": {
       "running": "Running",
@@ -2946,6 +2947,12 @@
         "save": "Save owners",
         "saved": "Owners saved.",
         "flagged": "The previous owner left the organization, so this agent was handed to its current owner. Check it and name a backup owner."
+      },
+      "templateUpdate": {
+        "available": "Version {version} of this agent's template is available. Applying it starts a new draft with the template's instructions, tools and limits, and keeps your name, description, purpose and audience. Nothing changes until the draft is reviewed and published.",
+        "afterReview": "Version {version} of this agent's template is available. You can apply it once the version in review is decided.",
+        "apply": "Apply template update",
+        "applied": "The template update is in a new draft. Check it, then send it for review."
       }
     },
     "review": {
@@ -3028,6 +3035,8 @@
       "maxClassification": "Highest data classification agents may read",
       "maxToolCalls": "Tool calls per run",
       "maxSteps": "Steps per run",
+      "maxRunSeconds": "Seconds per run",
+      "maxDailyRunsPerAgent": "Runs per agent each day",
       "tools": "Tools agents may hold",
       "allTools": "Allow every tool",
       "tool": "Tool",
@@ -3249,7 +3258,8 @@
       "unavailable": "Unavailable",
       "suspended": "Agent suspended",
       "stopped": "Stopped",
-      "expired": "Expired"
+      "expired": "Expired",
+      "interrupted": "Interrupted"
     },
     "metrics": {
       "answer_correctness": "Answer correctness",

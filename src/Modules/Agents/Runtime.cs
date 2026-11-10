@@ -34,6 +34,7 @@ public static class RunOutcomes
     public const string Suspended = "suspended";
     public const string Stopped = "stopped";
     public const string Expired = "expired";
+    public const string Interrupted = "interrupted";
 }
 
 /// <summary>What the tool gateway decided for one call (spec 027 US3), as recorded in the run's steps.</summary>
@@ -108,6 +109,9 @@ internal sealed class RunState
     public int StepNumber { get; set; }
     public List<string> Executed { get; set; } = [];
     public PendingCall? Pending { get; set; }
+
+    /// <summary>Seconds the run has worked so far, carried across a confirmation wait, which does not count (027 FR-015).</summary>
+    public double ActiveSeconds { get; set; }
 }
 
 /// <summary>The definition, version and limits a run uses.</summary>
@@ -144,6 +148,9 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     public const string PromptVersion = "agent.v1";
     public static readonly TimeSpan ConfirmationTimeout = TimeSpan.FromMinutes(15);
     public const int RecordRetentionDays = 365;
+
+    /// <summary>A run still marked running this long after its last change was cut off by a restart or crash.</summary>
+    public static readonly TimeSpan InterruptedAfter = TimeSpan.FromSeconds(AgentPolicy.PlatformMaxRunSeconds) + TimeSpan.FromMinutes(5);
     private const int MaxUntrusted = 50_000;
     private static readonly JsonSerializerOptions Json = AgentPolicyService.Json;
 
@@ -289,6 +296,10 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         var languages = agent.Definition.Languages ?? ["en"];
         var language = request.Language ?? AssistantPrompt.Language(message);
         language = languages.Contains(language) ? language : languages[0];
+        if (agent.Mode == "run")
+        {
+            await DemandDailyLimitAsync(agent, ct);
+        }
         var id = Guid.NewGuid();
         var now = clock.UtcNow;
         var state = new RunState { Classification = "internal" };
@@ -307,6 +318,21 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             """, new { id, agent = agent.Id, version = agent.Version, user, unit = agent.OrgUnitId, mode = agent.Mode, language, classification = state.Classification,
                 routeId, source = request.ItemSource, item = request.ItemId, now }, ct);
         return await LoopAsync(id, agent, user, language, state, ct);
+    }
+
+    /// <summary>
+    /// The per-agent daily limit (027 FR-015): conversations an agent may start in a UTC day, counting every person's runs;
+    /// test panel and evaluation runs do not count.
+    /// </summary>
+    private async Task DemandDailyLimitAsync(RunAgent agent, CancellationToken ct)
+    {
+        var day = new DateTimeOffset(clock.UtcNow.UtcDateTime.Date, TimeSpan.Zero);
+        var started = await session.ScalarAsync<long>("select count(*) from agents.run where agent_id = @agent and mode = 'run' and created_at >= @day",
+            new { agent = agent.Id, day }, ct);
+        if (started >= agent.Policy.MaxDailyRunsPerAgent)
+        {
+            throw AppException.Conflict("conflict.agent_run.daily_limit");
+        }
     }
 
     /// <summary>
@@ -375,8 +401,15 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         var maxSteps = agent.Policy.MaxSteps;
         string? model = null, provider = null;
         int input = 0, output = 0;
+        var resumed = clock.UtcNow;
+        var worked = state.ActiveSeconds;
         while (true)
         {
+            state.ActiveSeconds = worked + (clock.UtcNow - resumed).TotalSeconds;
+            if (state.ActiveSeconds >= agent.Policy.MaxRunSeconds)
+            {
+                return await FinishAsync(runId, agent, state, RunStatuses.Stopped, RunOutcomes.LimitReached, "duration", null, language, (model, provider, input, output), ct);
+            }
             if (!await ActiveAsync(agent, ct))
             {
                 return await FinishAsync(runId, agent, state, RunStatuses.Stopped, RunOutcomes.Suspended, "agent.suspended", null, language, (model, provider, input, output), ct);
@@ -465,6 +498,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             }
             if (state.Pending is not null)
             {
+                state.ActiveSeconds = worked + (clock.UtcNow - resumed).TotalSeconds;
                 return await WaitAsync(runId, agent, state, language, (model, provider, input, output), ct);
             }
         }
@@ -950,9 +984,18 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         return new RunRecord(run, steps, sources, route, extra[0].Source, extra[0].Item);
     }
 
-    /// <summary>Execution records older than the retention period go (027 section 8, default 365 days); waiting runs past their card expire.</summary>
+    /// <summary>
+    /// Execution records older than the retention period go (027 section 8, default 365 days); waiting runs past their card
+    /// expire; runs a restart cut off mid-turn are closed as interrupted, so the person sees them ended and can ask again.
+    /// Waiting runs keep their checkpoint and resume on confirmation after a restart.
+    /// </summary>
     public async Task<int> PurgeAsync(DateTimeOffset now, CancellationToken ct)
     {
+        await session.ExecAsync(
+            """
+            update agents.run set status = 'failed', outcome = 'interrupted', reason = 'run.interrupted', finished_at = @now, updated_at = @now
+            where status = 'running' and updated_at < @cutoff
+            """, new { now, cutoff = now - InterruptedAfter }, ct);
         await session.ExecAsync(
             """
             update agents.run set status = 'stopped', outcome = 'expired', reason = 'confirmation_expired', finished_at = @now, updated_at = @now

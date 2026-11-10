@@ -155,6 +155,20 @@ export function AgentEditor({ initial, tools, units }: { initial: AgentDetail; t
         </p>
       ) : null}
       {!detail.canEdit ? <p className="notice">{t("readOnly")}</p> : null}
+      {detail.templateUpdate !== null && detail.canEdit && status !== "retired" ? (
+        <div className="notice" data-testid="agent-template-update">
+          <p>{locked ? t("templateUpdate.afterReview", { version: String(detail.templateUpdate) }) : t("templateUpdate.available", { version: String(detail.templateUpdate) })}</p>
+          {!locked ? (
+            <Button
+              busy={busy === "template"}
+              busyLabel={t("saving")}
+              onClick={() => void send("template", `${base}/template-update`, "POST", { version: detail.templateUpdate }, t("templateUpdate.applied"))}
+            >
+              {t("templateUpdate.apply")}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
 
       <section className="agents-section" aria-labelledby={`${ids}-about`}>
         <h2 id={`${ids}-about`}>{t("about")}</h2>

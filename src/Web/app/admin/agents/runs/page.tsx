@@ -10,7 +10,7 @@ import "@/features/agents/agents.css";
 
 type Filters = { agent?: string; outcome?: string; tool?: string };
 
-const OUTCOMES = ["answered", "limit_reached", "policy_blocked", "unavailable", "suspended", "stopped", "expired"] as const;
+const OUTCOMES = ["answered", "limit_reached", "policy_blocked", "unavailable", "suspended", "stopped", "expired", "interrupted"] as const;
 const GUID = /^[0-9a-f-]{36}$/i;
 const TOOL = /^[a-z_]+\.[a-z_]+$/;
 
