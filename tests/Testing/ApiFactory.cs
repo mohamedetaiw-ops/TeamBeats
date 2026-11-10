@@ -52,6 +52,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public FakeTicketing Ticketing { get; } = new();
 
+    public FakeRestApi Rest { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Test");
@@ -90,6 +92,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => Weather);
             services.AddHttpClient(TeamBeats.Persistence.GotenbergConverter.ClientName).ConfigurePrimaryHttpMessageHandler(() => Gotenberg);
             services.AddHttpClient(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => OpenRouter);
+            services.AddHttpClient(TeamBeats.Modules.Integrations.Runtime.SafeHttp.ClientName).ConfigurePrimaryHttpMessageHandler(() => Rest);
         });
     }
 

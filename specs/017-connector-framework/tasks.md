@@ -10,7 +10,7 @@ Depends on 004, 005, 006, 015, 024, 026, 027. R2.
 - [ ] T005 Move the Microsoft 365 adapter onto the runtime with no behavior change (spec 018 and 006 suites stay green)
 
 ## Phase 2: User Stories 1 to 3, connections, actions and history (P1)
-- [ ] T006 [P] [US1] Tests: pack list by package; step-up and secret references; test per feature; disable stops calls within 1 minute; expiry alert
+- [x] T006 [P] [US1] Tests: pack list by package; step-up and secret references; test per feature; disable stops calls within 1 minute; expiry alert
 - [ ] T007 [US1] Connection lifecycle on the runtime in the Connections area
 - [ ] T008 [P] [US2] Tests: mapped fields only; idempotent retry after timeout; business error branch; incident on unknown outcome; agent tool path
 - [ ] T009 [US2] Connector action steps for 016 and 024; tool registrations for 027
