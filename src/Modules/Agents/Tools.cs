@@ -2,37 +2,93 @@ using System.Text.Json;
 using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Modules.Search.Contracts;
+using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Agents;
 
 /// <summary>A tool as designers see it in the tool picker (spec 020 US3 scenario 2): its side effect and approval rule.</summary>
 public sealed record ToolView(string Name, string Module, int Version, string SideEffect, string DefaultRule, string Rule, string OutputClassification,
-    bool Allowed, JsonElement Parameters);
+    bool Allowed, JsonElement Parameters, IReadOnlyDictionary<string, string>? Title = null);
 
 /// <summary>
-/// The tool registry (spec 027 T003, FR-005): every tool the modules offer to agents, by name. Tools are declared in code
-/// by the module that owns the action and versioned with the product, so the registry is the same for every tenant;
-/// what a tenant may use is its agent policy.
+/// The tool registry (spec 027 T003, FR-005, FR-006): the product tools the modules declare in code, the same for every
+/// tenant, and the tenant's own tools (connector actions registered by the integration administrator, R2). What a tenant
+/// may use is its agent policy. Tenant tools are loaded once per scope by <see cref="LoadAsync"/>, which the policy
+/// service calls before the policy is read; asking for a tenant tool before that, or in another tenant, is a programming error.
 /// </summary>
 public sealed class ToolRegistry
 {
-    private readonly Dictionary<string, IAgentTool> _tools;
+    private readonly Dictionary<string, IAgentTool> _product;
+    private readonly IReadOnlyList<IAgentToolSource> _sources;
+    private readonly ITenantContext _context;
+    private Dictionary<string, IAgentTool>? _all;
+    private Guid? _loadedFor;
 
-    public ToolRegistry(IEnumerable<IAgentTool> tools)
+    public ToolRegistry(IEnumerable<IAgentTool> tools, IEnumerable<IAgentToolSource>? sources = null, ITenantContext? context = null)
     {
-        _tools = new Dictionary<string, IAgentTool>(StringComparer.Ordinal);
+        _product = new Dictionary<string, IAgentTool>(StringComparer.Ordinal);
         foreach (var tool in tools)
         {
-            if (!_tools.TryAdd(tool.Definition.Name, tool))
+            if (!_product.TryAdd(tool.Definition.Name, tool))
             {
                 throw new InvalidOperationException($"Agent tool {tool.Definition.Name} is registered twice.");
             }
         }
+        _sources = [.. sources ?? []];
+        _context = context!;
+        if (_sources.Count > 0 && context is null)
+        {
+            throw new ArgumentNullException(nameof(context), "Tenant tools need the tenant context.");
+        }
+        if (_sources.Count == 0)
+        {
+            _all = _product;
+        }
     }
 
-    public IReadOnlyCollection<IAgentTool> All => _tools.Values;
+    /// <summary>Loads the tenant's own tools. Cheap after the first call in a scope.</summary>
+    public async Task LoadAsync(CancellationToken ct)
+    {
+        if (_sources.Count == 0)
+        {
+            return;
+        }
+        var tenant = _context.RequireTenant();
+        if (_all is not null && _loadedFor == tenant)
+        {
+            return;
+        }
+        var all = new Dictionary<string, IAgentTool>(_product, StringComparer.Ordinal);
+        foreach (var source in _sources)
+        {
+            foreach (var tool in await source.ToolsAsync(ct))
+            {
+                // A product tool always wins over a tenant tool of the same name.
+                all.TryAdd(tool.Definition.Name, tool);
+            }
+        }
+        _all = all;
+        _loadedFor = tenant;
+    }
 
-    public IAgentTool? Find(string name) => _tools.GetValueOrDefault(name);
+    public IReadOnlyCollection<IAgentTool> All => Loaded().Values;
+
+    /// <summary>A tool by name. Product tools are found before the tenant's tools are loaded; any other name needs them.</summary>
+    public IAgentTool? Find(string name) =>
+        _product.TryGetValue(name, out var tool) ? tool : Loaded().GetValueOrDefault(name);
+
+    private Dictionary<string, IAgentTool> Loaded()
+    {
+        if (_sources.Count == 0)
+        {
+            return _product;
+        }
+        if (_all is null || _loadedFor != _context.TenantId)
+        {
+            throw new InvalidOperationException("The tool registry was used before the tenant's tools were loaded.");
+        }
+        return _all;
+    }
 }
 
 /// <summary>Helpers for tool parameter schemas and arguments.</summary>

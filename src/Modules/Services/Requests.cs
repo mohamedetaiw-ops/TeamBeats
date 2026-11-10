@@ -63,7 +63,7 @@ public sealed record TrackingEntry(string Event, string? Step, PersonRef? Actor,
 public sealed record AttachmentView(Guid Id, string FileName, long SizeBytes, string ContentType, string ScanState);
 
 public sealed record RequestDetail(RequestSummary Request, int ServiceVersion, FormDefinition Form, IReadOnlyDictionary<string, JsonElement> Data,
-    string Classification, IReadOnlyList<AttachmentView> Attachments, IReadOnlyList<TrackingEntry> Tracking);
+    string Classification, IReadOnlyList<AttachmentView> Attachments, IReadOnlyList<TrackingEntry> Tracking, RequestAutomation? Automation = null);
 
 /// <summary>A row of <c>services.request</c>.</summary>
 internal sealed record RequestRow(
@@ -292,7 +292,7 @@ public sealed class Requests(
         }
         await attachments.LinkAsync(id, references.Attachments, ct);
         await EventAsync(id, "submitted", null, user, subject == user ? null : subject, null, ct);
-        if (published.Route.Approval is not null)
+        if (published.Route.HasSteps)
         {
             await StartRouteAsync(id, row.Id, unit, user, subject, 1, ct);
         }
@@ -339,8 +339,39 @@ public sealed class Requests(
     private async Task StartRouteAsync(Guid id, Guid serviceId, Guid? unit, Guid filer, Guid subject, int round, CancellationToken ct)
     {
         var businessKey = round == 1 ? id.ToString("N") : $"{id:N}.{round}";
-        var instance = await engine.StartAsync(ServiceAdmin.ProcessKey(serviceId), businessKey, unit, filer, subject == filer ? null : [subject], subject, ct);
+        var instance = await engine.StartAsync(ServiceAdmin.ProcessKey(serviceId), businessKey, unit, filer, subject == filer ? null : [subject], subject,
+            await VariablesAsync(id, subject, ct), ct);
         await session.ExecAsync("update services.request set process_instance_id = @instance where id = @id", new { id, instance = instance.Id }, ct);
+    }
+
+    /// <summary>
+    /// The values a connector step may map (spec 016 FR-016): each form field as <c>form.{id}</c>, the request number,
+    /// and the requester's name, email and employee ID. A step sends only what its owner mapped.
+    /// </summary>
+    private async Task<IReadOnlyDictionary<string, JsonElement>> VariablesAsync(Guid id, Guid subject, CancellationToken ct)
+    {
+        var row = await session.QuerySingleOrDefaultAsync("select number, data::text from services.request where id = @id", new { id },
+            r => (Number: r.GetString(0), Data: r.GetString(1)), ct);
+        var variables = new Dictionary<string, JsonElement>(StringComparer.Ordinal)
+        {
+            ["request.number"] = JsonSerializer.SerializeToElement(row.Number),
+        };
+        using (var data = JsonDocument.Parse(row.Data ?? "{}"))
+        {
+            foreach (var field in data.RootElement.EnumerateObject())
+            {
+                variables["form." + field.Name] = field.Value.Clone();
+            }
+        }
+        if (await users.GetAsync(subject, ct) is { } account)
+        {
+            variables["requester.name"] = JsonSerializer.SerializeToElement(account.DisplayName);
+            if (account.Email is { } email)
+            {
+                variables["requester.email"] = JsonSerializer.SerializeToElement(email);
+            }
+        }
+        return variables;
     }
 
     // ---- Resubmit ----
@@ -553,7 +584,25 @@ public sealed class Requests(
                 e.Comment, e.At));
         }
         return new RequestDetail(await SummaryAsync(row, ct), row.ServiceVersion, version?.Form ?? FormDefinition.Empty,
-            Catalogue.Json<Dictionary<string, JsonElement>>(row.Data), row.Classification, await attachments.ForRequestAsync(id, ct), tracking);
+            Catalogue.Json<Dictionary<string, JsonElement>>(row.Data), row.Classification, await attachments.ForRequestAsync(id, ct), tracking,
+            version?.Route.Actions is { Count: > 0 } actions && row.InstanceId is { } instance ? await AutomationAsync(row, instance, actions, ct) : null);
+    }
+
+    /// <summary>The connector steps of the request's current route, with the open incident of each; owners may act on them.</summary>
+    private async Task<RequestAutomation> AutomationAsync(RequestRow row, Guid instance, IReadOnlyList<ActionStep> actions, CancellationToken ct)
+    {
+        // Steps are published as action_1, action_2, ... in route order; their names in each language come from the version.
+        IReadOnlyDictionary<string, string>? NamesOf(string element) =>
+            element.StartsWith("action_", StringComparison.Ordinal) && int.TryParse(element["action_".Length..], out var n) && n >= 1 && n <= actions.Count
+                ? actions[n - 1].Names : null;
+        var incidents = (await engine.IncidentsAsync(instance, ct)).Where(i => i.Status == "open").ToDictionary(i => i.ElementId, i => i.Id);
+        var steps = (await engine.ServiceTasksAsync(instance, ct))
+            .Select(s => new AutomationStepView(s.ElementId, s.StepName, s.Status, s.ExternalReference, s.ErrorClass, s.ErrorCode, s.StartedAt, s.EndedAt,
+                incidents.TryGetValue(s.ElementId, out var incident) ? incident : null, NamesOf(s.ElementId)))
+            .ToList();
+        var owner = await session.ScalarAsync<Guid?>("select owner_org_unit_id from services.service where id = @id", new { id = row.ServiceId }, ct);
+        var canOperate = (await authz.CheckAsync(Permissions.ServiceManage, owner is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant, ct)).Allowed;
+        return new RequestAutomation(steps, canOperate);
     }
 
     // ---- Cancel ----

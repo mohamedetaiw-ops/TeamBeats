@@ -131,6 +131,37 @@ public static class PackEndpoints
         }).RequireStepUp();
     }
 
+    /// <summary>Connector actions as agent tools (spec 017 T009, spec 027 FR-006). Registering one needs step-up, like defining an action.</summary>
+    public static void MapTools(IEndpointRouteBuilder app)
+    {
+        var api = app.MapGroup("/api/v1/integrations/pack-connections/{id:guid}/tools").RequireTenantUser().InAdminArea()
+            .WithTags("Integrations: connector packs");
+
+        api.MapGet("", async (Guid id, IAuthorizationService authz, ConnectorTools tools, CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            return Results.Ok(await tools.ListAsync(id, ct));
+        });
+
+        api.MapPost("", async (Guid id, ConnectorToolRequest request, IAuthorizationService authz, ConnectorTools tools, IDbSession session,
+            CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            var view = await tools.RegisterAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/integrations/pack-connections/{id}/tools/{view.Id}", view);
+        }).RequireStepUp();
+
+        api.MapDelete("/{toolId:guid}", async (Guid id, Guid toolId, IAuthorizationService authz, ConnectorTools tools, IDbSession session,
+            CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            await tools.DeleteAsync(id, toolId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+    }
+
     private static Task Demand(IAuthorizationService authz, CancellationToken ct) => authz.DemandAsync(Permissions.IntegrationManage, AuthzTarget.Tenant, ct);
 
     private static async Task<IResult> SetEnabled(Guid id, bool enabled, IAuthorizationService authz, PackConnections packs, IDbSession session,

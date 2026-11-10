@@ -68,6 +68,8 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
     /// <summary>The policy in force, for the registry and the runtime; no permission check.</summary>
     public async Task<AgentPolicyView> CurrentAsync(CancellationToken ct)
     {
+        // Every use of the registry follows a policy read, so the tenant's own tools are loaded here (spec 027 FR-006).
+        await tools.LoadAsync(ct);
         var rows = await session.QueryAsync("select version, policy::text, updated_at from agents.agent_policy", null,
             r => new AgentPolicyView(r.GetInt32(0), JsonSerializer.Deserialize<AgentPolicy>(r.GetString(1), Json) ?? AgentPolicy.Default,
                 r.GetFieldValue<DateTimeOffset>(2)), ct);
@@ -95,8 +97,8 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
         {
             throw AppException.Validation("policy", "validation.agent_policy.required");
         }
-        policy = Validate(policy, tools);
         var current = await CurrentAsync(ct);
+        policy = Validate(policy, tools);
         if (request.Version != current.Version)
         {
             throw AppException.Conflict("conflict.agent_policy.version");

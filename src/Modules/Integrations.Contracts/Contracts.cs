@@ -267,6 +267,36 @@ public static class ConnectorSideEffects
     public const string ExternalEffect = "external_effect";
 }
 
+/// <summary>
+/// A field a connector action takes (spec 017 FR-008): <paramref name="Type"/> is <c>string</c>, <c>number</c>,
+/// <c>integer</c> or <c>boolean</c>.
+/// </summary>
+public sealed record ConnectorInput(string Name, string Type, bool Required);
+
+/// <summary>
+/// A connector action as a route designer or the engine sees it (spec 017 FR-008, FR-009): what it does, whether a
+/// retry is safe, its business errors and its inputs. <paramref name="Inputs"/> is null when the action declares none,
+/// and such an action cannot be a step.
+/// </summary>
+public sealed record ConnectorActionInfo(
+    Guid ConnectionId,
+    string ConnectionName,
+    string Kind,
+    string Action,
+    string SideEffect,
+    bool Idempotent,
+    IReadOnlyList<string> BusinessErrors,
+    IReadOnlyList<ConnectorInput>? Inputs,
+    bool Enabled);
+
+/// <summary>The connector actions of the tenant's connections, for route steps (specs 016, 024). Tenant comes from context; no secrets.</summary>
+public interface IConnectorActions
+{
+    Task<IReadOnlyList<ConnectorActionInfo>> ListAsync(CancellationToken ct = default);
+
+    Task<ConnectorActionInfo?> FindAsync(Guid connectionId, string action, CancellationToken ct = default);
+}
+
 /// <summary>How a connector call ended (spec 017 US2 and US3).</summary>
 public static class ConnectorOutcomes
 {

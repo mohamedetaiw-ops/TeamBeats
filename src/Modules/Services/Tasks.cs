@@ -261,6 +261,11 @@ public sealed class Tasks(
         var instance = await engine.GetInstanceAsync(task.InstanceId, ct);
         if (instance is not { Status: "completed" })
         {
+            if (done.Outcome == TaskOutcomes.Approve && version?.Route.Actions is { Count: > 0 } && instance is { Status: "active" })
+            {
+                // Approved, with automatic steps left: the requester can no longer cancel (section 6); the end of the route closes it.
+                await session.ExecAsync("update services.request set status = 'approved' where id = @id", new { id = request.Id }, ct);
+            }
             return; // A later step is open (R2 multi-step routes).
         }
         var status = instance.Outcome switch

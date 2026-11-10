@@ -12,14 +12,17 @@ import {
   fieldTypes,
   pick,
   prefillSources,
+  type ActionStep,
   type ApprovalStep,
   type Category,
   type FieldType,
   type FormField as Field,
   type Names,
+  type RouteActionsView,
   type ServiceAdminView,
   type ServicePreview,
 } from "@/lib/services/types";
+import { ActionStepsEditor } from "./ActionStepsEditor";
 import { PersonPicker } from "./PersonPicker";
 import { RequestForm } from "./RequestForm";
 import "./services.css";
@@ -65,7 +68,17 @@ function clean(names: Names | null | undefined): Names | null {
  * owner; for form services, the form fields, one approval step, a preview as a requester sees it, and publish. Every
  * rule is checked by the API, which also keeps the audience inside the owner's unit.
  */
-export function ServiceEditor({ initial, categories, units }: { initial: ServiceAdminView; categories: Category[]; units: OrgUnit[] }) {
+export function ServiceEditor({
+  initial,
+  categories,
+  units,
+  routeActions,
+}: {
+  initial: ServiceAdminView;
+  categories: Category[];
+  units: OrgUnit[];
+  routeActions: RouteActionsView;
+}) {
   const t = useTranslations("services.admin");
   const locale = useLocale();
   const router = useRouter();
@@ -85,6 +98,7 @@ export function ServiceEditor({ initial, categories, units }: { initial: Service
   const latest = view.latest;
   const [fields, setFields] = useState<Field[]>(latest?.form.fields ?? []);
   const [approval, setApproval] = useState<ApprovalStep | null>(latest?.route.approval ?? null);
+  const [actionSteps, setActionSteps] = useState<ActionStep[]>(latest?.route.actions ?? []);
   const [allowOnBehalf, setAllowOnBehalf] = useState(latest?.allowOnBehalf ?? false);
   const [maxAttachments, setMaxAttachments] = useState(latest?.maxAttachments ?? 0);
   const [draftResult, setDraftResult] = useState<Result>(null);
@@ -141,7 +155,10 @@ export function ServiceEditor({ initial, categories, units }: { initial: Service
             showWhen: f.showWhen && f.showWhen.field ? f.showWhen : null,
           })),
         },
-        route: { approval: approval ? { ...approval, names: clean(approval.names) } : null },
+        route: {
+          approval: approval ? { ...approval, names: clean(approval.names) } : null,
+          actions: actionSteps.length > 0 ? actionSteps.map((a) => ({ ...a, names: clean(a.names) })) : null,
+        },
         allowOnBehalf,
         maxAttachments,
       });
@@ -532,6 +549,14 @@ export function ServiceEditor({ initial, categories, units }: { initial: Service
               </>
             ) : null}
           </fieldset>
+          {routeActions.available ? (
+            <ActionStepsEditor
+              steps={actionSteps}
+              actions={routeActions.actions}
+              fields={fields.filter((f) => f.type !== "policy_note").map((f) => ({ key: f.key, label: pick(f.labels, locale, f.key) }))}
+              onChange={setActionSteps}
+            />
+          ) : null}
           <Notice result={draftResult} />
           <div className="services-actions">
             <Button type="submit" busy={busy === "draft"} busyLabel={t("saving")}>

@@ -167,6 +167,12 @@ public static class AuditActions
     public const string WorkflowTaskCompleted = "workflow.task_completed";
     public const string WorkflowInstanceWithdrawn = "workflow.instance_withdrawn";
 
+    // 024 (R2 part): incidents on connector steps
+    public const string ProcessIncidentRaised = "process.incident_raised";
+    public const string ProcessIncidentRetried = "process.incident_retried";
+    public const string ProcessIncidentSkipped = "process.incident_skipped";
+    public const string ProcessIncidentCancelled = "process.incident_cancelled";
+
     // Spec 016 (R1): services, requests, tasks and delegation.
     public const string ServiceCreated = "service.created";
     public const string ServiceChanged = "service.changed";

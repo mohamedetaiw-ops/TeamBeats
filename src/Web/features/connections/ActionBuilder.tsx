@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
@@ -71,6 +72,7 @@ function TextArea({ label, hint, value, onChange }: { label: string; hint?: stri
  */
 export function ActionBuilder({ connectionId, initial }: { connectionId: string; initial: RestActionView[] }) {
   const t = useTranslations("connections.builder");
+  const router = useRouter();
   const returnTo = `/admin/connections/${connectionId}`;
   const base = `/api/v1/integrations/pack-connections/${connectionId}`;
   const [actions, setActions] = useState(initial);
@@ -135,6 +137,8 @@ export function ActionBuilder({ connectionId, initial }: { connectionId: string;
       setActions((list) => [...list.filter((a) => a.name !== result.data.name), result.data].sort((x, y) => (x.name < y.name ? -1 : 1)));
       setExisting(true);
       setMessages({ ok: true, list: [t("saved")] });
+      // The agent tools section lists the actions with inputs from the page's data.
+      router.refresh();
     } else {
       setMessages({ ok: false, list: result.messages });
     }
@@ -163,6 +167,7 @@ export function ActionBuilder({ connectionId, initial }: { connectionId: string;
       setActions((list) => list.filter((a) => a.name !== target));
       edit(null);
       setMessages({ ok: true, list: [t("removed")] });
+      router.refresh();
     } else {
       setMessages({ ok: false, list: result.messages });
     }

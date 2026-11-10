@@ -2668,6 +2668,92 @@
         }
       }
     },
+    "/api/v1/integrations/pack-connections/{id}/tools": {
+      "get": {
+        "tags": [
+          "Integrations: connector packs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Integrations: connector packs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectorToolRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/integrations/pack-connections/{id}/tools/{toolId}": {
+      "delete": {
+        "tags": [
+          "Integrations: connector packs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "toolId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/agent/enrol": {
       "post": {
         "tags": [
@@ -5110,6 +5196,48 @@
         }
       }
     },
+    "/api/v1/requests/{id}/automation/incidents/{incidentId}:resolve": {
+      "post": {
+        "tags": [
+          "Services: requests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "incidentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/requests/attachments": {
       "post": {
         "tags": [
@@ -5297,6 +5425,18 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/services/admin/connector-actions": {
+      "get": {
+        "tags": [
+          "Services: builder"
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -12089,6 +12229,51 @@
           "condition": {}
         }
       },
+      "ActionStep": {
+        "required": [
+          "names",
+          "connectionId",
+          "action",
+          "inputs"
+        ],
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "connectionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "action": {
+            "type": "string"
+          },
+          "inputs": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "onBusinessError": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "AddMembershipRequest": {
         "required": [
           "userId",
@@ -13612,6 +13797,44 @@
           }
         }
       },
+      "ConnectorToolRequest": {
+        "required": [
+          "action",
+          "name",
+          "description",
+          "title"
+        ],
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "ContentAudience": {
         "type": "object",
         "properties": {
@@ -15101,6 +15324,27 @@
             ]
           },
           "content": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "IncidentResolveRequest": {
+        "required": [
+          "resolution",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "resolution": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reason": {
             "type": [
               "null",
               "string"
@@ -17204,6 +17448,18 @@
                 "$ref": "#/components/schemas/ApprovalStep"
               }
             ]
+          },
+          "actions": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ActionStep"
+            }
+          },
+          "hasSteps": {
+            "type": "boolean"
           }
         }
       },

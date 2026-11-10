@@ -20,10 +20,23 @@ public sealed record ApproverRule(string Kind, IReadOnlyList<Guid>? Users = null
 
 public sealed record ApprovalStep(IReadOnlyDictionary<string, string>? Names, ApproverRule Approvers, int? DueWorkingDays = null);
 
-/// <summary>A service's route. R1 has none or one approval step (US8: approval-only routes in R1).</summary>
-public sealed record ServiceRoute(ApprovalStep? Approval = null)
+/// <summary>
+/// A step that calls a connector action after the approval (spec 016 US8, FR-016; spec 017 T009). <paramref name="Inputs"/>
+/// maps each action input to a request value: <c>form.{field}</c>, <c>request.number</c>, <c>requester.name</c> or
+/// <c>requester.email</c>. Only the mapped values are sent. <paramref name="OnBusinessError"/> maps declared business
+/// error codes to <c>continue</c> or <c>reject</c>; other failures pause the request at the step ("automation failed").
+/// </summary>
+public sealed record ActionStep(IReadOnlyDictionary<string, string>? Names, Guid ConnectionId, string Action, IReadOnlyDictionary<string, string>? Inputs,
+    IReadOnlyDictionary<string, string>? OnBusinessError = null);
+
+/// <summary>A service's route: none or one approval step, then the connector steps in order (US8, R2 part).</summary>
+public sealed record ServiceRoute(ApprovalStep? Approval = null, IReadOnlyList<ActionStep>? Actions = null)
 {
     public static readonly ServiceRoute None = new();
+
+    public const int MaxActions = 5;
+
+    public bool HasSteps => Approval is not null || Actions is { Count: > 0 };
 }
 
 public sealed record VersionRow(

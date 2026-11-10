@@ -1409,7 +1409,32 @@
         "cancelled": "Cancelled",
         "approved": "Approved",
         "rejected": "Rejected",
-        "returned": "Returned for changes"
+        "returned": "Returned for changes",
+        "completed": "Completed",
+        "automation_done": "Automatic step done",
+        "automation_failed": "Automation failed",
+        "automation_retried": "Automatic step retried",
+        "automation_skipped": "Automatic step skipped",
+        "automation_cancelled": "Cancelled at an automatic step"
+      },
+      "automation": {
+        "title": "Automatic steps",
+        "reference": "Reference:",
+        "errorCode": "Error:",
+        "operatorHint": "This step stopped. Retry it, skip it, or cancel the request. Give a reason; it is kept in Tracking.",
+        "reason": "Reason",
+        "retry": "Retry",
+        "skip": "Skip",
+        "cancel": "Cancel request",
+        "working": "Working…",
+        "states": {
+          "running": "Running",
+          "succeeded": "Done",
+          "business_error": "Refused by the system",
+          "incident": "Automation failed",
+          "skipped": "Skipped",
+          "cancelled": "Cancelled"
+        }
       }
     },
     "decision": {
@@ -1620,7 +1645,36 @@
         "org_primary_unit": "Unit",
         "org_company": "Company"
       },
-      "lineManagerHint": "The manager of the person the request is for decides, from the reporting line. When there is no manager, or the manager filed the request, people who hold the Approver role for the requester's unit decide instead."
+      "lineManagerHint": "The manager of the person the request is for decides, from the reporting line. When there is no manager, or the manager filed the request, people who hold the Approver role for the requester's unit decide instead.",
+      "automation": {
+        "title": "Automatic steps",
+        "intro": "After the approval, each step calls an action of a connection. Only the values you map are sent.",
+        "none": "No connection has actions that declare their fields yet. Add them in Connections.",
+        "action": "Action",
+        "chooseAction": "Choose an action",
+        "nameEn": "Step name in English",
+        "nameAr": "Step name in Arabic",
+        "reads": "This action reads data.",
+        "writes": "This action changes data in the other system. If its result is unknown, the request stops for an owner.",
+        "writesOnce": "This action changes data in the other system and is safe to retry.",
+        "input": "Field {name}",
+        "inputRequired": "Field {name} (required)",
+        "notMapped": "Not sent",
+        "formValue": "Form: {field}",
+        "values": {
+          "request_number": "Request number",
+          "requester_name": "Requester name",
+          "requester_email": "Requester email"
+        },
+        "onError": "When the system answers {code}",
+        "paths": {
+          "stop": "Stop for an owner",
+          "continue": "Carry on",
+          "reject": "Reject the request"
+        },
+        "remove": "Remove step",
+        "add": "Add automatic step"
+      }
     },
     "team": {
       "title": "Team requests",
@@ -4322,6 +4376,36 @@
         "succeeded": "Done",
         "failed": "Failed"
       }
+    },
+    "tools": {
+      "title": "Agent tools",
+      "intro": "Register an action of this connection as a tool that AI agents can use. The AI policy decides which agents may hold it, and an agent sends only the action's declared inputs.",
+      "empty": "No action of this connection is a tool yet.",
+      "toolName": "Tool",
+      "action": "Action",
+      "sideEffects": {
+        "read": "Reads only",
+        "write_external": "Changes another system"
+      },
+      "rules": {
+        "execute": "Runs without asking",
+        "confirm": "Waits for the employee to confirm"
+      },
+      "remove": "Remove tool",
+      "removeQuestion": "Remove {name}? Agents that hold it can no longer use it.",
+      "removeConfirm": "Remove the tool",
+      "removed": "The tool is removed.",
+      "registerTitle": "Register a tool",
+      "noActions": "No action of this connection declares its inputs, so none can be a tool.",
+      "name": "Tool name",
+      "nameHint": "Lowercase letters, digits and underscores, starting with a letter. Agents see it with connector. in front, for example connector.permit_status.",
+      "description": "What the tool does",
+      "descriptionHint": "Agents read this to decide when to use the tool. Write it in English, 10 to 500 characters.",
+      "titleEn": "Title in English",
+      "titleAr": "Title in Arabic",
+      "policyNote": "Tools that change another system need agents at a higher autonomy level and always wait for the employee's confirmation.",
+      "register": "Register the tool",
+      "registered": "The tool is registered. The AI policy administrator can now allow it for agents."
     }
   },
   "components_gallery": {
