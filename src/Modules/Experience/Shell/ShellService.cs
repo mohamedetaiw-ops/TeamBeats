@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Experience.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
@@ -40,7 +41,7 @@ public sealed record OrganizationIndicator(Guid Id, string Name, bool Primary);
 /// <param name="Home">Slug of the home page when it is published and the caller may view it; otherwise null.</param>
 public sealed record ShellView(int Version, ShellDefinition Layout, IReadOnlyList<NavLink> GlobalMenu,
     IReadOnlyList<OrganizationMenu> OrganizationMenus, IReadOnlyList<OrganizationIndicator> Organizations, bool CanSwitchOrganization,
-    string? Home = null);
+    string? Home = null, bool Assistant = false);
 
 public sealed record OrganizationMenu(Guid OrgUnitId, string Name, IReadOnlyList<NavLink> Items);
 
@@ -68,7 +69,8 @@ public sealed partial class ShellService(
     IAuthorizationService authz,
     IOrganizationHierarchy hierarchy,
     IAuditWriter audit,
-    IOutbox outbox)
+    IOutbox outbox,
+    IEntitlementService entitlements)
 {
     public const string TenantScope = "tenant";
     public static readonly IReadOnlyList<string> Regions =
@@ -151,7 +153,9 @@ public sealed partial class ShellService(
         }
 
         return new ShellView(version, layout, global is null ? [] : await LinksAsync(global.Items, nodes, visible, locale, ct), orgMenus,
-            organizations, organizations.Count > 1, await HomeSlugAsync(layout.HomePageId, ct));
+            organizations, organizations.Count > 1, await HomeSlugAsync(layout.HomePageId, ct),
+            // The Ask TeamBeats button (spec 008 FR-056) appears only when the tenant's package has the assistant.
+            await entitlements.IsEnabledAsync(Capabilities.AiAssistant, ct));
     }
 
     // Menus

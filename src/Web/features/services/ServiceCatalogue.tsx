@@ -5,13 +5,12 @@ import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
-import { Icon, type IconName } from "@/components/ui/Icon";
+import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
+import { serviceLook } from "@/lib/services/look";
 import { pick, type CatalogueView, type ServiceCard } from "@/lib/services/types";
 import "./services.css";
 
-const categoryIcons: readonly IconName[] = ["user", "settings", "home", "inbox", "globe", "chat", "calendar", "book"];
-const tileTones = ["accent", "highlight", "success", "info"] as const;
 
 /**
  * The service catalogue (spec 016 US1): the services the API offers this person, by category, with search,
@@ -65,10 +64,7 @@ export function ServiceCatalogue({ initial }: { initial: CatalogueView }) {
   }, [view, locale, t]);
 
   // Each category keeps one icon and tint, so a service looks the same in Favourites, Recently used and its category.
-  const look = (s: ServiceCard) => {
-    const index = Math.max(0, view.categories.findIndex((c) => c.id === s.categoryId));
-    return { icon: categoryIcons[index % categoryIcons.length] ?? "services", tone: tileTones[index % tileTones.length] ?? "accent" };
-  };
+  const look = (s: ServiceCard) => serviceLook(s, view.categories);
 
   const card = (s: ServiceCard) => {
     const name = pick(s.names, locale);

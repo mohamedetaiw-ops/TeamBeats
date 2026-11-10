@@ -404,8 +404,8 @@
 }
 
 .shell-rail .shell-menu-item > a[aria-current="page"] {
-  background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-nav-active);
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
   font-weight: var(--tb-font-weight-medium);
 }
 
@@ -532,5 +532,47 @@
     background: transparent;
     font-weight: var(--tb-font-weight-bold);
     color: var(--tb-color-nav-active);
+  }
+}
+
+/*
+ * Ask TeamBeats (spec 008 FR-056): one floating button at the bottom end of every page that opens the assistant. It is
+ * drawn only when the shell says the tenant has the assistant, and it stays clear of the page's own actions.
+ */
+.shell-ask {
+  position: fixed;
+  inset-block-end: var(--tb-space-lg);
+  inset-inline-end: var(--tb-space-lg);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  min-block-size: 3rem;
+  padding-inline: var(--tb-space-lg);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-surface-night);
+  color: var(--tb-color-text-on-night);
+  font-weight: var(--tb-font-weight-bold);
+  box-shadow: var(--tb-shadow-md);
+  text-decoration: none;
+}
+
+.shell .shell-ask {
+  color: var(--tb-color-text-on-night);
+}
+
+.shell-ask svg {
+  color: var(--tb-color-highlight-bright);
+}
+
+.shell-ask:focus-visible {
+  outline-offset: var(--tb-space-xs);
+}
+
+@media (width <= 40rem) {
+  .shell-ask {
+    inset-block-end: var(--tb-space-md);
+    inset-inline-end: var(--tb-space-md);
+    padding-inline: var(--tb-space-md);
   }
 }

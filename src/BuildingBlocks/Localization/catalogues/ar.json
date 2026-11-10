@@ -1169,5 +1169,8 @@
   "integrations.agent.signature_invalid": "تعذّر التحقق من طلب الوكيل.",
   "conflict.integrations.agent_job_open": "توجد مزامنة للدليل قيد الانتظار أو التنفيذ لهذا الاتصال.",
   "conflict.integrations.agent_key_in_use": "هذا المفتاح مسجّل بالفعل.",
-  "conflict.integrations.agent_job_not_held": "هذا الوكيل لا يحمل هذه المهمة."
+  "conflict.integrations.agent_job_not_held": "هذا الوكيل لا يحمل هذه المهمة.",
+  "experience.component.home_your_day.name": "يومك",
+  "experience.component.home_your_day.description": "المهام التي تنتظر موافقتك والمهام المتأخرة واجتماعات اليوم، ثم جدول اليوم",
+  "experience.component.home_your_day.props.title": "العنوان"
 }

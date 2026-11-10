@@ -4,15 +4,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { localized, type PlacementProps } from "@/lib/experience/contract";
-import { pick, type CatalogueView, type ServiceCard } from "@/lib/services/types";
+import { pick, type CatalogueView, type Category, type ServiceCard } from "@/lib/services/types";
+import { serviceLook } from "@/lib/services/look";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
 import "@/features/services/home.css";
 
-const tones = ["accent", "highlight", "success", "info"] as const;
-
-type Answer = "loading" | "failed" | { shown: ServiceCard[]; total: number };
+type Answer = "loading" | "failed" | { shown: ServiceCard[]; total: number; categories: Category[] };
 
 /** Favourites first, then recently used, then the rest of the catalogue in its own order, without repeats. */
 function choose(view: CatalogueView, top: number): ServiceCard[] {
@@ -45,7 +44,7 @@ export default function MyServices({ props }: PlacementProps) {
       .then(async (r) => {
         if (!r.ok) throw new Error(String(r.status));
         const view = (await r.json()) as CatalogueView;
-        if (live) setAnswer({ shown: choose(view, top), total: view.services.length });
+        if (live) setAnswer({ shown: choose(view, top), total: view.services.length, categories: view.categories });
       })
       .catch(() => live && setAnswer("failed"));
     return () => {
@@ -80,11 +79,12 @@ export default function MyServices({ props }: PlacementProps) {
   if (answer.shown.length === 0) return shell(<StateView kind="empty" title={t("none")} message="" />, answer.total);
   return shell(
     <ul className="home-tiles">
-      {answer.shown.map((s, index) => {
+      {answer.shown.map((s) => {
         const name = pick(s.names, locale);
+        const look = serviceLook(s, answer.categories);
         const tile = (
-          <span className="ui-icon-tile" data-tone={tones[index % tones.length]} aria-hidden="true">
-            <Icon name={s.kind === "linked" ? "external" : "services"} size={20} />
+          <span className="ui-icon-tile" data-tone={look.tone} aria-hidden="true">
+            <Icon name={s.kind === "linked" ? "external" : look.icon} size={20} />
           </span>
         );
         return (

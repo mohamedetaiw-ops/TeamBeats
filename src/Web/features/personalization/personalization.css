@@ -1,11 +1,16 @@
-/* Personalization mode (spec 008 US2). A clear mode: areas the user may change get an outline and their tools. */
+/* Personalization mode (spec 008 US2). A clear mode: areas the user may change get an outline and their tools.
+ * The arrange control sits at the top end of the page frame, out of the way of the page title (spec 008 home). */
 .pz-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--tb-space-sm);
-  padding-block: var(--tb-space-sm);
-  padding-inline: var(--tb-space-md);
+  inline-size: 100%;
+  max-inline-size: var(--xp-content, 90rem);
+  margin-inline: auto;
+  padding-block: var(--tb-space-md) 0;
+  padding-inline: var(--xp-pad, var(--tb-space-lg));
 }
 
 .pz-toolbar .ui-confirm {

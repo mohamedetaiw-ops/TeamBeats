@@ -32,6 +32,21 @@
       "acceptPolicy": "اقرأ {name} ووافق عليها",
       "dueOn": "مطلوب بحلول {date}",
       "from": "من {name}"
+    },
+    "day": {
+      "title": "يومك",
+      "inbox": "صندوق المهام",
+      "toApprove": "بانتظار موافقتك",
+      "overdue": "متأخرة",
+      "meetings": "{count, plural, one {اجتماع متبقٍ اليوم} other {اجتماعات متبقية اليوم}}",
+      "agenda": "اجتماعات اليوم",
+      "noCalendar": "اعرض اجتماعات اليوم هنا.",
+      "connect": "اربط Outlook",
+      "calendarUnavailable": "التقويم غير متاح الآن.",
+      "noMeetings": "لا اجتماعات أخرى اليوم.",
+      "privateMeeting": "اجتماع خاص",
+      "startsIn": "بعد {minutes} دقيقة",
+      "now": "الآن"
     }
   },
   "signin": {
@@ -397,12 +412,13 @@
     "homeOf": "الصفحة الرئيسية لـ {name}",
     "account": "الحساب: {name}",
     "profile": "ملفي الشخصي",
-    "switchLanguage": "التبديل إلى {language}"
+    "switchLanguage": "التبديل إلى {language}",
+    "ask": "اسأل TeamBeats"
   },
   "personalization": {
     "toolbar": "خصّص صفحتك",
-    "start": "خصّص هذه الصفحة",
-    "done": "إنهاء التخصيص",
+    "start": "رتّب هذه الصفحة",
+    "done": "إنهاء الترتيب",
     "modeOn": "وضع التخصيص مفعّل. لكل عنصر يمكنك تغييره أزراره الخاصة.",
     "modeOff": "وضع التخصيص متوقف.",
     "undo": "تراجع",

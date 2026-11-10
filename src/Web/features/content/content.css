@@ -149,16 +149,36 @@
   color: var(--tb-color-text-on-night);
 }
 
+/* Decoration only: two peaks and a sun at the end of the band, drawn from tokens and mirrored in right to left. */
 .content-cta[data-emphasis="campaign"]::after {
   content: "";
   position: absolute;
-  inset-block-end: calc(-1 * var(--tb-space-xxl));
-  inset-inline-end: var(--tb-space-xl);
-  inline-size: 12rem;
-  block-size: 12rem;
-  border-radius: var(--tb-radius-full);
-  background: var(--tb-color-highlight-base);
-  opacity: 0.35;
+  inset-block: 0;
+  inset-inline-end: 0;
+  inline-size: 28%;
+  background:
+    radial-gradient(circle at 88% 14%, var(--tb-color-highlight-bright) 0 7%, transparent 7.5%),
+    linear-gradient(var(--tb-color-highlight-bright), var(--tb-color-highlight-bright));
+  clip-path: polygon(0 100%, 34% 18%, 56% 62%, 74% 30%, 100% 100%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.content-cta[data-emphasis="campaign"]::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 8%;
+  inline-size: 24%;
+  background: var(--tb-color-text-on-night);
+  clip-path: polygon(0 100%, 48% 8%, 100% 100%);
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.content-cta[data-emphasis="campaign"]:dir(rtl)::after,
+.content-cta[data-emphasis="campaign"]:dir(rtl)::before {
+  transform: scaleX(-1);
 }
 
 .content-cta[data-emphasis="campaign"] h2 {
@@ -193,7 +213,8 @@
     padding-inline: var(--tb-space-lg);
   }
 
-  .content-cta[data-emphasis="campaign"]::after {
+  .content-cta[data-emphasis="campaign"]::after,
+  .content-cta[data-emphasis="campaign"]::before {
     display: none;
   }
 }
@@ -417,13 +438,20 @@
   box-shadow: var(--tb-shadow-sm);
 }
 
+/* The lead story's picture panel; the picture fills it and keeps its ratio. */
 .content-lead-media {
-  display: grid;
-  place-items: center;
-  color: var(--tb-color-text-on-night);
-  background:
-    radial-gradient(circle at 80% 30%, var(--tb-color-highlight-bright) 0 14%, transparent 15%),
-    linear-gradient(135deg, var(--tb-color-accent-base), var(--tb-color-surface-night));
+  overflow: hidden;
+}
+
+.content-lead-media .ui-media {
+  display: block;
+  block-size: 100%;
+}
+
+.content-lead-media img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
 }
 
 .content-lead-body {

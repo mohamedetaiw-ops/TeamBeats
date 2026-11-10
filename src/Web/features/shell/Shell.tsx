@@ -11,6 +11,7 @@ import { GlobalMenu } from "./GlobalMenu";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { QuickNav } from "./QuickNav";
 import { SettingsPanel } from "./SettingsPanel";
+import { Icon } from "@/components/ui/Icon";
 import "./shell.css";
 
 /** The layout used when the shell API is unavailable, so the page always keeps identity, navigation and settings. */
@@ -101,6 +102,12 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
       ))}
       <div className="shell-below">{layout.below.map(render)}</div>
       <CriticalNotices />
+      {shell.ok && shell.data.assistant ? (
+        <Link className="shell-ask" href="/assistant">
+          <Icon name="spark" size={18} />
+          <span>{t("ask")}</span>
+        </Link>
+      ) : null}
     </header>
   );
 }
