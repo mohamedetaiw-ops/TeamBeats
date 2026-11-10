@@ -88,56 +88,59 @@ export function QuickNav() {
     };
   }, [term]);
 
+  // The palette sits outside the form: a second text field inside it would stop Enter from submitting the search.
   return (
-    <form className="shell-search" role="search" action="/search" method="get">
-      <label htmlFor={inputId} className="visually-hidden">
-        {t("label")}
-      </label>
-      <span className="shell-search-icon">
-        <Icon name="search" size={18} />
-      </span>
-      <input
-        id={inputId}
-        type="search"
-        name="q"
-        value={q}
-        maxLength={200}
-        placeholder={t("placeholder")}
-        aria-describedby={current && !palette ? listId : undefined}
-        aria-keyshortcuts="Control+K Meta+K"
-        onChange={(e) => setQ(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") {
-            setQ("");
-          }
-        }}
-      />
-      <p className="visually-hidden" aria-live="polite">
-        {current ? t("count", { count }) : ""}
-      </p>
-      {current && count > 0 && !palette ? (
-        <ul className="shell-search-results" id={listId}>
-          {current.pages.map((item) => (
-            <li key={`page:${item.href}`}>
-              <a href={item.href}>
-                <bdi>{item.label}</bdi>
-                {item.owner ? <span className="shell-owner">{item.owner}</span> : null}
-              </a>
+    <>
+      <form className="shell-search" role="search" action="/search" method="get">
+        <label htmlFor={inputId} className="visually-hidden">
+          {t("label")}
+        </label>
+        <span className="shell-search-icon">
+          <Icon name="search" size={18} />
+        </span>
+        <input
+          id={inputId}
+          type="search"
+          name="q"
+          value={q}
+          maxLength={200}
+          placeholder={t("placeholder")}
+          aria-describedby={current && !palette ? listId : undefined}
+          aria-keyshortcuts="Control+K Meta+K"
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setQ("");
+            }
+          }}
+        />
+        <p className="visually-hidden" aria-live="polite">
+          {current ? t("count", { count }) : ""}
+        </p>
+        {current && count > 0 && !palette ? (
+          <ul className="shell-search-results" id={listId}>
+            {current.pages.map((item) => (
+              <li key={`page:${item.href}`}>
+                <a href={item.href}>
+                  <bdi>{item.label}</bdi>
+                  {item.owner ? <span className="shell-owner">{item.owner}</span> : null}
+                </a>
+              </li>
+            ))}
+            {current.suggestions.map((item) => (
+              <li key={`${item.source}:${item.itemId}`}>
+                <a href={item.link}>
+                  <bdi>{item.title}</bdi>
+                  <span className="shell-owner">{t(`kinds.${item.kind}`)}</span>
+                </a>
+              </li>
+            ))}
+            <li>
+              <a href={`/search?q=${encodeURIComponent(term)}`}>{t("all", { term })}</a>
             </li>
-          ))}
-          {current.suggestions.map((item) => (
-            <li key={`${item.source}:${item.itemId}`}>
-              <a href={item.link}>
-                <bdi>{item.title}</bdi>
-                <span className="shell-owner">{t(`kinds.${item.kind}`)}</span>
-              </a>
-            </li>
-          ))}
-          <li>
-            <a href={`/search?q=${encodeURIComponent(term)}`}>{t("all", { term })}</a>
-          </li>
-        </ul>
-      ) : null}
+          </ul>
+        ) : null}
+      </form>
       <CommandPalette
         open={palette}
         onClose={() => setPalette(false)}
@@ -147,6 +150,6 @@ export function QuickNav() {
         groups={groups}
         onQueryChange={setQ}
       />
-    </form>
+    </>
   );
 }
