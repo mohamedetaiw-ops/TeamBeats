@@ -106,5 +106,40 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
       await expect(page.getByText(msg(locale, "connections.m365.empty"))).toBeVisible();
     });
+
+    test("an administrator adds a webhook that sends an event and receives deliveries, reads its inbound address and deletes it", async ({ page }, testInfo) => {
+      const host = `hooks-${locale}.example`;
+      const name = locale === "ar" ? "تنبيهات التصاريح" : "Permit alerts";
+      const event = msg(locale, "connections.webhooks.events.RequestCompleted");
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/connections`);
+      await page.getByLabel(msg(locale, "connections.allowlist.host")).fill(host);
+      await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
+      await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", host) })).toBeVisible();
+
+      const form = page.getByRole("form", { name: msg(locale, "connections.webhooks.formLabel") });
+      await form.getByLabel(msg(locale, "connections.webhooks.name")).fill(name);
+      await form.getByLabel(msg(locale, "connections.webhooks.url")).fill(`https://${host}/teambeats`);
+      await form.getByLabel(msg(locale, "connections.webhooks.secretRef")).fill(`secret://tenants/${tenant.id}/permit-hook`);
+      await form.getByLabel(event, { exact: true }).check();
+      await expect(form.getByLabel(msg(locale, "connections.webhooks.fieldOf").replace("{field}", "status").replace("{event}", event))).toBeChecked();
+      await form.getByLabel(msg(locale, "connections.webhooks.inboundOn")).check();
+      await form.getByLabel(msg(locale, "connections.webhooks.targetName")).fill("permits.approved");
+      await form.getByLabel(msg(locale, "connections.webhooks.fields"), { exact: true }).fill("status: $.permit.status");
+      await expectAccessible(page, testInfo, `webhook-add-${locale}`);
+      await form.getByRole("button", { name: msg(locale, "connections.webhooks.add") }).click();
+
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await expect(page.getByText(msg(locale, "connections.status.disabled"), { exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: msg(locale, "connections.webhooks.inboundTitle"), level: 2 })).toBeVisible();
+      await expect(page.getByText("/api/v1/integrations/inbound/")).toBeVisible();
+      await expectAccessible(page, testInfo, `webhook-${locale}`);
+
+      const deletion = page.getByRole("region", { name: msg(locale, "connections.detail.deleteTitle") });
+      await deletion.getByRole("button", { name: msg(locale, "connections.detail.delete"), exact: true }).click();
+      await page.getByRole("button", { name: msg(locale, "connections.detail.deleteConfirm"), exact: true }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
+    });
   });
 }

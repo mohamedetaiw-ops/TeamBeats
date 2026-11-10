@@ -8,6 +8,9 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Integrations.Runtime;
 
+/// <summary>A product event an outbound webhook may send, and the fields a receiver may get.</summary>
+public sealed record WebhookEventView(string Type, IReadOnlyList<string> Fields);
+
 /// <summary>
 /// Connector packs and their connections (spec 017 US1, US4; permission <c>integration.manage</c>). Creating a connection,
 /// changing its settings or credentials, and defining custom REST actions need step-up (FR-003).
@@ -22,6 +25,13 @@ public static class PackEndpoints
         {
             await Demand(authz, ct);
             return Results.Ok(await packs.CatalogueAsync(ct));
+        });
+
+        // The product events an outbound webhook may send, with the fields of each (spec 017 US5).
+        api.MapGet("/webhook-events", async (IAuthorizationService authz, CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            return Results.Ok(Webhooks.OutboundEvents.All.Select(e => new WebhookEventView(e.Key, e.Value)).OrderBy(e => e.Type, StringComparer.Ordinal).ToList());
         });
 
         api.MapGet("/pack-connections", async (IAuthorizationService authz, PackConnections packs, CancellationToken ct) =>
@@ -67,6 +77,12 @@ public static class PackEndpoints
             CancellationToken ct) => SetEnabled(id, true, authz, packs, session, ct));
         api.MapPost("/pack-connections/{id:guid}:disable", (Guid id, IAuthorizationService authz, PackConnections packs, IDbSession session,
             CancellationToken ct) => SetEnabled(id, false, authz, packs, session, ct));
+
+        api.MapGet("/pack-connections/{id:guid}/inbound", async (Guid id, IAuthorizationService authz, Webhooks.InboundWebhooks inbound, CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            return Results.Ok(await inbound.CountsAsync(id, ct) ?? throw AppException.NotFound());
+        });
 
         api.MapGet("/pack-connections/{id:guid}/dependents", async (Guid id, IAuthorizationService authz, PackConnections packs, CancellationToken ct) =>
         {

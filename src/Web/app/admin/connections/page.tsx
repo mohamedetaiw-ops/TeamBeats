@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
-import type { AllowlistEntry, FeatureView, Microsoft365Connection, Pack, PackConnection } from "@/lib/integrations/types";
+import type { AllowlistEntry, FeatureView, Microsoft365Connection, Pack, PackConnection, WebhookEventChoice } from "@/lib/integrations/types";
 import { ConnectionList } from "@/features/connections/ConnectionList";
 import { Microsoft365Connections } from "@/features/connections/Microsoft365Connections";
 import { connectionsSection } from "@/features/connections/guard";
@@ -11,12 +11,13 @@ import "@/features/connections/connections.css";
 export default async function ConnectionsPage({ searchParams }: { searchParams: Promise<{ consent?: string }> }) {
   const { consent } = await searchParams;
   await connectionsSection();
-  const [connections, packs, allowlist, microsoft, catalogue] = await Promise.all([
+  const [connections, packs, allowlist, microsoft, catalogue, webhookEvents] = await Promise.all([
     apiGet<PackConnection[]>("/api/v1/integrations/pack-connections"),
     apiGet<Pack[]>("/api/v1/integrations/packs"),
     apiGet<AllowlistEntry[]>("/api/v1/integrations/allowlist"),
     apiGet<Microsoft365Connection[]>("/api/v1/integrations/connections"),
     apiGet<FeatureView[]>("/api/v1/integrations/catalogue/microsoft365"),
+    apiGet<WebhookEventChoice[]>("/api/v1/integrations/webhook-events"),
   ]);
   if (!connections.ok || !packs.ok) {
     notFound();
@@ -33,7 +34,12 @@ export default async function ConnectionsPage({ searchParams }: { searchParams: 
           consent={consent === "granted" || consent === "failed" ? consent : null}
         />
       ) : null}
-      <ConnectionList initial={connections.data} packs={packs.data} allowlist={allowlist.ok ? allowlist.data : null} />
+      <ConnectionList
+        initial={connections.data}
+        packs={packs.data}
+        allowlist={allowlist.ok ? allowlist.data : null}
+        webhookEvents={webhookEvents.ok ? webhookEvents.data : []}
+      />
     </>
   );
 }
