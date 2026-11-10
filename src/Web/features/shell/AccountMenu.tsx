@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useId, useRef, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { SignOutButton } from "@/components/shell/SignOutButton";
+import { useShellPanel } from "@/lib/shell/panel";
 
 /** Up to two initials of a display name, for the avatar. */
 function initials(name: string): string {
@@ -14,22 +15,14 @@ function initials(name: string): string {
 
 /**
  * The signed-in person in the shell (spec 008 FR-001, identity region): an avatar button that opens their name, a link
- * to their profile and sign out. Escape or a click outside closes it and returns focus to the avatar.
+ * to their profile and sign out. Escape or a click outside closes it, and opening another shell panel does too, and returns focus to the avatar.
  */
 export function AccountMenu({ name }: { name: string }) {
   const t = useTranslations("shell");
-  const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useShellPanel(root);
   const button = useRef<HTMLButtonElement>(null);
   const panelId = useId();
-
-  useEffect(() => {
-    const close = (e: PointerEvent) => {
-      if (root.current && !root.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, []);
 
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key === "Escape" && open) {
@@ -47,7 +40,7 @@ export function AccountMenu({ name }: { name: string }) {
         aria-label={t("account", { name })}
         aria-expanded={open}
         aria-controls={panelId}
-        onClick={() => setOpen((x) => !x)}
+        onClick={() => setOpen(!open)}
       >
         <span aria-hidden="true">{initials(name)}</span>
       </button>

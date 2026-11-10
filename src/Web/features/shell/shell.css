@@ -411,14 +411,18 @@
 
 /* Wide screens: the rail sits down the start edge, under the bar, and the page moves over to make room. */
 @media (width > 64rem) {
+  /* The bar and the rail are one frame with no lines between them; the page sits inside it with a rounded start
+     corner, so the join matches the rounded cards (spec 036 DLS-030). */
   :root:not([data-nav="top"]) body:has(.shell-rail) {
     position: relative;
     min-block-size: 100vh;
     padding-inline-start: var(--xp-rail-size);
+    background: var(--tb-color-nav-background);
   }
 
   :root:not([data-nav="top"]) .shell:has(.shell-rail) {
     margin-inline-start: calc(-1 * var(--xp-rail-size));
+    border-block-end: 0;
   }
 
   :root:not([data-nav="top"]) .shell:has(.shell-rail) > :not(.shell-bar, .shell-rail) {
@@ -437,9 +441,14 @@
     z-index: 4;
     inline-size: var(--xp-rail-size);
     block-size: calc(100% - var(--xp-bar-size));
-    padding: var(--tb-space-md) var(--tb-space-xs);
+    padding: var(--tb-space-sm);
     border-block-start: 0;
-    border-inline-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  }
+
+  :root:not([data-nav="top"]) body:has(.shell-rail) main {
+    min-block-size: calc(100vh - var(--xp-bar-size));
+    border-start-start-radius: var(--tb-radius-lg);
+    background: var(--tb-color-surface-base);
   }
 
   :root:not([data-nav="top"]) .shell-rail .shell-menu-list {
@@ -575,4 +584,9 @@
     inset-inline-end: var(--tb-space-md);
     padding-inline: var(--tb-space-md);
   }
+}
+
+/* The place the page fills with its own actions, such as "Arrange this page" (spec 008 FR-059). */
+.shell-page-actions {
+  display: contents;
 }

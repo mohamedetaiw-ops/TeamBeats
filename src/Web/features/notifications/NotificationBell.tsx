@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
 import type { NotificationItem, NotificationPage } from "@/lib/notifications/types";
+import { useShellPanel } from "@/lib/shell/panel";
 import { NotificationEntry, openNotification } from "./NotificationEntry";
 import "./notifications.css";
 
@@ -19,7 +20,8 @@ export const pollInterval = 30_000;
 export function NotificationBell() {
   const t = useTranslations("notifications");
   const [unread, setUnread] = useState<number | null>(null);
-  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useShellPanel(root);
   const [items, setItems] = useState<NotificationItem[] | "loading" | "failed">("loading");
   const panelId = useId();
   const button = useRef<HTMLButtonElement>(null);
@@ -83,7 +85,7 @@ export function NotificationBell() {
 
   const count = unread ?? 0;
   return (
-    <div className="notification-bell" onKeyDown={onKeyDown}>
+    <div ref={root} className="notification-bell" onKeyDown={onKeyDown}>
       <button
         ref={button}
         type="button"

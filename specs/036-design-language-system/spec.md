@@ -142,6 +142,8 @@ A developer builds a new page from a template and the shared components; the bui
 - **DLS-053**: Empty, error and denied states MUST show an icon tile, a title and one line of help, without a dashed border, and an action when there is one. A card that would otherwise end half empty MUST fill its space with its empty state.
 - **DLS-054**: Forms and reading pages MUST sit in a readable column (forms at most 44rem, article text at most 46rem) inside the page frame; detail pages use the page header with the record's icon and breadcrumbs, not the section tabs of the area.
 - **DLS-055**: Person cards and other cards with an avatar MUST align the avatar to the top of the text, so names line up whether a card has one line or three.
+- **DLS-056**: The shell bar and the navigation rail MUST read as one frame, with no lines between them, and the page MUST sit inside that frame with a rounded start corner (`radius.lg`) so the join matches the rounded cards. The current rail item is an inset pill with space on every side. Page actions such as "Arrange this page" are icon buttons in the bar next to settings, never a row of their own.
+- **DLS-057**: Editors that move items (personalization mode, the page builder) MUST give each movable item a drag handle (the menu icon), fade the item while it moves and draw an accent bar where it will land, and MUST keep the same moves as buttons for the keyboard.
 - **DLS-023**: R2: theme drafts (spec 033 US2) SHOULD show the design review checklist before approval.
 - **DLS-024**: R2: cross-browser runs (Firefox, WebKit) SHOULD join the design suite once the browser matrix decision in `docs/testing/e2e-plan.md` is made.
 

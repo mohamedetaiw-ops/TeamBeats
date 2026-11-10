@@ -357,3 +357,47 @@
   border-radius: var(--tb-radius-md);
   padding: var(--tb-space-sm);
 }
+
+/* Drag and drop of placement cards (spec 032 FR-038): the handle takes the pointer, the card being moved fades, and a
+ * bar shows where it will land. The action menu and Alt+Arrow shortcuts do the same moves without a pointer. */
+.builder-handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.builder-handle:active {
+  cursor: grabbing;
+}
+
+.builder-region:has([data-dragging]) {
+  user-select: none;
+}
+
+.builder-placement[data-dragging] {
+  opacity: 0.5;
+}
+
+.builder-placement[data-drop] {
+  position: relative;
+}
+
+.builder-placement[data-drop]::before {
+  position: absolute;
+  inset-inline: 0;
+  block-size: var(--tb-border-width-thick);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-accent-base);
+  content: "";
+}
+
+.builder-placement[data-drop="before"]::before {
+  inset-block-start: calc(-1 * var(--tb-space-xs));
+}
+
+.builder-placement[data-drop="after"]::before {
+  inset-block-end: calc(-1 * var(--tb-space-xs));
+}
+
+.builder-region[data-drop="inside"] {
+  outline: var(--tb-border-width-thin) solid var(--tb-color-accent-base);
+}
