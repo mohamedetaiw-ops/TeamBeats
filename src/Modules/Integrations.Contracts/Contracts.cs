@@ -236,3 +236,79 @@ public interface IWeather
     /// <summary>Today's weather for a place name, with place names in <paramref name="locale"/> where the provider has them.</summary>
     Task<WeatherResult> TodayAsync(string location, string locale, bool refresh = false, CancellationToken ct = default);
 }
+
+/// <summary>What a connector action does to the external system (spec 017 FR-008). Writes get the stricter defaults of spec 027.</summary>
+public static class ConnectorSideEffects
+{
+    public const string Read = "read";
+    public const string Write = "write";
+    public const string ExternalEffect = "external_effect";
+}
+
+/// <summary>How a connector call ended (spec 017 US2 and US3).</summary>
+public static class ConnectorOutcomes
+{
+    /// <summary>The external system did what was asked.</summary>
+    public const string Succeeded = "succeeded";
+
+    /// <summary>The system refused for a business reason the action declares; the caller can branch on the code. Not retried.</summary>
+    public const string BusinessError = "business_error";
+
+    /// <summary>Technical failure after the retries, or a refused credential. The run is a dead letter that can be replayed.</summary>
+    public const string Failed = "failed";
+
+    /// <summary>A write that may have acted and cannot be retried safely (FR-010). The operator decides.</summary>
+    public const string Unknown = "unknown";
+
+    /// <summary>Not attempted: the connection is disabled, missing, outside the package, or the action is unknown.</summary>
+    public const string Refused = "refused";
+
+    /// <summary>Accepted as a durable job; <see cref="ConnectorActionCompleted"/> follows.</summary>
+    public const string Queued = "queued";
+
+    /// <summary>A call with the same idempotency key is still running.</summary>
+    public const string InProgress = "in_progress";
+}
+
+/// <summary>
+/// One call of a connector action by name (spec 017 FR-009). <paramref name="Input"/> holds only the fields the caller
+/// mapped. The same <paramref name="IdempotencyKey"/> on the same connection and action never runs the action twice.
+/// </summary>
+public sealed record ConnectorCall(Guid ConnectionId, string Action, System.Text.Json.JsonElement Input, string IdempotencyKey, string? CorrelationId = null);
+
+/// <summary>
+/// The outcome of a call. <paramref name="ErrorClass"/> is a plain class such as <c>not_responding</c> or
+/// <c>credential_refused</c>; <paramref name="ErrorCode"/> is the action's business error. <paramref name="Repeated"/>
+/// is true when the key had already run: the outcome and reference are the stored ones and the output is not kept.
+/// </summary>
+public sealed record ConnectorCallResult(
+    Guid? RunId,
+    string Outcome,
+    System.Text.Json.JsonElement? Output = null,
+    string? ExternalReference = null,
+    string? ErrorClass = null,
+    string? ErrorCode = null,
+    bool Repeated = false);
+
+/// <summary>
+/// The connector runtime (spec 017 plan) for workflows (016, 024) and agents (027). Tenant comes from context.
+/// <see cref="InvokeAsync"/> runs inside the caller's request: 3 attempts within 10 seconds. <see cref="EnqueueAsync"/>
+/// runs as a durable job: 5 attempts over about 30 minutes, then <see cref="ConnectorActionCompleted"/>.
+/// </summary>
+public interface IConnectorRuntime
+{
+    Task<ConnectorCallResult> InvokeAsync(ConnectorCall call, CancellationToken ct = default);
+
+    Task<ConnectorCallResult> EnqueueAsync(ConnectorCall call, CancellationToken ct = default);
+}
+
+/// <summary>A durable connector job finished, for good or not (spec 017 section 12). No payload content.</summary>
+public sealed record ConnectorActionCompleted(
+    Guid RunId,
+    Guid ConnectionId,
+    string Action,
+    string Outcome,
+    string? ExternalReference,
+    string? ErrorClass,
+    string? ErrorCode,
+    string? CorrelationId) : IIntegrationEvent;

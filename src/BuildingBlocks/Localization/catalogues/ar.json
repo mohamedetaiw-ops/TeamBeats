@@ -1074,5 +1074,11 @@
   "conflict.agent.no_template_update": "لا يوجد تحديث للقالب يمكن تطبيقه على هذا الوكيل، أو نُشر تحديث أحدث. أعد تحميل الصفحة.",
   "validation.agent_policy.max_run_seconds": "حدد مدة تشغيل بين 30 و300 ثانية.",
   "validation.agent_policy.max_daily_runs": "حدد حدًا يوميًا للتشغيل بين 1 و100000.",
-  "conflict.agent_run.daily_limit": "بلغ هذا الوكيل حده من المحادثات لهذا اليوم. حاول مرة أخرى غدًا."
+  "conflict.agent_run.daily_limit": "بلغ هذا الوكيل حده من المحادثات لهذا اليوم. حاول مرة أخرى غدًا.",
+  "validation.connector.action_required": "اختر إجراء الموصل المطلوب تنفيذه.",
+  "validation.connector.idempotency_key_invalid": "أدخل مفتاح عدم التكرار بطول من 1 إلى 200 حرف.",
+  "validation.connector.run_status_invalid": "اختر حالة تشغيل من القائمة.",
+  "validation.connector.replay_selection": "اختر من 1 إلى 100 عملية تشغيل لإعادتها.",
+  "validation.integrations.allowlist_host_invalid": "أدخل اسم مضيف مثل api.example.com أو ‎*.example.com. لا تُقبل عناوين IP.",
+  "conflict.integrations.allowlist_full": "تحتوي قائمة السماح على 200 مضيف. احذف واحدًا قبل إضافة آخر."
 }

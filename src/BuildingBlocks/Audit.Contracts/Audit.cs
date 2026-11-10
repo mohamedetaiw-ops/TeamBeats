@@ -99,6 +99,10 @@ public static class AuditActions
     public const string OutlookConnected = "integration.outlook_connected";
     public const string OutlookDisconnected = "integration.outlook_disconnected";
 
+    // 017 (R2): the connector runtime
+    public const string ConnectorReplay = "integration.replay";
+    public const string HostAllowlistChanged = "integration.allowlist_changed";
+
     // 032
     public const string PageCreated = "page.created";
     public const string PagePublished = "page.published";

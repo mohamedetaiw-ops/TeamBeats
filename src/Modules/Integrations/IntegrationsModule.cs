@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using TeamBeats.Authorization.Contracts;
@@ -8,6 +9,7 @@ using TeamBeats.Messaging;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Integrations.Microsoft365;
+using TeamBeats.Modules.Integrations.Runtime;
 using TeamBeats.Modules.Integrations.Weather;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -45,6 +47,15 @@ public static class IntegrationsModule
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, OutlookComponents>();
         services.AddHttpClient(OpenMeteoWeather.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
         services.AddScoped<IWeather, OpenMeteoWeather>();
+        services.AddSingleton<ConnectorRateLimits>();
+        services.AddScoped<ConnectorRuntime>();
+        services.AddScoped<IConnectorRuntime>(sp => sp.GetRequiredService<ConnectorRuntime>());
+        services.AddScoped<RunHistory>();
+        services.AddScoped<ConnectorJobs>();
+        services.AddScoped<HostAllowlist>();
+        services.AddHttpClient(SafeHttp.ClientName, c => c.Timeout = TimeSpan.FromSeconds(30))
+            .ConfigurePrimaryHttpMessageHandler(sp => SafeHttp.CreateHandler(
+                sp.GetRequiredService<IConfiguration>().GetValue<bool>(SafeHttp.AllowPrivateSetting)));
         services.AddMessageHandler<SessionEnded, DropTokensOnSessionEnded>("integrations.tokens_session_ended");
         services.AddMessageHandler<SessionRevoked, DropTokensOnSessionRevoked>("integrations.tokens_session_revoked");
         services.AddMessageHandler<UserDeprovisioned, DropTokensOnUserDeprovisioned>("integrations.tokens_user_deprovisioned");
@@ -179,6 +190,7 @@ public static class IntegrationsModule
         MapOutlookEndpoints(app);
         WorkspaceEndpoints.Map(app);
         WeatherEndpoints.Map(app);
+        RuntimeEndpoints.Map(app);
         return app;
     }
 
