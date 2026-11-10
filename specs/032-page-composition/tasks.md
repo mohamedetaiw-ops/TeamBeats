@@ -37,4 +37,4 @@ Depends on 002 (org units), 004 (authorization), 005 (entitlements), 006 (audit)
 - [x] T020 [P] [US2] Tests: keyboard-only and single-pointer composition, focus stays on moved placement and moves are announced, undo and redo order, offline autosave keeps edits locally
 
 ## Final phase
-- [ ] T021 Performance budgets in CI (LCP, INP, CLS on reference profiles), frontend failure telemetry without content, OpenAPI, R1 implementation notes, spec evidence
+- [x] T021 Performance budgets in CI (LCP, INP, CLS on reference profiles), frontend failure telemetry without content, OpenAPI, R1 implementation notes, spec evidence
