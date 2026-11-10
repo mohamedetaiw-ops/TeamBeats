@@ -191,7 +191,7 @@ export function WeekView({
   endHour?: number;
 }) {
   const locale = useLocale();
-  const t = useTranslations("ui.data");
+  const t = useTranslations("ui");
   const id = useId();
   const time = useTimes(locale);
   const dayName = new Intl.DateTimeFormat(locale, { weekday: "short", day: "numeric", timeZone: "UTC" });
@@ -218,7 +218,7 @@ export function WeekView({
             <h4 id={`${id}-${day}`} aria-current={day === today ? "date" : undefined}>
               {dayName.format(fromIso(day))}
             </h4>
-            <ul className="ui-week-all" aria-label={t("allDay")}>
+            <ul className="ui-week-all" aria-label={t("data.allDay")}>
               {all.map((e) => (
                 <li key={e.id}>
                   <EventChip event={e} />
@@ -228,7 +228,7 @@ export function WeekView({
             <ol className="ui-week-events">
               {timed.map((e) => {
                 const at = placed.get(e.id) ?? { lane: 0, lanes: 1 };
-                const label = t("timeRange", { start: time(day, e.start!), end: time(day, e.end ?? e.start!) });
+                const label = t("data.timeRange", { start: time(day, e.start!), end: time(day, e.end ?? e.start!) });
                 return (
                   <li
                     key={e.id}
