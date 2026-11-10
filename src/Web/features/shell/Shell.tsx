@@ -62,6 +62,8 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
         return (
           <div key={region} className="shell-settings-group">
             <LanguageSwitch locales={locales} locale={me.locale} />
+            {/* Page actions such as "Arrange this page" (spec 008 FR-059) sit next to settings; the page fills this place. */}
+            <div className="shell-page-actions" data-shell-page-actions="" />
             <SettingsPanel locales={locales} locale={me.locale} values={values} />
           </div>
         );

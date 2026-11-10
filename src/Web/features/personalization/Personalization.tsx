@@ -1,12 +1,16 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import type { LayoutOperation, LayoutView } from "./types";
 import "./personalization.css";
+
+const noSubscription = () => () => {};
 
 /** Changes the user can step back through (spec 008 FR-027). */
 export const undoDepth = 20;
@@ -59,6 +63,12 @@ export function PersonalizationProvider({
   const [announcement, setAnnouncement] = useState("");
   const eTag = useRef(initial.eTag);
   const toggle = useRef<HTMLButtonElement>(null);
+  // The shell keeps a place for page actions next to its settings; the toggle goes there once the page is in the browser.
+  const slot = useSyncExternalStore(
+    noSubscription,
+    () => document.querySelector("[data-shell-page-actions]"),
+    () => null,
+  );
 
   const announce = useCallback((text: string) => {
     // Clearing first makes a repeated message announce again.
@@ -167,19 +177,39 @@ export function PersonalizationProvider({
   return (
     <PersonalizationContext.Provider value={value}>
       <div className="pz-page" data-personalizing={editing || undefined} aria-busy={busy || undefined}>
-        {canPersonalize ? (
+        {canPersonalize && slot
+          ? createPortal(
+              <button
+                ref={toggle}
+                type="button"
+                className="button button-quiet shell-icon-button pz-toggle"
+                aria-pressed={editing}
+                title={t("start")}
+                onClick={() => setMode(!editing)}
+              >
+                <Icon name="edit" size={20} />
+                <span className="visually-hidden">{t("start")}</span>
+              </button>,
+              slot,
+            )
+          : null}
+        {canPersonalize && (editing || !slot) ? (
           <div className="pz-toolbar" role="toolbar" aria-label={t("toolbar")}>
-            <Button ref={toggle} variant={editing ? "primary" : "secondary"} aria-pressed={editing} onClick={() => setMode(!editing)}>
-              {editing ? t("done") : t("start")}
-            </Button>
             {editing ? (
               <>
+                <Button variant="primary" onClick={() => setMode(false)}>
+                  {t("done")}
+                </Button>
                 <Button variant="secondary" disabled={history.length === 0 || busy} onClick={() => void undo()}>
                   {t("undo")}
                 </Button>
                 <ConfirmAction label={t("reset")} question={t("resetQuestion")} confirmLabel={t("resetConfirm")} cancelLabel={t("cancel")} onConfirm={reset} />
               </>
-            ) : null}
+            ) : (
+              <Button ref={toggle} variant="secondary" aria-pressed={false} onClick={() => setMode(true)}>
+                {t("start")}
+              </Button>
+            )}
           </div>
         ) : null}
         <p role="status" aria-live="polite" className="visually-hidden">

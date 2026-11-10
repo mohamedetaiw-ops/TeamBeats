@@ -132,5 +132,32 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow).toBeLessThanOrEqual(0);
     });
+
+    test("an employee drags an item to a new place, and the move survives a reload (spec 008 FR-061)", async ({ page }) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await expect.poll(() => order(page, "grid")).toEqual(["services", "numbers"]);
+      await page.getByRole("button", { name: msg(locale, "personalization.start") }).click();
+
+      const handle = page.getByRole("group", { name: item(2, 2, 2) }).getByRole("button", { name: msg(locale, "personalization.drag") });
+      const target = page.locator('[data-placement-id="services"]');
+      await target.scrollIntoViewIfNeeded();
+      const from = (await handle.boundingBox())!;
+      const to = (await target.boundingBox())!;
+      await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(to.x + to.width / 2, to.y + 8, { steps: 8 });
+      await expect(target).toHaveAttribute("data-drop", "before");
+      await page.mouse.up();
+      await expect.poll(() => order(page, "grid")).toEqual(["numbers", "services"]);
+      await expect(page.locator("main [role=status]").first()).toHaveText(msg(locale, "personalization.moved", { position: n(1), count: n(2), region: n(2) }));
+
+      await page.reload();
+      await expect.poll(() => order(page, "grid")).toEqual(["numbers", "services"]);
+
+      await page.getByRole("button", { name: msg(locale, "personalization.start") }).click();
+      await page.getByRole("button", { name: msg(locale, "personalization.reset") }).click();
+      await page.getByRole("alertdialog", { name: msg(locale, "personalization.reset") }).getByRole("button", { name: msg(locale, "personalization.resetConfirm") }).click();
+      await expect.poll(() => order(page, "grid")).toEqual(["services", "numbers"]);
+    });
   });
 }

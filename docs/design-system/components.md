@@ -31,6 +31,9 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Person card | `people-cards` | People directory and team | Avatar with a steady tone, name link covers the card |
 | Briefing hero | `home.briefing` | Top of the home: greeting, date, weather, next three things with actions | A section named by its heading; rows are an ordered list; where items came from is stated |
 | Your day | `home.your_day` | Tinted counts and today's agenda beside the briefing | A section named by its heading; the agenda is an ordered list; the connect line is a real link |
+| Arrange this page | `features/personalization/Personalization.tsx` | Edit icon in the shell bar next to settings that starts personalization; Done, Undo and Reset appear at the top of the page while arranging | A button named "Arrange this page" with `aria-pressed`; focus returns to it when arranging ends |
+| Drag handle | `lib/experience/drag.ts` | Moves an item in personalization mode and in the page builder; the item fades and an accent bar marks where it lands | Pointer capture so touch works; the same moves stay as buttons and shortcuts |
+| Shell panels | `lib/shell/panel.ts` | Settings, notifications and account panels in the bar | One open at a time; outside press and Escape close; focus returns to the button |
 | Ask TeamBeats | `features/shell/Shell.tsx` | One floating button that opens the assistant, when the tenant has it | A link with a visible name; it never covers the focused element's own actions |
 | Featured news | `content.news_feed` with layout `featured` | Lead story large, the rest as rows, with reading time and reactions | One link per story |
 | Campaign band | `content.call_to_action` with emphasis `campaign` | One campaign at the bottom of the home | Heading and one action; decoration is hidden |

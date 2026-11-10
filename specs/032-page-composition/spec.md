@@ -200,7 +200,7 @@ Component registry and contract
 Visual builder
 - **FR-036**: Authorized users MUST create and change pages in a visual builder without editing markup or source code. *(CX-EDT-001)*
 - **FR-037**: The picker MUST show eligible components with category, description, preview, required permissions and version, and disable ineligible ones with an understandable reason. *(CX-EDT-002)*
-- **FR-038**: The builder MUST support add, remove, move, duplicate and replace placements within allowed regions, keeping valid settings, each with undo. *(CX-EDT-003)*
+- **FR-038**: The builder MUST support add, remove, move, duplicate and replace placements within allowed regions, keeping valid settings, each with undo. Moving MUST also work by dragging a placement card's handle to its new place in any region, with mouse, pen or touch, with a mark where it will land. *(CX-EDT-003)*
 - **FR-039**: Every placement operation MUST have a non-drag alternative (move before or after, region picker, action menu) and the builder MUST be fully keyboard operable. *(CX-EDT-005, CX-ACC-002, CX-ACC-003)*
 - **FR-040**: The builder MUST preview the current draft at desktop, tablet and mobile sizes in LTR and RTL, with the same renderer as the published page. *(CX-EDT-006)*
 - **FR-041**: The builder MUST preview as an organization, audience, language and device using approved test personas; preview MUST NOT sign in as a real user or show data the editor is not permitted to see, and MUST report which permissions the persona assumes. *(CX-EDT-007, CX-ORG-008 with spec 033)*
