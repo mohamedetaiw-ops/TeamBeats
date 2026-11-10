@@ -70,10 +70,14 @@ public sealed class ConnectorJobWorker(IServiceScopeFactory scopes, IClock clock
     }
 }
 
-/// <summary>The worker's view of the runtime: due attempts and the daily purge.</summary>
-public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history)
+/// <summary>The worker's view of the runtime: due attempts, and once a day the purge and the credential expiry check.</summary>
+public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history, PackConnections connections)
 {
     public Task<int> RunDueAsync(DateTimeOffset now, int limit, CancellationToken ct) => runtime.RunDueAsync(now, Math.Min(limit, 50), ct);
 
-    public Task PurgeAsync(DateTimeOffset now, CancellationToken ct) => history.PurgeAsync(now, ct);
+    public async Task PurgeAsync(DateTimeOffset now, CancellationToken ct)
+    {
+        await history.PurgeAsync(now, ct);
+        await connections.RefreshExpiryAsync(null, ct);
+    }
 }

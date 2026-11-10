@@ -75,7 +75,25 @@ public interface IConnectorPack
     IReadOnlyList<ConnectorActionDefinition> Actions { get; }
 
     Task<PackCallResult> CallAsync(PackCall call, CancellationToken ct);
+
+    /// <summary>The actions of one connection. Packs with fixed actions return <see cref="Actions"/>; custom REST reads the tenant's own.</summary>
+    Task<IReadOnlyList<ConnectorActionDefinition>> ActionsForAsync(PackConnection connection, CancellationToken ct) => Task.FromResult(Actions);
+
+    /// <summary>
+    /// Checks connection settings when they are saved and returns them in stored form. Settings hold secret manager
+    /// references, never secret values. Throws a validation error naming the field.
+    /// </summary>
+    Task<JsonElement> ValidateSettingsAsync(JsonElement settings, CancellationToken ct) => Task.FromResult(settings);
+
+    /// <summary>The credential expiry date the settings declare, if any (spec 017 US1 scenario 5).</summary>
+    DateOnly? CredentialExpiry(JsonElement settings) => null;
+
+    /// <summary>Test connection (FR-004): each check separately, with a plain result.</summary>
+    Task<IReadOnlyList<PackCheck>> TestAsync(PackConnection connection, CancellationToken ct) => Task.FromResult<IReadOnlyList<PackCheck>>([]);
 }
+
+/// <summary>One check of Test connection: <paramref name="ResultKey"/> is a resource key such as <c>integrations.test.ok</c>.</summary>
+public sealed record PackCheck(string Name, bool Ok, string ResultKey, string? ErrorClass = null);
 
 /// <summary>Plain error classes shown in run history (spec 017 section 10), with the technical detail kept out.</summary>
 public static class ConnectorErrorClasses
@@ -96,4 +114,7 @@ public static class ConnectorErrorClasses
     public const string UnknownAction = "unknown_action";
     public const string OutcomeUnknown = "outcome_unknown";
     public const string Unexpected = "unexpected";
+    public const string InvalidInput = "invalid_input";
+    public const string CredentialMissing = "credential_missing";
+    public const string RequestRefused = "request_refused";
 }

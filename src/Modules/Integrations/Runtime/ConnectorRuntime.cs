@@ -259,9 +259,7 @@ public sealed class ConnectorRuntime(
             cts.CancelAfter(timeout > TimeSpan.Zero ? timeout : TimeSpan.FromMilliseconds(1));
             try
             {
-                result = await resolved.Pack.CallAsync(
-                    new PackCall(new PackConnection(tenantId, c.Id, c.Kind, c.PackVersion, c.ExternalId, JsonDocument.Parse(c.Settings).RootElement),
-                        resolved.Action.Name, input, key, attemptNo), cts.Token);
+                result = await resolved.Pack.CallAsync(new PackCall(ToPack(c), resolved.Action.Name, input, key, attemptNo), cts.Token);
             }
             catch (Exception ex) when (Blocked(ex))
             {
@@ -450,12 +448,13 @@ public sealed class ConnectorRuntime(
             return (null, ConnectorErrorClasses.ConnectionMissing, null);
         }
         var pack = packs.FirstOrDefault(p => p.Kind == c.Kind);
-        var definition = pack?.Actions.FirstOrDefault(a => a.Name == action);
+        var definition = pack is null ? null
+            : (await pack.ActionsForAsync(ToPack(c), ct)).FirstOrDefault(a => a.Name == action);
         if (pack is null || definition is null)
         {
             return (null, ConnectorErrorClasses.UnknownAction, c);
         }
-        if (!await entitlements.IsEnabledAsync(pack.CapabilityKey, ct))
+        if (!await entitlements.IsEnabledAsync(Capabilities.IntegrationConnectors, ct) || !await entitlements.IsEnabledAsync(pack.CapabilityKey, ct))
         {
             return (null, ConnectorErrorClasses.NotInPackage, c);
         }
@@ -488,6 +487,9 @@ public sealed class ConnectorRuntime(
             throw AppException.Validation("idempotencyKey", "validation.connector.idempotency_key_invalid");
         }
     }
+
+    private PackConnection ToPack(Connection c) =>
+        new(context.RequireTenant(), c.Id, c.Kind, c.PackVersion, c.ExternalId, JsonDocument.Parse(c.Settings).RootElement);
 
     private static DateTimeOffset Max(DateTimeOffset a, DateTimeOffset b) => a > b ? a : b;
 }

@@ -102,6 +102,12 @@ public static class AuditActions
     // 017 (R2): the connector runtime
     public const string ConnectorReplay = "integration.replay";
     public const string HostAllowlistChanged = "integration.allowlist_changed";
+    public const string CredentialChanged = "integration.credential_changed";
+    public const string ConnectionChanged = "integration.connection_changed";
+    public const string ConnectionEnabled = "integration.connection_enabled";
+    public const string ConnectionDisabled = "integration.connection_disabled";
+    public const string ActionDefined = "integration.action_defined";
+    public const string ActionChanged = "integration.action_changed";
 
     // 032
     public const string PageCreated = "page.created";

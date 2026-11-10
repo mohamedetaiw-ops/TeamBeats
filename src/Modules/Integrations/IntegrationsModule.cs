@@ -53,10 +53,15 @@ public static class IntegrationsModule
         services.AddScoped<RunHistory>();
         services.AddScoped<ConnectorJobs>();
         services.AddScoped<HostAllowlist>();
+        services.AddSingleton<CustomRest.RestTokenCache>();
+        services.AddScoped<CustomRest.CustomRestPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<CustomRest.CustomRestPack>());
+        services.AddScoped<PackConnections>();
         services.AddHttpClient(SafeHttp.ClientName, c => c.Timeout = TimeSpan.FromSeconds(30))
             .ConfigurePrimaryHttpMessageHandler(sp => SafeHttp.CreateHandler(
                 sp.GetRequiredService<IConfiguration>().GetValue<bool>(SafeHttp.AllowPrivateSetting)));
         services.AddMessageHandler<SessionEnded, DropTokensOnSessionEnded>("integrations.tokens_session_ended");
+        services.AddMessageHandler<ConnectorUnavailable, ConnectionAlerts>("integrations.connection_alerts");
         services.AddMessageHandler<SessionRevoked, DropTokensOnSessionRevoked>("integrations.tokens_session_revoked");
         services.AddMessageHandler<UserDeprovisioned, DropTokensOnUserDeprovisioned>("integrations.tokens_user_deprovisioned");
         return services;
@@ -191,6 +196,7 @@ public static class IntegrationsModule
         WorkspaceEndpoints.Map(app);
         WeatherEndpoints.Map(app);
         RuntimeEndpoints.Map(app);
+        PackEndpoints.Map(app);
         return app;
     }
 
