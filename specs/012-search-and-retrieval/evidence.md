@@ -1,6 +1,6 @@
 # Spec 012 evidence (R1)
 
-The spec stays Approved, not Implemented. R1 still lacks the performance tests at 1 million units with paged rebuilds (T010). The R2 parts are not built either: communities, courses and projects (FR-015), federated search (FR-016, FR-017), AI summaries (FR-018), saved search alerts (FR-019), judged query sets (FR-020) and guests (FR-022). The spec 012 section of `docs/architecture/r1-implementation-notes.md` holds the defaults, deviations and gaps.
+The spec stays Approved, not Implemented. R1 still lacks the performance budgets at 1 million units (T010): measured on 2026-11-10, keyword search and type-ahead read every unit of the tenant, about 0.7 to 1 second at 1 million units, because forced row-level security keeps PostgreSQL from using the full-text index. ADR-0020 (Proposed) sets out the options; until it is decided, the budgets are expected (not measured) to hold up to roughly 100,000 units per tenant. Paged rebuilds are open too. The R2 parts are not built either: communities, courses and projects (FR-015), federated search (FR-016, FR-017), AI summaries (FR-018), saved search alerts (FR-019), judged query sets (FR-020) and guests (FR-022). The spec 012 section of `docs/architecture/r1-implementation-notes.md` holds the defaults, deviations and gaps.
 
 | Requirement | Status | Evidence |
 |---|---|---|
