@@ -23,7 +23,7 @@ Depends on 003 (Entra ID sign-in), 006 (Microsoft 365 connection), 005 (entitlem
 ## Phase 5: User Story 3, My calendar (P1)
 - [x] T011 [P] [US3] Tests: range 1 to 14 days, series expanded, all-day first, cancelled and declined hidden, free and tentative marked, join link, private subjects hidden by option, degraded state
 - [x] T012 [US3] `ICalendar` Graph adapter and `GET /api/v1/me/calendar`
-- [ ] T013 [US3] Merge registered events (009) and leave and holidays (022) once those modules exist
+- [x] T013 [US3] Merge registered events (009) and leave and holidays (022) once those modules exist
 
 ## Phase 6: User Story 4, colleague free and busy (P2)
 - [x] T014 [P] [US4] Tests: status text only; nothing when the viewer cannot see the profile or the colleague does not share; cross-tenant user is not found
@@ -33,7 +33,7 @@ Depends on 003 (Entra ID sign-in), 006 (Microsoft 365 connection), 005 (entitlem
 - [x] T016 My mail and My calendar components with every state of section 10, the unread badge, and the Outlook section in personal settings, in English and Arabic, RTL
 
 ## Phase 8: User Story 6, calendar for the assistant (P2)
-- [ ] T017 Calendar read tool under spec 027 with untrusted-content handling, once the tool registry exists; signed-out opt-in (FR-023) with the briefing agent
+- [x] T017 Calendar read tool under spec 027 with untrusted-content handling, once the tool registry exists; signed-out opt-in (FR-023) with the briefing agent
 
 ## Final phase
 - [x] T018 Telemetry `integration.graph_call` without content; rate limit per employee; OpenAPI; R1 implementation notes; spec evidence

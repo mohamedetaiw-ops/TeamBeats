@@ -1,6 +1,6 @@
 # Spec 010 evidence (R1)
 
-The spec stays Approved, not Implemented, until T010 (wiring into 016, 009, 025 and 018) and photos are done.
+The spec stays Approved, not Implemented, until photo upload and directory photos (part of T007) are done. The reporting line is wired into line manager approval and Team requests (016), manager lists (009, 025) and free and busy visibility (018).
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -17,7 +17,7 @@ The spec stays Approved, not Implemented, until T010 (wiring into 016, 009, 025 
 | PPL-011 location dimension | Met | `Renaming_a_location_keeps_its_key`, `PeopleSearchTextTests.Location_keys_ignore_case_and_spacing` |
 | PPL-012 events | Met | `Directory_sync_sets_profiles_...` (`ReportingLineChanged`, `LocationAdded` in the outbox), `Employees_edit_their_own_editable_fields_...` (`ProfileUpdated`) |
 | PPL-013 photos | Open | Needs an image library decision (r1-implementation-notes) |
-| PPL-014 free and busy visibility | Open | T010, with spec 018 US4 |
+| PPL-014 free and busy visibility | Met | `MailCalendarTests.Free_and_busy_shows_status_blocks_only_for_a_visible_colleague` (no `people.view`, no free and busy) |
 | PPL-015 contact actions from visible fields | Met | Profile page builds actions from returned fields only; `Visibility_rules_apply_in_profiles_and_search` |
 | PPL-016 tenant fields | Met | `The_policy_is_for_administrators_custom_fields_need_the_capability_and_stale_versions_conflict` |
 | PPL-017 search rate limit | Met | `people_search` limiter, 120 per minute per user |

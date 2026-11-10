@@ -10,4 +10,4 @@ Depends on 004 (authorization), 006 (audit), 022 (working-day contract), ADR-000
 - [x] T005 `IProcessEngine` contract, events `UserTaskCreated`, `UserTaskCompleted`, `ProcessInstanceCompleted`, `ProcessInstanceWithdrawn`; audit of task completion
 - [x] T006 Working-day due times on user tasks with reminder jobs and recalculation on `WorkingCalendarChanged`; `UserTaskDue` event
 - [x] T007 Delegation lookup through the spec 016 contract; "on behalf of" in history
-- [ ] T008 R1 implementation notes; spec evidence for the R1 part
+- [x] T008 R1 implementation notes; spec evidence for the R1 part
