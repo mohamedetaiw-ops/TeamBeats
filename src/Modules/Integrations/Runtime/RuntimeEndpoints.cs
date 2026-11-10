@@ -31,6 +31,38 @@ public static class RuntimeEndpoints
             return Results.Ok(result);
         });
 
+        // Payload capture for debugging (FR-007): reading needs integration.operate; turning it on or off integration.manage and step-up.
+        api.MapGet("/connections/{id:guid}/runs/{runId:guid}/capture", async (Guid id, Guid runId, IAuthorizationService authz, PayloadCapture capture,
+            CancellationToken ct) =>
+        {
+            await authz.DemandAsync(Permissions.IntegrationOperate, AuthzTarget.Tenant, ct);
+            return Results.Ok(await capture.RunAsync(id, runId, ct));
+        });
+
+        api.MapGet("/connections/{id:guid}/capture", async (Guid id, IAuthorizationService authz, PayloadCapture capture, CancellationToken ct) =>
+        {
+            await authz.DemandAsync(Permissions.IntegrationOperate, AuthzTarget.Tenant, ct);
+            return Results.Ok(await capture.GetAsync(id, ct));
+        });
+
+        api.MapPut("/connections/{id:guid}/capture", async (Guid id, CaptureRequest request, IAuthorizationService authz, PayloadCapture capture,
+            IDbSession session, CancellationToken ct) =>
+        {
+            await authz.DemandAsync(Permissions.IntegrationManage, AuthzTarget.Tenant, ct);
+            var view = await capture.StartAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).RequireStepUp();
+
+        api.MapDelete("/connections/{id:guid}/capture", async (Guid id, IAuthorizationService authz, PayloadCapture capture, IDbSession session,
+            CancellationToken ct) =>
+        {
+            await authz.DemandAsync(Permissions.IntegrationManage, AuthzTarget.Tenant, ct);
+            await capture.StopAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        }).RequireStepUp();
+
         api.MapGet("/allowlist", async (IAuthorizationService authz, HostAllowlist allowlist, CancellationToken ct) =>
         {
             await authz.DemandAsync(Permissions.IntegrationManage, AuthzTarget.Tenant, ct);

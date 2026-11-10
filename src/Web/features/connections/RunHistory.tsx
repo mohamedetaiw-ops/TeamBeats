@@ -3,16 +3,18 @@
 import { useId, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
-import { RUN_FILTERS, RUN_STATUSES, known, type ReplayResult, type RunPage, type RunView } from "@/lib/integrations/types";
+import { RUN_FILTERS, RUN_STATUSES, known, type CaptureView, type ReplayResult, type RunCapture, type RunPage, type RunView } from "@/lib/integrations/types";
+import { CapturePanel } from "./CapturePanel";
 import { ErrorText, Messages } from "./parts";
 import { send } from "./request";
 
 /**
  * Run history of one connection (spec 017 US3): status, attempts, error class, business code, external reference and
  * duration, never the data sent or received. Failed and unknown runs from the last 14 days can be replayed with their
- * original idempotency key. The API decides who may see and replay runs (<c>integration.operate</c>).
+ * original idempotency key. A run made while payload capture was on can show what it sent and received. The API decides
+ * who may see and replay runs (<c>integration.operate</c>).
  */
-export function RunHistory({ connectionId, initial }: { connectionId: string; initial: RunPage | null }) {
+export function RunHistory({ connectionId, initial, capture }: { connectionId: string; initial: RunPage | null; capture: CaptureView | null }) {
   const t = useTranslations("connections.runs");
   const format = useFormatter();
   const filterId = useId();
@@ -22,6 +24,7 @@ export function RunHistory({ connectionId, initial }: { connectionId: string; in
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<string | null>(null);
   const [messages, setMessages] = useState<{ ok: boolean; list: string[] }>({ ok: true, list: [] });
+  const [payloads, setPayloads] = useState<Record<string, RunCapture>>({});
   const base = `/api/v1/integrations/connections/${connectionId}/runs`;
 
   if (initial === null) {
@@ -68,12 +71,30 @@ export function RunHistory({ connectionId, initial }: { connectionId: string; in
     }
   }
 
+  async function showPayload(runId: string) {
+    setBusy(`payload-${runId}`);
+    try {
+      const response = await fetch(`${base}/${runId}/capture`);
+      if (response.ok) {
+        const data = (await response.json()) as RunCapture;
+        setPayloads((p) => ({ ...p, [runId]: data }));
+      } else {
+        setMessages({ ok: false, list: [t("failed")] });
+      }
+    } catch {
+      setMessages({ ok: false, list: [t("failed")] });
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const date = (iso: string) => format.dateTime(new Date(iso), { dateStyle: "medium", timeStyle: "short" });
 
   return (
     <section className="connections-section" aria-labelledby="runs-heading">
       <h2 id="runs-heading">{t("title")}</h2>
       <p>{t("intro")}</p>
+      {capture ? <CapturePanel connectionId={connectionId} initial={capture} /> : null}
       <div className="field">
         <label htmlFor={filterId}>{t("filter")}</label>
         <select
@@ -145,6 +166,20 @@ export function RunHistory({ connectionId, initial }: { connectionId: string; in
                 <p>
                   {t("correlation")} <bdi dir="ltr">{r.correlationId}</bdi>
                 </p>
+              ) : null}
+              {r.captured && !payloads[r.id] ? (
+                <Button variant="quiet" busy={busy === `payload-${r.id}`} busyLabel={t("working")} onClick={() => void showPayload(r.id)}>
+                  {t("showPayload")}
+                </Button>
+              ) : null}
+              {payloads[r.id] ? (
+                <div data-testid="run-payload">
+                  <h4>{t("sent")}</h4>
+                  <pre dir="ltr">{JSON.stringify(payloads[r.id]!.input, null, 2)}</pre>
+                  <h4>{t("received")}</h4>
+                  <pre dir="ltr">{JSON.stringify(payloads[r.id]!.output, null, 2)}</pre>
+                  <p className="field-hint">{t("payloadExpires", { at: date(payloads[r.id]!.expiresAt) })}</p>
+                </div>
               ) : null}
             </li>
           ))}

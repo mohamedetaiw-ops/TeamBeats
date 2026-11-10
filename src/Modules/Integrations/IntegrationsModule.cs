@@ -51,6 +51,7 @@ public static class IntegrationsModule
         services.AddScoped<ConnectorRuntime>();
         services.AddScoped<IConnectorRuntime>(sp => sp.GetRequiredService<ConnectorRuntime>());
         services.AddScoped<RunHistory>();
+        services.AddScoped<PayloadCapture>();
         services.AddScoped<ConnectorJobs>();
         services.AddScoped<HostAllowlist>();
         services.AddSingleton<CustomRest.RestTokenCache>();

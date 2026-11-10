@@ -77,7 +77,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       // Run history shows no runs yet, and nothing to replay.
       await expect(page.getByRole("heading", { name: msg(locale, "connections.runs.title") })).toBeVisible();
       await expect(page.getByText(msg(locale, "connections.runs.empty"))).toBeVisible();
+
+      // Payload capture is off until the administrator turns it on for a window and confirms the data is Public or Internal.
+      const capture = page.getByTestId("payload-capture");
+      await expect(capture.getByRole("button", { name: msg(locale, "connections.capture.start") })).toBeDisabled();
+      await capture.getByLabel(msg(locale, "connections.capture.confirm")).check();
+      await capture.getByRole("button", { name: msg(locale, "connections.capture.start") }).click();
+      await expect(capture.getByText(msg(locale, "connections.capture.started"))).toBeVisible();
       await expectAccessible(page, testInfo, `connection-actions-${locale}`);
+      await capture.getByRole("button", { name: msg(locale, "connections.capture.stop") }).click();
+      await expect(capture.getByText(msg(locale, "connections.capture.stopped"))).toBeVisible();
 
       const deletion = page.getByRole("region", { name: msg(locale, "connections.detail.deleteTitle") });
       await deletion.getByRole("button", { name: msg(locale, "connections.detail.delete"), exact: true }).click();
