@@ -326,3 +326,40 @@ public sealed record ConnectorActionCompleted(
     string? ErrorClass,
     string? ErrorCode,
     string? CorrelationId) : IIntegrationEvent;
+
+/// <summary>
+/// The on-premises sync agent protocol (spec 017 US6, FR-016). The agent holds an ECDSA P-256 key pair made at
+/// enrolment; TeamBeats keeps only the public key, bound to one tenant and one connection. Every agent request names the
+/// agent and is signed over <c>{METHOD}\n{path}\n{timestamp}\n{hex SHA-256 of body}</c> with the private key (IEEE P1363
+/// signature, Base64). Requests go outbound from the customer network to the tenant's own host, so no inbound port is
+/// opened and the proof works behind TLS-terminating proxies.
+/// </summary>
+public static class AgentProtocol
+{
+    public const string AgentHeader = "X-TeamBeats-Agent";
+    public const string TimestampHeader = "X-TeamBeats-Agent-Timestamp";
+    public const string SignatureHeader = "X-TeamBeats-Agent-Signature";
+    public static readonly TimeSpan Window = TimeSpan.FromMinutes(5);
+
+    public static string Canonical(string method, string pathAndQuery, long timestamp, ReadOnlySpan<byte> body) =>
+        $"{method.ToUpperInvariant()}\n{pathAndQuery}\n{timestamp.ToString(System.Globalization.CultureInfo.InvariantCulture)}\n{Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(body))}";
+
+    public static string Sign(System.Security.Cryptography.ECDsa key, string method, string pathAndQuery, long timestamp, ReadOnlySpan<byte> body) =>
+        Convert.ToBase64String(key.SignData(System.Text.Encoding.UTF8.GetBytes(Canonical(method, pathAndQuery, timestamp, body)),
+            System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.DSASignatureFormat.IeeeP1363FixedFieldConcatenation));
+
+    /// <summary>The SHA-256 thumbprint (lowercase hex) of a public key in SubjectPublicKeyInfo form.</summary>
+    public static string Thumbprint(byte[] subjectPublicKeyInfo) => Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(subjectPublicKeyInfo));
+}
+
+/// <summary>A job an agent pulled: <paramref name="Kind"/> is <c>directory_sync</c>; settings are the connection's, without secrets.</summary>
+public sealed record AgentJobView(Guid Id, string Kind, System.Text.Json.JsonElement Settings, DateTimeOffset LeaseUntil);
+
+/// <summary>A batch of canonical directory records an agent returns for a job, at most 1,000 of each per call.</summary>
+public sealed record AgentRecordBatch(IReadOnlyList<DirectoryUserRecord>? Users, IReadOnlyList<DirectoryGroupRecord>? Groups);
+
+/// <summary>The end of a job: <paramref name="Ok"/>, or the plain error class of the failure (spec 017 section 10).</summary>
+public sealed record AgentJobResult(bool Ok, string? ErrorClass);
+
+/// <summary>An agent job that finished, for the module that asked for it (spec 003 reads the records it returned).</summary>
+public sealed record AgentJobFinished(Guid JobId, Guid ConnectionId, string Kind, bool Ok, string? ErrorClass, int Users, int Groups) : IIntegrationEvent;

@@ -22,7 +22,7 @@ Depends on 004, 005, 006, 015, 024, 026, 027. R2.
 - [x] T013 [US5] Outbound and inbound webhooks
 
 ## Phase 4: User Story 6, on-premises agent (P1)
-- [ ] T014 [P] [US6] Tests: enrolment, certificate binding, revocation within 1 minute, one taker per connection, offline status
+- [x] T014 [P] [US6] Tests: enrolment, certificate binding, revocation within 1 minute, one taker per connection, offline status
 - [ ] T015 [US6] Sync agent service and endpoint; AD pack over LDAPS feeding specs 002 and 003
 
 ## Phase 5: User Stories 7 and 8, packs (P2, P3)

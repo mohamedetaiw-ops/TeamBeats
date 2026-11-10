@@ -59,6 +59,9 @@ public static class IntegrationsModule
         services.AddScoped<Webhooks.WebhookPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.WebhookPack>());
         services.AddScoped<Webhooks.InboundWebhooks>();
+        services.AddScoped<SyncAgents.OnPremDirectoryPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<SyncAgents.OnPremDirectoryPack>());
+        services.AddScoped<SyncAgents.SyncAgentService>();
         Webhooks.OutboundEvents.AddOutboundWebhookEvents(services);
         services.AddScoped<PackConnections>();
         services.AddHttpClient(SafeHttp.ClientName, c => c.Timeout = TimeSpan.FromSeconds(30))
@@ -202,6 +205,7 @@ public static class IntegrationsModule
         RuntimeEndpoints.Map(app);
         PackEndpoints.Map(app);
         Webhooks.InboundWebhooks.Map(app);
+        SyncAgents.AgentEndpoints.Map(app);
         return app;
     }
 
