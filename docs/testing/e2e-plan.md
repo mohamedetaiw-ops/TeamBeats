@@ -65,7 +65,7 @@ Each row is added in the same PR as the feature, by the build thread, so a story
 | Services and inbox | 016, 022 US2 | Open a linked app, submit a simple form service, act on it from the task inbox; due time follows the working calendar | none |
 | Policies | 025 | Policy register, attestation, policy Q&A answer with citation | Fake model route |
 | Security policy | 026 | IP rule denial page, session rules, MFA check and step-up prompt | Fake OIDC step-up claim |
-| Connections | 017 | Allow a host, add a custom REST connection, test it, turn it on and off, define an action, read run history, delete | none (only the allowlist is checked; no action runs) |
+| Connections | 006, 017 | Allow a host, add a custom REST connection, test it, turn it on and off, define an action, read run history, delete; add a Microsoft 365 connection, read its permissions, turn a feature off and on, delete | none (only the allowlist is checked; no action runs; Microsoft is not called) |
 | Notifications | 008, 016 | In-app notification appears and links to the item; email captured by a fake mail sink | Fake mail sink |
 | Localization | 007 | Bidi fixtures (Arabic text with English names and numbers), numbering system per tenant, time zone fallback | none |
 
