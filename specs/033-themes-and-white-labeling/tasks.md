@@ -24,4 +24,4 @@ Depends on 032 (`Experience` module), 001 (tenant logo and color), 002 (org hier
 - [x] T011 Brand manager page with token groups, contrast table, asset upload and live preview in both modes and directions, in English and Arabic
 
 ## Final phase
-- [ ] T012 OpenAPI, R1 implementation notes, spec evidence
+- [x] T012 OpenAPI, R1 implementation notes, spec evidence

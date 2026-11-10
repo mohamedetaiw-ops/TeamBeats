@@ -26,4 +26,4 @@ Depends on 032 (`Experience` module, pages, renderer), 033 (tokens), 003, 004, 0
 - [x] T015 [P] Tests: menus by keyboard and screen reader, personalization by keyboard only, mobile reachability, axe in `ar` and `en`
 
 ## Final phase
-- [ ] T016 OpenAPI, R1 implementation notes, spec evidence
+- [x] T016 OpenAPI, R1 implementation notes, spec evidence

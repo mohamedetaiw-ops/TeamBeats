@@ -71,7 +71,10 @@ public sealed record AgentVersionView(int Number, string State, string RiskClass
     DateTimeOffset? PublishedAt);
 
 /// <summary>An agent with the definition of its latest version, which is what the editor works on.</summary>
-public sealed record AgentDetail(AgentSummary Agent, AgentDefinition Definition, AgentVersionView Latest, IReadOnlyList<AgentVersionView> Versions, bool CanEdit);
+public sealed record AgentDetail(AgentSummary Agent, AgentDefinition Definition, AgentVersionView Latest, IReadOnlyList<AgentVersionView> Versions, bool CanEdit,
+    int? TemplateUpdate = null);
+
+public sealed record TemplateUpdateRequest(int? Version);
 
 /// <summary>
 /// The agent registry (spec 020 T001, T003, T007): the template library, installing a template as a tenant agent, the
@@ -244,8 +247,11 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
             new { id },
             r => (View: new AgentVersionView(r.GetInt32(0), r.GetString(1), r.GetString(2), r.GetInt32(3), r.GetGuid(4), r.GetFieldValue<DateTimeOffset>(5),
                 r.GetFieldValue<DateTimeOffset>(6), r.Get<DateTimeOffset?>("published_at")), Definition: r.GetString(8)), ct);
+        // A newer platform version of the agent's template is offered, never applied on its own (FR-005).
+        int? update = agent.TemplateId is { } templateId && AgentTemplates.Find(templateId) is { } template && template.Version > (agent.TemplateVersion ?? 0)
+            ? template.Version : null;
         return new AgentDetail(agent, Definition(versions[0].Definition), versions[0].View, versions.Select(v => v.View).ToList(),
-            canEdit && agent.Status != AgentStatuses.Retired);
+            canEdit && agent.Status != AgentStatuses.Retired, update);
     }
 
     /// <summary>
@@ -352,6 +358,48 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
 
     // Owners are active members of the tenant. Naming someone grants nothing: editing still needs agent.design on the unit.
     private async Task<bool> QualifiesAsync(Guid user, CancellationToken ct) => (await memberships.GetAsync(user, ct))?.Status == MembershipStatus.Active;
+
+    /// <summary>
+    /// Takes the offered template version into a new draft (FR-005, edge case "template update during review"): the
+    /// template's behaviour (instructions, knowledge, tools, autonomy, limits, tone, format and escalation text) replaces
+    /// the agent's, while its name, description, purpose, icon, category, audience and languages stay as the tenant set
+    /// them. The draft is checked like any save and published through review and the gate as usual. Refused while a
+    /// version is in review, and for a version other than the one offered. Audited <c>agent.template_update_applied</c>.
+    /// </summary>
+    public async Task<AgentDetail> ApplyTemplateUpdateAsync(Guid id, TemplateUpdateRequest request, CancellationToken ct)
+    {
+        await DesignerAsync(ct);
+        var current = await DetailAsync(id, ct);
+        if (!current.CanEdit)
+        {
+            throw AppException.Denied();
+        }
+        if (current.TemplateUpdate is not { } offered || request.Version != offered)
+        {
+            throw AppException.Conflict("conflict.agent.no_template_update");
+        }
+        if (current.Latest.State == AgentVersionStates.InReview)
+        {
+            throw AppException.Conflict("conflict.agent.in_review");
+        }
+        var template = AgentTemplates.Find(current.Agent.TemplateId!)!.Definition;
+        var mine = current.Definition;
+        var merged = template with
+        {
+            Name = mine.Name,
+            Description = mine.Description,
+            Purpose = mine.Purpose,
+            Icon = mine.Icon,
+            Category = mine.Category,
+            Audience = mine.Audience,
+            Languages = mine.Languages,
+        };
+        var detail = await SaveDraftAsync(id, new DraftRequest(current.Latest.Revision, merged), ct);
+        await session.ExecAsync("update agents.agent set template_version = @offered where id = @id", new { id, offered }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.AgentTemplateUpdateApplied, "agent", id.ToString(), TargetOrgUnitId: current.Agent.OrgUnitId,
+            Changes: new { template = current.Agent.TemplateId, from = current.Agent.TemplateVersion, to = offered, draft = detail.Latest.Number }), ct);
+        return await DetailAsync(id, ct);
+    }
 
     private static bool SameAudience(AgentAudience? a, AgentAudience? b) =>
         a?.Scope == b?.Scope && (a?.OrgUnits ?? []).Order().SequenceEqual((b?.OrgUnits ?? []).Order());

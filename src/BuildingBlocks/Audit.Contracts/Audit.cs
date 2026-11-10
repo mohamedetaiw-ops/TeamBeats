@@ -257,6 +257,7 @@ public static class AuditActions
 
     // Specs 020 and 027 (R1): agents and the tenant agent policy.
     public const string AgentInstalledFromTemplate = "agent.installed_from_template";
+    public const string AgentTemplateUpdateApplied = "agent.template_update_applied";
     public const string AgentAudienceChanged = "agent.audience_changed";
     public const string AgentOwnerChanged = "agent.owner_changed";
     public const string AgentPolicyChanged = "agent.policy_changed";
@@ -331,7 +332,7 @@ public static class AuditActions
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled,
         AssistantHistoryDeleted, AssistantRetentionChanged,
-        AgentInstalledFromTemplate, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected,
+        AgentInstalledFromTemplate, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,
         AgentRetired, AgentKillSwitch,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,

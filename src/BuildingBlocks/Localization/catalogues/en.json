@@ -1070,5 +1070,9 @@
   "validation.agent.backup_owner": "Choose a backup owner who is an active member of your organization and not the owner.",
   "notifications.template.agents.owner_reassigned.title": "You now own an agent",
   "notifications.template.agents.owner_reassigned.body": "The owner of an agent left the organization, so it was handed to you. It keeps running. Open it to check it and name a backup owner.",
-  "validation.agent.analytics_days": "Choose a period from 1 to 365 days."
+  "validation.agent.analytics_days": "Choose a period from 1 to 365 days.",
+  "conflict.agent.no_template_update": "There is no template update to apply to this agent, or a newer one was published. Reload the page.",
+  "validation.agent_policy.max_run_seconds": "Set a run duration between 30 and 300 seconds.",
+  "validation.agent_policy.max_daily_runs": "Set a daily run limit between 1 and 100000.",
+  "conflict.agent_run.daily_limit": "This agent has reached its limit of conversations for today. Try again tomorrow."
 }

@@ -1070,5 +1070,9 @@
   "validation.agent.backup_owner": "اختر مالكا احتياطيا من الأعضاء النشطين في مؤسستك، على ألا يكون هو المالك.",
   "notifications.template.agents.owner_reassigned.title": "أصبحت مالكا لوكيل",
   "notifications.template.agents.owner_reassigned.body": "غادر مالك أحد الوكلاء المؤسسة، فانتقلت ملكيته إليك. يستمر الوكيل في العمل. افتحه لمراجعته وتعيين مالك احتياطي.",
-  "validation.agent.analytics_days": "اختر مدة من يوم واحد إلى 365 يوما."
+  "validation.agent.analytics_days": "اختر مدة من يوم واحد إلى 365 يوما.",
+  "conflict.agent.no_template_update": "لا يوجد تحديث للقالب يمكن تطبيقه على هذا الوكيل، أو نُشر تحديث أحدث. أعد تحميل الصفحة.",
+  "validation.agent_policy.max_run_seconds": "حدد مدة تشغيل بين 30 و300 ثانية.",
+  "validation.agent_policy.max_daily_runs": "حدد حدًا يوميًا للتشغيل بين 1 و100000.",
+  "conflict.agent_run.daily_limit": "بلغ هذا الوكيل حده من المحادثات لهذا اليوم. حاول مرة أخرى غدًا."
 }
