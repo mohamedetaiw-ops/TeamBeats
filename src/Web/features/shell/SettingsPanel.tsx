@@ -42,7 +42,13 @@ export function PreferenceControls({ locales, locale, values }: { locales: strin
   const t = useTranslations("shell.settings");
   const tl = useTranslations("locale");
   const { saving, save } = useSave();
-  const profile = (key: PreferenceKey, value: string) => void save("/api/v1/me/preference-profile", { values: { [key]: value } });
+  // The choice shows at once; the page renders again with the saved value when the server answers.
+  const [chosen, setChosen] = useState<Partial<Record<PreferenceKey, string>>>({});
+  const current = { ...values, ...chosen };
+  const profile = (key: PreferenceKey, value: string) => {
+    setChosen((c) => ({ ...c, [key]: value }));
+    void save("/api/v1/me/preference-profile", { values: { [key]: value } });
+  };
   const languageId = useId();
   const textId = useId();
   return (
@@ -55,7 +61,7 @@ export function PreferenceControls({ locales, locale, values }: { locales: strin
           <SegmentedControl
             label={t(`${key}.label`)}
             name={`pref-${key}`}
-            value={values[key]}
+            value={current[key]}
             options={options[key].map((v) => ({ value: v, label: t(`${key}.${v}`) }))}
             onChange={(v) => profile(key, v)}
           />
@@ -75,7 +81,7 @@ export function PreferenceControls({ locales, locale, values }: { locales: strin
       ) : null}
       <div className="shell-setting-inline">
         <label htmlFor={textId}>{t("text_scale.label")}</label>
-        <select id={textId} value={values.text_scale} onChange={(e) => profile("text_scale", e.target.value)}>
+        <select id={textId} value={current.text_scale} onChange={(e) => profile("text_scale", e.target.value)}>
           {options.text_scale.map((v) => (
             <option key={v} value={v}>
               {t(`text_scale.${v}`)}
@@ -83,7 +89,7 @@ export function PreferenceControls({ locales, locale, values }: { locales: strin
           ))}
         </select>
       </div>
-      <Switch label={t("reduceMotion")} checked={values.motion === "reduced"} onChange={(e) => profile("motion", e.target.checked ? "reduced" : "system")} />
+      <Switch label={t("reduceMotion")} checked={current.motion === "reduced"} onChange={(e) => profile("motion", e.target.checked ? "reduced" : "system")} />
     </div>
   );
 }
