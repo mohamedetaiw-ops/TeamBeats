@@ -24,6 +24,7 @@ public static class AiGatewayModule
         services.AddScoped<DebugWindows>();
         services.AddScoped<UsageRecorder>();
         services.AddScoped<UsageReports>();
+        services.AddScoped<IAiAgentUsage, AiAgentUsage>();
         services.AddScoped<AiGatewayService>();
         services.AddScoped<IAiGateway>(sp => sp.GetRequiredService<AiGatewayService>());
         services.AddScoped<IAiClassificationPolicy>(sp => sp.GetRequiredService<AiGatewayService>());

@@ -161,6 +161,18 @@ public interface IAiClassificationPolicy
     Task<DataClassification?> CeilingAsync(string useCase, CancellationToken ct = default);
 }
 
+/// <summary>Served calls and estimated cost of one agent version over a period (spec 020 FR-018, cost from spec 013).</summary>
+public sealed record AgentVersionCost(int Version, long Calls, long Tokens, decimal Cost);
+
+/// <summary>
+/// Cost of an agent's model calls for agent analytics (spec 020 FR-018). The caller decides who may see the agent; this
+/// reads the current tenant's call records only.
+/// </summary>
+public interface IAiAgentUsage
+{
+    Task<IReadOnlyList<AgentVersionCost>> AgentCostsAsync(Guid agentId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default);
+}
+
 /// <summary>The tenant model policy changed and applies to new calls (spec 013 section 12).</summary>
 public sealed record AiPolicyChanged(int Version) : IIntegrationEvent;
 

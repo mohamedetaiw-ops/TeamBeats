@@ -30,6 +30,7 @@ public static class AgentsModule
         services.AddScoped<AgentPolicyService>();
         services.AddScoped<AgentRegistry>();
         services.AddScoped<AgentOwnerHandover>();
+        services.AddScoped<AgentAnalytics>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentOwnerHandler>("agents.owner_left");
         services.AddScoped<Contracts.IAgentCatalog, AgentCatalog>();
         services.AddScoped<Contracts.IAgentEvaluationRuntime, AgentEvaluationRuntime>();
@@ -174,6 +175,9 @@ public static class AgentsModule
             await session.CommitAsync(ct);
             return Results.Ok(detail);
         });
+
+        agents.MapGet("/{id:guid}/analytics", async (Guid id, int? days, AgentAnalytics analytics, CancellationToken ct) =>
+            Results.Ok(await analytics.ForAgentAsync(id, days, ct)));
 
         agents.MapPut("/{id:guid}/owners", async (Guid id, OwnersRequest request, AgentRegistry registry, IDbSession session, CancellationToken ct) =>
         {

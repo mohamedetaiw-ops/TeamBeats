@@ -3125,6 +3125,25 @@
       "confirm": "تأكيد",
       "cancel": "إلغاء",
       "working": "جار العمل…"
+    },
+    "analytics": {
+      "title": "الاستخدام والجودة",
+      "period": "آخر {days} يوما. لا تُحتسب تشغيلات لوحة الاختبار.",
+      "version": "الإصدار",
+      "versionNumber": "الإصدار {number}",
+      "total": "كل الإصدارات",
+      "runs": "التشغيلات",
+      "users": "الأشخاص",
+      "success": "تمت الإجابة",
+      "unfinished": "متوقفة أو فاشلة",
+      "toolCalls": "استدعاءات الأدوات",
+      "toolDenials": "استدعاءات مرفوضة",
+      "ratings": "مفيدة",
+      "helpfulOf": "{helpful} من {ratings}",
+      "tokens": "الرموز",
+      "cost": "التكلفة التقديرية",
+      "quality": "بوابة الإصدار",
+      "none": "لا يوجد"
     }
   },
   "evaluation": {

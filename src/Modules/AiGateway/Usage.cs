@@ -215,3 +215,15 @@ public sealed class UsageReports(IDbSession session, IAuthorizationService authz
         return new UsageView(start, end, group, units is null ? "tenant" : "units", totals, rows, denied, MinimumGroupSize, hidden, labels);
     }
 }
+
+/// <summary>Agent cost for spec 020 FR-018: served calls of the agent in the period, by version.</summary>
+public sealed class AiAgentUsage(IDbSession session) : IAiAgentUsage
+{
+    public async Task<IReadOnlyList<AgentVersionCost>> AgentCostsAsync(Guid agentId, DateTimeOffset from, DateTimeOffset to, CancellationToken ct = default) =>
+        await session.QueryAsync(
+            """
+            select agent_version, count(*), coalesce(sum(input_tokens + output_tokens), 0)::bigint, coalesce(sum(cost), 0)
+            from ai.usage_record where agent_id = @agentId and agent_version is not null and decision = 'served' and at >= @from and at < @to
+            group by 1 order by 1
+            """, new { agentId, from, to }, r => new AgentVersionCost(r.GetInt32(0), r.GetInt64(1), r.GetInt64(2), r.GetDecimal(3)), ct);
+}
