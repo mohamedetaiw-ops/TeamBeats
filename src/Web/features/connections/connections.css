@@ -1,0 +1,112 @@
+/* Spec 017 Connections pages. Colors and spacing come from tokens; logical properties keep RTL working. */
+.connections {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.connections-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+.connections-section h2,
+.connections-section h3 {
+  margin: 0;
+}
+
+.connections-section textarea {
+  min-block-size: 4rem;
+  font-family: inherit;
+}
+
+.connections-list {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.connections-item {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.connections-item p {
+  margin: 0;
+}
+
+.connections-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+}
+
+.connections-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--tb-space-sm);
+  align-items: end;
+}
+
+.connections-form {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.connections-fieldset {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+}
+
+.connections-check {
+  display: inline-flex;
+  gap: var(--tb-space-xs);
+  align-items: center;
+}
+
+.connections-status {
+  display: inline-block;
+  padding-inline: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-full);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.connections-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  margin: 0;
+}
+
+.connections-facts dd {
+  margin: 0;
+}
+
+.connections-checks {
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.connections-check-mark {
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.connections-section pre {
+  overflow-x: auto;
+  margin: 0;
+  text-align: start;
+}
