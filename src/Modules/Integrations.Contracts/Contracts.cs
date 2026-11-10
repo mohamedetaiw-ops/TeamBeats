@@ -6,6 +6,9 @@ namespace TeamBeats.Modules.Integrations.Contracts;
 public static class ConnectionKinds
 {
     public const string Microsoft365 = "microsoft365";
+
+    /// <summary>On-premises Active Directory read by the customer's sync agent over LDAPS (spec 017 US6).</summary>
+    public const string OnPremAd = "onprem_ad";
 }
 
 /// <summary>Features of a Microsoft 365 connection. Each declares its own Microsoft permissions and capability key.</summary>
@@ -352,14 +355,39 @@ public static class AgentProtocol
     public static string Thumbprint(byte[] subjectPublicKeyInfo) => Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(subjectPublicKeyInfo));
 }
 
-/// <summary>A job an agent pulled: <paramref name="Kind"/> is <c>directory_sync</c>; settings are the connection's, without secrets.</summary>
-public sealed record AgentJobView(Guid Id, string Kind, System.Text.Json.JsonElement Settings, DateTimeOffset LeaseUntil);
+/// <summary>
+/// A job an agent pulled: <paramref name="Kind"/> is <c>directory_sync</c>; settings are the connection's, without
+/// secrets. The cursors are where the read starts (the <c>uSNChanged</c> values the agent reported last time); both null
+/// mean a full read.
+/// </summary>
+public sealed record AgentJobView(Guid Id, string Kind, System.Text.Json.JsonElement Settings, DateTimeOffset LeaseUntil, string? UsersCursor = null,
+    string? GroupsCursor = null);
 
 /// <summary>A batch of canonical directory records an agent returns for a job, at most 1,000 of each per call.</summary>
 public sealed record AgentRecordBatch(IReadOnlyList<DirectoryUserRecord>? Users, IReadOnlyList<DirectoryGroupRecord>? Groups);
 
 /// <summary>The end of a job: <paramref name="Ok"/>, or the plain error class of the failure (spec 017 section 10).</summary>
-public sealed record AgentJobResult(bool Ok, string? ErrorClass);
+public sealed record AgentJobResult(bool Ok, string? ErrorClass, string? UsersCursor = null, string? GroupsCursor = null);
+
+/// <summary>
+/// Directory reads through the on-premises sync agent, for spec 003 directory sync. A read is asynchronous: Identity
+/// asks for one, the agent does it, and <see cref="AgentJobFinished"/> says when the result can be read. Integrations
+/// keeps the read position, so every succeeded job, also one an administrator started, carries on from the last.
+/// </summary>
+public interface IAgentDirectory
+{
+    /// <summary>True when the connection is an enabled on-premises AD connection in the package.</summary>
+    Task<bool> IsUsableAsync(Guid connectionId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Queues a read that starts where the last succeeded read ended (a full read the first time). Returns the job, or
+    /// null when a read is already waiting or running.
+    /// </summary>
+    Task<Guid?> RequestReadAsync(Guid connectionId, CancellationToken ct = default);
+
+    /// <summary>The changes a succeeded job returned, with the cursors for the next read; null for any other job.</summary>
+    Task<DirectoryChanges?> ReadResultAsync(Guid jobId, CancellationToken ct = default);
+}
 
 /// <summary>An agent job that finished, for the module that asked for it (spec 003 reads the records it returned).</summary>
 public sealed record AgentJobFinished(Guid JobId, Guid ConnectionId, string Kind, bool Ok, string? ErrorClass, int Users, int Groups) : IIntegrationEvent;

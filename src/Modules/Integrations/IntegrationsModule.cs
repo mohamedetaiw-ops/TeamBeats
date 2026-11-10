@@ -62,6 +62,7 @@ public static class IntegrationsModule
         services.AddScoped<SyncAgents.OnPremDirectoryPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<SyncAgents.OnPremDirectoryPack>());
         services.AddScoped<SyncAgents.SyncAgentService>();
+        services.AddScoped<IAgentDirectory>(sp => sp.GetRequiredService<SyncAgents.SyncAgentService>());
         Webhooks.OutboundEvents.AddOutboundWebhookEvents(services);
         services.AddScoped<PackConnections>();
         services.AddHttpClient(SafeHttp.ClientName, c => c.Timeout = TimeSpan.FromSeconds(30))

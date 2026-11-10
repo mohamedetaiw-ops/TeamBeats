@@ -42,6 +42,7 @@ public static class IdentityModule
         services.AddScoped<TeamBeats.Authorization.Contracts.IUserAttributeProvider, Directory.DirectoryUserAttributes>();
         services.AddScoped<Integrations.Contracts.IConnectionDependents, Directory.DirectoryConnectionDependents>();
         services.AddMessageHandler<Directory.DirectorySyncRequested, Directory.RunRequestedDirectorySync>(Directory.RunRequestedDirectorySync.ConsumerName);
+        services.AddMessageHandler<Integrations.Contracts.AgentJobFinished, Directory.ApplyAgentDirectoryRead>(Directory.ApplyAgentDirectoryRead.ConsumerName);
         services.AddMessageHandler<Integrations.Contracts.ConnectionDeleted, Directory.RemoveDirectoryOnConnectionDeleted>("identity.directory_connection_deleted");
         return services;
     }

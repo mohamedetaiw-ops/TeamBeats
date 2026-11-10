@@ -28,9 +28,25 @@ public sealed record DirectorySettings(
     int DeletionThresholdPct,
     DateTimeOffset? LastRunAt,
     DateTimeOffset NextRunAt,
-    int ConsecutiveFailures);
+    int ConsecutiveFailures,
+    string Source = DirectorySources.Entra);
 
-public sealed record DirectorySettingsRequest(UserScope? UserScope, IReadOnlyList<string>? SyncGroups, int? ScheduleMinutes, int? DeletionThresholdPct);
+/// <summary>Where a directory connection reads from (spec 003 FR-011).</summary>
+public static class DirectorySources
+{
+    /// <summary>Microsoft Entra ID through Microsoft Graph, on the tenant's Microsoft 365 connection.</summary>
+    public const string Entra = "entra";
+
+    /// <summary>On-premises AD DS over LDAPS, read by the customer's sync agent (spec 017 US6).</summary>
+    public const string ActiveDirectory = "adds";
+}
+
+/// <summary>
+/// Directory sync settings. <paramref name="ConnectionId"/> picks an on-premises Active Directory connection; without
+/// it the settings are for the Microsoft 365 connection that has directory sync turned on.
+/// </summary>
+public sealed record DirectorySettingsRequest(UserScope? UserScope, IReadOnlyList<string>? SyncGroups, int? ScheduleMinutes, int? DeletionThresholdPct,
+    Guid? ConnectionId = null);
 
 public sealed record SyncRun(Guid Id, DateTimeOffset StartedAt, DateTimeOffset? FinishedAt, string Outcome, string? Reason,
     int Created, int Updated, int Disabled, int Reenabled, int Groups, int Skipped);
@@ -43,7 +59,9 @@ public sealed record DirectorySyncNeedsAttention(Guid ConnectionId, string Reaso
 
 /// <summary>
 /// Keeps users, tenant memberships and selected groups in step with a connected directory (spec 003 User Story 6,
-/// FR-012 to FR-014). The directory is read through <see cref="IDirectorySource"/> as Graph deltas. Every account seen
+/// FR-012 to FR-014). Entra ID is read through <see cref="IDirectorySource"/> as Graph deltas; on-premises AD DS is
+/// read by the customer's sync agent through <see cref="IAgentDirectory"/>, which finishes later and is applied when
+/// <see cref="AgentJobFinished"/> arrives. Every account seen
 /// is mirrored, so a change of user scope is applied without reading the directory again. Each run reconciles the
 /// whole mirror, which makes runs idempotent and replayable. Users are keyed by the directory's immutable ID, never by
 /// email or UPN. Nothing is hard-deleted.
@@ -53,6 +71,7 @@ public sealed class DirectorySyncService(
     TenantContextAccessor context,
     IConnectionFeatures connections,
     IDirectorySource directory,
+    IAgentDirectory agentDirectory,
     IEntitlementService entitlements,
     ITenantMemberships memberships,
     IAuthorizationProvisioning authz,
@@ -70,7 +89,7 @@ public sealed class DirectorySyncService(
 
     private const string SettingsSelect =
         """
-        select connection_id, user_scope::text, sync_groups, schedule_minutes, deletion_threshold_pct, last_run_at, next_run_at, consecutive_failures
+        select connection_id, user_scope::text, sync_groups, schedule_minutes, deletion_threshold_pct, last_run_at, next_run_at, consecutive_failures, source
         from identity.directory_connection
         """;
 
@@ -82,7 +101,8 @@ public sealed class DirectorySyncService(
         r.GetInt32(4),
         r.Get<DateTimeOffset?>("last_run_at"),
         r.GetFieldValue<DateTimeOffset>(6),
-        r.GetInt32(7));
+        r.GetInt32(7),
+        r.GetString(8));
 
     public Task<DirectorySettings?> GetSettingsAsync(CancellationToken ct) =>
         session.QuerySingleOrDefaultAsync(SettingsSelect + " order by created_at limit 1", null, MapSettings, ct);
@@ -106,9 +126,21 @@ public sealed class DirectorySyncService(
 
     public async Task<DirectorySettings> SaveSettingsAsync(DirectorySettingsRequest request, CancellationToken ct)
     {
-        var feature = await connections.FindAsync(ConnectionKinds.Microsoft365, Microsoft365Features.DirectorySync, ct)
-            ?? throw AppException.Conflict("conflict.directory.no_connection");
-        var current = await session.QuerySingleOrDefaultAsync(SettingsSelect + " where connection_id = @c", new { c = feature.ConnectionId }, MapSettings, ct);
+        Guid connectionId;
+        string source;
+        if (request.ConnectionId is { } requested && await agentDirectory.IsUsableAsync(requested, ct))
+        {
+            (connectionId, source) = (requested, DirectorySources.ActiveDirectory);
+        }
+        else if (request.ConnectionId is null && await connections.FindAsync(ConnectionKinds.Microsoft365, Microsoft365Features.DirectorySync, ct) is { } feature)
+        {
+            (connectionId, source) = (feature.ConnectionId, DirectorySources.Entra);
+        }
+        else
+        {
+            throw AppException.Conflict("conflict.directory.no_connection");
+        }
+        var current = await session.QuerySingleOrDefaultAsync(SettingsSelect + " where connection_id = @c", new { c = connectionId }, MapSettings, ct);
 
         var scope = request.UserScope ?? current?.UserScope ?? new UserScope(UserScope.All, []);
         var mode = scope.Mode?.Trim().ToLowerInvariant();
@@ -136,15 +168,15 @@ public sealed class DirectorySyncService(
         var cleanScope = new UserScope(mode, mode == UserScope.All ? [] : scopeGroups);
         await session.ExecAsync(
             """
-            insert into identity.directory_connection (tenant_id, id, connection_id, user_scope, sync_groups, schedule_minutes, deletion_threshold_pct)
-            values (@t, @id, @c, @scope, @groups, @schedule, @threshold)
+            insert into identity.directory_connection (tenant_id, id, connection_id, user_scope, sync_groups, schedule_minutes, deletion_threshold_pct, source)
+            values (@t, @id, @c, @scope, @groups, @schedule, @threshold, @source)
             on conflict (tenant_id, connection_id) do update set user_scope = excluded.user_scope, sync_groups = excluded.sync_groups,
               schedule_minutes = excluded.schedule_minutes, deletion_threshold_pct = excluded.deletion_threshold_pct, updated_at = now()
             """,
-            new { t = context.RequireTenant(), id = Ids.New(), c = feature.ConnectionId, scope = Jsonb.From(cleanScope), groups = syncGroups.ToArray(), schedule, threshold }, ct);
-        await audit.WriteAsync(new AuditEntry(AuditActions.DirectoryConnectionChanged, "connection", feature.ConnectionId.ToString(),
-            Changes: new { scopeMode = mode, scopeGroups = cleanScope.Groups.Count, syncGroups = syncGroups.Count, scheduleMinutes = schedule, deletionThresholdPct = threshold, created = current is null }), ct);
-        return (await session.QuerySingleOrDefaultAsync(SettingsSelect + " where connection_id = @c", new { c = feature.ConnectionId }, MapSettings, ct))!;
+            new { t = context.RequireTenant(), id = Ids.New(), c = connectionId, scope = Jsonb.From(cleanScope), groups = syncGroups.ToArray(), schedule, threshold, source }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.DirectoryConnectionChanged, "connection", connectionId.ToString(),
+            Changes: new { source, scopeMode = mode, scopeGroups = cleanScope.Groups.Count, syncGroups = syncGroups.Count, scheduleMinutes = schedule, deletionThresholdPct = threshold, created = current is null }), ct);
+        return (await session.QuerySingleOrDefaultAsync(SettingsSelect + " where connection_id = @c", new { c = connectionId }, MapSettings, ct))!;
     }
 
     /// <summary>Runs the tenant's sync if its schedule is due. Called every minute by the worker.</summary>
@@ -167,14 +199,16 @@ public sealed class DirectorySyncService(
         context.SetActor(ActorType.System, null);
         var row = await session.QuerySingleOrDefaultAsync(
             """
-            select id, user_scope::text, sync_groups, schedule_minutes, deletion_threshold_pct, users_cursor, groups_cursor, consecutive_failures, admin_units_cursor
+            select id, user_scope::text, sync_groups, schedule_minutes, deletion_threshold_pct, users_cursor, groups_cursor, consecutive_failures, admin_units_cursor, source
             from identity.directory_connection where connection_id = @c for update skip locked
-            """, new { c = connectionId },
-            r => new RunSettings(r.GetGuid(0), JsonSerializer.Deserialize<UserScope>(r.GetString(1), JsonDefaults.Options)!, r.GetFieldValue<string[]>(2),
-                r.GetInt32(3), r.GetInt32(4), r.Get<string>("users_cursor"), r.Get<string>("groups_cursor"), r.GetInt32(7), r.Get<string>("admin_units_cursor")), ct);
+            """, new { c = connectionId }, MapRun, ct);
         if (row is null)
         {
             return null;
+        }
+        if (row.Source == DirectorySources.ActiveDirectory)
+        {
+            return await RequestAgentReadAsync(row, connectionId, ct);
         }
 
         var runId = Ids.New();
@@ -203,7 +237,100 @@ public sealed class DirectorySyncService(
             // Nothing is changed; existing users keep signing in through their identity provider (scenario 8).
             return await FailAsync(runId, row, connectionId, ex.Reason, ct);
         }
+        return await ReconcileAsync(runId, row, connectionId, directory.IssuerFor(feature.ExternalTenantId), changes, ct);
+    }
 
+    /// <summary>
+    /// An Active Directory run asks the sync agent for a read and waits; <see cref="ApplyAgentReadAsync"/> finishes it.
+    /// No run is started while a read is already waiting or running.
+    /// </summary>
+    private async Task<SyncRun?> RequestAgentReadAsync(RunSettings row, Guid connectionId, CancellationToken ct)
+    {
+        await session.ExecAsync("update identity.directory_connection set last_run_at = now(), next_run_at = now() + make_interval(mins => @m) where id = @id",
+            new { id = row.Id, m = row.ScheduleMinutes }, ct);
+        var runId = Ids.New();
+        if (!await entitlements.IsEnabledAsync(Capabilities.IdentityDirectorySync, ct))
+        {
+            await StartRunAsync(runId, connectionId, null, ct);
+            return await FinishAsync(runId, "failed", "not_in_package", new Counts(), ct);
+        }
+        if (!await agentDirectory.IsUsableAsync(connectionId, ct))
+        {
+            await StartRunAsync(runId, connectionId, null, ct);
+            return await FailAsync(runId, row, connectionId, "connection_unusable", ct);
+        }
+        var job = await agentDirectory.RequestReadAsync(connectionId, ct);
+        if (job is null)
+        {
+            return null;
+        }
+        await StartRunAsync(runId, connectionId, job, ct);
+        var now = clock.UtcNow;
+        return new SyncRun(runId, now, null, "running", null, 0, 0, 0, 0, 0, 0);
+    }
+
+    private Task StartRunAsync(Guid runId, Guid connectionId, Guid? agentJobId, CancellationToken ct) =>
+        session.ExecAsync("insert into identity.directory_sync_run (tenant_id, id, connection_id, outcome, agent_job_id) values (@t, @id, @c, 'running', @j)",
+            new { t = context.RequireTenant(), id = runId, c = connectionId, j = agentJobId }, ct);
+
+    /// <summary>
+    /// Applies a finished agent read of an Active Directory connection: the run that asked for it, or a new run when an
+    /// administrator started the read from the Connections area. A failed read changes nothing.
+    /// </summary>
+    public async Task<SyncRun?> ApplyAgentReadAsync(AgentJobFinished finished, CancellationToken ct)
+    {
+        context.SetActor(ActorType.System, null);
+        var row = await session.QuerySingleOrDefaultAsync(
+            """
+            select id, user_scope::text, sync_groups, schedule_minutes, deletion_threshold_pct, users_cursor, groups_cursor, consecutive_failures, admin_units_cursor, source
+            from identity.directory_connection where connection_id = @c and source = 'adds' for update
+            """, new { c = finished.ConnectionId }, MapRun, ct);
+        if (row is null)
+        {
+            return null;
+        }
+        var runId = await session.ScalarAsync<Guid?>(
+            "select id from identity.directory_sync_run where connection_id = @c and agent_job_id = @j and outcome = 'running'",
+            new { c = finished.ConnectionId, j = finished.JobId }, ct);
+        if (runId is null)
+        {
+            if (await session.ScalarAsync<bool>("select exists (select 1 from identity.directory_sync_run where agent_job_id = @j)", new { j = finished.JobId }, ct))
+            {
+                return null;
+            }
+            runId = Ids.New();
+            await StartRunAsync(runId.Value, finished.ConnectionId, finished.JobId, ct);
+        }
+        if (!finished.Ok)
+        {
+            return await FailAsync(runId.Value, row, finished.ConnectionId, finished.ErrorClass ?? "unexpected", ct);
+        }
+        if (!await entitlements.IsEnabledAsync(Capabilities.IdentityDirectorySync, ct))
+        {
+            return await FinishAsync(runId.Value, "failed", "not_in_package", new Counts(), ct);
+        }
+        var changes = await agentDirectory.ReadResultAsync(finished.JobId, ct);
+        if (changes is null)
+        {
+            return await FailAsync(runId.Value, row, finished.ConnectionId, "result_missing", ct);
+        }
+        return await ReconcileAsync(runId.Value, row, finished.ConnectionId, OnPremIssuer(finished.ConnectionId), changes, ct);
+    }
+
+    /// <summary>
+    /// The issuer that synced Active Directory accounts are linked under, keyed by the AD <c>objectGUID</c>. AD FS
+    /// sign-in (spec 003 US5) matches its token's <c>objectGUID</c> to this issuer for the same connection.
+    /// </summary>
+    public static string OnPremIssuer(Guid connectionId) => $"urn:teambeats:onprem-ad:{connectionId:D}";
+
+    private static RunSettings MapRun(Npgsql.NpgsqlDataReader r) =>
+        new(r.GetGuid(0), JsonSerializer.Deserialize<UserScope>(r.GetString(1), JsonDefaults.Options)!, r.GetFieldValue<string[]>(2),
+            r.GetInt32(3), r.GetInt32(4), r.Get<string>("users_cursor"), r.Get<string>("groups_cursor"), r.GetInt32(7), r.Get<string>("admin_units_cursor"),
+            r.GetString(9));
+
+    /// <summary>Applies read changes to the mirror, users, memberships and groups, unless the deletion threshold stops it.</summary>
+    private async Task<SyncRun> ReconcileAsync(Guid runId, RunSettings row, Guid connectionId, string issuer, DirectoryChanges changes, CancellationToken ct)
+    {
         var mirror = await LoadMirrorAsync(connectionId, ct);
         mirror.Apply(changes);
         var plan = await PlanAsync(connectionId, row.UserScope, mirror, ct);
@@ -218,12 +345,20 @@ public sealed class DirectorySyncService(
         }
 
         await mirror.SaveAsync(session, context.RequireTenant(), connectionId, ct);
-        var counts = await ApplyAsync(connectionId, feature.ExternalTenantId, plan, ct);
-        counts.Groups = await SyncGroupsAsync(connectionId, row.SyncGroups, mirror, ct);
+        var counts = await ApplyAsync(connectionId, issuer, row.Source == DirectorySources.Entra, plan, ct);
+        counts.Groups = await SyncGroupsAsync(connectionId, row.Source, row.SyncGroups, mirror, ct);
 
-        await session.ExecAsync(
-            "update identity.directory_connection set users_cursor = @u, groups_cursor = @g, admin_units_cursor = @a, consecutive_failures = 0, updated_at = now() where id = @id",
-            new { id = row.Id, u = changes.UsersCursor, g = changes.GroupsCursor, a = changes.AdminUnitsCursor }, ct);
+        if (row.Source == DirectorySources.Entra)
+        {
+            await session.ExecAsync(
+                "update identity.directory_connection set users_cursor = @u, groups_cursor = @g, admin_units_cursor = @a, consecutive_failures = 0, updated_at = now() where id = @id",
+                new { id = row.Id, u = changes.UsersCursor, g = changes.GroupsCursor, a = changes.AdminUnitsCursor }, ct);
+        }
+        else
+        {
+            // The agent's read position is kept with its jobs in Integrations.
+            await session.ExecAsync("update identity.directory_connection set consecutive_failures = 0, updated_at = now() where id = @id", new { id = row.Id }, ct);
+        }
         // The organization mapping (spec 002 US5) follows each successful run.
         await outbox.EnqueueAsync(new DirectorySynced(connectionId), ct);
         return await FinishAsync(runId, "succeeded", null, counts, ct);
@@ -320,12 +455,12 @@ public sealed class DirectorySyncService(
         return plan;
     }
 
-    private async Task<Counts> ApplyAsync(Guid connectionId, string externalTenantId, Plan plan, CancellationToken ct)
+    private async Task<Counts> ApplyAsync(Guid connectionId, string issuer, bool entra, Plan plan, CancellationToken ct)
     {
         var counts = new Counts();
         var tenantId = context.RequireTenant();
-        var issuer = directory.IssuerFor(externalTenantId);
-        var idp = await providers.GetEnabledAsync(ct);
+        // Entra ID accounts are linked to the tenant's Entra ID sign-in; AD accounts get theirs with AD FS (spec 003 US5).
+        var idp = entra ? await providers.GetEnabledAsync(ct) : null;
 
         foreach (var user in plan.Create)
         {
@@ -446,7 +581,7 @@ public sealed class DirectorySyncService(
     /// group-to-role mapping to them (scenario 6). A group that is no longer selected, or removed in the directory, is
     /// emptied, so its roles stop applying. Product groups are never changed.
     /// </summary>
-    private async Task<int> SyncGroupsAsync(Guid connectionId, IReadOnlyList<string> selected, Mirror mirror, CancellationToken ct)
+    private async Task<int> SyncGroupsAsync(Guid connectionId, string source, IReadOnlyList<string> selected, Mirror mirror, CancellationToken ct)
     {
         var userIds = (await session.QueryAsync("select directory_id, user_id from identity.directory_user_link where connection_id = @c",
             new { c = connectionId }, r => (r.GetString(0), r.GetGuid(1)), ct)).ToDictionary(x => x.Item1, x => x.Item2, StringComparer.Ordinal);
@@ -463,7 +598,7 @@ public sealed class DirectorySyncService(
                 continue;
             }
             var members = group.Members.Where(userIds.ContainsKey).Select(m => userIds[m]).ToList();
-            var groupId = await authz.SyncDirectoryGroupAsync(GroupKey(gid), group.DisplayName ?? gid, members, ct);
+            var groupId = await authz.SyncDirectoryGroupAsync(GroupKey(gid, source), group.DisplayName ?? gid, members, ct);
             await session.ExecAsync(
                 """
                 insert into identity.directory_group_link (tenant_id, connection_id, directory_id, group_id) values (@t, @c, @d, @g)
@@ -479,7 +614,7 @@ public sealed class DirectorySyncService(
         foreach (var gid in known.Where(g => !selected.Contains(g) || !mirror.Groups.ContainsKey(g)))
         {
             var name = mirror.Groups.TryGetValue(gid, out var group) ? group.DisplayName ?? gid : gid;
-            await authz.SyncDirectoryGroupAsync(GroupKey(gid), name, [], ct);
+            await authz.SyncDirectoryGroupAsync(GroupKey(gid, source), name, [], ct);
             await session.ExecAsync("delete from identity.directory_group_link where connection_id = @c and directory_id = @d", new { c = connectionId, d = gid }, ct);
         }
         return synced;
@@ -494,7 +629,8 @@ public sealed class DirectorySyncService(
         }
     }
 
-    public static string GroupKey(string directoryGroupId) => "entra:" + directoryGroupId;
+    public static string GroupKey(string directoryGroupId, string source = DirectorySources.Entra) =>
+        (source == DirectorySources.ActiveDirectory ? "ad:" : "entra:") + directoryGroupId;
 
     private static string DisplayName(MirrorUser u) =>
         string.IsNullOrWhiteSpace(u.Attributes.DisplayName) ? (Email(u) ?? u.Id) : u.Attributes.DisplayName.Trim();
@@ -520,7 +656,7 @@ public sealed class DirectorySyncService(
     }
 
     private sealed record RunSettings(Guid Id, UserScope UserScope, string[] SyncGroups, int ScheduleMinutes, int DeletionThresholdPct,
-        string? UsersCursor, string? GroupsCursor, int ConsecutiveFailures, string? AdminUnitsCursor);
+        string? UsersCursor, string? GroupsCursor, int ConsecutiveFailures, string? AdminUnitsCursor, string Source);
 
     private sealed record Link(string DirectoryId, Guid UserId, bool DisabledByDirectory, string DisplayName, string Email);
 
