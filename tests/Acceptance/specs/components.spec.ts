@@ -5,8 +5,8 @@ import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
 
 /**
- * Spec 036 DLS-031 to DLS-039: the actions, selection, status, structure, overlay, menu, input and date components,
- * the data blocks and the assistant and agent parts of the extended catalogue.
+ * Spec 036 DLS-031 to DLS-040: the actions, selection, status, structure, overlay, menu, input and date components,
+ * the data blocks, the assistant and agent parts and the charts of the extended catalogue.
  * Each one is driven with the keyboard, in English and in Arabic, and checked for the name, role and state that
  * assistive technology reads. The gallery exists only with the development fixtures.
  */
@@ -804,6 +804,48 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(run.locator('[aria-current="step"]')).toContainText(t("agents.stepDraft"));
       await expect(run.locator('[aria-current="step"]')).toContainText(a("status.running"));
       await expect(run.getByRole("listitem").first()).toContainText(a("status.done"));
+    });
+
+    test("charts are named pictures that can show their data as a table, with the value axis on the start side", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const c = (key: string) => msg(locale, `ui.charts.${key}`);
+      const charts = page.locator("section:has(> h2#cg-charts)");
+      const more = page.locator("section:has(> h2#cg-charts-more)");
+
+      // Every chart drawing is one image named by its summary in words.
+      for (const section of [charts, more]) {
+        const images = section.locator('svg[role="img"]');
+        expect(await images.count()).toBeGreaterThan(0);
+        for (const image of await images.all()) await expect(image).toHaveAttribute("aria-label", /\S/);
+      }
+
+      // The table toggle is a pressed button and swaps the drawing for a table with headers.
+      const visits = charts.getByRole("region", { name: t("charts.visits") });
+      await expect(visits.getByRole("img", { name: t("charts.visitsSummary") })).toBeVisible();
+      const toggle = visits.getByRole("button", { name: c("showTable") });
+      await expect(toggle).toHaveAttribute("aria-pressed", "false");
+      await toggle.focus();
+      await page.keyboard.press("Enter");
+      await expect(toggle).toHaveAttribute("aria-pressed", "true");
+      const table = visits.getByRole("table", { name: t("charts.visits") });
+      await expect(table.getByRole("columnheader", { name: t("charts.month") })).toBeVisible();
+      await expect(table.getByRole("columnheader", { name: t("charts.web") })).toBeVisible();
+      await expect(table.getByRole("rowheader")).toHaveCount(6);
+      await expect(visits.getByRole("img")).toHaveCount(0);
+      await page.keyboard.press("Enter");
+      await expect(visits.getByRole("img", { name: t("charts.visitsSummary") })).toBeVisible();
+
+      // Bar lists and funnels are ordered lists that read in order.
+      await expect(charts.getByRole("list", { name: t("charts.topSearches") }).getByRole("listitem")).toHaveCount(4);
+      await expect(charts.getByRole("list", { name: t("charts.topSearches") }).getByRole("listitem").first()).toContainText(t("charts.termLeave"));
+      await expect(charts.getByRole("list", { name: t("charts.surveySummary") }).getByRole("listitem")).toHaveCount(4);
+
+      // The value labels sit outside the plot on the start side: left in English, right in Arabic.
+      const bars = charts.getByRole("region", { name: t("charts.trend") }).getByRole("img");
+      const box = (await bars.boundingBox())!;
+      const tick = (await bars.locator("text").first().boundingBox())!;
+      if (locale === "ar") expect(tick.x).toBeGreaterThan(box.x + box.width * 0.85);
+      else expect(tick.x + tick.width).toBeLessThan(box.x + box.width * 0.15);
     });
   });
 }

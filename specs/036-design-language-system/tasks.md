@@ -25,7 +25,7 @@ Depends on 033 (theme engine, brand manager), 008 (shell), 032 (templates), 007.
 - [x] T017 Inputs and dates: field parts, SearchField, NumberField, OtpField, Combobox, Calendar, DateField, DateRangeField, TimeField, SlotPicker, ColorField, FileUpload, Carousel, TreeView
 - [x] T018 Data blocks: DataTable, DataGrid, StatCards, calendar views, task list, notification panel, settings dialog, sign-in card
 - [x] T019 Assistant and agent parts: thinking indicator, composer, attachments, sources, limits, question steps, agent form, run progress
-- [ ] T020 Charts: chart tokens in the schema and four designs, chart card, the chart types of DLS-040
+- [x] T020 Charts: chart tokens in the schema and four designs, chart card, the chart types of DLS-040
 - [ ] T021 Page patterns: dashboard, assistant chat, agent profile, record profile, board, mapped to the spec 032 templates
 
 ## R2
