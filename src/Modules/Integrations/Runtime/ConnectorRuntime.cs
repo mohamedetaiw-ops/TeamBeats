@@ -95,7 +95,7 @@ public sealed class ConnectorRuntime(
                 }
                 outcome = ConnectorOutcomes.Failed;
             }
-            await FinishAsync(runId, outcome, attempts, (int)elapsed, r.ExternalReference, r.ErrorClass, r.ErrorCode, r.RecordCount, ct);
+            await FinishAsync(runId, outcome, attempts, (int)elapsed, r.ExternalReference, r.ErrorClass, r.ErrorCode, r.RecordCount, ct, r.Output);
             return new ConnectorCallResult(runId, outcome, outcome == ConnectorOutcomes.Succeeded ? r.Output : null, r.ExternalReference, r.ErrorClass, r.ErrorCode);
         }
     }
@@ -191,13 +191,13 @@ public sealed class ConnectorRuntime(
                 """, new { id = run.Id, attempts = attemptNo, next = now + delay, errorClass = r.ErrorClass, duration }, ct);
             return;
         }
-        await FinishJobAsync(run, outcome, attemptNo, duration, r.ExternalReference, r.ErrorClass, r.ErrorCode, r.RecordCount, ct);
+        await FinishJobAsync(run, outcome, attemptNo, duration, r.ExternalReference, r.ErrorClass, r.ErrorCode, r.RecordCount, ct, r.Output);
     }
 
     private async Task FinishJobAsync(Run run, string outcome, int attempts, int duration, string? reference, string? errorClass, string? errorCode,
-        int? records, CancellationToken ct)
+        int? records, CancellationToken ct, JsonElement? output = null)
     {
-        await FinishAsync(run.Id, outcome, attempts, duration, reference, errorClass, errorCode, records, ct);
+        await FinishAsync(run.Id, outcome, attempts, duration, reference, errorClass, errorCode, records, ct, output);
         await outbox.EnqueueAsync(new ConnectorActionCompleted(run.Id, run.ConnectionId, run.Action, outcome, reference, errorClass, errorCode, run.CorrelationId), ct);
     }
 
@@ -424,15 +424,18 @@ public sealed class ConnectorRuntime(
             : new Start(claimed, null);
     }
 
-    private Task FinishAsync(Guid id, string outcome, int attempts, int duration, string? reference, string? errorClass, string? errorCode, int? records,
-        CancellationToken ct) =>
-        session.ExecAsync(
+    private async Task FinishAsync(Guid id, string outcome, int attempts, int duration, string? reference, string? errorClass, string? errorCode, int? records,
+        CancellationToken ct, JsonElement? output = null)
+    {
+        await PayloadCapture.KeepAsync(session, id, output, clock.UtcNow, ct);
+        await session.ExecAsync(
             """
             update integrations.run set status = @outcome, attempts = @attempts, duration_ms = @duration, external_reference = @reference,
               error_class = @errorClass, error_code = @errorCode, record_count = @records, finished_at = @now, next_attempt_at = null,
               input = case when @outcome in ('succeeded', 'business_error') then null else input end
             where id = @id
             """, new { id, outcome, attempts, duration, reference, errorClass, errorCode, records, now = clock.UtcNow }, ct);
+    }
 
     private async Task<(Resolved? Resolved, string? Refusal, Connection? Connection)> ResolveAsync(Guid connectionId, string action, CancellationToken ct)
     {

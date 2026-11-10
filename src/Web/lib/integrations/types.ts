@@ -106,7 +106,13 @@ export type RunView = {
   replayable: boolean;
   createdAt: string;
   finishedAt: string | null;
+  captured: boolean;
 };
+
+/** Payload capture of a connection (spec 017 FR-007): until is null while it is off. */
+export type CaptureView = { until: string | null };
+export type RunCapture = { runId: string; input: unknown; output: unknown; capturedAt: string; expiresAt: string };
+export const CAPTURE_HOURS = [1, 4, 8, 24] as const;
 
 export type RunPage = { items: RunView[]; nextCursor: string | null };
 

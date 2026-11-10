@@ -6,7 +6,10 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Integrations.Runtime;
 
-/// <summary>A run as history shows it (spec 017 US3 scenario 1): no payload content, ever.</summary>
+/// <summary>
+/// A run as history shows it (spec 017 US3 scenario 1): no payload content. <paramref name="Captured"/> says that the run
+/// kept its input and output while payload capture was on; they are read separately.
+/// </summary>
 public sealed record RunView(
     Guid Id,
     string Action,
@@ -24,7 +27,8 @@ public sealed record RunView(
     DateTimeOffset? LastReplayedAt,
     bool Replayable,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? FinishedAt);
+    DateTimeOffset? FinishedAt,
+    bool Captured = false);
 
 public sealed record RunPage(IReadOnlyList<RunView> Items, string? NextCursor);
 
@@ -62,7 +66,8 @@ public sealed class RunHistory(IDbSession session, ITenantContext context, IAudi
             """
             select id, action, mode, status, attempts, error_class, error_code, previous_error_class, external_reference, record_count,
               duration_ms, correlation_id, replays, last_replayed_at, created_at, finished_at,
-              (status in ('failed', 'unknown') and input is not null and finished_at > @since) as replayable
+              (status in ('failed', 'unknown') and input is not null and finished_at > @since) as replayable,
+              exists (select 1 from integrations.run_capture x where x.run_id = integrations.run.id and x.expires_at > @now) as captured
             from integrations.run
             where connection_id = @connectionId
               and (@status::text is null or (@status = 'dead_letter' and status in ('failed', 'unknown') and input is not null and finished_at > @since)
@@ -71,11 +76,11 @@ public sealed class RunHistory(IDbSession session, ITenantContext context, IAudi
               and (@beforeAt::timestamptz is null or (created_at, id) < (@beforeAt, @beforeId))
             order by created_at desc, id desc
             limit @take
-            """, new { connectionId, status, action, beforeAt, beforeId, since, take = limit + 1 },
+            """, new { connectionId, status, action, beforeAt, beforeId, since, now, take = limit + 1 },
             r => new RunView(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetInt32(4), r.Get<string>("error_class"),
                 r.Get<string>("error_code"), r.Get<string>("previous_error_class"), r.Get<string>("external_reference"), r.Get<int?>("record_count"),
                 r.Get<int?>("duration_ms"), r.Get<string>("correlation_id"), r.GetInt32(12), r.Get<DateTimeOffset?>("last_replayed_at"),
-                r.GetBoolean(16), r.GetFieldValue<DateTimeOffset>(14), r.Get<DateTimeOffset?>("finished_at")), ct);
+                r.GetBoolean(16), r.GetFieldValue<DateTimeOffset>(14), r.Get<DateTimeOffset?>("finished_at"), r.GetBoolean(17)), ct);
         var more = rows.Count > limit;
         var items = more ? rows.Take(limit).ToList() : rows;
         var next = more ? $"{items[^1].CreatedAt.UtcTicks.ToString(CultureInfo.InvariantCulture)}_{items[^1].Id:N}" : null;

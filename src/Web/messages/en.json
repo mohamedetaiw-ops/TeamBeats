@@ -4199,7 +4199,11 @@
       "replay": "{count, plural, =0 {Replay selected} one {Replay # run} other {Replay # runs}}",
       "replayed": "{replayed, plural, one {# run} other {# runs}} queued again; {skipped} skipped.",
       "working": "Working…",
-      "failed": "Run history could not be loaded."
+      "failed": "Run history could not be loaded.",
+      "showPayload": "Show what was sent and received",
+      "sent": "Sent",
+      "received": "Received",
+      "payloadExpires": "Deleted on {at}"
     },
     "m365": {
       "title": "Microsoft 365",
@@ -4395,6 +4399,20 @@
       "policyNote": "Tools that change another system need agents at a higher autonomy level and always wait for the employee's confirmation.",
       "register": "Register the tool",
       "registered": "The tool is registered. The AI policy administrator can now allow it for agents."
+    },
+    "capture": {
+      "title": "Payload capture",
+      "intro": "For debugging. While it is on, each run keeps what was sent and received for 24 hours. It is off by default.",
+      "hours": "Turn on for",
+      "hoursOption": "{count, plural, one {# hour} other {# hours}}",
+      "confirm": "This connection carries Public or Internal data only",
+      "start": "Turn on capture",
+      "stop": "Turn off capture",
+      "on": "Capture is on until {until}.",
+      "started": "Payload capture is on.",
+      "stopped": "Payload capture is off.",
+      "failed": "Payload capture could not be changed. Try again.",
+      "working": "Working…"
     }
   }
 }

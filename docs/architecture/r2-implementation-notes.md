@@ -25,12 +25,12 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 | Item | Status |
 |---|---|
 | The plan lists a separate `dead_letter` table | The run row is the dead letter: a failed or unknown run with its input kept for 14 days. One table keeps the original idempotency key and the replay outcome together. |
-| Payload content | Inputs are stored only while a run may still run or be replayed and cleared once it succeeds or after 14 days; outputs are returned to the caller and never stored, so a repeated key returns the outcome and external reference without the output. Time-boxed payload capture (FR-007) comes with the run history page (T010). |
+| Payload content | Inputs are stored only while a run may still run or be replayed and cleared once it succeeds or after 14 days; outputs are returned to the caller and never stored, so a repeated key returns the outcome and external reference without the output. Time-boxed payload capture (FR-007) is built in slice 13. |
 | Calls inside a request | Their run rows are written in the caller's transaction. If the caller's request fails after the external call, its run record is rolled back with it. Workflows use jobs for steps that must survive that. |
 | Rate limits | Kept per process, so an installation with several API instances allows that many times the limit. The circuit breaker is shared through the database. |
 | Half-open circuit | Concurrent calls at the half-open moment may all be let through, not only one. |
 | Host allowlist audit | Spec section 13 has no event for allowlist changes; they are audited as `integration.allowlist_changed` (smallest safe default). |
-| T001 and T002 | Runs, attempts and the allowlist are migrated; pack actions, webhooks, payload capture and sync agent tables, and the audit actions for credentials, actions, webhook secrets and agents come with their slices. |
+| T001 and T002 | Runs, attempts and the allowlist are migrated here; pack actions, webhooks, sync agents and payload capture came with their slices (2, 5, 7 and 13), and so did the audit actions. |
 | T005 | The Microsoft 365 adapter keeps its own retry until it moves onto the runtime in the next slice. |
 
 ## Connection lifecycle and custom REST (spec 017, slice 2: T006, T007 and T012 back end)
@@ -172,3 +172,16 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 - Spec 016 US8 scenario 5 alerts the service owner when a step fails. That alert is a follow-up; owners see the failed step on the request and in the connection's run history. Spec 024 names `process.incident_raised`, `_retried` and `_skipped`; `process.incident_cancelled` is added for the cancel path.
 - The route stays approval then automatic steps in order. Other step types of US8 (set field, notify, wait, branch, parallel, start another service), triggers and test mode come with the visual designer.
 - A step's name in Tracking is the preferred language at publish time, like the approval step; the request page shows each automatic step in the reader's language.
+
+## Payload capture for debugging (spec 017, slice 13: T001 and T002 close)
+
+### Built
+- `integrations.connection.capture_until` and `integrations.run_capture` (forced RLS). Capture is off by default. An administrator (`integration.manage`, step-up) turns it on for one connection for 1 to 24 hours with `PUT /api/v1/integrations/connections/{id}/capture` and must state that the connection carries Public or Internal data only (spec 017 section 8); `DELETE` turns it off early. Both are audited as `integration.connection_changed` with the window, since section 13 names no separate event.
+- While the window is open, each run that finishes keeps its input and the system's output, up to 64 KB each, for 24 hours. The connector worker deletes expired captures on every tick, so nothing outlives its 24 hours by more than a few seconds. Run history marks a captured run; its content is read separately with `GET /api/v1/integrations/connections/{id}/runs/{runId}/capture` (`integration.operate`). Run history itself still shows no content.
+- Microsoft 365 and on-premises directory connections cannot capture, because they carry mail, calendar and personal directory data.
+- Pages: the run history section of a connection has a "Payload capture" control (window, the data statement, turn on and off) and shows what a captured run sent and received. Acceptance: the custom REST test turns capture on and off.
+- Tests: `tests/Integration/PayloadCaptureTests.cs` (off by default, a window keeps input and output for operators only, turning off stops capture, deletion after 24 hours, window and statement rules, refused kinds, employee and cross-tenant denial).
+
+### Differences and follow-ups
+- Spec 017 section 9 lists `integration.erp_packs`; Oracle and SAP keep the separate keys `integration.oracle_fusion` and `integration.sap` that spec 005 seeded in R0, so no new key is added until those packs are built.
+- The classification of a connection's data is the administrator's statement at capture time; connections carry no classification of their own yet.

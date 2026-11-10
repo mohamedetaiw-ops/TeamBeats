@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
-import type { AgentJob, ConnectorTool, InboundCounts, PackConnection, RestActionView, RunPage, SyncAgent, WebhookEventChoice } from "@/lib/integrations/types";
+import type { AgentJob, CaptureView, ConnectorTool, InboundCounts, PackConnection, RestActionView, RunPage, SyncAgent, WebhookEventChoice } from "@/lib/integrations/types";
 import { ActionBuilder } from "@/features/connections/ActionBuilder";
 import { ConnectionDetail } from "@/features/connections/ConnectionDetail";
 import { ConnectorToolsPanel } from "@/features/connections/ConnectorToolsPanel";
@@ -12,7 +12,7 @@ import { WebhookInboundPanel } from "@/features/connections/WebhookInboundPanel"
 import { connectionsSection } from "@/features/connections/guard";
 import "@/features/connections/connections.css";
 
-/** One connection: state and lifecycle, custom REST actions, agent tools, sync agents, and run history (spec 017 T007, T009, T010, T012, T015). */
+/** One connection: state and lifecycle, custom REST actions, agent tools, sync agents, run history and payload capture (spec 017 T007, T009, T010, T012, T015, FR-007). */
 export default async function ConnectionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await connectionsSection();
@@ -24,7 +24,8 @@ export default async function ConnectionPage({ params }: { params: Promise<{ id:
   const webhook = connection.data.kind === "webhook";
   const onprem = connection.data.kind === "onprem_ad";
   const toolable = !webhook && !onprem;
-  const [actions, runs, webhookEvents, inbound, agents, agentJobs, tools] = await Promise.all([
+  const capturable = !onprem;
+  const [actions, runs, webhookEvents, inbound, agents, agentJobs, tools, capture] = await Promise.all([
     connection.data.kind === "custom_rest" ? apiGet<RestActionView[]>(`${path}/actions`) : Promise.resolve(null),
     apiGet<RunPage>(`/api/v1/integrations/connections/${encodeURIComponent(id)}/runs`),
     webhook ? apiGet<WebhookEventChoice[]>("/api/v1/integrations/webhook-events") : Promise.resolve(null),
@@ -32,6 +33,7 @@ export default async function ConnectionPage({ params }: { params: Promise<{ id:
     onprem ? apiGet<SyncAgent[]>(`${path}/agents`) : Promise.resolve(null),
     onprem ? apiGet<AgentJob[]>(`${path}/agent-jobs`) : Promise.resolve(null),
     toolable ? apiGet<ConnectorTool[]>(`${path}/tools`) : Promise.resolve(null),
+    capturable ? apiGet<CaptureView>(`/api/v1/integrations/connections/${encodeURIComponent(id)}/capture`) : Promise.resolve(null),
   ]);
   const t = await getTranslations("connections");
   return (
@@ -47,7 +49,7 @@ export default async function ConnectionPage({ params }: { params: Promise<{ id:
       {onprem ? <SyncAgentPanel connectionId={connection.data.id} agents={agents?.ok ? agents.data : []} jobs={agentJobs?.ok ? agentJobs.data : []} /> : null}
       {actions?.ok ? <ActionBuilder connectionId={connection.data.id} initial={actions.data} /> : null}
       {tools?.ok ? <ConnectorToolsPanel connectionId={connection.data.id} actions={connection.data.actions} tools={tools.data} /> : null}
-      <RunHistory connectionId={connection.data.id} initial={runs.ok ? runs.data : null} />
+      <RunHistory connectionId={connection.data.id} initial={runs.ok ? runs.data : null} capture={capture?.ok ? capture.data : null} />
     </>
   );
 }
