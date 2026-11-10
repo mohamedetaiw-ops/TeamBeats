@@ -9,6 +9,7 @@ import { problemMessages } from "@/lib/notifications/types";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { pick, type FieldValue, type FormField, type RequestDetail } from "@/lib/services/types";
 import { TaskDecisionPanel } from "./TaskDecisionPanel";
+import { isolate } from "@/lib/bidi";
 import "./services.css";
 
 const cancellable = new Set(["submitted", "in_approval", "returned"]);
@@ -183,7 +184,7 @@ export function RequestDetailView({ detail, meId, units, taskId }: { detail: Req
                 {e.onBehalfOf ? (
                   <>
                     {" · "}
-                    {decisions.has(e.event) ? t("onBehalfOf", { name: e.onBehalfOf.displayName }) : t("filedFor", { name: e.onBehalfOf.displayName })}
+                    {decisions.has(e.event) ? t("onBehalfOf", { name: isolate(e.onBehalfOf.displayName) }) : t("filedFor", { name: isolate(e.onBehalfOf.displayName) })}
                   </>
                 ) : null}
               </span>

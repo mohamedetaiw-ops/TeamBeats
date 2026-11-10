@@ -1,0 +1,4 @@
+/* Visual baselines show the design only: the development server's own badge and build indicator change from run to run. */
+nextjs-portal {
+  display: none !important;
+}

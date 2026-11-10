@@ -5,6 +5,7 @@ import type { TeamPage } from "@/lib/people/types";
 import { Header } from "@/components/shell/Header";
 import { MyTeam } from "@/features/people/MyTeam";
 import { PeopleNav } from "@/features/people/PeopleNav";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /** My team (spec 010 US3). */
 export default async function TeamPageRoute() {
@@ -27,8 +28,7 @@ export default async function TeamPageRoute() {
         ]}
       />
       <main id="main" className="page people">
-        <h1>{t("team.title")}</h1>
-        <PeopleNav current="team" />
+        <PageHeader title={t("team.title")} icon="people" nav={<PeopleNav current="team" />} />
         <MyTeam initial={team.data} />
       </main>
     </>

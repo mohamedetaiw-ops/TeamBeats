@@ -164,7 +164,7 @@ Layout engine
 - **FR-005**: Placements MUST size from their container, not from the viewport. *(CX-LAY-003)*
 - **FR-006**: The first release with the layout engine MUST ship the 10 layouts L01 to L10 of the source, usable independently of templates. *(CX-LAY-004, CX-TMP-003)*
 - **FR-007**: Authorized editors SHOULD be able to resize regions within declared constraints; resizing MUST persist and MUST NOT create overlap. *(CX-LAY-005, R2)*
-- **FR-008**: Sections MUST support contained, full-bleed, fixed-width and fluid modes. *(CX-LAY-006)*
+- **FR-008**: Sections MUST support contained, full-bleed, fixed-width and fluid modes. *(CX-LAY-006)* A full-bleed section paints its background to the edges of the content area, but its content aligns to the same frame and padding as contained sections (the page frame of spec 036), so a hero never touches the navigation and lines up with the grid below it.
 - **FR-009**: Admins MUST be able to set breakpoint-specific order and visibility per region, and the engine MUST keep DOM, reading and keyboard order meaningful; changes that break logical order MUST be refused. *(CX-LAY-007, CX-LAY-008)*
 - **FR-010**: The validator MUST block unsupported spans, zero-size placements, overflow, nesting beyond the limit, conflicting placements, duplicate singletons and forbidden regions on save and on publish, pointing to the offending placement. *(CX-LAY-009, CX-EDT-011)*
 - **FR-011**: The engine MUST account for the shell, page padding, sticky controls and device safe areas. *(CX-LAY-010)*
@@ -283,6 +283,7 @@ The layout engine, accessibility, localization, error isolation, rollback and au
 - Builder is WCAG 2.2 AA itself (spec 007): every drag has a non-drag path, focus is restored after panels and dialogs, live regions announce moves and validation.
 - Previews cover LTR and RTL; layouts use logical properties only (CX-LOC-010 in spec 007).
 - Validation messages name the placement and region and say how to fix.
+- Module pages (Policies, Knowledge, Documents, People, Tasks, Services and the rest) use the page templates of spec 036: List, Catalogue, Directory and Detail. Each starts with the shared page header and, where the area has several views, the section tabs.
 
 ## 11. AI behavior and data policy
 No AI in R1 and R2. The R3 template recommendations (FR-023) use only page metadata, never page content or user data, and go through the AI Gateway if a model is used.

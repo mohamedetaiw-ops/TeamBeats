@@ -17,6 +17,7 @@ import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { RemindButton } from "@/features/policies/RemindButton";
 import { ComplianceBreakdown } from "@/features/policies/ComplianceBreakdown";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 type Filters = { campaign?: string; unit?: string; direct?: string; location?: string; manager?: string; status?: string; offset?: string };
 
@@ -87,8 +88,7 @@ export default async function PolicyCompliancePage({ params, searchParams }: { p
         ]}
       />
       <main id="main" className="page policies-page">
-        <h1>{t("heading", { name })}</h1>
-        <PoliciesNav current={null} />
+        <PageHeader title={t("heading", { name })} icon="policy" nav={<PoliciesNav current={null} />} />
         <p className="policies-meta">{t(`scope.${v.scope}`)}</p>
         {v.campaigns.length > 1 ? (
           <form className="policies-toolbar" method="get">

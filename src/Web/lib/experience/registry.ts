@@ -10,6 +10,8 @@ type Loader = () => Promise<{ default: ComponentType<PlacementProps> }>;
  * included when the build sets NEXT_PUBLIC_TB_REFERENCE_PACKS, so production bundles leave them out.
  */
 const product: Record<string, Loader> = {
+  // The home briefing (spec 008 FR-056).
+  "home.briefing@1": () => import("@/components/placements/home.briefing"),
   // Tool box utilities (spec 008 FR-050).
   "toolbox.world_clock@1": () => import("@/components/placements/toolbox.world_clock"),
   "toolbox.time_converter@1": () => import("@/components/placements/toolbox.time_converter"),

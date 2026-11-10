@@ -6,6 +6,8 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { localized, type PlacementProps } from "@/lib/experience/contract";
 import { readHref, type FeedItem, type FeedPage } from "@/lib/content/types";
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
 import "@/features/content/content.css";
 
@@ -66,6 +68,7 @@ export default function NewsFeed({ props }: PlacementProps) {
     return shell(<StateView kind="error" title={t("failed")} message="" action={retry} />);
   }
   if (answer.length === 0) return shell(<StateView kind="empty" title={t("none")} message="" />);
+  if (props.layout === "featured") return <Featured items={answer} title={title} />;
   return shell(
     <ul className="content-list">
       {answer.map((item) => (
@@ -73,7 +76,7 @@ export default function NewsFeed({ props }: PlacementProps) {
           <Link href={readHref(item.id)}>
             <bdi>{item.title}</bdi>
           </Link>
-          {item.pinned ? <span className="content-badge">{t("pinned")}</span> : null}
+          {item.pinned ? <Badge tone="accent">{t("pinned")}</Badge> : null}
           {item.summary ? (
             <p className="content-meta">
               <bdi>{item.summary}</bdi>
@@ -85,5 +88,70 @@ export default function NewsFeed({ props }: PlacementProps) {
         </li>
       ))}
     </ul>,
+  );
+}
+
+/**
+ * Featured news (docs/design-system/components.md, Featured news): the lead story (featured first, then pinned, then
+ * newest) as a large card with its type, reading time and reactions, and the next stories as compact rows beside it.
+ */
+function Featured({ items, title }: { items: FeedItem[]; title: string }) {
+  const t = useTranslations("content.component.feed");
+  const format = useFormatter();
+  const lead = items.find((i) => i.featured) ?? items.find((i) => i.pinned) ?? items[0]!;
+  const rest = items.filter((i) => i.id !== lead.id);
+  return (
+    <section className="content-featured" aria-label={title}>
+      <h2 className="visually-hidden">{title}</h2>
+      <article className="content-lead" lang={lead.locale}>
+        <div className="content-lead-media" aria-hidden="true">
+          <Icon name="news" size={56} />
+        </div>
+        <div className="content-lead-body">
+          <p className="content-lead-eyebrow">
+            <span>{t(`type.${lead.type === "announcement" ? "announcement" : "news"}`)}</span>
+            <span>{t("readTime", { minutes: lead.readMinutes })}</span>
+          </p>
+          <h3>
+            <Link className="content-lead-link" href={readHref(lead.id)}>
+              <bdi>{lead.title}</bdi>
+            </Link>
+          </h3>
+          {lead.summary ? (
+            <p className="content-meta">
+              <bdi>{lead.summary}</bdi>
+            </p>
+          ) : null}
+          <p className="content-lead-meta">
+            <time dateTime={lead.publishedAt}>{format.dateTime(new Date(lead.publishedAt), { dateStyle: "medium" })}</time>
+            {lead.reactions > 0 ? <span>{t("reactions", { count: lead.reactions })}</span> : null}
+          </p>
+        </div>
+      </article>
+      {rest.length > 0 ? (
+        <ul className="content-side-list">
+          {rest.map((item) => (
+            <li key={item.id} className="content-side-item" lang={item.locale}>
+              <span className="ui-icon-tile" data-tone={item.pinned ? "highlight" : "accent"}>
+                <Icon name="news" size={20} />
+              </span>
+              <div>
+                <p className="content-side-eyebrow">
+                  {item.pinned ? t("pinned") : t(`type.${item.type === "announcement" ? "announcement" : "news"}`)}
+                </p>
+                <Link className="content-side-link" href={readHref(item.id)}>
+                  <bdi>{item.title}</bdi>
+                </Link>
+                <p className="content-meta">
+                  <time dateTime={item.publishedAt}>{format.dateTime(new Date(item.publishedAt), { dateStyle: "medium" })}</time>
+                  {" · "}
+                  {t("readTime", { minutes: item.readMinutes })}
+                </p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </section>
   );
 }

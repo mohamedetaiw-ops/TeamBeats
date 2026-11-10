@@ -57,12 +57,14 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
 
   return (
     <div className="people">
-      <section aria-labelledby="people-search-title" className="people-section">
-        <h2 id="people-search-title">{t("search.label")}</h2>
+      <section aria-labelledby="people-search-title" className="people-block">
+        <h2 id="people-search-title" className="visually-hidden">
+          {t("search.label")}
+        </h2>
         <form
           role="search"
           aria-labelledby="people-search-title"
-          className="people-search"
+          className="ui-filter-bar"
           onSubmit={(e) => {
             e.preventDefault();
             void load(query, 0);
@@ -109,7 +111,7 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
         {items && items.length > 0 ? (
           <>
             <h3>{t("search.results")}</h3>
-            <ul className="people-list" data-testid="people-results">
+            <ul className="people-list people-cards" data-testid="people-results">
               {items.map((p) => (
                 <li key={p.id}>
                   <PersonItem person={p} locale={locale} />
@@ -125,12 +127,12 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
         ) : null}
       </section>
 
-      <section aria-labelledby="people-newcomers-title" className="people-section">
+      <section aria-labelledby="people-newcomers-title" className="people-block">
         <h2 id="people-newcomers-title">{t("newcomers.title")}</h2>
         {newcomers.length === 0 ? (
           <p>{t("newcomers.none")}</p>
         ) : (
-          <ul className="people-list" data-testid="people-newcomers">
+          <ul className="people-list people-cards" data-testid="people-newcomers">
             {newcomers.map((p) => (
               <li key={p.id}>
                 <PersonItem person={p} locale={locale} />

@@ -16,6 +16,9 @@ public static class TokenTypes
     public const string Duration = "duration";
     public const string Easing = "easing";
     public const string Shadow = "shadow";
+
+    /// <summary>A keyword from a fixed list, such as the design preset or the navigation style (spec 033 FR-029).</summary>
+    public const string Choice = "choice";
 }
 
 /// <summary>
@@ -27,7 +30,8 @@ public sealed record TokenValue(
     [property: JsonPropertyName("$value")] string? Value,
     [property: JsonPropertyName("$modes")] IReadOnlyDictionary<string, string>? Modes = null);
 
-public sealed record TokenDefinition(string Name, string Type, string Light, string? Dark = null, string? Compact = null, string? Script = null)
+public sealed record TokenDefinition(string Name, string Type, string Light, string? Dark = null, string? Compact = null, string? Script = null,
+    IReadOnlyList<string>? Choices = null)
 {
     /// <summary>CSS custom property name, <c>--tb-</c> plus the token name with dots and underscores as hyphens.</summary>
     public string CssName => "--tb-" + Name.Replace('.', '-').Replace('_', '-');
@@ -56,7 +60,7 @@ public static partial class TokenSchema
 {
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> ApprovedFonts = new Dictionary<string, IReadOnlyList<string>>
     {
-        ["latin"] = ["Readex Pro", "Alexandria", "Inter", "IBM Plex Sans", "Noto Sans", "Source Sans 3", "Roboto"],
+        ["latin"] = ["Readex Pro", "Alexandria", "Inter", "IBM Plex Sans", "Cairo", "Noto Sans", "Source Sans 3", "Roboto"],
         ["arabic"] = ["Readex Pro", "Alexandria", "Noto Sans Arabic", "IBM Plex Sans Arabic", "Cairo", "Tajawal"],
         ["urdu"] = ["Noto Nastaliq Urdu", "Noto Sans Arabic"],
         ["devanagari"] = ["Noto Sans Devanagari", "Hind"],
@@ -84,8 +88,14 @@ public static partial class TokenSchema
 
     private static TokenDefinition D(string name, string value, string? compact = null) => new(name, TokenTypes.Dimension, value, Compact: compact);
 
+    private static TokenDefinition Choice(string name, params string[] choices) => new(name, TokenTypes.Choice, choices[0], Choices: choices);
+
     public static readonly IReadOnlyList<TokenDefinition> All =
     [
+        // The design language (docs/design-system/designs.md): the preset supplies a complete look, and the navigation style
+        // is the structural part of it that CSS cannot express as a value.
+        Choice("design.preset", DesignPresets.Beats, DesignPresets.Atlas, DesignPresets.Pulse),
+        Choice("layout.navigation", "rail", "top", "sidebar"),
         C("color.surface.base", "#f3f2f8", "#0f0d24"),
         C("color.surface.raised", "#ffffff", "#1b1838"),
         C("color.surface.sunken", "#e9e7f3", "#0a0918"),
@@ -110,6 +120,18 @@ public static partial class TokenSchema
         C("color.state.info", "#2f5bd3", "#9db7ff"),
         C("color.focus.ring", "#3b2fc9", "#f4b740"),
         C("color.focus.ring_inverse", "#3b2fc9", "#f4b740"),
+        // Decorative tints (docs/design-system/foundations/colour.md): tinted tiles that tell categories apart, never state.
+        C("color.tint.warm", "#fdf0d5", "#3d2e0f"),
+        C("color.tint.warm_text", "#8f5b00", "#f4b740"),
+        C("color.tint.fresh", "#e3f4ea", "#14352a"),
+        C("color.tint.fresh_text", "#157347", "#5ad19a"),
+        C("color.tint.cool", "#e6edfc", "#1c2a52"),
+        C("color.tint.cool_text", "#2f5bd3", "#9db7ff"),
+        // The night surface of AI and personal summaries, dark in both modes, with its text and bright accent.
+        C("color.surface.night", "#16133d", "#1f1a52"),
+        C("color.text.on_night", "#ffffff", "#f5f4fb"),
+        C("color.surface.campaign", "#146c43", "#14532d"),
+        C("color.highlight.bright", "#f4b740", "#f4b740"),
         new("font.family.latin", TokenTypes.FontFamily, "Readex Pro", Script: "latin"),
         new("font.family.arabic", TokenTypes.FontFamily, "Readex Pro", Script: "arabic"),
         new("font.family.heading_latin", TokenTypes.FontFamily, "Alexandria", Script: "latin"),
@@ -192,6 +214,7 @@ public static partial class TokenSchema
                 ? null : "validation.theme.duration_invalid",
             TokenTypes.Easing => Easings.ContainsKey(value) ? null : "validation.theme.easing_invalid",
             TokenTypes.Shadow => ShadowOk(value) ? null : "validation.theme.shadow_invalid",
+            TokenTypes.Choice => token.Choices!.Contains(value) ? null : "validation.theme.choice_invalid",
             _ => "validation.theme.token_value_invalid",
         };
     }

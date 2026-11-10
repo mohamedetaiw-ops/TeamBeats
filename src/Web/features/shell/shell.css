@@ -1,6 +1,16 @@
 /* The spec 008 shell. Colors come from the shell and navigation tokens, so a tenant brand restyles it. */
-.shell {
+
+/* The navigation style comes from the design (spec 036, token layout.navigation): rail (Beats), top (Atlas) or a
+   labelled sidebar (Pulse). The size is set on the root so the page body can make room for it. */
+:root {
   --xp-rail-size: 5.75rem;
+}
+
+:root[data-nav="sidebar"] {
+  --xp-rail-size: 15rem;
+}
+
+.shell {
   --xp-bar-size: 4.5rem;
 
   border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
@@ -401,17 +411,17 @@
 
 /* Wide screens: the rail sits down the start edge, under the bar, and the page moves over to make room. */
 @media (width > 64rem) {
-  body:has(.shell-rail) {
+  :root:not([data-nav="top"]) body:has(.shell-rail) {
     position: relative;
     min-block-size: 100vh;
-    padding-inline-start: 5.75rem; /* the rail size, set on .shell as --xp-rail-size */
+    padding-inline-start: var(--xp-rail-size);
   }
 
-  .shell:has(.shell-rail) {
+  :root:not([data-nav="top"]) .shell:has(.shell-rail) {
     margin-inline-start: calc(-1 * var(--xp-rail-size));
   }
 
-  .shell:has(.shell-rail) > :not(.shell-bar, .shell-rail) {
+  :root:not([data-nav="top"]) .shell:has(.shell-rail) > :not(.shell-bar, .shell-rail) {
     margin-inline-start: var(--xp-rail-size);
   }
 
@@ -420,7 +430,7 @@
     block-size: var(--xp-bar-size);
   }
 
-  .shell-rail {
+  :root:not([data-nav="top"]) .shell-rail {
     position: absolute;
     inset-block-start: var(--xp-bar-size);
     inset-inline-start: 0;
@@ -432,17 +442,17 @@
     border-inline-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   }
 
-  .shell-rail .shell-menu-list {
+  :root:not([data-nav="top"]) .shell-rail .shell-menu-list {
     flex-flow: column nowrap;
     align-items: stretch;
     gap: var(--tb-space-xs);
   }
 
-  .shell-rail .shell-menu-item {
+  :root:not([data-nav="top"]) .shell-rail .shell-menu-item {
     flex-direction: column;
   }
 
-  .shell-rail .shell-menu-item > a {
+  :root:not([data-nav="top"]) .shell-rail .shell-menu-item > a {
     flex-direction: column;
     inline-size: 100%;
     padding-block: var(--tb-space-sm);
@@ -451,12 +461,12 @@
     text-align: center;
   }
 
-  .shell-rail .shell-submenu-toggle {
+  :root:not([data-nav="top"]) .shell-rail .shell-submenu-toggle {
     min-block-size: 1.5rem;
     padding: 0;
   }
 
-  .shell-rail .shell-submenu {
+  :root:not([data-nav="top"]) .shell-rail .shell-submenu {
     inset-block-start: 0;
     inset-inline-start: 100%;
   }
@@ -466,5 +476,61 @@
 @media (width <= 64rem) {
   .shell-tenant {
     display: none;
+  }
+}
+
+/* Atlas: the menu is a row of labelled links under the bar, with the current page underlined. */
+:root[data-nav="top"] .shell-rail .shell-menu-item > a {
+  flex-direction: row;
+  border-radius: 0;
+  border-block-end: var(--tb-border-width-thick) solid transparent;
+}
+
+:root[data-nav="top"] .shell-rail .shell-menu-item > a[aria-current="page"] {
+  background: transparent;
+  border-block-end-color: var(--tb-color-nav-active);
+}
+
+@media (width > 64rem) {
+  :root[data-nav="top"] .shell-rail {
+    padding-inline: var(--tb-space-lg);
+    border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  }
+
+  :root[data-nav="top"] .shell-rail .shell-menu-list {
+    gap: var(--tb-space-md);
+  }
+
+  :root[data-nav="top"] .shell-rail .shell-menu-button {
+    display: none;
+  }
+
+  /* Pulse: a wide sidebar with icon and label on one line, the current page marked by a bar on the start edge. */
+  :root[data-nav="sidebar"] .shell-rail {
+    padding: var(--tb-space-lg) var(--tb-space-md);
+    border-inline-end: 0;
+  }
+
+  :root[data-nav="sidebar"] .shell-rail .shell-menu-item {
+    flex-direction: row;
+  }
+
+  :root[data-nav="sidebar"] .shell-rail .shell-menu-item > a {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--tb-space-md);
+    padding-block: var(--tb-space-sm);
+    padding-inline: var(--tb-space-md);
+    border-inline-start: var(--tb-border-width-focus) solid transparent;
+    border-radius: var(--tb-radius-sm);
+    font-size: var(--tb-font-size-md);
+    text-align: start;
+  }
+
+  :root[data-nav="sidebar"] .shell-rail .shell-menu-item > a[aria-current="page"] {
+    border-inline-start-color: var(--tb-color-nav-active);
+    background: transparent;
+    font-weight: var(--tb-font-weight-bold);
+    color: var(--tb-color-nav-active);
   }
 }

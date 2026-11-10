@@ -6,6 +6,7 @@ import { nameIn, policyHref, type MyPolicyItem } from "@/lib/policies/types";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /**
  * My policies (spec 025 section 10): the policies that apply to the person, those that need an attestation first with
@@ -28,8 +29,7 @@ export default async function MyPoliciesPage() {
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("title"), href: "/policies/my" }]} />
       <main id="main" className="page policies-page">
-        <h1>{t("title")}</h1>
-        <PoliciesNav current="my" />
+        <PageHeader title={t("title")} description={t("description")} icon="policy" nav={<PoliciesNav current="my" />} />
         {!list.ok ? (
           <StateView kind="error" title={t("failed")} message="" />
         ) : items.length === 0 ? (

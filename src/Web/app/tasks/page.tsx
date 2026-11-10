@@ -6,6 +6,7 @@ import { Header } from "@/components/shell/Header";
 import { DelegationPanel } from "@/features/services/DelegationPanel";
 import { ServicesNav } from "@/features/services/ServicesNav";
 import { TaskInbox } from "@/features/services/TaskInbox";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /** The task inbox and delegation while away (spec 016 US3 and US4). */
 export default async function TasksPage() {
@@ -22,10 +23,13 @@ export default async function TasksPage() {
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("inbox.pageTitle"), href: "/tasks" }]} />
       <main id="main" className="page">
-        <h1>{t("inbox.pageTitle")}</h1>
-        <ServicesNav current="tasks" />
-        <TaskInbox items={inbox.data} />
-        <DelegationPanel initial={delegation.ok ? delegation.data.delegation : null} />
+        <PageHeader title={t("inbox.pageTitle")} icon="tasks" nav={<ServicesNav current="tasks" />} />
+        <div className="ui-split">
+          <TaskInbox items={inbox.data} />
+          <aside aria-label={t("delegation.title")}>
+            <DelegationPanel initial={delegation.ok ? delegation.data.delegation : null} />
+          </aside>
+        </div>
       </main>
     </>
   );

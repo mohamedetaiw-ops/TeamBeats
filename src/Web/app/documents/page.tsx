@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
@@ -10,6 +9,10 @@ import {
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { DocumentsNav } from "@/features/documents/DocumentsNav";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { TileCard, type TileTone } from "@/components/ui/TileCard";
+
+const tones: readonly TileTone[] = ["accent", "highlight", "success", "info"];
 
 /** The document libraries this person may open (spec 011 US1), at tenant, unit and site scope. */
 export default async function LibrariesPage() {
@@ -32,19 +35,14 @@ export default async function LibrariesPage() {
         breadcrumbs={[{ label: t("title"), href: "/documents" }]}
       />
       <main id="main" className="page">
-        <h1>{t("title")}</h1>
-        <p>{t("intro")}</p>
-        <DocumentsNav current="libraries" />
+        <PageHeader title={t("title")} description={t("intro")} icon="files" nav={<DocumentsNav current="libraries" />} />
         {libraries.data.length === 0 ? (
           <StateView kind="empty" title={t("none")} message="" />
         ) : (
-          <ul className="documents-cards" data-testid="library-list">
-            {libraries.data.map((l) => (
-              <li key={l.id} className="documents-card">
-                <Link href={libraryHref(l.id)}>
-                  <bdi>{nameIn(l.names, locale)}</bdi>
-                </Link>
-                <p className="documents-meta">{t(`scope.${l.scope}`)}</p>
+          <ul className="ui-tiles" data-testid="library-list">
+            {libraries.data.map((l, i) => (
+              <li key={l.id}>
+                <TileCard title={nameIn(l.names, locale)} href={libraryHref(l.id)} icon="files" tone={tones[i % tones.length]} meta={t(`scope.${l.scope}`)} />
               </li>
             ))}
           </ul>

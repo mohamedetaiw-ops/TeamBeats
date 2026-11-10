@@ -5,6 +5,7 @@ import { editHref, nameIn, policyHref, type PolicyReading, type PolicyView, type
 import { Header } from "@/components/shell/Header";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { DraftEditor } from "@/features/policies/DraftEditor";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /**
  * Writing a version (spec 025 US1): the working draft, or for a revision a copy of the version in force with its clause
@@ -43,8 +44,7 @@ export default async function EditPolicyPage({ params }: { params: Promise<{ id:
         ]}
       />
       <main id="main" className="page policies-page">
-        <h1>{t("heading", { name })}</h1>
-        <PoliciesNav current={null} />
+        <PageHeader title={t("heading", { name })} icon="policy" nav={<PoliciesNav current={null} />} />
         <DraftEditor policyId={p.id} initial={initial} locales={me.data.tenant.enabledLocales} />
       </main>
     </>

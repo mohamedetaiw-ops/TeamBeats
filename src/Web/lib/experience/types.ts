@@ -36,6 +36,12 @@ export type RenderedPage = {
   themeScope: string;
 };
 
-export type ThemeVariant = { mode: "light" | "dark"; density: "comfortable" | "compact"; cssUrl: string };
+export type ThemeVariant = {
+  mode: "light" | "dark";
+  density: "comfortable" | "compact";
+  cssUrl: string;
+  /** Resolved token values by token name, including the design choices `design.preset` and `layout.navigation`. */
+  tokens?: Record<string, string>;
+};
 
 export type EffectiveTheme = { scope: string; variants: ThemeVariant[] };

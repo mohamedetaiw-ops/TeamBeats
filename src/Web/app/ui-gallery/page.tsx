@@ -4,6 +4,7 @@ import { apiGet, type Me } from "@/lib/api";
 import { getTheme } from "@/lib/experience/client";
 import { ThemeLinks } from "@/components/shell/ThemeLinks";
 import { Gallery } from "./Gallery";
+import { DesignSystem } from "./DesignSystem";
 
 /**
  * Development gallery of the shared states and interaction primitives (spec 008 T001 to T003), used by the Playwright
@@ -23,6 +24,8 @@ export default async function UiGallery({ searchParams }: { searchParams: Promis
       {compact?.ok ? <ThemeLinks variants={compact.data.variants} density="compact" /> : null}
       <h1>{t("title")}</h1>
       <Gallery />
+      <h1>{t("design_system")}</h1>
+      <DesignSystem />
     </main>
   );
 }

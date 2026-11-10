@@ -16,9 +16,9 @@
 .services-section {
   display: grid;
   gap: var(--tb-space-sm);
-  padding: var(--tb-space-md);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-md);
+  padding: var(--tb-space-lg);
+  border-radius: var(--tb-radius-lg);
+  box-shadow: var(--tb-shadow-sm);
   background: var(--tb-color-surface-raised);
   color: var(--tb-color-text-primary);
 }
@@ -178,4 +178,76 @@
   color: var(--tb-color-text-inverse);
   font-size: var(--tb-font-size-xs);
   text-align: center;
+}
+
+/* Catalogue blocks sit on the canvas: a heading, then a grid of tile cards (docs/design-system/templates.md, Catalogue). */
+.services-block {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.services-block > h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.services-tile .ui-tile-text {
+  flex: 1;
+}
+
+/* Favourite toggle: a star button above the card's cover link; filled when the service is a favourite. */
+.services-favourite {
+  position: relative;
+  z-index: 1;
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border: 0;
+  border-radius: var(--tb-radius-full);
+  background: transparent;
+  color: var(--tb-color-text-secondary);
+  cursor: pointer;
+}
+
+.services-favourite:hover {
+  background: var(--tb-color-surface-sunken);
+}
+
+.services-favourite[aria-pressed="true"] {
+  color: var(--tb-color-highlight-base);
+}
+
+.services-favourite[aria-pressed="true"] path {
+  fill: currentcolor;
+}
+
+.services-block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--tb-space-md);
+}
+
+.services-block-head h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.services-inline-select {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.services-tile {
+  padding-inline-end: calc(var(--tb-space-lg) + 2rem);
+}
+
+.services-tile .services-favourite {
+  position: absolute;
+  inset-block-start: var(--tb-space-sm);
+  inset-inline-end: var(--tb-space-sm);
 }

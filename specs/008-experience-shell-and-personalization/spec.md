@@ -154,7 +154,7 @@ Navigation
 - **FR-015**: The shell MUST show the active organization or workspace when the user can switch between scopes, and label same-named pages by owner. *(CX-NAV-005)*
 - **FR-016**: The shell MUST provide search and quick navigation to permitted destinations only (results from spec 012). *(CX-NAV-006)*
 - **FR-017**: Users SHOULD keep favorites and see recents, with clear history; revoked access MUST disable or remove affected shortcuts. *(CX-NAV-007, R2)*
-- **FR-018**: Menus MUST adapt across devices while keeping function and labels; all primary destinations MUST be reachable at mobile widths. *(CX-NAV-008)*
+- **FR-018**: Menus MUST adapt across devices while keeping function and labels; all primary destinations MUST be reachable at mobile widths. *(CX-NAV-008)* On wide screens the global menu takes the navigation style of the tenant's design (icon rail in Beats, top bar in Atlas, labelled sidebar in Pulse, spec 036); on screens up to 1024 px wide every style becomes the same menu behind one button.
 - **FR-019**: Missing, unpublished and inaccessible destinations MUST show a security-safe recovery path, never an unhandled error. *(CX-NAV-009)*
 - **FR-020**: Contextual help, hints, onboarding and guided tours SHOULD be configurable by policy, dismissible and reopenable without blocking overlays. *(CX-NAV-010, R2)*
 
@@ -194,6 +194,11 @@ Employee home
 - **FR-049**: The employee home MUST be a page of spec 032 with at least one protected region for mandatory and critical items and at least one delegated personal region by default. *(EXP-001)*
 - **FR-050**: The tool box utilities (weather, world clock, time zone converter) MUST be registered as platform components through spec 032 manifests; other home components belong to their modules. *(EXP-001)*
 - **FR-051**: When the tenant turns on Microsoft 365 Mail and Calendar (spec 018), the default home template MUST include My calendar and My mail in the personal region for employees with a mailbox, and the shell MAY show an unread mail badge in a utility region. Employees can remove, reorder or re-add them like any personal placement. *(EXP-001, INT-002)*
+- **FR-052**: The default home MUST open with the briefing hero (`home.briefing`, a platform component) at the top start of the page and Your day (spec 016 task summary) beside it. The briefing greets the viewer with the date and, when a location is set, the weather, and lists the next three things that need the viewer, ordered by time: meetings still to come today (spec 018), tasks in the inbox (spec 016) and policies waiting to be accepted (spec 025), each with its main action. Every source is read with the viewer's own session; a source that fails or that the tenant does not have is left out, never guessed. In R1 the wording is fixed text; the AI written briefing of spec 020 replaces it in R2. *(EXP-001)*
+- **FR-053**: Campaign and call to action bands MUST close the home, below the personal and news regions and above the end of the page, never above the briefing. They align to the page frame like every other section and never touch the navigation. *(EXP-001)*
+- **FR-054**: Featured news on the home MUST show the lead story as a large card with its reading time and reaction count, and the next stories as compact rows (spec 009 FR-021). *(EXP-001)*
+- **FR-055**: Home cards for features not yet built (recognition, celebrations, polls, communities, leave balance) MUST NOT be drawn. Their place in the home template is a planned slot that stays hidden until the owning module registers its component. *(EXP-001)*
+- **FR-056**: R1.1: the shell SHOULD add a footer region (organization name, privacy, acceptable use and accessibility links, and the page classification, all from tenant configuration) and an Ask TeamBeats utility that opens the assistant (spec 030) when the tenant has it. Neither appears until its configuration or capability is present. *(EXP-001)*
 
 ## 6. Business and validation rules
 - Preferences never grant access, never hide mandatory or critical content, and never change entitlements.

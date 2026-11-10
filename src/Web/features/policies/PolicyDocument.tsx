@@ -2,6 +2,7 @@ import Link from "next/link";
 import { useFormatter, useTranslations } from "next-intl";
 import { BodyView } from "@/features/content/BodyView";
 import { nameIn, shownLocale, versionHref, policyHref, type PolicyReading } from "@/lib/policies/types";
+import { isolate } from "@/lib/bidi";
 import "./policies.css";
 
 /**
@@ -28,7 +29,7 @@ export function PolicyDocument({ reading, locale }: { reading: PolicyReading; lo
         {t("version", { number: version.number ?? 0 })}
         {version.effectiveFrom ? <> · {t("effective", { date: format.dateTime(new Date(version.effectiveFrom), { dateStyle: "long" }) })}</> : null}
         {" · "}
-        {t("owner", { name: policy.owner.displayName })}
+        {t("owner", { name: isolate(policy.owner.displayName) })}
       </p>
       {reading.superseded ? (
         <div className="policies-banner" role="note" data-testid="superseded-banner">
