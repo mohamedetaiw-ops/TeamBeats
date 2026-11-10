@@ -25,7 +25,7 @@ public sealed class RequestNotifier(IDbSession session, Requests requests, IRepo
 
     public Task HandleAsync(RequestCompleted message, CancellationToken ct) => message.Status switch
     {
-        RequestStatuses.Approved => TellRequesterAsync(message.RequestId, Approved, "completed", ct),
+        RequestStatuses.Approved or RequestStatuses.Completed => TellRequesterAsync(message.RequestId, Approved, "completed", ct),
         RequestStatuses.Rejected => TellRequesterAsync(message.RequestId, Rejected, "completed", ct),
         _ => Task.CompletedTask, // The filer cancelled it themselves.
     };

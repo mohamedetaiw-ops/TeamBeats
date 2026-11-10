@@ -28,6 +28,9 @@ public static class InstanceOutcomes
     public const string Rejected = "rejected";
     public const string Returned = "returned";
     public const string Withdrawn = "withdrawn";
+
+    /// <summary>An operator cancelled the instance on an incident (spec 024 US4 scenario 2).</summary>
+    public const string Cancelled = "cancelled";
 }
 
 /// <summary>
@@ -39,8 +42,63 @@ public static class InstanceOutcomes
 /// </summary>
 public sealed record CandidateRule(IReadOnlyList<Guid>? Users = null, string? Permission = null, bool LineManager = false);
 
-/// <summary>One approval step. <see cref="DueWorkingDays"/> sets a due time from the tenant calendar of the instance's unit.</summary>
-public sealed record RouteStep(string Id, string Name, CandidateRule Candidates, int? DueWorkingDays = null);
+/// <summary>
+/// One step: an approval (user task) by default, or, with <see cref="Action"/>, a service task that calls a connector
+/// action (spec 024 FR-010, spec 017 US2). <see cref="DueWorkingDays"/> sets a due time for an approval from the tenant
+/// calendar of the instance's unit. An action step has no candidates.
+/// </summary>
+public sealed record RouteStep(string Id, string Name, CandidateRule Candidates, int? DueWorkingDays = null, ConnectorStep? Action = null);
+
+/// <summary>What a business error of a connector step does: carry on with the next step, or end the instance as rejected.</summary>
+public static class BusinessErrorPaths
+{
+    public const string Continue = "continue";
+    public const string Reject = "reject";
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Continue, Reject };
+}
+
+/// <summary>
+/// A service task that calls a connector action by name with mapped fields only (spec 017 FR-009, spec 016 FR-016).
+/// <see cref="Inputs"/> maps each action input to an instance variable, such as <c>form.device</c> or
+/// <c>requester.email</c>; nothing else is sent. <see cref="OnBusinessError"/> maps the action's declared business error
+/// codes to a path (<see cref="BusinessErrorPaths"/>); a code with no path raises an incident like a technical failure.
+/// </summary>
+public sealed record ConnectorStep(Guid ConnectionId, string Action, IReadOnlyDictionary<string, string> Inputs,
+    IReadOnlyDictionary<string, string>? OnBusinessError = null);
+
+/// <summary>The state of an incident on a step (spec 024 US4): open until an operator retries, skips or cancels.</summary>
+public static class IncidentResolutions
+{
+    public const string Retried = "retried";
+    public const string Skipped = "skipped";
+    public const string Cancelled = "cancelled";
+}
+
+/// <summary>
+/// An incident (spec 024 FR-010, FR-013): a service task whose call failed after its retries, whose outcome is unknown,
+/// or whose business error has no path. <see cref="ErrorClass"/> is the plain error class of spec 017 section 10, and
+/// <see cref="ErrorCode"/> the business error code when there is one. The instance waits on the step until it is resolved.
+/// </summary>
+public sealed record IncidentInfo(
+    Guid Id,
+    Guid InstanceId,
+    string DefinitionKey,
+    string BusinessKey,
+    string ElementId,
+    string StepName,
+    string ErrorClass,
+    string? ErrorCode,
+    string Status,
+    string? Resolution,
+    string? Reason,
+    Guid? ResolvedBy,
+    DateTimeOffset RaisedAt,
+    DateTimeOffset? ResolvedAt);
+
+/// <summary>A connector step of an instance: its state and the external reference the system returned.</summary>
+public sealed record ServiceTaskInfo(Guid InstanceId, string ElementId, string StepName, string Status, string? ExternalReference, string? ErrorClass,
+    string? ErrorCode, DateTimeOffset StartedAt, DateTimeOffset? EndedAt);
 
 /// <summary>
 /// The simple route settings that specs 009, 011, 016 and 025 keep, compiled to BPMN 2.0 by the engine. Steps run in
@@ -103,8 +161,10 @@ public interface IProcessEngine
     /// request was filed for). <paramref name="requestedFor"/> is the person the instance is for, whose line manager a
     /// line manager step asks; the starter when not given.
     /// </summary>
+    /// <paramref name="variables"/> are the values connector steps may map, such as <c>form.device</c>; they are kept on
+    /// the instance (at most 256 KB) and never sent unless a step maps them.
     Task<ProcessInstanceInfo> StartAsync(string key, string businessKey, Guid? orgUnitId, Guid? startedBy, IReadOnlyCollection<Guid>? alsoExcluded = null,
-        Guid? requestedFor = null, CancellationToken ct = default);
+        Guid? requestedFor = null, IReadOnlyDictionary<string, System.Text.Json.JsonElement>? variables = null, CancellationToken ct = default);
 
     /// <summary>Completes an open task as the current user, who must be a candidate. Refused with 409 once completed.</summary>
     Task<UserTaskInfo> CompleteTaskAsync(Guid taskId, string outcome, string? comment, CancellationToken ct = default);
@@ -133,6 +193,20 @@ public interface IProcessEngine
     Task<IReadOnlyList<UserTaskInfo>> InstanceTasksAsync(Guid instanceId, CancellationToken ct = default);
 
     Task<IReadOnlyList<HistoryEntry>> HistoryAsync(Guid instanceId, CancellationToken ct = default);
+
+    /// <summary>The connector steps of an instance, in the order they started.</summary>
+    Task<IReadOnlyList<ServiceTaskInfo>> ServiceTasksAsync(Guid instanceId, CancellationToken ct = default);
+
+    /// <summary>The incidents of an instance, newest first.</summary>
+    Task<IReadOnlyList<IncidentInfo>> IncidentsAsync(Guid instanceId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Resolves an open incident as an operator (spec 024 FR-013): <see cref="IncidentResolutions.Retried"/> runs the step
+    /// again with its original idempotency key, <see cref="IncidentResolutions.Skipped"/> moves on to the next step,
+    /// <see cref="IncidentResolutions.Cancelled"/> ends the instance. A reason is required; each is audited. The caller
+    /// authorizes the operator first. A second resolution of the same incident is refused with 409.
+    /// </summary>
+    Task<IncidentInfo> ResolveIncidentAsync(Guid incidentId, string resolution, string? reason, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -152,6 +226,15 @@ public sealed record UserTaskCompleted(Guid TaskId, Guid InstanceId, string Defi
 public sealed record ProcessInstanceCompleted(Guid InstanceId, string DefinitionKey, string BusinessKey, string Outcome) : IIntegrationEvent;
 
 public sealed record ProcessInstanceWithdrawn(Guid InstanceId, string DefinitionKey, string BusinessKey) : IIntegrationEvent;
+
+/// <summary>A connector step succeeded; <paramref name="ExternalReference"/> is the record the system created, if any (spec 017 US2 scenario 1).</summary>
+public sealed record ServiceTaskCompleted(Guid InstanceId, string DefinitionKey, string BusinessKey, string ElementId, string? ExternalReference) : IIntegrationEvent;
+
+/// <summary>A step stopped with an incident; the instance waits (spec 016 US8 scenario 5: "automation failed").</summary>
+public sealed record ProcessIncidentRaised(Guid IncidentId, Guid InstanceId, string DefinitionKey, string BusinessKey, string ElementId, string ErrorClass) : IIntegrationEvent;
+
+/// <summary>An operator resolved an incident: retried, skipped or cancelled.</summary>
+public sealed record ProcessIncidentResolved(Guid IncidentId, Guid InstanceId, string DefinitionKey, string BusinessKey, string ElementId, string Resolution) : IIntegrationEvent;
 
 /// <summary>A user task reached its due time (spec 015 reminders).</summary>
 public sealed record UserTaskDue(Guid TaskId, Guid InstanceId, string DefinitionKey, string BusinessKey, DateTimeOffset DueAt) : IIntegrationEvent;

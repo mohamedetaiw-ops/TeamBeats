@@ -188,7 +188,7 @@ public sealed class PolicyApprovals(
         var key = await RouteKeyAsync(policy, ct);
         // The owner and everyone who edited the draft may never approve it (FR-004); the engine leaves out the submitter.
         var excluded = working.Editors.Append(policy.Owner).Distinct().ToArray();
-        var instance = await engine.StartAsync(key, $"{working.Id:N}{Ids.New():N}", policy.OrgUnitId, user, excluded, policy.Owner, ct);
+        var instance = await engine.StartAsync(key, $"{working.Id:N}{Ids.New():N}", policy.OrgUnitId, user, excluded, policy.Owner, ct: ct);
         var now = clock.UtcNow;
         await session.ExecAsync(
             """

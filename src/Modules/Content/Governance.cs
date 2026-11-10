@@ -137,7 +137,7 @@ public sealed class ContentGovernance(
                 new RouteSpec("content review", [new RouteStep("review", "review", new CandidateRule(Users: [owner]))], ExcludeStarter: false), ct);
         }
         var site = (await sites.RowAsync(item.SiteId, false, ct))!;
-        var instance = await engine.StartAsync(key, $"{item.Id:N}{Ids.New():N}", site.OrgUnitId, null, null, owner, ct);
+        var instance = await engine.StartAsync(key, $"{item.Id:N}{Ids.New():N}", site.OrgUnitId, null, null, owner, ct: ct);
         await session.ExecAsync("update content.content_item set owner_review_instance_id = @instance where id = @id", new { id = item.Id, instance = instance.Id }, ct);
         await outbox.EnqueueAsync(new ContentReviewDue(item.Id, site.Id, owner, due), ct);
     }
@@ -229,7 +229,7 @@ public sealed class ContentGovernance(
             await engine.PublishRouteAsync(key, RouteSources.ContentRoute,
                 new RouteSpec("content retirement", [new RouteStep("retire", "retire", new CandidateRule(Permission: Permissions.ContentPublish))]), ct);
         }
-        var instance = await engine.StartAsync(key, $"{item.Id:N}{Ids.New():N}", site.OrgUnitId, actor, null, actor, ct);
+        var instance = await engine.StartAsync(key, $"{item.Id:N}{Ids.New():N}", site.OrgUnitId, actor, null, actor, ct: ct);
         await session.ExecAsync("update content.content_item set retire_instance_id = @instance where id = @id", new { id = item.Id, instance = instance.Id }, ct);
     }
 

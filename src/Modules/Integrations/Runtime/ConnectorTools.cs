@@ -262,3 +262,40 @@ public sealed class ConnectorActionTool : IAgentTool
         };
     }
 }
+
+/// <summary>The tenant's connector actions for route steps (spec 017 T009 for specs 016 and 024).</summary>
+public sealed class ConnectorActionCatalogue(IDbSession session, ConnectorTools tools) : IConnectorActions
+{
+    public async Task<IReadOnlyList<ConnectorActionInfo>> ListAsync(CancellationToken ct = default)
+    {
+        var connections = await session.QueryAsync(
+            "select id, display_name, enabled from integrations.connection where kind <> @m order by display_name, id",
+            new { m = ConnectionKinds.Microsoft365 }, r => (Id: r.GetGuid(0), Name: r.GetString(1), Enabled: r.GetBoolean(2)), ct);
+        var list = new List<ConnectorActionInfo>();
+        foreach (var c in connections)
+        {
+            if (await tools.ConnectionAsync(c.Id, ct) is not { } row)
+            {
+                continue;
+            }
+            foreach (var a in await tools.ActionsAsync(row, ct))
+            {
+                list.Add(new ConnectorActionInfo(c.Id, c.Name, row.Kind, a.Name, a.SideEffect, a.Idempotent, a.BusinessErrors, a.Inputs, c.Enabled));
+            }
+        }
+        return list;
+    }
+
+    public async Task<ConnectorActionInfo?> FindAsync(Guid connectionId, string action, CancellationToken ct = default)
+    {
+        var c = await session.QuerySingleOrDefaultAsync(
+            "select display_name, enabled from integrations.connection where id = @connectionId and kind <> @m",
+            new { connectionId, m = ConnectionKinds.Microsoft365 }, r => (Name: r.GetString(0), Enabled: r.GetBoolean(1)), ct);
+        if (c.Name is null || await tools.ConnectionAsync(connectionId, ct) is not { } row)
+        {
+            return null;
+        }
+        var a = (await tools.ActionsAsync(row, ct)).FirstOrDefault(x => x.Name == action);
+        return a is null ? null : new ConnectorActionInfo(connectionId, c.Name, row.Kind, a.Name, a.SideEffect, a.Idempotent, a.BusinessErrors, a.Inputs, c.Enabled);
+    }
+}

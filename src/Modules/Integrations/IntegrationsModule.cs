@@ -67,6 +67,7 @@ public static class IntegrationsModule
         services.AddScoped<PackConnections>();
         services.AddScoped<ConnectorTools>();
         services.AddScoped<Agents.Contracts.IAgentToolSource, ConnectorToolSource>();
+        services.AddScoped<IConnectorActions, ConnectorActionCatalogue>();
         services.AddHttpClient(SafeHttp.ClientName, c => c.Timeout = TimeSpan.FromSeconds(30))
             .ConfigurePrimaryHttpMessageHandler(sp => SafeHttp.CreateHandler(
                 sp.GetRequiredService<IConfiguration>().GetValue<bool>(SafeHttp.AllowPrivateSetting)));

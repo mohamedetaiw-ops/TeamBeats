@@ -109,4 +109,47 @@ public sealed class RouteCompilerTests
     [InlineData("Service", false)]
     [InlineData("", false)]
     public void Process_keys_are_lower_case_and_short(string key, bool valid) => Assert.Equal(valid, RouteCompiler.IsValidKey(key));
+
+    private static readonly Guid Desk = Guid.Parse("7c9e6679-7425-40de-944b-e07fc1f90ae7");
+
+    private static RouteSpec WithAction() => new("New laptop",
+    [
+        new RouteStep("approval", "Manager approval", new CandidateRule(Permission: "workflow.approve", LineManager: true)),
+        new RouteStep("action_1", "Open the IT ticket", new CandidateRule(), null,
+            new ConnectorStep(Desk, "create_incident", new Dictionary<string, string> { ["summary"] = "form.device", ["requester"] = "requester.email" },
+                new Dictionary<string, string> { ["invalid_category"] = BusinessErrorPaths.Reject })),
+    ]);
+
+    [Fact]
+    public void A_connector_step_becomes_a_service_task_with_its_mapping_and_reads_back_unchanged()
+    {
+        var compiled = RouteCompiler.Compile(WithAction());
+        var xml = RouteCompiler.ToBpmn("service.x", compiled);
+        XNamespace bpmn = RouteCompiler.BpmnNs;
+        var process = XDocument.Parse(xml).Root!.Element(bpmn + "process")!;
+        var task = Assert.Single(process.Elements(bpmn + "serviceTask"));
+        Assert.Equal("action_1", (string)task.Attribute("id")!);
+        Assert.Contains("create_incident", xml);
+        Assert.Contains("requester.email", xml);
+        var ids = process.Elements().Select(e => (string?)e.Attribute("id")).ToHashSet();
+        Assert.All(process.Elements(bpmn + "sequenceFlow"), f => Assert.True(ids.Contains((string)f.Attribute("sourceRef")!) && ids.Contains((string)f.Attribute("targetRef")!)));
+        Assert.Equal(compiled.ToJson(), RouteCompiler.FromBpmn(xml).ToJson());
+    }
+
+    [Fact]
+    public void A_connector_step_with_a_bad_mapping_or_path_is_refused()
+    {
+        var bad = new RouteSpec("x",
+        [
+            new RouteStep("action_1", "Call", new CandidateRule(Users: [Legal]), null,
+                new ConnectorStep(Guid.Empty, "Bad Name", new Dictionary<string, string> { ["summary"] = "not a variable" },
+                    new Dictionary<string, string> { ["invalid_category"] = "explode" })),
+        ]);
+        var keys = RouteCompiler.Validate(bad).Entries.Select(e => e.Key).ToHashSet();
+        Assert.Contains("validation.workflow.action_connection", keys);
+        Assert.Contains("validation.workflow.action_name", keys);
+        Assert.Contains("validation.workflow.action_inputs", keys);
+        Assert.Contains("validation.workflow.action_errors", keys);
+        Assert.Contains("validation.workflow.action_candidates", keys);
+    }
 }
