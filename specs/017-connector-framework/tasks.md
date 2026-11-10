@@ -17,7 +17,7 @@ Depends on 004, 005, 006, 015, 024, 026, 027. R2.
 - [x] T010 [US3] Run history, dead letters and replay endpoints and pages
 
 ## Phase 3: User Stories 4 and 5, custom REST and webhooks (P2)
-- [ ] T011 [P] [US4] [US5] Tests: custom action test with sample data; allowlist and private address refusal; undeclared field refusal; signed outbound; inbound signature, window and duplicate; secret rotation overlap
+- [x] T011 [P] [US4] [US5] Tests: custom action test with sample data; allowlist and private address refusal; undeclared field refusal; signed outbound; inbound signature, window and duplicate; secret rotation overlap
 - [x] T012 [US4] Custom REST connector and builder page
 - [ ] T013 [US5] Outbound and inbound webhooks
 

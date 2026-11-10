@@ -108,6 +108,7 @@ public static class AuditActions
     public const string ConnectionDisabled = "integration.connection_disabled";
     public const string ActionDefined = "integration.action_defined";
     public const string ActionChanged = "integration.action_changed";
+    public const string WebhookSecretRotated = "integration.webhook_secret_rotated";
 
     // 032
     public const string PageCreated = "page.created";
