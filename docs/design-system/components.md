@@ -1,6 +1,6 @@
 # Components
 
-Every TeamBeats screen is built from these components. They live in `src/Web/components/ui/`, read only `--tb-*` tokens, work in both directions, and appear in the living gallery (`/ui-gallery`, and `/ui-gallery/components` for the extended catalogue) in the tenant's active design. Feature code composes them; it does not restyle them.
+Every TeamBeats screen is built from these components. They live in `src/Web/components/ui/`, read only `--tb-*` tokens, work in both directions, and appear in the living gallery (`/ui-gallery`, `/ui-gallery/components` for the extended catalogue and `/ui-gallery/patterns` for the page patterns) in the tenant's active design. Feature code composes them; it does not restyle them.
 
 | Component | File | Use | Accessibility built in |
 |---|---|---|---|
@@ -87,6 +87,11 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Heat map and contributions | `Charts.tsx` (`HeatMap`, `Contributions`) | Activity by day and hour, or by day over weeks | One image with a summary; the value is written in each heat cell; levels use the accent at set opacities |
 | Radar, radial and rings | `Charts.tsx` (`RadarChart`, `RadialChart`, `Rings`) | Skills against an average, one percentage, a few goals against their targets | One image with a summary; the value and each ring's progress are also written as text |
 | Flow, scatter and stage bars | `Charts.tsx` (`FlowChart`, `ScatterChart`, `StageBars`) | Where people go from where they start, two measures per group, items by stage | One image with a summary; node labels carry their totals; stage bars list each stage with its count and share |
+| Mosaic | `Patterns.tsx` (`Mosaic`) | The tiles of a dashboard (layout L08) | Tiles keep reading order; a third, half, two thirds or the full row, and every tile takes the full row when the region is narrow |
+| Chat layout and transcript | `Patterns.tsx` (`ChatLayout`, `ChatTranscript`) | The assistant and agent conversations | Past conversations in a named navigation with the current one marked `aria-current`; the transcript is a log so new messages are read out |
+| Profile layout | `Patterns.tsx` (`ProfileLayout`, `ProfileIcon`, `ProfileBlock`, `FactList`) | A person, an agent or a record: who or what, status, facts and actions, details beside supporting blocks | One heading at the level the page gives; the status is a badge in words; facts are a description list |
+| Timeline | `Patterns.tsx` (`Timeline`) | What happened to a record, newest first | A named ordered list; each entry says who and when, with a machine readable time |
+| Board | `Patterns.tsx` (`Board`) | Work in columns by stage | Each column is a region named by its heading and count; a card moves from its menu (a radio group of columns) or by dragging; the move is announced and focus stays on the card |
 | Filter bar | `.ui-filter-bar` | Search box, selects and Apply above a list | Real labels; Apply is a button |
 | Filter chips | `.ui-chips` | A row of choices that narrow a list, such as request status | Links with `aria-current` on the active choice |
 | List rows | `.ui-rows`, `.ui-row` | Tasks and other actionable items: icon tile, title, meta, one action | Each row is a list item; the action names its item |

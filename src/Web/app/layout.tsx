@@ -34,6 +34,7 @@ import "@/components/ui/inputs.css";
 import "@/components/ui/data.css";
 import "@/components/ui/assistant.css";
 import "@/components/ui/charts.css";
+import "@/components/ui/patterns.css";
 import "@/components/ui/designs.css";
 import { MessagesProvider } from "@/components/ui/Messages";
 import { designOf } from "@/lib/experience/design";

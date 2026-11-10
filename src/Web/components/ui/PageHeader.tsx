@@ -13,6 +13,7 @@ export function PageHeader({
   actions,
   nav,
   eyebrow,
+  level = 1,
 }: {
   title: string;
   description?: ReactNode;
@@ -20,7 +21,10 @@ export function PageHeader({
   actions?: ReactNode;
   nav?: ReactNode;
   eyebrow?: ReactNode;
+  /** 1 on a page. A page pattern shown inside another page, such as in the gallery, takes the next level down. */
+  level?: 1 | 2 | 3;
 }) {
+  const Heading = `h${level}` as const;
   return (
     <header className="ui-page-header">
       <div className="ui-page-header-main">
@@ -31,9 +35,9 @@ export function PageHeader({
         ) : null}
         <div className="ui-page-header-text">
           {eyebrow ? <p className="ui-page-header-eyebrow">{eyebrow}</p> : null}
-          <h1 className="ui-page-header-title">
+          <Heading className="ui-page-header-title">
             <bdi>{title}</bdi>
-          </h1>
+          </Heading>
           {description ? <p className="ui-page-header-description">{description}</p> : null}
         </div>
         {actions ? <div className="ui-page-header-actions">{actions}</div> : null}

@@ -6,7 +6,7 @@ import { hostOrigin, stack } from "../support/stack";
 
 /**
  * Spec 036 DLS-031 to DLS-040: the actions, selection, status, structure, overlay, menu, input and date components,
- * the data blocks, the assistant and agent parts and the charts of the extended catalogue.
+ * the data blocks, the assistant and agent parts, the charts and the page patterns of the extended catalogue.
  * Each one is driven with the keyboard, in English and in Arabic, and checked for the name, role and state that
  * assistive technology reads. The gallery exists only with the development fixtures.
  */
@@ -846,6 +846,63 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const tick = (await bars.locator("text").first().boundingBox())!;
       if (locale === "ar") expect(tick.x).toBeGreaterThan(box.x + box.width * 0.85);
       else expect(tick.x + tick.width).toBeLessThan(box.x + box.width * 0.15);
+    });
+
+    test("the page patterns: a board card moves from its menu, the chat sends and stops, profiles switch sections", async ({ page }) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/ui-gallery/patterns`);
+      await expect(page.getByRole("heading", { level: 1, name: msg(locale, "patterns_gallery.title") })).toBeVisible();
+      await expect(page.locator('[data-testid="patterns-gallery"][data-hydrated="true"]')).toBeAttached();
+      const p = (key: string, values: Record<string, string> = {}) => msg(locale, `patterns_gallery.${key}`, values);
+      const u = (key: string, values: Record<string, string> = {}) => msg(locale, `ui.patterns.${key}`, values);
+
+      // Dashboard: one h3 page title inside the section, the key numbers as a list.
+      const dashboard = page.locator("section:has(> h2#pt-dashboard)");
+      await expect(dashboard.getByRole("heading", { level: 3, name: p("dashboard.page") })).toBeVisible();
+      await expect(dashboard.getByRole("list", { name: p("dashboard.numbers") }).getByRole("listitem")).toHaveCount(3);
+
+      // Board: the card menu moves a card, says so, and keeps focus on the moved card.
+      const board = page.getByRole("group", { name: p("board.label") });
+      const title = p("board.card3");
+      const button = board.getByRole("button", { name: u("move", { title }) });
+      await button.focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("menuitemradio", { name: p("board.progress") })).toHaveAttribute("aria-checked", "true");
+      await page.getByRole("menuitemradio", { name: p("board.done") }).click();
+      const done = board.getByRole("region", { name: new RegExp(`^${p("board.done")}`) });
+      await expect(done.getByRole("article").filter({ hasText: title })).toBeVisible();
+      await expect(board.getByRole("status")).toHaveText(u("moved", { title, column: p("board.done") }));
+      await expect(done.getByRole("button", { name: u("move", { title }) })).toBeFocused();
+
+      // Chat: the current conversation is marked; a sent message joins the log, and Stop ends the wait.
+      const chat = page.locator("section:has(> h2#pt-chat)");
+      const conversations = chat.getByRole("navigation", { name: p("chat.conversations") });
+      await expect(conversations.getByRole("button", { name: p("chat.c1") })).toHaveAttribute("aria-current", "page");
+      await conversations.getByRole("button", { name: p("chat.c2") }).click();
+      await expect(conversations.getByRole("button", { name: p("chat.c2") })).toHaveAttribute("aria-current", "page");
+      const box = chat.getByRole("textbox", { name: p("chat.composer") });
+      await box.fill(p("dashboard.task2"));
+      await box.press("Enter");
+      const log = chat.getByRole("log", { name: p("chat.transcript") });
+      await expect(log.getByRole("listitem").filter({ hasText: p("dashboard.task2") })).toBeVisible();
+      await expect(log.getByRole("status")).toContainText(p("chat.searching"));
+      await chat.getByRole("button", { name: msg(locale, "ui.assistant.stop") }).click();
+      await expect(log.getByRole("status")).toHaveCount(0);
+
+      // Agent profile: the tabs move with the arrow keys in the reading direction.
+      const agent = page.locator("section:has(> h2#pt-agent)");
+      await expect(agent.getByRole("heading", { level: 3, name: p("agent.name") })).toBeVisible();
+      await agent.getByRole("tab", { name: p("agent.overview") }).focus();
+      await page.keyboard.press(forward);
+      await expect(agent.getByRole("tab", { name: p("agent.runsTab") })).toHaveAttribute("aria-selected", "true");
+      await expect(agent.getByRole("table", { name: p("agent.runsCaption") }).getByRole("rowheader")).toHaveCount(3);
+
+      // Record profile: the activity is a named list, newest first.
+      const record = page.locator("section:has(> h2#pt-record)");
+      await record.getByRole("tab", { name: p("record.activity") }).click();
+      const activity = record.getByRole("list", { name: p("record.activity") });
+      await expect(activity.getByRole("listitem")).toHaveCount(3);
+      await expect(activity.getByRole("listitem").first()).toContainText(p("record.event3"));
     });
   });
 }
