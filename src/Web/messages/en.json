@@ -3125,6 +3125,25 @@
       "confirm": "Confirm",
       "cancel": "Cancel",
       "working": "Working…"
+    },
+    "analytics": {
+      "title": "Usage and quality",
+      "period": "The last {days} days. Test panel runs are not counted.",
+      "version": "Version",
+      "versionNumber": "Version {number}",
+      "total": "All versions",
+      "runs": "Runs",
+      "users": "People",
+      "success": "Answered",
+      "unfinished": "Stopped or failed",
+      "toolCalls": "Tool calls",
+      "toolDenials": "Tool calls refused",
+      "ratings": "Helpful",
+      "helpfulOf": "{helpful} of {ratings}",
+      "tokens": "Tokens",
+      "cost": "Estimated cost",
+      "quality": "Release gate",
+      "none": "None"
     }
   },
   "evaluation": {

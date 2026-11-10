@@ -1069,5 +1069,6 @@
   "validation.agent.owner": "اختر مالكا من الأعضاء النشطين في مؤسستك.",
   "validation.agent.backup_owner": "اختر مالكا احتياطيا من الأعضاء النشطين في مؤسستك، على ألا يكون هو المالك.",
   "notifications.template.agents.owner_reassigned.title": "أصبحت مالكا لوكيل",
-  "notifications.template.agents.owner_reassigned.body": "غادر مالك أحد الوكلاء المؤسسة، فانتقلت ملكيته إليك. يستمر الوكيل في العمل. افتحه لمراجعته وتعيين مالك احتياطي."
+  "notifications.template.agents.owner_reassigned.body": "غادر مالك أحد الوكلاء المؤسسة، فانتقلت ملكيته إليك. يستمر الوكيل في العمل. افتحه لمراجعته وتعيين مالك احتياطي.",
+  "validation.agent.analytics_days": "اختر مدة من يوم واحد إلى 365 يوما."
 }

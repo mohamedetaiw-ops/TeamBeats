@@ -1069,5 +1069,6 @@
   "validation.agent.owner": "Choose an owner who is an active member of your organization.",
   "validation.agent.backup_owner": "Choose a backup owner who is an active member of your organization and not the owner.",
   "notifications.template.agents.owner_reassigned.title": "You now own an agent",
-  "notifications.template.agents.owner_reassigned.body": "The owner of an agent left the organization, so it was handed to you. It keeps running. Open it to check it and name a backup owner."
+  "notifications.template.agents.owner_reassigned.body": "The owner of an agent left the organization, so it was handed to you. It keeps running. Open it to check it and name a backup owner.",
+  "validation.agent.analytics_days": "Choose a period from 1 to 365 days."
 }

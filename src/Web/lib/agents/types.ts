@@ -196,3 +196,22 @@ export function pickText(value: Localized | null | undefined, locale: string): s
   if (!value) return "";
   return value[locale] ?? value.en ?? Object.values(value)[0] ?? "";
 }
+
+export type AgentVersionStats = {
+  version: number | null;
+  runs: number;
+  users: number;
+  answered: number;
+  successRate: number | null;
+  stopped: number;
+  failed: number;
+  toolCalls: number;
+  toolDenials: number;
+  ratings: number;
+  helpful: number;
+  tokens: number;
+  cost: number;
+  quality: string | null;
+};
+
+export type AgentAnalyticsView = { agentId: string; days: number; from: string; to: string; total: AgentVersionStats; versions: AgentVersionStats[] };

@@ -62,6 +62,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByLabel(m("agents.templates.unit")).selectOption({ label: unitName });
       await page.getByRole("button", { name: m("agents.templates.installNamed", { name: agentName }) }).click();
       await page.waitForURL(/\/admin\/agents\/[0-9a-f-]{36}$/);
+      const agentPage = page.url();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(agentName);
       await expect(page.getByTestId("agent-status")).toHaveText(m("agents.status.draft"));
       await expectAccessible(page, testInfo, `agents-editor-${locale}`);
@@ -146,6 +147,12 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("agents.timeline.title"));
       await expect(page.getByTestId("agents-run-steps").locator("li").first()).toBeVisible();
       await expectAccessible(page, testInfo, `agents-run-${locale}`);
+
+      // The agent page shows its usage: the two real runs, not the test run (020 FR-018).
+      await page.goto(agentPage);
+      const analytics = page.getByTestId("agent-analytics");
+      await expect(analytics.locator("tbody tr").last().locator("td").first()).toHaveText(new Intl.NumberFormat(locale).format(2));
+      await expectAccessible(page, testInfo, `agents-analytics-${locale}`);
 
       // The kill switch stops every agent until it is switched back on.
       await page.goto(`${hostOrigin(tenant.key)}/admin/agents/policy`);
