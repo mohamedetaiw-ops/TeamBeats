@@ -42,6 +42,15 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Accordion | `Accordion.tsx` | Questions and settings that open in place | Native `details`; works without script; found by find in page |
 | Pagination | `Pagination.tsx` | Pages of a list that the API pages | A named `nav` of links; the current page has `aria-current="page"` |
 | Announcement | `Announcement.tsx` | News about the product or workplace, with at most one action; not for errors | A named region; the close button is named |
+| Dialog | `Dialog.tsx` (`Dialog`) | A task or question that must be finished or dismissed before going on, and needs room | Native modal `dialog`: focus stays inside, Escape and a click outside close it, focus returns to the opener; named by its title |
+| Drawer | `Dialog.tsx` (`Drawer`) | Details or filters beside a list, attached to an edge (end by default) | Same as Dialog; the edge follows the reading direction |
+| Popover | `Popover.tsx` | A few settings or details beside the button that opens them | Popover API; the button has `aria-expanded`; Escape closes and returns focus; the page stays usable |
+| Tooltip | `Tooltip.tsx` | One short line that adds to a control's name | Shows on hover and focus, can be hovered, Escape hides it; tied with `aria-describedby` |
+| Menu | `Menu.tsx` (`Menu`) | Actions on the thing beside the button; groups, checked items, shortcuts, one level of submenu | WAI-ARIA menu: arrows, Home, End, type ahead; disabled items are focusable; focus returns to the button |
+| Context menu | `Menu.tsx` (`ContextMenu`) | The same actions on the thing itself, by secondary click, long press or the menu key | A shortcut only: every action is also reachable from a visible control |
+| Command palette | `CommandPalette.tsx` | Go to a page or run a command from anywhere; the shell opens it with Ctrl+K or Command+K | A modal dialog holding a combobox and a list box; focus stays in the box |
+| Notification card | `Messages.tsx` (a message with a `title`) | A message that deserves a title and an icon, such as "Invitations sent" | Same live regions and timing as other messages |
+| Breadcrumb | `Breadcrumb.tsx` | Where the page sits; long trails collapse the middle levels into a menu | A named `nav`; the page itself has `aria-current="page"` |
 | Filter bar | `.ui-filter-bar` | Search box, selects and Apply above a list | Real labels; Apply is a button |
 | Filter chips | `.ui-chips` | A row of choices that narrow a list, such as request status | Links with `aria-current` on the active choice |
 | List rows | `.ui-rows`, `.ui-row` | Tasks and other actionable items: icon tile, title, meta, one action | Each row is a list item; the action names its item |
@@ -63,6 +72,7 @@ Shell parts (header, navigation, search, settings, account menu, notifications, 
 - **States.** Every component designs and builds default, hover, focus, active, disabled or busy, error, loading and empty states, in light and dark, LTR and RTL.
 - **No business rules.** Components render and collect input. Authorization, entitlements and validation rules come from the API (constitution XXX).
 - **No imports between feature components.** Placements talk through declared events (ADR-0014).
+- **Overlays use the platform.** Dialogs are the native `dialog` element, popovers and menus use the Popover API, and placement and list keys come from `overlay.ts`. Do not build another focus trap, click outside handler or positioning routine.
 - **Every new component** gets a gallery entry with realistic Arabic and English text, unit or e2e coverage of its keyboard behaviour, and a visual baseline in the design suite.
 
 ## Do and do not
@@ -77,3 +87,7 @@ Shell parts (header, navigation, search, settings, account menu, notifications, 
 | Use `Switch` for a setting that applies at once | Use a switch inside a form that needs Save (use `Checkbox`) |
 | Use `SegmentedControl` to change how one view is shown | Use it to move between pages (use section tabs) |
 | Use the compact button size inside a toolbar or a table | Use compact buttons for the main action of a page |
+| Use `ConfirmAction` to confirm a destructive action in place | Open a dialog only to ask "Are you sure?" |
+| Use `Popover` for a few settings beside a button | Put a form with Save in a popover (use `Dialog` or `Drawer`) |
+| Give every context menu action a visible control too | Hide the only way to an action behind a secondary click |
+| Use a tooltip for an extra hint | Put the only name of a control, or a link, in a tooltip |

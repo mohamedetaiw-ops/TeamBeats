@@ -5,7 +5,8 @@ import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
 
 /**
- * Spec 036 DLS-031 to DLS-038: the actions, selection, status and structure components of the extended catalogue.
+ * Spec 036 DLS-031 to DLS-038: the actions, selection, status, structure, overlay and menu components of the
+ * extended catalogue.
  * Each one is driven with the keyboard, in English and in Arabic, and checked for the name, role and state that
  * assistive technology reads. The gallery exists only with the development fixtures.
  */
@@ -220,6 +221,222 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.keyboard.press("Enter");
       await expect(banner).toHaveCount(0);
       await expect(structure.getByRole("status")).toHaveText(t("structure.dismissed"));
+    });
+
+    test("the dialog, drawer, popover and tooltip move focus in, close on Escape and return focus", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const overlays = page.locator("section:has(> h2#cg-overlays)");
+
+      // Dialog: modal, named by its title and described by its text; Escape closes and focus goes back to the button.
+      const invite = overlays.getByRole("button", { name: t("overlays.openDialog") });
+      await invite.focus();
+      await page.keyboard.press("Enter");
+      const dialog = page.getByRole("dialog", { name: t("overlays.dialogTitle") });
+      await expect(dialog).toBeVisible();
+      await expect(dialog).toHaveAccessibleDescription(t("overlays.dialogText"));
+      expect(await dialog.evaluate((el) => el.matches(":modal") && el.contains(document.activeElement))).toBe(true);
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+      await expect(invite).toBeFocused();
+
+      // A click on the backdrop closes it; the main action closes it and shows a notification card.
+      await invite.click();
+      await expect(dialog).toBeVisible();
+      await page.mouse.click(4, 4);
+      await expect(dialog).toBeHidden();
+      await invite.click();
+      await dialog.getByRole("button", { name: t("overlays.send") }).click();
+      await expect(dialog).toBeHidden();
+      const card = page.locator(".ui-message[data-card]");
+      await expect(card).toContainText(t("overlays.invited"));
+      await expect(card).toContainText(t("overlays.invitedText"));
+      await card.getByRole("button", { name: msg(locale, "ui.messages.dismiss") }).click();
+      await expect(card).toHaveCount(0);
+
+      // Drawer: the same modal behavior, attached to the end edge in the reading direction.
+      const filters = overlays.getByRole("button", { name: t("overlays.openDrawer") });
+      await filters.click();
+      const drawer = page.getByRole("dialog", { name: t("overlays.drawerTitle") });
+      await expect(drawer).toBeVisible();
+      await expect
+        .poll(async () => {
+          const box = (await drawer.boundingBox())!;
+          const width = page.viewportSize()!.width;
+          return locale === "ar" ? Math.round(box.x) : Math.round(width - box.x - box.width);
+        })
+        .toBeLessThanOrEqual(1);
+      await page.keyboard.press("Escape");
+      await expect(drawer).toBeHidden();
+      await expect(filters).toBeFocused();
+
+      // Popover: the button says it is expanded; Tab goes into the panel; Escape closes and returns focus.
+      const display = overlays.getByRole("button", { name: t("overlays.popover"), exact: true });
+      await expect(display).toHaveAttribute("aria-expanded", "false");
+      await display.focus();
+      await page.keyboard.press("Enter");
+      await expect(display).toHaveAttribute("aria-expanded", "true");
+      const panel = page.getByRole("dialog", { name: t("overlays.popoverTitle") });
+      await expect(panel).toBeVisible();
+      await page.keyboard.press("Tab");
+      await expect(panel.getByRole("switch", { name: t("overlays.compact") })).toBeFocused();
+      await page.keyboard.press("Escape");
+      await expect(panel).toBeHidden();
+      await expect(display).toBeFocused();
+      await expect(display).toHaveAttribute("aria-expanded", "false");
+      // A second press of the button closes it, and so does a click outside.
+      await display.click();
+      await expect(panel).toBeVisible();
+      await display.click();
+      await expect(panel).toBeHidden();
+      await display.click();
+      await overlays.getByRole("heading", { level: 2 }).click();
+      await expect(panel).toBeHidden();
+
+      // Tooltip: shows on keyboard focus, describes the control, and Escape hides it without moving focus.
+      const exportButton = overlays.getByRole("button", { name: t("overlays.export"), exact: true });
+      await expect(exportButton).toHaveAccessibleDescription(t("overlays.exportTip"));
+      const tip = overlays.getByRole("tooltip", { includeHidden: true });
+      await expect(tip).toBeHidden();
+      await display.focus();
+      await page.keyboard.press("Tab");
+      await expect(exportButton).toBeFocused();
+      await expect(tip).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(tip).toBeHidden();
+      await expect(exportButton).toBeFocused();
+    });
+
+    test("the command palette opens from the shortcut, filters and runs a command", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      await page.keyboard.press("Control+K");
+      const palette = page.getByRole("dialog", { name: t("overlays.paletteLabel") });
+      await expect(palette).toBeVisible();
+      const box = palette.getByRole("combobox");
+      await expect(box).toBeFocused();
+
+      // Focus stays in the box; the arrow keys move the highlighted option.
+      const options = palette.getByRole("option");
+      await expect(options).toHaveCount(7);
+      await expect(options.nth(0)).toHaveAttribute("aria-selected", "true");
+      await page.keyboard.press("ArrowDown");
+      await expect(options.nth(1)).toHaveAttribute("aria-selected", "true");
+      await expect(box).toHaveAttribute("aria-activedescendant", (await options.nth(1).getAttribute("id"))!);
+      await page.keyboard.press("ArrowUp");
+      await page.keyboard.press("ArrowUp");
+      await expect(options.nth(6)).toHaveAttribute("aria-selected", "true");
+      await expect(box).toBeFocused();
+
+      // Typing filters; nothing found is said in words; Enter runs the highlighted command and closes.
+      await box.fill("zzzz");
+      await expect(options).toHaveCount(0);
+      await expect(palette.getByRole("status")).toHaveText(t("overlays.paletteEmpty"));
+      await box.fill(t("overlays.commandLeave"));
+      await expect(options).toHaveCount(1);
+      await page.keyboard.press("Enter");
+      await expect(palette).toBeHidden();
+      await expect(page.getByTestId("cg-chosen")).toHaveText(t("menus.chosen", { name: t("overlays.commandLeave") }));
+
+      // Escape closes it and the next opening starts empty.
+      await page.keyboard.press("Control+K");
+      await expect(box).toHaveValue("");
+      await page.keyboard.press("Escape");
+      await expect(palette).toBeHidden();
+    });
+
+    test("menus, submenus, the context menu and the collapsed breadcrumb work from the keyboard", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const menus = page.locator("section:has(> h2#cg-menus)");
+      const chosen = page.getByTestId("cg-chosen");
+
+      // Opening moves focus to the first item; arrows wrap; Home and End jump.
+      const trigger = menus.getByRole("button", { name: t("menus.actions"), exact: true });
+      await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+      await trigger.focus();
+      await page.keyboard.press("Enter");
+      const menu = page.getByRole("menu", { name: t("menus.actions"), exact: true });
+      await expect(menu).toBeVisible();
+      await expect(trigger).toHaveAttribute("aria-expanded", "true");
+      const item = (key: string) => menu.getByRole("menuitem", { name: t(`menus.${key}`), exact: true });
+      await expect(item("open")).toBeFocused();
+      await page.keyboard.press("ArrowUp");
+      await expect(item("delete")).toBeFocused();
+      await page.keyboard.press("Home");
+      await expect(item("open")).toBeFocused();
+      await page.keyboard.press("End");
+      await expect(item("delete")).toBeFocused();
+      await page.keyboard.press("ArrowDown");
+      await expect(item("open")).toBeFocused();
+      if (locale === "en") {
+        // A letter jumps to the next item that starts with it.
+        await page.keyboard.press("d");
+        await expect(item("duplicate")).toBeFocused();
+        await page.keyboard.press("d");
+        await expect(item("delete")).toBeFocused();
+      }
+
+      // The forward arrow opens the submenu and the back arrow leaves it, following the reading direction.
+      await item("share").focus();
+      await page.keyboard.press(forward);
+      const share = page.getByRole("menu", { name: t("menus.share"), exact: true });
+      await expect(share).toBeVisible();
+      await expect(share.getByRole("menuitem", { name: t("menus.shareLink") })).toBeFocused();
+      await page.keyboard.press(back);
+      await expect(share).toBeHidden();
+      await expect(item("share")).toBeFocused();
+
+      // A disabled item can be focused but does nothing.
+      await item("moveLocked").focus();
+      await expect(item("moveLocked")).toHaveAttribute("aria-disabled", "true");
+      await page.keyboard.press("Enter");
+      await expect(menu).toBeVisible();
+
+      // Enter runs an item, closes the menu and returns focus to the button.
+      await item("rename").focus();
+      await page.keyboard.press("Enter");
+      await expect(menu).toBeHidden();
+      await expect(trigger).toBeFocused();
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await expect(chosen).toHaveText(t("menus.chosen", { name: t("menus.rename") }));
+
+      // A submenu item runs too; a checkbox item keeps its state; Escape closes without choosing.
+      await page.keyboard.press("ArrowDown");
+      await item("share").focus();
+      await page.keyboard.press("Enter");
+      await share.getByRole("menuitem", { name: t("menus.shareEmail") }).click();
+      await expect(menu).toBeHidden();
+      await expect(chosen).toHaveText(t("menus.chosen", { name: t("menus.shareEmail") }));
+      await trigger.click();
+      const comments = menu.getByRole("menuitemcheckbox", { name: t("menus.showComments") });
+      await expect(comments).toHaveAttribute("aria-checked", "false");
+      await comments.click();
+      await trigger.click();
+      await expect(comments).toHaveAttribute("aria-checked", "true");
+      await page.keyboard.press("Escape");
+      await expect(menu).toBeHidden();
+      await expect(trigger).toBeFocused();
+
+      // Context menu: the secondary button opens the same list on the thing itself.
+      const file = menus.getByRole("button", { name: t("menus.file") });
+      await file.click({ button: "right" });
+      const context = page.getByRole("menu", { name: t("menus.contextLabel") });
+      await expect(context).toBeVisible();
+      await expect(context.getByRole("menuitem", { name: t("menus.open"), exact: true })).toBeFocused();
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await expect(context).toBeHidden();
+      await expect(chosen).toHaveText(t("menus.chosen", { name: t("menus.duplicate") }));
+
+      // Breadcrumb: first level, a menu with the hidden levels, and the last two; the page itself is marked.
+      const trail = menus.getByRole("navigation", { name: t("menus.trail") });
+      await expect(trail.getByRole("link")).toHaveCount(3);
+      await expect(trail.getByRole("link", { name: t("menus.crumbPage") })).toHaveAttribute("aria-current", "page");
+      await trail.getByRole("button", { name: msg(locale, "ui.controls.moreLevels") }).click();
+      const levels = page.getByRole("menu", { name: msg(locale, "ui.controls.moreLevels") });
+      await expect(levels.getByRole("menuitem")).toHaveCount(3);
+      await expect(levels.getByRole("menuitem", { name: t("menus.crumbFinance") })).toHaveAttribute("href", "#crumbFinance");
+      await page.keyboard.press("Escape");
+      await expect(levels).toBeHidden();
     });
   });
 }

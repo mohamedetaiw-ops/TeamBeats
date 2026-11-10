@@ -116,6 +116,21 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.locator(".shell-search-results")).toHaveCount(0);
     });
 
+    test("the search shortcut opens the command palette with the same permitted destinations", async ({ page }) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await expect(page.getByRole("searchbox", { name: msg(locale, "shell.search.label") })).toBeVisible();
+      await page.keyboard.press("Control+K");
+      const palette = page.getByRole("dialog", { name: msg(locale, "shell.search.palette.label") });
+      await expect(palette).toBeVisible();
+      const box = palette.getByRole("combobox");
+      await expect(box).toBeFocused();
+      await expect(palette.getByRole("status")).toHaveText(msg(locale, "shell.search.palette.hint"));
+      await box.fill(setup.teamSlug.split("/")[0]!);
+      await expect(palette.getByRole("option", { name: about() })).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(palette).toBeHidden();
+    });
+
     test("settings are in one place and apply to the page; the menu stays reachable on a phone", async ({ page }) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
