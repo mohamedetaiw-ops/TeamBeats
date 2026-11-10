@@ -113,7 +113,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/people/me`);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "people.me.title"));
-      await page.getByLabel(msg(locale, "people.field.timeZone")).fill("Asia/Dubai");
+      await page.getByLabel(msg(locale, "people.field.timeZone")).selectOption("Asia/Dubai");
       await page.getByRole("button", { name: msg(locale, "people.me.save") }).click();
       await expect(page.getByRole("status").filter({ hasText: msg(locale, "people.me.saved") })).toBeVisible();
       await expectAccessible(page, testInfo, `people-me-${locale}`);

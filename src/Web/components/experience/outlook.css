@@ -122,13 +122,12 @@
   display: grid;
   gap: var(--tb-space-xs);
   justify-items: start;
-  padding-block-start: var(--tb-space-sm);
-  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
 
 .outlook-settings-title {
   margin: 0;
-  font-size: var(--tb-font-size-md);
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-semibold);
 }
 
 .outlook-settings-body {

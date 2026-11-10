@@ -60,12 +60,12 @@
 
 .people-item-text {
   display: grid;
-  gap: var(--tb-space-xs);
+  gap: calc(var(--tb-space-xs) / 2);
   min-inline-size: 0;
 }
 
 .people-item-name {
-  font-weight: var(--tb-font-weight-bold);
+  font-weight: var(--tb-font-weight-semibold);
 }
 
 .people-avatar {
@@ -121,17 +121,19 @@
 
 .people-cards .people-item {
   position: relative;
-  align-items: center;
+  align-items: start;
   block-size: 100%;
   padding: var(--tb-space-md);
-  border-radius: var(--tb-radius-lg);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
   background: var(--tb-color-surface-raised);
   box-shadow: var(--tb-shadow-sm);
-  transition: box-shadow var(--tb-motion-duration-normal) var(--tb-motion-easing-standard);
+  transition: border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
 }
 
+/* Hover changes the border only, never size or position (DLS-060). */
 .people-cards .people-item:hover {
-  box-shadow: var(--tb-shadow-md);
+  border-color: var(--tb-color-border-strong);
 }
 
 .people-cards .people-avatar {
@@ -160,7 +162,7 @@
   flex-wrap: wrap;
   gap: var(--tb-space-xs) var(--tb-space-sm);
   color: var(--tb-color-text-secondary);
-  font-size: var(--tb-font-size-sm);
+  font-size: var(--tb-font-size-xs);
 }
 
 .people-head {
@@ -287,4 +289,106 @@ ol.people-chart {
 
 .people-pair {
   display: contents;
+}
+
+/* Own profile (spec 036 DLS-063): identity header, then one card per group. */
+.people-profile {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 60rem;
+}
+
+.people-identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-md);
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+.people-identity-text {
+  display: grid;
+  flex: 1 1 14rem;
+  gap: calc(var(--tb-space-xs) / 2);
+  min-inline-size: 0;
+}
+
+.people-identity-text p {
+  margin: 0;
+}
+
+.people-identity-name {
+  font-family: var(--tb-font-family-heading);
+  font-size: var(--tb-font-size-lg);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.people-identity-title {
+  color: var(--tb-color-text-primary);
+}
+
+.people-group {
+  gap: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.people-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+}
+
+.people-group-head h3 {
+  font-size: var(--tb-font-size-md);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.people-managed,
+.people-source,
+.people-visibility {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+}
+
+.people-group .people-details {
+  grid-template-columns: minmax(9rem, 14rem) 1fr;
+  row-gap: var(--tb-space-sm);
+}
+
+.people-group .people-details dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs) var(--tb-space-sm);
+}
+
+.people-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--tb-space-md);
+}
+
+.people-edit {
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-xs);
+}
+
+.people-edit .field {
+  margin: 0;
+}
+
+@media (width <= 40rem) {
+  .people-group .people-details {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

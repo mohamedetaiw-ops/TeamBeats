@@ -135,9 +135,9 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("settings are in one place and apply to the page; the menu stays reachable on a phone", async ({ page }) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
-      await page.getByLabel(msg(locale, "shell.settings.density.label")).selectOption("compact");
+      await page.getByRole("radiogroup", { name: msg(locale, "shell.settings.density.label") }).getByText(msg(locale, "shell.settings.density.compact"), { exact: true }).click();
       await expect(page.locator("html")).toHaveAttribute("data-density", "compact");
-      await page.getByLabel(msg(locale, "shell.settings.motion.label")).selectOption("reduced");
+      await page.getByText(msg(locale, "shell.settings.reduceMotion"), { exact: true }).click();
       await expect(page.locator("html")).toHaveAttribute("data-motion", "reduced");
       await page.getByLabel(msg(locale, "shell.settings.text_scale.label")).selectOption("200");
       await expect(page.locator("html")).toHaveAttribute("style", /font-size: 200%/);

@@ -3,7 +3,7 @@ import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttribu
 type Props = InputHTMLAttributes<HTMLInputElement> & { label: string; name: string; error?: string | null; hint?: string };
 
 /**
- * Labelled input with an optional hint (FR-046) and an associated error (WCAG 2.2 AA: 1.3.1, 3.3.1; FR-038). The error
+ * Labelled input with an optional hint under the control, so a row of controls lines up (FR-046, DLS-049) and an associated error (WCAG 2.2 AA: 1.3.1, 3.3.1; FR-038). The error
  * is linked to the field and announced, and the input keeps what the user typed.
  */
 export function FormField({ label, error, hint, ...input }: Props) {
@@ -14,12 +14,12 @@ export function FormField({ label, error, hint, ...input }: Props) {
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
+      <input id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...input} />
       {hint ? (
         <p id={hintId} className="field-hint">
           {hint}
         </p>
       ) : null}
-      <input id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...input} />
       {error ? (
         <p id={errorId} className="field-error" role="alert">
           {error}
@@ -46,12 +46,12 @@ function Field({
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
+      {children({ id, describedBy, invalid: error ? true : undefined })}
       {hint ? (
         <p id={`${id}-hint`} className="field-hint">
           {hint}
         </p>
       ) : null}
-      {children({ id, describedBy, invalid: error ? true : undefined })}
       {error ? (
         <p id={`${id}-error`} className="field-error" role="alert">
           {error}

@@ -1,13 +1,14 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { PreferenceKey } from "@/lib/shell/types";
-import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { Icon } from "@/components/ui/Icon";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Switch } from "@/components/ui/Switch";
 import { useShellPanel } from "@/lib/shell/panel";
-import { OutlookSettings } from "./OutlookSettings";
 
 const options: Record<PreferenceKey, string[]> = {
   mode: ["system", "light", "dark"],
@@ -16,22 +17,10 @@ const options: Record<PreferenceKey, string[]> = {
   text_scale: ["100", "125", "150", "200"],
 };
 
-/**
- * One place on every page for language, mode, density, motion and text size (spec 008 FR-010). Language is saved on
- * the user account (spec 007), the rest in the preference profile; the page re-renders with the new values. Resetting
- * every personal layout lives here too, and keeps language and the other preferences (FR-027). The Outlook connection
- * (spec 018 FR-013) is read when the panel opens.
- */
-export function SettingsPanel({ locales, locale, values }: { locales: string[]; locale: string; values: Record<PreferenceKey, string> }) {
-  const t = useTranslations("shell.settings");
-  const tl = useTranslations("locale");
+/** Saves one preference and renders the page again with it: language on the account (spec 007), the rest in the profile. */
+function useSave() {
   const router = useRouter();
-  const root = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useShellPanel(root);
   const [saving, setSaving] = useState(false);
-  const panelId = useId();
-  const button = useRef<HTMLButtonElement>(null);
-
   async function save(url: string, body: unknown) {
     setSaving(true);
     try {
@@ -41,6 +30,74 @@ export function SettingsPanel({ locales, locale, values }: { locales: string[]; 
       setSaving(false);
     }
   }
+  return { saving, save };
+}
+
+/**
+ * The display preferences as compact controls (spec 008 FR-010, spec 036 DLS-047): appearance and density as segmented
+ * controls, language and text size as a label with a small select, and reduce motion as a switch, because it takes
+ * effect at once. The quick preferences popover and the Preferences page draw the same controls.
+ */
+export function PreferenceControls({ locales, locale, values }: { locales: string[]; locale: string; values: Record<PreferenceKey, string> }) {
+  const t = useTranslations("shell.settings");
+  const tl = useTranslations("locale");
+  const { saving, save } = useSave();
+  const profile = (key: PreferenceKey, value: string) => void save("/api/v1/me/preference-profile", { values: { [key]: value } });
+  const languageId = useId();
+  const textId = useId();
+  return (
+    <div className="shell-preferences" aria-busy={saving || undefined}>
+      {(["mode", "density"] as const).map((key) => (
+        <div key={key} className="shell-setting">
+          <span className="shell-setting-label" aria-hidden="true">
+            {t(`${key}.label`)}
+          </span>
+          <SegmentedControl
+            label={t(`${key}.label`)}
+            name={`pref-${key}`}
+            value={values[key]}
+            options={options[key].map((v) => ({ value: v, label: t(`${key}.${v}`) }))}
+            onChange={(v) => profile(key, v)}
+          />
+        </div>
+      ))}
+      {locales.length > 1 ? (
+        <div className="shell-setting-inline">
+          <label htmlFor={languageId}>{t("language")}</label>
+          <select id={languageId} value={locale} onChange={(e) => void save("/api/v1/me/preferences", { locale: e.target.value })}>
+            {locales.map((l) => (
+              <option key={l} value={l} lang={l}>
+                {tl(l)}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
+      <div className="shell-setting-inline">
+        <label htmlFor={textId}>{t("text_scale.label")}</label>
+        <select id={textId} value={values.text_scale} onChange={(e) => profile("text_scale", e.target.value)}>
+          {options.text_scale.map((v) => (
+            <option key={v} value={v}>
+              {t(`text_scale.${v}`)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <Switch label={t("reduceMotion")} checked={values.motion === "reduced"} onChange={(e) => profile("motion", e.target.checked ? "reduced" : "system")} />
+    </div>
+  );
+}
+
+/**
+ * Quick preferences in the shell bar (spec 036 DLS-047): the few display settings people change often, and a link to
+ * every preference. Resetting personal layouts and connected apps such as Outlook live on the Preferences page, not here.
+ */
+export function SettingsPanel({ locales, locale, values }: { locales: string[]; locale: string; values: Record<PreferenceKey, string> }) {
+  const t = useTranslations("shell.settings");
+  const root = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useShellPanel(root);
+  const panelId = useId();
+  const button = useRef<HTMLButtonElement>(null);
 
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key === "Escape" && open) {
@@ -55,42 +112,19 @@ export function SettingsPanel({ locales, locale, values }: { locales: string[]; 
         <Icon name="settings" size={20} />
         <span className="visually-hidden">{t("open")}</span>
       </button>
-      <div className="shell-settings-panel" id={panelId} hidden={!open} aria-busy={saving || undefined}>
-        {locales.length > 1 ? (
-          <label className="shell-setting">
-            <span>{t("language")}</span>
-            <select value={locale} onChange={(e) => void save("/api/v1/me/preferences", { locale: e.target.value })}>
-              {locales.map((l) => (
-                <option key={l} value={l} lang={l}>
-                  {tl(l)}
-                </option>
-              ))}
-            </select>
-          </label>
-        ) : null}
-        {(Object.keys(options) as PreferenceKey[]).map((key) => (
-          <label key={key} className="shell-setting">
-            <span>{t(`${key}.label`)}</span>
-            <select value={values[key]} onChange={(e) => void save("/api/v1/me/preference-profile", { values: { [key]: e.target.value } })}>
-              {options[key].map((v) => (
-                <option key={v} value={v}>
-                  {t(`${key}.${v}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-        ))}
-        <ConfirmAction
-          label={t("resetLayouts")}
-          question={t("resetLayoutsQuestion")}
-          confirmLabel={t("resetLayoutsConfirm")}
-          cancelLabel={t("resetLayoutsCancel")}
-          onConfirm={async () => {
-            await fetch("/api/v1/me/layouts", { method: "DELETE" });
-            router.refresh();
-          }}
-        />
-        {open ? <OutlookSettings /> : null}
+      <div className="shell-settings-panel shell-popover" id={panelId} role="dialog" aria-labelledby={`${panelId}-title`} hidden={!open}>
+        <div className="shell-popover-head">
+          <h2 className="shell-popover-title" id={`${panelId}-title`}>
+            {t("title")}
+          </h2>
+        </div>
+        <div className="shell-popover-body">{open ? <PreferenceControls locales={locales} locale={locale} values={values} /> : null}</div>
+        <div className="shell-popover-foot">
+          <Link href="/settings" className="shell-popover-anchor shell-popover-more">
+            {t("allPreferences")}
+            <Icon name="arrow-forward" size={14} />
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -333,3 +333,19 @@
     display: none;
   }
 }
+
+/* Your day without a calendar: an icon tile, one line and a secondary Connect button, so the card never ends half empty. */
+.home-connect {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm) var(--tb-space-md);
+  padding: var(--tb-space-md);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+}
+
+.home-connect .home-meta {
+  flex: 1 1 12rem;
+  margin: 0;
+}

@@ -18,7 +18,7 @@ It is binding. Constitution principle XXXI (One design language) and spec [036](
 | Part | For | Pages |
 |---|---|---|
 | Designs | Everyone | [The four designs](designs.md) |
-| Design guidelines | Designers, UX writers, researchers, graphics team | [Typography](foundations/typography.md), [Colour](foundations/colour.md), [Icons](foundations/icons.md), [Imagery](foundations/imagery.md), [Content](foundations/content.md), [Layout](foundations/layout.md), [Actions](foundations/actions.md), [Accessibility](foundations/accessibility.md) |
+| Design guidelines | Designers, UX writers, researchers, graphics team | [Typography](foundations/typography.md), [Colour](foundations/colour.md), [Icons](foundations/icons.md), [Imagery](foundations/imagery.md), [Content](foundations/content.md), [Layout](foundations/layout.md), [Actions](foundations/actions.md), [Accessibility](foundations/accessibility.md), [Details](foundations/details.md) |
 | Components and templates | Designers and developers | [Components](components.md), [Templates](templates.md) |
 | Technical guidelines | Frontend developers | [Frontend development](technical/frontend.md), [Security](technical/security.md), [Performance](technical/performance.md), [Consistency](technical/consistency.md) |
 | Testing | Designers, developers, QA | [UI testing strategy](testing.md) |

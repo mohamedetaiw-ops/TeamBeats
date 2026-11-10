@@ -202,18 +202,17 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `outlook-${locale}`);
     });
 
-    test("the Outlook section in personal settings disconnects and offers Connect Outlook", async ({ page }, testInfo) => {
+    test("the Outlook section in Connected apps disconnects and offers Connect Outlook", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       const seen = await fakeOutlook(page);
-      await page.goto(`${hostOrigin(tenant.key)}/p/${slug}`);
-      await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
+      await page.goto(`${hostOrigin(tenant.key)}/settings`);
       const section = page.getByRole("region", { name: msg(locale, "outlook.settings.title") });
       await expect(section.getByRole("status")).toContainText(msg(locale, "outlook.settings.connected"));
       await section.getByRole("button", { name: msg(locale, "outlook.settings.disconnect") }).click();
       await expect(section.getByRole("status")).toContainText(msg(locale, "outlook.settings.notConnected"));
       expect(seen).toContain("DELETE /api/v1/me/outlook");
       await expect(section.getByRole("link", { name: msg(locale, "outlook.settings.connect") })).toHaveAttribute(
-        "href", `/api/v1/me/outlook/connect?returnTo=${encodeURIComponent(`/p/${slug}`)}`);
+        "href", `/api/v1/me/outlook/connect?returnTo=${encodeURIComponent("/settings")}`);
       await expectAccessible(page, testInfo, `outlook-settings-${locale}`);
     });
   });
