@@ -70,10 +70,15 @@ public sealed class ConnectorJobWorker(IServiceScopeFactory scopes, IClock clock
     }
 }
 
-/// <summary>The worker's view of the runtime: due attempts, and once a day the purge and the credential expiry check.</summary>
-public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history, PackConnections connections, Webhooks.InboundWebhooks inbound)
+/// <summary>The worker's view of the runtime: due attempts and sync agent status, and once a day the purge and the credential expiry check.</summary>
+public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history, PackConnections connections, Webhooks.InboundWebhooks inbound,
+    SyncAgents.SyncAgentService agents)
 {
-    public Task<int> RunDueAsync(DateTimeOffset now, int limit, CancellationToken ct) => runtime.RunDueAsync(now, Math.Min(limit, 50), ct);
+    public async Task<int> RunDueAsync(DateTimeOffset now, int limit, CancellationToken ct)
+    {
+        await agents.RefreshAsync(now, ct);
+        return await runtime.RunDueAsync(now, Math.Min(limit, 50), ct);
+    }
 
     public async Task PurgeAsync(DateTimeOffset now, CancellationToken ct)
     {

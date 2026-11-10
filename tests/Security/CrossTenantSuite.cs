@@ -28,6 +28,13 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         "GET /api/v1/auth/signin/sso/callback",
         // Spec 017 FR-014: other systems call it with a signature instead of a session; WebhookTests covers its checks and the tenant boundary.
         "POST /api/v1/integrations/inbound/{connectionId:guid}",
+        // Spec 017 FR-016: the on-premises sync agent enrols with a one-time code, then signs every request with its own key;
+        // SyncAgentTests covers the checks, revocation and the tenant boundary.
+        "POST /api/v1/agent/enrol",
+        "POST /api/v1/agent/heartbeat",
+        "POST /api/v1/agent/jobs:pull",
+        "POST /api/v1/agent/jobs/{jobId:guid}/records",
+        "POST /api/v1/agent/jobs/{jobId:guid}:complete",
     ];
 
     private IReadOnlyList<(string Method, string Pattern)> TenantRoutes() =>
