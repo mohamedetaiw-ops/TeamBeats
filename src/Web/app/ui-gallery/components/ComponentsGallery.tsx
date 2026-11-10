@@ -16,6 +16,7 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Slider } from "@/components/ui/Slider";
 import { Divider, Kbd, Meter, Progress, Spinner, StatusDot } from "@/components/ui/Status";
 import { Switch } from "@/components/ui/Switch";
+import { DataGallery } from "./DataGallery";
 import { InputsGallery } from "./InputsGallery";
 import { OverlaysGallery } from "./OverlaysGallery";
 
@@ -246,6 +247,7 @@ export function ComponentsGallery() {
       </section>
       <OverlaysGallery />
       <InputsGallery />
+      <DataGallery />
     </div>
   );
 }

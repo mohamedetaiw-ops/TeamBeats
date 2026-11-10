@@ -981,6 +981,12 @@ a.ui-page[aria-current="page"]:hover {
   max-inline-size: 36rem;
 }
 
+.gallery-wide {
+  display: grid;
+  gap: var(--tb-space-xl);
+  min-inline-size: 0;
+}
+
 .gallery-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));

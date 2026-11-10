@@ -5,8 +5,8 @@ import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
 
 /**
- * Spec 036 DLS-031 to DLS-038: the actions, selection, status, structure, overlay, menu, input and date components
- * of the extended catalogue.
+ * Spec 036 DLS-031 to DLS-039: the actions, selection, status, structure, overlay, menu, input and date components
+ * and the data blocks of the extended catalogue.
  * Each one is driven with the keyboard, in English and in Arabic, and checked for the name, role and state that
  * assistive technology reads. The gallery exists only with the development fixtures.
  */
@@ -611,6 +611,133 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.keyboard.press("Enter");
       await expect(page.getByTestId("cg-node")).toHaveText(t("dates.treeChosen", { name: t("dates.nodeSecurity") }));
       await expect(item("nodeSecurity")).toHaveAttribute("aria-selected", "true");
+    });
+    test("the data table sorts, selects, hides columns and filters, and the data grid moves by cell", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const data = page.locator("section:has(> h2#cg-data)");
+
+      // Stat cards: a named list; the change is stated in words against its period.
+      const stats = data.getByRole("list", { name: t("data.statsLabel") });
+      await expect(stats.getByRole("listitem")).toHaveCount(4);
+      await expect(stats.getByRole("listitem").first()).toContainText(msg(locale, "ui.data.against", { period: t("data.lastMonth") }));
+
+      // Sorting: the header states its order and the rows follow it.
+      const table = data.getByRole("table", { name: t("data.tableCaption") });
+      const firstRow = () => table.locator("tbody tr").first().getByRole("rowheader");
+      await expect(table.getByRole("columnheader", { name: t("data.colSubmitted") })).toHaveAttribute("aria-sort", "descending");
+      await expect(firstRow()).toHaveText(t("data.requestLaptop"));
+      const amount = table.getByRole("button", { name: t("data.colAmount") });
+      await amount.focus();
+      await page.keyboard.press("Enter");
+      await expect(table.getByRole("columnheader", { name: t("data.colAmount") })).toHaveAttribute("aria-sort", "ascending");
+      await expect(table.getByRole("columnheader", { name: t("data.colSubmitted") })).toHaveAttribute("aria-sort", "none");
+      await expect(firstRow()).toHaveText(t("data.requestLicences"));
+      await page.keyboard.press("Enter");
+      await expect(firstRow()).toHaveText(t("data.requestTravel"));
+
+      // Selection: the header box selects all and shows the mixed state when only some are chosen.
+      const all = table.getByRole("checkbox", { name: msg(locale, "ui.data.selectAll") });
+      await all.check();
+      await expect(table.getByRole("checkbox", { checked: true })).toHaveCount(6);
+      await expect(data.locator(".ui-selection")).toBeVisible();
+      await table.getByRole("checkbox", { name: t("data.requestChairs") }).uncheck();
+      expect(await all.evaluate((el: HTMLInputElement) => el.indeterminate)).toBe(true);
+      await data.getByRole("button", { name: t("data.cancel") }).click();
+      await expect(table.getByRole("checkbox", { checked: true })).toHaveCount(0);
+
+      // Columns menu: a checked item per column that can be hidden.
+      await data.getByRole("button", { name: msg(locale, "ui.data.columns") }).click();
+      const department = page.getByRole("menuitemcheckbox", { name: t("data.colDepartment") });
+      await expect(department).toHaveAttribute("aria-checked", "true");
+      await department.click();
+      await expect(table.getByRole("columnheader", { name: t("data.colDepartment") })).toHaveCount(0);
+
+      // Search narrows the rows; no match says so in the table.
+      const search = data.getByRole("searchbox", { name: t("data.search") });
+      await search.fill(t("data.requestTravel"));
+      await expect(table.locator("tbody tr")).toHaveCount(1);
+      await search.fill("zzzz");
+      await expect(table.getByText(t("data.noMatch"))).toBeVisible();
+      await search.fill("");
+
+      // Data grid: one stop in the tab order; arrows move by cell in the reading direction; Enter edits, Escape returns.
+      const grid = data.getByRole("grid", { name: t("data.gridCaption") });
+      const corner = grid.getByRole("columnheader", { name: t("data.colLine") });
+      await expect(corner).toHaveAttribute("tabindex", "0");
+      await expect(grid.locator('[tabindex="0"]')).toHaveCount(1);
+      await corner.focus();
+      await page.keyboard.press("ArrowDown");
+      await expect(grid.getByRole("rowheader", { name: t("data.lineTravel") })).toBeFocused();
+      await page.keyboard.press(forward);
+      const cell = grid.getByRole("gridcell").first();
+      await expect(cell).toBeFocused();
+      await page.keyboard.press("Enter");
+      const input = grid.getByRole("textbox", { name: t("data.cellLabel", { line: t("data.lineTravel"), quarter: t("data.q1") }) });
+      await expect(input).toBeFocused();
+      await input.fill("50000");
+      await page.keyboard.press("Escape");
+      await expect(cell).toBeFocused();
+      await page.keyboard.press("End");
+      const total = grid.locator("tbody tr").first().getByRole("gridcell").last();
+      await expect(total).toBeFocused();
+      await expect(total).toContainText(new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(133500));
+    });
+
+    test("the month and week views, the task list, notifications, settings and sign-in work from the keyboard", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const schedule = page.locator("section:has(> h2#cg-schedule)");
+      const monthTitle = (iso: string) => new Intl.DateTimeFormat(locale, { month: "long", year: "numeric", timeZone: "UTC" }).format(Date.parse(`${iso}T00:00:00Z`));
+
+      // Month view: a table named by its month; today is marked; each day lists its events.
+      const month = schedule.getByRole("table", { name: monthTitle("2026-11-01") });
+      const today = month.locator('[aria-current="date"]');
+      await expect(today).toHaveCount(1);
+      await expect(today.locator("xpath=ancestor::td").getByRole("listitem")).toHaveCount(3);
+      await schedule.getByRole("button", { name: msg(locale, "ui.controls.nextMonth") }).click();
+      await expect(schedule.getByRole("table", { name: monthTitle("2026-12-01") })).toBeVisible();
+
+      // Week view: each day is a section named by its heading, with its events in order and their times in words.
+      const week = schedule.locator(".ui-week");
+      const tuesday = week.locator("section").filter({ has: page.locator('h4[aria-current="date"]') });
+      await expect(tuesday.locator("ol > li")).toHaveCount(3);
+      await expect(tuesday.locator("ol > li").first()).toContainText(t("schedule.eventStandup"));
+
+      // Task list: the box names its task and its new state.
+      const tasks = schedule.getByRole("list", { name: t("schedule.tasks") });
+      const box = tasks.getByRole("checkbox", { name: msg(locale, "ui.data.markDone", { title: t("schedule.taskSurvey") }) });
+      await box.focus();
+      await page.keyboard.press("Space");
+      await expect(tasks.getByRole("checkbox", { name: msg(locale, "ui.data.markNotDone", { title: t("schedule.taskSurvey") }) })).toBeChecked();
+
+      // Notifications: unread is said in words; the filter and the mark all action work.
+      const panels = page.locator("section:has(> h2#cg-panels)");
+      const notices = panels.getByRole("region", { name: t("panels.notifications") });
+      await expect(notices.getByText(msg(locale, "ui.data.unread"), { exact: true })).toHaveCount(2);
+      await notices.getByRole("radio", { name: msg(locale, "ui.data.unreadCount", { count: "2" }) }).check();
+      await expect(notices.getByRole("listitem")).toHaveCount(2);
+      await notices.getByRole("button", { name: msg(locale, "ui.data.markAllRead") }).click();
+      await expect(notices.getByText(msg(locale, "ui.data.noUnread"))).toBeVisible();
+      await expect(notices.getByRole("button", { name: msg(locale, "ui.data.markAllRead") })).toBeDisabled();
+
+      // Settings dialog: vertical tabs move with the up and down arrows; Escape closes and returns focus.
+      const open = panels.getByRole("button", { name: t("panels.openSettings") });
+      await open.click();
+      const dialog = page.getByRole("dialog", { name: t("panels.settings") });
+      await expect(dialog).toBeVisible();
+      const tablist = dialog.getByRole("tablist", { name: msg(locale, "ui.data.sections") });
+      await expect(tablist).toHaveAttribute("aria-orientation", "vertical");
+      await dialog.getByRole("tab", { name: t("panels.profile") }).focus();
+      await page.keyboard.press("ArrowDown");
+      await expect(dialog.getByRole("tab", { name: t("panels.notifications") })).toHaveAttribute("aria-selected", "true");
+      await expect(dialog.getByRole("switch", { name: t("panels.mentions") })).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+      await expect(open).toBeFocused();
+
+      // Sign-in card: a named region with the provider as a link.
+      const signIn = panels.getByRole("region", { name: t("panels.signInTitle") });
+      await expect(signIn.getByRole("link", { name: t("panels.signInWork") })).toBeVisible();
+      await expect(signIn.getByRole("textbox", { name: t("panels.email") })).toBeVisible();
     });
   });
 }

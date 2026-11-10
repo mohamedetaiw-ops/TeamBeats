@@ -45,6 +45,9 @@ const paths = {
   minus: "M5 12h14",
   more: "M5 12v.01M12 12v.01M19 12v.01",
   megaphone: "M4 10v4h3l8 5V5l-8 5zM18 9a4 4 0 0 1 0 6",
+  "trend-up": "M3 17l6-6 4 4 8-8M15 7h6v6",
+  "trend-down": "M3 7l6 6 4-4 8 8M15 17h6v-6",
+  sort: "M8 9l4-4 4 4M16 15l-4 4-4-4",
 } as const;
 
 export type IconName = keyof typeof paths;

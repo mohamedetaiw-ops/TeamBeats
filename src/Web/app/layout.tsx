@@ -31,6 +31,7 @@ import "@/components/ui/ui.css";
 import "@/components/ui/controls.css";
 import "@/components/ui/overlays.css";
 import "@/components/ui/inputs.css";
+import "@/components/ui/data.css";
 import "@/components/ui/designs.css";
 import { MessagesProvider } from "@/components/ui/Messages";
 import { designOf } from "@/lib/experience/design";

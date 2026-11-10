@@ -151,7 +151,7 @@ for (const design of designs) {
         await expectNoSeriousViolations(page, testInfo, `components-${design.key}-${locale}`);
         expect(await smallTargets(gallery), "controls smaller than 24 by 24 pixels").toEqual([]);
 
-        for (const id of ["cg-actions", "cg-selection", "cg-status", "cg-structure", "cg-overlays", "cg-menus", "cg-inputs", "cg-dates"]) {
+        for (const id of ["cg-actions", "cg-selection", "cg-status", "cg-structure", "cg-overlays", "cg-menus", "cg-inputs", "cg-dates", "cg-data", "cg-schedule", "cg-panels"]) {
           await expect.soft(page.locator(`section:has(> h2#${id})`)).toHaveScreenshot(`${id}-${design.key}-${locale}.png`, {
             animations: "disabled",
             caret: "hide",

@@ -64,10 +64,19 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | File upload | `FileUpload.tsx` | Add files to a request or a document | A labelled file input with a drop area; each file shows size, progress and its own error, and has a named remove button |
 | Carousel | `Carousel.tsx` | A row of cards that does not fit, such as featured news | A named scrolling list; previous and next buttons are disabled at the ends; nothing moves by itself |
 | Tree view | `TreeView.tsx` | Folders and nested sections | WAI-ARIA tree: arrows move and open by direction, type ahead finds a node |
+| Data table | `DataTable.tsx` | Registers and reports with sorting, row selection, a columns menu, a toolbar and paging | Native table with a caption; sortable headers are buttons and the header states `aria-sort`; the select all box shows the mixed state; the scroll area is a named, focusable region |
+| Data grid | `DataGrid.tsx` | Editing many values in place, such as a budget | WAI-ARIA grid: one tab stop, arrows by cell in the reading direction, Home and End, Enter or F2 to edit, Escape to return to the cell |
+| Stat cards | `Blocks.tsx` (`StatCards`) | Headline numbers with their change against the previous period | A named list; the change is a signed percent with an arrow and the words "against {period}"; the tone follows whether a rise is good news |
+| Month view | `CalendarViews.tsx` (`MonthView`) | Events across a month in the tenant's calendar | A table named by the month, weekday headers with full names; today has `aria-current="date"`; extra events are counted in words |
+| Week view | `CalendarViews.tsx` (`WeekView`) | Timed events across a few days, with overlaps side by side | Each day is a section named by its heading with an ordered list of events and their times in words |
+| Task list | `Blocks.tsx` (`TaskList`) | Tasks to tick off, with due date, priority and owner | Each box is named "Mark {title} done"; due and priority are text badges |
+| Notification panel | `Blocks.tsx` (`NotificationPanel`) | The latest notifications, in a popover or on a page | A named region; unread is said in words; the filter is a segmented control; mark all read is disabled when nothing is unread |
+| Settings dialog | `Blocks.tsx` (`SettingsDialog`) | Personal settings in sections | A dialog with vertical tabs (`aria-orientation="vertical"`, up and down arrows); each section saves on its own |
+| Sign-in card | `Blocks.tsx` (`SignInCard`) | The tenant's sign-in choices | A named region; providers are links; a form, when allowed, follows a labelled divider |
 | Filter bar | `.ui-filter-bar` | Search box, selects and Apply above a list | Real labels; Apply is a button |
 | Filter chips | `.ui-chips` | A row of choices that narrow a list, such as request status | Links with `aria-current` on the active choice |
 | List rows | `.ui-rows`, `.ui-row` | Tasks and other actionable items: icon tile, title, meta, one action | Each row is a list item; the action names its item |
-| Data table | `main table` | Registers and reports | Native table with header cells; rows highlight on hover |
+| Plain table | `main table` | A short read-only table inside page text | Native table with header cells; rows highlight on hover |
 | Split view | `.ui-split` | A main column with a side column (Tasks and delegation) | The side column is an `aside` with a label; stacks below 64rem |
 | Person card | `people-cards` | People directory and team | Avatar with a steady tone, name link covers the card |
 | Briefing hero | `home.briefing` | Top of the home: greeting, date, weather, next three things with actions | A section named by its heading; rows are an ordered list; where items came from is stated |
@@ -110,3 +119,6 @@ Shell parts (header, navigation, search, settings, account menu, notifications, 
 | Use `Combobox` for a long list of known options | Use it for free text with suggestions only (use `SearchField`) |
 | Use `DateField` and keep ISO days in the form | Parse or store dates as localized text |
 | Use `Carousel` buttons that stop at the ends | Rotate slides by themselves |
+| Use `DataTable` for lists people read, sort and select | Use `DataGrid` for a read-only list (it adds keys people do not expect) |
+| Say whether a rise is good with `goodWhen` | Colour a change red or green with no sign or words |
+| Keep the notification panel and settings dialog as the shell's only versions | Build a second notification list or settings layout in a feature |
