@@ -51,6 +51,19 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Command palette | `CommandPalette.tsx` | Go to a page or run a command from anywhere; the shell opens it with Ctrl+K or Command+K | A modal dialog holding a combobox and a list box; focus stays in the box |
 | Notification card | `Messages.tsx` (a message with a `title`) | A message that deserves a title and an icon, such as "Invitations sent" | Same live regions and timing as other messages |
 | Breadcrumb | `Breadcrumb.tsx` | Where the page sits; long trails collapse the middle levels into a menu | A named `nav`; the page itself has `aria-current="page"` |
+| Field parts | `FormField.tsx` (`Field`, `InputGroup`, `leading`, `trailing`) | A unit, prefix or icon inside a field | The label, help and error stay tied to the input; added parts are decoration or named buttons |
+| Search field | `Inputs.tsx` (`SearchField`) | Search within a page or a list | `type="search"` with a label; Escape and the named clear button empty it; Enter searches |
+| Number field | `Inputs.tsx` (`NumberField`) | A count or amount with a range and step | `role="spinbutton"`: arrows step, Page keys step by ten, Home and End go to the limits; the value is clamped on leaving |
+| Code field | `Inputs.tsx` (`OtpField`) | A one time code of fixed length | One named box per digit, always left to right; pasting fills every box |
+| Time field | `Inputs.tsx` (`TimeField`) | A time of day | Native time input with a label |
+| Colour field | `Inputs.tsx` (`ColorField`) | A brand or label colour, with presets | Hex text with a named native picker; presets are toggle buttons with names |
+| Combobox | `Combobox.tsx` | Pick one of many known options by typing | WAI-ARIA combobox with a list box; Enter picks, Escape closes and then clears |
+| Calendar | `Calendar.tsx` (`Calendar`) | Pick a day or a range in Gregorian or Umm al-Qura | Grid with roving focus: arrows by direction, Home and End for the week, Page keys for months, Shift for years; unavailable days say so |
+| Date field | `Calendar.tsx` (`DateField`, `DateRangeField`) | A date or a range in a form | A button that shows the chosen date as text and opens the calendar in a popover; hidden inputs carry ISO days |
+| Slot picker | `Calendar.tsx` (`SlotPicker`) | Pick a free time, such as a room or a meeting | A named radio group; taken slots are disabled with a reason |
+| File upload | `FileUpload.tsx` | Add files to a request or a document | A labelled file input with a drop area; each file shows size, progress and its own error, and has a named remove button |
+| Carousel | `Carousel.tsx` | A row of cards that does not fit, such as featured news | A named scrolling list; previous and next buttons are disabled at the ends; nothing moves by itself |
+| Tree view | `TreeView.tsx` | Folders and nested sections | WAI-ARIA tree: arrows move and open by direction, type ahead finds a node |
 | Filter bar | `.ui-filter-bar` | Search box, selects and Apply above a list | Real labels; Apply is a button |
 | Filter chips | `.ui-chips` | A row of choices that narrow a list, such as request status | Links with `aria-current` on the active choice |
 | List rows | `.ui-rows`, `.ui-row` | Tasks and other actionable items: icon tile, title, meta, one action | Each row is a list item; the action names its item |
@@ -91,3 +104,6 @@ Shell parts (header, navigation, search, settings, account menu, notifications, 
 | Use `Popover` for a few settings beside a button | Put a form with Save in a popover (use `Dialog` or `Drawer`) |
 | Give every context menu action a visible control too | Hide the only way to an action behind a secondary click |
 | Use a tooltip for an extra hint | Put the only name of a control, or a link, in a tooltip |
+| Use `Combobox` for a long list of known options | Use it for free text with suggestions only (use `SearchField`) |
+| Use `DateField` and keep ISO days in the form | Parse or store dates as localized text |
+| Use `Carousel` buttons that stop at the ends | Rotate slides by themselves |

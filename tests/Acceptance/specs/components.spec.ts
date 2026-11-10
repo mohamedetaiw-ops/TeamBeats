@@ -5,8 +5,8 @@ import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
 
 /**
- * Spec 036 DLS-031 to DLS-038: the actions, selection, status, structure, overlay and menu components of the
- * extended catalogue.
+ * Spec 036 DLS-031 to DLS-038: the actions, selection, status, structure, overlay, menu, input and date components
+ * of the extended catalogue.
  * Each one is driven with the keyboard, in English and in Arabic, and checked for the name, role and state that
  * assistive technology reads. The gallery exists only with the development fixtures.
  */
@@ -437,6 +437,180 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(levels.getByRole("menuitem", { name: t("menus.crumbFinance") })).toHaveAttribute("href", "#crumbFinance");
       await page.keyboard.press("Escape");
       await expect(levels).toBeHidden();
+    });
+    test("search, number, code, colour and combobox fields work from the keyboard", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const inputs = page.locator("section:has(> h2#cg-inputs)");
+
+      // Leading and trailing parts sit in one box; the label still names the text box.
+      await expect(inputs.getByRole("textbox", { name: t("inputs.amount") })).toHaveValue("1250.00");
+
+      // Search: the clear button appears with text, Escape clears, Enter searches.
+      const search = inputs.getByRole("searchbox", { name: t("inputs.search") });
+      await search.fill("Layla");
+      const clear = inputs.getByRole("button", { name: msg(locale, "ui.controls.clear") });
+      await expect(clear).toBeVisible();
+      await page.keyboard.press("Enter");
+      await expect(page.getByTestId("cg-searched")).toHaveText(t("inputs.searched", { term: "Layla" }));
+      await page.keyboard.press("Escape");
+      await expect(search).toHaveValue("");
+      await expect(clear).toHaveCount(0);
+
+      // Number: a spin button; arrows step, End goes to the limit, typing past the limit is brought back on leaving.
+      const days = inputs.getByRole("spinbutton", { name: t("inputs.days") });
+      await expect(days).toHaveAttribute("aria-valuenow", "5");
+      await days.focus();
+      await page.keyboard.press("ArrowUp");
+      await expect(days).toHaveValue("6");
+      await page.keyboard.press("End");
+      await expect(days).toHaveValue("22");
+      await expect(inputs.getByRole("button", { name: msg(locale, "ui.controls.increase") })).toBeDisabled();
+      await days.fill("30");
+      await expect(days).toHaveAttribute("aria-invalid", "true");
+      await expect(inputs.getByText(t("inputs.daysError"))).toBeVisible();
+      await page.keyboard.press("Tab");
+      await expect(days).toHaveValue("22");
+
+      // One-time code: typing moves on, Backspace moves back, a paste fills every box.
+      const code = inputs.getByRole("group", { name: t("inputs.code") });
+      const digit = (n: number) => code.getByRole("textbox", { name: msg(locale, "ui.controls.digit", { index: String(n), count: "6" }) });
+      await digit(1).focus();
+      await page.keyboard.type("12");
+      await expect(digit(3)).toBeFocused();
+      await page.keyboard.press("Backspace");
+      await expect(digit(2)).toBeFocused();
+      await expect(digit(2)).toHaveValue("");
+      await digit(1).evaluate((el) => {
+        const data = new DataTransfer();
+        data.setData("text", "48 31 07");
+        el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+      });
+      await expect(page.getByTestId("cg-code")).toHaveText(t("inputs.codeDone", { code: "483107" }));
+
+      // Colour: presets are named toggle buttons that write the code.
+      const green = inputs.getByRole("button", { name: t("inputs.presetGreen") });
+      await green.click();
+      await expect(green).toHaveAttribute("aria-pressed", "true");
+      await expect(inputs.getByRole("textbox", { name: t("inputs.color"), exact: true })).toHaveValue("#0b6e4f");
+
+      // Combobox: typing filters, the arrows move the highlight, Enter chooses, Escape closes the list.
+      const department = inputs.getByRole("combobox", { name: t("inputs.manager") });
+      await expect(department).toHaveValue(t("inputs.roleFinance"));
+      await department.fill("");
+      await expect(department).toHaveAttribute("aria-expanded", "true");
+      const list = page.getByRole("listbox", { name: t("inputs.manager") });
+      await expect(list.getByRole("option")).toHaveCount(6);
+      await department.fill(t("inputs.roleLegal").slice(0, 3));
+      await expect(list.getByRole("option")).toHaveCount(1);
+      await page.keyboard.press("Enter");
+      await expect(department).toHaveValue(t("inputs.roleLegal"));
+      await expect(department).toHaveAttribute("aria-expanded", "false");
+      await department.fill("zzzz");
+      await expect(list.getByText(t("inputs.managerEmpty"))).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(department).toHaveAttribute("aria-expanded", "false");
+
+      // Upload: the drop area is a labelled file input; each file names its remove button; errors are words.
+      await expect(inputs.getByText(t("inputs.uploadTooLarge"))).toBeVisible();
+      await inputs.getByLabel(t("inputs.upload")).setInputFiles({ name: "Leave form.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+      const files = inputs.getByRole("list", { name: msg(locale, "ui.controls.chosenFiles") });
+      await expect(files.getByRole("listitem")).toHaveCount(3);
+      await inputs.getByRole("button", { name: msg(locale, "ui.controls.remove", { name: t("inputs.fileBudget") }) }).click();
+      await expect(files.getByRole("listitem")).toHaveCount(2);
+    });
+
+    test("calendars, date fields, slots, the carousel and the tree work from the keyboard", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const dates = page.locator("section:has(> h2#cg-dates)");
+
+      // Calendar: a named grid; the arrows follow the reading direction and skip nothing; today is marked.
+      const grid = dates.getByRole("grid", { name: t("dates.gregorian"), exact: true });
+      const chosen = grid.locator('[data-date="2026-11-12"]');
+      await expect(chosen).toHaveAttribute("tabindex", "0");
+      await expect(grid.locator('[data-date="2026-11-10"]')).toHaveAttribute("aria-current", "date");
+      await chosen.focus();
+      await page.keyboard.press(forward);
+      await expect(grid.locator('[data-date="2026-11-13"]')).toBeFocused();
+      await page.keyboard.press("ArrowDown");
+      await expect(grid.locator('[data-date="2026-11-20"]')).toBeFocused();
+      // Weekend days can be reached but not chosen.
+      await expect(grid.locator('[data-date="2026-11-20"]')).toHaveAttribute("aria-disabled", "true");
+      await page.keyboard.press("Enter");
+      await expect(grid.locator('[data-date="2026-11-12"]').locator("xpath=..")).toHaveAttribute("aria-selected", "true");
+      await page.keyboard.press(back);
+      await page.keyboard.press("Enter");
+      await expect(grid.locator('[data-date="2026-11-19"]').locator("xpath=..")).toHaveAttribute("aria-selected", "true");
+      // Page Down goes to the next month and keeps the day.
+      await page.keyboard.press("PageDown");
+      await expect(grid.locator('[data-date="2026-12-19"]')).toBeFocused();
+
+      // The Hijri calendar shows the same days in its own months, through Intl.
+      const hijri = dates.getByRole("grid", { name: t("dates.hijri") });
+      const hijriMonth = new Intl.DateTimeFormat(locale, { calendar: "islamic-umalqura", month: "long", year: "numeric", timeZone: "UTC" }).format(Date.parse("2026-11-15T00:00:00Z"));
+      // The month title describes the grid.
+      await expect(hijri).toHaveAccessibleDescription(hijriMonth);
+      await expect(hijri.locator('[data-range="middle"]')).toHaveCount(3);
+
+      // Date field: opens the calendar on the right day, and choosing returns focus to the field.
+      const field = dates.getByRole("button", { name: t("dates.date") });
+      await field.click();
+      await expect(field).toHaveAttribute("aria-expanded", "true");
+      const picker = page.getByRole("dialog", { name: t("dates.date") });
+      await expect(picker.locator('.ui-calendar-day[tabindex="0"]')).toBeFocused();
+      await picker.locator('[data-date="2026-11-24"]').click();
+      await expect(picker).toBeHidden();
+      await expect(field).toBeFocused();
+      const long = new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(Date.parse("2026-11-24T00:00:00Z"));
+      await expect(field).toContainText(long);
+
+      // Range field: two choices make the range and close it.
+      const rangeField = dates.getByRole("button", { name: t("dates.range") });
+      await rangeField.click();
+      const rangePicker = page.getByRole("dialog", { name: t("dates.range") });
+      await rangePicker.locator('[data-date="2026-11-23"]').click();
+      await expect(rangePicker).toBeVisible();
+      await rangePicker.locator('[data-date="2026-11-25"]').click();
+      await expect(rangePicker).toBeHidden();
+      await expect(page.locator('input[name="cg-range_start"]')).toHaveValue("2026-11-23");
+      await expect(page.locator('input[name="cg-range_end"]')).toHaveValue("2026-11-25");
+
+      // Slots: a radio group; taken slots are disabled and say why.
+      const slots = dates.getByRole("group", { name: t("dates.slots") });
+      const ten30 = slots.getByRole("radio", { checked: true });
+      await ten30.focus();
+      await page.keyboard.press("ArrowDown");
+      await expect(slots.getByRole("radio", { checked: true })).not.toHaveValue("10:30");
+      await expect(slots.getByRole("radio", { disabled: true })).toHaveCount(2);
+      await expect(slots.getByRole("radio", { name: new RegExp(t("dates.booked")) })).toHaveCount(2);
+
+      // Carousel: a named list; previous starts off; next moves one card along.
+      const carousel = dates.getByRole("list", { name: t("dates.carousel") });
+      await expect(carousel.getByRole("listitem")).toHaveCount(5);
+      const previous = dates.getByRole("button", { name: msg(locale, "ui.controls.previousSlide"), exact: true });
+      await expect(previous).toBeDisabled();
+      await dates.getByRole("button", { name: msg(locale, "ui.controls.nextSlide"), exact: true }).click();
+      await expect(previous).toBeEnabled();
+
+      // Tree: one item in the tab order; arrows move and open branches in the reading direction.
+      const tree = dates.getByRole("tree", { name: t("dates.tree") });
+      const item = (key: string) => tree.getByRole("treeitem", { name: t(`dates.${key}`), exact: true });
+      const travel = tree.locator('[data-key="nodeTravel"]');
+      await expect(travel).toHaveAttribute("tabindex", "0");
+      await expect(travel).toHaveAttribute("aria-selected", "true");
+      await travel.focus();
+      await page.keyboard.press(back);
+      await expect(tree.locator('[data-key="nodeFinance"]')).toBeFocused();
+      await page.keyboard.press(back);
+      await expect(tree.locator('[data-key="nodeFinance"]')).toHaveAttribute("aria-expanded", "false");
+      await page.keyboard.press("ArrowDown");
+      await expect(tree.locator('[data-key="nodeIt"]')).toBeFocused();
+      await page.keyboard.press(forward);
+      await expect(tree.locator('[data-key="nodeIt"]')).toHaveAttribute("aria-expanded", "true");
+      await page.keyboard.press(forward);
+      await expect(tree.locator('[data-key="nodeSecurity"]')).toBeFocused();
+      await page.keyboard.press("Enter");
+      await expect(page.getByTestId("cg-node")).toHaveText(t("dates.treeChosen", { name: t("dates.nodeSecurity") }));
+      await expect(item("nodeSecurity")).toHaveAttribute("aria-selected", "true");
     });
   });
 }
