@@ -1177,6 +1177,9 @@
   "integrations.test.agent_missing": "No sync agent is enrolled yet",
   "integrations.test.agent_online": "The sync agent was in touch in the last 5 minutes",
   "integrations.test.agent_offline": "The sync agent has not been in touch for 5 minutes",
+  "integrations.test.system_ok": "The system answered with this sign-in",
+  "integrations.test.system_refused": "The system refused the credential",
+  "integrations.test.system_failed": "The system could not be reached with these settings",
   "validation.sync_agent.name": "Enter a name for the agent of up to 100 characters.",
   "validation.sync_agent.version": "The agent version is too long.",
   "validation.sync_agent.public_key": "The public key must be an ECDSA P-256 key.",
@@ -1198,5 +1201,7 @@
   "validation.connector_tool.no_inputs": "This action does not declare its inputs, so it cannot be a tool.",
   "validation.connector_tool.name": "Use 3 to 41 lowercase letters, digits or underscores, starting with a letter.",
   "validation.connector_tool.description": "Describe what the tool does in 10 to 500 characters.",
-  "validation.connector_tool.title": "Enter a title of up to 100 characters in at least one language."
+  "validation.connector_tool.title": "Enter a title of up to 100 characters in at least one language.",
+  "validation.ticketing.service_desk_id": "Enter the service desk ID, a number from Jira Service Management.",
+  "validation.ticketing.request_type_id": "Enter the request type ID, a number from Jira Service Management."
 }

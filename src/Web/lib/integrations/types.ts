@@ -38,7 +38,7 @@ export type RestAuth = {
   expiresOn?: string | null;
 };
 
-export type RestSettings = { baseUrl: string; auth: RestAuth };
+export type RestSettings = { baseUrl: string; auth: RestAuth; serviceDeskId?: string | null; requestTypeId?: string | null };
 
 export type PackConnection = {
   id: string;
@@ -142,10 +142,21 @@ export const CHECK_RESULTS = [
   "agent_missing",
   "agent_online",
   "agent_offline",
+  "system_ok",
+  "system_refused",
+  "system_failed",
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management"] as const;
+
+/** Ticketing packs (spec 017 T017) and the sign-in methods each offers in its form; the API checks them again. */
+export const TICKETING_KINDS = {
+  servicenow: { auth: ["basic", "oauth_client_credentials"], desk: false },
+  jira_service_management: { auth: ["basic", "bearer"], desk: true },
+} as const;
+export type TicketingKind = keyof typeof TICKETING_KINDS;
+export const isTicketing = (kind: string): kind is TicketingKind => Object.prototype.hasOwnProperty.call(TICKETING_KINDS, kind);
 
 /** Settings of an on-premises Active Directory connection (spec 017 US6). The service account stays with the agent. */
 export type OnPremSettings = { host: string | null; port: number | null; baseDn: string | null; userFilter: string | null; groupFilter: string | null };

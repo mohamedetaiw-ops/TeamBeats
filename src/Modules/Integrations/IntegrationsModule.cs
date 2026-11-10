@@ -55,8 +55,13 @@ public static class IntegrationsModule
         services.AddScoped<ConnectorJobs>();
         services.AddScoped<HostAllowlist>();
         services.AddSingleton<CustomRest.RestTokenCache>();
+        services.AddScoped<CustomRest.RestSignIn>();
         services.AddScoped<CustomRest.CustomRestPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<CustomRest.CustomRestPack>());
+        services.AddScoped<Ticketing.ServiceNowPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.ServiceNowPack>());
+        services.AddScoped<Ticketing.JiraServiceManagementPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.JiraServiceManagementPack>());
         services.AddScoped<Webhooks.WebhookPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.WebhookPack>());
         services.AddScoped<Webhooks.InboundWebhooks>();
