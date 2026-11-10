@@ -391,7 +391,7 @@
 /* Wide screens: the rail sits down the start edge, under the bar, and the page moves over to make room. */
 @media (width > 64rem) {
   /* The bar and the rail are one frame with no lines between them; the page sits inside it with a rounded start
-     corner, so the join matches the rounded cards (spec 036 DLS-030). */
+     corner, so the join matches the rounded cards (spec 036 DLS-056). */
   :root:not([data-nav="top"]) body:has(.shell-rail) {
     position: relative;
     min-block-size: 100vh;
