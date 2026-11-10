@@ -37,7 +37,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(briefing.getByText(msg(locale, "home.briefing.sources"))).toBeVisible();
       // The campaign band closes the page: after the news and services, never above them.
       const band = page.getByRole("link", { name: locale === "ar" ? "اطلع على البرنامج" : "See the programme" });
-      await expect(band).toHaveAttribute("href", /^\/content\/read\//);
+      // seedHome links the band to the home, as the test tenant has no seeded story (support/home.ts).
+      await expect(band).toHaveAttribute("href", "/");
       const bandTop = (await band.boundingBox())!.y;
       expect(bandTop).toBeGreaterThan((await services.boundingBox())!.y);
       await expectAccessible(page, testInfo, `home-v2-${locale}`);
