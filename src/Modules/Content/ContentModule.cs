@@ -21,6 +21,7 @@ public static class ContentModule
         services.AddScoped<Contracts.ISiteDirectory, SiteDirectory>();
         services.AddScoped<Contracts.IKnowledgeContent, KnowledgeContent>();
         services.AddScoped<Items>();
+        services.AddScoped<ContentSlackShare>();
         services.AddScoped<AudienceFactsLoader>();
         services.AddScoped<Audiences>();
         services.AddScoped<Contracts.IAudiences>(sp => sp.GetRequiredService<Audiences>());
@@ -144,6 +145,20 @@ public static class ContentModule
             var item = await service.ArchiveAsync(id, ct);
             await session.CommitAsync(ct);
             return Results.Ok(item);
+        });
+
+        items.MapPost("/{id:guid}/share-slack", async (Guid id, SlackShareRequest request, ContentSlackShare service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.ShareAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        items.MapGet("/slack-channels", async (ContentSlackShare service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.ChannelsAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         items.MapGet("/{id:guid}/view", async (Guid id, Items service, CancellationToken ct) => Results.Ok(await service.ReadAsync(id, ct)));

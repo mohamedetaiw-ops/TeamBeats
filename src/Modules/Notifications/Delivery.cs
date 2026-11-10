@@ -55,7 +55,7 @@ public sealed class EmailDelivery(
                    n.category, n.mandatory, n.template_key, n.parameters::text, n.link
             from notifications.delivery d
             join notifications.notification n on n.tenant_id = d.tenant_id and n.id = d.notification_id
-            where d.status = 'pending' and d.not_before <= @now
+            where d.status = 'pending' and d.channel = 'email' and d.not_before <= @now
             order by d.not_before
             limit @batch
             for update of d skip locked
@@ -257,7 +257,7 @@ public sealed class EmailDelivery(
     private async Task<EmailMessage> ComposeAsync(string to, string locale, string subject, IReadOnlyList<EmailItem> items, string? mandatoryLabel, CancellationToken ct)
     {
         var tenantId = context.RequireTenant();
-        var origin = await TenantOriginAsync(tenantId, ct);
+        var origin = await TenantOriginAsync(hosts.Value, tenants, tenantId, ct);
         var effective = await settings.GetEffectiveAsync(ct);
         var fromName = effective.SenderName ?? localizer.Get("notifications.email.default_sender", locale);
         var open = localizer.Get("notifications.email.open", locale);
@@ -284,9 +284,9 @@ public sealed class EmailDelivery(
         return new EmailMessage(to, emailOptions.Value.FromAddress, fromName, subject, text.ToString(), html.ToString(), locale);
     }
 
-    private async Task<string> TenantOriginAsync(Guid tenantId, CancellationToken ct)
+    /// <summary>The https origin of the tenant's own host, for links in messages that leave TeamBeats.</summary>
+    internal static async Task<string> TenantOriginAsync(HostResolutionOptions h, ITenantRegistry tenants, Guid tenantId, CancellationToken ct)
     {
-        var h = hosts.Value;
         if (h.Mode == InstallationMode.Dedicated)
         {
             return $"https://{h.BaseDomain}";

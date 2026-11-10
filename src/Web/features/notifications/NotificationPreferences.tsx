@@ -8,8 +8,9 @@ import { problemMessages, type Preferences } from "@/lib/notifications/types";
 import "./notifications.css";
 
 /**
- * An employee's notification preferences (spec 015 US2, US3): email and digest per category, quiet hours, digest time
- * and time zone. In-app is always on. Mandatory categories show as fixed; the API ignores any change to them anyway.
+ * An employee's notification preferences (spec 015 US2, US3, US8): email, digest and Slack per category, quiet hours,
+ * digest time and time zone. In-app is always on. Slack shows only when the organization connected it, and works once
+ * the person linked their Slack account. Mandatory categories show as fixed; the API ignores any change to them anyway.
  */
 export function NotificationPreferences({ initial }: { initial: Preferences }) {
   const t = useTranslations("notifications.preferences");
@@ -20,8 +21,28 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
   const [end, setEnd] = useState(initial.quietHours?.end ?? "07:00");
   const [saving, setSaving] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; messages: string[] } | null>(null);
+  const [linking, setLinking] = useState(false);
+  const slack = prefs.slack.available;
 
-  function setCategory(category: string, change: { email?: boolean; digest?: boolean }) {
+  async function link(on: boolean) {
+    setLinking(true);
+    setResult(null);
+    try {
+      const response = await fetch(on ? "/api/v1/me/notification-preferences/slack:link" : "/api/v1/me/notification-preferences/slack", { method: on ? "POST" : "DELETE" });
+      if (response.ok) {
+        setPrefs((await response.json()) as Preferences);
+        setResult({ ok: true, messages: [t(on ? "slackLinked" : "slackUnlinked")] });
+      } else {
+        setResult({ ok: false, messages: await problemMessages(response) });
+      }
+    } catch {
+      setResult({ ok: false, messages: [t("failed")] });
+    } finally {
+      setLinking(false);
+    }
+  }
+
+  function setCategory(category: string, change: { email?: boolean; digest?: boolean; slack?: boolean }) {
     setPrefs((p) => ({ ...p, categories: p.categories.map((c) => (c.category === category ? { ...c, ...change } : c)) }));
   }
 
@@ -33,7 +54,9 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
         method: "PUT",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          categories: prefs.categories.filter((c) => !c.mandatory).map((c) => ({ category: c.category, email: c.email, digest: c.email && c.digest })),
+          categories: prefs.categories
+            .filter((c) => !c.mandatory)
+            .map((c) => ({ category: c.category, email: c.email, digest: c.email && c.digest, ...(slack ? { slack: c.slack } : {}) })),
           quietHours: quiet ? { start, end } : null,
           digestTime: prefs.digestTime,
           timeZone: prefs.timeZone,
@@ -66,6 +89,14 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
         </p>
       ) : null}
       <p>{t("inAppAlways")}</p>
+      {slack ? (
+        <div className="notification-row">
+          <p>{t(prefs.slack.linked ? "slackIsLinked" : "slackNotLinked")}</p>
+          <Button busy={linking} busyLabel={t("saving")} onClick={() => void link(!prefs.slack.linked)}>
+            {t(prefs.slack.linked ? "slackUnlink" : "slackLink")}
+          </Button>
+        </div>
+      ) : null}
       <div className="notification-table-wrap">
         <table className="notification-table">
           <caption className="visually-hidden">{t("tableCaption")}</caption>
@@ -74,6 +105,7 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
               <th scope="col">{t("category")}</th>
               <th scope="col">{t("email")}</th>
               <th scope="col">{t("digest")}</th>
+              {slack ? <th scope="col">{t("slack")}</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -101,6 +133,17 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
                     onChange={(e) => setCategory(c.category, { digest: e.target.checked })}
                   />
                 </td>
+                {slack ? (
+                  <td>
+                    <input
+                      type="checkbox"
+                      aria-label={t("slackFor", { category: tc(c.category) })}
+                      checked={prefs.slack.linked && c.slack}
+                      disabled={c.mandatory || !prefs.slack.linked}
+                      onChange={(e) => setCategory(c.category, { slack: e.target.checked })}
+                    />
+                  </td>
+                ) : null}
               </tr>
             ))}
           </tbody>

@@ -1,4 +1,5 @@
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
@@ -6,21 +7,28 @@ using TeamBeats.Primitives;
 
 namespace TeamBeats.Modules.Notifications;
 
-public sealed record ChannelChoice(bool Email, bool Digest);
+public sealed record ChannelChoice(bool Email, bool Digest, bool Slack = false);
 
-public sealed record CategoryPreference(string Category, bool Mandatory, bool Email, bool Digest);
+/// <summary>A category's channels. <paramref name="Slack"/> only has effect while the person's Slack account is linked.</summary>
+public sealed record CategoryPreference(string Category, bool Mandatory, bool Email, bool Digest, bool Slack);
+
+/// <summary>Slack for this person (spec 015 US8 scenario 3): available when the tenant has a Slack connection turned on.</summary>
+public sealed record SlackPreference(bool Available, bool Linked);
 
 public sealed record QuietHours(string Start, string End);
 
 /// <summary>An employee's notification preferences (spec 015 US2, US3). In-app is always on.</summary>
-public sealed record PreferencesView(IReadOnlyList<CategoryPreference> Categories, QuietHours? QuietHours, string DigestTime, string TimeZone, bool EmailPaused);
+public sealed record PreferencesView(IReadOnlyList<CategoryPreference> Categories, QuietHours? QuietHours, string DigestTime, string TimeZone, bool EmailPaused,
+    SlackPreference Slack);
 
-public sealed record PreferenceChange(string Category, bool Email, bool Digest);
+/// <summary>A category's new channels. <paramref name="Slack"/> left out keeps the current choice.</summary>
+public sealed record PreferenceChange(string Category, bool Email, bool Digest, bool? Slack = null);
 
 public sealed record UpdatePreferencesRequest(IReadOnlyList<PreferenceChange>? Categories, QuietHours? QuietHours, string? DigestTime, string? TimeZone);
 
 /// <summary>Channel preferences, daily digest and quiet hours per user. Mandatory categories ignore preferences (FR-005).</summary>
-public sealed class PreferenceService(IDbSession session, IClock clock, NotificationSettingsService settings, ITenantSettingsReader tenantSettings, IUserDirectory users)
+public sealed class PreferenceService(IDbSession session, IClock clock, NotificationSettingsService settings, ITenantSettingsReader tenantSettings, IUserDirectory users,
+    ISlackMessaging slack)
 {
     private sealed record UserSettings(TimeOnly? QuietStart, TimeOnly? QuietEnd, string? TimeZone, TimeOnly DigestTime, DateTimeOffset? LastDigestAt);
 
@@ -33,17 +41,19 @@ public sealed class PreferenceService(IDbSession session, IClock clock, Notifica
             var mandatory = effective.IsMandatory(c.Key);
             if (mandatory)
             {
-                return new CategoryPreference(c.Key, true, true, false);
+                return new CategoryPreference(c.Key, true, true, false, true);
             }
             var row = rows.GetValueOrDefault(c.Key);
-            return new CategoryPreference(c.Key, false, row?.Email ?? effective.EmailByDefault(c), row?.Digest ?? false);
+            return new CategoryPreference(c.Key, false, row?.Email ?? effective.EmailByDefault(c), row?.Digest ?? false, row?.Slack ?? false);
         }).ToList();
         var user = await ReadUserSettingsAsync(userId, ct);
         var quiet = user?.QuietStart is { } s && user.QuietEnd is { } e ? new QuietHours(s.ToString("HH:mm"), e.ToString("HH:mm")) : null;
         var email = (await users.GetAsync(userId, ct))?.Email?.Trim();
         var paused = email is not null && await session.ScalarAsync<bool>(
             "select exists (select 1 from notifications.address_state where address = @email)", new { email }, ct);
-        return new PreferencesView(categories, quiet, (user?.DigestTime ?? new TimeOnly(8, 0)).ToString("HH:mm"), await TimeZoneAsync(user, ct), paused);
+        var slackStatus = await slack.StatusAsync(userId, ct);
+        return new PreferencesView(categories, quiet, (user?.DigestTime ?? new TimeOnly(8, 0)).ToString("HH:mm"), await TimeZoneAsync(user, ct), paused,
+            new SlackPreference(slackStatus.Available, slackStatus.Available && slackStatus.Linked));
     }
 
     public async Task<PreferencesView> UpdateAsync(Guid userId, UpdatePreferencesRequest request, CancellationToken ct)
@@ -89,11 +99,12 @@ public sealed class PreferenceService(IDbSession session, IClock clock, Notifica
             }
             await session.ExecAsync(
                 """
-                insert into notifications.preference (tenant_id, user_id, category, email, digest, updated_at)
-                values (platform.current_tenant_id(), @userId, @category, @email, @digest, @now)
-                on conflict (tenant_id, user_id, category) do update set email = excluded.email, digest = excluded.digest, updated_at = excluded.updated_at
+                insert into notifications.preference (tenant_id, user_id, category, email, digest, slack, updated_at)
+                values (platform.current_tenant_id(), @userId, @category, @email, @digest, coalesce(@slack, false), @now)
+                on conflict (tenant_id, user_id, category) do update
+                  set email = excluded.email, digest = excluded.digest, slack = coalesce(@slack, notifications.preference.slack), updated_at = excluded.updated_at
                 """,
-                new { userId, category = change.Category, email = change.Email, digest = change.Email && change.Digest, now }, ct);
+                new { userId, category = change.Category, email = change.Email, digest = change.Email && change.Digest, slack = change.Slack, now }, ct);
         }
 
         await session.ExecAsync(
@@ -112,15 +123,33 @@ public sealed class PreferenceService(IDbSession session, IClock clock, Notifica
         return await GetAsync(userId, ct);
     }
 
+    /// <summary>Links the person's Slack account by their work email (spec 015 US8 scenario 3). Throws when the workspace has no such member.</summary>
+    public async Task<PreferencesView> LinkSlackAsync(Guid userId, CancellationToken ct)
+    {
+        var email = (await users.GetAsync(userId, ct))?.Email?.Trim();
+        if (string.IsNullOrEmpty(email))
+        {
+            throw AppException.Validation("email", "validation.slack.no_email");
+        }
+        await slack.LinkAsync(userId, email, ct);
+        return await GetAsync(userId, ct);
+    }
+
+    public async Task<PreferencesView> UnlinkSlackAsync(Guid userId, CancellationToken ct)
+    {
+        await slack.UnlinkAsync(userId, ct);
+        return await GetAsync(userId, ct);
+    }
+
     public async Task<ChannelChoice> ChannelChoiceAsync(Guid userId, string category, bool mandatory, CancellationToken ct)
     {
         if (mandatory)
         {
-            return new ChannelChoice(true, false);
+            return new ChannelChoice(true, false, true);
         }
         var row = await session.QuerySingleOrDefaultAsync(
-            "select email, digest from notifications.preference where user_id = @userId and category = @category",
-            new { userId, category }, r => new ChannelChoice(r.GetBoolean(0), r.GetBoolean(1)), ct);
+            "select email, digest, slack from notifications.preference where user_id = @userId and category = @category",
+            new { userId, category }, r => new ChannelChoice(r.GetBoolean(0), r.GetBoolean(1), r.GetBoolean(2)), ct);
         if (row is not null)
         {
             return row;
@@ -154,8 +183,8 @@ public sealed class PreferenceService(IDbSession session, IClock clock, Notifica
 
     private async Task<Dictionary<string, ChannelChoice>> ReadPreferencesAsync(Guid userId, CancellationToken ct) =>
         (await session.QueryAsync(
-            "select category, email, digest from notifications.preference where user_id = @userId",
-            new { userId }, r => (Category: r.GetString(0), Choice: new ChannelChoice(r.GetBoolean(1), r.GetBoolean(2))), ct))
+            "select category, email, digest, slack from notifications.preference where user_id = @userId",
+            new { userId }, r => (Category: r.GetString(0), Choice: new ChannelChoice(r.GetBoolean(1), r.GetBoolean(2), r.GetBoolean(3))), ct))
         .ToDictionary(x => x.Category, x => x.Choice);
 
     private Task<UserSettings?> ReadUserSettingsAsync(Guid userId, CancellationToken ct) =>

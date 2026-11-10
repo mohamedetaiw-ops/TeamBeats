@@ -8,7 +8,7 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Notifications;
 
 /// <summary>
-/// Runs email delivery for every tenant, each in its own scope, transaction and tenant context: due deliveries every
+/// Runs email and Slack delivery for every tenant, each in its own scope, transaction and tenant context: due deliveries every
 /// 5 seconds, digests every minute, retention once a day. Hosted by the worker, and by the development host when
 /// <c>Notifications:Delivery:InProcess</c> is true.
 /// </summary>
@@ -26,9 +26,11 @@ public sealed class NotificationDeliveryWorker(IServiceScopeFactory scopes, IClo
             var now = clock.UtcNow;
             var digest = now - lastDigest >= TimeSpan.FromMinutes(1);
             var purge = now - lastPurge >= TimeSpan.FromHours(24);
-            await ForEachTenantAsync(async (delivery, ct) =>
+            await ForEachTenantAsync(async (services, ct) =>
             {
+                var delivery = services.GetRequiredService<EmailDelivery>();
                 await delivery.DeliverDueAsync(now, 100, ct);
+                await services.GetRequiredService<SlackDelivery>().DeliverDueAsync(now, 100, ct);
                 if (digest)
                 {
                     await delivery.SendDigestsAsync(now, ct);
@@ -44,7 +46,7 @@ public sealed class NotificationDeliveryWorker(IServiceScopeFactory scopes, IClo
         }
     }
 
-    private async Task ForEachTenantAsync(Func<EmailDelivery, CancellationToken, Task> action, CancellationToken ct)
+    private async Task ForEachTenantAsync(Func<IServiceProvider, CancellationToken, Task> action, CancellationToken ct)
     {
         IReadOnlyList<TenantInfo> tenants;
         try
@@ -66,7 +68,7 @@ public sealed class NotificationDeliveryWorker(IServiceScopeFactory scopes, IClo
                 var context = scope.ServiceProvider.GetRequiredService<TenantContextAccessor>();
                 context.SetTenant(tenant.Id);
                 context.SetActor(ActorType.System, null);
-                await action(scope.ServiceProvider.GetRequiredService<EmailDelivery>(), ct);
+                await action(scope.ServiceProvider, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

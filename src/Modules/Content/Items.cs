@@ -196,7 +196,7 @@ public sealed class Items(
         || (await HoldsAsync(Permissions.ContentAuthor, site, ct) && (item is null || item.CreatedBy == user));
 
     /// <summary>Anyone who works on content in the site may open its items for editing; others get not found.</summary>
-    private async Task<(ItemRow Item, SiteRow Site)> ManagedAsync(Guid id, bool forUpdate, CancellationToken ct)
+    internal async Task<(ItemRow Item, SiteRow Site)> ManagedAsync(Guid id, bool forUpdate, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.ContentCore, ct);
         context.RequireUser();

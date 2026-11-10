@@ -35,6 +35,7 @@ public static class NotificationsModule
         services.AddScoped<NotificationCentre>();
         services.AddScoped<INotificationSender, NotificationSender>();
         services.AddScoped<EmailDelivery>();
+        services.AddScoped<SlackDelivery>();
         services.AddScoped<CapturedMailbox>();
         if (EmailOptions.IsCapture(configuration))
         {
@@ -86,6 +87,20 @@ public static class NotificationsModule
 
         me.MapGet("/notification-preferences", async (ITenantContext context, PreferenceService preferences, CancellationToken ct) =>
             Results.Ok(await preferences.GetAsync(context.RequireUser(), ct)));
+
+        me.MapPost("/notification-preferences/slack:link", async (ITenantContext context, PreferenceService preferences, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await preferences.LinkSlackAsync(context.RequireUser(), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        me.MapDelete("/notification-preferences/slack", async (ITenantContext context, PreferenceService preferences, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await preferences.UnlinkSlackAsync(context.RequireUser(), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         me.MapPut("/notification-preferences", async (UpdatePreferencesRequest request, ITenantContext context, PreferenceService preferences,
             IDbSession session, CancellationToken ct) =>

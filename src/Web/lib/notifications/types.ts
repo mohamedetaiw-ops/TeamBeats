@@ -17,7 +17,7 @@ export type NotificationPage = { items: NotificationItem[]; nextCursor: string |
 
 export type NotificationFilter = "all" | "unread" | "mandatory";
 
-export type CategoryPreference = { category: string; mandatory: boolean; email: boolean; digest: boolean };
+export type CategoryPreference = { category: string; mandatory: boolean; email: boolean; digest: boolean; slack: boolean };
 
 export type Preferences = {
   categories: CategoryPreference[];
@@ -25,6 +25,8 @@ export type Preferences = {
   digestTime: string;
   timeZone: string;
   emailPaused: boolean;
+  /** Slack direct messages (spec 015 US8): available when the organization connected Slack; linked once the person linked their account. */
+  slack: { available: boolean; linked: boolean };
 };
 
 export type RelaySettings = { host: string; port: number; username: string | null; secretReference: string | null; startTls: boolean };

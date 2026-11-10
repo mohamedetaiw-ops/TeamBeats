@@ -886,7 +886,15 @@
       "timeZone": "المنطقة الزمنية",
       "timeZoneHint": "مثلًا Asia/Dubai.",
       "saving": "جارٍ الحفظ",
-      "save": "حفظ التفضيلات"
+      "save": "حفظ التفضيلات",
+      "slack": "Slack",
+      "slackFor": "Slack لفئة {category}",
+      "slackLink": "ربط حسابي في Slack",
+      "slackUnlink": "إلغاء ربط Slack",
+      "slackIsLinked": "حسابك في Slack مرتبط. اختر الفئات التي تريد استلامها كرسائل مباشرة في Slack.",
+      "slackNotLinked": "تستخدم مؤسستك Slack. اربط حسابك ببريد العمل لتصلك الإشعارات كرسائل مباشرة.",
+      "slackLinked": "تم ربط حسابك في Slack.",
+      "slackUnlinked": "تم إلغاء ربط حسابك في Slack."
     },
     "settings": {
       "title": "الإشعارات",
@@ -2001,6 +2009,17 @@
       },
       "show": "عرض {kind} في {site}",
       "none": "لا شيء لعرضه."
+    },
+    "slack": {
+      "title": "المشاركة في Slack",
+      "intro": "انشر عنوان هذا العنصر ورابطه في قناة على Slack. يسجّل القراء الدخول لفتحه.",
+      "channel": "القناة",
+      "notMember": "#{name} (ادعُ تطبيق TeamBeats أولًا)",
+      "note": "ملاحظة (اختيارية)",
+      "share": "مشاركة",
+      "working": "جارٍ المشاركة…",
+      "shared": "تمت المشاركة في Slack.",
+      "failed": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
     }
   },
   "documents": {
@@ -3963,7 +3982,8 @@
       "webhook": "خطاف ويب",
       "onprem_ad": "Active Directory المحلي",
       "servicenow": "ServiceNow",
-      "jira_service_management": "Jira Service Management"
+      "jira_service_management": "Jira Service Management",
+      "slack": "Slack"
     },
     "status": {
       "healthy": "سليم",
@@ -3985,7 +4005,8 @@
       "customRest": "عرّف إجراءاتك الخاصة لأي واجهة HTTPS موجودة في قائمة السماح.",
       "actions": "الإجراءات: {names}",
       "webhook": "أرسل أحداثًا موقعة إلى نظام آخر واستقبل منه تسليمات موقعة.",
-      "onprem_ad": "اقرأ المستخدمين والمجموعات من Active Directory في شبكتك، عبر وكيل مزامنة تثبّته هناك."
+      "onprem_ad": "اقرأ المستخدمين والمجموعات من Active Directory في شبكتك، عبر وكيل مزامنة تثبّته هناك.",
+      "slack": "إرسال الإشعارات كرسائل مباشرة في Slack للأشخاص الذين يربطون حساباتهم، ومشاركة روابط المحتوى في قناة."
     },
     "add": {
       "title": "إضافة اتصال REST مخصص",
@@ -4001,6 +4022,15 @@
         "addTitle": "إضافة اتصال Jira Service Management",
         "addIntro": "أدخل عنوان موقعك، مثل https://your-site.atlassian.net، وطريقة تسجيل دخول TeamBeats، ومكتب الخدمة ونوع الطلب اللذين تذهب إليهما الطلبات الجديدة. للموقع السحابي، سجّل الدخول بالبريد الإلكتروني للحساب ورمز API."
       }
+    },
+    "slack": {
+      "addTitle": "إضافة اتصال Slack",
+      "addIntro": "أنشئ تطبيق Slack بصلاحيات البوت chat:write وim:write وusers:read وusers:read.email وchannels:read، وثبّته في مساحة العمل، واحفظ رمز البوت في مدير الأسرار. أضف slack.com إلى قائمة السماح أولًا. بعد ذلك يمكن للأشخاص ربط حساباتهم في Slack من تفضيلات الإشعارات، ويمكن لفريق الاتصال مشاركة المحتوى في قناة.",
+      "formLabel": "إعدادات Slack",
+      "baseUrl": "عنوان Web API",
+      "baseUrlHint": "عادةً https://slack.com/api. يجب أن يكون المضيف في قائمة السماح.",
+      "botToken": "مرجع رمز البوت",
+      "botTokenHint": "مرجع رمز البوت في مدير الأسرار، مثل secret://tenants/your-tenant-id/slack-bot. لا تُدخل الرمز نفسه أبدًا."
     },
     "settings": {
       "name": "اسم الاتصال",

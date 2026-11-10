@@ -9,6 +9,7 @@ import { FormField } from "@/components/ui/FormField";
 import { PACK_KINDS, TICKETING_KINDS, isTicketing, known, type AllowlistEntry, type Pack, type PackConnection, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
+import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
 import { Messages, StatusBadge } from "./parts";
 import { send } from "./request";
@@ -109,8 +110,9 @@ export function ConnectionList({
   const webhook = packs.find((p) => p.kind === "webhook");
   const onprem = packs.find((p) => p.kind === "onprem_ad");
   const ticketing = packs.filter((p) => p.inPackage && isTicketing(p.kind));
+  const slack = packs.find((p) => p.kind === "slack");
 
-  async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody) {
+  async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody | SlackBody) {
     setBusy(kind);
     setMessages({ kind, list: [] });
     const result = await send<PackConnection>("POST", "/api/v1/integrations/pack-connections", { kind, ...body }, RETURN_TO, t("failed"));
@@ -162,6 +164,8 @@ export function ConnectionList({
                 <p>{t("catalogue.webhook")}</p>
               ) : p.kind === "onprem_ad" ? (
                 <p>{t("catalogue.onprem_ad")}</p>
+              ) : p.kind === "slack" ? (
+                <p>{t("catalogue.slack")}</p>
               ) : (
                 <p>{t("catalogue.actions", { names: p.actions.map((a) => a.name).join(", ") })}</p>
               )}
@@ -196,6 +200,15 @@ export function ConnectionList({
           </section>
         );
       })}
+
+      {slack?.inPackage ? (
+        <section className="connections-section" aria-labelledby="add-slack-heading">
+          <h2 id="add-slack-heading">{t("slack.addTitle")}</h2>
+          <p>{t("slack.addIntro")}</p>
+          <SlackSettingsForm submitLabel={t("add.submit")} busy={busy === "slack"} onSubmit={(body) => void create("slack", body)} />
+          {messages.kind === "slack" ? <Messages messages={messages.list} /> : null}
+        </section>
+      ) : null}
 
       {webhook?.inPackage ? (
         <section className="connections-section" aria-labelledby="add-webhook-heading">
