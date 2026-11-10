@@ -16,6 +16,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /web/.next/standalone ./
 COPY --from=build /web/.next/static ./.next/static
+# Standalone output leaves out public/, so the design system illustrations are copied next to the server.
+COPY --from=build /web/public ./public
 USER node
 EXPOSE 3000
 CMD ["node", "server.js"]
