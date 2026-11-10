@@ -5,7 +5,8 @@ import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
 
 /**
- * Spec 036 DLS-031 to DLS-038: the actions, selection, status and structure components of the extended catalogue.
+ * Spec 036 DLS-031 to DLS-038: the actions, selection, status, structure, overlay, menu, input and date components
+ * of the extended catalogue.
  * Each one is driven with the keyboard, in English and in Arabic, and checked for the name, role and state that
  * assistive technology reads. The gallery exists only with the development fixtures.
  */
@@ -220,6 +221,396 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.keyboard.press("Enter");
       await expect(banner).toHaveCount(0);
       await expect(structure.getByRole("status")).toHaveText(t("structure.dismissed"));
+    });
+
+    test("the dialog, drawer, popover and tooltip move focus in, close on Escape and return focus", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const overlays = page.locator("section:has(> h2#cg-overlays)");
+
+      // Dialog: modal, named by its title and described by its text; Escape closes and focus goes back to the button.
+      const invite = overlays.getByRole("button", { name: t("overlays.openDialog") });
+      await invite.focus();
+      await page.keyboard.press("Enter");
+      const dialog = page.getByRole("dialog", { name: t("overlays.dialogTitle") });
+      await expect(dialog).toBeVisible();
+      await expect(dialog).toHaveAccessibleDescription(t("overlays.dialogText"));
+      expect(await dialog.evaluate((el) => el.matches(":modal") && el.contains(document.activeElement))).toBe(true);
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+      await expect(invite).toBeFocused();
+
+      // A click on the backdrop closes it; the main action closes it and shows a notification card.
+      await invite.click();
+      await expect(dialog).toBeVisible();
+      await page.mouse.click(4, 4);
+      await expect(dialog).toBeHidden();
+      await invite.click();
+      await dialog.getByRole("button", { name: t("overlays.send") }).click();
+      await expect(dialog).toBeHidden();
+      const card = page.locator(".ui-message[data-card]");
+      await expect(card).toContainText(t("overlays.invited"));
+      await expect(card).toContainText(t("overlays.invitedText"));
+      await card.getByRole("button", { name: msg(locale, "ui.messages.dismiss") }).click();
+      await expect(card).toHaveCount(0);
+
+      // Drawer: the same modal behavior, attached to the end edge in the reading direction.
+      const filters = overlays.getByRole("button", { name: t("overlays.openDrawer") });
+      await filters.click();
+      const drawer = page.getByRole("dialog", { name: t("overlays.drawerTitle") });
+      await expect(drawer).toBeVisible();
+      await expect
+        .poll(async () => {
+          const box = (await drawer.boundingBox())!;
+          const width = page.viewportSize()!.width;
+          return locale === "ar" ? Math.round(box.x) : Math.round(width - box.x - box.width);
+        })
+        .toBeLessThanOrEqual(1);
+      await page.keyboard.press("Escape");
+      await expect(drawer).toBeHidden();
+      await expect(filters).toBeFocused();
+
+      // Popover: the button says it is expanded; Tab goes into the panel; Escape closes and returns focus.
+      const display = overlays.getByRole("button", { name: t("overlays.popover"), exact: true });
+      await expect(display).toHaveAttribute("aria-expanded", "false");
+      await display.focus();
+      await page.keyboard.press("Enter");
+      await expect(display).toHaveAttribute("aria-expanded", "true");
+      const panel = page.getByRole("dialog", { name: t("overlays.popoverTitle") });
+      await expect(panel).toBeVisible();
+      await page.keyboard.press("Tab");
+      await expect(panel.getByRole("switch", { name: t("overlays.compact") })).toBeFocused();
+      await page.keyboard.press("Escape");
+      await expect(panel).toBeHidden();
+      await expect(display).toBeFocused();
+      await expect(display).toHaveAttribute("aria-expanded", "false");
+      // A second press of the button closes it, and so does a click outside.
+      await display.click();
+      await expect(panel).toBeVisible();
+      await display.click();
+      await expect(panel).toBeHidden();
+      await display.click();
+      await overlays.getByRole("heading", { level: 2 }).click();
+      await expect(panel).toBeHidden();
+
+      // Tooltip: shows on keyboard focus, describes the control, and Escape hides it without moving focus.
+      const exportButton = overlays.getByRole("button", { name: t("overlays.export"), exact: true });
+      await expect(exportButton).toHaveAccessibleDescription(t("overlays.exportTip"));
+      const tip = overlays.getByRole("tooltip", { includeHidden: true });
+      await expect(tip).toBeHidden();
+      await display.focus();
+      await page.keyboard.press("Tab");
+      await expect(exportButton).toBeFocused();
+      await expect(tip).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(tip).toBeHidden();
+      await expect(exportButton).toBeFocused();
+    });
+
+    test("the command palette opens from the shortcut, filters and runs a command", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      await page.keyboard.press("Control+K");
+      const palette = page.getByRole("dialog", { name: t("overlays.paletteLabel") });
+      await expect(palette).toBeVisible();
+      const box = palette.getByRole("combobox");
+      await expect(box).toBeFocused();
+
+      // Focus stays in the box; the arrow keys move the highlighted option.
+      const options = palette.getByRole("option");
+      await expect(options).toHaveCount(7);
+      await expect(options.nth(0)).toHaveAttribute("aria-selected", "true");
+      await page.keyboard.press("ArrowDown");
+      await expect(options.nth(1)).toHaveAttribute("aria-selected", "true");
+      await expect(box).toHaveAttribute("aria-activedescendant", (await options.nth(1).getAttribute("id"))!);
+      await page.keyboard.press("ArrowUp");
+      await page.keyboard.press("ArrowUp");
+      await expect(options.nth(6)).toHaveAttribute("aria-selected", "true");
+      await expect(box).toBeFocused();
+
+      // Typing filters; nothing found is said in words; Enter runs the highlighted command and closes.
+      await box.fill("zzzz");
+      await expect(options).toHaveCount(0);
+      await expect(palette.getByRole("status")).toHaveText(t("overlays.paletteEmpty"));
+      await box.fill(t("overlays.commandLeave"));
+      await expect(options).toHaveCount(1);
+      await page.keyboard.press("Enter");
+      await expect(palette).toBeHidden();
+      await expect(page.getByTestId("cg-chosen")).toHaveText(t("menus.chosen", { name: t("overlays.commandLeave") }));
+
+      // Escape closes it and the next opening starts empty.
+      await page.keyboard.press("Control+K");
+      await expect(box).toHaveValue("");
+      await page.keyboard.press("Escape");
+      await expect(palette).toBeHidden();
+    });
+
+    test("menus, submenus, the context menu and the collapsed breadcrumb work from the keyboard", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const menus = page.locator("section:has(> h2#cg-menus)");
+      const chosen = page.getByTestId("cg-chosen");
+
+      // Opening moves focus to the first item; arrows wrap; Home and End jump.
+      const trigger = menus.getByRole("button", { name: t("menus.actions"), exact: true });
+      await expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+      await trigger.focus();
+      await page.keyboard.press("Enter");
+      const menu = page.getByRole("menu", { name: t("menus.actions"), exact: true });
+      await expect(menu).toBeVisible();
+      await expect(trigger).toHaveAttribute("aria-expanded", "true");
+      const item = (key: string) => menu.getByRole("menuitem", { name: t(`menus.${key}`), exact: true });
+      await expect(item("open")).toBeFocused();
+      await page.keyboard.press("ArrowUp");
+      await expect(item("delete")).toBeFocused();
+      await page.keyboard.press("Home");
+      await expect(item("open")).toBeFocused();
+      await page.keyboard.press("End");
+      await expect(item("delete")).toBeFocused();
+      await page.keyboard.press("ArrowDown");
+      await expect(item("open")).toBeFocused();
+      if (locale === "en") {
+        // A letter jumps to the next item that starts with it.
+        await page.keyboard.press("d");
+        await expect(item("duplicate")).toBeFocused();
+        await page.keyboard.press("d");
+        await expect(item("delete")).toBeFocused();
+      }
+
+      // The forward arrow opens the submenu and the back arrow leaves it, following the reading direction.
+      await item("share").focus();
+      await page.keyboard.press(forward);
+      const share = page.getByRole("menu", { name: t("menus.share"), exact: true });
+      await expect(share).toBeVisible();
+      await expect(share.getByRole("menuitem", { name: t("menus.shareLink") })).toBeFocused();
+      await page.keyboard.press(back);
+      await expect(share).toBeHidden();
+      await expect(item("share")).toBeFocused();
+
+      // A disabled item can be focused but does nothing.
+      await item("moveLocked").focus();
+      await expect(item("moveLocked")).toHaveAttribute("aria-disabled", "true");
+      await page.keyboard.press("Enter");
+      await expect(menu).toBeVisible();
+
+      // Enter runs an item, closes the menu and returns focus to the button.
+      await item("rename").focus();
+      await page.keyboard.press("Enter");
+      await expect(menu).toBeHidden();
+      await expect(trigger).toBeFocused();
+      await expect(trigger).toHaveAttribute("aria-expanded", "false");
+      await expect(chosen).toHaveText(t("menus.chosen", { name: t("menus.rename") }));
+
+      // A submenu item runs too; a checkbox item keeps its state; Escape closes without choosing.
+      await page.keyboard.press("ArrowDown");
+      await item("share").focus();
+      await page.keyboard.press("Enter");
+      await share.getByRole("menuitem", { name: t("menus.shareEmail") }).click();
+      await expect(menu).toBeHidden();
+      await expect(chosen).toHaveText(t("menus.chosen", { name: t("menus.shareEmail") }));
+      await trigger.click();
+      const comments = menu.getByRole("menuitemcheckbox", { name: t("menus.showComments") });
+      await expect(comments).toHaveAttribute("aria-checked", "false");
+      await comments.click();
+      await trigger.click();
+      await expect(comments).toHaveAttribute("aria-checked", "true");
+      await page.keyboard.press("Escape");
+      await expect(menu).toBeHidden();
+      await expect(trigger).toBeFocused();
+
+      // Context menu: the secondary button opens the same list on the thing itself.
+      const file = menus.getByRole("button", { name: t("menus.file") });
+      await file.click({ button: "right" });
+      const context = page.getByRole("menu", { name: t("menus.contextLabel") });
+      await expect(context).toBeVisible();
+      await expect(context.getByRole("menuitem", { name: t("menus.open"), exact: true })).toBeFocused();
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await expect(context).toBeHidden();
+      await expect(chosen).toHaveText(t("menus.chosen", { name: t("menus.duplicate") }));
+
+      // Breadcrumb: first level, a menu with the hidden levels, and the last two; the page itself is marked.
+      const trail = menus.getByRole("navigation", { name: t("menus.trail") });
+      await expect(trail.getByRole("link")).toHaveCount(3);
+      await expect(trail.getByRole("link", { name: t("menus.crumbPage") })).toHaveAttribute("aria-current", "page");
+      await trail.getByRole("button", { name: msg(locale, "ui.controls.moreLevels") }).click();
+      const levels = page.getByRole("menu", { name: msg(locale, "ui.controls.moreLevels") });
+      await expect(levels.getByRole("menuitem")).toHaveCount(3);
+      await expect(levels.getByRole("menuitem", { name: t("menus.crumbFinance") })).toHaveAttribute("href", "#crumbFinance");
+      await page.keyboard.press("Escape");
+      await expect(levels).toBeHidden();
+    });
+    test("search, number, code, colour and combobox fields work from the keyboard", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const inputs = page.locator("section:has(> h2#cg-inputs)");
+
+      // Leading and trailing parts sit in one box; the label still names the text box.
+      await expect(inputs.getByRole("textbox", { name: t("inputs.amount") })).toHaveValue("1250.00");
+
+      // Search: the clear button appears with text, Escape clears, Enter searches.
+      const search = inputs.getByRole("searchbox", { name: t("inputs.search") });
+      await search.fill("Layla");
+      const clear = inputs.getByRole("button", { name: msg(locale, "ui.controls.clear") });
+      await expect(clear).toBeVisible();
+      await page.keyboard.press("Enter");
+      await expect(page.getByTestId("cg-searched")).toHaveText(t("inputs.searched", { term: "Layla" }));
+      await page.keyboard.press("Escape");
+      await expect(search).toHaveValue("");
+      await expect(clear).toHaveCount(0);
+
+      // Number: a spin button; arrows step, End goes to the limit, typing past the limit is brought back on leaving.
+      const days = inputs.getByRole("spinbutton", { name: t("inputs.days") });
+      await expect(days).toHaveAttribute("aria-valuenow", "5");
+      await days.focus();
+      await page.keyboard.press("ArrowUp");
+      await expect(days).toHaveValue("6");
+      await page.keyboard.press("End");
+      await expect(days).toHaveValue("22");
+      await expect(inputs.getByRole("button", { name: msg(locale, "ui.controls.increase") })).toBeDisabled();
+      await days.fill("30");
+      await expect(days).toHaveAttribute("aria-invalid", "true");
+      await expect(inputs.getByText(t("inputs.daysError"))).toBeVisible();
+      await page.keyboard.press("Tab");
+      await expect(days).toHaveValue("22");
+
+      // One-time code: typing moves on, Backspace moves back, a paste fills every box.
+      const code = inputs.getByRole("group", { name: t("inputs.code") });
+      const digit = (n: number) => code.getByRole("textbox", { name: msg(locale, "ui.controls.digit", { index: String(n), count: "6" }) });
+      await digit(1).focus();
+      await page.keyboard.type("12");
+      await expect(digit(3)).toBeFocused();
+      await page.keyboard.press("Backspace");
+      await expect(digit(2)).toBeFocused();
+      await expect(digit(2)).toHaveValue("");
+      await digit(1).evaluate((el) => {
+        const data = new DataTransfer();
+        data.setData("text", "48 31 07");
+        el.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+      });
+      await expect(page.getByTestId("cg-code")).toHaveText(t("inputs.codeDone", { code: "483107" }));
+
+      // Colour: presets are named toggle buttons that write the code.
+      const green = inputs.getByRole("button", { name: t("inputs.presetGreen") });
+      await green.click();
+      await expect(green).toHaveAttribute("aria-pressed", "true");
+      await expect(inputs.getByRole("textbox", { name: t("inputs.color"), exact: true })).toHaveValue("#0b6e4f");
+
+      // Combobox: typing filters, the arrows move the highlight, Enter chooses, Escape closes the list.
+      const department = inputs.getByRole("combobox", { name: t("inputs.manager") });
+      await expect(department).toHaveValue(t("inputs.roleFinance"));
+      await department.fill("");
+      await expect(department).toHaveAttribute("aria-expanded", "true");
+      const list = page.getByRole("listbox", { name: t("inputs.manager") });
+      await expect(list.getByRole("option")).toHaveCount(6);
+      await department.fill(t("inputs.roleLegal").slice(0, 3));
+      await expect(list.getByRole("option")).toHaveCount(1);
+      await page.keyboard.press("Enter");
+      await expect(department).toHaveValue(t("inputs.roleLegal"));
+      await expect(department).toHaveAttribute("aria-expanded", "false");
+      await department.fill("zzzz");
+      await expect(list.getByText(t("inputs.managerEmpty"))).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(department).toHaveAttribute("aria-expanded", "false");
+
+      // Upload: the drop area is a labelled file input; each file names its remove button; errors are words.
+      await expect(inputs.getByText(t("inputs.uploadTooLarge"))).toBeVisible();
+      await inputs.getByLabel(t("inputs.upload")).setInputFiles({ name: "Leave form.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4") });
+      const files = inputs.getByRole("list", { name: msg(locale, "ui.controls.chosenFiles") });
+      await expect(files.getByRole("listitem")).toHaveCount(3);
+      await inputs.getByRole("button", { name: msg(locale, "ui.controls.remove", { name: t("inputs.fileBudget") }) }).click();
+      await expect(files.getByRole("listitem")).toHaveCount(2);
+    });
+
+    test("calendars, date fields, slots, the carousel and the tree work from the keyboard", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const dates = page.locator("section:has(> h2#cg-dates)");
+
+      // Calendar: a named grid; the arrows follow the reading direction and skip nothing; today is marked.
+      const grid = dates.getByRole("grid", { name: t("dates.gregorian"), exact: true });
+      const chosen = grid.locator('[data-date="2026-11-12"]');
+      await expect(chosen).toHaveAttribute("tabindex", "0");
+      await expect(grid.locator('[data-date="2026-11-10"]')).toHaveAttribute("aria-current", "date");
+      await chosen.focus();
+      await page.keyboard.press(forward);
+      await expect(grid.locator('[data-date="2026-11-13"]')).toBeFocused();
+      await page.keyboard.press("ArrowDown");
+      await expect(grid.locator('[data-date="2026-11-20"]')).toBeFocused();
+      // Weekend days can be reached but not chosen.
+      await expect(grid.locator('[data-date="2026-11-20"]')).toHaveAttribute("aria-disabled", "true");
+      await page.keyboard.press("Enter");
+      await expect(grid.locator('[data-date="2026-11-12"]').locator("xpath=..")).toHaveAttribute("aria-selected", "true");
+      await page.keyboard.press(back);
+      await page.keyboard.press("Enter");
+      await expect(grid.locator('[data-date="2026-11-19"]').locator("xpath=..")).toHaveAttribute("aria-selected", "true");
+      // Page Down goes to the next month and keeps the day.
+      await page.keyboard.press("PageDown");
+      await expect(grid.locator('[data-date="2026-12-19"]')).toBeFocused();
+
+      // The Hijri calendar shows the same days in its own months, through Intl.
+      const hijri = dates.getByRole("grid", { name: t("dates.hijri") });
+      const hijriMonth = new Intl.DateTimeFormat(locale, { calendar: "islamic-umalqura", month: "long", year: "numeric", timeZone: "UTC" }).format(Date.parse("2026-11-15T00:00:00Z"));
+      // The month title describes the grid.
+      await expect(hijri).toHaveAccessibleDescription(hijriMonth);
+      await expect(hijri.locator('[data-range="middle"]')).toHaveCount(3);
+
+      // Date field: opens the calendar on the right day, and choosing returns focus to the field.
+      const field = dates.getByRole("button", { name: t("dates.date") });
+      await field.click();
+      await expect(field).toHaveAttribute("aria-expanded", "true");
+      const picker = page.getByRole("dialog", { name: t("dates.date") });
+      await expect(picker.locator('.ui-calendar-day[tabindex="0"]')).toBeFocused();
+      await picker.locator('[data-date="2026-11-24"]').click();
+      await expect(picker).toBeHidden();
+      await expect(field).toBeFocused();
+      const long = new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(Date.parse("2026-11-24T00:00:00Z"));
+      await expect(field).toContainText(long);
+
+      // Range field: two choices make the range and close it.
+      const rangeField = dates.getByRole("button", { name: t("dates.range") });
+      await rangeField.click();
+      const rangePicker = page.getByRole("dialog", { name: t("dates.range") });
+      await rangePicker.locator('[data-date="2026-11-23"]').click();
+      await expect(rangePicker).toBeVisible();
+      await rangePicker.locator('[data-date="2026-11-25"]').click();
+      await expect(rangePicker).toBeHidden();
+      await expect(page.locator('input[name="cg-range_start"]')).toHaveValue("2026-11-23");
+      await expect(page.locator('input[name="cg-range_end"]')).toHaveValue("2026-11-25");
+
+      // Slots: a radio group; taken slots are disabled and say why.
+      const slots = dates.getByRole("group", { name: t("dates.slots") });
+      const ten30 = slots.getByRole("radio", { checked: true });
+      await ten30.focus();
+      await page.keyboard.press("ArrowDown");
+      await expect(slots.getByRole("radio", { checked: true })).not.toHaveValue("10:30");
+      await expect(slots.getByRole("radio", { disabled: true })).toHaveCount(2);
+      await expect(slots.getByRole("radio", { name: new RegExp(t("dates.booked")) })).toHaveCount(2);
+
+      // Carousel: a named list; previous starts off; next moves one card along.
+      const carousel = dates.getByRole("list", { name: t("dates.carousel") });
+      await expect(carousel.getByRole("listitem")).toHaveCount(5);
+      const previous = dates.getByRole("button", { name: msg(locale, "ui.controls.previousSlide"), exact: true });
+      await expect(previous).toBeDisabled();
+      await dates.getByRole("button", { name: msg(locale, "ui.controls.nextSlide"), exact: true }).click();
+      await expect(previous).toBeEnabled();
+
+      // Tree: one item in the tab order; arrows move and open branches in the reading direction.
+      const tree = dates.getByRole("tree", { name: t("dates.tree") });
+      const item = (key: string) => tree.getByRole("treeitem", { name: t(`dates.${key}`), exact: true });
+      const travel = tree.locator('[data-key="nodeTravel"]');
+      await expect(travel).toHaveAttribute("tabindex", "0");
+      await expect(travel).toHaveAttribute("aria-selected", "true");
+      await travel.focus();
+      await page.keyboard.press(back);
+      await expect(tree.locator('[data-key="nodeFinance"]')).toBeFocused();
+      await page.keyboard.press(back);
+      await expect(tree.locator('[data-key="nodeFinance"]')).toHaveAttribute("aria-expanded", "false");
+      await page.keyboard.press("ArrowDown");
+      await expect(tree.locator('[data-key="nodeIt"]')).toBeFocused();
+      await page.keyboard.press(forward);
+      await expect(tree.locator('[data-key="nodeIt"]')).toHaveAttribute("aria-expanded", "true");
+      await page.keyboard.press(forward);
+      await expect(tree.locator('[data-key="nodeSecurity"]')).toBeFocused();
+      await page.keyboard.press("Enter");
+      await expect(page.getByTestId("cg-node")).toHaveText(t("dates.treeChosen", { name: t("dates.nodeSecurity") }));
+      await expect(item("nodeSecurity")).toHaveAttribute("aria-selected", "true");
     });
   });
 }

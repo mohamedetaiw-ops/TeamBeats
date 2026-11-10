@@ -21,8 +21,8 @@ Depends on 033 (theme engine, brand manager), 008 (shell), 032 (templates), 007.
 ## Phase 4: Studio and the extended catalogue (DLS-030 to DLS-041)
 - [x] T014 Studio preset, Inter font, picker entry, Studio rules in `designs.css`, unit and design suite coverage in four designs
 - [x] T015 Actions, selection and status: Button sizes, icons and link form, ButtonGroup, IconButton, CloseButton, Checkbox, RadioGroup, Switch, card forms, SegmentedControl, Slider, Chip, TagGroup, StatusDot, Kbd, Divider, Spinner, Progress, Meter, AvatarGroup, Pagination, Accordion, Announcement; second gallery page `/ui-gallery/components` in the design suite; `components.spec.ts`
-- [ ] T016 Overlays and menus: Dialog, Drawer, Popover, Tooltip, Menu, ContextMenu, notification card, CommandPalette, Breadcrumb with collapsed levels (the collapsed levels open in a Menu)
-- [ ] T017 Inputs and dates: field parts, SearchField, NumberField, OtpField, Combobox, Calendar, DateField, DateRangeField, TimeField, SlotPicker, ColorField, FileUpload, Carousel, TreeView
+- [x] T016 Overlays and menus: Dialog, Drawer, Popover, Tooltip, Menu with groups, checked items and submenus, ContextMenu, notification card form of Messages, CommandPalette opened by the shell search shortcut, Breadcrumb with collapsed levels; shared placement and list keyboard helpers in `overlay.ts`; gallery sections and `components.spec.ts` coverage
+- [x] T017 Inputs and dates: field parts, SearchField, NumberField, OtpField, Combobox, Calendar, DateField, DateRangeField, TimeField, SlotPicker, ColorField, FileUpload, Carousel, TreeView
 - [ ] T018 Data blocks: DataTable, DataGrid, StatCards, calendar views, task list, notification panel, settings dialog, sign-in card
 - [ ] T019 Assistant and agent parts: thinking indicator, composer, attachments, sources, limits, question steps, agent form, run progress
 - [ ] T020 Charts: chart tokens in the schema and four designs, chart card, the chart types of DLS-040
