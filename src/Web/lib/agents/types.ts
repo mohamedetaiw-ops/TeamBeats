@@ -79,7 +79,23 @@ export type TemplateView = {
   autonomyAbovePolicy: boolean;
 };
 
-export type ToolView = { name: string; module: string; sideEffect: string; defaultRule: string; rule: string; allowed: boolean };
+/** A tenant tool (a connector action, spec 017) carries the title its administrator entered per language. */
+export type ToolView = {
+  name: string;
+  module: string;
+  sideEffect: string;
+  defaultRule: string;
+  rule: string;
+  allowed: boolean;
+  title?: Record<string, string> | null;
+};
+
+/** The title a tenant entered for its own tool, in the reader's language or the first one given. */
+export function tenantToolTitle(tools: ToolView[], name: string, locale: string): string | null {
+  const title = tools.find((x) => x.name === name)?.title;
+  if (!title) return null;
+  return title[locale] ?? Object.values(title)[0] ?? null;
+}
 
 export type FieldChange = { field: string; from: unknown; to: unknown };
 

@@ -71,7 +71,8 @@ public static class ToolApprovalRules
 /// A tool in the registry (spec 027 FR-005), declared in code by the module that owns the action. <paramref name="Parameters"/>
 /// is the JSON schema of the arguments the model may pass; <paramref name="OutputClassification"/> is the highest
 /// classification of what the tool can return. <paramref name="Description"/> tells the model what the tool does; people
-/// see the tool's title and description from the web message catalogue, keyed by the tool name.
+/// see the tool's title and description from the web message catalogue, keyed by the tool name, or, for a tenant tool,
+/// the <paramref name="Title"/> per language its administrator entered.
 /// </summary>
 public sealed record ToolDefinition(
     string Name,
@@ -84,7 +85,8 @@ public sealed record ToolDefinition(
     bool Idempotent,
     int TimeoutSeconds,
     string Description,
-    string? RequiredCapability = null);
+    string? RequiredCapability = null,
+    IReadOnlyDictionary<string, string>? Title = null);
 
 /// <summary>
 /// Who a tool call runs for: the person, through an agent, in a run. Authorization is the person's at the time of the
@@ -117,6 +119,16 @@ public interface IAgentTool
     ToolDefinition Definition { get; }
 
     Task<ToolResult> ExecuteAsync(System.Text.Json.JsonElement arguments, ToolCallContext context, CancellationToken ct);
+}
+
+/// <summary>
+/// Tenant tools (spec 027 FR-006, R2): tools a tenant registered itself, such as connector actions of spec 017, as
+/// opposed to the product tools declared in code. Asked once per scope, in the current tenant. Names must not clash with
+/// product tools; a source keeps its own names under a prefix such as <c>connector.</c>.
+/// </summary>
+public interface IAgentToolSource
+{
+    Task<IReadOnlyList<IAgentTool>> ToolsAsync(CancellationToken ct);
 }
 
 /// <summary>

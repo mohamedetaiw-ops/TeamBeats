@@ -4295,6 +4295,36 @@
         "succeeded": "Done",
         "failed": "Failed"
       }
+    },
+    "tools": {
+      "title": "Agent tools",
+      "intro": "Register an action of this connection as a tool that AI agents can use. The AI policy decides which agents may hold it, and an agent sends only the action's declared inputs.",
+      "empty": "No action of this connection is a tool yet.",
+      "toolName": "Tool",
+      "action": "Action",
+      "sideEffects": {
+        "read": "Reads only",
+        "write_external": "Changes another system"
+      },
+      "rules": {
+        "execute": "Runs without asking",
+        "confirm": "Waits for the employee to confirm"
+      },
+      "remove": "Remove tool",
+      "removeQuestion": "Remove {name}? Agents that hold it can no longer use it.",
+      "removeConfirm": "Remove the tool",
+      "removed": "The tool is removed.",
+      "registerTitle": "Register a tool",
+      "noActions": "No action of this connection declares its inputs, so none can be a tool.",
+      "name": "Tool name",
+      "nameHint": "Lowercase letters, digits and underscores, starting with a letter. Agents see it with connector. in front, for example connector.permit_status.",
+      "description": "What the tool does",
+      "descriptionHint": "Agents read this to decide when to use the tool. Write it in English, 10 to 500 characters.",
+      "titleEn": "Title in English",
+      "titleAr": "Title in Arabic",
+      "policyNote": "Tools that change another system need agents at a higher autonomy level and always wait for the employee's confirmation.",
+      "register": "Register the tool",
+      "registered": "The tool is registered. The AI policy administrator can now allow it for agents."
     }
   }
 }

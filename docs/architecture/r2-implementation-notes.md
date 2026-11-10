@@ -143,3 +143,17 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 
 ### Differences and follow-ups
 - There is no directory sync settings page yet (spec 003 US6 scope, schedule and threshold are set through the API), so the AD connection page offers only the switch to use it for directory sync.
+
+## Connector actions as agent tools (spec 017, slice 11: T008 and T009, agent tool path; spec 027 FR-006)
+
+### Built
+- Actions declare their inputs (`ConnectorInput`: name, type, required). Custom REST actions take theirs from the definition; a pack with fixed actions declares them in code. An action with no declared inputs, such as a webhook delivery, can be neither an agent tool nor a route step.
+- `integrations.connector_tool` (forced RLS): the integration administrator registers an action of a connection as the tool `connector.<name>`, with a description for the model and a title per language for people (`/api/v1/integrations/pack-connections/{id}/tools`, `integration.manage`; registering needs step-up, like defining an action). Each change is audited as `integration.action_changed` with the tool name, since spec 017 section 13 names no separate tool event.
+- `IAgentToolSource` in `Agents.Contracts`: the tool registry now holds the product tools declared in code and the tenant's own tools, loaded once per scope when the agent policy is read. A product tool always wins a name clash. The parameters of a connector tool are exactly the action's declared inputs (`additionalProperties: false`), read from the action each time, so a changed action never leaves a stale schema.
+- Reads are `read` tools that run without asking; writes and external effects are `write_external` tools whose default rule is "confirm", which need `ai.agents.write_tools` and L3. The tool gateway of spec 027 runs every check first; the tool then sends only the declared inputs through the connector runtime with a key per run and parameters for writes, and the run is correlated as `agent-run:{runId}` in run history. A business error goes back to the model as the system's refusal with its code; an unknown outcome, a disabled or missing connection and a failure go back as short keys.
+- `/admin/connections/{id}` has an "Agent tools" section that lists, registers and removes tools; the agent editor and the policy editor show a tenant tool by its title. Acceptance: the custom REST test registers the new action as a tool.
+- Tests: `tests/Integration/ConnectorToolTests.cs` (registration rules and audit, cross-tenant denial, only validated declared parameters reach the system, the run in run history, a disabled connection turns the tool off, a write tool needs L3 and the policy can block it).
+
+### Differences and follow-ups
+- Connector write tools wait for L3 (spec 027 R2), which is not built yet, so they can be registered and governed by the policy but no agent can hold one today. The incident for an unknown write outcome (spec 027 edge cases) waits for the Agent Security Center incidents; until then the unknown run is in the connection's dead letters.
+- Workflow and engine steps that call connector actions (T009 for 016 and 024) are the next slice.

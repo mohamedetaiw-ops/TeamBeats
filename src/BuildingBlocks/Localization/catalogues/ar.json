@@ -1169,5 +1169,12 @@
   "integrations.agent.signature_invalid": "تعذّر التحقق من طلب الوكيل.",
   "conflict.integrations.agent_job_open": "توجد مزامنة للدليل قيد الانتظار أو التنفيذ لهذا الاتصال.",
   "conflict.integrations.agent_key_in_use": "هذا المفتاح مسجّل بالفعل.",
-  "conflict.integrations.agent_job_not_held": "هذا الوكيل لا يحمل هذه المهمة."
+  "conflict.integrations.agent_job_not_held": "هذا الوكيل لا يحمل هذه المهمة.",
+  "validation.connector_tool.action": "اختر إجراءً من إجراءات هذا الاتصال.",
+  "validation.connector_tool.no_inputs": "هذا الإجراء لا يعرّف مدخلاته، لذلك لا يمكن أن يكون أداة.",
+  "validation.connector_tool.name": "استخدم من 3 إلى 41 حرفًا لاتينيًا صغيرًا أو رقمًا أو شرطة سفلية، تبدأ بحرف.",
+  "validation.connector_tool.description": "صف ما تفعله الأداة في 10 إلى 500 حرف.",
+  "validation.connector_tool.title": "أدخل عنوانًا من 100 حرف على الأكثر بلغة واحدة على الأقل.",
+  "conflict.integrations.tool_limit": "يمكن لمؤسستك تسجيل 200 أداة اتصال على الأكثر.",
+  "conflict.integrations.tool_exists": "توجد بالفعل أداة بهذا الاسم أو لهذا الإجراء."
 }

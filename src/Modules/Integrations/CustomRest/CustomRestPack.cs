@@ -70,7 +70,8 @@ public sealed class CustomRestPack(
         (await LoadActionsAsync(connection.Id, ct)).Select(a => ToRuntime(a.Name, a.Definition)).ToList();
 
     public static ConnectorActionDefinition ToRuntime(string name, RestActionDefinition d) =>
-        new(name, d.SideEffect, d.IdempotencyHeader is not null || d.SideEffect == ConnectorSideEffects.Read, (d.BusinessErrors ?? []).Select(b => b.Code).ToList());
+        new(name, d.SideEffect, d.IdempotencyHeader is not null || d.SideEffect == ConnectorSideEffects.Read, (d.BusinessErrors ?? []).Select(b => b.Code).ToList(),
+            (d.Inputs ?? []).Select(i => new ConnectorInput(i.Name, i.Type, i.Required)).ToList());
 
     public async Task<List<(string Name, RestActionDefinition Definition)>> LoadActionsAsync(Guid connectionId, CancellationToken ct) =>
         await session.QueryAsync("select name, definition::text from integrations.connector_action where connection_id = @connectionId order by name",

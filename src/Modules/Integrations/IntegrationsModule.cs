@@ -65,6 +65,8 @@ public static class IntegrationsModule
         services.AddScoped<IAgentDirectory>(sp => sp.GetRequiredService<SyncAgents.SyncAgentService>());
         Webhooks.OutboundEvents.AddOutboundWebhookEvents(services);
         services.AddScoped<PackConnections>();
+        services.AddScoped<ConnectorTools>();
+        services.AddScoped<Agents.Contracts.IAgentToolSource, ConnectorToolSource>();
         services.AddHttpClient(SafeHttp.ClientName, c => c.Timeout = TimeSpan.FromSeconds(30))
             .ConfigurePrimaryHttpMessageHandler(sp => SafeHttp.CreateHandler(
                 sp.GetRequiredService<IConfiguration>().GetValue<bool>(SafeHttp.AllowPrivateSetting)));
@@ -205,6 +207,7 @@ public static class IntegrationsModule
         WeatherEndpoints.Map(app);
         RuntimeEndpoints.Map(app);
         PackEndpoints.Map(app);
+        PackEndpoints.MapTools(app);
         Webhooks.InboundWebhooks.Map(app);
         SyncAgents.AgentEndpoints.Map(app);
         return app;

@@ -153,7 +153,7 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         var policy = (await policies.CurrentAsync(ct)).Policy;
         return tools.All.Select(t => t.Definition).OrderBy(d => d.Name, StringComparer.Ordinal)
             .Select(d => new ToolView(d.Name, d.Module, d.Version, d.SideEffect, d.ApprovalRule, policy.RuleFor(d), d.OutputClassification,
-                policy.Allows(d.Name) && policy.RuleFor(d) != ToolApprovalRules.Block, d.Parameters))
+                policy.Allows(d.Name) && policy.RuleFor(d) != ToolApprovalRules.Block, d.Parameters, d.Title))
             .ToList();
     }
 

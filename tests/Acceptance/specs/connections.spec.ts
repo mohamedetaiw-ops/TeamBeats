@@ -64,6 +64,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("status").filter({ hasText: msg(locale, "connections.builder.saved") })).toBeVisible();
       await expect(page.getByRole("button", { name: msg(locale, "connections.builder.editAction").replace("{name}", "lookup_permit") })).toBeVisible();
 
+      // The action declares its inputs, so it can be registered as an agent tool.
+      const tools = page.getByRole("form", { name: msg(locale, "connections.tools.registerTitle") });
+      await tools.getByLabel(msg(locale, "connections.tools.name"), { exact: true }).fill("permit_status");
+      await tools.getByLabel(msg(locale, "connections.tools.description"), { exact: true }).fill("Looks up the status of a parking permit by its ID.");
+      await tools.getByLabel(msg(locale, "connections.tools.titleEn"), { exact: true }).fill("Permit status");
+      await tools.getByLabel(msg(locale, "connections.tools.titleAr"), { exact: true }).fill("حالة التصريح");
+      await tools.getByRole("button", { name: msg(locale, "connections.tools.register"), exact: true }).click();
+      await expect(page.getByRole("status").filter({ hasText: msg(locale, "connections.tools.registered") })).toBeVisible();
+      await expect(page.getByRole("heading", { name: locale === "ar" ? "حالة التصريح" : "Permit status", level: 3 })).toBeVisible();
+
       // Run history shows no runs yet, and nothing to replay.
       await expect(page.getByRole("heading", { name: msg(locale, "connections.runs.title") })).toBeVisible();
       await expect(page.getByText(msg(locale, "connections.runs.empty"))).toBeVisible();

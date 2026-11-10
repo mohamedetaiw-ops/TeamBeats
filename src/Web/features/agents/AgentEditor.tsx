@@ -18,6 +18,7 @@ import {
   type Localized,
   type RunView,
   type ToolView,
+  tenantToolTitle,
 } from "@/lib/agents/types";
 
 type Result = { ok: boolean; messages: string[] } | null;
@@ -93,7 +94,7 @@ export function AgentEditor({ initial, tools, units }: { initial: AgentDetail; t
   const ownersEditable = detail.canEdit && status !== "retired";
   const audienceUnits = definition.audience?.orgUnits ?? [];
   const earlier = detail.versions.filter((v) => v.publishedAt !== null && v.number !== detail.agent.currentVersion);
-  const toolLabel = (name: string) => (ts.has(`toolNames.${name}`) ? ts(`toolNames.${name}`) : name);
+  const toolLabel = (name: string) => (ts.has(`toolNames.${name}`) ? ts(`toolNames.${name}`) : (tenantToolTitle(tools, name, locale) ?? name));
 
   async function send(key: string, url: string, method: string, body: unknown, done: string) {
     setBusy(key);

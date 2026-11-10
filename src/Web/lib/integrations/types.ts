@@ -1,6 +1,25 @@
 /** Shapes of the connector pack API (spec 017). The API decides every rule; these types only describe its answers. */
 
-export type PackAction = { name: string; sideEffect: string; idempotent: boolean; businessErrors: string[] };
+export type ConnectorInput = { name: string; type: string; required: boolean };
+
+/** An action of a pack. `inputs` is null when the action declares none; only actions with inputs can be agent tools or route steps. */
+export type PackAction = { name: string; sideEffect: string; idempotent: boolean; businessErrors: string[]; inputs?: ConnectorInput[] | null };
+
+/** A connector action registered as an agent tool (spec 017 T009, spec 027 FR-006). */
+export type ConnectorTool = {
+  id: string;
+  connectionId: string;
+  action: string;
+  name: string;
+  sideEffect: string;
+  approvalRule: string;
+  description: string;
+  title: Record<string, string>;
+  createdAt: string;
+};
+
+export const TOOL_SIDE_EFFECTS = ["read", "write_external"] as const;
+export const TOOL_RULES = ["execute", "confirm"] as const;
 
 export type Pack = { kind: string; version: number; inPackage: boolean; actions: PackAction[] };
 

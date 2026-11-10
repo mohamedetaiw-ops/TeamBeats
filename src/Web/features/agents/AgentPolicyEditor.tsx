@@ -2,10 +2,10 @@
 
 import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { problemMessages } from "@/lib/notifications/types";
-import { AUTONOMY_BUILT, CLASSIFICATIONS, type AgentPolicy, type AgentPolicyView, type ToolView } from "@/lib/agents/types";
+import { AUTONOMY_BUILT, CLASSIFICATIONS, type AgentPolicy, type AgentPolicyView, type ToolView, tenantToolTitle } from "@/lib/agents/types";
 
 type Result = { ok: boolean; messages: string[] } | null;
 
@@ -19,6 +19,7 @@ const RULES = ["execute", "draft_only", "confirm", "approval", "block"] as const
 export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView; tools: ToolView[] }) {
   const t = useTranslations("agents.policy");
   const ts = useTranslations("agents");
+  const locale = useLocale();
   const router = useRouter();
   const ids = useId();
   const [view, setView] = useState(initial);
@@ -26,7 +27,7 @@ export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result>(null);
   const set = (patch: Partial<AgentPolicy>) => setPolicy({ ...policy, ...patch });
-  const toolLabel = (name: string) => (ts.has(`toolNames.${name}`) ? ts(`toolNames.${name}`) : name);
+  const toolLabel = (name: string) => (ts.has(`toolNames.${name}`) ? ts(`toolNames.${name}`) : (tenantToolTitle(tools, name, locale) ?? name));
   const allowed = policy.allowedTools;
 
   async function save() {
