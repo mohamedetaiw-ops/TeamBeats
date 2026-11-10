@@ -24,7 +24,7 @@ Depends on 032 (`Experience` module), 001 (tenant logo and color), 002 (org hier
 - [x] T011 Brand manager page with token groups, contrast table, asset upload and live preview in both modes and directions, in English and Arabic
 
 ## Designs (spec 036)
-- [x] T013 Choice tokens `design.preset` and `layout.navigation`, the Atlas and Pulse presets in the resolver, design picker in the brand manager (FR-029 to FR-031)
+- [x] T013 Choice tokens `design.preset` and `layout.navigation`, the Atlas, Pulse and Studio presets in the resolver, design picker in the brand manager (FR-029 to FR-031)
 
 ## Final phase
 - [x] T012 OpenAPI, R1 implementation notes, spec evidence

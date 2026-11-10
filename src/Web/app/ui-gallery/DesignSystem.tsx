@@ -41,7 +41,7 @@ const people = ["a", "b", "c", "d"] as const;
 
 /**
  * The living reference of the TeamBeats design system (docs/design-system): foundations, components and template
- * patterns rendered with the tenant's effective design, so the same page shows Beats, Atlas or Pulse. The Playwright
+ * patterns rendered with the tenant's effective design, so the same page shows Beats, Atlas, Pulse or Studio. The Playwright
  * design suite runs accessibility, responsive and visual checks against it in every design and both directions.
  */
 export function DesignSystem() {

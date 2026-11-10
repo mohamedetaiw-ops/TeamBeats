@@ -289,8 +289,8 @@ export function BrandManager({
           replaces: t("design.replaces"),
           current: t("design.current"),
           choose: (name) => t("design.choose", { name }),
-          name: (key) => (["beats", "atlas", "pulse"].includes(key) ? t(`design.names.${key}`) : key),
-          summary: (key) => (["beats", "atlas", "pulse"].includes(key) ? t(`design.summaries.${key}`) : ""),
+          name: (key) => (["beats", "atlas", "pulse", "studio"].includes(key) ? t(`design.names.${key}`) : key),
+          summary: (key) => (["beats", "atlas", "pulse", "studio"].includes(key) ? t(`design.summaries.${key}`) : ""),
           navigation: (style) => (["rail", "top", "sidebar"].includes(style) ? t(`design.navigation.${style}`) : style),
         }}
       />

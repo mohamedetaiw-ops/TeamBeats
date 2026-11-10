@@ -94,7 +94,7 @@ public static partial class TokenSchema
     [
         // The design language (docs/design-system/designs.md): the preset supplies a complete look, and the navigation style
         // is the structural part of it that CSS cannot express as a value.
-        Choice("design.preset", DesignPresets.Beats, DesignPresets.Atlas, DesignPresets.Pulse),
+        Choice("design.preset", DesignPresets.Beats, DesignPresets.Atlas, DesignPresets.Pulse, DesignPresets.Studio),
         Choice("layout.navigation", "rail", "top", "sidebar"),
         C("color.surface.base", "#f3f2f8", "#0f0d24"),
         C("color.surface.raised", "#ffffff", "#1b1838"),

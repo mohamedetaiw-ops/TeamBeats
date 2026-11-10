@@ -1,6 +1,6 @@
 # Consistency
 
-Consistency makes TeamBeats look professional and trustworthy, and it is what lets one code line serve three designs and hundreds of tenant brands. Most of it is enforced by the build.
+Consistency makes TeamBeats look professional and trustworthy, and it is what lets one code line serve four designs and hundreds of tenant brands. Most of it is enforced by the build.
 
 ## Automated gates (fail the build)
 
@@ -24,7 +24,7 @@ All of them run in CI on every pull request (`web` and `e2e` jobs).
 - Same words for the same things (see the glossary in `messages/en.json` namespaces, for example "Request", not "Ticket" in one place and "Case" in another).
 - Same action in the same place: primary first in the reading direction, Cancel last.
 - Same states everywhere: empty, loading, error and denied use `StateView`.
-- Screenshots in Beats, Atlas and Pulse attached for visible changes, Arabic and English.
+- Screenshots in Beats, Atlas, Pulse and Studio attached for visible changes, Arabic and English.
 - Visual baselines updated only when the change is intended, and the reviewer looked at the diff.
 
 ## Updating visual baselines

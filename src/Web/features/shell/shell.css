@@ -1,7 +1,7 @@
 /* The spec 008 shell. Colors come from the shell and navigation tokens, so a tenant brand restyles it. */
 
 /* The navigation style comes from the design (spec 036, token layout.navigation): rail (Beats), top (Atlas) or a
-   labelled sidebar (Pulse). The size is set on the root so the page body can make room for it. */
+   labelled sidebar (Pulse, Studio). The size is set on the root so the page body can make room for it. */
 :root {
   --xp-rail-size: 5.75rem;
 }

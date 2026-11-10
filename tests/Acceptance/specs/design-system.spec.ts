@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import AxeBuilder from "@axe-core/playwright";
-import type { Page, TestInfo } from "@playwright/test";
+import type { Locator, Page, TestInfo } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { seedHome } from "../support/home";
 import type { LaunchLocale } from "../support/messages";
@@ -10,18 +10,20 @@ import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
 
 /**
- * Design system checks (spec 036, docs/design-system/testing.md) in each of the three designs and both directions:
+ * Design system checks (spec 036, docs/design-system/testing.md) in each of the four designs and both directions:
  *  - the tenant's chosen design reaches the page (design and navigation attributes, fonts, accent);
  *  - accessibility: zero critical and zero serious axe violations on the home and the component gallery;
  *  - responsive layout: no horizontal scrolling at phone, tablet and desktop widths;
  *  - target size: every control is at least 24 by 24 CSS pixels (WCAG 2.2 SC 2.5.8);
- *  - visual regression: the component gallery matches its reviewed baseline per design and direction.
+ *  - visual regression: both component galleries match their reviewed baselines per design and direction.
  * Set DESIGN_SCREENSHOTS_DIR to also write full-page screenshots for design reviews (post-development fidelity check).
  */
 const designs = [
-  { key: "beats", navigation: "rail", accent: "#3b2fc9", font: "Readex Pro" },
-  { key: "atlas", navigation: "top", accent: "#0b6e4f", font: "IBM Plex Sans" },
-  { key: "pulse", navigation: "sidebar", accent: "#c2185b", font: "Cairo" },
+  { key: "beats", navigation: "rail", accent: "#3b2fc9", font: "Readex Pro", arabicFont: "Readex Pro" },
+  { key: "atlas", navigation: "top", accent: "#0b6e4f", font: "IBM Plex Sans", arabicFont: "IBM Plex Sans Arabic" },
+  { key: "pulse", navigation: "sidebar", accent: "#c2185b", font: "Cairo", arabicFont: "Cairo" },
+  // Inter has no Arabic, so Studio pairs it with IBM Plex Sans Arabic.
+  { key: "studio", navigation: "sidebar", accent: "#155dfc", font: "Inter", arabicFont: "IBM Plex Sans Arabic" },
 ] as const;
 
 /** Hides what the development server draws over the page, so baselines hold only the design. */
@@ -48,6 +50,17 @@ async function expectNoSeriousViolations(page: Page, testInfo: TestInfo, label: 
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
   const serious = results.violations.filter((v) => v.impact === "serious");
   expect(serious.map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(" ")).join(", ")})`), `serious axe violations on ${label}`).toEqual([]);
+}
+
+/** Visible controls under `root` that are smaller than the 24 by 24 pixel minimum target (WCAG 2.2 SC 2.5.8). */
+function smallTargets(root: Locator) {
+  return root.evaluate((el) =>
+    [...el.querySelectorAll<HTMLElement>("button, [role=tab], input, select, textarea, a.button")]
+      .filter((control) => control.offsetParent !== null)
+      .map((control) => ({ html: control.outerHTML.slice(0, 80), box: control.getBoundingClientRect() }))
+      .filter(({ box }) => box.width < 24 || box.height < 24)
+      .map(({ html }) => html),
+  );
 }
 
 async function screenshotForReview(page: Page, name: string) {
@@ -84,7 +97,7 @@ for (const design of designs) {
           return { accent: root.getPropertyValue("--tb-color-accent-base").trim(), font: getComputedStyle(document.body).fontFamily };
         });
         expect(styles.accent).toBe(design.accent);
-        expect(styles.font).toContain(design.font);
+        expect(styles.font).toContain(locale === "ar" ? design.arabicFont : design.font);
         await expectNoSeriousViolations(page, testInfo, `home-${design.key}-${locale}`);
 
         for (const viewport of viewports) {
@@ -114,14 +127,7 @@ for (const design of designs) {
         await page.evaluate(() => document.fonts.ready);
         await expectNoSeriousViolations(page, testInfo, `gallery-${design.key}-${locale}`);
 
-        const small = await gallery.evaluate((root) =>
-          [...root.querySelectorAll<HTMLElement>("button, [role=tab], input, select, textarea, a.button")]
-            .filter((el) => el.offsetParent !== null)
-            .map((el) => ({ el: el.outerHTML.slice(0, 80), box: el.getBoundingClientRect() }))
-            .filter(({ box }) => box.width < 24 || box.height < 24)
-            .map(({ el }) => el),
-        );
-        expect(small, "controls smaller than 24 by 24 pixels").toEqual([]);
+        expect(await smallTargets(gallery), "controls smaller than 24 by 24 pixels").toEqual([]);
 
         for (const id of ["ds-actions", "ds-feedback", "ds-cards"]) {
           // Soft, so one run reports every section that moved.
@@ -133,6 +139,27 @@ for (const design of designs) {
           });
         }
         await screenshotForReview(page, `gallery-${design.key}-${locale}`);
+      });
+
+      test("the extended component gallery is accessible, has large enough targets and matches its baseline", async ({ page }, testInfo) => {
+        await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+        await page.setViewportSize({ width: 1280, height: 900 });
+        await page.goto(`${hostOrigin(tenant.key)}/ui-gallery/components`);
+        const gallery = page.getByTestId("components-gallery");
+        await expect(gallery).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+        await expectNoSeriousViolations(page, testInfo, `components-${design.key}-${locale}`);
+        expect(await smallTargets(gallery), "controls smaller than 24 by 24 pixels").toEqual([]);
+
+        for (const id of ["cg-actions", "cg-selection", "cg-status", "cg-structure"]) {
+          await expect.soft(page.locator(`section:has(> h2#${id})`)).toHaveScreenshot(`${id}-${design.key}-${locale}.png`, {
+            animations: "disabled",
+            caret: "hide",
+            stylePath: screenshotStyle,
+            maxDiffPixelRatio: 0.02,
+          });
+        }
+        await screenshotForReview(page, `components-${design.key}-${locale}`);
       });
     });
   }

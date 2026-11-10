@@ -8,7 +8,7 @@ Next.js (App Router) with React server components by default, `next-intl` for me
 
 ## Building a screen
 
-1. Start from a template in [templates](../templates.md) and the components in [components](../components.md). Check the gallery (`/ui-gallery`) for the current look in all three designs.
+1. Start from a template in [templates](../templates.md) and the components in [components](../components.md). Check the gallery (`/ui-gallery`) for the current look in all four designs.
 2. Server components fetch data through `lib/*/client.ts` API clients (the backend-for-frontend). Client components only where there is interaction.
 3. Every string is a message key in `messages/en.json` and `messages/ar.json`. One `useTranslations` or `getTranslations` namespace per file.
 4. Style with the feature's CSS file using only `--tb-*` tokens, logical properties and `rem` for component sizes. Local layout variables use the `--xp-` prefix.
@@ -21,7 +21,7 @@ Next.js (App Router) with React server components by default, `next-intl` for me
 - Read tokens with `var(--tb-...)`. Never set a `--tb-*` property in CSS; only the tenant theme and the generated file set them.
 - Body and heading fonts are `--tb-font-family-body` and `--tb-font-family-heading`; they switch with the page language.
 - Design-specific structure uses `html[data-design]` and `html[data-nav]` attributes, only in `components/ui/designs.css` and `features/shell/shell.css`.
-- A new token is a change to the schema, the three designs (each must still pass the contrast tests), spec 033 and the brand editor groups.
+- A new token is a change to the schema, the four designs (each must still pass the contrast tests), spec 033 and the brand editor groups.
 
 ## Components
 
@@ -39,7 +39,7 @@ Next.js (App Router) with React server components by default, `next-intl` for me
 ## Definition of done for UI work
 
 - [ ] Built from shared components and tokens; `npm run verify` passes (types, lint, CSS lint, messages, placements, tokens, design gate).
-- [ ] Works at 375, 768 and 1440 px, in Arabic and English, light and dark, in Beats, Atlas and Pulse.
+- [ ] Works at 375, 768 and 1440 px, in Arabic and English, light and dark, in Beats, Atlas, Pulse and Studio.
 - [ ] Keyboard only and screen reader checked on primary journeys; axe has no critical or serious violations.
 - [ ] Loading, empty, error and denied states shown.
 - [ ] Playwright journey added or updated; visual baseline updated on purpose if the look changed.
