@@ -214,3 +214,24 @@ export const M365_PERMISSION_REASONS = [
   "mail_read",
   "calendars_read_basic",
 ] as const;
+
+/** Webhook connections (spec 017 US5): settings, the events they may send, and inbound counts. */
+export type WebhookAuth = { type: "hmac_sha256"; secretRef: string; overlapHours?: number | null; previousSecretRef?: string | null; previousValidUntil?: string | null };
+
+export type WebhookEventChoice = { type: string; fields: string[] };
+
+export type WebhookInbound = { target: "event" | "message" | string; name: string; correlationPath?: string | null; fields: Record<string, string>; windowSeconds: number };
+
+export type WebhookSettings = { url?: string | null; auth: WebhookAuth; events?: WebhookEventChoice[]; inbound?: WebhookInbound | null };
+
+export type InboundCounts = {
+  path: string;
+  accepted: number;
+  refusedSignature: number;
+  refusedWindow: number;
+  refusedDuplicate: number;
+  lastReceivedAt: string | null;
+};
+
+export const WEBHOOK_EVENTS = ["ContentPublished", "ProcessInstanceCompleted", "RequestCompleted", "RequestReturned", "RequestSubmitted", "UserTaskCompleted", "UserTaskCreated"] as const;
+export const WEBHOOK_TARGETS = ["event", "message"] as const;

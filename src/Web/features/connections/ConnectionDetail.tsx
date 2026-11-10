@@ -5,8 +5,9 @@ import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
-import { CHECK_RESULTS, checkResult, known, type PackCheck, type PackConnection, type PackTestResult } from "@/lib/integrations/types";
+import { CHECK_RESULTS, checkResult, known, type PackCheck, type PackConnection, type PackTestResult, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
+import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
 import { ErrorText, Messages, StatusBadge } from "./parts";
 import { send } from "./request";
 
@@ -36,7 +37,7 @@ function Checks({ checks }: { checks: PackCheck[] }) {
  * One connection (spec 017 US1): status, the last test with each check, test, enable, disable, change settings and
  * credentials, and delete with confirmation. A connection is enabled only after the administrator chooses to.
  */
-export function ConnectionDetail({ initial }: { initial: PackConnection }) {
+export function ConnectionDetail({ initial, webhookEvents = [] }: { initial: PackConnection; webhookEvents?: WebhookEventChoice[] }) {
   const t = useTranslations("connections");
   const format = useFormatter();
   const router = useRouter();
@@ -128,6 +129,20 @@ export function ConnectionDetail({ initial }: { initial: PackConnection }) {
             submitLabel={t("detail.save")}
             busy={busy === "save"}
             onSubmit={(body: SettingsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+        </section>
+      ) : null}
+
+      {view.kind === "webhook" ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <WebhookSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            events={webhookEvents}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: WebhookBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
           />
         </section>
       ) : null}

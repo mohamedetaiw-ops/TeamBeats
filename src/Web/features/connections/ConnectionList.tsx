@@ -6,8 +6,9 @@ import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
-import { type AllowlistEntry, type Pack, type PackConnection } from "@/lib/integrations/types";
+import { type AllowlistEntry, type Pack, type PackConnection, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
+import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
 import { Messages, StatusBadge } from "./parts";
 import { send } from "./request";
 
@@ -86,24 +87,35 @@ function Allowlist({ initial }: { initial: AllowlistEntry[] | null }) {
  * The Connections area for connector packs (spec 017 US1, US4): connections with their status, the pack catalogue
  * with each pack's actions, adding a custom REST connection (it starts disabled), and the host allowlist.
  */
-export function ConnectionList({ initial, packs, allowlist }: { initial: PackConnection[]; packs: Pack[]; allowlist: AllowlistEntry[] | null }) {
+export function ConnectionList({
+  initial,
+  packs,
+  allowlist,
+  webhookEvents,
+}: {
+  initial: PackConnection[];
+  packs: Pack[];
+  allowlist: AllowlistEntry[] | null;
+  webhookEvents: WebhookEventChoice[];
+}) {
   const t = useTranslations("connections");
   const format = useFormatter();
   const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const [messages, setMessages] = useState<string[]>([]);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [messages, setMessages] = useState<{ kind: string; list: string[] }>({ kind: "", list: [] });
   const rest = packs.find((p) => p.kind === "custom_rest");
+  const webhook = packs.find((p) => p.kind === "webhook");
 
-  async function create(body: SettingsBody) {
-    setBusy(true);
-    setMessages([]);
-    const result = await send<PackConnection>("POST", "/api/v1/integrations/pack-connections", { kind: "custom_rest", ...body }, RETURN_TO, t("failed"));
+  async function create(kind: string, body: SettingsBody | WebhookBody) {
+    setBusy(kind);
+    setMessages({ kind, list: [] });
+    const result = await send<PackConnection>("POST", "/api/v1/integrations/pack-connections", { kind, ...body }, RETURN_TO, t("failed"));
     if (result.ok) {
       router.push(`/admin/connections/${result.data.id}`);
       return;
     }
-    setBusy(false);
-    setMessages(result.messages);
+    setBusy(null);
+    setMessages({ kind, list: result.messages });
   }
 
   return (
@@ -123,7 +135,7 @@ export function ConnectionList({ initial, packs, allowlist }: { initial: PackCon
                 </h3>
                 <p className="connections-row">
                   <StatusBadge status={c.status} />
-                  <span>{t(`kinds.${c.kind === "custom_rest" ? "custom_rest" : "other"}`)}</span>
+                  <span>{t(`kinds.${c.kind === "custom_rest" || c.kind === "webhook" ? c.kind : "other"}`)}</span>
                   <span>{t("list.actions", { count: c.actions.length })}</span>
                   {c.lastSuccessAt ? <span>{t("list.lastSuccess", { at: format.dateTime(new Date(c.lastSuccessAt), { dateStyle: "medium", timeStyle: "short" }) })}</span> : null}
                 </p>
@@ -138,10 +150,12 @@ export function ConnectionList({ initial, packs, allowlist }: { initial: PackCon
         <ul className="connections-list">
           {packs.map((p) => (
             <li key={p.kind} className="connections-item">
-              <h3>{p.kind === "custom_rest" ? t("kinds.custom_rest") : <bdi dir="ltr">{p.kind}</bdi>}</h3>
+              <h3>{p.kind === "custom_rest" || p.kind === "webhook" ? t(`kinds.${p.kind}`) : <bdi dir="ltr">{p.kind}</bdi>}</h3>
               <p>{t(p.inPackage ? "catalogue.inPackage" : "catalogue.notInPackage")}</p>
               {p.kind === "custom_rest" ? (
                 <p>{t("catalogue.customRest")}</p>
+              ) : p.kind === "webhook" ? (
+                <p>{t("catalogue.webhook")}</p>
               ) : (
                 <p>{t("catalogue.actions", { names: p.actions.map((a) => a.name).join(", ") })}</p>
               )}
@@ -154,8 +168,17 @@ export function ConnectionList({ initial, packs, allowlist }: { initial: PackCon
         <section className="connections-section" aria-labelledby="add-heading">
           <h2 id="add-heading">{t("add.title")}</h2>
           <p>{t("add.intro")}</p>
-          <ConnectionSettingsForm submitLabel={t("add.submit")} busy={busy} onSubmit={(body) => void create(body)} />
-          <Messages messages={messages} />
+          <ConnectionSettingsForm submitLabel={t("add.submit")} busy={busy === "custom_rest"} onSubmit={(body) => void create("custom_rest", body)} />
+          {messages.kind === "custom_rest" ? <Messages messages={messages.list} /> : null}
+        </section>
+      ) : null}
+
+      {webhook?.inPackage ? (
+        <section className="connections-section" aria-labelledby="add-webhook-heading">
+          <h2 id="add-webhook-heading">{t("webhooks.addTitle")}</h2>
+          <p>{t("webhooks.addIntro")}</p>
+          <WebhookSettingsForm events={webhookEvents} submitLabel={t("webhooks.add")} busy={busy === "webhook"} onSubmit={(body) => void create("webhook", body)} />
+          {messages.kind === "webhook" ? <Messages messages={messages.list} /> : null}
         </section>
       ) : null}
 
