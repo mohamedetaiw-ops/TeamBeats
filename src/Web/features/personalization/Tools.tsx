@@ -3,16 +3,21 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
+import { useDragHandle, type DragTargets } from "@/lib/experience/drag";
 import type { PersonalRight } from "@/lib/experience/types";
 import { usePersonalization } from "./Personalization";
 import type { AddPanelItem } from "./types";
 
 type Target = { id: string; rights: PersonalRight[] };
 
+const targetsOnPage: DragTargets = { item: ".xp-placement[data-placement-id]", itemKey: "placementId", region: ".xp-region[data-region]", regionKey: "region" };
+
 /**
- * Actions on one placement in personalization mode (spec 008 FR-024, FR-025): move up, move down and move to another
- * area by keyboard or pointer, hide an item of the page, remove one of the user's own. Only actions the API granted for
- * this region appear; the API checks them again on save.
+ * Actions on one placement in personalization mode (spec 008 FR-024, FR-025): drag the handle to move an item within
+ * its area or to another one, or use move up, move down and move to another area from the keyboard; hide an item of
+ * the page, remove one of the user's own. Only actions the API granted for this region appear; the API checks them
+ * again on save.
  */
 export function PlacementTools({
   placementId,
@@ -43,21 +48,36 @@ export function PlacementTools({
   useEffect(() => {
     // After a change the page re-renders from the API; focus follows the item to where it now is.
     if (focus && focus.placementId === placementId && focus.regionId === regionId && focus.index === index) {
-      group.current?.querySelector<HTMLButtonElement>("button:not([disabled])")?.focus();
+      group.current?.querySelector<HTMLButtonElement>("button:not([disabled]):not(.pz-handle)")?.focus();
       clearFocus?.();
     }
   }, [focus, clearFocus, placementId, regionId, index]);
 
-  if (!p?.editing || rights.length === 0) return null;
-  const region = p.regionNumber(regionId);
-  const label = t("item", { position: index + 1, count, region });
   const reorder = rights.includes("reorder");
-  const canDrop = personal || rights.includes("hide");
   const others = reorder ? targets.filter((r) => r.id !== regionId && r.rights.includes("reorder") && r.rights.includes("add")) : [];
 
   function move(to: string, position: number | null, text: string) {
     void p!.change({ op: "move", placementId, regionId: to, position }, { placementId, regionId: to, index: position ?? 0 }, text);
   }
+
+  // Drag and drop with the handle, within this area or into another one that takes items; the move buttons stay for
+  // the keyboard.
+  const drag = useDragHandle({
+    id: placementId,
+    allowed: new Set([regionId, ...others.map((r) => r.id)]),
+    targets: targetsOnPage,
+    disabled: !p || p.busy,
+    onDrop: (drop) => {
+      const area = p!.regionNumber(regionId);
+      if (drop.regionId !== regionId) move(drop.regionId, drop.position, t("movedTo", { region: p!.regionNumber(drop.regionId) }));
+      else if (drop.position !== index) move(regionId, drop.position, t("moved", { position: drop.position + 1, count, region: area }));
+    },
+  });
+
+  if (!p?.editing || rights.length === 0) return null;
+  const region = p.regionNumber(regionId);
+  const label = t("item", { position: index + 1, count, region });
+  const canDrop = personal || rights.includes("hide");
 
   return (
     <div ref={group} className="pz-tools" role="group" aria-label={label}>
@@ -66,6 +86,18 @@ export function PlacementTools({
       </span>
       {reorder ? (
         <>
+          <button
+            type="button"
+            className="button button-quiet pz-handle"
+            // A pointer control: keyboard users move with the buttons next to it, so it takes no tab stop.
+            tabIndex={-1}
+            disabled={p.busy}
+            title={t("drag")}
+            aria-label={t("drag")}
+            {...drag}
+          >
+            <Icon name="menu" size={18} />
+          </button>
           <Button variant="quiet" disabled={index === 0 || p.busy} onClick={() => move(regionId, index - 1, t("moved", { position: index, count, region }))}>
             {t("moveUp")}
           </Button>

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import type { PreferenceKey } from "@/lib/shell/types";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { Icon } from "@/components/ui/Icon";
+import { useShellPanel } from "@/lib/shell/panel";
 import { OutlookSettings } from "./OutlookSettings";
 
 const options: Record<PreferenceKey, string[]> = {
@@ -25,7 +26,8 @@ export function SettingsPanel({ locales, locale, values }: { locales: string[]; 
   const t = useTranslations("shell.settings");
   const tl = useTranslations("locale");
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useShellPanel(root);
   const [saving, setSaving] = useState(false);
   const panelId = useId();
   const button = useRef<HTMLButtonElement>(null);
@@ -48,8 +50,8 @@ export function SettingsPanel({ locales, locale, values }: { locales: string[]; 
   }
 
   return (
-    <div className="shell-settings" onKeyDown={onKeyDown}>
-      <button ref={button} type="button" className="button button-quiet shell-icon-button" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen((x) => !x)}>
+    <div ref={root} className="shell-settings" onKeyDown={onKeyDown}>
+      <button ref={button} type="button" className="button button-quiet shell-icon-button" aria-expanded={open} aria-controls={panelId} onClick={() => setOpen(!open)}>
         <Icon name="settings" size={20} />
         <span className="visually-hidden">{t("open")}</span>
       </button>
