@@ -481,7 +481,12 @@
       "opensOutlook": "(يفتح Outlook في علامة تبويب جديدة)",
       "join": "انضمام",
       "joinLabel": "الانضمام إلى {subject} (يفتح الاجتماع في علامة تبويب جديدة)",
-      "empty": "لا شيء في تقويمك"
+      "empty": "لا شيء في تقويمك",
+      "holiday": "عطلة رسمية",
+      "halfHoliday": "عطلة نصف يوم",
+      "sources": {
+        "holiday": "من تقويم العمل الخاص بك"
+      }
     },
     "settings": {
       "title": "Outlook",
@@ -2806,6 +2811,9 @@
       },
       "tasks": {
         "inbox": "صندوق مهامي"
+      },
+      "calendar": {
+        "events": "تقويم Outlook الخاص بي"
       }
     },
     "classifications": {

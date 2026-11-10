@@ -19,6 +19,7 @@ type Item = {
   location: string | null;
   onlineJoinUrl: string | null;
   webLink: string;
+  halfDay?: boolean;
 };
 type Answer = { state: OutlookState; asOf: string | null; timeZone: string; from: string; to: string; items: Item[] };
 
@@ -33,7 +34,7 @@ function dayOf(item: Item, zone: string): string {
 /**
  * My calendar (spec 018 US3): the employee's own events for the coming days in the tenant time zone, grouped by day
  * with all-day items first (the server orders them). Free and tentative are text markers; Join is the primary action
- * from 10 minutes before an online meeting starts until it ends. Every event opens in Outlook on the web.
+ * from 10 minutes before an online meeting starts until it ends. Every Outlook event opens in Outlook on the web; holidays from the working calendar show without a link.
  */
 export default function MyCalendar({ props }: PlacementProps) {
   const t = useTranslations("outlook.calendar");
@@ -89,6 +90,18 @@ export default function MyCalendar({ props }: PlacementProps) {
             <h3 className="outlook-day-title">{dayTitle(day)}</h3>
             <ul className="outlook-list">
               {items.map((item) => {
+                if (item.source !== "outlook") {
+                  // A TeamBeats item (FR-017): a holiday of the person's working calendar, labelled by its source.
+                  return (
+                    <li key={item.id} className="outlook-item">
+                      <span className="outlook-line">
+                        <span className="outlook-time">{t("allDay")}</span>
+                        <span className="outlook-markers">{t("sources.holiday")}</span>
+                      </span>
+                      <bdi className="outlook-subject">{item.halfDay ? t("halfHoliday") : t("holiday")}</bdi>
+                    </li>
+                  );
+                }
                 const start = new Date(item.start).getTime();
                 const end = new Date(item.end).getTime();
                 const joinNow = item.onlineJoinUrl !== null && now >= start - JOIN_LEAD_MS && now < end;

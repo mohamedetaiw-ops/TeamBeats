@@ -481,7 +481,12 @@
       "opensOutlook": "(opens Outlook in a new tab)",
       "join": "Join",
       "joinLabel": "Join {subject} (opens the meeting in a new tab)",
-      "empty": "Nothing on your calendar"
+      "empty": "Nothing on your calendar",
+      "holiday": "Public holiday",
+      "halfHoliday": "Half-day holiday",
+      "sources": {
+        "holiday": "From your working calendar"
+      }
     },
     "settings": {
       "title": "Outlook",
@@ -2806,6 +2811,9 @@
       },
       "tasks": {
         "inbox": "My task inbox"
+      },
+      "calendar": {
+        "events": "My Outlook calendar"
       }
     },
     "classifications": {

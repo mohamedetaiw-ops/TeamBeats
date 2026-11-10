@@ -40,6 +40,7 @@ public static class IntegrationsModule
         services.AddScoped<GraphReadCache>();
         services.AddScoped<IMailbox, GraphMailbox>();
         services.AddScoped<ICalendar, GraphCalendar>();
+        services.AddScoped<Agents.Contracts.IAgentTool, CalendarEventsTool>();
         services.AddScoped<IAvailability, GraphAvailability>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, OutlookComponents>();
         services.AddHttpClient(OpenMeteoWeather.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));

@@ -11,5 +11,5 @@ Depends on 002, 003, 004, 006, 007, 008, 032. All R1 user stories.
 - [ ] T007 [US1] [US3] Profiles, visibility, search, own profile and photo endpoints
 - [x] T008 [US4] Newcomers and the people component manifest
 - [x] T009 Directory page, profile page, org chart with list view, My team, personal profile settings, in English and Arabic, RTL; e2e with axe
-- [ ] T010 Wire the reporting line into spec 016 line manager approval and Team requests, spec 009 and 025 manager lists, and spec 018 availability visibility
+- [x] T010 Wire the reporting line into spec 016 line manager approval and Team requests, spec 009 and 025 manager lists, and spec 018 availability visibility
 - [x] T011 Performance tests; OpenAPI; R1 implementation notes; spec evidence
