@@ -243,19 +243,21 @@
     },
     "design": {
       "title": "Design",
-      "intro": "Pick one of the three TeamBeats designs. Each one sets colors, type, shape and navigation for the whole workspace, in light and dark, Arabic and English. You can still adjust any value below.",
+      "intro": "Pick one of the four TeamBeats designs. Each one sets colors, type, shape and navigation for the whole workspace, in light and dark, Arabic and English. You can still adjust any value below.",
       "replaces": "Choosing a design replaces the values you changed below. Brand images and the brand name stay. Nothing changes for employees until you save.",
       "current": "Current design",
       "choose": "Use {name}",
       "names": {
         "beats": "Beats",
         "atlas": "Atlas",
-        "pulse": "Pulse"
+        "pulse": "Pulse",
+        "studio": "Studio"
       },
       "summaries": {
         "beats": "Warm and modern. Indigo with saffron, soft rounded cards, an icon rail. The TeamBeats default.",
         "atlas": "Formal and institutional. Deep green with gold, square corners, top navigation, IBM Plex.",
-        "pulse": "Bold and editorial. Raspberry on a warm canvas, pill buttons, a dark labelled sidebar, Cairo."
+        "pulse": "Bold and editorial. Raspberry on a warm canvas, pill buttons, a dark labelled sidebar, Cairo.",
+        "studio": "Clean and neutral. White and grey with one blue accent, hairline borders, a light labelled sidebar, Inter."
       },
       "navigation": {
         "rail": "Navigation: icon rail",

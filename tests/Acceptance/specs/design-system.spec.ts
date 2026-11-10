@@ -10,7 +10,7 @@ import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
 
 /**
- * Design system checks (spec 036, docs/design-system/testing.md) in each of the three designs and both directions:
+ * Design system checks (spec 036, docs/design-system/testing.md) in each of the four designs and both directions:
  *  - the tenant's chosen design reaches the page (design and navigation attributes, fonts, accent);
  *  - accessibility: zero critical and zero serious axe violations on the home and the component gallery;
  *  - responsive layout: no horizontal scrolling at phone, tablet and desktop widths;
@@ -19,9 +19,11 @@ import { hostOrigin } from "../support/stack";
  * Set DESIGN_SCREENSHOTS_DIR to also write full-page screenshots for design reviews (post-development fidelity check).
  */
 const designs = [
-  { key: "beats", navigation: "rail", accent: "#3b2fc9", font: "Readex Pro" },
-  { key: "atlas", navigation: "top", accent: "#0b6e4f", font: "IBM Plex Sans" },
-  { key: "pulse", navigation: "sidebar", accent: "#c2185b", font: "Cairo" },
+  { key: "beats", navigation: "rail", accent: "#3b2fc9", font: "Readex Pro", arabicFont: "Readex Pro" },
+  { key: "atlas", navigation: "top", accent: "#0b6e4f", font: "IBM Plex Sans", arabicFont: "IBM Plex Sans Arabic" },
+  { key: "pulse", navigation: "sidebar", accent: "#c2185b", font: "Cairo", arabicFont: "Cairo" },
+  // Inter has no Arabic, so Studio pairs it with IBM Plex Sans Arabic.
+  { key: "studio", navigation: "sidebar", accent: "#155dfc", font: "Inter", arabicFont: "IBM Plex Sans Arabic" },
 ] as const;
 
 /** Hides what the development server draws over the page, so baselines hold only the design. */
@@ -84,7 +86,7 @@ for (const design of designs) {
           return { accent: root.getPropertyValue("--tb-color-accent-base").trim(), font: getComputedStyle(document.body).fontFamily };
         });
         expect(styles.accent).toBe(design.accent);
-        expect(styles.font).toContain(design.font);
+        expect(styles.font).toContain(locale === "ar" ? design.arabicFont : design.font);
         await expectNoSeriousViolations(page, testInfo, `home-${design.key}-${locale}`);
 
         for (const viewport of viewports) {

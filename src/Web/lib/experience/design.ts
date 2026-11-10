@@ -1,7 +1,7 @@
 import type { ThemeVariant } from "./types";
 
 /** The design keys and navigation styles the token schema allows (spec 036). Anything else falls back to the default. */
-const presets = ["beats", "atlas", "pulse"] as const;
+const presets = ["beats", "atlas", "pulse", "studio"] as const;
 const navigations = ["rail", "top", "sidebar"] as const;
 
 export type DesignKey = (typeof presets)[number];

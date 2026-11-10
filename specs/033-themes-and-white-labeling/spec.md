@@ -43,7 +43,7 @@ Source: [Composable Intranet Experience requirements](../../docs/product/composa
 - Curated asset collections, usage rights and renditions for employees (brand asset portal, spec 011). Shell brand assets here may be picked from that portal.
 - Page structure and templates (spec 032). This spec owns the scope model they inherit through.
 - Content audience targeting rules for content items (spec 009) and personal preferences (spec 008).
-- Finished customer brand designs written for one customer. TeamBeats ships three platform designs (Beats as the default, Atlas and Pulse, spec 036) that every tenant can choose and adjust through tokens.
+- Finished customer brand designs written for one customer. TeamBeats ships four platform designs (Beats as the default, Atlas, Pulse and Studio, spec 036) that every tenant can choose and adjust through tokens.
 
 ## 3. Actors and permissions
 
@@ -166,9 +166,9 @@ Acme Group's tenant admin creates two brand profiles, "Acme Gulf" (teal, Latin a
 - **FR-026**: All experience configuration MUST reference tenant and org units by immutable IDs, never names, slugs or URL labels. *(CX-ORG-011)*
 - **FR-027**: A starter wizard MUST provision brand preset, shell, navigation pattern, language and starter pages for a new organization as an editable draft. *(CX-TMP-011)*
 - **FR-028**: Organizations SHOULD configure locale-specific logos, imagery and titles. *(CX-LOC-006)*
-- **FR-029**: The platform MUST ship three designs (Beats, Atlas, Pulse), each a complete token set for light and dark that passes FR-009 in strict mode, plus a navigation style (rail, top bar, labelled sidebar). Beats is the platform default. *(spec 036 DLS-006, DLS-007)*
+- **FR-029**: The platform MUST ship four designs (Beats, Atlas, Pulse, Studio), each a complete token set for light and dark that passes FR-009 in strict mode, plus a navigation style (rail, top bar, labelled sidebar). Beats is the platform default. *(spec 036 DLS-006, DLS-007)*
 - **FR-030**: A brand or organization override MUST be able to choose a design with the `design.preset` choice token; the resolver MUST apply the design's values after the platform defaults and before the tenant brand, and the design choice MUST follow the same order and locks as any token. *(spec 036 DLS-003 to DLS-005)*
-- **FR-031**: The brand manager MUST offer the three designs as a picker with live miniatures from each design's resolved tokens; choosing one is an ordinary versioned brand change. *(spec 036 DLS-001, DLS-002)*
+- **FR-031**: The brand manager MUST offer the four designs as a picker with live miniatures from each design's resolved tokens; choosing one is an ordinary versioned brand change. *(spec 036 DLS-001, DLS-002)*
 
 ## 6. Business and validation rules
 - Locks are always stronger than overrides and user choices. Security and accessibility requirements cannot be unlocked by any tenant setting.
@@ -204,7 +204,7 @@ Acme Group's tenant admin creates two brand profiles, "Acme Gulf" (teal, Latin a
 | `experience.custom_domain` | off | on | on |
 | `experience.token_extensions` (reviewed token extensions) | off | off | on |
 
-Tenant branding, the three designs, dark mode, high contrast, contrast validation and theme rollback are in every package. Delegated experience administration uses `org.delegated_admin` (spec 005).
+Tenant branding, the four designs, dark mode, high contrast, contrast validation and theme rollback are in every package. Delegated experience administration uses `org.delegated_admin` (spec 005).
 
 ## 10. UX, localization and accessibility
 - Theme editor shows every color pair with its contrast ratio and pass or fail in text, not color alone.

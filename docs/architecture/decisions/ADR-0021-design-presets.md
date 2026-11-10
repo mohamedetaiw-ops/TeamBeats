@@ -17,14 +17,15 @@ Mohamed asked for three totally different designs that customers choose in admin
 
 ## Decision
 Option 3.
-- New token type `choice` with an allowed list. Tokens `design.preset` (`beats`, `atlas`, `pulse`) and `layout.navigation` (`rail`, `top`, `sidebar`).
+- New token type `choice` with an allowed list. Tokens `design.preset` (`beats`, `atlas`, `pulse`, `studio`) and `layout.navigation` (`rail`, `top`, `sidebar`).
 - `DesignPresets.cs` holds the values; Beats is the platform default and adds nothing. Each design must pass every contrast pair in strict mode in light and dark (unit tests).
 - Resolution: platform, then the effective design, then tenant brand, organizations, user choices; locks win. The design itself is resolved with the same layer order and locks.
 - Structural CSS per design is limited to `components/ui/designs.css` and the navigation styles in `features/shell/shell.css`, enforced by the design gate.
-- Fonts: add `@fontsource/ibm-plex-sans`, `@fontsource/ibm-plex-sans-arabic` and `@fontsource/cairo` at 5.3.0 (SIL OFL 1.1, already on the CI allow list), weights 400 and 600 for Plex, 400 and 700 for Cairo. Add Cairo to the approved Latin fonts. Only the `@font-face` rules ship to every page; the browser downloads a file only when the active design uses it for characters on the page.
+- Fonts: add `@fontsource/ibm-plex-sans`, `@fontsource/ibm-plex-sans-arabic` and `@fontsource/cairo` at 5.3.0 (SIL OFL 1.1, already on the CI allow list), weights 400 and 600 for Plex, 400 and 700 for Cairo. Add Cairo to the approved Latin fonts. Studio (added 2026-11-10) uses Inter, already an approved Latin font, from `@fontsource/inter` 5.3.0 (SIL OFL 1.1) at weights 400, 500 and 600, with IBM Plex Sans Arabic for Arabic. Only the `@font-face` rules ship to every page; the browser downloads a file only when the active design uses it for characters on the page.
 
 ## Consequences
 - An improvement to a design reaches every tenant on it at once; release notes must mention visible changes.
 - Tenants can start from a design and adjust any token on top; their values win.
 - Each page carries about 6 KB more CSS for the extra `@font-face` rules, and no extra font downloads unless the design is in use.
-- A fourth design is a code change reviewed against spec 036, never a per-customer setting.
+- Another design is a code change reviewed against spec 036, never a per-customer setting. Studio was added this way.
+- The finish of a design (shaded fills, inner edges) is drawn from its own tokens in `designs.css`; the lint still refuses color functions and raw values there.

@@ -13,7 +13,7 @@ import "@fontsource/readex-pro/500.css";
 import "@fontsource/readex-pro/700.css";
 import "@fontsource/alexandria/600.css";
 import "@fontsource/alexandria/700.css";
-// Fonts of the Atlas and Pulse designs (spec 036, ADR-0021). Only the @font-face rules ship with every page; a browser
+// Fonts of the Atlas, Pulse and Studio designs (spec 036, ADR-0021). Only the @font-face rules ship with every page; a browser
 // downloads a font file only when the active design uses that family for characters on the page.
 import "@fontsource/ibm-plex-sans/400.css";
 import "@fontsource/ibm-plex-sans/600.css";
@@ -21,6 +21,10 @@ import "@fontsource/ibm-plex-sans-arabic/400.css";
 import "@fontsource/ibm-plex-sans-arabic/600.css";
 import "@fontsource/cairo/400.css";
 import "@fontsource/cairo/700.css";
+// Studio: Inter for Latin text; its Arabic is IBM Plex Sans Arabic, already loaded above.
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
 import "./tokens.css";
 import "./globals.css";
 import "@/components/ui/ui.css";
