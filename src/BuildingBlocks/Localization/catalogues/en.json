@@ -1074,5 +1074,11 @@
   "conflict.agent.no_template_update": "There is no template update to apply to this agent, or a newer one was published. Reload the page.",
   "validation.agent_policy.max_run_seconds": "Set a run duration between 30 and 300 seconds.",
   "validation.agent_policy.max_daily_runs": "Set a daily run limit between 1 and 100000.",
-  "conflict.agent_run.daily_limit": "This agent has reached its limit of conversations for today. Try again tomorrow."
+  "conflict.agent_run.daily_limit": "This agent has reached its limit of conversations for today. Try again tomorrow.",
+  "validation.connector.action_required": "Choose the connector action to call.",
+  "validation.connector.idempotency_key_invalid": "Give an idempotency key of 1 to 200 characters.",
+  "validation.connector.run_status_invalid": "Choose a run status from the list.",
+  "validation.connector.replay_selection": "Choose between 1 and 100 runs to replay.",
+  "validation.integrations.allowlist_host_invalid": "Enter a host name such as api.example.com or *.example.com. IP addresses are not accepted.",
+  "conflict.integrations.allowlist_full": "The allowlist holds 200 hosts. Remove one before adding another."
 }

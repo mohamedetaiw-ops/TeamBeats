@@ -5,8 +5,8 @@ Depends on 004, 005, 006, 015, 024, 026, 027. R2.
 ## Phase 1: Runtime
 - [ ] T001 Migration for packs, actions, webhooks, runs, dead letters, payload capture and sync agents (forced RLS)
 - [ ] T002 Permissions `integration.operate`; audit actions of section 13; capability keys of section 9
-- [ ] T003 [P] Tests: retry, backoff, idempotency, rate limit, circuit breaker, dead letter and replay; SSRF guard
-- [ ] T004 `IConnectorPack`, `IConnectorRuntime`, job runner, `SafeHttpClient`, run history
+- [x] T003 [P] Tests: retry, backoff, idempotency, rate limit, circuit breaker, dead letter and replay; SSRF guard
+- [x] T004 `IConnectorPack`, `IConnectorRuntime`, job runner, `SafeHttpClient`, run history
 - [ ] T005 Move the Microsoft 365 adapter onto the runtime with no behavior change (spec 018 and 006 suites stay green)
 
 ## Phase 2: User Stories 1 to 3, connections, actions and history (P1)

@@ -22,7 +22,7 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.ContentPublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ContentView, P.ContentAuthor, P.ContentEdit, P.ContentPublish, P.KbEdit]),
         new(BuiltInRoles.WorkflowDesigner, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.WorkflowDesign, P.ServiceManage]),
         new(BuiltInRoles.Approver, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.WorkflowApprove]),
-        new(BuiltInRoles.IntegrationAdministrator, Delegable: false, DelegatedAdmin: false, [P.OrgUnitView, P.IntegrationManage]),
+        new(BuiltInRoles.IntegrationAdministrator, Delegable: false, DelegatedAdmin: false, [P.OrgUnitView, P.IntegrationManage, P.IntegrationOperate]),
         new(BuiltInRoles.AiPolicyAdministrator, Delegable: false, DelegatedAdmin: false, [P.OrgUnitView, P.AiPolicyManage, P.AiPolicyView, P.AgentPublish, P.AgentView, P.AgentSuspend, P.EvalPolicyManage, P.EvalView]),
         new(BuiltInRoles.SecurityOfficer, Delegable: false, DelegatedAdmin: false,
             [P.OrgUnitView, P.AuditView, P.AuditExport, P.UsersView, P.RolesView, P.AccessExplain, P.ConfigHistoryView, P.SecurityView, P.SecurityRespond, P.AiPolicyView,

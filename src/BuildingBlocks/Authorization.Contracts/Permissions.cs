@@ -36,6 +36,9 @@ public static class Permissions
     public const string WorkflowDesign = "process.design";
     public const string WorkflowApprove = "workflow.approve";
     public const string IntegrationManage = "integration.manage";
+
+    /// <summary>Spec 017 (R2): run history, health, replay of failed runs and pausing a sync, without changing connections.</summary>
+    public const string IntegrationOperate = "integration.operate";
     public const string AiPolicyManage = "ai.policy_manage";
 
     // Spec 013 (R1): security officers view the model policy, route changes and AI usage.
@@ -130,7 +133,7 @@ public static class Permissions
         UsersView, UsersManage, IdentityConfigManage,
         EntitlementsView,
         AuditView, AuditExport, AuditRetentionManage,
-        ContentView, ContentEdit, ContentPublish, WorkflowDesign, WorkflowApprove, IntegrationManage, AiPolicyManage, AiPolicyView,
+        ContentView, ContentEdit, ContentPublish, WorkflowDesign, WorkflowApprove, IntegrationManage, IntegrationOperate, AiPolicyManage, AiPolicyView,
         PageView, PageEdit, PagePublish, TemplateEdit, TemplateDistribute, ComponentEnable, ConfigHistoryView,
         ThemeEdit, ThemePublish, ConfigLockManage,
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,

@@ -41,6 +41,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Workflow.EngineJobWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Integrations.Runtime.ConnectorJobWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Integrations.Runtime.ConnectorJobWorker>();
+        }
         // Local development runs without the workers host, so the development host dispatches the outbox itself when
         // asked; staging leaves this off because its workers app does it. Dispatch takes rows with skip locked, so a
         // workers host running as well does not deliver twice.
