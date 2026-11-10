@@ -1064,5 +1064,10 @@
   "validation.search.embedding_model": "أدخل معرّف نموذج حتى 100 حرف من الأحرف والأرقام والرموز . _ : / -",
   "validation.search.retrieval_unchanged": "غيّر إعدادًا واحدًا على الأقل.",
   "validation.search.override_reason": "اكتب سببًا من 10 إلى 1000 حرف.",
-  "validation.agent.published_limit": "لا تسمح باقتك بنشر مزيد من الوكلاء. أوقف أحد الوكلاء نهائيا أولا، أو اسأل عن باقة أكبر."
+  "validation.agent.published_limit": "لا تسمح باقتك بنشر مزيد من الوكلاء. أوقف أحد الوكلاء نهائيا أولا، أو اسأل عن باقة أكبر.",
+  "validation.agent.purpose": "اجعل الغرض في حدود 1000 حرف.",
+  "validation.agent.owner": "اختر مالكا من الأعضاء النشطين في مؤسستك.",
+  "validation.agent.backup_owner": "اختر مالكا احتياطيا من الأعضاء النشطين في مؤسستك، على ألا يكون هو المالك.",
+  "notifications.template.agents.owner_reassigned.title": "أصبحت مالكا لوكيل",
+  "notifications.template.agents.owner_reassigned.body": "غادر مالك أحد الوكلاء المؤسسة، فانتقلت ملكيته إليك. يستمر الوكيل في العمل. افتحه لمراجعته وتعيين مالك احتياطي."
 }

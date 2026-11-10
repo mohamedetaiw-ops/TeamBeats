@@ -31,7 +31,8 @@ public sealed record AgentDefinition(
     Dictionary<string, string>? Escalation,
     string? Autonomy,
     string? MaxClassification,
-    int? MaxToolCalls);
+    int? MaxToolCalls,
+    Dictionary<string, string>? Purpose = null);
 
 public static class AgentAutonomy
 {
@@ -62,6 +63,7 @@ public static class AgentDefinitions
     public static readonly IReadOnlyList<string> Categories = ["knowledge", "hr", "it", "content", "requests", "productivity", "other"];
     public const int MaxNameLength = 80;
     public const int MaxDescriptionLength = 300;
+    public const int MaxPurposeLength = 1000;
     public const int MaxInstructionsLength = 4000;
     public const int MaxEscalationLength = 500;
     public const int MaxTools = 20;
@@ -83,6 +85,10 @@ public static class AgentDefinitions
             if (d.Description?.GetValueOrDefault(language) is { Length: > MaxDescriptionLength })
             {
                 errors.Add($"description.{language}", "validation.agent.description");
+            }
+            if (d.Purpose?.GetValueOrDefault(language) is { Length: > MaxPurposeLength })
+            {
+                errors.Add($"purpose.{language}", "validation.agent.purpose");
             }
             if (d.Instructions?.GetValueOrDefault(language) is not { } text || text.Trim().Length is 0 or > MaxInstructionsLength)
             {

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using TeamBeats.Messaging;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
@@ -28,6 +29,8 @@ public static class AgentsModule
         services.AddScoped<ToolRegistry>();
         services.AddScoped<AgentPolicyService>();
         services.AddScoped<AgentRegistry>();
+        services.AddScoped<AgentOwnerHandover>();
+        services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentOwnerHandler>("agents.owner_left");
         services.AddScoped<Contracts.IAgentCatalog, AgentCatalog>();
         services.AddScoped<Contracts.IAgentEvaluationRuntime, AgentEvaluationRuntime>();
         services.AddScoped<Contracts.IAssistantEvaluationRuntime, AssistantEvaluationRuntime>();
@@ -168,6 +171,13 @@ public static class AgentsModule
         agents.MapPut("/{id:guid}/draft", async (Guid id, DraftRequest request, AgentRegistry registry, IDbSession session, CancellationToken ct) =>
         {
             var detail = await registry.SaveDraftAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
+        agents.MapPut("/{id:guid}/owners", async (Guid id, OwnersRequest request, AgentRegistry registry, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await registry.SetOwnersAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(detail);
         });

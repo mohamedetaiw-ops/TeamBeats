@@ -68,8 +68,14 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
       const name = m("agents.editor.inLanguage", { field: m("agents.editor.name"), language: m(`agents.editor.languages.${locale}`) });
       await page.getByLabel(name, { exact: true }).fill(newName);
+      const purpose = m("agents.editor.inLanguage", { field: m("agents.editor.purpose"), language: m(`agents.editor.languages.${locale}`) });
+      await page.getByLabel(purpose, { exact: true }).fill(locale === "ar" ? "الإجابة عن أسئلة الإجازات" : "Answer leave questions");
       await page.getByRole("button", { name: m("agents.editor.save") }).click();
       await expect(page.getByRole("status").filter({ hasText: m("agents.editor.saved") })).toBeVisible();
+
+      // The designer owns the agent they installed and saves the owners (020 FR-002).
+      await page.getByTestId("agent-owners").getByRole("button", { name: m("agents.editor.owners.save") }).click();
+      await expect(page.getByRole("status").filter({ hasText: m("agents.editor.owners.saved") })).toBeVisible();
 
       // The test panel runs the latest version as the designer.
       await page.getByLabel(m("agents.editor.test.message"), { exact: true }).fill(locale === "ar" ? "ما هي سياسة الإجازات؟" : "What is the leave policy?");

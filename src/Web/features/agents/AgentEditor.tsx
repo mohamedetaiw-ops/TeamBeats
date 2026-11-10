@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { PersonPicker } from "@/features/services/PersonPicker";
 import { problemMessages } from "@/lib/notifications/types";
 import type { OrgUnit } from "@/lib/experience/builder-types";
 import {
@@ -77,6 +78,8 @@ export function AgentEditor({ initial, tools, units }: { initial: AgentDetail; t
   const [detail, setDetail] = useState(initial);
   const [definition, setDefinition] = useState<AgentDefinition>(initial.definition);
   const [busy, setBusy] = useState<string | null>(null);
+  const [owner, setOwner] = useState<string | null>(initial.agent.ownerUserId);
+  const [backup, setBackup] = useState<string | null>(initial.agent.backupOwnerUserId);
   const [result, setResult] = useState<Result>(null);
   const [testMessage, setTestMessage] = useState("");
   const [testRun, setTestRun] = useState<RunView | null>(null);
@@ -87,6 +90,7 @@ export function AgentEditor({ initial, tools, units }: { initial: AgentDetail; t
   const locked = detail.latest.state === "in_review";
   const editable = detail.canEdit && !locked && status !== "retired";
   const set = (patch: Partial<AgentDefinition>) => setDefinition({ ...definition, ...patch });
+  const ownersEditable = detail.canEdit && status !== "retired";
   const audienceUnits = definition.audience?.orgUnits ?? [];
   const earlier = detail.versions.filter((v) => v.publishedAt !== null && v.number !== detail.agent.currentVersion);
   const toolLabel = (name: string) => (ts.has(`toolNames.${name}`) ? ts(`toolNames.${name}`) : name);
@@ -156,6 +160,7 @@ export function AgentEditor({ initial, tools, units }: { initial: AgentDetail; t
         <h2 id={`${ids}-about`}>{t("about")}</h2>
         <Bilingual label={t("name")} value={definition.name} onChange={(name) => set({ name })} disabled={!editable} />
         <Bilingual label={t("description")} value={definition.description} onChange={(description) => set({ description })} disabled={!editable} />
+        <Bilingual label={t("purpose")} value={definition.purpose ?? null} onChange={(purpose) => set({ purpose })} multiline disabled={!editable} />
         <Bilingual label={t("instructions")} value={definition.instructions} onChange={(instructions) => set({ instructions })} multiline disabled={!editable} />
         <div className="agents-row">
           <div className="field">
@@ -227,6 +232,25 @@ export function AgentEditor({ initial, tools, units }: { initial: AgentDetail; t
           ))}
         </fieldset>
         <Bilingual label={t("escalation")} value={definition.escalation} onChange={(escalation) => set({ escalation })} disabled={!editable} />
+      </section>
+
+      <section className="agents-section" aria-labelledby={`${ids}-owners`} data-testid="agent-owners">
+        <h2 id={`${ids}-owners`}>{t("owners.title")}</h2>
+        {detail.agent.ownerFlaggedAt ? <p className="notice">{t("owners.flagged")}</p> : null}
+        <PersonPicker label={t("owners.owner")} value={owner} onChange={setOwner} readOnly={!ownersEditable} />
+        <PersonPicker label={t("owners.backup")} value={backup} onChange={setBackup} readOnly={!ownersEditable} />
+        {ownersEditable ? (
+          <div className="agents-row">
+            <Button
+              busy={busy === "owners"}
+              busyLabel={t("saving")}
+              disabled={owner === null}
+              onClick={() => void send("owners", `${base}/owners`, "PUT", { ownerUserId: owner, backupOwnerUserId: backup }, t("owners.saved"))}
+            >
+              {t("owners.save")}
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       <section className="agents-section" aria-labelledby={`${ids}-audience`}>
