@@ -3890,7 +3890,8 @@
     "kinds": {
       "custom_rest": "Custom REST API",
       "other": "Connector pack",
-      "webhook": "Webhook"
+      "webhook": "Webhook",
+      "onprem_ad": "On-premises Active Directory"
     },
     "status": {
       "healthy": "Healthy",
@@ -3911,7 +3912,8 @@
       "notInPackage": "Not included in your package",
       "customRest": "Define your own actions for any HTTPS API on your allowlist.",
       "actions": "Actions: {names}",
-      "webhook": "Send signed events to another system and receive signed deliveries from it."
+      "webhook": "Send signed events to another system and receive signed deliveries from it.",
+      "onprem_ad": "Read users and groups from Active Directory in your own network, through a sync agent you install there."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -3995,7 +3997,11 @@
       "token_ok": "A token was issued",
       "token_refused": "The token request was refused",
       "not_responding": "The system did not respond",
-      "settings_invalid": "The connection settings are not valid"
+      "settings_invalid": "The connection settings are not valid",
+      "agent_enrolled": "A sync agent is enrolled",
+      "agent_missing": "No sync agent is enrolled yet",
+      "agent_online": "The sync agent was in touch in the last 5 minutes",
+      "agent_offline": "The sync agent has not been in touch for 5 minutes"
     },
     "errors": {
       "business_error": "The system refused for a business reason",
@@ -4233,6 +4239,62 @@
       "refusedWindow": "Refused for an old timestamp",
       "refusedDuplicate": "Refused as repeated",
       "lastReceived": "Last delivery"
+    },
+    "onprem": {
+      "addTitle": "Add on-premises Active Directory",
+      "addIntro": "Enter the domain controller the sync agent reads. The connection starts turned off; turn it on, then enrol an agent on its page.",
+      "add": "Add Active Directory",
+      "formLabel": "Active Directory settings",
+      "name": "Directory name",
+      "host": "Domain controller",
+      "hostHint": "For example dc01.corp.example. The agent connects over LDAPS only.",
+      "port": "Port",
+      "ports": {
+        "636": "636 (LDAPS)",
+        "3269": "3269 (global catalogue over LDAPS)"
+      },
+      "baseDn": "Base DN",
+      "baseDnHint": "Where users and groups are read, for example DC=corp,DC=example.",
+      "userFilter": "User filter (optional)",
+      "groupFilter": "Group filter (optional)",
+      "filterHint": "An LDAP filter in parentheses, for example (memberOf=CN=Staff,OU=Groups,DC=corp,DC=example).",
+      "accountNote": "The service account and its password are set on the agent's machine and never entered here."
+    },
+    "agents": {
+      "title": "Sync agents",
+      "intro": "The sync agent runs in your network, connects out to TeamBeats only, and reads this directory over LDAPS.",
+      "enrolTitle": "Enrol an agent",
+      "enrolIntro": "Make a one-time code and enter it when you enrol the agent. The code is shown once and works for 24 hours; a new code replaces an unused one.",
+      "makeCode": "Make an enrolment code",
+      "code": "Enrolment code",
+      "codeExpires": "Expires",
+      "codeMade": "Copy the code now. It will not be shown again.",
+      "listTitle": "Enrolled agents",
+      "empty": "No agent is enrolled yet.",
+      "online": "In touch",
+      "offline": "Not in touch",
+      "revoked": "Revoked",
+      "lastContact": "Last contact: {at}",
+      "version": "Version",
+      "key": "Key",
+      "revoke": "Revoke",
+      "revokeQuestion": "Revoke {name}? Its next request is refused and it can no longer read for TeamBeats.",
+      "revokeConfirm": "Revoke the agent",
+      "revokedNote": "The agent is revoked.",
+      "readsTitle": "Directory reads",
+      "readsIntro": "Reads run on the directory sync schedule. You can also start one now.",
+      "readNow": "Read now",
+      "readQueued": "A read is waiting for the agent.",
+      "useForDirectory": "Use for directory sync",
+      "directoryUsed": "Directory sync now reads from this Active Directory.",
+      "noReads": "No reads yet.",
+      "counts": "{users} users, {groups} groups",
+      "jobStatus": {
+        "queued": "Waiting for the agent",
+        "taken": "Reading",
+        "succeeded": "Done",
+        "failed": "Failed"
+      }
     }
   }
 }

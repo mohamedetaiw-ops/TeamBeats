@@ -113,7 +113,46 @@ export const CHECK_RESULTS = [
   "token_refused",
   "not_responding",
   "settings_invalid",
+  "agent_enrolled",
+  "agent_missing",
+  "agent_online",
+  "agent_offline",
 ] as const;
+
+/** Connector pack kinds with their own name on these pages. */
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad"] as const;
+
+/** Settings of an on-premises Active Directory connection (spec 017 US6). The service account stays with the agent. */
+export type OnPremSettings = { host: string | null; port: number | null; baseDn: string | null; userFilter: string | null; groupFilter: string | null };
+
+/** A one-time enrolment code, shown once. */
+export type EnrolmentCode = { code: string; expiresAt: string };
+
+export type SyncAgent = {
+  id: string;
+  name: string;
+  thumbprint: string;
+  enrolledAt: string;
+  lastContactAt: string | null;
+  version: string | null;
+  online: boolean;
+  revokedAt: string | null;
+};
+
+export type AgentJob = {
+  id: string;
+  kind: string;
+  status: string;
+  takenBy: string | null;
+  attempts: number;
+  errorClass: string | null;
+  users: number | null;
+  groups: number | null;
+  createdAt: string;
+  finishedAt: string | null;
+};
+
+export const AGENT_JOB_STATUSES = ["queued", "taken", "succeeded", "failed"] as const;
 
 /** Error classes the runtime reports (spec 017 section 6), each with a message on these pages. */
 export const ERROR_CLASSES = [
