@@ -77,7 +77,9 @@ public sealed class ConnectionService(
 
     public async Task<IReadOnlyList<ConnectionView>> ListAsync(CancellationToken ct)
     {
-        var ids = await session.QueryAsync("select id from integrations.connection order by created_at", null, r => r.GetGuid(0), ct);
+        // Connections of other packs get their own views with the connection lifecycle of spec 017 (T007).
+        var ids = await session.QueryAsync("select id from integrations.connection where kind = @kind order by created_at",
+            new { kind = ConnectionKinds.Microsoft365 }, r => r.GetGuid(0), ct);
         var result = new List<ConnectionView>();
         foreach (var id in ids)
         {
@@ -91,8 +93,8 @@ public sealed class ConnectionService(
         var row = await session.QuerySingleOrDefaultAsync(
             """
             select id, kind, external_tenant_id, display_name, status, enabled, owner_user_id, last_success_at
-            from integrations.connection where id = @id
-            """, new { id },
+            from integrations.connection where id = @id and kind = @kind
+            """, new { id, kind = ConnectionKinds.Microsoft365 },
             r => (Id: r.GetGuid(0), Kind: r.GetString(1), External: r.GetString(2), Name: r.GetString(3), Status: r.GetString(4),
                 Enabled: r.GetBoolean(5), Owner: r.Get<Guid?>("owner_user_id"), LastSuccess: r.Get<DateTimeOffset?>("last_success_at")), ct);
         if (row == default)

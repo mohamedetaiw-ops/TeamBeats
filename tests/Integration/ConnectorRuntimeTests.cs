@@ -214,6 +214,16 @@ public sealed class ConnectorRuntimeTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task Connections_of_other_packs_stay_out_of_the_Microsoft_365_connection_views()
+    {
+        var t = await TenantAsync();
+        var c = await ConnectionAsync(t);
+        var list = await (await t["admin"].Client.GetAsync("/api/v1/integrations/connections")).ReadAsync<JsonElement>();
+        Assert.DoesNotContain(list.EnumerateArray(), e => e.GetProperty("id").GetGuid() == c);
+        Assert.Equal(HttpStatusCode.NotFound, (await t["admin"].Client.GetAsync($"/api/v1/integrations/connections/{c}")).StatusCode);
+    }
+
+    [Fact]
     public async Task Bursts_beyond_the_connection_rate_limit_wait_briefly_and_then_fail_as_rate_limited()
     {
         var t = await TenantAsync();
