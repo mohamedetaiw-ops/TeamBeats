@@ -164,6 +164,9 @@
   <Folder Name="/src/Modules/Tenancy/">
     <Project Path="src/Modules/Tenancy/TeamBeats.Modules.Tenancy.csproj" />
   </Folder>
+  <Folder Name="/src/SyncAgent/">
+    <Project Path="src/SyncAgent/TeamBeats.SyncAgent.csproj" />
+  </Folder>
   <Folder Name="/src/Workers/">
     <Project Path="src/Workers/TeamBeats.Workers.csproj" />
   </Folder>

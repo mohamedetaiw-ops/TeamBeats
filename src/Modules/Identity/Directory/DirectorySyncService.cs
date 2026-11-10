@@ -740,6 +740,10 @@ internal sealed class Mirror(Dictionary<string, MirrorUser> users, Dictionary<st
             var group = Groups.TryGetValue(g.ExternalId, out var existing)
                 ? existing with { DisplayName = g.DisplayName ?? existing.DisplayName }
                 : new MirrorGroup(g.ExternalId, g.DisplayName, new HashSet<string>(StringComparer.Ordinal), kind);
+            if (g.MembersComplete)
+            {
+                group.Members.Clear();
+            }
             group.Members.ExceptWith(g.MembersRemoved);
             group.Members.UnionWith(g.MembersAdded);
             Groups[g.ExternalId] = group;

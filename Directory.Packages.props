@@ -1,6 +1,10 @@
 <Project>
   <ItemGroup>
     <PackageVersion Include="Npgsql" Version="10.0.3" />
+    <!-- The on-premises sync agent (spec 017 US6): LDAPS from .NET, and running as a Windows or systemd service. -->
+    <PackageVersion Include="System.DirectoryServices.Protocols" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.14" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Systemd" Version="10.0.14" />
     <PackageVersion Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.23.0" />
     <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.14" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.14" />

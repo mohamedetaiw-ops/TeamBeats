@@ -12,5 +12,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Testing/TeamBeats.Testing.csproj" />
+    <ProjectReference Include="../../src/SyncAgent/TeamBeats.SyncAgent.csproj" />
   </ItemGroup>
 </Project>

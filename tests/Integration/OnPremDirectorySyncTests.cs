@@ -165,6 +165,17 @@ public sealed class OnPremDirectorySyncTests(TenantWorld world)
         Assert.Equal(1L, await world.Database.TenantScalarAsync<long>(s.Tenant.Id,
             "select count(*) from identity.directory_group_link where connection_id = @c and directory_id = @d", ("c", s.Connection), ("d", finance)));
 
+        // A group sent with its whole membership replaces the members known before.
+        var omar = Guid36();
+        Assert.Equal(HttpStatusCode.Created, (await admin.PostAsync($"{Packs}/{s.Connection}/agent-jobs", null)).StatusCode);
+        await ReadAsync(s, new
+        {
+            users = new[] { User(omar, "Omar Finance", s.Email("omar")) },
+            groups = new[] { new { externalId = finance, removed = false, displayName = "Finance", membersAdded = new[] { omar }, membersRemoved = Array.Empty<string>(), membersComplete = true } },
+        });
+        Assert.Equal(omar, await world.Database.TenantScalarAsync<string>(s.Tenant.Id,
+            "select array_to_string(members, ',') from identity.directory_group where connection_id = @c and directory_id = @d", ("c", s.Connection), ("d", finance)));
+
         var runs = await (await admin.GetAsync("/api/v1/tenant/directory")).ReadAsync<JsonElement>();
         Assert.Equal("succeeded", runs.GetProperty("runs").EnumerateArray().First().GetProperty("outcome").GetString());
     }

@@ -23,7 +23,7 @@ Depends on 004, 005, 006, 015, 024, 026, 027. R2.
 
 ## Phase 4: User Story 6, on-premises agent (P1)
 - [x] T014 [P] [US6] Tests: enrolment, certificate binding, revocation within 1 minute, one taker per connection, offline status
-- [ ] T015 [US6] Sync agent service and endpoint; AD pack over LDAPS feeding specs 002 and 003
+- [x] T015 [US6] Sync agent service and endpoint; AD pack over LDAPS feeding specs 002 and 003
 
 ## Phase 5: User Stories 7 and 8, packs (P2, P3)
 - [ ] T016 [US7] SFTP and CSV clock data import; finance hand-off contract

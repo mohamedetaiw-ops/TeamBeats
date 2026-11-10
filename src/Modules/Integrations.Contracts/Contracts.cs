@@ -95,8 +95,13 @@ public sealed record DirectoryUserRecord(
     string? ManagerId = null,
     string? HireDate = null);
 
-/// <summary>A directory group and the member changes since the last read.</summary>
-public sealed record DirectoryGroupRecord(string ExternalId, bool Removed, string? DisplayName, IReadOnlyList<string> MembersAdded, IReadOnlyList<string> MembersRemoved);
+/// <summary>
+/// A directory group and the member changes since the last read. When <paramref name="MembersComplete"/> is true,
+/// <paramref name="MembersAdded"/> is the whole membership and replaces what was known (the on-premises agent reads every
+/// member of a changed group).
+/// </summary>
+public sealed record DirectoryGroupRecord(string ExternalId, bool Removed, string? DisplayName, IReadOnlyList<string> MembersAdded, IReadOnlyList<string> MembersRemoved,
+    bool MembersComplete = false);
 
 /// <summary>
 /// Changes since the cursors (a full read when they are null), and the cursors for the next read. Administrative units

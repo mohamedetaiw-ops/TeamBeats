@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The on-premises sync agent (spec 017 US6). It runs inside the customer network as a Windows service, a systemd
+    service or a container, connects outbound only to the tenant's TeamBeats host, and reads Active Directory over LDAPS.
+    It shares only the agent protocol contracts with the product, never module code.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>TeamBeats.SyncAgent</RootNamespace>
+    <AssemblyName>TeamBeats.SyncAgent</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="System.DirectoryServices.Protocols" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Modules/Integrations.Contracts/TeamBeats.Modules.Integrations.Contracts.csproj" />
+  </ItemGroup>
+</Project>

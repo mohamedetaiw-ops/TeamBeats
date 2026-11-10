@@ -119,3 +119,17 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 ### Differences and follow-ups
 - AD FS sign-in (spec 003 US5) is not built yet, so synced AD accounts are linked under the issuer `urn:teambeats:onprem-ad:{connectionId}` with no identity provider. AD FS sign-in will match its token's `objectGUID` to that issuer for the connection. Until then synced AD users appear in the directory, groups and organization mapping, but cannot sign in.
 - Group to role mapping stays with the Entra ID identity provider settings, so it does not apply to AD groups yet; it comes with AD FS.
+
+## The sync agent program (spec 017, slice 9: T015 part 3)
+
+### Built
+- `src/SyncAgent`: the agent the customer installs. `enrol --server --code --name` makes an ECDSA P-256 key, enrols with the code and keeps the private key in its state folder (owner read and write only on Linux). `run` (a Windows service, a systemd service or the container in `deploy/docker/sync-agent.Dockerfile`) sends a heartbeat every minute, pulls every 30 seconds and runs directory sync jobs. Install and operation steps: `docs/operations/sync-agent.md`.
+- The read uses System.DirectoryServices.Protocols over LDAPS only, with the operating system's certificate checks, paged searches and ranged reads of large groups. The first read takes every user and group under the base DN; later reads take entries with `uSNChanged` after the cursor plus tombstones of deleted users and groups. The cursor is the domain controller's highest committed USN taken before the read. Users are keyed by `objectGUID`; `userAccountControl` decides whether the account is enabled; the manager DN is turned into the manager's `objectGUID`.
+- A changed group is sent with its whole membership; a new `MembersComplete` flag on the canonical group record makes Identity replace the members it knew, so membership stays right after an agent is replaced.
+- LDAP failures become plain error classes (`credential_refused`, `not_responding`, `server_error`, `credential_missing`). The service account and its password come from the agent's settings or environment and are never sent or logged.
+- Tests: `tests/Integration/SyncAgentProgramTests.cs` runs the program's client and job runner against the real API with a directory played by the test (enrol, key file mode, first read, manager resolution, group members, incremental filter after the cursor, disabled user, deleted group, password never stored); `tests/Unit/SyncAgentMappingTests.cs` covers the mapping.
+
+### Differences and follow-ups
+- New packages, all Microsoft and MIT licensed: `System.DirectoryServices.Protocols` (named in plan 017), `Microsoft.Extensions.Hosting.WindowsServices` and `Microsoft.Extensions.Hosting.Systemd` to run as a service. On Linux the agent needs the OpenLDAP client library (`libldap`), which the container image installs.
+- A signed Windows installer and code signing of the agent are release work and are not in this slice.
+- Objects moved out of the base DN are not seen as removed until they are deleted or disabled in AD.
