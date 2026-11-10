@@ -147,7 +147,7 @@ public sealed class ExperienceValidationTests
     {
         var registry = new ComponentRegistry([new PlatformComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
         Assert.Empty(registry.Rejected);
-        Assert.Equal(["home.briefing@1", "toolbox.time_converter@1", "toolbox.weather@1", "toolbox.world_clock@1"], registry.All.Select(m => m.Reference));
+        Assert.Equal(["home.briefing@1", "home.your_day@1", "toolbox.time_converter@1", "toolbox.weather@1", "toolbox.world_clock@1"], registry.All.Select(m => m.Reference));
         Assert.All(registry.All.Where(m => m.Id.StartsWith("toolbox.", StringComparison.Ordinal)), m =>
         {
             Assert.Equal("utility", m.Display.Category);
@@ -175,6 +175,18 @@ public sealed class ExperienceValidationTests
         Assert.Equal(["/api/v1/me", "/api/v1/tasks", "/api/v1/me/policies", "/api/v1/me/calendar", "/api/v1/weather"], briefing.Data);
         Assert.Empty(PropertyValidator.Validate(briefing.Properties, null));
         Assert.NotEmpty(PropertyValidator.Validate(briefing.Properties, JsonSerializer.SerializeToElement(new { location = new string('x', 101) })));
+    }
+
+    [Fact]
+    public void Your_day_is_a_personal_singleton_that_reads_tasks_and_the_calendar()
+    {
+        var registry = new ComponentRegistry([new PlatformComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        var day = registry.Find("home.your_day@1")!;
+        Assert.Equal("personal", day.Display.Category);
+        Assert.True(day.Placement.Singleton);
+        Assert.Empty(day.Requires.Capabilities);
+        Assert.Equal(["/api/v1/tasks", "/api/v1/me/calendar"], day.Data);
+        Assert.NotEmpty(PropertyValidator.Validate(day.Properties, JsonSerializer.SerializeToElement(new { title = new { en = new string('x', 81) } })));
     }
 
     [Theory]

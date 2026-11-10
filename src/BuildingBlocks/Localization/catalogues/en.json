@@ -1170,11 +1170,14 @@
   "conflict.integrations.agent_job_open": "A directory sync is already waiting or running for this connection.",
   "conflict.integrations.agent_key_in_use": "This key is already enrolled.",
   "conflict.integrations.agent_job_not_held": "This agent does not hold the job.",
+  "conflict.integrations.tool_limit": "Your organization can register at most 200 connector tools.",
+  "conflict.integrations.tool_exists": "A tool with this name, or for this action, already exists.",
+  "experience.component.home_your_day.name": "Your day",
+  "experience.component.home_your_day.description": "Tasks to approve, overdue tasks and meetings today, then today's agenda",
+  "experience.component.home_your_day.props.title": "Title",
   "validation.connector_tool.action": "Choose an action of this connection.",
   "validation.connector_tool.no_inputs": "This action does not declare its inputs, so it cannot be a tool.",
   "validation.connector_tool.name": "Use 3 to 41 lowercase letters, digits or underscores, starting with a letter.",
   "validation.connector_tool.description": "Describe what the tool does in 10 to 500 characters.",
-  "validation.connector_tool.title": "Enter a title of up to 100 characters in at least one language.",
-  "conflict.integrations.tool_limit": "Your organization can register at most 200 connector tools.",
-  "conflict.integrations.tool_exists": "A tool with this name, or for this action, already exists."
+  "validation.connector_tool.title": "Enter a title of up to 100 characters in at least one language."
 }

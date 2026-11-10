@@ -30,6 +30,8 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Split view | `.ui-split` | A main column with a side column (Tasks and delegation) | The side column is an `aside` with a label; stacks below 64rem |
 | Person card | `people-cards` | People directory and team | Avatar with a steady tone, name link covers the card |
 | Briefing hero | `home.briefing` | Top of the home: greeting, date, weather, next three things with actions | A section named by its heading; rows are an ordered list; where items came from is stated |
+| Your day | `home.your_day` | Tinted counts and today's agenda beside the briefing | A section named by its heading; the agenda is an ordered list; the connect line is a real link |
+| Ask TeamBeats | `features/shell/Shell.tsx` | One floating button that opens the assistant, when the tenant has it | A link with a visible name; it never covers the focused element's own actions |
 | Featured news | `content.news_feed` with layout `featured` | Lead story large, the rest as rows, with reading time and reactions | One link per story |
 | Campaign band | `content.call_to_action` with emphasis `campaign` | One campaign at the bottom of the home | Heading and one action; decoration is hidden |
 

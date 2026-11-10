@@ -22,13 +22,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await seedHome(tenant);
     });
 
-    test("the seeded home shows the briefing, tasks, services and the campaign band last", async ({ page }, testInfo) => {
+    test("the seeded home shows the briefing, your day, services, Ask TeamBeats and the campaign band last", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/`);
-      const tasks = page.getByTestId("home-task-summary");
-      await expect(tasks.getByRole("heading", { name: locale === "ar" ? "يومك" : "Your day" })).toBeVisible();
-      await expect(tasks.getByText(msg(locale, "services.home.tasks.none"))).toBeVisible();
-      await expect(tasks.getByRole("link", { name: msg(locale, "services.home.tasks.inbox") })).toHaveAttribute("href", "/tasks");
+      const day = page.getByTestId("home-your-day");
+      await expect(day.getByRole("heading", { name: msg(locale, "home.day.title") })).toBeVisible();
+      await expect(day.getByText(msg(locale, "home.day.toApprove"))).toBeVisible();
+      await expect(day.getByRole("link", { name: msg(locale, "home.day.inbox") })).toHaveAttribute("href", "/tasks");
+      // This tenant has no Microsoft 365, so the agenda says so in one line instead of guessing meetings.
+      await expect(day.getByText(msg(locale, "home.day.calendarUnavailable"))).toBeVisible();
+      await expect(page.getByRole("link", { name: msg(locale, "shell.ask") })).toHaveAttribute("href", "/assistant");
       const services = page.getByTestId("home-my-services");
       await expect(services.getByRole("heading", { name: msg(locale, "services.home.services.title") })).toBeVisible();
       await expect(services.getByRole("link").first()).toBeVisible();

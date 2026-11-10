@@ -70,6 +70,8 @@ public sealed class ShellNavigationTests(TenantWorld world)
         var shell = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
         Assert.Equal(0, shell.GetProperty("version").GetInt32());
         Assert.Equal(["identity", "global_navigation"], shell.GetProperty("layout").GetProperty("start").EnumerateArray().Select(r => r.GetString()));
+        // Every package has the assistant (spec 002), so the shell offers the Ask TeamBeats button (spec 008 FR-056).
+        Assert.True(shell.GetProperty("assistant").GetBoolean());
 
         var releasesBefore = await t["admin"].Client.GetStringAsync($"/api/v1/experience/pages/{pageId}/releases");
         var definition = new

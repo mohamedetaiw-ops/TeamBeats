@@ -32,6 +32,21 @@
       "acceptPolicy": "Read and accept {name}",
       "dueOn": "Due {date}",
       "from": "From {name}"
+    },
+    "day": {
+      "title": "Your day",
+      "inbox": "Task inbox",
+      "toApprove": "to approve",
+      "overdue": "overdue",
+      "meetings": "{count, plural, one {meeting left today} other {meetings left today}}",
+      "agenda": "Today's meetings",
+      "noCalendar": "See today's meetings here.",
+      "connect": "Connect Outlook",
+      "calendarUnavailable": "Your calendar is not available right now.",
+      "noMeetings": "No more meetings today.",
+      "privateMeeting": "Private meeting",
+      "startsIn": "In {minutes} min",
+      "now": "Now"
     }
   },
   "signin": {
@@ -397,12 +412,13 @@
     "homeOf": "{name} home",
     "account": "Account: {name}",
     "profile": "My profile",
-    "switchLanguage": "Switch to {language}"
+    "switchLanguage": "Switch to {language}",
+    "ask": "Ask TeamBeats"
   },
   "personalization": {
     "toolbar": "Personalize your page",
-    "start": "Personalize this page",
-    "done": "Done personalizing",
+    "start": "Arrange this page",
+    "done": "Done arranging",
     "modeOn": "Personalization mode is on. Each item you can change has its own buttons.",
     "modeOff": "Personalization mode is off.",
     "undo": "Undo",

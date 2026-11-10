@@ -1,9 +1,9 @@
 {
-  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md), laid out after the v2 home mockup: your briefing and Your day at the top, featured news next to My services, calendar and mail side by side, and the Safety Week campaign band at the bottom, above the end of the page. A page from the home template H01, published and set as the shell home, with fictional news, form services and a global menu so the rail and the cards have something to show. Every name in it is invented. Mail and calendar are placed with the IDs the home suggestions use, so they appear here and not at the top. Raise the revision when this file changes: a home seeded from an older revision that nobody edited is brought up to date, and a home an administrator changed is never replaced. News and services are added only when their English title is new; the menu only while the tenant has none.",
+  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md), laid out after the v2 home mockup: your briefing and Your day (tasks and today's agenda) at the top, featured news across the page, a row of My services, calendar and mail side by side, and the Safety Week campaign band at the bottom, above the end of the page. A page from the home template H01, published and set as the shell home, with fictional news, form services and a global menu so the rail and the cards have something to show. Every name in it is invented. Mail and calendar are placed with the IDs the home suggestions use, so they appear here and not at the top. Raise the revision when this file changes: a home seeded from an older revision that nobody edited is brought up to date, and a home an administrator changed is never replaced. News and services are added only when their English title is new; the menu only while the tenant has none.",
   "template": "H01",
   "slug": "home",
   "variant": "balanced",
-  "revision": 4,
+  "revision": 5,
   "navigation": [
     {
       "slug": "nav-home",
@@ -440,39 +440,32 @@
         "span": 8
       },
       {
-        "id": "tasks",
-        "componentRef": "services.task_summary@1",
-        "span": 4,
-        "props": {
-          "title": {
-            "en": "Your day",
-            "ar": "يومك"
-          },
-          "top": 3
-        }
+        "componentRef": "home.your_day@1",
+        "id": "your-day",
+        "span": 4
       }
     ],
     "grid": [
       {
         "id": "news",
         "componentRef": "content.news_feed@1",
-        "span": 8,
+        "span": 12,
         "props": {
           "title": {
             "en": "News",
             "ar": "الأخبار"
           },
           "type": "all",
-          "top": 5,
+          "top": 4,
           "layout": "featured"
         }
       },
       {
         "id": "services",
         "componentRef": "services.my_services@1",
-        "span": 4,
+        "span": 12,
         "props": {
-          "top": 4
+          "top": 5
         }
       },
       {

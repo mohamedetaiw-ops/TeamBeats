@@ -38,6 +38,8 @@ export type Shell = {
   canSwitchOrganization: boolean;
   /** Slug of the employee home when it is published and the viewer may open it. */
   home: string | null;
+  /** True when the tenant has the assistant, so the shell offers Ask TeamBeats (spec 008 FR-056). */
+  assistant: boolean;
 };
 
 export type Crumb = { label: string; href: string };
