@@ -4,7 +4,7 @@ import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
 
 /**
- * Spec 017 T007, T010 and T012: the Connections area. The administrator allows a host, adds a custom REST connection
+ * Spec 017 T005, T007, T010 and T012: the Connections area. The administrator allows a host, adds a custom REST connection
  * (it starts turned off), tests it, turns it on and off, defines an action without code, reads the run history and
  * deletes the connection, in English and Arabic with axe. Nothing calls an external system: the test only checks the
  * allowlist, and no action runs. The API decides every rule.
@@ -74,6 +74,37 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "connections.detail.deleteConfirm"), exact: true }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
       await expect(page.getByText(msg(locale, "connections.list.empty"))).toBeVisible();
+    });
+
+    test("an administrator adds a Microsoft 365 connection, reads its permissions, turns a feature off and on and deletes it", async ({ page }, testInfo) => {
+      const name = locale === "ar" ? "مستأجر الشركة" : "Company tenant";
+      const tenantId = locale === "ar" ? "7b2a4c11-3f5e-4d6a-9b8c-0d1e2f3a4b5c" : "6a1b3c22-4e5f-4a7b-8c9d-1e2f3a4b5c6d";
+      const mail = msg(locale, "connections.m365.feature.mail");
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/connections`);
+      const add = page.getByRole("form", { name: msg(locale, "connections.m365.addTitle") });
+      await add.getByLabel(msg(locale, "connections.m365.tenantId")).fill(tenantId);
+      await add.getByLabel(msg(locale, "connections.m365.name")).fill(name);
+      await add.getByLabel(mail, { exact: true }).check();
+      await add.getByRole("button", { name: msg(locale, "connections.m365.add") }).click();
+
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await expect(page.getByText(msg(locale, "connections.status.needs_consent"), { exact: true })).toBeVisible();
+      await expect(page.getByText(msg(locale, "connections.m365.permissions.mail_read_basic"))).toBeVisible();
+      await expect(page.getByRole("link", { name: msg(locale, "connections.m365.grantConsent").replace("{feature}", mail) })).toBeVisible();
+      await expectAccessible(page, testInfo, `m365-connection-${locale}`);
+
+      await page.getByRole("button", { name: msg(locale, "connections.m365.turnOffFeature").replace("{feature}", mail) }).click();
+      await expect(page.getByRole("button", { name: msg(locale, "connections.m365.turnOnFeature").replace("{feature}", mail) })).toBeVisible();
+      await page.getByRole("button", { name: msg(locale, "connections.m365.turnOnFeature").replace("{feature}", mail) }).click();
+      await expect(page.getByRole("form", { name: msg(locale, "connections.m365.optionsFor").replace("{feature}", mail) })).toBeVisible();
+
+      const deletion = page.getByRole("region", { name: msg(locale, "connections.detail.deleteTitle") });
+      await deletion.getByRole("button", { name: msg(locale, "connections.detail.delete"), exact: true }).click();
+      await page.getByRole("button", { name: msg(locale, "connections.detail.deleteConfirm"), exact: true }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
+      await expect(page.getByText(msg(locale, "connections.m365.empty"))).toBeVisible();
     });
   });
 }
