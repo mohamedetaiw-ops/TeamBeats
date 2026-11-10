@@ -960,7 +960,8 @@
     "tabs": {
       "all": "All",
       "unread": "Unread",
-      "action": "Needs action"
+      "action": "Needs action",
+      "label": "Which notifications to show"
     },
     "groups": {
       "action": "Requires action",

@@ -362,8 +362,8 @@ legend {
   align-items: center;
   justify-content: center;
   gap: var(--tb-space-sm);
-  min-block-size: 2.5rem;
-  min-inline-size: 2.5rem;
+  min-block-size: 2.75rem;
+  min-inline-size: 2.75rem;
   padding-block: var(--tb-space-sm);
   padding-inline: var(--tb-space-md);
   border: var(--tb-border-width-thin) solid var(--tb-color-accent-base);

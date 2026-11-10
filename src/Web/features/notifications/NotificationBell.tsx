@@ -137,7 +137,7 @@ export function NotificationBell() {
               </button>
             ) : null}
           </div>
-          <div role="group" aria-label={t("filter.label")} className="notification-tabs">
+          <div role="group" aria-label={t("tabs.label")} className="notification-tabs">
             {tabs.map((key) => (
               <button key={key} type="button" className="notification-tab" aria-pressed={tab === key} onClick={() => setTab(key)}>
                 {t(`tabs.${key}`)}

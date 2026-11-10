@@ -37,12 +37,12 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const panel = page.locator(".notification-panel");
       await expect(panel.getByRole("heading", { level: 3, name: msg(locale, "notifications.groups.action") })).toBeVisible();
       await expect(panel.locator(".notification-entry .notification-dot")).toHaveCount(2);
-      await panel.getByRole("button", { name: msg(locale, "notifications.tabs.action") }).click();
+      await panel.getByRole("button", { name: msg(locale, "notifications.tabs.action"), exact: true }).click();
       await expect(panel.locator(".notification-entry")).toHaveCount(1);
-      await panel.getByRole("button", { name: msg(locale, "notifications.tabs.all") }).click();
+      await panel.getByRole("button", { name: msg(locale, "notifications.tabs.all"), exact: true }).click();
       await panel.locator(".notification-entry", { hasText: "details-news" }).hover();
       await panel.locator(".notification-entry", { hasText: "details-news" }).getByRole("button", { name: msg(locale, "notifications.markRead") }).click();
-      await panel.getByRole("button", { name: msg(locale, "notifications.tabs.unread") }).click();
+      await panel.getByRole("button", { name: msg(locale, "notifications.tabs.unread"), exact: true }).click();
       await expect(panel.locator(".notification-entry")).toHaveCount(1);
       await expectAccessible(page, testInfo, `details-inbox-${locale}`);
     });

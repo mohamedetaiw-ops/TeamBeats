@@ -8,7 +8,8 @@ The layouts of a screen can be right and the screen can still look generated. Wh
 |---|---|---|
 | Page card, table | 16px radius, 1px border, hairline shadow | `radius.lg`, `color.border.default`, `shadow.sm` |
 | Tile, inner card | 12px radius | `radius.md` |
-| Input, button, select | 8px radius, 40px high (36 compact, 44 for a page's main action) | `radius.sm` |
+| Input, select | 8px radius, 40px high (36 compact) | `radius.sm` |
+| Button | 8px radius; medium 44px, small 36px, compact 28px (DLS-033) | `radius.sm` |
 | Popover, sheet, dialog | 12px radius, strong shadow | `radius.md`, `shadow.md` |
 | Badge, chip | 6px radius, 22 to 24px high | `radius.sm` less 2px |
 | Fully round | Avatar, count bubble, assistant launcher only | `radius.full` |

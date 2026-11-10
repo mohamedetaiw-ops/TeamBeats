@@ -63,7 +63,7 @@ test.describe("tenant theme", () => {
     await page.emulateMedia({ colorScheme: "dark" });
     expect(await accent(page)).toBe("#0f766e");
     await page.getByRole("button", { name: msg("en", "shell.settings.open") }).click();
-    await page.getByRole("radiogroup", { name: msg("en", "shell.settings.mode.label") }).getByText(msg("en", "shell.settings.mode.system"), { exact: true }).click();
+    await page.getByRole("radiogroup", { name: msg("en", "shell.settings.mode.label") }).getByRole("radio", { name: msg("en", "shell.settings.mode.system") }).check();
     await expect.poll(() => accent(page)).toBe("#5eead4");
   });
 });

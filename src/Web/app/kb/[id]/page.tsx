@@ -84,7 +84,7 @@ export default async function ArticlePage({
             <h1>
               <bdi>{title}</bdi>
             </h1>
-            {words === 0 ? (
+            {a.sections.length === 0 ? (
               <StateView
                 kind="empty"
                 icon="book"
