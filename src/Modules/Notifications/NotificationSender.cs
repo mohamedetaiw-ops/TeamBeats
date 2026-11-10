@@ -38,16 +38,21 @@ public sealed class NotificationSender(
         var parameters = new Jsonb(JsonSerializer.Serialize(request.Parameters ?? new Dictionary<string, string>(), JsonDefaults.Options));
 
         int created = 0, grouped = 0, duplicates = 0, skipped = 0;
-        foreach (var userId in request.Recipients.Distinct())
+        var recipients = request.Recipients.Distinct().ToList();
+        // Members and accounts are read for the whole batch at once, so a burst of 100,000 (a critical announcement in
+        // batches of 500) stays within its time budget (spec 015 section 15).
+        var members = await memberships.GetManyAsync(recipients, ct);
+        var accounts = await users.GetManyAsync(recipients, ct);
+        var rows = new List<(Guid Id, Guid UserId)>();
+        foreach (var userId in recipients)
         {
-            var membership = await memberships.GetAsync(userId, ct);
-            if (membership is not { Status: MembershipStatus.Active })
+            if (!members.TryGetValue(userId, out var membership) || membership.Status != MembershipStatus.Active)
             {
                 // Another tenant's user, or a disabled member: nothing is sent (spec 015 section 7, NOT-011).
                 skipped++;
                 continue;
             }
-            if ((await users.GetAsync(userId, ct))?.IsTest == true)
+            if (accounts.GetValueOrDefault(userId)?.IsTest == true)
             {
                 // A synthetic evaluation persona is never notified (spec 034 FR-006).
                 skipped++;
@@ -81,22 +86,25 @@ public sealed class NotificationSender(
                     continue;
                 }
             }
+            rows.Add((Ids.New(), userId));
+        }
 
-            var id = Ids.New();
+        if (rows.Count > 0)
+        {
             await session.ExecAsync(
                 """
                 insert into notifications.notification
                   (tenant_id, id, user_id, category, mandatory, urgent, template_key, parameters, link, dedupe_key, group_key, created_at, updated_at)
-                values (platform.current_tenant_id(), @id, @userId, @category, @mandatory, @urgent, @template, @parameters, @link, @dedupe, @group, @now, @now)
+                select platform.current_tenant_id(), r.id, r.user_id, @category, @mandatory, @urgent, @template, @parameters, @link, @dedupe, @group, @now, @now
+                from unnest(@ids, @userIds) as r(id, user_id)
                 """,
                 new
                 {
-                    id, userId, category = request.Category, mandatory, urgent = request.Urgent, template = request.TemplateKey,
-                    parameters, link = request.Link, dedupe = request.DedupeKey, group = request.GroupKey, now,
+                    ids = rows.Select(r => r.Id).ToArray(), userIds = rows.Select(r => r.UserId).ToArray(), category = request.Category, mandatory,
+                    urgent = request.Urgent, template = request.TemplateKey, parameters, link = request.Link, dedupe = request.DedupeKey, group = request.GroupKey, now,
                 }, ct);
-            created++;
-
-            await QueueEmailAsync(id, userId, request, mandatory, now, ct);
+            created = rows.Count;
+            await QueueEmailAsync(rows, accounts, request, mandatory, now, ct);
         }
 
         NotificationsTelemetry.Sent(context.RequireTenant(), request.Category, created, grouped, duplicates, skipped);
@@ -107,29 +115,42 @@ public sealed class NotificationSender(
         return new SendResult(created, grouped, duplicates, skipped);
     }
 
-    private async Task QueueEmailAsync(Guid notificationId, Guid userId, NotificationRequest request, bool mandatory, DateTimeOffset now, CancellationToken ct)
+    private async Task QueueEmailAsync(IReadOnlyList<(Guid Id, Guid UserId)> rows, IReadOnlyDictionary<Guid, UserInfo> accounts, NotificationRequest request,
+        bool mandatory, DateTimeOffset now, CancellationToken ct)
     {
-        var choice = await preferences.ChannelChoiceAsync(userId, request.Category, mandatory, ct);
-        if (!choice.Email)
+        var deliveries = new List<(Guid NotificationId, Guid UserId, string Status, string Address, DateTimeOffset NotBefore)>();
+        foreach (var (notificationId, userId) in rows)
+        {
+            if (accounts.GetValueOrDefault(userId) is not { } user || string.IsNullOrWhiteSpace(user.Email))
+            {
+                continue;
+            }
+            var choice = await preferences.ChannelChoiceAsync(userId, request.Category, mandatory, ct);
+            if (!choice.Email)
+            {
+                continue;
+            }
+            // Digest applies to non-urgent messages only; quiet hours hold everything except urgent mandatory messages.
+            var digest = choice.Digest && !request.Urgent;
+            var notBefore = digest || (request.Urgent && mandatory) ? now : await preferences.EndOfQuietHoursAsync(userId, now, ct);
+            deliveries.Add((notificationId, userId, digest ? "digest" : "pending", user.Email.Trim(), notBefore));
+        }
+        if (deliveries.Count == 0)
         {
             return;
         }
-
-        var user = await users.GetAsync(userId, ct);
-        if (user is null || string.IsNullOrWhiteSpace(user.Email))
-        {
-            return;
-        }
-
-        // Digest applies to non-urgent messages only; quiet hours hold everything except urgent mandatory messages.
-        var digest = choice.Digest && !request.Urgent;
-        var notBefore = digest || (request.Urgent && mandatory) ? now : await preferences.EndOfQuietHoursAsync(userId, now, ct);
         await session.ExecAsync(
             """
             insert into notifications.delivery (tenant_id, id, notification_id, user_id, channel, status, address, not_before, created_at)
-            values (platform.current_tenant_id(), @id, @notificationId, @userId, 'email', @status, @address, @notBefore, @now)
+            select platform.current_tenant_id(), d.id, d.notification_id, d.user_id, 'email', d.status, d.address, d.not_before, @now
+            from unnest(@ids, @notificationIds, @userIds, @statuses, @addresses, @notBefores) as d(id, notification_id, user_id, status, address, not_before)
             """,
-            new { id = Ids.New(), notificationId, userId, status = digest ? "digest" : "pending", address = user.Email.Trim(), notBefore, now }, ct);
+            new
+            {
+                ids = deliveries.Select(_ => Ids.New()).ToArray(), notificationIds = deliveries.Select(d => d.NotificationId).ToArray(),
+                userIds = deliveries.Select(d => d.UserId).ToArray(), statuses = deliveries.Select(d => d.Status).ToArray(),
+                addresses = deliveries.Select(d => d.Address).ToArray(), notBefores = deliveries.Select(d => d.NotBefore).ToArray(), now,
+            }, ct);
     }
 
     private static void Validate(NotificationRequest request)

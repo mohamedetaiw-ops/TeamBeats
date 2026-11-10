@@ -62,6 +62,20 @@ public interface ITenantMemberships
 {
     Task<TenantMembershipInfo?> GetAsync(Guid userId, CancellationToken ct = default);
 
+    /// <summary>The memberships of many users in one read; users without one in this tenant are left out.</summary>
+    async Task<IReadOnlyDictionary<Guid, TenantMembershipInfo>> GetManyAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct = default)
+    {
+        var found = new Dictionary<Guid, TenantMembershipInfo>();
+        foreach (var id in userIds.Distinct())
+        {
+            if (await GetAsync(id, ct) is { } m)
+            {
+                found[id] = m;
+            }
+        }
+        return found;
+    }
+
     /// <summary>Every tenant membership, active or disabled.</summary>
     Task<IReadOnlyList<TenantMembershipInfo>> ListAsync(CancellationToken ct = default);
 

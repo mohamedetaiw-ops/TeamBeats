@@ -9,6 +9,20 @@ public interface IUserDirectory
 {
     Task<UserInfo?> GetAsync(Guid userId, CancellationToken ct = default);
 
+    /// <summary>Many users in one read; unknown IDs are left out.</summary>
+    async Task<IReadOnlyDictionary<Guid, UserInfo>> GetManyAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct = default)
+    {
+        var found = new Dictionary<Guid, UserInfo>();
+        foreach (var id in userIds.Distinct())
+        {
+            if (await GetAsync(id, ct) is { } u)
+            {
+                found[id] = u;
+            }
+        }
+        return found;
+    }
+
     Task<UserInfo?> FindByEmailAsync(string email, CancellationToken ct = default);
 
     Task<IReadOnlyList<UserInfo>> ListAsync(string? search, int limit, CancellationToken ct = default);

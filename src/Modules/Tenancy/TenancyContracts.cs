@@ -87,6 +87,13 @@ public sealed class TenancyContracts(
             r => new TenantMembershipInfo(r.GetGuid(0), r.GetString(1), Sql.ParseEnum<MembershipStatus>(r.GetString(2)), r.Get<Guid?>("preferred_org_unit_id")),
             ct);
 
+    public async Task<IReadOnlyDictionary<Guid, TenantMembershipInfo>> GetManyAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct = default) =>
+        (await session.QueryAsync(
+            "select user_id, membership_type, status, preferred_org_unit_id from tenancy.tenant_membership where user_id = any(@ids)",
+            new { ids = userIds.Distinct().ToArray() },
+            r => new TenantMembershipInfo(r.GetGuid(0), r.GetString(1), Sql.ParseEnum<MembershipStatus>(r.GetString(2)), r.Get<Guid?>("preferred_org_unit_id")),
+            ct)).ToDictionary(m => m.UserId);
+
     public async Task<IReadOnlyList<TenantMembershipInfo>> ListAsync(CancellationToken ct = default) =>
         await session.QueryAsync(
             "select user_id, membership_type, status, preferred_org_unit_id from tenancy.tenant_membership",
