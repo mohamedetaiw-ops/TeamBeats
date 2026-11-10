@@ -26,6 +26,8 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         "GET /api/v1/auth/signin/options",
         "GET /api/v1/auth/signin/sso",
         "GET /api/v1/auth/signin/sso/callback",
+        // Spec 017 FR-014: other systems call it with a signature instead of a session; WebhookTests covers its checks and the tenant boundary.
+        "POST /api/v1/integrations/inbound/{connectionId:guid}",
     ];
 
     private IReadOnlyList<(string Method, string Pattern)> TenantRoutes() =>

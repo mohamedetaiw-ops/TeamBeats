@@ -56,6 +56,10 @@ public static class IntegrationsModule
         services.AddSingleton<CustomRest.RestTokenCache>();
         services.AddScoped<CustomRest.CustomRestPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<CustomRest.CustomRestPack>());
+        services.AddScoped<Webhooks.WebhookPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.WebhookPack>());
+        services.AddScoped<Webhooks.InboundWebhooks>();
+        Webhooks.OutboundEvents.AddOutboundWebhookEvents(services);
         services.AddScoped<PackConnections>();
         services.AddHttpClient(SafeHttp.ClientName, c => c.Timeout = TimeSpan.FromSeconds(30))
             .ConfigurePrimaryHttpMessageHandler(sp => SafeHttp.CreateHandler(
@@ -197,6 +201,7 @@ public static class IntegrationsModule
         WeatherEndpoints.Map(app);
         RuntimeEndpoints.Map(app);
         PackEndpoints.Map(app);
+        Webhooks.InboundWebhooks.Map(app);
         return app;
     }
 

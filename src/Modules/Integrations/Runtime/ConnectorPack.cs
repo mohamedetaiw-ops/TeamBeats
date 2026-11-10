@@ -85,6 +85,12 @@ public interface IConnectorPack
     /// </summary>
     Task<JsonElement> ValidateSettingsAsync(JsonElement settings, CancellationToken ct) => Task.FromResult(settings);
 
+    /// <summary>
+    /// Settings as stored after a change: <paramref name="next"/> is the validated new settings, <paramref name="previous"/>
+    /// the stored ones. Packs that keep state across changes (a webhook secret in its rotation overlap) carry it here.
+    /// </summary>
+    JsonElement CarryOver(JsonElement previous, JsonElement next, DateTimeOffset now) => next;
+
     /// <summary>The credential expiry date the settings declare, if any (spec 017 US1 scenario 5).</summary>
     DateOnly? CredentialExpiry(JsonElement settings) => null;
 

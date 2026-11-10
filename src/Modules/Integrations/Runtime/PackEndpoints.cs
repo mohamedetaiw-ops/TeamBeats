@@ -68,6 +68,12 @@ public static class PackEndpoints
         api.MapPost("/pack-connections/{id:guid}:disable", (Guid id, IAuthorizationService authz, PackConnections packs, IDbSession session,
             CancellationToken ct) => SetEnabled(id, false, authz, packs, session, ct));
 
+        api.MapGet("/pack-connections/{id:guid}/inbound", async (Guid id, IAuthorizationService authz, Webhooks.InboundWebhooks inbound, CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            return Results.Ok(await inbound.CountsAsync(id, ct) ?? throw AppException.NotFound());
+        });
+
         api.MapGet("/pack-connections/{id:guid}/dependents", async (Guid id, IAuthorizationService authz, PackConnections packs, CancellationToken ct) =>
         {
             await Demand(authz, ct);

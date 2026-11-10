@@ -137,7 +137,8 @@ public sealed class PackConnections(
         {
             throw AppException.Conflict("conflict.integrations.connection_limit");
         }
-        var settings = await pack.ValidateSettingsAsync(request.Settings ?? JsonDocument.Parse("{}").RootElement, ct);
+        var empty = JsonDocument.Parse("{}").RootElement;
+        var settings = pack.CarryOver(empty, await pack.ValidateSettingsAsync(request.Settings ?? empty, ct), clock.UtcNow);
         var id = Ids.New();
         await session.ExecAsync(
             """
@@ -161,7 +162,7 @@ public sealed class PackConnections(
         var pack = Pack(current.Kind);
         var name = request.DisplayName is null ? current.DisplayName : ValidName(request.DisplayName);
         var rate = request.RateLimitPerMinute is { } r ? ValidRate(r) : current.RateLimitPerMinute;
-        var settings = request.Settings is { } s ? await pack.ValidateSettingsAsync(s, ct) : current.Settings;
+        var settings = request.Settings is { } s ? pack.CarryOver(current.Settings, await pack.ValidateSettingsAsync(s, ct), clock.UtcNow) : current.Settings;
         await session.ExecAsync(
             """
             update integrations.connection set display_name = @name, settings = @settings, rate_limit_per_minute = @rate,
@@ -174,6 +175,11 @@ public sealed class PackConnections(
         if (credentialChanged)
         {
             await audit.WriteAsync(new AuditEntry(AuditActions.CredentialChanged, "connection", id.ToString(), Changes: new { credential = CredentialName(settings) }), ct);
+        }
+        if (pack is Webhooks.WebhookPack && Webhooks.WebhookPack.Rotation(current.Settings, settings, clock.UtcNow) is { } rotation)
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.WebhookSecretRotated, "connection", id.ToString(),
+                Changes: new { overlapHours = rotation.OverlapHours, previousValidUntil = rotation.PreviousValidUntil }), ct);
         }
         if (otherChanged)
         {

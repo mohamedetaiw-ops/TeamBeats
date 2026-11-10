@@ -54,6 +54,20 @@ public sealed record ConnectorRestored(Guid ConnectionId) : IIntegrationEvent;
 public sealed record ConnectionDeleted(Guid ConnectionId, string Kind) : IIntegrationEvent;
 
 /// <summary>
+/// A signed inbound webhook that passed its checks (spec 017 US5, FR-014), mapped to a product event or a process
+/// message (spec 024 FR-009). <paramref name="Target"/> is <c>event</c> or <c>message</c>; <paramref name="Name"/> is the
+/// configured event or message name; <paramref name="CorrelationKey"/> is set for messages. Only the declared fields
+/// are carried, as text.
+/// </summary>
+public sealed record InboundWebhookReceived(
+    Guid ConnectionId,
+    string DeliveryId,
+    string Target,
+    string Name,
+    string? CorrelationKey,
+    IReadOnlyDictionary<string, string?> Fields) : IIntegrationEvent;
+
+/// <summary>
 /// A directory account in canonical form (constitution XVII: no external DTOs leave Integrations). On an incremental
 /// read a null value means "not reported", so the previous value is kept; an empty string means the directory cleared it.
 /// <see cref="ManagerId"/> is the manager's directory ID; <see cref="HireDate"/> is the ISO date the directory reports (spec 010).
