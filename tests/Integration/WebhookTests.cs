@@ -336,4 +336,19 @@ public sealed class WebhookTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.NotFound, (await DeliverAsync(a, id, PermitBody, "fictional-cross-value", "x-2")).StatusCode);
         Assert.Equal(1, (await CountsAsync(a, id)).GetProperty("accepted").GetInt64());
     }
+
+    [Fact]
+    public async Task The_event_list_offers_each_event_with_its_fields_to_administrators_only()
+    {
+        var t = await TenantAsync();
+        var response = await t["admin"].Client.GetAsync("/api/v1/integrations/webhook-events");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var list = await response.ReadAsync<JsonElement>();
+        var completed = list.EnumerateArray().Single(e => e.GetProperty("type").GetString() == "RequestCompleted");
+        Assert.Equal(["requestId", "serviceId", "status"], completed.GetProperty("fields").EnumerateArray().Select(f => f.GetString()!).ToArray());
+        Assert.DoesNotContain(list.EnumerateArray().SelectMany(e => e.GetProperty("fields").EnumerateArray()), f => f.GetString() == "completedBy");
+
+        var employee = await world.SeedUserAsync(t, "employee", "employee");
+        Assert.Equal(HttpStatusCode.Forbidden, (await employee.Client.GetAsync("/api/v1/integrations/webhook-events")).StatusCode);
+    }
 }

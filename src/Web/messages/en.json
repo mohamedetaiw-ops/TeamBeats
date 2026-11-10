@@ -3663,7 +3663,8 @@
     "failed": "Something went wrong. Please try again.",
     "kinds": {
       "custom_rest": "Custom REST API",
-      "other": "Connector pack"
+      "other": "Connector pack",
+      "webhook": "Webhook"
     },
     "status": {
       "healthy": "Healthy",
@@ -3683,7 +3684,8 @@
       "inPackage": "Included in your package",
       "notInPackage": "Not included in your package",
       "customRest": "Define your own actions for any HTTPS API on your allowlist.",
-      "actions": "Actions: {names}"
+      "actions": "Actions: {names}",
+      "webhook": "Send signed events to another system and receive signed deliveries from it."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -3958,6 +3960,53 @@
       "deleteIntro": "Deleting stops directory sync, mail and calendar for everyone. Accounts already created stay.",
       "deleteQuestion": "Delete {name}? Its features stop for everyone.",
       "permissionKind": "({type}):"
+    },
+    "webhooks": {
+      "formLabel": "Webhook settings",
+      "name": "Webhook name",
+      "addTitle": "Add a webhook",
+      "addIntro": "Send TeamBeats events to another system, receive signed deliveries from it, or both. Store the signing secret in your secret manager and enter only its reference.",
+      "add": "Add webhook",
+      "url": "Address that receives events",
+      "urlHint": "An https address whose host is on the allowlist below. Leave it empty to only receive.",
+      "secretRef": "Signing secret reference",
+      "overlap": "Keep the old secret working for (hours)",
+      "overlapHint": "From 0 to 24. With 0 the old secret stops working at once.",
+      "overlapRunning": "The previous secret still works until its overlap ends.",
+      "eventsTitle": "Events to send",
+      "eventsHint": "Choose the events and the fields of each that the other system receives. Each delivery is signed and retried when it fails.",
+      "fieldOf": "{field} of {event}",
+      "events": {
+        "ContentPublished": "Content published",
+        "ProcessInstanceCompleted": "Process completed",
+        "RequestCompleted": "Request completed",
+        "RequestReturned": "Request returned",
+        "RequestSubmitted": "Request submitted",
+        "UserTaskCompleted": "Task completed",
+        "UserTaskCreated": "Task created"
+      },
+      "inboundTitle": "Inbound deliveries",
+      "inboundOn": "Receive signed deliveries",
+      "inboundIntro": "The other system sends deliveries to this address, signed with the secret, with a timestamp and a delivery ID. Deliveries with a wrong signature, an old timestamp or a repeated ID are refused and counted.",
+      "inboundUrl": "Inbound address",
+      "target": "A delivery becomes",
+      "targets": {
+        "event": "A product event",
+        "message": "A process message"
+      },
+      "targetName": "Event or message name",
+      "targetNameHint": "Lowercase letters, digits, dots and underscores, such as permits.approved.",
+      "correlationPath": "Correlation key path",
+      "correlationPathHint": "Where the key that matches the waiting process is, such as $.permit.id. Needed for a process message.",
+      "fields": "Fields to keep",
+      "fieldsHint": "One per line as name: path, such as status: $.permit.status. Everything else in the body is ignored.",
+      "window": "Timestamp window in seconds",
+      "windowHint": "From 60 to 300.",
+      "accepted": "Accepted",
+      "refusedSignature": "Refused for the signature",
+      "refusedWindow": "Refused for an old timestamp",
+      "refusedDuplicate": "Refused as repeated",
+      "lastReceived": "Last delivery"
     }
   }
 }

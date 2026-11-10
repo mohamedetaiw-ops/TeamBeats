@@ -2301,6 +2301,18 @@
         }
       }
     },
+    "/api/v1/integrations/webhook-events": {
+      "get": {
+        "tags": [
+          "Integrations: connector packs"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/pack-connections": {
       "get": {
         "tags": [
