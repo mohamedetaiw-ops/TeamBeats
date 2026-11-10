@@ -135,6 +135,9 @@ public sealed class UserDirectory(IDbSession session) : IUserDirectory
     public Task<UserInfo?> GetAsync(Guid userId, CancellationToken ct = default) =>
         session.QuerySingleOrDefaultAsync(Select + " where u.id = @id", new { id = userId }, Map, ct);
 
+    public async Task<IReadOnlyDictionary<Guid, UserInfo>> GetManyAsync(IReadOnlyCollection<Guid> userIds, CancellationToken ct = default) =>
+        (await session.QueryAsync(Select + " where u.id = any(@ids)", new { ids = userIds.Distinct().ToArray() }, Map, ct)).ToDictionary(u => u.Id);
+
     public Task<UserInfo?> FindByEmailAsync(string email, CancellationToken ct = default) =>
         session.QuerySingleOrDefaultAsync(Select + " where lower(u.email) = lower(@e) and not u.test_identity", new { e = email.Trim() }, Map, ct);
 

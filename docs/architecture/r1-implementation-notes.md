@@ -419,7 +419,7 @@ Screen reader checks assert the roles, names and states that assistive technolog
 ## Backfilling tenant rows in migrations
 Tenant tables force row-level security, so a migration that reads or writes their rows without a tenant set sees nothing. Authorization migrations 0003 to 0006 meant to add new permissions and roles to existing tenants and changed nothing; tenants created before them (the staging tenant among them) had administrators without page, theme, shell and personalization permissions. Migration 0007 applies those additions once per tenant with `app.tenant_id` set, and `PermissionBackfillTests` covers it. A future migration that changes rows of existing tenants loops over the tenants the same way.
 
-## Notifications and email (spec 015 T001 to T008)
+## Notifications and email (spec 015 T001 to T009)
 | Part | Where |
 |---|---|
 | Send contract | `INotificationSender.SendAsync` in `Notifications.Contracts`, in the caller's transaction. Recipients who are not active members of the current tenant are skipped and counted. Links must be paths on the tenant host. |
@@ -437,8 +437,8 @@ Tenant tables force row-level security, so a migration that reads or writes thei
 | Live count | Section 15 named a server-sent events connection that does not exist; the bell polls the count every 30 seconds while the page is visible. The spec wording is corrected to that. |
 | Bounces | Only synchronous refusals count as hard bounces. Delivery status notifications that arrive later by email are not read in R1. |
 | Platform relay | No provider is chosen yet (spec 015 section 17). Production needs `Notifications:Email:SmtpHost` and a from address with SPF, DKIM and DMARC before email is turned on. |
-| Template editor screen | The template override API exists; the admin screen lists no templates yet because no sending module defines any. It comes with the first sending module (T009). |
-| T009 | Wiring existing notify points, the 100,000 burst test and spec evidence wait for the sending modules. |
+| Template editor screen | The template override API exists; the admin screen lists no templates yet. |
+| T009 | Done. The sending modules use the contract (see the spec 015 evidence). The sender reads members and accounts for a whole batch at once and writes notifications and email deliveries with one insert each, so 100,000 notifications in batches of 500, as a critical announcement sends them, take about 10 seconds locally against a budget of 2 minutes (`NotificationBurstTests`). `ITenantMemberships.GetManyAsync` and `IUserDirectory.GetManyAsync` were added for it; their default implementations read one at a time, for fakes. Email still leaves at the relay's pace from the delivery queue. |
 
 ## Working calendars (spec 022 T001 to T007)
 | Part | Where |

@@ -11,7 +11,7 @@ Depends on 004, 005, 006, 007, 008. R1: US1 to US4. R2: US5 to US8.
 - [x] T007 [US4] Tenant settings, template overrides and relay test
 - [x] T007a [P] [US1] [US3] Tests and implementation: grouping window; quiet hours hold and urgent bypass
 - [x] T008 Bell, centre panel and page, preferences page, dev inbox page, in English and Arabic, RTL; e2e with axe
-- [ ] T009 Wire existing "notify" points (critical announcements, approvals, security alerts) once their modules exist; burst performance test; OpenAPI; spec evidence
+- [x] T009 Wire existing "notify" points (critical announcements, approvals, security alerts) once their modules exist; burst performance test; OpenAPI; spec evidence
 
 ## R2
 - [ ] T010 [P] [US5] Tests: Teams delivery, quick actions with the same checks and step-up, fallback when disabled
