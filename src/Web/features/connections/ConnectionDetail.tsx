@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
-import { CHECK_RESULTS, checkResult, known, type PackCheck, type PackConnection, type PackTestResult, type WebhookEventChoice } from "@/lib/integrations/types";
+import { CHECK_RESULTS, TICKETING_KINDS, checkResult, isTicketing, known, type PackCheck, type PackConnection, type PackTestResult, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
@@ -127,6 +127,21 @@ export function ConnectionDetail({ initial, webhookEvents = [] }: { initial: Pac
           <h2 id="settings-heading">{t("detail.settings")}</h2>
           <ConnectionSettingsForm
             initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: SettingsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+        </section>
+      ) : null}
+
+      {isTicketing(view.kind) ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <ConnectionSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            authTypes={TICKETING_KINDS[view.kind].auth}
+            desk={TICKETING_KINDS[view.kind].desk}
             submitLabel={t("detail.save")}
             busy={busy === "save"}
             onSubmit={(body: SettingsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}

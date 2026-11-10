@@ -187,13 +187,17 @@ public static partial class RestDefinitions
     /// Checks a call's input against the declared inputs: required ones present, types as declared. Fields that are not
     /// declared are never sent anywhere, so they are ignored. Returns null when valid.
     /// </summary>
-    public static string? CheckInput(RestActionDefinition d, JsonElement input)
+    public static string? CheckInput(RestActionDefinition d, JsonElement input) =>
+        CheckInput((d.Inputs ?? []).Select(i => new ConnectorInput(i.Name, i.Type, i.Required)), input);
+
+    /// <summary>The name of the first input that is missing or of the wrong type, or null when the input fits.</summary>
+    public static string? CheckInput(IEnumerable<ConnectorInput> inputs, JsonElement input)
     {
         if (input.ValueKind is not (JsonValueKind.Object or JsonValueKind.Undefined))
         {
             return "input";
         }
-        foreach (var i in d.Inputs ?? [])
+        foreach (var i in inputs)
         {
             if (input.ValueKind != JsonValueKind.Object || !input.TryGetProperty(i.Name, out var v) || v.ValueKind == JsonValueKind.Null)
             {

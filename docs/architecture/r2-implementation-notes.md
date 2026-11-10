@@ -185,3 +185,17 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 ### Differences and follow-ups
 - Spec 017 section 9 lists `integration.erp_packs`; Oracle and SAP keep the separate keys `integration.oracle_fusion` and `integration.sap` that spec 005 seeded in R0, so no new key is added until those packs are built.
 - The classification of a connection's data is the administrator's statement at capture time; connections carry no classification of their own yet.
+
+## Ticketing packs (spec 017, slice 14: T017)
+
+### Built
+- Two first-party packs, as the section 12 default says (other ticketing systems use custom REST). Both use the framework key `integration.connectors`, since section 9 gives packs in the package no key of their own. Settings are the instance or site address (https, on the tenant allowlist) and a sign-in with a secret manager reference; the REST plumbing (allowlist, sign-in, OAuth client credential tokens, status mapping, 1 MB answers) is shared with custom REST in `CustomRest/RestSignIn.cs`.
+- ServiceNow (`servicenow`, sign-in `basic` or `oauth_client_credentials`): `create_incident` (write, inputs `short_description` required, `description`, `caller`, `category`, `urgency`; output `number`, `sysId`, `state`; reference the incident number; business error `invalid_request` on a 400) and `get_incident_status` (read, input `number`; business error `not_found`). Each incident carries a correlation ID that is a hash of the idempotency key, and the pack looks it up before creating, so a retry after a timeout returns the incident ServiceNow already made (US2 scenario 2). The action is therefore idempotent.
+- Jira Service Management (`jira_service_management`, sign-in `basic` with the account email and an API token, or `bearer`): settings also name the service desk and request type. `create_request` (write, inputs `summary` required, `description`, `on_behalf_of`; output `issueKey`, `issueId`, `status`; reference the issue key; business error `invalid_request`) and `get_request_status` (read, input `issue_key`; business error `not_found` on a 404). The service desk API takes no idempotency key, so `create_request` is declared not idempotent and a timeout after sending stops with "outcome unknown" for the operator.
+- Test connection checks the host, the credential, a token for OAuth, and then one cheap read against the system (`integrations.test.system_ok`, `system_refused`, `system_failed`).
+- Pages: the Connections area has an add form for each ticketing pack in the package, with only that pack's sign-in methods; the connection page edits the same settings.
+- Tests: `tests/Integration/TicketingPackTests.cs` (declared fields only, canonical output, the ServiceNow retry finding its incident, business, credential and input errors, settings rules, package and cross-tenant denial). Acceptance: the connections test adds a ServiceNow connection in English and Arabic with axe.
+
+### Differences and follow-ups
+- Record numbers and issue keys are checked as letters, digits, `_` and `-` before they reach a query, so input can never change a ServiceNow encoded query.
+- The ServiceNow caller is sent as given (a user sys_id or user name). Mapping a TeamBeats person to a ServiceNow or Jira user is a follow-up with the directory contract.

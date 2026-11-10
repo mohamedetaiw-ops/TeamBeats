@@ -1177,6 +1177,9 @@
   "integrations.test.agent_missing": "لم يُسجَّل أي وكيل مزامنة بعد",
   "integrations.test.agent_online": "تواصل وكيل المزامنة خلال آخر 5 دقائق",
   "integrations.test.agent_offline": "لم يتواصل وكيل المزامنة منذ 5 دقائق",
+  "integrations.test.system_ok": "استجاب النظام بطريقة تسجيل الدخول هذه",
+  "integrations.test.system_refused": "رفض النظام بيانات الاعتماد",
+  "integrations.test.system_failed": "تعذر الوصول إلى النظام بهذه الإعدادات",
   "validation.sync_agent.name": "أدخل اسمًا للوكيل لا يتجاوز 100 حرف.",
   "validation.sync_agent.version": "إصدار الوكيل طويل جدًا.",
   "validation.sync_agent.public_key": "يجب أن يكون المفتاح العام من نوع ECDSA P-256.",
@@ -1198,5 +1201,7 @@
   "validation.connector_tool.no_inputs": "هذا الإجراء لا يعرّف مدخلاته، لذلك لا يمكن أن يكون أداة.",
   "validation.connector_tool.name": "استخدم من 3 إلى 41 حرفًا لاتينيًا صغيرًا أو رقمًا أو شرطة سفلية، تبدأ بحرف.",
   "validation.connector_tool.description": "صف ما تفعله الأداة في 10 إلى 500 حرف.",
-  "validation.connector_tool.title": "أدخل عنوانًا من 100 حرف على الأكثر بلغة واحدة على الأقل."
+  "validation.connector_tool.title": "أدخل عنوانًا من 100 حرف على الأكثر بلغة واحدة على الأقل.",
+  "validation.ticketing.service_desk_id": "أدخل معرّف مكتب الخدمة، وهو رقم من Jira Service Management.",
+  "validation.ticketing.request_type_id": "أدخل معرّف نوع الطلب، وهو رقم من Jira Service Management."
 }

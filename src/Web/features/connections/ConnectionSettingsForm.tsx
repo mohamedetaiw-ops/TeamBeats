@@ -9,30 +9,35 @@ import { AUTH_TYPES, type PackConnection, type RestAuth } from "@/lib/integratio
 export type SettingsBody = {
   displayName: string;
   rateLimitPerMinute: number;
-  settings: { baseUrl: string; auth: RestAuth };
+  settings: { baseUrl: string; auth: RestAuth; serviceDeskId?: string; requestTypeId?: string };
 };
 
 /**
  * Name, address and sign-in of a custom REST connection (spec 017 US4, FR-003). The credential is a secret manager
- * reference, never the secret itself; the API checks the reference, the allowlist and every field.
+ * reference, never the secret itself; the API checks the reference, the allowlist and every field. Ticketing packs use
+ * the same form with their own sign-in methods, and Jira Service Management adds its service desk and request type.
  */
 export function ConnectionSettingsForm({
   initial,
   submitLabel,
   busy,
   onSubmit,
+  authTypes = AUTH_TYPES,
+  desk = false,
 }: {
   initial?: PackConnection;
   submitLabel: string;
   busy: boolean;
   onSubmit: (body: SettingsBody) => void;
+  authTypes?: readonly string[];
+  desk?: boolean;
 }) {
   const t = useTranslations("connections.settings");
   const authId = useId();
   const a = initial?.settings.auth;
   const [name, setName] = useState(initial?.displayName ?? "");
   const [baseUrl, setBaseUrl] = useState(initial?.settings.baseUrl ?? "https://");
-  const [type, setType] = useState(a?.type ?? "bearer");
+  const [type, setType] = useState<string>(a?.type ?? (authTypes.includes("bearer") ? "bearer" : (authTypes[0] ?? "none")));
   const [secretRef, setSecretRef] = useState(a?.secretRef ?? "");
   const [header, setHeader] = useState(a?.header ?? "X-Api-Key");
   const [username, setUsername] = useState(a?.username ?? "");
@@ -40,6 +45,8 @@ export function ConnectionSettingsForm({
   const [clientId, setClientId] = useState(a?.clientId ?? "");
   const [scope, setScope] = useState(a?.scope ?? "");
   const [expiresOn, setExpiresOn] = useState(a?.expiresOn ?? "");
+  const [serviceDeskId, setServiceDeskId] = useState(initial?.settings.serviceDeskId ?? "");
+  const [requestTypeId, setRequestTypeId] = useState(initial?.settings.requestTypeId ?? "");
   const [rate, setRate] = useState(String(initial?.rateLimitPerMinute ?? 600));
 
   function submit() {
@@ -52,7 +59,12 @@ export function ConnectionSettingsForm({
       auth.clientId = clientId.trim();
       auth.scope = scope.trim() || null;
     }
-    onSubmit({ displayName: name.trim(), rateLimitPerMinute: Number(rate), settings: { baseUrl: baseUrl.trim(), auth } });
+    const settings: SettingsBody["settings"] = { baseUrl: baseUrl.trim(), auth };
+    if (desk) {
+      settings.serviceDeskId = serviceDeskId.trim();
+      settings.requestTypeId = requestTypeId.trim();
+    }
+    onSubmit({ displayName: name.trim(), rateLimitPerMinute: Number(rate), settings });
   }
 
   return (
@@ -68,7 +80,7 @@ export function ConnectionSettingsForm({
       <div className="field">
         <label htmlFor={authId}>{t("authType")}</label>
         <select id={authId} value={type} onChange={(e) => setType(e.target.value)}>
-          {AUTH_TYPES.map((k) => (
+          {authTypes.map((k) => (
             <option key={k} value={k}>
               {t(`auth.${k}`)}
             </option>
@@ -89,6 +101,12 @@ export function ConnectionSettingsForm({
       ) : null}
       {type !== "none" ? (
         <FormField label={t("expiresOn")} hint={t("expiresOnHint")} name="expiresOn" type="date" value={expiresOn} onChange={(e) => setExpiresOn(e.target.value)} />
+      ) : null}
+      {desk ? (
+        <>
+          <FormField label={t("serviceDeskId")} hint={t("serviceDeskIdHint")} name="serviceDeskId" dir="ltr" inputMode="numeric" required value={serviceDeskId} onChange={(e) => setServiceDeskId(e.target.value)} />
+          <FormField label={t("requestTypeId")} hint={t("requestTypeIdHint")} name="requestTypeId" dir="ltr" inputMode="numeric" required value={requestTypeId} onChange={(e) => setRequestTypeId(e.target.value)} />
+        </>
       ) : null}
       <FormField label={t("rateLimit")} hint={t("rateLimitHint")} name="rateLimitPerMinute" type="number" min={1} max={100000} value={rate} onChange={(e) => setRate(e.target.value)} />
       <div className="connections-row">

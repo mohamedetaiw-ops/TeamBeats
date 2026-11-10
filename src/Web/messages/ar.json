@@ -3961,7 +3961,9 @@
       "custom_rest": "واجهة REST مخصصة",
       "other": "حزمة موصّل",
       "webhook": "خطاف ويب",
-      "onprem_ad": "Active Directory المحلي"
+      "onprem_ad": "Active Directory المحلي",
+      "servicenow": "ServiceNow",
+      "jira_service_management": "Jira Service Management"
     },
     "status": {
       "healthy": "سليم",
@@ -3990,6 +3992,16 @@
       "intro": "أدخل عنوان الواجهة وطريقة تسجيل دخول TeamBeats. احفظ بيانات الاعتماد في مدير الأسرار وأدخل مرجعها فقط هنا.",
       "submit": "إضافة الاتصال"
     },
+    "ticketing": {
+      "servicenow": {
+        "addTitle": "إضافة اتصال ServiceNow",
+        "addIntro": "أدخل عنوان المثيل الخاص بك، مثل https://your-instance.service-now.com، وطريقة تسجيل دخول TeamBeats. بعد ذلك يمكن للخدمات والوكلاء إنشاء بلاغات وقراءة حالتها."
+      },
+      "jira_service_management": {
+        "addTitle": "إضافة اتصال Jira Service Management",
+        "addIntro": "أدخل عنوان موقعك، مثل https://your-site.atlassian.net، وطريقة تسجيل دخول TeamBeats، ومكتب الخدمة ونوع الطلب اللذين تذهب إليهما الطلبات الجديدة. للموقع السحابي، سجّل الدخول بالبريد الإلكتروني للحساب ورمز API."
+      }
+    },
     "settings": {
       "name": "اسم الاتصال",
       "baseUrl": "العنوان الأساسي",
@@ -4011,6 +4023,10 @@
       "scope": "النطاق",
       "expiresOn": "تنتهي بيانات الاعتماد في",
       "expiresOnHint": "يُنبَّه المسؤولون قبل هذا التاريخ بـ 14 يومًا.",
+      "serviceDeskId": "معرّف مكتب الخدمة",
+      "serviceDeskIdHint": "رقم مكتب الخدمة في Jira Service Management.",
+      "requestTypeId": "معرّف نوع الطلب",
+      "requestTypeIdHint": "رقم نوع الطلب الذي تستخدمه الطلبات الجديدة.",
       "rateLimit": "الاستدعاءات في الدقيقة",
       "rateLimitHint": "لا يستدعي TeamBeats هذا النظام أكثر من ذلك.",
       "working": "جارٍ الحفظ…"
@@ -4071,7 +4087,10 @@
       "agent_enrolled": "تم تسجيل وكيل مزامنة",
       "agent_missing": "لم يُسجَّل أي وكيل مزامنة بعد",
       "agent_online": "تواصل وكيل المزامنة خلال آخر 5 دقائق",
-      "agent_offline": "لم يتواصل وكيل المزامنة منذ 5 دقائق"
+      "agent_offline": "لم يتواصل وكيل المزامنة منذ 5 دقائق",
+      "system_ok": "استجاب النظام بطريقة تسجيل الدخول هذه",
+      "system_refused": "رفض النظام بيانات الاعتماد",
+      "system_failed": "تعذر الوصول إلى النظام بهذه الإعدادات"
     },
     "errors": {
       "business_error": "رفض النظام لسبب يتعلق بالعمل",

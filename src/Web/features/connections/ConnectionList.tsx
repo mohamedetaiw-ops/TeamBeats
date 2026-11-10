@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
-import { PACK_KINDS, known, type AllowlistEntry, type Pack, type PackConnection, type WebhookEventChoice } from "@/lib/integrations/types";
+import { PACK_KINDS, TICKETING_KINDS, isTicketing, known, type AllowlistEntry, type Pack, type PackConnection, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
@@ -86,7 +86,8 @@ function Allowlist({ initial }: { initial: AllowlistEntry[] | null }) {
 
 /**
  * The Connections area for connector packs (spec 017 US1, US4): connections with their status, the pack catalogue
- * with each pack's actions, adding a custom REST connection (it starts disabled), and the host allowlist.
+ * with each pack's actions, adding a custom REST, ServiceNow or Jira Service Management connection (each starts
+ * disabled), and the host allowlist.
  */
 export function ConnectionList({
   initial,
@@ -107,6 +108,7 @@ export function ConnectionList({
   const rest = packs.find((p) => p.kind === "custom_rest");
   const webhook = packs.find((p) => p.kind === "webhook");
   const onprem = packs.find((p) => p.kind === "onprem_ad");
+  const ticketing = packs.filter((p) => p.inPackage && isTicketing(p.kind));
 
   async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody) {
     setBusy(kind);
@@ -176,6 +178,24 @@ export function ConnectionList({
           {messages.kind === "custom_rest" ? <Messages messages={messages.list} /> : null}
         </section>
       ) : null}
+
+      {ticketing.map((p) => {
+        const kind = p.kind as keyof typeof TICKETING_KINDS;
+        return (
+          <section key={kind} className="connections-section" aria-labelledby={`add-${kind}-heading`}>
+            <h2 id={`add-${kind}-heading`}>{t(`ticketing.${kind}.addTitle`)}</h2>
+            <p>{t(`ticketing.${kind}.addIntro`)}</p>
+            <ConnectionSettingsForm
+              authTypes={TICKETING_KINDS[kind].auth}
+              desk={TICKETING_KINDS[kind].desk}
+              submitLabel={t("add.submit")}
+              busy={busy === kind}
+              onSubmit={(body) => void create(kind, body)}
+            />
+            {messages.kind === kind ? <Messages messages={messages.list} /> : null}
+          </section>
+        );
+      })}
 
       {webhook?.inPackage ? (
         <section className="connections-section" aria-labelledby="add-webhook-heading">

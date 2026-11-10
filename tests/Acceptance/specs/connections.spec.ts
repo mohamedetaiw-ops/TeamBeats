@@ -7,7 +7,8 @@ import { hostOrigin } from "../support/stack";
  * Spec 017 T005, T007, T010 and T012: the Connections area. The administrator allows a host, adds a custom REST connection
  * (it starts turned off), tests it, turns it on and off, defines an action without code, reads the run history and
  * deletes the connection, in English and Arabic with axe. Nothing calls an external system: the test only checks the
- * allowlist, and no action runs. The API decides every rule.
+ * allowlist, and no action runs. A ServiceNow connection is added in a tenant of its own and its test stops at the
+ * missing credential. The API decides every rule.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`connections in ${locale}`, () => {
@@ -34,10 +35,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
       await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", host) })).toBeVisible();
 
-      await page.getByLabel(msg(locale, "connections.settings.name")).fill(name);
-      await page.getByLabel(msg(locale, "connections.settings.baseUrl")).fill(`https://${host}/v1`);
-      await page.getByLabel(msg(locale, "connections.settings.authType")).selectOption("none");
-      await page.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+      const addRest = page.getByRole("region", { name: msg(locale, "connections.add.title") });
+      await addRest.getByLabel(msg(locale, "connections.settings.name")).fill(name);
+      await addRest.getByLabel(msg(locale, "connections.settings.baseUrl")).fill(`https://${host}/v1`);
+      await addRest.getByLabel(msg(locale, "connections.settings.authType")).selectOption("none");
+      await addRest.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
 
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
       await expect(page.getByText(msg(locale, "connections.status.disabled"), { exact: true })).toBeVisible();
@@ -93,6 +95,36 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "connections.detail.deleteConfirm"), exact: true }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
       await expect(page.getByText(msg(locale, "connections.list.empty"))).toBeVisible();
+    });
+
+    test("an administrator adds a ServiceNow connection with its own sign-in methods and sees its test result", async ({ page }, testInfo) => {
+      const own = await createTenant(`tick-${locale}`, locale, "workplace_plus");
+      const host = `desk-${locale}.example`;
+      const name = locale === "ar" ? "مكتب الخدمة" : "Service desk";
+
+      await signInWithDevForm(page, own.key, own.adminEmail, locale);
+      await page.goto(`${hostOrigin(own.key)}/admin/connections`);
+      await page.getByLabel(msg(locale, "connections.allowlist.host")).fill(host);
+      await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
+      await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", host) })).toBeVisible();
+
+      const add = page.getByRole("region", { name: msg(locale, "connections.ticketing.servicenow.addTitle") });
+      await expect(add.getByLabel(msg(locale, "connections.settings.authType")).locator("option")).toHaveCount(2);
+      await add.getByLabel(msg(locale, "connections.settings.name")).fill(name);
+      await add.getByLabel(msg(locale, "connections.settings.baseUrl")).fill(`https://${host}`);
+      await add.getByLabel(msg(locale, "connections.settings.secretRef")).fill(`secret://tenants/${own.id}/service-desk`);
+      await add.getByLabel(msg(locale, "connections.settings.username")).fill("teambeats.integration");
+      await add.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await expect(page.getByText(msg(locale, "connections.status.disabled"), { exact: true })).toBeVisible();
+      await expect(page.getByLabel(msg(locale, "connections.settings.username"))).toHaveValue("teambeats.integration");
+      await expectAccessible(page, testInfo, `servicenow-connection-${locale}`);
+
+      // The credential is not in the secret manager, so the test stops before calling ServiceNow.
+      await page.getByRole("button", { name: msg(locale, "connections.detail.test"), exact: true }).click();
+      await expect(page.getByText(msg(locale, "connections.detail.testFailed"))).toBeVisible();
+      await expect(page.getByText(msg(locale, "connections.checks.credential_missing"))).toBeVisible();
     });
 
     test("an administrator adds a Microsoft 365 connection, reads its permissions, turns a feature off and on and deletes it", async ({ page }, testInfo) => {

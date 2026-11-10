@@ -49,14 +49,10 @@ public sealed class RestTokenCache
 public sealed class CustomRestPack(
     IDbSession session,
     ITenantContext context,
-    HostAllowlist allowlist,
-    ISecretStore secrets,
-    IHttpClientFactory httpClients,
-    RestTokenCache tokens,
-    IClock clock) : IConnectorPack
+    RestSignIn signIn,
+    IHttpClientFactory httpClients) : IConnectorPack
 {
     public const string KindName = "custom_rest";
-    public const int MaxResponseBytes = 1024 * 1024;
 
     public string Kind => KindName;
 
@@ -103,7 +99,7 @@ public sealed class CustomRestPack(
             return new(PackCallResult.Fatal(ConnectorErrorClasses.InvalidInput), null);
         }
         var baseUri = new Uri(settings.BaseUrl.TrimEnd('/') + "/");
-        if (!await allowlist.IsAllowedAsync(baseUri, ct))
+        if (!await signIn.IsAllowedAsync(baseUri, ct))
         {
             return new(PackCallResult.Fatal(ConnectorErrorClasses.HostNotAllowed), null);
         }
@@ -133,7 +129,7 @@ public sealed class CustomRestPack(
             request.Content = new StringContent(RestDefinitions.RenderBody(body, input)?.ToJsonString() ?? "null", Encoding.UTF8, "application/json");
         }
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        var auth = await AuthorizeAsync(connection, settings, request, ct);
+        var auth = await signIn.AuthorizeAsync(connection, settings, request, ct);
         if (auth is not null)
         {
             return new(auth, null);
@@ -142,33 +138,13 @@ public sealed class CustomRestPack(
         using var client = httpClients.CreateClient(SafeHttp.ClientName);
         using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
         var status = (int)response.StatusCode;
-        if (status is 401 or 403)
+        var business = (d.BusinessErrors ?? []).GroupBy(b => b.Status).ToDictionary(g => g.Key, g => g.First().Code);
+        if (signIn.MapStatus(connection, settings, response, business) is { } failure)
         {
-            if (settings.Auth.Type == "oauth_client_credentials")
-            {
-                tokens.Drop(TokenKey(connection, settings));
-            }
-            return new(PackCallResult.Fatal(ConnectorErrorClasses.CredentialRefused), status);
-        }
-        if (status == 429)
-        {
-            return new(PackCallResult.Technical(ConnectorErrorClasses.Throttled, retryAfter: RetryAfter(response)), status);
-        }
-        if (status >= 500)
-        {
-            return new(PackCallResult.Technical(ConnectorErrorClasses.ServerError, mayHaveActed: true, retryAfter: RetryAfter(response)), status);
-        }
-        if (status >= 400)
-        {
-            var mapped = (d.BusinessErrors ?? []).FirstOrDefault(b => b.Status == status);
-            return new(mapped is null ? PackCallResult.Fatal(ConnectorErrorClasses.RequestRefused) : PackCallResult.Business(mapped.Code), status);
-        }
-        if (status is < 200 or >= 300)
-        {
-            return new(PackCallResult.Fatal(ConnectorErrorClasses.InvalidResponse), status);
+            return new(failure, status);
         }
 
-        var payload = await ReadLimitedAsync(response, ct);
+        var payload = await RestSignIn.ReadLimitedAsync(response, ct);
         if (payload is null)
         {
             return new(PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse, mayHaveActed: true), status);
@@ -206,111 +182,6 @@ public sealed class CustomRestPack(
         return new(PackCallResult.Ok(JsonSerializer.SerializeToElement(mappedOutput, JsonDefaults.Options), reference), status);
     }
 
-    private async Task<PackCallResult?> AuthorizeAsync(PackConnection connection, RestSettings settings, HttpRequestMessage request, CancellationToken ct)
-    {
-        var a = settings.Auth;
-        if (a.Type == "none")
-        {
-            return null;
-        }
-        var secret = a.SecretRef is null ? null : await secrets.GetTenantSecretAsync(connection.TenantId, a.SecretRef, ct);
-        if (string.IsNullOrEmpty(secret))
-        {
-            return PackCallResult.Fatal(ConnectorErrorClasses.CredentialMissing);
-        }
-        switch (a.Type)
-        {
-            case "api_key":
-                request.Headers.TryAddWithoutValidation(a.Header!, secret);
-                return null;
-            case "bearer":
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", secret);
-                return null;
-            case "basic":
-                request.Headers.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.UTF8.GetBytes($"{a.Username}:{secret}")));
-                return null;
-            case "oauth_client_credentials":
-                var (token, failure) = await TokenAsync(connection, settings, secret, ct);
-                if (token is null)
-                {
-                    return failure;
-                }
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-                return null;
-            default:
-                return PackCallResult.Fatal(ConnectorErrorClasses.RequestRefused);
-        }
-    }
-
-    private async Task<(string? Token, PackCallResult? Failure)> TokenAsync(PackConnection connection, RestSettings settings, string secret, CancellationToken ct)
-    {
-        var key = TokenKey(connection, settings);
-        var now = clock.UtcNow;
-        if (tokens.Get(key, now) is { } cached)
-        {
-            return (cached, null);
-        }
-        var a = settings.Auth;
-        var tokenUri = new Uri(a.TokenUrl!);
-        if (!await allowlist.IsAllowedAsync(tokenUri, ct))
-        {
-            return (null, PackCallResult.Fatal(ConnectorErrorClasses.HostNotAllowed));
-        }
-        var form = new Dictionary<string, string> { ["grant_type"] = "client_credentials", ["client_id"] = a.ClientId!, ["client_secret"] = secret };
-        if (!string.IsNullOrEmpty(a.Scope))
-        {
-            form["scope"] = a.Scope;
-        }
-        using var client = httpClients.CreateClient(SafeHttp.ClientName);
-        using var content = new FormUrlEncodedContent(form);
-        using var response = await client.PostAsync(tokenUri, content, ct);
-        var status = (int)response.StatusCode;
-        if (status is 400 or 401 or 403)
-        {
-            return (null, PackCallResult.Fatal(ConnectorErrorClasses.CredentialRefused));
-        }
-        if (!response.IsSuccessStatusCode)
-        {
-            return (null, PackCallResult.Technical(status == 429 ? ConnectorErrorClasses.Throttled : ConnectorErrorClasses.ServerError, retryAfter: RetryAfter(response)));
-        }
-        var payload = await ReadLimitedAsync(response, ct);
-        try
-        {
-            using var doc = JsonDocument.Parse(payload ?? "{}");
-            var token = doc.RootElement.TryGetProperty("access_token", out var t) && t.ValueKind == JsonValueKind.String ? t.GetString() : null;
-            if (string.IsNullOrEmpty(token))
-            {
-                return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
-            }
-            var seconds = doc.RootElement.TryGetProperty("expires_in", out var e) && e.TryGetInt32(out var n) ? n : 300;
-            tokens.Set(key, token, now.AddSeconds(Math.Max(0, seconds - 60)));
-            return (token, null);
-        }
-        catch (JsonException)
-        {
-            return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
-        }
-    }
-
-    private static string TokenKey(PackConnection c, RestSettings s) =>
-        $"{c.TenantId:N}:{c.Id:N}:{s.Auth.TokenUrl}:{s.Auth.ClientId}:{s.Auth.SecretRef}:{s.Auth.Scope}";
-
-    private static TimeSpan? RetryAfter(HttpResponseMessage response) =>
-        response.Headers.RetryAfter?.Delta is { } d ? (d > TimeSpan.FromMinutes(30) ? TimeSpan.FromMinutes(30) : d) : null;
-
-    private static async Task<string?> ReadLimitedAsync(HttpResponseMessage response, CancellationToken ct)
-    {
-        await using var stream = await response.Content.ReadAsStreamAsync(ct);
-        var buffer = new byte[MaxResponseBytes + 1];
-        var total = 0;
-        int read;
-        while (total <= MaxResponseBytes && (read = await stream.ReadAsync(buffer.AsMemory(total, buffer.Length - total), ct)) > 0)
-        {
-            total += read;
-        }
-        return total > MaxResponseBytes ? null : Encoding.UTF8.GetString(buffer, 0, total);
-    }
-
     public static RestSettings? ParseSettings(JsonElement settings)
     {
         try
@@ -323,72 +194,20 @@ public sealed class CustomRestPack(
         }
     }
 
-    public DateOnly? CredentialExpiry(JsonElement settings) =>
-        ParseSettings(settings)?.Auth?.ExpiresOn is { } e && DateOnly.TryParseExact(e, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d) ? d : null;
+    public DateOnly? CredentialExpiry(JsonElement settings) => RestSignIn.ExpiresOn(ParseSettings(settings)?.Auth);
 
     public async Task<JsonElement> ValidateSettingsAsync(JsonElement settings, CancellationToken ct)
     {
         var tenantId = context.RequireTenant();
         var s = ParseSettings(settings);
-        var errors = new ValidationErrors();
         if (s is null || s.Auth is null)
         {
             throw AppException.Validation("settings", "validation.custom_rest.settings");
         }
-        if (!Uri.TryCreate(s.BaseUrl, UriKind.Absolute, out var baseUri) || baseUri.Scheme != Uri.UriSchemeHttps || !string.IsNullOrEmpty(baseUri.UserInfo)
-            || !string.IsNullOrEmpty(baseUri.Query) || !string.IsNullOrEmpty(baseUri.Fragment) || !baseUri.IsDefaultPort && baseUri.Port is < 1 or > 65535
-            || IPAddress.TryParse(baseUri.IdnHost.Trim('[', ']'), out _))
-        {
-            errors.Add("baseUrl", "validation.custom_rest.base_url");
-        }
-        else if (!await allowlist.IsAllowedAsync(baseUri, ct))
-        {
-            errors.Add("baseUrl", "validation.custom_rest.host_not_allowed");
-        }
-        var a = s.Auth;
-        if (a.Type is not ("none" or "api_key" or "bearer" or "basic" or "oauth_client_credentials"))
-        {
-            errors.Add("auth.type", "validation.custom_rest.auth_type");
-        }
-        if (a.Type != "none" && SecretReferences.NameFor(tenantId, a.SecretRef) is null)
-        {
-            errors.Add("auth.secretRef", "validation.custom_rest.secret_ref");
-        }
-        if (a.Type == "api_key" && (a.Header is null || a.Header.Length > 64 || a.Header.Any(c => !(char.IsAsciiLetterOrDigit(c) || c is '-' or '_'))
-            || a.Header.Equals("host", StringComparison.OrdinalIgnoreCase) || a.Header.Equals("cookie", StringComparison.OrdinalIgnoreCase)))
-        {
-            errors.Add("auth.header", "validation.custom_rest.headers");
-        }
-        if (a.Type == "basic" && (string.IsNullOrEmpty(a.Username) || a.Username.Length > 200 || a.Username.Contains(':')))
-        {
-            errors.Add("auth.username", "validation.custom_rest.username");
-        }
-        if (a.Type == "oauth_client_credentials")
-        {
-            if (!Uri.TryCreate(a.TokenUrl, UriKind.Absolute, out var tokenUri) || tokenUri.Scheme != Uri.UriSchemeHttps || !await allowlist.IsAllowedAsync(tokenUri, ct))
-            {
-                errors.Add("auth.tokenUrl", "validation.custom_rest.host_not_allowed");
-            }
-            if (string.IsNullOrEmpty(a.ClientId) || a.ClientId.Length > 200)
-            {
-                errors.Add("auth.clientId", "validation.custom_rest.client_id");
-            }
-            if (a.Scope is { Length: > 500 })
-            {
-                errors.Add("auth.scope", "validation.custom_rest.scope");
-            }
-        }
-        if (a.ExpiresOn is not null && !DateOnly.TryParseExact(a.ExpiresOn, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _))
-        {
-            errors.Add("auth.expiresOn", "validation.custom_rest.expires_on");
-        }
+        var errors = new ValidationErrors();
+        var stored = await signIn.ValidateAsync(tenantId, s.BaseUrl, s.Auth, RestSignIn.AllTypes, errors, ct);
         errors.ThrowIfAny();
-        // Stored with only the fields that apply to the sign-in type.
-        var stored = new RestSettings(baseUri!.GetLeftPart(UriPartial.Path).TrimEnd('/'), new RestAuth(a.Type,
-            a.Type == "api_key" ? a.Header : null, a.Type == "basic" ? a.Username : null, a.Type == "none" ? null : a.SecretRef,
-            a.Type == "oauth_client_credentials" ? a.TokenUrl : null, a.Type == "oauth_client_credentials" ? a.ClientId : null,
-            a.Type == "oauth_client_credentials" ? a.Scope : null, a.ExpiresOn));
-        return JsonSerializer.SerializeToElement(stored, JsonDefaults.Options);
+        return JsonSerializer.SerializeToElement(stored!, JsonDefaults.Options);
     }
 
     public async Task<IReadOnlyList<PackCheck>> TestAsync(PackConnection connection, CancellationToken ct)
@@ -398,38 +217,6 @@ public sealed class CustomRestPack(
         {
             return [new PackCheck("settings", false, "integrations.test.settings_invalid", ConnectorErrorClasses.RequestRefused)];
         }
-        var checks = new List<PackCheck>();
-        var hostOk = await allowlist.IsAllowedAsync(new Uri(settings.BaseUrl.TrimEnd('/') + "/"), ct);
-        checks.Add(new PackCheck("base_url", hostOk, hostOk ? "integrations.test.host_allowed" : "integrations.test.host_not_allowed",
-            hostOk ? null : ConnectorErrorClasses.HostNotAllowed));
-        if (settings.Auth.Type != "none")
-        {
-            var secret = settings.Auth.SecretRef is null ? null : await secrets.GetTenantSecretAsync(connection.TenantId, settings.Auth.SecretRef, ct);
-            var found = !string.IsNullOrEmpty(secret);
-            checks.Add(new PackCheck("credential", found, found ? "integrations.test.credential_found" : "integrations.test.credential_missing",
-                found ? null : ConnectorErrorClasses.CredentialMissing));
-            if (found && settings.Auth.Type == "oauth_client_credentials")
-            {
-                tokens.Drop(TokenKey(connection, settings));
-                PackCheck check;
-                try
-                {
-                    var (token, failure) = await TokenAsync(connection, settings, secret!, ct);
-                    check = token is not null
-                        ? new PackCheck("token", true, "integrations.test.token_ok")
-                        : new PackCheck("token", false, "integrations.test.token_refused", failure?.ErrorClass);
-                }
-                catch (HttpRequestException)
-                {
-                    check = new PackCheck("token", false, "integrations.test.not_responding", ConnectorErrorClasses.NotResponding);
-                }
-                catch (OperationCanceledException) when (!ct.IsCancellationRequested)
-                {
-                    check = new PackCheck("token", false, "integrations.test.not_responding", ConnectorErrorClasses.NotResponding);
-                }
-                checks.Add(check);
-            }
-        }
-        return checks;
+        return await signIn.TestAsync(connection, settings, ct);
     }
 }

@@ -3961,7 +3961,9 @@
       "custom_rest": "Custom REST API",
       "other": "Connector pack",
       "webhook": "Webhook",
-      "onprem_ad": "On-premises Active Directory"
+      "onprem_ad": "On-premises Active Directory",
+      "servicenow": "ServiceNow",
+      "jira_service_management": "Jira Service Management"
     },
     "status": {
       "healthy": "Healthy",
@@ -3990,6 +3992,16 @@
       "intro": "Enter where the API lives and how TeamBeats signs in. Store the credential in your secret manager and enter only its reference here.",
       "submit": "Add connection"
     },
+    "ticketing": {
+      "servicenow": {
+        "addTitle": "Add a ServiceNow connection",
+        "addIntro": "Enter your instance address, such as https://your-instance.service-now.com, and how TeamBeats signs in. Services and agents can then create incidents and read their status."
+      },
+      "jira_service_management": {
+        "addTitle": "Add a Jira Service Management connection",
+        "addIntro": "Enter your site address, such as https://your-site.atlassian.net, how TeamBeats signs in, and the service desk and request type new requests go to. For a cloud site, sign in with the account email and an API token."
+      }
+    },
     "settings": {
       "name": "Connection name",
       "baseUrl": "Base URL",
@@ -4011,6 +4023,10 @@
       "scope": "Scope",
       "expiresOn": "Credential expires on",
       "expiresOnHint": "Administrators are alerted 14 days before this date.",
+      "serviceDeskId": "Service desk ID",
+      "serviceDeskIdHint": "The number of the service desk in Jira Service Management.",
+      "requestTypeId": "Request type ID",
+      "requestTypeIdHint": "The number of the request type that new requests use.",
       "rateLimit": "Calls per minute",
       "rateLimitHint": "TeamBeats never calls this system more often than this.",
       "working": "Saving…"
@@ -4071,7 +4087,10 @@
       "agent_enrolled": "A sync agent is enrolled",
       "agent_missing": "No sync agent is enrolled yet",
       "agent_online": "The sync agent was in touch in the last 5 minutes",
-      "agent_offline": "The sync agent has not been in touch for 5 minutes"
+      "agent_offline": "The sync agent has not been in touch for 5 minutes",
+      "system_ok": "The system answered with this sign-in",
+      "system_refused": "The system refused the credential",
+      "system_failed": "The system could not be reached with these settings"
     },
     "errors": {
       "business_error": "The system refused for a business reason",
