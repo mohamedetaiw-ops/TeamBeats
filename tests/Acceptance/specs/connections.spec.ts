@@ -127,6 +127,31 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByText(msg(locale, "connections.checks.credential_missing"))).toBeVisible();
     });
 
+    test("an administrator adds a Slack connection with a bot token reference", async ({ page }, testInfo) => {
+      const own = await createTenant(`slack-${locale}`, locale, "workplace_plus");
+      const name = locale === "ar" ? "مساحة Slack" : "Company Slack";
+
+      await signInWithDevForm(page, own.key, own.adminEmail, locale);
+      await page.goto(`${hostOrigin(own.key)}/admin/connections`);
+      await page.getByLabel(msg(locale, "connections.allowlist.host")).fill("slack.com");
+      await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
+      await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", "slack.com") })).toBeVisible();
+
+      const add = page.getByRole("form", { name: msg(locale, "connections.slack.formLabel") });
+      await expect(add.getByLabel(msg(locale, "connections.slack.baseUrl"))).toHaveValue("https://slack.com/api");
+      await add.getByLabel(msg(locale, "connections.settings.name")).fill(name);
+      await add.getByLabel(msg(locale, "connections.slack.botToken")).fill(`secret://tenants/${own.id}/slack-bot`);
+      await add.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await expect(page.getByLabel(msg(locale, "connections.slack.botToken"))).toHaveValue(`secret://tenants/${own.id}/slack-bot`);
+      await expectAccessible(page, testInfo, `slack-connection-${locale}`);
+
+      // The token is not in the secret manager, so the test stops before calling Slack.
+      await page.getByRole("button", { name: msg(locale, "connections.detail.test"), exact: true }).click();
+      await expect(page.getByText(msg(locale, "connections.checks.credential_missing"))).toBeVisible();
+    });
+
     test("an administrator adds a Microsoft 365 connection, reads its permissions, turns a feature off and on and deletes it", async ({ page }, testInfo) => {
       const name = locale === "ar" ? "مستأجر الشركة" : "Company tenant";
       const tenantId = locale === "ar" ? "7b2a4c11-3f5e-4d6a-9b8c-0d1e2f3a4b5c" : "6a1b3c22-4e5f-4a7b-8c9d-1e2f3a4b5c6d";

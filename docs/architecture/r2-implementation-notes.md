@@ -199,3 +199,18 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 ### Differences and follow-ups
 - Record numbers and issue keys are checked as letters, digits, `_` and `-` before they reach a query, so input can never change a ServiceNow encoded query.
 - The ServiceNow caller is sent as given (a user sys_id or user name). Mapping a TeamBeats person to a ServiceNow or Jira user is a follow-up with the directory contract.
+
+## Slack pack (spec 017, slice 15: T018; spec 015 US8 scenario 3)
+
+### Built
+- A `slack` pack (framework key `integration.connectors`). Settings are the Web API address (default `https://slack.com/api`, on the tenant allowlist) and the bot token as a secret manager reference. Its actions (`lookup_user`, `send_direct_message`, `list_channels`, `share_link`) declare no inputs, so they are never route steps or agent tools; only notifications and content sharing call them, through the runtime, so each call is in run history under the rate limit and circuit breaker. Slack's `ok: false` errors map to the plain classes (credential, throttled, server, `user_gone`, `channel_unavailable`). Text is escaped so it can never become a mention or a hidden link, and links are always https addresses on the tenant's own host. Slack connections cannot capture payloads.
+- Linking: a person links their Slack account from their notification preferences. The Slack member is found by the person's work email (`users.lookupByEmail`) and kept in `integrations.slack_link` (forced RLS). Unlinking, deleting the connection, or Slack answering that the member left all drop the link. A tenant uses its oldest enabled Slack connection.
+- Notifications: a Slack choice per category (`notifications.preference.slack`, off by default). Mandatory messages go to Slack too while the person is linked. Slack deliveries follow quiet hours, never join the digest, and retry with the email backoff for up to 2 hours (spec 015 section 9). When the person left the workspace, the delivery is dropped as `slack_user_left`, the link is removed, and the message goes by email if email did not already have it (spec 017 US8 scenario 2).
+- Sharing: a communicator (`content.publish` at the item's site) shares a published item to a public channel from the item page, with an optional note. Only Public or Internal items aimed at everyone can be shared, because channel members are not checked against the audience. Only the title, the note and the link are posted, and sharing is audited as `content.shared`.
+- Pages: Slack connection form in the Connections area, Slack column and link control in notification preferences, and a "Share to Slack" panel on a live item.
+- Tests: `tests/Integration/SlackTests.cs` (direct messages for linked people per category, run history without content, unlinking, fallback to email, linking refused outside the workspace, disabled connection, no capture, sharing rules, employee and cross-tenant denial).
+
+### Differences and follow-ups
+- Linking matches the work email in the workspace instead of a Slack sign-in, since spec 017 does not say how accounts are linked. Sign in with Slack can replace it without changing the stored link.
+- A share that Slack refuses is rolled back with the request, so it does not count towards the connection's circuit breaker.
+- SMS for mandatory messages (spec 015 R2) is a separate connector and is not part of this slice.

@@ -50,6 +50,8 @@
   "conflict.content.nothing_to_publish": "There are no unpublished changes.",
   "conflict.content.remind_limit": "You cannot put this announcement off again. Please read and confirm it.",
   "conflict.content.site_archived": "This site is archived.",
+  "conflict.content.share_not_published": "Only published content can be shared.",
+  "conflict.content.share_restricted": "Only Public or Internal content aimed at everyone can be shared to Slack, because channel members are not checked against the audience.",
   "conflict.directory.no_connection": "Turn on directory sync in the Microsoft 365 connection first",
   "conflict.directory.not_configured": "Directory sync is not set up yet",
   "conflict.documents.already_broken": "This already has its own permissions.",
@@ -297,6 +299,7 @@
   "experience.template.t12": "Collection",
   "experience.template.t12.description": "A side region for filters beside the results.",
   "integrations.dependent.synced_users": "Users kept in step by directory sync",
+  "integrations.dependent.slack_links": "People who linked their Slack account",
   "integrations.outlook.admin_setup": "Your administrator needs to finish setting up Outlook for TeamBeats",
   "integrations.outlook.conditional_access": "Your organization's access policy blocked this. Open Outlook to continue",
   "integrations.outlook.connected": "Outlook is connected",
@@ -1203,5 +1206,12 @@
   "validation.connector_tool.description": "Describe what the tool does in 10 to 500 characters.",
   "validation.connector_tool.title": "Enter a title of up to 100 characters in at least one language.",
   "validation.ticketing.service_desk_id": "Enter the service desk ID, a number from Jira Service Management.",
-  "validation.ticketing.request_type_id": "Enter the request type ID, a number from Jira Service Management."
+  "validation.ticketing.request_type_id": "Enter the request type ID, a number from Jira Service Management.",
+  "validation.slack.not_in_workspace": "Your work email is not a member of the Slack workspace. Ask your administrator to invite it, then try again.",
+  "validation.slack.no_email": "Your profile has no work email, so your Slack account cannot be found.",
+  "validation.slack.channel": "Choose a Slack channel.",
+  "validation.slack.note_too_long": "The note can be up to 500 characters.",
+  "conflict.slack.unavailable": "Slack is not connected for your organization.",
+  "conflict.slack.unreachable": "Slack could not be reached. Please try again later.",
+  "conflict.slack.channel_unavailable": "TeamBeats cannot post in that channel. Invite the TeamBeats app to the channel, then try again."
 }

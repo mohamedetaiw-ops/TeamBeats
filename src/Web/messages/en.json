@@ -886,7 +886,15 @@
       "timeZone": "Time zone",
       "timeZoneHint": "For example Asia/Dubai.",
       "saving": "Saving",
-      "save": "Save preferences"
+      "save": "Save preferences",
+      "slack": "Slack",
+      "slackFor": "Slack for {category}",
+      "slackLink": "Link my Slack account",
+      "slackUnlink": "Unlink Slack",
+      "slackIsLinked": "Your Slack account is linked. Choose the categories you want as Slack direct messages.",
+      "slackNotLinked": "Your organization uses Slack. Link your account with your work email to get notifications as direct messages.",
+      "slackLinked": "Your Slack account is linked.",
+      "slackUnlinked": "Your Slack account is unlinked."
     },
     "settings": {
       "title": "Notifications",
@@ -2001,6 +2009,17 @@
       },
       "show": "Show {kind} in {site}",
       "none": "Nothing to show."
+    },
+    "slack": {
+      "title": "Share to Slack",
+      "intro": "Post this item's title and link to a Slack channel. Readers still sign in to open it.",
+      "channel": "Channel",
+      "notMember": "#{name} (invite the TeamBeats app first)",
+      "note": "Note (optional)",
+      "share": "Share",
+      "working": "Sharing…",
+      "shared": "Shared to Slack.",
+      "failed": "Something went wrong. Please try again."
     }
   },
   "documents": {
@@ -3963,7 +3982,8 @@
       "webhook": "Webhook",
       "onprem_ad": "On-premises Active Directory",
       "servicenow": "ServiceNow",
-      "jira_service_management": "Jira Service Management"
+      "jira_service_management": "Jira Service Management",
+      "slack": "Slack"
     },
     "status": {
       "healthy": "Healthy",
@@ -3985,7 +4005,8 @@
       "customRest": "Define your own actions for any HTTPS API on your allowlist.",
       "actions": "Actions: {names}",
       "webhook": "Send signed events to another system and receive signed deliveries from it.",
-      "onprem_ad": "Read users and groups from Active Directory in your own network, through a sync agent you install there."
+      "onprem_ad": "Read users and groups from Active Directory in your own network, through a sync agent you install there.",
+      "slack": "Send notifications as Slack direct messages to people who link their account, and share content links to a channel."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -4001,6 +4022,15 @@
         "addTitle": "Add a Jira Service Management connection",
         "addIntro": "Enter your site address, such as https://your-site.atlassian.net, how TeamBeats signs in, and the service desk and request type new requests go to. For a cloud site, sign in with the account email and an API token."
       }
+    },
+    "slack": {
+      "addTitle": "Add a Slack connection",
+      "addIntro": "Create a Slack app with the bot scopes chat:write, im:write, users:read, users:read.email and channels:read, install it in your workspace, and store its bot token in your secret manager. Add slack.com to the allowlist first. People can then link their Slack account in their notification preferences, and communicators can share content to a channel.",
+      "formLabel": "Slack settings",
+      "baseUrl": "Web API address",
+      "baseUrlHint": "Usually https://slack.com/api. The host must be on the allowlist.",
+      "botToken": "Bot token reference",
+      "botTokenHint": "The reference of the bot token in your secret manager, such as secret://tenants/your-tenant-id/slack-bot. Never enter the token itself."
     },
     "settings": {
       "name": "Connection name",

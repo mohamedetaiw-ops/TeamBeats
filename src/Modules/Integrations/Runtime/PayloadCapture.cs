@@ -20,8 +20,8 @@ public sealed record RunCaptureView(Guid RunId, JsonElement? Input, JsonElement?
 /// <summary>
 /// Payload capture for debugging (spec 017 FR-007, US3 scenario 1): off by default, turned on per connection for at
 /// most 24 hours, for Public and Internal data only. While it is on, each finished run keeps its input and output for
-/// 24 hours; outside a window nothing is kept. Microsoft 365 and directory connections cannot capture, because they
-/// carry personal and confidential data. Turning it on or off is audited; reading a capture needs <c>integration.operate</c>
+/// 24 hours; outside a window nothing is kept. Microsoft 365, directory and Slack connections cannot capture, because they
+/// carry personal and confidential data (Slack carries notification text). Turning it on or off is audited; reading a capture needs <c>integration.operate</c>
 /// (checked by the endpoint). Each payload is kept up to 64 KB.
 /// </summary>
 public sealed class PayloadCapture(IDbSession session, IAuditWriter audit, IClock clock)
@@ -30,7 +30,7 @@ public sealed class PayloadCapture(IDbSession session, IAuditWriter audit, ICloc
     public const int MaxBytes = 64 * 1024;
     public static readonly TimeSpan Retention = TimeSpan.FromHours(24);
 
-    private static readonly string[] NoCapture = [ConnectionKinds.Microsoft365, ConnectionKinds.OnPremAd];
+    private static readonly string[] NoCapture = [ConnectionKinds.Microsoft365, ConnectionKinds.OnPremAd, Slack.SlackPack.KindName];
 
     private async Task<string> KindAsync(Guid id, CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync("select kind from integrations.connection where id = @id", new { id }, r => r.GetString(0), ct)

@@ -4569,6 +4569,30 @@
         }
       }
     },
+    "/api/v1/me/notification-preferences/slack:link": {
+      "post": {
+        "tags": [
+          "Notifications: my notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/notification-preferences/slack": {
+      "delete": {
+        "tags": [
+          "Notifications: my notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/notifications/settings": {
       "get": {
         "tags": [
@@ -6233,6 +6257,51 @@
               "format": "uuid"
             }
           }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/share-slack": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlackShareRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/slack-channels": {
+      "get": {
+        "tags": [
+          "Content: items"
         ],
         "responses": {
           "200": {
@@ -16597,6 +16666,12 @@
           },
           "digest": {
             "type": "boolean"
+          },
+          "slack": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -17835,6 +17910,27 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/ContentRoute"
             }
+          }
+        }
+      },
+      "SlackShareRequest": {
+        "required": [
+          "channelId",
+          "note"
+        ],
+        "type": "object",
+        "properties": {
+          "channelId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

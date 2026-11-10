@@ -50,6 +50,8 @@
   "conflict.content.nothing_to_publish": "لا توجد تغييرات غير منشورة.",
   "conflict.content.remind_limit": "لا يمكنك تأجيل هذا الإعلان مرة أخرى. يرجى قراءته وتأكيده.",
   "conflict.content.site_archived": "هذا الموقع مؤرشف.",
+  "conflict.content.share_not_published": "يمكن مشاركة المحتوى المنشور فقط.",
+  "conflict.content.share_restricted": "يمكن مشاركة المحتوى العام أو الداخلي الموجه إلى الجميع فقط في Slack، لأن أعضاء القناة لا يتم التحقق منهم مقابل الجمهور.",
   "conflict.directory.no_connection": "فعّل مزامنة الدليل في اتصال Microsoft 365 أولاً",
   "conflict.directory.not_configured": "لم يتم إعداد مزامنة الدليل بعد",
   "conflict.documents.already_broken": "لهذا العنصر أذونات خاصة به بالفعل.",
@@ -297,6 +299,7 @@
   "experience.template.t12": "مجموعة",
   "experience.template.t12.description": "منطقة جانبية للتصفية بجوار النتائج.",
   "integrations.dependent.synced_users": "المستخدمون الذين تتم مزامنتهم من الدليل",
+  "integrations.dependent.slack_links": "الأشخاص الذين ربطوا حساباتهم في Slack",
   "integrations.outlook.admin_setup": "يحتاج المسؤول إلى إكمال إعداد Outlook في TeamBeats",
   "integrations.outlook.conditional_access": "منعت سياسة الوصول في مؤسستك ذلك. افتح Outlook للمتابعة",
   "integrations.outlook.connected": "تم ربط Outlook",
@@ -1203,5 +1206,12 @@
   "validation.connector_tool.description": "صف ما تفعله الأداة في 10 إلى 500 حرف.",
   "validation.connector_tool.title": "أدخل عنوانًا من 100 حرف على الأكثر بلغة واحدة على الأقل.",
   "validation.ticketing.service_desk_id": "أدخل معرّف مكتب الخدمة، وهو رقم من Jira Service Management.",
-  "validation.ticketing.request_type_id": "أدخل معرّف نوع الطلب، وهو رقم من Jira Service Management."
+  "validation.ticketing.request_type_id": "أدخل معرّف نوع الطلب، وهو رقم من Jira Service Management.",
+  "validation.slack.not_in_workspace": "بريد العمل الخاص بك ليس عضوًا في مساحة عمل Slack. اطلب من المسؤول دعوته، ثم حاول مرة أخرى.",
+  "validation.slack.no_email": "لا يحتوي ملفك الشخصي على بريد عمل، لذلك تعذر العثور على حسابك في Slack.",
+  "validation.slack.channel": "اختر قناة في Slack.",
+  "validation.slack.note_too_long": "يمكن أن تصل الملاحظة إلى 500 حرف.",
+  "conflict.slack.unavailable": "Slack غير متصل بمؤسستك.",
+  "conflict.slack.unreachable": "تعذر الوصول إلى Slack. يرجى المحاولة لاحقًا.",
+  "conflict.slack.channel_unavailable": "لا يستطيع TeamBeats النشر في هذه القناة. ادعُ تطبيق TeamBeats إلى القناة، ثم حاول مرة أخرى."
 }

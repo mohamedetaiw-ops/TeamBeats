@@ -62,6 +62,11 @@ public static class IntegrationsModule
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.ServiceNowPack>());
         services.AddScoped<Ticketing.JiraServiceManagementPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Ticketing.JiraServiceManagementPack>());
+        services.AddScoped<Slack.SlackPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Slack.SlackPack>());
+        services.AddScoped<Slack.SlackMessaging>();
+        services.AddScoped<ISlackMessaging>(sp => sp.GetRequiredService<Slack.SlackMessaging>());
+        services.AddScoped<IConnectionDependents>(sp => sp.GetRequiredService<Slack.SlackMessaging>());
         services.AddScoped<Webhooks.WebhookPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.WebhookPack>());
         services.AddScoped<Webhooks.InboundWebhooks>();

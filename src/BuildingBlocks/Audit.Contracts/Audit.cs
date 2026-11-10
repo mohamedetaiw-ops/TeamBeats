@@ -197,6 +197,9 @@ public static class AuditActions
     public const string ContentArchived = "content.archived";
     public const string ContentExpired = "content.expired";
     public const string ContentSettingsChanged = "content.settings_changed";
+
+    /// <summary>Spec 017 US8: a communicator shared a content link to a Slack channel.</summary>
+    public const string ContentShared = "content.shared";
     public const string ContentSubmitted = "content.submitted";
     public const string ContentApproved = "content.approved";
     public const string ContentReturned = "content.returned";
@@ -337,7 +340,7 @@ public static class AuditActions
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
         ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,
         TaskApproved, TaskRejected, TaskReturned, DelegationSet, DelegationChanged, DelegationEnded,
-        ContentCreated, ContentPublished, ContentScheduled, ContentUnpublished, ContentArchived, ContentExpired, ContentSettingsChanged, ContentSubmitted, ContentApproved, ContentReturned, ContentWithdrawn,
+        ContentCreated, ContentPublished, ContentScheduled, ContentUnpublished, ContentArchived, ContentExpired, ContentSettingsChanged, ContentShared, ContentSubmitted, ContentApproved, ContentReturned, ContentWithdrawn,
         ContentCriticalSent, ContentCriticalDenied, ContentAcknowledged, ContentAckReportExported,
         ContentReviewed, ContentOwnerReassigned, ContentVersionRestored, ContentCommentModerated,
         SiteCreated, SiteChanged,

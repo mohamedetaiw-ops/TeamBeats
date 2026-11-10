@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
@@ -22,6 +23,7 @@ public sealed class NotificationSender(
     IUserDirectory users,
     NotificationSettingsService settings,
     PreferenceService preferences,
+    ISlackMessaging slack,
     ILogger<NotificationSender> logger) : INotificationSender
 {
     public static readonly TimeSpan DedupeWindow = TimeSpan.FromHours(1);
@@ -118,22 +120,26 @@ public sealed class NotificationSender(
     private async Task QueueEmailAsync(IReadOnlyList<(Guid Id, Guid UserId)> rows, IReadOnlyDictionary<Guid, UserInfo> accounts, NotificationRequest request,
         bool mandatory, DateTimeOffset now, CancellationToken ct)
     {
-        var deliveries = new List<(Guid NotificationId, Guid UserId, string Status, string Address, DateTimeOffset NotBefore)>();
+        var deliveries = new List<(Guid NotificationId, Guid UserId, string Channel, string Status, string? Address, DateTimeOffset NotBefore)>();
+        var slackAvailable = true;
         foreach (var (notificationId, userId) in rows)
         {
-            if (accounts.GetValueOrDefault(userId) is not { } user || string.IsNullOrWhiteSpace(user.Email))
-            {
-                continue;
-            }
             var choice = await preferences.ChannelChoiceAsync(userId, request.Category, mandatory, ct);
-            if (!choice.Email)
+            DateTimeOffset? release = null;
+            async Task<DateTimeOffset> ReleaseAsync() =>
+                release ??= request.Urgent && mandatory ? now : await preferences.EndOfQuietHoursAsync(userId, now, ct);
+
+            if (choice.Email && accounts.GetValueOrDefault(userId) is { } user && !string.IsNullOrWhiteSpace(user.Email))
             {
-                continue;
+                // Digest applies to non-urgent messages only; quiet hours hold everything except urgent mandatory messages.
+                var digest = choice.Digest && !request.Urgent;
+                deliveries.Add((notificationId, userId, NotificationChannels.Email, digest ? "digest" : "pending", user.Email.Trim(), digest ? now : await ReleaseAsync()));
             }
-            // Digest applies to non-urgent messages only; quiet hours hold everything except urgent mandatory messages.
-            var digest = choice.Digest && !request.Urgent;
-            var notBefore = digest || (request.Urgent && mandatory) ? now : await preferences.EndOfQuietHoursAsync(userId, now, ct);
-            deliveries.Add((notificationId, userId, digest ? "digest" : "pending", user.Email.Trim(), notBefore));
+            // Slack direct messages (US8 scenario 3) for people who linked their account; never in the digest.
+            if (choice.Slack && slackAvailable && await slack.StatusAsync(userId, ct) is var status && (slackAvailable = status.Available) && status.Linked)
+            {
+                deliveries.Add((notificationId, userId, NotificationChannels.Slack, "pending", null, await ReleaseAsync()));
+            }
         }
         if (deliveries.Count == 0)
         {
@@ -142,14 +148,16 @@ public sealed class NotificationSender(
         await session.ExecAsync(
             """
             insert into notifications.delivery (tenant_id, id, notification_id, user_id, channel, status, address, not_before, created_at)
-            select platform.current_tenant_id(), d.id, d.notification_id, d.user_id, 'email', d.status, d.address, d.not_before, @now
-            from unnest(@ids, @notificationIds, @userIds, @statuses, @addresses, @notBefores) as d(id, notification_id, user_id, status, address, not_before)
+            select platform.current_tenant_id(), d.id, d.notification_id, d.user_id, d.channel, d.status, d.address, d.not_before, @now
+            from unnest(@ids, @notificationIds, @userIds, @channels, @statuses, @addresses, @notBefores)
+              as d(id, notification_id, user_id, channel, status, address, not_before)
             """,
             new
             {
                 ids = deliveries.Select(_ => Ids.New()).ToArray(), notificationIds = deliveries.Select(d => d.NotificationId).ToArray(),
-                userIds = deliveries.Select(d => d.UserId).ToArray(), statuses = deliveries.Select(d => d.Status).ToArray(),
-                addresses = deliveries.Select(d => d.Address).ToArray(), notBefores = deliveries.Select(d => d.NotBefore).ToArray(), now,
+                userIds = deliveries.Select(d => d.UserId).ToArray(), channels = deliveries.Select(d => d.Channel).ToArray(),
+                statuses = deliveries.Select(d => d.Status).ToArray(), addresses = deliveries.Select(d => d.Address).ToArray(),
+                notBefores = deliveries.Select(d => d.NotBefore).ToArray(), now,
             }, ct);
     }
 

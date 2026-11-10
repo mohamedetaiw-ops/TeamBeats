@@ -148,7 +148,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack"] as const;
 
 /** Ticketing packs (spec 017 T017) and the sign-in methods each offers in its form; the API checks them again. */
 export const TICKETING_KINDS = {

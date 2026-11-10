@@ -426,3 +426,43 @@ public interface IAgentDirectory
 
 /// <summary>An agent job that finished, for the module that asked for it (spec 003 reads the records it returned).</summary>
 public sealed record AgentJobFinished(Guid JobId, Guid ConnectionId, string Kind, bool Ok, string? ErrorClass, int Users, int Groups) : IIntegrationEvent;
+
+/// <summary>What happened to a Slack message (spec 017 US8). <c>UserGone</c>: the person left the workspace and the link was dropped.</summary>
+public enum SlackSendOutcome
+{
+    Sent,
+    Transient,
+    UserGone,
+    NotLinked,
+    Unavailable,
+    Failed,
+}
+
+/// <summary>Whether Slack can be used in this tenant now, and whether the person has linked their Slack account.</summary>
+public sealed record SlackStatus(bool Available, bool Linked, DateTimeOffset? LinkedAt);
+
+/// <summary>A public Slack channel a link can be shared to.</summary>
+public sealed record SlackChannel(string Id, string Name, bool Member);
+
+/// <summary>
+/// Slack for product modules (spec 017 US8, spec 015 FR-019): notifications as direct messages to people who linked
+/// their account, and links shared to a channel. Tenant comes from context; the enabled Slack connection of the tenant
+/// is used. Message text is plain: Slack markup in it is escaped. Links are paths on the tenant's own host, such as
+/// /content/read/{id}; the absolute address is made here.
+/// </summary>
+public interface ISlackMessaging
+{
+    Task<SlackStatus> StatusAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>Links the person by their work email in the Slack workspace. Throws a validation error when Slack has no such member.</summary>
+    Task<SlackStatus> LinkAsync(Guid userId, string email, CancellationToken ct = default);
+
+    Task UnlinkAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>Sends a direct message. <paramref name="key"/> is the idempotency key: a key that already succeeded is not sent again.</summary>
+    Task<SlackSendOutcome> SendDirectAsync(Guid userId, string text, string? link, string key, CancellationToken ct = default);
+
+    Task<IReadOnlyList<SlackChannel>> ChannelsAsync(CancellationToken ct = default);
+
+    Task<SlackSendOutcome> ShareAsync(string channelId, string text, string link, string key, CancellationToken ct = default);
+}
