@@ -8,12 +8,16 @@ import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { problemMessages } from "@/lib/notifications/types";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { pick, type FieldValue, type FormField, type RequestDetail } from "@/lib/services/types";
+import { AutomationPanel } from "./AutomationPanel";
 import { TaskDecisionPanel } from "./TaskDecisionPanel";
 import { isolate } from "@/lib/bidi";
 import "./services.css";
 
 const cancellable = new Set(["submitted", "in_approval", "returned"]);
 const decisions = new Set(["approved", "rejected", "returned"]);
+// Tracking events that have a message; any other shows as the API sent it.
+const tracked = new Set(["submitted", "resubmitted", "cancelled", "approved", "rejected", "returned", "completed",
+  "automation_done", "automation_failed", "automation_retried", "automation_skipped", "automation_cancelled"]);
 
 /**
  * Details and Tracking of one request (spec 016 FR-005): status, current step and assignees, the submitted values on
@@ -167,12 +171,14 @@ export function RequestDetailView({ detail, meId, units, taskId }: { detail: Req
         ) : null}
       </section>
 
+      {detail.automation && detail.automation.steps.length > 0 ? <AutomationPanel requestId={r.id} automation={detail.automation} /> : null}
+
       <section className="services-section" aria-labelledby="request-tracking">
         <h2 id="request-tracking">{t("tracking")}</h2>
         <ol className="services-list" data-testid="request-tracking">
           {detail.tracking.map((e, i) => (
             <li key={`${e.at}-${i}`} className="services-item">
-              <strong>{t(`event.${e.event}`)}</strong>
+              <strong>{tracked.has(e.event) ? t(`event.${e.event}`) : e.event}</strong>
               <span className="services-meta">
                 {when(e.at)}
                 {e.actor ? (

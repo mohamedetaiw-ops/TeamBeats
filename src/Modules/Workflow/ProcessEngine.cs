@@ -1,7 +1,9 @@
+using System.Text.Json;
 using Npgsql;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Persistence;
@@ -11,15 +13,21 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Workflow;
 
 /// <summary>
-/// The R1 engine core of spec 024: immutable route versions, instances on the version they started with, user tasks in
-/// sequence with an outcome gateway after each, and history. Moves happen in the caller's transaction, with the task row
+/// The engine core of spec 024: immutable route versions, instances on the version they started with, user tasks in
+/// sequence with an outcome gateway after each, service tasks that call connector actions (R2 part of FR-010) with
+/// incidents an operator resolves (FR-013), and history. Moves happen in the caller's transaction, with the task row
 /// locked, so a second completion of the same task is refused and never creates a second next step (FR-012).
 /// </summary>
 public sealed class ProcessEngine(IDbSession session, ITenantContext context, IAuthorizationService authz, IAuthorizationProvisioning grants, IDelegations delegations,
-    IReportingLine reportingLine, IAuditWriter audit, IOutbox outbox, IClock clock, EngineJobs jobs)
+    IReportingLine reportingLine, IAuditWriter audit, IOutbox outbox, IClock clock, EngineJobs jobs, IConnectorRuntime connectors, IConnectorActions actions)
     : IProcessEngine
 {
     public const int CommentMax = 2000;
+    public const int ReasonMax = 2000;
+    public const int MaxVariablesBytes = 256 * 1024;
+
+    /// <summary>Correlation of a connector call made by a service task: <c>wf:{instance}:{element}</c>.</summary>
+    public const string CorrelationPrefix = "wf:";
 
     private static readonly IReadOnlySet<string> Sources = new HashSet<string>(StringComparer.Ordinal)
     {
@@ -43,6 +51,8 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             errors.Add("source", "validation.workflow.source");
         }
         errors.ThrowIfAny();
+        await CheckActionsAsync(route, errors, ct);
+        errors.ThrowIfAny();
         var compiled = RouteCompiler.Compile(route);
 
         // One publisher per key at a time, so versions never collide.
@@ -64,6 +74,45 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         await audit.WriteAsync(new AuditEntry(AuditActions.WorkflowDefinitionPublished, "process_definition", $"{key}:{version}",
             Changes: new { key, version, source, steps = compiled.Steps.Count }), ct);
         return new ProcessDefinitionInfo(key, version, compiled.Name, source, publishedAt);
+    }
+
+    /// <summary>
+    /// Checks each connector step against its action (spec 017 FR-008, FR-009): it exists, declares its inputs, every
+    /// mapped input is declared, every required input is mapped, and every business error with a path is declared.
+    /// </summary>
+    private async Task CheckActionsAsync(RouteSpec route, ValidationErrors errors, CancellationToken ct)
+    {
+        for (var i = 0; i < route.Steps.Count; i++)
+        {
+            if (route.Steps[i].Action is not { } step)
+            {
+                continue;
+            }
+            var field = $"steps[{i}].action";
+            var action = await actions.FindAsync(step.ConnectionId, step.Action, ct);
+            if (action is null)
+            {
+                errors.Add($"{field}.action", "validation.workflow.action_unknown");
+                continue;
+            }
+            if (action.Inputs is not { } inputs)
+            {
+                errors.Add($"{field}.action", "validation.workflow.action_no_inputs");
+                continue;
+            }
+            if (step.Inputs.Keys.Any(k => !inputs.Any(d => d.Name == k)))
+            {
+                errors.Add($"{field}.inputs", "validation.workflow.action_input_undeclared");
+            }
+            if (inputs.Any(d => d.Required && !step.Inputs.ContainsKey(d.Name)))
+            {
+                errors.Add($"{field}.inputs", "validation.workflow.action_input_missing");
+            }
+            if ((step.OnBusinessError ?? new Dictionary<string, string>()).Keys.Any(code => !action.BusinessErrors.Contains(code)))
+            {
+                errors.Add($"{field}.onBusinessError", "validation.workflow.action_error_unknown");
+            }
+        }
     }
 
     private async Task<(ProcessDefinitionInfo Info, string Compiled)?> LatestAsync(string key, CancellationToken ct)
@@ -104,12 +153,18 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         r.Get<string?>("outcome"), r.GetFieldValue<DateTimeOffset>(8), r.Get<DateTimeOffset?>("ended_at"));
 
     public async Task<ProcessInstanceInfo> StartAsync(string key, string businessKey, Guid? orgUnitId, Guid? startedBy, IReadOnlyCollection<Guid>? alsoExcluded = null,
-        Guid? requestedFor = null, CancellationToken ct = default)
+        Guid? requestedFor = null, IReadOnlyDictionary<string, JsonElement>? variables = null, CancellationToken ct = default)
     {
         context.RequireTenant();
         if (string.IsNullOrWhiteSpace(businessKey) || businessKey.Length > 200)
         {
             throw AppException.Validation("businessKey", "validation.workflow.business_key");
+        }
+        var variablesJson = JsonSerializer.Serialize(variables ?? new Dictionary<string, JsonElement>(), CompiledRoute.Json);
+        if (System.Text.Encoding.UTF8.GetByteCount(variablesJson) > MaxVariablesBytes)
+        {
+            // Large content belongs in attachments (spec 024 edge cases).
+            throw AppException.Validation("variables", "validation.workflow.variables_too_large");
         }
         var definition = await GetDefinitionAsync(key, null, ct) ?? throw AppException.NotFound();
         var route = await RouteAsync(definition.Key, definition.Version, ct);
@@ -117,11 +172,12 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         var now = clock.UtcNow;
         var created = await session.ScalarAsync<Guid?>(
             """
-            insert into workflow.process_instance (tenant_id, id, definition_key, definition_version, business_key, org_unit_id, started_by, excluded_user_ids, requested_for, status, started_at)
-            values (platform.current_tenant_id(), @id, @key, @version, @businessKey, @orgUnitId, @startedBy, @alsoExcluded, @requestedFor, 'active', @now)
+            insert into workflow.process_instance (tenant_id, id, definition_key, definition_version, business_key, org_unit_id, started_by, excluded_user_ids, requested_for, status, variables, started_at)
+            values (platform.current_tenant_id(), @id, @key, @version, @businessKey, @orgUnitId, @startedBy, @alsoExcluded, @requestedFor, 'active', @variables, @now)
             on conflict (tenant_id, definition_key, business_key) do nothing
             returning id
-            """, new { id, key = definition.Key, version = definition.Version, businessKey, orgUnitId, startedBy, alsoExcluded = (alsoExcluded ?? []).Distinct().ToArray(), requestedFor, now }, ct);
+            """, new { id, key = definition.Key, version = definition.Version, businessKey, orgUnitId, startedBy, alsoExcluded = (alsoExcluded ?? []).Distinct().ToArray(), requestedFor,
+                variables = new Jsonb(variablesJson), now }, ct);
         if (created is null)
         {
             // Started before for this business object: hand back that instance (at most one per business key).
@@ -129,8 +185,8 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         }
         await HistoryAsync(id, "start", "started", startedBy, null, ct);
         var instance = new ProcessInstanceInfo(id, definition.Key, definition.Version, businessKey, orgUnitId, startedBy, "active", null, now, null);
-        await CreateTaskAsync(instance, route, 0, ct);
-        return instance;
+        await EnterStepAsync(instance, route, 0, ct);
+        return (await GetInstanceAsync(id, ct))!;
     }
 
     public Task<ProcessInstanceInfo?> GetInstanceAsync(Guid instanceId, CancellationToken ct = default) =>
@@ -156,6 +212,12 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         }
         var now = clock.UtcNow;
         await session.ExecAsync("update workflow.user_task set status = 'cancelled', completed_at = @now where instance_id = @instanceId and status = 'open'", new { instanceId, now }, ct);
+        // A connector step still running or waiting on an incident stops here; a late answer finds it closed and does nothing.
+        await session.ExecAsync("update workflow.service_task set status = 'cancelled', ended_at = @now where instance_id = @instanceId and status in ('running', 'incident')",
+            new { instanceId, now }, ct);
+        await session.ExecAsync(
+            "update workflow.incident set status = 'resolved', resolution = 'cancelled', resolved_by = @by, resolved_at = @now where instance_id = @instanceId and status = 'open'",
+            new { instanceId, now, by = Actor() }, ct);
         await jobs.CloseInstanceJobsAsync(instanceId, ct);
         await session.ExecAsync("update workflow.process_instance set status = 'withdrawn', outcome = @outcome, ended_at = @now where id = @instanceId",
             new { instanceId, outcome = InstanceOutcomes.Withdrawn, now }, ct);
@@ -395,25 +457,295 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
 
         var instance = (await GetInstanceAsync(task.Info.InstanceId, ct))!;
         var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
-        var next = task.Info.StepIndex + 1;
-        if (outcome == TaskOutcomes.Approve && next < route.Steps.Count)
+        if (outcome == TaskOutcomes.Approve)
         {
-            await CreateTaskAsync(instance, route, next, ct);
+            await EnterStepAsync(instance, route, task.Info.StepIndex + 1, ct);
         }
         else
         {
-            var end = outcome switch
-            {
-                TaskOutcomes.Approve => InstanceOutcomes.Approved,
-                TaskOutcomes.Reject => InstanceOutcomes.Rejected,
-                _ => InstanceOutcomes.Returned,
-            };
-            await session.ExecAsync("update workflow.process_instance set status = 'completed', outcome = @end, ended_at = @now where id = @id",
-                new { id = instance.Id, end, now }, ct);
-            await HistoryAsync(instance.Id, "end_" + end, "completed", null, null, ct);
-            await outbox.EnqueueAsync(new ProcessInstanceCompleted(instance.Id, instance.DefinitionKey, instance.BusinessKey, end), ct);
+            await EndAsync(instance, outcome == TaskOutcomes.Reject ? InstanceOutcomes.Rejected : InstanceOutcomes.Returned, ct);
         }
         return task.Info with { Status = "completed", Outcome = outcome, Comment = comment, CompletedBy = user, OnBehalfOf = onBehalfOf, CompletedAt = now };
+    }
+
+    // ---- Steps, service tasks and incidents ----
+
+    /// <summary>Moves the instance to step <paramref name="index"/>: a user task, a service task, or the approved end after the last step.</summary>
+    private async Task EnterStepAsync(ProcessInstanceInfo instance, CompiledRoute route, int index, CancellationToken ct)
+    {
+        if (index >= route.Steps.Count)
+        {
+            await EndAsync(instance, InstanceOutcomes.Approved, ct);
+            return;
+        }
+        if (route.Steps[index].IsServiceTask)
+        {
+            await StartServiceTaskAsync(instance, route, index, ct);
+            return;
+        }
+        await CreateTaskAsync(instance, route, index, ct);
+    }
+
+    private async Task EndAsync(ProcessInstanceInfo instance, string end, CancellationToken ct)
+    {
+        await session.ExecAsync("update workflow.process_instance set status = @status, outcome = @end, ended_at = @now where id = @id",
+            new { id = instance.Id, end, status = end == InstanceOutcomes.Cancelled ? "cancelled" : "completed", now = clock.UtcNow }, ct);
+        await HistoryAsync(instance.Id, "end_" + end, "completed", null, null, ct);
+        await outbox.EnqueueAsync(new ProcessInstanceCompleted(instance.Id, instance.DefinitionKey, instance.BusinessKey, end), ct);
+    }
+
+    private sealed record ServiceTaskRow(Guid Id, Guid InstanceId, string ElementId, int StepIndex, string Key, string Status);
+
+    /// <summary>
+    /// Starts a connector step as a durable connector job (spec 017 FR-005). Only the mapped variables are sent, under a key
+    /// fixed for this instance and step, so a retry, a duplicate delivery or a replay never acts twice where the system
+    /// supports it. The answer comes back as <see cref="ConnectorActionCompleted"/>.
+    /// </summary>
+    private async Task StartServiceTaskAsync(ProcessInstanceInfo instance, CompiledRoute route, int index, CancellationToken ct)
+    {
+        var step = route.Steps[index];
+        var key = $"{CorrelationPrefix}{instance.Id:N}:{step.Id}";
+        var id = Ids.New();
+        var inserted = await session.ExecAsync(
+            """
+            insert into workflow.service_task (tenant_id, id, instance_id, element_id, step_index, idempotency_key, status, started_at)
+            values (platform.current_tenant_id(), @id, @instanceId, @element, @index, @key, 'running', @now)
+            on conflict do nothing
+            """, new { id, instanceId = instance.Id, element = step.Id, index, key, now = clock.UtcNow }, ct);
+        if (inserted == 0)
+        {
+            return; // Entered before: the step runs once.
+        }
+        await HistoryAsync(instance.Id, step.Id, "service_task_started", null, null, ct);
+        await CallAsync(new ServiceTaskRow(id, instance.Id, step.Id, index, key, "running"), step, ct);
+    }
+
+    private async Task CallAsync(ServiceTaskRow task, CompiledStep step, CancellationToken ct)
+    {
+        var action = step.Action!;
+        var variables = await session.ScalarAsync<string>("select variables::text from workflow.process_instance where id = @id", new { id = task.InstanceId }, ct) ?? "{}";
+        using var doc = JsonDocument.Parse(variables);
+        var input = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        foreach (var (name, source) in action.Inputs)
+        {
+            if (doc.RootElement.TryGetProperty(source, out var value) && value.ValueKind != JsonValueKind.Null)
+            {
+                input[name] = value.Clone();
+            }
+        }
+        var result = await connectors.EnqueueAsync(new ConnectorCall(action.ConnectionId, action.Action, JsonSerializer.SerializeToElement(input, CompiledRoute.Json),
+            task.Key, $"{CorrelationPrefix}{task.InstanceId:D}:{task.ElementId}"), ct);
+        if (result.RunId is { } run)
+        {
+            await session.ExecAsync("update workflow.service_task set run_id = @run where id = @id", new { id = task.Id, run }, ct);
+        }
+        if (result.Outcome is ConnectorOutcomes.Queued or ConnectorOutcomes.InProgress)
+        {
+            return;
+        }
+        // The key had already finished (a repeated step), or the call was refused before it was queued.
+        await OnOutcomeAsync(task, step, result.Outcome, result.ExternalReference, result.ErrorClass, result.ErrorCode, ct);
+    }
+
+    /// <summary>
+    /// The end of a connector job a service task started (spec 024 FR-010). Duplicate deliveries do nothing: only a
+    /// running service task moves.
+    /// </summary>
+    public async Task OnConnectorCompletedAsync(ConnectorActionCompleted done, CancellationToken ct = default)
+    {
+        if (done.CorrelationId is not { } correlation || !correlation.StartsWith(CorrelationPrefix, StringComparison.Ordinal))
+        {
+            return;
+        }
+        var parts = correlation[CorrelationPrefix.Length..].Split(':', 2);
+        if (parts.Length != 2 || !Guid.TryParse(parts[0], out var instanceId))
+        {
+            return;
+        }
+        var task = await session.QuerySingleOrDefaultAsync(
+            """
+            select s.id, s.instance_id, s.element_id, s.step_index, s.idempotency_key, s.status
+            from workflow.service_task s join workflow.process_instance i on i.id = s.instance_id
+            where s.instance_id = @instanceId and s.element_id = @element for update of s, i
+            """, new { instanceId, element = parts[1] },
+            r => new ServiceTaskRow(r.GetGuid(0), r.GetGuid(1), r.GetString(2), r.GetInt32(3), r.GetString(4), r.GetString(5)), ct);
+        if (task is null || task.Status != "running")
+        {
+            return;
+        }
+        var instance = (await GetInstanceAsync(task.InstanceId, ct))!;
+        if (instance.Status != "active")
+        {
+            return;
+        }
+        var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
+        await OnOutcomeAsync(task, route.Steps[task.StepIndex], done.Outcome, done.ExternalReference, done.ErrorClass, done.ErrorCode, ct);
+    }
+
+    private async Task OnOutcomeAsync(ServiceTaskRow task, CompiledStep step, string outcome, string? reference, string? errorClass, string? errorCode,
+        CancellationToken ct)
+    {
+        var instance = (await GetInstanceAsync(task.InstanceId, ct))!;
+        var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
+        var now = clock.UtcNow;
+        if (outcome == ConnectorOutcomes.Succeeded)
+        {
+            await session.ExecAsync(
+                "update workflow.service_task set status = 'succeeded', external_reference = @reference, error_class = null, error_code = null, ended_at = @now where id = @id",
+                new { id = task.Id, reference = reference is { Length: > 500 } ? reference[..500] : reference, now }, ct);
+            await HistoryAsync(task.InstanceId, task.ElementId, "service_task_completed", null, null, ct);
+            await outbox.EnqueueAsync(new ServiceTaskCompleted(task.InstanceId, instance.DefinitionKey, instance.BusinessKey, task.ElementId, reference), ct);
+            await EnterStepAsync(instance, route, task.StepIndex + 1, ct);
+            return;
+        }
+        if (outcome == ConnectorOutcomes.BusinessError && errorCode is not null && step.Action!.OnBusinessError?.GetValueOrDefault(errorCode) is { } path)
+        {
+            // A declared business error with a path: not retried and not an incident (spec 024 US4 scenario 1).
+            await session.ExecAsync(
+                "update workflow.service_task set status = 'business_error', error_class = @errorClass, error_code = @errorCode, ended_at = @now where id = @id",
+                new { id = task.Id, errorClass = ConnectorErrorClassBusiness, errorCode, now }, ct);
+            await HistoryAsync(task.InstanceId, task.ElementId, "service_task_business_error:" + errorCode, null, null, ct);
+            if (path == BusinessErrorPaths.Continue)
+            {
+                await EnterStepAsync(instance, route, task.StepIndex + 1, ct);
+            }
+            else
+            {
+                await EndAsync(instance, InstanceOutcomes.Rejected, ct);
+            }
+            return;
+        }
+        var cls = outcome switch
+        {
+            ConnectorOutcomes.Unknown => OutcomeUnknown,
+            ConnectorOutcomes.BusinessError => ConnectorErrorClassBusiness,
+            _ => errorClass ?? "unexpected",
+        };
+        await RaiseIncidentAsync(instance, task, cls, outcome == ConnectorOutcomes.BusinessError ? errorCode : null, ct);
+    }
+
+    private const string OutcomeUnknown = "outcome_unknown";
+    private const string ConnectorErrorClassBusiness = "business_error";
+
+    private async Task RaiseIncidentAsync(ProcessInstanceInfo instance, ServiceTaskRow task, string errorClass, string? errorCode, CancellationToken ct)
+    {
+        var now = clock.UtcNow;
+        await session.ExecAsync("update workflow.service_task set status = 'incident', error_class = @errorClass, error_code = @errorCode where id = @id",
+            new { id = task.Id, errorClass, errorCode }, ct);
+        var id = Ids.New();
+        await session.ExecAsync(
+            """
+            insert into workflow.incident (tenant_id, id, instance_id, service_task_id, element_id, error_class, error_code, status, raised_at)
+            values (platform.current_tenant_id(), @id, @instanceId, @taskId, @element, @errorClass, @errorCode, 'open', @now)
+            """, new { id, instanceId = task.InstanceId, taskId = task.Id, element = task.ElementId, errorClass, errorCode, now }, ct);
+        await HistoryAsync(task.InstanceId, task.ElementId, "incident_raised", null, null, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.ProcessIncidentRaised, "process_instance", task.InstanceId.ToString(), TargetOrgUnitId: instance.OrgUnitId,
+            Changes: new { incident = id, element = task.ElementId, errorClass, errorCode }), ct);
+        await outbox.EnqueueAsync(new ProcessIncidentRaised(id, task.InstanceId, instance.DefinitionKey, instance.BusinessKey, task.ElementId, errorClass), ct);
+    }
+
+    public async Task<IncidentInfo> ResolveIncidentAsync(Guid incidentId, string resolution, string? reason, CancellationToken ct = default)
+    {
+        context.RequireTenant();
+        var errors = new ValidationErrors();
+        if (resolution is not (IncidentResolutions.Retried or IncidentResolutions.Skipped or IncidentResolutions.Cancelled))
+        {
+            errors.Add("resolution", "validation.workflow.resolution");
+        }
+        reason = reason?.Trim();
+        if (string.IsNullOrEmpty(reason) || reason.Length > ReasonMax)
+        {
+            errors.Add("reason", "validation.workflow.reason");
+        }
+        errors.ThrowIfAny();
+        var row = await session.QuerySingleOrDefaultAsync(
+            """
+            select n.id, n.status, s.id, s.instance_id, s.element_id, s.step_index, s.idempotency_key, s.status
+            from workflow.incident n join workflow.service_task s on s.id = n.service_task_id join workflow.process_instance i on i.id = n.instance_id
+            where n.id = @incidentId for update of n, s, i
+            """, new { incidentId },
+            r => (Status: r.GetString(1), Task: new ServiceTaskRow(r.GetGuid(2), r.GetGuid(3), r.GetString(4), r.GetInt32(5), r.GetString(6), r.GetString(7))), ct);
+        if (row.Task is null)
+        {
+            throw AppException.NotFound();
+        }
+        if (row.Status != "open")
+        {
+            // Two operators on one incident: the second is refused (spec 024 US4 scenario 5).
+            throw AppException.Conflict("conflict.workflow.incident_resolved");
+        }
+        var instance = (await GetInstanceAsync(row.Task.InstanceId, ct))!;
+        var now = clock.UtcNow;
+        var by = Actor();
+        await session.ExecAsync(
+            "update workflow.incident set status = 'resolved', resolution = @resolution, reason = @reason, resolved_by = @by, resolved_at = @now where id = @incidentId",
+            new { incidentId, resolution, reason, by, now }, ct);
+        await HistoryAsync(instance.Id, row.Task.ElementId, "incident_" + resolution, by, null, ct);
+        var action = resolution switch
+        {
+            IncidentResolutions.Retried => AuditActions.ProcessIncidentRetried,
+            IncidentResolutions.Skipped => AuditActions.ProcessIncidentSkipped,
+            _ => AuditActions.ProcessIncidentCancelled,
+        };
+        await audit.WriteAsync(new AuditEntry(action, "process_instance", instance.Id.ToString(), TargetOrgUnitId: instance.OrgUnitId,
+            Changes: new { incident = incidentId, element = row.Task.ElementId, reason }), ct);
+        await outbox.EnqueueAsync(new ProcessIncidentResolved(incidentId, instance.Id, instance.DefinitionKey, instance.BusinessKey, row.Task.ElementId, resolution), ct);
+
+        var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
+        switch (resolution)
+        {
+            case IncidentResolutions.Retried:
+                await session.ExecAsync("update workflow.service_task set status = 'running', error_class = null, error_code = null where id = @id", new { id = row.Task.Id }, ct);
+                await CallAsync(row.Task with { Status = "running" }, route.Steps[row.Task.StepIndex], ct);
+                break;
+            case IncidentResolutions.Skipped:
+                await session.ExecAsync("update workflow.service_task set status = 'skipped', ended_at = @now where id = @id", new { id = row.Task.Id, now }, ct);
+                await EnterStepAsync(instance, route, row.Task.StepIndex + 1, ct);
+                break;
+            default:
+                await session.ExecAsync("update workflow.service_task set status = 'cancelled', ended_at = @now where id = @id", new { id = row.Task.Id, now }, ct);
+                await session.ExecAsync("update workflow.user_task set status = 'cancelled', completed_at = @now where instance_id = @id and status = 'open'",
+                    new { id = instance.Id, now }, ct);
+                await jobs.CloseInstanceJobsAsync(instance.Id, ct);
+                await EndAsync(instance, InstanceOutcomes.Cancelled, ct);
+                break;
+        }
+        return (await IncidentsAsync(instance.Id, ct)).First(i => i.Id == incidentId);
+    }
+
+    public async Task<IReadOnlyList<ServiceTaskInfo>> ServiceTasksAsync(Guid instanceId, CancellationToken ct = default)
+    {
+        var instance = await GetInstanceAsync(instanceId, ct);
+        if (instance is null)
+        {
+            return [];
+        }
+        var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
+        return await session.QueryAsync(
+            """
+            select instance_id, element_id, step_index, status, external_reference, error_class, error_code, started_at, ended_at
+            from workflow.service_task where instance_id = @instanceId order by started_at, id
+            """, new { instanceId },
+            r => new ServiceTaskInfo(r.GetGuid(0), r.GetString(1), route.Steps[r.GetInt32(2)].Name, r.GetString(3), r.Get<string?>("external_reference"),
+                r.Get<string?>("error_class"), r.Get<string?>("error_code"), r.GetFieldValue<DateTimeOffset>(7), r.Get<DateTimeOffset?>("ended_at")), ct);
+    }
+
+    public async Task<IReadOnlyList<IncidentInfo>> IncidentsAsync(Guid instanceId, CancellationToken ct = default)
+    {
+        var instance = await GetInstanceAsync(instanceId, ct);
+        if (instance is null)
+        {
+            return [];
+        }
+        var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
+        return await session.QueryAsync(
+            """
+            select id, element_id, error_class, error_code, status, resolution, reason, resolved_by, raised_at, resolved_at
+            from workflow.incident where instance_id = @instanceId order by raised_at desc, id
+            """, new { instanceId },
+            r => new IncidentInfo(r.GetGuid(0), instanceId, instance.DefinitionKey, instance.BusinessKey, r.GetString(1),
+                route.Steps.FirstOrDefault(x => x.Id == r.GetString(1))?.Name ?? r.GetString(1), r.GetString(2), r.Get<string?>("error_code"), r.GetString(4),
+                r.Get<string?>("resolution"), r.Get<string?>("reason"), r.Get<Guid?>("resolved_by"), r.GetFieldValue<DateTimeOffset>(8), r.Get<DateTimeOffset?>("resolved_at")), ct);
     }
 
     // ---- History ----

@@ -639,7 +639,7 @@ public sealed class Items(
         var author = (await VersionAsync(id, version, ct))!.Author;
         var writers = new[] { user, author, item.CreatedBy }.Distinct().ToArray();
         var key = await reviews.RouteKeyAsync(site, item.Type, route, writers, ct);
-        var instance = await engine.StartAsync(key, $"{id:N}{Ids.New():N}", site.OrgUnitId, user, writers.Where(w => w != user).ToArray(), user, ct);
+        var instance = await engine.StartAsync(key, $"{id:N}{Ids.New():N}", site.OrgUnitId, user, writers.Where(w => w != user).ToArray(), user, ct: ct);
         var now = clock.UtcNow;
         await session.ExecAsync("update content.content_version set material = @material where item_id = @id and number = @version",
             new { id, version, material = request.Material ?? true }, ct);

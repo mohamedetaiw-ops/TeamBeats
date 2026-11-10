@@ -132,7 +132,27 @@ export type RequestDetail = {
   classification: string;
   attachments: AttachmentView[];
   tracking: TrackingEntry[];
+  automation: RequestAutomation | null;
 };
+
+/** States of a connector step of a request (spec 016 US8, spec 017 T009). */
+export const AUTOMATION_STATES = ["running", "succeeded", "business_error", "incident", "skipped", "cancelled"] as const;
+
+export type AutomationStep = {
+  elementId: string;
+  name: string;
+  status: string;
+  externalReference: string | null;
+  errorClass: string | null;
+  errorCode: string | null;
+  startedAt: string;
+  endedAt: string | null;
+  incidentId: string | null;
+  names: Names | null;
+};
+
+/** The automatic steps of a request; canOperate comes from the API (service owners), never from a role check here. */
+export type RequestAutomation = { steps: AutomationStep[]; canOperate: boolean };
 
 export type InboxItem = {
   taskId: string;
@@ -177,7 +197,34 @@ export type ServiceRow = {
 
 export type ApproverRule = { kind: "users" | "permission_at_unit" | "line_manager"; users?: string[] | null; permission?: string | null };
 export type ApprovalStep = { names: Names | null; approvers: ApproverRule; dueWorkingDays?: number | null };
-export type ServiceRoute = { approval: ApprovalStep | null };
+/**
+ * A connector step after the approval. inputs maps each action field to a request value: form.{field}, request.number,
+ * requester.name or requester.email. onBusinessError maps declared error codes to continue or reject.
+ */
+export type ActionStep = {
+  names: Names | null;
+  connectionId: string;
+  action: string;
+  inputs: Record<string, string>;
+  onBusinessError?: Record<string, "continue" | "reject"> | null;
+};
+export type ServiceRoute = { approval: ApprovalStep | null; actions?: ActionStep[] | null };
+
+export const MAX_ACTION_STEPS = 5;
+export const REQUEST_VALUES = ["request.number", "requester.name", "requester.email"] as const;
+
+export type RouteActionInput = { name: string; type: string; required: boolean };
+export type RouteAction = {
+  connectionId: string;
+  connectionName: string;
+  action: string;
+  sideEffect: string;
+  idempotent: boolean;
+  businessErrors: string[];
+  inputs: RouteActionInput[];
+  enabled: boolean;
+};
+export type RouteActionsView = { available: boolean; actions: RouteAction[] };
 
 export type VersionRow = {
   version: number;

@@ -296,6 +296,19 @@ public sealed partial class ServiceAdmin(
 
     private static void ValidateRoute(ServiceRoute route, ValidationErrors errors)
     {
+        var actions = route.Actions ?? [];
+        if (actions.Count > ServiceRoute.MaxActions)
+        {
+            errors.Add("route.actions", "validation.services.actions");
+        }
+        for (var i = 0; i < actions.Count; i++)
+        {
+            var a = actions[i];
+            if (a is null || a.ConnectionId == Guid.Empty || string.IsNullOrWhiteSpace(a.Action) || a.Inputs is null || !Texts(a.Names, MaxNameLength, required: false))
+            {
+                errors.Add($"route.actions[{i}]", "validation.services.action_step");
+            }
+        }
         if (route.Approval is not { } step)
         {
             return;
@@ -345,6 +358,10 @@ public sealed partial class ServiceAdmin(
         var errors = new ValidationErrors();
         FormValidator.ValidateDefinition(form, errors);
         ValidateRoute(route, errors);
+        if (route.Actions is { Count: > 0 })
+        {
+            await entitlements.DemandAsync(Capabilities.WorkflowAutomation, ct); // Automatic steps (section 9).
+        }
         if (request.MaxAttachments is < 0 or > MaxAttachmentsLimit
             || (form.Fields?.Any(f => f?.Type == FieldTypes.Attachment) == true && request.MaxAttachments == 0))
         {
@@ -407,18 +424,34 @@ public sealed partial class ServiceAdmin(
         {
             throw AppException.Validation("form", "validation.services.form_empty");
         }
-        if (latest.Route.Approval is { } step)
+        if (latest.Route.Actions is { Count: > 0 })
         {
-            var name = Preferred(step.Names) ?? Preferred(row.Names) ?? id.ToString("N");
-            var rule = step.Approvers;
-            var candidates = rule.Kind switch
+            await entitlements.DemandAsync(Capabilities.WorkflowAutomation, ct);
+        }
+        if (latest.Route.HasSteps)
+        {
+            var steps = new List<RouteStep>();
+            if (latest.Route.Approval is { } step)
             {
-                ApproverKinds.Users => new CandidateRule(Users: rule.Users),
-                ApproverKinds.LineManager => new CandidateRule(Permission: rule.Permission ?? Permissions.WorkflowApprove, LineManager: true),
-                _ => new CandidateRule(Permission: rule.Permission),
-            };
-            await engine.PublishRouteAsync(ProcessKey(id), RouteSources.ServiceRoute,
-                new RouteSpec(Preferred(row.Names) ?? id.ToString("N"), [new RouteStep("approval", name, candidates, step.DueWorkingDays)]), ct);
+                var name = Preferred(step.Names) ?? Preferred(row.Names) ?? id.ToString("N");
+                var rule = step.Approvers;
+                var candidates = rule.Kind switch
+                {
+                    ApproverKinds.Users => new CandidateRule(Users: rule.Users),
+                    ApproverKinds.LineManager => new CandidateRule(Permission: rule.Permission ?? Permissions.WorkflowApprove, LineManager: true),
+                    _ => new CandidateRule(Permission: rule.Permission),
+                };
+                steps.Add(new RouteStep("approval", name, candidates, step.DueWorkingDays));
+            }
+            var n = 0;
+            foreach (var a in latest.Route.Actions ?? [])
+            {
+                n++;
+                steps.Add(new RouteStep($"action_{n}", Preferred(a.Names) ?? a.Action, new CandidateRule(), null,
+                    new ConnectorStep(a.ConnectionId, a.Action, a.Inputs ?? new Dictionary<string, string>(), a.OnBusinessError)));
+            }
+            // The engine checks each connector step against its action and names the field (spec 017 FR-009).
+            await engine.PublishRouteAsync(ProcessKey(id), RouteSources.ServiceRoute, new RouteSpec(Preferred(row.Names) ?? id.ToString("N"), steps), ct);
         }
         var now = clock.UtcNow;
         var user = context.RequireUser();

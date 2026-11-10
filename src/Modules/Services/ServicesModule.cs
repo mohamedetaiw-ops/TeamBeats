@@ -33,6 +33,11 @@ public static class ServicesModule
         services.AddMessageHandler<RequestCompleted, RequestNotifier>("services.notify_completed");
         services.AddMessageHandler<RequestReturned, RequestNotifier>("services.notify_returned");
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, RequestNotifier>("services.notify_task");
+        services.AddScoped<Automation>();
+        services.AddScoped<RouteActions>();
+        services.AddMessageHandler<Workflow.Contracts.ProcessInstanceCompleted, Automation>("services.route_completed");
+        services.AddMessageHandler<Workflow.Contracts.ServiceTaskCompleted, Automation>("services.automation_done");
+        services.AddMessageHandler<Workflow.Contracts.ProcessIncidentRaised, Automation>("services.automation_failed");
         return services;
     }
 
@@ -123,6 +128,15 @@ public static class ServicesModule
             return Results.Ok(detail);
         });
 
+        // A failed automatic step: the service owner retries it, skips it with a reason, or cancels the request (US8 scenario 5).
+        requests.MapPost("/{id:guid}/automation/incidents/{incidentId:guid}:resolve", async (Guid id, Guid incidentId, IncidentResolveRequest request,
+            Automation automation, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await automation.ResolveAsync(id, incidentId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(detail);
+        });
+
         var tasks = app.MapGroup("/api/v1/tasks").RequireTenantUser().WithTags("Services: task inbox");
 
         tasks.MapGet("", async (Guid? service, Tasks inbox, CancellationToken ct) => Results.Ok(await inbox.InboxAsync(service, ct)));
@@ -196,6 +210,8 @@ public static class ServicesModule
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/services/admin/{view.Service.Id}", view);
         });
+
+        admin.MapGet("/connector-actions", async (RouteActions actions, CancellationToken ct) => Results.Ok(await actions.ListAsync(ct)));
 
         admin.MapGet("/{id:guid}", async (Guid id, ServiceAdmin services, CancellationToken ct) => Results.Ok(await services.GetAsync(id, ct)));
 
