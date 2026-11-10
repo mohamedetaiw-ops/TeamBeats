@@ -131,6 +131,22 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(palette).toBeHidden();
     });
 
+    test("only one shell panel is open at a time, and a press outside closes it (spec 008 FR-060)", async ({ page }) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      const settings = page.locator(".shell-settings-panel");
+      const account = page.locator(".shell-account-panel");
+      await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
+      await expect(settings).toBeVisible();
+      await page.locator(".shell-avatar").click();
+      await expect(account).toBeVisible();
+      await expect(settings).toBeHidden();
+      await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
+      await expect(settings).toBeVisible();
+      await expect(account).toBeHidden();
+      await page.locator("main").click({ position: { x: 60, y: 60 } });
+      await expect(settings).toBeHidden();
+    });
+
     test("settings are in one place and apply to the page; the menu stays reachable on a phone", async ({ page }) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();

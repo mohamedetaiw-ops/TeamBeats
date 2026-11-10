@@ -75,6 +75,18 @@ export function moveTo(draft: PageDefinition, id: string, regionId: string): Pag
   });
 }
 
+/** Puts a placement at a position in a region, counted without the placement itself (drag and drop). */
+export function place(draft: PageDefinition, id: string, regionId: string, position: number): PageDefinition {
+  const at = locate(draft, id);
+  const target = draft.regions.findIndex((r) => r.id === regionId);
+  if (!at || target < 0 || (target === at.region && position === at.index)) return draft;
+  return withRegions(draft, (regions) => {
+    const [placement] = regions[at.region]!.splice(at.index, 1);
+    const list = regions[target]!;
+    list.splice(Math.max(0, Math.min(position, list.length)), 0, placement!);
+  });
+}
+
 /** Copies a placement right after itself with a new id; returns the new id too. */
 export function duplicate(draft: PageDefinition, id: string): { draft: PageDefinition; id: string | null } {
   const at = locate(draft, id);

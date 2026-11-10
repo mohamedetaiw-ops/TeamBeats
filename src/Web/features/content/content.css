@@ -419,7 +419,6 @@
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(16rem, 2fr);
   gap: var(--tb-space-lg);
-  block-size: 100%;
 }
 
 @container (width < 48rem) {

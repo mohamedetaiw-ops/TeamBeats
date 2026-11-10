@@ -143,6 +143,20 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "builder.editor.undo"), exact: true }).click();
       await expect.poll(order).toEqual(["placement-text-1", "placement-kpi-1"]);
 
+      // Dragging a card's handle does the same move, and undo takes it back (spec 032 FR-038).
+      const handle = kpi.getByRole("button", { name: msg(locale, "builder.editor.drag", { name: kpiName }) });
+      await text.scrollIntoViewIfNeeded();
+      const from = (await handle.boundingBox())!;
+      const to = (await text.boundingBox())!;
+      await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+      await page.mouse.down();
+      await page.mouse.move(to.x + to.width / 2, to.y + 4, { steps: 8 });
+      await expect(text).toHaveAttribute("data-drop", "before");
+      await page.mouse.up();
+      await expect.poll(order).toEqual(["placement-kpi-1", "placement-text-1"]);
+      await page.keyboard.press("Control+z");
+      await expect.poll(order).toEqual(["placement-text-1", "placement-kpi-1"]);
+
       // The action menu does what the keys do: move to another region, duplicate, remove.
       await text.getByRole("button", { name: msg(locale, "builder.editor.actionsFor", { name: textName }) }).click();
       await text.getByRole("button", { name: msg(locale, "builder.editor.moveTo", { region: aside }) }).click();
