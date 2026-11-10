@@ -33,7 +33,7 @@ public sealed class PlatformComponents : IComponentRegistration
         {
             ["location"] = new PropertySchema("string", MaxLength: 100),
         }, new PlacementRules(MinSpan: 3), ["/api/v1/weather"]),
-        // The home briefing (spec 008 FR-056): greeting, date and weather, and the next three things that need the viewer from
+        // The home briefing (spec 008 FR-052): greeting, date and weather, and the next three things that need the viewer from
         // the task inbox (016), policies to accept (025) and today's meetings (018). Each source is read with the viewer's own
         // session and left out when the tenant does not have it, so the component needs no capability of its own.
         Manifest("home.briefing", "spark", new()
@@ -41,5 +41,12 @@ public sealed class PlatformComponents : IComponentRegistration
             ["location"] = new PropertySchema("string", MaxLength: 100),
         }, new PlacementRules(MinSpan: 6, Singleton: true),
             ["/api/v1/me", "/api/v1/tasks", "/api/v1/me/policies", "/api/v1/me/calendar", "/api/v1/weather"], "personal"),
+        // Your day (spec 008 FR-057): counts of tasks to approve, overdue tasks and meetings today as tinted tiles, then
+        // today's agenda from the viewer's calendar (018). Read with the viewer's session; a source the tenant does not
+        // have is left out, so it needs no capability of its own.
+        Manifest("home.your_day", "calendar", new()
+        {
+            ["title"] = new PropertySchema("text", MaxLength: 80),
+        }, new PlacementRules(MinSpan: 3, Singleton: true), ["/api/v1/tasks", "/api/v1/me/calendar"], "personal"),
     ];
 }

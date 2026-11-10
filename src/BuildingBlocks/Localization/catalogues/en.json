@@ -1169,5 +1169,8 @@
   "integrations.agent.signature_invalid": "The agent request could not be verified.",
   "conflict.integrations.agent_job_open": "A directory sync is already waiting or running for this connection.",
   "conflict.integrations.agent_key_in_use": "This key is already enrolled.",
-  "conflict.integrations.agent_job_not_held": "This agent does not hold the job."
+  "conflict.integrations.agent_job_not_held": "This agent does not hold the job.",
+  "experience.component.home_your_day.name": "Your day",
+  "experience.component.home_your_day.description": "Tasks to approve, overdue tasks and meetings today, then today's agenda",
+  "experience.component.home_your_day.props.title": "Title"
 }

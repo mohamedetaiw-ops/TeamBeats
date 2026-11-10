@@ -78,6 +78,55 @@
   font-size: var(--tb-font-size-sm);
 }
 
+/* Today's agenda in Your day: time, title and place, and a badge for a meeting that starts within the hour. */
+.home-agenda {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-agenda-item {
+  display: grid;
+  grid-template-columns: 4rem 1fr auto;
+  align-items: start;
+  gap: var(--tb-space-sm);
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.home-agenda-item:last-child {
+  border-block-end: 0;
+}
+
+.home-agenda-time {
+  font-weight: var(--tb-font-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.home-agenda-text {
+  display: grid;
+  gap: var(--tb-space-xs);
+  min-inline-size: 0;
+}
+
+.home-agenda-text a {
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-medium);
+  text-decoration: none;
+}
+
+.home-agenda-soon {
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-sm);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-tint-warm);
+  color: var(--tb-color-tint-warm-text);
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-bold);
+  white-space: nowrap;
+}
+
 .home-list {
   display: grid;
   margin: 0;
@@ -104,7 +153,7 @@
 
 .home-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   gap: var(--tb-space-sm);
   margin: 0;
   padding: 0;
@@ -118,8 +167,9 @@
   justify-items: start;
   min-block-size: 7rem;
   padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-md);
-  background: var(--tb-color-surface-sunken);
+  background: var(--tb-color-surface-base);
   color: var(--tb-color-text-primary);
   font-weight: var(--tb-font-weight-medium);
   text-decoration: none;
