@@ -1,0 +1,457 @@
+/*
+ * Overlays and menus (spec 036 DLS-036, DLS-037, DLS-041): dialog, drawer, popover, tooltip, menu, context menu,
+ * command palette and the collapsed breadcrumb. Everything reads --tb-* tokens; direction comes from logical
+ * properties; entry motion uses only opacity and transform and stops under reduced motion (globals.css).
+ */
+
+@keyframes ui-overlay-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.375rem);
+  }
+}
+
+@keyframes ui-backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Dialog and drawer. */
+.ui-dialog {
+  inline-size: min(32rem, calc(100vw - 2 * var(--tb-space-md)));
+  max-inline-size: none;
+  max-block-size: calc(100dvh - 2 * var(--tb-space-lg));
+  padding: 0;
+  overflow: hidden;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  box-shadow: var(--tb-shadow-md);
+}
+
+.ui-dialog[open] {
+  animation: ui-overlay-in var(--tb-motion-duration-normal) var(--tb-motion-easing-emphasized);
+}
+
+/* The scrim is the night surface, which is dark in both modes, so the page dims and never washes out. */
+.ui-dialog::backdrop {
+  background: var(--tb-color-surface-night);
+  opacity: 0.6;
+  animation: ui-backdrop-in var(--tb-motion-duration-normal) var(--tb-motion-easing-standard);
+}
+
+.ui-dialog[data-size="sm"] {
+  inline-size: min(24rem, calc(100vw - 2 * var(--tb-space-md)));
+}
+
+.ui-dialog[data-size="lg"] {
+  inline-size: min(48rem, calc(100vw - 2 * var(--tb-space-md)));
+}
+
+.ui-dialog-panel {
+  display: flex;
+  flex-direction: column;
+  max-block-size: calc(100dvh - 2 * var(--tb-space-lg));
+}
+
+.ui-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-md);
+  padding-block: var(--tb-space-md) var(--tb-space-sm);
+  padding-inline: var(--tb-space-lg) var(--tb-space-md);
+}
+
+.ui-dialog-head h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.ui-dialog-description {
+  margin: 0;
+  padding-inline: var(--tb-space-lg);
+  color: var(--tb-color-text-secondary);
+}
+
+.ui-dialog-body {
+  flex: 1;
+  min-block-size: 0;
+  padding-block: var(--tb-space-md);
+  padding-inline: var(--tb-space-lg);
+  overflow: auto;
+}
+
+.ui-dialog-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--tb-space-sm);
+  padding-block: var(--tb-space-md);
+  padding-inline: var(--tb-space-lg);
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  background: var(--tb-color-surface-base);
+}
+
+.ui-dialog[data-side] {
+  border-radius: 0;
+}
+
+.ui-dialog[data-side="start"],
+.ui-dialog[data-side="end"] {
+  inline-size: min(26rem, calc(100vw - var(--tb-space-xl)));
+  block-size: 100dvh;
+  max-block-size: 100dvh;
+  margin-block: 0;
+  border-block-width: 0;
+}
+
+.ui-dialog[data-side="start"] {
+  margin-inline: 0 auto;
+  border-inline-start-width: 0;
+}
+
+.ui-dialog[data-side="end"] {
+  margin-inline: auto 0;
+  border-inline-end-width: 0;
+}
+
+.ui-dialog[data-side="top"],
+.ui-dialog[data-side="bottom"] {
+  inline-size: 100vw;
+  max-block-size: min(32rem, calc(100dvh - var(--tb-space-xl)));
+  margin-inline: 0;
+  border-inline-width: 0;
+}
+
+.ui-dialog[data-side="top"] {
+  margin-block: 0 auto;
+  border-block-start-width: 0;
+}
+
+.ui-dialog[data-side="bottom"] {
+  margin-block: auto 0;
+  border-block-end-width: 0;
+}
+
+.ui-dialog[data-side] .ui-dialog-panel {
+  block-size: 100%;
+  max-block-size: none;
+}
+
+/* Popover: a panel beside its button. The script sets its place; until then it stays invisible. */
+.ui-popover,
+.ui-menu-popover {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  box-shadow: var(--tb-shadow-md);
+  opacity: 0;
+}
+
+.ui-popover[data-placed],
+.ui-menu-popover[data-placed] {
+  opacity: 1;
+  animation: ui-overlay-in var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
+}
+
+.ui-popover {
+  inline-size: max-content;
+  max-inline-size: min(22rem, calc(100vw - 2 * var(--tb-space-md)));
+  padding: var(--tb-space-md);
+}
+
+.ui-popover:popover-open {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.ui-popover-title {
+  margin: 0;
+  font-weight: var(--tb-font-weight-bold);
+}
+
+/* Tooltip. */
+.ui-tooltip-anchor {
+  --xp-dir: 1;
+
+  position: relative;
+  display: inline-flex;
+}
+
+.ui-tooltip-anchor:dir(rtl) {
+  --xp-dir: -1;
+}
+
+.ui-tooltip {
+  position: absolute;
+  inset-block-end: calc(100% + var(--tb-space-xs));
+  inset-inline-start: 50%;
+  z-index: 20;
+  inline-size: max-content;
+  max-inline-size: 16rem;
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-sm);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-text-primary);
+  color: var(--tb-color-surface-raised);
+  font-size: var(--tb-font-size-sm);
+  line-height: var(--tb-font-line-height-heading);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(calc(var(--xp-dir) * -50%));
+  transition:
+    opacity var(--tb-motion-duration-fast) var(--tb-motion-easing-standard),
+    visibility var(--tb-motion-duration-fast);
+}
+
+.ui-tooltip[data-placement="bottom"] {
+  inset-block: calc(100% + var(--tb-space-xs)) auto;
+}
+
+/* A bridge over the gap, so the pointer can move onto the tooltip without it closing. */
+.ui-tooltip::before {
+  position: absolute;
+  inset-block: calc(-1 * var(--tb-space-xs));
+  inset-inline: 0;
+  z-index: -1;
+  content: "";
+}
+
+.ui-tooltip-anchor:not([data-dismissed]):hover > .ui-tooltip,
+.ui-tooltip-anchor:not([data-dismissed]):focus-within > .ui-tooltip,
+.ui-tooltip[data-open] {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: var(--tb-motion-duration-slow);
+}
+
+/* Menu. */
+.ui-menu-popover {
+  min-inline-size: 12rem;
+  max-inline-size: min(20rem, calc(100vw - 2 * var(--tb-space-md)));
+  max-block-size: calc(100dvh - 2 * var(--tb-space-md));
+  padding: var(--tb-space-xs);
+  overflow: auto;
+}
+
+.ui-menu-sub {
+  overflow: visible;
+}
+
+.ui-menu,
+.ui-menu-group {
+  display: grid;
+}
+
+.ui-menu-group-label {
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-sm);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.ui-menu-separator {
+  block-size: var(--tb-border-width-thin);
+  margin-block: var(--tb-space-xs);
+  background: var(--tb-color-border-default);
+}
+
+.ui-menu-item,
+.ui-palette-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  min-block-size: 2.25rem;
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-sm);
+  border: 0;
+  border-radius: var(--tb-radius-sm);
+  background: transparent;
+  color: var(--tb-color-text-primary);
+  font: inherit;
+  font-size: var(--tb-font-size-sm);
+  text-align: start;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ui-menu-item:hover,
+.ui-menu-item:focus-visible,
+.ui-menu-item:focus,
+.ui-palette-option[aria-selected="true"] {
+  background: var(--tb-color-accent-subtle);
+}
+
+.ui-menu-item:focus-visible {
+  outline-offset: calc(-1 * var(--tb-border-width-focus));
+}
+
+.ui-menu-item[data-danger] {
+  color: var(--tb-color-state-danger);
+}
+
+.ui-menu-item[aria-disabled="true"] {
+  color: var(--tb-color-text-secondary);
+  opacity: calc(1 - var(--tb-state-disabled-opacity));
+  cursor: not-allowed;
+}
+
+.ui-menu-mark {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1rem;
+  block-size: 1rem;
+}
+
+.ui-menu-label {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.ui-menu-shortcut {
+  display: inline-flex;
+  flex: none;
+  gap: calc(var(--tb-space-xs) / 2);
+  margin-inline-start: var(--tb-space-md);
+}
+
+/* Inline preview in the gallery: the menu list as it looks when open. */
+.ui-menu-preview {
+  inline-size: 15rem;
+  padding: var(--tb-space-xs);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-md);
+}
+
+/* Command palette. */
+.ui-palette {
+  inline-size: min(36rem, calc(100vw - 2 * var(--tb-space-md)));
+  margin-block-start: 12dvh;
+}
+
+.ui-palette-search {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  padding-inline: var(--tb-space-md);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  color: var(--tb-color-text-secondary);
+}
+
+.ui-palette-search input[role="combobox"] {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: 3rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--tb-color-text-primary);
+  font: inherit;
+}
+
+.ui-palette-search input[role="combobox"]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.ui-palette-search:focus-within {
+  box-shadow: inset 0 calc(-1 * var(--tb-border-width-focus)) 0 var(--tb-color-focus-ring);
+}
+
+.ui-palette-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  max-block-size: min(24rem, 60dvh);
+  padding: var(--tb-space-xs);
+  overflow: auto;
+}
+
+.ui-palette-list:empty {
+  display: none;
+}
+
+.ui-palette-group {
+  display: grid;
+}
+
+.ui-palette-text {
+  display: grid;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.ui-palette-hint {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+}
+
+.ui-palette-empty {
+  margin: 0;
+  padding: var(--tb-space-lg);
+  color: var(--tb-color-text-secondary);
+  text-align: center;
+}
+
+.ui-palette-empty:empty {
+  display: none;
+}
+
+/* Notification card form of a message. */
+.ui-message[data-card] {
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border-inline-start-width: var(--tb-border-width-thin);
+  border-color: var(--tb-color-border-default);
+  border-radius: var(--tb-radius-lg);
+}
+
+.ui-message-title {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.ui-message[data-card][data-priority="critical"] .ui-message-title {
+  color: var(--tb-color-state-danger);
+}
+
+/* Breadcrumb: the collapsed levels sit in a small menu button. */
+.ui-breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.ui-breadcrumb li:not(:last-child)::after {
+  padding-inline-start: var(--tb-space-xs);
+  color: var(--tb-color-text-secondary);
+  content: "/";
+}
+
+.ui-breadcrumb a[aria-current="page"] {
+  color: var(--tb-color-text-primary);
+  text-decoration: none;
+}

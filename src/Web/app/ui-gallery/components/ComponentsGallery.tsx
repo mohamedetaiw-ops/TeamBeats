@@ -16,6 +16,8 @@ import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { Slider } from "@/components/ui/Slider";
 import { Divider, Kbd, Meter, Progress, Spinner, StatusDot } from "@/components/ui/Status";
 import { Switch } from "@/components/ui/Switch";
+import { InputsGallery } from "./InputsGallery";
+import { OverlaysGallery } from "./OverlaysGallery";
 
 const team = ["Layla Hassan", "Omar Farouk", "Sara Nasser", "Khalid Mansour", "Huda Salem", "Yousef Adel"].map((name) => ({ name }));
 
@@ -242,6 +244,8 @@ export function ComponentsGallery() {
           </div>
         </div>
       </section>
+      <OverlaysGallery />
+      <InputsGallery />
     </div>
   );
 }

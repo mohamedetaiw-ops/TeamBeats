@@ -7,6 +7,7 @@ import { NotificationBell } from "@/features/notifications/NotificationBell";
 import { TaskBadge } from "@/features/services/TaskBadge";
 import { CriticalNotices } from "@/features/content/CriticalNotices";
 import { AccountMenu } from "./AccountMenu";
+import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { GlobalMenu } from "./GlobalMenu";
 import { LanguageSwitch } from "./LanguageSwitch";
 import { QuickNav } from "./QuickNav";
@@ -74,7 +75,7 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
           </p>
         ) : null;
       case "breadcrumbs":
-        return breadcrumbs.length > 0 ? <Breadcrumbs key={region} label={t("breadcrumbs")} crumbs={breadcrumbs} /> : null;
+        return breadcrumbs.length > 0 ? <Breadcrumb key={region} className="shell-breadcrumbs" label={t("breadcrumbs")} crumbs={breadcrumbs} /> : null;
       default:
         return null;
     }
@@ -111,28 +112,6 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
         </Link>
       ) : null}
     </header>
-  );
-}
-
-export function Breadcrumbs({ label, crumbs }: { label: string; crumbs: Crumb[] }) {
-  return (
-    <nav aria-label={label} className="shell-breadcrumbs">
-      <ol>
-        {crumbs.map((c, i) => (
-          <li key={c.href}>
-            {i === crumbs.length - 1 ? (
-              <a href={c.href} aria-current="page">
-                <bdi>{c.label}</bdi>
-              </a>
-            ) : (
-              <a href={c.href}>
-                <bdi>{c.label}</bdi>
-              </a>
-            )}
-          </li>
-        ))}
-      </ol>
-    </nav>
   );
 }
 
