@@ -1020,6 +1020,7 @@
   "validation.theme.dimension_invalid": "استخدم مقاسا بوحدة px أو rem ضمن النطاق المسموح",
   "validation.theme.duration_invalid": "استخدم مدة بالمللي ثانية لا تزيد على 2000",
   "validation.theme.easing_invalid": "اختر أحد منحنيات الحركة المسماة",
+  "validation.theme.choice_invalid": "اختر أحد الخيارات المدرجة",
   "validation.theme.font_not_approved": "اختر خطا من القائمة المعتمدة لنظام الكتابة هذا",
   "validation.theme.invalid": "أصلح مشكلات إمكانية الوصول في السمة قبل الحفظ",
   "validation.theme.lock_required": "لا يمكن إزالة أقفال الأمان وإمكانية الوصول",

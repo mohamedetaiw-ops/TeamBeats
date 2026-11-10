@@ -1020,6 +1020,7 @@
   "validation.theme.dimension_invalid": "Use a size in px or rem within the allowed range",
   "validation.theme.duration_invalid": "Use a duration in ms of up to 2000",
   "validation.theme.easing_invalid": "Choose one of the named motion curves",
+  "validation.theme.choice_invalid": "Choose one of the listed options",
   "validation.theme.font_not_approved": "Choose a font from the approved list for this writing system",
   "validation.theme.invalid": "Fix the accessibility problems in the theme before saving",
   "validation.theme.lock_required": "Security and accessibility locks cannot be removed",

@@ -1,6 +1,8 @@
 /* Generated from the token schema (spec 033). Do not edit: run the unit tests with TEAMBEATS_UPDATE_TOKENS=1. */
 /* Platform defaults, used before a tenant theme loads and on signed-out pages. */
 :root{
+  --tb-design-preset:beats;
+  --tb-layout-navigation:rail;
   --tb-color-surface-base:#f3f2f8;
   --tb-color-surface-raised:#ffffff;
   --tb-color-surface-sunken:#e9e7f3;
@@ -83,6 +85,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root{
+    --tb-design-preset:beats;
+    --tb-layout-navigation:rail;
     --tb-color-surface-base:#0f0d24;
     --tb-color-surface-raised:#1b1838;
     --tb-color-surface-sunken:#0a0918;

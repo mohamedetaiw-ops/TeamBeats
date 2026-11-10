@@ -82,6 +82,7 @@ Rules for writing this spec:
 |---|---|---|
 
 ## 10. UX, localization and accessibility
+- Design system (constitution XXXI, spec 036): templates and components used from `docs/design-system`; any new component, token or icon needed
 - States: empty, loading, error, degraded (AI or connector unavailable), no permission
 - Locales and RTL notes
 - WCAG 2.2 AA notes

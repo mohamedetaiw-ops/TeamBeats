@@ -13,10 +13,20 @@ import "@fontsource/readex-pro/500.css";
 import "@fontsource/readex-pro/700.css";
 import "@fontsource/alexandria/600.css";
 import "@fontsource/alexandria/700.css";
+// Fonts of the Atlas and Pulse designs (spec 036, ADR-0021). Only the @font-face rules ship with every page; a browser
+// downloads a font file only when the active design uses that family for characters on the page.
+import "@fontsource/ibm-plex-sans/400.css";
+import "@fontsource/ibm-plex-sans/600.css";
+import "@fontsource/ibm-plex-sans-arabic/400.css";
+import "@fontsource/ibm-plex-sans-arabic/600.css";
+import "@fontsource/cairo/400.css";
+import "@fontsource/cairo/700.css";
 import "./tokens.css";
 import "./globals.css";
 import "@/components/ui/ui.css";
+import "@/components/ui/designs.css";
 import { MessagesProvider } from "@/components/ui/Messages";
+import { designOf } from "@/lib/experience/design";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app");
@@ -33,9 +43,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const density = prefs.density === "compact" ? "compact" : "comfortable";
   const mode = prefs.mode === "light" || prefs.mode === "dark" ? prefs.mode : "system";
   // Text size scales the root font, so every rem-based size follows (spec 008 preferences, WCAG 1.4.4).
+  // The design (spec 036) picks the structural variant of the shell; the rest of the design arrives as tokens.
+  const design = designOf(theme.ok ? theme.data.variants : []);
   const scale = ["125", "150", "200"].includes(prefs.text_scale) ? `${prefs.text_scale}%` : undefined;
   return (
-    <html lang={locale} dir={dir} data-mode={mode} data-density={density} data-motion={prefs.motion} style={scale ? { fontSize: scale } : undefined}>
+    <html lang={locale} dir={dir} data-design={design.preset} data-nav={design.navigation} data-mode={mode} data-density={density} data-motion={prefs.motion} style={scale ? { fontSize: scale } : undefined}>
       <body>
         {theme.ok ? <ThemeLinks variants={theme.data.variants} density={density} mode={mode} /> : null}
         <a className="skip-link" href="#main">

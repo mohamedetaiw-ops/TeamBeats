@@ -149,7 +149,8 @@
       "border": "Borders",
       "shadow": "Shadows",
       "motion": "Motion",
-      "state": "Interaction states"
+      "state": "Interaction states",
+      "layout": "Layout"
     },
     "contrast": {
       "title": "Contrast and size checks",
@@ -199,6 +200,28 @@
       "success": "Approved",
       "warning": "Due soon",
       "danger": "Overdue"
+    },
+    "design": {
+      "title": "Design",
+      "intro": "Pick one of the three TeamBeats designs. Each one sets colors, type, shape and navigation for the whole workspace, in light and dark, Arabic and English. You can still adjust any value below.",
+      "replaces": "Choosing a design replaces the values you changed below. Brand images and the brand name stay. Nothing changes for employees until you save.",
+      "current": "Current design",
+      "choose": "Use {name}",
+      "names": {
+        "beats": "Beats",
+        "atlas": "Atlas",
+        "pulse": "Pulse"
+      },
+      "summaries": {
+        "beats": "Warm and modern. Indigo with saffron, soft rounded cards, an icon rail. The TeamBeats default.",
+        "atlas": "Formal and institutional. Deep green with gold, square corners, top navigation, IBM Plex.",
+        "pulse": "Bold and editorial. Raspberry on a warm canvas, pill buttons, a dark labelled sidebar, Cairo."
+      },
+      "navigation": {
+        "rail": "Navigation: icon rail",
+        "top": "Navigation: top bar",
+        "sidebar": "Navigation: labelled sidebar"
+      }
     }
   },
   "ui": {
@@ -283,7 +306,8 @@
       "consequence": "Archiving hides them from everyone in the team.",
       "cancel": "Cancel selection",
       "archive": "Archive"
-    }
+    },
+    "design_system": "Design system"
   },
   "shell": {
     "home": "Home",
@@ -3653,6 +3677,143 @@
         "count": "Reports",
         "last": "Last seen",
         "correlation": "Correlation IDs"
+      }
+    }
+  },
+  "design_system": {
+    "people": {
+      "a": "Layla Haddad",
+      "b": "Omar Farouk",
+      "c": "Sara Nabil",
+      "d": "Khaled Mansour"
+    },
+    "colour": {
+      "title": "Colour",
+      "intro": "Semantic colour tokens of the active design. Components use these names, never raw values."
+    },
+    "type": {
+      "title": "Typography",
+      "intro": "Display, heading, lead, body and caption sizes from the type scale.",
+      "display": "Good morning, team",
+      "heading": "This week at TeamBeats",
+      "lead": "Find people, policies and services in one place.",
+      "body": "Body text is set at 16 pixels with a line height of 1.5, so long reading stays comfortable in Arabic and English.",
+      "caption": "Updated 2 hours ago by the Communications team"
+    },
+    "icons": {
+      "title": "Icons",
+      "intro": "One outline set on a 24 pixel grid. Icons follow the text colour; forward and back icons mirror in Arabic."
+    },
+    "actions": {
+      "title": "Actions",
+      "intro": "One primary action per context. Secondary and quiet for the rest. Destructive looks different and is never the default.",
+      "primary": "Submit request",
+      "secondary": "Save draft",
+      "quiet": "Cancel",
+      "destructive": "Delete file",
+      "busy": "Submitting…",
+      "link": "Download the handbook"
+    },
+    "fields": {
+      "title": "Text boxes and selections",
+      "name": "Full name",
+      "nameHint": "As it appears on your ID.",
+      "email": "Work email",
+      "emailError": "Enter a complete email address, for example layla@company.com.",
+      "department": "Department",
+      "departments": {
+        "hr": "Human resources",
+        "finance": "Finance",
+        "it": "Information technology"
+      },
+      "bio": "About you",
+      "counter": "{count, plural, one {# character left} other {# characters left}}"
+    },
+    "feedback": {
+      "title": "Status, alerts and people",
+      "badges": {
+        "draft": "Draft",
+        "new": "New",
+        "review": "In review",
+        "published": "Published",
+        "due": "Due Thursday",
+        "overdue": "Overdue"
+      },
+      "alerts": {
+        "infoTitle": "Office closed on Sunday",
+        "infoText": "The head office is closed for maintenance. Remote services stay available.",
+        "successTitle": "Request submitted",
+        "successText": "Your leave request went to your manager. You will hear back within two working days.",
+        "warningTitle": "Your password expires in 3 days",
+        "warningText": "Change it now to keep access to your apps.",
+        "dangerTitle": "We could not save your changes",
+        "dangerText": "The connection dropped. Your text is kept on this page.",
+        "fix": "Try again"
+      }
+    },
+    "cards": {
+      "title": "Cards",
+      "news": {
+        "title": "New hybrid work guidelines",
+        "tag": "News",
+        "alt": "Three colleagues standing together",
+        "text": "What changes from next month and how to book a desk."
+      },
+      "event": {
+        "title": "Town hall with the CEO",
+        "when": "Thursday 10:00",
+        "alt": "Stage with a spotlight",
+        "text": "Join in person or online. Questions are open until Wednesday."
+      },
+      "service": {
+        "title": "Request a laptop",
+        "text": "Most requests are ready in three working days.",
+        "action": "Start request"
+      }
+    },
+    "imagery": {
+      "title": "Imagery",
+      "office": "Office towers at dusk",
+      "caption": "Illustrations use the design palette. Real photos replace them per tenant."
+    },
+    "tabs": {
+      "title": "Tabs",
+      "label": "Project sections",
+      "overview": "Overview",
+      "documents": "Documents",
+      "people": "People",
+      "overviewText": "Goals, owners and the next milestone.",
+      "documentsText": "Shared files for this project.",
+      "peopleText": "Everyone working on this project."
+    },
+    "templates": {
+      "title": "Templates",
+      "intro": "Page templates built from these components. Admins start pages from them in the page builder.",
+      "items": {
+        "home": {
+          "title": "Home",
+          "text": "Greeting, priorities, news, services and people."
+        },
+        "article": {
+          "title": "Article",
+          "text": "Title, hero image, readable column and related links."
+        },
+        "listing": {
+          "title": "Listing",
+          "text": "Filters, results as cards or rows, paging."
+        },
+        "form": {
+          "title": "Form",
+          "text": "One question per group, clear errors, one primary action."
+        },
+        "dashboard": {
+          "title": "Dashboard",
+          "text": "Key numbers, trends and the tasks behind them."
+        },
+        "profile": {
+          "title": "Profile",
+          "text": "Person, role, team, contact and skills."
+        }
       }
     }
   }

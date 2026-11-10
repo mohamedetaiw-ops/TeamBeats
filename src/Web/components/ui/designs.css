@@ -1,0 +1,48 @@
+/*
+ * Structural touches of the three designs (spec 036, docs/design-system/designs.md). Colors, type, shape, elevation
+ * and motion already come from the design's tokens; this file holds only what a token value cannot express. Keep it
+ * small: a rule here applies to every tenant on that design, and must still read only --tb-* tokens.
+ */
+
+/* Atlas: formal. A gold rule under page titles, a gold brand mark on the green bar, labels never rounded into pills. */
+:root[data-design="atlas"] main h1::after {
+  content: "";
+  display: block;
+  inline-size: 3rem;
+  block-size: 0.25rem;
+  margin-block-start: var(--tb-space-sm);
+  background: var(--tb-color-highlight-base);
+}
+
+:root[data-design="atlas"] .shell-mark rect {
+  fill: var(--tb-color-highlight-base);
+}
+
+:root[data-design="atlas"] .shell-mark path {
+  fill: var(--tb-color-shell-background);
+}
+
+:root[data-design="atlas"] .shell-bar .shell-avatar {
+  background: var(--tb-color-highlight-base);
+  color: var(--tb-color-text-inverse);
+}
+
+/* Pulse: expressive. Pill buttons, a floating bar with a soft shadow, tight large headings. */
+:root[data-design="pulse"] .button {
+  border-radius: var(--tb-radius-full);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+:root[data-design="pulse"] .shell {
+  border-block-end: 0;
+  box-shadow: var(--tb-shadow-sm);
+}
+
+:root[data-design="pulse"] main h1 {
+  font-size: var(--tb-font-size-xxl);
+  letter-spacing: -0.02em;
+}
+
+:root[data-design="pulse"] .ui-card {
+  border-color: transparent;
+}
