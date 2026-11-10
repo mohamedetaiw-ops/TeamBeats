@@ -73,6 +73,13 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Notification panel | `Blocks.tsx` (`NotificationPanel`) | The latest notifications, in a popover or on a page | A named region; unread is said in words; the filter is a segmented control; mark all read is disabled when nothing is unread |
 | Settings dialog | `Blocks.tsx` (`SettingsDialog`) | Personal settings in sections | A dialog with vertical tabs (`aria-orientation="vertical"`, up and down arrows); each section saves on its own |
 | Sign-in card | `Blocks.tsx` (`SignInCard`) | The tenant's sign-in choices | A named region; providers are links; a form, when allowed, follows a labelled divider |
+| Thinking indicator | `Assistant.tsx` (`ThinkingIndicator`) | While the assistant or an agent works, with what it is doing now | A status region in words; the dots are decoration and stop with reduced motion |
+| Composer | `Assistant.tsx` (`Composer`) | The message box of the assistant and of agents, with attachments | Labelled text box that grows; Enter sends, Shift and Enter adds a line (stated in its description); named attach, remove, send and stop buttons |
+| Source list and citations | `Assistant.tsx` (`SourceList`, `Cite`) | The sources an answer used, in the order it cites them | An ordered list under a heading; each citation is a link named "Source n: title" to its entry |
+| Usage limit | `Assistant.tsx` (`UsageLimit`) | A quota such as questions today or agent runs this month | A meter with the amount in words and when it resets; warning from 80 percent, danger at the limit |
+| Question steps | `Assistant.tsx` (`QuestionSteps`) | A few answers an agent needs before it can go on | One radio group per step, "Step n of m" takes focus on each step, Back keeps answers, a summary before sending |
+| Agent form | `Assistant.tsx` (`AgentForm`) | The inputs of an agent run, from its published schema | Labelled fields with "(optional)" where it applies; the API's errors sit beside each field |
+| Run progress | `Assistant.tsx` (`RunProgress`) | The steps of an agent run and where it is now | An ordered list; each step states its status in words; the running one has `aria-current="step"` and is announced |
 | Filter bar | `.ui-filter-bar` | Search box, selects and Apply above a list | Real labels; Apply is a button |
 | Filter chips | `.ui-chips` | A row of choices that narrow a list, such as request status | Links with `aria-current` on the active choice |
 | List rows | `.ui-rows`, `.ui-row` | Tasks and other actionable items: icon tile, title, meta, one action | Each row is a list item; the action names its item |
@@ -122,3 +129,5 @@ Shell parts (header, navigation, search, settings, account menu, notifications, 
 | Use `DataTable` for lists people read, sort and select | Use `DataGrid` for a read-only list (it adds keys people do not expect) |
 | Say whether a rise is good with `goodWhen` | Colour a change red or green with no sign or words |
 | Keep the notification panel and settings dialog as the shell's only versions | Build a second notification list or settings layout in a feature |
+| Show the sources an answer used, numbered as it cites them | Show an answer with no way to see where it came from |
+| Say what the assistant is doing while it works | Show only a spinner for a long answer |

@@ -5,8 +5,8 @@ import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin, stack } from "../support/stack";
 
 /**
- * Spec 036 DLS-031 to DLS-039: the actions, selection, status, structure, overlay, menu, input and date components
- * and the data blocks of the extended catalogue.
+ * Spec 036 DLS-031 to DLS-039: the actions, selection, status, structure, overlay, menu, input and date components,
+ * the data blocks and the assistant and agent parts of the extended catalogue.
  * Each one is driven with the keyboard, in English and in Arabic, and checked for the name, role and state that
  * assistive technology reads. The gallery exists only with the development fixtures.
  */
@@ -738,6 +738,72 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const signIn = panels.getByRole("region", { name: t("panels.signInTitle") });
       await expect(signIn.getByRole("link", { name: t("panels.signInWork") })).toBeVisible();
       await expect(signIn.getByRole("textbox", { name: t("panels.email") })).toBeVisible();
+    });
+    test("the composer, citations, limits, question steps, agent form and run progress work from the keyboard", async ({ page }) => {
+      await openGallery(page, tenant, locale);
+      const a = (key: string, values: Record<string, string> = {}) => msg(locale, `ui.assistant.${key}`, values);
+      const assistant = page.locator("section:has(> h2#cg-assistant)");
+
+      // Thinking: said in words in a status region.
+      await expect(assistant.getByRole("status").filter({ hasText: a("thinking") })).toContainText(t("assistant.searching"));
+
+      // Citations link to their numbered source.
+      const cite = assistant.getByRole("link", { name: a("source", { number: "1", title: t("assistant.sourceBalance") }) });
+      await expect(cite).toHaveAttribute("href", "#cg-src-1");
+      await expect(assistant.locator("#cg-src-1")).toContainText(t("assistant.sourceBalance"));
+
+      // Composer: Shift and Enter adds a line, Enter sends; attachments can be removed by name.
+      const box = assistant.getByRole("textbox", { name: t("assistant.composer") });
+      await expect(box).toHaveAccessibleDescription(new RegExp(a("keys")));
+      await box.focus();
+      await page.keyboard.type("first");
+      await page.keyboard.press("Shift+Enter");
+      await page.keyboard.type("second");
+      await expect(box).toHaveValue("first\nsecond");
+      await page.keyboard.press("Enter");
+      await expect(page.getByTestId("cg-sent")).toContainText("second");
+      await expect(box).toHaveValue("");
+      await assistant.getByRole("button", { name: a("remove", { name: t("assistant.fileTrip") }) }).click();
+      await expect(assistant.getByRole("list", { name: a("attached") })).toHaveCount(0);
+      await expect(assistant.getByRole("button", { name: a("send") })).toBeDisabled();
+
+      // Usage limits are meters with their values in words.
+      await expect(assistant.getByRole("meter", { name: t("assistant.usageTeam") })).toHaveAttribute("aria-valuetext", t("assistant.usageTeamValue"));
+
+      // Question steps: one question at a time; Next waits for an answer; Back keeps it; the answers are shown before sending.
+      const agents = page.locator("section:has(> h2#cg-agents)");
+      const steps = agents.getByRole("region", { name: t("agents.stepsTitle") });
+      const next = steps.getByRole("button", { name: a("next") });
+      await expect(next).toBeDisabled();
+      await steps.getByRole("radio", { name: t("agents.q1b") }).check({ force: true });
+      await next.click();
+      const count = steps.locator(".ui-steps-count");
+      await expect(count).toHaveText(a("stepNumber", { current: "2", total: "3" }));
+      await expect(count).toBeFocused();
+      await steps.getByRole("button", { name: a("back") }).click();
+      await expect(steps.getByRole("radio", { name: t("agents.q1b") })).toBeChecked();
+      await next.click();
+      await steps.getByRole("radio", { name: t("agents.q2a") }).check({ force: true });
+      await next.click();
+      await steps.getByRole("radio", { name: t("agents.q3b") }).check({ force: true });
+      await steps.getByRole("button", { name: a("review") }).click();
+      await expect(steps.getByRole("heading", { name: t("agents.summary") })).toBeFocused();
+      await expect(steps.locator("dl")).toContainText(t("agents.q1b"));
+      await steps.getByRole("button", { name: a("send") }).click();
+      await expect(page.getByTestId("cg-answers")).toHaveText(t("agents.stepsSent"));
+
+      // Agent form: the API's error sits beside its field.
+      const form = agents.getByRole("form", { name: t("agents.formTitle") });
+      await form.getByRole("button", { name: t("agents.run") }).click();
+      await expect(form.getByRole("textbox", { name: t("agents.item") })).toHaveAttribute("aria-invalid", "true");
+      await expect(form.getByText(t("agents.itemMissing"))).toBeVisible();
+      await expect(form.getByRole("textbox", { name: a("optional", { label: t("agents.notes") }) })).toBeVisible();
+
+      // Run progress: each step states its status in words; the running one is marked.
+      const run = agents.getByRole("region", { name: t("agents.runTitle") });
+      await expect(run.locator('[aria-current="step"]')).toContainText(t("agents.stepDraft"));
+      await expect(run.locator('[aria-current="step"]')).toContainText(a("status.running"));
+      await expect(run.getByRole("listitem").first()).toContainText(a("status.done"));
     });
   });
 }

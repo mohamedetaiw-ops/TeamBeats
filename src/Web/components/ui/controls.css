@@ -160,12 +160,12 @@
 }
 
 .ui-choice-control input:checked + .ui-choice-mark,
-.ui-choice-control input:indeterminate + .ui-choice-mark {
+.ui-choice-control input:where([type="checkbox"]):indeterminate + .ui-choice-mark {
   border-color: var(--tb-color-accent-base);
   background: var(--tb-color-accent-base);
 }
 
-:where(.ui-choice-control input:checked, .ui-choice-control input:indeterminate) + .ui-choice-mark .icon,
+:where(.ui-choice-control input:checked, .ui-choice-control input:where([type="checkbox"]):indeterminate) + .ui-choice-mark .icon,
 .ui-choice-control input:checked + .ui-choice-mark::after {
   opacity: 1;
   transform: scale(1);

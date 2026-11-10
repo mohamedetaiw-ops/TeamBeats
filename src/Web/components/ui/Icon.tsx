@@ -48,6 +48,9 @@ const paths = {
   "trend-up": "M3 17l6-6 4 4 8-8M15 7h6v6",
   "trend-down": "M3 7l6 6 4-4 8 8M15 17h6v-6",
   sort: "M8 9l4-4 4 4M16 15l-4 4-4-4",
+  attach: "M21 11l-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7",
+  "arrow-up": "M12 19V5M5 12l7-7 7 7",
+  stop: "M7 7h10v10H7z",
 } as const;
 
 export type IconName = keyof typeof paths;
