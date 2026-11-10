@@ -54,7 +54,7 @@ export default async function KnowledgeBasePage() {
                   icon="book"
                   meta={
                     <time dateTime={a.publishedAt}>
-                      {t("updated", { date: format.dateTime(new Date(a.publishedAt), { dateStyle: "medium" }) })}
+                      {t("listUpdated", { date: format.dateTime(new Date(a.publishedAt), { dateStyle: "medium" }) })}
                     </time>
                   }
                   footer={a.template ? <Badge tone="accent">{t(`template.${a.template}`)}</Badge> : null}

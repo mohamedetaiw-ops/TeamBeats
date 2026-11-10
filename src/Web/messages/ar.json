@@ -2080,7 +2080,7 @@
         "faq": "الأسئلة الشائعة",
         "troubleshooting": "استكشاف الأعطال"
       },
-      "updated": "حُدّث في {date}",
+      "updated": "نُشرت في {date}، الإصدار {version}",
       "edit": "تعديل هذه المقالة",
       "contents": "في هذه الصفحة",
       "related": "ذو صلة",
@@ -2088,7 +2088,8 @@
       "noScore": "لم يقيّم أحد هذه المقالة بعد.",
       "scoreValue": "وجدها {percent}% مفيدة ({helpful} من {total})",
       "helpful": "مفيدة",
-      "notHelpful": "غير مفيدة"
+      "notHelpful": "غير مفيدة",
+      "listUpdated": "حُدّث في {date}"
     },
     "feedback": {
       "choose": "حدد ما إذا كانت المقالة مفيدة.",

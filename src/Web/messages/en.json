@@ -2080,7 +2080,7 @@
         "faq": "Frequently asked questions",
         "troubleshooting": "Troubleshooting"
       },
-      "updated": "Updated {date}",
+      "updated": "Published {date}, version {version}",
       "edit": "Edit this article",
       "contents": "On this page",
       "related": "Related",
@@ -2088,7 +2088,8 @@
       "noScore": "No one has rated this article yet.",
       "scoreValue": "{percent}% found it helpful ({helpful} of {total})",
       "helpful": "Helpful",
-      "notHelpful": "Not helpful"
+      "notHelpful": "Not helpful",
+      "listUpdated": "Updated {date}"
     },
     "feedback": {
       "choose": "Say whether the article helped.",
