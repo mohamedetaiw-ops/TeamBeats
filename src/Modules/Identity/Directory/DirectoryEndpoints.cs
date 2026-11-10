@@ -63,6 +63,20 @@ public sealed class RunRequestedDirectorySync(DirectorySyncService sync) : IMess
     public async Task HandleAsync(DirectorySyncRequested message, CancellationToken ct) => await sync.RunAsync(message.ConnectionId, ct);
 }
 
+/// <summary>Applies a finished on-premises Active Directory read from the sync agent (spec 003 US6, spec 017 US6).</summary>
+public sealed class ApplyAgentDirectoryRead(DirectorySyncService sync) : IMessageHandler<AgentJobFinished>
+{
+    public const string ConsumerName = "identity.directory_agent_read";
+
+    public async Task HandleAsync(AgentJobFinished message, CancellationToken ct)
+    {
+        if (message.Kind == "directory_sync")
+        {
+            await sync.ApplyAgentReadAsync(message, ct);
+        }
+    }
+}
+
 /// <summary>
 /// Hands a requested sync to the host that can reach the directory: the run becomes due now and that host's scheduler
 /// starts it within a minute. Used by worker hosts that run without the directory scheduler (staging workers, whose

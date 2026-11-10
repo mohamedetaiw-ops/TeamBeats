@@ -47,7 +47,7 @@ public sealed class SyncAgentService(
     IEntitlementService entitlements,
     IAuditWriter audit,
     IOutbox outbox,
-    IClock clock)
+    IClock clock) : IAgentDirectory
 {
     public static readonly TimeSpan OfflineAfter = TimeSpan.FromMinutes(5);
     public static readonly TimeSpan CodeLifetime = TimeSpan.FromHours(24);
@@ -120,21 +120,59 @@ public sealed class SyncAgentService(
     {
         await RequireConnectionAsync(connectionId, ct);
         await RequireEntitlementAsync(ct);
+        var now = clock.UtcNow;
+        var id = await TryEnqueueAsync(connectionId, ct) ?? throw AppException.Conflict("conflict.integrations.agent_job_open");
+        return new AgentJobAdminView(id, DirectorySync, "queued", null, 0, null, null, null, now, null);
+    }
+
+    /// <summary>Queues a read from the cursors of the last succeeded job, or returns null when one waits or runs.</summary>
+    private async Task<Guid?> TryEnqueueAsync(Guid connectionId, CancellationToken ct)
+    {
         await session.ExecAsync("select pg_advisory_xact_lock(hashtextextended(@key, 0))", new { key = LockKey(connectionId) }, ct);
         var open = await session.ScalarAsync<bool>(
             "select exists (select 1 from integrations.agent_job where connection_id = @connectionId and status in ('queued', 'taken'))", new { connectionId }, ct);
         if (open)
         {
-            throw AppException.Conflict("conflict.integrations.agent_job_open");
+            return null;
         }
         var id = Ids.New();
-        var now = clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into integrations.agent_job (tenant_id, id, connection_id, kind, status, created_by, created_at)
-            values (platform.current_tenant_id(), @id, @connectionId, @kind, 'queued', @actor, @now)
-            """, new { id, connectionId, kind = DirectorySync, actor = context.ActorId, now }, ct);
-        return new AgentJobAdminView(id, DirectorySync, "queued", null, 0, null, null, null, now, null);
+            insert into integrations.agent_job (tenant_id, id, connection_id, kind, status, payload, created_by, created_at)
+            select platform.current_tenant_id(), @id, @connectionId, @kind, 'queued',
+              coalesce((select jsonb_strip_nulls(jsonb_build_object('usersCursor', users_cursor, 'groupsCursor', groups_cursor))
+                        from integrations.agent_job where connection_id = @connectionId and status = 'succeeded'
+                        order by finished_at desc limit 1), '{}'::jsonb),
+              @actor, @now
+            """, new { id, connectionId, kind = DirectorySync, actor = context.ActorId, now = clock.UtcNow }, ct);
+        return id;
+    }
+
+    /// <summary>Spec 003 asks for a directory read (see <see cref="IAgentDirectory"/>).</summary>
+    public async Task<Guid?> RequestReadAsync(Guid connectionId, CancellationToken ct) =>
+        await IsUsableAsync(connectionId, ct) ? await TryEnqueueAsync(connectionId, ct) : null;
+
+    public async Task<bool> IsUsableAsync(Guid connectionId, CancellationToken ct) =>
+        await session.ScalarAsync<bool>("select exists (select 1 from integrations.connection where id = @connectionId and kind = @kind and enabled)",
+            new { connectionId, kind = OnPremDirectoryPack.KindName }, ct)
+        && await EntitledAsync(ct);
+
+    /// <summary>The records and next cursors of a succeeded job, in the canonical directory form.</summary>
+    public async Task<DirectoryChanges?> ReadResultAsync(Guid jobId, CancellationToken ct)
+    {
+        var job = await session.QuerySingleOrDefaultAsync(
+            "select users_cursor, groups_cursor from integrations.agent_job where id = @jobId and status = 'succeeded'",
+            new { jobId }, r => (Users: r.Get<string?>("users_cursor"), Groups: r.Get<string?>("groups_cursor")), ct);
+        if (job == default && !await session.ScalarAsync<bool>("select exists (select 1 from integrations.agent_job where id = @jobId and status = 'succeeded')", new { jobId }, ct))
+        {
+            return null;
+        }
+        var records = await session.QueryAsync(
+            "select kind, record::text from integrations.agent_directory_record where job_id = @jobId order by kind, external_id",
+            new { jobId }, r => (Kind: r.GetString(0), Json: r.GetString(1)), ct);
+        var users = records.Where(r => r.Kind == "user").Select(r => JsonSerializer.Deserialize<DirectoryUserRecord>(r.Json, JsonDefaults.Options)!).ToList();
+        var groups = records.Where(r => r.Kind == "group").Select(r => JsonSerializer.Deserialize<DirectoryGroupRecord>(r.Json, JsonDefaults.Options)!).ToList();
+        return new DirectoryChanges(users, groups, job.Users ?? string.Empty, job.Groups ?? string.Empty);
     }
 
     public async Task<IReadOnlyList<AgentJobAdminView>> JobsAsync(Guid connectionId, CancellationToken ct)
@@ -316,8 +354,8 @@ public sealed class SyncAgentService(
         }
         var now = clock.UtcNow;
         var held = await session.QuerySingleOrDefaultAsync(
-            "select id, taken_by, kind from integrations.agent_job where connection_id = @id and status = 'taken' and lease_until >= @now limit 1",
-            new { id = agent.ConnectionId, now }, r => (Id: r.GetGuid(0), By: r.Get<Guid?>("taken_by"), Kind: r.GetString(2)), ct);
+            "select id, taken_by, kind, payload::text from integrations.agent_job where connection_id = @id and status = 'taken' and lease_until >= @now limit 1",
+            new { id = agent.ConnectionId, now }, r => (Id: r.GetGuid(0), By: r.Get<Guid?>("taken_by"), Kind: r.GetString(2), Payload: r.GetString(3)), ct);
         if (held != default)
         {
             // The holder asking again gets the same job with a longer lease; anyone else waits.
@@ -326,16 +364,17 @@ public sealed class SyncAgentService(
                 return null;
             }
             await ExtendAsync(held.Id, now, ct);
-            return new AgentJobView(held.Id, held.Kind, Parse(settings), now + Lease);
+            return View(held.Id, held.Kind, settings, held.Payload, now + Lease);
         }
         var job = await session.QuerySingleOrDefaultAsync(
             """
             update integrations.agent_job set status = 'taken', taken_by = @agent, lease_until = @lease, attempts = attempts + 1
             where id = (select id from integrations.agent_job where connection_id = @id
               and (status = 'queued' or (status = 'taken' and attempts < @max)) order by created_at limit 1)
-            returning id, kind
-            """, new { id = agent.ConnectionId, agent = agent.Id, lease = now + Lease, max = MaxAttempts }, r => (Id: r.GetGuid(0), Kind: r.GetString(1)), ct);
-        return job == default ? null : new AgentJobView(job.Id, job.Kind, Parse(settings), now + Lease);
+            returning id, kind, payload::text
+            """, new { id = agent.ConnectionId, agent = agent.Id, lease = now + Lease, max = MaxAttempts },
+            r => (Id: r.GetGuid(0), Kind: r.GetString(1), Payload: r.GetString(2)), ct);
+        return job == default ? null : View(job.Id, job.Kind, settings, job.Payload, now + Lease);
     }
 
     /// <summary>Stores a batch of directory records for a job the agent holds, and extends its lease.</summary>
@@ -380,13 +419,23 @@ public sealed class SyncAgentService(
         await session.ExecAsync(
             """
             update integrations.agent_job set status = @status, error_class = @errorClass, user_count = @users, group_count = @groups,
-              finished_at = @now, lease_until = null
+              users_cursor = @usersCursor, groups_cursor = @groupsCursor, finished_at = @now, lease_until = null
             where id = @jobId
-            """, new { jobId, status = ok ? "succeeded" : "failed", errorClass, users = counts.Users, groups = counts.Groups, now = clock.UtcNow }, ct);
+            """, new { jobId, status = ok ? "succeeded" : "failed", errorClass, users = counts.Users, groups = counts.Groups,
+                usersCursor = ok ? Cursor(result?.UsersCursor) : null, groupsCursor = ok ? Cursor(result?.GroupsCursor) : null, now = clock.UtcNow }, ct);
         await outbox.EnqueueAsync(new AgentJobFinished(jobId, agent.ConnectionId, DirectorySync, ok, errorClass, counts.Users, counts.Groups), ct);
     }
 
     // ---------------------------------------------------------------- helpers
+
+    private static AgentJobView View(Guid id, string kind, string settings, string payload, DateTimeOffset leaseUntil)
+    {
+        var p = Parse(payload);
+        static string? Text(JsonElement e, string name) => e.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
+        return new AgentJobView(id, kind, Parse(settings), leaseUntil, Text(p, "usersCursor"), Text(p, "groupsCursor"));
+    }
+
+    private static string? Cursor(string? value) => value is { Length: > 0 and <= 500 } && !value.Any(char.IsControl) ? value : null;
 
     private async Task<JsonElement> RequireConnectionAsync(Guid connectionId, CancellationToken ct)
     {

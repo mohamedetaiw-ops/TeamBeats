@@ -14323,6 +14323,13 @@
               "string"
             ],
             "format": "int32"
+          },
+          "connectionId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
