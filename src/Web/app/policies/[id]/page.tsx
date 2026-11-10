@@ -61,7 +61,7 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
       <main id="main" className="page policies-page">
         <PoliciesNav current={null} />
         {actions.length > 0 ? (
-          <nav aria-label={tm("label")} className="policies-nav">
+          <nav aria-label={tm("label")} className="ui-chips">
             <ul>
               {actions.map((a) => (
                 <li key={a.href}>

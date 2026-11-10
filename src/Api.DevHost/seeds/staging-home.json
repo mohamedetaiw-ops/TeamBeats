@@ -1,9 +1,9 @@
 {
-  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md), laid out after the v2 home mockup: a brand hero and Your day at the top, news next to the weather, My services next to the world clock, mail and calendar side by side, the tool box, then a call to action. A page from the home template H01, published and set as the shell home, with fictional news, form services and a global menu so the rail and the cards have something to show. Every name in it is invented. Mail and calendar are placed with the IDs the home suggestions use, so they appear here and not at the top. Raise the revision when this file changes: a home seeded from an older revision that nobody edited is brought up to date, and a home an administrator changed is never replaced. News and services are added only when their English title is new; the menu only while the tenant has none.",
+  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md), laid out after the v2 home mockup: your briefing and Your day at the top, featured news next to My services, calendar and mail side by side, and the Safety Week campaign band at the bottom, above the end of the page. A page from the home template H01, published and set as the shell home, with fictional news, form services and a global menu so the rail and the cards have something to show. Every name in it is invented. Mail and calendar are placed with the IDs the home suggestions use, so they appear here and not at the top. Raise the revision when this file changes: a home seeded from an older revision that nobody edited is brought up to date, and a home an administrator changed is never replaced. News and services are added only when their English title is new; the menu only while the tenant has none.",
   "template": "H01",
   "slug": "home",
   "variant": "balanced",
-  "revision": 3,
+  "revision": 4,
   "navigation": [
     {
       "slug": "nav-home",
@@ -432,25 +432,12 @@
   "regions": {
     "hero": [
       {
-        "id": "campaign-hero",
-        "componentRef": "content.call_to_action@1",
-        "span": 8,
+        "componentRef": "home.briefing@1",
+        "id": "briefing",
         "props": {
-          "heading": {
-            "en": "Safety Week: five days, five habits",
-            "ar": "أسبوع السلامة: خمسة أيام وخمس عادات"
-          },
-          "body": {
-            "en": "Daily drills, a quiz with prizes and a visit from Civil Defence at every site, 16 to 20 November.",
-            "ar": "تدريبات يومية ومسابقة بجوائز وزيارة من الدفاع المدني لكل موقع، من 16 إلى 20 نوفمبر."
-          },
-          "label": {
-            "en": "See the programme",
-            "ar": "اطلع على البرنامج"
-          },
-          "link": "seed:news:safety-week",
-          "emphasis": "primary"
-        }
+          "location": "Dubai"
+        },
+        "span": 8
       },
       {
         "id": "tasks",
@@ -476,72 +463,51 @@
             "ar": "الأخبار"
           },
           "type": "all",
-          "top": 4
-        }
-      },
-      {
-        "id": "weather",
-        "componentRef": "toolbox.weather@1",
-        "span": 4,
-        "props": {
-          "location": "Dubai"
+          "top": 5,
+          "layout": "featured"
         }
       },
       {
         "id": "services",
         "componentRef": "services.my_services@1",
-        "span": 8,
-        "props": {
-          "top": 5
-        }
-      },
-      {
-        "id": "world-clock",
-        "componentRef": "toolbox.world_clock@1",
         "span": 4,
         "props": {
-          "zones": [
-            "Asia/Dubai",
-            "Asia/Riyadh",
-            "Africa/Cairo",
-            "Europe/London"
-          ]
+          "top": 4
         }
       },
       {
-        "id": "home-outlook-my-calendar",
         "componentRef": "outlook.my_calendar@1",
+        "id": "home-outlook-my-calendar",
         "span": 6
       },
       {
-        "id": "home-outlook-my-mail",
         "componentRef": "outlook.my_mail@1",
+        "id": "home-outlook-my-mail",
         "span": 6
       },
       {
-        "id": "time-converter",
-        "componentRef": "toolbox.time_converter@1",
-        "span": 6
-      },
-      {
-        "id": "campaign",
+        "id": "campaign-band",
         "componentRef": "content.call_to_action@1",
-        "span": 6,
+        "span": 12,
         "props": {
           "heading": {
-            "en": "Every service in one place",
-            "ar": "كل الخدمات في مكان واحد"
+            "en": "Safety Week: five days, five habits",
+            "ar": "أسبوع السلامة: خمسة أيام وخمس عادات"
           },
           "body": {
-            "en": "Leave, IT help, letters and more, with every request tracked from start to finish.",
-            "ar": "الإجازات والدعم التقني والخطابات وغيرها، مع متابعة كل طلب من بدايته حتى نهايته."
+            "en": "Daily drills, a quiz with prizes and a visit from Civil Defence at every site, 16 to 20 November.",
+            "ar": "تدريبات يومية ومسابقة بجوائز وزيارة من الدفاع المدني لكل موقع، من 16 إلى 20 نوفمبر."
           },
           "label": {
-            "en": "Browse services",
-            "ar": "تصفح الخدمات"
+            "en": "See the programme",
+            "ar": "اطلع على البرنامج"
           },
-          "link": "/services",
-          "emphasis": "secondary"
+          "link": "seed:news:safety-week",
+          "emphasis": "campaign",
+          "eyebrow": {
+            "en": "Campaign · 16 to 20 November",
+            "ar": "حملة · من 16 إلى 20 نوفمبر"
+          }
         }
       }
     ]

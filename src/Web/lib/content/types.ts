@@ -27,6 +27,8 @@ export type FeedItem = {
   publishedAt: string;
   pinned: boolean;
   featured: boolean;
+  readMinutes: number;
+  reactions: number;
 };
 
 export type FeedPage = { items: FeedItem[]; next: string | null };

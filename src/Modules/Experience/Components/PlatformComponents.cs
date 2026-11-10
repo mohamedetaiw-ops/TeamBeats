@@ -14,10 +14,10 @@ public sealed class PlatformComponents : IComponentRegistration
     public const int MaxClockZones = 6;
 
     private static ComponentManifest Manifest(string id, string icon, Dictionary<string, PropertySchema> properties, PlacementRules placement,
-        IReadOnlyList<string>? data = null)
+        IReadOnlyList<string>? data = null, string category = "utility")
     {
         var key = "experience.component." + id.Replace('.', '_');
-        return new(id, "1.0.0", "TeamBeats", "^1", new ComponentDisplay(key + ".name", key + ".description", "utility", icon), properties,
+        return new(id, "1.0.0", "TeamBeats", "^1", new ComponentDisplay(key + ".name", key + ".description", category, icon), properties,
             placement, ["locale", "direction"], ComponentRequirements.None, ComponentEvents.None, data ?? [], TrustTiers.Platform, ComponentStates.Active);
     }
 
@@ -33,5 +33,13 @@ public sealed class PlatformComponents : IComponentRegistration
         {
             ["location"] = new PropertySchema("string", MaxLength: 100),
         }, new PlacementRules(MinSpan: 3), ["/api/v1/weather"]),
+        // The home briefing (spec 008 FR-056): greeting, date and weather, and the next three things that need the viewer from
+        // the task inbox (016), policies to accept (025) and today's meetings (018). Each source is read with the viewer's own
+        // session and left out when the tenant does not have it, so the component needs no capability of its own.
+        Manifest("home.briefing", "spark", new()
+        {
+            ["location"] = new PropertySchema("string", MaxLength: 100),
+        }, new PlacementRules(MinSpan: 6, Singleton: true),
+            ["/api/v1/me", "/api/v1/tasks", "/api/v1/me/policies", "/api/v1/me/calendar", "/api/v1/weather"], "personal"),
     ];
 }

@@ -49,7 +49,7 @@ export function MyTeam({ initial }: { initial: TeamPage }) {
         </label>
       </div>
       {error ? <p className="notice notice-error">{t("failed")}</p> : null}
-      <ul className="people-list" data-testid="team-list">
+      <ul className="people-list people-cards" data-testid="team-list">
         {page.items.map((p) => (
           <li key={p.id}>
             <PersonItem person={p} locale={locale} extra={indirect && p.level ? t("team.level", { level: p.level }) : undefined} />

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import type { Delegation } from "@/lib/services/types";
+import { isolate } from "@/lib/bidi";
 import { PersonPicker } from "./PersonPicker";
 
 /**
@@ -74,7 +75,7 @@ export function DelegationPanel({ initial }: { initial: Delegation | null }) {
       <p>{t("intro")}</p>
       {current ? (
         <p className="notice" data-testid="delegation-current">
-          {t(current.active ? "active" : "planned", { name: current.delegate.displayName, from: day(current.startsOn), to: day(current.endsOn) })}
+          {t(current.active ? "active" : "planned", { name: isolate(current.delegate.displayName), from: day(current.startsOn), to: day(current.endsOn) })}
         </p>
       ) : null}
       <PersonPicker label={t("delegate")} value={delegateId} onChange={setDelegateId} />

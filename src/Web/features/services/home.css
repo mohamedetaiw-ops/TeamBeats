@@ -46,29 +46,33 @@
   background: var(--tb-color-surface-sunken);
 }
 
+.home-stats li[data-tone="warm"] {
+  background: var(--tb-color-tint-warm);
+  color: var(--tb-color-tint-warm-text);
+}
+
 .home-stats li[data-tone="accent"] {
-  background: var(--tb-color-accent-subtle);
+  background: var(--tb-color-tint-cool);
+  color: var(--tb-color-tint-cool-text);
+}
+
+.home-stats li[data-tone="fresh"] {
+  background: var(--tb-color-tint-fresh);
+  color: var(--tb-color-tint-fresh-text);
 }
 
 .home-stats strong {
   font-family: var(--tb-font-family-heading);
-  font-size: var(--tb-font-size-xl);
+  font-size: var(--tb-font-size-xxl);
   line-height: var(--tb-font-line-height-heading);
 }
 
-.home-stats li[data-tone="accent"] strong {
-  color: var(--tb-color-link);
+.home-stats span {
+  color: inherit;
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-medium);
 }
 
-.home-stats li[data-tone="highlight"] strong {
-  color: var(--tb-color-highlight-base);
-}
-
-.home-stats li[data-tone="success"] strong {
-  color: var(--tb-color-state-success);
-}
-
-.home-stats span,
 .home-meta {
   color: var(--tb-color-text-secondary);
   font-size: var(--tb-font-size-sm);
@@ -95,6 +99,7 @@
 .home-list a {
   color: var(--tb-color-text-primary);
   font-weight: var(--tb-font-weight-medium);
+  text-decoration: none;
 }
 
 .home-tiles {
@@ -108,9 +113,10 @@
 
 .home-tiles a {
   display: grid;
-  gap: var(--tb-space-xs);
-  align-content: end;
-  min-block-size: 6rem;
+  gap: var(--tb-space-sm);
+  align-content: space-between;
+  justify-items: start;
+  min-block-size: 7rem;
   padding: var(--tb-space-md);
   border-radius: var(--tb-radius-md);
   background: var(--tb-color-surface-sunken);
@@ -121,4 +127,159 @@
 
 .home-tiles a:hover {
   background: var(--tb-color-accent-subtle);
+}
+
+/*
+ * Briefing hero (docs/design-system/components.md, Briefing hero): the night surface of AI and personal summaries,
+ * a large greeting, up to three timed rows with their actions, and a line that says where the items came from.
+ * The night surface is dark in both modes: deep indigo in light mode, the raised dark surface in dark mode.
+ */
+.home-briefing {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-lg);
+  block-size: 100%;
+  padding: var(--tb-space-xl);
+  overflow: hidden;
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-night);
+  color: var(--tb-color-text-on-night);
+}
+
+.home-briefing-mark {
+  position: absolute;
+  inset-block-start: var(--tb-space-lg);
+  inset-inline-end: var(--tb-space-xl);
+  color: var(--tb-color-highlight-bright);
+  opacity: 0.8;
+}
+
+.home-briefing-mark path {
+  fill: currentcolor;
+}
+
+.home-briefing-date {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  font-size: var(--tb-font-size-sm);
+}
+
+.home-briefing-date .icon {
+  color: var(--tb-color-highlight-bright);
+}
+
+.home-briefing-title {
+  max-inline-size: 36rem;
+  margin: 0;
+  font-size: var(--tb-font-size-xxl);
+}
+
+.home-briefing-rows {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-briefing-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-md);
+  padding: var(--tb-space-md);
+  border-radius: var(--tb-radius-md);
+  position: relative;
+  isolation: isolate;
+}
+
+/* A faint lift on the night surface, drawn with the on-night text colour so it follows every design. */
+.home-briefing-row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--tb-color-text-on-night);
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.home-briefing-time {
+  flex: none;
+  min-inline-size: 4.5rem;
+  color: var(--tb-color-highlight-bright);
+  font-weight: var(--tb-font-weight-bold);
+  font-size: var(--tb-font-size-sm);
+}
+
+.home-briefing-text {
+  display: grid;
+  flex: 1 1 14rem;
+  gap: var(--tb-space-xs);
+  min-inline-size: 0;
+}
+
+.home-briefing-text span {
+  opacity: 0.8;
+  font-size: var(--tb-font-size-sm);
+}
+
+.home-briefing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+.home-briefing-action {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.5rem;
+  padding-inline: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid transparent;
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-highlight-bright);
+  color: var(--tb-color-surface-night);
+  font-weight: var(--tb-font-weight-bold);
+  text-decoration: none;
+}
+
+.home-briefing-action-quiet {
+  border-color: var(--tb-color-text-on-night);
+  background: transparent;
+  color: inherit;
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.home-briefing-action:hover {
+  text-decoration: none;
+  filter: brightness(1.05);
+}
+
+.home-briefing :focus-visible {
+  outline-color: var(--tb-color-highlight-bright);
+}
+
+.home-briefing-foot {
+  margin: 0;
+  margin-block-start: auto;
+  opacity: 0.85;
+  font-size: var(--tb-font-size-sm);
+}
+
+@media (width <= 40rem) {
+  .home-briefing {
+    padding: var(--tb-space-lg);
+  }
+
+  .home-briefing-title {
+    font-size: var(--tb-font-size-xl);
+  }
+
+  .home-briefing-mark {
+    display: none;
+  }
 }

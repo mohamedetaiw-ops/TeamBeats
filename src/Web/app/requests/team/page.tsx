@@ -7,6 +7,8 @@ import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { ServicesNav } from "@/features/services/ServicesNav";
 import "@/features/services/services.css";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { isolate } from "@/lib/bidi";
 
 /**
  * Team requests (spec 016 FR-005, US2 scenario 4): requests for the signed-in person's direct and indirect reports by
@@ -30,9 +32,8 @@ export default async function TeamRequestsPage({ searchParams }: { searchParams:
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("team.title"), href: "/requests/team" }]} />
       <main id="main" className="page">
-        <h1>{t("team.title")}</h1>
-        <ServicesNav current="team" />
-        <nav aria-label={t("requests.filter")} className="services-nav">
+        <PageHeader title={t("team.title")} icon="services" nav={<ServicesNav current="team" />} />
+        <nav aria-label={t("requests.filter")} className="ui-chips">
           <ul>
             <li>
               <Link href="/requests/team" aria-current={filter === null ? "page" : undefined}>
@@ -63,7 +64,7 @@ export default async function TeamRequestsPage({ searchParams }: { searchParams:
                   {r.currentStep ? <bdi>{pick(r.currentStep, locale)}</bdi> : null}
                 </span>
                 <span className="services-meta">
-                  {t("team.for", { name: (r.onBehalfOf ?? r.requester).displayName })}
+                  {t("team.for", { name: isolate((r.onBehalfOf ?? r.requester).displayName) })}
                   {r.submittedAt ? t("requests.submittedAt", { when: format.dateTime(new Date(r.submittedAt), { dateStyle: "medium" }) }) : null}
                 </span>
               </li>

@@ -5,6 +5,7 @@ import type { RegisterRights } from "@/lib/policies/types";
 import { Header } from "@/components/shell/Header";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { NewPolicyForm } from "@/features/policies/NewPolicyForm";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /** A new policy in the register, for compliance officers (spec 025 US1). */
 export default async function NewPolicyPage() {
@@ -27,8 +28,7 @@ export default async function NewPolicyPage() {
         ]}
       />
       <main id="main" className="page policies-page">
-        <h1>{t("title")}</h1>
-        <PoliciesNav current={null} />
+        <PageHeader title={t("title")} icon="policy" nav={<PoliciesNav current={null} />} />
         <NewPolicyForm locales={me.data.tenant.enabledLocales} />
       </main>
     </>

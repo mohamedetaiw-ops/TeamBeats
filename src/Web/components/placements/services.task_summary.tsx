@@ -8,6 +8,7 @@ import { pick, type InboxItem } from "@/lib/services/types";
 import { useNow } from "@/lib/clock";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { isolate } from "@/lib/bidi";
 import "@/features/services/home.css";
 
 type Answer = "loading" | "failed" | InboxItem[];
@@ -74,15 +75,15 @@ export default function TaskSummary({ props }: PlacementProps) {
   return shell(
     <>
       <ul className="home-stats">
-        <li data-tone="accent">
+        <li data-tone="warm">
           <strong>{format.number(answer.length)}</strong>
           <span>{t("waiting", { count: answer.length })}</span>
         </li>
-        <li data-tone="highlight">
+        <li data-tone="accent">
           <strong>{format.number(overdue)}</strong>
           <span>{t("overdue", { count: overdue })}</span>
         </li>
-        <li data-tone="success">
+        <li data-tone="fresh">
           <strong>{format.number(soon)}</strong>
           <span>{t("dueSoon", { count: soon })}</span>
         </li>
@@ -97,7 +98,7 @@ export default function TaskSummary({ props }: PlacementProps) {
                 <bdi>{name(i)}</bdi>
               </Link>
               <span className="home-meta">
-                {i.requester ? t("from", { name: i.requester.displayName }) : null}
+                {i.requester ? t("from", { name: isolate(i.requester.displayName) }) : null}
                 {i.requester ? " · " : null}
                 {t("age", { when: format.relativeTime(new Date(i.createdAt), now) })}
               </span>

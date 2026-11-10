@@ -7,6 +7,8 @@ import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { ServicesNav } from "@/features/services/ServicesNav";
 import "@/features/services/services.css";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { isolate } from "@/lib/bidi";
 
 /** My requests (spec 016 FR-005): requests filed by or for the signed-in person, newest first, filtered by status. */
 export default async function MyRequestsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
@@ -27,9 +29,8 @@ export default async function MyRequestsPage({ searchParams }: { searchParams: P
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("requests.title"), href: "/requests" }]} />
       <main id="main" className="page">
-        <h1>{t("requests.title")}</h1>
-        <ServicesNav current="requests" />
-        <nav aria-label={t("requests.filter")} className="services-nav">
+        <PageHeader title={t("requests.title")} icon="services" nav={<ServicesNav current="requests" />} />
+        <nav aria-label={t("requests.filter")} className="ui-chips">
           <ul>
             <li>
               <Link href="/requests" aria-current={filter === null ? "page" : undefined}>
@@ -60,7 +61,7 @@ export default async function MyRequestsPage({ searchParams }: { searchParams: P
                   {r.currentStep ? <bdi>{pick(r.currentStep, locale)}</bdi> : null}
                 </span>
                 <span className="services-meta">
-                  {r.onBehalfOf ? t("requests.filedFor", { name: r.onBehalfOf.displayName }) : null}
+                  {r.onBehalfOf ? t("requests.filedFor", { name: isolate(r.onBehalfOf.displayName) }) : null}
                   {r.submittedAt ? t("requests.submittedAt", { when: format.dateTime(new Date(r.submittedAt), { dateStyle: "medium" }) }) : null}
                 </span>
               </li>

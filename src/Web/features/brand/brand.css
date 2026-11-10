@@ -282,3 +282,110 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Design picker (spec 036). The miniature reads the design's own tokens from its inline custom properties. */
+.design-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.design-option {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.design-option[data-selected] {
+  border: var(--tb-border-width-focus) solid var(--tb-color-accent-base);
+}
+
+.design-option-text h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.design-option-text p {
+  margin-block: var(--tb-space-xs) 0;
+}
+
+.design-option-current {
+  margin: 0;
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.design-mini {
+  display: grid;
+  grid-template: "bar bar" 1.25rem "nav main" 1fr / 1.5rem 1fr;
+  block-size: 8rem;
+  overflow: hidden;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-base);
+  font-family: var(--tb-font-family-heading);
+}
+
+.design-mini[data-nav="sidebar"] {
+  grid-template-columns: 3.5rem 1fr;
+}
+
+.design-mini[data-nav="top"] {
+  grid-template: "bar" 1.25rem "nav" 0.75rem "main" 1fr / 1fr;
+}
+
+.design-mini-bar {
+  grid-area: bar;
+  background: var(--tb-color-shell-background);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.design-mini-nav {
+  grid-area: nav;
+  background: var(--tb-color-nav-background);
+  border-inline-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.design-mini[data-nav="top"] .design-mini-nav {
+  border-inline-end: 0;
+  border-block-end: var(--tb-border-width-thick) solid var(--tb-color-nav-active);
+}
+
+.design-mini-main {
+  display: grid;
+  grid-area: main;
+  grid-template-columns: 1fr 1fr;
+  align-content: start;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-sm);
+}
+
+.design-mini-title {
+  grid-column: 1 / -1;
+  inline-size: 60%;
+  block-size: 0.5rem;
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-text-primary);
+}
+
+.design-mini-card {
+  block-size: 2.5rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+.design-mini-button {
+  inline-size: 3rem;
+  block-size: 0.75rem;
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-accent-base);
+}

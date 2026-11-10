@@ -16,13 +16,15 @@ import type {
 } from "@/lib/brand/types";
 import { BrandPreview, type PreviewSample } from "./BrandPreview";
 import { ContrastTable } from "./ContrastTable";
+import { DesignPicker } from "./DesignPicker";
 
 export type { PreviewSample };
 
 type Status = { kind: "idle" | "saving" | "saved" | "blocked" | "failed"; message?: string };
 
 const hex = /^#[0-9a-f]{6}$/i;
-const groups = ["color", "font", "space", "radius", "border", "shadow", "motion", "state"] as const;
+const groups = ["layout", "color", "font", "space", "radius", "border", "shadow", "motion", "state"] as const;
+const presetToken = "design.preset";
 
 /**
  * Brand editor (spec 033 T011). It holds only the values the brand sets; everything else shows the platform default
@@ -131,6 +133,14 @@ export function BrandManager({
     setStatus({ kind: "idle" });
   }
 
+  /** A design replaces the token values set so far; brand images, name and contrast policy stay (spec 036). */
+  function chooseDesign(key: string) {
+    const next: Record<string, TokenValue> = { [presetToken]: { $value: key } };
+    setTokens(next);
+    setStatus({ kind: "idle" });
+    scheduleCheck(next, strict);
+  }
+
   async function save() {
     setStatus({ kind: "saving" });
     const response = await fetch(`/api/v1/experience/brands/${brand.id}`, {
@@ -165,7 +175,14 @@ export function BrandManager({
     const label = t("tokenInput", { token: entry.name, mode: modeName(mode ?? "light") });
     const field = `tokens.${entry.name}${mode ? `.${mode}` : ""}`;
     const error = fieldError(field) ?? (mode === null ? fieldError(`tokens.${entry.name}`) : undefined);
-    const choices = entry.type === "font_family" ? (schema.fonts[entry.script ?? ""] ?? []) : entry.type === "easing" ? schema.easings : null;
+    const choices =
+      entry.type === "font_family"
+        ? (schema.fonts[entry.script ?? ""] ?? [])
+        : entry.type === "easing"
+          ? schema.easings
+          : entry.type === "choice"
+            ? (schema.choices[entry.name] ?? [])
+            : null;
     return (
       <div className="brand-input">
         {choices ? (
@@ -261,6 +278,22 @@ export function BrandManager({
           {status.message ?? ""}
         </p>
       </div>
+
+      <DesignPicker
+        designs={schema.designs}
+        current={tokens[presetToken]?.$value ?? schema.choices[presetToken]?.[0] ?? ""}
+        onChoose={chooseDesign}
+        labels={{
+          title: t("design.title"),
+          intro: t("design.intro"),
+          replaces: t("design.replaces"),
+          current: t("design.current"),
+          choose: (name) => t("design.choose", { name }),
+          name: (key) => (["beats", "atlas", "pulse"].includes(key) ? t(`design.names.${key}`) : key),
+          summary: (key) => (["beats", "atlas", "pulse"].includes(key) ? t(`design.summaries.${key}`) : ""),
+          navigation: (style) => (["rail", "top", "sidebar"].includes(style) ? t(`design.navigation.${style}`) : style),
+        }}
+      />
 
       <div className="brand-columns">
         <div className="brand-editor">

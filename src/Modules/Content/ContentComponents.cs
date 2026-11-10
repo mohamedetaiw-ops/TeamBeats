@@ -37,6 +37,8 @@ public sealed class ContentComponents : IComponentRegistration
             ["type"] = new PropertySchema("enum", Default: J(ContentTypes.News), Enum: ["all", ContentTypes.News, ContentTypes.Announcement, ContentTypes.Page]),
             ["site"] = new PropertySchema("string", MaxLength: 36),
             ["top"] = new PropertySchema("integer", Default: J(5), Minimum: 1, Maximum: 20),
+            // "featured" shows the lead story as a large card and the rest as compact rows (spec 008 home, spec 036 Featured news).
+            ["layout"] = new PropertySchema("enum", Default: J("list"), Enum: ["list", "featured"]),
         }, new PlacementRules(MinSpan: 3), [Capabilities.ContentCore], ["/api/v1/content/feed"]),
         Manifest(RichText, "content", "text", new()
         {
@@ -51,11 +53,12 @@ public sealed class ContentComponents : IComponentRegistration
         }, new PlacementRules(MinSpan: 3), [Capabilities.ContentCore], []),
         Manifest(CallToAction, "content", "pointer", new()
         {
+            ["eyebrow"] = new PropertySchema("text", MaxLength: 80),
             ["heading"] = new PropertySchema("text", Required: true, MaxLength: 120),
             ["body"] = new PropertySchema("text", MaxLength: 400),
             ["label"] = new PropertySchema("text", Required: true, MaxLength: 40),
             ["link"] = new PropertySchema("url", Required: true),
-            ["emphasis"] = new PropertySchema("enum", Default: J("primary"), Enum: ["primary", "secondary"]),
+            ["emphasis"] = new PropertySchema("enum", Default: J("primary"), Enum: ["primary", "secondary", "campaign"]),
         }, new PlacementRules(MinSpan: 3), [Capabilities.ContentCore], []),
         Manifest(AnnouncementBanner, "content", "megaphone", [], new PlacementRules(MinSpan: 6, Singleton: true),
             [Capabilities.ContentCore, Capabilities.ContentCriticalAck], ["/api/v1/content/critical/pending"]),

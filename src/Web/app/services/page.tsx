@@ -5,6 +5,7 @@ import type { CatalogueView } from "@/lib/services/types";
 import { Header } from "@/components/shell/Header";
 import { ServiceCatalogue } from "@/features/services/ServiceCatalogue";
 import { ServicesNav } from "@/features/services/ServicesNav";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /** The service catalogue (spec 016 US1): every service this person may use, from forms, linked apps and modules. */
 export default async function ServicesPage() {
@@ -21,9 +22,7 @@ export default async function ServicesPage() {
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("catalogue.title"), href: "/services" }]} />
       <main id="main" className="page">
-        <h1>{t("catalogue.title")}</h1>
-        <p>{t("catalogue.intro")}</p>
-        <ServicesNav current="catalogue" />
+        <PageHeader title={t("catalogue.title")} description={t("catalogue.intro")} icon="services" nav={<ServicesNav current="catalogue" />} />
         <ServiceCatalogue initial={view.data} />
       </main>
     </>

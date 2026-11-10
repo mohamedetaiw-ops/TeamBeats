@@ -5,10 +5,13 @@ import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
-import { Icon } from "@/components/ui/Icon";
+import { Icon, type IconName } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
 import { pick, type CatalogueView, type ServiceCard } from "@/lib/services/types";
 import "./services.css";
+
+const categoryIcons: readonly IconName[] = ["user", "settings", "home", "inbox", "globe", "chat", "calendar", "book"];
+const tileTones = ["accent", "highlight", "success", "info"] as const;
 
 /**
  * The service catalogue (spec 016 US1): the services the API offers this person, by category, with search,
@@ -61,34 +64,51 @@ export function ServiceCatalogue({ initial }: { initial: CatalogueView }) {
     return other.length > 0 ? [...byCategory, { id: "other", name: t("other"), services: other }] : byCategory;
   }, [view, locale, t]);
 
+  // Each category keeps one icon and tint, so a service looks the same in Favourites, Recently used and its category.
+  const look = (s: ServiceCard) => {
+    const index = Math.max(0, view.categories.findIndex((c) => c.id === s.categoryId));
+    return { icon: categoryIcons[index % categoryIcons.length] ?? "services", tone: tileTones[index % tileTones.length] ?? "accent" };
+  };
+
   const card = (s: ServiceCard) => {
     const name = pick(s.names, locale);
+    const { icon, tone } = look(s);
+    const description = pick(s.descriptions, locale);
     return (
-      <li key={s.id} className="services-card">
-        <h3>
-          {s.kind === "linked" && s.url ? (
-            <a href={s.url} target="_blank" rel="noopener noreferrer" onClick={() => void fetch(`/api/v1/services/${s.id}/used`, { method: "POST" })}>
-              <bdi>{name}</bdi>
-              <span className="visually-hidden">{t("external")}</span>
-              <Icon name="external" mirrorInRtl />
-            </a>
-          ) : s.kind === "module" && s.launchRoute ? (
-            <Link href={s.launchRoute}>
-              <bdi>{name}</bdi>
-            </Link>
-          ) : (
-            <Link href={`/services/${s.id}`}>
-              <bdi>{name}</bdi>
-            </Link>
-          )}
-        </h3>
-        {pick(s.descriptions, locale) ? <p className="services-meta">{pick(s.descriptions, locale)}</p> : null}
-        {s.kind === "linked" ? <p className="services-meta">{s.sso ? t("sso") : t("ownSignIn")}</p> : null}
-        <div className="services-row">
-          <Button variant="quiet" aria-pressed={s.favourite} onClick={() => void toggleFavourite(s)} aria-label={t(s.favourite ? "unfavourite" : "favourite", { name })}>
-            {s.favourite ? t("favourited") : t("addFavourite")}
-          </Button>
-        </div>
+      <li key={s.id}>
+        <article className="ui-tile services-tile">
+          <div className="ui-tile-head">
+            <span className="ui-icon-tile" data-tone={tone}>
+              <Icon name={s.kind === "linked" ? "external" : icon} size={22} mirrorInRtl={false} />
+            </span>
+            <div className="ui-tile-text">
+              <h3 className="ui-tile-title">
+                {s.kind === "linked" && s.url ? (
+                  <a className="ui-tile-link" href={s.url} target="_blank" rel="noopener noreferrer" onClick={() => void fetch(`/api/v1/services/${s.id}/used`, { method: "POST" })}>
+                    <bdi>{name}</bdi>
+                    <span className="visually-hidden">{t("external")}</span>
+                  </a>
+                ) : (
+                  <Link className="ui-tile-link" href={s.kind === "module" && s.launchRoute ? s.launchRoute : `/services/${s.id}`}>
+                    <bdi>{name}</bdi>
+                  </Link>
+                )}
+              </h3>
+              {s.kind === "linked" ? <p className="ui-tile-meta">{s.sso ? t("sso") : t("ownSignIn")}</p> : null}
+            </div>
+            <button
+              type="button"
+              className="services-favourite"
+              aria-pressed={s.favourite}
+              aria-label={t(s.favourite ? "unfavourite" : "favourite", { name })}
+              title={s.favourite ? t("favourited") : t("addFavourite")}
+              onClick={() => void toggleFavourite(s)}
+            >
+              <Icon name="star" size={20} />
+            </button>
+          </div>
+          {description ? <p>{description}</p> : null}
+        </article>
       </li>
     );
   };
@@ -97,15 +117,15 @@ export function ServiceCatalogue({ initial }: { initial: CatalogueView }) {
     <div className="services">
       <form
         role="search"
-        className="services-toolbar"
+        className="ui-filter-bar"
         onSubmit={(e) => {
           e.preventDefault();
           void load(query, category);
         }}
       >
         <FormField label={t("search")} name="q" type="search" hint={t("searchHint")} value={query} onChange={(e) => setQuery(e.target.value)} />
-        <label className="services-select">
-          {t("category")}
+        <label className="field">
+          <span>{t("category")}</span>
           <select
             value={category}
             onChange={(e) => {
@@ -129,16 +149,16 @@ export function ServiceCatalogue({ initial }: { initial: CatalogueView }) {
       {state === "failed" ? <StateView kind="error" title={t("failed")} message="" /> : null}
 
       {favourites.length > 0 ? (
-        <section className="services-section" aria-labelledby="services-favourites">
+        <section className="services-block" aria-labelledby="services-favourites">
           <h2 id="services-favourites">{t("favourites")}</h2>
-          <ul className="services-grid">{favourites.map(card)}</ul>
+          <ul className="ui-tiles">{favourites.map(card)}</ul>
         </section>
       ) : null}
 
       {recent.length > 0 ? (
-        <section className="services-section" aria-labelledby="services-recent">
+        <section className="services-block" aria-labelledby="services-recent">
           <h2 id="services-recent">{t("recent")}</h2>
-          <ul className="services-grid">{recent.map(card)}</ul>
+          <ul className="ui-tiles">{recent.map(card)}</ul>
         </section>
       ) : null}
 
@@ -147,11 +167,11 @@ export function ServiceCatalogue({ initial }: { initial: CatalogueView }) {
           <StateView kind="empty" title={t("none")} message="" />
         ) : (
           groups.map((g) => (
-            <section key={g.id} className="services-section" aria-labelledby={`services-category-${g.id}`}>
+            <section key={g.id} className="services-block" aria-labelledby={`services-category-${g.id}`}>
               <h2 id={`services-category-${g.id}`}>
                 <bdi>{g.name}</bdi>
               </h2>
-              <ul className="services-grid">{g.services.map(card)}</ul>
+              <ul className="ui-tiles">{g.services.map(card)}</ul>
             </section>
           ))
         )}

@@ -18,7 +18,13 @@ export type TokenSchema = {
   assetSlots: string[];
   fonts: Record<string, string[]>;
   easings: string[];
+  /** Allowed keywords of the choice tokens, such as `design.preset` and `layout.navigation`. */
+  choices: Record<string, string[]>;
+  designs: DesignOption[];
 };
+
+/** One of the three TeamBeats designs with its resolved custom properties per mode (spec 036). */
+export type DesignOption = { key: string; navigation: string; preview: Record<string, Record<string, string>> };
 
 export type ContrastFinding = {
   code: string;

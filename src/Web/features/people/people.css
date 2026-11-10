@@ -16,9 +16,9 @@
 .people-section {
   display: grid;
   gap: var(--tb-space-sm);
-  padding: var(--tb-space-md);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-md);
+  padding: var(--tb-space-lg);
+  border-radius: var(--tb-radius-lg);
+  box-shadow: var(--tb-shadow-sm);
   background: var(--tb-color-surface-raised);
   color: var(--tb-color-text-primary);
 }
@@ -65,7 +65,7 @@
 }
 
 .people-item-name {
-  font-weight: 600;
+  font-weight: var(--tb-font-weight-bold);
 }
 
 .people-avatar {
@@ -79,6 +79,75 @@
   background: var(--tb-color-surface-raised);
   color: var(--tb-color-text-primary);
   font-weight: 600;
+}
+
+.people-avatar[data-tone] {
+  border-color: transparent;
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-accent-base);
+}
+
+.people-avatar[data-tone="highlight"] {
+  background: var(--tb-color-tint-warm);
+  color: var(--tb-color-tint-warm-text);
+}
+
+.people-avatar[data-tone="success"] {
+  background: var(--tb-color-tint-fresh);
+  color: var(--tb-color-tint-fresh-text);
+}
+
+.people-avatar[data-tone="info"] {
+  background: var(--tb-color-tint-cool);
+  color: var(--tb-color-tint-cool-text);
+}
+
+/* Directory blocks sit on the canvas with their heading; the people in them are person cards (Person card). */
+.people-block {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.people-block > h2,
+.people-block h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.people-cards {
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--tb-space-md);
+}
+
+.people-cards .people-item {
+  position: relative;
+  align-items: center;
+  block-size: 100%;
+  padding: var(--tb-space-md);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  transition: box-shadow var(--tb-motion-duration-normal) var(--tb-motion-easing-standard);
+}
+
+.people-cards .people-item:hover {
+  box-shadow: var(--tb-shadow-md);
+}
+
+.people-cards .people-avatar {
+  inline-size: 3rem;
+  block-size: 3rem;
+}
+
+.people-cards .people-item-name {
+  color: var(--tb-color-text-primary);
+}
+
+.people-cards .people-item-name::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
 
 .people-avatar-large {

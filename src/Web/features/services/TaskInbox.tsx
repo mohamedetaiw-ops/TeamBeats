@@ -4,8 +4,10 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useNow } from "@/lib/clock";
+import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
 import { pick, type InboxItem } from "@/lib/services/types";
+import { isolate } from "@/lib/bidi";
 import "./services.css";
 
 /**
@@ -52,11 +54,12 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
   const shown = items.filter((i) => !type || (i.serviceId ?? i.source) === type);
 
   return (
-    <section className="services-section" aria-labelledby="inbox-title">
-      <h2 id="inbox-title">{t("title", { count: items.length })}</h2>
+    <section className="services-block" aria-labelledby="inbox-title">
+      <div className="services-block-head">
+        <h2 id="inbox-title">{t("title", { count: items.length })}</h2>
       {types.length > 1 ? (
-        <label className="services-select">
-          {t("type")}
+        <label className="services-select services-inline-select">
+          <span>{t("type")}</span>
           <select value={type} onChange={(e) => setType(e.target.value)}>
             <option value="">{t("allTypes")}</option>
             {types.map(([key, name]) => (
@@ -67,16 +70,21 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
           </select>
         </label>
       ) : null}
+      </div>
       {shown.length === 0 ? (
         <StateView kind="empty" title={t("empty")} message="" />
       ) : (
-        <ul className="services-list" data-testid="task-inbox">
+        <ul className="ui-rows" data-testid="task-inbox">
           {shown.map((i) => {
             const title = i.serviceNames ? pick(i.serviceNames, locale) : i.title ? pick(i.title, locale) : sourceName(i);
             return (
-              <li key={i.taskId} className="services-item">
+              <li key={i.taskId} className="ui-row">
+                <span className="ui-icon-tile" data-tone={i.dueAt && now !== null && new Date(i.dueAt).getTime() < Number(now) ? "highlight" : "accent"}>
+                  <Icon name={i.requestId ? "inbox" : "tasks"} size={20} />
+                </span>
+                <div className="ui-row-text">
                 {i.requestId ? (
-                  <Link href={`/requests/${i.requestId}?task=${i.taskId}`}>
+                  <Link className="ui-row-link" href={`/requests/${i.requestId}?task=${i.taskId}`}>
                     <bdi>{title}</bdi>
                     {i.number ? (
                       <>
@@ -86,7 +94,7 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
                     ) : null}
                   </Link>
                 ) : i.link && /^\/(?!\/)/.test(i.link) ? (
-                  <Link href={i.link}>
+                  <Link className="ui-row-link" href={i.link}>
                     <bdi>{title}</bdi>
                   </Link>
                 ) : (
@@ -94,8 +102,8 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
                 )}
                 <span className="services-meta">
                   {i.step ? <bdi>{pick(i.step, locale)}</bdi> : i.title ? <bdi>{sourceName(i)}</bdi> : null}
-                  {i.requester ? <> · {t("from", { name: i.requester.displayName })}</> : null}
-                  {i.requestedFor ? <> · {t("for", { name: i.requestedFor.displayName })}</> : null}
+                  {i.requester ? <> · {t("from", { name: isolate(i.requester.displayName) })}</> : null}
+                  {i.requestedFor ? <> · {t("for", { name: isolate(i.requestedFor.displayName) })}</> : null}
                 </span>
                 {now === null ? null : (
                   // Age and due date wait for the browser: the server has neither the viewer's clock nor time zone.
@@ -104,7 +112,8 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
                     {i.dueAt ? <> · {t("due", { when: format.dateTime(new Date(i.dueAt), { dateStyle: "medium" }) })}</> : null}
                   </span>
                 )}
-                {i.onBehalfOf ? <span className="services-status">{t("onBehalfOf", { name: i.onBehalfOf.displayName })}</span> : null}
+                </div>
+                {i.onBehalfOf ? <span className="services-status">{t("onBehalfOf", { name: isolate(i.onBehalfOf.displayName) })}</span> : null}
               </li>
             );
           })}
