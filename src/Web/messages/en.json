@@ -4122,6 +4122,68 @@
       "replayed": "{replayed, plural, one {# run} other {# runs}} queued again; {skipped} skipped.",
       "working": "Working…",
       "failed": "Run history could not be loaded."
+    },
+    "m365": {
+      "title": "Microsoft 365",
+      "intro": "Connect your Microsoft 365 tenant for directory sync, mail and calendar. Each feature asks for its own Microsoft permissions, and a Microsoft 365 administrator grants consent for it.",
+      "empty": "No Microsoft 365 connection yet.",
+      "featuresOn": "{count, plural, =0 {No features on} one {# feature on} other {# features on}}",
+      "addTitle": "Add a Microsoft 365 connection",
+      "tenantId": "Microsoft tenant ID",
+      "tenantIdHint": "The directory (tenant) ID from the Microsoft Entra admin center, such as 00000000-0000-0000-0000-000000000000.",
+      "name": "Name shown in TeamBeats",
+      "features": "Features",
+      "featuresIntro": "Turn on a feature, then grant consent for it. TeamBeats asks only for the permissions listed.",
+      "add": "Add Microsoft 365 connection",
+      "consentGranted": "Consent was granted. Test the connection to check it.",
+      "consentFailed": "Consent was not granted. Try again, or ask a Microsoft 365 administrator.",
+      "feature": {
+        "directory_sync": "Directory sync",
+        "mail": "Mail",
+        "calendar": "Calendar",
+        "free_busy": "Free and busy times"
+      },
+      "featureOn": "On",
+      "featureOff": "Off",
+      "consent": {
+        "granted": "Consent granted",
+        "pending": "Consent needed"
+      },
+      "permissions": {
+        "title": "Microsoft permissions",
+        "user_read_all": "Read all users' basic profiles, to create and update their accounts",
+        "group_read_all": "Read groups and their members, to keep groups and roles in step",
+        "administrative_unit_read_all": "Read administrative units, to map them to your organization units",
+        "user_read": "Sign in as the employee and read their own profile",
+        "mail_read_basic": "Read the employee's own mail headers, without message text",
+        "mail_read": "Read the employee's own mail, used only for the one-line preview",
+        "calendars_read_basic": "Read the employee's own calendar events, without body or attachments"
+      },
+      "application": "application",
+      "delegated": "on behalf of the employee",
+      "turnOnFeature": "Turn on {feature}",
+      "turnOffFeature": "Turn off {feature}",
+      "grantConsent": "Grant consent for {feature}",
+      "optionsFor": "Options for {feature}",
+      "previewLine": "Show a one-line preview of each message (needs Mail.Read)",
+      "maxMessages": "Most messages a page may show",
+      "maxMessagesHint": "From 1 to 10.",
+      "maxDays": "Longest calendar range in days",
+      "maxDaysHint": "From 1 to 14.",
+      "saveOptions": "Save options",
+      "tests": {
+        "ok": "Working",
+        "ok_broader": "Working, but the application holds more permissions than needed",
+        "consent_missing": "Admin consent is missing",
+        "unreachable": "Microsoft 365 could not be reached",
+        "application_mail_permissions": "The application holds application mail or calendar permissions, which TeamBeats must not have"
+      },
+      "counts": "({users} users, {groups} groups)",
+      "missing": "Missing:",
+      "broader": "More than needed:",
+      "deleteIntro": "Deleting stops directory sync, mail and calendar for everyone. Accounts already created stay.",
+      "deleteQuestion": "Delete {name}? Its features stop for everyone.",
+      "permissionKind": "({type}):"
     }
   }
 }

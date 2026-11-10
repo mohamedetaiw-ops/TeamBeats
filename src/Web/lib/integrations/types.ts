@@ -164,3 +164,53 @@ export function formatPairs(pairs: Record<string, string> | null | undefined): s
     .map(([k, v]) => `${k}: ${v}`)
     .join("\n");
 }
+
+/** Microsoft 365 connections (spec 006 US5, spec 018): features with their Microsoft permissions and consent. */
+export type GraphPermissionView = { name: string; type: "Application" | "Delegated" | string; reasonKey: string };
+
+export type FeatureView = {
+  key: string;
+  enabled: boolean;
+  inPackage: boolean;
+  consentStatus: "pending" | "granted" | string;
+  permissions: GraphPermissionView[];
+  grantedPermissions: string[];
+  lastTest: unknown;
+  options?: { previewLine?: boolean; maxMessages?: number; maxDays?: number } | null;
+};
+
+export type Microsoft365Connection = {
+  id: string;
+  kind: string;
+  externalTenantId: string;
+  displayName: string;
+  status: string;
+  enabled: boolean;
+  ownerUserId: string | null;
+  lastSuccessAt: string | null;
+  features: FeatureView[];
+};
+
+export type FeatureTestResult = {
+  feature: string;
+  ok: boolean;
+  resultKey: string;
+  users: number | null;
+  groups: number | null;
+  missing: string[];
+  broader: string[];
+};
+
+export type Microsoft365TestResult = { status: string; features: FeatureTestResult[] };
+
+export const M365_FEATURES = ["directory_sync", "mail", "calendar", "free_busy"] as const;
+export const M365_TEST_RESULTS = ["ok", "ok_broader", "consent_missing", "unreachable", "application_mail_permissions"] as const;
+export const M365_PERMISSION_REASONS = [
+  "user_read_all",
+  "group_read_all",
+  "administrative_unit_read_all",
+  "user_read",
+  "mail_read_basic",
+  "mail_read",
+  "calendars_read_basic",
+] as const;

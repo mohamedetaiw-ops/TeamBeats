@@ -7,7 +7,7 @@ Depends on 004, 005, 006, 015, 024, 026, 027. R2.
 - [ ] T002 Permissions `integration.operate`; audit actions of section 13; capability keys of section 9
 - [x] T003 [P] Tests: retry, backoff, idempotency, rate limit, circuit breaker, dead letter and replay; SSRF guard
 - [x] T004 `IConnectorPack`, `IConnectorRuntime`, job runner, `SafeHttpClient`, run history
-- [ ] T005 Move the Microsoft 365 adapter onto the runtime with no behavior change (spec 018 and 006 suites stay green)
+- [x] T005 Move the Microsoft 365 adapter onto the runtime with no behavior change (spec 018 and 006 suites stay green)
 
 ## Phase 2: User Stories 1 to 3, connections, actions and history (P1)
 - [x] T006 [P] [US1] Tests: pack list by package; step-up and secret references; test per feature; disable stops calls within 1 minute; expiry alert
