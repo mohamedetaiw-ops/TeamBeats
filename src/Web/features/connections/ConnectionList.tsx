@@ -6,8 +6,9 @@ import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
-import { type AllowlistEntry, type Pack, type PackConnection, type WebhookEventChoice } from "@/lib/integrations/types";
+import { PACK_KINDS, known, type AllowlistEntry, type Pack, type PackConnection, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
+import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
 import { Messages, StatusBadge } from "./parts";
 import { send } from "./request";
@@ -105,8 +106,9 @@ export function ConnectionList({
   const [messages, setMessages] = useState<{ kind: string; list: string[] }>({ kind: "", list: [] });
   const rest = packs.find((p) => p.kind === "custom_rest");
   const webhook = packs.find((p) => p.kind === "webhook");
+  const onprem = packs.find((p) => p.kind === "onprem_ad");
 
-  async function create(kind: string, body: SettingsBody | WebhookBody) {
+  async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody) {
     setBusy(kind);
     setMessages({ kind, list: [] });
     const result = await send<PackConnection>("POST", "/api/v1/integrations/pack-connections", { kind, ...body }, RETURN_TO, t("failed"));
@@ -135,7 +137,7 @@ export function ConnectionList({
                 </h3>
                 <p className="connections-row">
                   <StatusBadge status={c.status} />
-                  <span>{t(`kinds.${c.kind === "custom_rest" || c.kind === "webhook" ? c.kind : "other"}`)}</span>
+                  <span>{t(`kinds.${known(PACK_KINDS, c.kind) ? c.kind : "other"}`)}</span>
                   <span>{t("list.actions", { count: c.actions.length })}</span>
                   {c.lastSuccessAt ? <span>{t("list.lastSuccess", { at: format.dateTime(new Date(c.lastSuccessAt), { dateStyle: "medium", timeStyle: "short" }) })}</span> : null}
                 </p>
@@ -150,12 +152,14 @@ export function ConnectionList({
         <ul className="connections-list">
           {packs.map((p) => (
             <li key={p.kind} className="connections-item">
-              <h3>{p.kind === "custom_rest" || p.kind === "webhook" ? t(`kinds.${p.kind}`) : <bdi dir="ltr">{p.kind}</bdi>}</h3>
+              <h3>{known(PACK_KINDS, p.kind) ? t(`kinds.${p.kind}`) : <bdi dir="ltr">{p.kind}</bdi>}</h3>
               <p>{t(p.inPackage ? "catalogue.inPackage" : "catalogue.notInPackage")}</p>
               {p.kind === "custom_rest" ? (
                 <p>{t("catalogue.customRest")}</p>
               ) : p.kind === "webhook" ? (
                 <p>{t("catalogue.webhook")}</p>
+              ) : p.kind === "onprem_ad" ? (
+                <p>{t("catalogue.onprem_ad")}</p>
               ) : (
                 <p>{t("catalogue.actions", { names: p.actions.map((a) => a.name).join(", ") })}</p>
               )}
@@ -179,6 +183,15 @@ export function ConnectionList({
           <p>{t("webhooks.addIntro")}</p>
           <WebhookSettingsForm events={webhookEvents} submitLabel={t("webhooks.add")} busy={busy === "webhook"} onSubmit={(body) => void create("webhook", body)} />
           {messages.kind === "webhook" ? <Messages messages={messages.list} /> : null}
+        </section>
+      ) : null}
+
+      {onprem?.inPackage ? (
+        <section className="connections-section" aria-labelledby="add-onprem-heading">
+          <h2 id="add-onprem-heading">{t("onprem.addTitle")}</h2>
+          <p>{t("onprem.addIntro")}</p>
+          <OnPremSettingsForm submitLabel={t("onprem.add")} busy={busy === "onprem_ad"} onSubmit={(body) => void create("onprem_ad", body)} />
+          {messages.kind === "onprem_ad" ? <Messages messages={messages.list} /> : null}
         </section>
       ) : null}
 

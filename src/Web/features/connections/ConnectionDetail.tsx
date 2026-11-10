@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { CHECK_RESULTS, checkResult, known, type PackCheck, type PackConnection, type PackTestResult, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
+import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
 import { ErrorText, Messages, StatusBadge } from "./parts";
 import { send } from "./request";
@@ -143,6 +144,19 @@ export function ConnectionDetail({ initial, webhookEvents = [] }: { initial: Pac
             submitLabel={t("detail.save")}
             busy={busy === "save"}
             onSubmit={(body: WebhookBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+        </section>
+      ) : null}
+
+      {view.kind === "onprem_ad" ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <OnPremSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: OnPremBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
           />
         </section>
       ) : null}

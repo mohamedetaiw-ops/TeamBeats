@@ -133,3 +133,13 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 - New packages, all Microsoft and MIT licensed: `System.DirectoryServices.Protocols` (named in plan 017), `Microsoft.Extensions.Hosting.WindowsServices` and `Microsoft.Extensions.Hosting.Systemd` to run as a service. On Linux the agent needs the OpenLDAP client library (`libldap`), which the container image installs.
 - A signed Windows installer and code signing of the agent are release work and are not in this slice.
 - Objects moved out of the base DN are not seen as removed until they are deleted or disabled in AD.
+
+## Sync agent pages (spec 017, slice 10: T015 pages)
+
+### Built
+- `/admin/connections` adds an on-premises Active Directory connection: name, domain controller, port (636 or 3269), base DN and optional user and group filters. The page says that the service account is set on the agent's machine, not here.
+- `/admin/connections/{id}` for an AD connection: the same settings; the sync agents section makes a one-time enrolment code (shown once with its expiry), lists the enrolled agents with whether each is in touch, its last contact, version and key thumbprint, and revokes one after confirmation; the directory reads with their state and counts; "Read now"; and "Use for directory sync", which points directory sync (spec 003 US6) at this connection. The test checks of the connection show whether an agent is enrolled and in touch.
+- Acceptance: a fourth test in `tests/Acceptance/specs/connections.spec.ts` adds an AD connection, makes an enrolment code and deletes it, in English and Arabic with axe.
+
+### Differences and follow-ups
+- There is no directory sync settings page yet (spec 003 US6 scope, schedule and threshold are set through the API), so the AD connection page offers only the switch to use it for directory sync.

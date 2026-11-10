@@ -141,5 +141,32 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "connections.detail.deleteConfirm"), exact: true }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
     });
+
+    test("an administrator adds an on-premises Active Directory, makes an enrolment code for its sync agent and deletes it", async ({ page }, testInfo) => {
+      const name = locale === "ar" ? "دليل المكتب الرئيسي" : "Head office directory";
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/connections`);
+      const form = page.getByRole("form", { name: msg(locale, "connections.onprem.formLabel") });
+      await form.getByLabel(msg(locale, "connections.onprem.name")).fill(name);
+      await form.getByLabel(msg(locale, "connections.onprem.host")).fill(`dc01.${locale}.corp.example`);
+      await form.getByLabel(msg(locale, "connections.onprem.port")).selectOption("3269");
+      await form.getByLabel(msg(locale, "connections.onprem.baseDn")).fill("DC=corp,DC=example");
+      await expectAccessible(page, testInfo, `onprem-add-${locale}`);
+      await form.getByRole("button", { name: msg(locale, "connections.onprem.add") }).click();
+
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      const agents = page.getByRole("region", { name: msg(locale, "connections.agents.title") });
+      await expect(agents.getByText(msg(locale, "connections.agents.empty"))).toBeVisible();
+      await agents.getByRole("button", { name: msg(locale, "connections.agents.makeCode") }).click();
+      await expect(agents.getByText(msg(locale, "connections.agents.codeMade"))).toBeVisible();
+      await expect(agents.locator("code")).toHaveText(/^[A-Z2-9]{5}(-[A-Z2-9]{5}){3}$/);
+      await expectAccessible(page, testInfo, `onprem-${locale}`);
+
+      const deletion = page.getByRole("region", { name: msg(locale, "connections.detail.deleteTitle") });
+      await deletion.getByRole("button", { name: msg(locale, "connections.detail.delete"), exact: true }).click();
+      await page.getByRole("button", { name: msg(locale, "connections.detail.deleteConfirm"), exact: true }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
+    });
   });
 }
