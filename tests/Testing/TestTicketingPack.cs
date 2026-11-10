@@ -61,11 +61,18 @@ public sealed class TestTicketingPack(FakeTicketing fake) : IConnectorPack
 
     public string CapabilityKey => Capabilities.IntegrationConnectors;
 
+    private static readonly IReadOnlyList<ConnectorInput> IncidentInputs =
+    [
+        new("summary", "string", true),
+        new("category", "string", true),
+        new("requester", "string", false),
+    ];
+
     public IReadOnlyList<ConnectorActionDefinition> Actions { get; } =
     [
-        new("create_incident", ConnectorSideEffects.Write, Idempotent: false, ["invalid_category"]),
-        new("create_incident_keyed", ConnectorSideEffects.Write, Idempotent: true, ["invalid_category"]),
-        new("get_status", ConnectorSideEffects.Read, Idempotent: true, []),
+        new("create_incident", ConnectorSideEffects.Write, Idempotent: false, ["invalid_category"], IncidentInputs),
+        new("create_incident_keyed", ConnectorSideEffects.Write, Idempotent: true, ["invalid_category"], IncidentInputs),
+        new("get_status", ConnectorSideEffects.Read, Idempotent: true, [], [new ConnectorInput("number", "string", true)]),
     ];
 
     public Task<PackCallResult> CallAsync(PackCall call, CancellationToken ct) => fake.HandleAsync(call, ct);

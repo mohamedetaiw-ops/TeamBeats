@@ -1,4 +1,5 @@
 using System.Text.Json;
+using TeamBeats.Modules.Integrations.Contracts;
 
 namespace TeamBeats.Modules.Integrations.Runtime;
 
@@ -6,12 +7,16 @@ namespace TeamBeats.Modules.Integrations.Runtime;
 /// A connector action as its pack declares it (spec 017 FR-008). <paramref name="Idempotent"/> means the external
 /// system itself drops a repeated call with the same key, or the pack checks for the earlier result before acting, so a
 /// retry after a timeout is safe. <paramref name="BusinessErrors"/> are the codes a route can branch on.
+/// <paramref name="Inputs"/> are the fields a caller may map (FR-008, FR-009); the pack sends nothing else. Actions with
+/// no declared inputs (a webhook delivery, for example) cannot be used as a route step or an
+/// agent tool.
 /// </summary>
 public sealed record ConnectorActionDefinition(
     string Name,
     string SideEffect,
     bool Idempotent,
-    IReadOnlyList<string> BusinessErrors);
+    IReadOnlyList<string> BusinessErrors,
+    IReadOnlyList<ConnectorInput>? Inputs = null);
 
 /// <summary>What a pack learns about the connection it calls. Secrets stay references; the pack reads them through the secret store.</summary>
 public sealed record PackConnection(Guid TenantId, Guid Id, string Kind, int PackVersion, string? ExternalId, JsonElement Settings);

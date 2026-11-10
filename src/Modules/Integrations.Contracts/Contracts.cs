@@ -267,6 +267,12 @@ public static class ConnectorSideEffects
     public const string ExternalEffect = "external_effect";
 }
 
+/// <summary>
+/// A field a connector action takes (spec 017 FR-008): <paramref name="Type"/> is <c>string</c>, <c>number</c>,
+/// <c>integer</c> or <c>boolean</c>.
+/// </summary>
+public sealed record ConnectorInput(string Name, string Type, bool Required);
+
 /// <summary>How a connector call ended (spec 017 US2 and US3).</summary>
 public static class ConnectorOutcomes
 {

@@ -11,7 +11,8 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Integrations.Runtime;
 
-public sealed record PackActionView(string Name, string SideEffect, bool Idempotent, IReadOnlyList<string> BusinessErrors);
+/// <summary>An action as people see it. <paramref name="Inputs"/> is null for an action that declares none, which can be neither a route step nor an agent tool.</summary>
+public sealed record PackActionView(string Name, string SideEffect, bool Idempotent, IReadOnlyList<string> BusinessErrors, IReadOnlyList<ConnectorInput>? Inputs = null);
 
 /// <summary>A pack the tenant can add (spec 017 US1 scenario 1): its actions are listed before any credential is entered.</summary>
 public sealed record PackView(string Kind, int Version, bool InPackage, IReadOnlyList<PackActionView> Actions);
@@ -391,7 +392,7 @@ public sealed class PackConnections(
 
     private IConnectorPack Pack(string kind) => packs.FirstOrDefault(p => p.Kind == kind) ?? throw AppException.NotFound();
 
-    private static PackActionView View(ConnectorActionDefinition a) => new(a.Name, a.SideEffect, a.Idempotent, a.BusinessErrors);
+    private static PackActionView View(ConnectorActionDefinition a) => new(a.Name, a.SideEffect, a.Idempotent, a.BusinessErrors, a.Inputs);
 
     private static string ValidName(string? name)
     {
