@@ -4,7 +4,7 @@ using Xunit;
 
 namespace TeamBeats.Unit.Tests;
 
-/// <summary>Spec 033 FR-029 to FR-031 and spec 036: the three designs are complete, valid, accessible and resolve in order.</summary>
+/// <summary>Spec 033 FR-029 to FR-031 and spec 036: the four designs are complete, valid, accessible and resolve in order.</summary>
 public sealed class DesignPresetTests
 {
     private static readonly Dictionary<string, (int Depth, Guid? Scope)> NoLocks = new();
@@ -37,19 +37,21 @@ public sealed class DesignPresetTests
     }
 
     [Fact]
-    public void The_designs_are_three_distinct_looks()
+    public void The_designs_are_four_distinct_looks()
     {
         var values = DesignPresets.Keys
             .Select(k => ThemeEngine.Resolve([Brand(0, Preset(k))], NoLocks).Variants["light.comfortable"])
             .ToList();
-        foreach (var token in new[] { "layout.navigation", "color.accent.base", "font.family.latin", "radius.md", "color.surface.base" })
+        foreach (var token in new[] { "color.accent.base", "font.family.latin", "radius.md", "color.surface.base", "color.text.primary" })
         {
-            Assert.Equal(3, values.Select(v => v[token]).Distinct().Count());
+            Assert.Equal(4, values.Select(v => v[token]).Distinct().Count());
         }
         Assert.Equal("beats", values[0]["design.preset"]);
         Assert.Equal("rail", values[0]["layout.navigation"]);
         Assert.Equal("top", values[1]["layout.navigation"]);
         Assert.Equal("sidebar", values[2]["layout.navigation"]);
+        Assert.Equal("sidebar", values[3]["layout.navigation"]);
+        Assert.Equal("studio", values[3]["design.preset"]);
     }
 
     [Fact]

@@ -243,19 +243,21 @@
     },
     "design": {
       "title": "Design",
-      "intro": "Pick one of the three TeamBeats designs. Each one sets colors, type, shape and navigation for the whole workspace, in light and dark, Arabic and English. You can still adjust any value below.",
+      "intro": "Pick one of the four TeamBeats designs. Each one sets colors, type, shape and navigation for the whole workspace, in light and dark, Arabic and English. You can still adjust any value below.",
       "replaces": "Choosing a design replaces the values you changed below. Brand images and the brand name stay. Nothing changes for employees until you save.",
       "current": "Current design",
       "choose": "Use {name}",
       "names": {
         "beats": "Beats",
         "atlas": "Atlas",
-        "pulse": "Pulse"
+        "pulse": "Pulse",
+        "studio": "Studio"
       },
       "summaries": {
         "beats": "Warm and modern. Indigo with saffron, soft rounded cards, an icon rail. The TeamBeats default.",
         "atlas": "Formal and institutional. Deep green with gold, square corners, top navigation, IBM Plex.",
-        "pulse": "Bold and editorial. Raspberry on a warm canvas, pill buttons, a dark labelled sidebar, Cairo."
+        "pulse": "Bold and editorial. Raspberry on a warm canvas, pill buttons, a dark labelled sidebar, Cairo.",
+        "studio": "Clean and neutral. White and grey with one blue accent, hairline borders, a light labelled sidebar, Inter."
       },
       "navigation": {
         "rail": "Navigation: icon rail",
@@ -298,6 +300,15 @@
     "messages": {
       "region": "Notifications",
       "dismiss": "Dismiss"
+    },
+    "controls": {
+      "close": "Close",
+      "remove": "Remove {name}",
+      "removeItem": "Remove",
+      "pagination": "Pages",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page}"
     }
   },
   "gallery": {
@@ -4462,6 +4473,114 @@
       "stopped": "Payload capture is off.",
       "failed": "Payload capture could not be changed. Try again.",
       "working": "Working…"
+    }
+  },
+  "components_gallery": {
+    "title": "Components",
+    "intro": "The extended component catalogue in the active design. Every part reads the design tokens, so the same page shows Beats, Atlas, Pulse or Studio.",
+    "actions": {
+      "title": "Buttons",
+      "intro": "Three sizes, icons, icon only buttons and groups. Medium is for the actions of a page; small and compact are for toolbars and dense panels.",
+      "save": "Save changes",
+      "add": "New request",
+      "export": "Export",
+      "next": "Continue",
+      "delete": "Delete",
+      "small": "Small",
+      "compact": "Compact",
+      "open": "Open the handbook",
+      "edit": "Edit",
+      "more": "More actions",
+      "filter": "Filter",
+      "group": "Calendar view",
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "stepper": "Move between weeks"
+    },
+    "selection": {
+      "title": "Selection",
+      "intro": "Checkboxes, radio buttons, switches, segmented controls, sliders and chips. All are native inputs underneath, so the keyboard and forms work as people expect.",
+      "notify": "Email me when a request is approved",
+      "notifyHint": "One email per request, never a digest.",
+      "all": "Select all documents",
+      "terms": "I have read the travel policy",
+      "termsError": "Confirm that you read the policy to continue.",
+      "disabled": "Managed by your administrator",
+      "plan": "Work pattern",
+      "office": "In the office",
+      "officeHint": "A desk is booked for you every working day.",
+      "hybrid": "Hybrid",
+      "hybridHint": "Three office days, two remote days.",
+      "remote": "Remote",
+      "remoteHint": "Office visits by arrangement.",
+      "digest": "Daily summary",
+      "digestHint": "A morning email with your tasks and news.",
+      "presence": "Show when I am online",
+      "focus": "Focus mode",
+      "focusHint": "Hide notifications until the end of the day.",
+      "view": "Period",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "textSize": "Text size",
+      "textSizeValue": "{value}%",
+      "textSizeHint": "Applies to every page.",
+      "filters": "Filters in force",
+      "finance": "Finance",
+      "dubai": "Dubai office",
+      "thisYear": "This year",
+      "noFilters": "No filters. Showing everything.",
+      "topics": "Topics",
+      "topicNews": "News",
+      "topicEvents": "Events",
+      "topicPolicies": "Policies",
+      "topicPeople": "People",
+      "chipTones": "Chip tones",
+      "draft": "Draft",
+      "team": "Design team",
+      "approved": "Approved",
+      "review": "In review",
+      "blocked": "Blocked"
+    },
+    "status": {
+      "title": "Status and progress",
+      "intro": "Small parts that say what is happening. The words always carry the meaning; color only repeats it.",
+      "online": "Online",
+      "syncing": "Syncing",
+      "away": "Away",
+      "failed": "Sync failed",
+      "offline": "Offline",
+      "shortcut": "Open search with",
+      "or": "or",
+      "loading": "Loading results",
+      "upload": "Uploading annual-report.pdf",
+      "uploadValue": "{done} of {total} MB",
+      "preparing": "Preparing your export",
+      "storage": "Storage used",
+      "storageValue": "{used} of {total} GB",
+      "quota": "Assistant questions this month",
+      "quotaValue": "{used} of {total}",
+      "leave": "Annual leave taken",
+      "leaveValue": "{used} of {total} days",
+      "team": "Project team",
+      "more": "+{count} more"
+    },
+    "structure": {
+      "title": "Structure",
+      "intro": "Parts that organize a page: questions that open in place, page numbers and banners.",
+      "q1": "How do I request annual leave?",
+      "a1": "Open Services, choose Annual leave, pick your dates and send. Your manager is asked to approve.",
+      "q2": "Who approves my request?",
+      "a2": "Your line manager approves first. Requests longer than ten days also go to HR.",
+      "q3": "Can I cancel an approved leave?",
+      "a3": "Yes, until the day before it starts. Open the request and choose Cancel.",
+      "pages": "Search result pages",
+      "announceTitle": "Two new services",
+      "announceText": "Travel booking and equipment loans are now in the service catalogue.",
+      "announceAction": "See what is new",
+      "dismissed": "Announcement dismissed. It stays hidden for you."
     }
   }
 }

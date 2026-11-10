@@ -1,5 +1,5 @@
 /*
- * Structural touches of the three designs (spec 036, docs/design-system/designs.md). Colors, type, shape, elevation
+ * Structural touches of the designs (spec 036, docs/design-system/designs.md). Colors, type, shape, elevation
  * and motion already come from the design's tokens; this file holds only what a token value cannot express. Keep it
  * small: a rule here applies to every tenant on that design, and must still read only --tb-* tokens.
  */
@@ -45,4 +45,106 @@
 
 :root[data-design="pulse"] .ui-card {
   border-color: transparent;
+}
+
+/*
+ * Studio: quiet and precise. Filled surfaces (primary and destructive buttons, the current sidebar page) carry a soft
+ * top to bottom shade and a light inner top edge, outlined buttons are raised white surfaces with a hairline, the
+ * sidebar is light, and headings sit a little tighter. The shade and the edge are layers drawn in the design's own
+ * text colors at the state opacities, so a tenant accent keeps the finish and no color is written here.
+ */
+:root[data-design="studio"] .button,
+:root[data-design="studio"][data-nav="sidebar"] .shell-rail .shell-menu-item > a[aria-current="page"] {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+:root[data-design="studio"] .button {
+  box-shadow: var(--tb-shadow-sm);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+/* The shade: transparent at the top, the text color at the bottom, at the pressed opacity. Hover deepens it. */
+:root[data-design="studio"] .button::after,
+:root[data-design="studio"][data-nav="sidebar"] .shell-rail .shell-menu-item > a[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg, transparent, var(--tb-color-text-primary));
+  opacity: var(--tb-state-pressed-opacity);
+  transition: opacity var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
+  pointer-events: none;
+}
+
+:root[data-design="studio"] .button:hover::after {
+  opacity: calc(var(--tb-state-pressed-opacity) * 2);
+}
+
+/* The light inner top edge. */
+:root[data-design="studio"] .button::before,
+:root[data-design="studio"][data-nav="sidebar"] .shell-rail .shell-menu-item > a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  z-index: -1;
+  block-size: var(--tb-border-width-thin);
+  background: var(--tb-color-accent-text);
+  opacity: calc(var(--tb-state-pressed-opacity) * 2.5);
+  pointer-events: none;
+}
+
+:root[data-design="studio"] .button.secondary,
+:root[data-design="studio"] .button-secondary {
+  border-color: var(--tb-color-border-default);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+:root[data-design="studio"] .button.secondary::before,
+:root[data-design="studio"] .button-secondary::before,
+:root[data-design="studio"] .button-quiet::before,
+:root[data-design="studio"] .button.secondary::after,
+:root[data-design="studio"] .button-secondary::after,
+:root[data-design="studio"] .button-quiet::after {
+  display: none;
+}
+
+:root[data-design="studio"] .button.secondary:hover,
+:root[data-design="studio"] .button-secondary:hover {
+  border-color: var(--tb-color-border-strong);
+  background: var(--tb-color-surface-base);
+}
+
+:root[data-design="studio"] .button-quiet {
+  box-shadow: none;
+}
+
+:root[data-design="studio"] .button-destructive {
+  background: var(--tb-color-state-danger);
+  color: var(--tb-color-text-inverse);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+:root[data-design="studio"] main h1,
+:root[data-design="studio"] main h2 {
+  letter-spacing: -0.01em;
+}
+
+@media (width > 64rem) {
+  :root[data-design="studio"][data-nav="sidebar"] .shell-rail {
+    border-inline-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  }
+
+  :root[data-design="studio"][data-nav="sidebar"] .shell-rail .shell-menu-item > a {
+    border-inline-start: 0;
+  }
+
+  :root[data-design="studio"][data-nav="sidebar"] .shell-rail .shell-menu-item > a[aria-current="page"] {
+    background: var(--tb-color-accent-base);
+    color: var(--tb-color-accent-text);
+    font-weight: var(--tb-font-weight-medium);
+  }
 }

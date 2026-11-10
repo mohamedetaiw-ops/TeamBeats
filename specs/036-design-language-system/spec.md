@@ -5,13 +5,13 @@
 | Spec ID | 036-design-language-system |
 | Area | experience |
 | Status | Approved |
-| Version | 1.0 |
+| Version | 1.1 |
 | Owner | Mohamed |
 | Approver | Mohamed |
-| Target release | R1 (design guidelines and technical guidelines, three selectable designs Beats, Atlas and Pulse, design picker in the brand manager, component and template library with the living gallery, design consistency gate, design test suite with accessibility, responsive, target size and visual regression checks, enforcement in the constitution and specs), R2 (design review workflow in the theme lifecycle of spec 033, cross-browser automation, quarterly design audit report), R3 (tenant design extensions through reviewed token extensions) |
-| Last updated | 2026-11-09 |
+| Target release | R1 (design guidelines and technical guidelines, four selectable designs Beats, Atlas, Pulse and Studio, design picker in the brand manager, component and template library with the living gallery, design consistency gate, design test suite with accessibility, responsive, target size and visual regression checks, enforcement in the constitution and specs, the extended component catalogue of DLS-030 to DLS-041 with its data, assistant and chart parts), R2 (design review workflow in the theme lifecycle of spec 033, cross-browser automation, quarterly design audit report), R3 (tenant design extensions through reviewed token extensions) |
+| Last updated | 2026-11-10 |
 | Approved | 2026-11-09 by Mohamed (standing approval to proceed) |
-| Requirement IDs | DLS-001 to DLS-024 (new); CX-BRD-003, CX-BRD-006, CX-BRD-009 (with spec 033); CX-ACC-001 to CX-ACC-005 (with spec 007) |
+| Requirement IDs | DLS-001 to DLS-041 (new); CX-BRD-003, CX-BRD-006, CX-BRD-009 (with spec 033); CX-ACC-001 to CX-ACC-005 (with spec 007) |
 | Use cases | UC-01 (tenant setup, design choice), every employee and admin journey (look and feel) |
 | Depends on | 007 (localization and accessibility), 008 (shell), 032 (templates and components), 033 (tokens, brands, resolver, brand manager), ADR-0014, ADR-0019, ADR-0021 |
 | Used by | Every spec with a user interface: its UX section references this system instead of describing visuals from scratch |
@@ -22,15 +22,16 @@ Guidelines: [docs/design-system](../../docs/design-system/README.md).
 
 **Problem:** TeamBeats grew screen by screen. Without one written design language, each feature chose its own spacing, wording, icons and states, contrast was checked only in places, and customers could change colors but not choose a look that fits them (a ministry wants something formal, a retail group something bold). Designers had no shared rules to test against and developers had no gate to stop drift.
 
-**Outcome:** One design language system, modeled on national design systems such as the UAE Design System, with design guidelines (typography, colour, icons, imagery, content, layout, actions, accessibility), technical guidelines (frontend practice, security, performance, consistency), ready components and templates, and a testing strategy for designers and developers. TeamBeats ships three complete designs that tenant administrators choose from; the current v2 look (Beats) is the default. The build enforces the system, and the constitution makes it binding.
+**Outcome:** One design language system, modeled on national design systems such as the UAE Design System, with design guidelines (typography, colour, icons, imagery, content, layout, actions, accessibility), technical guidelines (frontend practice, security, performance, consistency), ready components and templates, and a testing strategy for designers and developers. TeamBeats ships four complete designs that tenant administrators choose from; the current v2 look (Beats) is the default. The component library covers what a modern product interface needs (actions, selection, text entry, pickers, dates, overlays, structure, status, data blocks, assistant parts, charts and page patterns), each built once on the tokens so every design gets it. The build enforces the system, and the constitution makes it binding.
 
 ## 2. Scope
 
 **In scope:**
 - Design and technical guidelines in `docs/design-system`.
-- Three designs: Beats (default), Atlas, Pulse, each a complete accessible token set plus a navigation style.
+- Four designs: Beats (default), Atlas, Pulse, Studio, each a complete accessible token set plus a navigation style.
 - Design choice per brand in the brand manager (spec 033), inherited and lockable like any token.
 - Shared component library and gallery: buttons, text boxes, text areas, selects, cards, badges, avatars, alerts, images, tabs, icons, states, skeletons, confirmations, selection bar, messages.
+- The extended catalogue (section 5, DLS-030 to DLS-041): actions, selection controls, text entry, pickers and menus, dates, overlays, structure, status, data blocks, assistant and agent parts, charts and page patterns. The catalogue was drawn up from a study of the BoardUI component library; every component is TeamBeats code on TeamBeats tokens, and no third-party component code or component library is used.
 - Page template patterns mapped to the spec 032 templates.
 - Automated consistency gate and design test suite; manual design testing process.
 - Enforcement: constitution principle XXXI, spec template, CLAUDE.md, references in specs 007, 008 and 033.
@@ -39,6 +40,7 @@ Guidelines: [docs/design-system](../../docs/design-system/README.md).
 - Customer-specific designs written in code. Customers adjust a design through tokens (spec 033).
 - Native mobile app design (spec 030 adopts these guidelines when it starts).
 - Marketing website design.
+- An image generation screen: no approved spec has that feature, so no component is built for it.
 
 ## 3. Actors and permissions
 
@@ -54,12 +56,12 @@ Guidelines: [docs/design-system](../../docs/design-system/README.md).
 
 ### User Story 1: Choose a design for the workspace (Priority: P1, R1)
 
-A ministry's tenant administrator opens Administration, Brand, sees three design cards with live miniatures, chooses Atlas, checks the preview and contrast table, and saves. Every employee then sees the formal green design with top navigation, in Arabic and English, light and dark.
+A ministry's tenant administrator opens Administration, Brand, sees four design cards with live miniatures, chooses Atlas, checks the preview and contrast table, and saves. Every employee then sees the formal green design with top navigation, in Arabic and English, light and dark.
 
 **Independent test:** set `design.preset` to each design on a test tenant through the brand API; the home and gallery show the design's attributes, fonts and accent, with no serious accessibility violation.
 
 **Acceptance scenarios:**
-1. **Given** the brand manager, **When** it opens, **Then** the three designs show with name, description, navigation style and a miniature drawn from the design's own resolved tokens, and the current design is marked. *(DLS-001)*
+1. **Given** the brand manager, **When** it opens, **Then** the four designs show with name, description, navigation style and a miniature drawn from the design's own resolved tokens, and the current design is marked. *(DLS-001)*
 2. **Given** an administrator chooses a design, **Then** the editor replaces the token values changed so far with the design, keeps the brand name and images, reruns the checks and shows the preview; nothing reaches employees until saved. *(DLS-002)*
 3. **Given** a saved design, **Then** pages render with that design's tokens and navigation style, and the brand version and audit record name the change. *(DLS-003)*
 4. **Given** a tenant on Atlas sets its own accent color, **Then** the accent wins over the design and every other value stays Atlas. *(DLS-004)*
@@ -87,13 +89,13 @@ A developer builds a new page from a template and the shared components; the bui
 
 ## 5. Functional requirements
 
-- **DLS-001**: The brand manager MUST present the three designs with a live miniature, description and navigation style, and mark the current one.
+- **DLS-001**: The brand manager MUST present the four designs with a live miniature, description and navigation style, and mark the current one.
 - **DLS-002**: Choosing a design MUST be a token change (`design.preset`) validated, checked, versioned, audited and reversible like any brand change (spec 033 FR-012).
 - **DLS-003**: The theme resolver MUST apply the design's values between the platform defaults and the tenant brand (spec 033 FR-030).
 - **DLS-004**: Brand and organization values MUST win over the design's values.
 - **DLS-005**: `design.preset` and `layout.navigation` MUST be lockable and inheritable like any token.
 - **DLS-006**: Each design MUST define every colour in light and dark mode and pass every contrast and text size check of spec 033 FR-009 in strict mode.
-- **DLS-007**: The three designs MUST differ in palette, typography, shape, elevation and navigation style, and MUST NOT differ in behavior, content, permissions or information architecture.
+- **DLS-007**: The four designs MUST differ in palette, typography, shape and elevation, and MAY share a navigation style (Pulse and Studio both use the labelled sidebar, dark and light). They MUST NOT differ in behavior, content, permissions or information architecture.
 - **DLS-008**: The web app MUST provide shared components for actions, text boxes, selections, cards, badges, avatars, alerts, images, tabs, icons and states, and a gallery showing them in the active design.
 - **DLS-009**: Components MUST read only `--tb-*` tokens; per-design structural rules MUST live in one file.
 - **DLS-010**: The build MUST fail on raw colours or sizes, literal font families or sizes, inline SVG outside the icon set, images without alternative text, literal user-facing strings and missing translations.
@@ -107,18 +109,30 @@ A developer builds a new page from a template and the shared components; the bui
 - **DLS-018**: Every spec with a user interface MUST reference the design system in its UX section and list any new component or token it needs.
 - **DLS-019**: New components, tokens or designs MUST update the guidelines, gallery and tests in the same change.
 - **DLS-020**: Fonts MUST be self-hosted from the approved list and loaded per script on demand (ADR-0019, ADR-0021).
-- **DLS-021**: All three designs MUST be available in every package.
+- **DLS-021**: All four designs MUST be available in every package.
 - **DLS-022**: The design suite SHOULD write review screenshots on request for the post-development review.
 - **DLS-025**: Every page MUST sit in the page frame: content up to 90rem wide, centred, with `space.lg` side padding (`space.md` on phones). Full-bleed sections paint to the edge but align their content to the frame.
 - **DLS-026**: Module pages MUST be built from four page templates (List, Catalogue, Directory, Detail) and the shared page parts: page header (icon tile, h1, description, actions), section tabs, filter bar, data table, tile card, list rows, person card and split view (main column with a side column).
 - **DLS-027**: Links MUST use `color.link` and carry no underline when their position says they are links (titles, tabs, navigation, cards); links inside running text keep an underline.
 - **DLS-028**: The home MUST use the briefing hero (night surface), Your day tiles in the warm, cool and fresh tints, featured news and the campaign band, each from shared tokens only (`color.tint.*`, `color.surface.night`, `color.text.on_night`, `color.highlight.bright`, `color.surface.campaign`), with every pair checked for contrast in every design and mode.
 - **DLS-029**: Names and other values that may be in another script MUST be isolated in sentences (`isolate()` in `lib/bidi.ts`, or `<bdi>` in markup) so an Arabic name does not reorder an English sentence and the other way round.
+- **DLS-030**: Studio MUST be a design like the others: a token set chosen with `design.preset`, neutral surfaces, one blue accent, Inter with IBM Plex Sans Arabic, hairline borders and a light labelled sidebar. Its finish (a soft shade and a light top edge on filled buttons and the current sidebar page) MUST be drawn from its own tokens, so a tenant accent keeps the finish.
+- **DLS-031**: Every component of the catalogue MUST be built once in `src/Web/components/ui` (parts used by one feature only in that feature's folder), read only `--tb-*` tokens, take all text from messages, and look right in every design, both directions and both modes. Where a component for the pattern exists it MUST be extended, not duplicated.
+- **DLS-032**: Interactive behavior MUST use native elements first (`button`, `input`, `select`, `details`, `dialog`, the Popover API) and shared hooks for what the platform lacks (roving focus, type ahead, dismissal, focus return). The web app MUST NOT add a component library, a CSS framework or a behavior library for these components (constitution XXII).
+- **DLS-033**: Actions: Button MUST offer the sizes medium (44 px), small (36 px) and compact (28 px, only inside toolbars, tables and dense panels), a leading or trailing icon, an icon-only form with a required accessible name, and a link form. The system MUST provide a button group, an icon button and a close button.
+- **DLS-034**: Selection: checkbox (with indeterminate), radio group, switch, each also as a card with a description; segmented control; slider; chip (static, removable, selectable) and tag group; all operable by keyboard as their WAI-ARIA patterns describe.
+- **DLS-035**: Text entry: text boxes with leading and trailing parts, search field with clear, number field with steppers, one-time code field with paste, time field, color field with presets, and file upload with drag and drop, validation messages and progress. Validation rules come from the API; the components only show them.
+- **DLS-036**: Pickers and menus: menu (with groups, checked items and submenus), context menu, combobox with filtering, command palette opened from the shell search shortcut, and tree view. Date components (calendar, date field, date range field, slot picker) MUST format through `Intl` in the user's locale and the tenant's calendar, including the Hijri calendar, and MUST mirror in right to left.
+- **DLS-037**: Overlays: dialog, drawer from any edge, popover, tooltip, announcement banner and the notification card form of messages. Overlays MUST trap and return focus, close on Escape, and never open over the element that has focus without moving focus into them.
+- **DLS-038**: Structure and status: accordion, breadcrumb with collapsing levels, pagination, divider, carousel with snap and visible controls, tabs with a sliding indicator, icons and counts, sortable and selectable data table; avatar groups and presence, status dot, keyboard key, spinner, progress and meter.
+- **DLS-039**: Data blocks: data table with toolbar, filters, column visibility and paging; data grid; stat cards with change against the previous period; month and week calendar; task list; notification panel; settings dialog; sign-in card. Assistant and agent parts: thinking indicator, composer with attachments, source list, usage limits, question steps, agent form and run progress. Blocks receive data and callbacks from their feature and hold no business rule.
+- **DLS-040**: Charts MUST be TeamBeats SVG components inside a chart card (area, line, bar, bar list, combined, funnel, heat map, radar, radial, flow, scatter, rings, contributions, stage bars, steps), colored only from categorical chart tokens (`color.chart.1` to `color.chart.8`, `color.chart.track`) defined in every design for both modes, and MUST carry a text or table alternative. Color MUST NOT be the only way to tell series apart.
+- **DLS-041**: Motion finish: selection indicators slide, filled buttons shade on hover, overlays fade and move a short distance, all with the motion tokens and only `transform` and `opacity`; everything stops when the user asked for reduced motion.
 - **DLS-023**: R2: theme drafts (spec 033 US2) SHOULD show the design review checklist before approval.
 - **DLS-024**: R2: cross-browser runs (Firefox, WebKit) SHOULD join the design suite once the browser matrix decision in `docs/testing/e2e-plan.md` is made.
 
 ## 6. Business and validation rules
-- `design.preset` takes `beats`, `atlas` or `pulse`; `layout.navigation` takes `rail`, `top` or `sidebar`. Other values are refused with `validation.theme.choice_invalid`.
+- `design.preset` takes `beats`, `atlas`, `pulse` or `studio`; `layout.navigation` takes `rail`, `top` or `sidebar`. Other values are refused with `validation.theme.choice_invalid`.
 - A new tenant, and any brand that sets no design, uses Beats.
 - Choosing a design in the editor replaces the brand's token values; brand name, assets and contrast policy stay.
 
@@ -130,12 +144,12 @@ A developer builds a new page from a template and the shared components; the bui
 No new data. The design is stored as a token in the brand version (spec 033 section 8).
 
 ## 9. Package entitlements
-All three designs are in every package (smallest safe default: the design is part of tenant branding, which spec 033 puts in every package). Organization-level design choice needs `experience.org_branding`.
+All four designs are in every package (smallest safe default: the design is part of tenant branding, which spec 033 puts in every package). Organization-level design choice needs `experience.org_branding`.
 
 ## 10. UX, localization and accessibility
 - The guidelines in `docs/design-system` are the UX rules for every screen.
 - Design names, descriptions and picker text are localized in Arabic and English.
-- All three designs meet WCAG 2.2 AA in both directions and modes.
+- All four designs meet WCAG 2.2 AA in both directions and modes.
 
 ## 11. AI behavior and data policy
 Not applicable. The AI mark (four point star) is reserved for AI features in every design.
@@ -156,13 +170,14 @@ Design changes publish through `ThemePublished` like any brand change.
 - Switching design causes no layout shift on load (theme in the head before paint).
 
 ## 16. Success criteria
-- 100 percent of shared components appear in the gallery and pass the design suite in three designs and two languages.
+- 100 percent of shared components appear in the gallery and pass the design suite in four designs and two languages.
 - Zero serious or critical axe violations on the home and gallery in every design.
 - A tenant administrator can switch design in under one minute without help.
 
 ## 17. Open questions
 - Should Firefox and WebKit join the design suite in R1 or R2? Default: R2 with the browser matrix decision.
-- Should tenants be able to submit a fourth design? Default: no; they adjust one of the three through tokens; revisit with R3 token extensions.
+- Should tenants be able to submit their own design? Default: no; they adjust one of the four through tokens; revisit with R3 token extensions.
+- Is Studio the final name of the fourth design? Default: Studio, so no other company's brand name appears in the product.
 
 ## 18. Traceability
 | Requirement | Tests |
@@ -171,6 +186,8 @@ Design changes publish through `ThemePublished` like any brand change.
 | DLS-001, DLS-003, DLS-012 to DLS-015, DLS-022 | `tests/Acceptance/specs/design-system.spec.ts` |
 | DLS-008 to DLS-011 | `src/Web/scripts/check-design.mjs`, `check-tokens.mjs`, stylelint, ESLint |
 | DLS-016, DLS-017 | `docs/design-system` |
+| DLS-030 | `tests/Unit/DesignPresetTests.cs`, `tests/Acceptance/specs/design-system.spec.ts` (Studio) |
+| DLS-031 to DLS-041 | `tests/Acceptance/specs/design-system.spec.ts`, `tests/Acceptance/specs/components.spec.ts` (keyboard behavior per component), `npm run verify` |
 
 ## Review checklist
 - [x] No implementation detail beyond what the contract needs

@@ -1,6 +1,6 @@
 # Components
 
-Every TeamBeats screen is built from these components. They live in `src/Web/components/ui/`, read only `--tb-*` tokens, work in both directions, and appear in the living gallery (`/ui-gallery`) in the tenant's active design. Feature code composes them; it does not restyle them.
+Every TeamBeats screen is built from these components. They live in `src/Web/components/ui/`, read only `--tb-*` tokens, work in both directions, and appear in the living gallery (`/ui-gallery`, and `/ui-gallery/components` for the extended catalogue) in the tenant's active design. Feature code composes them; it does not restyle them.
 
 | Component | File | Use | Accessibility built in |
 |---|---|---|---|
@@ -23,6 +23,25 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Page header | `PageHeader.tsx` | Top of every module page: icon tile, h1, one line description, page actions, section tabs | One h1; the icon is decorative |
 | Section tabs | `SectionNav.tsx` | Pill tabs between the pages of one area (My policies, Register, Campaigns) | A labelled `nav`; the current page has `aria-current="page"` |
 | Tile card | `TileCard.tsx` | A service, knowledge space or library: icon tile, title, meta, footer | The title link covers the card; one target, one name |
+| Button sizes and icons | `Button.tsx` (`Button`, `ButtonLink`) | Sizes medium (44 px, page actions), small (36 px) and compact (28 px, only in toolbars, tables and dense panels); a leading or trailing icon; a link that looks like a button | The icon is decorative; a link stays a link |
+| Icon button | `IconButton.tsx` (`IconButton`, `CloseButton`) | An action shown as an icon only: edit, more, close | The label is required and becomes the accessible name |
+| Button group | `ButtonGroup.tsx` | Two to five related actions joined in one row | A named group; toggles use `aria-pressed` |
+| Checkbox | `Checkbox.tsx` | One yes or no choice, or several from a list; mixed state for "select all"; card form with a description | Native checkbox; hint and error in `aria-describedby`; mixed state announced |
+| Radio group | `RadioGroup.tsx` | One choice from two to five options; card form with descriptions | Native radios in a `fieldset` with a legend; arrow keys move the choice |
+| Switch | `Switch.tsx` | A setting that applies at once, on or off; card form | `role="switch"` on a native checkbox; Space flips it |
+| Segmented control | `SegmentedControl.tsx` | One view setting from two to five short options (Day, Week, Month) | A radio group; arrow keys follow the reading direction |
+| Slider | `Slider.tsx` | An approximate number in a range | Native range input; the value is shown as text and in `aria-valuetext` |
+| Chip and tag group | `Chip.tsx` (`Chip`, `TagGroup`) | A short label for a filter, topic or status; removable or selectable | Remove buttons name what they remove; selectable chips are toggle buttons; a tag group is a named list |
+| Status dot | `Status.tsx` (`StatusDot`) | Presence or sync state beside its words | Never colour alone: the text is required |
+| Keyboard key | `Status.tsx` (`Kbd`) | A key or shortcut in help text | A `kbd` element |
+| Divider | `Status.tsx` (`Divider`) | A line between groups, with an optional word such as "or" | A separator; decorative when it has no label |
+| Spinner | `Status.tsx` (`Spinner`) | A short wait inside a control or a small region; pages use Skeleton | A status with its label as text; still under reduced motion |
+| Progress | `Status.tsx` (`Progress`) | How far a task is, or that it is running when the length is unknown | Native `progress` with a name and value text |
+| Meter | `Status.tsx` (`Meter`) | A measured amount against a limit, such as storage or a quota | `role="meter"` with a name, range and value text; the tone repeats what the text says |
+| Avatar group | `Avatar.tsx` (`AvatarGroup`) | The people on a card or a thread, at most four and then a count | A named list; the count is text |
+| Accordion | `Accordion.tsx` | Questions and settings that open in place | Native `details`; works without script; found by find in page |
+| Pagination | `Pagination.tsx` | Pages of a list that the API pages | A named `nav` of links; the current page has `aria-current="page"` |
+| Announcement | `Announcement.tsx` | News about the product or workplace, with at most one action; not for errors | A named region; the close button is named |
 | Filter bar | `.ui-filter-bar` | Search box, selects and Apply above a list | Real labels; Apply is a button |
 | Filter chips | `.ui-chips` | A row of choices that narrow a list, such as request status | Links with `aria-current` on the active choice |
 | List rows | `.ui-rows`, `.ui-row` | Tasks and other actionable items: icon tile, title, meta, one action | Each row is a list item; the action names its item |
@@ -55,3 +74,6 @@ Shell parts (header, navigation, search, settings, account menu, notifications, 
 | Use `Alert` next to the form that failed | Show a toast for a validation error |
 | Use `Media` with a ratio for every image | Use a bare `<img>` with no size |
 | Use `Tabs` for sibling views | Use tabs as main navigation between pages |
+| Use `Switch` for a setting that applies at once | Use a switch inside a form that needs Save (use `Checkbox`) |
+| Use `SegmentedControl` to change how one view is shown | Use it to move between pages (use section tabs) |
+| Use the compact button size inside a toolbar or a table | Use compact buttons for the main action of a page |

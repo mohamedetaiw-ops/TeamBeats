@@ -37,7 +37,7 @@ Testing the design before it goes to development is the cheapest place to find p
 
 ### Responsive and mobile layout
 - Visualise every screen at phone (375 px), tablet (768 px) and desktop (1440 px), in both directions, light and dark.
-- Check the three designs (Beats, Atlas, Pulse) for any screen that uses navigation, cards, forms or brand colour.
+- Check the four designs (Beats, Atlas, Pulse, Studio) for any screen that uses navigation, cards, forms or brand colour.
 - Check touch: thumb reach for primary actions on phones, no hover-only behaviour.
 
 ### Design review checklist (before handover)
@@ -45,7 +45,7 @@ Testing the design before it goes to development is the cheapest place to find p
 - [ ] Real content in Arabic and English, reviewed
 - [ ] All states designed: default, hover, focus, active, disabled or busy, error, empty, loading, denied
 - [ ] Annotated for accessibility; contrast checked
-- [ ] Phone, tablet and desktop; RTL and LTR; light and dark; three designs where relevant
+- [ ] Phone, tablet and desktop; RTL and LTR; light and dark; four designs where relevant
 - [ ] Usability tested, findings addressed
 
 ## For developers
@@ -56,7 +56,7 @@ Developers validate that the site is technically sound: smooth navigation, quick
 |---|---|---|
 | Functional | Journeys work end to end | Playwright e2e per spec (`tests/Acceptance`), API integration tests |
 | Navigation | Links, menus, breadcrumbs, redirects, keyboard | `shell.spec.ts`, `shell-reachability.spec.ts` |
-| Accessibility | WCAG 2.2 AA | axe on every primary page in both languages (`expectAccessible`); design suite with zero serious and critical violations in all three designs |
+| Accessibility | WCAG 2.2 AA | axe on every primary page in both languages (`expectAccessible`); design suite with zero serious and critical violations in all four designs |
 | Responsive | No horizontal scroll, layouts reflow | Design suite at 375, 768 and 1440 px; shell tests at mobile width |
 | Target size | Controls at least 24 by 24 px | Design suite on the component gallery |
 | Visual regression | Components look as designed in every design and direction | `toHaveScreenshot` baselines in the design suite |
@@ -85,7 +85,7 @@ After the first frontend build of a feature, the designer and the developer revi
 ## Release checklist (UI)
 
 - [ ] Design suite, e2e suite and axe green
-- [ ] Screenshots of changed screens in all three designs reviewed
+- [ ] Screenshots of changed screens in all four designs reviewed
 - [ ] Manual keyboard and screen reader pass on primary journeys in Arabic and English
 - [ ] Cross-browser pass (Chrome, Edge, Firefox, Safari, iOS Safari, Android Chrome)
 - [ ] Usability findings from this release addressed or ticketed

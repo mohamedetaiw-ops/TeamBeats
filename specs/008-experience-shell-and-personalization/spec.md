@@ -154,7 +154,7 @@ Navigation
 - **FR-015**: The shell MUST show the active organization or workspace when the user can switch between scopes, and label same-named pages by owner. *(CX-NAV-005)*
 - **FR-016**: The shell MUST provide search and quick navigation to permitted destinations only (results from spec 012). *(CX-NAV-006)*
 - **FR-017**: Users SHOULD keep favorites and see recents, with clear history; revoked access MUST disable or remove affected shortcuts. *(CX-NAV-007, R2)*
-- **FR-018**: Menus MUST adapt across devices while keeping function and labels; all primary destinations MUST be reachable at mobile widths. *(CX-NAV-008)* On wide screens the global menu takes the navigation style of the tenant's design (icon rail in Beats, top bar in Atlas, labelled sidebar in Pulse, spec 036); on screens up to 1024 px wide every style becomes the same menu behind one button.
+- **FR-018**: Menus MUST adapt across devices while keeping function and labels; all primary destinations MUST be reachable at mobile widths. *(CX-NAV-008)* On wide screens the global menu takes the navigation style of the tenant's design (icon rail in Beats, top bar in Atlas, labelled sidebar in Pulse and Studio, spec 036); on screens up to 1024 px wide every style becomes the same menu behind one button.
 - **FR-019**: Missing, unpublished and inaccessible destinations MUST show a security-safe recovery path, never an unhandled error. *(CX-NAV-009)*
 - **FR-020**: Contextual help, hints, onboarding and guided tours SHOULD be configurable by policy, dismissible and reopenable without blocking overlays. *(CX-NAV-010, R2)*
 

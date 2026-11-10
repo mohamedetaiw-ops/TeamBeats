@@ -28,7 +28,7 @@ You are contributing to a spec-driven enterprise product (TeamBeats, working nam
 10. Inside a module, keep domain code free of infrastructure: use cases reach databases, messaging, other modules and external systems only through ports (ADR-0013). Name modules as in `docs/architecture/module-map.md`.
 11. Keep the frontend thin: no business rules, role or package checks in React code; components never import each other and talk only through declared events; client caches are keyed by tenant and scope (constitution XXX, ADR-0014).
 12. Tenant-configurable behavior is versioned, schema-validated configuration, never code per customer (constitution XXIX).
-13. Build UI only from the design system: shared components, `--tb-*` tokens, the icon set, images with alt text; pass `npm run verify` and the design suite in Beats, Atlas and Pulse (constitution XXXI, spec 036).
+13. Build UI only from the design system: shared components, `--tb-*` tokens, the icon set, images with alt text; pass `npm run verify` and the design suite in Beats, Atlas, Pulse and Studio (constitution XXXI, spec 036).
 
 ## Report at the end of each task
 - **Specification:** IDs and files reviewed and changed
