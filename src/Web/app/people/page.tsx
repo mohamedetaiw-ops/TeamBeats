@@ -6,6 +6,7 @@ import type { Location, PersonCard } from "@/lib/people/types";
 import { Header } from "@/components/shell/Header";
 import { PeopleDirectory } from "@/features/people/PeopleDirectory";
 import { PeopleNav } from "@/features/people/PeopleNav";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /** The people directory (spec 010 US2 and US4): search with unit and location filters, and new joiners. */
 export default async function PeoplePage() {
@@ -26,9 +27,7 @@ export default async function PeoplePage() {
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("title"), href: "/people" }]} />
       <main id="main" className="page">
-        <h1>{t("title")}</h1>
-        <p>{t("intro")}</p>
-        <PeopleNav current="directory" />
+        <PageHeader title={t("title")} description={t("intro")} icon="people" nav={<PeopleNav current="directory" />} />
         <PeopleDirectory newcomers={newcomers.data} locations={locations.ok ? locations.data : []} units={units.ok ? units.data : []} />
       </main>
     </>

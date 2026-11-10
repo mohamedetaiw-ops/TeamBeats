@@ -120,6 +120,18 @@ public static partial class TokenSchema
         C("color.state.info", "#2f5bd3", "#9db7ff"),
         C("color.focus.ring", "#3b2fc9", "#f4b740"),
         C("color.focus.ring_inverse", "#3b2fc9", "#f4b740"),
+        // Decorative tints (docs/design-system/foundations/colour.md): tinted tiles that tell categories apart, never state.
+        C("color.tint.warm", "#fdf0d5", "#3d2e0f"),
+        C("color.tint.warm_text", "#8f5b00", "#f4b740"),
+        C("color.tint.fresh", "#e3f4ea", "#14352a"),
+        C("color.tint.fresh_text", "#157347", "#5ad19a"),
+        C("color.tint.cool", "#e6edfc", "#1c2a52"),
+        C("color.tint.cool_text", "#2f5bd3", "#9db7ff"),
+        // The night surface of AI and personal summaries, dark in both modes, with its text and bright accent.
+        C("color.surface.night", "#16133d", "#1f1a52"),
+        C("color.text.on_night", "#ffffff", "#f5f4fb"),
+        C("color.surface.campaign", "#146c43", "#14532d"),
+        C("color.highlight.bright", "#f4b740", "#f4b740"),
         new("font.family.latin", TokenTypes.FontFamily, "Readex Pro", Script: "latin"),
         new("font.family.arabic", TokenTypes.FontFamily, "Readex Pro", Script: "arabic"),
         new("font.family.heading_latin", TokenTypes.FontFamily, "Alexandria", Script: "latin"),

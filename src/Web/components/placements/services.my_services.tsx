@@ -6,8 +6,11 @@ import { useLocale, useTranslations } from "next-intl";
 import { localized, type PlacementProps } from "@/lib/experience/contract";
 import { pick, type CatalogueView, type ServiceCard } from "@/lib/services/types";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
 import "@/features/services/home.css";
+
+const tones = ["accent", "highlight", "success", "info"] as const;
 
 type Answer = "loading" | "failed" | { shown: ServiceCard[]; total: number };
 
@@ -77,17 +80,24 @@ export default function MyServices({ props }: PlacementProps) {
   if (answer.shown.length === 0) return shell(<StateView kind="empty" title={t("none")} message="" />, answer.total);
   return shell(
     <ul className="home-tiles">
-      {answer.shown.map((s) => {
+      {answer.shown.map((s, index) => {
         const name = pick(s.names, locale);
+        const tile = (
+          <span className="ui-icon-tile" data-tone={tones[index % tones.length]} aria-hidden="true">
+            <Icon name={s.kind === "linked" ? "external" : "services"} size={20} />
+          </span>
+        );
         return (
           <li key={s.id}>
             {s.kind === "linked" && s.url ? (
               <a href={s.url} target="_blank" rel="noopener noreferrer" onClick={() => void fetch(`/api/v1/services/${s.id}/used`, { method: "POST" })}>
+                {tile}
                 <bdi>{name}</bdi>
                 <span className="home-meta">{tc("external")}</span>
               </a>
             ) : (
               <Link href={s.kind === "module" && s.launchRoute ? s.launchRoute : `/services/${s.id}`}>
+                {tile}
                 <bdi>{name}</bdi>
               </Link>
             )}

@@ -1121,5 +1121,13 @@
   "notifications.template.integrations.connection.needs_consent.title": "Connection needs consent: {connection}",
   "notifications.template.integrations.connection.needs_consent.body": "{connection} lost the consent it needs. Grant it again on the Connections page.",
   "notifications.template.integrations.connection.credential_expiring.title": "Credential expiring: {connection}",
-  "notifications.template.integrations.connection.credential_expiring.body": "The credential of {connection} expires within 14 days. Renew it in the secret manager and update the connection."
+  "notifications.template.integrations.connection.credential_expiring.body": "The credential of {connection} expires within 14 days. Renew it in the secret manager and update the connection.",
+  "experience.component.content_call_to_action.props.eyebrow": "Line above the heading",
+  "experience.component.content_call_to_action.props.emphasis.campaign": "Campaign band",
+  "experience.component.content_news_feed.props.layout": "Layout",
+  "experience.component.content_news_feed.props.layout.list": "List",
+  "experience.component.content_news_feed.props.layout.featured": "Lead story with rows",
+  "experience.component.home_briefing.name": "Your briefing",
+  "experience.component.home_briefing.description": "A greeting with today's date and weather, and the three things that need the person next: tasks, policies to accept and meetings",
+  "experience.component.home_briefing.props.location": "Place for the weather"
 }

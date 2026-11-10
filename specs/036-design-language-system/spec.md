@@ -109,6 +109,11 @@ A developer builds a new page from a template and the shared components; the bui
 - **DLS-020**: Fonts MUST be self-hosted from the approved list and loaded per script on demand (ADR-0019, ADR-0021).
 - **DLS-021**: All three designs MUST be available in every package.
 - **DLS-022**: The design suite SHOULD write review screenshots on request for the post-development review.
+- **DLS-025**: Every page MUST sit in the page frame: content up to 90rem wide, centred, with `space.lg` side padding (`space.md` on phones). Full-bleed sections paint to the edge but align their content to the frame.
+- **DLS-026**: Module pages MUST be built from four page templates (List, Catalogue, Directory, Detail) and the shared page parts: page header (icon tile, h1, description, actions), section tabs, filter bar, data table, tile card, list rows, person card and split view (main column with a side column).
+- **DLS-027**: Links MUST use `color.link` and carry no underline when their position says they are links (titles, tabs, navigation, cards); links inside running text keep an underline.
+- **DLS-028**: The home MUST use the briefing hero (night surface), Your day tiles in the warm, cool and fresh tints, featured news and the campaign band, each from shared tokens only (`color.tint.*`, `color.surface.night`, `color.text.on_night`, `color.highlight.bright`, `color.surface.campaign`), with every pair checked for contrast in every design and mode.
+- **DLS-029**: Names and other values that may be in another script MUST be isolated in sentences (`isolate()` in `lib/bidi.ts`, or `<bdi>` in markup) so an Arabic name does not reorder an English sentence and the other way round.
 - **DLS-023**: R2: theme drafts (spec 033 US2) SHOULD show the design review checklist before approval.
 - **DLS-024**: R2: cross-browser runs (Firefox, WebKit) SHOULD join the design suite once the browser matrix decision in `docs/testing/e2e-plan.md` is made.
 

@@ -204,6 +204,12 @@ public static class ThemeEngine
         new("color.state.success", "color.surface.base", 3, false, "validation.theme.contrast_ui"),
         new("color.state.warning", "color.surface.base", 3, false, "validation.theme.contrast_ui"),
         new("color.state.info", "color.surface.base", 3, false, "validation.theme.contrast_ui"),
+        new("color.tint.warm_text", "color.tint.warm", 4.5, false, "validation.theme.contrast_text"),
+        new("color.tint.fresh_text", "color.tint.fresh", 4.5, false, "validation.theme.contrast_text"),
+        new("color.tint.cool_text", "color.tint.cool", 4.5, false, "validation.theme.contrast_text"),
+        new("color.text.on_night", "color.surface.night", 4.5, false, "validation.theme.contrast_text"),
+        new("color.surface.night", "color.highlight.bright", 4.5, false, "validation.theme.contrast_text"),
+        new("color.text.on_night", "color.surface.campaign", 4.5, false, "validation.theme.contrast_text"),
     ];
 
     public const int MinimumBodyPx = 14;

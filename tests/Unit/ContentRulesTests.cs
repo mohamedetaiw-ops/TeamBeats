@@ -156,4 +156,17 @@ public sealed class ContentRulesTests
         Assert.Equal("ar", Items.Pick(variants, "en", "ar", "fr").Locale);
         Assert.Equal("ar", Items.Pick(variants, "hi", "en", "ur").Locale);
     }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(150, 1)]
+    [InlineData(200, 1)]
+    [InlineData(201, 2)]
+    [InlineData(1000, 5)]
+    public void Feed_reading_time_counts_body_words_at_200_a_minute_and_is_at_least_one(int words, int minutes)
+    {
+        var text = string.Join(' ', Enumerable.Repeat("word", words));
+        var variant = new ContentVariant("Title", null, new BodyDocument(words == 0 ? [] : [Para(text, null)]));
+        Assert.Equal(minutes, ContentFeed.ReadMinutes(variant));
+    }
 }

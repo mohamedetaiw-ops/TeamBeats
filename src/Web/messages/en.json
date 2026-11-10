@@ -7,7 +7,32 @@
     "title": "Welcome, {name}",
     "subtitle": "You are signed in to {tenant}.",
     "openAdmin": "Open administration",
-    "pageTitle": "Home"
+    "pageTitle": "Home",
+    "briefing": {
+      "label": "Your briefing",
+      "greeting": {
+        "morning": "Good morning, {name}.",
+        "afternoon": "Good afternoon, {name}.",
+        "evening": "Good evening, {name}."
+      },
+      "waiting": "{count, plural, one {One thing needs you.} other {# things need you.}}",
+      "clear": "Nothing needs you right now.",
+      "sources": "Prepared from your tasks, calendar and policies. Only items you can open are used.",
+      "task": "Task",
+      "policy": "Policy",
+      "overdue": "Overdue",
+      "meeting": "Meeting",
+      "privateMeeting": "Private meeting",
+      "join": "Join",
+      "open": "Open",
+      "review": "Review",
+      "allTasks": "All tasks",
+      "readNow": "Read now",
+      "ask": "Ask about it",
+      "acceptPolicy": "Read and accept {name}",
+      "dueOn": "Due {date}",
+      "from": "From {name}"
+    }
   },
   "signin": {
     "title": "Sign in",
@@ -1643,7 +1668,13 @@
         "retry": "Try again",
         "failed": "News could not be loaded.",
         "none": "No news yet.",
-        "pinned": "Pinned"
+        "pinned": "Pinned",
+        "readTime": "{minutes, plural, one {# min read} other {# min read}}",
+        "reactions": "{count, plural, one {# reaction} other {# reactions}}",
+        "type": {
+          "news": "News",
+          "announcement": "Announcement"
+        }
       },
       "richText": {
         "missing": "This content is not available.",
@@ -2049,7 +2080,7 @@
         "faq": "Frequently asked questions",
         "troubleshooting": "Troubleshooting"
       },
-      "updated": "Published {date}, version {version}",
+      "updated": "Updated {date}",
       "edit": "Edit this article",
       "contents": "On this page",
       "related": "Related",
@@ -2146,7 +2177,8 @@
       "owner": "Owner",
       "none": "None",
       "working": "new version {state}",
-      "create": "New policy"
+      "create": "New policy",
+      "description": "Every policy in force, its owner and when it is reviewed next."
     },
     "my": {
       "title": "My policies",
@@ -2159,7 +2191,8 @@
       "allTitle": "All my policies",
       "accepted": "Accepted version {number} on {date}",
       "acceptedEarlier": "Accepted version {number} on {date}; a newer version is in force",
-      "inForce": "Version {number} in force"
+      "inForce": "Version {number} in force",
+      "description": "Policies that apply to you, and the ones waiting for you to read and accept."
     },
     "reading": {
       "register": "Policies",
@@ -3813,7 +3846,38 @@
         "profile": {
           "title": "Profile",
           "text": "Person, role, team, contact and skills."
+        },
+        "list": {
+          "title": "List",
+          "text": "Page header, section tabs, filter bar or chips, then a table or list rows."
+        },
+        "catalogue": {
+          "title": "Catalogue",
+          "text": "Page header, filter bar, then tile cards grouped by category."
+        },
+        "directory": {
+          "title": "Directory",
+          "text": "Page header, search, then person cards."
+        },
+        "detail": {
+          "title": "Detail",
+          "text": "Page header with actions, the main content and a side column."
         }
+      }
+    },
+    "pages": {
+      "title": "Page parts",
+      "intro": "Section tabs move between the pages of one area. Tile cards show services, spaces and libraries with an icon tile in one of the soft tints.",
+      "tabs": "Policy pages",
+      "mine": "My policies",
+      "register": "Register",
+      "tiles": {
+        "it": "IT support",
+        "itMeta": "Usually answered within a day",
+        "leave": "Annual leave",
+        "leaveMeta": "Approved by your manager",
+        "handbook": "Employee handbook",
+        "handbookMeta": "Updated last week"
       }
     }
   }

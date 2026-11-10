@@ -10,6 +10,9 @@ import {
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { DocumentsNav } from "@/features/documents/DocumentsNav";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { TileCard } from "@/components/ui/TileCard";
+import { Badge } from "@/components/ui/Badge";
 
 /** The knowledge base (spec 011 US4): published articles this person may read, the most recent first. */
 export default async function KnowledgeBasePage() {
@@ -28,35 +31,34 @@ export default async function KnowledgeBasePage() {
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("title"), href: "/kb" }]} />
       <main id="main" className="page">
-        <h1>{t("title")}</h1>
-        <p>{t("intro")}</p>
-        <DocumentsNav current="kb" />
-        <p>
-          <Link className="button" href="/kb/new">
-            {t("new")}
-          </Link>
-        </p>
+        <PageHeader
+          title={t("title")}
+          description={t("intro")}
+          icon="book"
+          nav={<DocumentsNav current="kb" />}
+          actions={
+            <Link className="button" href="/kb/new">
+              {t("new")}
+            </Link>
+          }
+        />
         {articles.data.length === 0 ? (
           <StateView kind="empty" title={t("none")} message="" />
         ) : (
-          <ul className="documents-cards" data-testid="article-list">
+          <ul className="ui-tiles" data-testid="article-list">
             {articles.data.map((a) => (
-              <li key={a.id} className="documents-card">
-                <Link href={articleHref(a.id)}>
-                  <bdi>{nameIn(a.titles, locale)}</bdi>
-                </Link>
-                <p className="documents-meta">
-                  {a.template ? (
-                    <span className="documents-badge">
-                      {t(`template.${a.template}`)}
-                    </span>
-                  ) : null}
-                  <time dateTime={a.publishedAt}>
-                    {format.dateTime(new Date(a.publishedAt), {
-                      dateStyle: "medium",
-                    })}
-                  </time>
-                </p>
+              <li key={a.id}>
+                <TileCard
+                  title={nameIn(a.titles, locale)}
+                  href={articleHref(a.id)}
+                  icon="book"
+                  meta={
+                    <time dateTime={a.publishedAt}>
+                      {t("updated", { date: format.dateTime(new Date(a.publishedAt), { dateStyle: "medium" }) })}
+                    </time>
+                  }
+                  footer={a.template ? <Badge tone="accent">{t(`template.${a.template}`)}</Badge> : null}
+                />
               </li>
             ))}
           </ul>

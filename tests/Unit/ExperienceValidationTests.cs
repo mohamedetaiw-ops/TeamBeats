@@ -147,8 +147,8 @@ public sealed class ExperienceValidationTests
     {
         var registry = new ComponentRegistry([new PlatformComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
         Assert.Empty(registry.Rejected);
-        Assert.Equal(["toolbox.time_converter@1", "toolbox.weather@1", "toolbox.world_clock@1"], registry.All.Select(m => m.Reference));
-        Assert.All(registry.All, m =>
+        Assert.Equal(["home.briefing@1", "toolbox.time_converter@1", "toolbox.weather@1", "toolbox.world_clock@1"], registry.All.Select(m => m.Reference));
+        Assert.All(registry.All.Where(m => m.Id.StartsWith("toolbox.", StringComparison.Ordinal)), m =>
         {
             Assert.Equal("utility", m.Display.Category);
             Assert.Empty(m.Requires.Capabilities);
@@ -160,6 +160,21 @@ public sealed class ExperienceValidationTests
         var tooMany = JsonSerializer.SerializeToElement(new { zones = Enumerable.Repeat("Asia/Dubai", PlatformComponents.MaxClockZones + 1) });
         Assert.NotEmpty(PropertyValidator.Validate(clock.Properties, tooMany));
         Assert.Empty(PropertyValidator.Validate(clock.Properties, JsonSerializer.SerializeToElement(new { zones = new[] { "Asia/Dubai", "Europe/London" } })));
+    }
+
+    [Fact]
+    public void Home_briefing_is_a_personal_singleton_that_reads_only_the_viewers_own_sources()
+    {
+        var registry = new ComponentRegistry([new PlatformComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        var briefing = registry.Find("home.briefing@1")!;
+        Assert.Equal("personal", briefing.Display.Category);
+        Assert.True(briefing.Placement.Singleton);
+        Assert.Equal(6, briefing.Placement.MinSpan);
+        // Each source is the viewer's own and is left out when the tenant lacks it, so the briefing needs no capability.
+        Assert.Empty(briefing.Requires.Capabilities);
+        Assert.Equal(["/api/v1/me", "/api/v1/tasks", "/api/v1/me/policies", "/api/v1/me/calendar", "/api/v1/weather"], briefing.Data);
+        Assert.Empty(PropertyValidator.Validate(briefing.Properties, null));
+        Assert.NotEmpty(PropertyValidator.Validate(briefing.Properties, JsonSerializer.SerializeToElement(new { location = new string('x', 101) })));
     }
 
     [Theory]

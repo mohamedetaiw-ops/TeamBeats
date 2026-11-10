@@ -20,6 +20,18 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Confirm | `ConfirmAction.tsx` | Confirm a destructive action in place | Focus moves to the question and back |
 | Selection bar | `SelectionBar.tsx` | Bulk actions on selected items | Count and consequence stated in text |
 | Messages | `Messages.tsx` | Toast-style messages with priority and Undo | Polite or assertive live region by priority |
+| Page header | `PageHeader.tsx` | Top of every module page: icon tile, h1, one line description, page actions, section tabs | One h1; the icon is decorative |
+| Section tabs | `SectionNav.tsx` | Pill tabs between the pages of one area (My policies, Register, Campaigns) | A labelled `nav`; the current page has `aria-current="page"` |
+| Tile card | `TileCard.tsx` | A service, knowledge space or library: icon tile, title, meta, footer | The title link covers the card; one target, one name |
+| Filter bar | `.ui-filter-bar` | Search box, selects and Apply above a list | Real labels; Apply is a button |
+| Filter chips | `.ui-chips` | A row of choices that narrow a list, such as request status | Links with `aria-current` on the active choice |
+| List rows | `.ui-rows`, `.ui-row` | Tasks and other actionable items: icon tile, title, meta, one action | Each row is a list item; the action names its item |
+| Data table | `main table` | Registers and reports | Native table with header cells; rows highlight on hover |
+| Split view | `.ui-split` | A main column with a side column (Tasks and delegation) | The side column is an `aside` with a label; stacks below 64rem |
+| Person card | `people-cards` | People directory and team | Avatar with a steady tone, name link covers the card |
+| Briefing hero | `home.briefing` | Top of the home: greeting, date, weather, next three things with actions | A section named by its heading; rows are an ordered list; where items came from is stated |
+| Featured news | `content.news_feed` with layout `featured` | Lead story large, the rest as rows, with reading time and reactions | One link per story |
+| Campaign band | `content.call_to_action` with emphasis `campaign` | One campaign at the bottom of the home | Heading and one action; decoration is hidden |
 
 Shell parts (header, navigation, search, settings, account menu, notifications, task badge) live in `src/Web/features/shell` and follow the same rules.
 

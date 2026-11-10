@@ -11,6 +11,8 @@ import { FormField, SelectField, TextAreaField } from "@/components/ui/FormField
 import { Icon, iconNames } from "@/components/ui/Icon";
 import { Media } from "@/components/ui/Media";
 import { Tabs } from "@/components/ui/Tabs";
+import { SectionNav } from "@/components/ui/SectionNav";
+import { TileCard } from "@/components/ui/TileCard";
 
 /** Token names shown as swatches; they are identifiers, not interface text, so they appear as code. */
 const swatches = [
@@ -28,6 +30,11 @@ const swatches = [
   "--tb-color-state-warning",
   "--tb-color-state-danger",
   "--tb-color-state-info",
+  "--tb-color-tint-warm",
+  "--tb-color-tint-fresh",
+  "--tb-color-tint-cool",
+  "--tb-color-surface-night",
+  "--tb-color-surface-campaign",
 ] as const;
 
 const people = ["a", "b", "c", "d"] as const;
@@ -225,11 +232,29 @@ export function DesignSystem() {
         />
       </section>
 
+      <section aria-labelledby="ds-pages">
+        <h2 id="ds-pages">{t("pages.title")}</h2>
+        <p className="notice">{t("pages.intro")}</p>
+        <SectionNav
+          label={t("pages.tabs")}
+          current="mine"
+          items={[
+            { key: "mine", href: "#ds-pages", label: t("pages.mine") },
+            { key: "register", href: "#ds-pages", label: t("pages.register") },
+          ]}
+        />
+        <div className="ui-tiles">
+          <TileCard title={t("pages.tiles.it")} href="#ds-pages" icon="settings" meta={t("pages.tiles.itMeta")} />
+          <TileCard title={t("pages.tiles.leave")} href="#ds-pages" icon="calendar" tone="success" meta={t("pages.tiles.leaveMeta")} />
+          <TileCard title={t("pages.tiles.handbook")} href="#ds-pages" icon="book" tone="highlight" meta={t("pages.tiles.handbookMeta")} />
+        </div>
+      </section>
+
       <section aria-labelledby="ds-templates">
         <h2 id="ds-templates">{t("templates.title")}</h2>
         <p className="notice">{t("templates.intro")}</p>
         <div className="gallery-cards">
-          {(["home", "article", "listing", "form", "dashboard", "profile"] as const).map((k) => (
+          {(["home", "article", "listing", "form", "dashboard", "profile", "list", "catalogue", "directory", "detail"] as const).map((k) => (
             <Card key={k} title={t(`templates.items.${k}.title`)} tone="sunken" eyebrow={<Icon name="services" size={20} />}>
               <p>{t(`templates.items.${k}.text`)}</p>
             </Card>

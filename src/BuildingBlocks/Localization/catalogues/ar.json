@@ -1121,5 +1121,13 @@
   "notifications.template.integrations.connection.needs_consent.title": "الاتصال يحتاج إلى موافقة: {connection}",
   "notifications.template.integrations.connection.needs_consent.body": "فقد {connection} الموافقة التي يحتاجها. امنحها مرة أخرى في صفحة الاتصالات.",
   "notifications.template.integrations.connection.credential_expiring.title": "بيانات الاعتماد على وشك الانتهاء: {connection}",
-  "notifications.template.integrations.connection.credential_expiring.body": "تنتهي بيانات اعتماد {connection} خلال 14 يومًا. جدّدها في مدير الأسرار وحدّث الاتصال."
+  "notifications.template.integrations.connection.credential_expiring.body": "تنتهي بيانات اعتماد {connection} خلال 14 يومًا. جدّدها في مدير الأسرار وحدّث الاتصال.",
+  "experience.component.content_call_to_action.props.eyebrow": "سطر فوق العنوان",
+  "experience.component.content_call_to_action.props.emphasis.campaign": "شريط حملة",
+  "experience.component.content_news_feed.props.layout": "التخطيط",
+  "experience.component.content_news_feed.props.layout.list": "قائمة",
+  "experience.component.content_news_feed.props.layout.featured": "خبر رئيسي مع صفوف",
+  "experience.component.home_briefing.name": "موجزك",
+  "experience.component.home_briefing.description": "تحية مع تاريخ اليوم والطقس، وأهم ثلاثة أمور تنتظر الشخص: المهام والسياسات المطلوب قبولها والاجتماعات",
+  "experience.component.home_briefing.props.location": "المكان لعرض الطقس"
 }

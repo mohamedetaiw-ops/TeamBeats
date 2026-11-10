@@ -483,3 +483,346 @@
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-sm);
 }
+
+/*
+ * Page header (docs/design-system/components.md, Page header): icon tile, title and description at the start, the main
+ * action at the end, section tabs below. One per module page.
+ */
+.ui-page-header {
+  display: grid;
+  gap: var(--tb-space-lg);
+  margin-block-end: var(--tb-space-lg);
+}
+
+.ui-page-header-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-md);
+}
+
+.ui-page-header-text {
+  display: grid;
+  flex: 1 1 18rem;
+  gap: var(--tb-space-xs);
+  min-inline-size: 0;
+}
+
+.ui-page-header-title {
+  margin: 0;
+  font-size: var(--tb-font-size-xxl);
+}
+
+.ui-page-header-eyebrow,
+.ui-page-header-description {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+}
+
+.ui-page-header-eyebrow {
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.ui-page-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+/* Icon tile: an icon on a tinted square, used in page headers, service tiles and list rows. */
+.ui-icon-tile {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-accent-base);
+}
+
+.ui-icon-tile[data-size="lg"] {
+  inline-size: 3.5rem;
+  block-size: 3.5rem;
+}
+
+.ui-icon-tile[data-tone="highlight"] {
+  background: var(--tb-color-tint-warm);
+  color: var(--tb-color-tint-warm-text);
+}
+
+.ui-icon-tile[data-tone="success"] {
+  background: var(--tb-color-tint-fresh);
+  color: var(--tb-color-tint-fresh-text);
+}
+
+.ui-icon-tile[data-tone="info"] {
+  background: var(--tb-color-tint-cool);
+  color: var(--tb-color-tint-cool-text);
+}
+
+/*
+ * Section tabs: a pill segmented control. The track is a raised pill, the current page a filled pill in the
+ * navigation's active colour. On a phone the row scrolls sideways.
+ */
+.ui-section-nav {
+  max-inline-size: 100%;
+  overflow-x: auto;
+}
+
+.ui-section-nav ul {
+  display: inline-flex;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: var(--tb-space-xs);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-surface-raised);
+  list-style: none;
+}
+
+.ui-section-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.5rem;
+  padding-inline: var(--tb-space-md);
+  border-radius: var(--tb-radius-full);
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-medium);
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.ui-section-nav a:where(:hover) {
+  background: var(--tb-color-surface-sunken);
+  text-decoration: none;
+}
+
+.ui-section-nav a[aria-current="page"] {
+  background: var(--tb-color-shell-text);
+  color: var(--tb-color-shell-background);
+}
+
+/* Filter chips: a row of choices that narrow a list, such as request status. */
+.ui-chips ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-chips a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.25rem;
+  padding-inline: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  font-size: var(--tb-font-size-sm);
+  text-decoration: none;
+}
+
+.ui-chips a:hover {
+  border-color: var(--tb-color-border-strong);
+  text-decoration: none;
+}
+
+.ui-chips a[aria-current="page"] {
+  border-color: var(--tb-color-accent-base);
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-accent-base);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+/*
+ * Filter bar: search and filters of a list on one raised strip. Fields sit side by side and wrap on narrow screens;
+ * labels stay visible above each control; the submit button lines up with the controls.
+ */
+.ui-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-md);
+  margin-block-end: var(--tb-space-lg);
+  padding: var(--tb-space-md);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+.ui-filter-bar .field {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+
+.ui-filter-bar .field:first-child {
+  flex-grow: 2;
+}
+
+/* Tile card: icon tile or avatar, a covering title link, meta line, optional footer action above the cover. */
+.ui-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-tile {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-md);
+  block-size: 100%;
+  padding: var(--tb-space-lg);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-text-primary);
+  transition: box-shadow var(--tb-motion-duration-normal) var(--tb-motion-easing-standard),
+    transform var(--tb-motion-duration-normal) var(--tb-motion-easing-standard);
+}
+
+.ui-tile:hover {
+  box-shadow: var(--tb-shadow-md);
+}
+
+.ui-tile:focus-within {
+  box-shadow: var(--tb-shadow-md);
+}
+
+.ui-tile-head {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-md);
+  min-inline-size: 0;
+}
+
+.ui-tile-text {
+  display: grid;
+  gap: var(--tb-space-xs);
+  min-inline-size: 0;
+}
+
+.ui-tile-title {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.ui-tile-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  color: inherit;
+  text-decoration: none;
+}
+
+.ui-tile-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.ui-tile-link:hover {
+  text-decoration: none;
+}
+
+.ui-tile-link:focus-visible {
+  outline: none;
+}
+
+.ui-tile:has(.ui-tile-link:focus-visible) {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+  outline-offset: var(--tb-border-width-focus);
+}
+
+.ui-tile-meta,
+.ui-tile > p {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.ui-tile-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+  margin-block-start: auto;
+}
+
+/* List rows: a raised list of rows with a leading icon tile or avatar, a covering title link and meta lines. */
+.ui-rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  overflow: hidden;
+}
+
+.ui-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-md);
+  padding: var(--tb-space-md) var(--tb-space-lg);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.ui-row:last-child {
+  border-block-end: 0;
+}
+
+.ui-row:hover {
+  background: var(--tb-color-accent-subtle);
+}
+
+.ui-row-text {
+  display: grid;
+  flex: 1;
+  gap: var(--tb-space-xs);
+  min-inline-size: 0;
+}
+
+.ui-row-link {
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.ui-row-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.ui-row-link:hover {
+  text-decoration: none;
+}
+
+/* Split page: the main column and a side panel at the end, stacked on narrow screens (Detail and List templates). */
+.ui-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 24rem);
+  gap: var(--tb-space-lg);
+  align-items: start;
+}
+
+@media (width <= 64rem) {
+  .ui-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

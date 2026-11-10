@@ -9,8 +9,8 @@
  */
 .xp-page {
   --xp-gap: var(--tb-space-lg);
-  --xp-content: 80rem;
-  --xp-pad: var(--tb-space-md);
+  --xp-content: 90rem;
+  --xp-pad: var(--tb-space-lg);
 
   display: grid;
   gap: var(--xp-gap);
@@ -61,8 +61,22 @@
   padding-inline: var(--xp-pad);
 }
 
-.xp-section-full_bleed > .xp-row-grid {
-  padding-inline: 0;
+/*
+ * Full bleed sections stretch their background to the window, but their cards still line up with the page frame
+ * (docs/design-system/foundations/layout.md): no card ever touches the navigation or the window edge.
+ */
+.xp-section-full_bleed > .xp-row-grid,
+.xp-section-full_bleed > [role="tabpanel"],
+.xp-section-full_bleed > .xp-tabs {
+  max-inline-size: var(--xp-content);
+  margin-inline: auto;
+  padding-inline: var(--xp-pad);
+}
+
+@media (width <= 40rem) {
+  .xp-page {
+    --xp-pad: var(--tb-space-md);
+  }
 }
 
 .xp-region {

@@ -5,6 +5,7 @@ import type { OwnProfile } from "@/lib/people/types";
 import { Header } from "@/components/shell/Header";
 import { OwnProfileForm } from "@/features/people/OwnProfileForm";
 import { PeopleNav } from "@/features/people/PeopleNav";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /** The signed-in person's own profile settings (spec 010 US1). */
 export default async function OwnProfilePage() {
@@ -27,9 +28,7 @@ export default async function OwnProfilePage() {
         ]}
       />
       <main id="main" className="page people">
-        <h1>{t("me.title")}</h1>
-        <p>{t("me.intro")}</p>
-        <PeopleNav current="me" />
+        <PageHeader title={t("me.title")} description={t("me.intro")} icon="people" nav={<PeopleNav current="me" />} />
         <OwnProfileForm initial={own.data} />
       </main>
     </>

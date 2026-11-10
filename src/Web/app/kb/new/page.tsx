@@ -5,6 +5,7 @@ import type { KbTemplate } from "@/lib/documents/types";
 import { Header } from "@/components/shell/Header";
 import { DocumentsNav } from "@/features/documents/DocumentsNav";
 import { NewArticleForm } from "@/features/documents/NewArticleForm";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /** Starts a knowledge article from a template (spec 011 US4 scenario 1); writing it continues in the content editor. */
 export default async function NewArticlePage() {
@@ -27,8 +28,7 @@ export default async function NewArticlePage() {
         ]}
       />
       <main id="main" className="page">
-        <h1>{t("new")}</h1>
-        <DocumentsNav current="kb" />
+        <PageHeader title={t("new")} icon="book" nav={<DocumentsNav current="kb" />} />
         <NewArticleForm
           templates={templates.data}
           locales={me.data.tenant.enabledLocales}

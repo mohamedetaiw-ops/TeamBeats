@@ -9,7 +9,7 @@ import { hostOrigin } from "../support/stack";
 /**
  * The v2 home as staging seeds it (src/Api.DevHost/seeds/staging-home.json): the file's placements are published on a
  * fresh tenant, which also checks the file against the component manifests, and the home shows the task summary and My
- * services of spec 016 next to news, the tool box and the call to action band (the news, services and menu the seeder
+ * services of spec 016 under the briefing, next to featured news, with the campaign band at the bottom (the news, services and menu the seeder
  * also publishes are covered by tests/Integration/StagingHomeSeedTests.cs), in English and Arabic with axe.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
@@ -22,7 +22,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await seedHome(tenant);
     });
 
-    test("the seeded home shows tasks, services, the tool box and the call to action", async ({ page }, testInfo) => {
+    test("the seeded home shows the briefing, tasks, services and the campaign band last", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/`);
       const tasks = page.getByTestId("home-task-summary");
@@ -32,7 +32,14 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const services = page.getByTestId("home-my-services");
       await expect(services.getByRole("heading", { name: msg(locale, "services.home.services.title") })).toBeVisible();
       await expect(services.getByRole("link").first()).toBeVisible();
-      await expect(page.getByRole("link", { name: locale === "ar" ? "تصفح الخدمات" : "Browse services" })).toHaveAttribute("href", "/services");
+      const briefing = page.getByTestId("home-briefing");
+      await expect(briefing.getByRole("heading", { level: 2 })).toBeVisible();
+      await expect(briefing.getByText(msg(locale, "home.briefing.sources"))).toBeVisible();
+      // The campaign band closes the page: after the news and services, never above them.
+      const band = page.getByRole("link", { name: locale === "ar" ? "اطلع على البرنامج" : "See the programme" });
+      await expect(band).toHaveAttribute("href", /^\/content\/read\//);
+      const bandTop = (await band.boundingBox())!.y;
+      expect(bandTop).toBeGreaterThan((await services.boundingBox())!.y);
       await expectAccessible(page, testInfo, `home-v2-${locale}`);
       await page.screenshot({ path: testInfo.outputPath(`home-v2-${locale}.png`), fullPage: true });
     });

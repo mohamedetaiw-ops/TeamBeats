@@ -6,8 +6,11 @@ import { nameIn, policyHref, type PolicyListItem, type RegisterRights } from "@/
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
 
 const statuses = ["draft", "in_review", "approved", "published", "retired"] as const;
+const statusTone: Record<string, BadgeTone> = { draft: "neutral", in_review: "warning", approved: "info", published: "success", retired: "neutral" };
 
 /**
  * The policy register (spec 025 section 10): what the person manages, owns, or is published for them, with ID, name,
@@ -35,16 +38,20 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("title"), href: "/policies" }]} />
       <main id="main" className="page policies-page">
-        <h1>{t("title")}</h1>
-        <PoliciesNav current="register" />
-        {rights.ok && rights.data.create ? (
-          <p>
-            <Link href="/policies/new" className="button button-primary">
-              {t("create")}
-            </Link>
-          </p>
-        ) : null}
-        <form className="policies-toolbar" method="get" role="search" aria-label={t("search")}>
+        <PageHeader
+          title={t("title")}
+          description={t("description")}
+          icon="policy"
+          nav={<PoliciesNav current="register" />}
+          actions={
+            rights.ok && rights.data.create ? (
+              <Link href="/policies/new" className="button button-primary">
+                {t("create")}
+              </Link>
+            ) : null
+          }
+        />
+        <form className="ui-filter-bar" method="get" role="search" aria-label={t("search")}>
           <div className="field">
             <label htmlFor="policy-q">{t("search")}</label>
             <input id="policy-q" name="q" type="search" defaultValue={q ?? ""} dir="auto" />
@@ -95,7 +102,7 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
                       </Link>
                     </td>
                     <td>
-                      {ts(p.status)}
+                      <Badge tone={statusTone[p.status] ?? "neutral"}>{ts(p.status)}</Badge>
                       {p.workingState ? <span className="policies-meta"> · {t("working", { state: ts(p.workingState) })}</span> : null}
                     </td>
                     <td>{p.currentVersion ?? t("none")}</td>

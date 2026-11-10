@@ -6,6 +6,7 @@ import { nameIn, policyHref, reviewHref, shownLocale, type CommentView, type Com
 import { Header } from "@/components/shell/Header";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { ReviewPanel } from "@/features/policies/ReviewPanel";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /**
  * The review page an approval task opens (spec 025 US1): the version in review compared with the one in force, clause
@@ -47,8 +48,7 @@ export default async function ReviewPolicyPage({ params }: { params: Promise<{ i
         ]}
       />
       <main id="main" className="page policies-page" lang={shown}>
-        <h1>{t("heading", { name: draft.data.titles[shown] ?? name })}</h1>
-        <PoliciesNav current={null} />
+        <PageHeader title={t("heading", { name: draft.data.titles[shown] ?? name })} icon="policy" nav={<PoliciesNav current={null} />} />
         <ReviewPanel
           policyId={p.id}
           compare={compare.data}

@@ -12,7 +12,7 @@ namespace TeamBeats.Integration.Tests;
 
 /// <summary>
 /// The staging home seed (docs/testing/fake-systems.md): from the checked-in file it publishes fictional news, form
-/// services and a global menu, then the v2 home with the brand hero linking to the seeded story and mail and calendar
+/// services and a global menu, then the v2 home with the briefing on top and the campaign band at the bottom linking to the seeded story, and mail and calendar
 /// placed lower in the grid; a second run adds nothing.
 /// </summary>
 [Collection(WorldCollection.Name)]
@@ -61,10 +61,10 @@ public sealed class StagingHomeSeedTests(TenantWorld world)
         var page = await OkAsync(emp.GetAsync("/api/v1/experience/render?slug=home"));
         var regions = page.GetProperty("regions").EnumerateArray().ToDictionary(r => r.GetProperty("id").GetString()!);
         var hero = regions["hero"].GetProperty("placements").EnumerateArray().ToArray();
-        Assert.Equal(["campaign-hero", "tasks"], hero.Select(p => p.GetProperty("id").GetString()!).ToArray());
-        Assert.Equal($"/content/read/{safety.GetProperty("id").GetGuid()}", hero[0].GetProperty("props").GetProperty("link").GetString());
-        var grid = regions["grid"].GetProperty("placements").EnumerateArray().Select(p => p.GetProperty("id").GetString()).ToList();
-        Assert.Equal("news", grid[0]);
-        Assert.True(grid.IndexOf("home-outlook-my-calendar") is -1 or > 3);
+        Assert.Equal(["briefing", "tasks"], hero.Select(p => p.GetProperty("id").GetString()!).ToArray());
+        var grid = regions["grid"].GetProperty("placements").EnumerateArray().ToArray();
+        Assert.Equal(["news", "services", "home-outlook-my-calendar", "home-outlook-my-mail", "campaign-band"], grid.Select(p => p.GetProperty("id").GetString()!).ToArray());
+        // The Safety Week band closes the home (spec 008 home composition) and links to the seeded story.
+        Assert.Equal($"/content/read/{safety.GetProperty("id").GetGuid()}", grid[^1].GetProperty("props").GetProperty("link").GetString());
     }
 }

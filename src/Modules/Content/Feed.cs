@@ -18,7 +18,9 @@ public sealed record FeedItem(
     string? Summary,
     DateTimeOffset PublishedAt,
     bool Pinned,
-    bool Featured);
+    bool Featured,
+    int ReadMinutes = 1,
+    int Reactions = 0);
 
 public sealed record FeedPage(IReadOnlyList<FeedItem> Items, string? Next);
 
@@ -90,7 +92,7 @@ public sealed class ContentFeed(
                 var version = (await items.VersionAsync(row.Id, number, ct))!;
                 var (locale, variant) = Items.Pick(version.Variants, requestLocale.Locale, locales.DefaultLocale, row.PrimaryLocale);
                 result.Add(new FeedItem(row.Id, row.SiteId, row.Type, locale, locale != requestLocale.Locale, variant.Title, variant.Summary,
-                    row.PublishedAt!.Value, row.Pinned, row.Featured));
+                    row.PublishedAt!.Value, row.Pinned, row.Featured, ReadMinutes(variant)));
                 if (result.Count == limit)
                 {
                     break;
@@ -106,7 +108,23 @@ public sealed class ContentFeed(
         {
             next = Encode(p);
         }
+        if (result.Count > 0)
+        {
+            // One query for the reaction counts of the page; the reaction table is this module's own.
+            var counts = await session.QueryAsync("select item_id, count(*)::int from content.reaction where item_id = any(@ids) group by item_id",
+                new { ids = result.Select(i => i.Id).ToArray() }, r => (Id: r.GetGuid(0), Count: r.GetInt32(1)), ct);
+            var byId = counts.ToDictionary(c => c.Id, c => c.Count);
+            result = [.. result.Select(i => byId.TryGetValue(i.Id, out var n) ? i with { Reactions = n } : i)];
+        }
         return new FeedPage(result, next);
+    }
+
+    /// <summary>Reading time for the feed card: words of the body at 200 words a minute, at least one minute.</summary>
+    internal static int ReadMinutes(ContentVariant variant)
+    {
+        var text = BodyValidator.PlainText(variant.Body);
+        var words = text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        return Math.Max(1, (int)Math.Ceiling(words / 200.0));
     }
 
     private static string Encode((int Pinned, DateTimeOffset At, Guid Id) p) =>

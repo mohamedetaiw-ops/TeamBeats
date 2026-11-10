@@ -4,7 +4,11 @@ Templates are ready page patterns built only from the shared components. Adminis
 
 | Template | Spec 032 layout | Contents | Use for |
 |---|---|---|---|
-| Home | Home layout with hero, main and side regions | Greeting or hero, your day (tasks), news, your services, tools, call to action | Employee home, organization homes |
+| Home | Home layout with hero and grid regions | Briefing hero at the top start with Your day beside it, featured news with your services, calendar and mail, then the campaign band at the bottom. Cards for features not built yet stay hidden | Employee home, organization homes |
+| List | Contained page | Page header, section tabs, filter bar or chips, data table or list rows, empty state | Policy register, requests, my policies |
+| Catalogue | Contained page | Page header, filter bar, tile cards grouped by category, favourites | Services, knowledge spaces, document libraries |
+| Directory | Contained page | Page header, section tabs, search, person cards | People, my team |
+| Detail | Split view | Page header with actions, main content, side column for related actions | A policy, a request, tasks with delegation |
 | Article | Article layout | Title, metadata, hero `Media`, readable column (45 to 80 characters), related links, acknowledgement when required | News, announcements, policies, knowledge articles |
 | Listing | Listing layout | Title, search and filters, results as `Card` grid or table rows, paging, empty state | News archive, services catalogue, document libraries, people search |
 | Form | Single column | Title, short intro, grouped fields, one primary action, inline errors, success state | Service requests, leave, feedback, settings |
