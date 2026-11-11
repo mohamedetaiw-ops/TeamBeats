@@ -3,18 +3,18 @@
 Depends on 002, 003, 010, 016, 017, 022, 026. R2.
 
 ## Phase 1: Contract and storage
-- [ ] T001 Migration for match links, runs, held changes and org codes (forced RLS)
-- [ ] T002 Permissions `hr.integration_manage`; capability keys of section 9; audit actions of section 13
-- [ ] T003 `IHrDirectory` contract, fake HR system with fixtures
+- [x] T001 Migration for match links, runs and held changes (forced RLS)
+- [x] T002 Permissions `hr.integration_manage`; capability keys of section 9; audit actions of section 13
+- [x] T003 `IHrRecords` contract, fake HR system with fixtures
 
 ## Phase 2: User Story 1, connect and match (P1)
-- [ ] T004 [P] [US1] Tests: match by email then number; conflicts not matched; manual link kept; HR fields read-only; threshold hold
-- [ ] T005 [US1] HR REST and SFTP packs, sync use case, results page
+- [x] T004 [P] [US1] Tests: match by email then number; conflicts not matched; manual link kept; HR fields read-only; threshold hold
+- [x] T005 [US1] HR REST and SFTP packs, sync use case, results page
 
 ## Phase 3: User Stories 2 to 4, lifecycle (P1)
 - [ ] T006 [P] [US2] [US3] [US4] Tests: held hires and lead time; cancelled hire; transfer applies together; unmapped code holds one change; leaver disabled on time; immediate termination within 15 minutes; rehire
 - [ ] T007 Lifecycle events and consumers in 002, 003, 010 and 022
-- [ ] T008 Org code mapping and proposed units
+- [ ] T008 Org code mapping and proposed units, with their migration (forced RLS)
 
 ## Phase 4: User Stories 5 to 7 (P1, P2)
 - [ ] T009 [P] [US5] Tests: prefill, read-only server values, classification check, live read when stale

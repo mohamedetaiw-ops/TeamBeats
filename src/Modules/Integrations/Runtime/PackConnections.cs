@@ -138,6 +138,12 @@ public sealed class PackConnections(
         {
             throw AppException.Conflict("conflict.integrations.connection_limit");
         }
+        // One HR system is the source of truth for a tenant (spec 019): a second HR connection would fight the first.
+        if (Hr.HrSync.PackKinds.Contains(pack.Kind)
+            && await session.ScalarAsync<long>("select count(*) from integrations.connection where kind = any(@kinds)", new { kinds = Hr.HrSync.PackKinds.ToArray() }, ct) > 0)
+        {
+            throw AppException.Conflict("conflict.hr.one_connection");
+        }
         var empty = JsonDocument.Parse("{}").RootElement;
         var settings = pack.CarryOver(empty, await pack.ValidateSettingsAsync(request.Settings ?? empty, ct), clock.UtcNow);
         var id = Ids.New();

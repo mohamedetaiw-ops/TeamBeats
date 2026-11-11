@@ -56,7 +56,7 @@ export type Location = { key: string; label: string; names: Names; people: numbe
 export const visibilities = ["everyone", "subtree", "managers_hr", "hr", "private"] as const;
 
 /** Built-in field keys; custom fields start with `custom.` and carry their own names. */
-export const builtInFields = ["email", "jobTitle", "department", "office", "workPhone", "mobilePhone", "preferredLanguage", "timeZone", "hireDate", "employeeNumber"] as const;
+export const builtInFields = ["email", "jobTitle", "department", "office", "workPhone", "mobilePhone", "preferredLanguage", "timeZone", "hireDate", "employeeNumber", "grade", "costCentre", "employmentType"] as const;
 
 export function localName(names: Names | null | undefined, locale: string, fallback = ""): string {
   if (!names) return fallback;

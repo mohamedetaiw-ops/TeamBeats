@@ -9,14 +9,15 @@ namespace TeamBeats.Modules.Integrations.Runtime;
 /// retry after a timeout is safe. <paramref name="BusinessErrors"/> are the codes a route can branch on.
 /// <paramref name="Inputs"/> are the fields a caller may map (FR-008, FR-009); the pack sends nothing else. Actions with
 /// no declared inputs (a webhook delivery, for example) cannot be used as a route step or an
-/// agent tool.
+/// agent tool. <paramref name="JobTimeout"/> lets a long read (a full HR sync) run longer than the usual job attempt.
 /// </summary>
 public sealed record ConnectorActionDefinition(
     string Name,
     string SideEffect,
     bool Idempotent,
     IReadOnlyList<string> BusinessErrors,
-    IReadOnlyList<ConnectorInput>? Inputs = null);
+    IReadOnlyList<ConnectorInput>? Inputs = null,
+    TimeSpan? JobTimeout = null);
 
 /// <summary>What a pack learns about the connection it calls. Secrets stay references; the pack reads them through the secret store.</summary>
 public sealed record PackConnection(Guid TenantId, Guid Id, string Kind, int PackVersion, string? ExternalId, JsonElement Settings);

@@ -226,7 +226,7 @@ public static class ClockCsv
     }
 
     /// <summary>Records with their first line number; quoted fields may hold the delimiter, quotes and line breaks.</summary>
-    private static IEnumerable<(int Line, List<string> Fields)> Records(string text, char delimiter)
+    internal static IEnumerable<(int Line, List<string> Fields)> Records(string text, char delimiter)
     {
         var fields = new List<string>();
         var field = new StringBuilder();

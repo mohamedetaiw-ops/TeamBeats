@@ -38,6 +38,12 @@ public static class Capabilities
     public const string IntegrationWebhooks = "integration.webhooks";
     public const string IntegrationOnPremAgent = "integration.onprem_agent";
     public const string IntegrationMaxConnections = "integration.max_connections";
+
+    // Spec 019 section 9: HR sync, payslips and form prefill are Workplace Plus and above; named packs are R3.
+    public const string HrIntegration = "hr.integration";
+    public const string HrPayslips = "hr.payslips";
+    public const string HrFormPrefill = "hr.form_prefill";
+    public const string HrNamedPacks = "hr.named_packs";
     public const string AnalyticsCore = "analytics.core";
     public const string AnalyticsAdvanced = "analytics.advanced";
     public const string AnalyticsExport = "analytics.export";

@@ -23,6 +23,7 @@ public sealed class EmployeeNumbers(IDbSession session, ProfileStore store) : IE
         {
             FieldSources.Directory => "directory_values",
             FieldSources.Person => "own_values",
+            FieldSources.Hr => "hr_values",
             _ => "admin_values",
         };
         var rows = await session.QueryAsync(

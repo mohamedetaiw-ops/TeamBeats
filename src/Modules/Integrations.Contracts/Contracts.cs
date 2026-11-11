@@ -699,3 +699,84 @@ public interface IFinanceHandOff
 }
 
 public sealed record FinanceHandOffChanged(string SourceType, Guid SourceId, string State, string? ExternalReference, string? PaymentStatus) : IIntegrationEvent;
+
+/// <summary>
+/// The canonical HR employee (spec 019 section 2). <paramref name="RecordId"/> is the HR system's own ID of the person;
+/// <paramref name="Status"/> is one of <see cref="HrEmployeeStatuses"/>. Names are kept in both languages when HR has them.
+/// </summary>
+public sealed record HrEmployee(
+    string RecordId,
+    string? EmployeeNumber,
+    string? WorkEmail,
+    string? NameEn,
+    string? NameAr,
+    string Status,
+    DateOnly? HireDate,
+    DateOnly? TerminationDate,
+    string? JobTitle,
+    string? Grade,
+    string? EmploymentType,
+    string? CostCentre,
+    string? Location,
+    string? OrgUnitCode,
+    string? ManagerEmployeeNumber);
+
+public static class HrEmployeeStatuses
+{
+    public const string Active = "active";
+    public const string Terminated = "terminated";
+
+    public static readonly IReadOnlyList<string> All = [Active, Terminated];
+}
+
+/// <summary>The canonical HR fields a connection maps (spec 019 section 2), as their names in mappings.</summary>
+public static class HrFields
+{
+    public const string RecordId = "record_id";
+    public const string EmployeeNumber = "employee_number";
+    public const string WorkEmail = "work_email";
+    public const string NameEn = "name_en";
+    public const string NameAr = "name_ar";
+    public const string Status = "status";
+    public const string HireDate = "hire_date";
+    public const string TerminationDate = "termination_date";
+    public const string JobTitle = "job_title";
+    public const string Grade = "grade";
+    public const string EmploymentType = "employment_type";
+    public const string CostCentre = "cost_centre";
+    public const string Location = "location";
+    public const string OrgUnitCode = "org_unit_code";
+    public const string ManagerEmployeeNumber = "manager_employee_number";
+
+    public static readonly IReadOnlyList<string> All =
+    [
+        RecordId, EmployeeNumber, WorkEmail, NameEn, NameAr, Status, HireDate, TerminationDate, JobTitle, Grade, EmploymentType, CostCentre, Location,
+        OrgUnitCode, ManagerEmployeeNumber,
+    ];
+
+    /// <summary>A mapping must name these; everything else is optional.</summary>
+    public static readonly IReadOnlyList<string> Required = [RecordId, Status];
+}
+
+/// <summary>A matched person's HR record as other modules see it: the mapped fields only, by canonical name.</summary>
+public sealed record HrRecordView(Guid UserId, string RecordId, IReadOnlyDictionary<string, string> Fields);
+
+/// <summary>
+/// HR records of matched people (spec 019 FR-001, FR-003) for the modules that own what HR feeds: profiles (spec 010)
+/// read the HR fields here after each applied sync. Only the canonical contract is visible; HR system DTOs stay in the
+/// packs. Without the <c>hr.integration</c> capability nothing is returned.
+/// </summary>
+public interface IHrRecords
+{
+    /// <summary>Matched records, all of them or those of the given people.</summary>
+    Task<IReadOnlyList<HrRecordView>> MatchedAsync(IReadOnlyCollection<Guid>? userIds = null, CancellationToken ct = default);
+
+    /// <summary>The canonical fields the tenant's HR connection maps, so their owners can mark them as from HR.</summary>
+    Task<IReadOnlyList<string>> MappedFieldsAsync(CancellationToken ct = default);
+}
+
+/// <summary>An HR sync applied its changes (spec 019 section 12). Counts only, never HR values.</summary>
+public sealed record HrSyncCompleted(Guid ConnectionId, Guid RunId, int Matched, int Changed) : IIntegrationEvent;
+
+/// <summary>An HR sync stopped before applying because it passed the change threshold (FR-004).</summary>
+public sealed record HrSyncHeld(Guid ConnectionId, Guid RunId, int Terminations, int Moves) : IIntegrationEvent;

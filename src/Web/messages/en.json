@@ -91,7 +91,8 @@
       "search": "Search",
       "agents": "Agents",
       "evaluation": "Evaluation",
-      "analytics": "Analytics"
+      "analytics": "Analytics",
+      "hr_integration": "HR integration"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}"
   },
@@ -1202,7 +1203,8 @@
       },
       "managed": {
         "directory": "Managed by the directory",
-        "admin": "Managed by your administrator"
+        "admin": "Managed by your administrator",
+        "hr": "Managed by your HR system"
       }
     },
     "field": {
@@ -1215,7 +1217,10 @@
       "preferredLanguage": "Preferred language",
       "timeZone": "Time zone",
       "hireDate": "Hire date",
-      "employeeNumber": "Employee number"
+      "employeeNumber": "Employee number",
+      "grade": "Grade",
+      "costCentre": "Cost centre",
+      "employmentType": "Employment type"
     },
     "visibility": {
       "everyone": "Everyone",
@@ -1227,7 +1232,8 @@
     "source": {
       "directory": "Directory",
       "person": "The person",
-      "admin": "Administrator"
+      "admin": "Administrator",
+      "hr": "HR system"
     },
     "admin": {
       "title": "People directory",
@@ -4128,7 +4134,9 @@
       "slack": "Slack",
       "clock_import": "Clock data import",
       "finance_rest": "Finance hand-off",
-      "google_workspace": "Google Workspace"
+      "google_workspace": "Google Workspace",
+      "hr_rest": "HR system (REST API)",
+      "hr_sftp": "HR system (SFTP and CSV)"
     },
     "status": {
       "healthy": "Healthy",
@@ -4154,7 +4162,9 @@
       "slack": "Send notifications as Slack direct messages to people who link their account, and share content links to a channel.",
       "clock_import": "Reads clock data files from an SFTP server every day, or takes CSV files you upload, and matches each row to a person by employee number.",
       "finance_rest": "Sends approved expense claims to your finance system over REST and reads back their payment status.",
-      "google_workspace": "Reads users and groups for directory sync, and files in chosen shared drives, through a service account with domain-wide delegation."
+      "google_workspace": "Reads users and groups for directory sync, and files in chosen shared drives, through a service account with domain-wide delegation.",
+      "hr_rest": "Reads the full employee list from an HR system's REST API every night.",
+      "hr_sftp": "Reads the newest full employee export that an HR system drops on an SFTP server every night."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -4825,6 +4835,62 @@
       "directoryIntro": "Make this connection the source of directory sync. Users are matched by their Google ID, and anyone Google no longer lists loses access at the next sync, within the deletion threshold.",
       "useForDirectory": "Use for directory sync",
       "directoryUsed": "Directory sync now reads from this Google Workspace."
+    },
+    "hr": {
+      "addRestTitle": "Add an HR system by REST API",
+      "addSftpTitle": "Add an HR system by SFTP file",
+      "addIntro": "Bring employee records from your HR system into TeamBeats. Each sync reads every employee, matches them to people by work email then employee number, and fills the profile fields you map, which become read-only and labelled from HR. A tenant has one HR connection. Matching, held runs and links made by hand are on the HR integration page.",
+      "restFormLabel": "HR REST settings",
+      "sftpFormLabel": "HR SFTP settings",
+      "listTitle": "Employee list",
+      "employeesPath": "Employees path",
+      "employeesPathHint": "The path after the address that lists employees, for example /v1/employees.",
+      "recordsPath": "Where the records are",
+      "pathHint": "A JSON path in the answer, for example $.items. Leave it empty when the answer is the list itself.",
+      "paging": "Paging",
+      "pagings": {
+        "none": "One answer holds every employee",
+        "page": "Page numbers",
+        "next": "A link to the next page"
+      },
+      "pageParam": "Page number parameter",
+      "pageSizeParam": "Page size parameter",
+      "pageSize": "Records per page",
+      "nextPath": "Where the next page link is",
+      "nextPathHint": "A JSON path in the answer, for example $.links.next. The link must be on the same host over https.",
+      "pathsHint": "For each field, the JSON path inside one record, for example $.workEmail or $.manager.number. The record ID and status are required; leave a field empty when the HR system does not have it.",
+      "fieldsTitle": "Fields",
+      "fields": {
+        "record_id": "HR record ID",
+        "status": "Employment status",
+        "work_email": "Work email",
+        "employee_number": "Employee number",
+        "name_en": "Name in English",
+        "name_ar": "Name in Arabic",
+        "hire_date": "Hire date",
+        "termination_date": "Termination date",
+        "job_title": "Job title",
+        "grade": "Grade",
+        "employment_type": "Employment type",
+        "cost_centre": "Cost centre",
+        "location": "Location",
+        "org_unit_code": "Organization unit code",
+        "manager_employee_number": "Manager's employee number"
+      },
+      "statusesTitle": "Status and schedule",
+      "statuses": {
+        "active": "Words for active",
+        "terminated": "Words for terminated"
+      },
+      "wordsHint": "The HR system's own words, separated by commas, for example Active, On leave.",
+      "dateFormat": "Date format",
+      "dateFormatHint": "Leave empty for ISO dates like 2026-03-15. Otherwise, for example dd/MM/yyyy.",
+      "syncAt": "Nightly sync time",
+      "syncAtHint": "Local time in the time zone below.",
+      "timeZone": "Time zone",
+      "timeZoneHint": "An IANA time zone, for example Asia/Dubai.",
+      "patternHint": "Which files hold the export, with * for any characters, for example employees_*.csv. Each sync reads only the newest one.",
+      "openIntegration": "Open the HR integration page"
     }
   },
   "components_gallery": {
@@ -5601,6 +5667,121 @@
       "title": "Profile",
       "hint": "Your photo, contact details and who can see them.",
       "link": "Edit my profile"
+    }
+  },
+  "hr_integration": {
+    "title": "HR integration",
+    "intro": "Employee records from your HR system, how they match people in TeamBeats, and the runs that brought them in. The HR connection itself is set up in Connections.",
+    "notInPackage": "HR integration is not part of your plan, or you cannot manage it.",
+    "failed": "That did not work. Try again in a moment.",
+    "working": "Working",
+    "cancel": "Cancel",
+    "never": "Never",
+    "none": "None",
+    "kinds": {
+      "hr_rest": "REST API",
+      "hr_sftp": "SFTP file"
+    },
+    "status": {
+      "title": "Status",
+      "connection": "Connection:",
+      "noConnection": "There is no HR connection yet.",
+      "addConnection": "Add one in Connections",
+      "lastRun": "Last run {at}: {status}",
+      "noRun": "No sync has run yet.",
+      "syncNow": "Sync now",
+      "queued": "A sync is on its way. Its results appear here when it finishes."
+    },
+    "counts": {
+      "matched": "Matched",
+      "unmatched": "Not matched",
+      "stale": "Not matched for over 30 days",
+      "conflicts": "Conflicts"
+    },
+    "runStatus": {
+      "applied": "Applied",
+      "held": "Held for review",
+      "confirmed": "Confirmed and applied",
+      "discarded": "Discarded",
+      "superseded": "Replaced by a newer run"
+    },
+    "held": {
+      "title": "A run is waiting for you",
+      "intro": "This run would end {terminations} employments and move {moves} people, out of {active} active matched employees. That is more than your {threshold} percent threshold, so nothing has changed yet.",
+      "read": "Read {at}, {total} records.",
+      "confirm": "Apply this run",
+      "confirmQuestion": "Apply every change in this run, including the terminations and moves?",
+      "confirmYes": "Yes, apply it",
+      "confirmed": "The run is applied.",
+      "discard": "Discard this run",
+      "discarded": "The run is discarded. Nothing changed."
+    },
+    "records": {
+      "title": "HR records",
+      "state": "Show",
+      "search": "Find a record",
+      "searchHint": "Record ID, employee number, email or name.",
+      "find": "Find",
+      "empty": "No records here.",
+      "record": "Record",
+      "email": "Work email",
+      "number": "Employee number",
+      "seen": "Seen",
+      "seenRange": "First {first}, last {last}",
+      "match": "Person in TeamBeats",
+      "linkTo": "Person for {name}",
+      "link": "Link",
+      "linked": "The record is linked. The person's HR fields fill in now.",
+      "unlink": "Unlink",
+      "unlinked": "The record is unlinked and stays unlinked until you link it again.",
+      "more": "Show more"
+    },
+    "states": {
+      "unmatched": "Not matched",
+      "stale": "Not matched for over 30 days",
+      "conflict": "Conflicts",
+      "matched": "Matched"
+    },
+    "rules": {
+      "work_email": "By work email",
+      "employee_number": "By employee number",
+      "manual": "Linked by hand"
+    },
+    "settings": {
+      "title": "Matching",
+      "matchRule": "Match records to people",
+      "matchRuleHint": "Links made by hand are always kept.",
+      "ruleOptions": {
+        "work_email_then_employee_number": "By work email, then by employee number",
+        "employee_number_then_work_email": "By employee number, then by work email",
+        "work_email": "By work email only",
+        "employee_number": "By employee number only"
+      },
+      "threshold": "Hold a run that changes more than this percent",
+      "thresholdHint": "Terminations and moves together, as a percent of active matched employees. A held run waits for you to apply or discard it.",
+      "save": "Save",
+      "saved": "Matching settings saved."
+    },
+    "runs": {
+      "title": "Run history",
+      "started": "Started",
+      "status": "Result",
+      "total": "Records",
+      "changed": "Changed",
+      "refused": "Refused records",
+      "noId": "A record",
+      "moreProblems": "{count, plural, one {and # more} other {and # more}}"
+    },
+    "problems": {
+      "missing_id": "has no record ID",
+      "duplicate_id": "appears more than once",
+      "bad_status": "has a status that is not mapped",
+      "bad_date": "has a date that cannot be read",
+      "bad_email": "has an email that is not valid",
+      "too_long": "has a value that is too long",
+      "manager_loop": "has a manager chain that loops back",
+      "self_manager": "is their own manager",
+      "other": "was refused"
     }
   }
 }

@@ -2,13 +2,14 @@ namespace TeamBeats.Modules.People;
 
 /// <summary>
 /// Where a field's value comes from (spec 010 FR-002): the directory, the person themselves (employee-editable) or an
-/// administrator. HR system ownership arrives with spec 019 in R2.
+/// administrator, or the HR system (spec 019 FR-003). HR values are read-only in TeamBeats like directory values.
 /// </summary>
 public static class FieldSources
 {
     public const string Directory = "directory";
     public const string Person = "person";
     public const string Admin = "admin";
+    public const string Hr = "hr";
 }
 
 /// <summary>
@@ -47,28 +48,50 @@ public static class ProfileFields
     public const string TimeZone = "timeZone";
     public const string HireDate = "hireDate";
     public const string EmployeeNumber = "employeeNumber";
+    public const string Grade = "grade";
+    public const string CostCentre = "costCentre";
+    public const string EmploymentType = "employmentType";
 
     public const int MaxCustomFields = 10;
     public const int MaxValueLength = 200;
     public const string CustomPrefix = "custom.";
 
     private static readonly string[] Synced = [FieldSources.Directory, FieldSources.Person, FieldSources.Admin];
+    private static readonly string[] SyncedOrHr = [FieldSources.Directory, FieldSources.Hr, FieldSources.Person, FieldSources.Admin];
     private static readonly string[] Local = [FieldSources.Person, FieldSources.Admin];
+    private static readonly string[] HrOrAdmin = [FieldSources.Hr, FieldSources.Admin];
 
     /// <summary>Email always comes from the account; the tenant sets only who sees it.</summary>
     public static readonly IReadOnlyList<FieldDefinition> BuiltIn =
     [
         new(Email, FieldSources.Directory, FieldVisibility.Everyone, [FieldSources.Directory]),
-        new(JobTitle, FieldSources.Directory, FieldVisibility.Everyone, Synced),
+        new(JobTitle, FieldSources.Directory, FieldVisibility.Everyone, SyncedOrHr),
         new(Department, FieldSources.Directory, FieldVisibility.Everyone, Synced),
-        new(Office, FieldSources.Directory, FieldVisibility.Everyone, Synced),
+        new(Office, FieldSources.Directory, FieldVisibility.Everyone, SyncedOrHr),
         new(WorkPhone, FieldSources.Directory, FieldVisibility.Everyone, Synced, IsPhone: true),
         new(MobilePhone, FieldSources.Directory, FieldVisibility.ManagersAndHr, Synced, IsPhone: true),
         new(PreferredLanguage, FieldSources.Directory, FieldVisibility.Everyone, Synced),
         new(TimeZone, FieldSources.Person, FieldVisibility.Everyone, Local),
-        new(HireDate, FieldSources.Directory, FieldVisibility.ManagersAndHr, Synced, IsDate: true),
-        new(EmployeeNumber, FieldSources.Directory, FieldVisibility.Hr, Synced),
+        new(HireDate, FieldSources.Directory, FieldVisibility.ManagersAndHr, SyncedOrHr, IsDate: true),
+        new(EmployeeNumber, FieldSources.Directory, FieldVisibility.Hr, SyncedOrHr),
+        // Spec 019: employment facts only HR holds. Shown to HR officers in scope and administrators by default; the
+        // tenant may widen them (spec 019 section 17: nothing visible to managers by default).
+        new(Grade, FieldSources.Hr, FieldVisibility.Hr, HrOrAdmin),
+        new(CostCentre, FieldSources.Hr, FieldVisibility.Hr, HrOrAdmin),
+        new(EmploymentType, FieldSources.Hr, FieldVisibility.Hr, HrOrAdmin),
     ];
+
+    /// <summary>The profile field each canonical HR field feeds (spec 019 FR-003).</summary>
+    public static readonly IReadOnlyDictionary<string, string> FromHr = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["employee_number"] = EmployeeNumber,
+        ["job_title"] = JobTitle,
+        ["hire_date"] = HireDate,
+        ["location"] = Office,
+        ["grade"] = Grade,
+        ["cost_centre"] = CostCentre,
+        ["employment_type"] = EmploymentType,
+    };
 
     public static readonly IReadOnlyDictionary<string, FieldDefinition> ByKey = BuiltIn.ToDictionary(f => f.Key, StringComparer.Ordinal);
 

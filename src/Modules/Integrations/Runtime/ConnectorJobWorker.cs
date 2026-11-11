@@ -104,11 +104,13 @@ public sealed class ConnectorJobWorker(IServiceScopeFactory scopes, IClock clock
 
 /// <summary>
 /// The worker's view of the runtime: on every tick due attempts, sync agent status, expired payload captures, the daily
-/// clock data imports and finance payment status checks; once a day the purge and the credential expiry check.
+/// clock data imports, the nightly HR sync and finance payment status checks; once a day the purge and the credential
+/// expiry check.
 /// </summary>
 public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history, PackConnections connections, Webhooks.InboundWebhooks inbound,
     SyncAgents.SyncAgentService agents, PayloadCapture capture,
-    ClockData.ClockImports clockImports, ClockData.ClockImportStore clockData, Finance.FinanceHandOffs finance, Webhooks.KpiFeed kpis)
+    ClockData.ClockImports clockImports, ClockData.ClockImportStore clockData, Finance.FinanceHandOffs finance, Webhooks.KpiFeed kpis,
+    Hr.HrSchedule hrSchedule, Hr.HrSync hr)
 {
     /// <summary>Due attempts run in one transaction.</summary>
     public const int BatchSize = 50;
@@ -118,6 +120,7 @@ public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history, 
         await agents.RefreshAsync(now, ct);
         await capture.PurgeAsync(now, ct);
         await clockImports.ScheduleDueAsync(now, ct);
+        await hrSchedule.ScheduleDueAsync(now, ct);
         await finance.CheckDueAsync(now, 20, ct);
         return await runtime.RunDueAsync(now, Math.Min(limit, BatchSize), ct);
     }
@@ -132,5 +135,6 @@ public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history, 
         await inbound.PurgeAsync(now, ct);
         await clockData.PurgeAsync(now, ct);
         await kpis.PurgeAsync(now, ct);
+        await hr.PurgeAsync(now, ct);
     }
 }

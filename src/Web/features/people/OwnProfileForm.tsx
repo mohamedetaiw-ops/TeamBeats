@@ -14,7 +14,7 @@ import "./people.css";
 
 /** The groups of the profile page (spec 036 DLS-063); custom fields and any field not listed go to Other. */
 const groups: { key: "work" | "contact" | "preferences" | "other"; fields: readonly string[] }[] = [
-  { key: "work", fields: ["jobTitle", "department", "office", "employeeNumber", "hireDate"] },
+  { key: "work", fields: ["jobTitle", "department", "office", "employeeNumber", "hireDate", "grade", "costCentre", "employmentType"] },
   { key: "contact", fields: ["email", "workPhone", "mobilePhone"] },
   { key: "preferences", fields: ["preferredLanguage", "timeZone"] },
   { key: "other", fields: [] },

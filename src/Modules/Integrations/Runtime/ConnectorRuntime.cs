@@ -160,7 +160,7 @@ public sealed class ConnectorRuntime(
         }
         var input = JsonDocument.Parse(run.Input ?? "{}").RootElement;
         var attemptNo = run.Attempts + 1;
-        var attempt = await AttemptAsync(resolved!, input, run.Key, attemptNo, RuntimePolicy.JobAttemptTimeout, waitForRate: false, ct);
+        var attempt = await AttemptAsync(resolved!, input, run.Key, attemptNo, resolved!.Action.JobTimeout ?? RuntimePolicy.JobAttemptTimeout, waitForRate: false, ct);
         var duration = run.DurationMs + (int)attempt.Milliseconds;
         if (attempt.NotCalled == ConnectorErrorClasses.CircuitOpen)
         {

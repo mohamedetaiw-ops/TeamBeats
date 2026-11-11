@@ -159,7 +159,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest", "google_workspace"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -426,3 +426,96 @@ export type InboundCounts = {
 
 export const WEBHOOK_EVENTS = ["ContentPublished", "ProcessInstanceCompleted", "RequestCompleted", "RequestReturned", "RequestSubmitted", "UserTaskCompleted", "UserTaskCreated"] as const;
 export const WEBHOOK_TARGETS = ["event", "message", "kpi"] as const;
+
+/** The canonical HR fields a connection maps (spec 019 section 2); the record ID and status are required. */
+export const HR_FIELDS = [
+  "record_id",
+  "status",
+  "work_email",
+  "employee_number",
+  "name_en",
+  "name_ar",
+  "hire_date",
+  "termination_date",
+  "job_title",
+  "grade",
+  "employment_type",
+  "cost_centre",
+  "location",
+  "org_unit_code",
+  "manager_employee_number",
+] as const;
+export const HR_REQUIRED = ["record_id", "status"] as const;
+export const HR_STATUSES = ["active", "terminated"] as const;
+export const HR_PAGING = ["none", "page", "next"] as const;
+export const HR_AUTH = ["api_key", "bearer", "basic", "oauth_client_credentials"] as const;
+export const HR_PACK_KINDS = ["hr_rest", "hr_sftp"] as const;
+
+/** Mapping shared by the HR REST and SFTP packs (spec 019 FR-016). */
+export type HrMappingSettings = {
+  fields: Record<string, string> | null;
+  statusValues: Record<string, string[]> | null;
+  dateFormat: string | null;
+  syncAt: string | null;
+  timeZone: string | null;
+};
+export type HrRestSettings = HrMappingSettings & {
+  employeesPath: string | null;
+  recordsPath: string | null;
+  paging: string | null;
+  pageParam: string | null;
+  pageSizeParam: string | null;
+  pageSize: number | null;
+  nextPath: string | null;
+};
+export type HrSftpSettings = HrMappingSettings & {
+  sftp: ClockSettings["sftp"];
+  delimiter: string | null;
+  hasHeader: boolean | null;
+};
+
+export type HrProblem = { recordId: string | null; reason: string };
+export type HrRun = {
+  id: string;
+  connectionId: string;
+  status: "applied" | "held" | "confirmed" | "discarded" | "superseded";
+  startedAt: string;
+  finishedAt: string | null;
+  total: number;
+  matched: number;
+  unmatched: number;
+  conflicts: number;
+  refused: number;
+  changed: number;
+  terminations: number;
+  moves: number;
+  activeBefore: number;
+  problems: HrProblem[];
+  decidedBy: string | null;
+  decidedAt: string | null;
+};
+export type HrOverview = {
+  settings: { matchRule: string[]; changeThresholdPercent: number; version: number };
+  connection: { id: string; kind: string; displayName: string; enabled: boolean } | null;
+  counts: { matched: number; unmatched: number; stale: number; conflicts: number };
+  lastRun: HrRun | null;
+  heldRun: HrRun | null;
+};
+export const HR_STATES = ["unmatched", "stale", "conflict", "matched"] as const;
+export const HR_MATCH_RULES = ["work_email", "employee_number"] as const;
+export const HR_PROBLEMS = ["missing_id", "duplicate_id", "bad_status", "bad_date", "bad_email", "too_long", "manager_loop", "self_manager"] as const;
+export type HrRecord = {
+  recordId: string;
+  employeeNumber: string | null;
+  workEmail: string | null;
+  nameEn: string | null;
+  nameAr: string | null;
+  state: string;
+  matchRule: string | null;
+  userId: string | null;
+  userName: string | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  lastRunId: string;
+};
+export type HrRecordPage = { items: HrRecord[]; nextCursor: string | null };

@@ -148,6 +148,13 @@ public static class AuditActions
     // 022
     public const string HrCalendarChanged = "hr.calendar_changed";
 
+    // 019
+    public const string HrSettingsChanged = "hr.settings_changed";
+    public const string HrMatchLinked = "hr.match_linked";
+    public const string HrMatchUnlinked = "hr.match_unlinked";
+    public const string HrSyncHeld = "hr.sync_held";
+    public const string HrSyncConfirmed = "hr.sync_confirmed";
+
     // 010
     public const string PeopleVisibilityChanged = "people.visibility_changed";
     public const string PeopleFieldSourceChanged = "people.field_source_changed";
@@ -335,7 +342,7 @@ public static class AuditActions
         TemplateReleased, TemplateDistributed, TemplateDeprecated, RegionLockChanged,
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
-        HrCalendarChanged,
+        HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
