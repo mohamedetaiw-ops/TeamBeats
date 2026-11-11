@@ -301,6 +301,8 @@ function CalendarEditor({ calendar, title, run, onSaved, onDeleted }: { calendar
         </fieldset>
       </form>
 
+      <PeriodsEditor calendar={calendar} editable={editable} run={run} saved={saved} />
+
       {editable && !calendar.isTenantDefault ? (
         <ConfirmAction
           label={t("delete")}
@@ -311,6 +313,108 @@ function CalendarEditor({ calendar, title, run, onSaved, onDeleted }: { calendar
         />
       ) : null}
     </section>
+  );
+}
+
+type PeriodRow = { key: string; en: string; ar: string; start: string; end: string; hours: string };
+
+/** Reduced hours periods such as Ramadan (spec 022 FR-007, R2): working days in a period have fewer working hours. */
+function PeriodsEditor({ calendar, editable, run, saved }: { calendar: Calendar; editable: boolean; run: Run; saved: (r: Response) => Promise<void> }) {
+  const t = useTranslations("calendars");
+  const [rows, setRows] = useState<PeriodRow[]>(
+    (calendar.periods ?? []).map((p) => ({ key: p.id, en: p.name.en ?? "", ar: p.name.ar ?? "", start: p.start, end: p.end, hours: String(p.hours) })),
+  );
+  const setRow = (key: string, change: Partial<PeriodRow>) => setRows((r) => r.map((x) => (x.key === key ? { ...x, ...change } : x)));
+  return (
+    <form
+      className="calendars-form"
+      aria-labelledby="calendar-periods-title"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void run(
+          () =>
+            fetch(
+              `/api/v1/hr/calendars/${calendar.id}/periods`,
+              json("PUT", { periods: rows.map((r) => ({ name: { en: r.en, ar: r.ar }, start: r.start, end: r.end, hours: Number(r.hours) })) }, calendar.eTag),
+            ),
+          t("periods.saved"),
+          saved,
+        );
+      }}
+    >
+      <h3 id="calendar-periods-title">{t("periods.title")}</h3>
+      <p className="field-hint">{t("periods.hint")}</p>
+      <fieldset disabled={!editable} className="calendars-plain">
+        <div className="calendars-table-wrap">
+          <table className="calendars-table">
+            <caption className="visually-hidden">{t("periods.title")}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{t("nameEn")}</th>
+                <th scope="col">{t("nameAr")}</th>
+                <th scope="col">{t("periods.start")}</th>
+                <th scope="col">{t("periods.end")}</th>
+                <th scope="col">{t("periods.hours")}</th>
+                <th scope="col">{t("holidays.actions")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6}>{t("periods.none")}</td>
+                </tr>
+              ) : null}
+              {rows.map((r, i) => (
+                <tr key={r.key}>
+                  <td>
+                    <input lang="en" dir="ltr" aria-label={t("periods.nameEnFor", { number: i + 1 })} value={r.en} onChange={(e) => setRow(r.key, { en: e.target.value })} />
+                  </td>
+                  <td>
+                    <input lang="ar" dir="rtl" aria-label={t("periods.nameArFor", { number: i + 1 })} value={r.ar} onChange={(e) => setRow(r.key, { ar: e.target.value })} />
+                  </td>
+                  <td>
+                    <input type="date" aria-label={t("periods.startFor", { number: i + 1 })} value={r.start} onChange={(e) => setRow(r.key, { start: e.target.value })} />
+                  </td>
+                  <td>
+                    <input type="date" aria-label={t("periods.endFor", { number: i + 1 })} value={r.end} onChange={(e) => setRow(r.key, { end: e.target.value })} />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      min={0.25}
+                      max={23.75}
+                      step={0.25}
+                      inputMode="decimal"
+                      aria-label={t("periods.hoursFor", { number: i + 1 })}
+                      value={r.hours}
+                      onChange={(e) => setRow(r.key, { hours: e.target.value })}
+                    />
+                  </td>
+                  <td>
+                    <button type="button" className="button button-quiet" onClick={() => setRows((x) => x.filter((y) => y.key !== r.key))}>
+                      {t("periods.remove", { number: i + 1 })}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="calendars-actions">
+          <Button
+            onClick={() => {
+              const today = new Date().toISOString().slice(0, 10);
+              setRows((x) => [...x, { key: crypto.randomUUID(), en: "", ar: "", start: today, end: today, hours: "6" }]);
+            }}
+          >
+            {t("periods.add")}
+          </Button>
+          <Button type="submit" variant="primary">
+            {t("periods.save")}
+          </Button>
+        </div>
+      </fieldset>
+    </form>
   );
 }
 
@@ -420,6 +524,9 @@ function Preview({ units }: { units: OrgUnit[] }) {
       <p role="status" className="calendars-answer">
         {answer === null ? "" : answer === "failed" ? t("preview.failed") : t("preview.result", { count: answer.workingDays })}
       </p>
+      {answer && answer !== "failed" && answer.days.some((d) => d.reducedHours !== null) ? (
+        <p className="calendars-answer">{t("preview.reduced", { count: answer.days.filter((d) => d.reducedHours !== null).length })}</p>
+      ) : null}
     </section>
   );
 }

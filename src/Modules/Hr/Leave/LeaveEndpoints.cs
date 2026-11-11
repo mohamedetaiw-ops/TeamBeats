@@ -15,7 +15,13 @@ public static class LeaveEndpoints
 
     public static IEndpointRouteBuilder MapLeaveEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/v1/me/leave", async (LeaveRequests leave, CancellationToken ct) => Results.Ok(await leave.MineAsync(ct)))
+        // Both reads commit: with HR as the balance source they keep the balances just read as the last known (spec 019 US7).
+        app.MapGet("/api/v1/me/leave", async (LeaveRequests leave, IDbSession session, CancellationToken ct) =>
+        {
+            var mine = await leave.MineAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(mine);
+        })
             .RequireTenantUser().RequiresCapability(Capabilities.HrLeave).WithTags("Leave");
 
         var leave = app.MapGroup("/api/v1/hr/leave").RequireTenantUser().RequiresCapability(Capabilities.HrLeave).WithTags("Leave");
@@ -64,9 +70,10 @@ public static class LeaveEndpoints
 
         leave.MapGet("/ledger/{userId:guid}", async (Guid userId, LeaveLedger ledger, CancellationToken ct) => Results.Ok(await ledger.EntriesAsync(userId, ct)));
 
-        leave.MapPost("/preview", async (LeaveRequestInput input, LeaveRequests requests, ILocalizer localizer, RequestLocale locale, CancellationToken ct) =>
+        leave.MapPost("/preview", async (LeaveRequestInput input, LeaveRequests requests, ILocalizer localizer, RequestLocale locale, IDbSession session, CancellationToken ct) =>
         {
             var preview = await requests.PreviewAsync(input, ct);
+            await session.CommitAsync(ct);
             return Results.Ok(preview with { Problems = preview.Problems.Select(p => p with { Message = localizer.Get(p.Key, locale.Locale) }).ToList() });
         });
 

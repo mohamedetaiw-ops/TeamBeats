@@ -21,6 +21,12 @@ public interface IWorkingCalendar
 public sealed record HolidayDay(DateOnly Date, bool HalfDay);
 
 /// <summary>
+/// A reduced hours period on a calendar (spec 022 US2 scenario 3, for example Ramadan): working days stay working days,
+/// with <paramref name="Hours"/> working hours each. Attendance rules read it.
+/// </summary>
+public sealed record ReducedHoursPeriod(DateOnly Start, DateOnly End, decimal Hours);
+
+/// <summary>
 /// A resolved calendar at one version. Pure functions over working days; dates are calendar dates in the tenant time
 /// zone (<see cref="Today"/> converts an instant).
 /// </summary>
@@ -30,7 +36,10 @@ public sealed class WorkingCalendarSnapshot
     private readonly HashSet<DayOfWeek> _weekDays;
     private readonly Dictionary<DateOnly, bool> _holidays;
 
-    public WorkingCalendarSnapshot(Guid? calendarId, int version, IEnumerable<DayOfWeek> weekDays, IEnumerable<HolidayDay> holidays, TimeZoneInfo zone)
+    private readonly List<ReducedHoursPeriod> _periods;
+
+    public WorkingCalendarSnapshot(Guid? calendarId, int version, IEnumerable<DayOfWeek> weekDays, IEnumerable<HolidayDay> holidays, TimeZoneInfo zone,
+        IEnumerable<ReducedHoursPeriod>? periods = null)
     {
         CalendarId = calendarId;
         Version = version;
@@ -41,7 +50,14 @@ public sealed class WorkingCalendarSnapshot
         }
         _holidays = holidays.ToDictionary(h => h.Date, h => h.HalfDay);
         Zone = zone;
+        _periods = [.. (periods ?? []).OrderBy(p => p.Start)];
     }
+
+    public IReadOnlyList<ReducedHoursPeriod> Periods => _periods;
+
+    /// <summary>The reduced working hours of a working day inside a period, or null for a normal day or a day off.</summary>
+    public decimal? ReducedHours(DateOnly date) =>
+        IsWorkingDay(date) ? _periods.FirstOrDefault(p => p.Start <= date && date <= p.End)?.Hours : null;
 
     /// <summary>Null for the built-in tenant week (Monday to Friday, no holidays) before anyone saves a calendar.</summary>
     public Guid? CalendarId { get; }
@@ -119,8 +135,9 @@ public sealed class WorkingCalendarSnapshot
 /// <summary>Published on any change to a calendar, its holidays or the units it applies to (spec 022 section 12).</summary>
 public sealed record WorkingCalendarChanged(Guid? CalendarId, IReadOnlyList<DateOnly> AffectedDates, IReadOnlyList<Guid> AffectedUnits) : IIntegrationEvent;
 
-/// <summary>One leave balance of a person for a leave year: the ledger total, days held by pending requests, and what is left.</summary>
-public sealed record LeaveBalance(string TypeKey, IReadOnlyDictionary<string, string> TypeNames, int LeaveYear, decimal Balance, decimal Pending, decimal Available, string Unit);
+/// <summary>A balance for the current leave year. <see cref="Source"/> is <c>teambeats</c> or <c>hr</c>; HR balances carry the time they were read.</summary>
+public sealed record LeaveBalance(string TypeKey, IReadOnlyDictionary<string, string> TypeNames, int LeaveYear, decimal Balance, decimal Pending, decimal Available, string Unit,
+    string Source = "teambeats", DateTimeOffset? AsOf = null, bool Stale = false);
 
 /// <summary>
 /// One person away on one date (spec 022 FR-009). <see cref="TypeKey"/> is set only when the viewer may see the leave

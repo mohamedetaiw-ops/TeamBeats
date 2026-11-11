@@ -133,6 +133,32 @@ public static class HrEndpoints
             return Results.Ok(view);
         });
 
+        // The leave balance source (spec 019 US7, FR-013) and the leave hand-offs to HR.
+        api.MapGet("/leave-source", async (IAuthorizationService authz, HrLeave leave, HttpResponse response, CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            var setting = await leave.SettingAsync(ct);
+            response.Headers.ETag = HrLeave.ETag(setting.Version);
+            return Results.Ok(setting);
+        });
+
+        api.MapPut("/leave-source", async (HrLeaveSettingRequest request, HttpRequest http, HrLeave leave, IDbSession session, CancellationToken ct) =>
+        {
+            var setting = await leave.PutSettingAsync(http.Headers.IfMatch.ToString() is { Length: > 0 } tag ? tag : null, request, ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = HrLeave.ETag(setting.Version);
+            return Results.Ok(setting);
+        });
+
+        api.MapGet("/leave-handoffs", async (HrLeave leave, CancellationToken ct) => Results.Ok(await leave.ListAsync(ct)));
+
+        api.MapPost("/leave-handoffs/{id:guid}:retry", async (Guid id, HrLeave leave, IDbSession session, CancellationToken ct) =>
+        {
+            await leave.RetryAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Accepted();
+        });
+
         // Starting a run: a sync of the HR connection now, outside the nightly schedule.
         api.MapPost("/runs", async (IAuthorizationService authz, HrSchedule schedule, IDbSession session, CancellationToken ct) =>
         {

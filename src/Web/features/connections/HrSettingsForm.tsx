@@ -4,7 +4,7 @@ import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
-import { FormField } from "@/components/ui/FormField";
+import { FormField, TextAreaField } from "@/components/ui/FormField";
 import {
   CLOCK_AUTH,
   CLOCK_DELIMITERS,
@@ -118,6 +118,18 @@ export function HrRestSettingsForm({
   const [payslipRecordsPath, setPayslipRecordsPath] = useState(s?.payslipRecordsPath ?? "");
   const [payslipPdfPath, setPayslipPdfPath] = useState(s?.payslipPdfPath ?? "");
   const [payslipFields, setPayslipFields] = useState<Record<string, string>>(() => ({ ...(s?.payslipFields ?? {}) }));
+  const [leaveBalancesPath, setLeaveBalancesPath] = useState(s?.leaveBalancesPath ?? "");
+  const [leaveBalanceRecordsPath, setLeaveBalanceRecordsPath] = useState(s?.leaveBalanceRecordsPath ?? "");
+  const [leaveType, setLeaveType] = useState(s?.leaveBalanceFields?.type ?? "");
+  const [leaveBalance, setLeaveBalance] = useState(s?.leaveBalanceFields?.balance ?? "");
+  const [leaveSubmitPath, setLeaveSubmitPath] = useState(s?.leaveSubmitPath ?? "");
+  const [leaveReferencePath, setLeaveReferencePath] = useState(s?.leaveReferencePath ?? "");
+  const [leaveIdempotencyHeader, setLeaveIdempotencyHeader] = useState(s?.leaveIdempotencyHeader ?? "");
+  const [leaveTypeCodes, setLeaveTypeCodes] = useState(() =>
+    Object.entries(s?.leaveTypeCodes ?? {})
+      .map(([k, v]) => `${k}=${v}`)
+      .join("\n"),
+  );
 
   const extra = {
     fields: (
@@ -171,6 +183,34 @@ export function HrRestSettingsForm({
             </>
           ) : null}
         </fieldset>
+        <fieldset className="connections-fieldset">
+          <legend>{t("leaveTitle")}</legend>
+          <FormField label={t("leaveBalancesPath")} hint={t("leaveBalancesPathHint")} name="leaveBalancesPath" dir="ltr" value={leaveBalancesPath} onChange={(e) => setLeaveBalancesPath(e.target.value)} />
+          {leaveBalancesPath.trim() ? (
+            <>
+              <FormField label={t("leaveBalanceRecordsPath")} hint={t("pathHint")} name="leaveBalanceRecordsPath" dir="ltr" value={leaveBalanceRecordsPath} onChange={(e) => setLeaveBalanceRecordsPath(e.target.value)} />
+              <FormField label={t("leaveBalanceType")} name="leaveBalanceType" dir="ltr" required value={leaveType} onChange={(e) => setLeaveType(e.target.value)} />
+              <FormField label={t("leaveBalanceValue")} name="leaveBalanceValue" dir="ltr" required value={leaveBalance} onChange={(e) => setLeaveBalance(e.target.value)} />
+            </>
+          ) : null}
+          <FormField label={t("leaveSubmitPath")} hint={t("leaveSubmitPathHint")} name="leaveSubmitPath" dir="ltr" value={leaveSubmitPath} onChange={(e) => setLeaveSubmitPath(e.target.value)} />
+          {leaveSubmitPath.trim() ? (
+            <>
+              <FormField label={t("leaveReferencePath")} hint={t("leaveReferencePathHint")} name="leaveReferencePath" dir="ltr" value={leaveReferencePath} onChange={(e) => setLeaveReferencePath(e.target.value)} />
+              <FormField
+                label={t("leaveIdempotencyHeader")}
+                hint={t("leaveIdempotencyHeaderHint")}
+                name="leaveIdempotencyHeader"
+                dir="ltr"
+                value={leaveIdempotencyHeader}
+                onChange={(e) => setLeaveIdempotencyHeader(e.target.value)}
+              />
+            </>
+          ) : null}
+          {leaveBalancesPath.trim() || leaveSubmitPath.trim() ? (
+            <TextAreaField label={t("leaveTypeCodes")} hint={t("leaveTypeCodesHint")} name="leaveTypeCodes" dir="ltr" value={leaveTypeCodes} onChange={(e) => setLeaveTypeCodes(e.target.value)} />
+          ) : null}
+        </fieldset>
         {mapping.render(t, t("pathsHint"))}
       </>
     ),
@@ -184,6 +224,21 @@ export function HrRestSettingsForm({
         ? Object.fromEntries(Object.entries(payslipFields).map(([k, v]) => [k, v.trim()]).filter(([, v]) => v))
         : null,
       payslipPdfPath: blank(payslipsPath) ? blank(payslipPdfPath) : null,
+      leaveBalancesPath: blank(leaveBalancesPath),
+      leaveBalanceRecordsPath: blank(leaveBalancesPath) ? blank(leaveBalanceRecordsPath) : null,
+      leaveBalanceFields: blank(leaveBalancesPath) ? { type: leaveType.trim(), balance: leaveBalance.trim() } : null,
+      leaveSubmitPath: blank(leaveSubmitPath),
+      leaveReferencePath: blank(leaveSubmitPath) ? blank(leaveReferencePath) : null,
+      leaveIdempotencyHeader: blank(leaveSubmitPath) ? blank(leaveIdempotencyHeader) : null,
+      leaveTypeCodes:
+        blank(leaveBalancesPath) || blank(leaveSubmitPath)
+          ? Object.fromEntries(
+              leaveTypeCodes
+                .split("\n")
+                .map((line) => line.split("=").map((x) => x.trim()))
+                .filter((p) => p.length === 2 && p[0] && p[1]),
+            )
+          : null,
       recordsPath: blank(recordsPath),
       paging,
       pageParam: paging === "page" ? blank(pageParam) : null,

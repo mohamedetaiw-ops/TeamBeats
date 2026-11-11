@@ -152,6 +152,61 @@ public sealed class LeaveTests(TenantWorld world)
         (await (await t[user].Client.GetAsync($"{Leave}/ledger/{t[user].Id}")).ReadAsync<JsonElement>()).EnumerateArray()
             .Where(e => e.GetProperty("typeKey").GetString() == type && e.GetProperty("leaveYear").GetInt32() == year).Sum(e => e.GetProperty("delta").GetDecimal());
 
+    private Task DispatchAsync() => world.Factory.Services.GetRequiredService<TeamBeats.Messaging.OutboxDispatcher>().DispatchBatchAsync(500, CancellationToken.None);
+
+    private static async Task<JsonElement> CalendarAsync(TestTenant t, Guid id) => await (await t["admin"].Client.GetAsync($"/api/v1/hr/calendars/{id}")).ReadAsync<JsonElement>();
+
+    private static async Task SetHolidaysAsync(TestTenant t, Guid calendar, int year, params DateOnly[] dates)
+    {
+        var current = await CalendarAsync(t, calendar);
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"/api/v1/hr/calendars/{calendar}/holidays")
+        {
+            Content = JsonContent.Create(new { year, holidays = dates.Select(d => new { date = d, name = new { en = "National day", ar = "اليوم الوطني" }, halfDay = false }) }),
+        };
+        request.Headers.TryAddWithoutValidation("If-Match", $"\"v{current.GetProperty("version").GetInt32()}\"");
+        var response = await t["admin"].Client.SendAsync(request);
+        Assert.True(response.StatusCode == HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task A_holiday_added_or_removed_recounts_open_leave_gives_days_back_and_tells_the_person()
+    {
+        var t = await FreshAsync();
+        var (mon, fri) = Week(1);
+        var monas = (await SubmittedAsync(t["mona"].Client, Input("annual", mon, fri))).GetProperty("id").GetGuid();
+        await DecideAsync(t["kofi"].Client, monas, "approve");
+        var karims = (await SubmittedAsync(t["karim"].Client, Input("annual", mon, mon.AddDays(2)))).GetProperty("id").GetGuid();
+        Assert.Equal(16m, await LedgerAsync(t, "mona", "annual", mon.Year));
+
+        // A calendar with the same week for the Gulf changes nothing.
+        var created = await t["admin"].Client.PostAsJsonAsync("/api/v1/hr/calendars", new { name = new { en = "Gulf", ar = "الخليج" }, weekDays = new[] { 1, 2, 3, 4, 5 } });
+        Assert.Equal(HttpStatusCode.Created, created.StatusCode);
+        var calendar = (await created.ReadAsync<JsonElement>()).GetProperty("id").GetGuid();
+        Assert.Equal(HttpStatusCode.OK, (await t["admin"].Client.PutAsJsonAsync($"/api/v1/hr/assignments/{t.Unit("Gulf")}", new { calendarId = calendar })).StatusCode);
+        await DispatchAsync();
+        Assert.Equal(5m, (await GetAsync(t["mona"].Client, monas)).GetProperty("days").GetDecimal());
+
+        // A holiday on the Wednesday: approved leave takes a day less and gives it back; pending leave is counted again too.
+        await SetHolidaysAsync(t, calendar, mon.Year, mon.AddDays(2));
+        await DispatchAsync();
+        Assert.Equal(4m, (await GetAsync(t["mona"].Client, monas)).GetProperty("days").GetDecimal());
+        Assert.Equal(17m, await LedgerAsync(t, "mona", "annual", mon.Year));
+        Assert.Equal(2m, (await GetAsync(t["karim"].Client, karims)).GetProperty("days").GetDecimal());
+        Assert.Equal(21m, await LedgerAsync(t, "karim", "annual", mon.Year));
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.HrLeaveRecounted, monas.ToString());
+        Assert.Equal(1L, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from notifications.notification where user_id = @u and template_key = @k", ("u", t["mona"].Id), ("k", LeaveRequests.RecountedTemplate)));
+        Assert.Equal(0L, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from notifications.notification where user_id = @u and template_key = @k", ("u", t["rana"].Id), ("k", LeaveRequests.RecountedTemplate)));
+
+        // Removing it takes the day again.
+        await SetHolidaysAsync(t, calendar, mon.Year);
+        await DispatchAsync();
+        Assert.Equal(5m, (await GetAsync(t["mona"].Client, monas)).GetProperty("days").GetDecimal());
+        Assert.Equal(16m, await LedgerAsync(t, "mona", "annual", mon.Year));
+        Assert.Equal(3m, (await GetAsync(t["karim"].Client, karims)).GetProperty("days").GetDecimal());
+    }
+
     [Fact]
     public async Task A_request_shows_balance_and_overlap_names_the_replacement_and_is_approved_by_the_manager_from_the_inbox()
     {

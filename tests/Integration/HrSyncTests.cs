@@ -43,6 +43,15 @@ public sealed partial class HrSyncTests(TenantWorld world)
 
         public byte[]? Pdf { get; set; }
 
+        /// <summary>Leave balances by record ID, as HR reports them (spec 019 US7).</summary>
+        public Dictionary<string, List<Dictionary<string, object?>>> Leave { get; } = [];
+
+        /// <summary>Leave sent to HR, with the idempotency key it came with.</summary>
+        public List<(JsonElement Body, string? Key)> LeaveSent { get; } = [];
+
+        /// <summary>When set, HR answers a leave submission with this status instead of taking it.</summary>
+        public HttpStatusCode? LeaveAnswer { get; set; }
+
         /// <summary>Every path asked for, so a test can see whose records were read.</summary>
         public List<string> Asked { get; } = [];
 
@@ -60,6 +69,18 @@ public sealed partial class HrSyncTests(TenantWorld world)
             {
                 Asked.Add(sent.Uri.AbsolutePath);
             }
+            if (sent.Method == "POST" && sent.Uri.AbsolutePath == "/v1/leave-requests")
+            {
+                if (LeaveAnswer is { } refused)
+                {
+                    return FakeRestApi.Json(refused, """{"error":"not allowed"}""");
+                }
+                lock (LeaveSent)
+                {
+                    LeaveSent.Add((JsonDocument.Parse(sent.Body!).RootElement.Clone(), sent.Headers.GetValueOrDefault("Idempotency-Key")));
+                    return FakeRestApi.Json(HttpStatusCode.Created, JsonSerializer.Serialize(new { @ref = $"HR-LV-{LeaveSent.Count}" }));
+                }
+            }
             if (sent.Uri.AbsolutePath.StartsWith("/v1/employees/", StringComparison.Ordinal))
             {
                 var parts = sent.Uri.AbsolutePath["/v1/employees/".Length..].Split('/').Select(Uri.UnescapeDataString).ToArray();
@@ -68,6 +89,7 @@ public sealed partial class HrSyncTests(TenantWorld world)
                     [var id] => Employees.FirstOrDefault(e => (string?)e["id"] == id) is { } one
                         ? FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { data = one }))
                         : new HttpResponseMessage(HttpStatusCode.NotFound),
+                    [var id, "leave"] => FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { items = Leave.GetValueOrDefault(id) ?? [] })),
                     [var id, "payslips"] => FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { items = Payslips.GetValueOrDefault(id) ?? [] })),
                     [var id, "payslips", var period, "pdf"] when Pdf is not null && Payslips.GetValueOrDefault(id)?.Any(p => (string?)p["month"] == period) == true =>
                         new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Pdf) { Headers = { ContentType = new("application/pdf") } } },
@@ -111,7 +133,7 @@ public sealed partial class HrSyncTests(TenantWorld world)
         return t;
     }
 
-    private async Task<(Guid Id, FakeHr Hr)> RestConnectionAsync(TestTenant t, bool payslips = false)
+    private async Task<(Guid Id, FakeHr Hr)> RestConnectionAsync(TestTenant t, bool payslips = false, bool leave = false)
     {
         var host = $"hr-{Guid.NewGuid():N}"[..20] + ".hr.test";
         var fake = new FakeHr();
@@ -137,6 +159,13 @@ public sealed partial class HrSyncTests(TenantWorld world)
                     ? new Dictionary<string, string> { ["period"] = "$.month", ["gross"] = "$.gross", ["deductions"] = "$.deducted", ["net"] = "$.net", ["currency"] = "$.cur" }
                     : null,
                 payslipPdfPath = payslips ? "/employees/{record_id}/payslips/{period}/pdf" : null,
+                leaveBalancesPath = leave ? "/employees/{record_id}/leave" : null,
+                leaveBalanceRecordsPath = leave ? "$.items" : null,
+                leaveBalanceFields = leave ? new Dictionary<string, string> { ["type"] = "$.code", ["balance"] = "$.left" } : null,
+                leaveSubmitPath = leave ? "/leave-requests" : null,
+                leaveReferencePath = leave ? "$.ref" : null,
+                leaveIdempotencyHeader = leave ? "Idempotency-Key" : null,
+                leaveTypeCodes = leave ? new Dictionary<string, string> { ["annual"] = "AL" } : null,
                 paging = "page",
                 pageSizeParam = "size",
                 pageSize = 2,

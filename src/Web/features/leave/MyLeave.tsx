@@ -64,6 +64,7 @@ export function MyLeave() {
 
   const date = (d: string) => format.dateTime(new Date(`${d}T00:00:00Z`), { dateStyle: "medium", timeZone: "UTC" });
   const number = (n: number) => format.number(n, { maximumFractionDigits: 2 });
+  const when = (at: string) => format.dateTime(new Date(at), { dateStyle: "medium", timeStyle: "short" });
   const range = (r: LeaveRequest) => (r.start === r.end ? date(r.start) : t("range", { from: date(r.start), to: date(r.end) }));
 
   if (view.kind === "loading") return <StateView kind="loading" />;
@@ -119,6 +120,9 @@ export function MyLeave() {
                 </span>
                 <strong className="leave-balance-value">{t("balances.available", { value: number(b.available), unit: b.unit })}</strong>
                 <span className="field-hint">{t("balances.detail", { year: String(b.leaveYear), balance: number(b.balance), pending: number(b.pending) })}</span>
+                {b.source === "hr" ? (
+                  <span className="field-hint">{b.asOf ? t(b.stale ? "balances.hrStale" : "balances.hr", { at: when(b.asOf) }) : t("balances.hrNone")}</span>
+                ) : null}
               </li>
             ))}
           </ul>

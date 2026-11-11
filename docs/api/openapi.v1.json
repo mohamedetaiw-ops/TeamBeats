@@ -3277,6 +3277,73 @@
         }
       }
     },
+    "/api/v1/hr/integration/leave-source": {
+      "get": {
+        "tags": [
+          "HR integration"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "HR integration"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HrLeaveSettingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/integration/leave-handoffs": {
+      "get": {
+        "tags": [
+          "HR integration"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/integration/leave-handoffs/{id}:retry": {
+      "post": {
+        "tags": [
+          "HR integration"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/payslips": {
       "get": {
         "tags": [
@@ -5311,6 +5378,39 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/HolidaysRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/calendars/{id}/periods": {
+      "put": {
+        "tags": [
+          "HR: working calendars"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PeriodsRequest"
               }
             }
           },
@@ -16394,6 +16494,27 @@
           }
         }
       },
+      "HrLeaveSettingRequest": {
+        "required": [
+          "source",
+          "allowStaleSubmit"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "allowStaleSubmit": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
       "HrLinkRequest": {
         "required": [
           "userId"
@@ -17757,6 +17878,59 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Placement"
+            }
+          }
+        }
+      },
+      "PeriodInput": {
+        "required": [
+          "name",
+          "start",
+          "end",
+          "hours"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "start": {
+            "type": "string",
+            "format": "date"
+          },
+          "end": {
+            "type": "string",
+            "format": "date"
+          },
+          "hours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          }
+        }
+      },
+      "PeriodsRequest": {
+        "required": [
+          "periods"
+        ],
+        "type": "object",
+        "properties": {
+          "periods": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/PeriodInput"
             }
           }
         }

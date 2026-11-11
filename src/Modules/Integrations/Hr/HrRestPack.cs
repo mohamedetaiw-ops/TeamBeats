@@ -24,6 +24,11 @@ namespace TeamBeats.Modules.Integrations.Hr;
 /// Payslips (US6) are optional too: <paramref name="PayslipsPath"/> lists one employee's payslips (with <c>{record_id}</c>),
 /// <paramref name="PayslipFields"/> says where the period, gross, deductions, net and currency are in each, and
 /// <paramref name="PayslipPdfPath"/> is the PDF of one period (with <c>{record_id}</c> and <c>{period}</c>).
+/// Leave (spec 019 US7) is optional as well: <paramref name="LeaveBalancesPath"/> lists one employee's balances (with
+/// <c>{record_id}</c>), <paramref name="LeaveBalanceFields"/> says where the type and the balance are in each, and
+/// <paramref name="LeaveSubmitPath"/> takes approved leave, cancellations and changes as a POST, answering with the HR
+/// reference at <paramref name="LeaveReferencePath"/>. <paramref name="LeaveTypeCodes"/> maps TeamBeats leave type keys
+/// to HR's codes when they differ; <paramref name="LeaveIdempotencyHeader"/> makes a repeated send safe.
 /// </summary>
 public sealed record HrRestSettings(
     string? BaseUrl,
@@ -45,7 +50,14 @@ public sealed record HrRestSettings(
     string? PayslipsPath = null,
     string? PayslipRecordsPath = null,
     IReadOnlyDictionary<string, string>? PayslipFields = null,
-    string? PayslipPdfPath = null)
+    string? PayslipPdfPath = null,
+    string? LeaveBalancesPath = null,
+    string? LeaveBalanceRecordsPath = null,
+    IReadOnlyDictionary<string, string>? LeaveBalanceFields = null,
+    string? LeaveSubmitPath = null,
+    string? LeaveReferencePath = null,
+    string? LeaveIdempotencyHeader = null,
+    IReadOnlyDictionary<string, string>? LeaveTypeCodes = null)
 {
     public RestSettings Rest => new(BaseUrl!, Auth!);
 }
@@ -59,6 +71,9 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
 {
     public const string KindName = "hr_rest";
     public const string SyncEmployees = "sync_employees";
+    public const string SubmitLeave = "submit_leave";
+    public const string LeaveRefused = "leave_refused";
+    public const int MaxLeaveBalances = 200;
     public const int MaxPages = 500;
     public const int DefaultPageSize = 200;
 
@@ -73,7 +88,34 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
 
     /// <summary>A full read of 20,000 employees takes minutes, not seconds (section 15).</summary>
     public IReadOnlyList<ConnectorActionDefinition> Actions { get; } =
-        [new(SyncEmployees, ConnectorSideEffects.Read, true, [], JobTimeout: TimeSpan.FromMinutes(5))];
+    [
+        new(SyncEmployees, ConnectorSideEffects.Read, true, [], JobTimeout: TimeSpan.FromMinutes(5)),
+        new(SubmitLeave, ConnectorSideEffects.Write, false, [LeaveRefused]),
+    ];
+
+    private static readonly IReadOnlyDictionary<int, string> LeaveErrors = new Dictionary<int, string> { [400] = LeaveRefused, [409] = LeaveRefused, [422] = LeaveRefused };
+
+    /// <summary>Leave goes to HR only when the connection has a submit address; with an idempotency header a retry is safe.</summary>
+    public Task<IReadOnlyList<ConnectorActionDefinition>> ActionsForAsync(PackConnection connection, CancellationToken ct)
+    {
+        var s = Parse(connection.Settings);
+        IReadOnlyList<ConnectorActionDefinition> list = s?.LeaveSubmitPath is null
+            ? [Actions[0]]
+            : [Actions[0], Actions[1] with { Idempotent = s.LeaveIdempotencyHeader is not null }];
+        return Task.FromResult(list);
+    }
+
+    [GeneratedRegex(@"^[A-Za-z0-9-]{1,64}$")]
+    private static partial Regex HeaderName();
+
+    [GeneratedRegex(@"^[A-Za-z0-9._:-]{1,100}$")]
+    private static partial Regex Reference();
+
+    [GeneratedRegex(@"^[a-z][a-z0-9_]{0,39}$")]
+    private static partial Regex LeaveKey();
+
+    [GeneratedRegex(@"^[A-Za-z0-9._ -]{1,60}$")]
+    private static partial Regex LeaveCode();
 
     [GeneratedRegex(@"^\$(\.[A-Za-z_][A-Za-z0-9_]{0,63}|\[[0-9]{1,3}\]){1,8}$")]
     internal static partial Regex RecordPath();
@@ -119,6 +161,10 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
 
     public async Task<PackCallResult> CallAsync(PackCall call, CancellationToken ct)
     {
+        if (call.Action == SubmitLeave)
+        {
+            return await SubmitLeaveAsync(call, ct);
+        }
         if (call.Action != SyncEmployees)
         {
             return PackCallResult.Fatal(ConnectorErrorClasses.UnknownAction);
@@ -306,6 +352,113 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
         return bytes.AsSpan().StartsWith("%PDF-"u8) ? (bytes, null) : (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
     }
 
+    /// <summary>One employee's leave balances by TeamBeats type key. Null with no failure means the connection has no balances address.</summary>
+    public async Task<(IReadOnlyList<HrLeaveBalance>? Balances, PackCallResult? Failure)> ReadLeaveBalancesAsync(PackConnection connection, string recordId, CancellationToken ct)
+    {
+        if (Parse(connection.Settings) is not { LeaveBalancesPath: { } path, LeaveBalanceFields: { } fields } s)
+        {
+            return (null, null);
+        }
+        var uri = PageUri(s with { Paging = "none" }, path.Replace("{record_id}", Uri.EscapeDataString(recordId), StringComparison.Ordinal), 1, 1);
+        if (uri is null)
+        {
+            return (null, PackCallResult.Fatal(ConnectorErrorClasses.HostNotAllowed));
+        }
+        var (failure, answer) = await GetAsync(connection, s, uri, ct);
+        if (failure is not null)
+        {
+            return (null, failure);
+        }
+        if (RestDefinitions.Select(answer, s.LeaveBalanceRecordsPath ?? "$") is not { ValueKind: JsonValueKind.Array } list || list.GetArrayLength() > MaxLeaveBalances)
+        {
+            return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+        }
+        var keys = (s.LeaveTypeCodes ?? new Dictionary<string, string>()).ToDictionary(c => c.Value, c => c.Key, StringComparer.Ordinal);
+        var balances = new Dictionary<string, decimal>(StringComparer.Ordinal);
+        foreach (var item in list.EnumerateArray())
+        {
+            var code = Text(RestDefinitions.Select(item, fields["type"]))?.Trim();
+            if (code is null || !decimal.TryParse(Text(RestDefinitions.Select(item, fields["balance"])), NumberStyles.Number, CultureInfo.InvariantCulture, out var balance)
+                || Math.Abs(balance) > 100000)
+            {
+                return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+            }
+            var key = keys.TryGetValue(code, out var mapped) ? mapped : code.ToLowerInvariant();
+            if (LeaveKey().IsMatch(key))
+            {
+                balances[key] = decimal.Round(balance, 2);
+            }
+        }
+        return (balances.Select(b => new HrLeaveBalance(b.Key, b.Value)).ToList(), null);
+    }
+
+    /// <summary>
+    /// Sends one leave change to HR. The body names the employee by HR record ID and number and the type by HR's code; the
+    /// TeamBeats request ID and change number let HR tell a repeat. HR's reference comes back as the external reference.
+    /// </summary>
+    private async Task<PackCallResult> SubmitLeaveAsync(PackCall call, CancellationToken ct)
+    {
+        if (Parse(call.Connection.Settings) is not { LeaveSubmitPath: { } path } s)
+        {
+            return PackCallResult.Fatal(ConnectorErrorClasses.RequestRefused);
+        }
+        var input = call.Input;
+        string? Field(string name) => input.ValueKind == JsonValueKind.Object && input.TryGetProperty(name, out var v) ? Text(v) : null;
+        var type = Field("type");
+        if (Field("record_id") is not { } recordId || type is null || Field("request_id") is null || Field("kind") is not ("approved" or "cancelled" or "changed"))
+        {
+            return PackCallResult.Fatal(ConnectorErrorClasses.InvalidInput);
+        }
+        var body = new System.Text.Json.Nodes.JsonObject
+        {
+            ["request_id"] = Field("request_id"),
+            ["change"] = Field("change"),
+            ["kind"] = Field("kind"),
+            ["record_id"] = recordId,
+            ["employee_number"] = Field("employee_number"),
+            ["type"] = s.LeaveTypeCodes is { } codes && codes.TryGetValue(type, out var code) ? code : type,
+            ["start"] = Field("start"),
+            ["end"] = Field("end"),
+            ["start_half"] = Field("start_half") == "true",
+            ["end_half"] = Field("end_half") == "true",
+            ["days"] = decimal.TryParse(Field("days"), NumberStyles.Number, CultureInfo.InvariantCulture, out var days) ? days : 0m,
+        };
+        var baseUri = new Uri(s.BaseUrl!.TrimEnd('/') + "/");
+        var uri = new Uri(s.BaseUrl!.TrimEnd('/') + path);
+        if (uri.Scheme != Uri.UriSchemeHttps || !string.Equals(uri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase) || !await signIn.IsAllowedAsync(baseUri, ct))
+        {
+            return PackCallResult.Fatal(ConnectorErrorClasses.HostNotAllowed);
+        }
+        using var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = new StringContent(body.ToJsonString(), System.Text.Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        if (s.LeaveIdempotencyHeader is { } header)
+        {
+            // The same for every attempt at one change, so HR can tell a resend from a new change.
+            request.Headers.TryAddWithoutValidation(header, $"teambeats-leave-{Field("request_id")}-{Field("change")}");
+        }
+        if (await signIn.AuthorizeAsync(call.Connection, s.Rest, request, ct) is { } refused)
+        {
+            return refused;
+        }
+        using var client = httpClients.CreateClient(SafeHttp.ClientName);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        if (signIn.MapStatus(call.Connection, s.Rest, response, LeaveErrors) is { } failure)
+        {
+            return failure;
+        }
+        var answer = await RestSignIn.ReadJsonAsync(response, ct);
+        var reference = answer is { ValueKind: JsonValueKind.Object } json ? Text(RestDefinitions.Select(json, s.LeaveReferencePath ?? "$.id")) : null;
+        if (reference is null || !Reference().IsMatch(reference))
+        {
+            // HR may hold the leave without a reference we can use: an operator must look.
+            return PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse, mayHaveActed: true);
+        }
+        return PackCallResult.Ok(JsonSerializer.SerializeToElement(new { reference }), reference);
+    }
+
     private static string? Text(JsonElement? value) => value switch
     {
         { ValueKind: JsonValueKind.String } v => v.GetString(),
@@ -455,6 +608,54 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
                 errors.Add("payslipFields", "validation.hr.payslip_fields_required");
             }
         }
+        var balancesPath = Blank(s.LeaveBalancesPath);
+        Dictionary<string, string>? balanceFields = null;
+        if (balancesPath is not null || s.LeaveBalanceFields is { Count: > 0 })
+        {
+            if (balancesPath is null || !Template(balancesPath, ["{record_id}"]))
+            {
+                errors.Add("leaveBalancesPath", "validation.hr.leave_balances_path");
+            }
+            if (s.LeaveBalanceRecordsPath is not null && !ArrayPath().IsMatch(s.LeaveBalanceRecordsPath))
+            {
+                errors.Add("leaveBalanceRecordsPath", "validation.hr.record_path");
+            }
+            balanceFields = [];
+            foreach (var (name, at) in s.LeaveBalanceFields ?? new Dictionary<string, string>())
+            {
+                var clean = at?.Trim();
+                if (name is not ("type" or "balance") || clean is null || !RecordPath().IsMatch(clean))
+                {
+                    errors.Add($"leaveBalanceFields.{name}", "validation.hr.field_source");
+                    continue;
+                }
+                balanceFields[name] = clean;
+            }
+            if (!balanceFields.ContainsKey("type") || !balanceFields.ContainsKey("balance"))
+            {
+                errors.Add("leaveBalanceFields", "validation.hr.leave_balance_fields_required");
+            }
+        }
+        var submitPath = Blank(s.LeaveSubmitPath);
+        if (submitPath is not null && (!PathShape().IsMatch(submitPath) || submitPath.Contains("..", StringComparison.Ordinal)))
+        {
+            errors.Add("leaveSubmitPath", "validation.hr.leave_submit_path");
+        }
+        if (s.LeaveReferencePath is not null && !RecordPath().IsMatch(s.LeaveReferencePath))
+        {
+            errors.Add("leaveReferencePath", "validation.hr.record_path");
+        }
+        var idempotency = Blank(s.LeaveIdempotencyHeader);
+        if (idempotency is not null && (!HeaderName().IsMatch(idempotency) || idempotency.Equals("authorization", StringComparison.OrdinalIgnoreCase)))
+        {
+            errors.Add("leaveIdempotencyHeader", "validation.hr.leave_idempotency_header");
+        }
+        var typeCodes = (s.LeaveTypeCodes ?? new Dictionary<string, string>()).Where(c => !string.IsNullOrWhiteSpace(c.Value))
+            .ToDictionary(c => c.Key, c => c.Value.Trim(), StringComparer.Ordinal);
+        if (typeCodes.Count > 50 || typeCodes.Any(c => !LeaveKey().IsMatch(c.Key) || !LeaveCode().IsMatch(c.Value)))
+        {
+            errors.Add("leaveTypeCodes", "validation.hr.leave_type_codes");
+        }
         var fields = CheckFields(s.Fields, f => RecordPath().IsMatch(f), errors);
         var statuses = HrMapping.CheckStatusValues(s.StatusValues, errors);
         CheckSchedule(s.DateFormat, s.SyncAt, s.TimeZone, errors);
@@ -463,7 +664,9 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
             paging == "page" ? s.PageSizeParam : null, paging == "page" ? s.PageSize ?? DefaultPageSize : null, paging == "next" ? s.NextPath : null,
             fields, statuses, Blank(s.DateFormat), s.SyncAt ?? "01:00", s.TimeZone ?? "UTC",
             Blank(s.EmployeePath), Blank(s.EmployeePath) is null ? null : s.EmployeeRecordPath ?? "$",
-            payslipsPath, payslipsPath is null ? null : s.PayslipRecordsPath ?? "$", payslipsPath is null ? null : payslipFields, payslipsPath is null ? null : pdfPath);
+            payslipsPath, payslipsPath is null ? null : s.PayslipRecordsPath ?? "$", payslipsPath is null ? null : payslipFields, payslipsPath is null ? null : pdfPath,
+            balancesPath, balancesPath is null ? null : s.LeaveBalanceRecordsPath ?? "$", balancesPath is null ? null : balanceFields,
+            submitPath, submitPath is null ? null : s.LeaveReferencePath ?? "$.id", submitPath is null ? null : idempotency, typeCodes.Count == 0 ? null : typeCodes);
         return JsonSerializer.SerializeToElement(stored, JsonDefaults.Options);
     }
 

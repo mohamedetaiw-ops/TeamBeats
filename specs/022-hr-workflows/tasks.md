@@ -27,9 +27,9 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 - [x] T014 [US1] Leave page and team availability page, in English and Arabic, RTL; e2e with axe
 
 ## Slice 2: HR balances, recount and reduced hours (US1 scenario 8, FR-006, FR-008, US2 scenario 3)
-- [ ] T015 HR leave balance source and write queue (with spec 019 T013)
-- [ ] T016 Recount of approved leave on `WorkingCalendarChanged`, with notifications
-- [ ] T017 Reduced hours periods on calendars
+- [x] T015 HR leave balance source and write queue (with spec 019 T013)
+- [x] T016 Recount of approved leave on `WorkingCalendarChanged`, with notifications
+- [x] T017 Reduced hours periods on calendars
 
 ## Slice 3: Journeys (US4, US5, FR-013 to FR-018)
 - [ ] T018 Journey templates, starts from spec 019 and spec 003 events and approved resignations, rescheduling

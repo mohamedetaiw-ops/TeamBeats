@@ -163,6 +163,9 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
               </li>
             ))}
           </ul>
+          {preview.balanceSource === "hr" && preview.balanceAsOf ? (
+            <p className="field-hint">{t("fromHr", { at: format.dateTime(new Date(preview.balanceAsOf), { dateStyle: "medium", timeStyle: "short" }) })}</p>
+          ) : null}
           {preview.overlap.length > 0 ? (
             <div>
               <p className="leave-subhead">{t("overlap")}</p>

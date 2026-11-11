@@ -4,6 +4,7 @@ using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
@@ -48,7 +49,9 @@ public sealed record LeavePreview(
     IReadOnlyList<YearBalance> Years,
     bool DocumentRequired,
     IReadOnlyList<OverlapPerson> Overlap,
-    IReadOnlyList<LeaveProblem> Problems);
+    IReadOnlyList<LeaveProblem> Problems,
+    string BalanceSource = "teambeats",
+    DateTimeOffset? BalanceAsOf = null);
 
 /// <summary>A reason a request cannot go in: the resource key, and the message in the caller's language (filled in by the endpoint).</summary>
 public sealed record LeaveProblem(string Key, string Message);
@@ -78,7 +81,9 @@ public sealed record LeaveRequestView(
     DateTimeOffset CreatedAt,
     DateTimeOffset? DecidedAt,
     LeaveRequestRights Rights,
-    IReadOnlyList<OverlapPerson>? Overlap = null);
+    IReadOnlyList<OverlapPerson>? Overlap = null,
+    string? HrState = null,
+    string? HrReference = null);
 
 public sealed record LeaveRequestRights(bool Cancel, bool Shorten, bool AnswerReplacement, bool NameReplacement, bool Decide);
 
@@ -98,7 +103,8 @@ public sealed record ReplacementChange(Guid? UserId);
 internal sealed record LeaveRow(
     Guid Id, string Number, Guid UserId, Guid FiledBy, Guid TypeId, Guid? OrgUnitId, DateOnly Start, DateOnly End, bool StartHalf, bool EndHalf,
     decimal Days, string Status, string? Comment, Guid? Replacement, string? ReplacementAnswer, Guid? DocumentId, Guid? InstanceId,
-    string? ChangeKind, DateOnly? ChangeEnd, bool ChangeEndHalf, Guid? ChangeInstanceId, int ChangeCount, DateTimeOffset CreatedAt, DateTimeOffset? DecidedAt);
+    string? ChangeKind, DateOnly? ChangeEnd, bool ChangeEndHalf, Guid? ChangeInstanceId, int ChangeCount, DateTimeOffset CreatedAt, DateTimeOffset? DecidedAt,
+    string? HrState = null, string? HrReference = null, int HrChanges = 0);
 
 /// <summary>
 /// Leave requests (spec 022 US1, FR-002 to FR-005, FR-009). A request counts working days on the person's calendar,
@@ -106,7 +112,7 @@ internal sealed record LeaveRow(
 /// its approval on the process engine with one line manager step whose task shows in the inbox. Approval, cancelling
 /// and shortening write the ledger and publish <see cref="LeaveApproved"/> and <see cref="LeaveCancelled"/>.
 /// </summary>
-public sealed class LeaveRequests(
+public sealed partial class LeaveRequests(
     IDbSession session,
     ITenantContext context,
     IClock clock,
@@ -122,7 +128,8 @@ public sealed class LeaveRequests(
     IWorkingCalendar calendars,
     LeaveConfig config,
     LeaveLedger ledger,
-    LeaveDocuments documents) : ILeave
+    LeaveDocuments documents,
+    IHrLeave hrLeave) : ILeave
 {
     public const string ProcessKey = "hr.leave";
     public const int MaxCommentLength = 1000;
@@ -146,7 +153,8 @@ public sealed class LeaveRequests(
     private const string Columns =
         """
         id, number, user_id, filed_by, leave_type_id, org_unit_id, start_date, end_date, start_half, end_half, days, status, comment, replacement_user_id,
-        replacement_answer, document_id, instance_id, change_kind, change_end, change_end_half, change_instance_id, change_count, created_at, decided_at
+        replacement_answer, document_id, instance_id, change_kind, change_end, change_end_half, change_instance_id, change_count, created_at, decided_at,
+        hr_state, hr_reference, hr_changes
         """;
 
     private static LeaveRow Read(Npgsql.NpgsqlDataReader r) => new(
@@ -154,7 +162,8 @@ public sealed class LeaveRequests(
         DateOnly.FromDateTime(r.GetDateTime(7)), r.GetBoolean(8), r.GetBoolean(9), r.GetDecimal(10), r.GetString(11), r.Get<string?>("comment"),
         r.Get<Guid?>("replacement_user_id"), r.Get<string?>("replacement_answer"), r.Get<Guid?>("document_id"), r.Get<Guid?>("instance_id"),
         r.Get<string?>("change_kind"), r.IsDBNull(18) ? null : DateOnly.FromDateTime(r.GetDateTime(18)), r.GetBoolean(19), r.Get<Guid?>("change_instance_id"),
-        r.GetInt32(21), r.GetFieldValue<DateTimeOffset>(22), r.Get<DateTimeOffset?>("decided_at"));
+        r.GetInt32(21), r.GetFieldValue<DateTimeOffset>(22), r.Get<DateTimeOffset?>("decided_at"), r.Get<string?>("hr_state"), r.Get<string?>("hr_reference"),
+        r.GetInt32(26));
 
     internal async Task<LeaveRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
         (await session.QueryAsync($"select {Columns} from hr.leave_request where id = @id{(forUpdate ? " for update" : "")}", new { id }, Read, ct)).SingleOrDefault();
@@ -162,7 +171,7 @@ public sealed class LeaveRequests(
     // ---- Preview and submit ----
 
     private sealed record Plan(LeavePerson Person, LeaveTypeRow Type, IReadOnlyList<LeaveDay> Days, decimal Total, IReadOnlyList<YearBalance> Years,
-        bool DocumentRequired, IReadOnlyList<string> Problems);
+        bool DocumentRequired, IReadOnlyList<string> Problems, HrLeaveBalances? Hr);
 
     /// <summary>The person a request is for: the caller, or someone they may file for (an HR officer covering them, or their manager).</summary>
     private async Task<LeavePerson> SubjectAsync(Guid? onBehalfOf, CancellationToken ct)
@@ -245,6 +254,16 @@ public sealed class LeaveRequests(
             problems.Add("validation.leave.overlaps_own");
         }
 
+        // When HR owns balances (FR-006) a request needs a balance from HR, or the last known one when the tenant allows it.
+        var hr = await ledger.HrBalancesAsync(person.UserId, ct);
+        if (hr is { State: HrLeaveBalances.NotMatched })
+        {
+            problems.Add("validation.leave.hr_not_matched");
+        }
+        else if (hr is { State: HrLeaveBalances.Unavailable } || (hr is { State: HrLeaveBalances.Stale } && !(await hrLeave.SettingAsync(ct)).AllowStaleSubmit))
+        {
+            problems.Add("validation.leave.hr_unavailable");
+        }
         var years = new List<YearBalance>();
         var takenCurrent = 0m;
         foreach (var group in days.GroupBy(d => d.LeaveYear).OrderBy(g => g.Key))
@@ -262,7 +281,7 @@ public sealed class LeaveRequests(
             }
         }
         var documentRequired = type.DocumentAfterDays is { } after && total > after;
-        return new Plan(person, type, days, total, years, documentRequired, problems.Distinct().ToList());
+        return new Plan(person, type, days, total, years, documentRequired, problems.Distinct().ToList(), hr);
     }
 
     public async Task<LeavePreview> PreviewAsync(LeaveRequestInput input, CancellationToken ct)
@@ -272,7 +291,7 @@ public sealed class LeaveRequests(
         var plan = await PlanAsync(input, person, null, ct);
         var overlap = await OverlapAsync(person, plan.Days.Select(d => d.Date).ToList(), null, ct);
         return new LeavePreview(plan.Type.Key, plan.Type.Unit, plan.Total, plan.Days.Select(d => d.Date).ToList(), plan.Years, plan.DocumentRequired, overlap,
-            plan.Problems.Select(p => new LeaveProblem(p, p)).ToList());
+            plan.Problems.Select(p => new LeaveProblem(p, p)).ToList(), plan.Hr is null ? HrLeaveSources.TeamBeats : HrLeaveSources.Hr, plan.Hr?.AsOf);
     }
 
     /// <summary>Submits a request (US1). The same idempotency key from the same person returns the request already made.</summary>
@@ -479,7 +498,8 @@ public sealed class LeaveRequests(
             refs.GetValueOrDefault(row.FiledBy) ?? new PersonRef(row.FiledBy, string.Empty), showType ? type!.Key : string.Empty,
             showType ? type!.Names : new Dictionary<string, string>(), type!.Unit, row.Start, row.End, row.StartHalf, row.EndHalf, row.Days, row.Status,
             access == Access.Replacement ? null : row.Comment, row.Replacement is { } rep ? refs.GetValueOrDefault(rep) ?? new PersonRef(rep, string.Empty) : null,
-            row.ReplacementAnswer, row.DocumentId is not null && access != Access.Replacement, row.ChangeKind, row.ChangeEnd, row.CreatedAt, row.DecidedAt, rights);
+            row.ReplacementAnswer, row.DocumentId is not null && access != Access.Replacement, row.ChangeKind, row.ChangeEnd, row.CreatedAt, row.DecidedAt, rights,
+            HrState: access == Access.Replacement ? null : row.HrState, HrReference: access is Access.Hr ? row.HrReference : null);
     }
 
     public async Task<MyLeaveView> MineAsync(CancellationToken ct)
@@ -537,9 +557,18 @@ public sealed class LeaveRequests(
         var person = await ledger.PersonAsync(me, ct);
         var today = await ledger.TodayAsync(ct);
         var list = new List<LeaveBalance>();
+        var hr = await ledger.HrBalancesAsync(me, ct);
         foreach (var type in (await config.TypesAsync(ct)).Where(t => t.Active && (person is null || t.Eligible(person.MembershipType))))
         {
             var year = LeaveMath.LeaveYear(today, type.YearStartMonth);
+            if (hr is not null)
+            {
+                var fromHr = hr.Balances.FirstOrDefault(b => b.TypeKey == type.Key)?.Balance ?? 0m;
+                var held = await ledger.HeldForHrAsync(me, type.Id, null, ct);
+                list.Add(new LeaveBalance(type.Key, type.Names, year, fromHr, held, fromHr - held, type.Unit, HrLeaveSources.Hr, hr.AsOf,
+                    hr.State != HrLeaveBalances.Ok));
+                continue;
+            }
             var balance = await ledger.BalanceAsync(me, type.Id, year, ct);
             var pending = await ledger.PendingAsync(me, type.Id, year, null, ct);
             list.Add(new LeaveBalance(type.Key, type.Names, year, balance, pending, balance - pending, type.Unit));
@@ -778,12 +807,20 @@ public sealed class LeaveRequests(
         {
             perYear = perYear.Select(p => (p.Year, row.Days)).ToList();
         }
-        await ledger.PostRequestAsync(row.UserId, row.TypeId, row.Id, "cancel", perYear, ct);
+        var hrOwns = await HrOwnsBalancesAsync(ct);
+        if (!hrOwns)
+        {
+            await ledger.PostRequestAsync(row.UserId, row.TypeId, row.Id, "cancel", perYear, ct);
+        }
         await session.ExecAsync("update hr.leave_request set status = 'cancelled', change_kind = null, change_end = null, change_end_half = false, change_instance_id = null, updated_at = @now where id = @id",
             new { id = row.Id, now = clock.UtcNow }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.HrLeaveCancelled, "leave_request", row.Id.ToString(), TargetOrgUnitId: row.OrgUnitId,
             Changes: new { row.Number, from = LeaveStatuses.Approved, to = LeaveStatuses.Cancelled, days = row.Days }), ct);
         await outbox.EnqueueAsync(new LeaveCancelled(row.Id, row.UserId, row.Start, row.End), ct);
+        if (hrOwns)
+        {
+            await HandOffAsync(row.Id, HrLeaveHandOffRequest.Cancelled, ct);
+        }
     }
 
     private async Task ApplyShortenAsync(LeaveRow row, LeaveTypeRow type, DateOnly end, bool endHalf, CancellationToken ct)
@@ -796,7 +833,11 @@ public sealed class LeaveRequests(
         var returned = before.Select(d => (d.LeaveYear, Days: d.Fraction - (kept.TryGetValue(d.Date, out var k) ? Math.Min(k.Fraction, d.Fraction) : 0m)))
             .Where(d => d.Days > 0).GroupBy(d => d.LeaveYear).Select(g => (g.Key, g.Sum(d => d.Days))).ToList();
         var newDays = before.Sum(d => d.Fraction) - returned.Sum(r => r.Item2);
-        await ledger.PostRequestAsync(row.UserId, row.TypeId, row.Id, "cancel", returned, ct);
+        var hrOwns = await HrOwnsBalancesAsync(ct);
+        if (!hrOwns)
+        {
+            await ledger.PostRequestAsync(row.UserId, row.TypeId, row.Id, "cancel", returned, ct);
+        }
         await session.ExecAsync("delete from hr.leave_request_day where request_id = @id", new { id = row.Id }, ct);
         await InsertDaysAsync(row.Id, before.Where(d => kept.ContainsKey(d.Date)).Select(d => d with { Fraction = Math.Min(kept[d.Date].Fraction, d.Fraction) }).ToList(), ct);
         await session.ExecAsync(
@@ -808,6 +849,10 @@ public sealed class LeaveRequests(
             Changes: new { row.Number, previousEnd = row.End, end, daysBefore = row.Days, days = newDays }), ct);
         var returnedFrom = endHalf ? end : end.AddDays(1);
         await outbox.EnqueueAsync(new LeaveCancelled(row.Id, row.UserId, returnedFrom, row.End), ct);
+        if (hrOwns)
+        {
+            await HandOffAsync(row.Id, HrLeaveHandOffRequest.Changed, ct);
+        }
     }
 
     /// <summary>The replacement accepts or declines (US1 scenario 5); a decline tells the requester, who can name someone else.</summary>
@@ -889,7 +934,8 @@ public sealed class LeaveRequests(
                 approved ? ChangeApprovedTemplate : ChangeRejectedTemplate, Link(row.Id), DedupeKey: $"hr.leave:{row.Id:N}:change:{row.ChangeCount}"), ct);
             return;
         }
-        if (approved)
+        var hrOwns = await HrOwnsBalancesAsync(ct);
+        if (approved && !hrOwns)
         {
             var perYear = await session.QueryAsync("select leave_year, sum(fraction) from hr.leave_request_day where request_id = @id group by leave_year",
                 new { id = row.Id }, r => (Year: r.GetInt32(0), Days: r.GetDecimal(1)), ct);
@@ -907,6 +953,10 @@ public sealed class LeaveRequests(
         if (approved)
         {
             await outbox.EnqueueAsync(new LeaveApproved(row.Id, row.UserId, row.Start, row.End), ct);
+            if (hrOwns)
+            {
+                await HandOffAsync(row.Id, HrLeaveHandOffRequest.Approved, ct);
+            }
         }
         await notifications.SendAsync(new NotificationRequest(recipients, NotificationCategories.RequestUpdate,
             approved ? LeaveApprovedTemplate : LeaveRejectedTemplate, Link(row.Id), DedupeKey: $"hr.leave:{row.Id:N}:decided"), ct);
