@@ -271,6 +271,9 @@ public sealed partial class JourneyService(
     /// Starts the engine process of every scheduled step whose date has come, in active journeys (all of them, or one).
     /// Run by the journey worker every two minutes and right after a start or a move.
     /// </summary>
+    /// <summary>Most steps opened in one transaction; the worker runs more batches in the same tick while they come back full.</summary>
+    public const int DueBatch = 500;
+
     public async Task<int> OpenDueAsync(Guid? journeyId, CancellationToken ct)
     {
         var today = await people.TodayAsync(ct);
@@ -279,9 +282,9 @@ public sealed partial class JourneyService(
             select s.journey_id, s.key, s.assignee, t.key, j.template_version, j.user_id, j.buddy_user_id, j.org_unit_id, s.type, s.systems
             from hr.journey_step s join hr.journey j on j.id = s.journey_id join hr.journey_template t on t.id = j.template_id
             where s.status = 'scheduled' and s.scheduled_on <= @today and j.status = 'active' and (@journeyId::uuid is null or j.id = @journeyId)
-            order by s.scheduled_on, s.journey_id, s.position limit 500
+            order by s.scheduled_on, s.journey_id, s.position limit @batch
             for update of s skip locked
-            """, new { today, journeyId },
+            """, new { today, journeyId, batch = DueBatch },
             r => (Journey: r.GetGuid(0), Step: r.GetString(1), Assignee: r.GetString(2), Template: r.GetString(3), Version: r.GetInt32(4), User: r.GetGuid(5),
                 Buddy: r.Get<Guid?>("buddy_user_id"), Unit: r.Get<Guid?>("org_unit_id"), Type: r.GetString(8), Systems: r.GetFieldValue<string[]>(9)), ct);
         foreach (var step in due)

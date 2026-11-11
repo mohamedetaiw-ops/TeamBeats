@@ -19,8 +19,10 @@ public sealed record FieldView(string Key, string Value, IReadOnlyDictionary<str
 public sealed record PersonCard(Guid Id, string DisplayName, IReadOnlyDictionary<string, string> Names, string? JobTitle, UnitRef? Unit, LocationRef? Location,
     IReadOnlyList<FieldView>? Fields = null, int? Level = null);
 
+/// <summary>A profile as the viewer may see it. <paramref name="Away"/> is approved leave covering today (spec 022 FR-005), dates only.</summary>
 public sealed record PersonView(Guid Id, string DisplayName, IReadOnlyDictionary<string, string> Names, UnitRef? Unit, IReadOnlyList<UnitRef> Units,
-    LocationRef? Location, IReadOnlyList<FieldView> Fields, PersonCard? Manager, int DirectReports, bool IsSelf, bool CanSetManager, bool CanEditAdminFields);
+    LocationRef? Location, IReadOnlyList<FieldView> Fields, PersonCard? Manager, int DirectReports, bool IsSelf, bool CanSetManager, bool CanEditAdminFields,
+    TeamBeats.Modules.Hr.Contracts.LeaveAway? Away = null);
 
 public sealed record SearchPage(IReadOnlyList<PersonCard> Items, int? Next);
 
@@ -69,7 +71,8 @@ public sealed class PeopleService(
     IOrganizationHierarchy hierarchy,
     ProfileStore store,
     ReportingLine lines,
-    VisibilityResolver visibility)
+    VisibilityResolver visibility,
+    IEnumerable<TeamBeats.Modules.Hr.Contracts.ILeave> leave)
 {
     public const int MaxPageSize = 50;
     public const int MaxChain = 15;
@@ -191,7 +194,7 @@ public sealed class PeopleService(
         var canSetManager = (await authz.CheckAsync(Permissions.PeopleManage, AuthzTarget.Tenant, ct)).Allowed;
         return new PersonView(row.UserId, row.DisplayName, row.Names, row.PrimaryUnitId is { } p ? unitRefs.FirstOrDefault(u => u.Id == p) : null, unitRefs,
             await LocationAsync(row.LocationKey, ct), fields, manager, reports, row.UserId == viewer.Id, canSetManager,
-            CanCorrect(viewer, row));
+            CanCorrect(viewer, row), leave.FirstOrDefault() is { } l ? await l.AwayAsync(row.UserId, ct) : null);
     }
 
     private static bool CanCorrect(Viewer viewer, ProfileRow row) => viewer.Manage.Covers(row.PrimaryUnitId) || viewer.Hr.Covers(row.PrimaryUnitId);

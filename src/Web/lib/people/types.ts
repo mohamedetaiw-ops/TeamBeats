@@ -29,6 +29,8 @@ export type PersonView = {
   isSelf: boolean;
   canSetManager: boolean;
   canEditAdminFields: boolean;
+  /** Approved leave covering today (spec 022 FR-005): dates only. */
+  away?: { from: string; to: string } | null;
 };
 
 export type SearchPage = { items: PersonCard[]; next: number | null };

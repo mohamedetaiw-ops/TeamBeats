@@ -463,4 +463,38 @@ public sealed class LeaveTests(TenantWorld world)
             Assert.Contains("entitlement.not_in_package", await response.Content.ReadAsStringAsync(), StringComparison.Ordinal);
         }
     }
+
+    [Fact]
+    public async Task Approved_leave_shows_as_out_of_office_on_the_profile_with_dates_only()
+    {
+        var t = await FreshAsync();
+        // Every day a working day, so the leave can start today whatever day it is.
+        var calendar = (await (await t["admin"].Client.GetAsync("/api/v1/hr/calendars")).ReadAsync<JsonElement>())[0];
+        using (var week = new HttpRequestMessage(HttpMethod.Put, $"/api/v1/hr/calendars/{calendar.GetProperty("id").GetGuid()}")
+        {
+            Content = JsonContent.Create(new { name = new { }, weekDays = new[] { 1, 2, 3, 4, 5, 6, 7 } }),
+        })
+        {
+            week.Headers.TryAddWithoutValidation("If-Match", calendar.GetProperty("eTag").GetString());
+            Assert.Equal(HttpStatusCode.OK, (await t["admin"].Client.SendAsync(week)).StatusCode);
+        }
+        var today = await world.Factory.InScopeAsync(t.Id, sp => sp.GetRequiredService<LeaveLedger>().TodayAsync(default));
+        var profile = $"/api/v1/people/{t["mona"].Id}";
+        Assert.Equal(JsonValueKind.Null, (await (await t["karim"].Client.GetAsync(profile)).ReadAsync<JsonElement>()).GetProperty("away").ValueKind);
+
+        var id = (await SubmittedAsync(t["mona"].Client, Input("annual", today, today.AddDays(2)))).GetProperty("id").GetGuid();
+        // Waiting leave is not out of office yet.
+        Assert.Equal(JsonValueKind.Null, (await (await t["karim"].Client.GetAsync(profile)).ReadAsync<JsonElement>()).GetProperty("away").ValueKind);
+        await DecideAsync(t["kofi"].Client, id, "approve");
+
+        var seen = await (await t["karim"].Client.GetAsync(profile)).ReadAsync<JsonElement>();
+        var away = seen.GetProperty("away");
+        Assert.Equal((today, today.AddDays(2)), (DateOnly.Parse(away.GetProperty("from").GetString()!), DateOnly.Parse(away.GetProperty("to").GetString()!)));
+        Assert.Equal(2, away.EnumerateObject().Count());
+        Assert.DoesNotContain("annual", seen.GetRawText(), StringComparison.Ordinal);
+
+        // Another tenant does not find the person at all.
+        var other = await world.CreateTenantAsync("lv-o-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");
+        Assert.Equal(HttpStatusCode.NotFound, (await other["admin"].Client.GetAsync(profile)).StatusCode);
+    }
 }

@@ -46,4 +46,4 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 - [x] T023 Claims, limits, currency, duplicates, routes by amount, finance hand-off, AI receipt suggestions
 
 ## Final phase (R2)
-- [ ] T024 Performance checks of section 15; OpenAPI; R2 implementation notes; spec evidence
+- [x] T024 Performance checks of section 15; OpenAPI; R2 implementation notes; spec evidence

@@ -38,7 +38,7 @@ public sealed class LeaveLedger(
 {
     public const int MaxNoteLength = 500;
 
-    internal async Task<DateOnly> TodayAsync(CancellationToken ct)
+    public async Task<DateOnly> TodayAsync(CancellationToken ct)
     {
         var zone = TimeZoneInfo.FindSystemTimeZoneById((await settings.GetLocaleSettingsAsync(ct)).TimeZone);
         return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(clock.UtcNow.UtcDateTime, zone));

@@ -277,7 +277,10 @@ public sealed class ClockImportTests(TenantWorld world)
         Assert.Equal("retrying", await RunStatusAsync(t, id, ConnectorErrorClasses.NotResponding));
     }
 
-    /// <summary>Spec 022 section 13: 50,000 punches import well within 10 minutes; here the budget is one minute.</summary>
+    /// <summary>
+    /// Spec 022 section 15: 50,000 punches import within 10 minutes, from the uploaded file to the punches attendance
+    /// shows. Here the budget is one minute for the file and five for the whole way.
+    /// </summary>
     [Fact]
     public async Task Fifty_thousand_punches_import_within_the_budget()
     {
@@ -307,6 +310,18 @@ public sealed class ClockImportTests(TenantWorld world)
         var file = Assert.Single(await FilesAsync(t, id));
         Assert.Equal(50_000, file.GetProperty("imported").GetInt32());
         Assert.True(watch.Elapsed < TimeSpan.FromMinutes(1), $"Import took {watch.Elapsed}.");
+        watch.Start();
+
+        // Attendance takes the punches (paired by time, since the file gives no direction) in one pass.
+        var taken = await world.Factory.InScopeAsync(t.Id, async sp =>
+        {
+            var count = await sp.GetRequiredService<TeamBeats.Modules.Hr.Attendance.AttendanceService>().ImportClockDataAsync(default);
+            await sp.GetRequiredService<IDbSession>().CommitAsync();
+            return count;
+        });
+        watch.Stop();
+        Assert.Equal(50_000, taken);
+        Assert.True(watch.Elapsed < TimeSpan.FromMinutes(5), $"Import to attendance took {watch.Elapsed}.");
     }
 
     private async Task<string?> RunStatusAsync(TestTenant t, Guid id, string errorClass) =>
