@@ -127,6 +127,16 @@ public static partial class TokenSchema
         C("color.tint.fresh_text", "#157347", "#5ad19a"),
         C("color.tint.cool", "#e6edfc", "#1c2a52"),
         C("color.tint.cool_text", "#2f5bd3", "#9db7ff"),
+        // Chart series (spec 036 DLS-040): eight categorical colors, each at least 3:1 on the surfaces, and the empty track.
+        C("color.chart.1", "#3b2fc9", "#b9b2ff"),
+        C("color.chart.2", "#b36b00", "#f4b740"),
+        C("color.chart.3", "#0e7c5f", "#4fd1a5"),
+        C("color.chart.4", "#c2255c", "#ff8fb1"),
+        C("color.chart.5", "#2f6fd3", "#8cb8ff"),
+        C("color.chart.6", "#7a45d6", "#c9a7ff"),
+        C("color.chart.7", "#5f6b0b", "#c4d45a"),
+        C("color.chart.8", "#b4441c", "#ff9a70"),
+        C("color.chart.track", "#e9e7f3", "#2e2a52"),
         // The night surface of AI and personal summaries, dark in both modes, with its text and bright accent.
         C("color.surface.night", "#16133d", "#1f1a52"),
         C("color.text.on_night", "#ffffff", "#f5f4fb"),

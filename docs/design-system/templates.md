@@ -17,6 +17,18 @@ Templates are ready page patterns built only from the shared components. Adminis
 
 Spec 032 ships 12 page templates (`T01` to `T12`) that implement these patterns as configurable regions. They inherit the tenant's design automatically: the same template looks like Beats, Atlas or Pulse without any change.
 
+## Page patterns
+
+The extended catalogue adds five patterns built from `components/ui/Patterns.tsx` and the shared blocks. The gallery page `/ui-gallery/patterns` shows each one with real content, and the design suite checks it in every design and direction.
+
+| Pattern | Spec 032 template and layout | Parts | Use for |
+|---|---|---|---|
+| Dashboard | T08 Dashboard on L08 Mosaic | `PageHeader` with a period control, `StatCards`, `Mosaic` tiles of chart cards, a task list and stage bars | Analytics, workplace and admin overviews |
+| Assistant chat | T07 Workspace on L05 Sidebar and canvas | `ChatLayout` with grouped past conversations, `ChatTranscript` as a log, citations and sources, `ThinkingIndicator`, `Composer` | The assistant, agent conversations |
+| Agent profile | T09 Detail on L03 Asymmetric two columns | `ProfileLayout` with status, facts and actions, `Tabs` for overview and runs, `UsageLimit` and access facts beside them | Agent pages in the agent registry |
+| Record profile | T09 Detail on L03 with L09 tabs | `ProfileLayout`, `FactList` details, `Timeline` activity, people and related items beside them | A request, a case, an asset, a policy record |
+| Board | T07 Workspace on L01 with columns along the line | `Board` columns by stage; cards move with their menu or by dragging, each move is announced | Requests by stage, campaign or onboarding work |
+
 ## Rules
 
 - One h1 per page, set by the template.

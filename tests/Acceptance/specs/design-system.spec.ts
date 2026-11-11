@@ -151,7 +151,7 @@ for (const design of designs) {
         await expectNoSeriousViolations(page, testInfo, `components-${design.key}-${locale}`);
         expect(await smallTargets(gallery), "controls smaller than 24 by 24 pixels").toEqual([]);
 
-        for (const id of ["cg-actions", "cg-selection", "cg-status", "cg-structure", "cg-overlays", "cg-menus", "cg-inputs", "cg-dates"]) {
+        for (const id of ["cg-actions", "cg-selection", "cg-status", "cg-structure", "cg-overlays", "cg-menus", "cg-inputs", "cg-dates", "cg-data", "cg-schedule", "cg-panels", "cg-assistant", "cg-agents", "cg-charts", "cg-charts-more"]) {
           await expect.soft(page.locator(`section:has(> h2#${id})`)).toHaveScreenshot(`${id}-${design.key}-${locale}.png`, {
             animations: "disabled",
             caret: "hide",
@@ -160,6 +160,27 @@ for (const design of designs) {
           });
         }
         await screenshotForReview(page, `components-${design.key}-${locale}`);
+      });
+
+      test("the page patterns are accessible, have large enough targets and match their baselines", async ({ page }, testInfo) => {
+        await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+        await page.setViewportSize({ width: 1280, height: 900 });
+        await page.goto(`${hostOrigin(tenant.key)}/ui-gallery/patterns`);
+        const gallery = page.getByTestId("patterns-gallery");
+        await expect(gallery).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+        await expectNoSeriousViolations(page, testInfo, `patterns-${design.key}-${locale}`);
+        expect(await smallTargets(gallery), "controls smaller than 24 by 24 pixels").toEqual([]);
+
+        for (const id of ["pt-dashboard", "pt-chat", "pt-agent", "pt-record", "pt-board"]) {
+          await expect.soft(page.locator(`section:has(> h2#${id})`)).toHaveScreenshot(`${id}-${design.key}-${locale}.png`, {
+            animations: "disabled",
+            caret: "hide",
+            stylePath: screenshotStyle,
+            maxDiffPixelRatio: 0.02,
+          });
+        }
+        await screenshotForReview(page, `patterns-${design.key}-${locale}`);
       });
     });
   }

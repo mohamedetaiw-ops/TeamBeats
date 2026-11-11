@@ -19,6 +19,7 @@ Colour tells people where they are, what they can do and what needs attention. I
 | Tints | `color.tint.warm`, `.fresh`, `.cool` and their `_text` | Soft tiles for counts and icons (Your day, service tiles, avatars). Never for status on their own |
 | Night | `color.surface.night`, `color.text.on_night`, `color.highlight.bright` | The briefing hero and other personal or AI summaries; dark in both modes |
 | Campaign | `color.surface.campaign` | The campaign band at the bottom of the home, with `color.text.on_night` text |
+| Charts | `color.chart.1` to `color.chart.8`, `color.chart.track` | Chart series in this order, and the empty part of bars, rings and meters. Each series color is at least 3:1 on the surfaces; series also differ by position, pattern or label, never by color alone |
 
 The palette of each design is in [designs](../designs.md). Components use token names, never values; the build refuses raw colors (`stylelint color-no-hex` and the token gate).
 
