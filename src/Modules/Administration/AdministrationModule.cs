@@ -37,6 +37,7 @@ public static class AdministrationModule
         ("pages", Permissions.PageEdit, "/admin/pages"),
         ("templates", Permissions.TemplateEdit, "/admin/templates"),
         ("branding", Permissions.ThemeEdit, "/admin/branding"),
+        ("shell", Permissions.ShellEdit, "/admin/shell"),
         ("notifications", Permissions.NotificationsManage, "/admin/notifications"),
         ("calendars", Permissions.HrCalendarManage, "/admin/calendars"),
         ("leave", Permissions.HrManage, "/admin/leave"),
@@ -68,8 +69,8 @@ public static class AdministrationModule
         ["evaluation"] = [Permissions.EvalDesign, Permissions.EvalReview, Permissions.EvalPolicyManage],
     };
 
-    /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) the people directory policy (spec 010 US1) search tuning (spec 012 US4) and adoption basics (spec 021) and the HR integration page (spec 019) are for the whole tenant.</summary>
-    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications", "people", "security", "search", "analytics", "hr_integration" };
+    /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) the people directory policy (spec 010 US1), the shell with its footer and home views (spec 008), search tuning (spec 012 US4), adoption basics (spec 021) and the HR integration page (spec 019) are for the whole tenant.</summary>
+    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications", "people", "security", "search", "analytics", "shell", "hr_integration" };
 
     public static IServiceCollection AddAdministrationModule(this IServiceCollection services)
     {

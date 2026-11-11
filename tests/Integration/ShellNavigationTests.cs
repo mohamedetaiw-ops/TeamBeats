@@ -362,4 +362,133 @@ public sealed class ShellNavigationTests(TenantWorld world)
         Assert.True((await PutNodeAsync(b, node, new { labels = new { en = "B" }, slug, url = "/only-b" })).IsSuccessStatusCode);
         Assert.Equal("/only-a", (await ResolveAsync(a, "/" + slug)).GetProperty("redirectTo").GetString());
     }
+
+    private static object ExtrasShell(Guid? home, object? footer = null, object? homeViews = null) => new
+    {
+        start = new[] { "identity", "global_navigation" },
+        center = new[] { "search" },
+        end = new[] { "settings" },
+        below = new[] { "breadcrumbs" },
+        utilities = Array.Empty<string>(),
+        homePageId = home,
+        footer,
+        homeViews,
+    };
+
+    [Fact]
+    public async Task Footer_is_validated_and_every_member_reads_it_in_their_language()
+    {
+        var t = await FreshAsync();
+        await world.SeedUserAsync(t, "employee", "employee");
+        var bad = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", ExtrasShell(null, new
+        {
+            organization = new { en = new string('x', 81) },
+            links = new object[]
+            {
+                new { kind = "lottery", labels = new { en = "Win" }, url = "/win" },
+                new { kind = "privacy", labels = new { en = "Privacy" }, url = "javascript:alert(1)" },
+                new { kind = "privacy", labels = new { en = "Privacy" }, url = "//evil.example" },
+                new { kind = "privacy", labels = new { en = "Privacy" }, url = "/\\evil.example" },
+                new { kind = "other", labels = new { fr = "Autre" }, url = "http://plain.example" },
+            },
+        }));
+        Assert.Equal(HttpStatusCode.BadRequest, bad.StatusCode);
+        var body = await bad.Content.ReadAsStringAsync();
+        foreach (var field in new[] { "footer.organization", "footer.links[0].kind", "footer.links[1].url", "footer.links[2].url", "footer.links[3].url",
+            "footer.links[4].labels", "footer.links[4].url" })
+        {
+            Assert.Contains(field, body, StringComparison.Ordinal);
+        }
+
+        var ok = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", ExtrasShell(null, new
+        {
+            organization = new { en = "Demo Co", ar = "شركة تجريبية" },
+            links = new object[]
+            {
+                new { kind = "privacy", labels = new { en = "Privacy", ar = "الخصوصية" }, url = "/policies" },
+                new { kind = "accessibility", labels = new { en = "Accessibility", ar = "إمكانية الوصول" }, url = "https://a11y.example/statement" },
+            },
+            classification = new { en = "Internal", ar = "داخلي" },
+        }));
+        Assert.True(ok.IsSuccessStatusCode, await ok.Content.ReadAsStringAsync());
+
+        var shell = await t["employee"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
+        var footer = shell.GetProperty("footer");
+        Assert.Equal("Demo Co", footer.GetProperty("organization").GetString());
+        Assert.Equal("Internal", footer.GetProperty("classification").GetString());
+        Assert.Equal(["/policies", "https://a11y.example/statement"], Hrefs(footer.GetProperty("links")));
+        Assert.Equal(["Privacy", "Accessibility"], footer.GetProperty("links").EnumerateArray().Select(l => l.GetProperty("label").GetString()));
+
+        // The editor reads back what was saved.
+        var admin = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell/definition");
+        Assert.Equal("شركة تجريبية", admin.GetProperty("definition").GetProperty("footer").GetProperty("organization").GetProperty("ar").GetString());
+
+        // A tenant that configured no footer gets none, and another tenant never sees this one's.
+        var other = await (await FreshAsync())["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
+        Assert.True(!other.TryGetProperty("footer", out var none) || none.ValueKind == JsonValueKind.Null);
+    }
+
+    [Fact]
+    public async Task Home_views_need_a_home_and_pages_of_this_tenant_and_show_only_to_their_audience()
+    {
+        var t = await FreshAsync();
+        await world.SeedUserAsync(t, "employee", "employee");
+        await world.SeedUserAsync(t, "contractor", "contractor");
+        var (homeId, _) = await PageAsync(t);
+        var (leadId, leadSlug) = await PageAsync(t);
+        var (floorId, floorSlug) = await PageAsync(t);
+        var (otherPage, _) = await PageAsync(world.A);
+
+        object View(string id, Guid page, Guid? rule = null) => new { id, labels = new { en = "View " + id, ar = "عرض" }, pageId = page, audienceRuleId = rule };
+
+        var noHome = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", ExtrasShell(null, homeViews: new[] { View("lead", leadId) }));
+        Assert.Contains("validation.shell.home_views_need_home", await noHome.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        var badId = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", ExtrasShell(homeId, homeViews: new[] { View("Bad Id", leadId) }));
+        Assert.Contains("homeViews[0].id", await badId.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+
+        // A page of another tenant, the home itself, or an audience rule that does not exist cannot make a view.
+        var badViews = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", ExtrasShell(homeId,
+            homeViews: new[] { View("x", otherPage), View("y", homeId), View("z", leadId, Guid.NewGuid()) }));
+        Assert.Equal(HttpStatusCode.BadRequest, badViews.StatusCode);
+        var body = await badViews.Content.ReadAsStringAsync();
+        foreach (var field in new[] { "homeViews[0].pageId", "homeViews[1].pageId", "homeViews[2].audienceRuleId", "validation.audience.unknown" })
+        {
+            Assert.Contains(field, body, StringComparison.Ordinal);
+        }
+
+        var rule = Guid.NewGuid();
+        var created = await t["admin"].Client.PutAsJsonAsync($"/api/v1/experience/audience-rules/{rule}",
+            new { labels = new { en = "Employees", ar = "الموظفون" }, conditions = new { membershipTypes = new[] { "employee" } } });
+        Assert.True(created.IsSuccessStatusCode, await created.Content.ReadAsStringAsync());
+        var set = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", ExtrasShell(homeId,
+            homeViews: new[] { View("lead", leadId, rule), View("floor", floorId) }));
+        Assert.True(set.IsSuccessStatusCode, await set.Content.ReadAsStringAsync());
+
+        var employee = await t["employee"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
+        Assert.Equal([leadSlug, floorSlug], employee.GetProperty("homeViews").EnumerateArray().Select(v => v.GetProperty("slug").GetString()));
+        Assert.Equal("View lead", employee.GetProperty("homeViews")[0].GetProperty("label").GetString());
+        // The configuration behind the tabs (pages, rules) is not sent to members.
+        Assert.True(!employee.GetProperty("layout").TryGetProperty("homeViews", out var raw) || raw.ValueKind == JsonValueKind.Null);
+
+        // The audience rule decides who gets the tab; a viewer it does not match never sees the targeted view.
+        var contractor = await t["contractor"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
+        Assert.DoesNotContain(leadSlug, contractor.GetProperty("homeViews").EnumerateArray().Select(v => v.GetProperty("slug").GetString()));
+    }
+
+    [Fact]
+    public async Task Home_view_audiences_need_the_package_capability()
+    {
+        var t = await world.CreateTenantAsync("sw-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        var (homeId, _) = await PageAsync(t);
+        var (viewId, _) = await PageAsync(t);
+        var refused = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", ExtrasShell(homeId,
+            homeViews: new[] { new { id = "lead", labels = new { en = "Lead" }, pageId = viewId, audienceRuleId = (Guid?)Guid.NewGuid() } }));
+        Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+        Assert.Contains("validation.audience.not_entitled", await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        // A view for everyone needs no capability.
+        var open = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", ExtrasShell(homeId,
+            homeViews: new[] { new { id = "lead", labels = new { en = "Lead" }, pageId = viewId, audienceRuleId = (Guid?)null } }));
+        Assert.True(open.IsSuccessStatusCode, await open.Content.ReadAsStringAsync());
+    }
 }

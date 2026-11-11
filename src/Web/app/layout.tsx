@@ -39,6 +39,7 @@ import "@/components/ui/patterns.css";
 import "@/components/ui/designs.css";
 import { MessagesProvider } from "@/components/ui/Messages";
 import { designOf } from "@/lib/experience/design";
+import { ShellFooter } from "@/features/shell/Footer";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app");
@@ -68,6 +69,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <NextIntlClientProvider>
           <MessagesProvider>{children}</MessagesProvider>
         </NextIntlClientProvider>
+        <ShellFooter />
       </body>
     </html>
   );
