@@ -1169,6 +1169,8 @@
   "validation.webhook.delivery_id": "يحتاج التسليم إلى معرف تسليم لا يزيد على 200 حرف.",
   "validation.webhook.body": "يجب أن يكون محتوى التسليم بتنسيق JSON.",
   "validation.webhook.correlation_missing": "لا توجد قيمة في مسار مفتاح الربط في هذا التسليم.",
+  "validation.webhook.kpi_fields": "يربط خطاف مؤشرات الأداء الحقول metric وvalue وunit وperiod_start وperiod_end وsource_time، ويمكنه ربط location. لا شيء غير ذلك.",
+  "validation.webhook.kpi_reading": "القراءة ناقصة أو غير صحيحة. أرسل المؤشر، ورقما للقيمة، والوحدة، وبداية الفترة ونهايتها، ووقت القياس مع فرق التوقيت.",
   "conflict.integrations.webhook_duplicate": "تم استلام معرف التسليم هذا من قبل.",
   "integrations.webhook.signature_invalid": "توقيع التسليم مفقود أو غير صحيح.",
   "integrations.webhook.timestamp_outside_window": "الطابع الزمني للتسليم خارج النافذة المسموح بها.",

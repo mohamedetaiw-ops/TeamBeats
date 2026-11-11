@@ -259,3 +259,27 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 - Directory and Drive reads call Google directly, as Microsoft Graph reads do, so they are not in run history; failures are kept as the directory sync run reason or the repository's unavailable reason.
 - Google sign-in (spec 003 T018) is not built yet; synced Google accounts are ready for it under the Google issuer.
 - Members of nested groups are not expanded, as with Entra ID.
+
+## Connector-down suite and performance (spec 017, slice 19: T020; SC-001, section 15)
+
+### Built
+- `tests/Integration/ConnectorDownTests.cs`, marked `Suite=ConnectorDown`, runs the five cases of SC-001 against two packs (custom REST and Slack): a revoked credential fails at once without retries and replays once fixed, a throttling system is waited for as it asks, a system that is down is retried, left as a dead letter and opens the circuit, a partial failure finishes each call on its own, and a duplicate request with the same key reaches the system once. It runs in the integration suite on every build.
+- `tests/Integration/ConnectorPerformanceTests.cs`: connector overhead at p95 under 30 ms (the fake system answers in process, so the time is an upper bound on the overhead) and 1,000 queued jobs within a minute.
+- `OnPremDirectorySyncTests.Twenty_thousand_users_sent_by_the_agent_are_applied_well_within_thirty_minutes` sends 20,000 users through the agent endpoint and asserts under 10 minutes (about 2 minutes locally).
+- `ArchitectureTests.Connectors_never_call_models` (FR-024): the Integrations module never references the AI Gateway contracts.
+
+### Differences and follow-ups
+- The job worker ran at most 50 jobs per tenant per 10 second tick, about 300 a minute, below the section 15 budget. It now drains: a tenant whose batch was full gets more batches in the same tick, inside an 8 second budget (`ConnectorJobs.BatchSize`, `RunBatchAsync`, `ConnectorJobWorker.DrainAsync`).
+
+## KPI feed (spec 017, slice 20: T021; FR-022)
+
+### Built
+- An inbound webhook with the target `kpi` maps its body to the canonical fields `metric`, `value`, `unit`, `period_start`, `period_end`, `source_time` and the optional `location`. Saving refuses a mapping that misses a required field or names any other (`validation.webhook.kpi_fields`). The signature, window and delivery ID checks of the webhook stay the same.
+- Each delivery carries one reading. Times are ISO 8601 with an offset, or dates read as midnight UTC; a source time more than 5 minutes ahead, an end before the start, a value that is not a number or text over its length is refused with `validation.webhook.kpi_reading` and the field.
+- Readings are kept in `integrations.kpi_reading` (migration 0013, forced RLS), one per connection, metric, location and period. A reading measured later replaces the value and an older one is ignored. A stored reading publishes `KpiReadingReceived`; no `InboundWebhookReceived` is published for KPI deliveries. `IKpiFeed.ReadAsync` gives consumers the readings under the `integration.connectors` key. Readings are purged after 400 days.
+- Pages: the webhook form offers the target "KPI readings" with its own field hint.
+- Tests: `tests/Integration/KpiFeedTests.cs` (stored once per period, later replaces, older ignored, duplicate delivery, wrong readings and mappings refused, cross-tenant and package denial).
+
+### Differences and follow-ups
+- The spec does not say how many readings a delivery holds or how long they are kept. Defaults: one reading per delivery, kept 400 days (a year plus a month for year on year views). Batches of readings can come later as a separate target.
+- No consumer reads the feed yet; dashboards in spec 021 are the expected first one.

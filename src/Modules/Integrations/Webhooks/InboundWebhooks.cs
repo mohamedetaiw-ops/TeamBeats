@@ -37,6 +37,7 @@ public sealed class InboundWebhooks(
     ITenantContext context,
     IEntitlementService entitlements,
     WebhookPack pack,
+    KpiFeed kpis,
     IOutbox outbox,
     IClock clock)
 {
@@ -102,6 +103,12 @@ public sealed class InboundWebhooks(
         {
             throw AppException.Validation("body", "validation.webhook.correlation_missing");
         }
+        KpiReading? reading = null;
+        if (inbound.Target == "kpi")
+        {
+            var (parsed, bad) = KpiFeed.Parse(connectionId, inbound.Name!, fields, now);
+            reading = parsed ?? throw AppException.Validation("body." + bad, "validation.webhook.kpi_reading");
+        }
 
         var fresh = await session.ExecAsync(
             """
@@ -114,6 +121,11 @@ public sealed class InboundWebhooks(
             return await RefuseAsync(connectionId, InboundRefusal.Duplicate, now, ct);
         }
         await CountAsync(connectionId, "accepted", now, ct);
+        if (reading is not null)
+        {
+            await kpis.RecordAsync(reading, ct);
+            return null;
+        }
         await outbox.EnqueueAsync(new InboundWebhookReceived(connectionId, deliveryId, inbound.Target!, inbound.Name!, correlation, fields), ct);
         return null;
     }

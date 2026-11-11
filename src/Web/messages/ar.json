@@ -4507,7 +4507,8 @@
       "target": "يصبح التسليم",
       "targets": {
         "event": "حدثًا في المنتج",
-        "message": "رسالة إجراء"
+        "message": "رسالة إجراء",
+        "kpi": "قراءات مؤشرات الأداء"
       },
       "targetName": "اسم الحدث أو الرسالة",
       "targetNameHint": "أحرف إنجليزية صغيرة وأرقام ونقاط وشرطات سفلية، مثل permits.approved.",
@@ -4521,7 +4522,8 @@
       "refusedSignature": "المرفوضة بسبب التوقيع",
       "refusedWindow": "المرفوضة بسبب طابع زمني قديم",
       "refusedDuplicate": "المرفوضة لتكرارها",
-      "lastReceived": "آخر تسليم"
+      "lastReceived": "آخر تسليم",
+      "kpiFieldsHint": "اربط الحقول metric و value و unit و period_start و period_end و source_time، والحقل location إن كنت تتابع المواقع، بصيغة الاسم: المسار، مثل value: $.kpi.value. يجب أن تحمل الأوقات فرق التوقيت أو تكون تواريخ. قراءة واحدة في كل تسليم."
     },
     "onprem": {
       "addTitle": "إضافة Active Directory المحلي",

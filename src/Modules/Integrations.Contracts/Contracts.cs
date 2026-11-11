@@ -234,6 +234,38 @@ public interface IDocumentRepository
     Task<RepositoryContent?> OpenAsync(Guid connectionId, string itemId, string userEmail, CancellationToken ct = default);
 }
 
+/// <summary>
+/// A KPI reading in canonical form (spec 017 FR-022): the metric, its value and unit, the period it covers, the
+/// location code it is for (null for the whole organization) and when the source system measured it.
+/// </summary>
+public sealed record KpiReading(
+    Guid ConnectionId,
+    string Feed,
+    string Metric,
+    decimal Value,
+    string Unit,
+    DateTimeOffset PeriodStart,
+    DateTimeOffset PeriodEnd,
+    string? Location,
+    DateTimeOffset SourceTime,
+    DateTimeOffset ReceivedAt);
+
+public sealed record KpiQuery(string? Metric, string? Location, DateTimeOffset? From, DateTimeOffset? To, int Limit = 100);
+
+/// <summary>
+/// The KPI feed contract (spec 017 FR-022) for location dashboards (R3) and analytics. Readings arrive through signed
+/// inbound webhooks whose target is <c>kpi</c>; the latest source time wins for the same metric, location and period.
+/// </summary>
+public interface IKpiFeed
+{
+    /// <summary>Readings of the current tenant, newest period first. <see cref="KpiQuery.From"/> and <see cref="KpiQuery.To"/> bound the period start.</summary>
+    Task<IReadOnlyList<KpiReading>> ReadAsync(KpiQuery query, CancellationToken ct = default);
+}
+
+/// <summary>A reading was stored or replaced by a newer measurement.</summary>
+public sealed record KpiReadingReceived(Guid ConnectionId, string Feed, string Metric, string? Location, DateTimeOffset PeriodStart, DateTimeOffset PeriodEnd)
+    : IIntegrationEvent;
+
 /// <summary>An employee connected Outlook for this session (spec 018 section 12). No token content.</summary>
 public sealed record OutlookConnected(Guid UserId, IReadOnlyList<string> Features) : IIntegrationEvent;
 

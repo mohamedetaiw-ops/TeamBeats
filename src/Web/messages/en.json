@@ -4507,7 +4507,8 @@
       "target": "A delivery becomes",
       "targets": {
         "event": "A product event",
-        "message": "A process message"
+        "message": "A process message",
+        "kpi": "KPI readings"
       },
       "targetName": "Event or message name",
       "targetNameHint": "Lowercase letters, digits, dots and underscores, such as permits.approved.",
@@ -4521,7 +4522,8 @@
       "refusedSignature": "Refused for the signature",
       "refusedWindow": "Refused for an old timestamp",
       "refusedDuplicate": "Refused as repeated",
-      "lastReceived": "Last delivery"
+      "lastReceived": "Last delivery",
+      "kpiFieldsHint": "Map metric, value, unit, period_start, period_end and source_time, and location if you track sites, as name: path, such as value: $.kpi.value. Times need an offset or are dates. One reading per delivery."
     },
     "onprem": {
       "addTitle": "Add on-premises Active Directory",
