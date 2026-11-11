@@ -84,6 +84,8 @@ public sealed class EntitlementsTests(TenantWorld world)
             .EnsureSuccessStatusCode();
         var moved = await tenant["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/tenant/entitlements");
         Assert.Equal(newVersion, moved.GetProperty("version").GetInt32());
+        // New tenants take the latest published version: publish the package as it was again for the rest of the run.
+        await world.PublishPackageAsync("workplace", before.GetProperty("capabilities"));
         await world.Database.AssertAuditedAsync(tenant.Id, AuditActions.SubscriptionChanged);
         Assert.Equal(1, await world.Database.PlatformAuditCountAsync(AuditActions.SubscriptionChanged, tenant.Id));
     }

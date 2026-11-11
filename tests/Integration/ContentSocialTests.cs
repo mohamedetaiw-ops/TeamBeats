@@ -104,21 +104,15 @@ public sealed class ContentSocialTests(TenantWorld world)
     [Fact]
     public async Task Without_the_content_capability_the_builder_refuses_the_components_and_the_content_apis_refuse_too()
     {
-        // A Workplace version with the page builder but no content: other suites only check Workplace version numbers.
+        // A Workplace version with the page builder but no content, for this tenant only.
         var t = await world.CreateTenantAsync("cs-off-" + Guid.NewGuid().ToString("N")[..6], "workplace");
-        var draft = await OkAsync(world.Platform.PostAsJsonAsync("/api/v1/platform/packages/workplace/versions", new
+        await world.PinPackageVersionAsync(t, "workplace", new Dictionary<string, object>
         {
-            capabilities = new Dictionary<string, object>
-            {
-                [Capabilities.AiAssistant] = new { enabled = true },
-                [Capabilities.AiAssistantMonthlyRequests] = new { enabled = true, limit = 9999 },
-                [Capabilities.OrgHierarchy] = new { enabled = true },
-                [Capabilities.ExperiencePageBuilder] = new { enabled = true },
-            },
-        }), HttpStatusCode.Created);
-        var version = draft.GetProperty("version").GetInt32();
-        (await world.Platform.PostAsync($"/api/v1/platform/packages/workplace/versions/{version}:publish", null)).EnsureSuccessStatusCode();
-        (await world.Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{t.Id}/subscription", new { packageKey = "workplace", version })).EnsureSuccessStatusCode();
+            [Capabilities.AiAssistant] = new { enabled = true },
+            [Capabilities.AiAssistantMonthlyRequests] = new { enabled = true, limit = 9999 },
+            [Capabilities.OrgHierarchy] = new { enabled = true },
+            [Capabilities.ExperiencePageBuilder] = new { enabled = true },
+        });
 
         var page = await OkAsync(t["admin"].Client.PostAsJsonAsync("/api/v1/experience/pages", new { templateId = "T01", slug = "off-news" }), HttpStatusCode.Created);
         var items = await OkAsync(t["admin"].Client.GetAsync($"/api/v1/experience/pages/{page.GetProperty("id").GetString()}/components"));
