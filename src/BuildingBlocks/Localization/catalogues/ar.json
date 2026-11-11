@@ -773,6 +773,7 @@
   "validation.org.type_key_format": "استخدم أحرفاً صغيرة وأرقاماً وشرطات سفلية",
   "validation.org.type_unknown": "نوع الوحدة غير معروف",
   "validation.org.unit_inactive": "الوحدة غير نشطة",
+  "validation.membership_policy.guest_fixed": "لا يحصل الضيوف أبدًا على دور الموظف الافتراضي",
   "validation.org_mapping.alias": "يحتاج كل اسم بديل إلى قيمة وبديل لا يتجاوز 200 حرف",
   "validation.org_mapping.group_id": "أدخل معرّفات مجموعات الدليل (GUID)",
   "validation.org_mapping.groups_required": "اختر مجموعة واحدة على الأقل",
