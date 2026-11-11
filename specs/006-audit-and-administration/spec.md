@@ -108,7 +108,7 @@ Acme's integration administrator, Karim, connects Acme's Microsoft 365 tenant on
 - **AUD-005 / FR-005**: Audit MUST NOT contain secrets, tokens or full content bodies. Personal data in audit is limited to identifiers needed for accountability.
 - **AUD-006 / FR-006**: Retention MUST be configurable per tenant above a platform minimum. *(ADM-003)*
 - **AUD-007 / FR-007**: Audit export MUST be asynchronous, tenant-scoped and itself audited.
-- **FR-008**: The admin shell MUST show only areas the user is authorized for, with every area enforced by the backend. *(ADM-001)*
+- **FR-008**: The admin shell MUST show only areas the user is authorized for, with every area enforced by the backend. Every page MUST offer people with at least one area a way into the admin shell, the Administration row of the account menu (spec 008 FR-062). *(ADM-001)*
 - **FR-009**: User administration MUST allow viewing a user's memberships, roles and sign-in status, and disabling a tenant membership.
 - **FR-010**: The admin shell MUST provide a Connections area listing every connection of the tenant with type, external tenant or endpoint, features, status, last successful run and owner, available to holders of `integration.manage`. *(INT-001)*
 - **FR-011**: A connection MUST be one tenant-owned record per external system instance (for example one Microsoft 365 connection per Entra tenant) with a set of features that are turned on separately. Each feature MUST declare the external permissions it needs, and the screen MUST show them before consent. Features MUST be gated by the capability keys of their own specs (for example `integration.microsoft365` in spec 005). *(INT-001, INT-002)*

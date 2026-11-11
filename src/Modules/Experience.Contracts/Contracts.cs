@@ -143,3 +143,13 @@ public interface ITemplateUsage
 {
     Task<IReadOnlyList<TemplateUsage>> UsageAsync(CancellationToken ct = default);
 }
+
+/// <summary>
+/// Whether the caller may open at least one administration section (spec 006 US4, spec 008 FR-062), so the shell offers an
+/// Administration entry. The administration module answers with the same checks that build its own navigation; the entry
+/// is only a way in, and every section still authorizes itself.
+/// </summary>
+public interface IAdministrationEntry
+{
+    Task<bool> CanOpenAsync(CancellationToken ct = default);
+}

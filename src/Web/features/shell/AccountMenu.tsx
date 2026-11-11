@@ -17,11 +17,12 @@ function initials(name: string): string {
 
 /**
  * The signed-in person in the shell (spec 008 FR-001, identity region; spec 036 DLS-047): an avatar button that opens a
- * compact menu with who is signed in (name, job title, email), rows for My profile and Preferences, and Sign out after
- * a divider. Job title and email are read from the person's own profile when the menu first opens; without them the
+ * compact menu with who is signed in (name, job title, email), rows for My profile and Preferences, Administration for
+ * people the API says may open an admin section (spec 008 FR-062; the sections still authorize themselves), and Sign out
+ * after a divider. Job title and email are read from the person's own profile when the menu first opens; without them the
  * header shows the name only. Escape, a press outside or opening another shell panel closes it.
  */
-export function AccountMenu({ name }: { name: string }) {
+export function AccountMenu({ name, administration = false }: { name: string; administration?: boolean }) {
   const t = useTranslations("shell");
   const root = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useShellPanel(root);
@@ -95,6 +96,12 @@ export function AccountMenu({ name }: { name: string }) {
             <Icon name="settings" size={16} />
             {t("preferences")}
           </Link>
+          {administration ? (
+            <Link className="shell-popover-row" href="/admin">
+              <Icon name="lock" size={16} />
+              {t("administration")}
+            </Link>
+          ) : null}
           <hr className="shell-popover-divider" />
           <SignOutButton className="shell-popover-row" label={t("signOut")} icon={<Icon name="arrow-forward" size={16} />} />
         </div>
