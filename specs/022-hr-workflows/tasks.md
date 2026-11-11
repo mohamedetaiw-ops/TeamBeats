@@ -40,7 +40,7 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 
 ## Slice 5: Letters and data change (US6, US7, FR-019 to FR-022)
 - [x] T021 Letter templates, issued PDFs with verification, public verification page
-- [ ] T022 Data change requests with documents, HR write-back and all-channel notice
+- [x] T022 Data change requests with documents, HR write-back and all-channel notice
 
 ## Slice 6: Expenses (US8, FR-023 to FR-025)
 - [ ] T023 Claims, limits, currency, duplicates, routes by amount, finance hand-off, AI receipt suggestions

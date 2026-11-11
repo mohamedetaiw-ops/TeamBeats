@@ -52,6 +52,12 @@ public sealed partial class HrSyncTests(TenantWorld world)
         /// <summary>When set, HR answers a leave submission with this status instead of taking it.</summary>
         public HttpStatusCode? LeaveAnswer { get; set; }
 
+        /// <summary>Data changes sent to HR (spec 022 FR-019), with the idempotency key they came with.</summary>
+        public List<(JsonElement Body, string? Key)> DataChangesSent { get; } = [];
+
+        /// <summary>When set, HR answers a data change with this status instead of taking it.</summary>
+        public HttpStatusCode? DataChangeAnswer { get; set; }
+
         /// <summary>Every path asked for, so a test can see whose records were read.</summary>
         public List<string> Asked { get; } = [];
 
@@ -79,6 +85,18 @@ public sealed partial class HrSyncTests(TenantWorld world)
                 {
                     LeaveSent.Add((JsonDocument.Parse(sent.Body!).RootElement.Clone(), sent.Headers.GetValueOrDefault("Idempotency-Key")));
                     return FakeRestApi.Json(HttpStatusCode.Created, JsonSerializer.Serialize(new { @ref = $"HR-LV-{LeaveSent.Count}" }));
+                }
+            }
+            if (sent.Method == "POST" && sent.Uri.AbsolutePath == "/v1/data-changes")
+            {
+                if (DataChangeAnswer is { } refused)
+                {
+                    return FakeRestApi.Json(refused, """{"error":"not allowed"}""");
+                }
+                lock (DataChangesSent)
+                {
+                    DataChangesSent.Add((JsonDocument.Parse(sent.Body!).RootElement.Clone(), sent.Headers.GetValueOrDefault("Idempotency-Key")));
+                    return FakeRestApi.Json(HttpStatusCode.Created, JsonSerializer.Serialize(new { result = new { id = $"HR-DC-{DataChangesSent.Count}" } }));
                 }
             }
             if (sent.Uri.AbsolutePath.StartsWith("/v1/employees/", StringComparison.Ordinal))
@@ -133,7 +151,7 @@ public sealed partial class HrSyncTests(TenantWorld world)
         return t;
     }
 
-    private async Task<(Guid Id, FakeHr Hr)> RestConnectionAsync(TestTenant t, bool payslips = false, bool leave = false)
+    private async Task<(Guid Id, FakeHr Hr)> RestConnectionAsync(TestTenant t, bool payslips = false, bool leave = false, bool dataChange = false)
     {
         var host = $"hr-{Guid.NewGuid():N}"[..20] + ".hr.test";
         var fake = new FakeHr();
@@ -166,6 +184,9 @@ public sealed partial class HrSyncTests(TenantWorld world)
                 leaveReferencePath = leave ? "$.ref" : null,
                 leaveIdempotencyHeader = leave ? "Idempotency-Key" : null,
                 leaveTypeCodes = leave ? new Dictionary<string, string> { ["annual"] = "AL" } : null,
+                dataChangePath = dataChange ? "/data-changes" : null,
+                dataChangeReferencePath = dataChange ? "$.result.id" : null,
+                dataChangeIdempotencyHeader = dataChange ? "Idempotency-Key" : null,
                 paging = "page",
                 pageSizeParam = "size",
                 pageSize = 2,
