@@ -26,7 +26,7 @@ Depends on 004, 005, 006, 015, 024, 026, 027. R2.
 - [x] T015 [US6] Sync agent service and endpoint; AD pack over LDAPS feeding specs 002 and 003
 
 ## Phase 5: User Stories 7 and 8, packs (P2, P3)
-- [ ] T016 [US7] SFTP and CSV clock data import; finance hand-off contract
+- [x] T016 [US7] SFTP and CSV clock data import; finance hand-off contract
 - [x] T017 ServiceNow and Jira Service Management ticketing packs
 - [x] T018 [US8] Slack pack for notifications and sharing
 - [ ] T019 Google Workspace directory and Drive extension points

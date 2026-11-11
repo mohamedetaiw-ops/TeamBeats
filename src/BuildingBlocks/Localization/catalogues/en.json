@@ -300,6 +300,7 @@
   "experience.template.t12.description": "A side region for filters beside the results.",
   "integrations.dependent.synced_users": "Users kept in step by directory sync",
   "integrations.dependent.slack_links": "People who linked their Slack account",
+  "integrations.dependent.finance_handoffs": "Claims handed to finance through this connection",
   "integrations.outlook.admin_setup": "Your administrator needs to finish setting up Outlook for TeamBeats",
   "integrations.outlook.conditional_access": "Your organization's access policy blocked this. Open Outlook to continue",
   "integrations.outlook.connected": "Outlook is connected",
@@ -1246,5 +1247,16 @@
   "integrations.clock.file.empty": "The file has no header row.",
   "integrations.clock.file.missing_column": "A mapped column is not in the file.",
   "integrations.clock.file.too_many_rows": "The file has more than 500,000 rows.",
-  "integrations.clock.file.too_large": "The file is larger than 50 MB."
+  "integrations.clock.file.too_large": "The file is larger than 50 MB.",
+  "validation.finance.submit_path": "Enter the path claims are sent to, starting with /, for example /expenses.",
+  "validation.finance.status_path": "Enter the status path with {reference} where the finance reference goes, for example /expenses/{reference}.",
+  "validation.finance.field_name": "Map only the listed fields, to names of letters, digits and underscores, with dots for nested objects.",
+  "validation.finance.field_twice": "Two fields cannot go to the same place, or one inside the other.",
+  "validation.finance.fields_required": "Map at least the employee number, the amount and the currency.",
+  "validation.finance.response_path": "Enter where the value is in the answer, as a path such as $.data.id.",
+  "validation.finance.status_values": "Enter the finance system's words for each payment status, at least for paid, with no word used twice.",
+  "validation.finance.source_type": "The claim type must be lowercase letters and underscores.",
+  "validation.finance.employee_number": "The claim needs the employee number of the person.",
+  "validation.finance.currency": "The currency must be a three-letter ISO code such as SAR.",
+  "validation.finance.lines": "The claim needs 1 to 200 lines with a category and an amount above zero that add up to the total."
 }

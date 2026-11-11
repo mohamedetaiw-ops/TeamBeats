@@ -155,7 +155,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -215,6 +215,37 @@ export type ClockFile = {
   importedAt: string | null;
 };
 export type ClockFilePage = { items: ClockFile[]; nextCursor: string | null };
+/** Settings of a finance hand-off connection beyond address and sign-in (spec 017 FR-021). */
+export type FinanceSettings = {
+  submitPath: string | null;
+  statusPath: string | null;
+  fields: Record<string, string> | null;
+  linesField: string | null;
+  lineFields: Record<string, string> | null;
+  referencePath: string | null;
+  statusValuePath: string | null;
+  statusValues: Record<string, string[]> | null;
+  idempotencyHeader: string | null;
+};
+export const FINANCE_AUTH = ["api_key", "bearer", "basic", "oauth_client_credentials"] as const;
+export const FINANCE_FIELDS = ["source_id", "employee_number", "currency", "amount", "claim_date", "description", "cost_centre", "project"] as const;
+export const FINANCE_LINE_FIELDS = ["category", "date", "amount", "description", "original_amount", "original_currency"] as const;
+export const FINANCE_STATUSES = ["submitted", "approved", "paid", "rejected"] as const;
+export const FINANCE_STATES = ["queued", "sent", "failed", "unknown"] as const;
+export type FinanceHandOff = {
+  id: string;
+  sourceType: string;
+  sourceId: string;
+  state: string;
+  externalReference: string | null;
+  paymentStatus: string | null;
+  errorClass: string | null;
+  errorCode: string | null;
+  createdAt: string;
+  sentAt: string | null;
+  checkedAt: string | null;
+};
+
 export type ClockProblem = { line: number; employeeNumber: string | null; reason: string };
 
 /** Ticketing packs (spec 017 T017) and the sign-in methods each offers in its form; the API checks them again. */

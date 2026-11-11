@@ -300,6 +300,7 @@
   "experience.template.t12.description": "منطقة جانبية للتصفية بجوار النتائج.",
   "integrations.dependent.synced_users": "المستخدمون الذين تتم مزامنتهم من الدليل",
   "integrations.dependent.slack_links": "الأشخاص الذين ربطوا حساباتهم في Slack",
+  "integrations.dependent.finance_handoffs": "المطالبات المرسلة إلى النظام المالي عبر هذا الاتصال",
   "integrations.outlook.admin_setup": "يحتاج المسؤول إلى إكمال إعداد Outlook في TeamBeats",
   "integrations.outlook.conditional_access": "منعت سياسة الوصول في مؤسستك ذلك. افتح Outlook للمتابعة",
   "integrations.outlook.connected": "تم ربط Outlook",
@@ -1246,5 +1247,16 @@
   "integrations.clock.file.empty": "لا يحتوي الملف على صف العناوين.",
   "integrations.clock.file.missing_column": "أحد الأعمدة المحددة غير موجود في الملف.",
   "integrations.clock.file.too_many_rows": "يحتوي الملف على أكثر من 500,000 صف.",
-  "integrations.clock.file.too_large": "حجم الملف أكبر من 50 ميجابايت."
+  "integrations.clock.file.too_large": "حجم الملف أكبر من 50 ميجابايت.",
+  "validation.finance.submit_path": "أدخل المسار الذي تُرسل إليه المطالبات، يبدأ بـ /، مثل ‎/expenses.",
+  "validation.finance.status_path": "أدخل مسار الحالة مع {reference} في مكان مرجع النظام المالي، مثل ‎/expenses/{reference}.",
+  "validation.finance.field_name": "اربط الحقول المدرجة فقط، بأسماء من الحروف والأرقام والشرطات السفلية، مع نقاط للكائنات المتداخلة.",
+  "validation.finance.field_twice": "لا يمكن وضع حقلين في المكان نفسه، أو أحدهما داخل الآخر.",
+  "validation.finance.fields_required": "اربط على الأقل الرقم الوظيفي والمبلغ والعملة.",
+  "validation.finance.response_path": "أدخل موضع القيمة في الرد كمسار، مثل ‎$.data.id.",
+  "validation.finance.status_values": "أدخل كلمات النظام المالي لكل حالة دفع، على الأقل لحالة المدفوع، دون تكرار أي كلمة.",
+  "validation.finance.source_type": "يجب أن يتكون نوع المطالبة من حروف إنجليزية صغيرة وشرطات سفلية.",
+  "validation.finance.employee_number": "تحتاج المطالبة إلى الرقم الوظيفي للموظف.",
+  "validation.finance.currency": "يجب أن تكون العملة رمز ISO من ثلاثة أحرف مثل SAR.",
+  "validation.finance.lines": "تحتاج المطالبة إلى سطر واحد إلى 200 سطر، لكل منها فئة ومبلغ أكبر من صفر، ومجموعها يساوي الإجمالي."
 }

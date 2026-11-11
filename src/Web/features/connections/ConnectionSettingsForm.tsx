@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
@@ -9,13 +9,16 @@ import { AUTH_TYPES, type PackConnection, type RestAuth } from "@/lib/integratio
 export type SettingsBody = {
   displayName: string;
   rateLimitPerMinute: number;
-  settings: { baseUrl: string; auth: RestAuth; serviceDeskId?: string; requestTypeId?: string };
+  settings: { baseUrl: string; auth: RestAuth; serviceDeskId?: string; requestTypeId?: string } & Record<string, unknown>;
 };
+
+/** More settings of a pack that signs in like custom REST: its own fields, and their values when the form is sent. */
+export type ExtraSettings = { fields: ReactNode; values: () => Record<string, unknown> };
 
 /**
  * Name, address and sign-in of a custom REST connection (spec 017 US4, FR-003). The credential is a secret manager
  * reference, never the secret itself; the API checks the reference, the allowlist and every field. Ticketing packs use
- * the same form with their own sign-in methods, and Jira Service Management adds its service desk and request type.
+ * the same form with their own sign-in methods, Jira Service Management adds its service desk and request type, and other packs add their own fields.
  */
 export function ConnectionSettingsForm({
   initial,
@@ -24,6 +27,8 @@ export function ConnectionSettingsForm({
   onSubmit,
   authTypes = AUTH_TYPES,
   desk = false,
+  extra,
+  formLabel,
 }: {
   initial?: PackConnection;
   submitLabel: string;
@@ -31,6 +36,8 @@ export function ConnectionSettingsForm({
   onSubmit: (body: SettingsBody) => void;
   authTypes?: readonly string[];
   desk?: boolean;
+  extra?: ExtraSettings;
+  formLabel?: string;
 }) {
   const t = useTranslations("connections.settings");
   const authId = useId();
@@ -59,7 +66,7 @@ export function ConnectionSettingsForm({
       auth.clientId = clientId.trim();
       auth.scope = scope.trim() || null;
     }
-    const settings: SettingsBody["settings"] = { baseUrl: baseUrl.trim(), auth };
+    const settings: SettingsBody["settings"] = { ...(extra?.values() ?? {}), baseUrl: baseUrl.trim(), auth };
     if (desk) {
       settings.serviceDeskId = serviceDeskId.trim();
       settings.requestTypeId = requestTypeId.trim();
@@ -70,6 +77,7 @@ export function ConnectionSettingsForm({
   return (
     <form
       className="connections-form"
+      aria-label={formLabel}
       onSubmit={(e) => {
         e.preventDefault();
         submit();
@@ -108,6 +116,7 @@ export function ConnectionSettingsForm({
           <FormField label={t("requestTypeId")} hint={t("requestTypeIdHint")} name="requestTypeId" dir="ltr" inputMode="numeric" required value={requestTypeId} onChange={(e) => setRequestTypeId(e.target.value)} />
         </>
       ) : null}
+      {extra?.fields}
       <FormField label={t("rateLimit")} hint={t("rateLimitHint")} name="rateLimitPerMinute" type="number" min={1} max={100000} value={rate} onChange={(e) => setRate(e.target.value)} />
       <div className="connections-row">
         <Button type="submit" variant="primary" busy={busy} busyLabel={t("working")}>

@@ -8,6 +8,7 @@ import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { CHECK_RESULTS, TICKETING_KINDS, checkResult, isTicketing, known, type PackCheck, type PackConnection, type PackTestResult, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
+import { FinanceSettingsForm } from "./FinanceSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
@@ -173,6 +174,19 @@ export function ConnectionDetail({ initial, webhookEvents = [] }: { initial: Pac
             submitLabel={t("detail.save")}
             busy={busy === "save"}
             onSubmit={(body: ClockBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+        </section>
+      ) : null}
+
+      {view.kind === "finance_rest" ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <FinanceSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: SettingsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
           />
         </section>
       ) : null}

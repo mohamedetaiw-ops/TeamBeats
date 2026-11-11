@@ -89,6 +89,29 @@
         }
       }
     },
+    "/api/v1/integrations/pack-connections/{id}/finance-handoffs": {
+      "get": {
+        "tags": [
+          "Integrations: connector packs"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/inbound/{connectionId}": {
       "post": {
         "tags": [
@@ -18885,6 +18908,9 @@
       "name": "Integrations: mail and calendar"
     },
     {
+      "name": "Integrations: connector packs"
+    },
+    {
       "name": "Integrations: webhooks"
     },
     {
@@ -18919,9 +18945,6 @@
     },
     {
       "name": "Integrations: runs"
-    },
-    {
-      "name": "Integrations: connector packs"
     },
     {
       "name": "Integrations: sync agent"

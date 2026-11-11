@@ -189,6 +189,40 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `clock-import-${locale}`);
     });
 
+    test("an administrator adds a finance hand-off, maps the claim fields and sees no claims handed over yet", async ({ page }, testInfo) => {
+      const own = await createTenant(`fin-${locale}`, locale, "workplace_plus");
+      const host = `erp-${locale}.example`;
+      const name = locale === "ar" ? "نظام المالية" : "Finance system";
+
+      await signInWithDevForm(page, own.key, own.adminEmail, locale);
+      await page.goto(`${hostOrigin(own.key)}/admin/connections`);
+      await page.getByLabel(msg(locale, "connections.allowlist.host")).fill(host);
+      await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
+      await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", host) })).toBeVisible();
+
+      const add = page.getByRole("form", { name: msg(locale, "connections.finance.formLabel") });
+      await add.getByLabel(msg(locale, "connections.settings.name")).fill(name);
+      await add.getByLabel(msg(locale, "connections.settings.baseUrl")).fill(`https://${host}/api`);
+      await add.getByLabel(msg(locale, "connections.settings.authType")).selectOption("bearer");
+      await add.getByLabel(msg(locale, "connections.settings.secretRef")).fill(`secret://tenants/${own.id}/erp-token`);
+      await add.getByLabel(msg(locale, "connections.finance.fields.employee_number"), { exact: true }).fill("employee.code");
+      await add.getByLabel(msg(locale, "connections.finance.fields.amount"), { exact: true }).fill("total.value");
+      await add.getByLabel(msg(locale, "connections.finance.fields.currency"), { exact: true }).fill("total.currency");
+      await add.getByLabel(msg(locale, "connections.finance.statuses.paid"), { exact: true }).fill("PAID, SETTLED");
+      await add.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await expect(page.getByLabel(msg(locale, "connections.finance.fields.employee_number"), { exact: true })).toHaveValue("employee.code");
+      await expect(page.getByLabel(msg(locale, "connections.finance.statuses.paid"), { exact: true })).toHaveValue("PAID, SETTLED");
+      const panel = page.getByRole("region", { name: msg(locale, "connections.finance.handoffs.title") });
+      await expect(panel.getByText(msg(locale, "connections.finance.handoffs.empty"))).toBeVisible();
+      await expectAccessible(page, testInfo, `finance-connection-${locale}`);
+
+      // The token is not in the secret manager, so the test stops before calling the finance system.
+      await page.getByRole("button", { name: msg(locale, "connections.detail.test"), exact: true }).click();
+      await expect(page.getByText(msg(locale, "connections.checks.credential_missing"))).toBeVisible();
+    });
+
     test("an administrator adds a Microsoft 365 connection, reads its permissions, turns a feature off and on and deletes it", async ({ page }, testInfo) => {
       const name = locale === "ar" ? "مستأجر الشركة" : "Company tenant";
       const tenantId = locale === "ar" ? "7b2a4c11-3f5e-4d6a-9b8c-0d1e2f3a4b5c" : "6a1b3c22-4e5f-4a7b-8c9d-1e2f3a4b5c6d";
