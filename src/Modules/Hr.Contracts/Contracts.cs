@@ -21,6 +21,12 @@ public interface IWorkingCalendar
 public sealed record HolidayDay(DateOnly Date, bool HalfDay);
 
 /// <summary>
+/// A reduced hours period on a calendar (spec 022 US2 scenario 3, for example Ramadan): working days stay working days,
+/// with <paramref name="Hours"/> working hours each. Attendance rules read it.
+/// </summary>
+public sealed record ReducedHoursPeriod(DateOnly Start, DateOnly End, decimal Hours);
+
+/// <summary>
 /// A resolved calendar at one version. Pure functions over working days; dates are calendar dates in the tenant time
 /// zone (<see cref="Today"/> converts an instant).
 /// </summary>
@@ -30,7 +36,10 @@ public sealed class WorkingCalendarSnapshot
     private readonly HashSet<DayOfWeek> _weekDays;
     private readonly Dictionary<DateOnly, bool> _holidays;
 
-    public WorkingCalendarSnapshot(Guid? calendarId, int version, IEnumerable<DayOfWeek> weekDays, IEnumerable<HolidayDay> holidays, TimeZoneInfo zone)
+    private readonly List<ReducedHoursPeriod> _periods;
+
+    public WorkingCalendarSnapshot(Guid? calendarId, int version, IEnumerable<DayOfWeek> weekDays, IEnumerable<HolidayDay> holidays, TimeZoneInfo zone,
+        IEnumerable<ReducedHoursPeriod>? periods = null)
     {
         CalendarId = calendarId;
         Version = version;
@@ -41,7 +50,14 @@ public sealed class WorkingCalendarSnapshot
         }
         _holidays = holidays.ToDictionary(h => h.Date, h => h.HalfDay);
         Zone = zone;
+        _periods = [.. (periods ?? []).OrderBy(p => p.Start)];
     }
+
+    public IReadOnlyList<ReducedHoursPeriod> Periods => _periods;
+
+    /// <summary>The reduced working hours of a working day inside a period, or null for a normal day or a day off.</summary>
+    public decimal? ReducedHours(DateOnly date) =>
+        IsWorkingDay(date) ? _periods.FirstOrDefault(p => p.Start <= date && date <= p.End)?.Hours : null;
 
     /// <summary>Null for the built-in tenant week (Monday to Friday, no holidays) before anyone saves a calendar.</summary>
     public Guid? CalendarId { get; }
@@ -118,3 +134,42 @@ public sealed class WorkingCalendarSnapshot
 
 /// <summary>Published on any change to a calendar, its holidays or the units it applies to (spec 022 section 12).</summary>
 public sealed record WorkingCalendarChanged(Guid? CalendarId, IReadOnlyList<DateOnly> AffectedDates, IReadOnlyList<Guid> AffectedUnits) : IIntegrationEvent;
+
+/// <summary>A balance for the current leave year. <see cref="Source"/> is <c>teambeats</c> or <c>hr</c>; HR balances carry the time they were read.</summary>
+public sealed record LeaveBalance(string TypeKey, IReadOnlyDictionary<string, string> TypeNames, int LeaveYear, decimal Balance, decimal Pending, decimal Available, string Unit,
+    string Source = "teambeats", DateTimeOffset? AsOf = null, bool Stale = false);
+
+/// <summary>
+/// One person away on one date (spec 022 FR-009). <see cref="TypeKey"/> is set only when the viewer may see the leave
+/// type; otherwise the day shows as "out of office".
+/// </summary>
+public sealed record LeaveAbsence(Guid UserId, DateOnly Date, decimal Fraction, string Status, string? TypeKey);
+
+/// <summary>
+/// Leave reads for other modules (spec 022 slice 1): the assistant (spec 014) answers "how many days do I have" with the
+/// person's own balances, and profiles (spec 010) show "out of office". All calls are in the current tenant and for the
+/// signed-in viewer.
+/// </summary>
+public interface ILeave
+{
+    /// <summary>The signed-in person's balances for the current leave year of each active type.</summary>
+    Task<IReadOnlyList<LeaveBalance>> MyBalancesAsync(CancellationToken ct = default);
+
+    /// <summary>Approved leave of the given people between two dates, with the type only where the viewer may see it.</summary>
+    Task<IReadOnlyList<LeaveAbsence>> AvailabilityAsync(IReadOnlyCollection<Guid> userIds, DateOnly from, DateOnly to, CancellationToken ct = default);
+}
+
+/// <summary>Leave was approved (spec 022 section 12). IDs and dates only.</summary>
+public sealed record LeaveApproved(Guid RequestId, Guid UserId, DateOnly From, DateOnly To) : IIntegrationEvent;
+
+/// <summary>Approved leave was cancelled, or shortened (then <see cref="From"/> and <see cref="To"/> are the days given back).</summary>
+public sealed record LeaveCancelled(Guid RequestId, Guid UserId, DateOnly From, DateOnly To) : IIntegrationEvent;
+
+/// <summary>A journey started for a person (spec 022 section 12). IDs and the kind only.</summary>
+public sealed record JourneyStarted(Guid JourneyId, Guid UserId, string Kind, DateOnly AnchorDate) : IIntegrationEvent;
+
+/// <summary>An open journey step passed its due time.</summary>
+public sealed record JourneyStepOverdue(Guid JourneyId, Guid UserId, string StepKey) : IIntegrationEvent;
+
+/// <summary>Every step of a journey is done.</summary>
+public sealed record JourneyCompleted(Guid JourneyId, Guid UserId, string Kind) : IIntegrationEvent;

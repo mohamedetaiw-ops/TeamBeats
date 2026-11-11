@@ -163,6 +163,11 @@ public sealed class AuthorizationTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         await world.Database.AssertAuditedAsync(world.A.Id, AuditActions.RoleDefined);
 
+        // The names a custom role was defined with come back with it, so screens can show "News curator", not the key.
+        var rolesA = await admin.GetFromJsonAsync<JsonElement>("/api/v1/authz/roles");
+        var curator = rolesA.EnumerateArray().Single(r => r.GetProperty("key").GetString() == "news_curator");
+        Assert.Equal("News curator", curator.GetProperty("names").GetProperty("en").GetString());
+
         var rolesB = await world.B["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/authz/roles");
         Assert.DoesNotContain(rolesB.EnumerateArray(), r => r.GetProperty("key").GetString() == "news_curator");
 
@@ -182,6 +187,33 @@ public sealed class AuthorizationTests(TenantWorld world)
         Assert.DoesNotContain(BuiltInRoles.Employee, roles);
         var employee = await t["employee_gulf"].Client.GetFromJsonAsync<JsonElement>("/api/v1/me/access");
         Assert.Contains(BuiltInRoles.Employee, employee.GetProperty("grants").EnumerateArray().Select(r => r.GetProperty("role").GetString()));
+    }
+
+    [Fact]
+    public async Task Membership_policies_are_readable_and_guests_never_get_the_default_employee_role()
+    {
+        var t = world.B;
+        var policies = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/tenant/membership-policies");
+        var guest = policies.EnumerateArray().Single(p => p.GetProperty("membershipType").GetString() == "guest");
+        Assert.False(guest.GetProperty("defaultEmployeeRole").GetBoolean());
+        Assert.True(guest.GetProperty("fixed").GetBoolean());
+        Assert.Contains(policies.EnumerateArray(), p => p.GetProperty("membershipType").GetString() == "employee" && p.GetProperty("defaultEmployeeRole").GetBoolean());
+
+        // The tenant cannot turn it on for guests, and an employee cannot read the policies at all.
+        var turnOn = await t["admin"].Client.PutAsJsonAsync("/api/v1/tenant/membership-policies/guest", new { defaultEmployeeRole = true });
+        Assert.Equal(HttpStatusCode.BadRequest, turnOn.StatusCode);
+        var employeeRead = await t["employee_gulf"].Client.GetAsync("/api/v1/tenant/membership-policies");
+        Assert.Equal(HttpStatusCode.Forbidden, employeeRead.StatusCode);
+
+        // Even with the seeded policy row still on, a guest holds no Employee grant.
+        await world.SeedUserAsync(t, "guest_1", "guest");
+        var me = await t["guest_1"].Client.GetFromJsonAsync<JsonElement>("/api/v1/me/access");
+        Assert.DoesNotContain(BuiltInRoles.Employee, me.GetProperty("grants").EnumerateArray().Select(r => r.GetProperty("role").GetString()));
+
+        // Reading back reflects a change.
+        (await t["admin"].Client.PutAsJsonAsync("/api/v1/tenant/membership-policies/contractor", new { defaultEmployeeRole = false })).EnsureSuccessStatusCode();
+        policies = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/tenant/membership-policies");
+        Assert.False(policies.EnumerateArray().Single(p => p.GetProperty("membershipType").GetString() == "contractor").GetProperty("defaultEmployeeRole").GetBoolean());
     }
 
     [Fact]

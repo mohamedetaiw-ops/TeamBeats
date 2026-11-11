@@ -11,7 +11,8 @@ import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import {
   fieldTypes,
   pick,
-  prefillSources,
+  isHrSource,
+  prefillSourcesFor,
   type ActionStep,
   type ApprovalStep,
   type Category,
@@ -31,7 +32,7 @@ const membershipTypes = ["employee", "contractor", "guest"] as const;
 const classifications = ["public", "internal", "confidential", "restricted"] as const;
 const withOptions = new Set<FieldType>(["choice", "multi_choice", "lookup"]);
 const withRange = new Set<FieldType>(["number", "money"]);
-const withPrefill = new Set<FieldType>(["text", "person", "org_unit"]);
+const withPrefill = new Set<FieldType>(["text", "person", "org_unit", "date"]);
 
 type Result = { ok: boolean; messages: string[] } | null;
 
@@ -150,6 +151,8 @@ export function ServiceEditor({
             help: clean(f.help),
             note: clean(f.note),
             prefill: f.prefill || null,
+            readOnly: isHrSource(f.prefill) ? (f.readOnly ?? false) : false,
+            mustBeCurrent: isHrSource(f.prefill) ? (f.mustBeCurrent ?? false) : false,
             options: withOptions.has(f.type) ? (f.options ?? []).map((o) => ({ value: o.value, labels: clean(o.labels) ?? {} })) : null,
             rules: f.rules && f.rules.length > 0 ? f.rules : null,
             showWhen: f.showWhen && f.showWhen.field ? f.showWhen : null,
@@ -257,13 +260,26 @@ export function ServiceEditor({
             {t("prefill")}
             <select value={f.prefill ?? ""} onChange={(e) => update(i, { prefill: e.target.value || null })}>
               <option value="">{t("noPrefill")}</option>
-              {prefillSources.map((p) => (
+              {prefillSourcesFor(f.type).map((p) => (
                 <option key={p} value={p}>
                   {t(`source.${p.replace(".", "_")}`)}
                 </option>
               ))}
             </select>
           </label>
+        ) : null}
+        {withPrefill.has(f.type) && isHrSource(f.prefill) ? (
+          <>
+            <p className="field-hint">{t("hrPrefillHint")}</p>
+            <label className="services-check">
+              <input type="checkbox" checked={f.readOnly ?? false} onChange={(e) => update(i, { readOnly: e.target.checked })} />
+              {t("hrReadOnly")}
+            </label>
+            <label className="services-check">
+              <input type="checkbox" checked={f.mustBeCurrent ?? false} onChange={(e) => update(i, { mustBeCurrent: e.target.checked })} />
+              {t("hrMustBeCurrent")}
+            </label>
+          </>
         ) : null}
         {withRange.has(f.type) ? (
           <div className="services-row">
@@ -591,7 +607,7 @@ export function ServiceEditor({
           <h2 id="service-preview">{t("previewTitle", { version: preview.version })}</h2>
           <p className="notice">{t("previewNote")}</p>
           {preview.approvalStep ? <p>{t("previewStep", { name: pick(preview.approvalStep, locale) })}</p> : null}
-          <RequestForm target={{ kind: "preview" }} form={preview.form} initial={preview.prefill.values} readOnly={preview.prefill.readOnly} units={units} />
+          <RequestForm target={{ kind: "preview" }} form={preview.form} initial={preview.prefill.values} readOnly={preview.prefill.readOnly} unconfirmed={preview.prefill.unconfirmed} units={units} />
         </section>
       ) : null}
     </div>

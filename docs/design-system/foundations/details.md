@@ -1,6 +1,6 @@
 # Details
 
-The layouts of a screen can be right and the screen can still look generated. What gives it away is the detail: raw values, browser default controls, everything at the same weight, and space nobody designed. This page is the checklist every screen passes before it merges (spec 036 DLS-042 to DLS-067). The reference boards are in the design canvas "TeamBeats component redesign".
+The layouts of a screen can be right and the screen can still look generated. What gives it away is the detail: raw values, browser default controls, everything at the same weight, and space nobody designed. This page is the checklist every screen passes before it merges (spec 036 DLS-042 to DLS-068). The reference boards are in the design canvas "TeamBeats component redesign".
 
 ## Geometry
 
@@ -45,6 +45,7 @@ Bold is for the number in a stat tile. Everything else is at most semibold.
 | `2026-11-09T13:03:00Z` in a list | 2 h, Yesterday, 9 Nov |
 | `Source: Directory Who sees this: Everyone` | "Managed by the directory" once per group, and a small eye label only where visibility is narrower |
 | `Operations Dubai HQ, Floor 7` | Operations · Dubai HQ, Floor 7 |
+| `hr.leave` or `analytics_sentiment` | Leave requests and balances, Sentiment insights (the catalogue name, never the key) |
 
 Use `lib/format.ts` (`languageName`, `dateLong`, `relativeTime`, `timeZoneLabel`) and join separate facts with `joinMeta`.
 
@@ -89,6 +90,7 @@ Use `lib/format.ts` (`languageName`, `dateLong`, `relativeTime`, `timeZoneLabel`
 | Profile | Identity header, then Work information, Contact details, Personal preferences |
 | Article | Reading column, meta and Edit in the header, On this page and Related at the side, helpfulness at the end |
 | Library | Breadcrumbs, compact filters, sort and direction, file rows with icon, type, owner, change date |
+| Catalogue | Search by name, filters with counts, groups by area with "x of y", sorted by localized name, two columns on wide screens, empty state with a way back |
 
 ## Quality gate
 

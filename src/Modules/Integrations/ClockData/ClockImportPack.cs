@@ -169,50 +169,7 @@ public sealed partial class ClockImportPack(ITenantContext context, ISecretStore
         }
         if (s.Source == "sftp")
         {
-            var f = s.Sftp ?? new ClockSftpSettings(null, null, null, null, null, null, null, null);
-            var host = f.Host?.Trim().ToLowerInvariant();
-            if (host is null || host.Length > 253 || !HostName().IsMatch(host))
-            {
-                errors.Add("sftp.host", "validation.clock.host");
-            }
-            else if (!await allowlist.IsAllowedAsync(new Uri("https://" + host), ct))
-            {
-                errors.Add("sftp.host", "validation.custom_rest.host_not_allowed");
-            }
-            if (f.Port is { } p && p is < 1 or > 65535)
-            {
-                errors.Add("sftp.port", "validation.clock.port");
-            }
-            if (string.IsNullOrWhiteSpace(f.Username) || f.Username.Length > 100 || f.Username.Any(char.IsControl))
-            {
-                errors.Add("sftp.username", "validation.clock.username");
-            }
-            if (!AuthTypes.Contains(f.AuthType ?? "password"))
-            {
-                errors.Add("sftp.authType", "validation.custom_rest.auth_type");
-            }
-            if (SecretReferences.NameFor(tenantId, f.SecretRef) is null)
-            {
-                errors.Add("sftp.secretRef", "validation.custom_rest.secret_ref");
-            }
-            var key = f.HostKeySha256?.Trim();
-            key = key is not null && key.StartsWith("SHA256:", StringComparison.Ordinal) ? key[7..] : key;
-            key = key?.TrimEnd('=');
-            if (key is null || !Fingerprint().IsMatch(key))
-            {
-                errors.Add("sftp.hostKeySha256", "validation.clock.host_key");
-            }
-            var directory = string.IsNullOrWhiteSpace(f.Directory) ? "." : f.Directory.Trim();
-            if (directory.Length > 300 || (directory != "." && !RemotePath().IsMatch(directory)) || directory.Split('/').Contains(".."))
-            {
-                errors.Add("sftp.directory", "validation.clock.directory");
-            }
-            var pattern = string.IsNullOrWhiteSpace(f.FilePattern) ? "*.csv" : f.FilePattern.Trim();
-            if (!Pattern().IsMatch(pattern))
-            {
-                errors.Add("sftp.filePattern", "validation.clock.file_pattern");
-            }
-            sftp = new ClockSftpSettings(host, f.Port ?? 22, f.Username?.Trim(), f.AuthType ?? "password", f.SecretRef, key, directory, pattern);
+            sftp = await CheckSftpAsync(s.Sftp, tenantId, allowlist, errors, ct);
             if (s.ImportAt is not null && !Clock().IsMatch(s.ImportAt))
             {
                 errors.Add("importAt", "validation.clock.import_at");
@@ -285,6 +242,55 @@ public sealed partial class ClockImportPack(ITenantContext context, ISecretStore
             stampSet ? null : Blank(s.TimeFormat), zone, columns.Direction is null ? [] : ins, columns.Direction is null ? [] : outs,
             s.Source == "sftp" ? s.ImportAt ?? "02:00" : null);
         return JsonSerializer.SerializeToElement(stored, Stored);
+    }
+
+    /// <summary>Checks SFTP settings shared by clock data and HR imports and returns them in stored form.</summary>
+    public static async Task<ClockSftpSettings> CheckSftpAsync(ClockSftpSettings? value, Guid tenantId, HostAllowlist allowlist, ValidationErrors errors, CancellationToken ct)
+    {
+        var f = value ?? new ClockSftpSettings(null, null, null, null, null, null, null, null);
+        var host = f.Host?.Trim().ToLowerInvariant();
+        if (host is null || host.Length > 253 || !HostName().IsMatch(host))
+        {
+            errors.Add("sftp.host", "validation.clock.host");
+        }
+        else if (!await allowlist.IsAllowedAsync(new Uri("https://" + host), ct))
+        {
+            errors.Add("sftp.host", "validation.custom_rest.host_not_allowed");
+        }
+        if (f.Port is { } p && p is < 1 or > 65535)
+        {
+            errors.Add("sftp.port", "validation.clock.port");
+        }
+        if (string.IsNullOrWhiteSpace(f.Username) || f.Username.Length > 100 || f.Username.Any(char.IsControl))
+        {
+            errors.Add("sftp.username", "validation.clock.username");
+        }
+        if (!AuthTypes.Contains(f.AuthType ?? "password"))
+        {
+            errors.Add("sftp.authType", "validation.custom_rest.auth_type");
+        }
+        if (SecretReferences.NameFor(tenantId, f.SecretRef) is null)
+        {
+            errors.Add("sftp.secretRef", "validation.custom_rest.secret_ref");
+        }
+        var key = f.HostKeySha256?.Trim();
+        key = key is not null && key.StartsWith("SHA256:", StringComparison.Ordinal) ? key[7..] : key;
+        key = key?.TrimEnd('=');
+        if (key is null || !Fingerprint().IsMatch(key))
+        {
+            errors.Add("sftp.hostKeySha256", "validation.clock.host_key");
+        }
+        var directory = string.IsNullOrWhiteSpace(f.Directory) ? "." : f.Directory.Trim();
+        if (directory.Length > 300 || (directory != "." && !RemotePath().IsMatch(directory)) || directory.Split('/').Contains(".."))
+        {
+            errors.Add("sftp.directory", "validation.clock.directory");
+        }
+        var pattern = string.IsNullOrWhiteSpace(f.FilePattern) ? "*.csv" : f.FilePattern.Trim();
+        if (!Pattern().IsMatch(pattern))
+        {
+            errors.Add("sftp.filePattern", "validation.clock.file_pattern");
+        }
+        return new ClockSftpSettings(host, f.Port ?? 22, f.Username?.Trim(), f.AuthType ?? "password", f.SecretRef, key, directory, pattern);
     }
 
     private static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;

@@ -11,7 +11,7 @@ if [ "$changed" -eq 0 ]; then
   exit 0
 fi
 
-ids=$(printf '%s\n%s' "$text" "$(git log --format=%B "$base"..HEAD)" | grep -oE '\b(spec|specs/)[ -]?0[0-9]{2}\b|\b0[0-9]{2}-[a-z-]+\b' | grep -oE '0[0-9]{2}' | sort -u || true)
+ids=$(printf '%s\n%s' "$text" "$(git log --format=%B "$base"..HEAD)" | grep -ioE '\b(spec|specs/)[ -]?0[0-9]{2}\b|\b0[0-9]{2}-[a-z-]+\b' | grep -oE '0[0-9]{2}' | sort -u || true)
 if [ -z "$ids" ]; then
   echo "spec-lint: src/ changed but no spec ID (for example 'spec 004') in the PR text or commits." >&2
   exit 1

@@ -22,6 +22,7 @@ public static class ServicesModule
         services.AddScoped<ServiceAdmin>();
         services.AddScoped<Requests>();
         services.AddScoped<Attachments>();
+        services.AddScoped<IRequestFacts, RequestFactsReader>();
         services.AddScoped<Tasks>();
         services.AddScoped<Delegations>();
         services.AddScoped<Agents.Contracts.IAgentTool, RequestStatusTool>();

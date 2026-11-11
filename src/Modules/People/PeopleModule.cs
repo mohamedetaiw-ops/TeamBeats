@@ -31,8 +31,11 @@ public static class PeopleModule
         services.AddScoped<PeopleService>();
         services.AddScoped<IEmployeeNumbers, EmployeeNumbers>();
         services.AddScoped<DirectoryProfiles>();
+        services.AddScoped<HrProfiles>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, PeopleComponents>();
         services.AddMessageHandler<DirectorySynced, ApplyDirectoryProfiles>("people.directory_profiles");
+        services.AddMessageHandler<TeamBeats.Modules.Integrations.Contracts.HrSyncCompleted, ApplyHrProfiles>("people.hr_profiles");
+        services.AddMessageHandler<TeamBeats.Modules.Integrations.Contracts.EmployeeManagerChanged, ApplyHrManager>("people.hr_manager");
         services.AddMessageHandler<UserProfileSynced, RefreshProfileOnSync>("people.profile_synced");
         services.AddMessageHandler<UserProvisioned, RefreshProfileOnSync>("people.user_provisioned");
         services.AddMessageHandler<UserDeprovisioned, RefreshProfileOnSync>("people.user_deprovisioned");

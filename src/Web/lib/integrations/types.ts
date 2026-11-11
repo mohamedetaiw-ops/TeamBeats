@@ -159,7 +159,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest", "google_workspace"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -426,3 +426,162 @@ export type InboundCounts = {
 
 export const WEBHOOK_EVENTS = ["ContentPublished", "ProcessInstanceCompleted", "RequestCompleted", "RequestReturned", "RequestSubmitted", "UserTaskCompleted", "UserTaskCreated"] as const;
 export const WEBHOOK_TARGETS = ["event", "message", "kpi"] as const;
+
+/** The canonical HR fields a connection maps (spec 019 section 2); the record ID and status are required. */
+export const HR_FIELDS = [
+  "record_id",
+  "status",
+  "work_email",
+  "employee_number",
+  "name_en",
+  "name_ar",
+  "hire_date",
+  "termination_date",
+  "job_title",
+  "grade",
+  "employment_type",
+  "cost_centre",
+  "location",
+  "org_unit_code",
+  "manager_employee_number",
+  "assignment_date",
+] as const;
+export const HR_REQUIRED = ["record_id", "status"] as const;
+export const HR_STATUSES = ["active", "terminated"] as const;
+export const HR_PAGING = ["none", "page", "next"] as const;
+export const HR_AUTH = ["api_key", "bearer", "basic", "oauth_client_credentials"] as const;
+export const HR_PACK_KINDS = ["hr_rest", "hr_sftp"] as const;
+
+/** Mapping shared by the HR REST and SFTP packs (spec 019 FR-016). */
+export type HrMappingSettings = {
+  fields: Record<string, string> | null;
+  statusValues: Record<string, string[]> | null;
+  dateFormat: string | null;
+  syncAt: string | null;
+  timeZone: string | null;
+};
+export type HrRestSettings = HrMappingSettings & {
+  employeesPath: string | null;
+  employeePath?: string | null;
+  employeeRecordPath?: string | null;
+  payslipsPath?: string | null;
+  payslipRecordsPath?: string | null;
+  payslipFields?: Record<string, string> | null;
+  payslipPdfPath?: string | null;
+  leaveBalancesPath?: string | null;
+  leaveBalanceRecordsPath?: string | null;
+  leaveBalanceFields?: { type?: string; balance?: string } | null;
+  leaveSubmitPath?: string | null;
+  leaveReferencePath?: string | null;
+  leaveIdempotencyHeader?: string | null;
+  leaveTypeCodes?: Record<string, string> | null;
+  recordsPath: string | null;
+  paging: string | null;
+  pageParam: string | null;
+  pageSizeParam: string | null;
+  pageSize: number | null;
+  nextPath: string | null;
+};
+export type HrSftpSettings = HrMappingSettings & {
+  sftp: ClockSettings["sftp"];
+  delimiter: string | null;
+  hasHeader: boolean | null;
+};
+
+export type HrProblem = { recordId: string | null; reason: string };
+export type HrRun = {
+  id: string;
+  connectionId: string;
+  status: "applied" | "held" | "confirmed" | "discarded" | "superseded";
+  startedAt: string;
+  finishedAt: string | null;
+  total: number;
+  matched: number;
+  unmatched: number;
+  conflicts: number;
+  refused: number;
+  changed: number;
+  terminations: number;
+  moves: number;
+  activeBefore: number;
+  problems: HrProblem[];
+  decidedBy: string | null;
+  decidedAt: string | null;
+};
+export type HrOverview = {
+  settings: { matchRule: string[]; changeThresholdPercent: number; version: number; onboardingLeadDays: number; rehireReactivates: boolean };
+  connection: { id: string; kind: string; displayName: string; enabled: boolean } | null;
+  counts: { matched: number; unmatched: number; stale: number; conflicts: number };
+  lastRun: HrRun | null;
+  heldRun: HrRun | null;
+};
+export const HR_STATES = ["unmatched", "stale", "conflict", "matched"] as const;
+export const HR_MATCH_RULES = ["work_email", "employee_number"] as const;
+export const HR_PROBLEMS = ["missing_id", "duplicate_id", "bad_status", "bad_date", "bad_email", "too_long", "manager_loop", "self_manager"] as const;
+export type HrRecord = {
+  recordId: string;
+  employeeNumber: string | null;
+  workEmail: string | null;
+  nameEn: string | null;
+  nameAr: string | null;
+  state: string;
+  matchRule: string | null;
+  userId: string | null;
+  userName: string | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  lastRunId: string;
+};
+export type HrRecordPage = { items: HrRecord[]; nextCursor: string | null };
+
+/** Lifecycle changes HR reported (spec 019 US2 to US4) and the org codes HR uses (FR-007). */
+export const HR_CHANGE_KINDS = ["hire", "assignment", "termination", "rehire"] as const;
+export const HR_CHANGE_STATUSES = ["unmapped", "pending", "applied", "cancelled"] as const;
+export const HR_CANCEL_REASONS = ["replaced", "reverted", "rescinded", "cancelled_in_hr"] as const;
+export type HrChange = {
+  id: string;
+  recordId: string;
+  userId: string | null;
+  userName: string | null;
+  kind: string;
+  effectiveDate: string;
+  dueAt: string;
+  status: string;
+  details: Record<string, string | null>;
+  runId: string;
+  createdAt: string;
+  appliedAt: string | null;
+  cancelledReason: string | null;
+};
+export type HrOrgCode = {
+  code: string;
+  unitId: string | null;
+  unitNames: Record<string, string> | null;
+  people: number;
+  waiting: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+};
+
+/** Where each payslip value is in payroll's answer (spec 019 US6). */
+export const HR_PAYSLIP_FIELDS = ["period", "gross", "deductions", "net", "currency"] as const;
+
+/** The leave balance source (spec 019 US7, FR-013): TeamBeats keeps balances, or HR does. */
+export const HR_LEAVE_SOURCES = ["teambeats", "hr"] as const;
+export type HrLeaveSetting = { source: string; allowStaleSubmit: boolean; version: number; fromHr: boolean };
+
+export const HR_LEAVE_HANDOFF_STATES = ["queued", "recorded", "failed"] as const;
+export const HR_LEAVE_HANDOFF_KINDS = ["approved", "cancelled", "changed"] as const;
+export type HrLeaveHandOff = {
+  id: string;
+  requestId: string;
+  change: number;
+  kind: string;
+  state: string;
+  attempt: number;
+  externalReference: string | null;
+  errorClass: string | null;
+  createdAt: string;
+  recordedAt: string | null;
+  nextRetryAt: string | null;
+};

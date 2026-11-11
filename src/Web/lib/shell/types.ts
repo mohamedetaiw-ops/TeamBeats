@@ -51,6 +51,8 @@ export type Shell = {
   assistant: boolean;
   footer?: ShellFooter | null;
   homeViews?: HomeView[] | null;
+  /** True when the viewer may open at least one administration section, so the account menu offers Administration (FR-062). */
+  administration: boolean;
 };
 
 export type Crumb = { label: string; href: string };

@@ -699,3 +699,208 @@ public interface IFinanceHandOff
 }
 
 public sealed record FinanceHandOffChanged(string SourceType, Guid SourceId, string State, string? ExternalReference, string? PaymentStatus) : IIntegrationEvent;
+
+/// <summary>
+/// The canonical HR employee (spec 019 section 2). <paramref name="RecordId"/> is the HR system's own ID of the person;
+/// <paramref name="Status"/> is one of <see cref="HrEmployeeStatuses"/>. Names are kept in both languages when HR has them.
+/// <paramref name="AssignmentDate"/> is the date the current org unit, manager, title and location take effect (FR-005).
+/// </summary>
+public sealed record HrEmployee(
+    string RecordId,
+    string? EmployeeNumber,
+    string? WorkEmail,
+    string? NameEn,
+    string? NameAr,
+    string Status,
+    DateOnly? HireDate,
+    DateOnly? TerminationDate,
+    string? JobTitle,
+    string? Grade,
+    string? EmploymentType,
+    string? CostCentre,
+    string? Location,
+    string? OrgUnitCode,
+    string? ManagerEmployeeNumber,
+    DateOnly? AssignmentDate = null);
+
+public static class HrEmployeeStatuses
+{
+    public const string Active = "active";
+    public const string Terminated = "terminated";
+
+    public static readonly IReadOnlyList<string> All = [Active, Terminated];
+}
+
+/// <summary>The canonical HR fields a connection maps (spec 019 section 2), as their names in mappings.</summary>
+public static class HrFields
+{
+    public const string RecordId = "record_id";
+    public const string EmployeeNumber = "employee_number";
+    public const string WorkEmail = "work_email";
+    public const string NameEn = "name_en";
+    public const string NameAr = "name_ar";
+    public const string Status = "status";
+    public const string HireDate = "hire_date";
+    public const string TerminationDate = "termination_date";
+    public const string JobTitle = "job_title";
+    public const string Grade = "grade";
+    public const string EmploymentType = "employment_type";
+    public const string CostCentre = "cost_centre";
+    public const string Location = "location";
+    public const string OrgUnitCode = "org_unit_code";
+    public const string ManagerEmployeeNumber = "manager_employee_number";
+    public const string AssignmentDate = "assignment_date";
+
+    public static readonly IReadOnlyList<string> All =
+    [
+        RecordId, EmployeeNumber, WorkEmail, NameEn, NameAr, Status, HireDate, TerminationDate, JobTitle, Grade, EmploymentType, CostCentre, Location,
+        OrgUnitCode, ManagerEmployeeNumber, AssignmentDate,
+    ];
+
+    /// <summary>The fields of one assignment: they change together on the assignment date (US3 scenario 1).</summary>
+    public static readonly IReadOnlyList<string> Assignment = [OrgUnitCode, ManagerEmployeeNumber, JobTitle, Location];
+
+    /// <summary>A mapping must name these; everything else is optional.</summary>
+    public static readonly IReadOnlyList<string> Required = [RecordId, Status];
+}
+
+/// <summary>
+/// A matched person's HR record as other modules see it: the mapped fields only, by canonical name.
+/// <paramref name="SeenAt"/> is when HR last confirmed the record, by a sync or a live read.
+/// </summary>
+public sealed record HrRecordView(Guid UserId, string RecordId, IReadOnlyDictionary<string, string> Fields, DateTimeOffset? SeenAt = null);
+
+/// <summary>
+/// A live read of one person's HR record (spec 019 US5 scenario 3). <see cref="State"/> is <c>ok</c>,
+/// <c>not_matched</c> (no HR record matches the person) or <c>unavailable</c> (the HR system did not answer, or its
+/// connection cannot read one record). <see cref="Record"/> is set only when the state is ok.
+/// </summary>
+public sealed record HrRecordRead(string State, HrRecordView? Record)
+{
+    public const string Ok = "ok";
+    public const string NotMatched = "not_matched";
+    public const string Unavailable = "unavailable";
+}
+
+/// <summary>
+/// HR records of matched people (spec 019 FR-001, FR-003) for the modules that own what HR feeds: profiles (spec 010)
+/// read the HR fields here after each applied sync. Only the canonical contract is visible; HR system DTOs stay in the
+/// packs. Without the <c>hr.integration</c> capability nothing is returned.
+/// </summary>
+public interface IHrRecords
+{
+    /// <summary>Matched records, all of them or those of the given people.</summary>
+    Task<IReadOnlyList<HrRecordView>> MatchedAsync(IReadOnlyCollection<Guid>? userIds = null, CancellationToken ct = default);
+
+    /// <summary>The canonical fields the tenant's HR connection maps, so their owners can mark them as from HR.</summary>
+    Task<IReadOnlyList<string>> MappedFieldsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Reads one matched person's record from the HR system now, for a value that must be current. The stored copy is
+    /// not changed; the next sync does that.
+    /// </summary>
+    Task<HrRecordRead> CurrentAsync(Guid userId, CancellationToken ct = default);
+}
+
+/// <summary>Who keeps leave balances (spec 019 FR-013): TeamBeats' own ledger, or the HR system.</summary>
+public static class HrLeaveSources
+{
+    public const string TeamBeats = "teambeats";
+    public const string Hr = "hr";
+
+    public static readonly IReadOnlyList<string> All = [TeamBeats, Hr];
+}
+
+/// <summary>
+/// The leave balance source setting (spec 019 US7, FR-013), versioned. <paramref name="AllowStaleSubmit"/> lets people
+/// send a request on the last known balance when HR cannot be read (US7 scenario 2). <paramref name="FromHr"/> is true
+/// only when HR is chosen and the plan includes <c>hr.integration</c>.
+/// </summary>
+public sealed record HrLeaveSetting(string Source, bool AllowStaleSubmit, int Version, bool FromHr);
+
+public sealed record HrLeaveBalance(string TypeKey, decimal Balance);
+
+/// <summary>
+/// One person's balances as HR reports them. <see cref="State"/> is <c>ok</c> (read now), <c>stale</c> (HR did not
+/// answer; <see cref="Balances"/> are the last known, read at <see cref="AsOf"/>), <c>not_matched</c> or
+/// <c>unavailable</c> (nothing known).
+/// </summary>
+public sealed record HrLeaveBalances(string State, IReadOnlyList<HrLeaveBalance> Balances, DateTimeOffset? AsOf)
+{
+    public const string Ok = "ok";
+    public const string Stale = "stale";
+    public const string NotMatched = "not_matched";
+    public const string Unavailable = "unavailable";
+}
+
+/// <summary>
+/// Leave handed to HR (spec 022 FR-006, spec 019 US7 scenario 1): an approved request, a cancellation, or a change of
+/// dates or days. <paramref name="Kind"/> is <c>approved</c>, <c>cancelled</c> or <c>changed</c>.
+/// </summary>
+public sealed record HrLeaveHandOffRequest(Guid RequestId, Guid UserId, string Kind, string TypeKey, DateOnly Start, DateOnly End, bool StartHalf, bool EndHalf,
+    decimal Days)
+{
+    public const string Approved = "approved";
+    public const string Cancelled = "cancelled";
+    public const string Changed = "changed";
+}
+
+/// <summary>States of a leave hand-off: queued (sent or waiting to retry), recorded (HR confirmed), failed, unavailable (no usable HR connection).</summary>
+public static class HrLeaveHandOffStates
+{
+    public const string Queued = "queued";
+    public const string Recorded = "recorded";
+    public const string Failed = "failed";
+    public const string Unavailable = "unavailable";
+}
+
+/// <summary>
+/// HR as the leave balance source (spec 019 US7, spec 022 FR-006). Balances are read live from the HR connection, with
+/// the last known kept for when HR does not answer. Hand-offs are durable connector jobs keyed by request, kind and
+/// change, retried hourly when HR is unavailable, so an approval never waits on HR. Tenant comes from context.
+/// </summary>
+public interface IHrLeave
+{
+    Task<HrLeaveSetting> SettingAsync(CancellationToken ct = default);
+
+    Task<HrLeaveBalances> BalancesAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>Hands one change to HR and returns its state; the same request, kind and change number is sent once.</summary>
+    Task<string> HandOffAsync(HrLeaveHandOffRequest request, int change, CancellationToken ct = default);
+}
+
+/// <summary>A leave hand-off changed state (queued, recorded, failed). IDs and the HR reference only.</summary>
+public sealed record HrLeaveHandOffChanged(Guid RequestId, string Kind, string State, string? ExternalReference, int Change = 0) : IIntegrationEvent;
+
+/// <summary>An HR sync applied its changes (spec 019 section 12). Counts only, never HR values.</summary>
+public sealed record HrSyncCompleted(Guid ConnectionId, Guid RunId, int Matched, int Changed) : IIntegrationEvent;
+
+/// <summary>An HR sync stopped before applying because it passed the change threshold (FR-004).</summary>
+public sealed record HrSyncHeld(Guid ConnectionId, Guid RunId, int Terminations, int Moves) : IIntegrationEvent;
+
+/// <summary>
+/// Lifecycle events (spec 019 FR-006), consumed by organization (002), identity (003), profiles (010) and leave and
+/// journeys (022). Each comes from one HR change, traceable to its run and HR record (FR-018). IDs and dates only.
+/// <paramref name="UserId"/> is null while the HR record matches nobody yet (US2 scenario 2).
+/// </summary>
+public sealed record EmployeeHired(Guid? UserId, string RecordId, DateOnly StartDate, Guid RunId, Guid ChangeId) : IIntegrationEvent;
+
+/// <summary>The person moved to another org unit on <paramref name="EffectiveDate"/> (US3).</summary>
+public sealed record EmployeeTransferred(Guid UserId, string RecordId, Guid? FromUnitId, Guid ToUnitId, DateOnly EffectiveDate, Guid RunId, Guid ChangeId)
+    : IIntegrationEvent;
+
+/// <summary>The person's manager changed on <paramref name="EffectiveDate"/>; the manager is null when HR's manager matches nobody.</summary>
+public sealed record EmployeeManagerChanged(Guid UserId, string RecordId, Guid? ManagerUserId, DateOnly EffectiveDate, Guid RunId, Guid ChangeId)
+    : IIntegrationEvent;
+
+/// <summary>
+/// HR recorded a termination (US4 scenario 1): published at once, so offboarding can start. Access ends with
+/// <see cref="EmployeeLeft"/> at the end of <paramref name="LastWorkingDay"/>, or within minutes when <paramref name="Immediate"/>.
+/// </summary>
+public sealed record EmployeeTerminated(Guid? UserId, string RecordId, DateOnly LastWorkingDay, bool Immediate, Guid RunId, Guid ChangeId) : IIntegrationEvent;
+
+/// <summary>The last working day of a terminated employee has ended (FR-008): their TeamBeats access ends now.</summary>
+public sealed record EmployeeLeft(Guid UserId, string RecordId, DateOnly LastWorkingDay, Guid ChangeId) : IIntegrationEvent;
+
+/// <summary>A former employee is active again (US4 scenario 3). <paramref name="Reactivate"/> is the tenant's choice to reopen the old account.</summary>
+public sealed record EmployeeRehired(Guid? UserId, string RecordId, DateOnly StartDate, bool Reactivate, Guid RunId, Guid ChangeId) : IIntegrationEvent;

@@ -23,6 +23,7 @@ An HR capability contract in `Integrations.Contracts` (`IHrDirectory`: employees
 - Effective-dated changes run from a daily job at 00:05 tenant time plus a check on each event.
 - Payslip PDFs stream through the API with a watermark added by the existing PDF library used for document previews; no new dependency.
 - The change threshold check runs before the apply phase as a dry run that counts terminations and moves.
+- Leave (US7, T013): `IHrLeave` in `Integrations.Contracts` gives the leave balance source setting (`integrations.hr_leave_setting`, versioned, audited), a person's balances read live through the HR REST pack with the last known kept in `integrations.hr_leave_balance`, and hand-offs of approved leave, cancellations and changes as durable `submit_leave` connector jobs in `integrations.hr_leave_handoff`. An unanswered hand-off is sent again every hour for three days, then failed; the HR integration page lists hand-offs and sends a failed one again. The `Hr` module reads only this contract and the `HrLeaveHandOffChanged` event. See the spec 022 plan, slice 2.
 
 ## Tests
 Fake HR system in `DevFakes` with matching, conflict, manager loop, future-dated and mass termination fixtures; cross-tenant match denial; payslip access by manager and administrator denied; prefill tampering refused; connector failure paths.

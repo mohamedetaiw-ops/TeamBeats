@@ -47,6 +47,14 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
         return t("preparedByAi");
       case "eval_follow_up":
         return t("evalFollowUp");
+      case "leave":
+        return t("leaveApproval");
+      case "leave_change":
+        return t("leaveChange");
+      case "leave_replacement":
+        return t("leaveReplacement");
+      case "journey":
+        return t("journeyStep");
       default:
         return i.name;
     }

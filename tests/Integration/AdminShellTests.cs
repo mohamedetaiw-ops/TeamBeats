@@ -42,6 +42,38 @@ public sealed class AdminShellTests(TenantWorld world)
         Assert.Empty(await Sections(world.A["employee_gulf"]));
     }
 
+    /// <summary>
+    /// Spec 008 FR-062: the shell offers Administration exactly when the admin shell has a section for the caller, including
+    /// admins whose rights cover only their own units, and never for employees or contractors.
+    /// </summary>
+    [Fact]
+    public async Task Shell_offers_administration_only_to_those_with_a_section()
+    {
+        foreach (var name in new[] { "admin", "orgadmin", "security", "publisher", "employee_gulf", "employee_africa", "contractor" })
+        {
+            var user = world.A[name];
+            var shell = await user.Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
+            Assert.True(shell.GetProperty("administration").GetBoolean() == (await Sections(user)).Count > 0, name);
+        }
+        Assert.True((await world.A["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell")).GetProperty("administration").GetBoolean());
+        Assert.True((await world.A["orgadmin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell")).GetProperty("administration").GetBoolean());
+        Assert.False((await world.A["employee_gulf"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell")).GetProperty("administration").GetBoolean());
+        Assert.False((await world.A["contractor"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell")).GetProperty("administration").GetBoolean());
+    }
+
+    /// <summary>A tenant admin's rights stay in their tenant: their session is refused on another tenant's host, and their own employees get no entry.</summary>
+    [Fact]
+    public async Task Administration_entry_does_not_cross_tenants()
+    {
+        var t = await world.CreateTenantAsync("ae-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        var employee = await world.SeedUserAsync(t, "employee", "employee");
+        Assert.True((await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell")).GetProperty("administration").GetBoolean());
+        Assert.False((await employee.Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell")).GetProperty("administration").GetBoolean());
+        // The new tenant's admin holds nothing in tenant A: its own sessions are refused on A's host.
+        var cross = await world.Factory.TenantClient(world.A.Key, t["admin"].Token).GetAsync("/api/v1/experience/shell");
+        Assert.Equal(HttpStatusCode.Unauthorized, cross.StatusCode);
+    }
+
     [Fact]
     public async Task Navigation_requires_a_session()
     {

@@ -1,0 +1,104 @@
+/* Spec 019 HR integration admin. Colors and spacing come from tokens. */
+.hr-integration {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.hr-integration-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+.hr-integration-section h2 {
+  margin: 0;
+}
+
+.hr-integration-held {
+  border-inline-start-width: var(--tb-border-width-thick);
+  border-inline-start-color: var(--tb-color-border-strong);
+}
+
+.hr-integration-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.hr-integration-form {
+  display: grid;
+  gap: var(--tb-space-sm);
+  max-inline-size: 40rem;
+}
+
+.hr-integration-meta {
+  display: block;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.hr-integration-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-md);
+  margin: 0;
+}
+
+.hr-integration-counts div {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.hr-integration-counts dt {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.hr-integration-counts dd {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.hr-integration-table {
+  overflow-x: auto;
+}
+
+.hr-integration-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.hr-integration-table caption {
+  text-align: start;
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.hr-integration-table th,
+.hr-integration-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: top;
+}
+
+.hr-integration-table td[data-number] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.hr-integration-cell {
+  display: grid;
+  gap: var(--tb-space-xs);
+  min-inline-size: 14rem;
+}
+
+.hr-integration-problems {
+  margin: 0;
+  padding-inline-start: var(--tb-space-md);
+}

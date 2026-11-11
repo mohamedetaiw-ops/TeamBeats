@@ -29,6 +29,8 @@ public static class TenancyModule
         services.AddScoped<DirectoryMapping.DirectoryMappingService>();
         services.AddMessageHandler<TeamBeats.Modules.Identity.Contracts.DirectorySynced, DirectoryMapping.ApplyMappingAfterDirectorySync>("tenancy.directory_mapping_apply");
         services.AddMessageHandler<TeamBeats.Modules.Integrations.Contracts.ConnectionDeleted, DirectoryMapping.ReleaseMappingOnConnectionDeleted>("tenancy.directory_mapping_release");
+        services.AddScoped<HrMemberships>();
+        services.AddMessageHandler<TeamBeats.Modules.Integrations.Contracts.EmployeeTransferred, MoveMembershipOnTransfer>("tenancy.hr_transfer");
         services.AddScoped<TenancyContracts>();
         services.AddScoped<IOrganizationHierarchy>(sp => sp.GetRequiredService<TenancyContracts>());
         services.AddScoped<ITenantMemberships>(sp => sp.GetRequiredService<TenancyContracts>());
@@ -146,6 +148,15 @@ public static class TenancyModule
             return Results.Created($"/api/v1/tenant/admins/{result.Id}", result);
         }).RequireStepUp();
 
+        // Default Employee access per membership type (spec 004 section 6). Guests never get it, so theirs is fixed.
+        tenant.MapGet("/membership-policies", async (IAuthorizationService authz, ITenantMemberships memberships, CancellationToken ct) =>
+        {
+            await authz.DemandAsync(Permissions.TenantSettingsView, AuthzTarget.Tenant, ct);
+            var policies = await memberships.GetMembershipTypePoliciesAsync(ct);
+            return Results.Ok(MembershipTypes.All.Select(type => new MembershipPolicyView(type,
+                type != MembershipTypes.Guest && (!policies.TryGetValue(type, out var on) || on), Fixed: type == MembershipTypes.Guest)));
+        });
+
         tenant.MapPut("/membership-policies/{membershipType}", async (string membershipType, MembershipPolicyRequest request,
             IAuthorizationService authz, IDbSession session, IAuditWriter audit, ITenantContext context, CancellationToken ct) =>
         {
@@ -153,6 +164,10 @@ public static class TenancyModule
             if (!MembershipTypes.All.Contains(membershipType))
             {
                 throw AppException.NotFound();
+            }
+            if (membershipType == MembershipTypes.Guest && request.DefaultEmployeeRole)
+            {
+                throw AppException.Validation("defaultEmployeeRole", "validation.membership_policy.guest_fixed");
             }
             await session.ExecAsync(
                 """
@@ -244,3 +259,6 @@ public static class TenancyModule
 }
 
 public sealed record MembershipPolicyRequest(bool DefaultEmployeeRole);
+
+/// <summary>Whether members of a membership type get the Employee role at tenant scope by default. <c>Fixed</c> marks a type whose answer the tenant cannot change.</summary>
+public sealed record MembershipPolicyView(string MembershipType, bool DefaultEmployeeRole, bool Fixed);

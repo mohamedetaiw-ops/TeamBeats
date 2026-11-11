@@ -82,6 +82,54 @@ public sealed class WorkingCalendarTests(TenantWorld world)
     private const string WeekStart = "2026-11-30";
     private const string WeekEnd = "2026-12-06";
 
+    private static Task<HttpResponseMessage> PeriodsAsync(HttpClient client, JsonElement calendar, params (string Start, string End, decimal Hours)[] periods)
+    {
+        var request = new HttpRequestMessage(HttpMethod.Put, $"/api/v1/hr/calendars/{Id(calendar)}/periods")
+        {
+            Content = JsonContent.Create(new { periods = periods.Select(p => new { name = new { en = "Ramadan", ar = "رمضان" }, start = p.Start, end = p.End, hours = p.Hours }) }),
+        };
+        request.Headers.TryAddWithoutValidation("If-Match", $"\"v{calendar.GetProperty("version").GetInt32()}\"");
+        return client.SendAsync(request);
+    }
+
+    [Fact]
+    public async Task Reduced_hours_periods_such_as_Ramadan_give_shorter_working_days_and_are_validated()
+    {
+        var t = await TenantAsync();
+        var riyadh = t.Unit("Riyadh");
+        var ksa = await CreateAsync(Admin(t), "KSA", SundayToThursday);
+        Assert.Equal(HttpStatusCode.OK, (await AssignAsync(Admin(t), riyadh, Id(ksa))).StatusCode);
+        ksa = await (await Admin(t).GetAsync($"/api/v1/hr/calendars/{Id(ksa)}")).ReadAsync<JsonElement>();
+
+        // Invalid periods are refused with their keys: overlap, hours, dates and names.
+        Assert.Contains("validation.calendar.period_overlap", await ErrorKeysAsync(await PeriodsAsync(Admin(t), ksa, ("2027-02-08", "2027-03-09", 6), ("2027-03-01", "2027-03-05", 5))));
+        Assert.Contains("validation.calendar.period_hours", await ErrorKeysAsync(await PeriodsAsync(Admin(t), ksa, ("2027-02-08", "2027-03-09", 6.3m))));
+        Assert.Contains("validation.calendar.period_hours", await ErrorKeysAsync(await PeriodsAsync(Admin(t), ksa, ("2027-02-08", "2027-03-09", 24))));
+        Assert.Contains("validation.calendar.period_dates", await ErrorKeysAsync(await PeriodsAsync(Admin(t), ksa, ("2027-03-09", "2027-02-08", 6))));
+        Assert.Contains("validation.calendar.period_dates", await ErrorKeysAsync(await PeriodsAsync(Admin(t), ksa, ("2027-01-01", "2027-06-30", 6))));
+
+        var saved = await PeriodsAsync(Admin(t), ksa, ("2027-02-08", "2027-03-09", 6));
+        Assert.True(saved.StatusCode == HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
+        var view = await saved.ReadAsync<JsonElement>();
+        var period = Assert.Single(view.GetProperty("periods").EnumerateArray());
+        Assert.Equal(("Ramadan", 6m), (period.GetProperty("name").GetProperty("en").GetString(), period.GetProperty("hours").GetDecimal()));
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.HrCalendarChanged, Id(ksa).ToString());
+        // The old version is refused now.
+        Assert.Equal(HttpStatusCode.Conflict, (await PeriodsAsync(Admin(t), ksa, ("2027-02-08", "2027-03-09", 5))).StatusCode);
+
+        // A working day in the period has the reduced hours; the weekend and days outside it do not.
+        var snapshot = await ForUserAsync(t, t["employee"].Id);
+        Assert.Equal(6m, snapshot.ReducedHours(new DateOnly(2027, 2, 10)));
+        Assert.Null(snapshot.ReducedHours(new DateOnly(2027, 2, 12)));
+        Assert.Null(snapshot.ReducedHours(new DateOnly(2027, 3, 10)));
+        var preview = await (await Admin(t).GetAsync($"/api/v1/hr/working-days?orgUnitId={riyadh}&from=2027-03-08&to=2027-03-11")).ReadAsync<JsonElement>();
+        Assert.Equal([6m, 6m, null, null], preview.GetProperty("days").EnumerateArray()
+            .Select(d => d.GetProperty("reducedHours").ValueKind == JsonValueKind.Null ? (decimal?)null : d.GetProperty("reducedHours").GetDecimal()).ToArray());
+
+        // Employees cannot set them.
+        Assert.Equal(HttpStatusCode.Forbidden, (await PeriodsAsync(t["employee"].Client, view, ("2027-02-08", "2027-03-09", 5))).StatusCode);
+    }
+
     [Fact]
     public async Task With_no_calendar_the_tenant_week_is_Monday_to_Friday_with_no_holidays()
     {

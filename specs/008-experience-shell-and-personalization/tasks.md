@@ -28,3 +28,4 @@ Depends on 032 (`Experience` module, pages, renderer), 033 (tokens), 003, 004, 0
 
 ## Final phase
 - [x] T016 OpenAPI, R1 implementation notes, spec evidence
+- [x] T018 [US1] Administration row in the account menu from the shell API's `administration` flag (FR-062); tests for admin, scoped admin, security officer, employee, contractor and another tenant, and the account menu path in `ar` and `en`

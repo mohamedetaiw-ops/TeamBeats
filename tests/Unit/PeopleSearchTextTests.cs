@@ -67,6 +67,9 @@ public sealed class PeopleSearchTextTests
         Assert.Equal(FieldVisibility.ManagersAndHr, defaults[ProfileFields.MobilePhone].Visibility);
         Assert.Equal(FieldVisibility.ManagersAndHr, defaults[ProfileFields.HireDate].Visibility);
         Assert.Equal(FieldVisibility.Hr, defaults[ProfileFields.EmployeeNumber].Visibility);
-        Assert.All(defaults.Values.Where(p => p.Key != ProfileFields.TimeZone), p => Assert.Equal(FieldSources.Directory, p.Source));
+        // Spec 019: grade, cost centre and employment type come from HR; the rest from the directory until HR maps them.
+        string[] fromHr = [ProfileFields.Grade, ProfileFields.CostCentre, ProfileFields.EmploymentType];
+        Assert.All(fromHr, k => Assert.Equal((FieldSources.Hr, FieldVisibility.Hr), (defaults[k].Source, defaults[k].Visibility)));
+        Assert.All(defaults.Values.Where(p => p.Key != ProfileFields.TimeZone && !fromHr.Contains(p.Key)), p => Assert.Equal(FieldSources.Directory, p.Source));
     }
 }

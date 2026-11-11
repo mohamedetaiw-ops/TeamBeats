@@ -31,7 +31,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
 
     private static readonly IReadOnlySet<string> Sources = new HashSet<string>(StringComparer.Ordinal)
     {
-        RouteSources.ServiceRoute, RouteSources.ContentRoute, RouteSources.PolicyRoute, RouteSources.DocumentRoute,
+        RouteSources.ServiceRoute, RouteSources.ContentRoute, RouteSources.PolicyRoute, RouteSources.DocumentRoute, RouteSources.LeaveRoute, RouteSources.JourneyRoute,
     };
 
     private Guid? Actor() => context.ActorType is ActorType.User or ActorType.System ? context.ActorId : null;
@@ -201,8 +201,9 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         var instance = await session.QuerySingleOrDefaultAsync(
             $"select {InstanceColumns} from workflow.process_instance where id = @instanceId for update", new { instanceId }, ReadInstance, ct)
             ?? throw AppException.NotFound();
-        // Only the person who started it withdraws as a user; modules acting as the system may also end it.
-        if (context.ActorType == ActorType.User && context.ActorId != instance.StartedBy)
+        // Only the person who started it withdraws as a user; modules acting as the system may also end it. An instance
+        // the system started (a journey step, spec 022) is ended by the user the calling module authorized.
+        if (context.ActorType == ActorType.User && instance.StartedBy is { } starter && context.ActorId != starter)
         {
             throw AppException.Denied();
         }
@@ -239,7 +240,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
 
     private sealed record TaskRow(UserTaskInfo Info, CandidateSet Candidates, Guid[] Excluded, Guid? OrgUnitId, int DefinitionVersion, Guid? Subject);
 
-    private sealed record CandidateSet(string Name, IReadOnlyList<Guid> Users, string? Permission, bool LineManager = false);
+    private sealed record CandidateSet(string Name, IReadOnlyList<Guid> Users, string? Permission, bool LineManager = false, bool Subject = false);
 
     private static TaskRow ReadTask(NpgsqlDataReader r)
     {
@@ -260,7 +261,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             var others = await session.ScalarAsync<Guid[]>("select excluded_user_ids from workflow.process_instance where id = @id", new { id = instance.Id }, ct) ?? [];
             excluded = [.. others.Concat(instance.StartedBy is { } starter ? [starter] : []).Distinct()];
         }
-        var candidates = new CandidateSet(step.Name, step.Users, step.Permission, step.LineManager);
+        var candidates = new CandidateSet(step.Name, step.Users, step.Permission, step.LineManager, step.Subject);
         var now = clock.UtcNow;
         DateTimeOffset? dueAt = step.DueWorkingDays is { } days ? await jobs.DueAtAsync(instance.OrgUnitId, now, days, ct) : null;
         await session.ExecAsync(
@@ -327,7 +328,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             {
                 return false;
             }
-            if (task.Candidates.Users.Contains(person))
+            if (task.Candidates.Users.Contains(person) || (task.Candidates.Subject && task.Subject == person))
             {
                 return true;
             }

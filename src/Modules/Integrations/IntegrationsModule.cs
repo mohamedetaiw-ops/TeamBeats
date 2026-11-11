@@ -78,6 +78,18 @@ public static class IntegrationsModule
         services.AddScoped<Finance.FinanceHandOffs>();
         services.AddScoped<IFinanceHandOff>(sp => sp.GetRequiredService<Finance.FinanceHandOffs>());
         services.AddScoped<IConnectionDependents, Finance.FinanceDependents>();
+        services.AddScoped<Hr.HrSync>();
+        services.AddScoped<Hr.HrRecords>();
+        services.AddScoped<IHrRecords>(sp => sp.GetRequiredService<Hr.HrRecords>());
+        services.AddScoped<Hr.HrSchedule>();
+        services.AddScoped<Hr.HrLifecycle>();
+        services.AddScoped<Hr.HrPayslips>();
+        services.AddScoped<Hr.HrRestPack>();
+        services.AddScoped<Hr.HrLeave>();
+        services.AddScoped<IHrLeave>(sp => sp.GetRequiredService<Hr.HrLeave>());
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrRestPack>());
+        services.AddScoped<Hr.HrSftpPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrSftpPack>());
         services.AddScoped<Webhooks.KpiFeed>();
         services.AddScoped<IKpiFeed>(sp => sp.GetRequiredService<Webhooks.KpiFeed>());
         services.AddScoped<Google.GoogleSignIn>();
@@ -104,6 +116,7 @@ public static class IntegrationsModule
         services.AddMessageHandler<SessionEnded, DropTokensOnSessionEnded>("integrations.tokens_session_ended");
         services.AddMessageHandler<ConnectorUnavailable, ConnectionAlerts>("integrations.connection_alerts");
         services.AddMessageHandler<ConnectorActionCompleted, Finance.FinanceSubmitFinished>("integrations.finance_submit_finished");
+        services.AddMessageHandler<ConnectorActionCompleted, Hr.HrLeaveSubmitFinished>("integrations.hr_leave_submit_finished");
         services.AddMessageHandler<SessionRevoked, DropTokensOnSessionRevoked>("integrations.tokens_session_revoked");
         services.AddMessageHandler<UserDeprovisioned, DropTokensOnUserDeprovisioned>("integrations.tokens_user_deprovisioned");
         return services;
@@ -242,6 +255,7 @@ public static class IntegrationsModule
         PackEndpoints.MapTools(app);
         ClockData.ClockEndpoints.Map(app);
         Finance.FinanceEndpoints.Map(app);
+        Hr.HrEndpoints.Map(app);
         Webhooks.InboundWebhooks.Map(app);
         SyncAgents.AgentEndpoints.Map(app);
         return app;

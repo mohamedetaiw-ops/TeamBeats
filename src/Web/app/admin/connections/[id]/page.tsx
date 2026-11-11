@@ -28,8 +28,9 @@ export default async function ConnectionPage({ params }: { params: Promise<{ id:
   const clock = connection.data.kind === "clock_import";
   const finance = connection.data.kind === "finance_rest";
   const google = connection.data.kind === "google_workspace";
-  const toolable = !webhook && !onprem && !clock && !finance && !google;
-  const capturable = !onprem && !clock && !finance && !google;
+  const hr = connection.data.kind === "hr_rest" || connection.data.kind === "hr_sftp";
+  const toolable = !webhook && !onprem && !clock && !finance && !google && !hr;
+  const capturable = !onprem && !clock && !finance && !google && !hr;
   const [actions, runs, webhookEvents, inbound, agents, agentJobs, tools, capture, clockFiles, handOffs] = await Promise.all([
     connection.data.kind === "custom_rest" ? apiGet<RestActionView[]>(`${path}/actions`) : Promise.resolve(null),
     apiGet<RunPage>(`/api/v1/integrations/connections/${encodeURIComponent(id)}/runs`),

@@ -64,6 +64,8 @@ public static class AuditActions
     public const string UserSynced = "identity.user_synced";
     public const string DisabledByDirectory = "identity.disabled_by_directory";
     public const string ReenabledByDirectory = "identity.reenabled_by_directory";
+    public const string DisabledByHr = "identity.disabled_by_hr";
+    public const string ReenabledByHr = "identity.reenabled_by_hr";
 
     // 004
     public const string RoleAssigned = "authz.role_assigned";
@@ -147,6 +149,34 @@ public static class AuditActions
 
     // 022
     public const string HrCalendarChanged = "hr.calendar_changed";
+    public const string HrLeaveSubmitted = "hr.leave_submitted";
+    public const string HrLeaveApproved = "hr.leave_approved";
+    public const string HrLeaveRejected = "hr.leave_rejected";
+    public const string HrLeaveCancelled = "hr.leave_cancelled";
+    public const string HrLeaveShortened = "hr.leave_shortened";
+    public const string HrLeaveOnBehalf = "hr.leave_on_behalf";
+    public const string HrBalanceAdjusted = "hr.balance_adjusted";
+    public const string HrLeaveTypeChanged = "hr.leave_type_changed";
+    public const string HrLeavePolicyChanged = "hr.leave_policy_changed";
+    public const string HrLeaveRecounted = "hr.leave_recounted";
+    public const string HrLeaveSourceChanged = "hr.leave_source_changed";
+    public const string HrLeaveHandOffRetried = "hr.leave_handoff_retried";
+    public const string HrJourneyTemplateChanged = "hr.journey_template_changed";
+    public const string HrJourneyStarted = "hr.journey_started";
+    public const string HrJourneyRescheduled = "hr.journey_rescheduled";
+    public const string HrJourneyStepCompleted = "hr.journey_step_completed";
+    public const string HrJourneyCancelled = "hr.journey_cancelled";
+
+    // 019
+    public const string HrSettingsChanged = "hr.settings_changed";
+    public const string HrMatchLinked = "hr.match_linked";
+    public const string HrMatchUnlinked = "hr.match_unlinked";
+    public const string HrSyncHeld = "hr.sync_held";
+    public const string HrSyncConfirmed = "hr.sync_confirmed";
+    public const string HrChangeApplied = "hr.change_applied";
+    public const string HrPayslipViewed = "hr.payslip_viewed";
+    public const string HrPayslipDownloaded = "hr.payslip_downloaded";
+    public const string HrOrgCodeMapped = "hr.org_code_mapped";
 
     // 010
     public const string PeopleVisibilityChanged = "people.visibility_changed";
@@ -335,7 +365,11 @@ public static class AuditActions
         TemplateReleased, TemplateDistributed, TemplateDeprecated, RegionLockChanged,
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
-        HrCalendarChanged,
+        HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed, HrChangeApplied, HrOrgCodeMapped, DisabledByHr, ReenabledByHr,
+        HrPayslipViewed, HrPayslipDownloaded,
+        HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
+        HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
+        HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
