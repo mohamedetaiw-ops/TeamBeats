@@ -45,6 +45,7 @@ public static class AdministrationModule
         ("attendance", Permissions.HrManage, "/admin/attendance"),
         ("letters", Permissions.HrManage, "/admin/letters"),
         ("data_changes", Permissions.HrManage, "/admin/data-changes"),
+        ("expenses", Permissions.FinanceProcess, "/admin/expenses"),
         ("people", Permissions.PeopleManage, "/admin/people"),
         ("services", Permissions.ServiceManage, "/admin/services"),
         ("audit", Permissions.AuditView, "/admin/audit"),

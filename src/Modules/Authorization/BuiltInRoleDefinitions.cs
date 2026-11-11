@@ -32,6 +32,7 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.PagePublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit, P.PagePublish]),
         new(BuiltInRoles.BrandManager, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ThemeEdit]),
         new(BuiltInRoles.HrOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.HrCalendarManage, P.HrIntegrationManage, P.HrManage, P.PeopleView, P.PeopleHrView]),
+        new(BuiltInRoles.FinanceOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.FinanceProcess]),
         new(BuiltInRoles.AgentDesigner, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.AgentDesign, P.AgentView, P.EvalDesign]),
         new(BuiltInRoles.EvaluationReviewer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.EvalReview]),
         new(BuiltInRoles.ComplianceOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.PolicyAuthor, P.PolicyManage]),

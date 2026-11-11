@@ -43,7 +43,7 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 - [x] T022 Data change requests with documents, HR write-back and all-channel notice
 
 ## Slice 6: Expenses (US8, FR-023 to FR-025)
-- [ ] T023 Claims, limits, currency, duplicates, routes by amount, finance hand-off, AI receipt suggestions
+- [x] T023 Claims, limits, currency, duplicates, routes by amount, finance hand-off, AI receipt suggestions
 
 ## Final phase (R2)
 - [ ] T024 Performance checks of section 15; OpenAPI; R2 implementation notes; spec evidence

@@ -70,6 +70,9 @@ public static class Permissions
     /// <summary>Spec 022 R2: leave types and policies, leave on behalf, balance adjustments and leave types of the people in scope.</summary>
     public const string HrManage = "hr.manage";
 
+    /// <summary>Spec 022 R2: expense policy, exchange rates and the finance step of expense claims of the people in scope.</summary>
+    public const string FinanceProcess = "finance.process";
+
     public const string PeopleView = "people.view";
     public const string PeopleHrView = "people.hr_view";
     public const string PeopleManage = "people.manage";
@@ -144,7 +147,7 @@ public static class Permissions
         ThemeEdit, ThemePublish, ConfigLockManage,
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
         NotificationsManage,
-        HrCalendarManage, HrIntegrationManage, HrManage,
+        HrCalendarManage, HrIntegrationManage, HrManage, FinanceProcess,
         PeopleView, PeopleHrView, PeopleManage,
         SecurityManage, SecurityView, SecurityRespond,
         ServiceManage, ServiceRequestOnBehalf,
@@ -175,6 +178,7 @@ public static class BuiltInRoles
     public const string PagePublisher = "page_publisher";
     public const string BrandManager = "brand_manager";
     public const string HrOfficer = "hr_officer";
+    public const string FinanceOfficer = "finance_officer";
     public const string ComplianceOfficer = "compliance_officer";
     public const string AgentDesigner = "agent_designer";
     public const string EvaluationReviewer = "evaluation_reviewer";

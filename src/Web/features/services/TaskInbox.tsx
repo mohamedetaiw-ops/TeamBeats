@@ -61,6 +61,8 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
         return t("letterRequest");
       case "data_change":
         return t("dataChangeRequest");
+      case "expense":
+        return t("expenseClaim");
       default:
         return i.name;
     }

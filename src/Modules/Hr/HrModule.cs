@@ -56,6 +56,13 @@ public static class HrModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<DataChanges.DataChangeTaskSource>());
         services.AddMessageHandler<Integrations.Contracts.HrDataChangeHandOffChanged, DataChanges.DataChangeTaskSource>("hr.data_change_written_back");
         services.AddSingleton<Services.Contracts.IModuleServiceSource, DataChanges.DataChangeModuleServices>();
+        services.AddScoped<Expenses.ExpenseConfig>();
+        services.AddScoped<Expenses.ExpenseClaims>();
+        services.AddScoped<Expenses.ExpenseReceiptReader>();
+        services.AddScoped<Expenses.ExpenseTaskSource>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<Expenses.ExpenseTaskSource>());
+        services.AddMessageHandler<Integrations.Contracts.FinanceHandOffChanged, Expenses.ExpenseTaskSource>("hr.expense_finance_changed");
+        services.AddSingleton<Services.Contracts.IModuleServiceSource, Expenses.ExpenseModuleServices>();
         services.AddScoped<JourneyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<JourneyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, JourneyTaskSource>("hr.journey_notify_task");
@@ -147,6 +154,7 @@ public static class HrModule
         app.MapAttendanceEndpoints();
         app.MapLetterEndpoints();
         DataChanges.DataChangeEndpoints.MapDataChangeEndpoints(app);
+        Expenses.ExpenseEndpoints.MapExpenseEndpoints(app);
         return app;
     }
 }

@@ -31,7 +31,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
 
     private static readonly IReadOnlySet<string> Sources = new HashSet<string>(StringComparer.Ordinal)
     {
-        RouteSources.ServiceRoute, RouteSources.ContentRoute, RouteSources.PolicyRoute, RouteSources.DocumentRoute, RouteSources.LeaveRoute, RouteSources.JourneyRoute, RouteSources.AttendanceRoute, RouteSources.LetterRoute, RouteSources.DataChangeRoute,
+        RouteSources.ServiceRoute, RouteSources.ContentRoute, RouteSources.PolicyRoute, RouteSources.DocumentRoute, RouteSources.LeaveRoute, RouteSources.JourneyRoute, RouteSources.AttendanceRoute, RouteSources.LetterRoute, RouteSources.DataChangeRoute, RouteSources.ExpenseRoute,
     };
 
     private Guid? Actor() => context.ActorType is ActorType.User or ActorType.System ? context.ActorId : null;
