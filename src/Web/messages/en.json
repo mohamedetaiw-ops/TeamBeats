@@ -3352,7 +3352,9 @@
       "approverHint": "Leave the approver empty to have the compliance officers of the policy's scope approve it.",
       "submit": "Create and write the first version",
       "busy": "Creating",
-      "failed": "The policy could not be created. Try again."
+      "failed": "The policy could not be created. Try again.",
+      "onboarding": "Required at onboarding",
+      "onboardingHint": "New joiners are asked to accept it during their onboarding journey."
     },
     "editor": {
       "register": "Policies",
@@ -7097,7 +7099,22 @@
         "manager": "The line manager",
         "users": "Named people",
         "permission": "A team by permission"
-      }
+      },
+      "type": "Step type",
+      "types": {
+        "task": "Task",
+        "attestation": "Policy acceptance",
+        "access_removal": "Access removal checklist",
+        "exit_interview": "Exit interview"
+      },
+      "typeHints": {
+        "task": "Marked done by whoever does it.",
+        "attestation": "The person accepts every policy marked as required at onboarding that applies to them. Done by the person.",
+        "access_removal": "One line per connected system and per system you list. Lines not confirmed after one working day go to IT and security officers.",
+        "exit_interview": "Reasons from a fixed list for reporting, and a comment only HR officers can read. Offboarding only."
+      },
+      "systems": "Other systems",
+      "systemsHint": "Systems that are not connected, one per line, such as Payroll or Door badges. Connected systems are added on their own."
     },
     "dashboard": {
       "title": "Journeys in your units",
@@ -7183,6 +7200,52 @@
         "manager": "The line manager",
         "users": "Named people",
         "permission": "A team by permission"
+      },
+      "openPolicies": "Open my policies",
+      "useChecklist": "Use the checklist below",
+      "useForm": "Fill in the form below",
+      "checklist": "Access removal",
+      "checklistHint": "Confirm each system once access is removed. The step is done when every line is confirmed.",
+      "accessStatuses": {
+        "pending": "Not confirmed",
+        "removed": "Removed",
+        "not_applicable": "Not applicable"
+      },
+      "escalated": "Sent to IT and security",
+      "removed": "Removed",
+      "notApplicable": "Not applicable",
+      "accessConfirmed": "Saved",
+      "exitRecorded": "Exit interview saved",
+      "exitTitle": "Exit interview",
+      "exitIntro": "Choose the reasons for leaving. Reasons are counted only in groups of at least five people. Your comment is read by HR officers only.",
+      "exitDeclined": "The person did not want an exit interview",
+      "exitReasons": "Reasons for leaving",
+      "exitPrimary": "Main reason",
+      "exitNoPrimary": "Not given",
+      "exitRating": "Overall experience",
+      "exitNoRating": "Not given",
+      "exitRatingValue": "{value} of 5",
+      "exitWouldReturn": "Would come back to work here",
+      "exitComment": "Comment",
+      "exitCommentHint": "Only HR officers can read this.",
+      "exitSubmit": "Save exit interview",
+      "exitWasDeclined": "The person did not want an exit interview.",
+      "yes": "Yes",
+      "no": "No",
+      "reasons": {
+        "compensation": "Pay and benefits",
+        "career_growth": "Career growth",
+        "management": "Management",
+        "work_life_balance": "Work and life balance",
+        "workload": "Workload",
+        "culture": "Culture",
+        "role_fit": "Fit with the role",
+        "relocation": "Moving away",
+        "family": "Family reasons",
+        "studies": "Studies",
+        "health": "Health",
+        "retirement": "Retirement",
+        "other": "Something else"
       }
     },
     "page": {
@@ -7200,6 +7263,17 @@
         "completed": "Completed",
         "cancelled": "Cancelled"
       }
+    },
+    "exitReasons": {
+      "title": "Exit reasons",
+      "intro": "The last twelve months in your units: {interviews, plural, one {# exit interview} other {# exit interviews}}, {declined} declined. Groups smaller than {size} are not shown.",
+      "notEnough": "Not enough interviews yet. Counts appear from {size} answered interviews.",
+      "reason": "Reason",
+      "chosen": "Chosen",
+      "primary": "Main reason",
+      "other": "Other units",
+      "unitCount": "{interviews, plural, one {# interview} other {# interviews}}",
+      "hidden": "{count, plural, one {# interview is} other {# interviews are}} in groups too small to show."
     }
   }
 }

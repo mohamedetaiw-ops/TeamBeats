@@ -19,6 +19,9 @@ namespace TeamBeats.Modules.Policies;
 /// <summary>Notices of one campaign to a batch of its members, sent apart so a large launch commits at once.</summary>
 public sealed record AttestationNoticeBatch(Guid CampaignId, string Template, IReadOnlyList<Guid> Recipients, string Dedupe) : IIntegrationEvent;
 
+/// <summary>An attestation the person owes: through a campaign membership, or an onboarding obligation (no campaign).</summary>
+internal sealed record Owed(CampaignRow? Campaign, Guid? ObligationId, Guid PolicyId, int Version, DateTimeOffset JoinedAt, DateTimeOffset DueAt, bool Overdue);
+
 internal sealed record CampaignRow(
     Guid Id,
     Guid PolicyId,
@@ -304,17 +307,34 @@ public sealed class PolicyCampaigns(
 
     // ---- The person ----
 
-    /// <summary>Open or overdue memberships of the user in open campaigns, earliest due first.</summary>
-    private async Task<List<(CampaignRow Campaign, DateTimeOffset JoinedAt, DateTimeOffset DueAt, string Status)>> OwedAsync(Guid user, Guid? policyId, CancellationToken ct) =>
-        await session.QueryAsync(
+    /// <summary>
+    /// What the user still owes, earliest due first: open or overdue memberships in open campaigns, and onboarding
+    /// obligations (spec 025 FR-017), which ask for the version in force.
+    /// </summary>
+    private async Task<List<Owed>> OwedAsync(Guid user, Guid? policyId, CancellationToken ct)
+    {
+        var campaigns = await session.QueryAsync(
             $"""
             select {string.Join(", ", CampaignRow.Columns.Split(", ").Select(c => "c." + c))}, m.joined_at, m.due_at, m.status
             from policies.campaign_member m join policies.campaign c on c.id = m.campaign_id join policies.policy p on p.id = c.policy_id
             where m.user_id = @user and m.status in ('open', 'overdue') and c.status = 'open' and p.status <> 'retired' and (@policyId::uuid is null or c.policy_id = @policyId)
-            order by m.due_at, c.id
-            """, new { user, policyId }, r => (CampaignRow.Read(r), r.GetFieldValue<DateTimeOffset>(13), r.GetFieldValue<DateTimeOffset>(14), r.GetString(15)), ct);
+            """, new { user, policyId },
+            r => new Owed(CampaignRow.Read(r), null, r.GetGuid(1), r.GetInt32(2), r.GetFieldValue<DateTimeOffset>(13), r.GetFieldValue<DateTimeOffset>(14), r.GetString(15) == MemberStatuses.Overdue),
+            ct);
+        var now = clock.UtcNow;
+        var obligations = await session.QueryAsync(
+            """
+            select o.id, o.policy_id, p.current_version, o.created_at, o.due_at
+            from policies.obligation o join policies.policy p on p.id = o.policy_id
+            where o.user_id = @user and o.status = 'open' and p.status <> 'retired' and p.current_version is not null and (@policyId::uuid is null or o.policy_id = @policyId)
+            """, new { user, policyId },
+            r => new Owed(null, r.GetGuid(0), r.GetGuid(1), r.GetInt32(2), r.GetFieldValue<DateTimeOffset>(3), r.GetFieldValue<DateTimeOffset>(4), r.GetFieldValue<DateTimeOffset>(4) < now),
+            ct);
+        return campaigns.Concat(obligations).OrderBy(o => o.DueAt).ThenBy(o => o.Campaign?.Id ?? o.ObligationId).ToList();
+    }
 
-    private static AttestationDue Due(CampaignRow c, DateTimeOffset dueAt, string status) => new(c.Id, c.Version, dueAt, status == MemberStatuses.Overdue, c.Text);
+    private static AttestationDue Due(Owed o) =>
+        new(o.Campaign?.Id, o.Version, o.DueAt, o.Overdue, o.Campaign?.Text ?? new Dictionary<string, string>());
 
     /// <summary>The person's own attestations in the inbox (US2 scenario 1). They never go to a delegate (section 4).</summary>
     public async Task<IReadOnlyList<PersonalTask>> OpenForAsync(Guid userId, CancellationToken ct = default)
@@ -324,10 +344,10 @@ public sealed class PolicyCampaigns(
             return [];
         }
         var list = new List<PersonalTask>();
-        foreach (var (campaign, joined, due, _) in await OwedAsync(userId, null, ct))
+        foreach (var owed in await OwedAsync(userId, null, ct))
         {
-            var policy = (await register.RowAsync(campaign.PolicyId, false, ct))!;
-            list.Add(new PersonalTask("policy_attestation", campaign.Id, policy.Names, AttestLink(policy.Id), joined, due));
+            var policy = (await register.RowAsync(owed.PolicyId, false, ct))!;
+            list.Add(new PersonalTask("policy_attestation", owed.Campaign?.Id ?? owed.ObligationId!.Value, policy.Names, AttestLink(policy.Id), owed.JoinedAt, owed.DueAt));
         }
         return list;
     }
@@ -344,7 +364,7 @@ public sealed class PolicyCampaigns(
         var policy = await register.VisibleAsync(id, false, ct);
         var owed = (await OwedAsync(user, policy.Id, ct)).FirstOrDefault();
         var last = await LastAttestationAsync(user, policy.Id, ct);
-        return new MyAttestation(owed.Campaign is null ? null : Due(owed.Campaign, owed.DueAt, owed.Status), last?.Version, last?.At);
+        return new MyAttestation(owed is null ? null : Due(owed), last?.Version, last?.At);
     }
 
     /// <summary>
@@ -360,7 +380,7 @@ public sealed class PolicyCampaigns(
     /// <summary>The policies that apply to one person with what they owe and last attested; the caller checks who may see it.</summary>
     internal async Task<IReadOnlyList<MyPolicyItem>> PoliciesOfAsync(Guid user, CancellationToken ct)
     {
-        var owed = (await OwedAsync(user, null, ct)).GroupBy(o => o.Campaign.PolicyId).ToDictionary(g => g.Key, g => g.First());
+        var owed = (await OwedAsync(user, null, ct)).GroupBy(o => o.PolicyId).ToDictionary(g => g.Key, g => g.First());
         var rows = await session.QueryAsync($"select {PolicyRow.Columns} from policies.policy where (current_version is not null and status <> 'retired') or id = any(@owed) order by lower(code), id",
             new { owed = owed.Keys.ToArray() }, PolicyRow.Read, ct);
         var last = (await session.QueryAsync(
@@ -369,7 +389,7 @@ public sealed class PolicyCampaigns(
         var list = new List<MyPolicyItem>();
         foreach (var p in rows)
         {
-            var due = owed.TryGetValue(p.Id, out var o) ? Due(o.Campaign, o.DueAt, o.Status) : null;
+            var due = owed.TryGetValue(p.Id, out var o) ? Due(o) : null;
             if (due is null && !await audiences.IncludesAsync(p.AppliesTo, user, ct))
             {
                 continue;
@@ -389,13 +409,14 @@ public sealed class PolicyCampaigns(
     {
         var user = context.RequireUser();
         var policy = await register.VisibleAsync(id, false, ct);
-        var owed = (await OwedAsync(user, policy.Id, ct)).Where(o => request.CampaignId is null || o.Campaign.Id == request.CampaignId).ToList();
+        var owed = (await OwedAsync(user, policy.Id, ct)).Where(o => request.CampaignId is null || o.Campaign?.Id == request.CampaignId).ToList();
         if (owed.Count == 0)
         {
             throw AppException.Conflict("conflict.policies.nothing_to_attest");
         }
-        var (campaign, _, _, _) = owed[0];
-        var version = await register.VersionByNumberAsync(policy.Id, campaign.Version, ct) ?? throw AppException.NotFound();
+        var asked = owed[0];
+        var campaign = asked.Campaign;
+        var version = await register.VersionByNumberAsync(policy.Id, asked.Version, ct) ?? throw AppException.NotFound();
         var channel = request.Channel ?? AttestationChannels.Web;
         var errors = new ValidationErrors();
         if (!AttestationChannels.Online.Contains(channel))
@@ -408,7 +429,7 @@ public sealed class PolicyCampaigns(
             errors.Add("locale", "validation.policies.locale");
         }
         errors.ThrowIfAny();
-        var text = campaign.Text.GetValueOrDefault(locale) ?? localizer.Get(DefaultTextKey, locale);
+        var text = campaign?.Text.GetValueOrDefault(locale) ?? localizer.Get(DefaultTextKey, locale);
         var shown = string.Join("\n\n", version.Titles.GetValueOrDefault(locale) ?? string.Empty,
             string.Join("\n\n", version.Clauses.Select(c => ClauseRules.Text(c, locale))), text);
         var hash = ClauseRules.Hash(shown);
@@ -419,17 +440,32 @@ public sealed class PolicyCampaigns(
             insert into policies.attestation (tenant_id, id, user_id, policy_id, version, campaign_id, attestation_text, locale, text_hash, channel, source, attested_at)
             values (platform.current_tenant_id(), @attestationId, @user, @policy, @version, @campaign, @text, @locale, @hash, @channel, 'online', @now)
             on conflict do nothing
-            """, new { attestationId, user, policy = policy.Id, version = campaign.Version, campaign = campaign.Id, text, locale, hash, channel, now }, ct);
+            """, new { attestationId, user, policy = policy.Id, version = asked.Version, campaign = campaign?.Id, text, locale, hash, channel, now }, ct);
         if (inserted == 0)
         {
             throw AppException.Conflict("conflict.policies.already_attested");
         }
-        await session.ExecAsync("update policies.campaign_member set status = 'attested', attested_at = @now where campaign_id = @campaign and user_id = @user",
-            new { campaign = campaign.Id, user, now }, ct);
+        if (campaign is not null)
+        {
+            await session.ExecAsync("update policies.campaign_member set status = 'attested', attested_at = @now where campaign_id = @campaign and user_id = @user",
+                new { campaign = campaign.Id, user, now }, ct);
+        }
+        // One attestation to the version in force settles every onboarding obligation for the policy.
+        var settled = await session.ExecAsync(
+            """
+            update policies.obligation o set status = 'attested', attested_at = @now
+            from policies.policy p
+            where p.id = o.policy_id and o.user_id = @user and o.policy_id = @policy and o.status = 'open' and p.current_version = @version
+            """, new { user, policy = policy.Id, version = asked.Version, now }, ct);
+        if (campaign is null && settled == 0)
+        {
+            // A second attestation racing the first finds the obligation settled; the transaction is rolled back.
+            throw AppException.Conflict("conflict.policies.already_attested");
+        }
         await audit.WriteAsync(new AuditEntry(AuditActions.PolicyAttested, Securables.Policy, policy.Id.ToString(), TargetOrgUnitId: policy.OrgUnitId,
-            Changes: new { version = campaign.Version, campaign = campaign.Id, channel, locale, hash }), ct);
-        await outbox.EnqueueAsync(new PolicyAttested(policy.Id, campaign.Version, user, campaign.Id, channel), ct);
-        return new AttestationView(attestationId, policy.Id, campaign.Version, campaign.Id, locale, text, hash, channel, now);
+            Changes: new { version = asked.Version, campaign = campaign?.Id, onboarding = settled, channel, locale, hash }), ct);
+        await outbox.EnqueueAsync(new PolicyAttested(policy.Id, asked.Version, user, campaign?.Id, channel), ct);
+        return new AttestationView(attestationId, policy.Id, asked.Version, campaign?.Id, locale, text, hash, channel, now);
     }
 
     // ---- Background work and events ----

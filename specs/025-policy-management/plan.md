@@ -29,12 +29,14 @@ R1 slices, in order:
 - `clause_comment`: version, clause anchor, author, text, resolved.
 - `campaign`: `policy_id`, `version`, `audience`, `deadline`, `attestation_text` per locale, `reminder_days int[]` (default 7 and 2), `late_joiner_days` (14), `excluded_membership_types`, `status`.
 - `campaign_member`: user, joined_at, due_at, status (open, attested, overdue, left_audience), left_at.
-- `attestation`: insert only: user, policy, version, campaign, text hash, attestation text, channel, time (FR-007). Attestation cannot be delegated, so the delegation contract of spec 016 is not consulted for these tasks.
+- `policy.onboarding_required` (FR-017, R2 with spec 022 T019) and `obligation`: an attestation one person owes outside any campaign, asked for by an onboarding journey step (the source key), due with the step, open, attested or cancelled.
+- `attestation`: insert only: user, policy, version, campaign (none for an obligation), text hash, attestation text, channel, time (FR-007). Attestation cannot be delegated, so the delegation contract of spec 016 is not consulted for these tasks.
 
 ## Attestation flow
 - Launch materializes `campaign_member` rows from the audience and creates one inbox task per person through the spec 016 task source contract (not an engine instance per person, to keep 100,000-person campaigns cheap).
 - `OrganizationMembershipChanged` adds late joiners with their own due date and marks leavers `left_audience`.
 - A scheduler sends reminders and, after the deadline, marks members overdue and sends manager lists. Manager lists wait for the reporting line (planned spec 010).
+- Onboarding (FR-017): the spec 022 journey asks through `IPolicyObligations` for every published policy flagged "onboarding required" that applies to the new joiner and whose version in force they have not attested to. Obligations show in the inbox and on My policies like campaign attestations; one attestation to the version in force settles them, and `PolicyAttested` tells the journey. Overdue onboarding attestations follow the journey's own overdue escalation, not the campaign scheduler.
 
 ## Compliance view (US3)
 Counts by org unit (with subtree roll-up) and drill-down to people; "location" and "manager" breakdowns arrive with spec 010, recorded in the notes. Line managers see their reports' status once spec 010 exists.

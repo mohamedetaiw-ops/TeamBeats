@@ -40,6 +40,18 @@ public interface IConnectionFeatures
     Task<ConnectionFeatureInfo?> FindAsync(string kind, string feature, CancellationToken ct = default);
 }
 
+/// <summary>A connected external system as other modules may name it: no secrets, no external identifiers.</summary>
+public sealed record ConnectedSystem(Guid ConnectionId, string Kind, string DisplayName);
+
+/// <summary>
+/// The external systems the tenant has connected and enabled, for checklists such as offboarding access removal
+/// (spec 022 FR-017). Tenant comes from context.
+/// </summary>
+public interface IConnectedSystems
+{
+    Task<IReadOnlyList<ConnectedSystem>> ListAsync(CancellationToken ct = default);
+}
+
 /// <summary>Feature owners describe what depends on a connection before it is deleted (spec 006 US5 scenario 8).</summary>
 public interface IConnectionDependents
 {

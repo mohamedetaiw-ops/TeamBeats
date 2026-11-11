@@ -6,19 +6,40 @@ import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
-import { FormField, SelectField } from "@/components/ui/FormField";
+import { FormField, SelectField, TextAreaField } from "@/components/ui/FormField";
 import { PersonPicker } from "@/features/services/PersonPicker";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { problemMessages } from "@/lib/notifications/types";
 import { pick } from "@/lib/services/types";
-import { JOURNEY_ASSIGNEES, JOURNEY_KINDS, JOURNEY_STARTS, type JourneyAssignee, type JourneyKind, type JourneyStart, type JourneyTemplate } from "@/lib/journeys";
+import {
+  JOURNEY_ASSIGNEES,
+  JOURNEY_KINDS,
+  JOURNEY_STARTS,
+  JOURNEY_STEP_TYPES,
+  type JourneyAssignee,
+  type JourneyKind,
+  type JourneyStart,
+  type JourneyStepType,
+  type JourneyTemplate,
+} from "@/lib/journeys";
 import "./journeys.css";
 
 type ServiceOption = { id: string; names: Record<string, string> };
 
-type StepText = { key: string; en: string; ar: string; offset: string; assignee: JourneyAssignee; users: string[]; permission: string; due: string };
+type StepText = {
+  key: string;
+  en: string;
+  ar: string;
+  offset: string;
+  assignee: JourneyAssignee;
+  users: string[];
+  permission: string;
+  due: string;
+  type: JourneyStepType;
+  systems: string;
+};
 
-const blankStep = (): StepText => ({ key: "", en: "", ar: "", offset: "0", assignee: "person", users: [], permission: "", due: "" });
+const blankStep = (): StepText => ({ key: "", en: "", ar: "", offset: "0", assignee: "person", users: [], permission: "", due: "", type: "task", systems: "" });
 
 /**
  * Journey templates (spec 022 FR-013): steps relative to an anchor date, each for the person, their buddy, their line
@@ -136,6 +157,8 @@ function TemplateForm({
           users: s.users ?? [],
           permission: s.permission ?? "",
           due: s.dueWorkingDays == null ? "" : String(s.dueWorkingDays),
+          type: s.type ?? "task",
+          systems: (s.systems ?? []).join("\n"),
         }))
       : [blankStep()],
   );
@@ -161,6 +184,14 @@ function TemplateForm({
         users: s.assignee === "users" ? s.users.filter(Boolean) : null,
         permission: s.permission.trim() || null,
         dueWorkingDays: s.due.trim() ? Number(s.due) : null,
+        type: s.type,
+        systems:
+          s.type === "access_removal"
+            ? s.systems
+                .split("\n")
+                .map((n) => n.trim())
+                .filter(Boolean)
+            : null,
       })),
     });
 
@@ -232,6 +263,14 @@ function TemplateForm({
               onChange={(e) => setStep(i, { offset: e.target.value })}
             />
             <SelectField
+              label={t("type")}
+              hint={t(`typeHints.${s.type}`)}
+              name={`${prefix}-s${i}-type`}
+              value={s.type}
+              onChange={(e) => setStep(i, { type: e.target.value as JourneyStepType })}
+              options={JOURNEY_STEP_TYPES.map((x) => ({ value: x, label: t(`types.${x}`) }))}
+            />
+            <SelectField
               label={t("assignee")}
               name={`${prefix}-s${i}-assignee`}
               value={s.assignee}
@@ -250,6 +289,16 @@ function TemplateForm({
             )}
             <FormField label={t("due")} hint={t("dueHint")} name={`${prefix}-s${i}-due`} type="number" min={1} max={60} value={s.due} onChange={(e) => setStep(i, { due: e.target.value })} />
           </div>
+          {s.type === "access_removal" ? (
+            <TextAreaField
+              label={t("systems")}
+              hint={t("systemsHint")}
+              name={`${prefix}-s${i}-systems`}
+              rows={3}
+              value={s.systems}
+              onChange={(e) => setStep(i, { systems: e.target.value })}
+            />
+          ) : null}
           {s.assignee === "users"
             ? [...s.users, ""].map((u, j) => (
                 <PersonPicker
