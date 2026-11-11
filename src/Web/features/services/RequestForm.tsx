@@ -6,7 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { problemMessages, type Problem } from "@/lib/notifications/types";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
-import { isShown, pick, type AttachmentView, type FieldValue, type FormDefinition, type FormField } from "@/lib/services/types";
+import { isHrSource, isShown, pick, type AttachmentView, type FieldValue, type FormDefinition, type FormField } from "@/lib/services/types";
 import { PersonPicker } from "./PersonPicker";
 import "./services.css";
 
@@ -25,6 +25,7 @@ export function RequestForm({
   form,
   initial,
   readOnly,
+  unconfirmed = [],
   units,
   existingAttachments = [],
   allowOnBehalf = false,
@@ -33,6 +34,7 @@ export function RequestForm({
   form: FormDefinition;
   initial: Record<string, FieldValue>;
   readOnly: string[];
+  unconfirmed?: string[];
   units: OrgUnit[];
   existingAttachments?: AttachmentView[];
   allowOnBehalf?: boolean;
@@ -56,6 +58,7 @@ export function RequestForm({
   const [idempotencyKey] = useState(() => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`));
   const [lockedKeys, setLockedKeys] = useState(readOnly);
   const locked = useMemo(() => new Set(lockedKeys), [lockedKeys]);
+  const [unconfirmedKeys, setUnconfirmedKeys] = useState(unconfirmed);
   const [forWhom, setForWhom] = useState<string | null>(null);
 
   /** Filing for someone else: their profile fills the form, and the API checks the permission at their unit. */
@@ -66,9 +69,10 @@ export function RequestForm({
     try {
       const response = await fetch(`/api/v1/services/${target.serviceId}/prefill${query}`, { cache: "no-store" });
       if (response.ok) {
-        const prefill = (await response.json()) as { values: Record<string, FieldValue>; readOnly: string[] };
+        const prefill = (await response.json()) as { values: Record<string, FieldValue>; readOnly: string[]; unconfirmed?: string[] };
         setData((d) => ({ ...Object.fromEntries(Object.entries(d).filter(([k]) => !locked.has(k))), ...prefill.values }));
         setLockedKeys(prefill.readOnly);
+        setUnconfirmedKeys(prefill.unconfirmed ?? []);
         setGeneral([]);
       } else {
         setGeneral(await problemMessages(response));
@@ -267,7 +271,15 @@ export function RequestForm({
         {errors[f.key]}
       </p>
     ) : null;
-    const lockedHint = locked.has(f.key) ? <p className="field-hint">{t("fromProfile")}</p> : null;
+    const fromHr = isHrSource(f.prefill);
+    const filled = data[f.key] !== undefined && data[f.key] !== null && data[f.key] !== "";
+    const lockedHint = unconfirmedKeys.includes(f.key) ? (
+      <p className="field-hint">{t("hrUnconfirmed")}</p>
+    ) : locked.has(f.key) ? (
+      <p className="field-hint">{t(fromHr ? "fromHr" : "fromProfile")}</p>
+    ) : fromHr && filled ? (
+      <p className="field-hint">{t("prefilledFromHr")}</p>
+    ) : null;
     if (f.type === "policy_note") {
       return (
         <div key={f.key} className="services-note" role="note">

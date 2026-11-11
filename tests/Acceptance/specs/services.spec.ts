@@ -43,7 +43,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await form.getByRole("button", { name: m("services.admin.addField") }).click();
       const field = form.getByTestId("builder-field").first();
       await field.getByLabel(m("services.admin.fieldKey")).fill("boxes");
-      await field.getByLabel(m("services.admin.fieldType")).selectOption("number");
+      await field.getByLabel(m("services.admin.fieldType")).first().selectOption("number");
       await field.getByLabel(m("services.admin.inEnglish", { label: m("services.admin.fieldLabel") })).fill("Number of boxes");
       await field.getByLabel(m("services.admin.inArabic", { label: m("services.admin.fieldLabel") })).fill("عدد العلب");
       await field.getByLabel(m("services.admin.required")).check();

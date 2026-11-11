@@ -112,6 +112,18 @@
         }
       }
     },
+    "/api/v1/me/payslips-available": {
+      "get": {
+        "tags": [
+          "Payslips"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/inbound/{connectionId}": {
       "post": {
         "tags": [
@@ -3246,6 +3258,40 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/payslips": {
+      "get": {
+        "tags": [
+          "Payslips"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/payslips/{period}/pdf": {
+      "get": {
+        "tags": [
+          "Payslips"
+        ],
+        "parameters": [
+          {
+            "name": "period",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -15697,6 +15743,14 @@
             "items": {
               "type": "string"
             }
+          },
+          "readOnly": {
+            "type": "boolean",
+            "default": false
+          },
+          "mustBeCurrent": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -19234,6 +19288,9 @@
     },
     {
       "name": "Integrations: connector packs"
+    },
+    {
+      "name": "Payslips"
     },
     {
       "name": "Integrations: webhooks"

@@ -53,7 +53,8 @@ public static class RuleKinds
 
 /// <summary>
 /// Where a field's starting value comes from (FR-004). Fields from the directory or the account are read-only; the
-/// rest start filled and stay editable. More profile fields arrive with spec 010 custom fields.
+/// rest start filled and stay editable. More profile fields arrive with spec 010 custom fields. HR fields (spec 019
+/// US5) are read-only when the owner says so, and may be marked as needing a value HR confirmed in the last 7 days.
 /// </summary>
 public static class PrefillSources
 {
@@ -69,16 +70,42 @@ public static class PrefillSources
     public const string PrimaryUnit = "org.primary_unit";
     public const string Company = "org.company";
 
-    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
+    // Spec 019 US5: the requester's HR record, with the hr.form_prefill capability.
+    public const string HrEmployeeNumber = "hr.employee_number";
+    public const string HrJobTitle = "hr.job_title";
+    public const string HrGrade = "hr.grade";
+    public const string HrCostCentre = "hr.cost_centre";
+    public const string HrEmploymentType = "hr.employment_type";
+    public const string HrLocation = "hr.location";
+    public const string HrHireDate = "hr.hire_date";
+
+    /// <summary>HR sources and the canonical HR field each reads (spec 019 section 4).</summary>
+    public static readonly IReadOnlyDictionary<string, string> Hr = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        DisplayName, Email, JobTitle, Department, Office, WorkPhone, MobilePhone, EmployeeNumber, Manager, PrimaryUnit, Company,
+        [HrEmployeeNumber] = "employee_number",
+        [HrJobTitle] = "job_title",
+        [HrGrade] = "grade",
+        [HrCostCentre] = "cost_centre",
+        [HrEmploymentType] = "employment_type",
+        [HrLocation] = "location",
+        [HrHireDate] = "hire_date",
     };
+
+    /// <summary>HR fields classified Confidential (spec 019 section 8); the rest are Internal (US5 scenario 4).</summary>
+    public static readonly IReadOnlySet<string> Confidential = new HashSet<string>(StringComparer.Ordinal) { HrGrade, HrCostCentre };
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(
+        new[] { DisplayName, Email, JobTitle, Department, Office, WorkPhone, MobilePhone, EmployeeNumber, Manager, PrimaryUnit, Company }.Concat(Hr.Keys),
+        StringComparer.Ordinal);
+
+    public static bool IsHr(string? source) => source is not null && Hr.ContainsKey(source);
 
     /// <summary>The field types a source can fill.</summary>
     public static bool Fits(string source, string type) => source switch
     {
         Manager => type == FieldTypes.Person,
         PrimaryUnit or Company => type == FieldTypes.OrgUnit,
+        HrHireDate => type == FieldTypes.Date,
         _ => type == FieldTypes.Text,
     };
 }
@@ -102,7 +129,9 @@ public sealed record FormField(
     IReadOnlyList<FieldRule>? Rules = null,
     FieldCondition? ShowWhen = null,
     IReadOnlyDictionary<string, string>? Note = null,
-    IReadOnlyList<string>? Currencies = null);
+    IReadOnlyList<string>? Currencies = null,
+    bool ReadOnly = false,
+    bool MustBeCurrent = false);
 
 public sealed record FormDefinition(IReadOnlyList<FormField> Fields)
 {
@@ -202,6 +231,10 @@ public static partial class FormValidator
             if (f.Prefill is { } source && (!PrefillSources.All.Contains(source) || !PrefillSources.Fits(source, f.Type)))
             {
                 errors.Add($"{at}.prefill", "validation.services.field_prefill");
+            }
+            if ((f.ReadOnly || f.MustBeCurrent) && !PrefillSources.IsHr(f.Prefill))
+            {
+                errors.Add($"{at}.prefill", "validation.services.field_prefill_hr_only");
             }
             var allowed = RuleKinds.For(f.Type);
             var rules = f.Rules ?? [];

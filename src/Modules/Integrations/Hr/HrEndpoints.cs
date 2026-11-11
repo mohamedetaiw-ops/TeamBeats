@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Persistence;
+using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Integrations.Hr;
@@ -16,9 +18,37 @@ public sealed record HrLinkRequest(Guid UserId);
 /// </summary>
 public static class HrEndpoints
 {
+    /// <summary>Payslips are never kept by a browser or a shared device (FR-011).</summary>
+    private static void NoStore(HttpResponse response)
+    {
+        response.Headers.CacheControl = "no-store, private";
+        response.Headers.Pragma = "no-cache";
+        response.Headers["X-Robots-Tag"] = "noindex";
+    }
+
     public static void Map(IEndpointRouteBuilder app)
     {
         var api = app.MapGroup("/api/v1/hr/integration").RequireTenantUser().InAdminArea().WithTags("HR integration");
+
+        // My payslips (US6): the signed-in person's own only, after step-up, never cached.
+        var payslips = app.MapGroup("/api/v1/me/payslips").RequireTenantUser().RequiresCapability(Capabilities.HrPayslips).WithTags("Payslips");
+        // Whether to offer My payslips in the account menu; says nothing about the payslips themselves, so no step-up.
+        app.MapGet("/api/v1/me/payslips-available", async (HrPayslips service, CancellationToken ct) =>
+            Results.Ok(new { available = await service.AvailableAsync(ct) })).RequireTenantUser().WithTags("Payslips");
+        payslips.MapGet("", async (HrPayslips service, IDbSession session, HttpResponse response, CancellationToken ct) =>
+        {
+            var list = await service.ListAsync(ct);
+            await session.CommitAsync(ct);
+            NoStore(response);
+            return Results.Ok(list);
+        }).RequireStepUp();
+        payslips.MapGet("/{period}/pdf", async (string period, HrPayslips service, IDbSession session, HttpResponse response, CancellationToken ct) =>
+        {
+            var pdf = await service.PdfAsync(period, ct) ?? throw AppException.Conflict("conflict.hr.payslip_unavailable");
+            await session.CommitAsync(ct);
+            NoStore(response);
+            return Results.File(pdf, "application/pdf", $"payslip-{period}.pdf");
+        }).RequireStepUp();
 
         api.MapGet("", async (IAuthorizationService authz, HrSync hr, HttpResponse response, CancellationToken ct) =>
         {

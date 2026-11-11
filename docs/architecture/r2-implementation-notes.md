@@ -337,3 +337,43 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 - Secondary assignments from HR (edge case "employee in two org units") are not read yet. The canonical record has one org unit code.
 - The onboarding, mover and offboarding journeys (spec 022 US4 to US6) consume these events once spec 022 R2 is built. Spec 022 R2 has no plan or tasks yet. The HR leave balance source of spec 019 US7 needs the leave ledger from spec 022, so it is built with spec 022 R2. Spec 022 R2 will be planned right after spec 019 slice 3 (form prefill and payslips).
 - Open approvals of a mover are reassigned by spec 016 delegation rules once 016 consumes `EmployeeTransferred` (US3 scenario 2). That consumer is a follow-up of spec 016.
+
+## HR values in service forms (spec 019, slice 3a: T009 and T010; US5, FR-009)
+
+### Built
+- Service forms (spec 016) get seven HR prefill sources: `hr.employee_number`, `hr.job_title`, `hr.grade`, `hr.cost_centre`, `hr.employment_type`, `hr.location` and `hr.hire_date`. The hire date fills a date field. The others fill text fields. They need the `hr.form_prefill` capability, checked through the entitlement service. Without it, the fields start empty.
+- The form owner can mark an HR field as read-only. A read-only value always comes from the HR record on the server, whatever the browser sends (scenario 2). Only HR fields can be read-only or need a current value, and the form builder refuses anything else (`validation.services.field_prefill_hr_only`).
+- Grade and cost centre are Confidential (section 8). They fill a field only when the service is classified Confidential or Restricted (scenario 4). The check runs every time a form is prefilled or submitted, so changing a service's classification later is covered too.
+- The owner can mark an HR field as "must be current". When HR has not confirmed the stored copy for more than 7 days, the value is read from the HR system at that moment (scenario 3). The read goes through the REST pack's new optional "one employee" path (`employeePath` with `{record_id}`, and `employeeRecordPath`), on the HR system's own host only. A live read does not change the stored copy, because only full syncs feed lifecycle planning. When the read fails, or the connection has no such path (as with SFTP), the field stays empty and the prefill lists it as unconfirmed. The form then explains this. A read-only unconfirmed field blocks submit with `validation.services.prefill_unconfirmed`, so no value made up in the browser gets through.
+- `IHrRecords` gains `CurrentAsync` and `HrRecordView.SeenAt` (the last time HR confirmed the record). `HrRecords` now implements the contract on top of `HrSync` and the REST pack.
+- Tests:
+  - `HrSyncTests.Forms_fill_the_requesters_hr_fields_...` covers the four scenarios, a stale copy that is read live, HR being down, each person getting only their own record, and a Workplace tenant getting nothing.
+  - `FormValidatorTests` checks the new source and flag rules.
+
+### Differences and follow-ups
+- Where the spec is silent, these defaults apply:
+  - HR fields fill only the person's own form. When someone files on behalf of another person, HR fields start empty, because HR values of others are for HR staff in the HR system.
+  - A Confidential HR source in a form with a lower classification is allowed in the builder but never filled. The builder shows a hint.
+- The live read uses the REST pack's normal HTTP time limit. A shorter limit for form opening can be added if HR systems turn out slow.
+
+## My payslips (spec 019, slice 3b: T011 and T012; US6, FR-010 to FR-012)
+
+### Built
+- My payslips (`/payslips`, in the account menu) lists the signed-in person's payslips by period, newest first, with gross pay, deductions and net pay in the locale's number and currency format, and a PDF download.
+- Payslips are read live from payroll through the HR REST pack each time. TeamBeats keeps no copy (section 8). The pack has new optional settings: the payslips path of one employee (`{record_id}`), where each value is in a payslip (period, gross, deductions, net, currency), and the PDF path of one period (`{record_id}` and `{period}`, year and month). Both paths stay on the HR system's own host over https. A PDF is at most 10 MB and must start as a PDF.
+- Only the person's own payslips (scenario 2): the endpoints `GET /api/v1/me/payslips` and `GET /api/v1/me/payslips/{period}/pdf` take no person, so no role, manager or administrator can read someone else's. They need the `hr.payslips` capability and step-up (spec 026). Both answer with `Cache-Control: no-store, private`.
+- Downloads (scenario 3) are audited as `hr.payslip_downloaded` with the period, and each list view as `hr.payslip_viewed` with the periods shown. Amounts are never in the audit. Every page of the PDF gets a stamp with the person's email and the time in UTC: a small line at the bottom and a light diagonal line. The stamp is a new content stream in a standard PDF font. Payroll's own content is left as it is (section 11). A PDF that cannot be stamped, for example one with a password, is not handed out.
+- When payroll does not answer (scenario 4), the page says so and shows nothing.
+- Payslips are never a search source, an agent tool, a connector action or an event, so they never reach search (012), models (013) or notifications (scenario 5).
+- `GET /api/v1/me/payslips-available` tells the account menu whether to offer My payslips. It shows nothing about the payslips and needs no step-up.
+- Dependency: PDFsharp 6.2.4 (MIT) stamps the PDF, because the base library cannot change PDF files. Only its low-level object model is used, with no font engine. Its `System.Security.Cryptography.Pkcs` dependency is raised to the .NET 10 release, because 8.0.1 has known advisories.
+- Tests: `HrSyncTests.People_read_only_their_own_payslips_...` covers the list, the order, no-store, both audits, the watermark text, unknown and invalid periods, a manager and an administrator getting only their own, payroll down, step-up on both endpoints and a Workplace tenant refused. The e2e suite opens My payslips in English and Arabic with axe.
+
+### Differences and follow-ups
+- Where the spec is silent, these defaults apply:
+  - There is no 10 minute per-user cache yet (section 7 default). Every view reads payroll, which is the safest reading of "never stale", and a cache can be added if payroll load needs it.
+  - The SFTP pack drops files and cannot read payslips, so My payslips says payroll is not available for it.
+  - The watermark uses the email, since the standard PDF fonts cannot draw Arabic names.
+- Kiosk mode (spec 030) is not built yet. When it is, it must hide My payslips (scenario 3).
+- My payslips is in the account menu. Listing it as a service in the catalogue (section 10) is a follow-up of spec 016.
+- "Your payslip for November is available" notifications need a payroll signal and are not built.

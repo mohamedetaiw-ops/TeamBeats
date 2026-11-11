@@ -17,10 +17,10 @@ Depends on 002, 003, 010, 016, 017, 022, 026. R2.
 - [x] T008 Org code mapping and proposed units, with their migration (forced RLS)
 
 ## Phase 4: User Stories 5 to 7 (P1, P2)
-- [ ] T009 [P] [US5] Tests: prefill, read-only server values, classification check, live read when stale
-- [ ] T010 [US5] Prefill source for 016 forms
-- [ ] T011 [P] [US6] Tests: self only; manager and administrator denied; step-up; watermark; no indexing; kiosk hidden; failure shows nothing stale
-- [ ] T012 [US6] My payslips page and streaming endpoint
+- [x] T009 [P] [US5] Tests: prefill, read-only server values, classification check, live read when stale
+- [x] T010 [US5] Prefill source for 016 forms
+- [x] T011 [P] [US6] Tests: self only; manager and administrator denied; step-up; watermark; no indexing; kiosk hidden; failure shows nothing stale
+- [x] T012 [US6] My payslips page and streaming endpoint
 - [ ] T013 [US7] HR leave balance source for 022
 
 ## Final phase

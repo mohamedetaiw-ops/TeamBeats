@@ -103,7 +103,7 @@ public sealed class HrSync(
     IClock clock,
     ITenantContext context,
     IEntitlementService entitlements,
-    HrLifecycle lifecycle) : IHrRecords
+    HrLifecycle lifecycle)
 {
     /// <summary>Unmatched HR records are retried each sync; after this many days they are listed as stale (FR-015).</summary>
     public const int RetryDays = 30;
@@ -589,9 +589,10 @@ public sealed class HrSync(
         }
         return await session.QueryAsync(
             """
-            select user_id, record_id, data::text from integrations.hr_employee
+            select user_id, record_id, data::text, last_seen_at from integrations.hr_employee
             where match_state = 'matched' and user_id is not null and (@ids::uuid[] is null or user_id = any(@ids))
-            """, new { ids = userIds?.Distinct().ToArray() }, r => new HrRecordView(r.GetGuid(0), r.GetString(1), Fields(r.GetString(2))), ct);
+            """, new { ids = userIds?.Distinct().ToArray() },
+            r => new HrRecordView(r.GetGuid(0), r.GetString(1), Fields(r.GetString(2)), r.GetFieldValue<DateTimeOffset>(3)), ct);
     }
 
     public async Task<IReadOnlyList<string>> MappedFieldsAsync(CancellationToken ct = default)

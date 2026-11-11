@@ -79,6 +79,12 @@ public sealed class FormValidatorTests
         Assert.Contains("form.fields[0].rules:validation.services.field_rules", DefinitionErrors(new([new FormField("a", FieldTypes.Text, L("A"), Rules: [new FieldRule(RuleKinds.Min, 1)])])));
         Assert.Contains("form.fields[0].prefill:validation.services.field_prefill", DefinitionErrors(new([new FormField("a", FieldTypes.Number, L("A"), Prefill: PrefillSources.Email)])));
         Assert.Contains("form.fields[0].prefill:validation.services.field_prefill", DefinitionErrors(new([new FormField("a", FieldTypes.Text, L("A"), Prefill: "profile.salary")])));
+        // HR sources (spec 019 US5): the hire date fills a date field only, and only HR fields can be read-only or need a current value.
+        Assert.Contains("form.fields[0].prefill:validation.services.field_prefill", DefinitionErrors(new([new FormField("a", FieldTypes.Text, L("A"), Prefill: PrefillSources.HrHireDate)])));
+        Assert.Contains("form.fields[0].prefill:validation.services.field_prefill_hr_only", DefinitionErrors(new([new FormField("a", FieldTypes.Text, L("A"), Prefill: PrefillSources.Email, ReadOnly: true)])));
+        Assert.Contains("form.fields[0].prefill:validation.services.field_prefill_hr_only", DefinitionErrors(new([new FormField("a", FieldTypes.Text, L("A"), MustBeCurrent: true)])));
+        Assert.Empty(DefinitionErrors(new([new FormField("a", FieldTypes.Date, L("A"), Prefill: PrefillSources.HrHireDate, ReadOnly: true, MustBeCurrent: true),
+            new FormField("b", FieldTypes.Text, L("B"), Prefill: PrefillSources.HrGrade, ReadOnly: true)])));
         Assert.Contains("form.fields[0].currencies:validation.services.field_currencies", DefinitionErrors(new([new FormField("a", FieldTypes.Money, L("A"), Currencies: ["dollars"])])));
         Assert.Contains("form.fields[0]:validation.services.policy_note_value", DefinitionErrors(new([new FormField("a", FieldTypes.PolicyNote, L("A"), Required: true, Note: L("n"))])));
         // A condition can only point back to an earlier choice field, so conditions never loop.
