@@ -30,6 +30,31 @@ public interface INotificationSender
     Task<SendResult> SendAsync(NotificationRequest request, CancellationToken ct = default);
 }
 
+/// <summary>
+/// One email to an address that is not a TeamBeats account (spec 022 FR-016: pre-boarding to the personal email HR
+/// holds). Text comes from the same template keys as <see cref="NotificationRequest"/>, in the tenant's default
+/// language unless <paramref name="Locale"/> names an enabled one. It is sent now, outside the queue and without an
+/// inbox entry; the caller keeps its own state and retries on <see cref="ExternalEmailOutcomes.Retry"/>.
+/// </summary>
+/// <param name="Link">A path inside the tenant host. Absolute URLs are refused.</param>
+public sealed record ExternalEmailRequest(string To, string TemplateKey, string Link, IReadOnlyDictionary<string, string>? Parameters = null, string? Locale = null);
+
+public static class ExternalEmailOutcomes
+{
+    public const string Sent = "sent";
+
+    /// <summary>The address was refused permanently.</summary>
+    public const string Bounced = "bounced";
+
+    /// <summary>The relay was down, busy or not set: worth trying again later.</summary>
+    public const string Retry = "retry";
+}
+
+public interface IExternalEmail
+{
+    Task<string> SendAsync(ExternalEmailRequest request, CancellationToken ct = default);
+}
+
 /// <summary>A notification category. Mandatory categories ignore channel preferences and are labelled (FR-005).</summary>
 public sealed record NotificationCategory(string Key, bool Mandatory, bool EmailByDefault);
 

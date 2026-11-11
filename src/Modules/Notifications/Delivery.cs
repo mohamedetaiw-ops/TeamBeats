@@ -184,6 +184,28 @@ public sealed class EmailDelivery(
         return await sender.SendAsync(message, (await settings.GetEffectiveAsync(ct)).Relay, context.RequireTenant(), ct);
     }
 
+    /// <summary>One email to an address outside the tenant's accounts, now (<see cref="IExternalEmail"/>).</summary>
+    public async Task<string> SendExternalAsync(ExternalEmailRequest request, CancellationToken ct)
+    {
+        if (!request.Link.StartsWith('/') || request.Link.StartsWith("//", StringComparison.Ordinal) || request.Link.Contains("://", StringComparison.Ordinal))
+        {
+            throw new ArgumentException("The link must be a path on the tenant host.", nameof(request));
+        }
+        var tenantLocale = await tenantSettings.GetLocaleSettingsAsync(ct);
+        var locale = LocaleResolver.Resolve(request.Locale, tenantLocale.EnabledLocales, tenantLocale.DefaultLocale);
+        var text = await templates.RenderAsync(request.TemplateKey, locale, request.Parameters ?? new Dictionary<string, string>(), ct);
+        var message = await ComposeAsync(request.To, locale, text.Title, [new EmailItem(text.Title, text.Body, request.Link)], null, ct);
+        var tenantId = context.RequireTenant();
+        var result = await sender.SendAsync(message, (await settings.GetEffectiveAsync(ct)).Relay, tenantId, ct);
+        NotificationsTelemetry.Delivery(tenantId, "external", result.Outcome);
+        return result.Outcome switch
+        {
+            EmailOutcome.Sent => ExternalEmailOutcomes.Sent,
+            EmailOutcome.HardBounce => ExternalEmailOutcomes.Bounced,
+            _ => ExternalEmailOutcomes.Retry,
+        };
+    }
+
     private async Task SendOneAsync(Guid deliveryId, Guid notificationId, Guid userId, string address, int attempts, DateTimeOffset createdAt,
         string category, EmailMessage message, DateTimeOffset now, CancellationToken ct)
     {
@@ -298,4 +320,10 @@ public sealed class EmailDelivery(
     private static string Encode(string value) => WebUtility.HtmlEncode(value);
 
     private static string Fill(string text, string name, int value) => text.Replace("{" + name + "}", value.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+}
+
+/// <summary>The <see cref="IExternalEmail"/> contract over <see cref="EmailDelivery"/>.</summary>
+public sealed class ExternalEmail(EmailDelivery delivery) : IExternalEmail
+{
+    public Task<string> SendAsync(ExternalEmailRequest request, CancellationToken ct = default) => delivery.SendExternalAsync(request, ct);
 }

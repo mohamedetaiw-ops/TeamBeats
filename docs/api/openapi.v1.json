@@ -171,6 +171,28 @@
         }
       }
     },
+    "/api/v1/preboarding/{token}": {
+      "get": {
+        "tags": [
+          "Journeys"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/policies": {
       "get": {
         "tags": [
@@ -6071,6 +6093,38 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/JourneyTemplateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/journey-settings": {
+      "get": {
+        "tags": [
+          "Journeys"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Journeys"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JourneySettingsRequest"
               }
             }
           },
@@ -17463,6 +17517,20 @@
           }
         }
       },
+      "JourneySettingsRequest": {
+        "required": [
+          "preboardingEnabled"
+        ],
+        "type": "object",
+        "properties": {
+          "preboardingEnabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
       "JourneyStartRequest": {
         "required": [
           "templateKey",
@@ -17564,6 +17632,15 @@
               "array"
             ],
             "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
               "type": "string"
             }
           }

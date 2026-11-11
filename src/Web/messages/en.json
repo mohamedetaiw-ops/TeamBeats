@@ -5694,7 +5694,8 @@
         "location": "Location",
         "org_unit_code": "Organization unit code",
         "manager_employee_number": "Manager's employee number",
-        "assignment_date": "Assignment effective date"
+        "assignment_date": "Assignment effective date",
+        "personal_email": "Personal email (pre-boarding only)"
       },
       "statusesTitle": "Status and schedule",
       "statuses": {
@@ -7074,16 +7075,21 @@
         "task": "Task",
         "attestation": "Policy acceptance",
         "access_removal": "Access removal checklist",
-        "exit_interview": "Exit interview"
+        "exit_interview": "Exit interview",
+        "preboarding": "Pre-boarding welcome"
       },
       "typeHints": {
         "task": "Marked done by whoever does it.",
         "attestation": "The person accepts every policy marked as required at onboarding that applies to them. Done by the person.",
         "access_removal": "One line per connected system and per system you list. Lines not confirmed after one working day go to IT and security officers.",
-        "exit_interview": "Reasons from a fixed list for reporting, and a comment only HR officers can read. Offboarding only."
+        "exit_interview": "Reasons from a fixed list for reporting, and a comment only HR officers can read. Offboarding only.",
+        "preboarding": "A welcome before day one, in an onboarding template started by a hire. When pre-boarding is on, a joiner without an account gets it by a personal link sent to the email HR holds."
       },
       "systems": "Other systems",
-      "systemsHint": "Systems that are not connected, one per line, such as Payroll or Door badges. Connected systems are added on their own."
+      "systemsHint": "Systems that are not connected, one per line, such as Payroll or Door badges. Connected systems are added on their own.",
+      "contentEn": "Welcome text (English)",
+      "contentAr": "Welcome text (Arabic)",
+      "contentHint": "Plain text, up to 2,000 characters. This is all the pre-boarding page shows."
     },
     "dashboard": {
       "title": "Journeys in your units",
@@ -7243,6 +7249,28 @@
       "other": "Other units",
       "unitCount": "{interviews, plural, one {# interview} other {# interviews}}",
       "hidden": "{count, plural, one {# interview is} other {# interviews are}} in groups too small to show."
+    },
+    "settings": {
+      "title": "Pre-boarding",
+      "intro": "Joiners without an account yet can get a personal link, sent to the email HR holds for them, to a page with the pre-boarding steps of their onboarding template. The link stops working after their start date.",
+      "enabled": "Send pre-boarding to joiners before their account exists",
+      "enabledHint": "Turning it off cancels invitations not sent yet.",
+      "readOnly": "Only an HR officer of the whole organization can change this.",
+      "save": "Save",
+      "saving": "Saving",
+      "saved": "Pre-boarding setting saved.",
+      "failed": "The setting could not be saved.",
+      "scheduled": "Waiting to send",
+      "sent": "Sent",
+      "opened": "Opened",
+      "failedCount": "Could not be sent"
     }
+  },
+  "preboarding": {
+    "title": "Welcome aboard",
+    "startsOn": "Your first day is {date}.",
+    "expires": "This personal link works until {at}.",
+    "unavailableTitle": "This link is not available",
+    "unavailable": "The link may have ended after your start date. Contact the HR team that invited you for a new one."
   }
 }

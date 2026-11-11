@@ -37,9 +37,24 @@ type StepText = {
   due: string;
   type: JourneyStepType;
   systems: string;
+  contentEn: string;
+  contentAr: string;
 };
 
-const blankStep = (): StepText => ({ key: "", en: "", ar: "", offset: "0", assignee: "person", users: [], permission: "", due: "", type: "task", systems: "" });
+const blankStep = (): StepText => ({
+  key: "",
+  en: "",
+  ar: "",
+  offset: "0",
+  assignee: "person",
+  users: [],
+  permission: "",
+  due: "",
+  type: "task",
+  systems: "",
+  contentEn: "",
+  contentAr: "",
+});
 
 /**
  * Journey templates (spec 022 FR-013): steps relative to an anchor date, each for the person, their buddy, their line
@@ -159,6 +174,8 @@ function TemplateForm({
           due: s.dueWorkingDays == null ? "" : String(s.dueWorkingDays),
           type: s.type ?? "task",
           systems: (s.systems ?? []).join("\n"),
+          contentEn: s.content?.en ?? "",
+          contentAr: s.content?.ar ?? "",
         }))
       : [blankStep()],
   );
@@ -192,6 +209,7 @@ function TemplateForm({
                 .map((n) => n.trim())
                 .filter(Boolean)
             : null,
+        content: s.type === "preboarding" ? names(s.contentEn, s.contentAr) : null,
       })),
     });
 
@@ -298,6 +316,28 @@ function TemplateForm({
               value={s.systems}
               onChange={(e) => setStep(i, { systems: e.target.value })}
             />
+          ) : null}
+          {s.type === "preboarding" ? (
+            <div className="journeys-row">
+              <TextAreaField
+                label={t("contentEn")}
+                hint={t("contentHint")}
+                name={`${prefix}-s${i}-content-en`}
+                rows={4}
+                maxLength={2000}
+                value={s.contentEn}
+                onChange={(e) => setStep(i, { contentEn: e.target.value })}
+              />
+              <TextAreaField
+                label={t("contentAr")}
+                name={`${prefix}-s${i}-content-ar`}
+                dir="rtl"
+                rows={4}
+                maxLength={2000}
+                value={s.contentAr}
+                onChange={(e) => setStep(i, { contentAr: e.target.value })}
+              />
+            </div>
           ) : null}
           {s.assignee === "users"
             ? [...s.users, ""].map((u, j) => (

@@ -144,6 +144,7 @@ public sealed class HrSync(
         Put(HrFields.OrgUnitCode, e.OrgUnitCode);
         Put(HrFields.ManagerEmployeeNumber, e.ManagerEmployeeNumber);
         Put(HrFields.AssignmentDate, e.AssignmentDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        Put(HrFields.PersonalEmail, e.PersonalEmail);
         return d;
     }
 
@@ -592,7 +593,17 @@ public sealed class HrSync(
             select user_id, record_id, data::text, last_seen_at from integrations.hr_employee
             where match_state = 'matched' and user_id is not null and (@ids::uuid[] is null or user_id = any(@ids))
             """, new { ids = userIds?.Distinct().ToArray() },
-            r => new HrRecordView(r.GetGuid(0), r.GetString(1), Fields(r.GetString(2)), r.GetFieldValue<DateTimeOffset>(3)), ct);
+            r => new HrRecordView(r.GetGuid(0), r.GetString(1), Visible(Fields(r.GetString(2))), r.GetFieldValue<DateTimeOffset>(3)), ct);
+    }
+
+    /// <summary>The fields other modules may see with a person's record: all but <see cref="HrFields.Private"/>.</summary>
+    public static Dictionary<string, string> Visible(Dictionary<string, string> fields)
+    {
+        foreach (var key in HrFields.Private)
+        {
+            fields.Remove(key);
+        }
+        return fields;
     }
 
     public async Task<IReadOnlyList<string>> MappedFieldsAsync(CancellationToken ct = default)

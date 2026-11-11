@@ -35,6 +35,9 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         "POST /api/v1/agent/jobs:pull",
         "POST /api/v1/agent/jobs/{jobId:guid}/records",
         "POST /api/v1/agent/jobs/{jobId:guid}:complete",
+        // Spec 022 FR-016: a joiner without an account opens their pre-boarding page with the link's token; PreboardingTests
+        // covers unknown, expired and other tenants' links.
+        "GET /api/v1/preboarding/{token}",
     ];
 
     private IReadOnlyList<(string Method, string Pattern)> TenantRoutes() =>

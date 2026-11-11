@@ -35,6 +35,7 @@ public static class HrModule
         services.AddSingleton<Services.Contracts.IModuleServiceSource, LeaveModuleServices>();
         services.AddScoped<JourneyTemplates>();
         services.AddScoped<JourneyService>();
+        services.AddScoped<Preboarding>();
         services.AddScoped<JourneyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<JourneyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, JourneyTaskSource>("hr.journey_notify_task");

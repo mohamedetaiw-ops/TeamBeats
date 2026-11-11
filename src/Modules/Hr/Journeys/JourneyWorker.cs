@@ -56,6 +56,7 @@ public sealed class JourneyWorker(IServiceScopeFactory scopes, ILogger<JourneyWo
                 await journeys.OpenDueAsync(null, ct);
                 await journeys.SettleAttestationsAsync(null, ct);
                 await journeys.EscalateAccessAsync(ct);
+                await scope.ServiceProvider.GetRequiredService<Preboarding>().SendDueAsync(ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

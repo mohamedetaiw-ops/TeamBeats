@@ -1428,8 +1428,11 @@
   "validation.journey.exit_rating": "Give a rating from 1 to 5.",
   "validation.journey.exit_comment": "Keep the comment to 2,000 characters.",
   "validation.journey.period": "Choose a period of at most three years that ends after it starts.",
+  "validation.journey.content": "A pre-boarding step needs its welcome text, up to 2,000 characters per language. Other steps have none.",
   "notifications.template.hr.journey_task_waiting.title": "A journey step waits for you: {step}",
   "notifications.template.hr.journey_task_waiting.body": "Open the journey to see what to do and mark the step done.",
   "notifications.template.hr.access_removal_escalated.title": "Access removal not confirmed for {count} systems",
-  "notifications.template.hr.access_removal_escalated.body": "An offboarding checklist still has systems without confirmed access removal after one working day. Open the journey to follow up."
+  "notifications.template.hr.access_removal_escalated.body": "An offboarding checklist still has systems without confirmed access removal after one working day. Open the journey to follow up.",
+  "notifications.template.hr.preboarding_invite.title": "Welcome aboard: your start date is {startDate}",
+  "notifications.template.hr.preboarding_invite.body": "We look forward to welcoming you. Open the link to read what to expect before your first day. The link is personal and stops working after your start date."
 }

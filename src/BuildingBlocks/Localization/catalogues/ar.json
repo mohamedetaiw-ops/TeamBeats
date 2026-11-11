@@ -1428,8 +1428,11 @@
   "validation.journey.exit_rating": "أعط تقييمًا من 1 إلى 5.",
   "validation.journey.exit_comment": "اجعل التعليق في حدود 2000 حرف.",
   "validation.journey.period": "اختر فترة لا تزيد عن ثلاث سنوات تنتهي بعد بدايتها.",
+  "validation.journey.content": "تحتاج خطوة ما قبل الالتحاق إلى نص الترحيب، حتى 2000 حرف لكل لغة. ولا تحمل الخطوات الأخرى نصًا.",
   "notifications.template.hr.journey_task_waiting.title": "خطوة في رحلة بانتظارك: {step}",
   "notifications.template.hr.journey_task_waiting.body": "افتح الرحلة لترى المطلوب ثم علّم الخطوة كمنجزة.",
   "notifications.template.hr.access_removal_escalated.title": "لم يتم تأكيد إزالة الصلاحيات في {count} من الأنظمة",
-  "notifications.template.hr.access_removal_escalated.body": "قائمة إنهاء خدمة ما زالت فيها أنظمة دون تأكيد إزالة الصلاحيات بعد يوم عمل. افتح الرحلة للمتابعة."
+  "notifications.template.hr.access_removal_escalated.body": "قائمة إنهاء خدمة ما زالت فيها أنظمة دون تأكيد إزالة الصلاحيات بعد يوم عمل. افتح الرحلة للمتابعة.",
+  "notifications.template.hr.preboarding_invite.title": "مرحبًا بك: تاريخ التحاقك {startDate}",
+  "notifications.template.hr.preboarding_invite.body": "يسعدنا انضمامك إلينا. افتح الرابط لتعرف ما ينتظرك قبل يومك الأول. الرابط خاص بك ويتوقف عن العمل بعد تاريخ التحاقك."
 }
