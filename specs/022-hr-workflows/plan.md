@@ -124,4 +124,14 @@ A leave request starts an instance of the process key `hr.leave` on spec 024 wit
 - Integration: US1 scenarios 1 to 7; overlapping own request refused; year-end split; sibling HR officer denied; another tenant's request and type not found; plan without `hr.leave` refused; nobody approves their own request; audit asserted.
 - e2e: request leave with balance and overlap, approve from the inbox, in English and Arabic with axe.
 
+## Implementation notes (slice 1)
+- The accrual and carry-over job runs every hour per active tenant (`LeaveMaintenanceWorker`); each period writes once per person and type, so the extra runs write nothing.
+- Leave is a module service (`hr.leave`, route `/leave`) in the services catalogue, shown only when the plan has `hr.leave`. Module service registrations now carry an optional capability key.
+- The preview returns each problem as a key with the message in the caller's language, so the page shows it as is.
+- An hour type takes one day per request, in quarter hours; against the day count it weighs 8 hours a day.
+- Eligibility is by membership type only; gender and religion rules wait for a spec decision. A person needs no org unit to take leave; without one the tenant policy applies.
+- Replacement asks are personal tasks (`leave_replacement`) besides the request page. Cancelling or shortening approved leave starts a second approval (`leave_change`) when the type says so.
+- HR adjustments have their API and audit; their page comes with slice 2 (balances from the HR connection).
+- People profile "out of office" reads `ILeave.AvailabilityAsync`; wiring it into the profile is left to spec 010's next change.
+
 Slices 2 to 6 get their data model, API and tests here when each starts.

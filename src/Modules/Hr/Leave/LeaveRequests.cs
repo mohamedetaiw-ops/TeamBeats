@@ -48,7 +48,10 @@ public sealed record LeavePreview(
     IReadOnlyList<YearBalance> Years,
     bool DocumentRequired,
     IReadOnlyList<OverlapPerson> Overlap,
-    IReadOnlyList<string> Problems);
+    IReadOnlyList<LeaveProblem> Problems);
+
+/// <summary>A reason a request cannot go in: the resource key, and the message in the caller's language (filled in by the endpoint).</summary>
+public sealed record LeaveProblem(string Key, string Message);
 
 public sealed record PersonRef(Guid Id, string DisplayName);
 
@@ -269,7 +272,7 @@ public sealed class LeaveRequests(
         var plan = await PlanAsync(input, person, null, ct);
         var overlap = await OverlapAsync(person, plan.Days.Select(d => d.Date).ToList(), null, ct);
         return new LeavePreview(plan.Type.Key, plan.Type.Unit, plan.Total, plan.Days.Select(d => d.Date).ToList(), plan.Years, plan.DocumentRequired, overlap,
-            plan.Problems);
+            plan.Problems.Select(p => new LeaveProblem(p, p)).ToList());
     }
 
     /// <summary>Submits a request (US1). The same idempotency key from the same person returns the request already made.</summary>

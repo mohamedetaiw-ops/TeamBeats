@@ -225,7 +225,7 @@ public sealed class LeaveTests(TenantWorld world)
         await AccrueAsync(t);
         var (mon3, _) = Week(2);
         var tight = await (await t["mona"].Client.PostAsJsonAsync($"{Leave}/preview", Input("study", mon3, mon3.AddDays(2)))).ReadAsync<JsonElement>();
-        Assert.Contains("validation.leave.balance", tight.GetProperty("problems").EnumerateArray().Select(p => p.GetString()));
+        Assert.Contains("validation.leave.balance", tight.GetProperty("problems").EnumerateArray().Select(p => p.GetProperty("key").GetString()));
         Assert.Contains("validation.leave.balance", await ErrorsAsync(await SubmitAsync(t["mona"].Client, Input("study", mon3, mon3.AddDays(2)))));
 
         // Scenario 3: three days of sick leave need a document; with one it goes in, and colleagues cannot read it.
@@ -383,18 +383,18 @@ public sealed class LeaveTests(TenantWorld world)
         Assert.Empty((await (await other["admin"].Client.GetAsync($"{Leave}/types?all=true")).ReadAsync<JsonElement>()).EnumerateArray());
         Assert.Contains("validation.leave.person_unknown", await ErrorsAsync(await SubmitAsync(other["admin"].Client, Input("annual", mon, fri, onBehalfOf: t["mona"].Id))));
 
-        // A plan without hr.leave refuses every leave endpoint.
+        // A plan without hr.leave refuses every leave endpoint. New tenants take the latest published version, so the
+        // package's capabilities are published again straight after.
         var plain = await world.CreateTenantAsync("lv-p-" + Guid.NewGuid().ToString("N")[..6], "workplace");
-        var capabilities = new Dictionary<string, object>
-        {
-            [Capabilities.AiAssistant] = new { enabled = true },
-            [Capabilities.AiAssistantMonthlyRequests] = new { enabled = true, limit = 9999 },
-            [Capabilities.OrgHierarchy] = new { enabled = true },
-        };
+        var current = (await (await plain["admin"].Client.GetAsync("/api/v1/tenant/entitlements")).ReadAsync<JsonElement>()).GetProperty("capabilities");
+        var capabilities = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(current.GetRawText())!.ToDictionary(p => p.Key, p => (object)p.Value);
+        capabilities[Capabilities.HrLeave] = new { enabled = false };
         var created = await (await world.Platform.PostAsJsonAsync("/api/v1/platform/packages/workplace/versions", new { capabilities })).ReadAsync<JsonElement>();
         var version = created.GetProperty("version").GetInt32();
         (await world.Platform.PostAsync($"/api/v1/platform/packages/workplace/versions/{version}:publish", null)).EnsureSuccessStatusCode();
         (await world.Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{plain.Id}/subscription", new { packageKey = "workplace", version })).EnsureSuccessStatusCode();
+        var restore = await (await world.Platform.PostAsJsonAsync("/api/v1/platform/packages/workplace/versions", new { capabilities = current })).ReadAsync<JsonElement>();
+        (await world.Platform.PostAsync($"/api/v1/platform/packages/workplace/versions/{restore.GetProperty("version").GetInt32()}:publish", null)).EnsureSuccessStatusCode();
         foreach (var call in new Func<Task<HttpResponseMessage>>[]
         {
             () => plain["admin"].Client.GetAsync("/api/v1/me/leave"),

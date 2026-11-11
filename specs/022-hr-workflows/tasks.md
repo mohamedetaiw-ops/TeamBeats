@@ -19,12 +19,12 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 # R2 tasks
 
 ## Slice 1: Leave (US1 scenarios 1 to 7, FR-001 to FR-005, FR-009)
-- [ ] T009 Migration for leave types, policies, ledger, requests and request days (forced RLS); capability keys of section 9; permission `hr.manage`; audit actions of section 13
-- [ ] T010 [P] [US1] Unit tests: day count with half days and holidays, accrual, carry-over, eligibility, ledger balance
-- [ ] T011 [P] [US1] Integration tests: preview, balance block, document rule, overlap names without sensitive types, replacement accept and decline, approval from the inbox, cancel and shorten restore the balance, own request not approvable, sibling HR officer denied, cross-tenant not found, package denied
-- [ ] T012 [US1] Leave types and policies admin API and page
-- [ ] T013 [US1] Requests, approval on the engine with an `ITaskSource`, accrual job, `LeaveApproved` and `LeaveCancelled`, Leave module service in the catalogue
-- [ ] T014 [US1] Leave page and team availability page, in English and Arabic, RTL; e2e with axe
+- [x] T009 Migration for leave types, policies, ledger, requests and request days (forced RLS); capability keys of section 9; permission `hr.manage`; audit actions of section 13
+- [x] T010 [P] [US1] Unit tests: day count with half days and holidays, accrual, carry-over, eligibility, ledger balance
+- [x] T011 [P] [US1] Integration tests: preview, balance block, document rule, overlap names without sensitive types, replacement accept and decline, approval from the inbox, cancel and shorten restore the balance, own request not approvable, sibling HR officer denied, cross-tenant not found, package denied
+- [x] T012 [US1] Leave types and policies admin API and page
+- [x] T013 [US1] Requests, approval on the engine with an `ITaskSource`, accrual job, `LeaveApproved` and `LeaveCancelled`, Leave module service in the catalogue
+- [x] T014 [US1] Leave page and team availability page, in English and Arabic, RTL; e2e with axe
 
 ## Slice 2: HR balances, recount and reduced hours (US1 scenario 8, FR-006, FR-008, US2 scenario 3)
 - [ ] T015 HR leave balance source and write queue (with spec 019 T013)

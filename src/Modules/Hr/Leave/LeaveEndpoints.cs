@@ -1,3 +1,4 @@
+using TeamBeats.Localization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -63,7 +64,11 @@ public static class LeaveEndpoints
 
         leave.MapGet("/ledger/{userId:guid}", async (Guid userId, LeaveLedger ledger, CancellationToken ct) => Results.Ok(await ledger.EntriesAsync(userId, ct)));
 
-        leave.MapPost("/preview", async (LeaveRequestInput input, LeaveRequests requests, CancellationToken ct) => Results.Ok(await requests.PreviewAsync(input, ct)));
+        leave.MapPost("/preview", async (LeaveRequestInput input, LeaveRequests requests, ILocalizer localizer, RequestLocale locale, CancellationToken ct) =>
+        {
+            var preview = await requests.PreviewAsync(input, ct);
+            return Results.Ok(preview with { Problems = preview.Problems.Select(p => p with { Message = localizer.Get(p.Key, locale.Locale) }).ToList() });
+        });
 
         leave.MapPost("/requests", async (LeaveRequestInput input, HttpRequest http, LeaveRequests requests, IDbSession session, CancellationToken ct) =>
         {
