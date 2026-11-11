@@ -105,7 +105,8 @@ public sealed record DirectoryGroupRecord(string ExternalId, bool Removed, strin
 
 /// <summary>
 /// Changes since the cursors (a full read when they are null), and the cursors for the next read. Administrative units
-/// (Entra ID) are read like groups, for the organization mapping in spec 002 US5.
+/// (Entra ID) are read like groups, for the organization mapping in spec 002 US5. <paramref name="Complete"/> means the
+/// read lists every user and group the directory has (Google Workspace has no change feed), so anything not listed was removed.
 /// </summary>
 public sealed record DirectoryChanges(
     IReadOnlyList<DirectoryUserRecord> Users,
@@ -113,7 +114,8 @@ public sealed record DirectoryChanges(
     string UsersCursor,
     string GroupsCursor,
     IReadOnlyList<DirectoryGroupRecord>? AdminUnits = null,
-    string? AdminUnitsCursor = null);
+    string? AdminUnitsCursor = null,
+    bool Complete = false);
 
 public sealed class DirectoryUnavailableException(string reason) : Exception(reason)
 {
@@ -128,6 +130,108 @@ public interface IDirectorySource
     string IssuerFor(string externalTenantId);
 
     Task<DirectoryChanges> ReadChangesAsync(Guid connectionId, string? usersCursor, string? groupsCursor, string? adminUnitsCursor = null, CancellationToken ct = default);
+}
+
+/// <summary>Directories read inline by a connector pack connection.</summary>
+public static class PackDirectorySources
+{
+    /// <summary>Google Workspace users and groups through the Admin SDK (spec 017 T019).</summary>
+    public const string Google = "google";
+}
+
+/// <summary>
+/// Reads the directory of a connector pack connection for directory sync (spec 003 US6, spec 017 T019). Read only. Every
+/// read is complete; the user and group cursors are only the time of the read.
+/// </summary>
+public interface IPackDirectory
+{
+    /// <summary>The directory a connection reads (<see cref="PackDirectorySources"/>) when it is enabled, in the package and has directory on; otherwise null.</summary>
+    Task<string?> SourceOfAsync(Guid connectionId, CancellationToken ct = default);
+
+    /// <summary>The OIDC issuer the directory's IDs are the subjects of, so synced and signed-in identities meet (spec 003 FR-003).</summary>
+    string IssuerFor(Guid connectionId);
+
+    /// <summary>Throws <see cref="DirectoryUnavailableException"/> when the directory cannot be read; nothing is then changed.</summary>
+    Task<DirectoryChanges> ReadChangesAsync(Guid connectionId, string? usersCursor, string? groupsCursor, CancellationToken ct = default);
+}
+
+/// <summary>A container of a document repository: a Google shared drive or, later, a SharePoint document library (ADR-0016).</summary>
+public sealed record RepositoryContainer(string Id, string Name);
+
+/// <summary>Who a permission is for: <c>user</c> or <c>group</c> with an email, <c>domain</c> with a domain, or <c>anyone</c>.</summary>
+public sealed record RepositoryPrincipal(string Type, string? Email, string? Domain);
+
+/// <summary>A permission in canonical form; <paramref name="Role"/> is <c>read</c>, <c>write</c> or <c>owner</c>. Mirrored permissions may only narrow access.</summary>
+public sealed record RepositoryPermission(RepositoryPrincipal Principal, string Role);
+
+/// <summary>
+/// A file or folder of a document repository. <paramref name="Version"/> changes with each change of content or
+/// metadata. <paramref name="Permissions"/> is filled only when one item is read.
+/// </summary>
+public sealed record RepositoryItem(
+    string Id,
+    string ContainerId,
+    string? ParentId,
+    string Name,
+    bool Folder,
+    string? MediaType,
+    long? Size,
+    DateTimeOffset? ModifiedAt,
+    string? Version,
+    string? WebLink,
+    IReadOnlyList<RepositoryPermission>? Permissions = null);
+
+public sealed record RepositoryPage(IReadOnlyList<RepositoryItem> Items, string? NextCursor);
+
+/// <summary>A change since a cursor: the item as it is now, or <paramref name="Removed"/> when it was deleted, trashed or moved out of the container.</summary>
+public sealed record RepositoryChange(string ItemId, bool Removed, RepositoryItem? Item);
+
+/// <summary>Changes since the cursor and the cursor for the next read; <paramref name="More"/> means another page is waiting.</summary>
+public sealed record RepositoryChanges(IReadOnlyList<RepositoryChange> Changes, string Cursor, bool More);
+
+/// <summary>The content of an item opened for a user. Disposing it closes the connection to the repository.</summary>
+public sealed class RepositoryContent(Stream content, string mediaType, string name, long? length, IDisposable owner) : IAsyncDisposable
+{
+    public Stream Content { get; } = content;
+    public string MediaType { get; } = mediaType;
+    public string Name { get; } = name;
+    public long? Length { get; } = length;
+
+    public async ValueTask DisposeAsync()
+    {
+        await Content.DisposeAsync();
+        owner.Dispose();
+    }
+}
+
+public sealed class RepositoryUnavailableException(string reason) : Exception(reason)
+{
+    /// <summary>Short reason for degraded states (spec 011 FR-031), for example <c>unreachable</c> or <c>consent_missing</c>.</summary>
+    public string Reason { get; } = reason;
+}
+
+/// <summary>
+/// The document repository contract of ADR-0016 (spec 017 FR-019, INT-004): the extension point through which
+/// <c>Documents</c> reads document systems without their types. Listing, reading and changes run with the connection's
+/// own access and only inside the containers the connection allows; opening content runs as the user, so the
+/// repository's own permissions decide. Throws <see cref="RepositoryUnavailableException"/> when the repository cannot be read.
+/// </summary>
+public interface IDocumentRepository
+{
+    /// <summary>The containers the connection allows, or an empty list when the connection is not usable for documents.</summary>
+    Task<IReadOnlyList<RepositoryContainer>> ContainersAsync(Guid connectionId, CancellationToken ct = default);
+
+    /// <summary>One page of a folder's items; the container's root when <paramref name="folderId"/> is null.</summary>
+    Task<RepositoryPage> ListAsync(Guid connectionId, string containerId, string? folderId, string? cursor, CancellationToken ct = default);
+
+    /// <summary>One item with its permissions; null when it is not in an allowed container or does not exist.</summary>
+    Task<RepositoryItem?> GetAsync(Guid connectionId, string itemId, CancellationToken ct = default);
+
+    /// <summary>Changes in a container since <paramref name="cursor"/>; with no cursor, no changes and the cursor of now.</summary>
+    Task<RepositoryChanges> ChangesAsync(Guid connectionId, string containerId, string? cursor, CancellationToken ct = default);
+
+    /// <summary>The content as <paramref name="userEmail"/> may read it; null when that user may not, or the item is not in an allowed container.</summary>
+    Task<RepositoryContent?> OpenAsync(Guid connectionId, string itemId, string userEmail, CancellationToken ct = default);
 }
 
 /// <summary>An employee connected Outlook for this session (spec 018 section 12). No token content.</summary>

@@ -11,6 +11,7 @@ import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsF
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
 import { FinanceSettingsForm } from "./FinanceSettingsForm";
+import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
 import { Messages, StatusBadge } from "./parts";
@@ -115,8 +116,9 @@ export function ConnectionList({
   const slack = packs.find((p) => p.kind === "slack");
   const clock = packs.find((p) => p.kind === "clock_import");
   const finance = packs.find((p) => p.kind === "finance_rest");
+  const google = packs.find((p) => p.kind === "google_workspace");
 
-  async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody | SlackBody | ClockBody) {
+  async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody | SlackBody | ClockBody | GoogleBody) {
     setBusy(kind);
     setMessages({ kind, list: [] });
     const result = await send<PackConnection>("POST", "/api/v1/integrations/pack-connections", { kind, ...body }, RETURN_TO, t("failed"));
@@ -174,6 +176,8 @@ export function ConnectionList({
                 <p>{t("catalogue.clock_import")}</p>
               ) : p.kind === "finance_rest" ? (
                 <p>{t("catalogue.finance_rest")}</p>
+              ) : p.kind === "google_workspace" ? (
+                <p>{t("catalogue.google_workspace")}</p>
               ) : (
                 <p>{t("catalogue.actions", { names: p.actions.map((a) => a.name).join(", ") })}</p>
               )}
@@ -224,6 +228,15 @@ export function ConnectionList({
           <p>{t("clock.addIntro")}</p>
           <ClockSettingsForm submitLabel={t("add.submit")} busy={busy === "clock_import"} onSubmit={(body) => void create("clock_import", body)} />
           {messages.kind === "clock_import" ? <Messages messages={messages.list} /> : null}
+        </section>
+      ) : null}
+
+      {google?.inPackage ? (
+        <section className="connections-section" aria-labelledby="add-google-heading">
+          <h2 id="add-google-heading">{t("google.addTitle")}</h2>
+          <p>{t("google.addIntro")}</p>
+          <GoogleSettingsForm submitLabel={t("add.submit")} busy={busy === "google_workspace"} onSubmit={(body) => void create("google_workspace", body)} />
+          {messages.kind === "google_workspace" ? <Messages messages={messages.list} /> : null}
         </section>
       ) : null}
 

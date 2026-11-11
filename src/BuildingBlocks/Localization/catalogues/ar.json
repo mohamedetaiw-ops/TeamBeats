@@ -1191,6 +1191,10 @@
   "integrations.test.clock_unreachable": "تعذر الوصول إلى خادم SFTP",
   "integrations.test.clock_files": "تم تسجيل الدخول وتوجد ملفات تنتظر الاستيراد",
   "integrations.test.clock_no_files": "تم تسجيل الدخول، ولا توجد ملفات مطابقة للنمط تنتظر الاستيراد",
+  "integrations.test.google_key_invalid": "السر ليس مفتاحا خاصا لحساب خدمة، أو أنه يخص حساب خدمة آخر",
+  "integrations.test.google_delegation_refused": "رفضت Google الرمز. تحقق من التفويض على مستوى النطاق لحساب الخدمة ونطاقاته",
+  "integrations.test.google_drives_ok": "يمكن قراءة كل المساحات المشتركة المدرجة",
+  "integrations.test.google_drives_missing": "تعذرت قراءة بعض المساحات المشتركة المدرجة. أضف المسؤول عضوا في كل مساحة",
   "validation.sync_agent.name": "أدخل اسمًا للوكيل لا يتجاوز 100 حرف.",
   "validation.sync_agent.version": "إصدار الوكيل طويل جدًا.",
   "validation.sync_agent.public_key": "يجب أن يكون المفتاح العام من نوع ECDSA P-256.",
@@ -1258,5 +1262,12 @@
   "validation.finance.source_type": "يجب أن يتكون نوع المطالبة من حروف إنجليزية صغيرة وشرطات سفلية.",
   "validation.finance.employee_number": "تحتاج المطالبة إلى الرقم الوظيفي للموظف.",
   "validation.finance.currency": "يجب أن تكون العملة رمز ISO من ثلاثة أحرف مثل SAR.",
-  "validation.finance.lines": "تحتاج المطالبة إلى سطر واحد إلى 200 سطر، لكل منها فئة ومبلغ أكبر من صفر، ومجموعها يساوي الإجمالي."
+  "validation.finance.lines": "تحتاج المطالبة إلى سطر واحد إلى 200 سطر، لكل منها فئة ومبلغ أكبر من صفر، ومجموعها يساوي الإجمالي.",
+  "validation.google.domain": "أدخل النطاق الأساسي لحساب Google Workspace، مثل example.com.",
+  "validation.google.admin_email": "أدخل البريد الإلكتروني لمسؤول في Google Workspace ضمن هذا النطاق.",
+  "validation.google.service_account": "أدخل البريد الإلكتروني لحساب الخدمة، وينتهي بـ .iam.gserviceaccount.com.",
+  "validation.google.customer_id": "أدخل معرّف العميل من وحدة تحكم مشرف Google، أو اتركه فارغا.",
+  "validation.google.features": "اختر مزامنة الدليل أو Google Drive أو كليهما.",
+  "validation.google.shared_drives": "أدرج من 1 إلى 50 معرّفا للمساحات المشتركة في Google Drive.",
+  "validation.google.host_not_allowed": "أضف أولا oauth2.googleapis.com وخوادم واجهات Google للميزات التي تستخدمها إلى قائمة السماح."
 }
