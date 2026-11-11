@@ -110,8 +110,7 @@
   list-style: none;
 }
 
-.admin-chips code,
-.admin-capability-text code {
+.admin-chips code {
   font-size: var(--tb-font-size-xs);
   color: var(--tb-color-text-secondary);
 }
@@ -186,6 +185,17 @@
 
 .admin-capabilities li:not([data-enabled]) .admin-capability-text span {
   color: var(--tb-color-text-secondary);
+}
+
+/* Plan areas flow in two balanced columns on wide screens, one on narrow ones (DLS-068). */
+.admin-plan-areas {
+  columns: 2 26rem;
+  column-gap: var(--tb-space-lg);
+}
+
+.admin-plan-areas > .admin-panel {
+  break-inside: avoid;
+  margin-block-end: var(--tb-space-lg);
 }
 
 .admin-capability-text {

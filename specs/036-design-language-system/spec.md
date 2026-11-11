@@ -11,7 +11,7 @@
 | Target release | R1 (design guidelines and technical guidelines, four selectable designs Beats, Atlas, Pulse and Studio, design picker in the brand manager, component and template library with the living gallery, design consistency gate, design test suite with accessibility, responsive, target size and visual regression checks, enforcement in the constitution and specs, the extended component catalogue of DLS-030 to DLS-041 with its data, assistant and chart parts), R2 (design review workflow in the theme lifecycle of spec 033, cross-browser automation, quarterly design audit report), R3 (tenant design extensions through reviewed token extensions) |
 | Last updated | 2026-11-10 |
 | Approved | 2026-11-09 by Mohamed (standing approval to proceed) |
-| Requirement IDs | DLS-001 to DLS-067 (new); CX-BRD-003, CX-BRD-006, CX-BRD-009 (with spec 033); CX-ACC-001 to CX-ACC-005 (with spec 007) |
+| Requirement IDs | DLS-001 to DLS-068 (new); CX-BRD-003, CX-BRD-006, CX-BRD-009 (with spec 033); CX-ACC-001 to CX-ACC-005 (with spec 007) |
 | Use cases | UC-01 (tenant setup, design choice), every employee and admin journey (look and feel) |
 | Depends on | 007 (localization and accessibility), 008 (shell), 032 (templates and components), 033 (tokens, brands, resolver, brand manager), ADR-0014, ADR-0019, ADR-0021 |
 | Used by | Every spec with a user interface: its UX section references this system instead of describing visuals from scratch |
@@ -154,6 +154,7 @@ A developer builds a new page from a template and the shared components; the bui
 - **DLS-065**: Reading and files: an article MUST put its text in a reading column with its meta line and an Edit action in the header, an "On this page" list and related items in a side column on wide screens, and the helpfulness question at the end of the text. A document library MUST read as a file browser: breadcrumbs to the folder, compact filter controls, sort with a direction button, rows with a file or folder icon, name, type, owner and change date, and an empty state that names the filter and offers Clear filters.
 - **DLS-066**: The assistant launcher MUST be compact (40px high, "Ask" with the AI mark), MUST NOT cover content or an open overlay, and SHOULD offer help that fits the page it is on (completing a service, explaining a policy, the next step of a request).
 - **DLS-067**: UX quality gate: a screen merges only when no floating panel overlaps another, nothing is clipped at phone, tablet and desktop widths, shared parts use tokens, every component has its states, compact and comfortable densities size components consistently, Arabic right to left, light and dark modes and text scaling work, the assistant launcher covers nothing, existing workflows and permissions are unchanged, and the key journeys pass the visual and keyboard tests of the design suite.
+- **DLS-068**: Catalogue screens (the Plan page, permission lists, any list of system capabilities) MUST show each item by its localized name, never its technical key, and every catalogue item MUST have a name in each launch language (checked by `npm run check:messages`). A list longer than about twenty items MUST offer a search by name and filters with counts, group items by area with an "x of y" count per group, sort groups and items by their localized names, flow the groups in two columns on wide screens, and show an empty state with a way back when nothing matches. A summary row keeps to the stats that fit one row at the content width (at most three on an admin page); secondary facts such as a version go in the meta line.
 - **DLS-023**: R2: theme drafts (spec 033 US2) SHOULD show the design review checklist before approval.
 - **DLS-024**: R2: cross-browser runs (Firefox, WebKit) SHOULD join the design suite once the browser matrix decision in `docs/testing/e2e-plan.md` is made.
 
@@ -213,7 +214,7 @@ Design changes publish through `ThemePublished` like any brand change.
 | DLS-008 to DLS-011 | `src/Web/scripts/check-design.mjs`, `check-tokens.mjs`, stylelint, ESLint |
 | DLS-016, DLS-017 | `docs/design-system` |
 | DLS-030 | `tests/Unit/DesignPresetTests.cs`, `tests/Acceptance/specs/design-system.spec.ts` (Studio) |
-| DLS-042 to DLS-067 | `tests/Acceptance/specs/design-system.spec.ts` (gallery details section), `tests/Acceptance/specs/details.spec.ts` (shell panels and pages), `npm run verify` |
+| DLS-042 to DLS-068 | `tests/Acceptance/specs/admin-foundation.spec.ts` (Plan page), `tests/Acceptance/specs/design-system.spec.ts` (gallery details section), `tests/Acceptance/specs/details.spec.ts` (shell panels and pages), `npm run verify` |
 | DLS-031 to DLS-041 | `tests/Acceptance/specs/design-system.spec.ts`, `tests/Acceptance/specs/components.spec.ts` (keyboard behavior per component), `npm run verify` |
 
 ## Review checklist

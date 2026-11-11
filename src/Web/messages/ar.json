@@ -591,7 +591,8 @@
       "experience": "التجربة",
       "access": "الوصول",
       "users": "الأشخاص",
-      "roles": "الأدوار"
+      "roles": "الأدوار",
+      "records": "السجلات"
     },
     "plan": {
       "description": "الباقة التي تستخدمها مساحة العمل هذه وكل ما تتضمنه.",
@@ -698,8 +699,38 @@
         "search_semantic": "البحث بالمعنى",
         "search_federated": "البحث في الأنظمة المتصلة",
         "search_ai_summary": "ملخصات البحث بالذكاء الاصطناعي",
-        "search_saved_alerts": "تنبيهات البحث المحفوظة"
-      }
+        "search_saved_alerts": "تنبيهات البحث المحفوظة",
+        "docs_asset_portal": "بوابة أصول العلامة التجارية",
+        "records_retention": "الاحتفاظ بالسجلات",
+        "records_legal_hold": "الحجز القانوني",
+        "docs_view_only_watermark": "مستندات للعرض فقط بعلامة مائية",
+        "docs_guest_sharing": "مشاركة المستندات مع الضيوف",
+        "docs_ocr": "التعرف على النص في الملفات الممسوحة",
+        "policy_comprehension": "اختبارات فهم السياسات",
+        "policy_exemptions": "استثناءات السياسات",
+        "policy_evidence": "حزم أدلة السياسات",
+        "analytics_location_dashboards": "لوحات المعلومات حسب الموقع",
+        "analytics_sentiment": "تحليلات المشاعر",
+        "analytics_kpi_tiles": "بطاقات مؤشرات الأداء",
+        "analytics_api": "واجهة برمجة التحليلات",
+        "analytics_experience": "تحليلات تجربة الموظفين",
+        "analytics_experiments": "تجارب المحتوى",
+        "hr_leave": "طلبات الإجازات وأرصدتها",
+        "hr_attendance": "الحضور والانصراف",
+        "hr_journeys": "رحلات الانضمام والمغادرة",
+        "hr_letters": "خطابات الموارد البشرية",
+        "hr_data_change": "طلبات تعديل البيانات الشخصية",
+        "hr_expenses": "مطالبات المصروفات",
+        "ai_receipt_reading": "قراءة الإيصالات بالذكاء الاصطناعي"
+      },
+      "searchLabel": "البحث في الإمكانات",
+      "searchPlaceholder": "ابحث بالاسم",
+      "filterCount": "{label} ({count})",
+      "areaCount": "{count} من {total} متضمَّنة",
+      "versionMeta": "إصدار الباقة {version}",
+      "emptyTitle": "لا توجد إمكانات مطابقة",
+      "emptyBody": "جرّب اسمًا آخر أو اعرض الكل.",
+      "clear": "عرض الكل"
     },
     "identity": {
       "description": "كيف يسجّل الأشخاص الدخول بحساب Microsoft، وكيف يُجلب الأشخاص والمجموعات من دليلك.",
