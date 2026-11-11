@@ -66,5 +66,20 @@ public sealed class StagingHomeSeedTests(TenantWorld world)
         Assert.Equal(["news", "services", "home-calendar-overview", "home-outlook-my-mail", "campaign-band"], grid.Select(p => p.GetProperty("id").GetString()!).ToArray());
         // The Safety Week band closes the home (spec 008 home composition) and links to the seeded story.
         Assert.Equal($"/content/read/{safety.GetProperty("id").GetGuid()}", grid[^1].GetProperty("props").GetProperty("link").GetString());
+
+        // The footer and the two extra home views come from the file (spec 008 FR-056, FR-058), once.
+        var footer = shell.GetProperty("footer");
+        Assert.Equal("TeamBeats Demo", footer.GetProperty("organization").GetString());
+        Assert.Equal("Internal", footer.GetProperty("classification").GetString());
+        Assert.Equal(["privacy", "acceptable_use", "accessibility"],
+            footer.GetProperty("links").EnumerateArray().Select(l => l.GetProperty("kind").GetString()!).ToArray());
+        var views = shell.GetProperty("homeViews").EnumerateArray().ToArray();
+        Assert.Equal(["team-lead", "plant-floor"], views.Select(v => v.GetProperty("id").GetString()!).ToArray());
+        Assert.Equal(["Team lead", "Plant floor"], views.Select(v => v.GetProperty("label").GetString()!).ToArray());
+        var floor = await OkAsync(emp.GetAsync($"/api/v1/experience/render?slug={views[1].GetProperty("slug").GetString()}"));
+        Assert.Contains(floor.GetProperty("regions").EnumerateArray().SelectMany(r => r.GetProperty("placements").EnumerateArray()),
+            p => p.GetProperty("id").GetString() == "safety");
+        // The shell's own layout never carries the configuration behind them to employees.
+        Assert.False(shell.GetProperty("layout").TryGetProperty("homeViews", out var raw) && raw.ValueKind != JsonValueKind.Null);
     }
 }

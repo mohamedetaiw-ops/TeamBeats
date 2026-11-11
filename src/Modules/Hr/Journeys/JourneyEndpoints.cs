@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Persistence;
+using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Hr.Journeys;
@@ -46,6 +47,39 @@ public static class JourneyEndpoints
             return Results.Ok(view);
         }).InAdminArea();
 
+        hr.MapGet("/journey-settings", async (Preboarding preboarding, HttpResponse response, CancellationToken ct) =>
+        {
+            var view = await preboarding.SettingsAsync(ct);
+            response.Headers.ETag = view.ETag;
+            return Results.Ok(view);
+        }).InAdminArea();
+
+        hr.MapPut("/journey-settings", async (JourneySettingsRequest request, HttpRequest http, Preboarding preboarding, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await preboarding.UpdateSettingsAsync(IfMatch(http), request, ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = view.ETag;
+            return Results.Ok(view);
+        }).InAdminArea();
+
+        // The pre-boarding page (FR-016). No session: the joiner has no account yet. The tenant comes from the host, as
+        // for inbound webhooks; the link's token is the only thing that opens it.
+        app.MapGet("/api/v1/preboarding/{token}", async (string token, ITenantContext context, TenantContextAccessor accessor, Preboarding preboarding,
+            IDbSession session, HttpResponse response, CancellationToken ct) =>
+        {
+            if (context.Host.Kind != HostScopeKind.Tenant || context.Host.Tenant is not { Status: TenantLifecycleStatus.Active } tenant)
+            {
+                throw AppException.NotFound();
+            }
+            accessor.SetTenant(tenant.Id);
+            accessor.SetActor(ActorType.Anonymous, null);
+            var view = await preboarding.PageAsync(token, ct);
+            await session.CommitAsync(ct);
+            response.Headers.CacheControl = "no-store";
+            response.Headers["Referrer-Policy"] = "no-referrer";
+            return Results.Ok(view);
+        }).WithTags("Journeys");
+
         hr.MapGet("/journeys", async (string? status, bool? overdue, Guid? userId, JourneyService journeys, CancellationToken ct) =>
             Results.Ok(await journeys.ListAsync(status, overdue == true, userId, ct)));
 
@@ -78,6 +112,25 @@ public static class JourneyEndpoints
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        hr.MapPost("/journeys/{id:guid}/steps/{key}/access-items/{itemId:guid}", async (Guid id, string key, Guid itemId, AccessConfirmRequest request,
+            JourneyService journeys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await journeys.ConfirmAccessAsync(id, key, itemId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        hr.MapPost("/journeys/{id:guid}/steps/{key}/exit-interview", async (Guid id, string key, ExitInterviewRequest request, JourneyService journeys,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await journeys.RecordExitInterviewAsync(id, key, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        hr.MapGet("/exit-reasons", async (DateOnly? from, DateOnly? to, JourneyService journeys, CancellationToken ct) =>
+            Results.Ok(await journeys.ExitReasonsAsync(from, to, ct)));
 
         return app;
     }

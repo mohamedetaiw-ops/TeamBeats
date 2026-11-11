@@ -1,0 +1,52 @@
+/* Shell settings (spec 008 FR-056, FR-058): two sections of plain form rows, one card each. */
+.shell-settings {
+  display: grid;
+  gap: var(--tb-space-lg);
+  max-inline-size: 60rem;
+}
+
+.shell-settings-section {
+  display: grid;
+  gap: var(--tb-space-md);
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+}
+
+.shell-settings-section > :is(h2, h3, p) {
+  margin: 0;
+}
+
+.shell-settings-hint {
+  color: var(--tb-color-text-secondary);
+}
+
+.shell-settings-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: var(--tb-space-md);
+}
+
+.shell-settings-rows {
+  display: grid;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shell-settings-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--tb-space-sm) var(--tb-space-md);
+  align-items: end;
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+}
+
+.shell-settings-actions {
+  display: flex;
+  justify-content: flex-end;
+}

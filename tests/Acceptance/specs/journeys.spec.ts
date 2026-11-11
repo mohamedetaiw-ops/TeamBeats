@@ -99,3 +99,100 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     });
   });
 }
+
+/**
+ * Spec 022 T019: offboarding in the browser. The leaver fills in the exit interview, which HR then reads with the
+ * comment; HR confirms the access removal checklist line by line. In English and Arabic, with axe on every screen.
+ */
+for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
+  test.describe(`offboarding steps in ${locale}`, () => {
+    test.describe.configure({ mode: "serial" });
+    test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
+    let tenant: TestTenant;
+    let samiEmail: string;
+    let journeyId: string;
+    const m = (key: string, values: Record<string, string> = {}) => msg(locale, key, values);
+
+    test.beforeAll(async () => {
+      tenant = await createTenant(`jx-${locale}`, locale, "workplace_plus", ["sami"]);
+      samiEmail = `sami@${tenant.key}.example`;
+      const admin = await signedIn(tenant, tenant.adminEmail);
+      const sami = await signedIn(tenant, samiEmail);
+      const [samiId, adminId] = await Promise.all([profileId(sami), profileId(admin)]);
+      const template = await admin.post("/api/v1/hr/journey-templates", {
+        data: {
+          key: "offboarding",
+          kind: "offboarding",
+          names: { en: "Offboarding", ar: "إنهاء الخدمة" },
+          startOn: "manual",
+          steps: [
+            { key: "exit", names: { en: "Exit interview", ar: "مقابلة نهاية الخدمة" }, offsetDays: 0, assignee: "person", type: "exit_interview" },
+            { key: "access", names: { en: "Remove access", ar: "إزالة الصلاحيات" }, offsetDays: 0, assignee: "users", users: [adminId], type: "access_removal", systems: ["Payroll"] },
+          ],
+        },
+      });
+      expect(template.status(), await template.text()).toBe(201);
+      const started = await admin.post("/api/v1/hr/journeys", { data: { templateKey: "offboarding", userId: samiId, anchorDate: new Date().toISOString().slice(0, 10) } });
+      expect(started.status(), await started.text()).toBe(201);
+      journeyId = ((await started.json()) as { journey: { id: string } }).journey.id;
+      await Promise.all([admin.dispose(), sami.dispose()]);
+    });
+
+    test("the leaver fills in the exit interview", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, samiEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/hr/journeys/${journeyId}`);
+      const form = page.locator("section", { has: page.locator("#journey-exit") });
+      await expect(form).toBeVisible();
+      await expectAccessible(page, testInfo, `journey-exit-${locale}`);
+      await form.getByLabel(m("journeys.detail.reasons.career_growth")).check();
+      await form.getByLabel(m("journeys.detail.reasons.workload")).check();
+      await form.getByLabel(m("journeys.detail.exitPrimary")).selectOption("career_growth");
+      await form.getByLabel(m("journeys.detail.exitComment")).fill("Looking for a bigger role");
+      await form.getByRole("button", { name: m("journeys.detail.exitSubmit") }).click();
+      await expect(page.getByRole("status").filter({ hasText: m("journeys.detail.exitRecorded") })).toBeVisible();
+      const record = page.locator("section", { has: page.locator("#journey-exit-record") });
+      // The test tenant's people are all administrators, so the leaver here also reads the comment; the integration
+      // tests check that a leaver without hr.manage never does.
+      await expect(record.getByText(m("journeys.detail.reasons.career_growth")).first()).toBeVisible();
+    });
+
+    test("HR reads the comment and confirms the access removal checklist", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/hr/journeys/${journeyId}`);
+      await expect(page.locator("section", { has: page.locator("#journey-exit-record") }).getByText("Looking for a bigger role")).toBeVisible();
+      const checklist = page.locator("section", { has: page.locator("#journey-access-access") });
+      await expect(checklist.locator(".journeys-item")).toHaveCount(1);
+      await expectAccessible(page, testInfo, `journey-access-${locale}`);
+      await checklist.getByRole("button", { name: m("journeys.detail.removed") }).click();
+      await expect(page.getByRole("status").filter({ hasText: m("journeys.detail.accessConfirmed") })).toBeVisible();
+      await expect(checklist.getByText(m("journeys.detail.accessStatuses.removed"), { exact: true })).toBeVisible();
+      await expect(page.locator("section", { has: page.locator("#journey-summary") }).getByText(m("journeys.detail.statuses.completed"))).toBeVisible();
+    });
+  });
+
+  test.describe(`pre-boarding in ${locale}`, () => {
+    test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
+    const m = (key: string, values: Record<string, string> = {}) => msg(locale, key, values);
+
+    test("HR turns pre-boarding on, and a link that is unknown or ended reads as not available", async ({ page }, testInfo) => {
+      const tenant = await createTenant(`pb-${locale}`, locale, "workplace_plus");
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/journeys`);
+      const panel = page.locator("section", { has: page.locator("#journey-settings") });
+      const toggle = panel.getByLabel(m("journeys.settings.enabled"));
+      await expect(toggle).not.toBeChecked();
+      await expectAccessible(page, testInfo, `journeys-preboarding-${locale}`);
+      await toggle.check();
+      await panel.getByRole("button", { name: m("journeys.settings.save") }).click();
+      await expect(page.getByRole("status").filter({ hasText: m("journeys.settings.saved") })).toBeVisible();
+      await page.reload();
+      await expect(page.locator("section", { has: page.locator("#journey-settings") }).getByLabel(m("journeys.settings.enabled"))).toBeChecked();
+
+      // The joiner has no account: the page needs no sign-in, and a link nobody was sent shows nothing of the tenant.
+      await page.context().clearCookies();
+      await page.goto(`${hostOrigin(tenant.key)}/preboarding/${"A".repeat(43)}`);
+      await expect(page.getByText(m("preboarding.unavailableTitle"))).toBeVisible();
+      await expectAccessible(page, testInfo, `preboarding-unavailable-${locale}`);
+    });
+  });
+}

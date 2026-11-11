@@ -1,0 +1,13 @@
+/* Home view tabs (spec 008 FR-058): My day and the tenant's other home views, on the page's own content width. */
+.home-views {
+  max-inline-size: 90rem;
+  margin-inline: auto;
+  padding-block-start: var(--tb-space-lg);
+  padding-inline: var(--tb-space-lg);
+}
+
+@media (width <= 40rem) {
+  .home-views {
+    padding-inline: var(--tb-space-md);
+  }
+}

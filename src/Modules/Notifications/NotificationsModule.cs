@@ -35,6 +35,7 @@ public static class NotificationsModule
         services.AddScoped<NotificationCentre>();
         services.AddScoped<INotificationSender, NotificationSender>();
         services.AddScoped<EmailDelivery>();
+        services.AddScoped<IExternalEmail, ExternalEmail>();
         services.AddScoped<SlackDelivery>();
         services.AddScoped<CapturedMailbox>();
         if (EmailOptions.IsCapture(configuration))

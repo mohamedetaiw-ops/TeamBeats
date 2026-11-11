@@ -18,6 +18,9 @@ Grouping is applied when the in-app row is written: an existing row with the sam
 ## R2 channels
 `IChannelSender` per channel: email (R1), Teams (Microsoft 365 connection through `Integrations.Contracts`), web push (030 adapter), Slack and SMS (017 runtime), and a signage feed endpoint that reads published announcements through the 009 contract.
 
+## Email outside the tenant's accounts
+`IExternalEmail` (spec 022 FR-016, pre-boarding) sends one email now to an address that is not an account: same templates and tenant relay, the tenant's default language, no inbox entry and no queue. The calling module keeps its own state and retries when the outcome is `retry`; a `bounced` address is not paused here because no account owns it.
+
 ## Staging
 Staging uses the fake email sender with a dev inbox page, so no external SMTP is needed until a provider is chosen.
 

@@ -36,7 +36,7 @@ public static class HrMapping
 
     private static readonly Dictionary<string, int> Limits = new(StringComparer.Ordinal)
     {
-        [HrFields.RecordId] = 100, [HrFields.EmployeeNumber] = 100, [HrFields.WorkEmail] = 254, [HrFields.OrgUnitCode] = 100,
+        [HrFields.RecordId] = 100, [HrFields.EmployeeNumber] = 100, [HrFields.WorkEmail] = 254, [HrFields.PersonalEmail] = 254, [HrFields.OrgUnitCode] = 100,
         [HrFields.ManagerEmployeeNumber] = 100, [HrFields.CostCentre] = 100, [HrFields.Grade] = 100, [HrFields.EmploymentType] = 100,
     };
 
@@ -108,7 +108,8 @@ public static class HrMapping
             return (null, new HrProblem(id, HrProblemReasons.BadStatus));
         }
         var email = V(HrFields.WorkEmail)?.ToLowerInvariant();
-        if (email is not null && (email.Count(c => c == '@') != 1 || email.StartsWith('@') || email.EndsWith('@') || email.Contains(' ')))
+        var personal = V(HrFields.PersonalEmail)?.ToLowerInvariant();
+        if (!EmailLike(email) || !EmailLike(personal))
         {
             return (null, new HrProblem(id, HrProblemReasons.BadEmail));
         }
@@ -126,8 +127,11 @@ public static class HrMapping
             return (null, new HrProblem(id, HrProblemReasons.SelfManager));
         }
         return (new HrEmployee(id, number, email, V(HrFields.NameEn), V(HrFields.NameAr), status, hire, end, V(HrFields.JobTitle), V(HrFields.Grade),
-            V(HrFields.EmploymentType), V(HrFields.CostCentre), V(HrFields.Location), V(HrFields.OrgUnitCode), manager, assigned), null);
+            V(HrFields.EmploymentType), V(HrFields.CostCentre), V(HrFields.Location), V(HrFields.OrgUnitCode), manager, assigned, personal), null);
     }
+
+    private static bool EmailLike(string? email) =>
+        email is null || email.Count(c => c == '@') == 1 && !email.StartsWith('@') && !email.EndsWith('@') && !email.Contains(' ');
 
     private static DateOnly? Date(string text, string? format)
     {

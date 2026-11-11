@@ -34,6 +34,7 @@ public static class IntegrationsModule
         services.AddSingleton<IMicrosoftGraph, HttpMicrosoftGraph>();
         services.AddScoped<ConnectionService>();
         services.AddScoped<IConnectionFeatures, ConnectionFeatures>();
+        services.AddScoped<IConnectedSystems, ConnectedSystems>();
         services.AddScoped<IDirectorySource, MicrosoftDirectorySource>();
         services.AddSingleton<TokenProtector>();
         services.AddScoped<DelegatedTokenStore>();

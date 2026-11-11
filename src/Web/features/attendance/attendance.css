@@ -1,0 +1,100 @@
+/* Spec 022 attendance pages. Colors and spacing come from tokens. */
+.attendance {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.attendance-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  min-inline-size: 0;
+}
+
+.attendance-section h2,
+.attendance-section h3 {
+  margin: 0;
+}
+
+.attendance-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.attendance-month {
+  margin: 0;
+  min-inline-size: 10rem;
+  text-align: center;
+  font-weight: var(--tb-font-weight-semibold);
+  align-self: center;
+}
+
+.attendance-status {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.attendance-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: var(--tb-space-sm);
+  margin: 0;
+}
+
+.attendance-totals div {
+  padding: var(--tb-space-sm);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+}
+
+.attendance-totals dt {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.attendance-totals dd {
+  margin: 0;
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.attendance-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+}
+
+.attendance-site {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  align-items: end;
+  gap: var(--tb-space-sm);
+  padding-block-end: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.attendance-requests {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attendance-requests li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.attendance-reason {
+  margin: 0;
+  white-space: pre-wrap;
+}

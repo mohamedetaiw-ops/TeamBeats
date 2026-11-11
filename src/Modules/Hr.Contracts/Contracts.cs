@@ -82,6 +82,9 @@ public sealed class WorkingCalendarSnapshot
 
     public bool IsWorkingDay(DateOnly date) => WorkingFraction(date) > 0;
 
+    /// <summary>True for a holiday of the calendar, whole or half day, on any day of the week.</summary>
+    public bool IsHoliday(DateOnly date) => _holidays.ContainsKey(date);
+
     /// <summary>Working days from <paramref name="from"/> to <paramref name="to"/>, both included; zero when the range is empty.</summary>
     public decimal CountWorkingDays(DateOnly from, DateOnly to)
     {
@@ -161,6 +164,9 @@ public interface ILeave
 
 /// <summary>Leave was approved (spec 022 section 12). IDs and dates only.</summary>
 public sealed record LeaveApproved(Guid RequestId, Guid UserId, DateOnly From, DateOnly To) : IIntegrationEvent;
+
+/// <summary>An approved correction changed a person's attendance day (spec 022 section 12). IDs and the date only.</summary>
+public sealed record AttendanceCorrected(Guid RequestId, Guid UserId, DateOnly Date) : IIntegrationEvent;
 
 /// <summary>Approved leave was cancelled, or shortened (then <see cref="From"/> and <see cref="To"/> are the days given back).</summary>
 public sealed record LeaveCancelled(Guid RequestId, Guid UserId, DateOnly From, DateOnly To) : IIntegrationEvent;

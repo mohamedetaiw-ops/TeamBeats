@@ -166,6 +166,18 @@ public static class AuditActions
     public const string HrJourneyRescheduled = "hr.journey_rescheduled";
     public const string HrJourneyStepCompleted = "hr.journey_step_completed";
     public const string HrJourneyCancelled = "hr.journey_cancelled";
+    public const string HrAccessRemovalConfirmed = "hr.access_removal_confirmed";
+    public const string HrAccessRemovalEscalated = "hr.access_removal_escalated";
+    public const string HrExitInterviewRecorded = "hr.exit_interview_recorded";
+    public const string HrJourneySettingsChanged = "hr.journey_settings_changed";
+    public const string HrPreboardingSent = "hr.preboarding_sent";
+    public const string HrAttendanceSettingsChanged = "hr.attendance_settings_changed";
+    public const string HrWorkRuleChanged = "hr.work_rule_changed";
+    public const string HrAttendanceExported = "hr.attendance_exported";
+    public const string HrAttendanceRequested = "hr.attendance_requested";
+    public const string HrAttendanceCorrected = "hr.attendance_corrected";
+    public const string HrCompensationCredited = "hr.compensation_credited";
+    public const string HrAttendanceRequestRejected = "hr.attendance_request_rejected";
 
     // 037
     public const string CalendarEventCreated = "calendar.event_created";
@@ -377,7 +389,7 @@ public static class AuditActions
         HrPayslipViewed, HrPayslipDownloaded,
         HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
         HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
-        HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled,
+        HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected,
         CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarSettingsChanged, CalendarTeamViewed,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,

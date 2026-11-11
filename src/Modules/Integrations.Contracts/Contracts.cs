@@ -40,6 +40,18 @@ public interface IConnectionFeatures
     Task<ConnectionFeatureInfo?> FindAsync(string kind, string feature, CancellationToken ct = default);
 }
 
+/// <summary>A connected external system as other modules may name it: no secrets, no external identifiers.</summary>
+public sealed record ConnectedSystem(Guid ConnectionId, string Kind, string DisplayName);
+
+/// <summary>
+/// The external systems the tenant has connected and enabled, for checklists such as offboarding access removal
+/// (spec 022 FR-017). Tenant comes from context.
+/// </summary>
+public interface IConnectedSystems
+{
+    Task<IReadOnlyList<ConnectedSystem>> ListAsync(CancellationToken ct = default);
+}
+
 /// <summary>Feature owners describe what depends on a connection before it is deleted (spec 006 US5 scenario 8).</summary>
 public interface IConnectionDependents
 {
@@ -744,7 +756,8 @@ public sealed record HrEmployee(
     string? Location,
     string? OrgUnitCode,
     string? ManagerEmployeeNumber,
-    DateOnly? AssignmentDate = null);
+    DateOnly? AssignmentDate = null,
+    string? PersonalEmail = null);
 
 public static class HrEmployeeStatuses
 {
@@ -774,11 +787,20 @@ public static class HrFields
     public const string ManagerEmployeeNumber = "manager_employee_number";
     public const string AssignmentDate = "assignment_date";
 
+    /// <summary>
+    /// The joiner's own email outside the tenant, used only to send pre-boarding before day one (spec 022 FR-016). It
+    /// never leaves this module in <see cref="HrRecordView"/>; <see cref="IHrRecords.PreHireAsync"/> is its one reader.
+    /// </summary>
+    public const string PersonalEmail = "personal_email";
+
     public static readonly IReadOnlyList<string> All =
     [
         RecordId, EmployeeNumber, WorkEmail, NameEn, NameAr, Status, HireDate, TerminationDate, JobTitle, Grade, EmploymentType, CostCentre, Location,
-        OrgUnitCode, ManagerEmployeeNumber, AssignmentDate,
+        OrgUnitCode, ManagerEmployeeNumber, AssignmentDate, PersonalEmail,
     ];
+
+    /// <summary>Fields kept out of <see cref="HrRecordView"/>: other modules never see them with a person's record.</summary>
+    public static readonly IReadOnlyList<string> Private = [PersonalEmail];
 
     /// <summary>The fields of one assignment: they change together on the assignment date (US3 scenario 1).</summary>
     public static readonly IReadOnlyList<string> Assignment = [OrgUnitCode, ManagerEmployeeNumber, JobTitle, Location];
@@ -823,7 +845,19 @@ public interface IHrRecords
     /// not changed; the next sync does that.
     /// </summary>
     Task<HrRecordRead> CurrentAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>
+    /// A hire HR knows before they have an account (spec 022 FR-016): the stored record, when it is active, matched to
+    /// no account and has a personal email. Null otherwise, or without the <c>hr.integration</c> capability.
+    /// </summary>
+    Task<HrPreHire?> PreHireAsync(string recordId, CancellationToken ct = default);
 }
+
+/// <summary>
+/// A joiner without an account yet: the personal email from HR, the start date and the hierarchy unit their HR org
+/// code maps to (null when the code is not mapped). Used only to send pre-boarding.
+/// </summary>
+public sealed record HrPreHire(string RecordId, string PersonalEmail, DateOnly? HireDate, Guid? OrgUnitId);
 
 /// <summary>Who keeps leave balances (spec 019 FR-013): TeamBeats' own ledger, or the HR system.</summary>
 public static class HrLeaveSources

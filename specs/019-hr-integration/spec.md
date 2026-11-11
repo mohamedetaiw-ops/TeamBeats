@@ -25,7 +25,7 @@
 ## 2. Scope
 
 **In scope:**
-- Canonical HR contract: employee (employee number, legal name in ar and en, work email, employment status, hire date, termination date, job title, grade, employment type, cost centre, location, org unit code, manager employee number), position, org unit code mapping, payslip summary and document.
+- Canonical HR contract: employee (employee number, legal name in ar and en, work email, employment status, hire date, termination date, job title, grade, employment type, cost centre, location, org unit code, manager employee number, personal email), position, org unit code mapping, payslip summary and document. The personal email is optional and used only to send pre-boarding to a joiner who has no account yet (spec 022 FR-016); no other module sees it with a person's record.
 - Matching HR employees to TeamBeats users by work email or employee number, with an unmatched list.
 - Scheduled sync and inbound change events (webhook through spec 017), with field ownership: HR owns the fields it maps, they are read-only in TeamBeats.
 - Lifecycle events: `EmployeeHired`, `EmployeeTransferred`, `EmployeeManagerChanged`, `EmployeeTerminated`, `EmployeeRehired`, with effective dates and future-dated changes held until effective.
@@ -163,7 +163,7 @@ Omar moves from Finance to Procurement with a new manager on 1 January.
 
 | Entity | System of record | Classification | Retention | Personal data? |
 |---|---|---|---|---|
-| Employee HR fields (copy) | HR system | Confidential (grade, cost centre), Internal (title, location) | While employed plus 30 days, then removed | Yes |
+| Employee HR fields (copy) | HR system | Confidential (grade, cost centre, personal email), Internal (title, location) | While employed plus 30 days, then removed | Yes |
 | Match link | Product | Internal | Life of the user | Yes (IDs) |
 | Held future-dated changes | Product | Confidential | Until applied or cancelled | Yes |
 | Payslip summary and PDF | Payroll or HR | Confidential | Not stored | Yes |

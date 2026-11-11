@@ -33,10 +33,10 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 
 ## Slice 3: Journeys (US4, US5, FR-013 to FR-018)
 - [x] T018 Journey templates, starts from spec 019 and spec 003 events and approved resignations, rescheduling
-- [ ] T019 Attestation steps, access removal checklist with escalation, exit interview, journeys dashboard, pre-boarding setting
+- [x] T019 Attestation steps, access removal checklist with escalation, exit interview, journeys dashboard, pre-boarding setting
 
 ## Slice 4: Attendance (US3, FR-010 to FR-012)
-- [ ] T020 Sign in and out, clock data, working hours rules, exceptions, corrections, compensation days, monthly summary and export
+- [x] T020 Sign in and out, clock data, working hours rules, exceptions, corrections, compensation days, monthly summary and export
 
 ## Slice 5: Letters and data change (US6, US7, FR-019 to FR-022)
 - [ ] T021 Letter templates, issued PDFs with verification, public verification page

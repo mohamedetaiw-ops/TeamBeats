@@ -24,6 +24,7 @@ public static class PoliciesModule
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
         services.AddScoped<PolicyCampaigns>();
         services.AddScoped<PolicyCompliance>();
+        services.AddScoped<Contracts.IPolicyObligations, PolicyObligations>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<PolicyCampaigns>());
         services.AddMessageHandler<AttestationNoticeBatch, PolicyCampaigns>("policies.attestation_notice");
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, PolicyCampaigns>("policies.campaign_membership");

@@ -6,12 +6,13 @@ import { useTranslations } from "next-intl";
 import { problemMessages } from "@/lib/notifications/types";
 import { editHref } from "@/lib/policies/types";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { PersonPicker } from "@/features/services/PersonPicker";
 import "./policies.css";
 
 /**
- * A new register entry (spec 025 US1): ID, name in each language, the binding language, the review cycle and an
- * optional named approver. Without one, the compliance officers of the policy's scope approve it. The API validates
+ * A new register entry (spec 025 US1): ID, name in each language, the binding language, the review cycle, whether new
+ * joiners must attest to it during onboarding (FR-017) and an optional named approver. Without one, the compliance officers of the policy's scope approve it. The API validates
  * everything and the person goes on to write the first draft.
  */
 export function NewPolicyForm({ locales }: { locales: string[] }) {
@@ -22,6 +23,7 @@ export function NewPolicyForm({ locales }: { locales: string[] }) {
   const [names, setNames] = useState<Record<string, string>>({});
   const [binding, setBinding] = useState("");
   const [reviewMonths, setReviewMonths] = useState("12");
+  const [onboarding, setOnboarding] = useState(false);
   const [approver, setApprover] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
@@ -39,6 +41,7 @@ export function NewPolicyForm({ locales }: { locales: string[] }) {
           names: Object.fromEntries(Object.entries(names).filter(([, v]) => v.trim())),
           bindingLocale: binding || null,
           reviewMonths: Number(reviewMonths) || null,
+          onboardingRequired: onboarding,
           route: approver ? [{ approvers: [approver] }] : null,
         }),
       });
@@ -89,6 +92,7 @@ export function NewPolicyForm({ locales }: { locales: string[] }) {
         <label htmlFor={`${ids}-review`}>{t("reviewMonths")}</label>
         <input id={`${ids}-review`} type="number" min={1} max={60} value={reviewMonths} onChange={(e) => setReviewMonths(e.target.value)} dir="ltr" />
       </div>
+      <Checkbox label={t("onboarding")} hint={t("onboardingHint")} name="policyOnboarding" checked={onboarding} onChange={(e) => setOnboarding(e.target.checked)} />
       <PersonPicker label={t("approver")} value={approver} onChange={setApprover} />
       <p className="policies-meta">{t("approverHint")}</p>
       {messages.length > 0 ? (

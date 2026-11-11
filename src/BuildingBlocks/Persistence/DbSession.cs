@@ -115,8 +115,15 @@ public sealed class DbSession : IDbSession
     }
 }
 
-/// <summary>Wraps the application data source, which connects as <c>tb_app</c> (no ownership, no BYPASSRLS).</summary>
-public sealed class AppDataSource(NpgsqlDataSource dataSource)
+/// <summary>
+/// Wraps the application data source, which connects as <c>tb_app</c> (no ownership, no BYPASSRLS). It is disposed with
+/// its host, which closes the pool; otherwise every stopped host (tests start several) keeps its idle connections open.
+/// </summary>
+public sealed class AppDataSource(NpgsqlDataSource dataSource) : IAsyncDisposable, IDisposable
 {
     public NpgsqlDataSource DataSource { get; } = dataSource;
+
+    public ValueTask DisposeAsync() => DataSource.DisposeAsync();
+
+    public void Dispose() => DataSource.Dispose();
 }

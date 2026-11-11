@@ -8,8 +8,10 @@ using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.People.Contracts;
+using TeamBeats.Modules.Policies.Contracts;
 using TeamBeats.Modules.Services.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
+using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Hr.Journeys;
@@ -21,7 +23,8 @@ namespace TeamBeats.Modules.Hr.Journeys;
 /// existing staff starts nothing. <c>UserDeprovisioned</c> starts nothing: the account is disabled at the end of
 /// offboarding (US5 scenario 3), not before it.
 /// </summary>
-public sealed class JourneyStarter(IEntitlementService entitlements, LeaveLedger people, JourneyTemplates templates, JourneyService journeys, IRequestFacts requests)
+public sealed class JourneyStarter(IEntitlementService entitlements, LeaveLedger people, JourneyTemplates templates, JourneyService journeys, IRequestFacts requests,
+    Preboarding preboarding)
     : IMessageHandler<EmployeeHired>, IMessageHandler<EmployeeRehired>, IMessageHandler<UserProvisioned>, IMessageHandler<EmployeeTerminated>,
         IMessageHandler<RequestCompleted>
 {
@@ -39,11 +42,12 @@ public sealed class JourneyStarter(IEntitlementService entitlements, LeaveLedger
 
     public Task HandleAsync(EmployeeHired message, CancellationToken ct) => message.UserId is { } user
         ? StartAsync(JourneyStarts.Hire, null, user, message.StartDate, "hr_hire", $"hr_hire:{message.ChangeId:N}", ct)
-        : Task.CompletedTask; // No account yet: the new account starts it with the HR start date.
+        // No account yet: the new account starts the journey with the HR start date; until then pre-boarding may reach them (FR-016).
+        : preboarding.ScheduleAsync(message.RecordId, message.StartDate, ct);
 
     public Task HandleAsync(EmployeeRehired message, CancellationToken ct) => message.UserId is { } user
         ? StartAsync(JourneyStarts.Hire, null, user, message.StartDate, "hr_rehire", $"hr_rehire:{message.ChangeId:N}", ct)
-        : Task.CompletedTask;
+        : preboarding.ScheduleAsync(message.RecordId, message.StartDate, ct);
 
     public Task HandleAsync(EmployeeTerminated message, CancellationToken ct) => message.UserId is { } user
         ? StartAsync(JourneyStarts.Termination, null, user, message.LastWorkingDay, "hr_termination", $"hr_termination:{message.ChangeId:N}", ct)
@@ -97,7 +101,7 @@ public sealed class JourneyStarter(IEntitlementService entitlements, LeaveLedger
 /// them; a queue (permission) step is found in the inbox. An overdue step publishes <see cref="JourneyStepOverdue"/>.
 /// </summary>
 public sealed class JourneyTaskSource(ITenantContext context, JourneyService journeys, IReportingLine reporting, IUserDirectory users, INotificationSender notifications,
-    IOutbox outbox) : ITaskSource, IMessageHandler<UserTaskCreated>, IMessageHandler<UserTaskDue>
+    IOutbox outbox, IEntitlementService entitlements) : ITaskSource, IMessageHandler<UserTaskCreated>, IMessageHandler<UserTaskDue>, IMessageHandler<PolicyAttested>
 {
     public const string TaskWaiting = "hr.journey_task_waiting";
 
@@ -115,7 +119,8 @@ public sealed class JourneyTaskSource(ITenantContext context, JourneyService jou
 
     public async Task<TaskSubject?> DescribeAsync(UserTaskInfo task, CancellationToken ct = default)
     {
-        if (await WaitingAsync(task, false, ct) is not var (journey, step))
+        // An attestation step shows in the inbox as the policies to attest to (spec 025), not as a task of its own.
+        if (await WaitingAsync(task, false, ct) is not var (journey, step) || step.Type == JourneyStepTypes.Attestation)
         {
             return null;
         }
@@ -124,13 +129,27 @@ public sealed class JourneyTaskSource(ITenantContext context, JourneyService jou
         return new TaskSubject("journey", title, JourneyService.Link(journey.Id) + "?task=" + task.Id, journey.OrgUnitId, journey.UserId);
     }
 
+    /// <summary>The person decides only their own steps; an attestation step is done only by attesting.</summary>
     public async Task<bool> MayDecideAsync(UserTaskInfo task, Guid authority, CancellationToken ct = default) =>
-        await WaitingAsync(task, false, ct) is var (journey, step) && (step.Assignee == JourneyAssignees.Person || authority != journey.UserId);
+        await WaitingAsync(task, false, ct) is var (journey, step) && (step.Assignee == JourneyAssignees.Person || authority != journey.UserId)
+        && step.Type != JourneyStepTypes.Attestation;
 
+    /// <summary>
+    /// A checklist step is done when every line is confirmed, and an exit interview step is approved by recording the
+    /// interview (it may still be closed as not needed); a decision before that is refused and rolled back.
+    /// </summary>
     public async Task DecidedAsync(UserTaskInfo task, UserTaskInfo done, CancellationToken ct = default)
     {
-        if (await WaitingAsync(task, true, ct) is var (_, step))
+        if (await WaitingAsync(task, true, ct) is var (journey, step))
         {
+            if (step.Type == JourneyStepTypes.AccessRemoval && await journeys.PendingAsync(journey.Id, step.Key, ct))
+            {
+                throw AppException.Conflict("conflict.journey.checklist_pending");
+            }
+            if (step.Type == JourneyStepTypes.ExitInterview && done.Outcome == TaskOutcomes.Approve && !await journeys.ExitRecordedAsync(journey.Id, ct))
+            {
+                throw AppException.Conflict("conflict.journey.exit_pending");
+            }
             await journeys.StepDecidedAsync(step, done with { CompletedBy = done.CompletedBy ?? context.ActorId }, ct);
         }
     }
@@ -139,8 +158,9 @@ public sealed class JourneyTaskSource(ITenantContext context, JourneyService jou
     {
         if (!Handles(message.DefinitionKey) || JourneyService.ParseBusinessKey(message.BusinessKey) is not var (journeyId, key)
             || await journeys.RowAsync(journeyId, false, ct) is not { Status: JourneyStatuses.Active } journey
-            || (await journeys.StepsAsync(journeyId, ct)).FirstOrDefault(s => s.Key == key) is not { } step)
+            || (await journeys.StepsAsync(journeyId, ct)).FirstOrDefault(s => s.Key == key) is not { } step || step.Type == JourneyStepTypes.Attestation)
         {
+            // Policies tells the person about their attestations itself.
             return;
         }
         IReadOnlyCollection<Guid> recipients = step.Assignee switch
@@ -158,6 +178,15 @@ public sealed class JourneyTaskSource(ITenantContext context, JourneyService jou
         await notifications.SendAsync(new NotificationRequest(recipients, NotificationCategories.RequestUpdate, TaskWaiting,
             JourneyService.Link(journey.Id) + "?task=" + message.TaskId, new Dictionary<string, string> { ["step"] = JourneyTemplates.StepName(step.Names) },
             DedupeKey: "task:" + message.TaskId.ToString("N")), ct);
+    }
+
+    /// <summary>The person attested: their attestation steps with nothing left are done (US4 scenario 4).</summary>
+    public async Task HandleAsync(PolicyAttested message, CancellationToken ct)
+    {
+        if (await entitlements.IsEnabledAsync(Capabilities.HrJourneys, ct))
+        {
+            await journeys.SettleAttestationsAsync(message.UserId, ct);
+        }
     }
 
     public async Task HandleAsync(UserTaskDue message, CancellationToken ct)

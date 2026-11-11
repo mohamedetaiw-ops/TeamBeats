@@ -49,7 +49,8 @@ public sealed record PolicyRequest(
     string? BindingLocale,
     IReadOnlyList<RouteStepSetting>? Route,
     int? ReviewMonths,
-    IReadOnlyList<Guid>? Related);
+    IReadOnlyList<Guid>? Related,
+    bool? OnboardingRequired = null);
 
 public sealed record CategoryRequest(IReadOnlyDictionary<string, string>? Names);
 
@@ -139,7 +140,8 @@ public sealed record PolicyView(
     ScheduledVersion? Scheduled,
     PolicyRights Rights,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    bool OnboardingRequired);
 
 public sealed record PolicyListItem(
     Guid Id,
@@ -241,8 +243,8 @@ public sealed record AttestRequest(Guid? CampaignId, string? Locale, string? Cha
 public sealed record AttestationView(Guid Id, Guid PolicyId, int Version, Guid? CampaignId, string Locale, string AttestationText, string TextHash, string Channel,
     DateTimeOffset AttestedAt);
 
-/// <summary>An attestation the person still owes: the campaign, the version, the due date and the text to confirm.</summary>
-public sealed record AttestationDue(Guid CampaignId, int Version, DateTimeOffset DueAt, bool Overdue, IReadOnlyDictionary<string, string> Text);
+/// <summary>An attestation the person still owes: the campaign (none for an onboarding obligation), the version, the due date and the text to confirm.</summary>
+public sealed record AttestationDue(Guid? CampaignId, int Version, DateTimeOffset DueAt, bool Overdue, IReadOnlyDictionary<string, string> Text);
 
 /// <summary>The current user's attestation state for one policy, for the policy page.</summary>
 public sealed record MyAttestation(AttestationDue? Due, int? LastVersion, DateTimeOffset? LastAt);

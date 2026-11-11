@@ -23,6 +23,15 @@ export type ShellLayout = {
   homePageId?: string | null;
 };
 
+/** One footer link, already in the viewer's language (spec 008 FR-056). */
+export type FooterLink = { kind: "privacy" | "acceptable_use" | "accessibility" | "other"; label: string; href: string };
+
+/** The footer the tenant configured; null when it configured none, so no footer is drawn. */
+export type ShellFooter = { organization: string | null; links: FooterLink[]; classification: string | null };
+
+/** One more view of the home, as a tab after My day (spec 008 FR-058); only views this viewer may see arrive. */
+export type HomeView = { id: string; label: string; slug: string };
+
 export type NavLink = { nodeId: string; label: string; href: string; owner: string | null; children: NavLink[] };
 
 export type OrganizationMenu = { orgUnitId: string; name: string; items: NavLink[] };
@@ -40,6 +49,8 @@ export type Shell = {
   home: string | null;
   /** True when the tenant has the assistant, so the shell offers Ask TeamBeats (spec 008 FR-056). */
   assistant: boolean;
+  footer?: ShellFooter | null;
+  homeViews?: HomeView[] | null;
   /** True when the viewer may open at least one administration section, so the account menu offers Administration (FR-062). */
   administration: boolean;
 };

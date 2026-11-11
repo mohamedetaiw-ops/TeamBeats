@@ -1,9 +1,9 @@
 {
-  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md), laid out after the v2 home mockup: your briefing and Your day (tasks and today's agenda) at the top, featured news across the page, a row of My services, calendar and mail side by side, and the Safety Week campaign band at the bottom, above the end of the page. A page from the home template H01, published and set as the shell home, with fictional news, form services and a global menu so the rail and the cards have something to show. Every name in it is invented. Mail and calendar are placed with the IDs the home suggestions use, so they appear here and not at the top. Raise the revision when this file changes: a home seeded from an older revision that nobody edited is brought up to date, and a home an administrator changed is never replaced. News and services are added only when their English title is new; the menu only while the tenant has none.",
+  "$comment": "The employee home seeded on staging (docs/testing/fake-systems.md), laid out after the v2 home mockup: your briefing and Your day (tasks and today's agenda) at the top, featured news across the page, a row of My services, calendar and mail side by side, and the Safety Week campaign band at the bottom, above the end of the page. A page from the home template H01, published and set as the shell home, with fictional news, form services and a global menu so the rail and the cards have something to show. Every name in it is invented. Mail and calendar are placed with the IDs the home suggestions use, so they appear here and not at the top. Raise the revision when this file changes: a home seeded from an older revision that nobody edited is brought up to date, and a home an administrator changed is never replaced. News and services are added only when their English title is new; the menu only while the tenant has none. The footer and the two extra home views (Team lead and Plant floor, shown as tabs after My day) are set only while the shell has none. On staging the views carry no audience rule, so every viewer sees all three tabs; the footer's privacy and acceptable use links open the policy register and the accessibility link opens the preferences, until the tenant publishes pages of its own.",
   "template": "H01",
   "slug": "home",
   "variant": "balanced",
-  "revision": 6,
+  "revision": 7,
   "navigation": [
     {
       "slug": "nav-home",
@@ -504,5 +504,160 @@
         }
       }
     ]
-  }
+  },
+  "footer": {
+    "organization": {
+      "en": "TeamBeats Demo",
+      "ar": "TeamBeats التجريبية"
+    },
+    "links": [
+      {
+        "kind": "privacy",
+        "labels": {
+          "en": "Privacy",
+          "ar": "الخصوصية"
+        },
+        "url": "/policies"
+      },
+      {
+        "kind": "acceptable_use",
+        "labels": {
+          "en": "Acceptable use",
+          "ar": "الاستخدام المقبول"
+        },
+        "url": "/policies"
+      },
+      {
+        "kind": "accessibility",
+        "labels": {
+          "en": "Accessibility",
+          "ar": "إمكانية الوصول"
+        },
+        "url": "/settings"
+      }
+    ],
+    "classification": {
+      "en": "Internal",
+      "ar": "داخلي"
+    }
+  },
+  "views": [
+    {
+      "id": "team-lead",
+      "labels": {
+        "en": "Team lead",
+        "ar": "قائد الفريق"
+      },
+      "slug": "home-team-lead",
+      "regions": {
+        "hero": [
+          {
+            "id": "tasks",
+            "componentRef": "services.task_summary@1",
+            "span": 8
+          },
+          {
+            "id": "your-day",
+            "componentRef": "home.your_day@1",
+            "span": 4
+          }
+        ],
+        "grid": [
+          {
+            "id": "calendar",
+            "componentRef": "outlook.my_calendar@1",
+            "span": 6
+          },
+          {
+            "id": "mail",
+            "componentRef": "outlook.my_mail@1",
+            "span": 6
+          },
+          {
+            "id": "news",
+            "componentRef": "content.news_feed@1",
+            "span": 12,
+            "props": {
+              "title": {
+                "en": "Team news",
+                "ar": "أخبار الفريق"
+              },
+              "type": "all",
+              "top": 3,
+              "layout": "featured"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "plant-floor",
+      "labels": {
+        "en": "Plant floor",
+        "ar": "أرض المصنع"
+      },
+      "slug": "home-plant-floor",
+      "regions": {
+        "hero": [
+          {
+            "id": "safety",
+            "componentRef": "content.call_to_action@1",
+            "span": 8,
+            "props": {
+              "heading": {
+                "en": "Safety Week: five days, five habits",
+                "ar": "أسبوع السلامة: خمسة أيام وخمس عادات"
+              },
+              "body": {
+                "en": "Daily drills, a quiz with prizes and a visit from Civil Defence at every site, 16 to 20 November.",
+                "ar": "تدريبات يومية ومسابقة بجوائز وزيارة من الدفاع المدني لكل موقع، من 16 إلى 20 نوفمبر."
+              },
+              "label": {
+                "en": "See the programme",
+                "ar": "اطلع على البرنامج"
+              },
+              "link": "seed:news:safety-week",
+              "emphasis": "campaign",
+              "eyebrow": {
+                "en": "Campaign · 16 to 20 November",
+                "ar": "حملة · من 16 إلى 20 نوفمبر"
+              }
+            }
+          },
+          {
+            "id": "weather",
+            "componentRef": "toolbox.weather@1",
+            "span": 4,
+            "props": {
+              "location": "Dubai"
+            }
+          }
+        ],
+        "grid": [
+          {
+            "id": "services",
+            "componentRef": "services.my_services@1",
+            "span": 12,
+            "props": {
+              "top": 5
+            }
+          },
+          {
+            "id": "news",
+            "componentRef": "content.news_feed@1",
+            "span": 12,
+            "props": {
+              "title": {
+                "en": "Site news",
+                "ar": "أخبار الموقع"
+              },
+              "type": "all",
+              "top": 4,
+              "layout": "featured"
+            }
+          }
+        ]
+      }
+    }
+  ]
 }
