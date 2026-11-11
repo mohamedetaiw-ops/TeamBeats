@@ -8,6 +8,7 @@ import { StateView } from "@/components/ui/StateView";
 import { problemMessages } from "@/lib/notifications/types";
 import { currentPosition, thisMonth, type AttendanceMonth, type Punch } from "@/lib/attendance";
 import { AttendanceDays, AttendanceTotalsList, MonthPicker } from "./AttendanceMonth";
+import { AttendanceRequests } from "./AttendanceRequests";
 import "./attendance.css";
 
 /**
@@ -129,6 +130,7 @@ export function MyAttendance() {
         <AttendanceTotalsList totals={data.totals} />
       </section>
       <AttendanceDays data={data} />
+      <AttendanceRequests onChanged={() => setReload((n) => n + 1)} />
     </div>
   );
 }

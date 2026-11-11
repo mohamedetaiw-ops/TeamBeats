@@ -55,6 +55,8 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
         return t("leaveReplacement");
       case "journey":
         return t("journeyStep");
+      case "attendance":
+        return t("attendanceRequest");
       default:
         return i.name;
     }

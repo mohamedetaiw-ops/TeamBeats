@@ -129,5 +129,5 @@ export const statusTone: Record<LeaveStatus, "neutral" | "info" | "success" | "w
 };
 
 /** Why a ledger row was written (spec 022 section 14). */
-export const LEDGER_REASONS = ["request", "cancel", "recount", "accrual", "carry_over", "lapse", "adjustment"] as const;
+export const LEDGER_REASONS = ["request", "cancel", "recount", "accrual", "carry_over", "lapse", "adjustment", "compensation"] as const;
 export type LedgerEntry = { id: string; typeKey: string; leaveYear: number; delta: number; reason: string; requestId: string | null; note: string | null; at: string };

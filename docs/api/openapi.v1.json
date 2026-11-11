@@ -6479,6 +6479,84 @@
         }
       }
     },
+    "/api/v1/me/attendance/requests": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Attendance"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceRequestInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/attendance/requests/{id}": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/attendance/requests/{id}:withdraw": {
+      "post": {
+        "tags": [
+          "Attendance"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/hr/attendance/team": {
       "get": {
         "tags": [
@@ -14701,6 +14779,45 @@
           }
         }
       },
+      "AttendanceRequestInput": {
+        "required": [
+          "kind",
+          "date",
+          "reason",
+          "punches"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "date": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "punches": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CorrectionPunch"
+            }
+          }
+        }
+      },
       "AttendanceSettingsRequest": {
         "required": [
           "webSignIn",
@@ -14729,6 +14846,12 @@
             "items": {
               "$ref": "#/components/schemas/AttendanceSite"
             }
+          },
+          "compensationTypeKey": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -15977,6 +16100,27 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "CorrectionPunch": {
+        "required": [
+          "time",
+          "direction"
+        ],
+        "type": "object",
+        "properties": {
+          "time": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "direction": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

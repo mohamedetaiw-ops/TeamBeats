@@ -40,6 +40,10 @@ public static class HrModule
         services.AddScoped<Preboarding>();
         services.AddScoped<Attendance.AttendanceService>();
         services.AddMessageHandler<Integrations.Contracts.ClockDataImported, Attendance.ClockDataHandler>("hr.attendance_clock_import");
+        services.AddScoped<Attendance.AttendanceRequests>();
+        services.AddScoped<Attendance.AttendanceTaskSource>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<Attendance.AttendanceTaskSource>());
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, Attendance.AttendanceTaskSource>("hr.attendance_notify_approval");
         services.AddScoped<JourneyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<JourneyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, JourneyTaskSource>("hr.journey_notify_task");

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
 import type { AttendanceSettings, WorkRule } from "@/lib/attendance";
+import type { LeaveType } from "@/lib/leave";
 import { AttendanceAdmin } from "@/features/attendance/AttendanceAdmin";
 
 /**
@@ -14,10 +15,11 @@ export default async function AttendanceAdminPage() {
   if (!nav.ok || !nav.data.some((s) => s.key === "attendance")) {
     notFound();
   }
-  const [settings, rules, units] = await Promise.all([
+  const [settings, rules, units, leaveTypes] = await Promise.all([
     apiGet<AttendanceSettings>("/api/v1/hr/attendance-settings"),
     apiGet<WorkRule[]>("/api/v1/hr/work-rules"),
     listUnits(),
+    apiGet<LeaveType[]>("/api/v1/hr/leave/types?all=true"),
   ]);
   const t = await getTranslations("attendance.admin");
   return (
@@ -25,7 +27,7 @@ export default async function AttendanceAdminPage() {
       <h1>{t("title")}</h1>
       <p className="notice">{t("intro")}</p>
       {settings.ok && rules.ok ? (
-        <AttendanceAdmin settings={settings.data} rules={rules.data} units={units.ok ? units.data : []} />
+        <AttendanceAdmin settings={settings.data} rules={rules.data} units={units.ok ? units.data : []} leaveTypes={leaveTypes.ok ? leaveTypes.data : []} />
       ) : (
         <p className="notice">{t("notInPackage")}</p>
       )}
