@@ -165,7 +165,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `journey-access-${locale}`);
       await checklist.getByRole("button", { name: m("journeys.detail.removed") }).click();
       await expect(page.getByRole("status").filter({ hasText: m("journeys.detail.accessConfirmed") })).toBeVisible();
-      await expect(checklist.getByText(m("journeys.detail.accessStatuses.removed"))).toBeVisible();
+      await expect(checklist.getByText(m("journeys.detail.accessStatuses.removed"), { exact: true })).toBeVisible();
       await expect(page.locator("section", { has: page.locator("#journey-summary") }).getByText(m("journeys.detail.statuses.completed"))).toBeVisible();
     });
   });
