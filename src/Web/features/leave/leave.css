@@ -1,0 +1,154 @@
+/* Spec 022 leave pages. Colors and spacing come from tokens. */
+.leave {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.leave-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+.leave-section h2,
+.leave-section h3 {
+  margin: 0;
+}
+
+.leave-form {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.leave-row,
+.leave-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.leave-plain {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.leave-preview {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-sm);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+}
+
+.leave-total {
+  margin: 0;
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.leave-subhead {
+  margin: 0;
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.leave-years,
+.leave-overlap,
+.leave-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leave-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+  padding-block: var(--tb-space-xs);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.leave-item > .leave-form {
+  flex-basis: 100%;
+}
+
+.leave-balances {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leave-balance {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+}
+
+.leave-balance-name {
+  color: var(--tb-color-text-secondary);
+}
+
+.leave-balance-value {
+  font-size: var(--tb-font-size-xl);
+}
+
+.leave-details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  margin: 0;
+}
+
+.leave-details dt {
+  color: var(--tb-color-text-secondary);
+}
+
+.leave-details dd {
+  margin: 0;
+}
+
+.leave-grid-wrap {
+  overflow-x: auto;
+}
+
+.leave-grid {
+  border-collapse: collapse;
+  min-inline-size: 100%;
+}
+
+.leave-grid th,
+.leave-grid td {
+  padding: var(--tb-space-xs);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.leave-grid tbody th {
+  text-align: start;
+}
+
+.leave-grid td[data-status="approved"] {
+  color: var(--tb-color-state-success);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.leave-grid td[data-status="pending"] {
+  color: var(--tb-color-state-info);
+}

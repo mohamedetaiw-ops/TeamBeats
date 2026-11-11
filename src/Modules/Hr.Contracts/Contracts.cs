@@ -118,3 +118,32 @@ public sealed class WorkingCalendarSnapshot
 
 /// <summary>Published on any change to a calendar, its holidays or the units it applies to (spec 022 section 12).</summary>
 public sealed record WorkingCalendarChanged(Guid? CalendarId, IReadOnlyList<DateOnly> AffectedDates, IReadOnlyList<Guid> AffectedUnits) : IIntegrationEvent;
+
+/// <summary>One leave balance of a person for a leave year: the ledger total, days held by pending requests, and what is left.</summary>
+public sealed record LeaveBalance(string TypeKey, IReadOnlyDictionary<string, string> TypeNames, int LeaveYear, decimal Balance, decimal Pending, decimal Available, string Unit);
+
+/// <summary>
+/// One person away on one date (spec 022 FR-009). <see cref="TypeKey"/> is set only when the viewer may see the leave
+/// type; otherwise the day shows as "out of office".
+/// </summary>
+public sealed record LeaveAbsence(Guid UserId, DateOnly Date, decimal Fraction, string Status, string? TypeKey);
+
+/// <summary>
+/// Leave reads for other modules (spec 022 slice 1): the assistant (spec 014) answers "how many days do I have" with the
+/// person's own balances, and profiles (spec 010) show "out of office". All calls are in the current tenant and for the
+/// signed-in viewer.
+/// </summary>
+public interface ILeave
+{
+    /// <summary>The signed-in person's balances for the current leave year of each active type.</summary>
+    Task<IReadOnlyList<LeaveBalance>> MyBalancesAsync(CancellationToken ct = default);
+
+    /// <summary>Approved leave of the given people between two dates, with the type only where the viewer may see it.</summary>
+    Task<IReadOnlyList<LeaveAbsence>> AvailabilityAsync(IReadOnlyCollection<Guid> userIds, DateOnly from, DateOnly to, CancellationToken ct = default);
+}
+
+/// <summary>Leave was approved (spec 022 section 12). IDs and dates only.</summary>
+public sealed record LeaveApproved(Guid RequestId, Guid UserId, DateOnly From, DateOnly To) : IIntegrationEvent;
+
+/// <summary>Approved leave was cancelled, or shortened (then <see cref="From"/> and <see cref="To"/> are the days given back).</summary>
+public sealed record LeaveCancelled(Guid RequestId, Guid UserId, DateOnly From, DateOnly To) : IIntegrationEvent;

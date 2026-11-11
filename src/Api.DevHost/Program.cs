@@ -64,6 +64,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Policies.PolicyMaintenanceWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Hr.Leave.LeaveMaintenanceWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Hr.Leave.LeaveMaintenanceWorker>();
+        }
         if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Analytics.AnalyticsMaintenanceWorker.InProcessKey))
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Analytics.AnalyticsMaintenanceWorker>();

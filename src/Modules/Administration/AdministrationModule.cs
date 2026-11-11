@@ -39,6 +39,7 @@ public static class AdministrationModule
         ("branding", Permissions.ThemeEdit, "/admin/branding"),
         ("notifications", Permissions.NotificationsManage, "/admin/notifications"),
         ("calendars", Permissions.HrCalendarManage, "/admin/calendars"),
+        ("leave", Permissions.HrManage, "/admin/leave"),
         ("people", Permissions.PeopleManage, "/admin/people"),
         ("services", Permissions.ServiceManage, "/admin/services"),
         ("audit", Permissions.AuditView, "/admin/audit"),

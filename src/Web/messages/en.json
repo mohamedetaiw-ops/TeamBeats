@@ -91,7 +91,8 @@
       "agents": "Agents",
       "evaluation": "Evaluation",
       "analytics": "Analytics",
-      "hr_integration": "HR integration"
+      "hr_integration": "HR integration",
+      "leave": "Leave"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}",
     "common": {
@@ -2260,7 +2261,10 @@
       "policyAttestation": "Policy attestation",
       "agentReview": "Agent review",
       "preparedByAi": "Prepared by AI",
-      "evalFollowUp": "Evaluation follow-up"
+      "evalFollowUp": "Evaluation follow-up",
+      "leaveApproval": "Leave approval",
+      "leaveChange": "Leave change",
+      "leaveReplacement": "Cover for a colleague"
     },
     "delegation": {
       "title": "While you are away",
@@ -6559,6 +6563,196 @@
     "empty": {
       "title": "No payslips yet",
       "message": "Payroll has no payslips for you yet."
+    }
+  },
+  "leave": {
+    "title": "Leave",
+    "intro": "Your balances, new requests and the requests you are part of.",
+    "failed": "Something went wrong. Try again.",
+    "range": "{from} to {to}",
+    "columns": {
+      "number": "Request",
+      "type": "Type",
+      "dates": "Dates",
+      "days": "Days",
+      "status": "Status",
+      "person": "Colleague",
+      "answer": "Your answer"
+    },
+    "status": {
+      "pending": "Waiting for approval",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "withdrawn": "Withdrawn"
+    },
+    "balances": {
+      "title": "My balances",
+      "empty": "No leave types apply to you yet.",
+      "available": "{value} {unit, select, hour {hours} other {days}} available",
+      "detail": "Leave year {year}: balance {balance}, waiting for approval {pending}"
+    },
+    "team": {
+      "link": "See who is away",
+      "title": "Team availability",
+      "intro": "Who on your team is away, approved and waiting for approval.",
+      "from": "From",
+      "earlier": "Earlier",
+      "later": "Later",
+      "legend": "A filled dot is approved leave, an empty dot is waiting for approval. Private leave shows only as away.",
+      "caption": "Team availability by day",
+      "person": "Person",
+      "away": "Away",
+      "halfAway": "Away half the day",
+      "pending": "Waiting for approval",
+      "failed": "Team availability could not be loaded."
+    },
+    "form": {
+      "title": "Request leave",
+      "noTypes": "No leave type is open to you yet. Ask HR.",
+      "type": "Leave type",
+      "start": "First day",
+      "end": "Last day",
+      "startHalf": "Start at midday",
+      "endHalf": "End at midday",
+      "previewLabel": "What this request takes",
+      "takes": "{days} {unit, select, hour {hours} other {working days}}",
+      "yearLine": "Leave year {year}: {available} available now, {after} after this request",
+      "overlap": "Also away",
+      "overlapDates": "{count, plural, one {# day} other {# days}} from {first}, {status, select, approved {approved} other {waiting for approval}}",
+      "noOverlap": "Nobody else on your team is away on these days.",
+      "cannot": "This request cannot be sent yet",
+      "document": "Supporting document",
+      "documentChosen": "Attached: {name}",
+      "documentHint": "This request needs a document. PDF, PNG or JPEG up to 10 MB.",
+      "replacement": "Replacement while you are away",
+      "comment": "Comment for your manager",
+      "failed": "The request was not sent.",
+      "submit": "Send request",
+      "submitting": "Sending",
+      "submitted": "Request {number} was sent for approval.",
+      "previewFailed": "The days could not be counted. Try again.",
+      "uploadFailed": "The document was not uploaded. Try again.",
+      "hours": "Hours"
+    },
+    "mine": {
+      "title": "My requests",
+      "caption": "My leave requests",
+      "empty": "No requests yet",
+      "emptyHint": "Requests you send show here with their status."
+    },
+    "replacement": {
+      "title": "Asked to cover",
+      "caption": "Requests where a colleague named you as replacement",
+      "accept": "Accept",
+      "decline": "Decline",
+      "accepted": "Accepted",
+      "declined": "Declined",
+      "waiting": "Has not answered yet"
+    },
+    "detail": {
+      "title": "Leave request {number}",
+      "person": "For",
+      "filedBy": "filed by {name}",
+      "dates": "Dates",
+      "halfStart": "Starts at midday.",
+      "halfEnd": "Ends at midday.",
+      "days": "Takes",
+      "replacement": "Replacement",
+      "none": "None",
+      "comment": "Comment",
+      "document": "Document",
+      "openDocument": "Open the document",
+      "change": "Change asked",
+      "changeShorten": "Waiting for approval to end on {end}",
+      "changeCancel": "Waiting for approval to cancel",
+      "decide": "Your decision",
+      "decided": {
+        "approve": "Your decision was recorded: approved.",
+        "reject": "Your decision was recorded: rejected.",
+        "return": "Your decision was recorded: sent back.",
+        "other": "Your decision was recorded."
+      },
+      "nameReplacement": "Change the replacement",
+      "saveReplacement": "Save replacement",
+      "shorten": "End early",
+      "shortenHint": "Pick the new last day. The days after it go back to your balance.",
+      "newEnd": "New last day",
+      "shortenAction": "End early",
+      "withdraw": "Withdraw request",
+      "cancel": "Cancel leave",
+      "done": {
+        "accept": "You accepted.",
+        "decline": "You declined.",
+        "replacement": "Replacement saved.",
+        "shorten": "Change saved.",
+        "cancel": "Change saved."
+      }
+    },
+    "admin": {
+      "title": "Leave",
+      "intro": "Leave types and how many days people get. Every change is versioned and audited.",
+      "failed": "The change was not saved.",
+      "wholeOrganization": "Whole organization",
+      "types": {
+        "title": "Leave types",
+        "inactive": "Inactive",
+        "sensitive": "Private",
+        "edit": "Edit",
+        "saved": "Leave type saved.",
+        "created": "Leave type added.",
+        "new": "Add a leave type",
+        "key": "Key",
+        "keyHint": "Lowercase letters, digits and underscores, for example annual.",
+        "add": "Add leave type",
+        "nameEn": "Name in English",
+        "nameAr": "Name in Arabic",
+        "unit": "Counted in",
+        "units": {
+          "day": "Days",
+          "hour": "Hours"
+        },
+        "noticeDays": "Notice in days",
+        "maxDays": "Most days in one request",
+        "documentAfter": "Document needed after days",
+        "carryOver": "Most days carried over",
+        "negativeMax": "Most days below zero",
+        "yearStart": "Leave year starts in month",
+        "membership": "Only for membership types",
+        "membershipHint": "Separate with commas. Empty means everyone.",
+        "halfDays": "Half days allowed",
+        "paid": "Paid",
+        "sensitiveHint": "Colleagues see only that the person is away.",
+        "negative": "Balance may go below zero",
+        "cancelApproval": "Cancelling approved leave needs approval",
+        "active": "Active",
+        "save": "Save leave type"
+      },
+      "policies": {
+        "title": "Entitlement policies",
+        "intro": "The nearest unit with a policy decides; otherwise the whole organization policy applies. The first band that matches gives the days.",
+        "new": "Add a policy",
+        "accrual": {
+          "yearly": "Given at the start of the year",
+          "monthly": "Earned each month"
+        },
+        "saved": "Policy saved.",
+        "deleted": "Policy deleted.",
+        "type": "Leave type",
+        "unit": "Applies to",
+        "wholeOrganization": "Whole organization",
+        "accrualLabel": "How days are given",
+        "bands": "Bands",
+        "bandsHint": "Each band gives days for people with at least the years of service, and only for the grades listed when there are any.",
+        "days": "Days a year",
+        "years": "From years of service",
+        "grades": "Grades",
+        "removeBand": "Remove band",
+        "addBand": "Add band",
+        "save": "Save policy",
+        "create": "Add policy",
+        "delete": "Delete policy"
+      }
     }
   }
 }
