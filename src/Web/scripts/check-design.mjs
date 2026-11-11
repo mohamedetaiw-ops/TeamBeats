@@ -1,6 +1,6 @@
 // Design system consistency gate (spec 036, docs/design-system/technical/consistency.md). It runs with `npm run verify`
 // beside the token gate and the literal-string lint, and fails the build when code steps outside the design system:
-//  1. Inline <svg> only in the icon set and the shell brand mark; every other icon goes through components/ui/Icon.
+//  1. Inline <svg> only in the icon set, the charts (spec 036 DLS-040) and the shell brand mark; every other icon goes through components/ui/Icon.
 //  2. Every <img> has an alt attribute (empty only for decorative images, see components/ui/Media).
 //  3. font-family and font-size in CSS come from the type tokens (or inherit), never a literal family or size.
 //  4. Per-design selectors ([data-design=...]) live only in components/ui/designs.css, so a design stays one file.
@@ -9,7 +9,7 @@ import { join, extname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const svgAllowed = new Set(["components/ui/Icon.tsx", "features/shell/Shell.tsx"]);
+const svgAllowed = new Set(["components/ui/Icon.tsx", "components/ui/Charts.tsx", "features/shell/Shell.tsx"]);
 const designCss = "components/ui/designs.css";
 const errors = [];
 

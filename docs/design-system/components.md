@@ -1,6 +1,6 @@
 # Components
 
-Every TeamBeats screen is built from these components. They live in `src/Web/components/ui/`, read only `--tb-*` tokens, work in both directions, and appear in the living gallery (`/ui-gallery`, and `/ui-gallery/components` for the extended catalogue) in the tenant's active design. Feature code composes them; it does not restyle them.
+Every TeamBeats screen is built from these components. They live in `src/Web/components/ui/`, read only `--tb-*` tokens, work in both directions, and appear in the living gallery (`/ui-gallery`, `/ui-gallery/components` for the extended catalogue and `/ui-gallery/patterns` for the page patterns) in the tenant's active design. Feature code composes them; it does not restyle them.
 
 | Component | File | Use | Accessibility built in |
 |---|---|---|---|
@@ -64,10 +64,38 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | File upload | `FileUpload.tsx` | Add files to a request or a document | A labelled file input with a drop area; each file shows size, progress and its own error, and has a named remove button |
 | Carousel | `Carousel.tsx` | A row of cards that does not fit, such as featured news | A named scrolling list; previous and next buttons are disabled at the ends; nothing moves by itself |
 | Tree view | `TreeView.tsx` | Folders and nested sections | WAI-ARIA tree: arrows move and open by direction, type ahead finds a node |
+| Data table | `DataTable.tsx` | Registers and reports with sorting, row selection, a columns menu, a toolbar and paging | Native table with a caption; sortable headers are buttons and the header states `aria-sort`; the select all box shows the mixed state; the scroll area is a named, focusable region |
+| Data grid | `DataGrid.tsx` | Editing many values in place, such as a budget | WAI-ARIA grid: one tab stop, arrows by cell in the reading direction, Home and End, Enter or F2 to edit, Escape to return to the cell |
+| Stat cards | `Blocks.tsx` (`StatCards`) | Headline numbers with their change against the previous period | A named list; the change is a signed percent with an arrow and the words "against {period}"; the tone follows whether a rise is good news |
+| Month view | `CalendarViews.tsx` (`MonthView`) | Events across a month in the tenant's calendar | A table named by the month, weekday headers with full names; today has `aria-current="date"`; extra events are counted in words |
+| Week view | `CalendarViews.tsx` (`WeekView`) | Timed events across a few days, with overlaps side by side | Each day is a section named by its heading with an ordered list of events and their times in words |
+| Task list | `Blocks.tsx` (`TaskList`) | Tasks to tick off, with due date, priority and owner | Each box is named "Mark {title} done"; due and priority are text badges |
+| Notification panel | `Blocks.tsx` (`NotificationPanel`) | The latest notifications, in a popover or on a page | A named region; unread is said in words; the filter is a segmented control; mark all read is disabled when nothing is unread |
+| Settings dialog | `Blocks.tsx` (`SettingsDialog`) | Personal settings in sections | A dialog with vertical tabs (`aria-orientation="vertical"`, up and down arrows); each section saves on its own |
+| Sign-in card | `Blocks.tsx` (`SignInCard`) | The tenant's sign-in choices | A named region; providers are links; a form, when allowed, follows a labelled divider |
+| Thinking indicator | `Assistant.tsx` (`ThinkingIndicator`) | While the assistant or an agent works, with what it is doing now | A status region in words; the dots are decoration and stop with reduced motion |
+| Composer | `Assistant.tsx` (`Composer`) | The message box of the assistant and of agents, with attachments | Labelled text box that grows; Enter sends, Shift and Enter adds a line (stated in its description); named attach, remove, send and stop buttons |
+| Source list and citations | `Assistant.tsx` (`SourceList`, `Cite`) | The sources an answer used, in the order it cites them | An ordered list under a heading; each citation is a link named "Source n: title" to its entry |
+| Usage limit | `Assistant.tsx` (`UsageLimit`) | A quota such as questions today or agent runs this month | A meter with the amount in words and when it resets; warning from 80 percent, danger at the limit |
+| Question steps | `Assistant.tsx` (`QuestionSteps`) | A few answers an agent needs before it can go on | One radio group per step, "Step n of m" takes focus on each step, Back keeps answers, a summary before sending |
+| Agent form | `Assistant.tsx` (`AgentForm`) | The inputs of an agent run, from its published schema | Labelled fields with "(optional)" where it applies; the API's errors sit beside each field |
+| Run progress | `Assistant.tsx` (`RunProgress`) | The steps of an agent run and where it is now | An ordered list; each step states its status in words; the running one has `aria-current="step"` and is announced |
+| Chart card | `Charts.tsx` (`ChartCard`, `ChartLegend`, `seriesTable`) | Every chart: title, hint, optional headline figure, legend and a "Show as a table" toggle | A region named by its title; the toggle is a pressed button that swaps the drawing for a table with column and row headers |
+| Line and area chart | `Charts.tsx` (`LineChart`) | A measure over time, stacked areas for parts of a whole, a step line for counts that change on a date | One image named by a summary in words; each series has its own colour, marker and dash; the value axis is on the start side |
+| Bar chart | `Charts.tsx` (`BarChart`) | Comparing categories, grouped or stacked, with an optional target line | As the line chart; stacked series also differ by pattern |
+| Bar list and funnel | `Charts.tsx` (`BarList`, `FunnelChart`) | Ranked items such as top searches; stages that people drop out of | Ordered lists with the label and value in text; the funnel says each stage's share of the first |
+| Heat map and contributions | `Charts.tsx` (`HeatMap`, `Contributions`) | Activity by day and hour, or by day over weeks | One image with a summary; the value is written in each heat cell; levels use the accent at set opacities |
+| Radar, radial and rings | `Charts.tsx` (`RadarChart`, `RadialChart`, `Rings`) | Skills against an average, one percentage, a few goals against their targets | One image with a summary; the value and each ring's progress are also written as text |
+| Flow, scatter and stage bars | `Charts.tsx` (`FlowChart`, `ScatterChart`, `StageBars`) | Where people go from where they start, two measures per group, items by stage | One image with a summary; node labels carry their totals; stage bars list each stage with its count and share |
+| Mosaic | `Patterns.tsx` (`Mosaic`) | The tiles of a dashboard (layout L08) | Tiles keep reading order; a third, half, two thirds or the full row, and every tile takes the full row when the region is narrow |
+| Chat layout and transcript | `Patterns.tsx` (`ChatLayout`, `ChatTranscript`) | The assistant and agent conversations | Past conversations in a named navigation with the current one marked `aria-current`; the transcript is a log so new messages are read out |
+| Profile layout | `Patterns.tsx` (`ProfileLayout`, `ProfileIcon`, `ProfileBlock`, `FactList`) | A person, an agent or a record: who or what, status, facts and actions, details beside supporting blocks | One heading at the level the page gives; the status is a badge in words; facts are a description list |
+| Timeline | `Patterns.tsx` (`Timeline`) | What happened to a record, newest first | A named ordered list; each entry says who and when, with a machine readable time |
+| Board | `Patterns.tsx` (`Board`) | Work in columns by stage | Each column is a region named by its heading and count; a card moves from its menu (a radio group of columns) or by dragging; the move is announced and focus stays on the card |
 | Filter bar | `.ui-filter-bar` | Search box, selects and Apply above a list | Real labels; Apply is a button |
 | Filter chips | `.ui-chips` | A row of choices that narrow a list, such as request status | Links with `aria-current` on the active choice |
 | List rows | `.ui-rows`, `.ui-row` | Tasks and other actionable items: icon tile, title, meta, one action | Each row is a list item; the action names its item |
-| Data table | `main table` | Registers and reports | Native table with header cells; rows highlight on hover |
+| Plain table | `main table` | A short read-only table inside page text | Native table with header cells; rows highlight on hover |
 | Split view | `.ui-split` | A main column with a side column (Tasks and delegation) | The side column is an `aside` with a label; stacks below 64rem |
 | Person card | `people-cards` | People directory and team | Avatar with a steady tone, name link covers the card |
 | Briefing hero | `home.briefing` | Top of the home: greeting, date, weather, next three things with actions | A section named by its heading; rows are an ordered list; where items came from is stated |
@@ -110,3 +138,8 @@ Shell parts (header, navigation, search, settings, account menu, notifications, 
 | Use `Combobox` for a long list of known options | Use it for free text with suggestions only (use `SearchField`) |
 | Use `DateField` and keep ISO days in the form | Parse or store dates as localized text |
 | Use `Carousel` buttons that stop at the ends | Rotate slides by themselves |
+| Use `DataTable` for lists people read, sort and select | Use `DataGrid` for a read-only list (it adds keys people do not expect) |
+| Say whether a rise is good with `goodWhen` | Colour a change red or green with no sign or words |
+| Keep the notification panel and settings dialog as the shell's only versions | Build a second notification list or settings layout in a feature |
+| Show the sources an answer used, numbered as it cites them | Show an answer with no way to see where it came from |
+| Say what the assistant is doing while it works | Show only a spinner for a long answer |

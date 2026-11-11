@@ -332,12 +332,14 @@
 
 /* The step back points against the reading direction: the forward chevron, turned. */
 .ui-calendar-previous .icon,
-.ui-carousel-previous .icon {
+.ui-carousel-previous .icon,
+.ui-month-previous .icon {
   transform: scaleX(-1);
 }
 
 .ui-calendar-previous .icon:where(:dir(rtl)),
-.ui-carousel-previous .icon:where(:dir(rtl)) {
+.ui-carousel-previous .icon:where(:dir(rtl)),
+.ui-month-previous .icon:where(:dir(rtl)) {
   transform: none;
 }
 
