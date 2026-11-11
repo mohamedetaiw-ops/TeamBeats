@@ -33,8 +33,11 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
     /// edited since, is brought up to date; a home an administrator changed or replaced is left alone.</param>
     /// <param name="News">Fictional news published before the home, so the news feed and links have something to show.</param>
     /// <param name="Services">Fictional form services published before the home, so the catalogue and My services are not empty.</param>
+    /// <param name="Footer">The shell footer (spec 008 FR-056), set only while the tenant has none.</param>
+    /// <param name="Views">More home views as tabs (spec 008 FR-058), set only while the tenant has none.</param>
     public sealed record HomeFile(string Template, string Slug, string? Variant, IReadOnlyDictionary<string, IReadOnlyList<HomePlacement>> Regions, int Revision = 1,
-        IReadOnlyList<SeedNews>? News = null, IReadOnlyList<SeedService>? Services = null, IReadOnlyList<SeedLink>? Navigation = null)
+        IReadOnlyList<SeedNews>? News = null, IReadOnlyList<SeedService>? Services = null, IReadOnlyList<SeedLink>? Navigation = null,
+        ShellFooter? Footer = null, IReadOnlyList<SeedView>? Views = null)
     {
         [JsonPropertyName("$comment")]
         public string? Comment { get; init; }
@@ -49,6 +52,9 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
 
     /// <summary>A global menu entry: an IA entry with this slug pointing at a product address. The menu is set only while the tenant has none.</summary>
     public sealed record SeedLink(string Slug, IReadOnlyDictionary<string, string> Labels, string Url);
+
+    /// <summary>One more home view: a page from the same template with its own placements, shown as a tab next to the home.</summary>
+    public sealed record SeedView(string Id, IReadOnlyDictionary<string, string> Labels, string Slug, IReadOnlyDictionary<string, IReadOnlyList<HomePlacement>> Regions);
 
     public const string NewsLinkPrefix = "seed:news:";
 
@@ -128,12 +134,12 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
             var home = list.FirstOrDefault(p => p.Id == homeId);
             if (home is null || home.Slug != file.Slug || home.PublishedAt is not { } published || home.DraftUpdatedAt > published)
             {
-                return true;
+                return await SeedShellExtrasAsync(tenantId, admin.Id, file, links, ct);
             }
             var last = (await pages.ReleasesAsync(homeId, ct)).OrderByDescending(r => r.Release).FirstOrDefault();
             if (last?.Reason is not { } lastReason || !lastReason.StartsWith(SeedReason, StringComparison.Ordinal) || lastReason == reason)
             {
-                return true;
+                return await SeedShellExtrasAsync(tenantId, admin.Id, file, links, ct);
             }
         }
 
@@ -153,6 +159,69 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
         }
         await sp.GetRequiredService<IDbSession>().CommitAsync(ct);
         logger.LogInformation("Home seed: page {Slug} published as the home of {Tenant}", file.Slug, key);
+        return await SeedShellExtrasAsync(tenantId, admin.Id, file, links, ct);
+    }
+
+    /// <summary>
+    /// Gives the shell the file's footer and home views while it has none of each, so an administrator's own footer and
+    /// views are never replaced. Each view's page is created and published once, from the home's template.
+    /// </summary>
+    private async Task<bool> SeedShellExtrasAsync(Guid tenantId, Guid adminId, HomeFile file, IReadOnlyDictionary<string, string> links,
+        CancellationToken ct)
+    {
+        // Its own scope: the home above may have committed its session already.
+        await using var scope = scopes.CreateAsyncScope();
+        var sp = scope.ServiceProvider;
+        var context = sp.GetRequiredService<TenantContextAccessor>();
+        context.SetTenant(tenantId);
+        context.SetActor(ActorType.User, adminId);
+        var shells = sp.GetRequiredService<ShellService>();
+        var pages = sp.GetRequiredService<PageService>();
+        var definition = (await shells.GetShellAdminAsync(ct)).Definition;
+        if (definition.HomePageId is null)
+        {
+            return true;
+        }
+        var changed = false;
+        if (definition.Footer is null && file.Footer is not null)
+        {
+            definition = definition with { Footer = file.Footer };
+            changed = true;
+        }
+        if ((definition.HomeViews ?? []).Count == 0 && file.Views is { Count: > 0 } views)
+        {
+            var list = await pages.ListAsync(ct);
+            var configs = new List<HomeViewConfig>();
+            foreach (var view in views)
+            {
+                if (list.FirstOrDefault(p => p.Slug == view.Slug) is not { CurrentRelease: not null } existing)
+                {
+                    var page = list.FirstOrDefault(p => p.Slug == view.Slug) is { } draft
+                        ? await pages.GetAsync(draft.Id, ct)
+                        : await pages.CreateAsync(new CreatePageRequest(file.Template, view.Slug, null, file.Variant), ct);
+                    var regions = page.Draft.Regions
+                        .Select(r => new PageRegion(r.Id, view.Regions.TryGetValue(r.Id, out var items)
+                            ? items.Select(p => new Placement(p.Id, p.ComponentRef, p.Span, Link(p.Props, links))).ToList()
+                            : r.Placements))
+                        .ToList();
+                    page = await pages.SaveDraftAsync(page.Id, page.ETag, new SaveDraftRequest(page.Draft with { Regions = regions }), ct);
+                    await pages.PublishAsync(page.Id, new TeamBeats.Modules.Experience.Pages.PublishRequest($"{SeedReason} r{file.Revision}"), ct);
+                    configs.Add(new HomeViewConfig(view.Id, view.Labels, page.Id, null));
+                }
+                else
+                {
+                    configs.Add(new HomeViewConfig(view.Id, view.Labels, existing.Id, null));
+                }
+            }
+            definition = definition with { HomeViews = configs };
+            changed = true;
+        }
+        if (changed)
+        {
+            await shells.PublishShellAsync(definition, ct);
+            await sp.GetRequiredService<IDbSession>().CommitAsync(ct);
+            logger.LogInformation("Home seed: footer and home views set");
+        }
         return true;
     }
 

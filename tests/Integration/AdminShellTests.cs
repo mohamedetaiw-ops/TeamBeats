@@ -20,7 +20,7 @@ public sealed class AdminShellTests(TenantWorld world)
     public async Task Navigation_is_server_driven_per_permission()
     {
         var admin = await Sections(world.A["admin"]);
-        Assert.Superset(new HashSet<string> { "tenant_settings", "organization", "users", "roles", "plan", "audit", "pages", "templates", "notifications", "services", "ai", "agents", "evaluation" }, admin);
+        Assert.Superset(new HashSet<string> { "tenant_settings", "organization", "users", "roles", "plan", "audit", "pages", "templates", "notifications", "services", "ai", "agents", "evaluation", "shell" }, admin);
 
         var orgadmin = await Sections(world.A["orgadmin"]);
         Assert.Contains("organization", orgadmin);
@@ -30,6 +30,7 @@ public sealed class AdminShellTests(TenantWorld world)
         // The org admin holds template.edit for the Gulf only; template designers work tenant-wide in R1.
         Assert.DoesNotContain("templates", orgadmin);
         Assert.DoesNotContain("notifications", orgadmin);
+        Assert.DoesNotContain("shell", orgadmin); // The footer and home views belong to the whole tenant (spec 008 FR-056, FR-058).
 
         var security = await Sections(world.A["security"]);
         Assert.Contains("audit", security);
