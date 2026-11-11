@@ -4,13 +4,14 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Hr.Contracts;
+using TeamBeats.Modules.Hr.Journeys;
 using TeamBeats.Modules.Hr.Leave;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Hr;
 
-/// <summary>Leave, attendance and HR workflows (spec 022, module map: Hr): working calendars (R1) and leave (R2 slice 1).</summary>
+/// <summary>Leave, attendance and HR workflows (spec 022, module map: Hr): working calendars (R1), leave (R2 slices 1 and 2) and journeys (slice 3).</summary>
 public static class HrModule
 {
     public static readonly MigrationSource Migrations = new("hr", typeof(HrModule).Assembly);
@@ -32,6 +33,17 @@ public static class HrModule
         services.AddMessageHandler<WorkingCalendarChanged, LeaveRecountHandler>("hr.leave_recount");
         services.AddMessageHandler<Integrations.Contracts.HrLeaveHandOffChanged, LeaveHrAnswered>("hr.leave_hr_answered");
         services.AddSingleton<Services.Contracts.IModuleServiceSource, LeaveModuleServices>();
+        services.AddScoped<JourneyTemplates>();
+        services.AddScoped<JourneyService>();
+        services.AddScoped<JourneyTaskSource>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<JourneyTaskSource>());
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, JourneyTaskSource>("hr.journey_notify_task");
+        services.AddMessageHandler<Workflow.Contracts.UserTaskDue, JourneyTaskSource>("hr.journey_step_overdue");
+        services.AddMessageHandler<Integrations.Contracts.EmployeeHired, JourneyStarter>("hr.journey_start_hire");
+        services.AddMessageHandler<Integrations.Contracts.EmployeeRehired, JourneyStarter>("hr.journey_start_rehire");
+        services.AddMessageHandler<Integrations.Contracts.EmployeeTerminated, JourneyStarter>("hr.journey_start_termination");
+        services.AddMessageHandler<Identity.Contracts.UserProvisioned, JourneyStarter>("hr.journey_start_account");
+        services.AddMessageHandler<Services.Contracts.RequestCompleted, JourneyStarter>("hr.journey_start_service");
         return services;
     }
 
@@ -109,6 +121,7 @@ public static class HrModule
             CancellationToken ct) => Results.Ok(await calendars.PreviewAsync(orgUnitId, calendarId, from, to, resolver, ct)));
 
         app.MapLeaveEndpoints();
+        app.MapJourneyEndpoints();
         return app;
     }
 }

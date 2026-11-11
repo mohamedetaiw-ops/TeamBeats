@@ -76,7 +76,22 @@ public sealed class RouteCompilerTests
         Assert.All(back.Steps, s => Assert.True(s.LineManager));
     }
 
+    [Fact]
+    public void A_step_for_the_instances_subject_with_a_fallback_permission_survives_BPMN()
+    {
+        var route = new RouteSpec("Journey step", [new RouteStep("welcome", "Read the welcome pack", new CandidateRule(Permission: "hr.manage", Subject: true))]);
+        Assert.False(RouteCompiler.Validate(route).Any);
+        var compiled = RouteCompiler.Compile(route);
+        var xml = RouteCompiler.ToBpmn("hr.journey.onboarding.1.welcome", compiled);
+        Assert.Contains("subject", xml);
+        var back = RouteCompiler.FromBpmn(xml);
+        Assert.Equal(compiled.ToJson(), back.ToJson());
+        Assert.True(Assert.Single(back.Steps).Subject);
+    }
+
     [Theory]
+    [InlineData("subject_with_users")]
+    [InlineData("subject_with_line_manager")]
     [InlineData("line_manager_with_users")]
     [InlineData("no_steps")]
     [InlineData("no_candidates")]
@@ -92,6 +107,8 @@ public sealed class RouteCompilerTests
         {
             "no_steps" => new RouteSpec("R", []),
             "line_manager_with_users" => new RouteSpec("R", [ok with { Candidates = new CandidateRule(Users: [Legal], LineManager: true) }]),
+            "subject_with_users" => new RouteSpec("R", [ok with { Candidates = new CandidateRule(Users: [Legal], Subject: true) }]),
+            "subject_with_line_manager" => new RouteSpec("R", [ok with { Candidates = new CandidateRule(LineManager: true, Subject: true) }]),
             "no_candidates" => new RouteSpec("R", [ok with { Candidates = new CandidateRule() }]),
             "duplicate_id" => new RouteSpec("R", [ok, ok]),
             "reserved_id" => new RouteSpec("R", [ok with { Id = "gw_a" }]),

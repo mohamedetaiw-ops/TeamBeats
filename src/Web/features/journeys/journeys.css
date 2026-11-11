@@ -1,0 +1,98 @@
+/* Spec 022 journey pages. Colors and spacing come from tokens. */
+.journeys {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.journeys-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+.journeys-section h2,
+.journeys-section h3 {
+  margin: 0;
+}
+
+.journeys-form {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.journeys-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.journeys-step {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+  min-inline-size: 0;
+}
+
+.journeys-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.journeys-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+  padding-block: var(--tb-space-xs);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.journeys-table {
+  overflow-x: auto;
+}
+
+.journeys-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.journeys-table table th,
+.journeys-table table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: top;
+}
+
+.journeys-table table td[data-number] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.journeys-details {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  margin: 0;
+}
+
+.journeys-details dt {
+  color: var(--tb-color-text-secondary);
+}
+
+.journeys-details dd {
+  margin: 0;
+}

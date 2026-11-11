@@ -53,6 +53,8 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
         return t("leaveChange");
       case "leave_replacement":
         return t("leaveReplacement");
+      case "journey":
+        return t("journeyStep");
       default:
         return i.name;
     }

@@ -161,6 +161,11 @@ public static class AuditActions
     public const string HrLeaveRecounted = "hr.leave_recounted";
     public const string HrLeaveSourceChanged = "hr.leave_source_changed";
     public const string HrLeaveHandOffRetried = "hr.leave_handoff_retried";
+    public const string HrJourneyTemplateChanged = "hr.journey_template_changed";
+    public const string HrJourneyStarted = "hr.journey_started";
+    public const string HrJourneyRescheduled = "hr.journey_rescheduled";
+    public const string HrJourneyStepCompleted = "hr.journey_step_completed";
+    public const string HrJourneyCancelled = "hr.journey_cancelled";
 
     // 019
     public const string HrSettingsChanged = "hr.settings_changed";
@@ -364,6 +369,7 @@ public static class AuditActions
         HrPayslipViewed, HrPayslipDownloaded,
         HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
         HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
+        HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,

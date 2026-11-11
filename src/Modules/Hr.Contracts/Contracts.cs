@@ -164,3 +164,12 @@ public sealed record LeaveApproved(Guid RequestId, Guid UserId, DateOnly From, D
 
 /// <summary>Approved leave was cancelled, or shortened (then <see cref="From"/> and <see cref="To"/> are the days given back).</summary>
 public sealed record LeaveCancelled(Guid RequestId, Guid UserId, DateOnly From, DateOnly To) : IIntegrationEvent;
+
+/// <summary>A journey started for a person (spec 022 section 12). IDs and the kind only.</summary>
+public sealed record JourneyStarted(Guid JourneyId, Guid UserId, string Kind, DateOnly AnchorDate) : IIntegrationEvent;
+
+/// <summary>An open journey step passed its due time.</summary>
+public sealed record JourneyStepOverdue(Guid JourneyId, Guid UserId, string StepKey) : IIntegrationEvent;
+
+/// <summary>Every step of a journey is done.</summary>
+public sealed record JourneyCompleted(Guid JourneyId, Guid UserId, string Kind) : IIntegrationEvent;

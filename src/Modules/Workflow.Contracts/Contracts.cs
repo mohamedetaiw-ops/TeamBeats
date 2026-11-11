@@ -10,6 +10,7 @@ public static class RouteSources
     public const string PolicyRoute = "policy_route";
     public const string DocumentRoute = "document_route";
     public const string LeaveRoute = "leave_route";
+    public const string JourneyRoute = "journey_route";
 }
 
 /// <summary>Outcomes a user task can end with. Approve continues to the next step; reject and return end the instance.</summary>
@@ -39,9 +40,11 @@ public static class InstanceOutcomes
 /// central authorization (so a sibling unit's holder is not a candidate). Role names are never used. With
 /// <see cref="LineManager"/>, the current manager of the person the instance is for decides, from the reporting line
 /// (spec 010), checked each time so a new manager takes over an open step; when that person has no manager, or the
-/// manager may not decide (they filed it), <see cref="Permission"/> holders are the fallback.
+/// manager may not decide (they filed it), <see cref="Permission"/> holders are the fallback. With <see cref="Subject"/>,
+/// the person the instance is for completes it themselves (a journey step for the new joiner or their buddy, spec 022);
+/// <see cref="Permission"/> holders can then complete it too, for when that person has left.
 /// </summary>
-public sealed record CandidateRule(IReadOnlyList<Guid>? Users = null, string? Permission = null, bool LineManager = false);
+public sealed record CandidateRule(IReadOnlyList<Guid>? Users = null, string? Permission = null, bool LineManager = false, bool Subject = false);
 
 /// <summary>
 /// One step: an approval (user task) by default, or, with <see cref="Action"/>, a service task that calls a connector
@@ -170,7 +173,10 @@ public interface IProcessEngine
     /// <summary>Completes an open task as the current user, who must be a candidate. Refused with 409 once completed.</summary>
     Task<UserTaskInfo> CompleteTaskAsync(Guid taskId, string outcome, string? comment, CancellationToken ct = default);
 
-    /// <summary>Ends an active instance and cancels its open task (the requester withdrew).</summary>
+    /// <summary>
+    /// Ends an active instance and cancels its open task (the requester withdrew). As a user, only the starter may; an
+    /// instance started by the system is ended by whoever the calling module authorized.
+    /// </summary>
     Task<ProcessInstanceInfo> WithdrawAsync(Guid instanceId, CancellationToken ct = default);
 
     Task<ProcessInstanceInfo?> GetInstanceAsync(Guid instanceId, CancellationToken ct = default);

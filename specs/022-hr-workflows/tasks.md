@@ -32,7 +32,7 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 - [x] T017 Reduced hours periods on calendars
 
 ## Slice 3: Journeys (US4, US5, FR-013 to FR-018)
-- [ ] T018 Journey templates, starts from spec 019 and spec 003 events and approved resignations, rescheduling
+- [x] T018 Journey templates, starts from spec 019 and spec 003 events and approved resignations, rescheduling
 - [ ] T019 Attestation steps, access removal checklist with escalation, exit interview, journeys dashboard, pre-boarding setting
 
 ## Slice 4: Attendance (US3, FR-010 to FR-012)
