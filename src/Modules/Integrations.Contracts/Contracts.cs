@@ -703,6 +703,7 @@ public sealed record FinanceHandOffChanged(string SourceType, Guid SourceId, str
 /// <summary>
 /// The canonical HR employee (spec 019 section 2). <paramref name="RecordId"/> is the HR system's own ID of the person;
 /// <paramref name="Status"/> is one of <see cref="HrEmployeeStatuses"/>. Names are kept in both languages when HR has them.
+/// <paramref name="AssignmentDate"/> is the date the current org unit, manager, title and location take effect (FR-005).
 /// </summary>
 public sealed record HrEmployee(
     string RecordId,
@@ -719,7 +720,8 @@ public sealed record HrEmployee(
     string? CostCentre,
     string? Location,
     string? OrgUnitCode,
-    string? ManagerEmployeeNumber);
+    string? ManagerEmployeeNumber,
+    DateOnly? AssignmentDate = null);
 
 public static class HrEmployeeStatuses
 {
@@ -747,12 +749,16 @@ public static class HrFields
     public const string Location = "location";
     public const string OrgUnitCode = "org_unit_code";
     public const string ManagerEmployeeNumber = "manager_employee_number";
+    public const string AssignmentDate = "assignment_date";
 
     public static readonly IReadOnlyList<string> All =
     [
         RecordId, EmployeeNumber, WorkEmail, NameEn, NameAr, Status, HireDate, TerminationDate, JobTitle, Grade, EmploymentType, CostCentre, Location,
-        OrgUnitCode, ManagerEmployeeNumber,
+        OrgUnitCode, ManagerEmployeeNumber, AssignmentDate,
     ];
+
+    /// <summary>The fields of one assignment: they change together on the assignment date (US3 scenario 1).</summary>
+    public static readonly IReadOnlyList<string> Assignment = [OrgUnitCode, ManagerEmployeeNumber, JobTitle, Location];
 
     /// <summary>A mapping must name these; everything else is optional.</summary>
     public static readonly IReadOnlyList<string> Required = [RecordId, Status];
@@ -780,3 +786,30 @@ public sealed record HrSyncCompleted(Guid ConnectionId, Guid RunId, int Matched,
 
 /// <summary>An HR sync stopped before applying because it passed the change threshold (FR-004).</summary>
 public sealed record HrSyncHeld(Guid ConnectionId, Guid RunId, int Terminations, int Moves) : IIntegrationEvent;
+
+/// <summary>
+/// Lifecycle events (spec 019 FR-006), consumed by organization (002), identity (003), profiles (010) and leave and
+/// journeys (022). Each comes from one HR change, traceable to its run and HR record (FR-018). IDs and dates only.
+/// <paramref name="UserId"/> is null while the HR record matches nobody yet (US2 scenario 2).
+/// </summary>
+public sealed record EmployeeHired(Guid? UserId, string RecordId, DateOnly StartDate, Guid RunId, Guid ChangeId) : IIntegrationEvent;
+
+/// <summary>The person moved to another org unit on <paramref name="EffectiveDate"/> (US3).</summary>
+public sealed record EmployeeTransferred(Guid UserId, string RecordId, Guid? FromUnitId, Guid ToUnitId, DateOnly EffectiveDate, Guid RunId, Guid ChangeId)
+    : IIntegrationEvent;
+
+/// <summary>The person's manager changed on <paramref name="EffectiveDate"/>; the manager is null when HR's manager matches nobody.</summary>
+public sealed record EmployeeManagerChanged(Guid UserId, string RecordId, Guid? ManagerUserId, DateOnly EffectiveDate, Guid RunId, Guid ChangeId)
+    : IIntegrationEvent;
+
+/// <summary>
+/// HR recorded a termination (US4 scenario 1): published at once, so offboarding can start. Access ends with
+/// <see cref="EmployeeLeft"/> at the end of <paramref name="LastWorkingDay"/>, or within minutes when <paramref name="Immediate"/>.
+/// </summary>
+public sealed record EmployeeTerminated(Guid? UserId, string RecordId, DateOnly LastWorkingDay, bool Immediate, Guid RunId, Guid ChangeId) : IIntegrationEvent;
+
+/// <summary>The last working day of a terminated employee has ended (FR-008): their TeamBeats access ends now.</summary>
+public sealed record EmployeeLeft(Guid UserId, string RecordId, DateOnly LastWorkingDay, Guid ChangeId) : IIntegrationEvent;
+
+/// <summary>A former employee is active again (US4 scenario 3). <paramref name="Reactivate"/> is the tenant's choice to reopen the old account.</summary>
+public sealed record EmployeeRehired(Guid? UserId, string RecordId, DateOnly StartDate, bool Reactivate, Guid RunId, Guid ChangeId) : IIntegrationEvent;

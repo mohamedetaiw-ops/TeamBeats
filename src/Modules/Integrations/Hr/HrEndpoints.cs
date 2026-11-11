@@ -12,7 +12,7 @@ public sealed record HrLinkRequest(Guid UserId);
 /// <summary>
 /// The HR integration page (spec 019 section 10, permission <c>hr.integration_manage</c> at tenant scope): last run and
 /// counts, the unmatched, stale and conflicting records, held runs to confirm or discard, links made by hand, the
-/// matching rule and change threshold, and a sync now. The HR connection itself is made in the Connections area.
+/// matching rule and change threshold, the lifecycle changes waiting or applied, the HR org codes and their units, and a sync now. The HR connection itself is made in the Connections area.
 /// </summary>
 public static class HrEndpoints
 {
@@ -80,6 +80,27 @@ public static class HrEndpoints
             var row = await hr.UnlinkAsync(recordId, ct);
             await session.CommitAsync(ct);
             return Results.Ok(row);
+        });
+
+        api.MapGet("/changes", async (string? status, IAuthorizationService authz, HrLifecycle lifecycle, CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            return Results.Ok(await lifecycle.ChangesAsync(status, 100, ct));
+        });
+
+        api.MapGet("/org-codes", async (IAuthorizationService authz, HrLifecycle lifecycle, CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            return Results.Ok(await lifecycle.OrgCodesAsync(ct));
+        });
+
+        api.MapPut("/org-codes/{code}", async (string code, HrOrgCodeRequest request, IAuthorizationService authz, HrLifecycle lifecycle, IDbSession session,
+            CancellationToken ct) =>
+        {
+            await Demand(authz, ct);
+            var view = await lifecycle.MapOrgCodeAsync(code, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         // Starting a run: a sync of the HR connection now, outside the nightly schedule.

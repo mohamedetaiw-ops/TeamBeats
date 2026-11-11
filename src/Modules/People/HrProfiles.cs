@@ -89,3 +89,23 @@ public sealed class ApplyHrProfiles(HrProfiles profiles) : IMessageHandler<HrSyn
 {
     public Task HandleAsync(HrSyncCompleted message, CancellationToken ct) => profiles.ApplyAsync(ct);
 }
+
+/// <summary>
+/// HR manager changes (spec 019 US3 scenario 1, FR-006): the reporting line takes HR's manager on the effective date,
+/// with HR as its source, so directory sync leaves it alone. A change that would make a loop is refused and reported,
+/// as for the directory (spec 010 US2 scenario 5).
+/// </summary>
+public sealed class ApplyHrManager(ReportingLine lines, IAuditWriter audit) : IMessageHandler<EmployeeManagerChanged>
+{
+    public async Task HandleAsync(EmployeeManagerChanged message, CancellationToken ct)
+    {
+        var proposed = new Dictionary<Guid, Guid?>(await lines.CurrentAsync(ct)) { [message.UserId] = message.ManagerUserId };
+        if (ReportingLine.FindCycles(proposed).Contains(message.UserId))
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.PeopleReportingCycleDetected, "hr_change", message.ChangeId.ToString(),
+                Changes: new { people = new[] { message.UserId }, source = FieldSources.Hr }), ct);
+            return;
+        }
+        await lines.SetAsync(message.UserId, message.ManagerUserId, FieldSources.Hr, ct);
+    }
+}

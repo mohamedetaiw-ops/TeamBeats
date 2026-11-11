@@ -25,6 +25,7 @@ public static class OrgOwners
 {
     public const string Product = "product";
     public const string Directory = "directory";
+    public const string Hr = "hr";
 }
 
 public sealed record OrgUnitResult(OrgUnitView Unit, IReadOnlyList<string> Warnings);

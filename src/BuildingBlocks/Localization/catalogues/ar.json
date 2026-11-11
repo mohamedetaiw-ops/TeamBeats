@@ -1298,5 +1298,8 @@
   "validation.hr.threshold": "أدخل حدًا من 1 إلى 100 بالمئة.",
   "validation.hr.time_zone": "اختر منطقة زمنية معروفة.",
   "validation.hr.user_linked": "هذا الشخص مربوط بسجل آخر في الموارد البشرية.",
-  "validation.hr.user_unknown": "اختر شخصًا من هذه المؤسسة."
+  "validation.hr.user_unknown": "اختر شخصًا من هذه المؤسسة.",
+  "validation.hr.lead_days": "اختر من 0 إلى 30 يوم عمل.",
+  "validation.hr.org_unit": "اختر وحدة من هذه المؤسسة.",
+  "validation.hr.change_status": "اختر بالانتظار أو بانتظار وحدة أو مطبّق أو ملغى."
 }

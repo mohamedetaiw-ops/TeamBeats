@@ -302,3 +302,38 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 - The HR job can run up to 5 minutes inside the connector worker tick, which delays other jobs of that tenant meanwhile. A separate long job lane is a follow-up.
 - `hr.mapping_changed` from section 13 is covered by `integration.connection_changed`, which already audits every settings change of the connection.
 - Lifecycle (US2 to US4) needs leave and journeys from spec 022 R2, which has no tasks yet. Slice 2 builds the 019 events and the consumers in 002, 003 and 010, and records the 022 part as a planning gap.
+
+## HR lifecycle: joiners, movers and leavers (spec 019, slice 2: T006 to T008; US2 to US4, FR-005 to FR-008)
+
+### Built
+- Each applied run is compared with what TeamBeats last applied, record by record (`HrLifecycle.Plan`, a pure function). A record first seen after the baseline is a hire. A changed org unit code, manager, job title or location is one assignment change: the four fields change together. A terminated status, or a termination date not older than the latest hire, is a termination. A former employee whose access ended and who is active again is a rehire. The new canonical field `assignment_date` gives the date the assignment takes effect. Until the change applies, TeamBeats keeps the assignment it had, so profiles do not run ahead of the move.
+- Changes are stored in `integrations.hr_change` (migration 0015, forced RLS). Each change carries its kind, effective date, due time, from and to values, status, and the run and record it came from (FR-018). Due times use the tenant default calendar and its time zone.
+  - A joiner is due the onboarding lead time before the start date. The default is 5 working days, and the tenant can set 0 to 30.
+  - A termination is due at the start of the day after the last working day. When that day has already passed, or HR gives no date, it is due at once.
+  - Assignments and rehires are due on their date.
+- The connector tick applies due changes every 10 seconds, so an immediate termination takes effect within a minute, well inside the 15 minutes of FR-008. Every applied change is audited as `hr.change_applied` with its kind, effective date, run and record.
+- A later run cancels an open change HR no longer reports: replaced, reverted, rescinded, or cancelled in HR. A hire cancelled before it is due is dropped and never becomes a termination.
+- Events in `Integrations.Contracts`:
+  - `EmployeeHired`, `EmployeeTransferred`, `EmployeeManagerChanged` and `EmployeeRehired` are published when the change applies.
+  - `EmployeeTerminated` is published as soon as HR reports the termination, so offboarding can start (US4 scenario 1).
+  - `EmployeeLeft` is published when the last working day has ended.
+- Org codes: every code HR uses is listed in `integrations.hr_org_code` until an HR administrator maps it to a unit. An assignment to an unmapped code waits with the status `unmapped`, and nothing else in the run waits for it. Mapping the code applies the waiting assignments at once, and the mapping is audited as `hr.org_code_mapped`. Units are never created from HR codes: a new code is a proposal that waits for a mapping (US3 scenario 4).
+- Consumers:
+  - Organization (002) moves the main membership to the mapped unit, marked with the owner `hr`. It ends the previous main membership when TeamBeats or HR made it. A membership that directory mapping owns is kept as a secondary.
+  - Profiles (010) set the reporting line to HR's manager, with HR as its source, and directory sync leaves such lines alone. A change that would create a loop is refused and reported.
+  - Identity (003) disables the account when the person leaves (`identity.disabled_by_hr`), revokes their sessions and publishes `UserDeprovisioned` with the reason `hr`. The tenant's last administrator is kept enabled. Identity records which accounts HR closed (`identity.hr_leaver`, migration 0010). A rehire reopens only those accounts, only when the tenant allows it, and never one the directory has disabled.
+- Pages: the HR integration page lists the org codes, waiting codes first, with a unit picker. It also shows joiners, movers and leavers by state (waiting, applied, cancelled) with their effective dates. Two new settings sit next to matching: the joiner lead time and whether rehires reopen accounts.
+- Tests:
+  - `tests/Unit/HrLifecyclePlanTests.cs` covers the planner: the baseline, future assignments, immediate and end-of-day terminations, rescinded and moved dates, joiners and cancelled hires, and rehires.
+  - `HrSyncTests.Movers_wait_for_their_org_code_...` checks that a move waits for its code and then applies membership, manager and title together with its run. It also checks that a past last day disables at once and revokes sessions, that a notice period waits until due, that a rehire reopens the account only with the setting on, and that a joiner is prepared ahead and a cancelled hire is dropped. It also covers mapping to another tenant's unit, employee denial and package denial.
+
+### Differences and follow-ups
+- Where the spec is silent, these defaults apply:
+  - The first applied run is the baseline. It plans only notice periods (termination dates today or later), never historic leavers or existing employees as joiners.
+  - A record seen for the first time with a past termination date is history, not a leaver.
+  - Moves and rehires without a date take effect on the day of the run.
+  - Rehires do not reopen accounts unless the tenant turns that on.
+- "HR may create org units" (FR-007, off by default) is not offered yet. Turning it on, with approval, is a follow-up.
+- Secondary assignments from HR (edge case "employee in two org units") are not read yet. The canonical record has one org unit code.
+- The onboarding, mover and offboarding journeys (spec 022 US4 to US6) consume these events once spec 022 R2 is built. Spec 022 R2 has no plan or tasks yet. The HR leave balance source of spec 019 US7 needs the leave ledger from spec 022, so it is built with spec 022 R2. Spec 022 R2 will be planned right after spec 019 slice 3 (form prefill and payslips).
+- Open approvals of a mover are reassigned by spec 016 delegation rules once 016 consumes `EmployeeTransferred` (US3 scenario 2). That consumer is a follow-up of spec 016.

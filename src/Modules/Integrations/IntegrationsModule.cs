@@ -81,6 +81,7 @@ public static class IntegrationsModule
         services.AddScoped<Hr.HrSync>();
         services.AddScoped<IHrRecords>(sp => sp.GetRequiredService<Hr.HrSync>());
         services.AddScoped<Hr.HrSchedule>();
+        services.AddScoped<Hr.HrLifecycle>();
         services.AddScoped<Hr.HrRestPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrRestPack>());
         services.AddScoped<Hr.HrSftpPack>();

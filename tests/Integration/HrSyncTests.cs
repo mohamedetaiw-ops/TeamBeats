@@ -24,7 +24,7 @@ namespace TeamBeats.Integration.Tests;
 /// a fake behind the connector HTTP client; records and names are fictional.
 /// </summary>
 [Collection(WorldCollection.Name)]
-public sealed class HrSyncTests(TenantWorld world)
+public sealed partial class HrSyncTests(TenantWorld world)
 {
     private const string Packs = "/api/v1/integrations/pack-connections";
     private const string Hr = "/api/v1/hr/integration";
@@ -62,7 +62,8 @@ public sealed class HrSyncTests(TenantWorld world)
     {
         ["record_id"] = "$.id", ["work_email"] = "$.email", ["employee_number"] = "$.number", ["name_en"] = "$.name", ["name_ar"] = "$.nameAr", ["status"] = "$.state",
         ["hire_date"] = "$.hired", ["job_title"] = "$.job.title", ["grade"] = "$.job.grade", ["cost_centre"] = "$.costCentre", ["location"] = "$.site",
-        ["org_unit_code"] = "$.dept", ["manager_employee_number"] = "$.manager", ["employment_type"] = "$.type",
+        ["org_unit_code"] = "$.dept", ["manager_employee_number"] = "$.manager", ["employment_type"] = "$.type", ["termination_date"] = "$.left",
+        ["assignment_date"] = "$.since",
     };
 
     private static object StatusValues => new Dictionary<string, string[]> { ["active"] = ["Active"], ["terminated"] = ["Terminated", "Left"] };
