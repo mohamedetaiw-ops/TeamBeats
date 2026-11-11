@@ -30,7 +30,7 @@ public sealed class PayloadCapture(IDbSession session, IAuditWriter audit, ICloc
     public const int MaxBytes = 64 * 1024;
     public static readonly TimeSpan Retention = TimeSpan.FromHours(24);
 
-    private static readonly string[] NoCapture = [ConnectionKinds.Microsoft365, ConnectionKinds.OnPremAd, Slack.SlackPack.KindName, ClockData.ClockImportPack.KindName];
+    private static readonly string[] NoCapture = [ConnectionKinds.Microsoft365, ConnectionKinds.OnPremAd, Slack.SlackPack.KindName, ClockData.ClockImportPack.KindName, Finance.FinancePack.KindName];
 
     private async Task<string> KindAsync(Guid id, CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync("select kind from integrations.connection where id = @id", new { id }, r => r.GetString(0), ct)

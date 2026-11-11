@@ -497,3 +497,69 @@ public interface IClockData
 /// </summary>
 public sealed record ClockDataImported(Guid ConnectionId, Guid FileId, int Imported, int Duplicates, int Unmatched, DateTimeOffset? From, DateTimeOffset? To)
     : IIntegrationEvent;
+
+/// <summary>Payment statuses of the finance hand-off contract, mapped from the finance system's own words.</summary>
+public static class FinancePaymentStatuses
+{
+    public const string Submitted = "submitted";
+    public const string Approved = "approved";
+    public const string Paid = "paid";
+    public const string Rejected = "rejected";
+
+    public static readonly IReadOnlyList<string> All = [Submitted, Approved, Paid, Rejected];
+}
+
+/// <summary>Where a hand-off stands: waiting to be sent, sent (with a reference), failed, or unknown after a timeout.</summary>
+public static class FinanceHandOffStates
+{
+    public const string Unavailable = "unavailable";
+    public const string Queued = "queued";
+    public const string Sent = "sent";
+    public const string Failed = "failed";
+    public const string Unknown = "unknown";
+}
+
+/// <summary>One line of a claim in the finance hand-off contract. Amounts are in the claim currency; the original is kept when it differed.</summary>
+public sealed record FinanceLine(string Category, DateOnly Date, decimal Amount, string? Description = null, decimal? OriginalAmount = null, string? OriginalCurrency = null);
+
+/// <summary>
+/// The canonical document handed to finance (spec 017 US7 scenario 2, spec 022 FR-025): an approved claim of one
+/// person. <paramref name="SourceType"/> and <paramref name="SourceId"/> name the claim in the calling module; a claim is
+/// handed off once.
+/// </summary>
+public sealed record FinanceHandOffRequest(
+    string SourceType,
+    Guid SourceId,
+    string EmployeeNumber,
+    string Currency,
+    decimal Amount,
+    DateOnly ClaimDate,
+    string? Description,
+    string? CostCentre,
+    string? Project,
+    IReadOnlyList<FinanceLine> Lines);
+
+/// <summary>A hand-off as the calling module shows it: its state, the finance system's reference and the payment status.</summary>
+public sealed record FinanceHandOffView(
+    string SourceType,
+    Guid SourceId,
+    string State,
+    string? ExternalReference,
+    string? PaymentStatus,
+    string? ErrorClass,
+    DateTimeOffset? SentAt,
+    DateTimeOffset? CheckedAt);
+
+/// <summary>
+/// Hands approved claims to the finance or ERP system (spec 017 FR-021) through the tenant's finance connection. Sending
+/// is a durable connector job, so an approval never waits on finance; the payment status is then checked until it is
+/// paid or rejected. <see cref="FinanceHandOffChanged"/> tells the caller of every change.
+/// </summary>
+public interface IFinanceHandOff
+{
+    Task<FinanceHandOffView> SubmitAsync(FinanceHandOffRequest request, CancellationToken ct = default);
+
+    Task<FinanceHandOffView?> GetAsync(string sourceType, Guid sourceId, CancellationToken ct = default);
+}
+
+public sealed record FinanceHandOffChanged(string SourceType, Guid SourceId, string State, string? ExternalReference, string? PaymentStatus) : IIntegrationEvent;

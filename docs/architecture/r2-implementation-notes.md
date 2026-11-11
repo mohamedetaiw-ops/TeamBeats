@@ -229,3 +229,17 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 ### Differences and follow-ups
 - Retention is not in the spec: punches are kept 400 days for attendance history, uploaded files and the rows not imported 90 days, and SFTP file records as long as punches so a file is never read twice.
 - The SFTP adapter is covered by a fake in CI, since the hosted runners have no SFTP server; the SSH.NET code path is exercised only against a real server.
+
+## Finance hand-off (spec 017, slice 17: T016 finance hand-off; spec 022 dependency)
+
+### Built
+- A `finance_rest` pack (framework key `integration.connectors`) for any finance system with a REST API. Settings: the https address on the allowlist, the sign-in (API key, bearer token, user name and password, or OAuth client credentials, as secret manager references), the submit path and the status path (with `{reference}`), where each claim field goes in the request body (dotted names make nested objects; only mapped fields are sent), the optional lines field and its line fields, where the reference and the status are in the answers, the finance system's words for submitted, approved, paid and rejected, and an optional idempotency header.
+- Two actions run through the connector runtime, so both are in run history with retries, replay and the circuit breaker: `submit_expense` (a write; idempotent only when an idempotency header is set, keyed per hand-off attempt) and `get_payment_status` (a read).
+- Spec 022 hands a claim over through the new Integrations contract `IFinanceHandOff.SubmitAsync` and reads its state with `GetAsync`. The oldest enabled finance connection of the tenant is used; with none, or outside the package, the answer is `unavailable` and nothing is stored. Each hand-off is a row in `integrations.finance_handoff` (forced RLS) with the state (`queued`, `sent`, `failed`, `unknown`), the external reference and the payment status. A failed or unknown hand-off can be sent again as a new attempt; the outcome of an older attempt never overwrites a newer one. `FinanceHandOffChanged` is published on every change of state or payment status.
+- Status checks run every six hours for each sent claim until it is paid or rejected.
+- Pages: an add form for finance in the Connections area, the same settings on the connection page, and a panel of the claims handed over through the connection with reference, payment status and last check. Claim content is not shown there and payload capture is not offered on a finance connection, since claims carry personal finance data.
+- Tests: `tests/Integration/FinanceHandOffTests.cs` (only mapped fields sent with the idempotency key, the reference stored, status read until paid, a refused claim failing with its business error and sent again, a timeout without an idempotency header stopping as unknown, settings rules, claim checks, no capture, package and cross-tenant denial). Acceptance: the connections test adds a finance connection with mapped fields and sees no claims yet, in English and Arabic with axe.
+
+### Differences and follow-ups
+- Without an idempotency header a submit is not idempotent, so a timeout after sending stops as `unknown` for an administrator to check, rather than risking a second claim in the finance system.
+- The six hour status check interval is not in the spec; it is the smallest safe default for a payment status that changes once or twice a week.

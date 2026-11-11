@@ -4126,7 +4126,8 @@
       "servicenow": "ServiceNow",
       "jira_service_management": "Jira Service Management",
       "slack": "Slack",
-      "clock_import": "Clock data import"
+      "clock_import": "Clock data import",
+      "finance_rest": "Finance hand-off"
     },
     "status": {
       "healthy": "Healthy",
@@ -4150,7 +4151,8 @@
       "webhook": "Send signed events to another system and receive signed deliveries from it.",
       "onprem_ad": "Read users and groups from Active Directory in your own network, through a sync agent you install there.",
       "slack": "Send notifications as Slack direct messages to people who link their account, and share content links to a channel.",
-      "clock_import": "Reads clock data files from an SFTP server every day, or takes CSV files you upload, and matches each row to a person by employee number."
+      "clock_import": "Reads clock data files from an SFTP server every day, or takes CSV files you upload, and matches each row to a person by employee number.",
+      "finance_rest": "Sends approved expense claims to your finance system over REST and reads back their payment status."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -4718,6 +4720,76 @@
         },
         "firstRows": "Showing the first {count} rows.",
         "more": "Show more"
+      }
+    },
+    "finance": {
+      "formLabel": "Finance hand-off settings",
+      "addTitle": "Add a finance hand-off",
+      "addIntro": "Send approved expense claims to your finance system over its REST API and read back their payment status. Add the finance system's host to the allowlist and store its credential in your secret manager. Only the claim fields you map below are sent.",
+      "pathsTitle": "Where claims go",
+      "submitPath": "Submit path",
+      "submitPathHint": "The path TeamBeats posts each claim to, for example /expenses.",
+      "statusPath": "Status path",
+      "statusPathHint": "The path TeamBeats reads a claim's status from. Use '{reference}' for the finance system's reference, for example /expenses/'{reference}'.",
+      "idempotencyHeader": "Idempotency header (optional)",
+      "idempotencyHeaderHint": "If the finance system accepts an idempotency key, name its header, for example Idempotency-Key. Without it, a claim whose submission timed out is not sent again automatically.",
+      "fieldsTitle": "Claim fields",
+      "fieldsHint": "Where each claim field goes in the request body. Use dots for nested fields, for example employee.id. Leave a field empty to leave it out.",
+      "fields": {
+        "source_id": "Claim ID",
+        "employee_number": "Employee number",
+        "currency": "Currency",
+        "amount": "Total amount",
+        "claim_date": "Claim date",
+        "description": "Description",
+        "cost_centre": "Cost centre",
+        "project": "Project"
+      },
+      "linesField": "Lines field (optional)",
+      "linesFieldHint": "The body field that holds the list of claim lines. Leave it empty to send totals only.",
+      "lineFields": {
+        "category": "Line category",
+        "date": "Line date",
+        "amount": "Line amount",
+        "description": "Line description",
+        "original_amount": "Original amount",
+        "original_currency": "Original currency"
+      },
+      "answersTitle": "Reading the answers",
+      "referencePath": "Reference in the submit answer",
+      "statusValuePath": "Status in the status answer",
+      "pathHint": "A path into the JSON answer, for example $.data.id.",
+      "statuses": {
+        "submitted": "Words for submitted",
+        "approved": "Words for approved",
+        "paid": "Words for paid",
+        "rejected": "Words for rejected"
+      },
+      "wordsHint": "The finance system's status values that mean this, separated by commas.",
+      "handoffs": {
+        "title": "Claims handed to finance",
+        "intro": "Claims sent through this connection, with the finance reference and the payment status last read. TeamBeats checks each claim every six hours until it is paid or rejected.",
+        "unavailable": "The hand-off list could not be loaded. Try again later.",
+        "empty": "No claims have been handed to finance yet.",
+        "created": "Created",
+        "state": "Hand-off",
+        "reference": "Finance reference",
+        "payment": "Payment status",
+        "checked": "Last checked",
+        "never": "Not yet",
+        "none": "None",
+        "states": {
+          "queued": "Waiting to send",
+          "sent": "Sent",
+          "failed": "Failed",
+          "unknown": "Outcome unknown"
+        },
+        "payments": {
+          "submitted": "Submitted",
+          "approved": "Approved",
+          "paid": "Paid",
+          "rejected": "Rejected"
+        }
       }
     }
   },

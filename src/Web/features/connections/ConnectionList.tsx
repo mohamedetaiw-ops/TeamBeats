@@ -10,6 +10,7 @@ import { PACK_KINDS, TICKETING_KINDS, isTicketing, known, type AllowlistEntry, t
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
+import { FinanceSettingsForm } from "./FinanceSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
 import { Messages, StatusBadge } from "./parts";
@@ -113,6 +114,7 @@ export function ConnectionList({
   const ticketing = packs.filter((p) => p.inPackage && isTicketing(p.kind));
   const slack = packs.find((p) => p.kind === "slack");
   const clock = packs.find((p) => p.kind === "clock_import");
+  const finance = packs.find((p) => p.kind === "finance_rest");
 
   async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody | SlackBody | ClockBody) {
     setBusy(kind);
@@ -170,6 +172,8 @@ export function ConnectionList({
                 <p>{t("catalogue.slack")}</p>
               ) : p.kind === "clock_import" ? (
                 <p>{t("catalogue.clock_import")}</p>
+              ) : p.kind === "finance_rest" ? (
+                <p>{t("catalogue.finance_rest")}</p>
               ) : (
                 <p>{t("catalogue.actions", { names: p.actions.map((a) => a.name).join(", ") })}</p>
               )}
@@ -220,6 +224,15 @@ export function ConnectionList({
           <p>{t("clock.addIntro")}</p>
           <ClockSettingsForm submitLabel={t("add.submit")} busy={busy === "clock_import"} onSubmit={(body) => void create("clock_import", body)} />
           {messages.kind === "clock_import" ? <Messages messages={messages.list} /> : null}
+        </section>
+      ) : null}
+
+      {finance?.inPackage ? (
+        <section className="connections-section" aria-labelledby="add-finance-heading">
+          <h2 id="add-finance-heading">{t("finance.addTitle")}</h2>
+          <p>{t("finance.addIntro")}</p>
+          <FinanceSettingsForm submitLabel={t("add.submit")} busy={busy === "finance_rest"} onSubmit={(body) => void create("finance_rest", body)} />
+          {messages.kind === "finance_rest" ? <Messages messages={messages.list} /> : null}
         </section>
       ) : null}
 

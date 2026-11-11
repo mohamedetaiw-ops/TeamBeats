@@ -73,6 +73,11 @@ public static class IntegrationsModule
         services.AddScoped<ClockData.ClockImportPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<ClockData.ClockImportPack>());
         services.AddScoped<ClockData.ClockImports>();
+        services.AddScoped<Finance.FinancePack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Finance.FinancePack>());
+        services.AddScoped<Finance.FinanceHandOffs>();
+        services.AddScoped<IFinanceHandOff>(sp => sp.GetRequiredService<Finance.FinanceHandOffs>());
+        services.AddScoped<IConnectionDependents, Finance.FinanceDependents>();
         services.AddScoped<Webhooks.WebhookPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.WebhookPack>());
         services.AddScoped<Webhooks.InboundWebhooks>();
@@ -90,6 +95,7 @@ public static class IntegrationsModule
                 sp.GetRequiredService<IConfiguration>().GetValue<bool>(SafeHttp.AllowPrivateSetting)));
         services.AddMessageHandler<SessionEnded, DropTokensOnSessionEnded>("integrations.tokens_session_ended");
         services.AddMessageHandler<ConnectorUnavailable, ConnectionAlerts>("integrations.connection_alerts");
+        services.AddMessageHandler<ConnectorActionCompleted, Finance.FinanceSubmitFinished>("integrations.finance_submit_finished");
         services.AddMessageHandler<SessionRevoked, DropTokensOnSessionRevoked>("integrations.tokens_session_revoked");
         services.AddMessageHandler<UserDeprovisioned, DropTokensOnUserDeprovisioned>("integrations.tokens_user_deprovisioned");
         return services;
@@ -227,6 +233,7 @@ public static class IntegrationsModule
         PackEndpoints.Map(app);
         PackEndpoints.MapTools(app);
         ClockData.ClockEndpoints.Map(app);
+        Finance.FinanceEndpoints.Map(app);
         Webhooks.InboundWebhooks.Map(app);
         SyncAgents.AgentEndpoints.Map(app);
         return app;
