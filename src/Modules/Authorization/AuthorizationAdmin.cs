@@ -12,7 +12,8 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Authorization;
 
-public sealed record RoleView(Guid Id, string Key, bool IsBuiltIn, bool IsDelegable, IReadOnlyList<string> Permissions);
+/// <summary>A role as administrators see it. <c>Names</c> holds a custom role's display names by locale; built-in roles take theirs from the web resources.</summary>
+public sealed record RoleView(Guid Id, string Key, bool IsBuiltIn, bool IsDelegable, IReadOnlyList<string> Permissions, IReadOnlyDictionary<string, string>? Names = null);
 
 public sealed record DefineRoleRequest(string Key, IReadOnlyDictionary<string, string>? Names, IReadOnlyList<string> Permissions, bool Delegable);
 
@@ -58,9 +59,11 @@ public sealed class AuthorizationAdmin(
         return await session.QueryAsync(
             """
             select r.id, r.key, r.is_builtin, r.is_delegable,
-                   array(select permission_key from authz.role_permission p where p.role_id = r.id order by 1)
+                   array(select permission_key from authz.role_permission p where p.role_id = r.id order by 1),
+                   r.names::text
             from authz.role r order by r.is_builtin desc, r.key
-            """, null, r => new RoleView(r.GetGuid(0), r.GetString(1), r.GetBoolean(2), r.GetBoolean(3), r.GetFieldValue<string[]>(4)), ct);
+            """, null, r => new RoleView(r.GetGuid(0), r.GetString(1), r.GetBoolean(2), r.GetBoolean(3), r.GetFieldValue<string[]>(4),
+                r.IsDBNull(5) ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(5))), ct);
     }
 
     public async Task<RoleView> DefineRoleAsync(DefineRoleRequest request, CancellationToken ct)
@@ -109,7 +112,7 @@ public sealed class AuthorizationAdmin(
         await BumpAsync(ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.RoleDefined, "role", id.ToString(),
             Changes: new { key = request.Key, permissions = request.Permissions, delegable = request.Delegable }), ct);
-        return new RoleView(id, request.Key!, false, request.Delegable, request.Permissions!);
+        return new RoleView(id, request.Key!, false, request.Delegable, request.Permissions!, request.Names);
     }
 
     public async Task<IReadOnlyList<AssignmentView>> ListAssignmentsAsync(Guid? userId, CancellationToken ct)
