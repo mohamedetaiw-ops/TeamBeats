@@ -64,6 +64,9 @@ public static class Permissions
 
     public const string HrCalendarManage = "hr.calendar_manage";
 
+    /// <summary>Spec 019: HR sync results, unmatched people, held runs and org codes, at tenant scope.</summary>
+    public const string HrIntegrationManage = "hr.integration_manage";
+
     public const string PeopleView = "people.view";
     public const string PeopleHrView = "people.hr_view";
     public const string PeopleManage = "people.manage";
@@ -138,7 +141,7 @@ public static class Permissions
         ThemeEdit, ThemePublish, ConfigLockManage,
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
         NotificationsManage,
-        HrCalendarManage,
+        HrCalendarManage, HrIntegrationManage,
         PeopleView, PeopleHrView, PeopleManage,
         SecurityManage, SecurityView, SecurityRespond,
         ServiceManage, ServiceRequestOnBehalf,

@@ -78,6 +78,13 @@ public static class IntegrationsModule
         services.AddScoped<Finance.FinanceHandOffs>();
         services.AddScoped<IFinanceHandOff>(sp => sp.GetRequiredService<Finance.FinanceHandOffs>());
         services.AddScoped<IConnectionDependents, Finance.FinanceDependents>();
+        services.AddScoped<Hr.HrSync>();
+        services.AddScoped<IHrRecords>(sp => sp.GetRequiredService<Hr.HrSync>());
+        services.AddScoped<Hr.HrSchedule>();
+        services.AddScoped<Hr.HrRestPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrRestPack>());
+        services.AddScoped<Hr.HrSftpPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrSftpPack>());
         services.AddScoped<Webhooks.KpiFeed>();
         services.AddScoped<IKpiFeed>(sp => sp.GetRequiredService<Webhooks.KpiFeed>());
         services.AddScoped<Google.GoogleSignIn>();
@@ -242,6 +249,7 @@ public static class IntegrationsModule
         PackEndpoints.MapTools(app);
         ClockData.ClockEndpoints.Map(app);
         Finance.FinanceEndpoints.Map(app);
+        Hr.HrEndpoints.Map(app);
         Webhooks.InboundWebhooks.Map(app);
         SyncAgents.AgentEndpoints.Map(app);
         return app;

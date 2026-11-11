@@ -38,6 +38,8 @@ public sealed class DirectoryProfiles(
         var settings = await store.SettingsAsync(ct);
         var policies = await store.PoliciesAsync(ct);
         var rows = (await store.GetManyAsync(snapshot.People.Select(p => p.UserId), ct)).ToDictionary(r => r.UserId);
+        // When HR owns the hire date (spec 019), the directory's copy does not move it.
+        var hireFromHr = policies.First(p => p.Key == ProfileFields.HireDate).Source == FieldSources.Hr;
 
         var updates = new List<object>();
         var locations = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -65,17 +67,18 @@ public sealed class DirectoryProfiles(
             {
                 changed.Add("location");
             }
-            if (changed.Count == 0 && row.DirectoryId == person.DirectoryId && row.HireDate == p.HireDate)
+            var hire = hireFromHr ? row.HireDate : p.HireDate;
+            if (changed.Count == 0 && row.DirectoryId == person.DirectoryId && row.HireDate == hire)
             {
                 continue;
             }
-            var updated = row with { DirectoryValues = values, DirectoryId = person.DirectoryId, LocationKey = locationKey, HireDate = p.HireDate };
+            var updated = row with { DirectoryValues = values, DirectoryId = person.DirectoryId, LocationKey = locationKey, HireDate = hire };
             updates.Add(new
             {
                 userId = row.UserId,
                 directoryId = person.DirectoryId,
                 directoryValues = values,
-                hireDate = p.HireDate,
+                hireDate = hire,
                 locationKey,
                 searchFields = ProfileStore.SearchFields(updated, policies),
             });

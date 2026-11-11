@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
@@ -9,6 +10,7 @@ import { CHECK_RESULTS, TICKETING_KINDS, checkResult, isTicketing, known, type P
 import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
 import { FinanceSettingsForm } from "./FinanceSettingsForm";
+import { HrRestSettingsForm, HrSftpSettingsForm, type HrSftpBody } from "./HrSettingsForm";
 import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
@@ -217,6 +219,38 @@ export function ConnectionDetail({ initial, webhookEvents = [] }: { initial: Pac
             busy={busy === "save"}
             onSubmit={(body: SettingsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
           />
+        </section>
+      ) : null}
+
+      {view.kind === "hr_rest" ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <HrRestSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: SettingsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+          <p>
+            <Link href="/admin/hr-integration">{t("hr.openIntegration")}</Link>
+          </p>
+        </section>
+      ) : null}
+
+      {view.kind === "hr_sftp" ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <HrSftpSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: HrSftpBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+          <p>
+            <Link href="/admin/hr-integration">{t("hr.openIntegration")}</Link>
+          </p>
         </section>
       ) : null}
 

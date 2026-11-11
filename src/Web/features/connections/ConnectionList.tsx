@@ -11,6 +11,7 @@ import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsF
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
 import { FinanceSettingsForm } from "./FinanceSettingsForm";
+import { HrRestSettingsForm, HrSftpSettingsForm, type HrSftpBody } from "./HrSettingsForm";
 import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
@@ -117,8 +118,10 @@ export function ConnectionList({
   const clock = packs.find((p) => p.kind === "clock_import");
   const finance = packs.find((p) => p.kind === "finance_rest");
   const google = packs.find((p) => p.kind === "google_workspace");
+  const hrRest = packs.find((p) => p.kind === "hr_rest");
+  const hrSftp = packs.find((p) => p.kind === "hr_sftp");
 
-  async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody | SlackBody | ClockBody | GoogleBody) {
+  async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody | SlackBody | ClockBody | GoogleBody | HrSftpBody) {
     setBusy(kind);
     setMessages({ kind, list: [] });
     const result = await send<PackConnection>("POST", "/api/v1/integrations/pack-connections", { kind, ...body }, RETURN_TO, t("failed"));
@@ -178,6 +181,8 @@ export function ConnectionList({
                 <p>{t("catalogue.finance_rest")}</p>
               ) : p.kind === "google_workspace" ? (
                 <p>{t("catalogue.google_workspace")}</p>
+              ) : p.kind === "hr_rest" || p.kind === "hr_sftp" ? (
+                <p>{t(`catalogue.${p.kind}`)}</p>
               ) : (
                 <p>{t("catalogue.actions", { names: p.actions.map((a) => a.name).join(", ") })}</p>
               )}
@@ -246,6 +251,24 @@ export function ConnectionList({
           <p>{t("finance.addIntro")}</p>
           <FinanceSettingsForm submitLabel={t("add.submit")} busy={busy === "finance_rest"} onSubmit={(body) => void create("finance_rest", body)} />
           {messages.kind === "finance_rest" ? <Messages messages={messages.list} /> : null}
+        </section>
+      ) : null}
+
+      {hrRest?.inPackage ? (
+        <section className="connections-section" aria-labelledby="add-hr-rest-heading">
+          <h2 id="add-hr-rest-heading">{t("hr.addRestTitle")}</h2>
+          <p>{t("hr.addIntro")}</p>
+          <HrRestSettingsForm submitLabel={t("add.submit")} busy={busy === "hr_rest"} onSubmit={(body) => void create("hr_rest", body)} />
+          {messages.kind === "hr_rest" ? <Messages messages={messages.list} /> : null}
+        </section>
+      ) : null}
+
+      {hrSftp?.inPackage ? (
+        <section className="connections-section" aria-labelledby="add-hr-sftp-heading">
+          <h2 id="add-hr-sftp-heading">{t("hr.addSftpTitle")}</h2>
+          <p>{t("hr.addIntro")}</p>
+          <HrSftpSettingsForm submitLabel={t("add.submit")} busy={busy === "hr_sftp"} onSubmit={(body) => void create("hr_sftp", body)} />
+          {messages.kind === "hr_sftp" ? <Messages messages={messages.list} /> : null}
         </section>
       ) : null}
 
