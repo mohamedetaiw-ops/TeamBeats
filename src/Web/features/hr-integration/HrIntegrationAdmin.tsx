@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { FormField } from "@/components/ui/FormField";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
@@ -40,6 +41,8 @@ export function HrIntegrationAdmin({ initial, initialRuns, initialRecords }: { i
   const [picked, setPicked] = useState<Record<string, string | null>>({});
   const [rule, setRule] = useState(initial.settings.matchRule.join(","));
   const [threshold, setThreshold] = useState(String(initial.settings.changeThresholdPercent));
+  const [leadDays, setLeadDays] = useState(String(initial.settings.onboardingLeadDays));
+  const [rehire, setRehire] = useState(initial.settings.rehireReactivates);
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<Result>(null);
 
@@ -267,7 +270,7 @@ export function HrIntegrationAdmin({ initial, initialRuns, initialRecords }: { i
               "settings",
               () =>
                 fetch(`${BASE}/settings`, {
-                  ...post({ matchRule: rule.split(","), changeThresholdPercent: Number(threshold) }, etag),
+                  ...post({ matchRule: rule.split(","), changeThresholdPercent: Number(threshold), onboardingLeadDays: Number(leadDays), rehireReactivates: rehire }, etag),
                   method: "PUT",
                 }),
               t("settings.saved"),
@@ -298,6 +301,18 @@ export function HrIntegrationAdmin({ initial, initialRuns, initialRecords }: { i
             value={threshold}
             onChange={(e) => setThreshold(e.target.value)}
           />
+          <FormField
+            label={t("settings.leadDays")}
+            hint={t("settings.leadDaysHint")}
+            name="onboardingLeadDays"
+            type="number"
+            min={0}
+            max={30}
+            required
+            value={leadDays}
+            onChange={(e) => setLeadDays(e.target.value)}
+          />
+          <Checkbox label={t("settings.rehire")} hint={t("settings.rehireHint")} checked={rehire} onChange={(e) => setRehire(e.target.checked)} />
           <div className="hr-integration-row">
             <Button type="submit" variant="primary" busy={busy === "settings"} busyLabel={t("working")}>
               {t("settings.save")}

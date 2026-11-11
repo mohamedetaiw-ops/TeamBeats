@@ -444,6 +444,7 @@ export const HR_FIELDS = [
   "location",
   "org_unit_code",
   "manager_employee_number",
+  "assignment_date",
 ] as const;
 export const HR_REQUIRED = ["record_id", "status"] as const;
 export const HR_STATUSES = ["active", "terminated"] as const;
@@ -495,7 +496,7 @@ export type HrRun = {
   decidedAt: string | null;
 };
 export type HrOverview = {
-  settings: { matchRule: string[]; changeThresholdPercent: number; version: number };
+  settings: { matchRule: string[]; changeThresholdPercent: number; version: number; onboardingLeadDays: number; rehireReactivates: boolean };
   connection: { id: string; kind: string; displayName: string; enabled: boolean } | null;
   counts: { matched: number; unmatched: number; stale: number; conflicts: number };
   lastRun: HrRun | null;
@@ -519,3 +520,32 @@ export type HrRecord = {
   lastRunId: string;
 };
 export type HrRecordPage = { items: HrRecord[]; nextCursor: string | null };
+
+/** Lifecycle changes HR reported (spec 019 US2 to US4) and the org codes HR uses (FR-007). */
+export const HR_CHANGE_KINDS = ["hire", "assignment", "termination", "rehire"] as const;
+export const HR_CHANGE_STATUSES = ["unmapped", "pending", "applied", "cancelled"] as const;
+export const HR_CANCEL_REASONS = ["replaced", "reverted", "rescinded", "cancelled_in_hr"] as const;
+export type HrChange = {
+  id: string;
+  recordId: string;
+  userId: string | null;
+  userName: string | null;
+  kind: string;
+  effectiveDate: string;
+  dueAt: string;
+  status: string;
+  details: Record<string, string | null>;
+  runId: string;
+  createdAt: string;
+  appliedAt: string | null;
+  cancelledReason: string | null;
+};
+export type HrOrgCode = {
+  code: string;
+  unitId: string | null;
+  unitNames: Record<string, string> | null;
+  people: number;
+  waiting: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+};

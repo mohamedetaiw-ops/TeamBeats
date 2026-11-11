@@ -113,7 +113,9 @@ public static class HrMapping
             return (null, new HrProblem(id, HrProblemReasons.BadEmail));
         }
         DateOnly? hire = null, end = null;
-        if (V(HrFields.HireDate) is { } h && (hire = Date(h, dateFormat)) is null || V(HrFields.TerminationDate) is { } t && (end = Date(t, dateFormat)) is null)
+        DateOnly? assigned = null;
+        if (V(HrFields.HireDate) is { } h && (hire = Date(h, dateFormat)) is null || V(HrFields.TerminationDate) is { } t && (end = Date(t, dateFormat)) is null
+            || V(HrFields.AssignmentDate) is { } a && (assigned = Date(a, dateFormat)) is null)
         {
             return (null, new HrProblem(id, HrProblemReasons.BadDate));
         }
@@ -124,7 +126,7 @@ public static class HrMapping
             return (null, new HrProblem(id, HrProblemReasons.SelfManager));
         }
         return (new HrEmployee(id, number, email, V(HrFields.NameEn), V(HrFields.NameAr), status, hire, end, V(HrFields.JobTitle), V(HrFields.Grade),
-            V(HrFields.EmploymentType), V(HrFields.CostCentre), V(HrFields.Location), V(HrFields.OrgUnitCode), manager), null);
+            V(HrFields.EmploymentType), V(HrFields.CostCentre), V(HrFields.Location), V(HrFields.OrgUnitCode), manager, assigned), null);
     }
 
     private static DateOnly? Date(string text, string? format)

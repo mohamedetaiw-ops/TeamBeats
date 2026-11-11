@@ -129,9 +129,10 @@ public sealed class DirectoryProfiles(
                 Changes: new { people = cycles.Order().ToArray() }), ct);
         }
         var current = await lines.CurrentAsync(ct);
+        var fromHr = await lines.FromHrAsync(ct);
         foreach (var (user, manager) in proposed)
         {
-            if (cycles.Contains(user) || (current.TryGetValue(user, out var now) ? now == manager : manager is null))
+            if (cycles.Contains(user) || fromHr.Contains(user) || (current.TryGetValue(user, out var now) ? now == manager : manager is null))
             {
                 continue;
             }

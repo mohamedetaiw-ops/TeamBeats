@@ -1298,5 +1298,8 @@
   "validation.hr.threshold": "Enter a threshold from 1 to 100 percent.",
   "validation.hr.time_zone": "Choose a known time zone.",
   "validation.hr.user_linked": "This person is already linked to another HR record.",
-  "validation.hr.user_unknown": "Choose a person of this organization."
+  "validation.hr.user_unknown": "Choose a person of this organization.",
+  "validation.hr.lead_days": "Choose from 0 to 30 working days.",
+  "validation.hr.org_unit": "Choose a unit of this organization.",
+  "validation.hr.change_status": "Choose waiting, waiting for a unit, applied or cancelled."
 }

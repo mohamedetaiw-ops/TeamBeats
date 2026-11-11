@@ -42,7 +42,7 @@ public static class HrRunStatuses
     public const string Superseded = "superseded";
 }
 
-public sealed record HrSettingsView(IReadOnlyList<string> MatchRule, int ChangeThresholdPercent, int Version);
+public sealed record HrSettingsView(IReadOnlyList<string> MatchRule, int ChangeThresholdPercent, int Version, int OnboardingLeadDays = 5, bool RehireReactivates = false);
 
 public sealed record HrRunView(
     Guid Id,
@@ -86,7 +86,7 @@ public sealed record HrConnectionSummary(Guid Id, string Kind, string DisplayNam
 
 public sealed record HrOverview(HrSettingsView Settings, HrConnectionSummary? Connection, HrCounts Counts, HrRunView? LastRun, HrRunView? HeldRun);
 
-public sealed record HrSettingsRequest(IReadOnlyList<string>? MatchRule, int? ChangeThresholdPercent);
+public sealed record HrSettingsRequest(IReadOnlyList<string>? MatchRule, int? ChangeThresholdPercent, int? OnboardingLeadDays = null, bool? RehireReactivates = null);
 
 /// <summary>
 /// HR sync (spec 019 US1, FR-002, FR-004, FR-014, FR-015, FR-018). Each run stores the canonical records the pack
@@ -102,7 +102,8 @@ public sealed class HrSync(
     IAuditWriter audit,
     IClock clock,
     ITenantContext context,
-    IEntitlementService entitlements) : IHrRecords
+    IEntitlementService entitlements,
+    HrLifecycle lifecycle) : IHrRecords
 {
     /// <summary>Unmatched HR records are retried each sync; after this many days they are listed as stale (FR-015).</summary>
     public const int RetryDays = 30;
@@ -142,6 +143,7 @@ public sealed class HrSync(
         Put(HrFields.Location, e.Location);
         Put(HrFields.OrgUnitCode, e.OrgUnitCode);
         Put(HrFields.ManagerEmployeeNumber, e.ManagerEmployeeNumber);
+        Put(HrFields.AssignmentDate, e.AssignmentDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
         return d;
     }
 
@@ -155,8 +157,8 @@ public sealed class HrSync(
     public async Task<HrSettingsView> SettingsAsync(CancellationToken ct)
     {
         await session.ExecAsync("insert into integrations.hr_settings (tenant_id) values (platform.current_tenant_id()) on conflict do nothing", null, ct);
-        return (await session.QuerySingleOrDefaultAsync("select match_rule, change_threshold_percent, version from integrations.hr_settings", null,
-            r => new HrSettingsView(r.GetFieldValue<string[]>(0), r.GetInt32(1), r.GetInt32(2)), ct))!;
+        return (await session.QuerySingleOrDefaultAsync("select match_rule, change_threshold_percent, version, onboarding_lead_days, rehire_reactivates from integrations.hr_settings", null,
+            r => new HrSettingsView(r.GetFieldValue<string[]>(0), r.GetInt32(1), r.GetInt32(2), r.GetInt32(3), r.GetBoolean(4)), ct))!;
     }
 
     public static string ETag(int version) => $"\"v{version}\"";
@@ -181,12 +183,20 @@ public sealed class HrSync(
         {
             errors.Add("changeThresholdPercent", "validation.hr.threshold");
         }
+        var lead = request.OnboardingLeadDays ?? current.OnboardingLeadDays;
+        if (lead is < 0 or > 30)
+        {
+            errors.Add("onboardingLeadDays", "validation.hr.lead_days");
+        }
+        var rehire = request.RehireReactivates ?? current.RehireReactivates;
         errors.ThrowIfAny();
         await session.ExecAsync(
-            "update integrations.hr_settings set match_rule = @rule, change_threshold_percent = @threshold, version = version + 1, updated_at = now()",
-            new { rule = rule.ToArray(), threshold }, ct);
+            """
+            update integrations.hr_settings set match_rule = @rule, change_threshold_percent = @threshold, onboarding_lead_days = @lead,
+              rehire_reactivates = @rehire, version = version + 1, updated_at = now()
+            """, new { rule = rule.ToArray(), threshold, lead, rehire }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.HrSettingsChanged, "hr_settings", null,
-            Changes: new { matchRule = rule, changeThresholdPercent = threshold }), ct);
+            Changes: new { matchRule = rule, changeThresholdPercent = threshold, onboardingLeadDays = lead, rehireReactivates = rehire }), ct);
         return await SettingsAsync(ct);
     }
 
@@ -290,11 +300,18 @@ public sealed class HrSync(
 
         // Links already made stay (scenario 3): manual ones always, automatic ones while the user exists.
         var taken = stored.Values.Where(s => s.UserId is { } u && known.Contains(u)).ToDictionary(s => s.UserId!.Value, s => s.RecordId);
+        // Lifecycle (US2 to US4): the first run of a tenant is the baseline; later runs are compared with what was applied.
+        var baseline = stored.Count == 0;
+        var (open, left) = await lifecycle.StateAsync(ct);
+        var at = await lifecycle.ClockAsync(ct);
+        var plans = new List<(string, Guid?, HrRecordPlan)>();
         var rows = new List<object>();
         int matched = 0, unmatched = 0, conflicts = 0, changed = 0;
-        foreach (var (id, data) in incoming.OrderBy(i => i.Key, StringComparer.Ordinal))
+        foreach (var (id, read) in incoming.OrderBy(i => i.Key, StringComparer.Ordinal))
         {
             stored.TryGetValue(id, out var before);
+            var plan = HrLifecycle.Plan(before?.Data, read, baseline, left.Contains(id), open.TryGetValue(id, out var o) ? o : [], at);
+            var data = plan.Data;
             Guid? user = null;
             string state, rule;
             if (before is { UserId: { } linked } && known.Contains(linked))
@@ -325,6 +342,10 @@ public sealed class HrSync(
                 changed++;
             }
             rows.Add(new { id, data, user, state, rule = rule.Length == 0 ? null : rule });
+            if (plan.Add.Count > 0 || plan.Cancel.Count > 0)
+            {
+                plans.Add((id, user, plan));
+            }
         }
         await session.ExecAsync(
             """
@@ -341,7 +362,10 @@ public sealed class HrSync(
             update integrations.hr_run set finished_at = @now, total = @total, matched = @matched, unmatched = @unmatched, conflicts = @conflicts, changed = @changed
             where id = @runId
             """, new { runId, now, total = incoming.Count, matched, unmatched, conflicts, changed }, ct);
+        var codes = incoming.Values.Select(d => F(d, HrFields.OrgUnitCode)).OfType<string>().Distinct(StringComparer.Ordinal).ToList();
+        await lifecycle.SaveAsync(runId, plans, codes, ct);
         await outbox.EnqueueAsync(new HrSyncCompleted(connectionId, runId, matched, changed), ct);
+        await lifecycle.ApplyDueAsync(ct);
     }
 
     private static (Guid? User, string State, string Rule) Match(IReadOnlyDictionary<string, string> data, IReadOnlyList<string> order,

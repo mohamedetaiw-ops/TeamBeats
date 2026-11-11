@@ -4876,7 +4876,8 @@
         "cost_centre": "Cost centre",
         "location": "Location",
         "org_unit_code": "Organization unit code",
-        "manager_employee_number": "Manager's employee number"
+        "manager_employee_number": "Manager's employee number",
+        "assignment_date": "Assignment effective date"
       },
       "statusesTitle": "Status and schedule",
       "statuses": {
@@ -5749,7 +5750,7 @@
       "manual": "Linked by hand"
     },
     "settings": {
-      "title": "Matching",
+      "title": "Matching and lifecycle",
       "matchRule": "Match records to people",
       "matchRuleHint": "Links made by hand are always kept.",
       "ruleOptions": {
@@ -5761,7 +5762,11 @@
       "threshold": "Hold a run that changes more than this percent",
       "thresholdHint": "Terminations and moves together, as a percent of active matched employees. A held run waits for you to apply or discard it.",
       "save": "Save",
-      "saved": "Matching settings saved."
+      "saved": "Matching settings saved.",
+      "leadDays": "Prepare joiners this many working days before they start",
+      "leadDaysHint": "From 0 to 30. Onboarding and the profile are prepared on that day.",
+      "rehire": "Reopen the former account when someone is rehired",
+      "rehireHint": "Only accounts that HR closed are reopened. When off, an administrator decides."
     },
     "runs": {
       "title": "Run history",
@@ -5783,6 +5788,64 @@
       "manager_loop": "has a manager chain that loops back",
       "self_manager": "is their own manager",
       "other": "was refused"
+    },
+    "lifecycle": {
+      "failed": "That did not work. Try again in a moment.",
+      "working": "Working",
+      "codes": {
+        "title": "HR org codes",
+        "intro": "Each org code HR uses needs a TeamBeats unit. A move to a code with no unit waits until you choose one; nothing else waits for it. Units are never created from HR codes.",
+        "empty": "HR has not sent any org codes yet.",
+        "code": "HR org code",
+        "people": "People",
+        "unit": "TeamBeats unit",
+        "unitFor": "Unit for {code}",
+        "none": "No unit yet",
+        "proposed": "Proposed by HR, needs a unit",
+        "waiting": "{count, plural, one {# move waits for it} other {# moves wait for it}}",
+        "save": "Save",
+        "saved": "{code} is saved. Moves that waited for it are applied now."
+      },
+      "changes": {
+        "title": "Joiners, movers and leavers",
+        "intro": "Changes HR reported, each with the date it takes effect in your time zone. Leavers lose access at the end of their last working day, or within minutes when the day has passed.",
+        "show": "Show",
+        "empty": "Nothing here.",
+        "person": "Person",
+        "kind": "Change",
+        "effective": "Effective",
+        "state": "State",
+        "noPerson": "Not matched yet",
+        "appliedAt": "Applied {at}",
+        "dueAt": "Due {at}",
+        "waitingForCode": "Waits for its org code to get a unit"
+      },
+      "kinds": {
+        "hire": "Joiner",
+        "assignment": "Move or change of manager, title or location",
+        "termination": "Leaver",
+        "rehire": "Rehire",
+        "other": "Change"
+      },
+      "details": {
+        "assignment": "Manager, title or location",
+        "assignmentTo": "To {code}",
+        "immediate": "Access ends now",
+        "endOfDay": "Access ends after the last working day"
+      },
+      "statuses": {
+        "pending": "Waiting",
+        "unmapped": "Waiting for a unit",
+        "applied": "Applied",
+        "cancelled": "Cancelled"
+      },
+      "reasons": {
+        "replaced": "Replaced by a newer change from HR",
+        "reverted": "HR changed it back",
+        "rescinded": "HR withdrew the termination",
+        "cancelled_in_hr": "Cancelled in HR",
+        "other": "Cancelled"
+      }
     }
   }
 }
