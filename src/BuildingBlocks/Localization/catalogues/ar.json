@@ -989,6 +989,8 @@
   "validation.services.url_not_linked": "التطبيقات المرتبطة فقط لها عنوان.",
   "validation.services.actions": "يمكن أن يحتوي المسار على 5 خطوات تلقائية كحد أقصى.",
   "validation.services.action_step": "تحتاج كل خطوة تلقائية إلى اتصال وإجراء وربط للحقول، بأسماء لا تتجاوز 200 حرف.",
+  "validation.services.field_prefill_hr_only": "الحقول المعبأة من الموارد البشرية فقط يمكن جعلها للقراءة فقط أو اشتراط قيمة حديثة لها.",
+  "validation.services.prefill_unconfirmed": "تعذر تأكيد هذه القيمة مع نظام الموارد البشرية. حاول مرة أخرى لاحقًا.",
   "validation.shell.definition": "أدخل تخطيط الواجهة",
   "validation.shell.home_unknown": "اختر صفحة من صفحات هذه المؤسسة لتكون الصفحة الرئيسية",
   "validation.shell.region_required": "يجب أن تحتفظ الواجهة بهذه المنطقة",
@@ -1282,6 +1284,7 @@
   "conflict.hr.one_connection": "لدى هذه المؤسسة اتصال بنظام الموارد البشرية. عدّله أو احذفه بدلًا من إضافة اتصال آخر.",
   "conflict.hr.run_not_held": "هذه المزامنة لا تنتظر قرارًا.",
   "conflict.hr.settings_changed": "غيّر شخص آخر إعدادات الموارد البشرية. أعد التحميل لترى أحدث نسخة.",
+  "conflict.hr.payslip_unavailable": "لا يمكن فتح كشف الراتب هذا الآن. حاول مرة أخرى لاحقًا.",
   "validation.hr.date_format": "أدخل صيغة تاريخ مثل dd/MM/yyyy.",
   "validation.hr.employees_path": "أدخل مسار قائمة الموظفين بحيث يبدأ بالرمز /.",
   "validation.hr.field_source": "أدخل مكان هذا الحقل كمسار مثل $.email أو كعمود.",
@@ -1298,5 +1301,13 @@
   "validation.hr.threshold": "أدخل حدًا من 1 إلى 100 بالمئة.",
   "validation.hr.time_zone": "اختر منطقة زمنية معروفة.",
   "validation.hr.user_linked": "هذا الشخص مربوط بسجل آخر في الموارد البشرية.",
-  "validation.hr.user_unknown": "اختر شخصًا من هذه المؤسسة."
+  "validation.hr.user_unknown": "اختر شخصًا من هذه المؤسسة.",
+  "validation.hr.lead_days": "اختر من 0 إلى 30 يوم عمل.",
+  "validation.hr.org_unit": "اختر وحدة من هذه المؤسسة.",
+  "validation.hr.change_status": "اختر بالانتظار أو بانتظار وحدة أو مطبّق أو ملغى.",
+  "validation.hr.employee_path": "أدخل عنوان موظف واحد كمسار يحتوي على موضع معرّف السجل مرة واحدة.",
+  "validation.hr.payslips_path": "أدخل عنوان كشوف رواتب موظف واحد كمسار يحتوي على موضع معرّف السجل مرة واحدة.",
+  "validation.hr.payslip_pdf_path": "أدخل عنوان ملف PDF لكشف الراتب كمسار يحتوي على موضعي معرّف السجل والفترة مرة واحدة لكل منهما.",
+  "validation.hr.payslip_fields_required": "حدد مكان الفترة وصافي الراتب في كل كشف راتب.",
+  "validation.hr.payslip_period": "اختر فترة كشف الراتب بالسنة والشهر."
 }

@@ -64,6 +64,8 @@ public static class AuditActions
     public const string UserSynced = "identity.user_synced";
     public const string DisabledByDirectory = "identity.disabled_by_directory";
     public const string ReenabledByDirectory = "identity.reenabled_by_directory";
+    public const string DisabledByHr = "identity.disabled_by_hr";
+    public const string ReenabledByHr = "identity.reenabled_by_hr";
 
     // 004
     public const string RoleAssigned = "authz.role_assigned";
@@ -154,6 +156,10 @@ public static class AuditActions
     public const string HrMatchUnlinked = "hr.match_unlinked";
     public const string HrSyncHeld = "hr.sync_held";
     public const string HrSyncConfirmed = "hr.sync_confirmed";
+    public const string HrChangeApplied = "hr.change_applied";
+    public const string HrPayslipViewed = "hr.payslip_viewed";
+    public const string HrPayslipDownloaded = "hr.payslip_downloaded";
+    public const string HrOrgCodeMapped = "hr.org_code_mapped";
 
     // 010
     public const string PeopleVisibilityChanged = "people.visibility_changed";
@@ -342,7 +348,8 @@ public static class AuditActions
         TemplateReleased, TemplateDistributed, TemplateDeprecated, RegionLockChanged,
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
-        HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed,
+        HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed, HrChangeApplied, HrOrgCodeMapped, DisabledByHr, ReenabledByHr,
+        HrPayslipViewed, HrPayslipDownloaded,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,

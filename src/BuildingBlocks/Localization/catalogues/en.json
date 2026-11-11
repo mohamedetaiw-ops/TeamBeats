@@ -989,6 +989,8 @@
   "validation.services.url_not_linked": "Only linked apps have an address.",
   "validation.services.actions": "A route can have up to 5 automatic steps.",
   "validation.services.action_step": "Each automatic step needs a connection, an action and its field mapping, with names up to 200 characters.",
+  "validation.services.field_prefill_hr_only": "Only fields filled from HR can be read-only or need a current value.",
+  "validation.services.prefill_unconfirmed": "This value could not be confirmed with the HR system. Try again later.",
   "validation.shell.definition": "Give a shell layout",
   "validation.shell.home_unknown": "Choose a page of this organization as the home page",
   "validation.shell.region_required": "The shell must keep this region",
@@ -1282,6 +1284,7 @@
   "conflict.hr.one_connection": "This organization already has an HR connection. Change or delete it instead of adding another.",
   "conflict.hr.run_not_held": "This sync is not waiting for a decision.",
   "conflict.hr.settings_changed": "Someone changed the HR settings. Reload to see the latest version.",
+  "conflict.hr.payslip_unavailable": "This payslip cannot be opened right now. Try again later.",
   "validation.hr.date_format": "Enter a date format such as dd/MM/yyyy.",
   "validation.hr.employees_path": "Enter the path of the employees list, starting with /.",
   "validation.hr.field_source": "Enter where this field is, as a path such as $.email or a column.",
@@ -1298,5 +1301,13 @@
   "validation.hr.threshold": "Enter a threshold from 1 to 100 percent.",
   "validation.hr.time_zone": "Choose a known time zone.",
   "validation.hr.user_linked": "This person is already linked to another HR record.",
-  "validation.hr.user_unknown": "Choose a person of this organization."
+  "validation.hr.user_unknown": "Choose a person of this organization.",
+  "validation.hr.lead_days": "Choose from 0 to 30 working days.",
+  "validation.hr.org_unit": "Choose a unit of this organization.",
+  "validation.hr.change_status": "Choose waiting, waiting for a unit, applied or cancelled.",
+  "validation.hr.employee_path": "Enter the address of one employee as a path with the record ID placeholder in it once.",
+  "validation.hr.payslips_path": "Enter the payslips address of one employee as a path with the record ID placeholder in it once.",
+  "validation.hr.payslip_pdf_path": "Enter the payslip PDF address as a path with the record ID and period placeholders in it once each.",
+  "validation.hr.payslip_fields_required": "Say where the period and the net pay are in each payslip.",
+  "validation.hr.payslip_period": "Choose a payslip period as a year and month."
 }

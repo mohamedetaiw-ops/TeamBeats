@@ -24,7 +24,7 @@ namespace TeamBeats.Integration.Tests;
 /// a fake behind the connector HTTP client; records and names are fictional.
 /// </summary>
 [Collection(WorldCollection.Name)]
-public sealed class HrSyncTests(TenantWorld world)
+public sealed partial class HrSyncTests(TenantWorld world)
 {
     private const string Packs = "/api/v1/integrations/pack-connections";
     private const string Hr = "/api/v1/hr/integration";
@@ -35,11 +35,44 @@ public sealed class HrSyncTests(TenantWorld world)
     {
         public List<Dictionary<string, object?>> Employees { get; set; } = [];
 
+        /// <summary>When true the HR system answers 503, as when it is down.</summary>
+        public bool Down { get; set; }
+
+        /// <summary>Payslips by record ID, as payroll reports them.</summary>
+        public Dictionary<string, List<Dictionary<string, object?>>> Payslips { get; } = [];
+
+        public byte[]? Pdf { get; set; }
+
+        /// <summary>Every path asked for, so a test can see whose records were read.</summary>
+        public List<string> Asked { get; } = [];
+
         public HttpResponseMessage Answer(FakeRestApi.Sent sent)
         {
             if (sent.Headers.GetValueOrDefault("Authorization") != "Bearer fictional-hr-token")
             {
                 return new HttpResponseMessage(HttpStatusCode.Unauthorized);
+            }
+            if (Down)
+            {
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            }
+            lock (Asked)
+            {
+                Asked.Add(sent.Uri.AbsolutePath);
+            }
+            if (sent.Uri.AbsolutePath.StartsWith("/v1/employees/", StringComparison.Ordinal))
+            {
+                var parts = sent.Uri.AbsolutePath["/v1/employees/".Length..].Split('/').Select(Uri.UnescapeDataString).ToArray();
+                return parts switch
+                {
+                    [var id] => Employees.FirstOrDefault(e => (string?)e["id"] == id) is { } one
+                        ? FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { data = one }))
+                        : new HttpResponseMessage(HttpStatusCode.NotFound),
+                    [var id, "payslips"] => FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { items = Payslips.GetValueOrDefault(id) ?? [] })),
+                    [var id, "payslips", var period, "pdf"] when Pdf is not null && Payslips.GetValueOrDefault(id)?.Any(p => (string?)p["month"] == period) == true =>
+                        new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Pdf) { Headers = { ContentType = new("application/pdf") } } },
+                    _ => new HttpResponseMessage(HttpStatusCode.NotFound),
+                };
             }
             var query = sent.Uri.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries)
                 .Select(p => p.Split('=')).ToDictionary(p => p[0], p => int.Parse(p[1], System.Globalization.CultureInfo.InvariantCulture));
@@ -62,7 +95,8 @@ public sealed class HrSyncTests(TenantWorld world)
     {
         ["record_id"] = "$.id", ["work_email"] = "$.email", ["employee_number"] = "$.number", ["name_en"] = "$.name", ["name_ar"] = "$.nameAr", ["status"] = "$.state",
         ["hire_date"] = "$.hired", ["job_title"] = "$.job.title", ["grade"] = "$.job.grade", ["cost_centre"] = "$.costCentre", ["location"] = "$.site",
-        ["org_unit_code"] = "$.dept", ["manager_employee_number"] = "$.manager", ["employment_type"] = "$.type",
+        ["org_unit_code"] = "$.dept", ["manager_employee_number"] = "$.manager", ["employment_type"] = "$.type", ["termination_date"] = "$.left",
+        ["assignment_date"] = "$.since",
     };
 
     private static object StatusValues => new Dictionary<string, string[]> { ["active"] = ["Active"], ["terminated"] = ["Terminated", "Left"] };
@@ -77,7 +111,7 @@ public sealed class HrSyncTests(TenantWorld world)
         return t;
     }
 
-    private async Task<(Guid Id, FakeHr Hr)> RestConnectionAsync(TestTenant t)
+    private async Task<(Guid Id, FakeHr Hr)> RestConnectionAsync(TestTenant t, bool payslips = false)
     {
         var host = $"hr-{Guid.NewGuid():N}"[..20] + ".hr.test";
         var fake = new FakeHr();
@@ -95,6 +129,14 @@ public sealed class HrSyncTests(TenantWorld world)
                 auth = new { type = "bearer", secretRef = SecretReferences.For(t.Id, "hr-token") },
                 employeesPath = "/employees",
                 recordsPath = "$.data.items",
+                employeePath = "/employees/{record_id}",
+                employeeRecordPath = "$.data",
+                payslipsPath = payslips ? "/employees/{record_id}/payslips" : null,
+                payslipRecordsPath = payslips ? "$.items" : null,
+                payslipFields = payslips
+                    ? new Dictionary<string, string> { ["period"] = "$.month", ["gross"] = "$.gross", ["deductions"] = "$.deducted", ["net"] = "$.net", ["currency"] = "$.cur" }
+                    : null,
+                payslipPdfPath = payslips ? "/employees/{record_id}/payslips/{period}/pdf" : null,
                 paging = "page",
                 pageSizeParam = "size",
                 pageSize = 2,

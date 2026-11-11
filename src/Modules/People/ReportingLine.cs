@@ -60,6 +60,10 @@ public sealed class ReportingLine(IDbSession session, IClock clock, ITenantConte
         (await session.QueryAsync("select user_id, manager_user_id from people.reporting_line where valid_to is null", null,
             r => (User: r.GetGuid(0), Manager: r.Get<Guid?>("manager_user_id")), ct)).ToDictionary(x => x.User, x => x.Manager);
 
+    /// <summary>People whose current line came from HR (spec 019): directory sync does not change those.</summary>
+    public async Task<IReadOnlySet<Guid>> FromHrAsync(CancellationToken ct) =>
+        (await session.QueryAsync("select user_id from people.reporting_line where valid_to is null and source = 'hr'", null, r => r.GetGuid(0), ct)).ToHashSet();
+
     /// <summary>Records a new line when it differs from the current one. A person with no line and no manager needs no row.</summary>
     public async Task<bool> SetAsync(Guid userId, Guid? managerId, string source, CancellationToken ct)
     {

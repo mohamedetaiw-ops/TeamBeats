@@ -44,6 +44,9 @@ public static class IdentityModule
         services.AddMessageHandler<Directory.DirectorySyncRequested, Directory.RunRequestedDirectorySync>(Directory.RunRequestedDirectorySync.ConsumerName);
         services.AddMessageHandler<Integrations.Contracts.AgentJobFinished, Directory.ApplyAgentDirectoryRead>(Directory.ApplyAgentDirectoryRead.ConsumerName);
         services.AddMessageHandler<Integrations.Contracts.ConnectionDeleted, Directory.RemoveDirectoryOnConnectionDeleted>("identity.directory_connection_deleted");
+        services.AddScoped<Hr.HrLeavers>();
+        services.AddMessageHandler<Integrations.Contracts.EmployeeLeft, Hr.DisableOnEmployeeLeft>("identity.hr_leaver_disable");
+        services.AddMessageHandler<Integrations.Contracts.EmployeeRehired, Hr.ReactivateOnEmployeeRehired>("identity.hr_rehire_reactivate");
         return services;
     }
 

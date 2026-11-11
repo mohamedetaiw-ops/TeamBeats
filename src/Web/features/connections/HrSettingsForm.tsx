@@ -11,6 +11,7 @@ import {
   HR_AUTH,
   HR_FIELDS,
   HR_PAGING,
+  HR_PAYSLIP_FIELDS,
   HR_REQUIRED,
   HR_STATUSES,
   type HrMappingSettings,
@@ -111,6 +112,12 @@ export function HrRestSettingsForm({
   const [pageSizeParam, setPageSizeParam] = useState(s?.pageSizeParam ?? "");
   const [pageSize, setPageSize] = useState(String(s?.pageSize ?? 200));
   const [nextPath, setNextPath] = useState(s?.nextPath ?? "$.next");
+  const [employeePath, setEmployeePath] = useState(s?.employeePath ?? "");
+  const [employeeRecordPath, setEmployeeRecordPath] = useState(s?.employeeRecordPath ?? "");
+  const [payslipsPath, setPayslipsPath] = useState(s?.payslipsPath ?? "");
+  const [payslipRecordsPath, setPayslipRecordsPath] = useState(s?.payslipRecordsPath ?? "");
+  const [payslipPdfPath, setPayslipPdfPath] = useState(s?.payslipPdfPath ?? "");
+  const [payslipFields, setPayslipFields] = useState<Record<string, string>>(() => ({ ...(s?.payslipFields ?? {}) }));
 
   const extra = {
     fields: (
@@ -138,11 +145,45 @@ export function HrRestSettingsForm({
           ) : null}
           {paging === "next" ? <FormField label={t("nextPath")} hint={t("nextPathHint")} name="nextPath" dir="ltr" required value={nextPath} onChange={(e) => setNextPath(e.target.value)} /> : null}
         </fieldset>
+        <fieldset className="connections-fieldset">
+          <legend>{t("oneTitle")}</legend>
+          <FormField label={t("employeePath")} hint={t("employeePathHint")} name="employeePath" dir="ltr" value={employeePath} onChange={(e) => setEmployeePath(e.target.value)} />
+          <FormField label={t("employeeRecordPath")} hint={t("pathHint")} name="employeeRecordPath" dir="ltr" value={employeeRecordPath} onChange={(e) => setEmployeeRecordPath(e.target.value)} />
+        </fieldset>
+        <fieldset className="connections-fieldset">
+          <legend>{t("payslipsTitle")}</legend>
+          <FormField label={t("payslipsPath")} hint={t("payslipsPathHint")} name="payslipsPath" dir="ltr" value={payslipsPath} onChange={(e) => setPayslipsPath(e.target.value)} />
+          {payslipsPath.trim() ? (
+            <>
+              <FormField label={t("payslipRecordsPath")} hint={t("pathHint")} name="payslipRecordsPath" dir="ltr" value={payslipRecordsPath} onChange={(e) => setPayslipRecordsPath(e.target.value)} />
+              {HR_PAYSLIP_FIELDS.map((f) => (
+                <FormField
+                  key={f}
+                  label={t(`payslipFields.${f}`)}
+                  name={`payslip-${f}`}
+                  dir="ltr"
+                  required={f === "period" || f === "net"}
+                  value={payslipFields[f] ?? ""}
+                  onChange={(e) => setPayslipFields((m) => ({ ...m, [f]: e.target.value }))}
+                />
+              ))}
+              <FormField label={t("payslipPdfPath")} hint={t("payslipPdfPathHint")} name="payslipPdfPath" dir="ltr" value={payslipPdfPath} onChange={(e) => setPayslipPdfPath(e.target.value)} />
+            </>
+          ) : null}
+        </fieldset>
         {mapping.render(t, t("pathsHint"))}
       </>
     ),
     values: (): Partial<HrRestSettings> => ({
       employeesPath: employeesPath.trim(),
+      employeePath: blank(employeePath),
+      employeeRecordPath: blank(employeePath) ? blank(employeeRecordPath) : null,
+      payslipsPath: blank(payslipsPath),
+      payslipRecordsPath: blank(payslipsPath) ? blank(payslipRecordsPath) : null,
+      payslipFields: blank(payslipsPath)
+        ? Object.fromEntries(Object.entries(payslipFields).map(([k, v]) => [k, v.trim()]).filter(([, v]) => v))
+        : null,
+      payslipPdfPath: blank(payslipsPath) ? blank(payslipPdfPath) : null,
       recordsPath: blank(recordsPath),
       paging,
       pageParam: paging === "page" ? blank(pageParam) : null,

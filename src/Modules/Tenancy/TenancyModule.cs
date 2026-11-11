@@ -29,6 +29,8 @@ public static class TenancyModule
         services.AddScoped<DirectoryMapping.DirectoryMappingService>();
         services.AddMessageHandler<TeamBeats.Modules.Identity.Contracts.DirectorySynced, DirectoryMapping.ApplyMappingAfterDirectorySync>("tenancy.directory_mapping_apply");
         services.AddMessageHandler<TeamBeats.Modules.Integrations.Contracts.ConnectionDeleted, DirectoryMapping.ReleaseMappingOnConnectionDeleted>("tenancy.directory_mapping_release");
+        services.AddScoped<HrMemberships>();
+        services.AddMessageHandler<TeamBeats.Modules.Integrations.Contracts.EmployeeTransferred, MoveMembershipOnTransfer>("tenancy.hr_transfer");
         services.AddScoped<TenancyContracts>();
         services.AddScoped<IOrganizationHierarchy>(sp => sp.GetRequiredService<TenancyContracts>());
         services.AddScoped<ITenantMemberships>(sp => sp.GetRequiredService<TenancyContracts>());

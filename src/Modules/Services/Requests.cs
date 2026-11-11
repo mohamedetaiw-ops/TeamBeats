@@ -2,9 +2,11 @@ using System.Text.Json;
 using Npgsql;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Modules.Services.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
@@ -36,7 +38,11 @@ public sealed record RequestSubmit(Guid ServiceId, Dictionary<string, JsonElemen
 public sealed record RequestResubmit(Dictionary<string, JsonElement>? Data);
 
 /// <summary>Starting values of a form for one person, and which of them come from the directory or the account and stay read-only.</summary>
-public sealed record PrefillView(IReadOnlyDictionary<string, JsonElement> Values, IReadOnlyList<string> ReadOnly);
+/// <summary>
+/// Prefilled values, the fields that keep their value, and the HR fields that must be current but could not be
+/// confirmed with the HR system (spec 019 US5 scenario 3).
+/// </summary>
+public sealed record PrefillView(IReadOnlyDictionary<string, JsonElement> Values, IReadOnlyList<string> ReadOnly, IReadOnlyList<string> Unconfirmed);
 
 public sealed record PersonRef(Guid Id, string DisplayName);
 
@@ -93,9 +99,14 @@ public sealed class Requests(
     IClock clock,
     Catalogue catalogue,
     ServiceAdmin admin,
-    Attachments attachments)
+    Attachments attachments,
+    IHrRecords hr,
+    IEntitlementService entitlements)
 {
     public const int MaxIdempotencyKeyLength = 100;
+
+    /// <summary>HR values older than this are read again from the HR system when a field must be current (US5 scenario 3).</summary>
+    public static readonly TimeSpan HrCurrentFor = TimeSpan.FromDays(7);
 
     private const string Columns =
         """
@@ -124,18 +135,31 @@ public sealed class Requests(
     {
         var detail = await catalogue.DetailAsync(serviceId, ct);
         var subject = await SubjectAsync(forUser, detail.AllowOnBehalf, ct);
-        var (values, readOnly) = await PrefillValuesAsync(detail.Form, subject, ct);
-        return new PrefillView(values, readOnly.ToList());
+        var p = await PrefillValuesAsync(detail.Form, subject, detail.Classification, ct);
+        return new PrefillView(p.Values, p.ReadOnly.ToList(), p.Unconfirmed.ToList());
     }
 
-    private async Task<(Dictionary<string, JsonElement> Values, HashSet<string> ReadOnly)> PrefillValuesAsync(FormDefinition form, Guid subject, CancellationToken ct)
+    private sealed record Prefilled(Dictionary<string, JsonElement> Values, HashSet<string> ReadOnly, HashSet<string> Unconfirmed);
+
+    private async Task<Prefilled> PrefillValuesAsync(FormDefinition form, Guid subject, string classification, CancellationToken ct)
     {
         var values = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
         var readOnly = new HashSet<string>(StringComparer.Ordinal);
+        var unconfirmed = new HashSet<string>(StringComparer.Ordinal);
         var fields = form.Fields.Where(f => f.Prefill is not null).ToList();
         if (fields.Count == 0)
         {
-            return (values, readOnly);
+            return new Prefilled(values, readOnly, unconfirmed);
+        }
+        var hrFields = fields.Where(f => PrefillSources.IsHr(f.Prefill)).ToList();
+        foreach (var field in hrFields.Where(f => f.ReadOnly))
+        {
+            readOnly.Add(field.Key);
+        }
+        if (hrFields.Count > 0)
+        {
+            await HrValuesAsync(hrFields, subject, classification, values, unconfirmed, ct);
+            fields = fields.Except(hrFields).ToList();
         }
         var account = await users.GetAsync(subject, ct);
         // The requester sees the subject's profile as they may see it, never more.
@@ -162,7 +186,7 @@ public sealed class Requests(
                 readOnly.Add(field.Key);
             }
         }
-        return (values, readOnly);
+        return new Prefilled(values, readOnly, unconfirmed);
 
         async Task<(object?, bool)> CompanyAsync()
         {
@@ -173,6 +197,46 @@ public sealed class Requests(
             }
             chain ??= await hierarchy.GetAncestorsAndSelfAsync(u, ct); // nearest first
             return ((chain.Count > 1 ? chain[^2] : chain[0]).ToString(), true);
+        }
+    }
+
+    /// <summary>
+    /// HR values (spec 019 US5, FR-009). Only for the person's own form: HR fields of someone else are for HR staff in the
+    /// HR system. A Confidential field fills only a Confidential or Restricted form. A field that must be current and was
+    /// not confirmed by HR in the last 7 days is read now; when that fails it stays empty and is listed as unconfirmed.
+    /// </summary>
+    private async Task HrValuesAsync(List<FormField> fields, Guid subject, string classification, Dictionary<string, JsonElement> values,
+        HashSet<string> unconfirmed, CancellationToken ct)
+    {
+        if (subject != context.RequireUser() || !await entitlements.IsEnabledAsync(Capabilities.HrFormPrefill, ct))
+        {
+            return;
+        }
+        var rank = ConditionAttributes.Classifications.ToList().IndexOf(classification);
+        var allowed = fields.Where(f => !PrefillSources.Confidential.Contains(f.Prefill!) || rank >= 2).ToList();
+        if (allowed.Count == 0)
+        {
+            return;
+        }
+        var record = (await hr.MatchedAsync([subject], ct)).FirstOrDefault();
+        HrRecordRead? live = null;
+        foreach (var field in allowed)
+        {
+            var source = record;
+            if (field.MustBeCurrent && (record?.SeenAt is not { } seen || clock.UtcNow - seen > HrCurrentFor))
+            {
+                live ??= record is null ? new HrRecordRead(HrRecordRead.NotMatched, null) : await hr.CurrentAsync(subject, ct);
+                source = live.Record;
+                if (source is null)
+                {
+                    unconfirmed.Add(field.Key);
+                    continue;
+                }
+            }
+            if (source?.Fields.TryGetValue(PrefillSources.Hr[field.Prefill!], out var value) == true)
+            {
+                values[field.Key] = JsonSerializer.SerializeToElement(value);
+            }
         }
     }
 
@@ -199,8 +263,9 @@ public sealed class Requests(
     public async Task<ServicePreview> PreviewAsync(Guid serviceId, CancellationToken ct)
     {
         var latest = await admin.LatestManagedAsync(serviceId, ct);
-        var (values, readOnly) = await PrefillValuesAsync(latest.Form, context.RequireUser(), ct);
-        return new ServicePreview(latest.Version, latest.State, latest.Form, new PrefillView(values, readOnly.ToList()), latest.Route.Approval?.Names,
+        var classification = await session.ScalarAsync<string>("select classification from services.service where id = @serviceId", new { serviceId }, ct) ?? "internal";
+        var p = await PrefillValuesAsync(latest.Form, context.RequireUser(), classification, ct);
+        return new ServicePreview(latest.Version, latest.State, latest.Form, new PrefillView(p.Values, p.ReadOnly.ToList(), p.Unconfirmed.ToList()), latest.Route.Approval?.Names,
             latest.AllowOnBehalf, latest.MaxAttachments);
     }
 
@@ -266,7 +331,7 @@ public sealed class Requests(
         }
 
         var now = clock.UtcNow;
-        var (data, references) = await PrepareAsync(published, subject, request.Data, null, ct);
+        var (data, references) = await PrepareAsync(published, subject, row.Classification, request.Data, null, ct);
 
         var id = Ids.New();
         var number = await NextNumberAsync(ct);
@@ -308,11 +373,12 @@ public sealed class Requests(
     /// from their source, whatever the client sent; dates compare with today on that person's calendar.
     /// </summary>
     private async Task<(Dictionary<string, JsonElement> Data, FormReferences References)> PrepareAsync(VersionRow published, Guid subject,
-        Dictionary<string, JsonElement>? sent, Guid? existingRequest, CancellationToken ct)
+        string classification, Dictionary<string, JsonElement>? sent, Guid? existingRequest, CancellationToken ct)
     {
         var input = new Dictionary<string, JsonElement>(sent ?? [], StringComparer.Ordinal);
-        var (prefilled, locked) = await PrefillValuesAsync(published.Form, subject, ct);
-        foreach (var field in locked)
+        var p = await PrefillValuesAsync(published.Form, subject, classification, ct);
+        var prefilled = p.Values;
+        foreach (var field in p.ReadOnly)
         {
             if (prefilled.TryGetValue(field, out var value))
             {
@@ -327,6 +393,11 @@ public sealed class Requests(
         var today = (await calendars.ForUserAsync(subject, ct)).Today(clock.UtcNow);
         var errors = new ValidationErrors();
         var (data, references) = FormValidator.ValidateData(published.Form, input, today, errors);
+        // A read-only value HR could not confirm is not taken from the browser either (US5 scenario 3).
+        foreach (var field in p.Unconfirmed.Where(p.ReadOnly.Contains))
+        {
+            errors.Add($"data.{field}", "validation.services.prefill_unconfirmed");
+        }
         await CheckReferencesAsync(references, published.MaxAttachments, existingRequest, errors, ct);
         errors.ThrowIfAny();
         return (data, references);
@@ -399,7 +470,7 @@ public sealed class Requests(
             throw AppException.Conflict("conflict.services.service_retired");
         }
         var published = (await Versions.GetAsync(session, row.ServiceId, row.ServiceVersion, ct))!;
-        var (data, references) = await PrepareAsync(published, row.SubjectId, request.Data, id, ct);
+        var (data, references) = await PrepareAsync(published, row.SubjectId, row.Classification, request.Data, id, ct);
 
         await session.ExecAsync("update services.request set data = @data, status = 'in_approval', submitted_at = @now where id = @id",
             new { id, data = Jsonb.From(data), now = clock.UtcNow }, ct);

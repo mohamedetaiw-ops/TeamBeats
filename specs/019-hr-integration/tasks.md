@@ -12,15 +12,15 @@ Depends on 002, 003, 010, 016, 017, 022, 026. R2.
 - [x] T005 [US1] HR REST and SFTP packs, sync use case, results page
 
 ## Phase 3: User Stories 2 to 4, lifecycle (P1)
-- [ ] T006 [P] [US2] [US3] [US4] Tests: held hires and lead time; cancelled hire; transfer applies together; unmapped code holds one change; leaver disabled on time; immediate termination within 15 minutes; rehire
-- [ ] T007 Lifecycle events and consumers in 002, 003, 010 and 022
-- [ ] T008 Org code mapping and proposed units, with their migration (forced RLS)
+- [x] T006 [P] [US2] [US3] [US4] Tests: held hires and lead time; cancelled hire; transfer applies together; unmapped code holds one change; leaver disabled on time; immediate termination within 15 minutes; rehire
+- [x] T007 Lifecycle events and consumers in 002, 003 and 010 (the 022 journey consumers are built with spec 022 R2)
+- [x] T008 Org code mapping and proposed units, with their migration (forced RLS)
 
 ## Phase 4: User Stories 5 to 7 (P1, P2)
-- [ ] T009 [P] [US5] Tests: prefill, read-only server values, classification check, live read when stale
-- [ ] T010 [US5] Prefill source for 016 forms
-- [ ] T011 [P] [US6] Tests: self only; manager and administrator denied; step-up; watermark; no indexing; kiosk hidden; failure shows nothing stale
-- [ ] T012 [US6] My payslips page and streaming endpoint
+- [x] T009 [P] [US5] Tests: prefill, read-only server values, classification check, live read when stale
+- [x] T010 [US5] Prefill source for 016 forms
+- [x] T011 [P] [US6] Tests: self only; manager and administrator denied; step-up; watermark; no indexing; kiosk hidden; failure shows nothing stale
+- [x] T012 [US6] My payslips page and streaming endpoint
 - [ ] T013 [US7] HR leave balance source for 022
 
 ## Final phase

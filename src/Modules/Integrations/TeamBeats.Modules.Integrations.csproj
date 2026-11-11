@@ -23,6 +23,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="SSH.NET" />
+    <PackageReference Include="PDFsharp" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Migrations/*.sql" />

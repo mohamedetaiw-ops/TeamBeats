@@ -72,8 +72,10 @@ public sealed class OrgMembershipService(
     }
 
     /// <summary>Adds a membership after the caller has authorized and validated it. A directory membership is always primary.</summary>
-    internal async Task<OrgMembershipView> AddCoreAsync(Guid unitId, Guid userId, string type, DateTimeOffset? from, Guid? directoryConnectionId, CancellationToken ct)
+    internal async Task<OrgMembershipView> AddCoreAsync(Guid unitId, Guid userId, string type, DateTimeOffset? from, Guid? directoryConnectionId, CancellationToken ct,
+        string? owner = null)
     {
+        owner ??= directoryConnectionId is null ? OrgOwners.Product : OrgOwners.Directory;
         var request = new AddMembershipRequest(userId, type, from);
         var hasActive = await session.ScalarAsync<bool>(
             "select exists (select 1 from tenancy.org_membership where user_id = @u and valid_to is null)", new { u = request.UserId }, ct);
@@ -93,7 +95,7 @@ public sealed class OrgMembershipService(
             new
             {
                 t = context.RequireTenant(), id, u = request.UserId, unit = unitId, type = makePrimary ? "primary" : request.Type, primary = makePrimary, from = validFrom,
-                owner = directoryConnectionId is null ? OrgOwners.Product : OrgOwners.Directory, conn = directoryConnectionId,
+                owner, conn = directoryConnectionId,
             }, ct);
         if (makePrimary)
         {
@@ -104,7 +106,7 @@ public sealed class OrgMembershipService(
         await hierarchy.BumpVersionAsync(ct);
 
         await audit.WriteAsync(new AuditEntry(AuditActions.OrgMembershipAdded, "org_membership", id.ToString(), TargetOrgUnitId: unitId,
-            Changes: new { userId = request.UserId, type = request.Type, isPrimary = makePrimary, owner = directoryConnectionId is null ? OrgOwners.Product : OrgOwners.Directory }), ct);
+            Changes: new { userId = request.UserId, type = request.Type, isPrimary = makePrimary, owner }), ct);
         if (makePrimary && hasActive)
         {
             await audit.WriteAsync(new AuditEntry(AuditActions.OrgMembershipPrimaryChanged, "org_membership", id.ToString(), TargetOrgUnitId: unitId,
@@ -132,7 +134,7 @@ public sealed class OrgMembershipService(
         await EndInternalAsync(m, ct);
     }
 
-    /// <summary>Ends a directory-owned membership; history is kept (spec 002 US5 scenario 5).</summary>
+    /// <summary>Ends a membership for directory mapping or an HR move, without a user's permission check; history is kept (spec 002 US5 scenario 5).</summary>
     internal async Task EndFromDirectoryAsync(Guid membershipId, CancellationToken ct)
     {
         var m = await session.QuerySingleOrDefaultAsync(

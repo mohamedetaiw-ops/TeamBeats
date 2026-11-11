@@ -60,7 +60,23 @@ export const prefillSources = [
   "profile.manager",
   "org.primary_unit",
   "org.company",
+  "hr.employee_number",
+  "hr.job_title",
+  "hr.grade",
+  "hr.cost_centre",
+  "hr.employment_type",
+  "hr.location",
+  "hr.hire_date",
 ] as const;
+
+/** HR sources (spec 019 US5) can keep the HR value and can ask for one HR confirmed in the last 7 days. */
+export const isHrSource = (source: string | null | undefined) => typeof source === "string" && source.startsWith("hr.");
+
+/** The sources offered for a field type; the API checks the same. */
+export const prefillSourcesFor = (type: FieldType) =>
+  prefillSources.filter((p) =>
+    p === "profile.manager" ? type === "person" : p === "org.primary_unit" || p === "org.company" ? type === "org_unit" : p === "hr.hire_date" ? type === "date" : type === "text",
+  );
 
 export type FieldOption = { value: string; labels: Names };
 export type FieldRule = { kind: string; value?: number | null; message?: Names | null };
@@ -78,6 +94,8 @@ export type FormField = {
   showWhen?: FieldCondition | null;
   note?: Names | null;
   currencies?: string[] | null;
+  readOnly?: boolean;
+  mustBeCurrent?: boolean;
 };
 
 export type FormDefinition = { fields: FormField[] };
@@ -94,7 +112,7 @@ export type ServiceDetail = {
 
 export type FieldValue = string | number | string[] | { amount: number; currency: string } | { from: string; to: string } | null;
 
-export type Prefill = { values: Record<string, FieldValue>; readOnly: string[] };
+export type Prefill = { values: Record<string, FieldValue>; readOnly: string[]; unconfirmed?: string[] };
 
 /** A request an AI agent prepared for the person (spec 020 US8); the form opens with its values. */
 export type PreparedRequest = { id: string; serviceId: string; data: Record<string, FieldValue>; status: "prepared" | "submitted" | "discarded" };

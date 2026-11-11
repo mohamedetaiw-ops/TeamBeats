@@ -112,6 +112,18 @@
         }
       }
     },
+    "/api/v1/me/payslips-available": {
+      "get": {
+        "tags": [
+          "Payslips"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/integrations/inbound/{connectionId}": {
       "post": {
         "tags": [
@@ -3174,6 +3186,105 @@
         "parameters": [
           {
             "name": "recordId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/integration/changes": {
+      "get": {
+        "tags": [
+          "HR integration"
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/integration/org-codes": {
+      "get": {
+        "tags": [
+          "HR integration"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/integration/org-codes/{code}": {
+      "put": {
+        "tags": [
+          "HR integration"
+        ],
+        "parameters": [
+          {
+            "name": "code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HrOrgCodeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/payslips": {
+      "get": {
+        "tags": [
+          "Payslips"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/payslips/{period}/pdf": {
+      "get": {
+        "tags": [
+          "Payslips"
+        ],
+        "parameters": [
+          {
+            "name": "period",
             "in": "path",
             "required": true,
             "schema": {
@@ -15632,6 +15743,14 @@
             "items": {
               "type": "string"
             }
+          },
+          "readOnly": {
+            "type": "boolean",
+            "default": false
+          },
+          "mustBeCurrent": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -15773,6 +15892,21 @@
           }
         }
       },
+      "HrOrgCodeRequest": {
+        "required": [
+          "unitId"
+        ],
+        "type": "object",
+        "properties": {
+          "unitId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
       "HrSettingsRequest": {
         "required": [
           "matchRule",
@@ -15797,6 +15931,21 @@
               "string"
             ],
             "format": "int32"
+          },
+          "onboardingLeadDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "rehireReactivates": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -19139,6 +19288,9 @@
     },
     {
       "name": "Integrations: connector packs"
+    },
+    {
+      "name": "Payslips"
     },
     {
       "name": "Integrations: webhooks"
