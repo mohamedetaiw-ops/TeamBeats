@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { initials, isPhoneField, localName, locationName, personName, type OrgChart, type PersonView } from "@/lib/people/types";
 import { Header } from "@/components/shell/Header";
@@ -21,6 +21,7 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
   }
   const t = await getTranslations("people");
   const locale = await getLocale();
+  const format = await getFormatter();
   const person = await apiGet<PersonView>(`/api/v1/people/${encodeURIComponent(id)}`);
   if (!person.ok && person.status !== 410) {
     notFound();
@@ -70,6 +71,11 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
               {p.unit ? <bdi>{localName(p.unit.names, locale)}</bdi> : null}
               {p.location ? <bdi>{locationName(p.location, locale)}</bdi> : null}
             </span>
+            {p.away ? (
+              <span className="people-away">
+                {t("profile.away", { date: format.dateTime(new Date(`${p.away.to}T00:00:00Z`), { dateStyle: "medium", timeZone: "UTC" }) })}
+              </span>
+            ) : null}
           </div>
           {p.isSelf ? <Link href="/people/me">{t("profile.editOwn")}</Link> : null}
         </div>

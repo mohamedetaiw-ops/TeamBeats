@@ -2051,7 +2051,8 @@
       "contact": "Contact",
       "email": "Email {name}",
       "call": "Call {number}",
-      "editOwn": "Edit my profile"
+      "editOwn": "Edit my profile",
+      "away": "Out of office until {date}"
     },
     "org": {
       "title": "Org chart",

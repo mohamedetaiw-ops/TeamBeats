@@ -301,7 +301,7 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 - HR names do not feed profile names yet; directory sync stays the source of names (spec 003).
 - The HR job can run up to 5 minutes inside the connector worker tick, which delays other jobs of that tenant meanwhile. A separate long job lane is a follow-up.
 - `hr.mapping_changed` from section 13 is covered by `integration.connection_changed`, which already audits every settings change of the connection.
-- Lifecycle (US2 to US4) needs leave and journeys from spec 022 R2, which has no tasks yet. Slice 2 builds the 019 events and the consumers in 002, 003 and 010, and records the 022 part as a planning gap.
+- Lifecycle (US2 to US4) needs leave and journeys from spec 022 R2. Slice 2 builds the 019 events and the consumers in 002, 003 and 010; the journeys of spec 022 consume them (see the spec 022 section).
 
 ## HR lifecycle: joiners, movers and leavers (spec 019, slice 2: T006 to T008; US2 to US4, FR-005 to FR-008)
 
@@ -335,7 +335,7 @@ What was built for R2, slice by slice, and where it differs from the specs and p
   - Rehires do not reopen accounts unless the tenant turns that on.
 - "HR may create org units" (FR-007, off by default) is not offered yet. Turning it on, with approval, is a follow-up.
 - Secondary assignments from HR (edge case "employee in two org units") are not read yet. The canonical record has one org unit code.
-- The onboarding, mover and offboarding journeys (spec 022 US4 to US6) consume these events once spec 022 R2 is built. Spec 022 R2 has no plan or tasks yet. The HR leave balance source of spec 019 US7 needs the leave ledger from spec 022, so it is built with spec 022 R2. Spec 022 R2 will be planned right after spec 019 slice 3 (form prefill and payslips).
+- The onboarding and offboarding journeys of spec 022 consume these events, and the HR leave balance source of spec 019 US7 is built with the spec 022 leave ledger (see the spec 022 section).
 - Open approvals of a mover are reassigned by spec 016 delegation rules once 016 consumes `EmployeeTransferred` (US3 scenario 2). That consumer is a follow-up of spec 016.
 
 ## HR values in service forms (spec 019, slice 3a: T009 and T010; US5, FR-009)
@@ -377,3 +377,47 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 - Kiosk mode (spec 030) is not built yet. When it is, it must hide My payslips (scenario 3).
 - My payslips is in the account menu. Listing it as a service in the catalogue (section 10) is a follow-up of spec 016.
 - "Your payslip for November is available" notifications need a payroll signal and are not built.
+
+## HR integration final checks (spec 019, T014; section 15)
+
+### Built
+- `HrSyncTests.A_full_sync_of_twenty_thousand_employees_finishes_well_within_thirty_minutes` reads 20,000 employees from the HR REST pack in pages of 1,000, matches and stores them, applies the due lifecycle changes and gives every profile its HR values. It then runs a second full sync with a normal month of changes under the threshold: 1,000 new titles applied on the day, 500 moves waiting for an unmapped code and 100 leavers waiting for their last day. Each run must finish under 10 minutes, a third of the budget; the whole test, seeding included, takes about 30 seconds locally.
+- `HrSyncTests.The_payslip_list_loads_p95_under_two_seconds_when_payroll_takes_close_to_a_second` holds payroll at 900 ms on every read and checks the list p95 under 2 seconds. Every view reads payroll, so this is the worst case.
+- `HrSyncTests.Unmatched_records_are_retried_then_listed_as_stale_and_hr_fields_show_only_where_profile_visibility_allows` covers FR-015 (a record unmatched for over 30 days is listed as stale, is still retried and matches once the account exists) and FR-017 (grade, cost centre and employee number show to HR officers in scope only).
+- Evidence: `specs/019-hr-integration/evidence.md`. No API changed, so the OpenAPI document is unchanged.
+
+### Differences and follow-ups
+- Due lifecycle changes are applied 500 per connector tick (every 10 seconds), so a run with thousands of due changes takes a few ticks to apply them all. The test runs the ticks it needs.
+- SC-001 (joiners ready on day one in pilot tenants) needs a pilot tenant.
+- Still open from the slices: creating units from HR, secondary assignments, HR names on profiles, a separate long job lane, the payslip cache, kiosk mode, My payslips in the catalogue and payslip notifications.
+
+## HR workflows (spec 022, R2 slices 1 to 6 and T024)
+
+The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") holds the data model, API, audit and the smallest safe default of every slice. This section lists what was built and what is left.
+
+### Built
+- Slice 1, leave (T009 to T014): leave types and policies, a ledger kept by TeamBeats with monthly or yearly accrual and carry-over, requests with the live balance, day count and team overlap, replacement asks, approval on the process engine with tasks in the inbox, cancel and shorten, the team availability view, HR adjustments and the Leave module service.
+- Slice 2 (T015 to T017): balances read from HR when HR owns them, approved leave handed to HR with a retry queue, recount of approved leave when holidays change, and reduced hours periods such as Ramadan.
+- Slice 3, journeys (T018, T019): onboarding, offboarding, transfer and promotion templates with steps relative to an anchor date, started by HR and directory events or an approved resignation, moved with the anchor, attestation steps (spec 025), the access removal checklist with escalation, exit interviews, the journeys dashboard and pre-boarding behind a tenant setting.
+- Slice 4, attendance (T020): web sign in with an optional location check, clock data from spec 017 imports, working hours rules, exceptions, corrections, compensation days and the monthly summary with export.
+- Slice 5, letters and data change (T021, T022): bilingual letter templates issued as PDF with a reference and a public verification page; employee data changes with documents, written back to HR through spec 019 and kept nowhere afterwards.
+- Slice 6, expenses (T023): the expense policy and rates kept by a new `finance_officer` role, claims checked against the window and the grade limit, converted at finance's rate, flagged as duplicates, routed by amount and handed to the finance system through spec 017; AI receipt reading through the gateway as a Confidential attachment, as a suggestion only.
+- T024:
+  - Profiles show "out of office" for approved leave that covers today (FR-005). `ILeave.AwayAsync` gives the first and last day of the leave run around today, joined over weekends and holidays, and never the type. The People profile reads it; a pending request does not show.
+  - The journey worker now runs more batches of due steps in the same tick while a tenant's batch of 500 comes back full, within a 90 second budget and one batch per tenant before any tenant gets a second. Before, a day with more than 500 due steps took one two minute tick per 500.
+- Performance (section 15):
+  - `HrWorkflowPerformanceTests.The_leave_request_page_with_balance_and_overlap_loads_p95_under_one_second`: the three calls of the page, with 40 colleagues away in the same week. About 80 ms p95 locally.
+  - `HrWorkflowPerformanceTests.Journey_steps_due_on_a_busy_day_all_open_in_one_tick_well_within_five_minutes`: 1,500 steps due at once open in one tick, in about 9 seconds locally. With the two minute tick, a step opens within about 2.2 minutes of its date.
+  - `ClockImportTests.Fifty_thousand_punches_import_within_the_budget`: 50,000 punches from an uploaded file to the attendance punches, within one minute for the file and five minutes in total.
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Eligibility by gender or religion (FR-001) | Only membership type rules are built; gender and religion rules wait for a spec decision on which attributes may be used |
+| Delegation for the leave period (FR-004) | Leave approvals follow spec 016 delegation, but the leave page does not offer to set one up for the period yet |
+| Learning assignments in onboarding (FR-015) | Wait for spec 028; a template step can be a manual task until then |
+| Ownership hand-overs at offboarding (FR-017) | The access removal checklist and its escalation are built. Specs 009 and 011 handle a leaver on their own side (an ownerless site is flagged; an approver who left falls back on the route). Cancelling a leaver's open requests (spec 016 edge case "requester leaves") is not built yet |
+| Expense policy page | The policy is edited as validated JSON on `/admin/expenses`; a form for categories and tiers is a follow-up |
+| Rate source | Finance keeps the rate table by hand; a rate feed through spec 017 can fill the same table later |
+| Receipt reading use case | Spec 013 has no receipt use case, so it uses `summarize`. Under the default AI policy it is blocked, because receipts are Confidential |
+| SC-001 to SC-004 | SC-001 and SC-004 are covered by the e2e suites (`leave.spec.ts`, `letters.spec.ts`), which do the same steps without timing a person. SC-002 and SC-003 need a pilot tenant and are not proven |
