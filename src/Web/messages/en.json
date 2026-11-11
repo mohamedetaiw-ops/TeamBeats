@@ -2497,7 +2497,8 @@
       "leaveApproval": "Leave approval",
       "leaveChange": "Leave change",
       "leaveReplacement": "Cover for a colleague",
-      "journeyStep": "Journey step"
+      "journeyStep": "Journey step",
+      "attendanceRequest": "Attendance request"
     },
     "delegation": {
       "title": "While you are away",
@@ -7079,7 +7080,8 @@
         "carry_over": "Carried over",
         "lapse": "Lapsed",
         "adjustment": "Adjustment",
-        "other": "Other"
+        "other": "Other",
+        "compensation": "Compensation day"
       }
     }
   },
@@ -7421,7 +7423,8 @@
       "missing_punch": "Missing punch",
       "absent": "Absent",
       "remote": "Remote",
-      "worked_day_off": "Worked on a day off"
+      "worked_day_off": "Worked on a day off",
+      "corrected": "Corrected"
     },
     "team": {
       "title": "Team attendance",
@@ -7468,7 +7471,10 @@
         "radius": "Radius in metres",
         "removeSite": "Remove site",
         "addSite": "Add site",
-        "save": "Save settings"
+        "save": "Save settings",
+        "compensation": "Compensation leave type",
+        "compensationHint": "Approved compensation days are credited to this leave type.",
+        "compensationOff": "Compensation days are off"
       },
       "rules": {
         "title": "Working hours rules",
@@ -7494,6 +7500,48 @@
         "month": "Month",
         "download": "Download export"
       }
+    },
+    "requests": {
+      "title": "Ask to change a day",
+      "intro": "Ask your manager to correct a day with a missing or wrong punch, or to credit a compensation day for work on a holiday or day off.",
+      "kind": "What do you need?",
+      "kinds": {
+        "correction": "Attendance correction",
+        "compensation": "Compensation day"
+      },
+      "kindHints": {
+        "correction": "Add the sign in or sign out times the day is missing.",
+        "compensation": "Credit work on a holiday or day off to your leave balance."
+      },
+      "date": "Day",
+      "punch": "Time {n}",
+      "time": "Time",
+      "direction": "Sign in or out",
+      "addPunch": "Add a time",
+      "removePunch": "Remove time",
+      "reason": "Reason",
+      "send": "Send request",
+      "sent": "Your request was sent to your manager.",
+      "failed": "The request was not sent.",
+      "mine": "My requests",
+      "none": "You have no requests yet.",
+      "statuses": {
+        "pending": "Waiting",
+        "approved": "Approved",
+        "rejected": "Not approved",
+        "withdrawn": "Withdrawn"
+      }
+    },
+    "detail": {
+      "title": "Attendance request",
+      "person": "Person",
+      "status": "Status",
+      "days": "Days credited",
+      "punches": "Times to add",
+      "withdraw": "Withdraw request",
+      "withdrawn": "The request was withdrawn.",
+      "decide": "Your decision",
+      "decided": "Your decision was recorded."
     }
   }
 }

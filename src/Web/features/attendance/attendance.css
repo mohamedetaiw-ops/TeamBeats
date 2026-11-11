@@ -78,3 +78,23 @@
   padding-block-end: var(--tb-space-sm);
   border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
+
+.attendance-requests {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attendance-requests li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.attendance-reason {
+  margin: 0;
+  white-space: pre-wrap;
+}

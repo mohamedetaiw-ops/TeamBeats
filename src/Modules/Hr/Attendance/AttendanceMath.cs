@@ -34,6 +34,9 @@ public static class AttendanceFlags
     public const string Absent = "absent";
     public const string Remote = "remote";
     public const string WorkedDayOff = "worked_day_off";
+
+    /// <summary>An approved correction changed the day (US3 scenario 3).</summary>
+    public const string Corrected = "corrected";
 }
 
 /// <summary>
@@ -160,6 +163,16 @@ public static class AttendanceMath
         var dLon = Rad(lon2 - lon1);
         var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) + Math.Cos(Rad(lat1)) * Math.Cos(Rad(lat2)) * Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
         return 2 * R * Math.Asin(Math.Min(1, Math.Sqrt(a)));
+    }
+
+    /// <summary>
+    /// The compensation a day of work on a holiday or day off earns (FR-011, smallest safe default): a full day for at
+    /// least the rule's day length, half a day for at least half of it, nothing for less.
+    /// </summary>
+    public static decimal CompensationDays(decimal hoursWorked, WorkRule rule)
+    {
+        var length = (decimal)(rule.End.ToTimeSpan() - rule.Start.ToTimeSpan()).TotalHours;
+        return hoursWorked >= length ? 1m : hoursWorked >= length / 2 ? 0.5m : 0m;
     }
 
     private static decimal Round(decimal hours) => Math.Round(hours, 2, MidpointRounding.AwayFromZero);

@@ -143,4 +143,14 @@ public sealed class AttendanceMathTests
         var oneDegree = AttendanceMath.DistanceMeters(0, 0, 1, 0);
         Assert.InRange(oneDegree, 111_000, 111_400);
     }
+
+    [Fact]
+    public void A_compensation_day_is_a_full_day_for_a_full_working_day_and_a_half_for_at_least_half()
+    {
+        Assert.Equal(1m, AttendanceMath.CompensationDays(8m, WorkRule.Default));
+        Assert.Equal(1m, AttendanceMath.CompensationDays(9.5m, WorkRule.Default));
+        Assert.Equal(0.5m, AttendanceMath.CompensationDays(4m, WorkRule.Default));
+        Assert.Equal(0m, AttendanceMath.CompensationDays(3.99m, WorkRule.Default));
+        Assert.Equal(1m, AttendanceMath.CompensationDays(6m, new WorkRule(new TimeOnly(8, 0), new TimeOnly(14, 0), 0, 0)));
+    }
 }

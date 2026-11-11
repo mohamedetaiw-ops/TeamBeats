@@ -14,12 +14,21 @@ async function signedIn(tenant: TestTenant, email: string): Promise<APIRequestCo
   return request.newContext({ baseURL: stack.apiOrigin, extraHTTPHeaders: { "x-forwarded-host": host, cookie: `tb_session=${token}` } });
 }
 
+/** A weekday a few days back, inside the 60 days a correction may reach, as yyyy-mm-dd. */
+function pastWeekday(): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 3);
+  while (d.getUTCDay() === 0 || d.getUTCDay() === 6) d.setUTCDate(d.getUTCDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 const profileId = async (api: APIRequestContext) => ((await (await api.get("/api/v1/me/profile")).json()) as { profile: { id: string } }).profile.id;
 
 /**
  * Spec 022 T020: attendance in the browser. HR turns web sign in on; Layla signs in and sees her month; HR sets a
  * working hours rule and sees the export; her manager sees her on the team page and opens her days. In English and
- * Arabic, with axe on every screen.
+ * Arabic, with axe on every screen. Layla then asks to correct a day; her manager approves it from the inbox, and the
+ * day shows as corrected.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`attendance in ${locale}`, () => {
@@ -84,6 +93,42 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("attendance.person.title"));
       await expect(page.getByText(m("attendance.days.rule", { start: "08:00", end: "16:00", late: "15", early: "15" }))).toBeVisible();
       await expectAccessible(page, testInfo, `attendance-person-${locale}`);
+    });
+
+    test("an employee asks to correct a day and the manager approves it from the inbox", async ({ page }, testInfo) => {
+      const day = pastWeekday();
+      await signInWithDevForm(page, tenant.key, laylaEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/attendance`);
+      const form = page.locator("section").filter({ has: page.getByRole("heading", { name: m("attendance.requests.title") }) });
+      await form.getByLabel(m("attendance.requests.date"), { exact: true }).fill(day);
+      await form.getByLabel(m("attendance.requests.time"), { exact: true }).first().fill("09:00");
+      await form.getByLabel(m("attendance.requests.direction"), { exact: true }).first().selectOption("in");
+      await form.getByRole("button", { name: m("attendance.requests.addPunch") }).click();
+      await form.getByLabel(m("attendance.requests.time"), { exact: true }).nth(1).fill("17:00");
+      await form.getByLabel(m("attendance.requests.direction"), { exact: true }).nth(1).selectOption("out");
+      await form.getByLabel(m("attendance.requests.reason"), { exact: true }).fill(locale === "ar" ? "نسيت تسجيل الحضور" : "Forgot to sign in");
+      await form.getByRole("button", { name: m("attendance.requests.send") }).click();
+      await expect(page.getByText(m("attendance.requests.sent"), { exact: true })).toBeVisible();
+      await expect(form.getByText(m("attendance.requests.statuses.pending"))).toBeVisible();
+      await expectAccessible(page, testInfo, `attendance-request-${locale}`);
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/tasks`);
+      const inbox = page.getByTestId("task-inbox");
+      await inbox.getByRole("link").filter({ hasText: day }).first().click();
+      await page.waitForURL(/\/attendance\/requests\/[0-9a-f-]{36}\?task=/);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("attendance.detail.title"));
+      await expectAccessible(page, testInfo, `attendance-decision-${locale}`);
+      await page.getByRole("button", { name: m("services.decision.approve") }).click();
+      await expect(page.getByText(m("attendance.detail.decided"), { exact: true })).toBeVisible();
+      await expect(page.getByText(m("attendance.requests.statuses.approved")).first()).toBeVisible();
+
+      await signInWithDevForm(page, tenant.key, laylaEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/attendance`);
+      if (day.slice(0, 7) !== new Date().toISOString().slice(0, 7)) {
+        await page.getByRole("button", { name: m("attendance.previous") }).click();
+      }
+      await expect(page.getByText(m("attendance.flags.corrected")).first()).toBeVisible();
     });
   });
 }

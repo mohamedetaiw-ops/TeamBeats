@@ -33,12 +33,13 @@ public static class LocationModes
 
 public sealed record AttendanceSite(string Name, double Latitude, double Longitude, int RadiusMeters);
 
-public sealed record AttendanceSettingsView(bool WebSignIn, string LocationMode, IReadOnlyList<AttendanceSite> Sites, int Version, DateTimeOffset? UpdatedAt, bool CanChange)
+public sealed record AttendanceSettingsView(bool WebSignIn, string LocationMode, IReadOnlyList<AttendanceSite> Sites, int Version, DateTimeOffset? UpdatedAt, bool CanChange,
+    string? CompensationTypeKey = null)
 {
     public string ETag => JourneyTemplates.ETag(Version);
 }
 
-public sealed record AttendanceSettingsRequest(bool? WebSignIn, string? LocationMode, IReadOnlyList<AttendanceSite>? Sites);
+public sealed record AttendanceSettingsRequest(bool? WebSignIn, string? LocationMode, IReadOnlyList<AttendanceSite>? Sites, string? CompensationTypeKey = null);
 
 public sealed record WorkRuleView(Guid Id, Guid? OrgUnitId, string Start, string End, int GraceLateMinutes, int GraceEarlyMinutes, int Version, DateTimeOffset UpdatedAt)
 {
@@ -79,7 +80,8 @@ public sealed class AttendanceService(
     IReportingLine reporting,
     IUserDirectory users,
     IClockData clockData,
-    LeaveLedger people)
+    LeaveLedger people,
+    LeaveConfig leaveConfig)
 {
     public const int MaxSites = 20;
     public const int MaxSiteName = 80;
@@ -108,7 +110,7 @@ public sealed class AttendanceService(
             throw AppException.Denied();
         }
         var (web, mode, sites, version, updatedAt) = await SettingRowAsync(ct);
-        return new AttendanceSettingsView(web, mode, sites, version, updatedAt, coverage.WholeTenant);
+        return new AttendanceSettingsView(web, mode, sites, version, updatedAt, coverage.WholeTenant, await CompensationTypeKeyAsync(ct));
     }
 
     public async Task<AttendanceSettingsView> UpdateSettingsAsync(string? ifMatch, AttendanceSettingsRequest request, CancellationToken ct)
@@ -140,6 +142,11 @@ public sealed class AttendanceService(
         {
             errors.Add("webSignIn", "validation.required");
         }
+        var compensation = string.IsNullOrWhiteSpace(request.CompensationTypeKey) ? null : request.CompensationTypeKey.Trim();
+        if (compensation is not null && await leaveConfig.TypeByKeyAsync(compensation, ct) is not { Active: true, Unit: LeaveUnits.Day })
+        {
+            errors.Add("compensationTypeKey", "validation.attendance.compensation_type");
+        }
         errors.ThrowIfAny();
         var clean = sites.Select(s => s with { Name = s.Name.Trim() }).ToList();
         var current = await SettingRowAsync(ct);
@@ -151,15 +158,19 @@ public sealed class AttendanceService(
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into hr.attendance_settings (tenant_id, web_sign_in, location_mode, sites, version, updated_by, updated_at)
-            values (platform.current_tenant_id(), @web, @mode, @sites, 1, @actor, @now)
-            on conflict (tenant_id) do update set web_sign_in = @web, location_mode = @mode, sites = @sites, version = hr.attendance_settings.version + 1,
-              updated_by = @actor, updated_at = @now
-            """, new { web = request.WebSignIn!.Value, mode, sites = Jsonb.From(clean), actor = context.RequireUser(), now }, ct);
+            insert into hr.attendance_settings (tenant_id, web_sign_in, location_mode, sites, compensation_type_key, version, updated_by, updated_at)
+            values (platform.current_tenant_id(), @web, @mode, @sites, @compensation, 1, @actor, @now)
+            on conflict (tenant_id) do update set web_sign_in = @web, location_mode = @mode, sites = @sites, compensation_type_key = @compensation,
+              version = hr.attendance_settings.version + 1, updated_by = @actor, updated_at = @now
+            """, new { web = request.WebSignIn!.Value, mode, sites = Jsonb.From(clean), compensation, actor = context.RequireUser(), now }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.HrAttendanceSettingsChanged, "attendance_settings", "attendance",
-            Changes: new { webSignIn = request.WebSignIn, locationMode = mode, sites = clean.Count }), ct);
+            Changes: new { webSignIn = request.WebSignIn, locationMode = mode, sites = clean.Count, compensationType = compensation }), ct);
         return await SettingsAsync(ct);
     }
+
+    /// <summary>The leave type compensation days go to (FR-011), or null when compensation requests are off.</summary>
+    internal async Task<string?> CompensationTypeKeyAsync(CancellationToken ct) =>
+        await session.ScalarAsync<string?>("select compensation_type_key from hr.attendance_settings", null, ct);
 
     // ---- working hours rules ----
 
@@ -402,6 +413,14 @@ public sealed class AttendanceService(
 
     private static AttendanceDay ToDay(AttendanceDayView d) => new(d.Date, d.Kind, null, null, d.HoursWorked, d.ExpectedHours, d.Flags, d.Punches.Count);
 
+    /// <summary>One day of a person as the month view computes it, with the rule that applied.</summary>
+    internal async Task<(AttendanceDayView Day, WorkRule Rule)> DayAsync(LeavePerson person, DateOnly date, CancellationToken ct)
+    {
+        var view = RuleFor(await RulesAsync(ct), person.Path);
+        var (days, _) = await DaysAsync(person, view, date, date, await people.TodayAsync(ct), ct);
+        return (days[0], ToRule(view));
+    }
+
     private async Task<(List<AttendanceDayView> Days, List<PunchView> Punches)> DaysAsync(LeavePerson person, WorkRuleView? ruleView, DateOnly from, DateOnly to,
         DateOnly today, CancellationToken ct)
     {
@@ -417,6 +436,9 @@ public sealed class AttendanceService(
             where r.user_id = @userId and r.status = 'approved' and d.date between @from and @to group by d.date
             """, new { userId = person.UserId, from, to }, r => (Date: DateOnly.FromDateTime(r.GetDateTime(0)), Fraction: r.GetDecimal(1)), ct))
             .ToDictionary(x => x.Date, x => x.Fraction);
+        var corrected = (await session.QueryAsync(
+            "select distinct date from hr.attendance_request where user_id = @userId and kind = 'correction' and status = 'approved' and date between @from and @to",
+            new { userId = person.UserId, from, to }, r => DateOnly.FromDateTime(r.GetDateTime(0)), ct)).ToHashSet();
         var rule = ToRule(ruleView);
         var byDay = punches.GroupBy(p => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(p.At, calendar.Zone).DateTime)).ToDictionary(g => g.Key, g => g.ToList());
         var days = new List<AttendanceDayView>();
@@ -426,7 +448,7 @@ public sealed class AttendanceService(
             var day = AttendanceMath.Evaluate(d, mine.Select(p => new Punch(p.At, p.Direction, p.Remote, p.Source)).ToList(), rule, calendar,
                 leave.GetValueOrDefault(d), today);
             days.Add(new AttendanceDayView(d, day.Kind, day.FirstIn?.ToString("HH:mm", CultureInfo.InvariantCulture), day.LastOut?.ToString("HH:mm", CultureInfo.InvariantCulture),
-                day.HoursWorked, day.ExpectedHours, day.Flags, mine));
+                day.HoursWorked, day.ExpectedHours, corrected.Contains(d) ? [.. day.Flags, AttendanceFlags.Corrected] : day.Flags, mine));
         }
         return (days, punches);
     }

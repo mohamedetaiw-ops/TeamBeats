@@ -31,7 +31,22 @@ public static class AttendanceEndpoints
             return Results.Created($"/api/v1/me/attendance/punches/{view.Id}", view);
         });
 
+        me.MapGet("/requests", async (AttendanceRequests requests, CancellationToken ct) => Results.Ok(await requests.MineAsync(ct)));
+        me.MapPost("/requests", async (AttendanceRequestInput input, AttendanceRequests requests, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await requests.CreateAsync(input, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/hr/attendance/requests/{view.Id}", view);
+        });
+
         var hr = app.MapGroup("/api/v1/hr").RequireTenantUser().RequiresCapability(Capabilities.HrAttendance).WithTags("Attendance");
+        hr.MapGet("/attendance/requests/{id:guid}", async (Guid id, AttendanceRequests requests, CancellationToken ct) => Results.Ok(await requests.GetAsync(id, ct)));
+        hr.MapPost("/attendance/requests/{id:guid}:withdraw", async (Guid id, AttendanceRequests requests, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await requests.WithdrawAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
         hr.MapGet("/attendance/team", async (string? month, AttendanceService attendance, CancellationToken ct) => Results.Ok(await attendance.TeamAsync(month, ct)));
         hr.MapGet("/attendance/people/{userId:guid}", async (Guid userId, string? month, AttendanceService attendance, CancellationToken ct) =>
             Results.Ok(await attendance.PersonAsync(userId, month, ct)));

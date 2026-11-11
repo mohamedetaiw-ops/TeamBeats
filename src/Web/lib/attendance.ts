@@ -3,7 +3,7 @@ import type { PersonRef } from "@/lib/leave";
 
 export type AttendanceKind = "working" | "day_off" | "holiday" | "leave";
 
-export const ATTENDANCE_FLAGS = ["late", "early_leave", "missing_punch", "absent", "remote", "worked_day_off"] as const;
+export const ATTENDANCE_FLAGS = ["late", "early_leave", "missing_punch", "absent", "remote", "worked_day_off", "corrected"] as const;
 export type AttendanceFlag = (typeof ATTENDANCE_FLAGS)[number];
 
 export type Punch = { id: string; at: string; direction: "in" | "out"; remote: boolean; source: "web" | "clock" };
@@ -68,6 +68,7 @@ export type AttendanceSettings = {
   version: number;
   updatedAt: string | null;
   canChange: boolean;
+  compensationTypeKey: string | null;
   eTag: string;
 };
 
@@ -90,6 +91,7 @@ export const flagTone: Record<AttendanceFlag, "neutral" | "info" | "warning" | "
   absent: "danger",
   remote: "info",
   worked_day_off: "accent",
+  corrected: "neutral",
 };
 
 /** The person's position, asked only when the tenant turned the location check on, and only for the sign in itself. */
@@ -103,3 +105,28 @@ export function currentPosition(): Promise<{ latitude: number; longitude: number
     );
   });
 }
+
+export type AttendanceRequestKind = "correction" | "compensation";
+export type AttendanceRequestStatus = "pending" | "approved" | "rejected" | "withdrawn";
+
+export type AttendanceRequest = {
+  id: string;
+  kind: AttendanceRequestKind;
+  person: PersonRef;
+  date: string;
+  reason: string;
+  punches: { time: string; direction: "in" | "out" }[];
+  days: number | null;
+  leaveTypeKey: string | null;
+  status: AttendanceRequestStatus;
+  createdAt: string;
+  decidedAt: string | null;
+  rights: { withdraw: boolean; decide: boolean };
+};
+
+export const requestTone: Record<AttendanceRequestStatus, "neutral" | "info" | "success" | "danger"> = {
+  pending: "info",
+  approved: "success",
+  rejected: "danger",
+  withdrawn: "neutral",
+};

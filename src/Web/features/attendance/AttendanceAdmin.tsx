@@ -10,6 +10,8 @@ import { FormField, SelectField } from "@/components/ui/FormField";
 import { RadioGroup } from "@/components/ui/RadioGroup";
 import { problemMessages } from "@/lib/notifications/types";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
+import type { LeaveType } from "@/lib/leave";
+import { pick } from "@/lib/services/types";
 import { thisMonth, type AttendanceSettings, type AttendanceSite, type LocationMode, type WorkRule } from "@/lib/attendance";
 import "./attendance.css";
 
@@ -22,13 +24,24 @@ const toDraft = (s: AttendanceSite): SiteDraft => ({ name: s.name, latitude: Str
  * against named sites, the working hours rules per unit, and the monthly export for payroll. The API decides who may
  * change what (the tenant settings need an HR officer of the whole organization) and validates every value.
  */
-export function AttendanceAdmin({ settings: initialSettings, rules: initialRules, units }: { settings: AttendanceSettings; rules: WorkRule[]; units: OrgUnit[] }) {
+export function AttendanceAdmin({
+  settings: initialSettings,
+  rules: initialRules,
+  units,
+  leaveTypes,
+}: {
+  settings: AttendanceSettings;
+  rules: WorkRule[];
+  units: OrgUnit[];
+  leaveTypes: LeaveType[];
+}) {
   const t = useTranslations("attendance.admin");
   const locale = useLocale();
   const [settings, setSettings] = useState(initialSettings);
   const [web, setWeb] = useState(initialSettings.webSignIn);
   const [mode, setMode] = useState<LocationMode>(initialSettings.locationMode);
   const [sites, setSites] = useState<SiteDraft[]>(initialSettings.sites.map(toDraft));
+  const [compensation, setCompensation] = useState(initialSettings.compensationTypeKey ?? "");
   const [rules, setRules] = useState(initialRules);
   const [unit, setUnit] = useState("");
   const [start, setStart] = useState("09:00");
@@ -73,6 +86,7 @@ export function AttendanceAdmin({ settings: initialSettings, rules: initialRules
             webSignIn: web,
             locationMode: mode,
             sites: sites.map((s) => ({ name: s.name, latitude: Number(s.latitude), longitude: Number(s.longitude), radiusMeters: Number(s.radiusMeters) })),
+            compensationTypeKey: compensation || null,
           }),
         }),
       async (response) => {
@@ -81,6 +95,7 @@ export function AttendanceAdmin({ settings: initialSettings, rules: initialRules
         setWeb(next.webSignIn);
         setMode(next.locationMode);
         setSites(next.sites.map(toDraft));
+        setCompensation(next.compensationTypeKey ?? "");
       },
     );
   }
@@ -151,6 +166,18 @@ export function AttendanceAdmin({ settings: initialSettings, rules: initialRules
             </Button>
           </div>
         ))}
+        <SelectField
+          label={t("settings.compensation")}
+          hint={t("settings.compensationHint")}
+          name="compensation-type"
+          value={compensation}
+          disabled={locked}
+          onChange={(e) => setCompensation(e.target.value)}
+          options={[
+            { value: "", label: t("settings.compensationOff") },
+            ...leaveTypes.filter((x) => x.active && x.unit === "day").map((x) => ({ value: x.key, label: pick(x.names, locale, x.key) })),
+          ]}
+        />
         {settings.canChange ? (
           <div className="attendance-row">
             <Button size="sm" icon="plus" disabled={locked} onClick={() => setSites((list) => [...list, { name: "", latitude: "", longitude: "", radiusMeters: "200" }])}>
