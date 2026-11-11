@@ -510,7 +510,8 @@
     "account": "Account: {name}",
     "profile": "My profile",
     "ask": "Ask TeamBeats",
-    "preferences": "Preferences"
+    "preferences": "Preferences",
+    "administration": "Administration"
   },
   "personalization": {
     "toolbar": "Personalize your page",

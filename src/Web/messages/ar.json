@@ -510,7 +510,8 @@
     "account": "الحساب: {name}",
     "profile": "ملفي الشخصي",
     "ask": "اسأل TeamBeats",
-    "preferences": "التفضيلات"
+    "preferences": "التفضيلات",
+    "administration": "الإدارة"
   },
   "personalization": {
     "toolbar": "خصّص صفحتك",

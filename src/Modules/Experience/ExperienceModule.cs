@@ -356,9 +356,10 @@ public static class ExperienceModule
     {
         var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: shell and navigation");
 
-        x.MapGet("/shell", async (ShellService shell, RequestLocale locale, IDbSession session, CancellationToken ct) =>
+        x.MapGet("/shell", async (ShellService shell, RequestLocale locale, IDbSession session, IAdministrationEntry administration, CancellationToken ct) =>
         {
-            var view = await shell.GetShellAsync(locale.Locale, ct);
+            // The Administration entry (FR-062) appears only when the administration module says a section would open.
+            var view = await shell.GetShellAsync(locale.Locale, ct) with { Administration = await administration.CanOpenAsync(ct) };
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
