@@ -25,7 +25,7 @@ Depends on 001 Phase 1 and ADR-0007. R0 tasks first, R1 tasks marked.
 ## Phase 4: Tenant-scoped identity (R0)
 - [ ] T009 [P] Test: same issuer and subject in tenants A and B creates two unrelated users (ADR-0005)
 - [ ] T010 [P] Test: session cookie from tenant A rejected on tenant B host
-- [ ] T011 IdP configuration admin API and screen (secret stored as secret-manager reference)
+- [x] T011 IdP configuration admin API and screen (secret stored as secret-manager reference); screen at `/admin/identity` with directory sync settings and runs
 
 ## Phase 5: User Story 2, Entra ID (P1, R1)
 - [x] T012 [P] [US2] Tests: wrong issuer, wrong audience, expired, bad signature, missing nonce, replay

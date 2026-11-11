@@ -31,7 +31,7 @@ Depends on 001 Phase 1 and 002 Phase 1.
 
 ## Phase 7: User Story 6, explain (P3) and UI
 - [ ] T016 Explain endpoint and `/me/access`
-- [ ] T017 Role assignment UI with scope picker; explain view
+- [x] T017 Role assignment UI with scope picker; explain view (`/admin/roles`: assignments, roles with custom role definition, check access)
 
 ## Phase 8: User Story 7, attribute conditions (P2, R1)
 - [x] T020 [P] [US7] Tests: grade condition allows and denies with explanations; missing attribute fails closed; no grant stays denied; condition on a share gives not-found to a contractor; attribute change shows within 60 s; schema rejections; property test that conditions never add an allowed decision; batch of 1,000 within 50 ms

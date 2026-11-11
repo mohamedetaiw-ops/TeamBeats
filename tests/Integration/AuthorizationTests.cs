@@ -163,6 +163,11 @@ public sealed class AuthorizationTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
         await world.Database.AssertAuditedAsync(world.A.Id, AuditActions.RoleDefined);
 
+        // The names a custom role was defined with come back with it, so screens can show "News curator", not the key.
+        var rolesA = await admin.GetFromJsonAsync<JsonElement>("/api/v1/authz/roles");
+        var curator = rolesA.EnumerateArray().Single(r => r.GetProperty("key").GetString() == "news_curator");
+        Assert.Equal("News curator", curator.GetProperty("names").GetProperty("en").GetString());
+
         var rolesB = await world.B["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/authz/roles");
         Assert.DoesNotContain(rolesB.EnumerateArray(), r => r.GetProperty("key").GetString() == "news_curator");
 
