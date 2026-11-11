@@ -39,9 +39,10 @@ public sealed record NavLink(Guid NodeId, string Label, string Href, string? Own
 public sealed record OrganizationIndicator(Guid Id, string Name, bool Primary);
 
 /// <param name="Home">Slug of the home page when it is published and the caller may view it; otherwise null.</param>
+/// <param name="Administration">True when the caller may open at least one administration section (FR-062).</param>
 public sealed record ShellView(int Version, ShellDefinition Layout, IReadOnlyList<NavLink> GlobalMenu,
     IReadOnlyList<OrganizationMenu> OrganizationMenus, IReadOnlyList<OrganizationIndicator> Organizations, bool CanSwitchOrganization,
-    string? Home = null, bool Assistant = false);
+    string? Home = null, bool Assistant = false, bool Administration = false);
 
 public sealed record OrganizationMenu(Guid OrgUnitId, string Name, IReadOnlyList<NavLink> Items);
 

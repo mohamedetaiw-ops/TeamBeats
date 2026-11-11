@@ -43,6 +43,7 @@ The spec stays Approved, not Implemented. R1 builds the shell, the shared states
 | FR-049 employee home with protected and personal regions | Met | `PersonalizationTests.Home_template_delegates_its_personal_region_in_every_package_and_keeps_the_top_region_protected`, `home-v2.spec.ts` |
 | FR-050 tool box utilities as platform components | Met | `ExperienceValidationTests.Tool_box_utilities_register_as_platform_components_needing_no_capability_and_addable_with_defaults`, `WeatherTests`, `toolbox.spec.ts` |
 | FR-051 My calendar and My mail on the default home | Met | `MailCalendarTests.The_default_home_shows_My_calendar_and_My_mail_in_the_personal_region_while_their_features_are_on`, `The_default_home_suggests_nothing_without_the_entitlement_or_the_feature` |
+| FR-062 Administration row in the account menu | Met | `AdminShellTests.Shell_offers_administration_only_to_those_with_a_section`, `AdminShellTests.Administration_entry_does_not_cross_tenants`, `admin-shell.spec.ts` (account menu path in `ar` and `en`) |
 | Cross-tenant | Met | `ShellNavigationTests.Another_tenants_menus_entries_and_scopes_are_not_found`, `PersonalizationTests.Layouts_are_per_user_and_per_tenant_and_need_a_viewable_published_page` |
 | SC-001 consistent action conventions | Met for R1 | `interaction.spec.ts` across the platform, content and reference packs |
 | SC-002 personal reorder leaves coworkers unchanged | Met | `PersonalizationTests.Personal_placements_go_only_into_delegated_regions_with_eligible_components_and_coworkers_are_unaffected` |

@@ -90,7 +90,7 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
         </div>
         <div className="shell-slot" data-slot="end">
           {layout.end.map(render)}
-          {regions.includes("identity") ? <AccountMenu name={me.displayName} /> : null}
+          {regions.includes("identity") ? <AccountMenu name={me.displayName} administration={shell.ok && shell.data.administration} /> : null}
         </div>
       </div>
       {rail && shell.ok ? (

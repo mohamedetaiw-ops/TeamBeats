@@ -40,6 +40,8 @@ export type Shell = {
   home: string | null;
   /** True when the tenant has the assistant, so the shell offers Ask TeamBeats (spec 008 FR-056). */
   assistant: boolean;
+  /** True when the viewer may open at least one administration section, so the account menu offers Administration (FR-062). */
+  administration: boolean;
 };
 
 export type Crumb = { label: string; href: string };
