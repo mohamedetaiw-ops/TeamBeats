@@ -159,7 +159,7 @@ export function WebhookSettingsForm({
             />
             <div className="field">
               <label htmlFor={`${targetId}-fields`}>{t("webhooks.fields")}</label>
-              <p className="field-hint">{t("webhooks.fieldsHint")}</p>
+              <p className="field-hint">{t(target === "kpi" ? "webhooks.kpiFieldsHint" : "webhooks.fieldsHint")}</p>
               <textarea id={`${targetId}-fields`} dir="ltr" value={fields} onChange={(e) => setFields(e.target.value)} />
             </div>
             <FormField label={t("webhooks.window")} hint={t("webhooks.windowHint")} name="windowSeconds" type="number" min={60} max={300} value={windowSeconds} onChange={(e) => setWindowSeconds(e.target.value)} />

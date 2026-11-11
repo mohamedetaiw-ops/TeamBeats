@@ -55,3 +55,13 @@ public sealed record ProfileUpdated(Guid UserId, IReadOnlyList<string> ChangedFi
 public sealed record ReportingLineChanged(Guid UserId, Guid? PreviousManagerId, Guid? ManagerId, string Source) : IIntegrationEvent;
 
 public sealed record LocationAdded(string Key) : IIntegrationEvent;
+
+/// <summary>
+/// People by employee number (spec 017 FR-020): clock data and other imports map rows to people this way. Only active
+/// people of the current tenant are matched, from the employee number under its configured source; a number held by
+/// more than one person matches nobody.
+/// </summary>
+public interface IEmployeeNumbers
+{
+    Task<IReadOnlyDictionary<string, Guid>> ResolveAsync(IReadOnlyCollection<string> employeeNumbers, CancellationToken ct = default);
+}

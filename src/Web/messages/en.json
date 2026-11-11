@@ -4180,7 +4180,10 @@
       "onprem_ad": "On-premises Active Directory",
       "servicenow": "ServiceNow",
       "jira_service_management": "Jira Service Management",
-      "slack": "Slack"
+      "slack": "Slack",
+      "clock_import": "Clock data import",
+      "finance_rest": "Finance hand-off",
+      "google_workspace": "Google Workspace"
     },
     "status": {
       "healthy": "Healthy",
@@ -4203,7 +4206,10 @@
       "actions": "Actions: {names}",
       "webhook": "Send signed events to another system and receive signed deliveries from it.",
       "onprem_ad": "Read users and groups from Active Directory in your own network, through a sync agent you install there.",
-      "slack": "Send notifications as Slack direct messages to people who link their account, and share content links to a channel."
+      "slack": "Send notifications as Slack direct messages to people who link their account, and share content links to a channel.",
+      "clock_import": "Reads clock data files from an SFTP server every day, or takes CSV files you upload, and matches each row to a person by employee number.",
+      "finance_rest": "Sends approved expense claims to your finance system over REST and reads back their payment status.",
+      "google_workspace": "Reads users and groups for directory sync, and files in chosen shared drives, through a service account with domain-wide delegation."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -4317,7 +4323,18 @@
       "agent_offline": "The sync agent has not been in touch for 5 minutes",
       "system_ok": "The system answered with this sign-in",
       "system_refused": "The system refused the credential",
-      "system_failed": "The system could not be reached with these settings"
+      "system_failed": "The system could not be reached with these settings",
+      "clock_upload": "Files are uploaded by an administrator, so there is no server to check",
+      "clock_host_key": "The server's host key does not match the fingerprint in the settings",
+      "clock_credential": "The SFTP server refused the user name or credential",
+      "clock_directory": "The folder was not found or cannot be read",
+      "clock_unreachable": "The SFTP server could not be reached",
+      "clock_files": "Signed in and found files waiting to be imported",
+      "clock_no_files": "Signed in; no files matching the pattern are waiting",
+      "google_key_invalid": "The secret is not a service account private key, or it belongs to another service account",
+      "google_delegation_refused": "Google refused the token. Check domain-wide delegation for the service account and its scopes",
+      "google_drives_ok": "Every listed shared drive can be read",
+      "google_drives_missing": "Some listed shared drives cannot be read. Add the administrator as a member of each drive"
     },
     "errors": {
       "business_error": "The system refused for a business reason",
@@ -4338,7 +4355,8 @@
       "unexpected": "Unexpected error",
       "invalid_input": "The input does not match the action",
       "credential_missing": "The credential is not in the secret manager",
-      "request_refused": "The system refused the request"
+      "request_refused": "The system refused the request",
+      "host_key_mismatch": "The server's host key does not match the pinned fingerprint"
     },
     "builder": {
       "title": "Actions",
@@ -4544,7 +4562,8 @@
       "target": "A delivery becomes",
       "targets": {
         "event": "A product event",
-        "message": "A process message"
+        "message": "A process message",
+        "kpi": "KPI readings"
       },
       "targetName": "Event or message name",
       "targetNameHint": "Lowercase letters, digits, dots and underscores, such as permits.approved.",
@@ -4558,7 +4577,8 @@
       "refusedSignature": "Refused for the signature",
       "refusedWindow": "Refused for an old timestamp",
       "refusedDuplicate": "Refused as repeated",
-      "lastReceived": "Last delivery"
+      "lastReceived": "Last delivery",
+      "kpiFieldsHint": "Map metric, value, unit, period_start, period_end and source_time, and location if you track sites, as name: path, such as value: $.kpi.value. Times need an offset or are dates. One reading per delivery."
     },
     "onprem": {
       "addTitle": "Add on-premises Active Directory",
@@ -4659,6 +4679,207 @@
       "stopped": "Payload capture is off.",
       "failed": "Payload capture could not be changed. Try again.",
       "working": "Working…"
+    },
+    "clock": {
+      "addTitle": "Add a clock data import",
+      "addIntro": "Bring punches from your time and attendance system into TeamBeats. Choose an SFTP server that TeamBeats reads once a day, or upload CSV files yourself. Rows are matched to people by the employee number in their profile. For SFTP, add the server to the allowlist, store the password or private key in your secret manager, and copy the server's SHA256 host key fingerprint.",
+      "formLabel": "Clock data settings",
+      "source": "Where files come from",
+      "sources": {
+        "sftp": "SFTP server, read daily",
+        "upload": "Files uploaded by an administrator"
+      },
+      "sftpTitle": "SFTP server",
+      "host": "SFTP server name",
+      "hostHint": "For example sftp.example.com. The host must be on the allowlist.",
+      "port": "Port",
+      "username": "User name",
+      "authType": "Sign in with",
+      "auth": {
+        "password": "Password",
+        "private_key": "Private key"
+      },
+      "hostKey": "Host key fingerprint",
+      "hostKeyHint": "The SHA256 fingerprint of the server's host key, as ssh-keygen -lf prints it. TeamBeats only signs in to a server with this key.",
+      "directory": "Folder",
+      "directoryHint": "The folder that holds the export files, for example /exports. TeamBeats only reads; it never moves or deletes files.",
+      "pattern": "File names",
+      "patternHint": "Which files to import, with * for any characters and ? for one, for example *.csv. Each file is imported once.",
+      "importAt": "Daily import time",
+      "importAtHint": "Local time in the time zone below.",
+      "csvTitle": "File layout",
+      "delimiter": "Separator",
+      "delimiters": {
+        "comma": "Comma",
+        "semicolon": "Semicolon",
+        "tab": "Tab",
+        "bar": "Vertical bar"
+      },
+      "hasHeader": "The first row holds column headings",
+      "columnsByName": "Enter each column by its heading, exactly as in the file.",
+      "columnsByNumber": "Enter each column by its number, counting from 1.",
+      "columns": {
+        "employeeNumber": "Employee number",
+        "punchId": "Punch ID (optional)",
+        "timestamp": "Date and time",
+        "date": "Date (when date and time are separate)",
+        "time": "Time (when date and time are separate)",
+        "direction": "In or out (optional)",
+        "device": "Reader or device (optional)"
+      },
+      "timestampFormat": "Date and time format (optional)",
+      "formatHint": "For example yyyy-MM-dd HH:mm:ss. Leave empty for ISO 8601.",
+      "dateFormat": "Date format (optional)",
+      "timeFormat": "Time format (optional)",
+      "timeZone": "Time zone",
+      "timeZoneHint": "The time zone of times without an offset, for example Asia/Riyadh.",
+      "inValues": "Words for in",
+      "outValues": "Words for out",
+      "valuesHint": "Separate words with commas, for example IN, I, 1. Case does not matter.",
+      "files": {
+        "title": "Clock data files",
+        "unavailable": "The files cannot be shown right now.",
+        "intro": "Each file read or uploaded, with how many rows were imported. Rows that could not be matched to a person are listed so you can fix them at the source.",
+        "upload": "Upload a CSV file",
+        "uploadHint": "One CSV file, up to 20 MB, in the layout set above.",
+        "importNow": "Import now",
+        "refresh": "Refresh",
+        "working": "Working…",
+        "failed": "Something went wrong. Please try again.",
+        "uploaded": "{name} was uploaded and will be imported shortly.",
+        "queued": "The import has started. Refresh in a moment to see the result.",
+        "empty": "No files have been imported yet.",
+        "statuses": {
+          "pending": "Waiting",
+          "imported": "Imported",
+          "refused": "Refused"
+        },
+        "fromSftp": "From the SFTP server",
+        "uploadedFile": "Uploaded",
+        "received": "Received {at}",
+        "errors": {
+          "time_zone": "The time zone in the settings is not known.",
+          "empty": "The file has no header row.",
+          "missing_column": "A mapped column is not in the file.",
+          "too_many_rows": "The file has more than 500,000 rows.",
+          "too_large": "The file is larger than 50 MB."
+        },
+        "rows": "{count, plural, one {# row} other {# rows}}",
+        "imported": "{count, plural, one {# punch imported} other {# punches imported}}",
+        "duplicates": "{count, plural, one {# already imported} other {# already imported}}",
+        "unmatched": "{count, plural, one {# row not imported} other {# rows not imported}}",
+        "showUnmatched": "Show rows not imported",
+        "unmatchedCaption": "Rows of {name} that were not imported",
+        "line": "Line",
+        "employeeNumber": "Employee number",
+        "reason": "Reason",
+        "noNumber": "None",
+        "reasons": {
+          "unknown_employee": "No active person has this employee number",
+          "missing_employee": "No employee number",
+          "bad_time": "The date or time cannot be read",
+          "bad_direction": "In or out is not one of the configured words",
+          "too_long": "A value is longer than 200 characters"
+        },
+        "firstRows": "Showing the first {count} rows.",
+        "more": "Show more"
+      }
+    },
+    "finance": {
+      "formLabel": "Finance hand-off settings",
+      "addTitle": "Add a finance hand-off",
+      "addIntro": "Send approved expense claims to your finance system over its REST API and read back their payment status. Add the finance system's host to the allowlist and store its credential in your secret manager. Only the claim fields you map below are sent.",
+      "pathsTitle": "Where claims go",
+      "submitPath": "Submit path",
+      "submitPathHint": "The path TeamBeats posts each claim to, for example /expenses.",
+      "statusPath": "Status path",
+      "statusPathHint": "The path TeamBeats reads a claim's status from. Use '{reference}' for the finance system's reference, for example /expenses/'{reference}'.",
+      "idempotencyHeader": "Idempotency header (optional)",
+      "idempotencyHeaderHint": "If the finance system accepts an idempotency key, name its header, for example Idempotency-Key. Without it, a claim whose submission timed out is not sent again automatically.",
+      "fieldsTitle": "Claim fields",
+      "fieldsHint": "Where each claim field goes in the request body. Use dots for nested fields, for example employee.id. Leave a field empty to leave it out.",
+      "fields": {
+        "source_id": "Claim ID",
+        "employee_number": "Employee number",
+        "currency": "Currency",
+        "amount": "Total amount",
+        "claim_date": "Claim date",
+        "description": "Description",
+        "cost_centre": "Cost centre",
+        "project": "Project"
+      },
+      "linesField": "Lines field (optional)",
+      "linesFieldHint": "The body field that holds the list of claim lines. Leave it empty to send totals only.",
+      "lineFields": {
+        "category": "Line category",
+        "date": "Line date",
+        "amount": "Line amount",
+        "description": "Line description",
+        "original_amount": "Original amount",
+        "original_currency": "Original currency"
+      },
+      "answersTitle": "Reading the answers",
+      "referencePath": "Reference in the submit answer",
+      "statusValuePath": "Status in the status answer",
+      "pathHint": "A path into the JSON answer, for example $.data.id.",
+      "statuses": {
+        "submitted": "Words for submitted",
+        "approved": "Words for approved",
+        "paid": "Words for paid",
+        "rejected": "Words for rejected"
+      },
+      "wordsHint": "The finance system's status values that mean this, separated by commas.",
+      "handoffs": {
+        "title": "Claims handed to finance",
+        "intro": "Claims sent through this connection, with the finance reference and the payment status last read. TeamBeats checks each claim every six hours until it is paid or rejected.",
+        "unavailable": "The hand-off list could not be loaded. Try again later.",
+        "empty": "No claims have been handed to finance yet.",
+        "created": "Created",
+        "state": "Hand-off",
+        "reference": "Finance reference",
+        "payment": "Payment status",
+        "checked": "Last checked",
+        "never": "Not yet",
+        "none": "None",
+        "states": {
+          "queued": "Waiting to send",
+          "sent": "Sent",
+          "failed": "Failed",
+          "unknown": "Outcome unknown"
+        },
+        "payments": {
+          "submitted": "Submitted",
+          "approved": "Approved",
+          "paid": "Paid",
+          "rejected": "Rejected"
+        }
+      }
+    },
+    "google": {
+      "formLabel": "Google Workspace settings",
+      "addTitle": "Add a Google Workspace connection",
+      "addIntro": "Read users and groups for directory sync, and files in chosen shared drives, from your Google Workspace. In Google Cloud, create a service account and give it domain-wide delegation in the Google Admin console with the scopes TeamBeats lists below. Store its key file in your secret manager, and add oauth2.googleapis.com, admin.googleapis.com and, for Google Drive, www.googleapis.com to the allowlist.",
+      "domain": "Primary domain",
+      "domainHint": "The primary domain of your Google Workspace, for example example.com.",
+      "adminEmail": "Administrator email",
+      "adminEmailHint": "TeamBeats reads the directory and the shared drives as this administrator. For Google Drive, add this person as a member of each shared drive.",
+      "serviceAccount": "Service account email",
+      "serviceAccountHint": "It ends with .iam.gserviceaccount.com. Delegate these scopes to it: admin.directory.user.readonly and admin.directory.group.readonly for directory sync, drive.readonly for Google Drive.",
+      "keyRef": "Key reference",
+      "keyRefHint": "The reference of the service account key file, or of its private key, in your secret manager. Never enter the key itself.",
+      "customerId": "Customer ID (optional)",
+      "customerIdHint": "Shown in the Google Admin console under Account settings. Leave it empty to use the administrator's own account.",
+      "featuresTitle": "Use this connection for",
+      "features": {
+        "directory": "Directory sync of users and groups",
+        "drive": "Files in Google Drive shared drives"
+      },
+      "sharedDrives": "Shared drive IDs",
+      "sharedDrivesHint": "One ID per line, from the address of each shared drive. TeamBeats never reads any other drive.",
+      "directoryTitle": "Directory sync",
+      "directoryIntro": "Make this connection the source of directory sync. Users are matched by their Google ID, and anyone Google no longer lists loses access at the next sync, within the deletion threshold.",
+      "useForDirectory": "Use for directory sync",
+      "directoryUsed": "Directory sync now reads from this Google Workspace."
     }
   },
   "components_gallery": {

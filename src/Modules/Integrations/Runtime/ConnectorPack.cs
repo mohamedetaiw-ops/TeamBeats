@@ -128,4 +128,5 @@ public static class ConnectorErrorClasses
     public const string InvalidInput = "invalid_input";
     public const string CredentialMissing = "credential_missing";
     public const string RequestRefused = "request_refused";
+    public const string HostKeyMismatch = "host_key_mismatch";
 }

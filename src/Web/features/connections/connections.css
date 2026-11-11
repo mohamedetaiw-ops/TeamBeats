@@ -110,3 +110,25 @@
   margin: 0;
   text-align: start;
 }
+
+.connections-table {
+  overflow-x: auto;
+}
+
+.connections-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.connections-table th,
+.connections-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: top;
+}
+
+.connections-table td[data-number] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

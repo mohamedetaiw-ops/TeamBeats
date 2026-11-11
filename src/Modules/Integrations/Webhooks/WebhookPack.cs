@@ -278,9 +278,14 @@ public sealed partial class WebhookPack(
         if (s.Inbound is { } i)
         {
             var fields = i.Fields ?? new Dictionary<string, string>();
-            if (i.Target is not ("event" or "message"))
+            if (i.Target is not ("event" or "message" or "kpi"))
             {
                 errors.Add("inbound.target", "validation.webhook.target");
+            }
+            if (i.Target == "kpi" && (KpiFeed.RequiredFields.Any(f => !fields.ContainsKey(f))
+                || fields.Keys.Any(k => !KpiFeed.RequiredFields.Contains(k) && k != KpiFeed.LocationField)))
+            {
+                errors.Add("inbound.fields", "validation.webhook.kpi_fields");
             }
             if (i.Name is null || !TargetName().IsMatch(i.Name))
             {

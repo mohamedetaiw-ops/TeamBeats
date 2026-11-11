@@ -226,4 +226,36 @@ public sealed class OnPremDirectorySyncTests(TenantWorld world)
         var run = await RunAsync(a);
         Assert.Equal(("failed", "connection_unusable"), (run!.Outcome, run.Reason));
     }
+
+    /// <summary>Spec 017 section 15: 20,000 directory users through the on-premises agent in under 30 minutes (spec 002 T027).</summary>
+    [Fact]
+    public async Task Twenty_thousand_users_sent_by_the_agent_are_applied_well_within_thirty_minutes()
+    {
+        const int total = 20_000;
+        var s = await SetupAsync();
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        Assert.Equal("running", (await RunAsync(s))!.Outcome);
+        var pulled = await AgentAsync(s, "/api/v1/agent/jobs:pull");
+        var jobId = (await pulled.ReadAsync<JsonElement>()).GetProperty("id").GetGuid();
+        for (var batch = 0; batch < total / SyncAgentServiceLimits.PerBatch; batch++)
+        {
+            var users = Enumerable.Range(batch * SyncAgentServiceLimits.PerBatch, SyncAgentServiceLimits.PerBatch)
+                .Select(i => User(new Guid(i, 0, 0, new byte[8]).ToString("D"), $"Person {i}", s.Email($"p{i}")));
+            Assert.Equal(HttpStatusCode.OK, (await AgentAsync(s, $"/api/v1/agent/jobs/{jobId}/records", new { users })).StatusCode);
+        }
+        Assert.Equal(HttpStatusCode.NoContent, (await AgentAsync(s, $"/api/v1/agent/jobs/{jobId}:complete", new { ok = true, usersCursor = "usn-1", groupsCursor = "usn-2" })).StatusCode);
+        var run = await ApplyAsync(s.Tenant, new AgentJobFinished(jobId, s.Connection, "directory_sync", true, null, total, 0));
+        watch.Stop();
+
+        Assert.Equal("succeeded", run!.Outcome);
+        Assert.Equal(total, run.Created);
+        Assert.True(watch.Elapsed < TimeSpan.FromMinutes(10), $"{total} users took {watch.Elapsed.TotalSeconds:F0} s");
+        // The sync leaves an event per user; other tests dispatch the shared outbox in fixed batches, so drop them.
+        await world.Database.OwnerExecAsync("delete from messaging.outbox where tenant_id = @t and dispatched_at is null", ("t", s.Tenant.Id));
+    }
+
+    private static class SyncAgentServiceLimits
+    {
+        public const int PerBatch = TeamBeats.Modules.Integrations.SyncAgents.SyncAgentService.MaxRecordsPerKind;
+    }
 }

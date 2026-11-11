@@ -145,10 +145,125 @@ export const CHECK_RESULTS = [
   "system_ok",
   "system_refused",
   "system_failed",
+  "clock_upload",
+  "clock_host_key",
+  "clock_credential",
+  "clock_directory",
+  "clock_unreachable",
+  "clock_files",
+  "clock_no_files",
+  "google_key_invalid",
+  "google_delegation_refused",
+  "google_drives_ok",
+  "google_drives_missing",
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest", "google_workspace"] as const;
+
+/** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
+export type ClockColumns = {
+  employeeNumber: string | null;
+  punchId: string | null;
+  timestamp: string | null;
+  date: string | null;
+  time: string | null;
+  direction: string | null;
+  device: string | null;
+};
+export type ClockSettings = {
+  source: "sftp" | "upload";
+  sftp: {
+    host: string | null;
+    port: number | null;
+    username: string | null;
+    authType: string | null;
+    secretRef: string | null;
+    hostKeySha256: string | null;
+    directory: string | null;
+    filePattern: string | null;
+  } | null;
+  delimiter: string;
+  hasHeader: boolean;
+  columns: ClockColumns;
+  timestampFormat: string | null;
+  dateFormat: string | null;
+  timeFormat: string | null;
+  timeZone: string;
+  inValues: string[];
+  outValues: string[];
+  importAt: string | null;
+};
+export const CLOCK_SOURCES = ["sftp", "upload"] as const;
+export const CLOCK_AUTH = ["password", "private_key"] as const;
+export const CLOCK_DELIMITERS = { comma: ",", semicolon: ";", tab: "\t", bar: "|" } as const;
+export const CLOCK_COLUMNS = ["employeeNumber", "punchId", "timestamp", "date", "time", "direction", "device"] as const;
+export const CLOCK_FILE_STATUSES = ["pending", "imported", "refused"] as const;
+export const CLOCK_FILE_ERRORS = ["time_zone", "empty", "missing_column", "too_many_rows", "too_large"] as const;
+export const CLOCK_REASONS = ["unknown_employee", "missing_employee", "bad_time", "bad_direction", "too_long"] as const;
+
+export type ClockFile = {
+  id: string;
+  source: string;
+  name: string;
+  sizeBytes: number;
+  status: string;
+  errorKey: string | null;
+  rowCount: number;
+  imported: number;
+  duplicates: number;
+  unmatched: number;
+  firstAt: string | null;
+  lastAt: string | null;
+  receivedAt: string;
+  importedAt: string | null;
+};
+export type ClockFilePage = { items: ClockFile[]; nextCursor: string | null };
+/** Settings of a Google Workspace connection (spec 017 T019). The key stays in the secret manager. */
+export type GoogleSettings = {
+  domain: string;
+  adminEmail: string;
+  serviceAccountEmail: string;
+  privateKeyRef: string;
+  customerId: string | null;
+  features: string[];
+  sharedDrives: string[];
+  expiresOn: string | null;
+};
+export const GOOGLE_FEATURES = ["directory", "drive"] as const;
+
+/** Settings of a finance hand-off connection beyond address and sign-in (spec 017 FR-021). */
+export type FinanceSettings = {
+  submitPath: string | null;
+  statusPath: string | null;
+  fields: Record<string, string> | null;
+  linesField: string | null;
+  lineFields: Record<string, string> | null;
+  referencePath: string | null;
+  statusValuePath: string | null;
+  statusValues: Record<string, string[]> | null;
+  idempotencyHeader: string | null;
+};
+export const FINANCE_AUTH = ["api_key", "bearer", "basic", "oauth_client_credentials"] as const;
+export const FINANCE_FIELDS = ["source_id", "employee_number", "currency", "amount", "claim_date", "description", "cost_centre", "project"] as const;
+export const FINANCE_LINE_FIELDS = ["category", "date", "amount", "description", "original_amount", "original_currency"] as const;
+export const FINANCE_STATUSES = ["submitted", "approved", "paid", "rejected"] as const;
+export const FINANCE_STATES = ["queued", "sent", "failed", "unknown"] as const;
+export type FinanceHandOff = {
+  id: string;
+  sourceType: string;
+  sourceId: string;
+  state: string;
+  externalReference: string | null;
+  paymentStatus: string | null;
+  errorClass: string | null;
+  errorCode: string | null;
+  createdAt: string;
+  sentAt: string | null;
+  checkedAt: string | null;
+};
+
+export type ClockProblem = { line: number; employeeNumber: string | null; reason: string };
 
 /** Ticketing packs (spec 017 T017) and the sign-in methods each offers in its form; the API checks them again. */
 export const TICKETING_KINDS = {
@@ -211,6 +326,7 @@ export const ERROR_CLASSES = [
   "invalid_input",
   "credential_missing",
   "request_refused",
+  "host_key_mismatch",
 ] as const;
 
 export function known<T extends string>(list: readonly T[], value: string | null | undefined): value is T {
@@ -309,4 +425,4 @@ export type InboundCounts = {
 };
 
 export const WEBHOOK_EVENTS = ["ContentPublished", "ProcessInstanceCompleted", "RequestCompleted", "RequestReturned", "RequestSubmitted", "UserTaskCompleted", "UserTaskCreated"] as const;
-export const WEBHOOK_TARGETS = ["event", "message"] as const;
+export const WEBHOOK_TARGETS = ["event", "message", "kpi"] as const;

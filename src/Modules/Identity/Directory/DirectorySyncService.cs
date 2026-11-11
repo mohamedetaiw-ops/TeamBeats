@@ -39,10 +39,13 @@ public static class DirectorySources
 
     /// <summary>On-premises AD DS over LDAPS, read by the customer's sync agent (spec 017 US6).</summary>
     public const string ActiveDirectory = "adds";
+
+    /// <summary>Google Workspace through the Admin SDK, on a Google Workspace connection (spec 017 T019).</summary>
+    public const string Google = "google";
 }
 
 /// <summary>
-/// Directory sync settings. <paramref name="ConnectionId"/> picks an on-premises Active Directory connection; without
+/// Directory sync settings. <paramref name="ConnectionId"/> picks an on-premises Active Directory or Google Workspace connection; without
 /// it the settings are for the Microsoft 365 connection that has directory sync turned on.
 /// </summary>
 public sealed record DirectorySettingsRequest(UserScope? UserScope, IReadOnlyList<string>? SyncGroups, int? ScheduleMinutes, int? DeletionThresholdPct,
@@ -61,7 +64,7 @@ public sealed record DirectorySyncNeedsAttention(Guid ConnectionId, string Reaso
 /// Keeps users, tenant memberships and selected groups in step with a connected directory (spec 003 User Story 6,
 /// FR-012 to FR-014). Entra ID is read through <see cref="IDirectorySource"/> as Graph deltas; on-premises AD DS is
 /// read by the customer's sync agent through <see cref="IAgentDirectory"/>, which finishes later and is applied when
-/// <see cref="AgentJobFinished"/> arrives. Every account seen
+/// <see cref="AgentJobFinished"/> arrives; Google Workspace is read inline through <see cref="IPackDirectory"/>. Every account seen
 /// is mirrored, so a change of user scope is applied without reading the directory again. Each run reconciles the
 /// whole mirror, which makes runs idempotent and replayable. Users are keyed by the directory's immutable ID, never by
 /// email or UPN. Nothing is hard-deleted.
@@ -72,6 +75,7 @@ public sealed class DirectorySyncService(
     IConnectionFeatures connections,
     IDirectorySource directory,
     IAgentDirectory agentDirectory,
+    IPackDirectory packDirectory,
     IEntitlementService entitlements,
     ITenantMemberships memberships,
     IAuthorizationProvisioning authz,
@@ -132,6 +136,10 @@ public sealed class DirectorySyncService(
         {
             (connectionId, source) = (requested, DirectorySources.ActiveDirectory);
         }
+        else if (request.ConnectionId is { } pack && await packDirectory.SourceOfAsync(pack, ct) == PackDirectorySources.Google)
+        {
+            (connectionId, source) = (pack, DirectorySources.Google);
+        }
         else if (request.ConnectionId is null && await connections.FindAsync(ConnectionKinds.Microsoft365, Microsoft365Features.DirectorySync, ct) is { } feature)
         {
             (connectionId, source) = (feature.ConnectionId, DirectorySources.Entra);
@@ -148,12 +156,12 @@ public sealed class DirectorySyncService(
         {
             throw AppException.Validation("userScope.mode", "validation.directory.scope_mode");
         }
-        var scopeGroups = Guids("userScope.groups", scope.Groups ?? []);
+        var scopeGroups = GroupIds("userScope.groups", scope.Groups ?? [], source);
         if (mode == UserScope.SelectedGroups && scopeGroups.Count == 0)
         {
             throw AppException.Validation("userScope.groups", "validation.directory.scope_groups_required");
         }
-        var syncGroups = Guids("syncGroups", request.SyncGroups ?? current?.SyncGroups ?? []);
+        var syncGroups = GroupIds("syncGroups", request.SyncGroups ?? current?.SyncGroups ?? [], source);
         var schedule = request.ScheduleMinutes ?? current?.ScheduleMinutes ?? 30;
         if (schedule is < 5 or > 1440)
         {
@@ -221,23 +229,38 @@ public sealed class DirectorySyncService(
         {
             return await FinishAsync(runId, "failed", "not_in_package", new Counts(), ct);
         }
-        var feature = await connections.FindAsync(ConnectionKinds.Microsoft365, Microsoft365Features.DirectorySync, ct);
-        if (feature is not { Usable: true } || feature.ConnectionId != connectionId)
+        string issuer;
+        if (row.Source == DirectorySources.Google)
         {
-            return await FailAsync(runId, row, connectionId, "connection_unusable", ct);
+            if (await packDirectory.SourceOfAsync(connectionId, ct) != PackDirectorySources.Google)
+            {
+                return await FailAsync(runId, row, connectionId, "connection_unusable", ct);
+            }
+            issuer = packDirectory.IssuerFor(connectionId);
+        }
+        else
+        {
+            var feature = await connections.FindAsync(ConnectionKinds.Microsoft365, Microsoft365Features.DirectorySync, ct);
+            if (feature is not { Usable: true } || feature.ConnectionId != connectionId)
+            {
+                return await FailAsync(runId, row, connectionId, "connection_unusable", ct);
+            }
+            issuer = directory.IssuerFor(feature.ExternalTenantId);
         }
 
         DirectoryChanges changes;
         try
         {
-            changes = await directory.ReadChangesAsync(connectionId, row.UsersCursor, row.GroupsCursor, row.AdminUnitsCursor, ct);
+            changes = row.Source == DirectorySources.Google
+                ? await packDirectory.ReadChangesAsync(connectionId, row.UsersCursor, row.GroupsCursor, ct)
+                : await directory.ReadChangesAsync(connectionId, row.UsersCursor, row.GroupsCursor, row.AdminUnitsCursor, ct);
         }
         catch (DirectoryUnavailableException ex)
         {
             // Nothing is changed; existing users keep signing in through their identity provider (scenario 8).
             return await FailAsync(runId, row, connectionId, ex.Reason, ct);
         }
-        return await ReconcileAsync(runId, row, connectionId, directory.IssuerFor(feature.ExternalTenantId), changes, ct);
+        return await ReconcileAsync(runId, row, connectionId, issuer, changes, ct);
     }
 
     /// <summary>
@@ -348,7 +371,7 @@ public sealed class DirectorySyncService(
         var counts = await ApplyAsync(connectionId, issuer, row.Source == DirectorySources.Entra, plan, ct);
         counts.Groups = await SyncGroupsAsync(connectionId, row.Source, row.SyncGroups, mirror, ct);
 
-        if (row.Source == DirectorySources.Entra)
+        if (row.Source is DirectorySources.Entra or DirectorySources.Google)
         {
             await session.ExecAsync(
                 "update identity.directory_connection set users_cursor = @u, groups_cursor = @g, admin_units_cursor = @a, consecutive_failures = 0, updated_at = now() where id = @id",
@@ -630,7 +653,12 @@ public sealed class DirectorySyncService(
     }
 
     public static string GroupKey(string directoryGroupId, string source = DirectorySources.Entra) =>
-        (source == DirectorySources.ActiveDirectory ? "ad:" : "entra:") + directoryGroupId;
+        source switch
+        {
+            DirectorySources.ActiveDirectory => "ad:",
+            DirectorySources.Google => "google:",
+            _ => "entra:",
+        } + directoryGroupId;
 
     private static string DisplayName(MirrorUser u) =>
         string.IsNullOrWhiteSpace(u.Attributes.DisplayName) ? (Email(u) ?? u.Id) : u.Attributes.DisplayName.Trim();
@@ -641,12 +669,18 @@ public sealed class DirectorySyncService(
         return string.IsNullOrWhiteSpace(value) || !value.Contains('@', StringComparison.Ordinal) ? null : value.Trim().ToLowerInvariant();
     }
 
-    private static List<string> Guids(string field, IEnumerable<string> values)
+    /// <summary>Directory group IDs: GUIDs for Entra ID and AD DS, Google's own IDs (lowercase letters and digits) for Google Workspace.</summary>
+    private static List<string> GroupIds(string field, IEnumerable<string> values, string source)
     {
         var list = new List<string>();
         foreach (var v in values)
         {
-            if (!Guid.TryParse(v, out var g))
+            if (source == DirectorySources.Google && v is { Length: > 0 and <= 64 } && v.All(c => char.IsAsciiDigit(c) || char.IsAsciiLetterLower(c)))
+            {
+                list.Add(v);
+                continue;
+            }
+            if (source == DirectorySources.Google || !Guid.TryParse(v, out var g))
             {
                 throw AppException.Validation(field, "validation.directory.group_id");
             }
@@ -706,6 +740,17 @@ internal sealed class Mirror(Dictionary<string, MirrorUser> users, Dictionary<st
 
     public void Apply(DirectoryChanges changes)
     {
+        if (changes.Complete)
+        {
+            // A complete read lists everything the directory still has: what it no longer lists was removed.
+            var listedUsers = changes.Users.Select(u => u.ExternalId).ToHashSet(StringComparer.Ordinal);
+            var listedGroups = changes.Groups.Select(g => g.ExternalId).ToHashSet(StringComparer.Ordinal);
+            changes = changes with
+            {
+                Users = [.. changes.Users, .. Users.Keys.Where(id => !listedUsers.Contains(id)).Select(id => new DirectoryUserRecord(id, true, null, null, null, null, null, null, null, null, null))],
+                Groups = [.. changes.Groups, .. Groups.Values.Where(g => g.Kind == MirrorGroup.GroupKind && !listedGroups.Contains(g.Id)).Select(g => new DirectoryGroupRecord(g.Id, true, null, [], []))],
+            };
+        }
         foreach (var u in changes.Users)
         {
             if (u.Removed)

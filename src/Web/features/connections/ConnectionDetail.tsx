@@ -6,7 +6,10 @@ import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { CHECK_RESULTS, TICKETING_KINDS, checkResult, isTicketing, known, type PackCheck, type PackConnection, type PackTestResult, type WebhookEventChoice } from "@/lib/integrations/types";
+import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
+import { FinanceSettingsForm } from "./FinanceSettingsForm";
+import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
@@ -159,6 +162,60 @@ export function ConnectionDetail({ initial, webhookEvents = [] }: { initial: Pac
             submitLabel={t("detail.save")}
             busy={busy === "save"}
             onSubmit={(body: SlackBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+        </section>
+      ) : null}
+
+      {view.kind === "clock_import" ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <ClockSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: ClockBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+        </section>
+      ) : null}
+
+      {view.kind === "google_workspace" ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <GoogleSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: GoogleBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+          {(view.settings as { features?: string[] } | null)?.features?.includes("directory") ? (
+            <>
+              <h3>{t("google.directoryTitle")}</h3>
+              <p>{t("google.directoryIntro")}</p>
+              <div className="connections-row">
+                <Button
+                  busy={busy === "directory"}
+                  busyLabel={t("detail.working")}
+                  onClick={() => void run<unknown>("directory", "PUT", "/api/v1/tenant/directory", { connectionId: view.id }, () => t("google.directoryUsed"))}
+                >
+                  {t("google.useForDirectory")}
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </section>
+      ) : null}
+
+      {view.kind === "finance_rest" ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <FinanceSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: SettingsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
           />
         </section>
       ) : null}

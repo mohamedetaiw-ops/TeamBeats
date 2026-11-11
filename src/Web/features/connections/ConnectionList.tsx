@@ -9,6 +9,9 @@ import { FormField } from "@/components/ui/FormField";
 import { PACK_KINDS, TICKETING_KINDS, isTicketing, known, type AllowlistEntry, type Pack, type PackConnection, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
+import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
+import { FinanceSettingsForm } from "./FinanceSettingsForm";
+import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
 import { Messages, StatusBadge } from "./parts";
@@ -111,8 +114,11 @@ export function ConnectionList({
   const onprem = packs.find((p) => p.kind === "onprem_ad");
   const ticketing = packs.filter((p) => p.inPackage && isTicketing(p.kind));
   const slack = packs.find((p) => p.kind === "slack");
+  const clock = packs.find((p) => p.kind === "clock_import");
+  const finance = packs.find((p) => p.kind === "finance_rest");
+  const google = packs.find((p) => p.kind === "google_workspace");
 
-  async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody | SlackBody) {
+  async function create(kind: string, body: SettingsBody | WebhookBody | OnPremBody | SlackBody | ClockBody | GoogleBody) {
     setBusy(kind);
     setMessages({ kind, list: [] });
     const result = await send<PackConnection>("POST", "/api/v1/integrations/pack-connections", { kind, ...body }, RETURN_TO, t("failed"));
@@ -166,6 +172,12 @@ export function ConnectionList({
                 <p>{t("catalogue.onprem_ad")}</p>
               ) : p.kind === "slack" ? (
                 <p>{t("catalogue.slack")}</p>
+              ) : p.kind === "clock_import" ? (
+                <p>{t("catalogue.clock_import")}</p>
+              ) : p.kind === "finance_rest" ? (
+                <p>{t("catalogue.finance_rest")}</p>
+              ) : p.kind === "google_workspace" ? (
+                <p>{t("catalogue.google_workspace")}</p>
               ) : (
                 <p>{t("catalogue.actions", { names: p.actions.map((a) => a.name).join(", ") })}</p>
               )}
@@ -207,6 +219,33 @@ export function ConnectionList({
           <p>{t("slack.addIntro")}</p>
           <SlackSettingsForm submitLabel={t("add.submit")} busy={busy === "slack"} onSubmit={(body) => void create("slack", body)} />
           {messages.kind === "slack" ? <Messages messages={messages.list} /> : null}
+        </section>
+      ) : null}
+
+      {clock?.inPackage ? (
+        <section className="connections-section" aria-labelledby="add-clock-heading">
+          <h2 id="add-clock-heading">{t("clock.addTitle")}</h2>
+          <p>{t("clock.addIntro")}</p>
+          <ClockSettingsForm submitLabel={t("add.submit")} busy={busy === "clock_import"} onSubmit={(body) => void create("clock_import", body)} />
+          {messages.kind === "clock_import" ? <Messages messages={messages.list} /> : null}
+        </section>
+      ) : null}
+
+      {google?.inPackage ? (
+        <section className="connections-section" aria-labelledby="add-google-heading">
+          <h2 id="add-google-heading">{t("google.addTitle")}</h2>
+          <p>{t("google.addIntro")}</p>
+          <GoogleSettingsForm submitLabel={t("add.submit")} busy={busy === "google_workspace"} onSubmit={(body) => void create("google_workspace", body)} />
+          {messages.kind === "google_workspace" ? <Messages messages={messages.list} /> : null}
+        </section>
+      ) : null}
+
+      {finance?.inPackage ? (
+        <section className="connections-section" aria-labelledby="add-finance-heading">
+          <h2 id="add-finance-heading">{t("finance.addTitle")}</h2>
+          <p>{t("finance.addIntro")}</p>
+          <FinanceSettingsForm submitLabel={t("add.submit")} busy={busy === "finance_rest"} onSubmit={(body) => void create("finance_rest", body)} />
+          {messages.kind === "finance_rest" ? <Messages messages={messages.list} /> : null}
         </section>
       ) : null}
 

@@ -29,6 +29,7 @@ public static class PeopleModule
         services.AddScoped<Profiles>();
         services.AddScoped<IProfiles>(sp => sp.GetRequiredService<Profiles>());
         services.AddScoped<PeopleService>();
+        services.AddScoped<IEmployeeNumbers, EmployeeNumbers>();
         services.AddScoped<DirectoryProfiles>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, PeopleComponents>();
         services.AddMessageHandler<DirectorySynced, ApplyDirectoryProfiles>("people.directory_profiles");

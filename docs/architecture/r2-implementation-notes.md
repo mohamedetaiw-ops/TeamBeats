@@ -214,3 +214,72 @@ What was built for R2, slice by slice, and where it differs from the specs and p
 - Linking matches the work email in the workspace instead of a Slack sign-in, since spec 017 does not say how accounts are linked. Sign in with Slack can replace it without changing the stored link.
 - A share that Slack refuses is rolled back with the request, so it does not count towards the connection's circuit breaker.
 - SMS for mandatory messages (spec 015 R2) is a separate connector and is not part of this slice.
+
+## Clock data import (spec 017, slice 16: T016 clock data; spec 022 dependency)
+
+### Built
+- A `clock_import` pack (framework key `integration.connectors`). A connection reads clock data from an SFTP server once a day, or takes CSV files an administrator uploads. Both use the same CSV layout: separator, header row or not, a column per field (employee number, punch ID, date and time or separate date and time, direction, device; by heading or by number), .NET date and time formats or ISO 8601, the source's IANA time zone for times without an offset, and the source's words for in and out.
+- SFTP uses SSH.NET (MIT, as the plan names; the base library has no SFTP client) behind the `IClockFileSource` port. The host must be on the tenant allowlist, every resolved address is checked as `SafeHttp` checks HTTP, and the server's host key must match the SHA256 fingerprint pinned in the settings before the credential (a password or private key, as a secret manager reference) is sent. TeamBeats only lists and reads; it never moves or deletes files. Each file is imported once, keyed by name, size and change time; up to 20 files and 50 MB per file per run.
+- Every import is a job of the connector runtime (`import_clock_data`, a read, idempotent, no inputs, so never a route step or tool), so it is in run history with retries, replay and the circuit breaker. The daily import is queued once per local day after the configured time (default 02:00); an administrator can also import now. Uploads (raw CSV body, up to 20 MB, audited as `integration.clock_data_uploaded`) are stored until imported, then their content is cleared; the same content uploaded twice is refused.
+- Rows map to people by employee number through the new People contract `IEmployeeNumbers` (active people of the tenant, under the field's configured source; a number held by two people matches nobody). Punches are stored as canonical clock events in `integrations.clock_punch`, once per source punch ID; a row without a punch ID gets one hashed from employee, time and direction. Rows not imported are listed per file with line, employee number as written and reason (`unknown_employee`, `missing_employee`, `bad_time`, `bad_direction`, `too_long`); no other row content is kept. All tables have forced RLS.
+- Spec 022 reads punches through `IClockData.ReadAsync(afterSequence, limit)` and is told of each file by the `ClockDataImported` event.
+- Pages: an add form for clock data in the Connections area, the same settings on the connection page, and a clock data files panel with upload, import now, counts per file and the rows not imported.
+- Tests: `tests/Unit/ClockCsvTests.cs` (mapping by heading and by number, time zones, daylight saving gaps, quoting, bad rows, file patterns) and `tests/Integration/ClockImportTests.cs` (daily SFTP import once a day, rows mapped inside the tenant only, a person of another tenant unmatched, punches stored once, uploads, refusals, host key, credential and down server, settings rules, package, employee and cross-tenant denial, and 50,000 punches within one minute against the spec 022 target of 10 minutes). Acceptance: the connections test adds an upload connection, uploads a file and reads the row not imported, in English and Arabic with axe.
+
+### Differences and follow-ups
+- Retention is not in the spec: punches are kept 400 days for attendance history, uploaded files and the rows not imported 90 days, and SFTP file records as long as punches so a file is never read twice.
+- The SFTP adapter is covered by a fake in CI, since the hosted runners have no SFTP server; the SSH.NET code path is exercised only against a real server.
+
+## Finance hand-off (spec 017, slice 17: T016 finance hand-off; spec 022 dependency)
+
+### Built
+- A `finance_rest` pack (framework key `integration.connectors`) for any finance system with a REST API. Settings: the https address on the allowlist, the sign-in (API key, bearer token, user name and password, or OAuth client credentials, as secret manager references), the submit path and the status path (with `{reference}`), where each claim field goes in the request body (dotted names make nested objects; only mapped fields are sent), the optional lines field and its line fields, where the reference and the status are in the answers, the finance system's words for submitted, approved, paid and rejected, and an optional idempotency header.
+- Two actions run through the connector runtime, so both are in run history with retries, replay and the circuit breaker: `submit_expense` (a write; idempotent only when an idempotency header is set, keyed per hand-off attempt) and `get_payment_status` (a read).
+- Spec 022 hands a claim over through the new Integrations contract `IFinanceHandOff.SubmitAsync` and reads its state with `GetAsync`. The oldest enabled finance connection of the tenant is used; with none, or outside the package, the answer is `unavailable` and nothing is stored. Each hand-off is a row in `integrations.finance_handoff` (forced RLS) with the state (`queued`, `sent`, `failed`, `unknown`), the external reference and the payment status. A failed or unknown hand-off can be sent again as a new attempt; the outcome of an older attempt never overwrites a newer one. `FinanceHandOffChanged` is published on every change of state or payment status.
+- Status checks run every six hours for each sent claim until it is paid or rejected.
+- Pages: an add form for finance in the Connections area, the same settings on the connection page, and a panel of the claims handed over through the connection with reference, payment status and last check. Claim content is not shown there and payload capture is not offered on a finance connection, since claims carry personal finance data.
+- Tests: `tests/Integration/FinanceHandOffTests.cs` (only mapped fields sent with the idempotency key, the reference stored, status read until paid, a refused claim failing with its business error and sent again, a timeout without an idempotency header stopping as unknown, settings rules, claim checks, no capture, package and cross-tenant denial). Acceptance: the connections test adds a finance connection with mapped fields and sees no claims yet, in English and Arabic with axe.
+
+### Differences and follow-ups
+- Without an idempotency header a submit is not idempotent, so a timeout after sending stops as `unknown` for an administrator to check, rather than risking a second claim in the finance system.
+- The six hour status check interval is not in the spec; it is the smallest safe default for a payment status that changes once or twice a week.
+
+## Google Workspace directory and Drive (spec 017, slice 18: T019; FR-019, INT-004; spec 003 US6)
+
+### Built
+- A `google_workspace` pack (framework key `integration.connectors`). Settings: the primary domain, the administrator TeamBeats reads as, the service account email and its key as a secret manager reference (the key file Google gives, or the PEM private key), an optional customer ID, the features in use (`directory`, `drive`) and, for Drive, up to 50 shared drive IDs. `oauth2.googleapis.com`, `admin.googleapis.com` and, for Drive, `www.googleapis.com` must be on the allowlist. The pack declares no actions, so nothing is a route step or an agent tool, and payload capture is not offered.
+- Sign-in is the JWT bearer grant (RFC 7523) with domain-wide delegation, signed RS256 with the base library; no Google client library is added. Tokens are cached per tenant, connection, user and scope until a minute before they expire, and dropped when Google refuses them. Test connection checks the hosts, that the key parses and belongs to the service account, a directory token, a Drive token and every listed shared drive.
+- Directory: the new Integrations contract `IPackDirectory` is read by spec 003 directory sync as the source `google` (Identity migration 0009). Google has no change feed for users, so every read lists all users, groups and user members and is marked complete in `DirectoryChanges.Complete`; Identity then removes from its mirror whatever Google no longer lists, and the deletion threshold stops a short list. Users are keyed by their Google ID, which is the `sub` of Google sign-in, under the issuer `https://accounts.google.com`. Suspended and archived accounts are disabled. Profile fields come from the primary organization, work and mobile phones, the `organization` external ID and the manager relation (given by email, passed on as the manager's ID). Group IDs for selected groups and the user scope are Google's own IDs for this source.
+- Drive: the document repository contract of ADR-0016 now exists in `Integrations.Contracts` (`IDocumentRepository` with canonical container, item, permission, change and content types) as the extension point for spec 011 connected libraries. Google Drive is its first adapter: containers, folder listing, one item with its permissions mapped to read, write and owner, changes per shared drive with a cursor, and content opened as the user (Google Docs, Sheets and Slides as PDF, up to 100 MB). Nothing outside the listed shared drives is ever returned, and an ID that is not a Drive ID is never sent to Google.
+- Pages: an add form in the Connections area, the same settings on the connection page, and a button to use the connection for directory sync when the directory feature is on.
+- Tests: `tests/Integration/GoogleWorkspaceTests.cs` (users by Google ID with manager, suspended users left out, selected groups, a removed user disabled by the next complete read, Google down or refusing changes nothing, a short list stopped by the threshold, Drive inside the listed drives only, permissions, changes, content as the user and as PDF, a user outside the Workspace refused, settings rules, a bad key reported without calling Google, no capture, package and cross-tenant denial). Google is a fake that checks each assertion's signature with a key the test makes. Acceptance: the connections test adds a connection with both features and sees the test stop at the missing key, in English and Arabic with axe.
+
+### Differences and follow-ups
+- Spec 011 connected libraries (US9, US10) are not built yet; they will read Google Drive and SharePoint through this contract. The SharePoint adapter joins it then, behind a router by connection kind.
+- Directory and Drive reads call Google directly, as Microsoft Graph reads do, so they are not in run history; failures are kept as the directory sync run reason or the repository's unavailable reason.
+- Google sign-in (spec 003 T018) is not built yet; synced Google accounts are ready for it under the Google issuer.
+- Members of nested groups are not expanded, as with Entra ID.
+
+## Connector-down suite and performance (spec 017, slice 19: T020; SC-001, section 15)
+
+### Built
+- `tests/Integration/ConnectorDownTests.cs`, marked `Suite=ConnectorDown`, runs the five cases of SC-001 against two packs (custom REST and Slack): a revoked credential fails at once without retries and replays once fixed, a throttling system is waited for as it asks, a system that is down is retried, left as a dead letter and opens the circuit, a partial failure finishes each call on its own, and a duplicate request with the same key reaches the system once. It runs in the integration suite on every build.
+- `tests/Integration/ConnectorPerformanceTests.cs`: connector overhead at p95 under 30 ms (the fake system answers in process, so the time is an upper bound on the overhead) and 1,000 queued jobs within a minute.
+- `OnPremDirectorySyncTests.Twenty_thousand_users_sent_by_the_agent_are_applied_well_within_thirty_minutes` sends 20,000 users through the agent endpoint and asserts under 10 minutes (about 2 minutes locally).
+- `ArchitectureTests.Connectors_never_call_models` (FR-024): the Integrations module never references the AI Gateway contracts.
+
+### Differences and follow-ups
+- The job worker ran at most 50 jobs per tenant per 10 second tick, about 300 a minute, below the section 15 budget. It now drains: a tenant whose batch was full gets more batches in the same tick, inside an 8 second budget (`ConnectorJobs.BatchSize`, `RunBatchAsync`, `ConnectorJobWorker.DrainAsync`).
+
+## KPI feed (spec 017, slice 20: T021; FR-022)
+
+### Built
+- An inbound webhook with the target `kpi` maps its body to the canonical fields `metric`, `value`, `unit`, `period_start`, `period_end`, `source_time` and the optional `location`. Saving refuses a mapping that misses a required field or names any other (`validation.webhook.kpi_fields`). The signature, window and delivery ID checks of the webhook stay the same.
+- Each delivery carries one reading. Times are ISO 8601 with an offset, or dates read as midnight UTC; a source time more than 5 minutes ahead, an end before the start, a value that is not a number or text over its length is refused with `validation.webhook.kpi_reading` and the field.
+- Readings are kept in `integrations.kpi_reading` (migration 0013, forced RLS), one per connection, metric, location and period. A reading measured later replaces the value and an older one is ignored. A stored reading publishes `KpiReadingReceived`; no `InboundWebhookReceived` is published for KPI deliveries. `IKpiFeed.ReadAsync` gives consumers the readings under the `integration.connectors` key. Readings are purged after 400 days.
+- Pages: the webhook form offers the target "KPI readings" with its own field hint.
+- Tests: `tests/Integration/KpiFeedTests.cs` (stored once per period, later replaces, older ignored, duplicate delivery, wrong readings and mappings refused, cross-tenant and package denial).
+
+### Differences and follow-ups
+- The spec does not say how many readings a delivery holds or how long they are kept. Defaults: one reading per delivery, kept 400 days (a year plus a month for year on year views). Batches of readings can come later as a separate target.
+- No consumer reads the feed yet; dashboards in spec 021 are the expected first one.
