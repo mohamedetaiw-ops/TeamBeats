@@ -1,9 +1,10 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
-import type { AdminAppointment, TenantSettings } from "@/lib/admin/types";
+import type { AdminAppointment, MembershipPolicy, TenantSettings } from "@/lib/admin/types";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TenantSettingsAdmin } from "@/features/admin/TenantSettingsAdmin";
+import { MembershipPoliciesAdmin } from "@/features/admin/MembershipPoliciesAdmin";
 
 /**
  * Workspace settings (spec 001 US2, US3). The section appears only when the API lists it; the administrators list is
@@ -14,7 +15,11 @@ export default async function TenantSettingsPage() {
   if (!nav.ok || !nav.data.some((s) => s.key === "tenant_settings")) {
     notFound();
   }
-  const [settings, admins] = await Promise.all([apiGet<TenantSettings>("/api/v1/tenant/settings"), apiGet<AdminAppointment[]>("/api/v1/tenant/admins")]);
+  const [settings, admins, policies] = await Promise.all([
+    apiGet<TenantSettings>("/api/v1/tenant/settings"),
+    apiGet<AdminAppointment[]>("/api/v1/tenant/admins"),
+    apiGet<MembershipPolicy[]>("/api/v1/tenant/membership-policies"),
+  ]);
   if (!settings.ok) {
     notFound();
   }
@@ -22,7 +27,10 @@ export default async function TenantSettingsPage() {
   return (
     <>
       <PageHeader title={t("nav.tenant_settings")} description={t("tenant.description")} icon="settings" />
-      <TenantSettingsAdmin initial={settings.data} initialAdmins={admins.ok ? admins.data : null} />
+      <div className="admin-screen">
+        <TenantSettingsAdmin initial={settings.data} initialAdmins={admins.ok ? admins.data : null} />
+        {policies.ok ? <MembershipPoliciesAdmin initial={policies.data} /> : null}
+      </div>
     </>
   );
 }

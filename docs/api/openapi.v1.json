@@ -422,6 +422,18 @@
         }
       }
     },
+    "/api/v1/tenant/membership-policies": {
+      "get": {
+        "tags": [
+          "Tenant: settings"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/tenant/membership-policies/{membershipType}": {
       "put": {
         "tags": [
