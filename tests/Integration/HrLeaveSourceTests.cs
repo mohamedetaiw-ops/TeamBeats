@@ -109,8 +109,7 @@ public sealed partial class HrSyncTests
             await sp.GetRequiredService<IDbSession>().CommitAsync();
             return ran;
         });
-        await DispatchAsync();
-        await DispatchAsync();
+        await world.DispatchTenantAsync(t.Id);
     }
 
     private static async Task<JsonElement> RequestAsync(HttpClient client, Guid id) => await (await client.GetAsync($"{LeaveApi}/requests/{id}")).ReadAsync<JsonElement>();

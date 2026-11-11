@@ -164,6 +164,25 @@ public sealed class TenantWorld : IAsyncLifetime
         return t;
     }
 
+    /// <summary>
+    /// Delivers the tenant's waiting messages, and what their handlers publish in turn, however many messages other
+    /// tests left in the shared outbox ahead of them. A fixed number of batches can stop short of this tenant's rows.
+    /// </summary>
+    public async Task DispatchTenantAsync(Guid tenantId, int maxBatches = 200)
+    {
+        var dispatcher = Factory.Services.GetRequiredService<TeamBeats.Messaging.OutboxDispatcher>();
+        for (var i = 0; i < maxBatches; i++)
+        {
+            var waiting = await Database.OwnerScalarAsync<long>("select count(*) from messaging.outbox where tenant_id = @t and dispatched_at is null", ("t", tenantId));
+            if (waiting == 0)
+            {
+                return;
+            }
+            await dispatcher.DispatchBatchAsync(500, CancellationToken.None);
+        }
+        throw new InvalidOperationException($"The outbox of tenant {tenantId} did not drain in {maxBatches} batches.");
+    }
+
     public async Task DisposeAsync()
     {
         await Factory.DisposeAsync();
