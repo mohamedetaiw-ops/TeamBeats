@@ -52,7 +52,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("an employee personalizes the home by keyboard, undoes in order and resets", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await expect(page.locator("main")).toContainText(locale === "en" ? "Wear a helmet on the plant floor." : "ارتد الخوذة في أرض المصنع.");
-      expect(await order(page, "grid")).toEqual(["services", "numbers"]);
+      // The calendar card is the suggested personal item of every default home (spec 008 FR-051).
+      await expect.poll(() => order(page, "grid")).toEqual(["home-calendar-overview", "services", "numbers"]);
 
       const toggle = page.getByRole("button", { name: msg(locale, "personalization.start") });
       await toggle.focus();
@@ -63,6 +64,10 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("group", { name: item(1, 1, 1) })).toHaveCount(0);
       await expect(page.getByRole("button", { name: msg(locale, "personalization.add", { region: n(2) }) })).toBeVisible();
       await expectAccessible(page, testInfo, `home-personalization-${locale}`);
+
+      // 0. The suggested calendar card is the user's own, so it is removed like any personal item, and stays removed.
+      await page.getByRole("group", { name: item(1, 3, 2) }).getByRole("button", { name: msg(locale, "personalization.remove") }).click();
+      await expect.poll(() => order(page, "grid")).toEqual(["services", "numbers"]);
 
       // 1. Move the second item up, by keyboard. Focus follows the item.
       await page.getByRole("group", { name: item(2, 2, 2) }).getByRole("button", { name: msg(locale, "personalization.moveUp") }).focus();
@@ -115,7 +120,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const question = page.getByRole("alertdialog", { name: msg(locale, "personalization.reset") });
       await expect(question.getByRole("button", { name: msg(locale, "personalization.cancel") })).toBeFocused();
       await question.getByRole("button", { name: msg(locale, "personalization.resetConfirm") }).click();
-      await expect.poll(() => order(page, "grid")).toEqual(["services", "numbers"]);
+      await expect.poll(() => order(page, "grid")).toEqual(["home-calendar-overview", "services", "numbers"]);
       await expect(status).toHaveText(msg(locale, "personalization.resetDone"));
 
       // Leaving the mode is announced and returns focus to the mode button.
@@ -135,8 +140,10 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
     test("an employee drags an item to a new place, and the move survives a reload (spec 008 FR-061)", async ({ page }) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
-      await expect.poll(() => order(page, "grid")).toEqual(["services", "numbers"]);
+      await expect.poll(() => order(page, "grid")).toEqual(["home-calendar-overview", "services", "numbers"]);
       await page.getByRole("button", { name: msg(locale, "personalization.start") }).click();
+      await page.getByRole("group", { name: item(1, 3, 2) }).getByRole("button", { name: msg(locale, "personalization.remove") }).click();
+      await expect.poll(() => order(page, "grid")).toEqual(["services", "numbers"]);
 
       const handle = page.getByRole("group", { name: item(2, 2, 2) }).getByRole("button", { name: msg(locale, "personalization.drag") });
       const target = page.locator('[data-placement-id="services"]');
@@ -157,7 +164,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "personalization.start") }).click();
       await page.getByRole("button", { name: msg(locale, "personalization.reset") }).click();
       await page.getByRole("alertdialog", { name: msg(locale, "personalization.reset") }).getByRole("button", { name: msg(locale, "personalization.resetConfirm") }).click();
-      await expect.poll(() => order(page, "grid")).toEqual(["services", "numbers"]);
+      await expect.poll(() => order(page, "grid")).toEqual(["home-calendar-overview", "services", "numbers"]);
     });
   });
 }
