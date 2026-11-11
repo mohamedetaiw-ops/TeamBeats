@@ -183,7 +183,7 @@ Mona asks the assistant "When is my next meeting and what's free this afternoon?
 - **FR-014 / M365-014**: My calendar MUST show the employee's own events for a configurable range (default 7 days, 1 to 14), recurring series expanded, cancelled and declined events hidden, tentative and free marked in text, times in the TeamBeats time zone and locale, mirrored in RTL.
 - **FR-015 / M365-015**: Online meetings MUST offer a Join action from Microsoft's join link, primary from 10 minutes before start until end. Events MUST open in Outlook on the web. Responding to invitations from TeamBeats is R3 and needs `Calendars.ReadWrite`.
 - **FR-016 / M365-016**: A placement setting MUST allow hiding subjects of private events.
-- **FR-017 / M365-017**: My calendar MUST merge TeamBeats items (registered events from 009, approved leave and location holidays from 022) labelled by source, and MUST show an item exported to Outlook by TeamBeats only once.
+- **FR-017 / M365-017**: Outlook events MUST be merged with TeamBeats items (company events, location holidays, leave) in the unified calendar of spec 037, labelled by source, and an item TeamBeats also sent to Outlook MUST show only once (spec 037 FR-004, by iCalendar UID). From R2 the home calendar card and the calendar workspace of spec 037 replace the R1 My calendar list; the `outlook.my_calendar` placement renders the spec 037 card.
 
 ### Free and busy, rooms
 - **FR-018 / M365-018**: Profile cards and scheduling people pickers MUST show a colleague's free and busy for the day as status text only, only when the viewer may see that profile in TeamBeats, and never more than Microsoft 365 shows that viewer.
@@ -196,7 +196,7 @@ Mona asks the assistant "When is my next meeting and what's free this afternoon?
 - **FR-023 / M365-023**: Access while the employee is signed out (for example a scheduled briefing) MUST require a separate, revocable employee opt-in. Without it, TeamBeats MUST NOT hold mail or calendar access beyond the employee's session.
 
 ### Ports
-- **FR-024 / M365-024**: Product modules MUST use canonical mailbox, calendar, free and busy and room ports in the `Integrations` module; Microsoft Graph types MUST stay inside the Microsoft 365 adapter, so that a Google Workspace adapter can be added later (INT-004, constitution XVII).
+- **FR-024 / M365-024**: Product modules MUST use canonical mailbox, calendar, free and busy and room ports in the `Integrations` module; Microsoft Graph types MUST stay inside the Microsoft 365 adapter (INT-004, constitution XVII). Calendar occurrences MUST carry their source and iCalendar UID. The Google Calendar adapter behind the same calendar port is specified in spec 037 FR-012 (R2).
 
 ## 6. Business and validation rules
 - Default for new connections: every mail and calendar feature off. Turning one on is a tenant admin decision recorded in the audit log.
