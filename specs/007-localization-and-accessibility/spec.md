@@ -145,7 +145,7 @@ All five locales and accessibility are available in every package. No capability
 
 ## 10. UX
 - Every screen follows the TeamBeats Design System (spec 036, `docs/design-system`), whose accessibility and content guidelines implement this spec; its design suite runs axe, reflow and target size checks in all three designs in Arabic and English.
-- Language switcher in the header and profile.
+- Language is chosen in one place: Quick preferences in the shell header and the same control on the personal Preferences page (spec 036 DLS-047).
 - Pseudo-localization locale for testing (long strings, accented characters, forced RTL).
 
 ## 11. AI behavior

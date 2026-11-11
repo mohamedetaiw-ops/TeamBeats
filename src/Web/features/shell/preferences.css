@@ -1,0 +1,55 @@
+/* The Preferences page (spec 036 DLS-047): one card of sections, each with its heading on the start side. */
+.preferences {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.preferences-section {
+  display: grid;
+  grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  gap: var(--tb-space-lg);
+  max-inline-size: 60rem;
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+.preferences-section-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tb-space-sm);
+}
+
+.preferences-section-head h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.preferences-section-head p,
+.preferences-none {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+}
+
+.preferences-section-body {
+  display: grid;
+  align-content: start;
+  justify-items: start;
+  gap: var(--tb-space-sm);
+}
+
+.preferences-section-body .shell-preferences {
+  inline-size: min(100%, 26rem);
+  justify-self: stretch;
+}
+
+@media (width <= 40rem) {
+  .preferences-section {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--tb-space-md);
+  }
+}

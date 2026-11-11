@@ -1,5 +1,6 @@
 "use client";
 
+import { requestTone } from "@/lib/services/status";
 import Link from "next/link";
 import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -84,7 +85,7 @@ export function RequestDetailView({ detail, meId, units, taskId }: { detail: Req
           </dd>
           <dt>{t("statusLabel")}</dt>
           <dd>
-            <span className="services-status" data-testid="request-status">
+            <span className="ui-badge" data-tone={requestTone(r.status)} data-testid="request-status">
               {ts(r.status)}
             </span>
           </dd>

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "re
 import { useLocale, useTranslations } from "next-intl";
 import type { CatalogueTemplate, Finding, PageDefinition, PageView } from "@/lib/experience/builder-types";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
+import { useDragHandle, type Drop, type DragTargets } from "@/lib/experience/drag";
 import * as model from "./model";
 import { Picker } from "./Picker";
 import { PropertyForm } from "./PropertyForm";
@@ -42,6 +44,18 @@ const isTyping = (target: EventTarget | null) =>
  * action menu and shortcuts for every placement operation, undo and redo, autosave with its states, and publish. Every
  * rule is the API's: the editor shows what the API answers and never decides what is valid.
  */
+const builderTargets: DragTargets = { item: ".builder-placement[data-builder-placement]", itemKey: "builderPlacement", region: ".builder-region[data-builder-region]", regionKey: "builderRegion" };
+
+/** The drag handle of one placement card (spec 032 FR-038); the card's action menu and shortcuts do the same moves. */
+function DragHandle({ id, label, regions, onDrop }: { id: string; label: string; regions: ReadonlySet<string>; onDrop: (drop: Drop) => void }) {
+  const drag = useDragHandle({ id, allowed: regions, targets: builderTargets, onDrop });
+  return (
+    <button type="button" className="button button-quiet builder-handle" tabIndex={-1} title={label} aria-label={label} {...drag}>
+      <Icon name="menu" size={18} />
+    </button>
+  );
+}
+
 export function PageEditor({
   page,
   template,
@@ -167,6 +181,7 @@ export function PageEditor({
     return { region: regionName(region.id), number: String(region.placements.findIndex((p) => p.id === id) + 1), count: String(region.placements.length) };
   };
   const nameOf = (ref: string) => items.get(ref)?.name ?? ref;
+  const allRegions = new Set(draft.regions.map((r) => r.id));
 
   const ops = {
     move(id: string, ref: string, step: -1 | 1) {
@@ -176,6 +191,10 @@ export function PageEditor({
         return;
       }
       edit(next, id, t("moved", { name: nameOf(ref), ...position(next, id) }));
+    },
+    place(id: string, ref: string, region: string, at: number) {
+      const next = model.place(draft, id, region, at);
+      if (next !== draft) edit(next, id, t("moved", { name: nameOf(ref), ...position(next, id) }));
     },
     moveTo(id: string, ref: string, region: string) {
       const next = model.moveTo(draft, id, region);
@@ -333,7 +352,7 @@ export function PageEditor({
         const policy = template?.regions.find((r) => r.id === region.id)?.policy;
         const headingId = `builder-region-${region.id}`;
         return (
-          <section key={region.id} className="builder-region" aria-labelledby={headingId}>
+          <section key={region.id} className="builder-region" aria-labelledby={headingId} data-builder-region={region.id}>
             <div className="builder-heading">
               <h2 id={headingId}>{regionName(region.id)}</h2>
               {policy ? <span className="builder-template-description">{t("limits", { min: String(policy.minPlacements), max: String(policy.maxPlacements) })}</span> : null}
@@ -358,11 +377,13 @@ export function PageEditor({
                       aria-label={t("placementLabel", { name, ...position(draft, p.id) })}
                       aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown Alt+D Delete"
                       data-testid={`placement-${p.id}`}
+                      data-builder-placement={p.id}
                       onKeyDown={(e) => onCardKey(e, p.id, p.componentRef)}
                     >
                       <div className="builder-heading">
                         <h3 className="builder-template-name">{name}</h3>
                         <div className="builder-actions">
+                          <DragHandle id={p.id} label={t("drag", { name })} regions={allRegions} onDrop={(d) => ops.place(p.id, p.componentRef, d.regionId, d.position)} />
                           <button
                             type="button"
                             className="button button-secondary"

@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import { Icon, type IconName } from "./Icon";
 
 /**
  * Messages with priority and dismissal rules (FR-007). Critical messages persist until the user handles them and are
@@ -15,6 +16,9 @@ export type Message = {
   id: number;
   priority: MessagePriority;
   text: string;
+  /** With a title the message is drawn as a notification card (spec 036 DLS-037): icon, title, then the text. */
+  title?: string;
+  icon?: IconName;
   action?: { label: string; run: () => void };
 };
 
@@ -82,11 +86,18 @@ function MessageItem({ message, dismiss, dismissLabel }: { message: Message; dis
     <div
       className="ui-message"
       data-priority={message.priority}
+      data-card={message.title ? true : undefined}
       onPointerEnter={() => setPaused(true)}
       onPointerLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
+      {message.title ? (
+        <p className="ui-message-title">
+          <Icon name={message.icon ?? (message.priority === "critical" ? "alert" : "bell")} size={18} />
+          <span>{message.title}</span>
+        </p>
+      ) : null}
       <p>{message.text}</p>
       <div className="ui-actions">
         {message.action ? (

@@ -10,15 +10,15 @@ It is binding. Constitution principle XXXI (One design language) and spec [036](
 2. **Arabic and English are equal.** Every layout, type choice, icon and image works right to left and left to right from the first sketch. Arabic is never a translation pass at the end.
 3. **Accessible to everyone.** WCAG 2.2 AA is the floor, not the goal. People of determination use TeamBeats every day with keyboards, screen readers, zoom and switch devices.
 4. **Brand is data.** Colors, type, shape and navigation come from tokens that a tenant chooses in administration. Code never hard-codes a look.
-5. **One system, three designs.** TeamBeats ships three complete designs (Beats, Atlas, Pulse). They share every component, rule and test; only the token values and the navigation style differ.
+5. **One system, four designs.** TeamBeats ships four complete designs (Beats, Atlas, Pulse, Studio). They share every component, rule and test; only the token values and the navigation style differ.
 6. **Calm and trustworthy.** Motion, color and imagery support the content and never compete with it. The same thing always looks and behaves the same way.
 
 ## What is in it
 
 | Part | For | Pages |
 |---|---|---|
-| Designs | Everyone | [The three designs](designs.md) |
-| Design guidelines | Designers, UX writers, researchers, graphics team | [Typography](foundations/typography.md), [Colour](foundations/colour.md), [Icons](foundations/icons.md), [Imagery](foundations/imagery.md), [Content](foundations/content.md), [Layout](foundations/layout.md), [Actions](foundations/actions.md), [Accessibility](foundations/accessibility.md) |
+| Designs | Everyone | [The four designs](designs.md) |
+| Design guidelines | Designers, UX writers, researchers, graphics team | [Typography](foundations/typography.md), [Colour](foundations/colour.md), [Icons](foundations/icons.md), [Imagery](foundations/imagery.md), [Content](foundations/content.md), [Layout](foundations/layout.md), [Actions](foundations/actions.md), [Accessibility](foundations/accessibility.md), [Details](foundations/details.md) |
 | Components and templates | Designers and developers | [Components](components.md), [Templates](templates.md) |
 | Technical guidelines | Frontend developers | [Frontend development](technical/frontend.md), [Security](technical/security.md), [Performance](technical/performance.md), [Consistency](technical/consistency.md) |
 | Testing | Designers, developers, QA | [UI testing strategy](testing.md) |
@@ -27,7 +27,7 @@ It is binding. Constitution principle XXXI (One design language) and spec [036](
 
 | Thing | Place |
 |---|---|
-| Token schema and the three designs | `src/Modules/Experience/Themes/Tokens.cs`, `DesignPresets.cs` |
+| Token schema and the four designs | `src/Modules/Experience/Themes/Tokens.cs`, `DesignPresets.cs` |
 | Theme resolution, contrast checks, CSS | `src/Modules/Experience/Themes/ThemeEngine.cs` |
 | Generated platform tokens for the web app | `src/Web/app/tokens.css` (never edit by hand) |
 | Shared components | `src/Web/components/ui/` |
@@ -45,4 +45,4 @@ It is binding. Constitution principle XXXI (One design language) and spec [036](
 
 ## Changing the system
 
-The design system changes like code: through a pull request that updates the guideline page, the component, its gallery entry and its tests together. A new component, token or design needs a line in spec 036. A change to the three designs that alters what a tenant sees needs a note in the release notes, because every tenant on that design sees it.
+The design system changes like code: through a pull request that updates the guideline page, the component, its gallery entry and its tests together. A new component, token or design needs a line in spec 036. A change to the designs that alters what a tenant sees needs a note in the release notes, because every tenant on that design sees it.

@@ -1,7 +1,7 @@
 namespace TeamBeats.Modules.Experience.Themes;
 
 /// <summary>
-/// The three TeamBeats designs (spec 033 FR-029 to FR-031, spec 036, docs/design-system/designs.md). A design is a complete
+/// The four TeamBeats designs (spec 033 FR-029 to FR-031, spec 036, docs/design-system/designs.md). A design is a complete
 /// set of token values that sits between the platform defaults and the brand in the resolution order, so a tenant picks a
 /// whole look with one choice and can still adjust any token on top of it. Beats is the platform default itself, so it adds
 /// nothing. Every preset passes the contrast checks with no finding in light and dark (unit tests).
@@ -11,10 +11,11 @@ public static class DesignPresets
     public const string Beats = "beats";
     public const string Atlas = "atlas";
     public const string Pulse = "pulse";
+    public const string Studio = "studio";
 
     public const string PresetToken = "design.preset";
 
-    public static readonly IReadOnlyList<string> Keys = [Beats, Atlas, Pulse];
+    public static readonly IReadOnlyList<string> Keys = [Beats, Atlas, Pulse, Studio];
 
     private static TokenValue V(string value, string? dark = null) =>
         new(value, dark is null ? null : new Dictionary<string, string> { [ThemeModes.Dark] = dark });
@@ -128,12 +129,69 @@ public static class DesignPresets
         ["motion.duration.normal"] = V("240ms"),
     };
 
+    /// <summary>
+    /// Studio: clean and neutral, in the manner of modern product dashboards. White and grey surfaces, one blue accent,
+    /// hairline borders, very soft shadows, a light labelled sidebar, Inter. The gradient finish of its buttons is in
+    /// <c>components/ui/designs.css</c>, mixed from these tokens.
+    /// </summary>
+    private static readonly Dictionary<string, TokenValue> StudioTokens = new()
+    {
+        ["layout.navigation"] = V("sidebar"),
+        ["color.surface.base"] = V("#f7f7f7", "#121212"),
+        ["color.surface.raised"] = V("#ffffff", "#1c1c1c"),
+        ["color.surface.sunken"] = V("#ebebeb", "#0a0a0a"),
+        ["color.shell.background"] = V("#ffffff", "#171717"),
+        ["color.shell.text"] = V("#0a0a0a", "#fafafa"),
+        ["color.nav.background"] = V("#ffffff", "#171717"),
+        ["color.nav.text"] = V("#404040", "#d4d4d4"),
+        ["color.nav.active"] = V("#155dfc", "#51a2ff"),
+        ["color.text.primary"] = V("#0a0a0a", "#fafafa"),
+        ["color.text.secondary"] = V("#525252", "#a1a1a1"),
+        ["color.text.inverse"] = V("#ffffff", "#0a0a0a"),
+        ["color.accent.base"] = V("#155dfc", "#51a2ff"),
+        ["color.accent.text"] = V("#ffffff", "#0a1633"),
+        ["color.accent.subtle"] = V("#dbeafe", "#162456"),
+        ["color.highlight.base"] = V("#00786f", "#00d5be"),
+        ["color.link"] = V("#1447e6", "#8ec5ff"),
+        ["color.border.default"] = V("#e5e5e5", "#2e2e2e"),
+        ["color.border.strong"] = V("#858585", "#8a8a8a"),
+        ["color.state.success"] = V("#016630", "#05df72"),
+        ["color.state.warning"] = V("#973c00", "#ffb900"),
+        ["color.state.danger"] = V("#c10007", "#ff6467"),
+        ["color.state.info"] = V("#1447e6", "#51a2ff"),
+        ["color.focus.ring"] = V("#2b7fff", "#51a2ff"),
+        ["color.focus.ring_inverse"] = V("#155dfc", "#51a2ff"),
+        ["color.tint.warm"] = V("#fef3c6", "#3b2a05"),
+        ["color.tint.warm_text"] = V("#973c00", "#ffd230"),
+        ["color.tint.fresh"] = V("#ecfcca", "#1f2e06"),
+        ["color.tint.fresh_text"] = V("#3c6300", "#9ae600"),
+        ["color.tint.cool"] = V("#dbeafe", "#162456"),
+        ["color.tint.cool_text"] = V("#193cb8", "#8ec5ff"),
+        ["color.surface.night"] = V("#0a0a0a", "#262626"),
+        ["color.text.on_night"] = V("#ffffff", "#fafafa"),
+        ["color.surface.campaign"] = V("#1447e6", "#193cb8"),
+        ["color.highlight.bright"] = V("#9ae600", "#9ae600"),
+        ["font.family.latin"] = V("Inter"),
+        ["font.family.arabic"] = V("IBM Plex Sans Arabic"),
+        ["font.family.heading_latin"] = V("Inter"),
+        ["font.family.heading_arabic"] = V("IBM Plex Sans Arabic"),
+        ["font.weight.bold"] = V("600"),
+        ["font.size.xl"] = S("22px", "20px"),
+        ["font.size.xxl"] = S("30px", "26px"),
+        ["radius.sm"] = V("8px"),
+        ["radius.md"] = V("10px"),
+        ["radius.lg"] = V("20px"),
+        ["shadow.sm"] = new("0px 1px 2px 0px #0000000f", new Dictionary<string, string> { [ThemeModes.Dark] = "0px 1px 2px 0px #00000052" }),
+        ["shadow.md"] = new("0px 4px 12px 0px #0000001a", new Dictionary<string, string> { [ThemeModes.Dark] = "0px 4px 12px 0px #00000066" }),
+    };
+
     private static readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, TokenValue>> ByKey =
         new Dictionary<string, IReadOnlyDictionary<string, TokenValue>>
         {
             [Beats] = new Dictionary<string, TokenValue>(),
             [Atlas] = AtlasTokens,
             [Pulse] = PulseTokens,
+            [Studio] = StudioTokens,
         };
 
     /// <summary>The token values a design sets on top of the platform defaults. An unknown key gives the default design.</summary>

@@ -5,7 +5,7 @@ Layout gives every page the same predictable frame so people always know where t
 ## The frame
 
 - **Shell** (spec 008): header bar with identity, search, notifications, tasks, language, settings and the account menu; then the global navigation; then breadcrumbs.
-- **Navigation style** follows the design: Beats uses an icon rail on the start edge, Atlas a top bar of labelled links, Pulse a dark labelled sidebar. On screens up to 1024 px wide all three become the same menu behind one button.
+- **Navigation style** follows the design: Beats uses an icon rail on the start edge, Atlas a top bar of labelled links, Pulse a dark labelled sidebar, Studio a light labelled sidebar. On screens up to 1024 px wide all of them become the same menu behind one button.
 - **Main** holds one `<main id="main">` with one h1. A skip link jumps to it.
 - **Page frame**: content is at most 90rem wide, centred, with `space.lg` padding on each side (`space.md` on phones). Full-bleed sections paint their background to the edge of the content area but their content follows the frame, so nothing touches the navigation and the hero lines up with the grid below.
 - **Page header**: every module page starts with the shared page header and, when the area has several pages, section tabs under it.

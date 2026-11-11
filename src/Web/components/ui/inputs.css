@@ -1,0 +1,629 @@
+/*
+ * Inputs, pickers and dates (spec 036 DLS-035, DLS-036, DLS-038): input groups, search, number, one-time code, color,
+ * combobox, file upload, calendar, date fields, slot picker, carousel and tree view. Tokens only; logical properties.
+ */
+
+/* Input group: one box around the text box and its parts. */
+.ui-input-group {
+  display: flex;
+  align-items: stretch;
+  min-block-size: 2.75rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  transition: border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
+}
+
+.ui-input-group:hover {
+  border-color: var(--tb-color-border-strong);
+}
+
+.ui-input-group:focus-within {
+  border-color: var(--tb-color-accent-base);
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+  outline-offset: 0;
+}
+
+.ui-input-group:has([aria-invalid="true"]) {
+  border-color: var(--tb-color-state-danger);
+}
+
+.ui-input-group > input:where(:not([type="color"])) {
+  flex: 1;
+  min-inline-size: 0;
+  min-block-size: 0;
+  border: 0;
+  border-radius: var(--tb-radius-sm);
+  background: transparent;
+}
+
+.ui-input-group > input:where(:not([type="color"]):focus-visible) {
+  outline: none;
+}
+
+.ui-input-group > input[type="search"]::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+.ui-input-part {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  padding-inline: var(--tb-space-sm);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+  white-space: nowrap;
+}
+
+.ui-input-part:empty {
+  display: none;
+}
+
+.ui-input-part:first-child {
+  padding-inline-end: 0;
+}
+
+.ui-input-part:last-child {
+  padding-inline-start: 0;
+}
+
+.ui-input-action {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--tb-radius-sm);
+  background: transparent;
+  color: var(--tb-color-text-secondary);
+  cursor: pointer;
+}
+
+.ui-input-action:where(:hover:not(:disabled)) {
+  background: var(--tb-color-surface-sunken);
+  color: var(--tb-color-text-primary);
+}
+
+.ui-input-action:disabled {
+  opacity: calc(1 - var(--tb-state-disabled-opacity));
+  cursor: not-allowed;
+}
+
+.ui-field-label {
+  display: block;
+}
+
+/* Number field. */
+.ui-number {
+  display: block;
+  max-inline-size: 14rem;
+}
+
+.ui-number input {
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.ui-input-unit {
+  padding-inline-end: var(--tb-space-xs);
+}
+
+/* One-time code: always left to right. */
+.ui-otp {
+  display: flex;
+  gap: var(--tb-space-sm);
+}
+
+.ui-otp input {
+  inline-size: 2.75rem;
+  padding-inline: 0;
+  font-size: var(--tb-font-size-lg);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--tb-font-weight-medium);
+  text-align: center;
+}
+
+/* Color field. */
+.ui-color {
+  display: grid;
+  gap: var(--tb-space-sm);
+  max-inline-size: 16rem;
+}
+
+.ui-color-swatch {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  padding: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: calc(var(--tb-radius-sm) / 2);
+  background: transparent;
+  cursor: pointer;
+}
+
+.ui-color-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.ui-color-swatch::-webkit-color-swatch,
+.ui-color-swatch::-moz-color-swatch {
+  border: 0;
+}
+
+.ui-color-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+/* The preset takes its color from the inline `color` and paints itself with it. */
+.ui-color-preset {
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  padding: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-full);
+  background: currentcolor;
+  cursor: pointer;
+}
+
+.ui-color-preset[aria-pressed="true"] {
+  outline: var(--tb-border-width-thick) solid var(--tb-color-text-primary);
+  outline-offset: var(--tb-border-width-thick);
+}
+
+/* Combobox. */
+.ui-combobox {
+  display: block;
+}
+
+.ui-combobox-list {
+  min-inline-size: 0;
+  max-inline-size: none;
+  max-block-size: 16rem;
+}
+
+.ui-combobox-list:popover-open {
+  display: grid;
+}
+
+.ui-combobox-empty {
+  margin: 0;
+  padding: var(--tb-space-sm);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+/* File upload. */
+.ui-upload {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.ui-upload-area {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) dashed var(--tb-color-border-strong);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard),
+    background-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
+}
+
+.ui-upload-area:hover,
+.ui-upload-area[data-over] {
+  border-color: var(--tb-color-accent-base);
+  background: var(--tb-color-accent-subtle);
+}
+
+.ui-upload-area:has(.ui-upload-input:focus-visible) {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+  outline-offset: var(--tb-border-width-thick);
+}
+
+.ui-upload-input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ui-upload-icon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2.25rem;
+  block-size: 2.25rem;
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+  color: var(--tb-color-text-secondary);
+}
+
+.ui-upload-label {
+  color: var(--tb-color-link);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.ui-upload-drop {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.ui-upload-list {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-upload-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.ui-upload-item[data-error] {
+  border-color: var(--tb-color-state-danger);
+}
+
+.ui-upload-item[data-error] .ui-upload-icon {
+  color: var(--tb-color-state-danger);
+}
+
+.ui-upload-text {
+  display: grid;
+  flex: 1;
+  gap: calc(var(--tb-space-xs) / 2);
+  min-inline-size: 0;
+}
+
+.ui-upload-name {
+  overflow: hidden;
+  font-weight: var(--tb-font-weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ui-upload-text .ui-progress-label {
+  position: absolute;
+  inline-size: 0.0625rem;
+  block-size: 0.0625rem;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Calendar. */
+.ui-calendar {
+  display: grid;
+  gap: var(--tb-space-sm);
+  inline-size: max-content;
+  min-block-size: 19rem;
+  max-inline-size: 100%;
+}
+
+.ui-calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+}
+
+.ui-calendar-title {
+  margin: 0;
+  font-weight: var(--tb-font-weight-bold);
+}
+
+/* The step back points against the reading direction: the forward chevron, turned. */
+.ui-calendar-previous .icon,
+.ui-carousel-previous .icon {
+  transform: scaleX(-1);
+}
+
+.ui-calendar-previous .icon:where(:dir(rtl)),
+.ui-carousel-previous .icon:where(:dir(rtl)) {
+  transform: none;
+}
+
+.ui-calendar table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.ui-calendar th {
+  block-size: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-medium);
+  text-align: center;
+}
+
+.ui-calendar td {
+  padding: 0;
+  padding-block: calc(var(--tb-space-xs) / 4);
+  border: 0;
+  background: transparent;
+}
+
+.ui-calendar tbody tr:hover > td {
+  background: transparent;
+}
+
+.ui-calendar td[data-range="middle"],
+.ui-calendar td[data-range="start"],
+.ui-calendar td[data-range="end"] {
+  background: var(--tb-color-accent-subtle);
+}
+
+.ui-calendar td[data-range="start"] {
+  border-start-start-radius: var(--tb-radius-sm);
+  border-end-start-radius: var(--tb-radius-sm);
+}
+
+.ui-calendar td[data-range="end"] {
+  border-start-end-radius: var(--tb-radius-sm);
+  border-end-end-radius: var(--tb-radius-sm);
+}
+
+.ui-calendar-day {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--tb-radius-sm);
+  background: transparent;
+  color: var(--tb-color-text-primary);
+  font: inherit;
+  font-size: var(--tb-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.ui-calendar-day:hover:not([aria-disabled="true"]) {
+  background: var(--tb-color-surface-sunken);
+}
+
+/* Today: a short line under the number, so it is not marked by color alone. */
+.ui-calendar-day[aria-current="date"] {
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.ui-calendar-day[aria-current="date"]::after {
+  position: absolute;
+  inset-block-end: 0.3125rem;
+  inset-inline: 0.875rem;
+  block-size: var(--tb-border-width-thick);
+  border-radius: var(--tb-radius-full);
+  background: currentcolor;
+  content: "";
+}
+
+.ui-calendar-day[aria-disabled="true"] {
+  color: var(--tb-color-text-secondary);
+  opacity: calc(1 - var(--tb-state-disabled-opacity));
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.ui-calendar td:is([data-range="selected"], [data-range="start"], [data-range="end"]) > .ui-calendar-day {
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
+}
+
+/* Date field: a button that looks like a text box. */
+.ui-date-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-md);
+  min-block-size: 2.75rem;
+  padding-block: var(--tb-space-sm);
+  padding-inline: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.ui-date-button:hover {
+  border-color: var(--tb-color-border-strong);
+}
+
+.ui-date-button[data-empty] > span,
+.ui-date-button > :where(.icon) {
+  color: var(--tb-color-text-secondary);
+}
+
+.ui-date-button[data-invalid] {
+  border-color: var(--tb-color-state-danger);
+}
+
+.ui-date-popover {
+  max-inline-size: none;
+}
+
+/* Slot picker. */
+.ui-slots {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ui-slots legend {
+  margin-block-end: var(--tb-space-sm);
+  padding: 0;
+}
+
+.ui-slots-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+}
+
+.ui-slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-inline-size: 5rem;
+  min-block-size: 2.25rem;
+  padding-inline: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-raised);
+  font-size: var(--tb-font-size-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.ui-slot input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ui-slot:hover {
+  border-color: var(--tb-color-accent-base);
+}
+
+.ui-slot:has(input:checked) {
+  border-color: var(--tb-color-accent-base);
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.ui-slot:has(input:focus-visible) {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+  outline-offset: var(--tb-border-width-thick);
+}
+
+.ui-slot:has(input:disabled) {
+  border-style: dashed;
+  background: transparent;
+  color: var(--tb-color-text-secondary);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.ui-slot:has(input:disabled) input {
+  cursor: not-allowed;
+}
+
+.ui-slot-note {
+  position: absolute;
+  inline-size: 0.0625rem;
+  block-size: 0.0625rem;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Carousel. */
+.ui-carousel {
+  display: grid;
+  gap: var(--tb-space-sm);
+  min-inline-size: 0;
+}
+
+.ui-carousel-controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--tb-space-xs);
+}
+
+.ui-carousel-track {
+  display: flex;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: var(--tb-space-xs);
+  scroll-padding-inline: var(--tb-space-xs);
+  overflow-x: auto;
+  list-style: none;
+  scroll-snap-type: inline mandatory;
+  scrollbar-width: thin;
+}
+
+.ui-carousel-track > li {
+  flex: none;
+  inline-size: min(18rem, 80%);
+  scroll-snap-align: start;
+}
+
+/* Tree view. */
+.ui-tree,
+.ui-tree ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-tree ul {
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.ui-tree-item {
+  outline: none;
+}
+
+.ui-tree-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  min-block-size: 2.25rem;
+  padding-inline: var(--tb-space-sm);
+  border-radius: var(--tb-radius-sm);
+  font-size: var(--tb-font-size-sm);
+  cursor: pointer;
+}
+
+.ui-tree-row:hover {
+  background: var(--tb-color-surface-sunken);
+}
+
+.ui-tree-item[aria-selected="true"] > .ui-tree-row {
+  background: var(--tb-color-accent-subtle);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.ui-tree-item:focus-visible > .ui-tree-row {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+  outline-offset: calc(-1 * var(--tb-border-width-focus));
+}
+
+.ui-tree-twist {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 1rem;
+  color: var(--tb-color-text-secondary);
+}

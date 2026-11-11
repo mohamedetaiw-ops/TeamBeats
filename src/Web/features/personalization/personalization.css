@@ -1,5 +1,6 @@
 /* Personalization mode (spec 008 US2). A clear mode: areas the user may change get an outline and their tools.
- * The arrange control sits at the top end of the page frame, out of the way of the page title (spec 008 home). */
+ * The arrange control is an icon in the shell bar next to settings (spec 008 FR-059); while arranging, a toolbar with
+ * Done, Undo and Reset sits at the top end of the page frame. */
 .pz-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -72,4 +73,54 @@
 .pz-tools-label {
   font-size: var(--tb-font-size-sm);
   margin-inline-end: var(--tb-space-sm);
+}
+
+/* Drag and drop (spec 008 FR-024): the handle takes the pointer, so touch drags never scroll the page. The item being
+ * moved fades, and a bar shows where it will land. */
+.pz-handle {
+  cursor: grab;
+  touch-action: none;
+}
+
+.pz-handle:active {
+  cursor: grabbing;
+}
+
+.pz-page:has([data-dragging]) {
+  user-select: none;
+}
+
+.pz-page [data-dragging] {
+  opacity: 0.5;
+}
+
+.pz-page .xp-placement[data-drop] {
+  position: relative;
+}
+
+.pz-page .xp-placement[data-drop]::before {
+  position: absolute;
+  inset-inline: 0;
+  block-size: var(--tb-border-width-thick);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-accent-base);
+  content: "";
+}
+
+.pz-page .xp-placement[data-drop="before"]::before {
+  inset-block-start: calc(-1 * var(--tb-space-sm));
+}
+
+.pz-page .xp-placement[data-drop="after"]::before {
+  inset-block-end: calc(-1 * var(--tb-space-sm));
+}
+
+.pz-page .xp-region[data-drop="inside"] {
+  outline-color: var(--tb-color-accent-base);
+  outline-style: solid;
+}
+
+.pz-toggle[aria-pressed="true"] {
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
 }

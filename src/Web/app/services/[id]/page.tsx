@@ -4,6 +4,7 @@ import { apiGet, type Me } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
 import { pick, type Prefill, type PreparedRequest, type ServiceDetail } from "@/lib/services/types";
 import { Header } from "@/components/shell/Header";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { StateView } from "@/components/ui/StateView";
 import { RequestForm } from "@/features/services/RequestForm";
 import { ServicesNav } from "@/features/services/ServicesNav";
@@ -65,11 +66,8 @@ export default async function NewRequestPage({
         ]}
       />
       <main id="main" className="page">
-        <h1>
-          <bdi>{name}</bdi>
-        </h1>
-        {pick(detail.data.service.descriptions, locale) ? <p>{pick(detail.data.service.descriptions, locale)}</p> : null}
-        <ServicesNav current={null} />
+        <PageHeader title={name} description={pick(detail.data.service.descriptions, locale) || undefined} icon="services" nav={<ServicesNav current={null} />} />
+        <div className="ui-form-column">
         {draft ? <p className="notice">{t("form.prepared")}</p> : null}
         {detail.data.hasApproval ? <p className="notice">{t("form.needsApproval")}</p> : null}
         <RequestForm
@@ -80,6 +78,7 @@ export default async function NewRequestPage({
           units={units.ok ? units.data : []}
           allowOnBehalf={detail.data.allowOnBehalf}
         />
+        </div>
       </main>
     </>
   );

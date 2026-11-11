@@ -116,12 +116,44 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.locator(".shell-search-results")).toHaveCount(0);
     });
 
+    test("the search shortcut opens the command palette with the same permitted destinations", async ({ page }) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await expect(page.getByRole("searchbox", { name: msg(locale, "shell.search.label") })).toBeVisible();
+      await page.keyboard.press("Control+K");
+      const palette = page.getByRole("dialog", { name: msg(locale, "shell.search.palette.label") });
+      await expect(palette).toBeVisible();
+      const box = palette.getByRole("combobox");
+      await expect(box).toBeFocused();
+      await expect(palette.getByRole("status")).toHaveText(msg(locale, "shell.search.palette.hint"));
+      await box.fill(setup.teamSlug.split("/")[0]!);
+      await expect(palette.getByRole("option", { name: about() })).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(palette).toBeHidden();
+    });
+
+    test("only one shell panel is open at a time, and a press outside closes it (spec 008 FR-060)", async ({ page }) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      const settings = page.locator(".shell-settings-panel");
+      const account = page.locator(".shell-account-panel");
+      await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
+      await expect(settings).toBeVisible();
+      await page.locator(".shell-avatar").click();
+      await expect(account).toBeVisible();
+      await expect(settings).toBeHidden();
+      await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
+      await expect(settings).toBeVisible();
+      await expect(account).toBeHidden();
+      await page.locator("main").click({ position: { x: 60, y: 60 } });
+      await expect(settings).toBeHidden();
+    });
+
     test("settings are in one place and apply to the page; the menu stays reachable on a phone", async ({ page }) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.getByRole("button", { name: msg(locale, "shell.settings.open") }).click();
-      await page.getByLabel(msg(locale, "shell.settings.density.label")).selectOption("compact");
+      await page.getByRole("radiogroup", { name: msg(locale, "shell.settings.density.label") }).getByRole("radio", { name: msg(locale, "shell.settings.density.compact") }).check();
       await expect(page.locator("html")).toHaveAttribute("data-density", "compact");
-      await page.getByLabel(msg(locale, "shell.settings.motion.label")).selectOption("reduced");
+      await page.getByRole("switch", { name: msg(locale, "shell.settings.reduceMotion") }).focus();
+      await page.keyboard.press("Space");
       await expect(page.locator("html")).toHaveAttribute("data-motion", "reduced");
       await page.getByLabel(msg(locale, "shell.settings.text_scale.label")).selectOption("200");
       await expect(page.locator("html")).toHaveAttribute("style", /font-size: 200%/);
