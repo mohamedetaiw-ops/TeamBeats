@@ -4064,7 +4064,8 @@
       "onprem_ad": "On-premises Active Directory",
       "servicenow": "ServiceNow",
       "jira_service_management": "Jira Service Management",
-      "slack": "Slack"
+      "slack": "Slack",
+      "clock_import": "Clock data import"
     },
     "status": {
       "healthy": "Healthy",
@@ -4087,7 +4088,8 @@
       "actions": "Actions: {names}",
       "webhook": "Send signed events to another system and receive signed deliveries from it.",
       "onprem_ad": "Read users and groups from Active Directory in your own network, through a sync agent you install there.",
-      "slack": "Send notifications as Slack direct messages to people who link their account, and share content links to a channel."
+      "slack": "Send notifications as Slack direct messages to people who link their account, and share content links to a channel.",
+      "clock_import": "Reads clock data files from an SFTP server every day, or takes CSV files you upload, and matches each row to a person by employee number."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -4201,7 +4203,14 @@
       "agent_offline": "The sync agent has not been in touch for 5 minutes",
       "system_ok": "The system answered with this sign-in",
       "system_refused": "The system refused the credential",
-      "system_failed": "The system could not be reached with these settings"
+      "system_failed": "The system could not be reached with these settings",
+      "clock_upload": "Files are uploaded by an administrator, so there is no server to check",
+      "clock_host_key": "The server's host key does not match the fingerprint in the settings",
+      "clock_credential": "The SFTP server refused the user name or credential",
+      "clock_directory": "The folder was not found or cannot be read",
+      "clock_unreachable": "The SFTP server could not be reached",
+      "clock_files": "Signed in and found files waiting to be imported",
+      "clock_no_files": "Signed in; no files matching the pattern are waiting"
     },
     "errors": {
       "business_error": "The system refused for a business reason",
@@ -4222,7 +4231,8 @@
       "unexpected": "Unexpected error",
       "invalid_input": "The input does not match the action",
       "credential_missing": "The credential is not in the secret manager",
-      "request_refused": "The system refused the request"
+      "request_refused": "The system refused the request",
+      "host_key_mismatch": "The server's host key does not match the pinned fingerprint"
     },
     "builder": {
       "title": "Actions",
@@ -4543,6 +4553,111 @@
       "stopped": "Payload capture is off.",
       "failed": "Payload capture could not be changed. Try again.",
       "working": "Working…"
+    },
+    "clock": {
+      "addTitle": "Add a clock data import",
+      "addIntro": "Bring punches from your time and attendance system into TeamBeats. Choose an SFTP server that TeamBeats reads once a day, or upload CSV files yourself. Rows are matched to people by the employee number in their profile. For SFTP, add the server to the allowlist, store the password or private key in your secret manager, and copy the server's SHA256 host key fingerprint.",
+      "formLabel": "Clock data settings",
+      "source": "Where files come from",
+      "sources": {
+        "sftp": "SFTP server, read daily",
+        "upload": "Files uploaded by an administrator"
+      },
+      "sftpTitle": "SFTP server",
+      "host": "SFTP server name",
+      "hostHint": "For example sftp.example.com. The host must be on the allowlist.",
+      "port": "Port",
+      "username": "User name",
+      "authType": "Sign in with",
+      "auth": {
+        "password": "Password",
+        "private_key": "Private key"
+      },
+      "hostKey": "Host key fingerprint",
+      "hostKeyHint": "The SHA256 fingerprint of the server's host key, as ssh-keygen -lf prints it. TeamBeats only signs in to a server with this key.",
+      "directory": "Folder",
+      "directoryHint": "The folder that holds the export files, for example /exports. TeamBeats only reads; it never moves or deletes files.",
+      "pattern": "File names",
+      "patternHint": "Which files to import, with * for any characters and ? for one, for example *.csv. Each file is imported once.",
+      "importAt": "Daily import time",
+      "importAtHint": "Local time in the time zone below.",
+      "csvTitle": "File layout",
+      "delimiter": "Separator",
+      "delimiters": {
+        "comma": "Comma",
+        "semicolon": "Semicolon",
+        "tab": "Tab",
+        "bar": "Vertical bar"
+      },
+      "hasHeader": "The first row holds column headings",
+      "columnsByName": "Enter each column by its heading, exactly as in the file.",
+      "columnsByNumber": "Enter each column by its number, counting from 1.",
+      "columns": {
+        "employeeNumber": "Employee number",
+        "punchId": "Punch ID (optional)",
+        "timestamp": "Date and time",
+        "date": "Date (when date and time are separate)",
+        "time": "Time (when date and time are separate)",
+        "direction": "In or out (optional)",
+        "device": "Reader or device (optional)"
+      },
+      "timestampFormat": "Date and time format (optional)",
+      "formatHint": "For example yyyy-MM-dd HH:mm:ss. Leave empty for ISO 8601.",
+      "dateFormat": "Date format (optional)",
+      "timeFormat": "Time format (optional)",
+      "timeZone": "Time zone",
+      "timeZoneHint": "The time zone of times without an offset, for example Asia/Riyadh.",
+      "inValues": "Words for in",
+      "outValues": "Words for out",
+      "valuesHint": "Separate words with commas, for example IN, I, 1. Case does not matter.",
+      "files": {
+        "title": "Clock data files",
+        "unavailable": "The files cannot be shown right now.",
+        "intro": "Each file read or uploaded, with how many rows were imported. Rows that could not be matched to a person are listed so you can fix them at the source.",
+        "upload": "Upload a CSV file",
+        "uploadHint": "One CSV file, up to 20 MB, in the layout set above.",
+        "importNow": "Import now",
+        "refresh": "Refresh",
+        "working": "Working…",
+        "failed": "Something went wrong. Please try again.",
+        "uploaded": "{name} was uploaded and will be imported shortly.",
+        "queued": "The import has started. Refresh in a moment to see the result.",
+        "empty": "No files have been imported yet.",
+        "statuses": {
+          "pending": "Waiting",
+          "imported": "Imported",
+          "refused": "Refused"
+        },
+        "fromSftp": "From the SFTP server",
+        "uploadedFile": "Uploaded",
+        "received": "Received {at}",
+        "errors": {
+          "time_zone": "The time zone in the settings is not known.",
+          "empty": "The file has no header row.",
+          "missing_column": "A mapped column is not in the file.",
+          "too_many_rows": "The file has more than 500,000 rows.",
+          "too_large": "The file is larger than 50 MB."
+        },
+        "rows": "{count, plural, one {# row} other {# rows}}",
+        "imported": "{count, plural, one {# punch imported} other {# punches imported}}",
+        "duplicates": "{count, plural, one {# already imported} other {# already imported}}",
+        "unmatched": "{count, plural, one {# row not imported} other {# rows not imported}}",
+        "showUnmatched": "Show rows not imported",
+        "unmatchedCaption": "Rows of {name} that were not imported",
+        "line": "Line",
+        "employeeNumber": "Employee number",
+        "reason": "Reason",
+        "noNumber": "None",
+        "reasons": {
+          "unknown_employee": "No active person has this employee number",
+          "missing_employee": "No employee number",
+          "bad_time": "The date or time cannot be read",
+          "bad_direction": "In or out is not one of the configured words",
+          "too_long": "A value is longer than 200 characters"
+        },
+        "firstRows": "Showing the first {count} rows.",
+        "more": "Show more"
+      }
     }
   },
   "components_gallery": {

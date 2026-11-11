@@ -22,6 +22,9 @@
     <ProjectReference Include="../Workflow.Contracts/TeamBeats.Modules.Workflow.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="SSH.NET" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="Migrations/*.sql" />
   </ItemGroup>
 </Project>
