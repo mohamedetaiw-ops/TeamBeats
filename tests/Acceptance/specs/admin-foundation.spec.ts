@@ -43,6 +43,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(saved(page, locale, "admin.tenant.admins.appointed")).toBeVisible();
       await expect(admins.getByRole("row").filter({ hasText: `sara@${tenant.key}.example` })).toContainText(m("admin.tenant.admins.statuses.pending"));
 
+      // Default access by membership type (spec 004 section 6): guests are fixed, contractors can be turned off.
+      const access = page.getByRole("region", { name: m("admin.tenant.membership.title") });
+      await expect(access.getByLabel(m("admin.users.membershipTypes.guest"))).toBeDisabled();
+      await expect(access.getByLabel(m("admin.users.membershipTypes.guest"))).not.toBeChecked();
+      await access.getByLabel(m("admin.users.membershipTypes.contractor")).uncheck();
+      await access.getByRole("button", { name: m("admin.tenant.membership.save") }).click();
+      await expect(saved(page, locale, "admin.tenant.membership.saved")).toBeVisible();
+      await page.reload();
+      await expect(page.getByRole("region", { name: m("admin.tenant.membership.title") }).getByLabel(m("admin.users.membershipTypes.contractor"))).not.toBeChecked();
+
       await openSection(page, tenant.key, locale, "plan");
       await expect(page.getByText(m("admin.plan.packages.workplace"))).toBeVisible();
       await expect(page.locator("#main").getByText(m("admin.plan.capabilities.people_directory"), { exact: true })).toBeVisible();
@@ -88,6 +98,18 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(saved(page, locale, "admin.org.members.added")).toBeVisible();
       await expect(page.getByRole("table", { name: m("admin.org.members.caption", { name: child }) }).getByRole("row")).toHaveCount(2);
       await expectAccessible(page, testInfo, `admin-org-${locale}`);
+
+      // Organization from the directory (spec 002 US5): without a directory connection the mapping cannot be saved.
+      await page.getByRole("link", { name: m("admin.org.directory.open") }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("admin.org.directory.title"));
+      await expect(page.getByText(m("admin.org.directory.status.notSet"))).toBeVisible();
+      await expect(page.getByRole("button", { name: m("admin.org.directory.preview") })).toBeDisabled();
+      await page.getByRole("button", { name: m("admin.org.directory.addAlias") }).click();
+      await page.getByLabel(m("admin.org.directory.aliasFrom")).fill("HR");
+      await page.getByLabel(m("admin.org.directory.aliasTo")).fill("Human Resources");
+      await expectAccessible(page, testInfo, `admin-org-directory-${locale}`);
+      await page.getByRole("button", { name: m("admin.org.directory.save") }).click();
+      await expect(page.getByRole("alert").filter({ hasText: m("admin.common.notDone") })).toBeVisible();
     });
 
     test("an administrator reviews people and removes a role, which closes administration for that person", async ({ page }, testInfo) => {

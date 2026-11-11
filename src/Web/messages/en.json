@@ -157,6 +157,17 @@
           "active": "Active",
           "revoked": "Removed"
         }
+      },
+      "membership": {
+        "title": "Default access by membership type",
+        "intro": "Everyone in the workspace gets the Employee role across the workspace unless you turn it off for their membership type, for example for contractors.",
+        "legend": "Give the Employee role by default to",
+        "on": "Gets the Employee role",
+        "off": "No Employee role by default",
+        "fixed": "Guests never get the Employee role. They only see what is shared with them.",
+        "save": "Save default access",
+        "saving": "Saving default access",
+        "saved": "Default access saved"
       }
     },
     "org": {
@@ -258,6 +269,121 @@
         "membershipsMove": "Move them to another unit",
         "moveMembershipsTo": "Move members to",
         "pick": "Choose a unit"
+      },
+      "directory": {
+        "open": "Map from the directory",
+        "breadcrumb": "Location in organization settings",
+        "title": "Organization from the directory",
+        "description": "Build and keep units up to date from your Microsoft Entra ID directory.",
+        "intro": "Choose how units come from the directory, run a preview to see what would change, then approve it. After that, every directory sync keeps units and primary memberships up to date. Units you create in TeamBeats are never changed.",
+        "readOnly": "You can see the mapping and its runs. Changing it is a whole-workspace action.",
+        "strategy": "Build units from",
+        "strategies": {
+          "attributes": "Directory attributes",
+          "admin_units": "Administrative units",
+          "groups": "Selected groups",
+          "ou_path": "Organizational units (OU path)"
+        },
+        "strategyHints": {
+          "attributes": "Company becomes the top level, then division and department below it.",
+          "admin_units": "Each Entra ID administrative unit becomes a unit.",
+          "groups": "Each group you list becomes a unit.",
+          "ou_path": "Needs an on-premises Active Directory connection, which is not available yet."
+        },
+        "levels": "Levels",
+        "levelsHint": "Top level first. Values that differ only in case or spacing become one unit.",
+        "levelNames": {
+          "company": "Company",
+          "division": "Division",
+          "department": "Department"
+        },
+        "groups": "Group IDs",
+        "groupsHint": "One directory group ID per line.",
+        "parent": "Place directory units under",
+        "parentHint": "Leave at top level to add them as top-level units.",
+        "topLevel": "Top level",
+        "threshold": "Safety threshold (%)",
+        "thresholdHint": "A sync that would deactivate or end more than this share stops and alerts you.",
+        "aliases": "Alias rules",
+        "aliasesHint": "Treat two directory values as the same unit, for example \"HR\" and \"Human Resources\".",
+        "aliasFrom": "Directory value",
+        "aliasTo": "Treat as",
+        "addAlias": "Add alias rule",
+        "removeAlias": "Remove alias rule",
+        "valueMap": "Map values to existing units",
+        "valueMapHint": "Send a directory value to a unit you already manage in TeamBeats instead of creating a new one.",
+        "valueKey": "Directory value path",
+        "valueKeyHint": "As shown in a preview, for example company=acme/department=finance.",
+        "valueUnit": "TeamBeats unit",
+        "chooseUnit": "Choose a unit",
+        "addValue": "Add value mapping",
+        "removeValue": "Remove value mapping",
+        "save": "Save mapping",
+        "saving": "Saving mapping",
+        "saved": "Mapping saved. Run a preview before approving it.",
+        "preview": "Run preview",
+        "previewing": "Running preview",
+        "previewed": "Preview ready. Nothing has changed yet.",
+        "approve": "Approve and apply",
+        "approving": "Applying mapping",
+        "applied": "Mapping applied. Later directory syncs apply it automatically.",
+        "stopped": "The run stopped at the safety threshold. Nothing was changed.",
+        "approveHint": "Any change to the mapping needs a new preview and approval before it is applied.",
+        "status": {
+          "notSet": "Not set up",
+          "saved": "Saved, needs a preview",
+          "previewed": "Previewed, waiting for approval",
+          "approved": "Applied since {when}"
+        },
+        "previewTitle": "What the mapping would change",
+        "appliedTitle": "What the mapping changed",
+        "thresholdExceeded": "This run goes over the safety threshold, so a sync would stop instead of applying it.",
+        "counts": {
+          "create": "Units to create",
+          "rename": "Units to rename",
+          "move": "Units to move",
+          "deactivate": "Units to deactivate",
+          "flagged": "Units left for you",
+          "membershipsAdded": "Memberships to add",
+          "membershipsEnded": "Memberships to end",
+          "unmapped": "People not mapped"
+        },
+        "createTitle": "Units to create",
+        "renameTitle": "Units to rename",
+        "flaggedTitle": "Units left active for you to review",
+        "unmappedTitle": "People not mapped",
+        "unitName": "Unit",
+        "unitType": "Type",
+        "under": "Under",
+        "from": "From",
+        "to": "To",
+        "reason": "Reason",
+        "person": "Person",
+        "flagReasons": {
+          "active_children": "Still has active units under it",
+          "active_memberships": "Still has active members"
+        },
+        "unmappedReasons": {
+          "no_value": "No value in the directory",
+          "ambiguous": "In more than one mapped unit",
+          "inactive": "Target unit is inactive"
+        },
+        "runsTitle": "Recent runs",
+        "noRuns": "No runs yet",
+        "started": "Started",
+        "mode": "Run",
+        "modes": {
+          "preview": "Preview",
+          "apply": "Apply"
+        },
+        "outcome": "Outcome",
+        "outcomes": {
+          "succeeded": "Succeeded",
+          "stopped": "Stopped"
+        },
+        "summary": "Changes",
+        "runSummary": "{create} created, {deactivate} deactivated, {added} memberships added, {ended} ended",
+        "backToTree": "Back to the organization tree"
       }
     },
     "users": {

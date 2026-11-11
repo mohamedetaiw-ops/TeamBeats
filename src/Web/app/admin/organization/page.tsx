@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { OrgUnitView, UnitType } from "@/lib/admin/types";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ButtonLink } from "@/components/ui/Button";
 import { OrganizationAdmin } from "@/features/admin/OrganizationAdmin";
 
 /**
@@ -22,7 +23,16 @@ export default async function OrganizationPage() {
   const t = await getTranslations("admin");
   return (
     <>
-      <PageHeader title={t("nav.organization")} description={t("org.description")} icon="people" />
+      <PageHeader
+        title={t("nav.organization")}
+        description={t("org.description")}
+        icon="people"
+        actions={
+          <ButtonLink href="/admin/organization/directory" variant="secondary" icon="link">
+            {t("org.directory.open")}
+          </ButtonLink>
+        }
+      />
       <OrganizationAdmin initialUnits={units.data} types={types.ok ? types.data : []} />
     </>
   );

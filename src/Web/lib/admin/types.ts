@@ -202,3 +202,46 @@ export function byArea<T>(items: readonly T[], key: (item: T) => string): [strin
   }
   return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
+
+/** Whether a membership type gets the Employee role at tenant scope by default (spec 004 section 6). */
+export type MembershipPolicy = { membershipType: string; defaultEmployeeRole: boolean; fixed: boolean };
+
+/** Directory mapping (spec 002 US5): how units are derived from the directory, previews and runs. */
+export const MAPPING_STRATEGIES = ["attributes", "admin_units", "groups", "ou_path"] as const;
+export const MAPPING_LEVELS = ["company", "division", "department"] as const;
+
+export type OrgMappingSettings = {
+  levels: string[];
+  groups: string[];
+  aliases: { from: string; to: string }[];
+  valueMap: { key: string; unitId: string }[];
+  parentUnitId: string | null;
+};
+
+export type OrgMappingView = {
+  connectionId: string;
+  strategy: string;
+  settings: OrgMappingSettings;
+  deletionThresholdPct: number;
+  previewedAt: string | null;
+  approvedAt: string | null;
+};
+
+export type MappingRun = { id: string; mode: string; startedAt: string; outcome: string; counts: Record<string, number> };
+
+export type MappingDiff = {
+  create: { key: string; parentKey: string | null; parentUnitId: string | null; name: string; typeKey: string }[];
+  reactivate: string[];
+  rename: { unitId: string; key: string; from: string; to: string }[];
+  move: { unitId: string; key: string; fromParentId: string | null; toParentKey: string | null; toParentUnitId: string | null }[];
+  deactivate: string[];
+  flagged: { unitId: string; key: string; reason: string }[];
+  addMemberships: { userId: string; key: string }[];
+  endMemberships: { membershipId: string; userId: string; unitId: string; replaced: boolean }[];
+  unmapped: { userId: string; reason: string }[];
+  thresholdExceeded: boolean;
+};
+
+export type MappingRunResult = { run: MappingRun; diff: MappingDiff };
+
+export type DirectoryMappingState = { mapping: OrgMappingView | null; runs: MappingRun[] };

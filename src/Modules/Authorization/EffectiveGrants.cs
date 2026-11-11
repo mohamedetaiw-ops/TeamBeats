@@ -124,9 +124,11 @@ public sealed class EffectiveGrantsLoader(
             },
             x.Subject == "group" ? "group" : "direct", x.Condition)).ToList();
 
-        // Default Employee role at tenant scope, unless removed for this membership type (spec 004 section 6).
+        // Default Employee role at tenant scope, unless removed for this membership type. Guests never receive it
+        // (spec 004 section 6), whatever their policy row says.
         var policies = await memberships.GetMembershipTypePoliciesAsync(ct);
-        if (!policies.TryGetValue(membership.MembershipType, out var defaultEmployee) || defaultEmployee)
+        if (membership.MembershipType != MembershipTypes.Guest
+            && (!policies.TryGetValue(membership.MembershipType, out var defaultEmployee) || defaultEmployee))
         {
             var employeePermissions = await session.QueryAsync(
                 "select p.permission_key from authz.role r join authz.role_permission p on p.role_id = r.id where r.key = @k",

@@ -768,6 +768,7 @@
   "validation.org.type_key_format": "Use lowercase letters, digits and underscores",
   "validation.org.type_unknown": "Unknown unit type",
   "validation.org.unit_inactive": "The unit is inactive",
+  "validation.membership_policy.guest_fixed": "Guests never get the default Employee role",
   "validation.org_mapping.alias": "Each alias needs a value and a replacement of up to 200 characters",
   "validation.org_mapping.group_id": "Enter directory group IDs (GUIDs)",
   "validation.org_mapping.groups_required": "Choose at least one group",

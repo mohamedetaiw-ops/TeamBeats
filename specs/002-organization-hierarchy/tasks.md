@@ -38,7 +38,7 @@ Depends on 001 Phase 1. Tests first.
 - [x] T022 [P] [US5] Tests: mover ends old membership and starts new one with history; disappearing value with children is flagged; case, spacing and alias normalization
 - [x] T023 [P] [US5] Tests: deletion threshold stops the run before any change; cross-tenant sync isolation; org admin read-only on mapping
 - [ ] T024 [US5] `IDirectoryReader` consumer, diff engine, threshold check and batched apply on the outbox worker
-- [ ] T025 [US5] Mapping page (strategy picker, preview diff, unmapped list, last runs) and "Managed by Active Directory" badge
+- [x] T025 [US5] Mapping page (strategy picker, preview diff, unmapped list, last runs) and "Managed by Active Directory" badge
 - [ ] T026 [US5] HR versus directory hierarchy source setting (FR-014) with tests
 - [ ] T027 [US5] Performance test: first full sync of 20,000 users and 2,000 units under 30 minutes; incremental run of 500 changes under 2 minutes
 
