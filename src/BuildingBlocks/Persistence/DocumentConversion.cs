@@ -16,6 +16,12 @@ public interface IDocumentConverter
 
     /// <summary>The PDF with one line of text at the foot of every page, or null when it could not be stamped.</summary>
     Task<Stream?> StampFooterAsync(Stream pdf, string text, CancellationToken ct = default);
+
+    /// <summary>
+    /// A PDF printed from a self-contained HTML page (spec 022 FR-021 letters), or null when it could not be printed.
+    /// The page must load nothing from outside: the converter is given the HTML alone.
+    /// </summary>
+    Task<Stream?> HtmlToPdfAsync(string html, CancellationToken ct = default);
 }
 
 /// <summary>
@@ -56,6 +62,26 @@ public sealed class GotenbergConverter(IHttpClientFactory clients, Uri baseUrl) 
         return PostAsync("forms/pdfengines/stamp", form, ct);
     }
 
+    /// <summary>
+    /// Gotenberg 8's Chromium route with one index.html and nothing else, A4 with 2 cm margins. Chromium shapes Arabic
+    /// and lays out right to left, which a PDF library alone does not.
+    /// </summary>
+    public Task<Stream?> HtmlToPdfAsync(string html, CancellationToken ct = default)
+    {
+        var form = new MultipartFormDataContent();
+        var file = new StringContent(html, System.Text.Encoding.UTF8);
+        file.Headers.ContentType = new MediaTypeHeaderValue("text/html") { CharSet = "utf-8" };
+        form.Add(file, "files", "index.html");
+        form.Add(new StringContent("8.27"), "paperWidth");
+        form.Add(new StringContent("11.7"), "paperHeight");
+        foreach (var side in new[] { "marginTop", "marginBottom", "marginLeft", "marginRight" })
+        {
+            form.Add(new StringContent("0.79"), side);
+        }
+        form.Add(new StringContent("true"), "printBackground");
+        return PostAsync("forms/chromium/convert/html", form, ct);
+    }
+
     private async Task<Stream?> PostAsync(string route, MultipartFormDataContent form, CancellationToken ct)
     {
         try
@@ -88,4 +114,6 @@ public sealed class UnavailableConverter : IDocumentConverter
     public Task<Stream?> ToPdfAsync(Stream content, string fileName, CancellationToken ct = default) => Task.FromResult<Stream?>(null);
 
     public Task<Stream?> StampFooterAsync(Stream pdf, string text, CancellationToken ct = default) => Task.FromResult<Stream?>(null);
+
+    public Task<Stream?> HtmlToPdfAsync(string html, CancellationToken ct = default) => Task.FromResult<Stream?>(null);
 }

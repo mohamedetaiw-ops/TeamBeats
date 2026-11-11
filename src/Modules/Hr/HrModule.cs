@@ -7,6 +7,7 @@ using TeamBeats.Modules.Hr.Attendance;
 using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Hr.Journeys;
 using TeamBeats.Modules.Hr.Leave;
+using TeamBeats.Modules.Hr.Letters;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
@@ -35,6 +36,7 @@ public static class HrModule
         services.AddMessageHandler<Integrations.Contracts.HrLeaveHandOffChanged, LeaveHrAnswered>("hr.leave_hr_answered");
         services.AddSingleton<Services.Contracts.IModuleServiceSource, LeaveModuleServices>();
         services.AddSingleton<Services.Contracts.IModuleServiceSource, AttendanceModuleServices>();
+        services.AddSingleton<Services.Contracts.IModuleServiceSource, LetterModuleServices>();
         services.AddScoped<JourneyTemplates>();
         services.AddScoped<JourneyService>();
         services.AddScoped<Preboarding>();
@@ -44,6 +46,10 @@ public static class HrModule
         services.AddScoped<Attendance.AttendanceTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<Attendance.AttendanceTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, Attendance.AttendanceTaskSource>("hr.attendance_notify_approval");
+        services.AddScoped<Letters.LetterConfig>();
+        services.AddScoped<Letters.LetterRequests>();
+        services.AddScoped<Letters.LetterTaskSource>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<Letters.LetterTaskSource>());
         services.AddScoped<JourneyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<JourneyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, JourneyTaskSource>("hr.journey_notify_task");
@@ -133,6 +139,7 @@ public static class HrModule
         app.MapLeaveEndpoints();
         app.MapJourneyEndpoints();
         app.MapAttendanceEndpoints();
+        app.MapLetterEndpoints();
         return app;
     }
 }

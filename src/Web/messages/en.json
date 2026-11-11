@@ -99,7 +99,8 @@
       "hr_integration": "HR integration",
       "leave": "Leave",
       "journeys": "Journeys",
-      "attendance": "Attendance"
+      "attendance": "Attendance",
+      "letters": "HR letters"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}",
     "common": {
@@ -2498,7 +2499,8 @@
       "leaveChange": "Leave change",
       "leaveReplacement": "Cover for a colleague",
       "journeyStep": "Journey step",
-      "attendanceRequest": "Attendance request"
+      "attendanceRequest": "Attendance request",
+      "letterRequest": "Letter request"
     },
     "delegation": {
       "title": "While you are away",
@@ -7542,6 +7544,133 @@
       "withdrawn": "The request was withdrawn.",
       "decide": "Your decision",
       "decided": "Your decision was recorded."
+    }
+  },
+  "letters": {
+    "title": "HR letters",
+    "intro": "Ask for a salary certificate, an experience letter or another HR letter, and download it once it is issued.",
+    "unavailableTitle": "Letters are not available",
+    "unavailable": "Your organization's plan does not include HR letters.",
+    "ask": "Ask for a letter",
+    "type": "Letter type",
+    "needsApproval": "HR reviews this letter before it is issued.",
+    "issuedAtOnce": "This letter is issued straight away from your HR record.",
+    "language": "Language",
+    "languages": {
+      "en": "English",
+      "ar": "Arabic"
+    },
+    "addressee": "Addressed to",
+    "addresseeHint": "For example a bank or an embassy. Leave empty for \"To whom it may concern\".",
+    "send": "Ask for the letter",
+    "sending": "Sending",
+    "sent": "Letter {reference} was sent to HR.",
+    "issuedNow": "Letter {reference} is ready to download.",
+    "failed": "The letter could not be saved",
+    "noTypes": "There are no letter types for you yet.",
+    "mine": "My letters",
+    "none": "You have not asked for a letter yet.",
+    "download": "Download PDF",
+    "statuses": {
+      "pending": "Waiting for HR",
+      "approved": "Being prepared",
+      "issued": "Issued",
+      "rejected": "Not approved",
+      "withdrawn": "Withdrawn"
+    },
+    "fields": {
+      "name": "Name",
+      "employee_number": "Employee number",
+      "job_title": "Job title",
+      "grade": "Grade",
+      "hire_date": "Hire date"
+    },
+    "detail": {
+      "title": "Letter",
+      "reference": "Reference",
+      "person": "Employee",
+      "status": "Status",
+      "issuedAt": "Issued on",
+      "printing": "The letter is approved and is being prepared. It will be ready shortly.",
+      "withdraw": "Withdraw the letter",
+      "withdrawn": "The letter was withdrawn.",
+      "values": "What the letter will say",
+      "valuesIntro": "Values from the HR record are shown as they are. Type in anything the letter needs that HR does not hold, then approve.",
+      "missing": "Needed before the letter can be approved.",
+      "saveValues": "Save the values",
+      "valuesSaved": "The values were saved.",
+      "decide": "Decide on this letter",
+      "decided": "Your decision was recorded."
+    },
+    "verify": {
+      "title": "Verify a letter",
+      "intro": "Type the verification code printed at the foot of the letter. Only the reference, the letter type, the issue date and the company are shown.",
+      "code": "Verification code",
+      "check": "Verify",
+      "valid": "This letter was issued",
+      "reference": "Reference",
+      "type": "Letter type",
+      "issuedOn": "Issued on",
+      "company": "Company",
+      "notFoundTitle": "No letter matches this code",
+      "notFound": "Check the code and try again. If it still does not match, contact the company that issued the letter."
+    },
+    "admin": {
+      "title": "HR letters",
+      "intro": "Letter types and their templates in English and Arabic, the public verification page and the letters of the people you cover.",
+      "notInPackage": "Your organization's plan does not include HR letters.",
+      "failed": "The change could not be saved",
+      "saved": "Saved.",
+      "saving": "Saving",
+      "wholeOrganization": "Whole organization",
+      "settings": {
+        "title": "Verification page",
+        "verification": "Let anyone holding a letter check it without signing in",
+        "verificationHint": "The page shows only the reference, the letter type, the issue date and the company.",
+        "wholeOrganizationOnly": "Only HR officers of the whole organization can change this."
+      },
+      "types": {
+        "title": "Letter types",
+        "caption": "Letter types",
+        "empty": "No letter types yet",
+        "name": "Name",
+        "unit": "Applies to",
+        "approval": "Approval",
+        "approvalYes": "HR approves",
+        "approvalNo": "Issued at once",
+        "state": "State",
+        "active": "Active",
+        "inactive": "Inactive",
+        "actions": "Actions",
+        "edit": "Edit"
+      },
+      "editor": {
+        "newTitle": "New letter type",
+        "editTitle": "Edit {key}",
+        "placeholders": "Templates are plain text. Placeholders you can use: {list}, and the keys of the fields below. Leave a blank line between paragraphs.",
+        "key": "Key",
+        "nameEn": "Name in English",
+        "nameAr": "Name in Arabic",
+        "templateEn": "Letter in English",
+        "templateAr": "Letter in Arabic",
+        "fields": "Fields HR types in",
+        "fieldsHint": "Values HR does not hold, such as a salary. A type with fields always needs approval.",
+        "field": "Field {n}",
+        "fieldKey": "Field key",
+        "addField": "Add a field",
+        "removeField": "Remove",
+        "needsApproval": "HR approves each letter",
+        "needsApprovalHint": "Without approval the letter is issued at once from the HR record.",
+        "active": "People can ask for this letter",
+        "save": "Save the letter type",
+        "new": "New type"
+      },
+      "letters": {
+        "title": "Letters",
+        "caption": "Letters of the people you cover",
+        "empty": "No letters yet",
+        "asked": "Asked on"
+      }
     }
   }
 }

@@ -1,0 +1,78 @@
+/* Spec 022 letter pages. Colors and spacing come from tokens. */
+.letters {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.letters-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  min-inline-size: 0;
+}
+
+.letters-section h2,
+.letters-section h3 {
+  margin: 0;
+}
+
+.letters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.letters-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.letters-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.letters-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--tb-space-sm);
+  margin: 0;
+}
+
+.letters-facts div {
+  padding: var(--tb-space-sm);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+}
+
+.letters-facts dt {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.letters-facts dd {
+  margin: 0;
+  font-weight: var(--tb-font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.letters-download {
+  color: var(--tb-color-link);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.letters-verify {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 40rem;
+}

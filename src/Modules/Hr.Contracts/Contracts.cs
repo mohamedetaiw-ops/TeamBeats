@@ -168,6 +168,9 @@ public sealed record LeaveApproved(Guid RequestId, Guid UserId, DateOnly From, D
 /// <summary>An approved correction changed a person's attendance day (spec 022 section 12). IDs and the date only.</summary>
 public sealed record AttendanceCorrected(Guid RequestId, Guid UserId, DateOnly Date) : IIntegrationEvent;
 
+/// <summary>An HR letter was issued as a PDF (spec 022 section 12). IDs and the reference only, never the letter's content.</summary>
+public sealed record LetterIssued(Guid LetterId, Guid UserId, string Reference) : IIntegrationEvent;
+
 /// <summary>Approved leave was cancelled, or shortened (then <see cref="From"/> and <see cref="To"/> are the days given back).</summary>
 public sealed record LeaveCancelled(Guid RequestId, Guid UserId, DateOnly From, DateOnly To) : IIntegrationEvent;
 
