@@ -4127,7 +4127,8 @@
       "jira_service_management": "Jira Service Management",
       "slack": "Slack",
       "clock_import": "Clock data import",
-      "finance_rest": "Finance hand-off"
+      "finance_rest": "Finance hand-off",
+      "google_workspace": "Google Workspace"
     },
     "status": {
       "healthy": "Healthy",
@@ -4152,7 +4153,8 @@
       "onprem_ad": "Read users and groups from Active Directory in your own network, through a sync agent you install there.",
       "slack": "Send notifications as Slack direct messages to people who link their account, and share content links to a channel.",
       "clock_import": "Reads clock data files from an SFTP server every day, or takes CSV files you upload, and matches each row to a person by employee number.",
-      "finance_rest": "Sends approved expense claims to your finance system over REST and reads back their payment status."
+      "finance_rest": "Sends approved expense claims to your finance system over REST and reads back their payment status.",
+      "google_workspace": "Reads users and groups for directory sync, and files in chosen shared drives, through a service account with domain-wide delegation."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -4273,7 +4275,11 @@
       "clock_directory": "The folder was not found or cannot be read",
       "clock_unreachable": "The SFTP server could not be reached",
       "clock_files": "Signed in and found files waiting to be imported",
-      "clock_no_files": "Signed in; no files matching the pattern are waiting"
+      "clock_no_files": "Signed in; no files matching the pattern are waiting",
+      "google_key_invalid": "The secret is not a service account private key, or it belongs to another service account",
+      "google_delegation_refused": "Google refused the token. Check domain-wide delegation for the service account and its scopes",
+      "google_drives_ok": "Every listed shared drive can be read",
+      "google_drives_missing": "Some listed shared drives cannot be read. Add the administrator as a member of each drive"
     },
     "errors": {
       "business_error": "The system refused for a business reason",
@@ -4791,6 +4797,32 @@
           "rejected": "Rejected"
         }
       }
+    },
+    "google": {
+      "formLabel": "Google Workspace settings",
+      "addTitle": "Add a Google Workspace connection",
+      "addIntro": "Read users and groups for directory sync, and files in chosen shared drives, from your Google Workspace. In Google Cloud, create a service account and give it domain-wide delegation in the Google Admin console with the scopes TeamBeats lists below. Store its key file in your secret manager, and add oauth2.googleapis.com, admin.googleapis.com and, for Google Drive, www.googleapis.com to the allowlist.",
+      "domain": "Primary domain",
+      "domainHint": "The primary domain of your Google Workspace, for example example.com.",
+      "adminEmail": "Administrator email",
+      "adminEmailHint": "TeamBeats reads the directory and the shared drives as this administrator. For Google Drive, add this person as a member of each shared drive.",
+      "serviceAccount": "Service account email",
+      "serviceAccountHint": "It ends with .iam.gserviceaccount.com. Delegate these scopes to it: admin.directory.user.readonly and admin.directory.group.readonly for directory sync, drive.readonly for Google Drive.",
+      "keyRef": "Key reference",
+      "keyRefHint": "The reference of the service account key file, or of its private key, in your secret manager. Never enter the key itself.",
+      "customerId": "Customer ID (optional)",
+      "customerIdHint": "Shown in the Google Admin console under Account settings. Leave it empty to use the administrator's own account.",
+      "featuresTitle": "Use this connection for",
+      "features": {
+        "directory": "Directory sync of users and groups",
+        "drive": "Files in Google Drive shared drives"
+      },
+      "sharedDrives": "Shared drive IDs",
+      "sharedDrivesHint": "One ID per line, from the address of each shared drive. TeamBeats never reads any other drive.",
+      "directoryTitle": "Directory sync",
+      "directoryIntro": "Make this connection the source of directory sync. Users are matched by their Google ID, and anyone Google no longer lists loses access at the next sync, within the deletion threshold.",
+      "useForDirectory": "Use for directory sync",
+      "directoryUsed": "Directory sync now reads from this Google Workspace."
     }
   },
   "components_gallery": {

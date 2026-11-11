@@ -29,7 +29,7 @@ Depends on 004, 005, 006, 015, 024, 026, 027. R2.
 - [x] T016 [US7] SFTP and CSV clock data import; finance hand-off contract
 - [x] T017 ServiceNow and Jira Service Management ticketing packs
 - [x] T018 [US8] Slack pack for notifications and sharing
-- [ ] T019 Google Workspace directory and Drive extension points
+- [x] T019 Google Workspace directory and Drive extension points
 
 ## Final phase
 - [ ] T020 Connector-down suite in CI; performance tests; OpenAPI; R2 implementation notes; spec evidence

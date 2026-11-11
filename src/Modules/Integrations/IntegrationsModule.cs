@@ -78,6 +78,12 @@ public static class IntegrationsModule
         services.AddScoped<Finance.FinanceHandOffs>();
         services.AddScoped<IFinanceHandOff>(sp => sp.GetRequiredService<Finance.FinanceHandOffs>());
         services.AddScoped<IConnectionDependents, Finance.FinanceDependents>();
+        services.AddScoped<Google.GoogleSignIn>();
+        services.AddScoped<Google.GoogleApi>();
+        services.AddScoped<Google.GooglePack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Google.GooglePack>());
+        services.AddScoped<IPackDirectory, Google.GoogleDirectory>();
+        services.AddScoped<IDocumentRepository, Google.GoogleDrive>();
         services.AddScoped<Webhooks.WebhookPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.WebhookPack>());
         services.AddScoped<Webhooks.InboundWebhooks>();

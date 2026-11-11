@@ -152,10 +152,14 @@ export const CHECK_RESULTS = [
   "clock_unreachable",
   "clock_files",
   "clock_no_files",
+  "google_key_invalid",
+  "google_delegation_refused",
+  "google_drives_ok",
+  "google_drives_missing",
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest", "google_workspace"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -215,6 +219,19 @@ export type ClockFile = {
   importedAt: string | null;
 };
 export type ClockFilePage = { items: ClockFile[]; nextCursor: string | null };
+/** Settings of a Google Workspace connection (spec 017 T019). The key stays in the secret manager. */
+export type GoogleSettings = {
+  domain: string;
+  adminEmail: string;
+  serviceAccountEmail: string;
+  privateKeyRef: string;
+  customerId: string | null;
+  features: string[];
+  sharedDrives: string[];
+  expiresOn: string | null;
+};
+export const GOOGLE_FEATURES = ["directory", "drive"] as const;
+
 /** Settings of a finance hand-off connection beyond address and sign-in (spec 017 FR-021). */
 export type FinanceSettings = {
   submitPath: string | null;

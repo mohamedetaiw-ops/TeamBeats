@@ -4127,7 +4127,8 @@
       "jira_service_management": "Jira Service Management",
       "slack": "Slack",
       "clock_import": "استيراد بيانات الحضور",
-      "finance_rest": "التسليم إلى المالية"
+      "finance_rest": "التسليم إلى المالية",
+      "google_workspace": "Google Workspace"
     },
     "status": {
       "healthy": "سليم",
@@ -4152,7 +4153,8 @@
       "onprem_ad": "اقرأ المستخدمين والمجموعات من Active Directory في شبكتك، عبر وكيل مزامنة تثبّته هناك.",
       "slack": "إرسال الإشعارات كرسائل مباشرة في Slack للأشخاص الذين يربطون حساباتهم، ومشاركة روابط المحتوى في قناة.",
       "clock_import": "يقرأ ملفات بيانات الحضور من خادم SFTP يوميًا، أو يأخذ ملفات CSV ترفعها، ويطابق كل صف مع موظف حسب الرقم الوظيفي.",
-      "finance_rest": "يرسل مطالبات المصروفات المعتمدة إلى نظام المالية عبر REST ويقرأ حالة الدفع."
+      "finance_rest": "يرسل مطالبات المصروفات المعتمدة إلى نظام المالية عبر REST ويقرأ حالة الدفع.",
+      "google_workspace": "يقرأ المستخدمين والمجموعات لمزامنة الدليل، والملفات في مساحات مشتركة تختارها، عبر حساب خدمة بتفويض على مستوى النطاق."
     },
     "add": {
       "title": "إضافة اتصال REST مخصص",
@@ -4273,7 +4275,11 @@
       "clock_directory": "المجلد غير موجود أو لا يمكن قراءته",
       "clock_unreachable": "تعذر الوصول إلى خادم SFTP",
       "clock_files": "تم تسجيل الدخول وتوجد ملفات تنتظر الاستيراد",
-      "clock_no_files": "تم تسجيل الدخول، ولا توجد ملفات مطابقة للنمط تنتظر الاستيراد"
+      "clock_no_files": "تم تسجيل الدخول، ولا توجد ملفات مطابقة للنمط تنتظر الاستيراد",
+      "google_key_invalid": "السر ليس مفتاحا خاصا لحساب خدمة، أو أنه يخص حساب خدمة آخر",
+      "google_delegation_refused": "رفضت Google الرمز. تحقق من التفويض على مستوى النطاق لحساب الخدمة ونطاقاته",
+      "google_drives_ok": "يمكن قراءة كل المساحات المشتركة المدرجة",
+      "google_drives_missing": "تعذرت قراءة بعض المساحات المشتركة المدرجة. أضف المسؤول عضوا في كل مساحة"
     },
     "errors": {
       "business_error": "رفض النظام لسبب يتعلق بالعمل",
@@ -4791,6 +4797,32 @@
           "rejected": "مرفوضة"
         }
       }
+    },
+    "google": {
+      "formLabel": "إعدادات Google Workspace",
+      "addTitle": "إضافة اتصال Google Workspace",
+      "addIntro": "اقرأ المستخدمين والمجموعات لمزامنة الدليل، والملفات في مساحات مشتركة تختارها، من Google Workspace. أنشئ في Google Cloud حساب خدمة وامنحه التفويض على مستوى النطاق في وحدة تحكم مشرف Google بالنطاقات المذكورة أدناه. احفظ ملف مفتاحه في مدير الأسرار، وأضف oauth2.googleapis.com وadmin.googleapis.com و، لـ Google Drive، www.googleapis.com إلى قائمة السماح.",
+      "domain": "النطاق الأساسي",
+      "domainHint": "النطاق الأساسي لحساب Google Workspace، مثل example.com.",
+      "adminEmail": "البريد الإلكتروني للمسؤول",
+      "adminEmailHint": "تقرأ TeamBeats الدليل والمساحات المشتركة بصفة هذا المسؤول. لـ Google Drive، أضفه عضوا في كل مساحة مشتركة.",
+      "serviceAccount": "البريد الإلكتروني لحساب الخدمة",
+      "serviceAccountHint": "ينتهي بـ .iam.gserviceaccount.com. فوّض إليه هذه النطاقات: admin.directory.user.readonly وadmin.directory.group.readonly لمزامنة الدليل، وdrive.readonly لـ Google Drive.",
+      "keyRef": "مرجع المفتاح",
+      "keyRefHint": "مرجع ملف مفتاح حساب الخدمة، أو مفتاحه الخاص، في مدير الأسرار. لا تُدخل المفتاح نفسه أبدا.",
+      "customerId": "معرّف العميل (اختياري)",
+      "customerIdHint": "يظهر في وحدة تحكم مشرف Google ضمن إعدادات الحساب. اتركه فارغا لاستخدام حساب المسؤول نفسه.",
+      "featuresTitle": "استخدم هذا الاتصال لـ",
+      "features": {
+        "directory": "مزامنة دليل المستخدمين والمجموعات",
+        "drive": "الملفات في المساحات المشتركة على Google Drive"
+      },
+      "sharedDrives": "معرّفات المساحات المشتركة",
+      "sharedDrivesHint": "معرّف واحد في كل سطر، من عنوان كل مساحة مشتركة. لا تقرأ TeamBeats أي مساحة أخرى.",
+      "directoryTitle": "مزامنة الدليل",
+      "directoryIntro": "اجعل هذا الاتصال مصدر مزامنة الدليل. يُطابق المستخدمون بمعرّف Google، ومن لم تعد Google تدرجه يفقد الوصول في المزامنة التالية، ضمن حد الحذف.",
+      "useForDirectory": "استخدم لمزامنة الدليل",
+      "directoryUsed": "مزامنة الدليل تقرأ الآن من Google Workspace هذا."
     }
   },
   "components_gallery": {

@@ -223,6 +223,38 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByText(msg(locale, "connections.checks.credential_missing"))).toBeVisible();
     });
 
+    test("an administrator adds a Google Workspace connection for directory sync and Drive and sees its test stop at the missing key", async ({ page }, testInfo) => {
+      const own = await createTenant(`gws-${locale}`, locale, "workplace_plus");
+      const name = locale === "ar" ? "حساب Google" : "Company Google";
+
+      await signInWithDevForm(page, own.key, own.adminEmail, locale);
+      await page.goto(`${hostOrigin(own.key)}/admin/connections`);
+      for (const host of ["oauth2.googleapis.com", "admin.googleapis.com", "www.googleapis.com"]) {
+        await page.getByLabel(msg(locale, "connections.allowlist.host")).fill(host);
+        await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
+        await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", host) })).toBeVisible();
+      }
+
+      const add = page.getByRole("form", { name: msg(locale, "connections.google.formLabel") });
+      await add.getByLabel(msg(locale, "connections.settings.name")).fill(name);
+      await add.getByLabel(msg(locale, "connections.google.domain"), { exact: true }).fill(`${own.key}.example`);
+      await add.getByLabel(msg(locale, "connections.google.adminEmail"), { exact: true }).fill(`admin@${own.key}.example`);
+      await add.getByLabel(msg(locale, "connections.google.serviceAccount"), { exact: true }).fill("teambeats-sync@acme-intranet.iam.gserviceaccount.com");
+      await add.getByLabel(msg(locale, "connections.google.keyRef"), { exact: true }).fill(`secret://tenants/${own.id}/google-key`);
+      await add.getByLabel(msg(locale, "connections.google.features.drive"), { exact: true }).check();
+      await add.getByLabel(msg(locale, "connections.google.sharedDrives"), { exact: true }).fill("0AAbcDriveFinance1");
+      await add.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await expect(page.getByLabel(msg(locale, "connections.google.sharedDrives"), { exact: true })).toHaveValue("0AAbcDriveFinance1");
+      await expect(page.getByRole("button", { name: msg(locale, "connections.google.useForDirectory") })).toBeVisible();
+      await expectAccessible(page, testInfo, `google-connection-${locale}`);
+
+      // The key is not in the secret manager, so the test stops before calling Google.
+      await page.getByRole("button", { name: msg(locale, "connections.detail.test"), exact: true }).click();
+      await expect(page.getByText(msg(locale, "connections.checks.google_key_invalid"))).toBeVisible();
+    });
+
     test("an administrator adds a Microsoft 365 connection, reads its permissions, turns a feature off and on and deletes it", async ({ page }, testInfo) => {
       const name = locale === "ar" ? "مستأجر الشركة" : "Company tenant";
       const tenantId = locale === "ar" ? "7b2a4c11-3f5e-4d6a-9b8c-0d1e2f3a4b5c" : "6a1b3c22-4e5f-4a7b-8c9d-1e2f3a4b5c6d";

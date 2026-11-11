@@ -1191,6 +1191,10 @@
   "integrations.test.clock_unreachable": "The SFTP server could not be reached",
   "integrations.test.clock_files": "Signed in and found files waiting to be imported",
   "integrations.test.clock_no_files": "Signed in; no files matching the pattern are waiting",
+  "integrations.test.google_key_invalid": "The secret is not a service account private key, or it belongs to another service account",
+  "integrations.test.google_delegation_refused": "Google refused the token. Check domain-wide delegation for the service account and its scopes",
+  "integrations.test.google_drives_ok": "Every listed shared drive can be read",
+  "integrations.test.google_drives_missing": "Some listed shared drives cannot be read. Add the administrator as a member of each drive",
   "validation.sync_agent.name": "Enter a name for the agent of up to 100 characters.",
   "validation.sync_agent.version": "The agent version is too long.",
   "validation.sync_agent.public_key": "The public key must be an ECDSA P-256 key.",
@@ -1258,5 +1262,12 @@
   "validation.finance.source_type": "The claim type must be lowercase letters and underscores.",
   "validation.finance.employee_number": "The claim needs the employee number of the person.",
   "validation.finance.currency": "The currency must be a three-letter ISO code such as SAR.",
-  "validation.finance.lines": "The claim needs 1 to 200 lines with a category and an amount above zero that add up to the total."
+  "validation.finance.lines": "The claim needs 1 to 200 lines with a category and an amount above zero that add up to the total.",
+  "validation.google.domain": "Enter the primary domain of your Google Workspace, for example example.com.",
+  "validation.google.admin_email": "Enter the email of a Google Workspace administrator in that domain.",
+  "validation.google.service_account": "Enter the service account email, which ends with .iam.gserviceaccount.com.",
+  "validation.google.customer_id": "Enter the customer ID from the Google Admin console, or leave it empty.",
+  "validation.google.features": "Choose directory sync, Google Drive or both.",
+  "validation.google.shared_drives": "List between 1 and 50 shared drive IDs for Google Drive.",
+  "validation.google.host_not_allowed": "Add oauth2.googleapis.com and the Google API hosts of the features you use to the allowlist first."
 }
