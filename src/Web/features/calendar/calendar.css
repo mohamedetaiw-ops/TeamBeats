@@ -1,0 +1,256 @@
+/* The unified calendar screens (spec 037). Parts come from components/ui/calendar.css; this file only lays them out. */
+
+.cal-card {
+  display: grid;
+  gap: var(--tb-space-sm);
+  min-inline-size: 0;
+}
+
+.cal-card-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+}
+
+.cal-card-view {
+  padding-block: 0.125rem;
+  padding-inline: var(--tb-space-sm);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-surface-sunken);
+  color: var(--tb-color-text-primary);
+  font-size: var(--tb-font-size-sm);
+  text-decoration: none;
+}
+
+.cal-card-view:hover {
+  text-decoration: underline;
+}
+
+.cal-card-all {
+  display: inline-flex;
+  gap: var(--tb-space-xs);
+  align-items: center;
+  justify-self: start;
+  color: var(--tb-color-link);
+  font-size: var(--tb-font-size-sm);
+}
+
+.cal-alerts {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+  font-size: var(--tb-font-size-sm);
+  list-style: none;
+}
+
+.cal-alerts li {
+  display: flex;
+  gap: var(--tb-space-xs);
+  align-items: center;
+}
+
+.cal-empty {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.cal-error,
+.cal-warning {
+  margin: 0;
+  color: var(--tb-color-state-danger);
+  font-size: var(--tb-font-size-sm);
+}
+
+.cal-warning {
+  color: var(--tb-color-text-primary);
+}
+
+.cal-fresh {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-inline-start: var(--tb-border-width-thick) solid var(--tb-color-state-warning);
+  background: var(--tb-color-tint-warm);
+  color: var(--tb-color-tint-warm-text);
+  font-size: var(--tb-font-size-sm);
+}
+
+.cal-fresh p {
+  margin: 0;
+}
+
+.cal-detail-line,
+.cal-detail-text {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+}
+
+.cal-detail-text {
+  white-space: pre-line;
+}
+
+.cal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  align-items: center;
+}
+
+.cal-rsvp {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.cal-workspace {
+  display: grid;
+  gap: var(--tb-space-md);
+  min-inline-size: 0;
+}
+
+.cal-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cal-agenda {
+  display: grid;
+  gap: var(--tb-space-xs);
+  max-inline-size: 48rem;
+}
+
+.cal-week {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.cal-week-grid {
+  overflow-x: auto;
+}
+
+.cal-month {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+@media (min-width: 900px) {
+  .cal-month[data-panel="open"] {
+    grid-template-columns: minmax(0, 1fr) 22rem;
+    align-items: start;
+  }
+}
+
+.cal-team {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.cal-people {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cal-people li {
+  display: flex;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.cal-person {
+  display: grid;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.cal-person-dates {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.cal-manage {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.cal-manage-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cal-manage h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.cal-manage-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin-block: var(--tb-space-sm) 0;
+  margin-inline: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cal-manage-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.cal-manage-item {
+  display: grid;
+  flex: 1;
+  min-inline-size: 12rem;
+}
+
+.cal-manage-title {
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.cal-form {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.cal-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--tb-space-md);
+}
+
+.cal-settings {
+  display: grid;
+  gap: var(--tb-space-sm);
+  max-inline-size: 40rem;
+}
+
+.cal-fieldset {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+}

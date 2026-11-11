@@ -7202,5 +7202,182 @@
         "cancelled": "Cancelled"
       }
     }
+  },
+  "calendar": {
+    "title": "Calendar",
+    "intro": "Your meetings, company events, holidays and leave in one place.",
+    "failed": "The calendar could not be loaded. Try again in a moment.",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "todayWith": "Today, {date}",
+    "todayButton": "Today",
+    "previous": "Previous",
+    "next": "Next",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "weekLabel": "Days of the week",
+    "legend": "Shown on your calendar",
+    "layersLabel": "Show on the calendar",
+    "itemCount": "{count, plural, =0 {nothing planned} one {# item} other {# items}}",
+    "allDay": "All day",
+    "halfDay": "Half day",
+    "timeRange": "{start} to {end}",
+    "dateRange": "{start} to {end}",
+    "until": "Until {end}",
+    "online": "Online",
+    "private": "Private appointment",
+    "busy": "Busy",
+    "onLeave": "On leave",
+    "teamAway": "{count, plural, one {# team member on leave} other {# team members on leave}}",
+    "cancelledTitle": "Cancelled: {title}",
+    "recurring": "Repeats",
+    "joinLabel": "Join {title}",
+    "nothing": "Nothing planned for this day.",
+    "nothingLeft": "Nothing else today.",
+    "nothingRange": "Nothing planned in these days.",
+    "noLayers": "Every layer is turned off",
+    "noLayersHint": "Turn on a layer above to see its items.",
+    "seeMore": "{count, plural, one {See # more in the calendar} other {See # more in the calendar}}",
+    "openCalendar": "Open the calendar",
+    "views": {
+      "label": "View",
+      "agenda": "Agenda",
+      "week": "Week",
+      "month": "Month",
+      "team": "Team"
+    },
+    "layers": {
+      "meeting": "Meetings",
+      "company": "Company events",
+      "department": "Department events",
+      "important": "Important dates",
+      "holiday": "Holidays",
+      "my_leave": "My leave",
+      "team_leave": "Team leave"
+    },
+    "sources": {
+      "outlook": "Outlook",
+      "google": "Google Calendar",
+      "events": "TeamBeats events",
+      "holidays": "Holidays",
+      "leave": "Leave",
+      "other": "Calendar"
+    },
+    "status": {
+      "pending": "Pending approval",
+      "cancelled": "Cancelled",
+      "tentative": "Tentative",
+      "free": "Free"
+    },
+    "actions": {
+      "join": "Join",
+      "openOutlook": "Open in Outlook",
+      "openGoogle": "Open in Google Calendar",
+      "openLeave": "Open the request",
+      "viewTeam": "See team availability"
+    },
+    "fresh": {
+      "stale": "{source} could not be updated. Showing what was last synchronized at {time}.",
+      "down": "{source} could not be read right now. Other items are still shown.",
+      "setup": "{source} is not set up for you yet.",
+      "retry": "Try again"
+    },
+    "alerts": {
+      "holiday": "{title} on {date}",
+      "team": "{count, plural, one {# team member on leave today} other {# team members on leave today}}"
+    },
+    "rsvp": {
+      "question": "Are you going?",
+      "closed": "Answers are closed.",
+      "going": "Going",
+      "maybe": "Maybe",
+      "declined": "Not going",
+      "counts": "{going} going, {maybe} maybe, {declined} not going",
+      "failed": "Your answer was not saved. Try again."
+    },
+    "team": {
+      "none": "Team availability is for people with a team.",
+      "availableToday": "Available today",
+      "onLeaveToday": "On leave today",
+      "startingSoon": "Leave starting in the next 7 days",
+      "ofTotal": "{available} of {total}",
+      "heatTitle": "Available each day (staffing threshold {threshold}%)",
+      "breaches": "{count, plural, one {# day is under the {threshold}% threshold.} other {# days are under the {threshold}% threshold.}}",
+      "underThreshold": "Under the threshold",
+      "nonWorking": "Not a working day",
+      "share": "{share}%",
+      "cell": "{date}: {available} of {total} available",
+      "upcoming": "Upcoming leave",
+      "noUpcoming": "No leave coming up.",
+      "more": "{count, plural, one {# more person is not listed.} other {# more people are not listed.}}",
+      "status": {
+        "approved": "Approved",
+        "pending": "Pending"
+      }
+    },
+    "manage": {
+      "open": "Manage events",
+      "title": "Manage calendar",
+      "intro": "Create company and department events, and set how team availability works.",
+      "denied": "You do not have access to manage calendar events or settings.",
+      "events": "Events",
+      "create": "New event",
+      "edit": "Edit event",
+      "none": "No events yet.",
+      "wholeOrganization": "Whole organization",
+      "unit": "Unit",
+      "kind": "Type",
+      "titleEn": "Title in English",
+      "titleAr": "Title in Arabic",
+      "descriptionEn": "Description in English",
+      "descriptionAr": "Description in Arabic",
+      "allDay": "All day",
+      "date": "Date",
+      "firstDay": "First day",
+      "lastDay": "Last day",
+      "startTime": "Starts",
+      "endTime": "Ends",
+      "timeZone": "Time zone",
+      "timeZoneHint": "For example Asia/Dubai. Times are kept in this zone.",
+      "repeat": "Repeats",
+      "repeats": {
+        "none": "Does not repeat",
+        "daily": "Every day",
+        "weekly": "Every week",
+        "monthly": "Every month"
+      },
+      "count": "Number of times",
+      "location": "Place",
+      "onlineUrl": "Online meeting link",
+      "onlineUrlHint": "Must start with https://",
+      "rsvp": "Ask people if they are going",
+      "save": "Save event",
+      "saving": "Saving",
+      "close": "Close",
+      "fix": "Check the event",
+      "saved": "The event is saved and shown on calendars.",
+      "failed": "That did not work. Try again.",
+      "cancel": "Cancel event",
+      "cancelQuestion": "Cancel this event? It stays on calendars as cancelled for 7 days.",
+      "cancelled": "The event is cancelled.",
+      "delete": "Delete",
+      "deleteQuestion": "Delete this event? It is removed from every calendar at once.",
+      "deleted": "The event is deleted.",
+      "status": {
+        "published": "Published",
+        "cancelled": "Cancelled"
+      }
+    },
+    "settings": {
+      "title": "Team availability settings",
+      "version": "Version {version}",
+      "threshold": "Staffing threshold (%)",
+      "thresholdHint": "Days where fewer than this share of a team is available are flagged. Between 10 and 100.",
+      "indirect": "Include indirect reports",
+      "indirectHint": "Managers also see the people who report to their reports.",
+      "layers": "Layers shown by default",
+      "save": "Save settings",
+      "saved": "Settings saved as version {version}."
+    }
   }
 }

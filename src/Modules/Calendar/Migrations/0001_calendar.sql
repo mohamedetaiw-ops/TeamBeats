@@ -37,7 +37,7 @@ create table calendar.event (
   check ((all_day and start_date is not null and end_date > start_date and start_at is null and end_at is null)
       or (not all_day and start_at is not null and end_at > start_at and start_date is null and end_date is null))
 );
-create index event_range on calendar.event (tenant_id, status, coalesce(start_at, start_date::timestamptz), series_end);
+create index event_range on calendar.event (tenant_id, series_end, status);
 create index event_unit on calendar.event (tenant_id, org_unit_id);
 select platform.enable_tenant_rls('calendar.event');
 grant select, insert, update, delete on calendar.event to tb_app;

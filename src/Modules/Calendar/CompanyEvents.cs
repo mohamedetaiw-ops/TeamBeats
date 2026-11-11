@@ -306,10 +306,8 @@ public sealed class CompanyEvents(
                 var end = date.AddDays(length);
                 if (from is { } f && to is { } t)
                 {
-                    // All-day dates are compared with the range in the event's zone.
-                    var first = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(f, zone).DateTime);
-                    var last = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(t, zone).DateTime);
-                    if (date > last || end <= first)
+                    // All-day dates are midnight to midnight in the event's zone; the range end is exclusive.
+                    if (ToInstant(date.ToDateTime(TimeOnly.MinValue), zone) >= t || ToInstant(end.ToDateTime(TimeOnly.MinValue), zone) <= f)
                     {
                         continue;
                     }

@@ -112,6 +112,8 @@ public static class TeamBeatsModules
         services.AddEntitlementsModule();
         services.AddAuditModule();
         services.AddAdministrationModule();
+        // Calendar before Integrations so its home card comes first among the personal defaults (spec 008 FR-051).
+        services.AddCalendarModule();
         services.AddIntegrationsModule();
         services.AddExperienceModule();
         services.AddNotificationsModule(configuration);
@@ -129,7 +131,6 @@ public static class TeamBeatsModules
         services.AddAgentsModule();
         services.AddEvaluationModule();
         services.AddAnalyticsModule();
-        services.AddCalendarModule();
         return services;
     }
 }

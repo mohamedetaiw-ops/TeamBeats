@@ -3,7 +3,7 @@
   "template": "H01",
   "slug": "home",
   "variant": "balanced",
-  "revision": 5,
+  "revision": 6,
   "navigation": [
     {
       "slug": "nav-home",
@@ -469,8 +469,8 @@
         }
       },
       {
-        "componentRef": "outlook.my_calendar@1",
-        "id": "home-outlook-my-calendar",
+        "componentRef": "calendar.overview@1",
+        "id": "home-calendar-overview",
         "span": 6
       },
       {

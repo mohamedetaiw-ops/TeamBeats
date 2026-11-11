@@ -7202,5 +7202,182 @@
         "cancelled": "ملغاة"
       }
     }
+  },
+  "calendar": {
+    "title": "التقويم",
+    "intro": "اجتماعاتك وفعاليات الشركة والعطلات والإجازات في مكان واحد.",
+    "failed": "تعذر تحميل التقويم. حاول مرة أخرى بعد قليل.",
+    "today": "اليوم",
+    "tomorrow": "غدًا",
+    "todayWith": "اليوم، {date}",
+    "todayButton": "اليوم",
+    "previous": "السابق",
+    "next": "التالي",
+    "previousWeek": "الأسبوع السابق",
+    "nextWeek": "الأسبوع التالي",
+    "weekLabel": "أيام الأسبوع",
+    "legend": "المعروض في تقويمك",
+    "layersLabel": "إظهار في التقويم",
+    "itemCount": "{count, plural, =0 {لا شيء مخطط} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
+    "allDay": "طوال اليوم",
+    "halfDay": "نصف يوم",
+    "timeRange": "{start} إلى {end}",
+    "dateRange": "{start} إلى {end}",
+    "until": "حتى {end}",
+    "online": "عبر الإنترنت",
+    "private": "موعد خاص",
+    "busy": "مشغول",
+    "onLeave": "في إجازة",
+    "teamAway": "{count, plural, one {عضو واحد من الفريق في إجازة} two {عضوان من الفريق في إجازة} few {# أعضاء من الفريق في إجازة} many {# عضوًا من الفريق في إجازة} other {# عضو من الفريق في إجازة}}",
+    "cancelledTitle": "ملغى: {title}",
+    "recurring": "يتكرر",
+    "joinLabel": "انضم إلى {title}",
+    "nothing": "لا شيء مخطط لهذا اليوم.",
+    "nothingLeft": "لا شيء آخر اليوم.",
+    "nothingRange": "لا شيء مخطط في هذه الأيام.",
+    "noLayers": "جميع الطبقات مخفية",
+    "noLayersHint": "فعّل طبقة في الأعلى لعرض عناصرها.",
+    "seeMore": "{count, plural, one {عرض عنصر آخر في التقويم} two {عرض عنصرين آخرين في التقويم} few {عرض # عناصر أخرى في التقويم} many {عرض # عنصرًا آخر في التقويم} other {عرض # عنصر آخر في التقويم}}",
+    "openCalendar": "افتح التقويم",
+    "views": {
+      "label": "طريقة العرض",
+      "agenda": "جدول الأعمال",
+      "week": "الأسبوع",
+      "month": "الشهر",
+      "team": "الفريق"
+    },
+    "layers": {
+      "meeting": "الاجتماعات",
+      "company": "فعاليات الشركة",
+      "department": "فعاليات الإدارة",
+      "important": "تواريخ مهمة",
+      "holiday": "العطلات",
+      "my_leave": "إجازاتي",
+      "team_leave": "إجازات الفريق"
+    },
+    "sources": {
+      "outlook": "Outlook",
+      "google": "تقويم Google",
+      "events": "فعاليات TeamBeats",
+      "holidays": "العطلات",
+      "leave": "الإجازات",
+      "other": "التقويم"
+    },
+    "status": {
+      "pending": "بانتظار الموافقة",
+      "cancelled": "ملغى",
+      "tentative": "مبدئي",
+      "free": "متاح"
+    },
+    "actions": {
+      "join": "انضم",
+      "openOutlook": "افتح في Outlook",
+      "openGoogle": "افتح في تقويم Google",
+      "openLeave": "افتح الطلب",
+      "viewTeam": "عرض توفر الفريق"
+    },
+    "fresh": {
+      "stale": "تعذر تحديث {source}. المعروض هو آخر مزامنة في {time}.",
+      "down": "تعذرت قراءة {source} الآن. بقية العناصر ما زالت معروضة.",
+      "setup": "{source} غير مُعد لك بعد.",
+      "retry": "حاول مرة أخرى"
+    },
+    "alerts": {
+      "holiday": "{title} في {date}",
+      "team": "{count, plural, one {عضو واحد من الفريق في إجازة اليوم} two {عضوان من الفريق في إجازة اليوم} few {# أعضاء من الفريق في إجازة اليوم} many {# عضوًا من الفريق في إجازة اليوم} other {# عضو من الفريق في إجازة اليوم}}"
+    },
+    "rsvp": {
+      "question": "هل ستحضر؟",
+      "closed": "انتهى وقت الردود.",
+      "going": "سأحضر",
+      "maybe": "ربما",
+      "declined": "لن أحضر",
+      "counts": "{going} سيحضرون، {maybe} ربما، {declined} لن يحضروا",
+      "failed": "لم يُحفظ ردك. حاول مرة أخرى."
+    },
+    "team": {
+      "none": "توفر الفريق متاح لمن لديهم فريق.",
+      "availableToday": "المتاحون اليوم",
+      "onLeaveToday": "في إجازة اليوم",
+      "startingSoon": "إجازات تبدأ خلال 7 أيام",
+      "ofTotal": "{available} من {total}",
+      "heatTitle": "المتاحون كل يوم (حد التوفر {threshold}%)",
+      "breaches": "{count, plural, one {يوم واحد أقل من حد {threshold}%.} two {يومان أقل من حد {threshold}%.} few {# أيام أقل من حد {threshold}%.} many {# يومًا أقل من حد {threshold}%.} other {# يوم أقل من حد {threshold}%.}}",
+      "underThreshold": "أقل من الحد",
+      "nonWorking": "ليس يوم عمل",
+      "share": "{share}%",
+      "cell": "{date}: {available} من {total} متاحون",
+      "upcoming": "الإجازات القادمة",
+      "noUpcoming": "لا توجد إجازات قادمة.",
+      "more": "{count, plural, one {شخص آخر غير مدرج.} two {شخصان آخران غير مدرجين.} few {# أشخاص آخرين غير مدرجين.} many {# شخصًا آخر غير مدرجين.} other {# شخص آخر غير مدرجين.}}",
+      "status": {
+        "approved": "موافق عليها",
+        "pending": "قيد الانتظار"
+      }
+    },
+    "manage": {
+      "open": "إدارة الفعاليات",
+      "title": "إدارة التقويم",
+      "intro": "أنشئ فعاليات الشركة والإدارات، وحدد طريقة عمل توفر الفريق.",
+      "denied": "ليس لديك صلاحية لإدارة فعاليات التقويم أو إعداداته.",
+      "events": "الفعاليات",
+      "create": "فعالية جديدة",
+      "edit": "تعديل الفعالية",
+      "none": "لا توجد فعاليات بعد.",
+      "wholeOrganization": "المؤسسة كلها",
+      "unit": "الوحدة",
+      "kind": "النوع",
+      "titleEn": "العنوان بالإنجليزية",
+      "titleAr": "العنوان بالعربية",
+      "descriptionEn": "الوصف بالإنجليزية",
+      "descriptionAr": "الوصف بالعربية",
+      "allDay": "طوال اليوم",
+      "date": "التاريخ",
+      "firstDay": "اليوم الأول",
+      "lastDay": "اليوم الأخير",
+      "startTime": "يبدأ",
+      "endTime": "ينتهي",
+      "timeZone": "المنطقة الزمنية",
+      "timeZoneHint": "مثل Asia/Dubai. تُحفظ الأوقات بهذه المنطقة.",
+      "repeat": "التكرار",
+      "repeats": {
+        "none": "لا يتكرر",
+        "daily": "كل يوم",
+        "weekly": "كل أسبوع",
+        "monthly": "كل شهر"
+      },
+      "count": "عدد المرات",
+      "location": "المكان",
+      "onlineUrl": "رابط الاجتماع عبر الإنترنت",
+      "onlineUrlHint": "يجب أن يبدأ بـ https://",
+      "rsvp": "اسأل الناس إن كانوا سيحضرون",
+      "save": "حفظ الفعالية",
+      "saving": "جارٍ الحفظ",
+      "close": "إغلاق",
+      "fix": "راجع الفعالية",
+      "saved": "حُفظت الفعالية وظهرت في التقويمات.",
+      "failed": "لم ينجح ذلك. حاول مرة أخرى.",
+      "cancel": "إلغاء الفعالية",
+      "cancelQuestion": "هل تريد إلغاء هذه الفعالية؟ ستبقى في التقويمات بصفة ملغاة لمدة 7 أيام.",
+      "cancelled": "أُلغيت الفعالية.",
+      "delete": "حذف",
+      "deleteQuestion": "هل تريد حذف هذه الفعالية؟ ستُزال من كل التقويمات فورًا.",
+      "deleted": "حُذفت الفعالية.",
+      "status": {
+        "published": "منشورة",
+        "cancelled": "ملغاة"
+      }
+    },
+    "settings": {
+      "title": "إعدادات توفر الفريق",
+      "version": "الإصدار {version}",
+      "threshold": "حد التوفر (%)",
+      "thresholdHint": "تُميَّز الأيام التي يتوفر فيها أقل من هذه النسبة من الفريق. بين 10 و100.",
+      "indirect": "تضمين المرؤوسين غير المباشرين",
+      "indirectHint": "يرى المديرون أيضًا من يتبعون مرؤوسيهم.",
+      "layers": "الطبقات المعروضة افتراضيًا",
+      "save": "حفظ الإعدادات",
+      "saved": "حُفظت الإعدادات بالإصدار {version}."
+    }
   }
 }
