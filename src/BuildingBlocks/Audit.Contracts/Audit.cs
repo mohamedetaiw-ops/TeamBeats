@@ -149,6 +149,15 @@ public static class AuditActions
 
     // 022
     public const string HrCalendarChanged = "hr.calendar_changed";
+    public const string HrLeaveSubmitted = "hr.leave_submitted";
+    public const string HrLeaveApproved = "hr.leave_approved";
+    public const string HrLeaveRejected = "hr.leave_rejected";
+    public const string HrLeaveCancelled = "hr.leave_cancelled";
+    public const string HrLeaveShortened = "hr.leave_shortened";
+    public const string HrLeaveOnBehalf = "hr.leave_on_behalf";
+    public const string HrBalanceAdjusted = "hr.balance_adjusted";
+    public const string HrLeaveTypeChanged = "hr.leave_type_changed";
+    public const string HrLeavePolicyChanged = "hr.leave_policy_changed";
 
     // 019
     public const string HrSettingsChanged = "hr.settings_changed";
@@ -350,6 +359,7 @@ public static class AuditActions
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
         HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed, HrChangeApplied, HrOrgCodeMapped, DisabledByHr, ReenabledByHr,
         HrPayslipViewed, HrPayslipDownloaded,
+        HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,

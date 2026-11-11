@@ -97,6 +97,9 @@ public static class Sql
         if (u == typeof(int)) return NpgsqlDbType.Integer;
         if (u == typeof(long)) return NpgsqlDbType.Bigint;
         if (u == typeof(bool)) return NpgsqlDbType.Boolean;
+        if (u == typeof(short)) return NpgsqlDbType.Smallint;
+        if (u == typeof(decimal)) return NpgsqlDbType.Numeric;
+        if (u == typeof(DateOnly)) return NpgsqlDbType.Date;
         if (u == typeof(DateTimeOffset) || u == typeof(DateTime)) return NpgsqlDbType.TimestampTz;
         if (u == typeof(Jsonb)) return NpgsqlDbType.Jsonb;
         if (u == typeof(string[])) return NpgsqlDbType.Array | NpgsqlDbType.Text;

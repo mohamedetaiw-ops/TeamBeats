@@ -2,13 +2,15 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Messaging;
 using TeamBeats.Modules.Hr.Contracts;
+using TeamBeats.Modules.Hr.Leave;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Hr;
 
-/// <summary>Leave, attendance and HR workflows (spec 022, module map: Hr). R1 has working calendars only.</summary>
+/// <summary>Leave, attendance and HR workflows (spec 022, module map: Hr): working calendars (R1) and leave (R2 slice 1).</summary>
 public static class HrModule
 {
     public static readonly MigrationSource Migrations = new("hr", typeof(HrModule).Assembly);
@@ -18,6 +20,16 @@ public static class HrModule
         services.AddScoped<CalendarService>();
         services.AddScoped<WorkingCalendar>();
         services.AddScoped<IWorkingCalendar>(sp => sp.GetRequiredService<WorkingCalendar>());
+        services.AddScoped<LeaveConfig>();
+        services.AddScoped<LeaveLedger>();
+        services.AddScoped<LeaveDocuments>();
+        services.AddScoped<LeaveRequests>();
+        services.AddScoped<ILeave>(sp => sp.GetRequiredService<LeaveRequests>());
+        services.AddScoped<LeaveTaskSource>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<LeaveTaskSource>());
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<LeaveTaskSource>());
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, LeaveTaskSource>("hr.leave_notify_approval");
+        services.AddSingleton<Services.Contracts.IModuleServiceSource, LeaveModuleServices>();
         return services;
     }
 
@@ -85,6 +97,7 @@ public static class HrModule
         hr.MapGet("/working-days", async (Guid? orgUnitId, Guid? calendarId, DateOnly from, DateOnly to, CalendarService calendars, WorkingCalendar resolver,
             CancellationToken ct) => Results.Ok(await calendars.PreviewAsync(orgUnitId, calendarId, from, to, resolver, ct)));
 
+        app.MapLeaveEndpoints();
         return app;
     }
 }

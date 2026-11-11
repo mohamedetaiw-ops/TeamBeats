@@ -138,6 +138,20 @@ public sealed class Catalogue(
         new(s.Id, s.Kind, s.Names, s.Descriptions, s.CategoryId, s.Kind == ServiceKinds.Linked ? s.Url : null, s.Kind == ServiceKinds.Linked && s.Sso,
             s.Kind == ServiceKinds.Module ? s.LaunchRoute : null, favourite);
 
+    /// <summary>Module services whose capability the tenant's plan does not have.</summary>
+    private async Task<IReadOnlySet<string>> UnavailableModuleKeysAsync(CancellationToken ct)
+    {
+        var off = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var registration in moduleSources.SelectMany(s => s.Services).Where(r => r.Capability is not null))
+        {
+            if (!await entitlements.IsEnabledAsync(registration.Capability!, ct))
+            {
+                off.Add(registration.Key);
+            }
+        }
+        return off;
+    }
+
     public async Task<CatalogueView> ListAsync(string? query, Guid? categoryId, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.WorkflowCatalogue, ct);
@@ -145,8 +159,9 @@ public sealed class Catalogue(
         await SyncModuleServicesAsync(ct);
         var facts = await ViewerAsync(ct);
         var favourites = (await session.QueryAsync("select service_id from services.favourite where user_id = @user", new { user }, r => r.GetGuid(0), ct)).ToHashSet();
+        var unavailable = await UnavailableModuleKeysAsync(ct);
         var visible = (await session.QueryAsync($"select {Columns} from services.service where status = 'published'", null, Read, ct))
-            .Where(s => facts.Matches(s.Audience)).ToList();
+            .Where(s => facts.Matches(s.Audience) && (s.ModuleKey is null || !unavailable.Contains(s.ModuleKey))).ToList();
         var terms = Search.Terms(query);
         var shown = visible
             .Where(s => categoryId is null || s.CategoryId == categoryId)
@@ -170,6 +185,10 @@ public sealed class Catalogue(
         await SyncModuleServicesAsync(ct);
         var row = await session.QuerySingleOrDefaultAsync($"select {Columns} from services.service where id = @id and status = 'published'", new { id }, Read, ct)
             ?? throw AppException.NotFound();
+        if (row.ModuleKey is { } moduleKey && (await UnavailableModuleKeysAsync(ct)).Contains(moduleKey))
+        {
+            throw AppException.NotFound();
+        }
         if (!(await ViewerAsync(ct)).Matches(row.Audience))
         {
             throw AppException.Denied("services.not_available");

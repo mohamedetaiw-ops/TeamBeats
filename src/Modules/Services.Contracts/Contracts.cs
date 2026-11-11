@@ -27,14 +27,16 @@ public sealed record ServiceAudience(IReadOnlyList<Guid>? OrgUnits = null, IRead
 /// <summary>
 /// A service a domain module provides (FR-010), registered at startup. It appears in every tenant's catalogue for
 /// everyone until an administrator changes its audience or category. <see cref="LaunchRoute"/> is a path in TeamBeats;
-/// <see cref="TaskSource"/> names where its tasks come from when they are not engine tasks.
+/// <see cref="TaskSource"/> names where its tasks come from when they are not engine tasks. With
+/// <see cref="Capability"/>, the service is left out of the catalogue of a tenant whose plan does not have it.
 /// </summary>
 public sealed record ModuleServiceRegistration(
     string Key,
     IReadOnlyDictionary<string, string> Names,
     IReadOnlyDictionary<string, string>? Descriptions,
     string LaunchRoute,
-    string? TaskSource = null);
+    string? TaskSource = null,
+    string? Capability = null);
 
 /// <summary>Implemented by modules that register services in the catalogue.</summary>
 public interface IModuleServiceSource
