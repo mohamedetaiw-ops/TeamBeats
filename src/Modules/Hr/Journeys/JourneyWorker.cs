@@ -9,7 +9,8 @@ namespace TeamBeats.Modules.Hr.Journeys;
 
 /// <summary>
 /// Every two minutes, for every active tenant with <c>hr.journeys</c> in its own scope and transaction: starts the
-/// engine process of each journey step whose scheduled date has come (spec 022 R2 plan, slice 3). Runs as the system
+/// engine process of each journey step whose scheduled date has come, closes attestation steps with nothing left to attest
+/// to and escalates access removal lines not confirmed after one working day (spec 022 R2 plan, slice 3). Runs as the system
 /// actor. Hosted by the worker, and by the development host when <c>Hr:Journeys:InProcess</c> is true.
 /// </summary>
 public sealed class JourneyWorker(IServiceScopeFactory scopes, ILogger<JourneyWorker> logger) : BackgroundService
@@ -51,7 +52,10 @@ public sealed class JourneyWorker(IServiceScopeFactory scopes, ILogger<JourneyWo
                 {
                     continue;
                 }
-                await scope.ServiceProvider.GetRequiredService<JourneyService>().OpenDueAsync(null, ct);
+                var journeys = scope.ServiceProvider.GetRequiredService<JourneyService>();
+                await journeys.OpenDueAsync(null, ct);
+                await journeys.SettleAttestationsAsync(null, ct);
+                await journeys.EscalateAccessAsync(ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

@@ -31,17 +31,18 @@ internal sealed record PolicyRow(
     DateTimeOffset? EffectiveFrom,
     DateTimeOffset? NextReviewAt,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt)
+    DateTimeOffset UpdatedAt,
+    bool OnboardingRequired)
 {
     public const string Columns =
         "id, code, names::text, category_id, owner_user_id, org_unit_id, audience::text, classification, binding_locale, route::text, review_months, related, status, " +
-        "current_version, effective_from, next_review_at, created_at, updated_at";
+        "current_version, effective_from, next_review_at, created_at, updated_at, onboarding_required";
 
     public static PolicyRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), PolicyJson.Read<Dictionary<string, string>>(r.GetString(2)),
         r.Get<Guid?>("category_id"), r.GetGuid(4), r.Get<Guid?>("org_unit_id"), PolicyJson.Read<ContentAudience>(r.GetString(6)), r.GetString(7),
         r.Get<string>("binding_locale"), PolicyJson.Read<List<RouteStepSetting>>(r.GetString(9)), r.GetInt32(10), r.GetFieldValue<Guid[]>(11), r.GetString(12),
         r.Get<int?>("current_version"), r.Get<DateTimeOffset?>("effective_from"), r.Get<DateTimeOffset?>("next_review_at"), r.GetFieldValue<DateTimeOffset>(16),
-        r.GetFieldValue<DateTimeOffset>(17));
+        r.GetFieldValue<DateTimeOffset>(17), r.GetBoolean(18));
 
     public AuthzTarget Target => OrgUnitId is { } unit ? AuthzTarget.OrgUnit(unit) : AuthzTarget.Tenant;
 
@@ -368,19 +369,20 @@ public sealed class PolicyRegister(
         await session.ExecAsync(
             """
             insert into policies.policy (tenant_id, id, code, names, category_id, owner_user_id, org_unit_id, audience, classification, binding_locale, route,
-              review_months, related, status, created_by, created_at, updated_at)
+              review_months, related, status, created_by, created_at, updated_at, onboarding_required)
             values (platform.current_tenant_id(), @id, @code, @names, @category, @owner, @unit, @audience, @classification, @binding, @route, @months, @related,
-              'draft', @user, @now, @now)
+              'draft', @user, @now, @now, @onboarding)
             """,
             new
             {
                 id, code = request.Code!.Trim(), names = new Jsonb(PolicyJson.Write(names)), category = request.CategoryId, owner, unit = request.OrgUnitId,
                 audience = new Jsonb(PolicyJson.Write(request.Audience ?? ContentAudience.Everyone)), classification = request.Classification ?? "internal",
                 binding = request.BindingLocale, route = new Jsonb(PolicyJson.Write(request.Route ?? [])), months = request.ReviewMonths ?? 12,
-                related = (request.Related ?? []).Distinct().ToArray(), user, now,
+                related = (request.Related ?? []).Distinct().ToArray(), user, now, onboarding = request.OnboardingRequired ?? false,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.PolicyCreated, Securables.Policy, id.ToString(), TargetOrgUnitId: request.OrgUnitId,
-            Changes: new { code = request.Code!.Trim(), names, owner, orgUnitId = request.OrgUnitId, request.Classification, request.BindingLocale, route = request.Route?.Count ?? 0 }), ct);
+            Changes: new { code = request.Code!.Trim(), names, owner, orgUnitId = request.OrgUnitId, request.Classification, request.BindingLocale, route = request.Route?.Count ?? 0,
+                onboardingRequired = request.OnboardingRequired ?? false }), ct);
         return await GetAsync(id, ct);
     }
 
@@ -414,7 +416,7 @@ public sealed class PolicyRegister(
             """
             update policies.policy set code = @code, names = @names, category_id = @category, owner_user_id = @owner, org_unit_id = @unit, audience = @audience,
               classification = @classification, binding_locale = @binding, route = @route, review_months = @months, related = @related, updated_at = @now,
-              row_version = row_version + 1
+              onboarding_required = @onboarding, row_version = row_version + 1
             where id = @id
             """,
             new
@@ -422,13 +424,15 @@ public sealed class PolicyRegister(
                 id, code = request.Code!.Trim(), names = new Jsonb(PolicyJson.Write(names)), category = request.CategoryId, owner, unit = request.OrgUnitId,
                 audience = new Jsonb(PolicyJson.Write(request.Audience ?? ContentAudience.Everyone)), classification = request.Classification ?? policy.Classification,
                 binding = request.BindingLocale, route = new Jsonb(PolicyJson.Write(request.Route ?? [])), months = request.ReviewMonths ?? policy.ReviewMonths,
-                related = (request.Related ?? []).Distinct().ToArray(), now = clock.UtcNow,
+                related = (request.Related ?? []).Distinct().ToArray(), now = clock.UtcNow, onboarding = request.OnboardingRequired ?? policy.OnboardingRequired,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.PolicyChanged, Securables.Policy, id.ToString(), TargetOrgUnitId: request.OrgUnitId,
             Changes: new
             {
-                before = new { policy.Code, policy.Names, policy.Owner, policy.OrgUnitId, policy.Classification, policy.BindingLocale, route = policy.Route.Count },
-                after = new { code = request.Code!.Trim(), names, owner, orgUnitId = request.OrgUnitId, request.Classification, request.BindingLocale, route = request.Route?.Count ?? 0 },
+                before = new { policy.Code, policy.Names, policy.Owner, policy.OrgUnitId, policy.Classification, policy.BindingLocale, route = policy.Route.Count,
+                    policy.OnboardingRequired },
+                after = new { code = request.Code!.Trim(), names, owner, orgUnitId = request.OrgUnitId, request.Classification, request.BindingLocale, route = request.Route?.Count ?? 0,
+                    onboardingRequired = request.OnboardingRequired ?? policy.OnboardingRequired },
             }), ct);
         return await GetAsync(id, ct);
     }
@@ -487,7 +491,7 @@ public sealed class PolicyRegister(
             scheduled is { Number: { } n, EffectiveFrom: { } from } && (edit || manage || history) ? new ScheduledVersion(scheduled.Id, n, from) : null,
             new PolicyRights(manage, edit && policy.Status != PolicyStatuses.Retired, review, history, await FollowsPeopleAsync(ct), await AsksAsync(policy, ct),
                 history && policy.CurrentVersion is not null && await entitlements.IsEnabledAsync(Capabilities.AnalyticsCore, ct)),
-            policy.CreatedAt, policy.UpdatedAt);
+            policy.CreatedAt, policy.UpdatedAt, policy.OnboardingRequired);
     }
 
     private async Task<bool> AsksAsync(PolicyRow policy, CancellationToken ct) =>

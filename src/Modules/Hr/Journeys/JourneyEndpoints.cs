@@ -79,6 +79,25 @@ public static class JourneyEndpoints
             return Results.Ok(view);
         });
 
+        hr.MapPost("/journeys/{id:guid}/steps/{key}/access-items/{itemId:guid}", async (Guid id, string key, Guid itemId, AccessConfirmRequest request,
+            JourneyService journeys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await journeys.ConfirmAccessAsync(id, key, itemId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        hr.MapPost("/journeys/{id:guid}/steps/{key}/exit-interview", async (Guid id, string key, ExitInterviewRequest request, JourneyService journeys,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await journeys.RecordExitInterviewAsync(id, key, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        hr.MapGet("/exit-reasons", async (DateOnly? from, DateOnly? to, JourneyService journeys, CancellationToken ct) =>
+            Results.Ok(await journeys.ExitReasonsAsync(from, to, ct)));
+
         return app;
     }
 }

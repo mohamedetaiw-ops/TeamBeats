@@ -6,6 +6,9 @@ using TeamBeats.Messaging;
 using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Hr.Leave;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Integrations.Contracts;
+using TeamBeats.Modules.Notifications.Contracts;
+using TeamBeats.Modules.Policies.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Persistence;
@@ -68,6 +71,7 @@ public sealed record JourneyStepView(
     string Key,
     int Position,
     IReadOnlyDictionary<string, string> Names,
+    string Type,
     int OffsetDays,
     string Assignee,
     DateOnly ScheduledOn,
@@ -77,7 +81,8 @@ public sealed record JourneyStepView(
     DateTimeOffset? CompletedAt,
     DateTimeOffset? DueAt,
     bool Overdue,
-    Guid? MyTaskId);
+    Guid? MyTaskId,
+    IReadOnlyList<AccessItemView>? AccessItems);
 
 public sealed record JourneyView(
     JourneySummary Journey,
@@ -85,7 +90,8 @@ public sealed record JourneyView(
     string? CancelReason,
     Guid? PreviousJourneyId,
     IReadOnlyList<JourneyStepView> Steps,
-    bool CanManage);
+    bool CanManage,
+    ExitInterviewView? ExitInterview);
 
 internal sealed record JourneyRow(
     Guid Id, Guid TemplateId, string TemplateKey, int TemplateVersion, string Kind, Guid UserId, Guid? BuddyUserId, Guid? OrgUnitId, DateOnly AnchorDate,
@@ -93,7 +99,7 @@ internal sealed record JourneyRow(
 
 internal sealed record JourneyStepRow(
     Guid JourneyId, string Key, int Position, Dictionary<string, string> Names, int OffsetDays, string Assignee, DateOnly ScheduledOn, string Status,
-    Guid? InstanceId, Guid? TaskId, DateTimeOffset? DueAt, string? Outcome, Guid? CompletedBy, DateTimeOffset? CompletedAt);
+    Guid? InstanceId, Guid? TaskId, DateTimeOffset? DueAt, string? Outcome, Guid? CompletedBy, DateTimeOffset? CompletedAt, string Type, DateTimeOffset? OpenedAt);
 
 /// <summary>
 /// Journeys (spec 022 US4, US5, FR-013, FR-014): one per template and person while active, started from HR, directory
@@ -102,11 +108,12 @@ internal sealed record JourneyStepRow(
 /// and manage journeys of the units they cover; the person, the buddy and anyone with a task in it may read it. Needs
 /// <c>hr.journeys</c> in the plan.
 /// </summary>
-public sealed class JourneyService(
+public sealed partial class JourneyService(
     IDbSession session,
     ITenantContext context,
     IClock clock,
     IAuthorizationService authz,
+    IAuthorizationProvisioning grants,
     IEntitlementService entitlements,
     IAuditWriter audit,
     IOutbox outbox,
@@ -114,7 +121,11 @@ public sealed class JourneyService(
     IUserDirectory users,
     ITenantMemberships memberships,
     LeaveLedger people,
-    JourneyTemplates templates)
+    JourneyTemplates templates,
+    IPolicyObligations obligations,
+    IConnectedSystems systems,
+    INotificationSender notifications,
+    IWorkingCalendar calendars)
 {
     public const int MaxReasonLength = 500;
     public const int MaxList = 500;
@@ -141,12 +152,12 @@ public sealed class JourneyService(
         r.GetFieldValue<DateTimeOffset>(13), r.Get<DateTimeOffset?>("completed_at"));
 
     private const string StepColumns =
-        "journey_id, key, position, names::text, offset_days, assignee, scheduled_on, status, instance_id, task_id, due_at, outcome, completed_by, completed_at";
+        "journey_id, key, position, names::text, offset_days, assignee, scheduled_on, status, instance_id, task_id, due_at, outcome, completed_by, completed_at, type, opened_at";
 
     private static JourneyStepRow ReadStep(Npgsql.NpgsqlDataReader r) => new(
         r.GetGuid(0), r.GetString(1), r.GetInt32(2), JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(3)) ?? [], r.GetInt32(4), r.GetString(5),
         DateOnly.FromDateTime(r.GetDateTime(6)), r.GetString(7), r.Get<Guid?>("instance_id"), r.Get<Guid?>("task_id"), r.Get<DateTimeOffset?>("due_at"),
-        r.Get<string?>("outcome"), r.Get<Guid?>("completed_by"), r.Get<DateTimeOffset?>("completed_at"));
+        r.Get<string?>("outcome"), r.Get<Guid?>("completed_by"), r.Get<DateTimeOffset?>("completed_at"), r.GetString(14), r.Get<DateTimeOffset?>("opened_at"));
 
     internal async Task<JourneyRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
         (await session.QueryAsync(
@@ -215,12 +226,14 @@ public sealed class JourneyService(
         {
             await session.ExecAsync(
                 """
-                insert into hr.journey_step (tenant_id, journey_id, key, position, names, offset_days, assignee, users, permission, due_working_days, scheduled_on, status)
-                values (platform.current_tenant_id(), @id, @key, @position, @names, @offset, @assignee, @users, @permission, @due, @scheduled, 'scheduled')
+                insert into hr.journey_step (tenant_id, journey_id, key, position, names, offset_days, assignee, users, permission, due_working_days, scheduled_on, status,
+                  type, systems)
+                values (platform.current_tenant_id(), @id, @key, @position, @names, @offset, @assignee, @users, @permission, @due, @scheduled, 'scheduled', @type, @systems)
                 """, new
                 {
                     id, key = step.Key, position = position++, names = Jsonb.From(step.Names), offset = step.OffsetDays, assignee = step.Assignee,
                     users = (step.Users ?? []).ToArray(), permission = step.Permission, due = step.DueWorkingDays, scheduled = anchor.AddDays(step.OffsetDays),
+                    type = step.Type ?? JourneyStepTypes.Task, systems = (step.Systems ?? []).ToArray(),
                 }, ct);
         }
         await audit.WriteAsync(new AuditEntry(AuditActions.HrJourneyStarted, "journey", id.ToString(), TargetOrgUnitId: person.PrimaryUnit,
@@ -258,14 +271,14 @@ public sealed class JourneyService(
         var today = await people.TodayAsync(ct);
         var due = await session.QueryAsync(
             """
-            select s.journey_id, s.key, s.assignee, t.key, j.template_version, j.user_id, j.buddy_user_id, j.org_unit_id
+            select s.journey_id, s.key, s.assignee, t.key, j.template_version, j.user_id, j.buddy_user_id, j.org_unit_id, s.type, s.systems
             from hr.journey_step s join hr.journey j on j.id = s.journey_id join hr.journey_template t on t.id = j.template_id
             where s.status = 'scheduled' and s.scheduled_on <= @today and j.status = 'active' and (@journeyId::uuid is null or j.id = @journeyId)
             order by s.scheduled_on, s.journey_id, s.position limit 500
             for update of s skip locked
             """, new { today, journeyId },
             r => (Journey: r.GetGuid(0), Step: r.GetString(1), Assignee: r.GetString(2), Template: r.GetString(3), Version: r.GetInt32(4), User: r.GetGuid(5),
-                Buddy: r.Get<Guid?>("buddy_user_id"), Unit: r.Get<Guid?>("org_unit_id")), ct);
+                Buddy: r.Get<Guid?>("buddy_user_id"), Unit: r.Get<Guid?>("org_unit_id"), Type: r.GetString(8), Systems: r.GetFieldValue<string[]>(9)), ct);
         foreach (var step in due)
         {
             // The person does their own steps; nobody else's step about them is theirs to complete (no self-approval).
@@ -275,8 +288,11 @@ public sealed class JourneyService(
                 null, personStep ? [] : [step.User], subject, ct: ct);
             var task = (await engine.InstanceTasksAsync(instance.Id, ct)).FirstOrDefault(t => t.Status == "open");
             await session.ExecAsync(
-                "update hr.journey_step set status = 'open', instance_id = @instance, task_id = @task, due_at = @dueAt where journey_id = @journey and key = @key",
-                new { instance = instance.Id, task = task?.Id, dueAt = task?.DueAt, journey = step.Journey, key = step.Step }, ct);
+                """
+                update hr.journey_step set status = 'open', instance_id = @instance, task_id = @task, due_at = @dueAt, opened_at = @now
+                where journey_id = @journey and key = @key
+                """, new { instance = instance.Id, task = task?.Id, dueAt = task?.DueAt, journey = step.Journey, key = step.Step, now = clock.UtcNow }, ct);
+            await OpenedAsync(new OpenedStep(step.Journey, step.Step, step.Type, step.User, step.Unit, instance.Id, task?.DueAt, step.Systems), ct);
         }
         return due.Count;
     }
@@ -288,14 +304,24 @@ public sealed class JourneyService(
         {
             return;
         }
-        var now = clock.UtcNow;
         var outcome = done.Outcome == TaskOutcomes.Approve ? JourneyStepOutcomes.Done : JourneyStepOutcomes.Skipped;
-        var by = done.CompletedBy ?? context.ActorId;
-        await session.ExecAsync(
-            "update hr.journey_step set status = 'done', outcome = @outcome, completed_by = @by, completed_at = @now where journey_id = @journey and key = @key",
-            new { outcome, by, now, journey = journey.Id, key = step.Key }, ct);
+        await CloseStepAsync(journey, step.Key, outcome, done.CompletedBy ?? context.ActorId, done.OnBehalfOf, ct);
+    }
+
+    /// <summary>Marks an open step done with the outcome, audited, and completes the journey when no step is left.</summary>
+    private async Task CloseStepAsync(JourneyRow journey, string key, string outcome, Guid? by, Guid? onBehalfOf, CancellationToken ct)
+    {
+        var now = clock.UtcNow;
+        if (await session.ExecAsync(
+                """
+                update hr.journey_step set status = 'done', outcome = @outcome, completed_by = @by, completed_at = @now
+                where journey_id = @journey and key = @key and status = 'open'
+                """, new { outcome, by, now, journey = journey.Id, key }, ct) == 0)
+        {
+            return;
+        }
         await audit.WriteAsync(new AuditEntry(AuditActions.HrJourneyStepCompleted, "journey", journey.Id.ToString(), TargetOrgUnitId: journey.OrgUnitId,
-            Changes: new { step = step.Key, outcome, userId = journey.UserId, onBehalfOf = done.OnBehalfOf }), ct);
+            Changes: new { step = key, outcome, userId = journey.UserId, onBehalfOf }), ct);
         if (!await session.ScalarAsync<bool>("select exists (select 1 from hr.journey_step where journey_id = @id and status in ('scheduled', 'open'))",
                 new { id = journey.Id }, ct))
         {
@@ -417,6 +443,10 @@ public sealed class JourneyService(
                 await engine.WithdrawAsync(step.InstanceId.Value, ct);
             }
         }
+        foreach (var step in (await StepsAsync(id, ct)).Where(s => s.Status == JourneyStepStatuses.Open && s.Type == JourneyStepTypes.Attestation))
+        {
+            await obligations.CancelAsync(BusinessKey(id, step.Key), ct);
+        }
         var now = clock.UtcNow;
         await session.ExecAsync("update hr.journey_step set status = 'cancelled' where journey_id = @id and status in ('scheduled', 'open')", new { id }, ct);
         await session.ExecAsync("update hr.journey set status = 'cancelled', cancel_reason = @reason, updated_at = @now where id = @id", new { id, reason, now }, ct);
@@ -526,14 +556,17 @@ public sealed class JourneyService(
         foreach (var s in steps)
         {
             Guid? mine = null;
-            if (s.Status == JourneyStepStatuses.Open && s.TaskId is { } taskId && context.ActorType == ActorType.User
+            // An attestation step is done by attesting to the policies, never from the journey.
+            if (s.Status == JourneyStepStatuses.Open && s.TaskId is { } taskId && s.Type != JourneyStepTypes.Attestation && context.ActorType == ActorType.User
                 && await engine.MyTaskAsync(taskId, ct) is { Status: "open" })
             {
                 mine = taskId;
             }
-            views.Add(new JourneyStepView(s.Key, s.Position, s.Names, s.OffsetDays, s.Assignee, s.ScheduledOn, s.Status, s.Outcome,
-                s.CompletedBy is { } by ? refs.GetValueOrDefault(by) : null, s.CompletedAt, s.DueAt, s.Status == JourneyStepStatuses.Open && s.DueAt < now, mine));
+            var items = s.Type == JourneyStepTypes.AccessRemoval && (manage || mine is not null) ? await AccessItemsAsync(row.Id, s.Key, ct) : null;
+            views.Add(new JourneyStepView(s.Key, s.Position, s.Names, s.Type, s.OffsetDays, s.Assignee, s.ScheduledOn, s.Status, s.Outcome,
+                s.CompletedBy is { } by ? refs.GetValueOrDefault(by) : null, s.CompletedAt, s.DueAt, s.Status == JourneyStepStatuses.Open && s.DueAt < now, mine, items));
         }
-        return new JourneyView(Summary(summary, refs), row.StartedByEvent, manage ? row.CancelReason : null, row.PreviousJourneyId, views, manage);
+        return new JourneyView(Summary(summary, refs), row.StartedByEvent, manage ? row.CancelReason : null, row.PreviousJourneyId, views, manage,
+            await ExitInterviewAsync(row, manage, ct));
     }
 }

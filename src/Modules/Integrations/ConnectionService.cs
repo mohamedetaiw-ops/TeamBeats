@@ -500,3 +500,12 @@ public sealed class ConnectionFeatures(IDbSession session) : IConnectionFeatures
             """, new { k = kind, f = feature },
             r => new ConnectionFeatureInfo(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetBoolean(4), r.GetString(5)), ct);
 }
+
+/// <summary>Enabled connections that are not disabled, by name, for module checklists (spec 022 FR-017).</summary>
+public sealed class ConnectedSystems(IDbSession session) : IConnectedSystems
+{
+    public async Task<IReadOnlyList<ConnectedSystem>> ListAsync(CancellationToken ct = default) =>
+        await session.QueryAsync(
+            "select id, kind, display_name from integrations.connection where enabled and status <> 'disabled' order by lower(display_name), id limit 100",
+            null, r => new ConnectedSystem(r.GetGuid(0), r.GetString(1), r.GetString(2)), ct);
+}

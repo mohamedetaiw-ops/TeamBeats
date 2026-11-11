@@ -61,6 +61,7 @@ export type PolicyView = {
   rights: PolicyRights;
   createdAt: string;
   updatedAt: string;
+  onboardingRequired: boolean;
 };
 
 export type PolicyListItem = {
@@ -91,7 +92,8 @@ export type VersionHistoryItem = {
   approvals: ApprovalView[];
 };
 
-export type AttestationDue = { campaignId: string; version: number; dueAt: string; overdue: boolean; text: Names };
+/** What the person owes: through a campaign, or without one for an onboarding policy (spec 025 FR-017). */
+export type AttestationDue = { campaignId: string | null; version: number; dueAt: string; overdue: boolean; text: Names };
 
 export type MyAttestation = { due: AttestationDue | null; lastVersion: number | null; lastAt: string | null };
 

@@ -51,9 +51,27 @@ public static class JourneyAssignees
 }
 
 /// <summary>
+/// What a step does (T019). <c>task</c>: a task that is marked done. <c>attestation</c>: the person attests to every
+/// policy flagged "onboarding required" that applies to them (spec 025 FR-017); the step is done when none is left.
+/// <c>access_removal</c>: a checklist with a line per connected system and per system the template names, done when
+/// every line is confirmed (FR-017). <c>exit_interview</c>: a form with structured reasons (FR-018).
+/// </summary>
+public static class JourneyStepTypes
+{
+    public const string Task = "task";
+    public const string Attestation = "attestation";
+    public const string AccessRemoval = "access_removal";
+    public const string ExitInterview = "exit_interview";
+
+    public static readonly IReadOnlyList<string> All = [Task, Attestation, AccessRemoval, ExitInterview];
+}
+
+/// <summary>
 /// One step of a template: done <paramref name="OffsetDays"/> calendar days from the anchor date (negative is before).
 /// <paramref name="Permission"/> names the queue of a permission step, and for person, buddy and manager steps the
-/// fallback when that person is missing or has left (<c>hr.manage</c> when not given).
+/// fallback when that person is missing or has left (<c>hr.manage</c> when not given). <paramref name="Type"/> is a
+/// <see cref="JourneyStepTypes"/> value (<c>task</c> when not given); <paramref name="Systems"/> names systems that are
+/// not connected for an access removal checklist.
 /// </summary>
 public sealed record JourneyStepSpec(
     string Key,
@@ -62,7 +80,9 @@ public sealed record JourneyStepSpec(
     string Assignee,
     IReadOnlyList<Guid>? Users = null,
     string? Permission = null,
-    int? DueWorkingDays = null);
+    int? DueWorkingDays = null,
+    string? Type = null,
+    IReadOnlyList<string>? Systems = null);
 
 public sealed record JourneyTemplateRequest(
     string? Key,
@@ -121,6 +141,8 @@ public sealed partial class JourneyTemplates(
     public const int MinOffset = -60;
     public const int MaxOffset = 365;
     public const int MaxDueWorkingDays = 60;
+    public const int MaxSystems = 20;
+    public const int MaxSystemLength = 80;
 
     public static string ETag(int version) => $"\"v{version}\"";
 
@@ -269,7 +291,7 @@ public sealed partial class JourneyTemplates(
             Changes: new
             {
                 operation, row.Kind, row.StartOn, row.ServiceId, row.AnchorField, row.Active, row.Version,
-                steps = row.Steps.Select(s => new { s.Key, s.OffsetDays, s.Assignee, s.Permission, users = s.Users?.Count ?? 0, s.DueWorkingDays }),
+                steps = row.Steps.Select(s => new { s.Key, s.Type, s.OffsetDays, s.Assignee, s.Permission, users = s.Users?.Count ?? 0, s.DueWorkingDays, systems = s.Systems?.Count ?? 0 }),
             }), ct);
 
     /// <summary>One single step route per step, published under the version so open journeys keep theirs.</summary>
@@ -424,10 +446,26 @@ public sealed partial class JourneyTemplates(
             {
                 errors.Add($"{field}.permission", "validation.journey.permission");
             }
+            var type = s.Type ?? JourneyStepTypes.Task;
+            if (!JourneyStepTypes.All.Contains(type)
+                // The person attests for themselves; nobody removes their own access; an exit interview belongs to offboarding.
+                || type == JourneyStepTypes.Attestation && s.Assignee != JourneyAssignees.Person
+                || type == JourneyStepTypes.AccessRemoval && s.Assignee is JourneyAssignees.Person or JourneyAssignees.Buddy
+                || type == JourneyStepTypes.ExitInterview && (kind != JourneyKinds.Offboarding || s.Assignee == JourneyAssignees.Buddy))
+            {
+                errors.Add($"{field}.type", "validation.journey.step_type");
+            }
+            var systems = (s.Systems ?? []).Select(n => n?.Trim() ?? string.Empty).ToList();
+            if (systems.Count > 0 && (type != JourneyStepTypes.AccessRemoval || systems.Count > MaxSystems
+                    || systems.Any(n => n.Length is 0 or > MaxSystemLength || n.Any(char.IsControl))
+                    || systems.Distinct(StringComparer.OrdinalIgnoreCase).Count() != systems.Count))
+            {
+                errors.Add($"{field}.systems", "validation.journey.systems");
+            }
             if (stepNames is not null && s.Key is not null)
             {
                 steps.Add(new JourneyStepSpec(s.Key, stepNames, s.OffsetDays, s.Assignee ?? string.Empty, s.Assignee == JourneyAssignees.Users ? users : null,
-                    permission, s.DueWorkingDays));
+                    permission, s.DueWorkingDays, type, type == JourneyStepTypes.AccessRemoval ? systems : null));
             }
         }
         errors.ThrowIfAny();

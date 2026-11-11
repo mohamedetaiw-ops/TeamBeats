@@ -16,6 +16,27 @@ export type JourneyStatus = (typeof JOURNEY_STATUSES)[number];
 export const STEP_STATUSES = ["scheduled", "open", "done", "cancelled"] as const;
 export type StepStatus = (typeof STEP_STATUSES)[number];
 
+export const JOURNEY_STEP_TYPES = ["task", "attestation", "access_removal", "exit_interview"] as const;
+export type JourneyStepType = (typeof JOURNEY_STEP_TYPES)[number];
+
+/** The structured exit reasons (spec 022 FR-018), as the API lists them. */
+export const EXIT_REASONS = [
+  "compensation",
+  "career_growth",
+  "management",
+  "work_life_balance",
+  "workload",
+  "culture",
+  "role_fit",
+  "relocation",
+  "family",
+  "studies",
+  "health",
+  "retirement",
+  "other",
+] as const;
+export type ExitReason = (typeof EXIT_REASONS)[number];
+
 export type JourneyStepSpec = {
   key: string;
   names: Names;
@@ -24,6 +45,8 @@ export type JourneyStepSpec = {
   users?: string[] | null;
   permission?: string | null;
   dueWorkingDays?: number | null;
+  type?: JourneyStepType | null;
+  systems?: string[] | null;
 };
 
 export type JourneyTemplate = {
@@ -62,10 +85,22 @@ export type JourneySummary = {
   completedAt: string | null;
 };
 
+export type AccessItem = {
+  id: string;
+  name: string;
+  kind: "connected" | "listed";
+  status: "pending" | "removed" | "not_applicable";
+  note: string | null;
+  confirmedBy: PersonRef | null;
+  confirmedAt: string | null;
+  escalatedAt: string | null;
+};
+
 export type JourneyStep = {
   key: string;
   position: number;
   names: Names;
+  type: JourneyStepType;
   offsetDays: number;
   assignee: JourneyAssignee;
   scheduledOn: string;
@@ -76,6 +111,32 @@ export type JourneyStep = {
   dueAt: string | null;
   overdue: boolean;
   myTaskId: string | null;
+  accessItems: AccessItem[] | null;
+};
+
+/** An exit interview as the viewer may see it: the free text only for HR officers. */
+export type ExitInterview = {
+  declined: boolean;
+  reasons: ExitReason[];
+  primaryReason: ExitReason | null;
+  rating: number | null;
+  wouldReturn: boolean | null;
+  comment: string | null;
+  submittedBy: PersonRef;
+  submittedAt: string;
+};
+
+export type ExitReasonCount = { reason: ExitReason; chosen: number; primary: number };
+
+export type ExitReasons = {
+  from: string;
+  to: string;
+  minimumGroupSize: number;
+  interviews: number;
+  declined: number;
+  reasons: ExitReasonCount[];
+  units: { orgUnitId: string | null; interviews: number; reasons: ExitReasonCount[] }[];
+  hidden: number;
 };
 
 export type Journey = {
@@ -85,4 +146,5 @@ export type Journey = {
   previousJourneyId: string | null;
   steps: JourneyStep[];
   canManage: boolean;
+  exitInterview: ExitInterview | null;
 };

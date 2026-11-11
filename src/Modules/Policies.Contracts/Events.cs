@@ -17,3 +17,21 @@ public sealed record PolicyAttested(Guid PolicyId, int Version, Guid UserId, Gui
 
 /// <summary>A campaign member's due date passed without an attestation.</summary>
 public sealed record AttestationOverdue(Guid PolicyId, int Version, Guid CampaignId, Guid UserId) : IIntegrationEvent;
+
+/// <summary>
+/// Onboarding attestations (spec 025 FR-017, spec 022 FR-015). The onboarding journey asks a new joiner to attest to
+/// every published policy flagged "onboarding required" that applies to them; each becomes the person's own attestation
+/// task with the journey's deadline. <c>sourceKey</c> names what asked (a journey step) and makes a repeat a no-op.
+/// Tenant comes from context.
+/// </summary>
+public interface IPolicyObligations
+{
+    /// <summary>Creates the obligations and tells the person. Policies they already attested to in their version in force are left out. Returns how many are open.</summary>
+    Task<int> RequireOnboardingAsync(Guid userId, string sourceKey, DateTimeOffset dueAt, CancellationToken ct = default);
+
+    /// <summary>How many obligations of the source are still open (a retired policy no longer counts).</summary>
+    Task<int> OpenCountAsync(string sourceKey, CancellationToken ct = default);
+
+    /// <summary>Cancels the open obligations of the source (the journey was cancelled).</summary>
+    Task CancelAsync(string sourceKey, CancellationToken ct = default);
+}
