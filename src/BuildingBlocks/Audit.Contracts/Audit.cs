@@ -157,6 +157,8 @@ public static class AuditActions
     public const string HrSyncHeld = "hr.sync_held";
     public const string HrSyncConfirmed = "hr.sync_confirmed";
     public const string HrChangeApplied = "hr.change_applied";
+    public const string HrPayslipViewed = "hr.payslip_viewed";
+    public const string HrPayslipDownloaded = "hr.payslip_downloaded";
     public const string HrOrgCodeMapped = "hr.org_code_mapped";
 
     // 010
@@ -347,6 +349,7 @@ public static class AuditActions
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
         NotificationSettingsChanged, NotificationRelayTested, NotificationTemplateOverridden,
         HrCalendarChanged, HrSettingsChanged, HrMatchLinked, HrMatchUnlinked, HrSyncHeld, HrSyncConfirmed, HrChangeApplied, HrOrgCodeMapped, DisabledByHr, ReenabledByHr,
+        HrPayslipViewed, HrPayslipDownloaded,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,

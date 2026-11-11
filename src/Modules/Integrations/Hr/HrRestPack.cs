@@ -18,7 +18,12 @@ namespace TeamBeats.Modules.Integrations.Hr;
 /// address and sign-in, the employees list (<paramref name="EmployeesPath"/>, the array of records at
 /// <paramref name="RecordsPath"/>, and paging by page number or by a next link), where each canonical field is in a
 /// record (<paramref name="Fields"/>, paths such as <c>$.person.email</c>), the HR system's words for each status,
-/// and the nightly sync time in the HR system's time zone.
+/// and the nightly sync time in the HR system's time zone. <paramref name="EmployeePath"/> is optional: the address of one
+/// employee with <c>{record_id}</c> in it (for example <c>/employees/{record_id}</c>), and <paramref name="EmployeeRecordPath"/>
+/// is where the record is in its answer. Without it, values that must be current cannot be confirmed (US5 scenario 3).
+/// Payslips (US6) are optional too: <paramref name="PayslipsPath"/> lists one employee's payslips (with <c>{record_id}</c>),
+/// <paramref name="PayslipFields"/> says where the period, gross, deductions, net and currency are in each, and
+/// <paramref name="PayslipPdfPath"/> is the PDF of one period (with <c>{record_id}</c> and <c>{period}</c>).
 /// </summary>
 public sealed record HrRestSettings(
     string? BaseUrl,
@@ -34,7 +39,13 @@ public sealed record HrRestSettings(
     IReadOnlyDictionary<string, IReadOnlyList<string>>? StatusValues,
     string? DateFormat,
     string? SyncAt,
-    string? TimeZone)
+    string? TimeZone,
+    string? EmployeePath = null,
+    string? EmployeeRecordPath = null,
+    string? PayslipsPath = null,
+    string? PayslipRecordsPath = null,
+    IReadOnlyDictionary<string, string>? PayslipFields = null,
+    string? PayslipPdfPath = null)
 {
     public RestSettings Rest => new(BaseUrl!, Auth!);
 }
@@ -72,6 +83,19 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
 
     [GeneratedRegex(@"^/[A-Za-z0-9._~/-]{0,300}$")]
     private static partial Regex PathShape();
+
+    [GeneratedRegex(@"^/[A-Za-z0-9._~/-]{0,150}\{record_id\}[A-Za-z0-9._~/-]{0,150}$")]
+    private static partial Regex OnePathShape();
+
+    [GeneratedRegex(@"^/[A-Za-z0-9._~/{}-]{1,300}$")]
+    private static partial Regex TemplateShape();
+
+    /// <summary>A payroll period: year and month.</summary>
+    [GeneratedRegex(@"^[0-9]{4}-(0[1-9]|1[0-2])$")]
+    public static partial Regex PayslipPeriod();
+
+    [GeneratedRegex(@"^[A-Z]{3}$")]
+    private static partial Regex CurrencyCode();
 
     [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9_.-]{0,39}$")]
     private static partial Regex ParamName();
@@ -157,6 +181,130 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
         run = run.Id, status = run.Status, total = run.Total, matched = run.Matched, unmatched = run.Unmatched, conflicts = run.Conflicts,
         refused = run.Refused, changed = run.Changed,
     });
+
+    /// <summary>
+    /// Reads one employee now (US5 scenario 3). Null with no failure means the connection has no address for one record.
+    /// The record ID is escaped into the path, so it cannot change the address.
+    /// </summary>
+    public async Task<(HrEmployee? Employee, PackCallResult? Failure)> ReadOneAsync(PackConnection connection, string recordId, CancellationToken ct)
+    {
+        if (Parse(connection.Settings) is not { Fields: not null, StatusValues: not null, EmployeePath: { } path } s)
+        {
+            return (null, null);
+        }
+        var uri = PageUri(s with { Paging = "none" }, path.Replace("{record_id}", Uri.EscapeDataString(recordId), StringComparison.Ordinal), 1, 1);
+        if (uri is null)
+        {
+            return (null, PackCallResult.Fatal(ConnectorErrorClasses.HostNotAllowed));
+        }
+        var (failure, answer) = await GetAsync(connection, s, uri, ct);
+        if (failure is not null)
+        {
+            return (null, failure);
+        }
+        if (RestDefinitions.Select(answer, s.EmployeeRecordPath ?? "$") is not { ValueKind: JsonValueKind.Object } record)
+        {
+            return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+        }
+        var raw = s.Fields!.ToDictionary(f => f.Key, f => Text(RestDefinitions.Select(record, f.Value)), StringComparer.Ordinal);
+        var (employee, _) = HrMapping.Map(raw, s.StatusValues!, s.DateFormat);
+        return employee is not null && employee.RecordId == recordId
+            ? (employee, null)
+            : (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+    }
+
+    public static readonly IReadOnlyList<string> PayslipFieldNames = ["period", "gross", "deductions", "net", "currency"];
+
+    /// <summary>The largest payslip PDF passed on; payroll PDFs are a page or two.</summary>
+    public const int MaxPdfBytes = 10 * 1024 * 1024;
+
+    /// <summary>
+    /// One employee's payslips (US6), newest period first. Null with no failure means the connection has no payslip
+    /// address. Values are read live and never stored (section 8).
+    /// </summary>
+    public async Task<(IReadOnlyList<HrPayslip>? Payslips, PackCallResult? Failure)> ReadPayslipsAsync(PackConnection connection, string recordId, CancellationToken ct)
+    {
+        if (Parse(connection.Settings) is not { PayslipsPath: { } path, PayslipFields: { } fields } s)
+        {
+            return (null, null);
+        }
+        var uri = PageUri(s with { Paging = "none" }, path.Replace("{record_id}", Uri.EscapeDataString(recordId), StringComparison.Ordinal), 1, 1);
+        if (uri is null)
+        {
+            return (null, PackCallResult.Fatal(ConnectorErrorClasses.HostNotAllowed));
+        }
+        var (failure, answer) = await GetAsync(connection, s, uri, ct);
+        if (failure is not null)
+        {
+            return (null, failure);
+        }
+        if (RestDefinitions.Select(answer, s.PayslipRecordsPath ?? "$") is not { ValueKind: JsonValueKind.Array } list || list.GetArrayLength() > 600)
+        {
+            return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+        }
+        var payslips = new List<HrPayslip>();
+        foreach (var item in list.EnumerateArray())
+        {
+            string? Value(string name) => fields.TryGetValue(name, out var at) ? Text(RestDefinitions.Select(item, at)) : null;
+            static decimal? Number(string? v) => decimal.TryParse(v, NumberStyles.Number, CultureInfo.InvariantCulture, out var d) ? d : null;
+            var period = Value("period");
+            if (period is null || !PayslipPeriod().IsMatch(period) || Number(Value("net")) is not { } net)
+            {
+                return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+            }
+            var currency = Value("currency")?.Trim().ToUpperInvariant();
+            payslips.Add(new HrPayslip(period, Number(Value("gross")), Number(Value("deductions")), net, currency is not null && CurrencyCode().IsMatch(currency) ? currency : null));
+        }
+        return (payslips.OrderByDescending(p => p.Period, StringComparer.Ordinal).ToList(), null);
+    }
+
+    /// <summary>The PDF of one period as payroll provides it. Null with no failure means the connection has no PDF address.</summary>
+    public async Task<(byte[]? Pdf, PackCallResult? Failure)> ReadPayslipPdfAsync(PackConnection connection, string recordId, string period, CancellationToken ct)
+    {
+        if (!PayslipPeriod().IsMatch(period) || Parse(connection.Settings) is not { PayslipPdfPath: { } path } s)
+        {
+            return (null, null);
+        }
+        var address = path.Replace("{record_id}", Uri.EscapeDataString(recordId), StringComparison.Ordinal).Replace("{period}", period, StringComparison.Ordinal);
+        if (PageUri(s with { Paging = "none" }, address, 1, 1) is not { } uri)
+        {
+            return (null, PackCallResult.Fatal(ConnectorErrorClasses.HostNotAllowed));
+        }
+        if (!await signIn.IsAllowedAsync(new Uri(s.BaseUrl!.TrimEnd('/') + "/"), ct))
+        {
+            return (null, PackCallResult.Fatal(ConnectorErrorClasses.HostNotAllowed));
+        }
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/pdf"));
+        if (await signIn.AuthorizeAsync(connection, s.Rest, request, ct) is { } refused)
+        {
+            return (null, refused);
+        }
+        using var client = httpClients.CreateClient(SafeHttp.ClientName);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        if (signIn.MapStatus(connection, s.Rest, response) is { } failure)
+        {
+            return (null, failure);
+        }
+        if (response.Content.Headers.ContentLength is > MaxPdfBytes)
+        {
+            return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+        }
+        await using var stream = await response.Content.ReadAsStreamAsync(ct);
+        using var copy = new MemoryStream();
+        var buffer = new byte[81920];
+        int read;
+        while ((read = await stream.ReadAsync(buffer, ct)) > 0)
+        {
+            if (copy.Length + read > MaxPdfBytes)
+            {
+                return (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+            }
+            copy.Write(buffer, 0, read);
+        }
+        var bytes = copy.ToArray();
+        return bytes.AsSpan().StartsWith("%PDF-"u8) ? (bytes, null) : (null, PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse));
+    }
 
     private static string? Text(JsonElement? value) => value switch
     {
@@ -265,14 +413,69 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
         {
             errors.Add("nextPath", "validation.hr.record_path");
         }
+        if (Blank(s.EmployeePath) is { } one && (!OnePathShape().IsMatch(one) || one.Contains("..", StringComparison.Ordinal)
+            || one.Split("{record_id}").Length != 2))
+        {
+            errors.Add("employeePath", "validation.hr.employee_path");
+        }
+        if (s.EmployeeRecordPath is not null && !ArrayPath().IsMatch(s.EmployeeRecordPath))
+        {
+            errors.Add("employeeRecordPath", "validation.hr.record_path");
+        }
+        var payslipsPath = Blank(s.PayslipsPath);
+        var pdfPath = Blank(s.PayslipPdfPath);
+        Dictionary<string, string>? payslipFields = null;
+        if (payslipsPath is not null || pdfPath is not null || s.PayslipFields is { Count: > 0 })
+        {
+            if (payslipsPath is null || !Template(payslipsPath, ["{record_id}"]))
+            {
+                errors.Add("payslipsPath", "validation.hr.payslips_path");
+            }
+            if (pdfPath is not null && !Template(pdfPath, ["{record_id}", "{period}"]))
+            {
+                errors.Add("payslipPdfPath", "validation.hr.payslip_pdf_path");
+            }
+            if (s.PayslipRecordsPath is not null && !ArrayPath().IsMatch(s.PayslipRecordsPath))
+            {
+                errors.Add("payslipRecordsPath", "validation.hr.record_path");
+            }
+            payslipFields = [];
+            foreach (var (name, at) in s.PayslipFields ?? new Dictionary<string, string>())
+            {
+                var clean = at?.Trim();
+                if (!PayslipFieldNames.Contains(name) || clean is null || !RecordPath().IsMatch(clean))
+                {
+                    errors.Add($"payslipFields.{name}", "validation.hr.field_source");
+                    continue;
+                }
+                payslipFields[name] = clean;
+            }
+            if (!payslipFields.ContainsKey("period") || !payslipFields.ContainsKey("net"))
+            {
+                errors.Add("payslipFields", "validation.hr.payslip_fields_required");
+            }
+        }
         var fields = CheckFields(s.Fields, f => RecordPath().IsMatch(f), errors);
         var statuses = HrMapping.CheckStatusValues(s.StatusValues, errors);
         CheckSchedule(s.DateFormat, s.SyncAt, s.TimeZone, errors);
         errors.ThrowIfAny();
         var stored = new HrRestSettings(rest!.BaseUrl, rest.Auth, s.EmployeesPath, s.RecordsPath ?? "$", paging, paging == "page" ? s.PageParam ?? "page" : null,
             paging == "page" ? s.PageSizeParam : null, paging == "page" ? s.PageSize ?? DefaultPageSize : null, paging == "next" ? s.NextPath : null,
-            fields, statuses, Blank(s.DateFormat), s.SyncAt ?? "01:00", s.TimeZone ?? "UTC");
+            fields, statuses, Blank(s.DateFormat), s.SyncAt ?? "01:00", s.TimeZone ?? "UTC",
+            Blank(s.EmployeePath), Blank(s.EmployeePath) is null ? null : s.EmployeeRecordPath ?? "$",
+            payslipsPath, payslipsPath is null ? null : s.PayslipRecordsPath ?? "$", payslipsPath is null ? null : payslipFields, payslipsPath is null ? null : pdfPath);
         return JsonSerializer.SerializeToElement(stored, JsonDefaults.Options);
+    }
+
+    /// <summary>A path with each placeholder exactly once and nothing else in braces.</summary>
+    private static bool Template(string path, IReadOnlyList<string> placeholders)
+    {
+        if (!TemplateShape().IsMatch(path) || path.Contains("..", StringComparison.Ordinal) || placeholders.Any(p => path.Split(p).Length != 2))
+        {
+            return false;
+        }
+        var rest = placeholders.Aggregate(path, (s, p) => s.Replace(p, "x", StringComparison.Ordinal));
+        return !rest.Contains('{') && !rest.Contains('}');
     }
 
     internal static string? Blank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

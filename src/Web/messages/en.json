@@ -511,7 +511,8 @@
     "profile": "My profile",
     "ask": "Ask TeamBeats",
     "preferences": "Preferences",
-    "administration": "Administration"
+    "administration": "Administration",
+    "payslips": "My payslips"
   },
   "personalization": {
     "toolbar": "Personalize your page",
@@ -1478,7 +1479,10 @@
       "changeTitle": "Change {name}",
       "returnedWith": "It was returned with this comment:",
       "onBehalf": "File for someone else",
-      "onBehalfHint": "Leave empty to file for yourself. Their profile fills the form, and you need permission to file for people in their unit."
+      "onBehalfHint": "Leave empty to file for yourself. Their profile fills the form, and you need permission to file for people in their unit.",
+      "fromHr": "From your HR record. Ask HR to change it.",
+      "prefilledFromHr": "Filled from your HR record.",
+      "hrUnconfirmed": "This value could not be confirmed with the HR system right now. Try again later."
     },
     "status": {
       "draft": "Draft",
@@ -1782,7 +1786,14 @@
         "profile_employee_number": "Employee number",
         "profile_manager": "Manager",
         "org_primary_unit": "Unit",
-        "org_company": "Company"
+        "org_company": "Company",
+        "hr_employee_number": "Employee number from HR",
+        "hr_job_title": "Job title from HR",
+        "hr_grade": "Grade from HR",
+        "hr_cost_centre": "Cost centre from HR",
+        "hr_employment_type": "Employment type from HR",
+        "hr_location": "Location from HR",
+        "hr_hire_date": "Hire date from HR"
       },
       "lineManagerHint": "The manager of the person the request is for decides, from the reporting line. When there is no manager, or the manager filed the request, people who hold the Approver role for the requester's unit decide instead.",
       "automation": {
@@ -1813,7 +1824,10 @@
         },
         "remove": "Remove step",
         "add": "Add automatic step"
-      }
+      },
+      "hrPrefillHint": "Grade and cost centre are Confidential. They fill this field only when the service is classified Confidential or Restricted.",
+      "hrReadOnly": "Keep the HR value. People cannot change it.",
+      "hrMustBeCurrent": "Must be current. Check with HR when the copy is older than 7 days."
     },
     "team": {
       "title": "Team requests",
@@ -4892,7 +4906,24 @@
       "timeZone": "Time zone",
       "timeZoneHint": "An IANA time zone, for example Asia/Dubai.",
       "patternHint": "Which files hold the export, with * for any characters, for example employees_*.csv. Each sync reads only the newest one.",
-      "openIntegration": "Open the HR integration page"
+      "openIntegration": "Open the HR integration page",
+      "oneTitle": "One employee (optional)",
+      "employeePath": "Path of one employee",
+      "employeePathHint": "Used to confirm values that must be current. Put '{record_id}' where the record ID goes, for example /v1/employees/'{record_id}'.",
+      "employeeRecordPath": "Where the record is",
+      "payslipsTitle": "Payslips (optional)",
+      "payslipsPath": "Path of one employee's payslips",
+      "payslipsPathHint": "Put '{record_id}' where the record ID goes, for example /v1/employees/'{record_id}'/payslips. Payslips are read live and never stored.",
+      "payslipRecordsPath": "Where the payslips are",
+      "payslipPdfPath": "Path of one payslip PDF",
+      "payslipPdfPathHint": "Put '{record_id}' and '{period}' (year and month, such as 2026-11) where they go.",
+      "payslipFields": {
+        "period": "Period (year and month)",
+        "gross": "Gross pay",
+        "deductions": "Deductions",
+        "net": "Net pay",
+        "currency": "Currency"
+      }
     }
   },
   "components_gallery": {
@@ -5846,6 +5877,37 @@
         "cancelled_in_hr": "Cancelled in HR",
         "other": "Cancelled"
       }
+    }
+  },
+  "payslips": {
+    "title": "My payslips",
+    "intro": "Your payslips from payroll, by period. Only you can see them.",
+    "caption": "Payslips by period",
+    "period": "Period",
+    "gross": "Gross pay",
+    "deductions": "Deductions",
+    "net": "Net pay",
+    "pdf": "Payslip PDF",
+    "download": "Download the payslip for {period}",
+    "none": "Not given",
+    "privacy": "Payslips are read from payroll each time and are not kept in TeamBeats. A download is recorded and carries your name and the time.",
+    "failed": "Your payslips could not be loaded. Try again.",
+    "stepUp": {
+      "title": "Confirm it is you",
+      "message": "Payslips need a recent sign-in. Sign in again to see them.",
+      "action": "Sign in again"
+    },
+    "unavailable": {
+      "title": "Payroll is not available",
+      "message": "Your payslips cannot be read from payroll right now, so nothing is shown. Try again later."
+    },
+    "notMatched": {
+      "title": "No payroll record yet",
+      "message": "Your account is not linked to an HR record yet. Ask HR if you expected to see payslips."
+    },
+    "empty": {
+      "title": "No payslips yet",
+      "message": "Payroll has no payslips for you yet."
     }
   }
 }

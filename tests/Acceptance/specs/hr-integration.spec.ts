@@ -7,7 +7,8 @@ import { hostOrigin } from "../support/stack";
  * Spec 019 T005 and T008: the HR integration page. The administrator opens it from the admin area, sees that no HR
  * connection exists yet and no records, org codes or lifecycle changes are waiting, changes the matching rule, threshold,
  * joiner lead time and rehire setting, and finds both HR packs in the
- * Connections catalogue with their add forms, in English and Arabic with axe. Nothing calls an HR system: syncing,
+ * Connections catalogue with their add forms, in English and Arabic with axe. My payslips tells a person with no HR
+ * record why there are none (spec 019 US6). Nothing calls an HR system: syncing,
  * matching and held runs are covered by the API tests. The API decides every rule.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
@@ -51,9 +52,18 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
       await expect(page.getByText(msg(locale, "connections.catalogue.hr_rest"))).toBeVisible();
       await expect(page.getByRole("region", { name: msg(locale, "connections.hr.addRestTitle") }).getByLabel(msg(locale, "connections.hr.employeesPath"))).toBeVisible();
+      await expect(page.getByRole("region", { name: msg(locale, "connections.hr.addRestTitle") }).getByLabel(msg(locale, "connections.hr.employeePath"), { exact: true })).toBeVisible();
       const sftp = page.getByRole("region", { name: msg(locale, "connections.hr.addSftpTitle") });
       await expect(sftp.getByLabel(msg(locale, "connections.hr.fields.record_id"))).toBeVisible();
       await expectAccessible(page, testInfo, `hr-connections-${locale}`);
+    });
+
+    test("a person with no HR record opens My payslips and is told why there are none", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/payslips`);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "payslips.title"));
+      await expect(page.getByText(msg(locale, "payslips.notMatched.title"))).toBeVisible();
+      await expectAccessible(page, testInfo, `payslips-${locale}`);
     });
   });
 }

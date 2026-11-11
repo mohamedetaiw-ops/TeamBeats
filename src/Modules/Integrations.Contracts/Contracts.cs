@@ -764,8 +764,23 @@ public static class HrFields
     public static readonly IReadOnlyList<string> Required = [RecordId, Status];
 }
 
-/// <summary>A matched person's HR record as other modules see it: the mapped fields only, by canonical name.</summary>
-public sealed record HrRecordView(Guid UserId, string RecordId, IReadOnlyDictionary<string, string> Fields);
+/// <summary>
+/// A matched person's HR record as other modules see it: the mapped fields only, by canonical name.
+/// <paramref name="SeenAt"/> is when HR last confirmed the record, by a sync or a live read.
+/// </summary>
+public sealed record HrRecordView(Guid UserId, string RecordId, IReadOnlyDictionary<string, string> Fields, DateTimeOffset? SeenAt = null);
+
+/// <summary>
+/// A live read of one person's HR record (spec 019 US5 scenario 3). <see cref="State"/> is <c>ok</c>,
+/// <c>not_matched</c> (no HR record matches the person) or <c>unavailable</c> (the HR system did not answer, or its
+/// connection cannot read one record). <see cref="Record"/> is set only when the state is ok.
+/// </summary>
+public sealed record HrRecordRead(string State, HrRecordView? Record)
+{
+    public const string Ok = "ok";
+    public const string NotMatched = "not_matched";
+    public const string Unavailable = "unavailable";
+}
 
 /// <summary>
 /// HR records of matched people (spec 019 FR-001, FR-003) for the modules that own what HR feeds: profiles (spec 010)
@@ -779,6 +794,12 @@ public interface IHrRecords
 
     /// <summary>The canonical fields the tenant's HR connection maps, so their owners can mark them as from HR.</summary>
     Task<IReadOnlyList<string>> MappedFieldsAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Reads one matched person's record from the HR system now, for a value that must be current. The stored copy is
+    /// not changed; the next sync does that.
+    /// </summary>
+    Task<HrRecordRead> CurrentAsync(Guid userId, CancellationToken ct = default);
 }
 
 /// <summary>An HR sync applied its changes (spec 019 section 12). Counts only, never HR values.</summary>

@@ -462,6 +462,12 @@ export type HrMappingSettings = {
 };
 export type HrRestSettings = HrMappingSettings & {
   employeesPath: string | null;
+  employeePath?: string | null;
+  employeeRecordPath?: string | null;
+  payslipsPath?: string | null;
+  payslipRecordsPath?: string | null;
+  payslipFields?: Record<string, string> | null;
+  payslipPdfPath?: string | null;
   recordsPath: string | null;
   paging: string | null;
   pageParam: string | null;
@@ -549,3 +555,6 @@ export type HrOrgCode = {
   firstSeenAt: string;
   lastSeenAt: string;
 };
+
+/** Where each payslip value is in payroll's answer (spec 019 US6). */
+export const HR_PAYSLIP_FIELDS = ["period", "gross", "deductions", "net", "currency"] as const;

@@ -75,6 +75,7 @@ export default async function NewRequestPage({
           form={detail.data.form}
           initial={initial}
           readOnly={readOnly}
+          unconfirmed={prefill.ok ? (prefill.data.unconfirmed ?? []) : []}
           units={units.ok ? units.data : []}
           allowOnBehalf={detail.data.allowOnBehalf}
         />
