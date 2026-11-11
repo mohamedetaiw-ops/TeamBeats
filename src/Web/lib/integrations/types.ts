@@ -425,4 +425,4 @@ export type InboundCounts = {
 };
 
 export const WEBHOOK_EVENTS = ["ContentPublished", "ProcessInstanceCompleted", "RequestCompleted", "RequestReturned", "RequestSubmitted", "UserTaskCompleted", "UserTaskCreated"] as const;
-export const WEBHOOK_TARGETS = ["event", "message"] as const;
+export const WEBHOOK_TARGETS = ["event", "message", "kpi"] as const;

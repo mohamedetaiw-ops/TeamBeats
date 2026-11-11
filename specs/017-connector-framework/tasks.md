@@ -31,5 +31,7 @@ Depends on 004, 005, 006, 015, 024, 026, 027. R2.
 - [x] T018 [US8] Slack pack for notifications and sharing
 - [x] T019 Google Workspace directory and Drive extension points
 
+- [x] T021 KPI feed contract (FR-022): signed inbound webhooks with the target `kpi`, one reading per delivery, kept 400 days
+
 ## Final phase
-- [ ] T020 Connector-down suite in CI; performance tests; OpenAPI; R2 implementation notes; spec evidence
+- [x] T020 Connector-down suite in CI; performance tests; OpenAPI; R2 implementation notes; spec evidence

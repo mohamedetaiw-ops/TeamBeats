@@ -87,6 +87,20 @@ public sealed partial class ArchitectureTests
     }
 
     [Fact]
+    public void Connectors_never_call_models()
+    {
+        // Spec 017 FR-024: connectors never call models; AI work on connector data goes through the gateway in the
+        // consuming feature. The Integrations module neither references the gateway nor uses its contract.
+        var references = SourceFiles("src/Modules/Integrations", "*.csproj")
+            .Where(f => ProjectReferences(f).Any(r => r.StartsWith("TeamBeats.Modules.AiGateway", StringComparison.Ordinal)))
+            .Select(Rel).ToList();
+        var uses = SourceFiles("src/Modules/Integrations")
+            .Where(f => File.ReadAllText(f).Contains("TeamBeats.Modules.AiGateway", StringComparison.Ordinal) || File.ReadAllText(f).Contains("IAiGateway", StringComparison.Ordinal))
+            .Select(Rel).ToList();
+        Assert.True(references.Count + uses.Count == 0, "Integrations reaches the AI Gateway: " + string.Join(", ", references.Concat(uses)));
+    }
+
+    [Fact]
     public void Production_api_does_not_contain_development_sign_in()
     {
         Assert.DoesNotContain("TeamBeats.Modules.Identity.DevAuth", ProjectReferences(Path.Combine(Root, "src/Api/TeamBeats.Api.csproj")));

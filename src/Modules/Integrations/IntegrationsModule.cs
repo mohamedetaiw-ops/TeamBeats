@@ -78,6 +78,8 @@ public static class IntegrationsModule
         services.AddScoped<Finance.FinanceHandOffs>();
         services.AddScoped<IFinanceHandOff>(sp => sp.GetRequiredService<Finance.FinanceHandOffs>());
         services.AddScoped<IConnectionDependents, Finance.FinanceDependents>();
+        services.AddScoped<Webhooks.KpiFeed>();
+        services.AddScoped<IKpiFeed>(sp => sp.GetRequiredService<Webhooks.KpiFeed>());
         services.AddScoped<Google.GoogleSignIn>();
         services.AddScoped<Google.GoogleApi>();
         services.AddScoped<Google.GooglePack>();

@@ -1169,6 +1169,8 @@
   "validation.webhook.delivery_id": "The delivery needs a delivery ID of at most 200 characters.",
   "validation.webhook.body": "The delivery body must be JSON.",
   "validation.webhook.correlation_missing": "The delivery has no value at the correlation key path.",
+  "validation.webhook.kpi_fields": "A KPI webhook maps metric, value, unit, period_start, period_end and source_time, and may map location. Nothing else.",
+  "validation.webhook.kpi_reading": "The reading is incomplete or wrong. Send the metric, a number for the value, the unit, the period start and end, and the source time with its offset.",
   "conflict.integrations.webhook_duplicate": "This delivery ID was received already.",
   "integrations.webhook.signature_invalid": "The delivery signature is missing or wrong.",
   "integrations.webhook.timestamp_outside_window": "The delivery timestamp is outside the allowed window.",
