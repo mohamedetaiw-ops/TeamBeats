@@ -14,7 +14,7 @@ import { FormField, SelectField } from "@/components/ui/FormField";
 import { RadioGroup } from "@/components/ui/RadioGroup";
 import { Tabs } from "@/components/ui/Tabs";
 import { PersonPicker } from "@/features/services/PersonPicker";
-import { byArea, scopeTypeName, unitLabel, type AssignmentView, type DecisionReason, type ExplainResult, type OrgUnitView, type RoleView } from "@/lib/admin/types";
+import { byArea, customRoleName, scopeTypeName, unitLabel, type AssignmentView, type DecisionReason, type ExplainResult, type OrgUnitView, type RoleView } from "@/lib/admin/types";
 import { ResultAlert, useAdminAction, useKeyLabel, usePeopleNames, useWhen } from "./shared";
 
 const RETURN = "/admin/roles";
@@ -49,7 +49,10 @@ export function RolesAdmin({
   const [assigning, setAssigning] = useState(false);
   const person = usePeopleNames([...(assignments ?? []).filter((a) => a.subjectType === "user").map((a) => a.subjectId), onlyUser]);
   const permissions = useMemo(() => [...new Set(roles.flatMap((r) => r.permissions))].sort(), [roles]);
-  const nameOf = (key: string) => roleName[key] ?? key;
+  const nameOf = (key: string) => {
+    const role = roles.find((r) => r.key === key);
+    return roleName[key] ?? (role ? customRoleName(role, locale) : null) ?? key;
+  };
   const unitName = (id: string | null) => {
     const u = id ? units.find((x) => x.id === id) : undefined;
     return u ? unitLabel(u, locale) : t("unknownUnit");
