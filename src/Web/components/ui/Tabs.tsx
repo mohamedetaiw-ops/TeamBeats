@@ -1,19 +1,31 @@
 "use client";
 
 import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Icon, type IconName } from "./Icon";
 
 /**
  * Tabs (WAI-ARIA tabs pattern, automatic activation). Arrow keys follow the reading direction, so the right arrow moves
- * to the previous tab in Arabic. Home and End jump to the first and last tab.
+ * to the previous tab in Arabic. Home and End jump to the first and last tab. Vertical tabs, such as the sections of a
+ * settings dialog, sit at the start and move with the up and down arrows.
  */
-export function Tabs({ label, tabs }: { label: string; tabs: { key: string; label: string; content: ReactNode }[] }) {
+export function Tabs({
+  label,
+  tabs,
+  orientation = "horizontal",
+}: {
+  label: string;
+  tabs: { key: string; label: string; icon?: IconName; content: ReactNode }[];
+  orientation?: "horizontal" | "vertical";
+}) {
   const id = useId();
   const [active, setActive] = useState(0);
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
   function onKey(event: KeyboardEvent<HTMLDivElement>) {
     const rtl = getComputedStyle(event.currentTarget).direction === "rtl";
-    const next = { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 }[event.key];
+    const keys: Record<string, number> =
+      orientation === "vertical" ? { ArrowDown: 1, ArrowUp: -1 } : { ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 };
+    const next = keys[event.key];
     let index = active;
     if (next) index = (active + next + tabs.length) % tabs.length;
     else if (event.key === "Home") index = 0;
@@ -25,8 +37,8 @@ export function Tabs({ label, tabs }: { label: string; tabs: { key: string; labe
   }
 
   return (
-    <div className="ui-tabs">
-      <div role="tablist" aria-label={label} className="ui-tablist" onKeyDown={onKey}>
+    <div className="ui-tabs" data-orientation={orientation === "vertical" ? orientation : undefined}>
+      <div role="tablist" aria-label={label} aria-orientation={orientation === "vertical" ? orientation : undefined} className="ui-tablist" onKeyDown={onKey}>
         {tabs.map((tab, i) => (
           <button
             key={tab.key}
@@ -42,7 +54,8 @@ export function Tabs({ label, tabs }: { label: string; tabs: { key: string; labe
             className="ui-tab"
             onClick={() => setActive(i)}
           >
-            {tab.label}
+            {tab.icon ? <Icon name={tab.icon} size={18} /> : null}
+            <span>{tab.label}</span>
           </button>
         ))}
       </div>

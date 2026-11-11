@@ -160,12 +160,12 @@
 }
 
 .ui-choice-control input:checked + .ui-choice-mark,
-.ui-choice-control input:indeterminate + .ui-choice-mark {
+.ui-choice-control input:where([type="checkbox"]):indeterminate + .ui-choice-mark {
   border-color: var(--tb-color-accent-base);
   background: var(--tb-color-accent-base);
 }
 
-:where(.ui-choice-control input:checked, .ui-choice-control input:indeterminate) + .ui-choice-mark .icon,
+:where(.ui-choice-control input:checked, .ui-choice-control input:where([type="checkbox"]):indeterminate) + .ui-choice-mark .icon,
 .ui-choice-control input:checked + .ui-choice-mark::after {
   opacity: 1;
   transform: scale(1);
@@ -981,6 +981,12 @@ a.ui-page[aria-current="page"]:hover {
   max-inline-size: 36rem;
 }
 
+.gallery-wide {
+  display: grid;
+  gap: var(--tb-space-xl);
+  min-inline-size: 0;
+}
+
 .gallery-columns {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
@@ -990,4 +996,41 @@ a.ui-page[aria-current="page"]:hover {
 
 .gallery-columns > * {
   min-inline-size: 0;
+}
+
+.gallery-charts {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 24rem), 1fr));
+}
+
+/* A page pattern shown inside the gallery page, in a frame that stands for the page. */
+.gallery-pattern {
+  display: grid;
+  gap: var(--tb-space-lg);
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) dashed var(--tb-color-border-strong);
+  border-radius: var(--tb-radius-lg);
+}
+
+.pt-people {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pt-people :where(li) {
+  display: flex;
+  gap: var(--tb-space-sm);
+  align-items: center;
+}
+
+.pt-people :where(li) > span:last-child {
+  display: grid;
+  font-size: var(--tb-font-size-sm);
+}
+
+.pt-people :where(li) > span:last-child > span {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
 }
