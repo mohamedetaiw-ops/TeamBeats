@@ -78,7 +78,8 @@ test.describe("v2 home language switch", () => {
     await signInWithDevForm(page, tenant.key, tenant.adminEmail, "en");
     await page.goto(`${hostOrigin(tenant.key)}/`);
     await expect(page.getByRole("link", { name: "Shuttle times change on Monday" })).toBeVisible();
-    await page.getByRole("button", { name: msg("en", "shell.switchLanguage", { language: msg("en", "locale.ar") }) }).click();
+    await page.getByRole("button", { name: msg("en", "shell.settings.open") }).click();
+    await page.getByLabel(msg("en", "shell.settings.language")).selectOption("ar");
     await expect(page.getByRole("link", { name: "تتغير مواعيد الحافلة يوم الاثنين" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Shuttle times change on Monday" })).toHaveCount(0);
   });

@@ -45,6 +45,10 @@ const paths = {
   minus: "M5 12h14",
   more: "M5 12v.01M12 12v.01M19 12v.01",
   megaphone: "M4 10v4h3l8 5V5l-8 5zM18 9a4 4 0 0 1 0 6",
+  folder: "M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z",
+  eye: "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  "sort-desc": "M7 4v16M3 16l4 4 4-4M14 6h7M14 12h5M14 18h3",
+  "sort-asc": "M7 20V4M3 8l4-4 4 4M14 6h3M14 12h5M14 18h7",
 } as const;
 
 export type IconName = keyof typeof paths;

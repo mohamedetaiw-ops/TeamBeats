@@ -10,6 +10,7 @@ import { getPreferences } from "@/lib/shell/client";
 // characters of that script.
 import "@fontsource/readex-pro/400.css";
 import "@fontsource/readex-pro/500.css";
+import "@fontsource/readex-pro/600.css";
 import "@fontsource/readex-pro/700.css";
 import "@fontsource/alexandria/600.css";
 import "@fontsource/alexandria/700.css";

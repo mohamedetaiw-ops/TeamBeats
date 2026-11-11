@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { connectHref, useOutlookData, useReturnPath, type OutlookState } from "@/components/experience/outlook";
 import { Button } from "@/components/ui/Button";
@@ -12,14 +12,15 @@ type Status = { state: OutlookState; features: string[]; connectedAt: string | n
  * page, or disconnect, which deletes TeamBeats' delegated token. The section is left out when the tenant's plan or
  * connection has no mail or calendar: the server answers that, the client does not decide it.
  */
-export function OutlookSettings() {
+export function OutlookSettings({ unavailable = null }: { unavailable?: ReactNode } = {}) {
   const t = useTranslations("outlook.settings");
   const returnTo = useReturnPath();
   const { answer, retry } = useOutlookData<Status>("/api/v1/me/outlook", false);
   const [busy, setBusy] = useState(false);
 
-  if (answer === "loading" || answer === "denied" || answer === "failed") return null;
-  if (answer.state === "turned_off" || answer.state === "not_in_plan") return null;
+  if (answer === "loading") return null;
+  if (answer === "denied" || answer === "failed") return unavailable;
+  if (answer.state === "turned_off" || answer.state === "not_in_plan") return unavailable;
 
   async function disconnect() {
     setBusy(true);

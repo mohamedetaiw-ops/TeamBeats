@@ -291,7 +291,7 @@ export function RequestForm({
         <fieldset key={f.key} aria-describedby={describedBy(f)}>
           <legend>
             {label(f)}
-            {f.required ? <span aria-hidden="true">{t("requiredMark")}</span> : null}
+            {f.required ? <span className="field-required" aria-hidden="true">{t("requiredMark")}</span> : null}
           </legend>
           {help}
           {(f.options ?? []).map((o) => (
@@ -314,7 +314,7 @@ export function RequestForm({
         <fieldset key={f.key} aria-describedby={describedBy(f)}>
           <legend>
             {label(f)}
-            {f.required ? <span aria-hidden="true">{t("requiredMark")}</span> : null}
+            {f.required ? <span className="field-required" aria-hidden="true">{t("requiredMark")}</span> : null}
           </legend>
           {help}
           <label className="services-select">
@@ -340,10 +340,10 @@ export function RequestForm({
       <div key={f.key} className="field">
         <label htmlFor={`${formId}-${f.key}`}>
           {label(f)}
-          {f.required ? <span aria-hidden="true">{t("requiredMark")}</span> : null}
+          {f.required ? <span className="field-required" aria-hidden="true">{t("requiredMark")}</span> : null}
         </label>
-        {help}
         {control(f)}
+        {help}
         {lockedHint}
         {error}
       </div>

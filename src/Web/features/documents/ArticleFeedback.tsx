@@ -5,9 +5,13 @@ import { useTranslations } from "next-intl";
 import { problemMessages } from "@/lib/notifications/types";
 import type { MyFeedback } from "@/lib/documents/types";
 import { Button } from "@/components/ui/Button";
+import { Icon } from "@/components/ui/Icon";
 import "./documents.css";
 
-/** "Was this helpful?" (spec 011 US4 scenario 2): yes or no with an optional comment; a new answer replaces the last one. */
+/**
+ * "Was this helpful?" (spec 011 US4 scenario 2; spec 036 DLS-049): two toggle buttons at the end of the article; the
+ * comment box and Send appear once the reader chooses. A new answer replaces the last one.
+ */
 export function ArticleFeedback({
   articleId,
   initial,
@@ -55,43 +59,31 @@ export function ArticleFeedback({
   }
 
   return (
-    <form
-      className="documents-card documents-feedback"
-      onSubmit={(e) => void send(e)}
-      noValidate
-    >
-      <fieldset>
-        <legend>{t("question")}</legend>
-        <label className="documents-check">
-          <input
-            type="radio"
-            name={`${ids}-helpful`}
-            checked={helpful === true}
-            onChange={() => setHelpful(true)}
-          />
+    <form className="kb-feedback" onSubmit={(e) => void send(e)} noValidate>
+      <div className="kb-feedback-question" role="group" aria-labelledby={`${ids}-question`}>
+        <span id={`${ids}-question`} className="kb-feedback-label">
+          {t("question")}
+        </span>
+        <button type="button" className="button button-secondary kb-feedback-choice" aria-pressed={helpful === true} onClick={() => setHelpful(true)}>
+          <Icon name="check" size={14} />
           {t("yes")}
-        </label>
-        <label className="documents-check">
-          <input
-            type="radio"
-            name={`${ids}-helpful`}
-            checked={helpful === false}
-            onChange={() => setHelpful(false)}
-          />
+        </button>
+        <button type="button" className="button button-secondary kb-feedback-choice" aria-pressed={helpful === false} onClick={() => setHelpful(false)}>
+          <Icon name="close" size={14} />
           {t("no")}
-        </label>
-      </fieldset>
-      <div className="field">
-        <label htmlFor={`${ids}-comment`}>{t("comment")}</label>
-        <textarea
-          id={`${ids}-comment`}
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          maxLength={1000}
-          rows={3}
-          dir="auto"
-        />
+        </button>
       </div>
+      {helpful !== null || mine ? (
+        <>
+          <div className="field">
+            <label htmlFor={`${ids}-comment`}>{t("comment")}</label>
+            <textarea id={`${ids}-comment`} value={comment} onChange={(e) => setComment(e.target.value)} maxLength={1000} rows={3} dir="auto" />
+          </div>
+          <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>
+            {mine ? t("update") : t("send")}
+          </Button>
+        </>
+      ) : null}
       {messages.length > 0 ? (
         <div className="notice notice-error" role="alert">
           {messages.map((m) => (
@@ -104,9 +96,6 @@ export function ArticleFeedback({
           {t("thanks")}
         </p>
       ) : null}
-      <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>
-        {mine ? t("update") : t("send")}
-      </Button>
     </form>
   );
 }

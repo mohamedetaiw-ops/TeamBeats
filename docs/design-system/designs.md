@@ -8,12 +8,12 @@ TeamBeats ships four complete designs. A tenant administrator picks one in **Adm
 | Suits | Most companies, the TeamBeats look | Government, banks, regulated sectors | Creative, retail, young workforces | Technology companies, operations, data heavy workspaces |
 | Navigation | Icon rail on the start edge | Top bar of labelled links under the header | Dark labelled sidebar on the start edge | Light labelled sidebar on the start edge |
 | Header | White bar | Deep green bar with a gold mark | White bar with a soft shadow | White bar with a hairline |
-| Canvas | Lavender grey `#F3F2F8` | Paper white `#F6F7F5` | Warm cream `#FFF8F3` | Neutral grey `#F7F7F7` |
-| Accent | Indigo `#3B2FC9` | Green `#0B6E4F` | Raspberry `#C2185B` | Blue `#155DFC` |
+| Canvas | Cool grey `#F7F8FB` | Paper white `#F6F7F5` | Warm cream `#FFF8F3` | Neutral grey `#F7F7F7` |
+| Accent | Indigo `#4338CA` | Green `#0B6E4F` | Raspberry `#C2185B` | Blue `#155DFC` |
 | Highlight | Saffron | Gold | Coral | Teal, with lime on dark surfaces |
 | Type | Readex Pro text, Alexandria headings | IBM Plex Sans and IBM Plex Sans Arabic | Cairo for text and headings | Inter, with IBM Plex Sans Arabic for Arabic |
 | Headings | 32 / 24 px, bold 700 | 28 / 22 px, semibold 600, gold rule under the page title | 40 / 26 px, bold 700, tight | 30 / 22 px, semibold 600, slightly tight |
-| Corners | Soft (8, 14, 24 px) | Square (2, 4, 6 px) | Round (10, 18, 28 px), pill buttons | Even (8, 10, 20 px) |
+| Corners | Controlled (8, 12, 16 px) | Square (2, 4, 6 px) | Round (10, 18, 28 px), pill buttons | Even (8, 10, 20 px) |
 | Elevation | Light shadows | Borders, almost no shadow | Deep soft shadows | Hairline borders, very soft shadows, shaded filled buttons |
 
 The token values are in `src/Modules/Experience/Themes/DesignPresets.cs`; Beats is the platform default in `Tokens.cs`. Dark mode values are defined for every color in all four designs.

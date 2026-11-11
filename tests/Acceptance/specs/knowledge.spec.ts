@@ -50,7 +50,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 2, name: msg(locale, "documents.kb_new.section.steps") })).toBeVisible();
       await expect(page.getByTestId("article-score")).toContainText(msg(locale, "documents.kb.noScore"));
 
-      await page.getByRole("radio", { name: msg(locale, "documents.feedback.yes") }).check();
+      await page.getByRole("button", { name: msg(locale, "documents.feedback.yes") }).click();
       await page.getByLabel(msg(locale, "documents.feedback.comment")).fill(locale === "ar" ? "واضحة جدًا" : "Very clear");
       await page.getByRole("button", { name: msg(locale, "documents.feedback.send") }).click();
       await expect(page.getByTestId("feedback-saved")).toHaveText(msg(locale, "documents.feedback.thanks"));

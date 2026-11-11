@@ -415,7 +415,7 @@
       "language": "Language",
       "mode": {
         "label": "Appearance",
-        "system": "Same as device",
+        "system": "System",
         "light": "Light",
         "dark": "Dark"
       },
@@ -439,13 +439,16 @@
       "resetLayouts": "Reset all my pages",
       "resetLayoutsQuestion": "Return every page you personalized to your organization's layout? Your language and other settings stay.",
       "resetLayoutsConfirm": "Reset all pages",
-      "resetLayoutsCancel": "Cancel"
+      "resetLayoutsCancel": "Cancel",
+      "title": "Quick preferences",
+      "allPreferences": "All preferences",
+      "reduceMotion": "Reduce motion"
     },
     "homeOf": "{name} home",
     "account": "Account: {name}",
     "profile": "My profile",
-    "switchLanguage": "Switch to {language}",
-    "ask": "Ask TeamBeats"
+    "ask": "Ask TeamBeats",
+    "preferences": "Preferences"
   },
   "personalization": {
     "toolbar": "Personalize your page",
@@ -974,7 +977,21 @@
       "empty": "No email has been captured yet.",
       "to": "To:",
       "from": "From:"
-    }
+    },
+    "tabs": {
+      "all": "All",
+      "unread": "Unread",
+      "action": "Needs action",
+      "label": "Notification filters"
+    },
+    "groups": {
+      "action": "Requires action",
+      "today": "Today",
+      "earlier": "Earlier"
+    },
+    "markRead": "Mark as read",
+    "emptyUnread": "You're all caught up.",
+    "emptyAction": "Nothing needs your action."
   },
   "calendars": {
     "title": "Working calendars",
@@ -1115,7 +1132,17 @@
       "visibility": "Who sees this: {value}",
       "source": "Source: {value}",
       "empty": "Not set",
-      "view": "View my public profile"
+      "view": "View public profile",
+      "groups": {
+        "work": "Work information",
+        "contact": "Contact details",
+        "preferences": "Personal preferences",
+        "other": "More about you"
+      },
+      "managed": {
+        "directory": "Managed by the directory",
+        "admin": "Managed by your administrator"
+      }
     },
     "field": {
       "email": "Email",
@@ -1366,7 +1393,7 @@
       "to": "To",
       "currency": "Currency for {field}",
       "fromProfile": "From your profile. Change it in the directory or ask HR.",
-      "requiredMark": " (required)",
+      "requiredMark": "Required",
       "addFiles": "Add files",
       "remove": "Remove",
       "removeFile": "Remove {name}",
@@ -1402,7 +1429,20 @@
       "empty": "No requests yet.",
       "emptyHint": "Requests you file, or that are filed for you, appear here.",
       "filedFor": "Filed for {name}. ",
-      "submittedAt": "Submitted {when}"
+      "submittedAt": "Submitted {when}",
+      "view": "Show",
+      "views": {
+        "all": "All",
+        "active": "Active",
+        "completed": "Completed"
+      },
+      "search": "Search by service or number",
+      "anyStatus": "Any status",
+      "apply": "Filter",
+      "noMatch": "No requests match these filters.",
+      "noMatchHint": "Try other words or another status.",
+      "clear": "Clear filters",
+      "browse": "Browse services"
     },
     "request": {
       "summary": "Summary",
@@ -2110,7 +2150,10 @@
         "superseded": "Superseded"
       },
       "viewName": "Name for this view",
-      "saveView": "Save view"
+      "saveView": "Save view",
+      "noneHint": "Try other words, or clear the filters to see the whole folder.",
+      "clear": "Clear filters",
+      "anyField": "{field}: Any"
     },
     "upload": {
       "noFile": "Choose a file to upload.",
@@ -2203,7 +2246,7 @@
         "faq": "Frequently asked questions",
         "troubleshooting": "Troubleshooting"
       },
-      "updated": "Published {date}, version {version}",
+      "updated": "Published {date} · version {version}",
       "edit": "Edit this article",
       "contents": "On this page",
       "related": "Related",
@@ -2212,7 +2255,11 @@
       "scoreValue": "{percent}% found it helpful ({helpful} of {total})",
       "helpful": "Helpful",
       "notHelpful": "Not helpful",
-      "listUpdated": "Updated {date}"
+      "listUpdated": "Updated {date}",
+      "readTime": "{minutes} min read",
+      "noBody": "This article has no text yet.",
+      "noBodyEditor": "Add the steps with Edit so readers can follow them.",
+      "noBodyReader": "The owner is still writing it. Check back soon."
     },
     "feedback": {
       "choose": "Say whether the article helped.",
@@ -4771,6 +4818,33 @@
       "nodeSecurity": "Security",
       "nodeDevices": "Devices",
       "treeChosen": "Open: {name}"
+    }
+  },
+  "preferences": {
+    "title": "Preferences",
+    "intro": "How TeamBeats looks and works for you. Changes apply at once and follow you to every device.",
+    "display": {
+      "title": "Display",
+      "hint": "Appearance, density, language and text size."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "hint": "Choose what reaches you, and how.",
+      "link": "Notification preferences"
+    },
+    "apps": {
+      "title": "Connected apps",
+      "hint": "Apps TeamBeats reads for you while you are signed in.",
+      "none": "No apps are available to connect yet."
+    },
+    "pages": {
+      "title": "Your pages",
+      "hint": "Pages you arranged keep your layout until you reset them. Your language and other preferences stay."
+    },
+    "profile": {
+      "title": "Profile",
+      "hint": "Your photo, contact details and who can see them.",
+      "link": "Edit my profile"
     }
   }
 }

@@ -12,11 +12,35 @@
   justify-items: center;
   gap: var(--tb-space-xs);
   min-block-size: 6rem;
-  padding: var(--tb-space-md);
-  border: var(--tb-border-width-thin) dashed var(--tb-color-border-default);
+  padding: var(--tb-space-lg) var(--tb-space-md);
   border-radius: var(--tb-radius-md);
   color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
   text-align: center;
+}
+
+.ui-state-icon {
+  display: grid;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  margin-block-end: var(--tb-space-xs);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+  color: var(--tb-color-text-secondary);
+}
+
+.ui-state[data-state="error"] .ui-state-icon,
+.ui-state[data-state="denied"] .ui-state-icon {
+  color: var(--tb-color-state-danger);
+}
+
+.ui-state-action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--tb-space-sm);
+  margin-block-start: var(--tb-space-xs);
 }
 
 .ui-state p {
@@ -25,7 +49,8 @@
 
 .ui-state-title {
   color: var(--tb-color-text-primary);
-  font-weight: var(--tb-font-weight-bold);
+  font-size: var(--tb-font-size-md);
+  font-weight: var(--tb-font-weight-semibold);
 }
 
 .ui-state[data-state="error"] .ui-state-title,
@@ -236,40 +261,47 @@
   border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
 
+/* Badges and chips: 6px corners, 22 to 24px high, a tint of their own colour; tone carries meaning only (DLS-058, DLS-060). */
 .ui-badge {
   display: inline-flex;
   align-items: center;
   gap: var(--tb-space-xs);
-  padding-block: 0.125rem;
+  min-block-size: 1.375rem;
   padding-inline: var(--tb-space-sm);
-  border: var(--tb-border-width-thin) solid currentcolor;
-  border-radius: var(--tb-radius-full);
-  background: var(--tb-color-surface-raised);
+  border: var(--tb-border-width-thin) solid transparent;
+  border-radius: calc(var(--tb-radius-sm) * 0.75);
+  background: var(--tb-color-surface-sunken);
   color: var(--tb-color-text-secondary);
-  font-size: var(--tb-font-size-sm);
+  font-size: var(--tb-font-size-xs);
   font-weight: var(--tb-font-weight-medium);
   line-height: var(--tb-font-line-height-heading);
+  white-space: nowrap;
 }
 
 .ui-badge[data-tone="accent"] {
-  border-color: transparent;
   background: var(--tb-color-accent-subtle);
   color: var(--tb-color-text-primary);
 }
 
 .ui-badge[data-tone="info"] {
-  color: var(--tb-color-state-info);
+  background: var(--tb-color-tint-cool);
+  color: var(--tb-color-tint-cool-text);
 }
 
 .ui-badge[data-tone="success"] {
-  color: var(--tb-color-state-success);
+  background: var(--tb-color-tint-fresh);
+  color: var(--tb-color-tint-fresh-text);
 }
 
 .ui-badge[data-tone="warning"] {
-  color: var(--tb-color-state-warning);
+  background: var(--tb-color-tint-warm);
+  color: var(--tb-color-tint-warm-text);
 }
 
+/* Danger has no tint token, so it keeps a hairline in its own colour on the plain surface. */
 .ui-badge[data-tone="danger"] {
+  border-color: currentcolor;
+  background: var(--tb-color-surface-raised);
   color: var(--tb-color-state-danger);
 }
 
@@ -620,7 +652,7 @@
   min-block-size: 2.25rem;
   padding-inline: var(--tb-space-md);
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-full);
+  border-radius: var(--tb-radius-sm);
   background: var(--tb-color-surface-raised);
   color: var(--tb-color-text-primary);
   font-size: var(--tb-font-size-sm);
@@ -635,7 +667,7 @@
 .ui-chips a[aria-current="page"] {
   border-color: var(--tb-color-accent-base);
   background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-accent-base);
+  color: var(--tb-color-link);
   font-weight: var(--tb-font-weight-medium);
 }
 

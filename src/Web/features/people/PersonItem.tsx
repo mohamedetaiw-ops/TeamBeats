@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { joinMeta } from "@/lib/format";
 import { initials, localName, locationName, personName, type PersonCard } from "@/lib/people/types";
 
 const tones = ["accent", "highlight", "success", "info"] as const;
@@ -11,11 +12,13 @@ function avatarTone(id: string) {
 }
 
 /**
- * One person in a list: initials, name linked to the profile, title, unit and location. The API has already removed
+ * One person in a list (spec 036 DLS-062): initials aligned to the top of the text, the name linked to the profile, the
+ * title on its own line, and unit · location on one meta line. The API has already removed
  * anything the viewer may not see, so this shows what it is given.
  */
 export function PersonItem({ person, locale, extra }: { person: PersonCard; locale: string; extra?: string }) {
   const name = personName(person, locale);
+  const meta = joinMeta([person.unit ? localName(person.unit.names, locale) : null, person.location ? locationName(person.location, locale) : null, extra]);
   return (
     <div className="people-item">
       <span className="people-avatar" data-tone={avatarTone(person.id)} aria-hidden="true">
@@ -30,11 +33,11 @@ export function PersonItem({ person, locale, extra }: { person: PersonCard; loca
             <bdi>{person.jobTitle}</bdi>
           </span>
         ) : null}
-        <span className="people-meta">
-          {person.unit ? <bdi>{localName(person.unit.names, locale)}</bdi> : null}
-          {person.location ? <bdi>{locationName(person.location, locale)}</bdi> : null}
-          {extra ? <span>{extra}</span> : null}
-        </span>
+        {meta ? (
+          <span className="people-meta">
+            <bdi>{meta}</bdi>
+          </span>
+        ) : null}
       </div>
     </div>
   );

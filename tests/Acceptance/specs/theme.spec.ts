@@ -32,7 +32,7 @@ test.describe("tenant theme", () => {
 
   test("signed-out pages use the platform tokens", async ({ page }) => {
     await page.goto(`${hostOrigin(tenant.key)}/signin`);
-    expect(await accent(page)).toBe("#3b2fc9");
+    expect(await accent(page)).toBe("#4338ca");
     await expect(page.locator('link[href*="theme.css"]')).toHaveCount(0);
   });
 
@@ -63,7 +63,7 @@ test.describe("tenant theme", () => {
     await page.emulateMedia({ colorScheme: "dark" });
     expect(await accent(page)).toBe("#0f766e");
     await page.getByRole("button", { name: msg("en", "shell.settings.open") }).click();
-    await page.getByLabel(msg("en", "shell.settings.mode.label")).selectOption("system");
+    await page.getByRole("radiogroup", { name: msg("en", "shell.settings.mode.label") }).getByRole("radio", { name: msg("en", "shell.settings.mode.system") }).check();
     await expect.poll(() => accent(page)).toBe("#5eead4");
   });
 });

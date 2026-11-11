@@ -12,7 +12,7 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
 };
 
 /**
- * Labelled input with an optional hint (FR-046) and an associated error (WCAG 2.2 AA: 1.3.1, 3.3.1; FR-038). The error
+ * Labelled input with an optional hint under the control, so a row of controls lines up (FR-046, DLS-049) and an associated error (WCAG 2.2 AA: 1.3.1, 3.3.1; FR-038). The error
  * is linked to the field and announced, and the input keeps what the user typed.
  */
 export function FormField({ label, error, hint, leading, trailing, ...input }: Props) {
@@ -23,11 +23,6 @@ export function FormField({ label, error, hint, leading, trailing, ...input }: P
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
-      {hint ? (
-        <p id={hintId} className="field-hint">
-          {hint}
-        </p>
-      ) : null}
       {leading || trailing ? (
         <InputGroup leading={leading} trailing={trailing}>
           <input id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...input} />
@@ -35,6 +30,11 @@ export function FormField({ label, error, hint, leading, trailing, ...input }: P
       ) : (
         <input id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...input} />
       )}
+      {hint ? (
+        <p id={hintId} className="field-hint">
+          {hint}
+        </p>
+      ) : null}
       {error ? (
         <p id={errorId} className="field-error" role="alert">
           {error}
@@ -75,12 +75,12 @@ export function Field({
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
+      {children({ id, describedBy, invalid: error ? true : undefined })}
       {hint ? (
         <p id={`${id}-hint`} className="field-hint">
           {hint}
         </p>
       ) : null}
-      {children({ id, describedBy, invalid: error ? true : undefined })}
       {error ? (
         <p id={`${id}-error`} className="field-error" role="alert">
           {error}

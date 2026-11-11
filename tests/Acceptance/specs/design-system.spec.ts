@@ -19,7 +19,7 @@ import { hostOrigin } from "../support/stack";
  * Set DESIGN_SCREENSHOTS_DIR to also write full-page screenshots for design reviews (post-development fidelity check).
  */
 const designs = [
-  { key: "beats", navigation: "rail", accent: "#3b2fc9", font: "Readex Pro", arabicFont: "Readex Pro" },
+  { key: "beats", navigation: "rail", accent: "#4338ca", font: "Readex Pro", arabicFont: "Readex Pro" },
   { key: "atlas", navigation: "top", accent: "#0b6e4f", font: "IBM Plex Sans", arabicFont: "IBM Plex Sans Arabic" },
   { key: "pulse", navigation: "sidebar", accent: "#c2185b", font: "Cairo", arabicFont: "Cairo" },
   // Inter has no Arabic, so Studio pairs it with IBM Plex Sans Arabic.

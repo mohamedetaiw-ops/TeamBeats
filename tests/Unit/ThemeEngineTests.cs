@@ -196,7 +196,7 @@ public sealed class ThemeEngineTests
         foreach (var variant in theme.Variants.Values)
         {
             var css = ThemeEngine.Css(variant);
-            Assert.Contains("--tb-color-accent-base:#3b2fc9;", ThemeEngine.Css(theme.Variants["light.comfortable"]));
+            Assert.Contains("--tb-color-accent-base:#4338ca;", ThemeEngine.Css(theme.Variants["light.comfortable"]));
             Assert.Contains(":root:lang(ar){--tb-font-family-body:var(--tb-font-family-arabic);--tb-font-family-heading:var(--tb-font-family-heading-arabic);}", css);
             Assert.Contains("--tb-font-family-arabic:\"Readex Pro\", \"Noto Sans Arabic\"", css);
             Assert.DoesNotContain("url(", css);
