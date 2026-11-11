@@ -141,7 +141,7 @@
   gap: var(--tb-space-md);
 }
 
-@media (min-width: 900px) {
+@media (width >= 56.25rem) {
   .cal-month[data-panel="open"] {
     grid-template-columns: minmax(0, 1fr) 22rem;
     align-items: start;

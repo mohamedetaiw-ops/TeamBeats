@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { AvailabilityHeatmap, CalendarHeader, CalendarStats, DayPanel, LayerChips, RangeMonth, WeekStrip, type MonthBar } from "@/components/ui/CalendarParts";
@@ -47,14 +47,13 @@ export function CalendarWorkspace({ canManage }: { canManage: boolean }) {
   const now = useNow();
   const weekStart = firstWeekday(locale);
   const [attempt, setAttempt] = useState(0);
-  const [prefs, setPrefs] = useState<Preferences | null>(null);
+  const [saved, setPrefs] = useState<Preferences | null>(null);
   const [panelDay, setPanelDay] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
 
   const prefLoad = useCalendar<Preferences>("/api/v1/calendar/preferences");
-  useEffect(() => {
-    if (prefLoad.state === "ok") setPrefs(prefLoad.data);
-  }, [prefLoad]);
+  // The person's changes win over the first answer until the page is opened again.
+  const prefs = saved ?? (prefLoad.state === "ok" ? prefLoad.data : null);
 
   const asked = params.get("view");
   const view: CalendarView = (VIEWS as readonly string[]).includes(asked ?? "") ? (asked as CalendarView) : prefs?.view ?? "agenda";

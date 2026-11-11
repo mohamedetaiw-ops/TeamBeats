@@ -95,14 +95,6 @@
   box-shadow: inset 0 0 0 var(--tb-border-width-thin) var(--xp-swatch);
 }
 
-.ui-cal-layer:focus-visible,
-.ui-cal-strip-day:focus-visible,
-.ui-cal-month-day:focus-visible,
-.ui-cal-row-toggle:focus-visible {
-  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
-  outline-offset: 2px;
-}
-
 /* Week strip (DLS-071). */
 .ui-cal-strip {
   display: grid;
@@ -133,8 +125,9 @@
 }
 
 .ui-cal-strip-day[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 var(--tb-border-width-thin) var(--tb-color-accent-base);
   background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-accent-text);
+  color: var(--tb-color-text-primary);
 }
 
 .ui-cal-strip-initial {
@@ -185,7 +178,7 @@
 }
 
 .ui-cal-row {
-  border-inline-start: 3px solid var(--xp-swatch, var(--tb-color-accent-base));
+  border-inline-start: var(--tb-border-width-thick) solid var(--xp-swatch, var(--tb-color-accent-base));
   border-radius: var(--tb-radius-sm);
   background: var(--tb-color-surface-raised);
 }
@@ -193,12 +186,7 @@
 .ui-cal-row[data-status="pending"],
 .ui-cal-row[data-status="tentative"] {
   border-inline-start-style: dashed;
-  background: repeating-linear-gradient(135deg, transparent 0 6px, var(--tb-color-surface-sunken) 6px 8px);
-}
-
-.ui-cal-row[data-status="cancelled"] .ui-cal-row-title {
-  color: var(--tb-color-text-secondary);
-  text-decoration: line-through;
+  background: repeating-linear-gradient(135deg, transparent 0 0.375rem, var(--tb-color-surface-sunken) 0.375rem 0.5rem);
 }
 
 .ui-cal-row-main {
@@ -304,11 +292,6 @@ button.ui-cal-row-toggle {
   vertical-align: top;
 }
 
-.ui-cal-month td[data-outside] .ui-cal-month-day {
-  color: var(--tb-color-text-secondary);
-  opacity: 0.6;
-}
-
 .ui-cal-month-day {
   display: grid;
   justify-items: center;
@@ -332,8 +315,9 @@ button.ui-cal-row-toggle {
 }
 
 .ui-cal-month-day[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 var(--tb-border-width-thin) var(--tb-color-accent-base);
   background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-accent-text);
+  color: var(--tb-color-text-primary);
 }
 
 .ui-cal-month-day[aria-current="date"] > span:first-child {
@@ -380,8 +364,8 @@ button.ui-cal-row-toggle {
 
 .ui-cal-bar[data-pending] {
   outline: var(--tb-border-width-thin) dashed var(--xp-swatch);
-  outline-offset: -1px;
-  background: repeating-linear-gradient(135deg, var(--tb-color-surface-raised) 0 6px, var(--tb-color-surface-sunken) 6px 8px);
+  outline-offset: calc(-1 * var(--tb-border-width-thin));
+  background: repeating-linear-gradient(135deg, var(--tb-color-surface-raised) 0 0.375rem, var(--tb-color-surface-sunken) 0.375rem 0.5rem);
   color: var(--tb-color-text-primary);
 }
 
@@ -521,4 +505,22 @@ button.ui-cal-row-toggle {
 .ui-event[data-swatch] {
   border-inline-start-color: var(--xp-swatch);
   background: var(--tb-color-surface-sunken);
+}
+
+/* Placed last so they follow the base rules they refine. */
+.ui-cal-row[data-status="cancelled"] .ui-cal-row-title {
+  color: var(--tb-color-text-secondary);
+  text-decoration: line-through;
+}
+
+.ui-cal-layer:focus-visible,
+.ui-cal-strip-day:focus-visible,
+.ui-cal-month-day:focus-visible,
+.ui-cal-row-toggle:focus-visible {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+  outline-offset: 0.125rem;
+}
+
+.ui-cal-month td[data-outside] .ui-cal-month-day {
+  color: var(--tb-color-text-secondary);
 }

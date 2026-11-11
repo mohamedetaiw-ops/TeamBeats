@@ -129,6 +129,7 @@ export function WeekStrip({
   countLabel: (count: number) => string;
 }) {
   const locale = useLocale();
+  const t = useTranslations("ui");
   const initial = new Intl.DateTimeFormat(locale, { weekday: "narrow", timeZone: "UTC" });
   const number = new Intl.DateTimeFormat(locale, { day: "numeric", timeZone: "UTC" });
   const full = new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" });
@@ -155,7 +156,7 @@ export function WeekStrip({
               ))}
             </span>
             <span className="visually-hidden">
-              {full.format(fromIso(d.date))}, {countLabel(d.count)}
+              {t("data.dayCount", { date: full.format(fromIso(d.date)), count: countLabel(d.count) })}
             </span>
           </button>
         </li>
@@ -343,7 +344,7 @@ export function RangeMonth({
                           {more > 0 ? <span className="ui-cal-more">{t("data.more", { count: more })}</span> : null}
                         </span>
                         <span className="visually-hidden">
-                          {full.format(fromIso(d))}, {countLabel(dots.length + (hidden.get(d) ?? 0))}
+                          {t("data.dayCount", { date: full.format(fromIso(d)), count: countLabel(dots.length + (hidden.get(d) ?? 0)) })}
                         </span>
                       </button>
                     </td>

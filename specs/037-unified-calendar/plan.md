@@ -52,7 +52,7 @@ The frontend gets a calendar workspace page at `/calendar` and a home card compo
 `GoogleCalendar` in `Integrations/Google` reads `calendars/primary/events?singleEvents=true&timeMin&timeMax&orderBy=startTime` as the signed-in employee's email through `GoogleSignIn` (domain-wide delegation, scope `https://www.googleapis.com/auth/calendar.events.readonly`). Feature `calendar` of the Google pack, off by default; host `www.googleapis.com` on the allowlist. A composite `ICalendar` merges Outlook and Google results, labelling each occurrence with its source and keeping both states. The fake in `DevFakes` serves the same API for tests.
 
 ## Frontend
-- `features/calendar`: `CalendarWorkspace` (header, view switch, layer chips, freshness line, views), `AgendaView`, `CalendarWeek`, `CalendarMonth`, `TeamAvailability`, `DayPanel`, `EventAdmin` (admin page `/admin/calendar`).
+- `features/calendar`: `CalendarWorkspace` (header, view switch, layer chips, freshness line, views), `AgendaView`, `CalendarWeek`, `CalendarMonth`, `TeamAvailability`, `DayPanel`, `ManageCalendar` (page `/calendar/manage`, open to anyone with `content.publish` for some unit or `hr.manage`).
 - `components/placements/calendar.overview.tsx` the home card; `outlook.my_calendar` renders the same card so existing homes improve without a republish.
 - Design system parts in `components/ui/CalendarParts.tsx` with `calendar.css`: `LayerChips`, `WeekStrip`, `AgendaRow`, `RangeMonth` (month grid with ranges), `DaySheet` (Drawer as bottom sheet on phones, side panel on wide screens), `AvailabilityHeatmap`, plus gallery section `cg-calendar`.
 

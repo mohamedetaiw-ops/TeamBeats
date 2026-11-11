@@ -216,9 +216,9 @@ export function ManageCalendar({ events: initial, settings: initialSettings }: {
                       </Button>
                     ) : null}
                     {e.status === "published" ? (
-                      <ConfirmAction label={t("manage.cancel")} question={t("manage.cancelQuestion")} confirmLabel={t("manage.cancel")} onConfirm={() => act(e.id, "cancel")} />
+                      <ConfirmAction label={t("manage.cancel")} question={t("manage.cancelQuestion")} confirmLabel={t("manage.cancel")} cancelLabel={t("manage.keep")} onConfirm={() => act(e.id, "cancel")} />
                     ) : null}
-                    <ConfirmAction label={t("manage.delete")} question={t("manage.deleteQuestion")} confirmLabel={t("manage.delete")} onConfirm={() => act(e.id, "delete")} />
+                    <ConfirmAction label={t("manage.delete")} question={t("manage.deleteQuestion")} confirmLabel={t("manage.delete")} cancelLabel={t("manage.keep")} onConfirm={() => act(e.id, "delete")} />
                   </div>
                 </li>
               ))}

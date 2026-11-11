@@ -1152,7 +1152,8 @@
       "sections": "Settings sections",
       "more": "{count} more",
       "allDay": "All day",
-      "timeRange": "{start} to {end}"
+      "timeRange": "{start} to {end}",
+      "dayCount": "{date}, {count}"
     },
     "assistant": {
       "thinking": "Thinking",
@@ -6325,6 +6326,58 @@
       "pipeline": "Open requests by stage",
       "requestsShort": "Requests",
       "pipelineSummary": "Of 245 requests, 120 are done and 65 in progress."
+    },
+    "calendar": {
+      "title": "Calendar",
+      "intro": "Calendar parts of DLS-069 to DLS-074: header, layers, week strip, agenda rows, month with ranges and team availability.",
+      "cardTitle": "Calendar",
+      "period": "November 2026",
+      "previous": "Previous week",
+      "next": "Next week",
+      "today": "Today",
+      "view": "View",
+      "views": {
+        "agenda": "Agenda",
+        "week": "Week",
+        "month": "Month"
+      },
+      "week": "Days of the week",
+      "count": "{count, plural, =0 {nothing planned} one {# item} other {# items}}",
+      "legend": "Layers",
+      "layers": {
+        "meeting": "Meetings",
+        "company": "Company events",
+        "department": "Department events",
+        "important": "Important dates",
+        "holiday": "Holidays",
+        "my_leave": "My leave",
+        "team_leave": "Team leave"
+      },
+      "standupTime": "9:00 to 9:15",
+      "standup": "Product stand-up",
+      "online": "Online",
+      "join": "Join",
+      "townTime": "13:00 to 14:00",
+      "town": "Quarterly town hall",
+      "hall": "Main hall, level 2",
+      "townDetails": "Results of the quarter and questions to the leadership team.",
+      "allDay": "All day",
+      "leave": "Annual leave",
+      "pending": "Pending approval",
+      "drillTime": "11:00 to 11:30",
+      "drill": "Fire drill",
+      "cancelled": "Cancelled",
+      "teamAway": "2 team members on leave",
+      "holiday": "National day",
+      "fair": "Book fair",
+      "ofTotal": "7 of 9",
+      "availableToday": "Available today",
+      "onLeave": "On leave today",
+      "soon": "Leave starting in the next 7 days",
+      "heat": "Available each day (staffing threshold 70%)",
+      "under": "Under the threshold",
+      "nonWorking": "Not a working day",
+      "share": "{share}%"
     }
   },
   "patterns_gallery": {
@@ -7366,7 +7419,8 @@
       "status": {
         "published": "Published",
         "cancelled": "Cancelled"
-      }
+      },
+      "keep": "Keep it"
     },
     "settings": {
       "title": "Team availability settings",
