@@ -61,3 +61,17 @@ public sealed record RequestReturned(Guid RequestId, Guid ServiceId) : IIntegrat
 
 /// <summary>The requester changed a returned request and submitted it again.</summary>
 public sealed record RequestResubmitted(Guid RequestId, Guid ServiceId, string Number) : IIntegrationEvent;
+
+/// <summary>
+/// What another module may know about one request to act on its end (spec 022 FR-014: an approved resignation starts
+/// offboarding): the person it is for, their unit, its status and the form data. For event handlers of the same
+/// tenant; callers decide what of the data they use and never show it.
+/// </summary>
+public sealed record RequestFacts(Guid RequestId, Guid ServiceId, Guid SubjectId, Guid? OrgUnitId, string Status,
+    IReadOnlyDictionary<string, System.Text.Json.JsonElement> Data);
+
+/// <summary>Reads <see cref="RequestFacts"/> of a request in the current tenant; null when there is none.</summary>
+public interface IRequestFacts
+{
+    Task<RequestFacts?> GetAsync(Guid requestId, CancellationToken ct = default);
+}

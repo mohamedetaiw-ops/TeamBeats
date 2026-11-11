@@ -92,7 +92,8 @@
       "evaluation": "Evaluation",
       "analytics": "Analytics",
       "hr_integration": "HR integration",
-      "leave": "Leave"
+      "leave": "Leave",
+      "journeys": "Journeys"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}",
     "common": {
@@ -2408,7 +2409,8 @@
       "evalFollowUp": "Evaluation follow-up",
       "leaveApproval": "Leave approval",
       "leaveChange": "Leave change",
-      "leaveReplacement": "Cover for a colleague"
+      "leaveReplacement": "Cover for a colleague",
+      "journeyStep": "Journey step"
     },
     "delegation": {
       "title": "While you are away",
@@ -6988,6 +6990,184 @@
         "lapse": "Lapsed",
         "adjustment": "Adjustment",
         "other": "Other"
+      }
+    }
+  },
+  "journeys": {
+    "admin": {
+      "title": "Journeys",
+      "intro": "Plan onboarding, offboarding, transfer and promotion as steps around one date. Journeys start from HR events, new accounts, approved services or by hand, and each step lands in the right inbox on its day.",
+      "notInPackage": "Journeys are not part of your organization's plan."
+    },
+    "templates": {
+      "title": "Journey templates",
+      "intro": "Each step happens a number of days before or after the anchor date, such as the start date or the last working day. A template applies to its unit and the units below it.",
+      "empty": "No templates yet.",
+      "failed": "The template could not be saved.",
+      "saved": "Template saved",
+      "summary": "{steps, plural, one {# step} other {# steps}}, version {version}",
+      "wholeOrganization": "Whole organization",
+      "inactive": "Inactive",
+      "edit": "Edit",
+      "close": "Close",
+      "new": "New template",
+      "key": "Key",
+      "keyHint": "Lowercase letters, digits and underscores. It cannot change later.",
+      "kind": "Kind",
+      "startOn": "Starts on",
+      "unit": "Unit",
+      "nameEn": "Name in English",
+      "nameAr": "Name in Arabic",
+      "service": "Service",
+      "anchorField": "Date field",
+      "anchorFieldHint": "The key of the date field in the service form, such as last_day.",
+      "steps": "Steps",
+      "stepNumber": "Step {number}",
+      "stepKey": "Step key",
+      "offset": "Days from the anchor date",
+      "offsetHint": "Negative is before the date, for example -10 for ten days before.",
+      "assignee": "Done by",
+      "permission": "Permission",
+      "permissionHint": "People who hold this permission at the person's unit, such as hr.manage.",
+      "fallback": "Fallback permission",
+      "fallbackHint": "Who takes the step when the person is missing or has left. HR officers when left empty.",
+      "due": "Days to complete",
+      "dueHint": "Working days before reminders and escalation. Optional.",
+      "person": "Person {number}",
+      "removeStep": "Remove step",
+      "addStep": "Add step",
+      "active": "Active",
+      "working": "Saving",
+      "save": "Save template",
+      "create": "Create template",
+      "kinds": {
+        "onboarding": "Onboarding",
+        "offboarding": "Offboarding",
+        "transfer": "Transfer",
+        "promotion": "Promotion"
+      },
+      "starts": {
+        "hire": "HR hire",
+        "account": "New account",
+        "termination": "HR termination",
+        "service": "Approved service request",
+        "manual": "Started by HR"
+      },
+      "startHints": {
+        "hire": "Starts when HR records a hire or re-hire, or when a new account has a recent HR hire date. The anchor is the start date.",
+        "account": "Starts for every new account, anchored on the HR hire date or today. Accounts hired more than 30 days ago start nothing.",
+        "termination": "Starts when HR records a termination. The anchor is the last working day.",
+        "service": "Starts when a request of the service is approved. The anchor is the date in the field you name.",
+        "manual": "HR officers start it from the dashboard and choose the date."
+      },
+      "assignees": {
+        "person": "The person",
+        "buddy": "The buddy",
+        "manager": "The line manager",
+        "users": "Named people",
+        "permission": "A team by permission"
+      }
+    },
+    "dashboard": {
+      "title": "Journeys in your units",
+      "intro": "Progress of each journey by step, with steps past their due time.",
+      "failed": "That did not work. Try again in a moment.",
+      "status": "Show",
+      "all": "All",
+      "overdueOnly": "Only journeys with overdue steps",
+      "empty": "No journeys match.",
+      "person": "Person",
+      "template": "Journey",
+      "anchor": "Anchor date",
+      "anchorHint": "The date the steps are planned around.",
+      "progress": "Progress",
+      "statusColumn": "Status",
+      "progressValue": "{done} of {steps} done",
+      "overdue": "{count, plural, one {# overdue} other {# overdue}}",
+      "statuses": {
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "startTitle": "Start a journey",
+      "noTemplates": "Create an active template first.",
+      "buddy": "Buddy (optional)",
+      "start": "Start journey",
+      "working": "Starting",
+      "started": "Journey started for {name}"
+    },
+    "detail": {
+      "failed": "That did not work. Try again in a moment.",
+      "person": "Person",
+      "kind": "Kind",
+      "anchor": "Anchor date",
+      "anchorHint": "Steps not open yet move with this date.",
+      "buddy": "Buddy",
+      "noBuddy": "None",
+      "status": "Status",
+      "progress": "{done} of {steps} done",
+      "cancelReason": "Reason for cancelling",
+      "steps": "Steps",
+      "step": "Step",
+      "scheduled": "Date",
+      "assignee": "Done by",
+      "action": "Action",
+      "dueAt": "due {at}",
+      "overdue": "Overdue",
+      "skipped": "Not needed",
+      "completedBy": "by {name}, {at}",
+      "markDone": "Mark done",
+      "stepDone": "Step marked done",
+      "working": "Working",
+      "manage": "Manage this journey",
+      "moveAnchor": "Move date",
+      "anchorMoved": "Date moved and steps rescheduled",
+      "saveBuddy": "Save buddy",
+      "buddySaved": "Buddy saved",
+      "reason": "Reason",
+      "noShow": "The person did not show up",
+      "noShowHint": "Also starts offboarding today, so access is removed.",
+      "cancel": "Cancel journey",
+      "cancelled": "Journey cancelled",
+      "kinds": {
+        "onboarding": "Onboarding",
+        "offboarding": "Offboarding",
+        "transfer": "Transfer",
+        "promotion": "Promotion"
+      },
+      "statuses": {
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "stepStatuses": {
+        "scheduled": "Scheduled",
+        "open": "Open",
+        "done": "Done",
+        "cancelled": "Cancelled"
+      },
+      "assignees": {
+        "person": "The person",
+        "buddy": "The buddy",
+        "manager": "The line manager",
+        "users": "Named people",
+        "permission": "A team by permission"
+      }
+    },
+    "page": {
+      "title": "My journeys",
+      "intro": "Your onboarding, offboarding and other journeys, step by step.",
+      "detailTitle": "Journey of {name}",
+      "notInPackage": "Journeys are not part of your organization's plan."
+    },
+    "mine": {
+      "title": "Your journeys",
+      "empty": "You have no journeys.",
+      "progress": "{done} of {steps} done, around {date}",
+      "statuses": {
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
       }
     }
   }

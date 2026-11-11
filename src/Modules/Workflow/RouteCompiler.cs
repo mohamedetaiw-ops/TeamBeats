@@ -21,7 +21,7 @@ public sealed record CompiledRoute(string Name, bool ExcludeStarter, IReadOnlyLi
 }
 
 public sealed record CompiledStep(string Id, string Name, IReadOnlyList<Guid> Users, string? Permission, int? DueWorkingDays, bool LineManager = false,
-    ConnectorStep? Action = null)
+    ConnectorStep? Action = null, bool Subject = false)
 {
     public bool IsServiceTask => Action is not null;
 }
@@ -110,7 +110,7 @@ public static partial class RouteCompiler
             if (step.Action is { } action)
             {
                 ValidateAction(action, field, errors);
-                if (step.DueWorkingDays is not null || step.Candidates is { } c && (c.Users is { Count: > 0 } || c.Permission is not null || c.LineManager))
+                if (step.DueWorkingDays is not null || step.Candidates is { } c && (c.Users is { Count: > 0 } || c.Permission is not null || c.LineManager || c.Subject))
                 {
                     errors.Add($"{field}.candidates", "validation.workflow.action_candidates");
                 }
@@ -118,12 +118,13 @@ public static partial class RouteCompiler
             }
             var users = step.Candidates?.Users ?? [];
             var permission = step.Candidates?.Permission;
-            if (users.Count == 0 && string.IsNullOrEmpty(permission) && step.Candidates?.LineManager != true)
+            if (users.Count == 0 && string.IsNullOrEmpty(permission) && step.Candidates?.LineManager != true && step.Candidates?.Subject != true)
             {
                 // A user task with no assignment cannot be published (US1 scenario 2).
                 errors.Add($"{field}.candidates", "validation.workflow.no_candidates");
             }
-            if (users.Count > MaxUsersPerStep || users.Any(u => u == Guid.Empty) || (step.Candidates?.LineManager == true && users.Count > 0))
+            if (users.Count > MaxUsersPerStep || users.Any(u => u == Guid.Empty) || (step.Candidates?.LineManager == true && users.Count > 0)
+                || (step.Candidates?.Subject == true && (users.Count > 0 || step.Candidates.LineManager)))
             {
                 errors.Add($"{field}.candidates.users", "validation.workflow.users");
             }
@@ -171,7 +172,7 @@ public static partial class RouteCompiler
                     new ConnectorStep(a.ConnectionId, a.Action, new SortedDictionary<string, string>(a.Inputs.ToDictionary(), StringComparer.Ordinal),
                         a.OnBusinessError is { Count: > 0 } paths ? new SortedDictionary<string, string>(paths.ToDictionary(), StringComparer.Ordinal) : null))
                 : new CompiledStep(s.Id, s.Name.Trim(), (s.Candidates?.Users ?? []).Distinct().ToList(), s.Candidates?.Permission, s.DueWorkingDays,
-                    s.Candidates?.LineManager ?? false)).ToList());
+                    s.Candidates?.LineManager ?? false, Subject: s.Candidates?.Subject ?? false)).ToList());
     }
 
     /// <summary>BPMN 2.0 XML for the route. Element IDs are the step IDs, so history and monitoring name the same elements.</summary>
@@ -217,6 +218,10 @@ public static partial class RouteCompiler
             if (step.LineManager)
             {
                 candidates.Add(new XElement(Tb + "lineManager"));
+            }
+            if (step.Subject)
+            {
+                candidates.Add(new XElement(Tb + "subject"));
             }
             foreach (var user in step.Users)
             {
@@ -308,7 +313,8 @@ public static partial class RouteCompiler
             var permission = (string?)candidates?.Element(Tb + "permissionAtUnit")?.Attribute("key");
             var due = (int?)extensions?.Element(Tb + "dueDate")?.Attribute("workingDays");
             var lineManager = candidates?.Element(Tb + "lineManager") is not null;
-            steps.Add(new CompiledStep(current, (string?)task.Attribute("name") ?? current, users, permission, due, lineManager));
+            var subject = candidates?.Element(Tb + "subject") is not null;
+            steps.Add(new CompiledStep(current, (string?)task.Attribute("name") ?? current, users, permission, due, lineManager, Subject: subject));
             var gateway = flows.Single(f => f.From == current).To;
             current = flows.Single(f => f.From == gateway && f.Condition == approve).To;
         }
