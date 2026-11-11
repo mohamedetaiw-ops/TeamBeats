@@ -112,8 +112,11 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
         if (!refused && body["response_format"] is not null && !last.Contains("[fake:badjson]", StringComparison.Ordinal))
         {
             // An evaluation judge (spec 034) asks for a verdict: pass, unless the judged text carries [fake:judge:fail].
-            var judging = body["response_format"]?["json_schema"]?["schema"]?["properties"]?["verdict"] is not null;
-            reply = judging
+            var properties = body["response_format"]?["json_schema"]?["schema"]?["properties"];
+            var judging = properties?["verdict"] is not null;
+            // Receipt reading (spec 022 FR-024) answers with the JSON of [fake:receipt:{...}] found inside an attached file,
+            // or with nothing read.
+            reply = properties?["merchant"] is not null ? Receipt(messages) : judging
                 ? JsonSerializer.Serialize(last.Contains("[fake:judge:fail]", StringComparison.Ordinal)
                     ? new { verdict = "fail", score = 0.0, reason = "Fake judge: marked to fail." }
                     : new { verdict = "pass", score = 1.0, reason = "Fake judge: passes by default." })
@@ -179,7 +182,28 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
         _ => string.Empty,
     };
 
-    /// <summary>A deterministic 8-dimension vector, so similar inputs are equal and different inputs differ.</summary>
+    /// <summary>The fields a receipt reader returns: the marker's JSON from the first attached file that has one, else all empty.</summary>
+    private static string Receipt(JsonArray messages)
+    {
+        foreach (var part in messages.SelectMany(m => m?["content"] is JsonArray parts ? parts : []))
+        {
+            var url = part?["image_url"]?["url"]?.GetValue<string>() ?? part?["file"]?["file_data"]?.GetValue<string>();
+            var comma = url?.IndexOf(',', StringComparison.Ordinal) ?? -1;
+            if (url is null || comma < 0)
+            {
+                continue;
+            }
+            var text = Encoding.UTF8.GetString(Convert.FromBase64String(url[(comma + 1)..]));
+            var start = text.IndexOf("[fake:receipt:{", StringComparison.Ordinal);
+            var end = start < 0 ? -1 : text.IndexOf("}]", start, StringComparison.Ordinal);
+            if (end > start)
+            {
+                return text[(start + "[fake:receipt:".Length)..(end + 1)];
+            }
+        }
+        return JsonSerializer.Serialize(new { merchant = (string?)null, date = (string?)null, amount = (decimal?)null, currency = (string?)null, tax = (decimal?)null });
+    }
+
     /// <summary>
     /// The JSON object of <c>[fake:args:{...}]</c>: the shortest text from the brace to a <c>}]</c> that parses as JSON, so
     /// arguments may hold nested objects and arrays.

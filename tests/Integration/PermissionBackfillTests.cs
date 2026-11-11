@@ -189,6 +189,29 @@ public sealed class PermissionBackfillTests(TenantWorld world)
             "select count(*) from authz.role_permission p join authz.role r on r.id = p.role_id where r.key = 'evaluation_reviewer'"));
     }
 
+    [Fact]
+    public async Task Finance_backfill_adds_the_finance_officer_role_to_an_older_tenant()
+    {
+        var old = await world.CreateTenantAsync("bffi-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        await world.Database.OwnerExecAsync(
+            """
+            select set_config('app.tenant_id', @t, false);
+            delete from authz.role_permission where permission_key = 'finance.process';
+            delete from authz.role_permission where role_id in (select id from authz.role where key = 'finance_officer');
+            delete from authz.role where key = 'finance_officer';
+            update authz.grants_version set version = version + 1;
+            """, ("t", old.Id.ToString()));
+
+        var script = AuthorizationModule.Migrations.Scripts().Single(s => s.Name.StartsWith("0024_", StringComparison.Ordinal)).Sql;
+        await world.Database.OwnerExecAsync(script);
+        await world.Database.OwnerExecAsync(script);
+
+        Assert.Equal(1, await CountAsync(old.Id, "select count(*) from authz.role where key = 'finance_officer'"));
+        Assert.Equal(3, await CountAsync(old.Id,
+            "select count(*) from authz.role_permission p join authz.role r on r.id = p.role_id where r.key = 'finance_officer'"));
+        Assert.Equal(2, await CountAsync(old.Id, "select count(*) from authz.role_permission where permission_key = 'finance.process'"));
+    }
+
     /// <summary>Counts as the table owner with one tenant set, on one connection, as row-level security requires.</summary>
     private async Task<long> CountAsync(Guid tenant, string sql = "select count(*) from authz.role_permission")
     {

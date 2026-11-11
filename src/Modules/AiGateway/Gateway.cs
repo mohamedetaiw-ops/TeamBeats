@@ -43,7 +43,8 @@ public sealed class AiGatewayService(
     internal static int Estimate(IEnumerable<string> texts) => (int)Math.Ceiling(texts.Sum(t => t.Length) / CharsPerToken);
 
     private static int Estimate(AiRequest request) =>
-        Estimate(request.Messages.Select(m => m.Content).Concat(request.Tools?.Select(t => t.Description + t.Parameters.GetRawText()) ?? []));
+        Estimate(request.Messages.Select(m => m.Content).Concat(request.Tools?.Select(t => t.Description + t.Parameters.GetRawText()) ?? []))
+        + request.Messages.Sum(m => m.Attachments?.Count ?? 0) * AiAttachment.EstimatedTokens;
 
     /// <summary>Steps 1 to 6: who may call, where the content may go, which models are left, and the parameters after limits.</summary>
     internal async Task<(RoutePlan? Plan, string? Denial)> PlanAsync(string useCase, string? model, DataClassification? classification, int inputTokens, int? maxTokens,
@@ -198,6 +199,10 @@ public sealed class AiGatewayService(
         if (request.ResponseSchema is not null)
         {
             needs.Add(ModelCapabilities.StructuredOutput);
+        }
+        if (request.Messages.Any(m => m.Attachments is { Count: > 0 }))
+        {
+            needs.Add(ModelCapabilities.Vision);
         }
         return [.. needs];
     }

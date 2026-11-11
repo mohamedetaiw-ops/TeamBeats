@@ -1,0 +1,110 @@
+/* Spec 022 expense pages. Colors and spacing come from tokens. */
+.expenses {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.expenses-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  min-inline-size: 0;
+}
+
+.expenses-section h2,
+.expenses-section h3 {
+  margin: 0;
+}
+
+.expenses-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.expenses-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.expenses-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.expenses-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--tb-space-sm);
+  margin: 0;
+}
+
+.expenses-facts div {
+  padding: var(--tb-space-sm);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+}
+
+.expenses-facts dt {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.expenses-facts dd {
+  margin: 0;
+  font-weight: var(--tb-font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.expenses-link {
+  color: var(--tb-color-link);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.expenses-line {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  min-inline-size: 0;
+}
+
+.expenses-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  align-items: center;
+}
+
+.expenses-justification {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* AI receipt reading: the suggestion stays apart from the fields until the person uses it (spec 022 FR-024). */
+.expenses-reading {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) dashed var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+}
+
+.expenses-reading-title {
+  margin: 0;
+  font-weight: var(--tb-font-weight-semibold);
+}
