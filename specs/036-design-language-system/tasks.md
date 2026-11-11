@@ -28,6 +28,13 @@ Depends on 033 (theme engine, brand manager), 008 (shell), 032 (templates), 007.
 - [x] T020 Charts: chart tokens in the schema and four designs, chart card, the chart types of DLS-040
 - [x] T021 Page patterns: dashboard, assistant chat, agent profile, record profile, board, mapped to the spec 032 templates
 
+## Phase 5: Detail quality (DLS-042 to DLS-055)
+- [x] T022 Detail checklist `docs/design-system/foundations/details.md` and the review of the staging screens in `docs/review/ui-detail-review.md`
+- [x] T023 Global details: value formatters (`lib/format.ts`), link and breadcrumb rules, native radio and checkbox look, hints under controls, filled selected chips, status badges, empty states with icons, space for Ask TeamBeats
+- [x] T024 Shell panels on one popover surface: account menu rows, notification rows with relative time and category icons, grouped settings with segmented controls
+- [x] T025 Pages: Your day empty state, request rows, person cards, own profile values and tags, knowledge article header and feedback toggles, documents filter bar, sort direction and folder chips, service form column
+- [ ] T026 Move the shell panels onto the T016 popover and T018 notification panel and settings blocks once they merge, keeping the DLS-045 to DLS-047 look
+
 ## R2
 - [ ] T011 Design review checklist in the spec 033 theme draft and approval flow
 - [ ] T012 Firefox and WebKit in the design suite after the browser matrix decision

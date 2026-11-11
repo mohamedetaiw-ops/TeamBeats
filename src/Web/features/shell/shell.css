@@ -103,8 +103,7 @@
 }
 
 .shell-submenu,
-.shell-search-results,
-.shell-settings-panel {
+.shell-search-results {
   position: absolute;
   z-index: 10;
   inset-inline-start: 0;
@@ -129,29 +128,13 @@
   position: relative;
 }
 
-.shell-settings-panel {
-  inset-inline: auto 0;
-  display: grid;
-  gap: var(--tb-space-sm);
-}
-
-.shell-settings-panel[hidden],
 .shell-submenu[hidden] {
   display: none;
 }
 
-.shell-setting {
-  display: grid;
-  gap: var(--tb-space-xs);
-}
-
-.shell-setting select,
 .shell-search input {
   min-block-size: 2.75rem;
   font: inherit;
-}
-
-.shell-search input {
   inline-size: 100%;
   padding-inline: 2.75rem var(--tb-space-md);
   border: var(--tb-border-width-thin) solid transparent;
@@ -216,19 +199,44 @@
 .shell-breadcrumbs ol {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+}
+
+.shell-breadcrumbs li {
+  display: inline-flex;
+  align-items: center;
   gap: var(--tb-space-xs);
 }
 
+/* A small chevron between crumbs that points along the reading direction (DLS-044). */
 .shell-breadcrumbs li:not(:last-child)::after {
-  content: "/";
-  padding-inline-start: var(--tb-space-xs);
+  content: "";
+  inline-size: 0.375rem;
+  block-size: 0.375rem;
+  margin-inline: var(--tb-space-xs);
+  border-block-start: var(--tb-border-width-thick) solid currentcolor;
+  border-inline-end: var(--tb-border-width-thick) solid currentcolor;
+  opacity: 0.7;
+  transform: rotate(45deg);
+}
+
+[dir="rtl"] .shell-breadcrumbs li:not(:last-child)::after {
+  transform: rotate(-45deg);
 }
 
 .shell-below .shell-breadcrumbs a {
   display: inline-flex;
   align-items: center;
   min-block-size: 2.75rem;
-  color: var(--tb-color-link);
+  color: var(--tb-color-text-secondary);
+  text-decoration: none;
+}
+
+.shell-breadcrumbs a:hover {
+  color: var(--tb-color-text-primary);
 }
 
 .shell-below .shell-breadcrumbs a[aria-current="page"] {
@@ -336,10 +344,6 @@
   gap: var(--tb-space-xs);
 }
 
-.shell-language {
-  font-weight: var(--tb-font-weight-medium);
-}
-
 .shell-account {
   position: relative;
 }
@@ -356,31 +360,6 @@
   font: inherit;
   font-weight: var(--tb-font-weight-bold);
   cursor: pointer;
-}
-
-.shell-account-panel {
-  position: absolute;
-  z-index: 10;
-  inset-inline-end: 0;
-  inset-block-start: calc(100% + var(--tb-space-xs));
-  display: grid;
-  gap: var(--tb-space-sm);
-  min-inline-size: 14rem;
-  max-inline-size: min(90vw, 20rem);
-  padding: var(--tb-space-md);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-md);
-  background: var(--tb-color-nav-background);
-  box-shadow: var(--tb-shadow-md);
-  color: var(--tb-color-nav-text);
-}
-
-.shell-account-panel[hidden] {
-  display: none;
-}
-
-.shell-account-panel .shell-user {
-  font-weight: var(--tb-font-weight-bold);
 }
 
 .shell-rail {
@@ -556,12 +535,13 @@
   display: inline-flex;
   align-items: center;
   gap: var(--tb-space-sm);
-  min-block-size: 3rem;
-  padding-inline: var(--tb-space-lg);
+  min-block-size: 2.5rem;
+  padding-inline: var(--tb-space-md);
   border-radius: var(--tb-radius-full);
   background: var(--tb-color-surface-night);
   color: var(--tb-color-text-on-night);
-  font-weight: var(--tb-font-weight-bold);
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-medium);
   box-shadow: var(--tb-shadow-md);
   text-decoration: none;
 }
@@ -582,11 +562,289 @@
   .shell-ask {
     inset-block-end: var(--tb-space-md);
     inset-inline-end: var(--tb-space-md);
-    padding-inline: var(--tb-space-md);
+    inline-size: 2.75rem;
+    min-block-size: 2.75rem;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .shell-ask span {
+    position: absolute;
+    inline-size: 0.0625rem;
+    block-size: 0.0625rem;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 
 /* The place the page fills with its own actions, such as "Arrange this page" (spec 008 FR-059). */
 .shell-page-actions {
   display: contents;
+}
+
+/*
+ * Shell popovers (spec 036 DLS-045 to DLS-047): notifications, quick preferences and the account menu share one frame.
+ * They open below their button, stay 8px inside the window, keep the header and footer fixed while only the body
+ * scrolls, and become a bottom sheet under 40rem. Each panel sets only its width.
+ */
+.shell-popover {
+  position: absolute;
+  z-index: 20;
+  inset-block-start: calc(100% + var(--tb-space-sm));
+  inset-inline-end: 0;
+  display: flex;
+  flex-direction: column;
+  inline-size: min(var(--xp-popover-width, 21rem), calc(100vw - 1rem));
+  max-block-size: min(40rem, 75vh);
+  overflow: hidden;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-md);
+  color: var(--tb-color-text-primary);
+  font-size: var(--tb-font-size-sm);
+  text-align: start;
+  animation: shell-popover-in var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
+}
+
+.shell-popover[hidden] {
+  display: none;
+}
+
+@keyframes shell-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+}
+
+.shell-popover-head {
+  display: grid;
+  flex: none;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-sm) var(--tb-space-md) 0;
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.shell-popover-body {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  padding: var(--tb-space-xs);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+.shell-popover-foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-sm) var(--tb-space-md);
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  font-size: var(--tb-font-size-xs);
+}
+
+.shell .shell-popover-anchor {
+  color: var(--tb-color-link);
+  font-weight: var(--tb-font-weight-medium);
+  text-decoration: none;
+}
+
+.shell .shell-popover-anchor:hover {
+  text-decoration: underline;
+}
+
+.shell-popover-link,
+.shell-popover-quiet {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  min-block-size: 2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-medium);
+  cursor: pointer;
+}
+
+.shell-popover-link {
+  color: var(--tb-color-link);
+}
+
+.shell .shell-popover .shell-popover-quiet {
+  color: var(--tb-color-text-secondary);
+}
+
+/* A row in a popover menu: icon, label, and an optional value at the end. Hover changes the surface only. */
+.shell-popover-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  inline-size: 100%;
+  min-block-size: 2.5rem;
+  padding-inline: var(--tb-space-sm);
+  border: 0;
+  border-radius: var(--tb-radius-sm);
+  background: none;
+  color: var(--tb-color-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.shell .shell-popover a.shell-popover-row {
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-regular);
+}
+
+.shell .shell-popover a.shell-popover-row:hover,
+.shell-popover-row:hover {
+  background: var(--tb-color-surface-sunken);
+  text-decoration: none;
+}
+
+.shell-popover-row .icon {
+  flex: none;
+  color: var(--tb-color-text-secondary);
+}
+
+.shell-popover-divider {
+  margin: var(--tb-space-xs) calc(var(--tb-space-xs) * -1);
+  border: 0;
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+/* Quick preferences: a label above a segmented control, or a label and a compact control on one line. */
+.shell-settings-panel {
+  --xp-popover-width: 21rem;
+}
+
+.shell-settings-panel .shell-popover-head {
+  padding-block-end: var(--tb-space-sm);
+}
+
+.shell-popover-title {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.shell-settings-panel .shell-popover-body {
+  padding: var(--tb-space-md);
+}
+
+.shell-preferences {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.shell-popover-more {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+}
+
+.shell-setting {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.shell-setting-label {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.shell-setting-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-md);
+}
+
+.shell-setting-inline > label {
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.shell-setting-inline select {
+  min-block-size: 2.25rem;
+  max-inline-size: 11rem;
+  font: inherit;
+  font-size: var(--tb-font-size-sm);
+}
+
+.shell-preferences .ui-segmented {
+  inline-size: 100%;
+}
+
+.shell-settings-panel .ui-switch {
+  margin: 0;
+}
+
+/* The account menu: who is signed in, their own pages, then Sign out after a divider. */
+.shell-account-panel {
+  --xp-popover-width: 17.5rem;
+}
+
+.shell-account-panel .shell-popover-body {
+  padding: var(--tb-space-xs);
+}
+
+.shell-account-head {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-sm);
+}
+
+.shell-account-avatar {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.shell-account-who {
+  display: grid;
+  min-inline-size: 0;
+  line-height: var(--tb-font-line-height-heading);
+}
+
+.shell-account-who .shell-user {
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.shell-account-who small {
+  overflow: hidden;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+/* The assistant launcher hides while a shell panel is open, so it never covers one (DLS-065). */
+.shell:has(.shell-popover:not([hidden])) .shell-ask {
+  display: none;
+}
+
+@media (width <= 40rem) {
+  .shell-popover {
+    position: fixed;
+    inset: auto 0 0;
+    inline-size: auto;
+    max-block-size: 85vh;
+    border-end-start-radius: 0;
+    border-end-end-radius: 0;
+  }
 }

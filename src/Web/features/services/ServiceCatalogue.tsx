@@ -119,7 +119,7 @@ export function ServiceCatalogue({ initial }: { initial: CatalogueView }) {
           void load(query, category);
         }}
       >
-        <FormField label={t("search")} name="q" type="search" hint={t("searchHint")} value={query} onChange={(e) => setQuery(e.target.value)} />
+        <FormField label={t("search")} name="q" type="search" placeholder={t("searchHint")} value={query} onChange={(e) => setQuery(e.target.value)} />
         <label className="field">
           <span>{t("category")}</span>
           <select

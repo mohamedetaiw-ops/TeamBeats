@@ -51,6 +51,10 @@ const paths = {
   attach: "M21 11l-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7",
   "arrow-up": "M12 19V5M5 12l7-7 7 7",
   stop: "M7 7h10v10H7z",
+  folder: "M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z",
+  eye: "M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
+  "sort-desc": "M7 4v16M3 16l4 4 4-4M14 6h7M14 12h5M14 18h3",
+  "sort-asc": "M7 20V4M3 8l4-4 4 4M14 6h3M14 12h5M14 18h7",
 } as const;
 
 export type IconName = keyof typeof paths;

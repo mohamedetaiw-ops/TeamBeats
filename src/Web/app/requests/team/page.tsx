@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getFormatter, getLocale, getTranslations } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { pick, requestStatuses, type RequestSummary } from "@/lib/services/types";
+import { requestStatuses, type RequestSummary } from "@/lib/services/types";
 import { Header } from "@/components/shell/Header";
+import { renderTime } from "@/lib/format";
 import { StateView } from "@/components/ui/StateView";
 import { ServicesNav } from "@/features/services/ServicesNav";
+import { WorkItemList } from "@/features/services/WorkItemList";
 import "@/features/services/services.css";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { isolate } from "@/lib/bidi";
 
 /**
  * Team requests (spec 016 FR-005, US2 scenario 4): requests for the signed-in person's direct and indirect reports by
@@ -26,8 +27,6 @@ export default async function TeamRequestsPage({ searchParams }: { searchParams:
     notFound();
   }
   const t = await getTranslations("services");
-  const locale = await getLocale();
-  const format = await getFormatter();
   return (
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("team.title"), href: "/requests/team" }]} />
@@ -52,24 +51,7 @@ export default async function TeamRequestsPage({ searchParams }: { searchParams:
         {list.data.length === 0 ? (
           <StateView kind="empty" title={t("team.empty")} message={t("team.emptyHint")} />
         ) : (
-          <ul className="services-list" data-testid="team-requests">
-            {list.data.map((r) => (
-              <li key={r.id} className="services-item">
-                <Link href={`/requests/${r.id}`}>
-                  <bdi>{pick(r.serviceNames, locale)}</bdi>
-                </Link>
-                <span className="services-row">
-                  <bdi dir="ltr">{r.number}</bdi>
-                  <span className="services-status">{t(`status.${r.status}`)}</span>
-                  {r.currentStep ? <bdi>{pick(r.currentStep, locale)}</bdi> : null}
-                </span>
-                <span className="services-meta">
-                  {t("team.for", { name: isolate((r.onBehalfOf ?? r.requester).displayName) })}
-                  {r.submittedAt ? t("requests.submittedAt", { when: format.dateTime(new Date(r.submittedAt), { dateStyle: "medium" }) }) : null}
-                </span>
-              </li>
-            ))}
-          </ul>
+          <WorkItemList items={list.data} now={renderTime()} person="requester" testId="team-requests" />
         )}
       </main>
     </>

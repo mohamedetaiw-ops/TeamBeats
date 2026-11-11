@@ -8,6 +8,7 @@ import type { InboxItem } from "@/lib/services/types";
 import { useNow } from "@/lib/clock";
 import { StateView } from "@/components/ui/StateView";
 import { connectHref } from "@/components/experience/outlook";
+import { Icon } from "@/components/ui/Icon";
 import "@/features/services/home.css";
 
 type Meeting = { id: string; subject: string | null; start: string; end: string; isAllDay: boolean; isPrivate: boolean; location: string | null; webLink: string; source: string };
@@ -96,15 +97,19 @@ export default function YourDay({ props }: PlacementProps) {
         ) : null}
       </ul>
       {!connected ? (
-        <p className="home-meta">
-          {sources.calendar?.state === "not_connected" || sources.calendar?.state === "reconnect" ? (
-            <>
-              {t("noCalendar")} <a href={connectHref("/")}>{t("connect")}</a>
-            </>
-          ) : (
-            t("calendarUnavailable")
-          )}
-        </p>
+        sources.calendar?.state === "not_connected" || sources.calendar?.state === "reconnect" ? (
+          <div className="home-connect">
+            <span className="ui-icon-tile" aria-hidden="true">
+              <Icon name="calendar" size={18} />
+            </span>
+            <p className="home-meta">{t("noCalendar")}</p>
+            <a className="button button-secondary" href={connectHref("/")}>
+              {t("connect")}
+            </a>
+          </div>
+        ) : (
+          <p className="home-meta">{t("calendarUnavailable")}</p>
+        )
       ) : meetings.length === 0 ? (
         <p className="home-meta">{t("noMeetings")}</p>
       ) : (

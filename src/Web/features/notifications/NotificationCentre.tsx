@@ -19,6 +19,7 @@ export function NotificationCentre() {
   const [unread, setUnread] = useState(0);
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
   const [more, setMore] = useState(false);
+  const [now, setNow] = useState(0);
 
   const load = useCallback(async (chosen: NotificationFilter, after: string | null) => {
     try {
@@ -32,6 +33,7 @@ export function NotificationCentre() {
       const page = (await response.json()) as NotificationPage;
       setItems((current) => (after ? [...current, ...page.items] : page.items));
       setCursor(page.nextCursor);
+      setNow(Date.now());
       setUnread(page.unread);
       setState("ready");
     } catch {
@@ -59,7 +61,7 @@ export function NotificationCentre() {
             <button
               key={f}
               type="button"
-              className={f === filter ? "button button-primary" : "button button-secondary"}
+              className="notification-tab"
               aria-pressed={f === filter}
               onClick={() => {
                 setState("loading");
@@ -95,7 +97,7 @@ export function NotificationCentre() {
         <>
           <ul className="notification-list notification-list-full">
             {items.map((item) => (
-              <NotificationEntry key={item.id} item={item} onOpen={(i) => void openNotification(i)} />
+              <NotificationEntry key={item.id} item={item} now={now} onOpen={(i) => void openNotification(i)} />
             ))}
           </ul>
           {cursor ? (

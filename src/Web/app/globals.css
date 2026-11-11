@@ -52,7 +52,8 @@ a:hover {
   text-decoration: underline;
 }
 
-:where(p, li, dd, blockquote) > a:not([class]) {
+:where(p, dd, blockquote) > a:not([class]),
+:where(.prose, article) :where(p, li) > a:not([class]) {
   text-decoration: underline;
 }
 
@@ -143,7 +144,9 @@ main tbody tr:where(:hover) > * {
   inline-size: 100%;
   max-inline-size: 90rem;
   margin-inline: auto;
-  padding-block: var(--tb-space-lg) var(--tb-space-xxl);
+
+  /* The end of the page keeps room for the assistant launcher, so it never covers the last card (DLS-050). */
+  padding-block: var(--tb-space-lg) calc(var(--tb-space-xxl) + 3rem);
   padding-inline: var(--tb-space-lg);
   overflow-wrap: anywhere; /* long addresses and names wrap instead of widening a phone screen */
 }
@@ -246,9 +249,99 @@ textarea:focus-visible {
   outline-offset: 0;
 }
 
+/* Radios and checkboxes in the system look (spec 036 DLS-051): sized, bordered, filled with the accent when on. */
 input[type="checkbox"],
 input[type="radio"] {
-  accent-color: var(--tb-color-accent-base);
+  flex: none;
+  display: inline-grid;
+  place-content: center;
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  margin: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+  background: var(--tb-color-surface-raised);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard),
+    border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
+}
+
+input[type="checkbox"] {
+  border-radius: calc(var(--tb-radius-sm) / 2);
+}
+
+input[type="radio"] {
+  border-radius: var(--tb-radius-full);
+}
+
+input[type="checkbox"]:checked,
+input[type="radio"]:checked {
+  border-color: var(--tb-color-accent-base);
+  background: var(--tb-color-accent-base);
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  inline-size: 0.3rem;
+  block-size: 0.6rem;
+  margin-block-start: -0.125rem;
+  border-block-end: 0.125rem solid var(--tb-color-accent-text);
+  border-inline-end: 0.125rem solid var(--tb-color-accent-text);
+  transform: rotate(45deg) scale(0);
+}
+
+input[type="checkbox"]:checked::before {
+  transform: rotate(45deg) scale(1);
+}
+
+input[type="radio"]::before {
+  content: "";
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-accent-text);
+  transform: scale(0);
+}
+
+input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled {
+  cursor: not-allowed;
+  opacity: calc(1 - var(--tb-state-disabled-opacity) / 2);
+}
+
+/* Labels read as labels; the hint and error sit under the control so a row of fields lines up (DLS-051). */
+.field > label,
+.field > span:first-child,
+legend {
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.field-required {
+  display: inline-block;
+  margin-inline-start: var(--tb-space-sm);
+  padding-inline: var(--tb-space-xs);
+  border-radius: calc(var(--tb-radius-sm) * 0.75);
+  background: var(--tb-color-surface-sunken);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-medium);
+  vertical-align: middle;
+}
+
+/* Fields in a row of controls carry no bottom margin, so a button lines up with the controls (DLS-051). */
+:where(.ui-filter-bar, .ui-toolbar, .button-row, .inline-field) > .field,
+:where(.ui-filter-bar, .ui-toolbar) form > .field {
+  margin-block-end: 0;
+}
+
+/* Forms sit in a readable column (DLS-054). */
+.ui-form-column {
+  max-inline-size: 44rem;
 }
 
 .field-error {
@@ -268,6 +361,7 @@ input[type="radio"] {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--tb-space-sm);
   min-block-size: 2.75rem;
   min-inline-size: 2.75rem;
   padding-block: var(--tb-space-sm);
@@ -318,7 +412,7 @@ input[type="radio"] {
 .field-hint {
   margin: 0;
   color: var(--tb-color-text-secondary);
-  font-size: var(--tb-font-size-sm);
+  font-size: var(--tb-font-size-xs);
 }
 
 .inline-field {
