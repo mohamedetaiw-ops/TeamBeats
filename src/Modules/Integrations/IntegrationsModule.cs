@@ -67,6 +67,12 @@ public static class IntegrationsModule
         services.AddScoped<Slack.SlackMessaging>();
         services.AddScoped<ISlackMessaging>(sp => sp.GetRequiredService<Slack.SlackMessaging>());
         services.AddScoped<IConnectionDependents>(sp => sp.GetRequiredService<Slack.SlackMessaging>());
+        services.AddScoped<ClockData.IClockFileSource, ClockData.SshNetClockFileSource>();
+        services.AddScoped<ClockData.ClockImportStore>();
+        services.AddScoped<IClockData>(sp => sp.GetRequiredService<ClockData.ClockImportStore>());
+        services.AddScoped<ClockData.ClockImportPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<ClockData.ClockImportPack>());
+        services.AddScoped<ClockData.ClockImports>();
         services.AddScoped<Webhooks.WebhookPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.WebhookPack>());
         services.AddScoped<Webhooks.InboundWebhooks>();
@@ -220,6 +226,7 @@ public static class IntegrationsModule
         RuntimeEndpoints.Map(app);
         PackEndpoints.Map(app);
         PackEndpoints.MapTools(app);
+        ClockData.ClockEndpoints.Map(app);
         Webhooks.InboundWebhooks.Map(app);
         SyncAgents.AgentEndpoints.Map(app);
         return app;

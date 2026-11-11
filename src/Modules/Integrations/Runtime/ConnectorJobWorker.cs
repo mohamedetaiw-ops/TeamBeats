@@ -71,16 +71,18 @@ public sealed class ConnectorJobWorker(IServiceScopeFactory scopes, IClock clock
 }
 
 /// <summary>
-/// The worker's view of the runtime: due attempts, sync agent status and expired payload captures on every tick, and once
+/// The worker's view of the runtime: due attempts, sync agent status, expired payload captures and the daily clock data imports on every tick, and once
 /// a day the purge and the credential expiry check.
 /// </summary>
 public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history, PackConnections connections, Webhooks.InboundWebhooks inbound,
-    SyncAgents.SyncAgentService agents, PayloadCapture capture)
+    SyncAgents.SyncAgentService agents, PayloadCapture capture,
+    ClockData.ClockImports clockImports, ClockData.ClockImportStore clockData)
 {
     public async Task<int> RunDueAsync(DateTimeOffset now, int limit, CancellationToken ct)
     {
         await agents.RefreshAsync(now, ct);
         await capture.PurgeAsync(now, ct);
+        await clockImports.ScheduleDueAsync(now, ct);
         return await runtime.RunDueAsync(now, Math.Min(limit, 50), ct);
     }
 
@@ -89,5 +91,6 @@ public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history, 
         await history.PurgeAsync(now, ct);
         await connections.RefreshExpiryAsync(null, ct);
         await inbound.PurgeAsync(now, ct);
+        await clockData.PurgeAsync(now, ct);
     }
 }

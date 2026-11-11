@@ -8,7 +8,7 @@ import { hostOrigin } from "../support/stack";
  * (it starts turned off), tests it, turns it on and off, defines an action without code, reads the run history and
  * deletes the connection, in English and Arabic with axe. Nothing calls an external system: the test only checks the
  * allowlist, and no action runs. A ServiceNow connection is added in a tenant of its own and its test stops at the
- * missing credential. The API decides every rule.
+ * missing credential. A clock data import takes an uploaded CSV file and lists the row it could not match. The API decides every rule.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`connections in ${locale}`, () => {
@@ -150,6 +150,43 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       // The token is not in the secret manager, so the test stops before calling Slack.
       await page.getByRole("button", { name: msg(locale, "connections.detail.test"), exact: true }).click();
       await expect(page.getByText(msg(locale, "connections.checks.credential_missing"))).toBeVisible();
+    });
+
+    test("an administrator adds a clock data import, uploads a CSV file and reads the rows not imported", async ({ page }, testInfo) => {
+      const own = await createTenant(`clock-${locale}`, locale, "workplace_plus");
+      const name = locale === "ar" ? "أجهزة البوابات" : "Gate readers";
+
+      await signInWithDevForm(page, own.key, own.adminEmail, locale);
+      await page.goto(`${hostOrigin(own.key)}/admin/connections`);
+      const add = page.getByRole("form", { name: msg(locale, "connections.clock.formLabel") });
+      await add.getByLabel(msg(locale, "connections.settings.name")).fill(name);
+      await add.getByLabel(msg(locale, "connections.clock.source")).selectOption("upload");
+      await add.getByLabel(msg(locale, "connections.clock.columns.employeeNumber"), { exact: true }).fill("Badge");
+      await add.getByLabel(msg(locale, "connections.clock.columns.timestamp"), { exact: true }).fill("When");
+      await add.getByLabel(msg(locale, "connections.clock.timeZone"), { exact: true }).fill("Asia/Riyadh");
+      await add.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await page.getByRole("button", { name: msg(locale, "connections.detail.enable"), exact: true }).click();
+      await expect(page.getByRole("status").filter({ hasText: msg(locale, "connections.detail.enabled") })).toBeVisible();
+
+      // Nobody in this tenant has the employee number, so the row is listed as not imported.
+      await page.getByLabel(msg(locale, "connections.clock.files.upload")).setInputFiles({
+        name: "punches.csv",
+        mimeType: "text/csv",
+        buffer: Buffer.from("Badge,When\nE-404,2026-11-09 08:00:00\n"),
+      });
+      await expect(page.getByText(msg(locale, "connections.clock.files.uploaded").replace("{name}", "punches.csv"))).toBeVisible();
+      const panel = page.getByRole("region", { name: msg(locale, "connections.clock.files.title") });
+      await expect(async () => {
+        await panel.getByRole("button", { name: msg(locale, "connections.clock.files.refresh") }).click();
+        await expect(panel.getByText(msg(locale, "connections.clock.files.statuses.imported"), { exact: true })).toBeVisible({ timeout: 2_000 });
+      }).toPass({ timeout: 45_000 });
+      await panel.getByRole("button", { name: msg(locale, "connections.clock.files.showUnmatched") }).click();
+      const rows = panel.getByTestId("clock-unmatched");
+      await expect(rows.getByText("E-404")).toBeVisible();
+      await expect(rows.getByText(msg(locale, "connections.clock.files.reasons.unknown_employee"))).toBeVisible();
+      await expectAccessible(page, testInfo, `clock-import-${locale}`);
     });
 
     test("an administrator adds a Microsoft 365 connection, reads its permissions, turns a feature off and on and deletes it", async ({ page }, testInfo) => {

@@ -466,3 +466,34 @@ public interface ISlackMessaging
 
     Task<SlackSendOutcome> ShareAsync(string channelId, string text, string link, string key, CancellationToken ct = default);
 }
+
+/// <summary>Directions of a clock punch in the time and attendance contract.</summary>
+public static class ClockDirections
+{
+    public const string In = "in";
+    public const string Out = "out";
+
+    /// <summary>The source does not say; spec 022 pairs punches by time.</summary>
+    public const string Unknown = "unknown";
+}
+
+/// <summary>
+/// One canonical clock event (spec 017 US7, the time and attendance contract): who punched, when, which way, and the
+/// source's own punch ID, which makes an import idempotent per punch (spec 022 edge cases). <paramref name="Sequence"/>
+/// orders every punch of the tenant, so a consumer reads on from the last sequence it saw.
+/// </summary>
+public sealed record ClockPunch(long Sequence, Guid ConnectionId, string PunchId, Guid UserId, DateTimeOffset At, string Direction, string? Device);
+
+/// <summary>Clock data imported from time systems, for spec 022 attendance.</summary>
+public interface IClockData
+{
+    /// <summary>Punches after <paramref name="afterSequence"/>, oldest first, at most <paramref name="limit"/> (1 to 5000).</summary>
+    Task<IReadOnlyList<ClockPunch>> ReadAsync(long afterSequence, int limit, CancellationToken ct = default);
+}
+
+/// <summary>
+/// A clock data file was imported (spec 017 US7 scenario 1). New punches are read through <see cref="IClockData"/>;
+/// <paramref name="From"/> and <paramref name="To"/> are the earliest and latest punch time in the file.
+/// </summary>
+public sealed record ClockDataImported(Guid ConnectionId, Guid FileId, int Imported, int Duplicates, int Unmatched, DateTimeOffset? From, DateTimeOffset? To)
+    : IIntegrationEvent;
