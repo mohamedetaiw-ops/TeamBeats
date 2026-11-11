@@ -59,6 +59,18 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `admin-plan-${locale}`);
       await page.getByRole("radio", { name: m("admin.plan.filters.missing") }).check();
       await expect(page.locator("#main").getByText(m("admin.plan.capabilities.people_directory"), { exact: true })).toHaveCount(0);
+
+      // Catalogue rules (spec 036 DLS-068): names only, search by name, an empty state with a way back.
+      await page.getByRole("radio", { name: m("admin.plan.filters.all") }).check();
+      await expect(page.locator("#main").getByText("people.directory", { exact: true })).toHaveCount(0);
+      const search = page.getByRole("searchbox", { name: m("admin.plan.searchLabel") });
+      await search.fill(m("admin.plan.capabilities.people_directory"));
+      await expect(page.locator("#main").getByText(m("admin.plan.capabilities.people_directory"), { exact: true })).toBeVisible();
+      await expect(page.locator("#main").getByText(m("admin.plan.capabilities.ai_assistant"), { exact: true })).toHaveCount(0);
+      await search.fill("zzzz");
+      await expect(page.getByText(m("admin.plan.emptyTitle"))).toBeVisible();
+      await page.getByRole("button", { name: m("admin.plan.clear") }).click();
+      await expect(page.locator("#main").getByText(m("admin.plan.capabilities.ai_assistant"), { exact: true })).toBeVisible();
     });
 
     test("an administrator builds part of the organization and adds a member", async ({ page }, testInfo) => {

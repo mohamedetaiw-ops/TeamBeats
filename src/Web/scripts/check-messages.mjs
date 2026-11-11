@@ -52,6 +52,21 @@ for (const section of ["tenant_settings", "organization", "users", "roles", "pla
   if (!en.has(`admin.nav.${section}`)) errors.push(`missing admin.nav.${section}`);
 }
 
+// Plan names come from the capability catalogue (spec 005 US3, DLS-068): every key seeded by an Entitlements
+// migration needs a name and an area label, so the Plan page never shows a raw key.
+const migrations = join(root, "..", "Modules", "Entitlements", "Migrations");
+const capabilityKeys = new Set();
+for (const name of readdirSync(migrations).filter((n) => n.endsWith(".sql"))) {
+  const sql = readFileSync(join(migrations, name), "utf8");
+  for (const match of sql.matchAll(/\(\s*'([a-z0-9_]+\.[a-z0-9_.]+)'\s*,\s*'(?:flag|limit)'/g)) capabilityKeys.add(match[1]);
+}
+if (capabilityKeys.size === 0) errors.push("no capability keys found in the Entitlements migrations");
+for (const key of capabilityKeys) {
+  if (!en.has(`admin.plan.capabilities.${key.replaceAll(".", "_")}`)) errors.push(`missing admin.plan.capabilities.${key.replaceAll(".", "_")}`);
+  const area = key.split(".")[0];
+  if (!en.has(`admin.areas.${area}`)) errors.push(`missing admin.areas.${area}`);
+}
+
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);
