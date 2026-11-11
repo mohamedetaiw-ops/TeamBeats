@@ -178,6 +178,12 @@ public static class AuditActions
     public const string HrAttendanceCorrected = "hr.attendance_corrected";
     public const string HrCompensationCredited = "hr.compensation_credited";
     public const string HrAttendanceRequestRejected = "hr.attendance_request_rejected";
+    public const string HrLetterTypeChanged = "hr.letter_type_changed";
+    public const string HrLetterSettingsChanged = "hr.letter_settings_changed";
+    public const string HrLetterRequested = "hr.letter_requested";
+    public const string HrLetterIssued = "hr.letter_issued";
+    public const string HrLetterRejected = "hr.letter_rejected";
+    public const string HrLetterVerified = "hr.letter_verified";
 
     // 019
     public const string HrSettingsChanged = "hr.settings_changed";
@@ -381,7 +387,7 @@ public static class AuditActions
         HrPayslipViewed, HrPayslipDownloaded,
         HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
         HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
-        HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected,
+        HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected, HrLetterTypeChanged, HrLetterSettingsChanged, HrLetterRequested, HrLetterIssued, HrLetterRejected, HrLetterVerified,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,

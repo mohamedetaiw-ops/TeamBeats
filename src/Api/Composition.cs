@@ -155,6 +155,10 @@ public static class ApiComposition
             o.AddPolicy("audit", http => RateLimitPartition.GetFixedWindowLimiter(
                 http.RequestServices.GetRequiredService<ITenantContext>().ActorId?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
+            // Letter verification is a guessing path (spec 022 FR-022): limit per client address, as nobody is signed in.
+            o.AddPolicy(TeamBeats.Modules.Hr.Letters.LetterEndpoints.VerifyRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
+                http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1) }));
             // People search is a scraping path (spec 010 FR-017): limit per user.
             o.AddPolicy(PeopleModule.SearchRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
                 http.RequestServices.GetRequiredService<ITenantContext>().ActorId?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",

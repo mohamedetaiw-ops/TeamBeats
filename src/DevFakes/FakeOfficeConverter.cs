@@ -18,6 +18,9 @@ public sealed class FakeOfficeConverter : HttpMessageHandler
 
     public int Requests;
 
+    /// <summary>The last HTML page printed, so tests can check what a letter says.</summary>
+    public string? LastHtml { get; private set; }
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         Interlocked.Increment(ref Requests);
@@ -41,6 +44,16 @@ public sealed class FakeOfficeConverter : HttpMessageHandler
             var kind = Path.GetExtension(file.Headers.ContentDisposition?.FileName?.Trim('"') ?? string.Empty).TrimStart('.').ToUpperInvariant();
             return Pdf(OnePage(["TeamBeats test environment", $"Fictional preview of a {(kind.Length > 0 ? kind : "Office")} file",
                 $"{size.ToString("N0", CultureInfo.InvariantCulture)} bytes, converted by the fake converter."]));
+        }
+        if (path.EndsWith("/forms/chromium/convert/html", StringComparison.Ordinal))
+        {
+            // The letter's own text is kept out of the fake PDF; a hash of the page lets tests tell two pages apart, and
+            // the verification code is printed so a test can check the letter on the public page.
+            var html = await file.ReadAsStringAsync(cancellationToken);
+            LastHtml = html;
+            var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(html)))[..16];
+            var code = System.Text.RegularExpressions.Regex.Match(html, "[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}").Value;
+            return Pdf(OnePage(["TeamBeats test environment", "Fictional letter printed by the fake converter", $"Page {hash}", $"Code {code}"]));
         }
         if (path.EndsWith("/forms/pdfengines/stamp", StringComparison.Ordinal))
         {

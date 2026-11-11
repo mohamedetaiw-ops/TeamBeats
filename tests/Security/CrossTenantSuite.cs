@@ -38,6 +38,7 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         // Spec 022 FR-016: a joiner without an account opens their pre-boarding page with the link's token; PreboardingTests
         // covers unknown, expired and other tenants' links.
         "GET /api/v1/preboarding/{token}",
+        "GET /api/v1/letters/verify/{code}",
     ];
 
     private IReadOnlyList<(string Method, string Pattern)> TenantRoutes() =>

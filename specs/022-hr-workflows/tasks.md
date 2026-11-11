@@ -39,7 +39,7 @@ Depends on 002 (hierarchy), 004 (authorization), 006 (audit and admin shell), 00
 - [x] T020 Sign in and out, clock data, working hours rules, exceptions, corrections, compensation days, monthly summary and export
 
 ## Slice 5: Letters and data change (US6, US7, FR-019 to FR-022)
-- [ ] T021 Letter templates, issued PDFs with verification, public verification page
+- [x] T021 Letter templates, issued PDFs with verification, public verification page
 - [ ] T022 Data change requests with documents, HR write-back and all-channel notice
 
 ## Slice 6: Expenses (US8, FR-023 to FR-025)

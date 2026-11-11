@@ -19,6 +19,9 @@ public sealed class FakeGotenberg : HttpMessageHandler
 
     public int Stamps => _stamps;
 
+    /// <summary>Makes the Chromium route fail, as when the conversion service is down.</summary>
+    public bool HtmlDown { get; set; }
+
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         if (request.Method != HttpMethod.Post || request.Content is not MultipartFormDataContent form)
@@ -38,6 +41,9 @@ public sealed class FakeGotenberg : HttpMessageHandler
         }
         switch (request.RequestUri?.AbsolutePath)
         {
+            case "/forms/chromium/convert/html":
+                // The printed page is the HTML itself after a PDF header, so tests can read what a letter says.
+                return HtmlDown || name != "index.html" ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) : Pdf($"%PDF-1.7 html\n{body}");
             case "/forms/libreoffice/convert":
                 return Pdf($"%PDF-1.7 converted {name}");
             case "/forms/pdfengines/stamp":
