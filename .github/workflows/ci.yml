@@ -80,7 +80,7 @@ jobs:
     # Playwright end-to-end suite (tests/Acceptance, docs/testing/e2e-plan.md): web, development API host and
     # PostgreSQL together, in Arabic and English, with axe accessibility checks.
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     services:
       postgres:
         image: pgvector/pgvector:pg18
@@ -125,7 +125,7 @@ jobs:
         # are missing), so the package step is bounded and warns instead of failing the run.
         run: |
           npx playwright install chromium
-          timeout 300 npx playwright install-deps chromium || echo "::warning::Playwright OS packages could not be installed; using the runner image's libraries"
+          timeout 120 npx playwright install-deps chromium || echo "::warning::Playwright OS packages could not be installed; using the runner image's libraries"
         working-directory: tests/Acceptance
       - name: Playwright
         run: npx playwright test
