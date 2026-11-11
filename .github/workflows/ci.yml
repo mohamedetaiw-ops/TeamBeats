@@ -120,7 +120,12 @@ jobs:
         run: npm run typecheck
         working-directory: tests/Acceptance
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        # The browser comes from the Playwright CDN; its OS packages come from the Ubuntu mirrors. When the mirrors
+        # cannot be reached the runner image already holds the libraries headless Chromium needs (only extra fonts
+        # are missing), so the package step is bounded and warns instead of failing the run.
+        run: |
+          npx playwright install chromium
+          timeout 300 npx playwright install-deps chromium || echo "::warning::Playwright OS packages could not be installed; using the runner image's libraries"
         working-directory: tests/Acceptance
       - name: Playwright
         run: npx playwright test
