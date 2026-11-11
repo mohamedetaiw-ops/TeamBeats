@@ -222,6 +222,12 @@
   inset: 0;
 }
 
+/* Footer actions of a linked card stay their own targets, above the covering link. */
+.ui-card[data-linked] .ui-card-footer {
+  position: relative;
+  z-index: 1;
+}
+
 .ui-card-link {
   color: inherit;
   text-decoration: none;

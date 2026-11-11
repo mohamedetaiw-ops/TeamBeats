@@ -369,6 +369,13 @@ public static class AuditActions
     public const string EvalRubricCalibrated = "eval.rubric_calibrated";
     public const string EvalRubricDemoted = "eval.rubric_demoted";
 
+    // 023
+    public const string EngagementCommunityCreated = "engagement.community_created";
+    public const string EngagementCommunityChanged = "engagement.community_changed";
+    public const string EngagementCommunityArchived = "engagement.community_archived";
+    public const string EngagementMemberChanged = "engagement.member_changed";
+    public const string EngagementPostPinned = "engagement.post_pinned";
+
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
 
@@ -424,6 +431,7 @@ public static class AuditActions
         AgentRetired, AgentKillSwitch,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
         EvalRubricCalibrated, EvalRubricDemoted,
+        EngagementCommunityCreated, EngagementCommunityChanged, EngagementCommunityArchived, EngagementMemberChanged, EngagementPostPinned,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

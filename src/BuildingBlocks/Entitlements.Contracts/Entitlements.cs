@@ -53,6 +53,15 @@ public static class Capabilities
     public const string HrDataChange = "hr.data_change";
     public const string HrExpenses = "hr.expenses";
     public const string AiReceiptReading = "ai.receipt_reading";
+
+    // Spec 023 section 9: communities, recognition and galleries in every package; Speak Up, surveys and points Workplace
+    // Plus and above. Workplace runs polls without surveys.
+    public const string EngagementCommunities = "engagement.communities";
+    public const string EngagementSpeakUp = "engagement.speak_up";
+    public const string EngagementSurveys = "engagement.surveys";
+    public const string EngagementRecognition = "engagement.recognition";
+    public const string EngagementPoints = "engagement.points";
+    public const string EngagementGalleries = "engagement.galleries";
     public const string AnalyticsCore = "analytics.core";
     public const string AnalyticsAdvanced = "analytics.advanced";
     public const string AnalyticsExport = "analytics.export";

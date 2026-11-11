@@ -421,3 +421,34 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Rate source | Finance keeps the rate table by hand; a rate feed through spec 017 can fill the same table later |
 | Receipt reading use case | Spec 013 has no receipt use case, so it uses `summarize`. Under the default AI policy it is blocked, because receipts are Confidential |
 | SC-001 to SC-004 | SC-001 and SC-004 are covered by the e2e suites (`leave.spec.ts`, `letters.spec.ts`), which do the same steps without timing a person. SC-002 and SC-003 need a pilot tenant and are not proven |
+
+## Communities, posts and comments (spec 023, slice 1: T001 to T004; US1, FR-001 to FR-004, FR-023)
+
+### Built
+- The `Engagement` module (ADR-0013) with schema `engagement` and forced RLS on every table: communities, members, channels, posts, hashtags, mentions, comments, reactions and follows. Later slices add their own tables (reports, mutes, Speak Up, polls, surveys, recognition, celebrations, albums) in their own migrations, so T001 covers the module and the slice 1 tables.
+- Five permissions (`engagement.participate`, `engagement.moderate`, `engagement.manage`, `engagement.survey_publish`, `engagement.recognition_approve`), the new built-in role `engagement_administrator`, the six capability keys of section 9 and the audit actions for community created, changed and archived, member changed and post pinned.
+- Communities: open, approval required and closed. Closed communities answer "not found" to anyone who is not a member or a moderator in scope, in the directory, the page, the feed and search. An approval community lists its name to everyone but shows posts only to members; requests go to the owners. The last owner cannot leave or be demoted.
+- Department communities: a community linked to an org unit takes its members from the unit and the units below it, read live from the organization contract (spec 002), so a move changes membership at once.
+- Posts in the shared body format (spec 009 editor), comments with one reply level, five reactions, mentions, hashtags, pinning, following and editing. A mention tells only people who can read the community (spec 015); the others come back to the author as "not told". Followers hear about new comments at most once an hour per post, folded into one grouped notice.
+- Posts are indexed for search (spec 012) as the `discussion` kind, with the community's access rule checked at query time.
+- Pages: the communities directory with the create form for engagement administrators, the community page with channels, composer and feed, the members page, the post page and the hashtag page. In English and Arabic.
+- `GET /api/v1/engagement/rights` tells the directory whether to offer the create form; the API still checks every create.
+- The shared `Card` component now keeps footer actions above the covering heading link, so a linked card can carry a button.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Who sees an approval community | Everyone sees its name and description; posts only members and moderators in scope |
+| Moderators of closed communities | A person with `engagement.moderate` on the community's scope can see and read it |
+| Department membership and child units | People in units below the linked unit are members too |
+| Follower notices | At most one notice per post per hour, folded into the 15 minute group of spec 015 |
+| Search and the assistant | Discussions are internal content and are open to assistant retrieval under the same access rule |
+| Communities capability | On in every package (section 9), so there is no entitlement denial test for it; the other keys are tested in their slices |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Department membership (plan, key decisions) | The plan stores unit members in `community_member` from 002 events; slice 1 reads them live from the organization contract instead, which needs no sync and cannot drift |
+| Images and files in posts (FR-003) | Wait for the galleries slice (T014), which brings scanning through spec 026 |
+| Moderator removal of comments | Authors remove their own comments; moderator removal comes with the moderation slice (T005, T006) |
+| Home widgets (FR-022) | T015 |

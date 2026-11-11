@@ -490,7 +490,8 @@
         "compliance_officer": "Compliance officer",
         "agent_designer": "Agent designer",
         "evaluation_reviewer": "Evaluation reviewer",
-        "finance_officer": "Finance officer"
+        "finance_officer": "Finance officer",
+        "engagement_administrator": "Engagement administrator"
       },
       "tabs": "Roles and access sections",
       "unknownUnit": "a unit outside your view",
@@ -603,7 +604,8 @@
       "access": "Access",
       "users": "People",
       "roles": "Roles",
-      "records": "Records"
+      "records": "Records",
+      "engagement": "Communities and engagement"
     },
     "plan": {
       "description": "The package this workspace uses and everything it includes.",
@@ -732,7 +734,13 @@
         "hr_letters": "HR letters",
         "hr_data_change": "Personal data change requests",
         "hr_expenses": "Expense claims",
-        "ai_receipt_reading": "Receipt reading with AI"
+        "ai_receipt_reading": "Receipt reading with AI",
+        "engagement_communities": "Communities",
+        "engagement_speak_up": "Speak Up",
+        "engagement_surveys": "Surveys",
+        "engagement_recognition": "Recognition",
+        "engagement_points": "Points and leaderboards",
+        "engagement_galleries": "Galleries"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -3794,7 +3802,8 @@
       "document": "Document",
       "knowledge": "Article",
       "policy": "Policy",
-      "service": "Service"
+      "service": "Service",
+      "discussion": "Discussion"
     },
     "admin": {
       "title": "Search",
@@ -7899,5 +7908,163 @@
     "nothingRead": "Nothing could be read from this receipt. Fill in the line yourself.",
     "readBlocked": "Your organization's AI policy does not allow receipts to be read with AI.",
     "readUnavailable": "Receipt reading is not available right now. Fill in the line yourself."
+  },
+  "engagement": {
+    "pageTitle": "Communities",
+    "pageIntro": "Join groups around your work and interests, share posts and talk with colleagues.",
+    "unavailableTitle": "Communities are not available",
+    "unavailable": "Communities are not turned on for your organization, or they could not be loaded. Try again later.",
+    "failed": "That did not work",
+    "working": "Working…",
+    "formerEmployee": "{name} (former employee)",
+    "directory": {
+      "search": "Search communities",
+      "find": "Search",
+      "listLabel": "Communities",
+      "emptyTitle": "No communities yet",
+      "empty": "There are no communities you can see. When one is started for you, it appears here.",
+      "department": "Department",
+      "member": "Member",
+      "pending": "Request sent",
+      "members": "{count, plural, one {# member} other {# members}}",
+      "joined": "You joined {name}.",
+      "requested": "Your request to join {name} went to its owners."
+    },
+    "kinds": {
+      "open": "Open",
+      "approval": "Approval required",
+      "closed": "Closed"
+    },
+    "community": {
+      "join": "Join",
+      "askToJoin": "Ask to join",
+      "leave": "Leave",
+      "left": "You left this community.",
+      "requested": "Your request went to the owners. You can read posts once they accept it.",
+      "joinedNotice": "You joined this community. You can post now.",
+      "archived": "Archived",
+      "membersLink": "Members",
+      "closedTitle": "Posts are for members",
+      "joinToRead": "Join this community to read its posts.",
+      "pendingMessage": "Your request to join is waiting for the owners. You can read posts once they accept it."
+    },
+    "create": {
+      "title": "Start a community",
+      "intro": "Give it a name in each language. Link it to an org unit to make it the department community; its members then follow the unit.",
+      "name": "Name in {language}",
+      "description": "Description in {language}",
+      "kind": "Who can join",
+      "unit": "Department",
+      "unitHint": "Optional. People in this unit and the units below it are members.",
+      "noUnit": "Not linked to a unit",
+      "submit": "Start community",
+      "created": "{name} is ready."
+    },
+    "channels": {
+      "general": "General",
+      "choose": "Channel",
+      "all": "All channels",
+      "addTitle": "Add a channel",
+      "key": "Channel key",
+      "keyHint": "Lowercase letters, digits or underscores, such as events.",
+      "name": "Channel name in {language}",
+      "add": "Add channel",
+      "added": "The channel was added."
+    },
+    "composer": {
+      "title": "Write a post",
+      "channel": "Post in",
+      "body": "Post",
+      "hint": "Add #hashtags in the text to group posts by topic.",
+      "submit": "Post",
+      "posted": "Your post is published."
+    },
+    "mentions": {
+      "add": "Mention someone",
+      "chosen": "People you mention",
+      "remove": "Stop mentioning {name}"
+    },
+    "notReachable": {
+      "title": "Some people you mentioned cannot read this community, so they were not told:"
+    },
+    "feed": {
+      "label": "Posts",
+      "emptyTitle": "No posts yet",
+      "empty": "Nobody has posted here yet.",
+      "emptyPoster": "Nobody has posted here yet. Start the conversation.",
+      "more": "Show more posts"
+    },
+    "post": {
+      "pageTitle": "Post",
+      "edited": "edited",
+      "pinned": "Pinned",
+      "embed": "Embedded content",
+      "hashtags": "Hashtags",
+      "mentioned": "Mentioned:",
+      "comments": "{count, plural, =0 {Comment} one {# comment} other {# comments}}",
+      "follow": "Follow",
+      "following": "Following",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete post",
+      "deleteQuestion": "Delete this post and its comments?",
+      "deleteConfirm": "Delete"
+    },
+    "comments": {
+      "label": "Comments",
+      "loading": "Loading comments…",
+      "failed": "Comments could not be loaded. Try again later.",
+      "none": "No comments yet.",
+      "add": "Add a comment",
+      "replyLabel": "Your reply",
+      "reply": "Reply",
+      "replyingTo": "Replying to {name}.",
+      "cancelReply": "Cancel reply",
+      "send": "Send",
+      "delete": "Delete"
+    },
+    "reactions": {
+      "postLabel": "Reactions to this post",
+      "commentLabel": "Reactions to this comment",
+      "count": "{reaction} {count}",
+      "like": "Like",
+      "celebrate": "Celebrate",
+      "support": "Support",
+      "insightful": "Insightful",
+      "funny": "Funny"
+    },
+    "members": {
+      "pageTitle": "Members",
+      "title": "{count, plural, one {# member} other {# members}}",
+      "pending": "Asked to join",
+      "fromUnit": "From the department",
+      "accept": "Accept",
+      "decline": "Decline",
+      "accepted": "{name} is now a member.",
+      "declined": "The request from {name} was declined.",
+      "roleFor": "Role of {name}",
+      "changed": "The role of {name} was changed.",
+      "remove": "Remove",
+      "removed": "{name} was removed.",
+      "addTitle": "Add a member",
+      "person": "Person",
+      "role": "Role",
+      "add": "Add",
+      "added": "The person was added."
+    },
+    "roles": {
+      "member": "Member",
+      "moderator": "Moderator",
+      "owner": "Owner"
+    },
+    "hashtag": {
+      "title": "#{tag}",
+      "intro": "Posts with this hashtag from the communities you can read.",
+      "emptyTitle": "No posts",
+      "empty": "There are no posts with this hashtag that you can read."
+    }
   }
 }

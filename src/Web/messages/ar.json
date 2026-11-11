@@ -490,7 +490,8 @@
         "compliance_officer": "مسؤول الامتثال",
         "agent_designer": "مصمم الوكلاء",
         "evaluation_reviewer": "مراجع التقييم",
-        "finance_officer": "مسؤول المالية"
+        "finance_officer": "مسؤول المالية",
+        "engagement_administrator": "مسؤول التفاعل"
       },
       "tabs": "أقسام الأدوار والوصول",
       "unknownUnit": "وحدة خارج نطاق عرضك",
@@ -603,7 +604,8 @@
       "access": "الوصول",
       "users": "الأشخاص",
       "roles": "الأدوار",
-      "records": "السجلات"
+      "records": "السجلات",
+      "engagement": "المجتمعات والمشاركة"
     },
     "plan": {
       "description": "الباقة التي تستخدمها مساحة العمل هذه وكل ما تتضمنه.",
@@ -732,7 +734,13 @@
         "hr_letters": "خطابات الموارد البشرية",
         "hr_data_change": "طلبات تعديل البيانات الشخصية",
         "hr_expenses": "مطالبات المصروفات",
-        "ai_receipt_reading": "قراءة الإيصالات بالذكاء الاصطناعي"
+        "ai_receipt_reading": "قراءة الإيصالات بالذكاء الاصطناعي",
+        "engagement_communities": "المجتمعات",
+        "engagement_speak_up": "تحدّث بصراحة",
+        "engagement_surveys": "الاستبيانات",
+        "engagement_recognition": "التقدير",
+        "engagement_points": "النقاط ولوحات الصدارة",
+        "engagement_galleries": "معارض الصور"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",
@@ -3794,7 +3802,8 @@
       "document": "مستند",
       "knowledge": "مقالة",
       "policy": "سياسة",
-      "service": "خدمة"
+      "service": "خدمة",
+      "discussion": "نقاش"
     },
     "admin": {
       "title": "البحث",
@@ -7899,5 +7908,163 @@
     "nothingRead": "تعذرت قراءة أي شيء من هذا الإيصال. املأ البند بنفسك.",
     "readBlocked": "لا تسمح سياسة الذكاء الاصطناعي في مؤسستك بقراءة الإيصالات بالذكاء الاصطناعي.",
     "readUnavailable": "قراءة الإيصالات غير متاحة الآن. املأ البند بنفسك."
+  },
+  "engagement": {
+    "pageTitle": "المجتمعات",
+    "pageIntro": "انضم إلى مجموعات حول عملك واهتماماتك، وشارك المنشورات وتحدث مع زملائك.",
+    "unavailableTitle": "المجتمعات غير متاحة",
+    "unavailable": "المجتمعات غير مفعلة لمؤسستك، أو تعذر تحميلها. حاول مرة أخرى لاحقا.",
+    "failed": "لم ينجح ذلك",
+    "working": "جار التنفيذ…",
+    "formerEmployee": "{name} (موظف سابق)",
+    "directory": {
+      "search": "ابحث في المجتمعات",
+      "find": "بحث",
+      "listLabel": "المجتمعات",
+      "emptyTitle": "لا توجد مجتمعات بعد",
+      "empty": "لا توجد مجتمعات يمكنك رؤيتها. عندما يبدأ مجتمع لك سيظهر هنا.",
+      "department": "إدارة",
+      "member": "عضو",
+      "pending": "تم إرسال الطلب",
+      "members": "{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضوا} other {# عضو}}",
+      "joined": "انضممت إلى {name}.",
+      "requested": "أُرسل طلب انضمامك إلى {name} إلى مالكيه."
+    },
+    "kinds": {
+      "open": "مفتوح",
+      "approval": "يتطلب موافقة",
+      "closed": "مغلق"
+    },
+    "community": {
+      "join": "انضمام",
+      "askToJoin": "اطلب الانضمام",
+      "leave": "مغادرة",
+      "left": "غادرت هذا المجتمع.",
+      "requested": "أُرسل طلبك إلى المالكين. يمكنك قراءة المنشورات بعد قبوله.",
+      "joinedNotice": "انضممت إلى هذا المجتمع. يمكنك النشر الآن.",
+      "archived": "مؤرشف",
+      "membersLink": "الأعضاء",
+      "closedTitle": "المنشورات للأعضاء",
+      "joinToRead": "انضم إلى هذا المجتمع لقراءة منشوراته.",
+      "pendingMessage": "طلب انضمامك بانتظار المالكين. يمكنك قراءة المنشورات بعد قبوله."
+    },
+    "create": {
+      "title": "ابدأ مجتمعا",
+      "intro": "أعطه اسما بكل لغة. اربطه بوحدة تنظيمية ليصبح مجتمع الإدارة، ويتبع أعضاؤه الوحدة.",
+      "name": "الاسم باللغة {language}",
+      "description": "الوصف باللغة {language}",
+      "kind": "من يمكنه الانضمام",
+      "unit": "الإدارة",
+      "unitHint": "اختياري. الأشخاص في هذه الوحدة والوحدات التابعة لها أعضاء.",
+      "noUnit": "غير مرتبط بوحدة",
+      "submit": "ابدأ المجتمع",
+      "created": "{name} جاهز."
+    },
+    "channels": {
+      "general": "عام",
+      "choose": "القناة",
+      "all": "كل القنوات",
+      "addTitle": "أضف قناة",
+      "key": "مفتاح القناة",
+      "keyHint": "أحرف إنجليزية صغيرة أو أرقام أو شرطات سفلية، مثل events.",
+      "name": "اسم القناة باللغة {language}",
+      "add": "أضف القناة",
+      "added": "أُضيفت القناة."
+    },
+    "composer": {
+      "title": "اكتب منشورا",
+      "channel": "انشر في",
+      "body": "المنشور",
+      "hint": "أضف #وسوما في النص لتجميع المنشورات حسب الموضوع.",
+      "submit": "نشر",
+      "posted": "نُشر منشورك."
+    },
+    "mentions": {
+      "add": "اذكر شخصا",
+      "chosen": "الأشخاص الذين تذكرهم",
+      "remove": "إلغاء ذكر {name}"
+    },
+    "notReachable": {
+      "title": "بعض من ذكرتهم لا يمكنهم قراءة هذا المجتمع، لذلك لم يتم إبلاغهم:"
+    },
+    "feed": {
+      "label": "المنشورات",
+      "emptyTitle": "لا توجد منشورات بعد",
+      "empty": "لم ينشر أحد هنا بعد.",
+      "emptyPoster": "لم ينشر أحد هنا بعد. ابدأ الحديث.",
+      "more": "عرض المزيد من المنشورات"
+    },
+    "post": {
+      "pageTitle": "منشور",
+      "edited": "معدل",
+      "pinned": "مثبت",
+      "embed": "محتوى مضمن",
+      "hashtags": "الوسوم",
+      "mentioned": "تم ذكر:",
+      "comments": "{count, plural, =0 {تعليق} one {تعليق واحد} two {تعليقان} few {# تعليقات} many {# تعليقا} other {# تعليق}}",
+      "follow": "متابعة",
+      "following": "تتابعه",
+      "pin": "تثبيت",
+      "unpin": "إلغاء التثبيت",
+      "edit": "تعديل",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "delete": "حذف المنشور",
+      "deleteQuestion": "هل تريد حذف هذا المنشور وتعليقاته؟",
+      "deleteConfirm": "حذف"
+    },
+    "comments": {
+      "label": "التعليقات",
+      "loading": "جار تحميل التعليقات…",
+      "failed": "تعذر تحميل التعليقات. حاول مرة أخرى لاحقا.",
+      "none": "لا توجد تعليقات بعد.",
+      "add": "أضف تعليقا",
+      "replyLabel": "ردك",
+      "reply": "رد",
+      "replyingTo": "رد على {name}.",
+      "cancelReply": "إلغاء الرد",
+      "send": "إرسال",
+      "delete": "حذف"
+    },
+    "reactions": {
+      "postLabel": "التفاعلات مع هذا المنشور",
+      "commentLabel": "التفاعلات مع هذا التعليق",
+      "count": "{reaction} {count}",
+      "like": "إعجاب",
+      "celebrate": "احتفال",
+      "support": "دعم",
+      "insightful": "مفيد",
+      "funny": "مضحك"
+    },
+    "members": {
+      "pageTitle": "الأعضاء",
+      "title": "{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضوا} other {# عضو}}",
+      "pending": "طلب الانضمام",
+      "fromUnit": "من الإدارة",
+      "accept": "قبول",
+      "decline": "رفض",
+      "accepted": "أصبح {name} عضوا.",
+      "declined": "رُفض طلب {name}.",
+      "roleFor": "دور {name}",
+      "changed": "تغير دور {name}.",
+      "remove": "إزالة",
+      "removed": "أُزيل {name}.",
+      "addTitle": "أضف عضوا",
+      "person": "الشخص",
+      "role": "الدور",
+      "add": "إضافة",
+      "added": "أُضيف الشخص."
+    },
+    "roles": {
+      "member": "عضو",
+      "moderator": "مشرف",
+      "owner": "مالك"
+    },
+    "hashtag": {
+      "title": "#{tag}",
+      "intro": "منشورات بهذا الوسم من المجتمعات التي يمكنك قراءتها.",
+      "emptyTitle": "لا توجد منشورات",
+      "empty": "لا توجد منشورات بهذا الوسم يمكنك قراءتها."
+    }
   }
 }
