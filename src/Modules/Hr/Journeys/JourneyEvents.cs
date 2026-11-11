@@ -23,7 +23,8 @@ namespace TeamBeats.Modules.Hr.Journeys;
 /// existing staff starts nothing. <c>UserDeprovisioned</c> starts nothing: the account is disabled at the end of
 /// offboarding (US5 scenario 3), not before it.
 /// </summary>
-public sealed class JourneyStarter(IEntitlementService entitlements, LeaveLedger people, JourneyTemplates templates, JourneyService journeys, IRequestFacts requests)
+public sealed class JourneyStarter(IEntitlementService entitlements, LeaveLedger people, JourneyTemplates templates, JourneyService journeys, IRequestFacts requests,
+    Preboarding preboarding)
     : IMessageHandler<EmployeeHired>, IMessageHandler<EmployeeRehired>, IMessageHandler<UserProvisioned>, IMessageHandler<EmployeeTerminated>,
         IMessageHandler<RequestCompleted>
 {
@@ -41,11 +42,12 @@ public sealed class JourneyStarter(IEntitlementService entitlements, LeaveLedger
 
     public Task HandleAsync(EmployeeHired message, CancellationToken ct) => message.UserId is { } user
         ? StartAsync(JourneyStarts.Hire, null, user, message.StartDate, "hr_hire", $"hr_hire:{message.ChangeId:N}", ct)
-        : Task.CompletedTask; // No account yet: the new account starts it with the HR start date.
+        // No account yet: the new account starts the journey with the HR start date; until then pre-boarding may reach them (FR-016).
+        : preboarding.ScheduleAsync(message.RecordId, message.StartDate, ct);
 
     public Task HandleAsync(EmployeeRehired message, CancellationToken ct) => message.UserId is { } user
         ? StartAsync(JourneyStarts.Hire, null, user, message.StartDate, "hr_rehire", $"hr_rehire:{message.ChangeId:N}", ct)
-        : Task.CompletedTask;
+        : preboarding.ScheduleAsync(message.RecordId, message.StartDate, ct);
 
     public Task HandleAsync(EmployeeTerminated message, CancellationToken ct) => message.UserId is { } user
         ? StartAsync(JourneyStarts.Termination, null, user, message.LastWorkingDay, "hr_termination", $"hr_termination:{message.ChangeId:N}", ct)

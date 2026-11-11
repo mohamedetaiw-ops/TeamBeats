@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.Hr.Attendance;
 using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Hr.Journeys;
 using TeamBeats.Modules.Hr.Leave;
@@ -33,8 +34,12 @@ public static class HrModule
         services.AddMessageHandler<WorkingCalendarChanged, LeaveRecountHandler>("hr.leave_recount");
         services.AddMessageHandler<Integrations.Contracts.HrLeaveHandOffChanged, LeaveHrAnswered>("hr.leave_hr_answered");
         services.AddSingleton<Services.Contracts.IModuleServiceSource, LeaveModuleServices>();
+        services.AddSingleton<Services.Contracts.IModuleServiceSource, AttendanceModuleServices>();
         services.AddScoped<JourneyTemplates>();
         services.AddScoped<JourneyService>();
+        services.AddScoped<Preboarding>();
+        services.AddScoped<Attendance.AttendanceService>();
+        services.AddMessageHandler<Integrations.Contracts.ClockDataImported, Attendance.ClockDataHandler>("hr.attendance_clock_import");
         services.AddScoped<JourneyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<JourneyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, JourneyTaskSource>("hr.journey_notify_task");
@@ -123,6 +128,7 @@ public static class HrModule
 
         app.MapLeaveEndpoints();
         app.MapJourneyEndpoints();
+        app.MapAttendanceEndpoints();
         return app;
     }
 }

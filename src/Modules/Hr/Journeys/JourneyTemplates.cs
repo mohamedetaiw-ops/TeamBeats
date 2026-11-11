@@ -55,6 +55,9 @@ public static class JourneyAssignees
 /// policy flagged "onboarding required" that applies to them (spec 025 FR-017); the step is done when none is left.
 /// <c>access_removal</c>: a checklist with a line per connected system and per system the template names, done when
 /// every line is confirmed (FR-017). <c>exit_interview</c>: a form with structured reasons (FR-018).
+/// <c>preboarding</c>: a welcome before day one in an onboarding template started by a hire (FR-016). A joiner with no
+/// account yet gets it by a time-limited link to the personal email from HR, when the tenant turns pre-boarding on; a
+/// joiner with an account reads it as their own step.
 /// </summary>
 public static class JourneyStepTypes
 {
@@ -62,8 +65,9 @@ public static class JourneyStepTypes
     public const string Attestation = "attestation";
     public const string AccessRemoval = "access_removal";
     public const string ExitInterview = "exit_interview";
+    public const string Preboarding = "preboarding";
 
-    public static readonly IReadOnlyList<string> All = [Task, Attestation, AccessRemoval, ExitInterview];
+    public static readonly IReadOnlyList<string> All = [Task, Attestation, AccessRemoval, ExitInterview, Preboarding];
 }
 
 /// <summary>
@@ -71,7 +75,8 @@ public static class JourneyStepTypes
 /// <paramref name="Permission"/> names the queue of a permission step, and for person, buddy and manager steps the
 /// fallback when that person is missing or has left (<c>hr.manage</c> when not given). <paramref name="Type"/> is a
 /// <see cref="JourneyStepTypes"/> value (<c>task</c> when not given); <paramref name="Systems"/> names systems that are
-/// not connected for an access removal checklist.
+/// not connected for an access removal checklist. <paramref name="Content"/> is a pre-boarding step's text, by language:
+/// the only content a pre-boarding page shows.
 /// </summary>
 public sealed record JourneyStepSpec(
     string Key,
@@ -82,7 +87,8 @@ public sealed record JourneyStepSpec(
     string? Permission = null,
     int? DueWorkingDays = null,
     string? Type = null,
-    IReadOnlyList<string>? Systems = null);
+    IReadOnlyList<string>? Systems = null,
+    IReadOnlyDictionary<string, string>? Content = null);
 
 public sealed record JourneyTemplateRequest(
     string? Key,
@@ -143,6 +149,7 @@ public sealed partial class JourneyTemplates(
     public const int MaxDueWorkingDays = 60;
     public const int MaxSystems = 20;
     public const int MaxSystemLength = 80;
+    public const int MaxContentLength = 2000;
 
     public static string ETag(int version) => $"\"v{version}\"";
 
@@ -451,7 +458,10 @@ public sealed partial class JourneyTemplates(
                 // The person attests for themselves; nobody removes their own access; an exit interview belongs to offboarding.
                 || type == JourneyStepTypes.Attestation && s.Assignee != JourneyAssignees.Person
                 || type == JourneyStepTypes.AccessRemoval && s.Assignee is JourneyAssignees.Person or JourneyAssignees.Buddy
-                || type == JourneyStepTypes.ExitInterview && (kind != JourneyKinds.Offboarding || s.Assignee == JourneyAssignees.Buddy))
+                || type == JourneyStepTypes.ExitInterview && (kind != JourneyKinds.Offboarding || s.Assignee == JourneyAssignees.Buddy)
+                // Pre-boarding is the joiner's own welcome before day one, from an onboarding template a hire starts.
+                || type == JourneyStepTypes.Preboarding && (kind != JourneyKinds.Onboarding || startOn != JourneyStarts.Hire
+                    || s.Assignee != JourneyAssignees.Person || s.OffsetDays >= 0))
             {
                 errors.Add($"{field}.type", "validation.journey.step_type");
             }
@@ -462,10 +472,16 @@ public sealed partial class JourneyTemplates(
             {
                 errors.Add($"{field}.systems", "validation.journey.systems");
             }
+            var content = CleanContent(s.Content);
+            if (type == JourneyStepTypes.Preboarding ? content is null : s.Content is { Count: > 0 })
+            {
+                errors.Add($"{field}.content", "validation.journey.content");
+            }
             if (stepNames is not null && s.Key is not null)
             {
                 steps.Add(new JourneyStepSpec(s.Key, stepNames, s.OffsetDays, s.Assignee ?? string.Empty, s.Assignee == JourneyAssignees.Users ? users : null,
-                    permission, s.DueWorkingDays, type, type == JourneyStepTypes.AccessRemoval ? systems : null));
+                    permission, s.DueWorkingDays, type, type == JourneyStepTypes.AccessRemoval ? systems : null,
+                    type == JourneyStepTypes.Preboarding ? content : null));
             }
         }
         errors.ThrowIfAny();
@@ -477,6 +493,15 @@ public sealed partial class JourneyTemplates(
         var clean = (names ?? new Dictionary<string, string>()).Where(n => !string.IsNullOrWhiteSpace(n.Value))
             .ToDictionary(n => n.Key, n => n.Value.Trim(), StringComparer.Ordinal);
         return clean.Count == 0 || clean.Any(n => !LocaleKey().IsMatch(n.Key) || n.Value.Length > 120 || n.Value.Any(char.IsControl)) ? null : clean;
+    }
+
+    /// <summary>A pre-boarding text by language: plain text up to 2,000 characters, line breaks allowed.</summary>
+    internal static Dictionary<string, string>? CleanContent(IReadOnlyDictionary<string, string>? content)
+    {
+        var clean = (content ?? new Dictionary<string, string>()).Where(n => !string.IsNullOrWhiteSpace(n.Value))
+            .ToDictionary(n => n.Key, n => n.Value.Trim().ReplaceLineEndings("\n"), StringComparer.Ordinal);
+        return clean.Count == 0 || clean.Any(n => !LocaleKey().IsMatch(n.Key) || n.Value.Length > MaxContentLength
+            || n.Value.Any(c => char.IsControl(c) && c != '\n')) ? null : clean;
     }
 
     [GeneratedRegex("^[a-z][a-z0-9_]{1,39}$")]

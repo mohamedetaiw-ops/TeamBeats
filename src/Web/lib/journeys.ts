@@ -16,7 +16,7 @@ export type JourneyStatus = (typeof JOURNEY_STATUSES)[number];
 export const STEP_STATUSES = ["scheduled", "open", "done", "cancelled"] as const;
 export type StepStatus = (typeof STEP_STATUSES)[number];
 
-export const JOURNEY_STEP_TYPES = ["task", "attestation", "access_removal", "exit_interview"] as const;
+export const JOURNEY_STEP_TYPES = ["task", "attestation", "access_removal", "exit_interview", "preboarding"] as const;
 export type JourneyStepType = (typeof JOURNEY_STEP_TYPES)[number];
 
 /** The structured exit reasons (spec 022 FR-018), as the API lists them. */
@@ -47,6 +47,8 @@ export type JourneyStepSpec = {
   dueWorkingDays?: number | null;
   type?: JourneyStepType | null;
   systems?: string[] | null;
+  /** A pre-boarding step's welcome text, by language. */
+  content?: Names | null;
 };
 
 export type JourneyTemplate = {
@@ -112,6 +114,7 @@ export type JourneyStep = {
   overdue: boolean;
   myTaskId: string | null;
   accessItems: AccessItem[] | null;
+  content: Names | null;
 };
 
 /** An exit interview as the viewer may see it: the free text only for HR officers. */
@@ -147,4 +150,21 @@ export type Journey = {
   steps: JourneyStep[];
   canManage: boolean;
   exitInterview: ExitInterview | null;
+};
+
+/** The tenant's journeys setting (spec 022 FR-016): pre-boarding before the account exists, and how invitations went. */
+export type JourneySettings = {
+  preboardingEnabled: boolean;
+  version: number;
+  updatedAt: string | null;
+  preboarding: { scheduled: number; sent: number; opened: number; failed: number };
+  canChange: boolean;
+  eTag: string;
+};
+
+/** A pre-boarding page: the start date and the pre-boarding text of the template, nothing else. */
+export type PreboardingPage = {
+  startDate: string;
+  expiresAt: string;
+  steps: { key: string; names: Names; content: Names; showsOn: string }[];
 };

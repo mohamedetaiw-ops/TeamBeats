@@ -169,5 +169,30 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.locator("section", { has: page.locator("#journey-summary") }).getByText(m("journeys.detail.statuses.completed"))).toBeVisible();
     });
   });
-}
 
+  test.describe(`pre-boarding in ${locale}`, () => {
+    test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
+    const m = (key: string, values: Record<string, string> = {}) => msg(locale, key, values);
+
+    test("HR turns pre-boarding on, and a link that is unknown or ended reads as not available", async ({ page }, testInfo) => {
+      const tenant = await createTenant(`pb-${locale}`, locale, "workplace_plus");
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/journeys`);
+      const panel = page.locator("section", { has: page.locator("#journey-settings") });
+      const toggle = panel.getByLabel(m("journeys.settings.enabled"));
+      await expect(toggle).not.toBeChecked();
+      await expectAccessible(page, testInfo, `journeys-preboarding-${locale}`);
+      await toggle.check();
+      await panel.getByRole("button", { name: m("journeys.settings.save") }).click();
+      await expect(page.getByRole("status").filter({ hasText: m("journeys.settings.saved") })).toBeVisible();
+      await page.reload();
+      await expect(page.locator("section", { has: page.locator("#journey-settings") }).getByLabel(m("journeys.settings.enabled"))).toBeChecked();
+
+      // The joiner has no account: the page needs no sign-in, and a link nobody was sent shows nothing of the tenant.
+      await page.context().clearCookies();
+      await page.goto(`${hostOrigin(tenant.key)}/preboarding/${"A".repeat(43)}`);
+      await expect(page.getByText(m("preboarding.unavailableTitle"))).toBeVisible();
+      await expectAccessible(page, testInfo, `preboarding-unavailable-${locale}`);
+    });
+  });
+}

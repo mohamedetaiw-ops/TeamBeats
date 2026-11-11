@@ -102,3 +102,15 @@
   grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
   gap: var(--tb-space-xs) var(--tb-space-md);
 }
+
+.journeys-content {
+  margin: var(--tb-space-xs) 0 0;
+  white-space: pre-line;
+}
+
+.preboarding-steps {
+  display: grid;
+  gap: var(--tb-space-md);
+  padding: 0;
+  list-style: none;
+}

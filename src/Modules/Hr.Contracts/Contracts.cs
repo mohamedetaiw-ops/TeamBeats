@@ -82,6 +82,9 @@ public sealed class WorkingCalendarSnapshot
 
     public bool IsWorkingDay(DateOnly date) => WorkingFraction(date) > 0;
 
+    /// <summary>True for a holiday of the calendar, whole or half day, on any day of the week.</summary>
+    public bool IsHoliday(DateOnly date) => _holidays.ContainsKey(date);
+
     /// <summary>Working days from <paramref name="from"/> to <paramref name="to"/>, both included; zero when the range is empty.</summary>
     public decimal CountWorkingDays(DateOnly from, DateOnly to)
     {

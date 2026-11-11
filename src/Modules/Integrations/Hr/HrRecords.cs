@@ -62,11 +62,33 @@ public sealed class HrRecords(IDbSession session, ITenantContext context, IEntit
             var (employee, _) = await rest.ReadOneAsync(connection, row.Record, ct);
             return employee is null
                 ? new HrRecordRead(HrRecordRead.Unavailable, null)
-                : new HrRecordRead(HrRecordRead.Ok, new HrRecordView(userId, row.Record, HrSync.ToFields(employee), clock.UtcNow));
+                : new HrRecordRead(HrRecordRead.Ok, new HrRecordView(userId, row.Record, HrSync.Visible(HrSync.ToFields(employee)), clock.UtcNow));
         }
         catch (Exception e) when (e is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
         {
             return new HrRecordRead(HrRecordRead.Unavailable, null);
         }
+    }
+
+    public async Task<HrPreHire?> PreHireAsync(string recordId, CancellationToken ct = default)
+    {
+        if (string.IsNullOrEmpty(recordId) || !await entitlements.IsEnabledAsync(Capabilities.HrIntegration, ct))
+        {
+            return null;
+        }
+        var row = await session.QuerySingleOrDefaultAsync(
+            """
+            select e.data->>'personal_email' as personal_email, e.data->>'hire_date' as hire_date, m.unit_id
+            from integrations.hr_employee e
+            left join integrations.hr_org_code m on m.tenant_id = e.tenant_id and m.code = e.data->>'org_unit_code'
+            where e.record_id = @recordId and e.user_id is null and e.data->>'status' = 'active' and e.data ? 'personal_email'
+            """, new { recordId }, r => (Email: r.GetString(0), Hire: r.Get<string?>("hire_date"), Unit: r.Get<Guid?>("unit_id")), ct);
+        if (row == default)
+        {
+            return null;
+        }
+        DateOnly? hire = DateOnly.TryParseExact(row.Hire, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var d)
+            ? d : null;
+        return new HrPreHire(recordId, row.Email, hire, row.Unit);
     }
 }

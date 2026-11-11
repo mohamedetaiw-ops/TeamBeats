@@ -128,6 +128,7 @@ export function JourneyDetail({ initial }: { initial: Journey }) {
                 <tr key={s.key}>
                   <td>
                     <bdi>{pick(s.names, locale, s.key)}</bdi>
+                    {s.type === "preboarding" && s.content ? <p className="journeys-content">{pick(s.content, locale, "")}</p> : null}
                   </td>
                   <td>
                     {date(s.scheduledOn)}
@@ -151,7 +152,7 @@ export function JourneyDetail({ initial }: { initial: Journey }) {
                     ) : null}
                     {s.myTaskId && s.type === "access_removal" ? <span className="field-hint">{t("useChecklist")}</span> : null}
                     {s.myTaskId && s.type === "exit_interview" ? <span className="field-hint">{t("useForm")}</span> : null}
-                    {s.myTaskId && s.type === "task" ? (
+                    {s.myTaskId && (s.type === "task" || s.type === "preboarding") ? (
                       <Button
                         size="sm"
                         variant="primary"

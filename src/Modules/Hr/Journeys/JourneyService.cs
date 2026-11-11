@@ -82,7 +82,8 @@ public sealed record JourneyStepView(
     DateTimeOffset? DueAt,
     bool Overdue,
     Guid? MyTaskId,
-    IReadOnlyList<AccessItemView>? AccessItems);
+    IReadOnlyList<AccessItemView>? AccessItems,
+    IReadOnlyDictionary<string, string>? Content = null);
 
 public sealed record JourneyView(
     JourneySummary Journey,
@@ -99,7 +100,8 @@ internal sealed record JourneyRow(
 
 internal sealed record JourneyStepRow(
     Guid JourneyId, string Key, int Position, Dictionary<string, string> Names, int OffsetDays, string Assignee, DateOnly ScheduledOn, string Status,
-    Guid? InstanceId, Guid? TaskId, DateTimeOffset? DueAt, string? Outcome, Guid? CompletedBy, DateTimeOffset? CompletedAt, string Type, DateTimeOffset? OpenedAt);
+    Guid? InstanceId, Guid? TaskId, DateTimeOffset? DueAt, string? Outcome, Guid? CompletedBy, DateTimeOffset? CompletedAt, string Type, DateTimeOffset? OpenedAt,
+    Dictionary<string, string>? Content = null);
 
 /// <summary>
 /// Journeys (spec 022 US4, US5, FR-013, FR-014): one per template and person while active, started from HR, directory
@@ -152,12 +154,13 @@ public sealed partial class JourneyService(
         r.GetFieldValue<DateTimeOffset>(13), r.Get<DateTimeOffset?>("completed_at"));
 
     private const string StepColumns =
-        "journey_id, key, position, names::text, offset_days, assignee, scheduled_on, status, instance_id, task_id, due_at, outcome, completed_by, completed_at, type, opened_at";
+        "journey_id, key, position, names::text, offset_days, assignee, scheduled_on, status, instance_id, task_id, due_at, outcome, completed_by, completed_at, type, opened_at, content::text";
 
     private static JourneyStepRow ReadStep(Npgsql.NpgsqlDataReader r) => new(
         r.GetGuid(0), r.GetString(1), r.GetInt32(2), JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(3)) ?? [], r.GetInt32(4), r.GetString(5),
         DateOnly.FromDateTime(r.GetDateTime(6)), r.GetString(7), r.Get<Guid?>("instance_id"), r.Get<Guid?>("task_id"), r.Get<DateTimeOffset?>("due_at"),
-        r.Get<string?>("outcome"), r.Get<Guid?>("completed_by"), r.Get<DateTimeOffset?>("completed_at"), r.GetString(14), r.Get<DateTimeOffset?>("opened_at"));
+        r.Get<string?>("outcome"), r.Get<Guid?>("completed_by"), r.Get<DateTimeOffset?>("completed_at"), r.GetString(14), r.Get<DateTimeOffset?>("opened_at"),
+        r.Get<string?>("content") is { } content ? JsonSerializer.Deserialize<Dictionary<string, string>>(content) : null);
 
     internal async Task<JourneyRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
         (await session.QueryAsync(
@@ -227,13 +230,15 @@ public sealed partial class JourneyService(
             await session.ExecAsync(
                 """
                 insert into hr.journey_step (tenant_id, journey_id, key, position, names, offset_days, assignee, users, permission, due_working_days, scheduled_on, status,
-                  type, systems)
-                values (platform.current_tenant_id(), @id, @key, @position, @names, @offset, @assignee, @users, @permission, @due, @scheduled, 'scheduled', @type, @systems)
+                  type, systems, content)
+                values (platform.current_tenant_id(), @id, @key, @position, @names, @offset, @assignee, @users, @permission, @due, @scheduled, 'scheduled', @type, @systems,
+                  @content)
                 """, new
                 {
                     id, key = step.Key, position = position++, names = Jsonb.From(step.Names), offset = step.OffsetDays, assignee = step.Assignee,
                     users = (step.Users ?? []).ToArray(), permission = step.Permission, due = step.DueWorkingDays, scheduled = anchor.AddDays(step.OffsetDays),
                     type = step.Type ?? JourneyStepTypes.Task, systems = (step.Systems ?? []).ToArray(),
+                    content = step.Content is { } text ? Jsonb.From(text) : null,
                 }, ct);
         }
         await audit.WriteAsync(new AuditEntry(AuditActions.HrJourneyStarted, "journey", id.ToString(), TargetOrgUnitId: person.PrimaryUnit,
@@ -564,7 +569,7 @@ public sealed partial class JourneyService(
             }
             var items = s.Type == JourneyStepTypes.AccessRemoval && (manage || mine is not null) ? await AccessItemsAsync(row.Id, s.Key, ct) : null;
             views.Add(new JourneyStepView(s.Key, s.Position, s.Names, s.Type, s.OffsetDays, s.Assignee, s.ScheduledOn, s.Status, s.Outcome,
-                s.CompletedBy is { } by ? refs.GetValueOrDefault(by) : null, s.CompletedAt, s.DueAt, s.Status == JourneyStepStatuses.Open && s.DueAt < now, mine, items));
+                s.CompletedBy is { } by ? refs.GetValueOrDefault(by) : null, s.CompletedAt, s.DueAt, s.Status == JourneyStepStatuses.Open && s.DueAt < now, mine, items, s.Content));
         }
         return new JourneyView(Summary(summary, refs), row.StartedByEvent, manage ? row.CancelReason : null, row.PreviousJourneyId, views, manage,
             await ExitInterviewAsync(row, manage, ct));

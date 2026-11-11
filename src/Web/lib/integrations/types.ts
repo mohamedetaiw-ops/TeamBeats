@@ -445,6 +445,7 @@ export const HR_FIELDS = [
   "org_unit_code",
   "manager_employee_number",
   "assignment_date",
+  "personal_email",
 ] as const;
 export const HR_REQUIRED = ["record_id", "status"] as const;
 export const HR_STATUSES = ["active", "terminated"] as const;

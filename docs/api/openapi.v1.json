@@ -171,6 +171,28 @@
         }
       }
     },
+    "/api/v1/preboarding/{token}": {
+      "get": {
+        "tags": [
+          "Journeys"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/policies": {
       "get": {
         "tags": [
@@ -6083,6 +6105,38 @@
         }
       }
     },
+    "/api/v1/hr/journey-settings": {
+      "get": {
+        "tags": [
+          "Journeys"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Journeys"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JourneySettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/hr/journeys": {
       "get": {
         "tags": [
@@ -6375,6 +6429,185 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/attendance": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/attendance/punches": {
+      "post": {
+        "tags": [
+          "Attendance"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PunchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/attendance/team": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/attendance/people/{userId}": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/attendance/export": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/attendance-settings": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Attendance"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttendanceSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/hr/work-rules": {
+      "get": {
+        "tags": [
+          "Attendance"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Attendance"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkRuleRequest"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -14468,6 +14701,75 @@
           }
         }
       },
+      "AttendanceSettingsRequest": {
+        "required": [
+          "webSignIn",
+          "locationMode",
+          "sites"
+        ],
+        "type": "object",
+        "properties": {
+          "webSignIn": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "locationMode": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "sites": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/AttendanceSite"
+            }
+          }
+        }
+      },
+      "AttendanceSite": {
+        "required": [
+          "name",
+          "latitude",
+          "longitude",
+          "radiusMeters"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "latitude": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "longitude": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "radiusMeters": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "AttestRequest": {
         "required": [
           "campaignId",
@@ -17516,6 +17818,20 @@
           }
         }
       },
+      "JourneySettingsRequest": {
+        "required": [
+          "preboardingEnabled"
+        ],
+        "type": "object",
+        "properties": {
+          "preboardingEnabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
       "JourneyStartRequest": {
         "required": [
           "templateKey",
@@ -17617,6 +17933,15 @@
               "array"
             ],
             "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
               "type": "string"
             }
           }
@@ -18989,6 +19314,40 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "PunchRequest": {
+        "required": [
+          "direction",
+          "latitude",
+          "longitude"
+        ],
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "latitude": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "longitude": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
           }
         }
       },
@@ -21094,6 +21453,55 @@
             ]
           }
         }
+      },
+      "WorkRuleRequest": {
+        "required": [
+          "orgUnitId",
+          "start",
+          "end",
+          "graceLateMinutes",
+          "graceEarlyMinutes"
+        ],
+        "type": "object",
+        "properties": {
+          "orgUnitId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "start": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "end": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "graceLateMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "graceEarlyMinutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
       }
     }
   },
@@ -21193,6 +21601,9 @@
     },
     {
       "name": "HR: working calendars"
+    },
+    {
+      "name": "Attendance"
     },
     {
       "name": "Services: catalogue"
