@@ -28,8 +28,8 @@ Depends on 001 Phase 1. Tests first.
 - [ ] T015 [US4] Deactivate use case
 
 ## Phase 6: UI
-- [ ] T016 Org tree admin page (WAI-ARIA tree, keyboard navigation, RTL mirrored), move dialog with affected count
-- [ ] T017 Membership management panel
+- [x] T016 Org tree admin page at `/admin/organization` (WAI-ARIA tree, keyboard navigation, RTL mirrored), move dialog with affected count
+- [x] T017 Membership management panel (add and end memberships on the chosen unit)
 
 ## Phase 7: User Story 5, directory mapping (P1, R1 Entra ID, R2 on-premises AD; after approval of US5)
 - [ ] T019 Migration: owner columns on `org_unit` and `org_membership`; `directory_mapping`, `directory_sync_run`, `directory_unmapped` with RLS

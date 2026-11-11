@@ -23,8 +23,8 @@ Depends on 001 Phase 1 and ADR-0008. `IAuditWriter` should land early because 00
 ## Phase 5: User Story 4, admin shell (P1)
 - [ ] T011 [P] [US4] Tests: tenant admin sees all sections; org admin sees scoped sections; employee gets no-access page and API denial
 - [ ] T012 [US4] `GET /api/v1/admin/navigation` and Next.js admin layout
-- [ ] T013 [US4] Users and groups list and detail; disable membership action
-- [ ] T014 Audit search UI (localized actions, user time zone, RTL)
+- [x] T013 [US4] Users list and detail at `/admin/users` with disable, enable and sign out everywhere (groups are listed under Roles and access)
+- [x] T014 Audit search UI at `/admin/audit` (filters, entry details, seal check, retention, export; user time zone, RTL)
 
 ## Final phase
 - [ ] T015 Contract test listing every audit event named in specs 001 to 005; OpenAPI; spec evidence
