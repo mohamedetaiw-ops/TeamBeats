@@ -1434,5 +1434,18 @@
   "notifications.template.hr.access_removal_escalated.title": "Access removal not confirmed for {count} systems",
   "notifications.template.hr.access_removal_escalated.body": "An offboarding checklist still has systems without confirmed access removal after one working day. Open the journey to follow up.",
   "notifications.template.hr.preboarding_invite.title": "Welcome aboard: your start date is {startDate}",
-  "notifications.template.hr.preboarding_invite.body": "We look forward to welcoming you. Open the link to read what to expect before your first day. The link is personal and stops working after your start date."
+  "notifications.template.hr.preboarding_invite.body": "We look forward to welcoming you. Open the link to read what to expect before your first day. The link is personal and stops working after your start date.",
+  "validation.attendance.location_mode": "Choose off, flag as remote, or refuse.",
+  "validation.attendance.sites": "List up to 20 sites with different names of at most 80 characters, a valid position and a radius from 10 to 5,000 metres.",
+  "validation.attendance.sites_needed": "Add at least one site before turning on the location check.",
+  "validation.attendance.hours": "Give a start and end time as hours and minutes, with the end after the start.",
+  "validation.attendance.grace": "Grace minutes must be from 0 to 120.",
+  "validation.attendance.direction": "Choose sign in or sign out.",
+  "validation.attendance.location_needed": "Your location is needed to sign in here. Allow location in your browser and try again.",
+  "validation.attendance.month": "Give the month as year and month, such as 2026-11.",
+  "conflict.attendance.changed": "Someone changed this since you opened it. Reload to see the latest version.",
+  "conflict.attendance.web_off": "Signing in on the web is not turned on for your organization.",
+  "conflict.attendance.outside_sites": "You are outside every allowed site, so this sign in was not recorded.",
+  "conflict.attendance.too_soon": "You signed in or out less than a minute ago.",
+  "conflict.attendance.export_too_large": "This export would hold more than 5,000 people."
 }

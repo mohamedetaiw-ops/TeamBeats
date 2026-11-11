@@ -93,7 +93,8 @@
       "analytics": "Analytics",
       "hr_integration": "HR integration",
       "leave": "Leave",
-      "journeys": "Journeys"
+      "journeys": "Journeys",
+      "attendance": "Attendance"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}",
     "common": {
@@ -7272,5 +7273,141 @@
     "expires": "This personal link works until {at}.",
     "unavailableTitle": "This link is not available",
     "unavailable": "The link may have ended after your start date. Contact the HR team that invited you for a new one."
+  },
+  "attendance": {
+    "title": "Attendance",
+    "intro": "Sign in and out, and see your hours and exceptions for the month.",
+    "failed": "Something went wrong. Try again.",
+    "month": "Month",
+    "previous": "Previous month",
+    "next": "Next month",
+    "summary": "This month",
+    "sign": {
+      "title": "Sign in and out",
+      "in": "Sign in",
+      "out": "Sign out",
+      "saving": "Saving",
+      "failed": "The sign in was not recorded.",
+      "statusIn": "Signed in since {at}",
+      "statusOut": "Signed out at {at}",
+      "statusNone": "You have not signed in yet.",
+      "signedIn": "You are signed in.",
+      "signedInRemote": "You are signed in. You are outside the work sites, so the day is marked remote.",
+      "signedOut": "You are signed out.",
+      "webOff": "Signing in on the web is off in your organization. Your time system records your attendance.",
+      "locationHint": "Your organization checks your location when you sign in. Your browser asks for it, and only whether you are at a work site is kept.",
+      "locationDenied": "Your location is needed to sign in. Allow location in your browser and try again."
+    },
+    "totals": {
+      "workedDays": "Days worked",
+      "hours": "Hours",
+      "hoursOf": "{worked} of {expected}",
+      "late": "Late",
+      "earlyLeave": "Left early",
+      "missingPunch": "Missing punch",
+      "absent": "Absent",
+      "remote": "Remote",
+      "workedDaysOff": "Worked on a day off"
+    },
+    "days": {
+      "title": "Days",
+      "caption": "Attendance days of {name}",
+      "empty": "No days to show.",
+      "date": "Date",
+      "kind": "Day",
+      "firstIn": "First in",
+      "lastOut": "Last out",
+      "hours": "Hours",
+      "expected": "Expected",
+      "flags": "Exceptions",
+      "rule": "Working hours {start} to {end}, late after {late} minutes, early leave more than {early} minutes before the end.",
+      "defaultRule": "Working hours 09:00 to 17:00 with 15 minutes of grace, until HR sets a rule."
+    },
+    "kinds": {
+      "working": "Working day",
+      "day_off": "Day off",
+      "holiday": "Holiday",
+      "leave": "On leave"
+    },
+    "flags": {
+      "late": "Late",
+      "early_leave": "Left early",
+      "missing_punch": "Missing punch",
+      "absent": "Absent",
+      "remote": "Remote",
+      "worked_day_off": "Worked on a day off"
+    },
+    "team": {
+      "title": "Team attendance",
+      "intro": "Hours and exceptions of the people who report to you.",
+      "month": "Month summary",
+      "caption": "Team attendance for the month",
+      "empty": "Nobody reports to you.",
+      "person": "Person"
+    },
+    "person": {
+      "title": "Attendance of a person",
+      "intro": "Their days and exceptions for the month."
+    },
+    "admin": {
+      "title": "Attendance",
+      "intro": "How people sign in and out, the working hours rules and the monthly export for payroll.",
+      "notInPackage": "Attendance is not part of your plan, or you do not cover any unit.",
+      "failed": "The change was not saved.",
+      "saved": "Saved.",
+      "saving": "Saving",
+      "wholeOrganization": "Whole organization",
+      "settings": {
+        "title": "Signing in",
+        "readOnly": "Only an HR officer of the whole organization can change these settings.",
+        "webSignIn": "People can sign in and out on the web",
+        "webSignInHint": "When this is off, attendance comes only from the time system.",
+        "location": "Location check",
+        "modes": {
+          "off": "Off",
+          "flag": "Mark as remote",
+          "refuse": "Refuse"
+        },
+        "modeHints": {
+          "off": "No location is asked for.",
+          "flag": "A sign in away from every site is recorded and marked remote.",
+          "refuse": "A sign in away from every site is refused."
+        },
+        "sites": "Work sites",
+        "sitesHint": "A sign in within the radius of a site counts as at work. Coordinates are in decimal degrees.",
+        "site": "Site {n}",
+        "siteName": "Name",
+        "latitude": "Latitude",
+        "longitude": "Longitude",
+        "radius": "Radius in metres",
+        "removeSite": "Remove site",
+        "addSite": "Add site",
+        "save": "Save settings"
+      },
+      "rules": {
+        "title": "Working hours rules",
+        "intro": "The rule of the nearest unit applies. Without one, the day runs 09:00 to 17:00 with 15 minutes of grace.",
+        "caption": "Working hours rules",
+        "empty": "No rules yet.",
+        "unit": "Unit",
+        "hours": "Hours",
+        "grace": "Grace",
+        "graceValue": "{late} min late, {early} min early",
+        "actions": "Actions",
+        "edit": "Edit",
+        "start": "Start",
+        "end": "End",
+        "graceLate": "Grace for arriving late, in minutes",
+        "graceEarly": "Grace for leaving early, in minutes",
+        "save": "Save rule",
+        "hoursValue": "{start} to {end}"
+      },
+      "export": {
+        "title": "Monthly export",
+        "intro": "A file for payroll with each person's days, hours and exceptions. The export is recorded in the audit log.",
+        "month": "Month",
+        "download": "Download export"
+      }
+    }
   }
 }

@@ -150,9 +150,9 @@ public sealed class ServiceCatalogueTests(TenantWorld world)
         Assert.True(card.GetProperty("sso").GetBoolean());
 
         // Module services join the catalogue from their registration, with their launch route and no URL.
-        var module = (await CatalogueAsync(o.T["sara"].Client)).GetProperty("services").EnumerateArray().Single(s => s.GetProperty("kind").GetString() == "module");
-        Assert.Equal("/leave", module.GetProperty("launchRoute").GetString());
-        Assert.Equal(JsonValueKind.Null, module.GetProperty("url").ValueKind);
+        var modules = (await CatalogueAsync(o.T["sara"].Client)).GetProperty("services").EnumerateArray().Where(s => s.GetProperty("kind").GetString() == "module").ToList();
+        Assert.Equal(["/attendance", "/leave"], modules.Select(m => m.GetProperty("launchRoute").GetString()).Order(StringComparer.Ordinal));
+        Assert.All(modules, m => Assert.Equal(JsonValueKind.Null, m.GetProperty("url").ValueKind));
     }
 
     [Fact]
