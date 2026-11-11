@@ -76,6 +76,8 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Drag handle | `lib/experience/drag.ts` | Moves an item in personalization mode and in the page builder; the item fades and an accent bar marks where it lands | Pointer capture so touch works; the same moves stay as buttons and shortcuts |
 | Shell panels | `lib/shell/panel.ts` | Settings, notifications and account panels in the bar | One open at a time; outside press and Escape close; focus returns to the button |
 | Ask TeamBeats | `features/shell/Shell.tsx` | One floating button that opens the assistant, when the tenant has it | A link with a visible name; it never covers the focused element's own actions |
+| Shell footer | `features/shell/Footer.tsx` | Organization, the tenant's policy and accessibility links and the classification under every page | A `footer` (contentinfo) with a labelled `nav`; drawn only from tenant settings, absent when there are none; secondary text size, lock icon beside the classification |
+| Home view tabs | `app/page.tsx` with `SectionNav` | My day and the tenant's other home views at the top of the home | Section tabs as links (`/?view=<id>`); My day first; no tabs when the viewer has no other view |
 | Featured news | `content.news_feed` with layout `featured` | Lead story large, the rest as rows, with reading time and reactions | One link per story |
 | Campaign band | `content.call_to_action` with emphasis `campaign` | One campaign at the bottom of the home | Heading and one action; decoration is hidden |
 

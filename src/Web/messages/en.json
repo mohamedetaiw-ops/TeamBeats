@@ -47,6 +47,10 @@
       "privateMeeting": "Private meeting",
       "startsIn": "In {minutes} min",
       "now": "Now"
+    },
+    "views": {
+      "label": "Home views",
+      "mine": "My day"
     }
   },
   "signin": {
@@ -80,6 +84,7 @@
       "audit": "Audit log",
       "connections": "Connections",
       "branding": "Brand",
+      "shell": "Shell and footer",
       "pages": "Pages",
       "templates": "Templates",
       "notifications": "Notifications",
@@ -448,7 +453,57 @@
     "account": "Account: {name}",
     "profile": "My profile",
     "ask": "Ask TeamBeats",
-    "preferences": "Preferences"
+    "preferences": "Preferences",
+    "footer": {
+      "label": "Footer",
+      "classification": "Classification: {value}"
+    }
+  },
+  "shell_settings": {
+    "title": "Shell and footer",
+    "intro": "Set the footer every page shows and the extra home views people get as tabs after My day. Leave a field empty to leave it out.",
+    "save": "Save and publish",
+    "saved": "Saved. Everyone sees the change on their next page.",
+    "failed": "This could not be saved",
+    "footer": {
+      "title": "Footer",
+      "intro": "Name your organization, link your own privacy, acceptable use and accessibility pages, and state the classification. Only what you fill in is shown.",
+      "organizationEn": "Organization (English)",
+      "organizationAr": "Organization (Arabic)",
+      "classificationEn": "Classification (English)",
+      "classificationAr": "Classification (Arabic)",
+      "links": "Links",
+      "noLinks": "No links yet.",
+      "kind": "Link {number}: kind",
+      "labelEn": "Link {number}: label (English)",
+      "labelAr": "Link {number}: label (Arabic)",
+      "url": "Link {number}: address",
+      "urlHint": "A page here, such as /policies, or an https address",
+      "removeLink": "Remove link {number}",
+      "addLink": "Add a link",
+      "kinds": {
+        "privacy": "Privacy",
+        "acceptable_use": "Acceptable use",
+        "accessibility": "Accessibility",
+        "other": "Other"
+      }
+    },
+    "views": {
+      "title": "Home views",
+      "intro": "Each view is a published page shown as a tab after My day. With an audience, only the people it matches get the tab.",
+      "needHome": "Set a home page first; views are tabs next to it.",
+      "none": "No extra views. People see only My day.",
+      "id": "View {number}: short id",
+      "idHint": "Lowercase letters, digits and dashes, used in the address",
+      "labelEn": "View {number}: tab name (English)",
+      "labelAr": "View {number}: tab name (Arabic)",
+      "page": "View {number}: page",
+      "audience": "View {number}: audience",
+      "choosePage": "Choose a published page",
+      "everyone": "Everyone",
+      "remove": "Remove view {number}",
+      "add": "Add a view"
+    }
   },
   "personalization": {
     "toolbar": "Personalize your page",

@@ -5,6 +5,7 @@ using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Experience.Contracts;
+using TeamBeats.Modules.Experience.Personalization;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -17,7 +18,24 @@ namespace TeamBeats.Modules.Experience.Shell;
 /// root address as the employee home (spec 008 US2), usually a page from the home template.
 /// </summary>
 public sealed record ShellDefinition(IReadOnlyList<string> Start, IReadOnlyList<string> Center, IReadOnlyList<string> End,
-    IReadOnlyList<string> Below, IReadOnlyList<string> Utilities, Guid? HomePageId = null);
+    IReadOnlyList<string> Below, IReadOnlyList<string> Utilities, Guid? HomePageId = null, ShellFooter? Footer = null,
+    IReadOnlyList<HomeViewConfig>? HomeViews = null);
+
+/// <summary>One footer link (spec 008 FR-056): a kind the footer knows, its label per locale and where it goes.</summary>
+public sealed record FooterLink(string Kind, IReadOnlyDictionary<string, string> Labels, string Url);
+
+/// <summary>The footer of every page (spec 008 FR-056), drawn only from what the tenant configured here.</summary>
+public sealed record ShellFooter(IReadOnlyDictionary<string, string>? Organization, IReadOnlyList<FooterLink>? Links,
+    IReadOnlyDictionary<string, string>? Classification);
+
+/// <summary>One more view of the home (spec 008 FR-058): a published page, shown as a tab to viewers its audience rule matches.</summary>
+public sealed record HomeViewConfig(string Id, IReadOnlyDictionary<string, string> Labels, Guid PageId, Guid? AudienceRuleId);
+
+public sealed record FooterLinkView(string Kind, string Label, string Href);
+
+public sealed record FooterView(string? Organization, IReadOnlyList<FooterLinkView> Links, string? Classification);
+
+public sealed record HomeViewLink(string Id, string Label, string Slug);
 
 public sealed record ShellAdminView(int Version, ShellDefinition Definition, IReadOnlyList<string> Regions, IReadOnlyList<string> Utilities);
 
@@ -41,7 +59,7 @@ public sealed record OrganizationIndicator(Guid Id, string Name, bool Primary);
 /// <param name="Home">Slug of the home page when it is published and the caller may view it; otherwise null.</param>
 public sealed record ShellView(int Version, ShellDefinition Layout, IReadOnlyList<NavLink> GlobalMenu,
     IReadOnlyList<OrganizationMenu> OrganizationMenus, IReadOnlyList<OrganizationIndicator> Organizations, bool CanSwitchOrganization,
-    string? Home = null, bool Assistant = false);
+    string? Home = null, bool Assistant = false, FooterView? Footer = null, IReadOnlyList<HomeViewLink>? HomeViews = null);
 
 public sealed record OrganizationMenu(Guid OrgUnitId, string Name, IReadOnlyList<NavLink> Items);
 
@@ -70,7 +88,8 @@ public sealed partial class ShellService(
     IOrganizationHierarchy hierarchy,
     IAuditWriter audit,
     IOutbox outbox,
-    IEntitlementService entitlements)
+    IEntitlementService entitlements,
+    AudienceEvaluator audiences)
 {
     public const string TenantScope = "tenant";
     public static readonly IReadOnlyList<string> Regions =
@@ -91,6 +110,13 @@ public sealed partial class ShellService(
 
     private const int MaxMenuItems = 50;
 
+    /// <summary>Footer link kinds (spec 008 FR-056). "other" covers a tenant link the list does not name.</summary>
+    public static readonly IReadOnlyList<string> FooterLinkKinds = ["privacy", "acceptable_use", "accessibility", "other"];
+
+    private const int MaxFooterLinks = 8;
+    private const int MaxHomeViews = 5;
+    private const int MaxLabel = 80;
+
     // Shell
 
     public async Task<ShellAdminView> GetShellAdminAsync(CancellationToken ct)
@@ -108,6 +134,30 @@ public sealed partial class ShellService(
             && await session.ScalarAsync<int?>("select 1 from experience.page where id = @home", new { home }, ct) is null)
         {
             throw AppException.Validation("homePageId", "validation.shell.home_unknown");
+        }
+        var views = definition.HomeViews ?? [];
+        if (views.Count > 0)
+        {
+            var errors = new ValidationErrors();
+            if (definition.HomePageId is null)
+            {
+                errors.Add("homeViews", "validation.shell.home_views_need_home");
+            }
+            var rules = await audiences.RulesAsync(ct);
+            var audiencesEntitled = await entitlements.IsEnabledAsync(Capabilities.ExperienceAudienceVariants, ct);
+            foreach (var (view, i) in views.Select((v, i) => (v, i)))
+            {
+                if (await session.ScalarAsync<int?>("select 1 from experience.page where id = @id", new { id = view.PageId }, ct) is null
+                    || view.PageId == definition.HomePageId)
+                {
+                    errors.Add($"homeViews[{i}].pageId", "validation.shell.home_unknown");
+                }
+                if (view.AudienceRuleId is { } rule && (!audiencesEntitled || !rules.ContainsKey(rule)))
+                {
+                    errors.Add($"homeViews[{i}].audienceRuleId", audiencesEntitled ? "validation.audience.unknown" : "validation.audience.not_entitled");
+                }
+            }
+            errors.ThrowIfAny();
         }
         var (current, before) = await LiveShellAsync(ct);
         var version = current + 1;
@@ -152,10 +202,65 @@ public sealed partial class ShellService(
             }
         }
 
-        return new ShellView(version, layout, global is null ? [] : await LinksAsync(global.Items, nodes, visible, locale, ct), orgMenus,
-            organizations, organizations.Count > 1, await HomeSlugAsync(layout.HomePageId, ct),
+        var home = await HomeSlugAsync(layout.HomePageId, ct);
+        // The footer and home views go out resolved for this viewer; their configuration (pages, audience rules) stays with editors.
+        return new ShellView(version, layout with { Footer = null, HomeViews = null },
+            global is null ? [] : await LinksAsync(global.Items, nodes, visible, locale, ct), orgMenus,
+            organizations, organizations.Count > 1, home,
             // The Ask TeamBeats button (spec 008 FR-056) appears only when the tenant's package has the assistant.
-            await entitlements.IsEnabledAsync(Capabilities.AiAssistant, ct));
+            await entitlements.IsEnabledAsync(Capabilities.AiAssistant, ct),
+            FooterFor(layout.Footer, locale),
+            home is null ? [] : await HomeViewsAsync(layout.HomeViews ?? [], locale, ct));
+    }
+
+    /// <summary>The footer in the viewer's language (spec 008 FR-056); absent when the tenant configured nothing.</summary>
+    private static FooterView? FooterFor(ShellFooter? footer, string locale)
+    {
+        if (footer is null)
+        {
+            return null;
+        }
+        var links = (footer.Links ?? []).Select(l => new FooterLinkView(l.Kind, Label(l.Labels, locale) ?? l.Url, l.Url)).ToList();
+        var organization = Label(footer.Organization, locale);
+        var classification = Label(footer.Classification, locale);
+        return organization is null && classification is null && links.Count == 0 ? null : new FooterView(organization, links, classification);
+    }
+
+    /// <summary>
+    /// The extra home views this viewer gets as tabs (spec 008 FR-058): published pages they may view whose audience rule,
+    /// if any, matches them. A viewer who gets none sees no tabs, only the home.
+    /// </summary>
+    private async Task<IReadOnlyList<HomeViewLink>> HomeViewsAsync(IReadOnlyList<HomeViewConfig> views, string locale, CancellationToken ct)
+    {
+        if (views.Count == 0)
+        {
+            return [];
+        }
+        var rules = await audiences.RulesAsync(ct);
+        // Audience targeting belongs to a package capability; without it, a targeted view is shown to nobody.
+        var audiencesEntitled = await entitlements.IsEnabledAsync(Capabilities.ExperienceAudienceVariants, ct);
+        AudienceFacts? viewer = null;
+        var result = new List<HomeViewLink>();
+        foreach (var view in views)
+        {
+            if (view.AudienceRuleId is { } ruleId)
+            {
+                if (!audiencesEntitled || !rules.TryGetValue(ruleId, out var rule))
+                {
+                    continue;
+                }
+                viewer ??= await audiences.ViewerAsync(ct);
+                if (!AudienceMatcher.Matches(rule.Conditions, viewer))
+                {
+                    continue;
+                }
+            }
+            if (await HomeSlugAsync(view.PageId, ct) is { } slug)
+            {
+                result.Add(new HomeViewLink(view.Id, Label(view.Labels, locale) ?? view.Id, slug));
+            }
+        }
+        return result;
     }
 
     // Menus
@@ -434,9 +539,69 @@ public sealed partial class ShellService(
         {
             errors.Add("utilities", "validation.shell.utilities_unplaced");
         }
+        var footer = request.Footer;
+        var links = footer?.Links ?? [];
+        if (links.Count > MaxFooterLinks)
+        {
+            errors.Add("footer.links", "validation.shell.footer_too_many");
+        }
+        foreach (var (link, i) in links.Select((l, i) => (l, i)))
+        {
+            if (!FooterLinkKinds.Contains(link.Kind))
+            {
+                errors.Add($"footer.links[{i}].kind", "validation.shell.footer_kind");
+            }
+            if (!LabelsValid(link.Labels))
+            {
+                errors.Add($"footer.links[{i}].labels", "validation.shell.label");
+            }
+            if (!SafeUrl(link.Url))
+            {
+                errors.Add($"footer.links[{i}].url", "validation.shell.footer_url");
+            }
+        }
+        if (footer?.Organization is { } org && !LabelsValid(org))
+        {
+            errors.Add("footer.organization", "validation.shell.label");
+        }
+        if (footer?.Classification is { } classification && !LabelsValid(classification))
+        {
+            errors.Add("footer.classification", "validation.shell.label");
+        }
+        var views = request.HomeViews ?? [];
+        if (views.Count > MaxHomeViews)
+        {
+            errors.Add("homeViews", "validation.shell.home_views_too_many");
+        }
+        foreach (var (view, i) in views.Select((v, i) => (v, i)))
+        {
+            if (string.IsNullOrEmpty(view.Id) || !ViewIdPattern().IsMatch(view.Id) || views.Count(v => v.Id == view.Id) > 1)
+            {
+                errors.Add($"homeViews[{i}].id", "validation.shell.home_view_id");
+            }
+            if (!LabelsValid(view.Labels))
+            {
+                errors.Add($"homeViews[{i}].labels", "validation.shell.label");
+            }
+        }
         errors.ThrowIfAny();
-        return new ShellDefinition(request.Start ?? [], request.Center ?? [], request.End ?? [], request.Below ?? [], utilities, request.HomePageId);
+        return new ShellDefinition(request.Start ?? [], request.Center ?? [], request.End ?? [], request.Below ?? [], utilities, request.HomePageId,
+            footer is null ? null : new ShellFooter(footer.Organization, links, footer.Classification), views.Count == 0 ? null : views);
     }
+
+    /// <summary>Labels per supported locale, each one line of at most 80 characters.</summary>
+    private static bool LabelsValid(IReadOnlyDictionary<string, string>? labels) =>
+        labels is { Count: > 0 } && labels.All(l => l.Key is "en" or "ar" && !string.IsNullOrWhiteSpace(l.Value) && l.Value.Length <= MaxLabel
+            && !l.Value.Contains('\n', StringComparison.Ordinal));
+
+    /// <summary>Footer links go to a page of this intranet ("/…") or to an https address; no other scheme can run anything.</summary>
+    private static bool SafeUrl(string? url) =>
+        !string.IsNullOrWhiteSpace(url) && url.Length <= 2048 && !url.Contains('\\', StringComparison.Ordinal)
+        && ((url.StartsWith('/') && !url.StartsWith("//", StringComparison.Ordinal))
+            || (Uri.TryCreate(url, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps));
+
+    [GeneratedRegex("^[a-z0-9-]{1,40}$")]
+    private static partial Regex ViewIdPattern();
 
     private static IReadOnlyList<MenuItemInput> ValidateItems(IReadOnlyList<MenuItemInput>? items, IReadOnlyDictionary<Guid, Node> nodes)
     {

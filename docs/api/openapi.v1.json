@@ -15193,6 +15193,28 @@
           }
         }
       },
+      "FooterLink": {
+        "required": [
+          "kind",
+          "labels",
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "labels": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "url": {
+            "type": "string"
+          }
+        }
+      },
       "ForceCheckInRequest": {
         "required": [
           "reason"
@@ -15431,6 +15453,37 @@
             "items": {
               "$ref": "#/components/schemas/HolidayInput"
             }
+          }
+        }
+      },
+      "HomeViewConfig": {
+        "required": [
+          "id",
+          "labels",
+          "pageId",
+          "audienceRuleId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "labels": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "pageId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "audienceRuleId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -17834,6 +17887,62 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "footer": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ShellFooter"
+              }
+            ]
+          },
+          "homeViews": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/HomeViewConfig"
+            }
+          }
+        }
+      },
+      "ShellFooter": {
+        "required": [
+          "organization",
+          "links",
+          "classification"
+        ],
+        "type": "object",
+        "properties": {
+          "organization": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "links": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/FooterLink"
+            }
+          },
+          "classification": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       },

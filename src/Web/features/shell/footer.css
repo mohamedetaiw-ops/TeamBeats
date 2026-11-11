@@ -1,0 +1,72 @@
+/*
+ * Shell footer (spec 008 FR-056, docs/design-system/components.md): one quiet row under the page with the
+ * organization, the tenant's policy and accessibility links and the classification. It continues the page surface,
+ * so inside the rail frame it reads as the end of the page, not as part of the navigation.
+ */
+.shell-footer {
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  background: var(--tb-color-surface-base);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.shell-footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm) var(--tb-space-lg);
+  align-items: center;
+  max-inline-size: 90rem;
+  margin-inline: auto;
+  padding: var(--tb-space-md) var(--tb-space-lg);
+}
+
+.shell-footer-org,
+.shell-footer-classification {
+  margin: 0;
+}
+
+.shell-footer-org {
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.shell-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shell-footer-links a {
+  color: var(--tb-color-text-secondary);
+}
+
+.shell-footer-links a:hover {
+  color: var(--tb-color-link);
+}
+
+.shell-footer-classification {
+  display: inline-flex;
+  gap: var(--tb-space-xs);
+  align-items: center;
+  margin-inline-start: auto;
+}
+
+/* Inside the rail frame the page keeps its height, minus the footer row, so the footer lands at the bottom of a short page. */
+@media (width > 64rem) {
+  :root:not([data-nav="top"]) body:has(.shell-rail):has(.shell-footer) main {
+    min-block-size: calc(100vh - var(--xp-bar-size) - 3.5rem);
+  }
+}
+
+@media (width <= 40rem) {
+  .shell-footer-inner {
+    padding-inline: var(--tb-space-md);
+  }
+
+  .shell-footer-classification {
+    margin-inline-start: 0;
+  }
+}

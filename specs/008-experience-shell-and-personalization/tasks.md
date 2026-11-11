@@ -24,6 +24,7 @@ Depends on 032 (`Experience` module, pages, renderer), 033 (tokens), 003, 004, 0
 - [x] T013 Default home template with protected and personal regions; My mail and My calendar in the personal region when spec 018 features are on (FR-051)
 - [x] T014 Tool box utilities (weather, world clock, time zone converter) as platform components with manifests
 - [x] T015 [P] Tests: menus by keyboard and screen reader, personalization by keyboard only, mobile reachability, axe in `ar` and `en`
+- [x] T017 [US1] [US3] Footer (FR-056) and home view tabs (FR-058) in the shell configuration, validated, resolved per viewer and audience, a shell settings page in administration and the staging seed; integration tests for validation, audience, capability and another tenant, browser tests in `ar` and `en` with axe
 
 ## Final phase
 - [x] T016 OpenAPI, R1 implementation notes, spec evidence
