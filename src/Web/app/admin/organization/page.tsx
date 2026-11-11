@@ -1,0 +1,29 @@
+import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { apiGet, type NavigationSection } from "@/lib/api";
+import type { OrgUnitView, UnitType } from "@/lib/admin/types";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { OrganizationAdmin } from "@/features/admin/OrganizationAdmin";
+
+/**
+ * Organization (spec 002 US1 to US4): the unit tree the caller may see, with units, memberships and unit types. The
+ * section appears only when the API lists it; the tree holds only the units the API returns, and every change is
+ * authorized again by the API for the unit it touches.
+ */
+export default async function OrganizationPage() {
+  const nav = await apiGet<NavigationSection[]>("/api/v1/admin/navigation");
+  if (!nav.ok || !nav.data.some((s) => s.key === "organization")) {
+    notFound();
+  }
+  const [units, types] = await Promise.all([apiGet<OrgUnitView[]>("/api/v1/org/units"), apiGet<UnitType[]>("/api/v1/org/unit-types")]);
+  if (!units.ok) {
+    notFound();
+  }
+  const t = await getTranslations("admin");
+  return (
+    <>
+      <PageHeader title={t("nav.organization")} description={t("org.description")} icon="people" />
+      <OrganizationAdmin initialUnits={units.data} types={types.ok ? types.data : []} />
+    </>
+  );
+}

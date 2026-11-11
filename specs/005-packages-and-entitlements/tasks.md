@@ -22,7 +22,7 @@ Depends on 001 Phase 1. R0 tasks first; R2 tasks in the last phase.
 - [ ] T011 [US3] Usage counters, atomic quota check with tolerance max(1%, 10), exhaustion notification once per period
 - [ ] T012 [US4] Add-ons, overrides with expiry, precedence resolution
 - [ ] T013 [US4] Expiry: 30-day grace, then read-only flag
-- [ ] T014 Plan and usage admin page
+- [x] T014 Plan and usage admin page
 
 ## Final phase
 - [ ] T015 Architecture test banning package keys in feature code; audit assertions; OpenAPI; spec evidence
