@@ -110,7 +110,7 @@ public sealed class ConnectorJobWorker(IServiceScopeFactory scopes, IClock clock
 public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history, PackConnections connections, Webhooks.InboundWebhooks inbound,
     SyncAgents.SyncAgentService agents, PayloadCapture capture,
     ClockData.ClockImports clockImports, ClockData.ClockImportStore clockData, Finance.FinanceHandOffs finance, Webhooks.KpiFeed kpis,
-    Hr.HrSchedule hrSchedule, Hr.HrSync hr, Hr.HrLifecycle hrLifecycle, Hr.HrLeave hrLeave)
+    Hr.HrSchedule hrSchedule, Hr.HrSync hr, Hr.HrLifecycle hrLifecycle, Hr.HrLeave hrLeave, Hr.HrDataChange hrDataChange)
 {
     /// <summary>Due attempts run in one transaction.</summary>
     public const int BatchSize = 50;
@@ -124,6 +124,7 @@ public sealed class ConnectorJobs(ConnectorRuntime runtime, RunHistory history, 
         await hrLifecycle.ApplyDueAsync(ct);
         await finance.CheckDueAsync(now, 20, ct);
         await hrLeave.RetryDueAsync(now, 20, ct);
+        await hrDataChange.RetryDueAsync(now, 20, ct);
         return await runtime.RunDueAsync(now, Math.Min(limit, BatchSize), ct);
     }
 

@@ -50,6 +50,12 @@ public static class HrModule
         services.AddScoped<Letters.LetterRequests>();
         services.AddScoped<Letters.LetterTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<Letters.LetterTaskSource>());
+        services.AddScoped<DataChanges.DataChangeConfig>();
+        services.AddScoped<DataChanges.DataChangeRequests>();
+        services.AddScoped<DataChanges.DataChangeTaskSource>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<DataChanges.DataChangeTaskSource>());
+        services.AddMessageHandler<Integrations.Contracts.HrDataChangeHandOffChanged, DataChanges.DataChangeTaskSource>("hr.data_change_written_back");
+        services.AddSingleton<Services.Contracts.IModuleServiceSource, DataChanges.DataChangeModuleServices>();
         services.AddScoped<JourneyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<JourneyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, JourneyTaskSource>("hr.journey_notify_task");
@@ -140,6 +146,7 @@ public static class HrModule
         app.MapJourneyEndpoints();
         app.MapAttendanceEndpoints();
         app.MapLetterEndpoints();
+        DataChanges.DataChangeEndpoints.MapDataChangeEndpoints(app);
         return app;
     }
 }

@@ -125,6 +125,9 @@ export function HrRestSettingsForm({
   const [leaveSubmitPath, setLeaveSubmitPath] = useState(s?.leaveSubmitPath ?? "");
   const [leaveReferencePath, setLeaveReferencePath] = useState(s?.leaveReferencePath ?? "");
   const [leaveIdempotencyHeader, setLeaveIdempotencyHeader] = useState(s?.leaveIdempotencyHeader ?? "");
+  const [dataChangePath, setDataChangePath] = useState(s?.dataChangePath ?? "");
+  const [dataChangeReferencePath, setDataChangeReferencePath] = useState(s?.dataChangeReferencePath ?? "");
+  const [dataChangeIdempotencyHeader, setDataChangeIdempotencyHeader] = useState(s?.dataChangeIdempotencyHeader ?? "");
   const [leaveTypeCodes, setLeaveTypeCodes] = useState(() =>
     Object.entries(s?.leaveTypeCodes ?? {})
       .map(([k, v]) => `${k}=${v}`)
@@ -211,6 +214,30 @@ export function HrRestSettingsForm({
             <TextAreaField label={t("leaveTypeCodes")} hint={t("leaveTypeCodesHint")} name="leaveTypeCodes" dir="ltr" value={leaveTypeCodes} onChange={(e) => setLeaveTypeCodes(e.target.value)} />
           ) : null}
         </fieldset>
+        <fieldset className="connections-fieldset">
+          <legend>{t("dataChangeTitle")}</legend>
+          <FormField label={t("dataChangePath")} hint={t("dataChangePathHint")} name="dataChangePath" dir="ltr" value={dataChangePath} onChange={(e) => setDataChangePath(e.target.value)} />
+          {dataChangePath.trim() ? (
+            <>
+              <FormField
+                label={t("leaveReferencePath")}
+                hint={t("dataChangeReferencePathHint")}
+                name="dataChangeReferencePath"
+                dir="ltr"
+                value={dataChangeReferencePath}
+                onChange={(e) => setDataChangeReferencePath(e.target.value)}
+              />
+              <FormField
+                label={t("leaveIdempotencyHeader")}
+                hint={t("leaveIdempotencyHeaderHint")}
+                name="dataChangeIdempotencyHeader"
+                dir="ltr"
+                value={dataChangeIdempotencyHeader}
+                onChange={(e) => setDataChangeIdempotencyHeader(e.target.value)}
+              />
+            </>
+          ) : null}
+        </fieldset>
         {mapping.render(t, t("pathsHint"))}
       </>
     ),
@@ -239,6 +266,9 @@ export function HrRestSettingsForm({
                 .filter((p) => p.length === 2 && p[0] && p[1]),
             )
           : null,
+      dataChangePath: blank(dataChangePath),
+      dataChangeReferencePath: blank(dataChangePath) ? blank(dataChangeReferencePath) : null,
+      dataChangeIdempotencyHeader: blank(dataChangePath) ? blank(dataChangeIdempotencyHeader) : null,
       recordsPath: blank(recordsPath),
       paging,
       pageParam: paging === "page" ? blank(pageParam) : null,

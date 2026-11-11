@@ -100,7 +100,8 @@
       "leave": "Leave",
       "journeys": "Journeys",
       "attendance": "Attendance",
-      "letters": "HR letters"
+      "letters": "HR letters",
+      "data_changes": "Data changes"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}",
     "common": {
@@ -2500,7 +2501,8 @@
       "leaveReplacement": "Cover for a colleague",
       "journeyStep": "Journey step",
       "attendanceRequest": "Attendance request",
-      "letterRequest": "Letter request"
+      "letterRequest": "Letter request",
+      "dataChangeRequest": "Data change"
     },
     "delegation": {
       "title": "While you are away",
@@ -5831,7 +5833,11 @@
       "leaveIdempotencyHeader": "Idempotency header",
       "leaveIdempotencyHeaderHint": "Optional. When HR supports one, for example Idempotency-Key, a resend is never recorded twice.",
       "leaveTypeCodes": "Leave type codes",
-      "leaveTypeCodesHint": "One per line as TeamBeats key=HR code, for example annual=AL. Types not listed use their key."
+      "leaveTypeCodesHint": "One per line as TeamBeats key=HR code, for example annual=AL. Types not listed use their key.",
+      "dataChangeTitle": "Employee data changes (optional)",
+      "dataChangePath": "Data change address",
+      "dataChangePathHint": "Approved changes to an employee's details are sent here, for example /data-changes.",
+      "dataChangeReferencePathHint": "For example $.id. HR must answer with a reference for the change to show as recorded."
     }
   },
   "components_gallery": {
@@ -7671,6 +7677,101 @@
         "empty": "No letters yet",
         "asked": "Asked on"
       }
+    }
+  },
+  "data_changes": {
+    "title": "My details",
+    "intro": "Ask HR to change your address, emergency contact, bank details and family details.",
+    "unavailableTitle": "Not available",
+    "unavailable": "Changing your details is not available for your organization.",
+    "ask": "Ask for a change",
+    "askIntro": "HR checks every change. Your profile keeps the current value until HR records the new one.",
+    "failed": "The change could not be sent",
+    "sent": "Your change was sent to HR.",
+    "noGroups": "Your organization offers no details to change here.",
+    "group": "What to change",
+    "groups": {
+      "address": "Address",
+      "emergency_contact": "Emergency contact",
+      "bank": "Bank details",
+      "marital_status": "Marital status",
+      "dependants": "Dependants"
+    },
+    "sensitiveTitle": "Sensitive details",
+    "sensitive": "For your safety you are told on every channel when this change is asked for and when HR records it.",
+    "fields": {
+      "address_line": "Address",
+      "city": "City",
+      "country": "Country",
+      "postal_code": "Postal code",
+      "contact_name": "Contact name",
+      "relationship": "Relationship",
+      "phone": "Phone",
+      "bank_name": "Bank name",
+      "account_name": "Account holder name",
+      "iban": "IBAN",
+      "marital_status": "Marital status",
+      "dependants_count": "Number of dependants"
+    },
+    "choose": "Choose",
+    "choices": {
+      "single": "Single",
+      "married": "Married",
+      "divorced": "Divorced",
+      "widowed": "Widowed"
+    },
+    "optional": "Optional",
+    "document": "Supporting document",
+    "documentChosen": "Attached: {name}",
+    "documentHint": "A PDF, PNG or JPEG file. HR needs it for this change.",
+    "reason": "Note for HR",
+    "sending": "Sending",
+    "send": "Send to HR",
+    "mine": "My change requests",
+    "none": "You have not asked for any changes yet.",
+    "statuses": {
+      "pending": "Waiting for HR",
+      "approved": "Approved",
+      "completed": "Recorded",
+      "write_failed": "Not recorded",
+      "rejected": "Refused",
+      "withdrawn": "Withdrawn"
+    },
+    "detail": {
+      "title": "Change request",
+      "person": "Person",
+      "status": "Status",
+      "asked": "Asked on",
+      "hrReference": "HR reference",
+      "manual": "Approved. HR enters it in the HR system and then marks it done.",
+      "writing": "Approved. It is being recorded in the HR system.",
+      "writeFailed": "The HR system did not take this change. Ask HR before sending it again.",
+      "values": "New values",
+      "cleared": "The values are no longer kept now that this change has ended.",
+      "notKept": "Not kept",
+      "document": "Download {name}",
+      "withdraw": "Withdraw",
+      "withdrawn": "The change was withdrawn.",
+      "complete": "Mark as entered in HR",
+      "completed": "The change is marked as done.",
+      "decide": "Decide on this change",
+      "decided": "Your decision was saved."
+    },
+    "admin": {
+      "title": "Data changes",
+      "intro": "Choose which details people may ask to change, which need a document, and follow the changes of the people you cover.",
+      "notInPackage": "Data changes are not part of your plan.",
+      "failed": "The settings could not be saved",
+      "saved": "The settings were saved.",
+      "settings": "What people may change",
+      "wholeOrganizationOnly": "Only HR officers of the whole organization can change these settings.",
+      "offered": "People may ask to change this",
+      "needsDocument": "A supporting document is needed",
+      "saving": "Saving",
+      "save": "Save settings",
+      "changes": "Changes",
+      "caption": "Change requests of the people you cover",
+      "empty": "No change requests yet."
     }
   }
 }

@@ -207,8 +207,11 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
         return "{}";
     }
 
-    /// <summary>Embedding dimensions of the fake: small, and different from the 1536 of the real model, so both paths run.</summary>
-    public const int EmbeddingDimensions = 512;
+    /// <summary>
+    /// Embedding dimensions of the fake: different from the 1536 of the real model, so both paths run, and wide enough
+    /// that two words rarely land on the same dimension (at 512 the Arabic word for "my details" matched "legal").
+    /// </summary>
+    public const int EmbeddingDimensions = 4096;
 
     /// <summary>
     /// A deterministic bag of words: each word adds weight to one dimension picked by its hash, then the vector is scaled
