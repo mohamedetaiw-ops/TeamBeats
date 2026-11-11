@@ -167,6 +167,14 @@ public static class AuditActions
     public const string HrJourneyStepCompleted = "hr.journey_step_completed";
     public const string HrJourneyCancelled = "hr.journey_cancelled";
 
+    // 037
+    public const string CalendarEventCreated = "calendar.event_created";
+    public const string CalendarEventChanged = "calendar.event_changed";
+    public const string CalendarEventCancelled = "calendar.event_cancelled";
+    public const string CalendarEventDeleted = "calendar.event_deleted";
+    public const string CalendarSettingsChanged = "calendar.settings_changed";
+    public const string CalendarTeamViewed = "calendar.team_viewed";
+
     // 019
     public const string HrSettingsChanged = "hr.settings_changed";
     public const string HrMatchLinked = "hr.match_linked";
@@ -370,6 +378,7 @@ public static class AuditActions
         HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
         HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
         HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled,
+        CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarSettingsChanged, CalendarTeamViewed,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,

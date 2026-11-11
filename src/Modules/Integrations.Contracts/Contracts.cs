@@ -331,7 +331,30 @@ public sealed record CalendarOccurrence(
     string Response,
     string? Location,
     string? OnlineJoinUrl,
-    string WebLink);
+    string WebLink,
+    string? ICalUId = null,
+    string Source = CalendarSources.Outlook);
+
+/// <summary>The meeting sources behind the calendar ports (spec 037 FR-011).</summary>
+public static class CalendarSources
+{
+    public const string Outlook = "outlook";
+    public const string Google = "google";
+}
+
+/// <summary>What one meeting source answered for the signed-in employee: its state (M365States values), data age and occurrences.</summary>
+public sealed record MeetingSourceResult(string Source, string State, DateTimeOffset? AsOf, IReadOnlyList<CalendarOccurrence> Occurrences);
+
+/// <summary>
+/// Every meeting source the tenant has for the signed-in employee (spec 037 FR-011, FR-012): Outlook through
+/// <see cref="ICalendar"/> while <c>integration.microsoft365</c> is on, and Google Calendar while the Google Workspace
+/// connection has its calendar feature on. A source the tenant does not have is left out; a failing source comes back
+/// with its state and never throws.
+/// </summary>
+public interface IMeetingCalendars
+{
+    Task<IReadOnlyList<MeetingSourceResult>> ReadAsync(CalendarQuery query, CancellationToken ct = default);
+}
 
 public sealed record CalendarQuery(DateTimeOffset From, DateTimeOffset To, bool Refresh);
 

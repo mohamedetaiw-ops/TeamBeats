@@ -5666,7 +5666,7 @@
       "adminEmail": "البريد الإلكتروني للمسؤول",
       "adminEmailHint": "تقرأ TeamBeats الدليل والمساحات المشتركة بصفة هذا المسؤول. لـ Google Drive، أضفه عضوا في كل مساحة مشتركة.",
       "serviceAccount": "البريد الإلكتروني لحساب الخدمة",
-      "serviceAccountHint": "ينتهي بـ .iam.gserviceaccount.com. فوّض إليه هذه النطاقات: admin.directory.user.readonly وadmin.directory.group.readonly لمزامنة الدليل، وdrive.readonly لـ Google Drive.",
+      "serviceAccountHint": "ينتهي بـ .iam.gserviceaccount.com. فوّض إليه هذه النطاقات: admin.directory.user.readonly وadmin.directory.group.readonly لمزامنة الدليل، وdrive.readonly لـ Google Drive، وcalendar.events.readonly لتقويم Google.",
       "keyRef": "مرجع المفتاح",
       "keyRefHint": "مرجع ملف مفتاح حساب الخدمة، أو مفتاحه الخاص، في مدير الأسرار. لا تُدخل المفتاح نفسه أبدا.",
       "customerId": "معرّف العميل (اختياري)",
@@ -5674,7 +5674,8 @@
       "featuresTitle": "استخدم هذا الاتصال لـ",
       "features": {
         "directory": "مزامنة دليل المستخدمين والمجموعات",
-        "drive": "الملفات في المساحات المشتركة على Google Drive"
+        "drive": "الملفات في المساحات المشتركة على Google Drive",
+        "calendar": "اجتماعات كل موظف في تقويم Google الخاص به، للتقويم الموحد"
       },
       "sharedDrives": "معرّفات المساحات المشتركة",
       "sharedDrivesHint": "معرّف واحد في كل سطر، من عنوان كل مساحة مشتركة. لا تقرأ TeamBeats أي مساحة أخرى.",

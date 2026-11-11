@@ -5666,7 +5666,7 @@
       "adminEmail": "Administrator email",
       "adminEmailHint": "TeamBeats reads the directory and the shared drives as this administrator. For Google Drive, add this person as a member of each shared drive.",
       "serviceAccount": "Service account email",
-      "serviceAccountHint": "It ends with .iam.gserviceaccount.com. Delegate these scopes to it: admin.directory.user.readonly and admin.directory.group.readonly for directory sync, drive.readonly for Google Drive.",
+      "serviceAccountHint": "It ends with .iam.gserviceaccount.com. Delegate these scopes to it: admin.directory.user.readonly and admin.directory.group.readonly for directory sync, drive.readonly for Google Drive, calendar.events.readonly for Google Calendar.",
       "keyRef": "Key reference",
       "keyRefHint": "The reference of the service account key file, or of its private key, in your secret manager. Never enter the key itself.",
       "customerId": "Customer ID (optional)",
@@ -5674,7 +5674,8 @@
       "featuresTitle": "Use this connection for",
       "features": {
         "directory": "Directory sync of users and groups",
-        "drive": "Files in Google Drive shared drives"
+        "drive": "Files in Google Drive shared drives",
+        "calendar": "Each employee's own meetings in Google Calendar, for the unified calendar"
       },
       "sharedDrives": "Shared drive IDs",
       "sharedDrivesHint": "One ID per line, from the address of each shared drive. TeamBeats never reads any other drive.",

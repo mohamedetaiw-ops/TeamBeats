@@ -53,6 +53,12 @@
   <Folder Name="/src/Modules/Experience.Contracts/">
     <Project Path="src/Modules/Experience.Contracts/TeamBeats.Modules.Experience.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Calendar/">
+    <Project Path="src/Modules/Calendar/TeamBeats.Modules.Calendar.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Calendar.Contracts/">
+    <Project Path="src/Modules/Calendar.Contracts/TeamBeats.Modules.Calendar.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Integrations/">
     <Project Path="src/Modules/Integrations/TeamBeats.Modules.Integrations.csproj" />
   </Folder>

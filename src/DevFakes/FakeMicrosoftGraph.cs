@@ -77,7 +77,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         string Importance = "normal", bool HasAttachments = false, string Preview = "", bool Focused = true);
 
     public sealed record FakeEvent(string Id, string Subject, DateTimeOffset Start, DateTimeOffset End, bool AllDay = false, string ShowAs = "busy",
-        string Sensitivity = "normal", bool Cancelled = false, string Response = "accepted", string? Location = null, string? JoinUrl = null);
+        string Sensitivity = "normal", bool Cancelled = false, string Response = "accepted", string? Location = null, string? JoinUrl = null, string? ICalUId = null);
 
     public sealed record FakeScheduleItem(string Status, DateTimeOffset Start, DateTimeOffset End);
 
@@ -559,6 +559,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
                     organizer = new { emailAddress = new { name = e.OrganizerName, address = e.OrganizerAddress } },
                     attendees = e.Attendees.Select(a => new { emailAddress = new { address = a }, type = "required" }),
                     webLink = $"https://outlook.office.com/calendar/fake/{e.Id}",
+                    iCalUId = $"{e.Id}@fake.outlook",
                 });
             return Json(new { value = events });
         }
@@ -675,6 +676,7 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
                 ["isAllDay"] = e.AllDay, ["showAs"] = e.ShowAs, ["sensitivity"] = e.Sensitivity, ["isCancelled"] = e.Cancelled,
                 ["responseStatus"] = new { response = e.Response }, ["location"] = new { displayName = e.Location ?? string.Empty },
                 ["onlineMeeting"] = e.JoinUrl is null ? null : new { joinUrl = e.JoinUrl }, ["webLink"] = $"https://outlook.office365.com/owa/?itemid={e.Id}&path=/calendar/item",
+                ["iCalUId"] = e.ICalUId ?? $"{e.Id}@fake.outlook",
             }).ToList();
             return Json(new { value = items });
         }

@@ -19,7 +19,10 @@ public static class GoogleFeatures
     /// <summary>Shared drives through the document repository contract (ADR-0016, INT-004).</summary>
     public const string Drive = "drive";
 
-    public static readonly string[] All = [Directory, Drive];
+    /// <summary>Each employee's own Google Calendar meetings for the unified calendar (spec 037 FR-012), read as that employee.</summary>
+    public const string Calendar = "calendar";
+
+    public static readonly string[] All = [Directory, Drive, Calendar];
 }
 
 /// <summary>
@@ -178,6 +181,15 @@ public sealed partial class GooglePack(ITenantContext context, GoogleSignIn sign
             checks.Add(token.Ok
                 ? new PackCheck("directory", true, "integrations.test.token_ok")
                 : new PackCheck("directory", false, token.ErrorClass == ConnectorErrorClasses.NotResponding ? "integrations.test.not_responding" : "integrations.test.google_delegation_refused",
+                    token.ErrorClass));
+        }
+        if (s.Has(GoogleFeatures.Calendar))
+        {
+            // The administrator stands in for every employee: delegation for the calendar scope is the same for all.
+            var token = await signIn.TokenAsync(connection, s, s.AdminEmail!, GoogleHosts.CalendarScope, ct, fresh: true);
+            checks.Add(token.Ok
+                ? new PackCheck("calendar", true, "integrations.test.token_ok")
+                : new PackCheck("calendar", false, token.ErrorClass == ConnectorErrorClasses.NotResponding ? "integrations.test.not_responding" : "integrations.test.google_delegation_refused",
                     token.ErrorClass));
         }
         if (s.Has(GoogleFeatures.Drive))

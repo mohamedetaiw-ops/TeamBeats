@@ -36,9 +36,12 @@ public sealed class OutlookComponents : IComponentRegistration
         {
             ["days"] = new PropertySchema("integer", Default: Json(7), Minimum: 1, Maximum: 14),
             ["hidePrivate"] = new PropertySchema("boolean", Default: Json(false)),
-        }, ["/api/v1/me/calendar", "/api/v1/me/outlook"]),
+        }, ["/api/v1/me/calendar", "/api/v1/me/outlook", "/api/v1/calendar/summary", "/api/v1/calendar/events"]),
     ];
 
-    /// <summary>Spec 008 FR-051: My calendar, then My mail, in the personal region of the default home while their feature is on.</summary>
-    public IEnumerable<string> PersonalHomeDefaults() => ["outlook.my_calendar@1", "outlook.my_mail@1"];
+    /// <summary>
+    /// Spec 008 FR-051: My mail in the personal region of the default home while its feature is on. The calendar card of
+    /// spec 037 (<c>calendar.overview</c>) replaced My calendar there; existing My calendar placements render that card.
+    /// </summary>
+    public IEnumerable<string> PersonalHomeDefaults() => ["outlook.my_mail@1"];
 }

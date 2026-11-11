@@ -48,13 +48,17 @@ public static class ScenarioFiller
             switch (t.Pattern)
             {
                 case FillPattern.Team:
+                    // Each manager's team meeting is its own meeting, named after the team and shifted by the manager's
+                    // depth, so a manager who also reports to someone attends two different meetings, not two at once
+                    // that look the same (spec 037 FR-004).
                     foreach (var (managerMail, team) in reports.OrderBy(r => r.Key, StringComparer.OrdinalIgnoreCase))
                     {
                         var manager = byMail[managerMail];
+                        var depth = Depth(manager, byMail);
                         foreach (var day in t.DayOffsets)
                         {
-                            Add(graph, directoryId, manager, $"fill-ev-{++n:D5}", Text(t.Subject, Arabic(manager.PreferredLanguage), manager, manager.DisplayName),
-                                At(today, day, t.Start), t.Minutes, t.Location, [.. team.Select(x => x.Mail)], t.Online, t.ShowAs, rooms);
+                            Add(graph, directoryId, manager, $"fill-ev-{++n:D5}", TeamText(t.Subject, Arabic(manager.PreferredLanguage), manager),
+                                At(today, day, t.Start).AddMinutes(depth % 4 * 30), t.Minutes, t.Location, [.. team.Select(x => x.Mail)], t.Online, t.ShowAs, rooms);
                         }
                     }
                     break;
@@ -177,6 +181,22 @@ public static class ScenarioFiller
 
     private static DateTimeOffset At(DateTimeOffset today, int day, string start) =>
         today.AddDays(day) + TimeSpan.Parse(start, CultureInfo.InvariantCulture);
+
+    /// <summary>How many managers are above the person (0 for the top of the directory).</summary>
+    private static int Depth(ScenarioUser person, Dictionary<string, ScenarioUser> byMail)
+    {
+        var depth = 0;
+        for (var p = person; p.Manager is not null && byMail.TryGetValue(p.Manager, out var next) && depth < 20; p = next)
+        {
+            depth++;
+        }
+        return depth;
+    }
+
+    /// <summary>{team} is the manager's department, or their name when the directory has none.</summary>
+    private static string TeamText(LocalizedText text, bool arabic, ScenarioUser manager) =>
+        Text(text, arabic, manager, manager.DisplayName).Replace("{team}", string.IsNullOrWhiteSpace(manager.Department) ? manager.DisplayName : manager.Department,
+            StringComparison.Ordinal);
 
     private static bool Arabic(string? language) => language?.StartsWith("ar", StringComparison.OrdinalIgnoreCase) == true;
 
