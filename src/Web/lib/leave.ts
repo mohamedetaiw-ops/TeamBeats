@@ -29,7 +29,19 @@ export type LeaveBand = { days: number; minServiceYears?: number | null; grades?
 
 export type LeavePolicy = { id: string; typeKey: string; orgUnitId: string | null; bands: LeaveBand[]; accrual: "monthly" | "yearly"; version: number; canEdit: boolean; eTag: string };
 
-export type LeaveBalance = { typeKey: string; typeNames: Names; leaveYear: number; balance: number; pending: number; available: number; unit: LeaveUnit };
+/** A balance for the current leave year. With HR as the source it carries when HR's figure was read, and stale when HR could not be reached. */
+export type LeaveBalance = {
+  typeKey: string;
+  typeNames: Names;
+  leaveYear: number;
+  balance: number;
+  pending: number;
+  available: number;
+  unit: LeaveUnit;
+  source: "teambeats" | "hr";
+  asOf: string | null;
+  stale: boolean;
+};
 
 export type PersonRef = { id: string; displayName: string };
 
@@ -46,7 +58,12 @@ export type LeavePreview = {
   documentRequired: boolean;
   overlap: OverlapPerson[];
   problems: { key: string; message: string }[];
+  balanceSource: "teambeats" | "hr";
+  balanceAsOf: string | null;
 };
+
+/** Whether HR recorded approved leave or a change to it, when HR keeps balances. */
+export const HR_LEAVE_STATES = ["queued", "recorded", "failed", "unavailable"] as const;
 
 export type LeaveStatus = "pending" | "approved" | "rejected" | "cancelled" | "withdrawn";
 
@@ -76,6 +93,8 @@ export type LeaveRequest = {
   decidedAt: string | null;
   rights: LeaveRights;
   overlap: OverlapPerson[] | null;
+  hrState: (typeof HR_LEAVE_STATES)[number] | null;
+  hrReference: string | null;
 };
 
 export type MyLeave = { balances: LeaveBalance[]; types: LeaveType[]; requests: LeaveRequest[]; replacementAsks: LeaveRequest[] };
@@ -108,3 +127,7 @@ export const statusTone: Record<LeaveStatus, "neutral" | "info" | "success" | "w
   cancelled: "neutral",
   withdrawn: "neutral",
 };
+
+/** Why a ledger row was written (spec 022 section 14). */
+export const LEDGER_REASONS = ["request", "cancel", "recount", "accrual", "carry_over", "lapse", "adjustment"] as const;
+export type LedgerEntry = { id: string; typeKey: string; leaveYear: number; delta: number; reason: string; requestId: string | null; note: string | null; at: string };

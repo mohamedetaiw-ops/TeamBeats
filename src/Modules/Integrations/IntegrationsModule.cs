@@ -85,6 +85,8 @@ public static class IntegrationsModule
         services.AddScoped<Hr.HrLifecycle>();
         services.AddScoped<Hr.HrPayslips>();
         services.AddScoped<Hr.HrRestPack>();
+        services.AddScoped<Hr.HrLeave>();
+        services.AddScoped<IHrLeave>(sp => sp.GetRequiredService<Hr.HrLeave>());
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrRestPack>());
         services.AddScoped<Hr.HrSftpPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Hr.HrSftpPack>());
@@ -114,6 +116,7 @@ public static class IntegrationsModule
         services.AddMessageHandler<SessionEnded, DropTokensOnSessionEnded>("integrations.tokens_session_ended");
         services.AddMessageHandler<ConnectorUnavailable, ConnectionAlerts>("integrations.connection_alerts");
         services.AddMessageHandler<ConnectorActionCompleted, Finance.FinanceSubmitFinished>("integrations.finance_submit_finished");
+        services.AddMessageHandler<ConnectorActionCompleted, Hr.HrLeaveSubmitFinished>("integrations.hr_leave_submit_finished");
         services.AddMessageHandler<SessionRevoked, DropTokensOnSessionRevoked>("integrations.tokens_session_revoked");
         services.AddMessageHandler<UserDeprovisioned, DropTokensOnUserDeprovisioned>("integrations.tokens_user_deprovisioned");
         return services;

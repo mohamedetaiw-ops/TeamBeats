@@ -88,4 +88,17 @@ public sealed class LeaveMathTests
     public void A_balance_never_goes_below_zero_unless_the_type_allows_it_and_then_not_below_its_maximum(decimal available, decimal days, bool negative,
         decimal max, bool allowed) =>
         Assert.Equal(allowed, LeaveMath.Allowed(available, days, negative, max));
+
+    [Fact]
+    public void Reduced_hours_apply_to_working_days_inside_a_period_only_and_a_holiday_is_not_one()
+    {
+        var calendar = new WorkingCalendarSnapshot(null, 1, [DayOfWeek.Sunday, DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday],
+            [new HolidayDay(new DateOnly(2027, 2, 15), false)], TimeZoneInfo.Utc, [new ReducedHoursPeriod(new DateOnly(2027, 2, 8), new DateOnly(2027, 3, 9), 6m)]);
+        Assert.Equal(6m, calendar.ReducedHours(new DateOnly(2027, 2, 8)));
+        Assert.Equal(6m, calendar.ReducedHours(new DateOnly(2027, 3, 9)));
+        Assert.Null(calendar.ReducedHours(new DateOnly(2027, 2, 12)));
+        Assert.Null(calendar.ReducedHours(new DateOnly(2027, 2, 15)));
+        Assert.Null(calendar.ReducedHours(new DateOnly(2027, 3, 10)));
+        Assert.Single(calendar.Periods);
+    }
 }

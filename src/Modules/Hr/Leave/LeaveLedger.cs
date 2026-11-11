@@ -33,6 +33,7 @@ public sealed class LeaveLedger(
     ITenantMemberships memberships,
     ITenantSettingsReader settings,
     IHrRecords hrRecords,
+    IHrLeave hrLeave,
     LeaveConfig config)
 {
     public const int MaxNoteLength = 500;
@@ -80,6 +81,25 @@ public sealed class LeaveLedger(
 
     internal async Task<LeavePerson?> PersonAsync(Guid userId, CancellationToken ct) => (await PeopleAsync([userId], ct)).GetValueOrDefault(userId);
 
+    /// <summary>Whether the HR system owns balances (spec 019 FR-013, spec 022 FR-006): the ledger is then not written.</summary>
+    internal async Task<bool> HrOwnsAsync(CancellationToken ct) => (await hrLeave.SettingAsync(ct)).FromHr;
+
+    /// <summary>The HR balances of a person when HR owns balances, else null.</summary>
+    internal async Task<HrLeaveBalances?> HrBalancesAsync(Guid userId, CancellationToken ct) =>
+        await HrOwnsAsync(ct) ? await hrLeave.BalancesAsync(userId, ct) : null;
+
+    /// <summary>
+    /// What TeamBeats holds against an HR balance for a type: pending requests, and approved requests HR has not
+    /// recorded yet, leaving out one request (the one being changed).
+    /// </summary>
+    internal Task<decimal> HeldForHrAsync(Guid userId, Guid typeId, Guid? except, CancellationToken ct) =>
+        session.ScalarAsync<decimal>(
+            """
+            select coalesce(sum(r.days), 0) from hr.leave_request r
+            where r.user_id = @userId and r.leave_type_id = @typeId and (@except::uuid is null or r.id <> @except)
+              and (r.status = 'pending' or (r.status = 'approved' and r.hr_state in ('queued', 'failed')))
+            """, new { userId, typeId, except }, ct);
+
     internal Task<decimal> BalanceAsync(Guid userId, Guid typeId, int year, CancellationToken ct) =>
         session.ScalarAsync<decimal>(
             "select coalesce(sum(delta), 0) from hr.leave_ledger where user_id = @userId and leave_type_id = @typeId and leave_year = @year",
@@ -114,6 +134,13 @@ public sealed class LeaveLedger(
         DateOnly lastDay, decimal takenThisYear, Guid? except, CancellationToken ct)
     {
         var current = LeaveMath.LeaveYear(today, type.YearStartMonth);
+        if (await HrBalancesAsync(person.UserId, ct) is { } hr)
+        {
+            // HR keeps one balance per type; days of an earlier leave year in the same request come off it first.
+            var held = await HeldForHrAsync(person.UserId, type.Id, except, ct) + (year > current ? takenThisYear : 0m);
+            var fromHr = hr.Balances.FirstOrDefault(b => b.TypeKey == type.Key)?.Balance ?? 0m;
+            return (fromHr, held, fromHr - held);
+        }
         var balance = await BalanceAsync(person.UserId, type.Id, year, ct);
         var pending = await PendingAsync(person.UserId, type.Id, year, except, ct);
         if (year <= current)
@@ -139,7 +166,8 @@ public sealed class LeaveLedger(
     /// </summary>
     public async Task<int> RunAccrualAsync(CancellationToken ct)
     {
-        if (!await entitlements.IsEnabledAsync(Capabilities.HrLeave, ct))
+        // When HR owns balances it accrues and carries over itself.
+        if (!await entitlements.IsEnabledAsync(Capabilities.HrLeave, ct) || await HrOwnsAsync(ct))
         {
             return 0;
         }
@@ -253,6 +281,10 @@ public sealed class LeaveLedger(
             throw AppException.NotFound();
         }
         await DemandHrAsync(person, ct);
+        if (await HrOwnsAsync(ct))
+        {
+            throw AppException.Conflict("conflict.leave.hr_owns_balances");
+        }
         var errors = new ValidationErrors();
         var type = request.TypeKey is { } key ? await config.TypeByKeyAsync(key, ct) : null;
         if (type is null)

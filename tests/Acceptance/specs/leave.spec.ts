@@ -29,7 +29,8 @@ const profileId = async (api: APIRequestContext) => ((await (await api.get("/api
 /**
  * Spec 022 T014: leave in the browser. HR sets up annual leave and a balance; Layla requests a week, sees the working
  * days, her balance after and that Omar is away too, and sends it; her manager opens the task from the inbox and
- * approves it; Layla then sees it approved. In English and Arabic, with axe on every screen.
+ * approves it; Layla then sees it approved; HR adjusts her balance with a reason and sees her ledger. In English and
+ * Arabic, with axe on every screen.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`leave in ${locale}`, () => {
@@ -114,6 +115,24 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByLabel(m("leave.team.from")).fill(week.monday);
       await expect(page.locator(".leave-grid td[data-status='approved']").first()).toBeVisible();
       await expectAccessible(page, testInfo, `leave-team-${locale}`);
+    });
+
+    test("HR adjusts a balance with a reason and sees the ledger", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/leave`);
+      const section = page.locator("section", { has: page.locator("#leave-adjustments") });
+      await section.getByLabel(m("services.person.search")).fill("layla");
+      await section.getByRole("button", { name: m("services.person.find") }).click();
+      await section.getByRole("list", { name: m("services.person.results") }).getByRole("button").first().click();
+      const ledger = section.locator("table tbody");
+      await expect(ledger.getByRole("cell", { name: m("leave.adjustments.reasons.request") })).toBeVisible();
+      await expect(ledger.getByRole("cell", { name: new RegExp(`^${m("leave.adjustments.reasons.adjustment")}`) }).first()).toBeVisible();
+      await section.getByLabel(m("leave.adjustments.delta")).fill("-1");
+      await section.getByLabel(m("leave.adjustments.note"), { exact: true }).fill("Correction after review");
+      await section.getByRole("button", { name: m("leave.adjustments.save") }).click();
+      await expect(section.getByRole("status").filter({ hasText: m("leave.adjustments.saved") })).toBeVisible();
+      await expect(ledger.getByText("Correction after review")).toBeVisible();
+      await expectAccessible(page, testInfo, `leave-adjustments-${locale}`);
     });
   });
 }

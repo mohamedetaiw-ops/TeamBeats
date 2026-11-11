@@ -3,10 +3,11 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
 import type { LeavePolicy, LeaveType } from "@/lib/leave";
+import { LeaveAdjustments } from "@/features/leave/LeaveAdjustments";
 import { LeaveAdmin } from "@/features/leave/LeaveAdmin";
 
 /**
- * Leave types and entitlement policies (spec 022 FR-001). The section appears only when the API lists it; every call
+ * Leave types and entitlement policies (spec 022 FR-001), and HR adjustments of a person's balance (section 14). The section appears only when the API lists it; every call
  * is authorized again by the API.
  */
 export default async function LeaveAdminPage() {
@@ -28,6 +29,7 @@ export default async function LeaveAdminPage() {
       <h1>{t("title")}</h1>
       <p className="notice">{t("intro")}</p>
       <LeaveAdmin initialTypes={types.data} initialPolicies={policies.data} units={units.ok ? units.data : []} />
+      <LeaveAdjustments types={types.data} />
     </>
   );
 }

@@ -1896,7 +1896,25 @@
       "to": "To",
       "run": "Count",
       "failed": "Could not count working days for these dates.",
-      "result": "{count, plural, =0 {No working days} one {# working day} other {# working days}}"
+      "result": "{count, plural, =0 {No working days} one {# working day} other {# working days}}",
+      "reduced": "{count, plural, one {# of these days has reduced hours} other {# of these days have reduced hours}}"
+    },
+    "periods": {
+      "title": "Reduced hours periods",
+      "hint": "For periods such as Ramadan, working days between the start and end have the hours you set. Periods cannot overlap.",
+      "start": "Start",
+      "end": "End",
+      "hours": "Working hours a day",
+      "none": "No reduced hours periods yet.",
+      "nameEnFor": "English name of period {number}",
+      "nameArFor": "Arabic name of period {number}",
+      "startFor": "Start of period {number}",
+      "endFor": "End of period {number}",
+      "hoursFor": "Working hours a day in period {number}",
+      "remove": "Remove period {number}",
+      "add": "Add period",
+      "save": "Save periods",
+      "saved": "Reduced hours periods saved."
     }
   },
   "people": {
@@ -5704,7 +5722,21 @@
         "deductions": "Deductions",
         "net": "Net pay",
         "currency": "Currency"
-      }
+      },
+      "leaveTitle": "Leave (optional)",
+      "leaveBalancesPath": "Leave balances address",
+      "leaveBalancesPathHint": "The balances of one employee, with '{record_id}' in it, for example /employees/'{record_id}'/leave.",
+      "leaveBalanceRecordsPath": "Where the balances are in the answer",
+      "leaveBalanceType": "Field with the leave type code",
+      "leaveBalanceValue": "Field with the balance",
+      "leaveSubmitPath": "Leave submission address",
+      "leaveSubmitPathHint": "Approved leave, cancellations and changes are sent here, for example /leave-requests.",
+      "leaveReferencePath": "Where HR's reference is in the answer",
+      "leaveReferencePathHint": "For example $.id. HR must answer with a reference for the leave to show as recorded.",
+      "leaveIdempotencyHeader": "Idempotency header",
+      "leaveIdempotencyHeaderHint": "Optional. When HR supports one, for example Idempotency-Key, a resend is never recorded twice.",
+      "leaveTypeCodes": "Leave type codes",
+      "leaveTypeCodesHint": "One per line as TeamBeats key=HR code, for example annual=AL. Types not listed use their key."
     }
   },
   "components_gallery": {
@@ -6658,6 +6690,44 @@
         "cancelled_in_hr": "Cancelled in HR",
         "other": "Cancelled"
       }
+    },
+    "leave": {
+      "title": "Leave balances",
+      "intro": "Choose where leave balances are kept. When HR keeps them, balances are read from HR, and approved leave, cancellations and changes are sent to HR. If HR does not answer, they are sent again every hour for three days.",
+      "source": "Balances are kept in",
+      "sources": {
+        "teambeats": "TeamBeats",
+        "hr": "The HR system"
+      },
+      "allowStale": "Allow requests on the last known balance",
+      "allowStaleHint": "When HR cannot be reached, people can still request leave against the balance read last.",
+      "notActive": "HR integration is not in your plan, so TeamBeats keeps balances for now.",
+      "save": "Save",
+      "saved": "Leave balance settings saved.",
+      "working": "Working…",
+      "failed": "Something went wrong. Try again.",
+      "handOffs": {
+        "title": "Leave sent to HR",
+        "empty": "No leave has been sent to HR yet.",
+        "request": "Request",
+        "kind": "Change",
+        "state": "State",
+        "actions": "Actions",
+        "open": "Open request (change {change})",
+        "nextTry": "Next try {at}",
+        "retry": "Send again",
+        "resent": "The leave was sent to HR again."
+      },
+      "kinds": {
+        "approved": "Approved",
+        "cancelled": "Cancelled",
+        "changed": "Dates or days changed"
+      },
+      "states": {
+        "queued": "Waiting for HR",
+        "recorded": "Recorded in HR",
+        "failed": "Not recorded"
+      }
     }
   },
   "payslips": {
@@ -6716,7 +6786,10 @@
       "title": "My balances",
       "empty": "No leave types apply to you yet.",
       "available": "{value} {unit, select, hour {hours} other {days}} available",
-      "detail": "Leave year {year}: balance {balance}, waiting for approval {pending}"
+      "detail": "Leave year {year}: balance {balance}, waiting for approval {pending}",
+      "hr": "From HR, read {at}.",
+      "hrStale": "HR could not be reached. This is the balance read {at}.",
+      "hrNone": "HR could not be reached and no balance has been read yet."
     },
     "team": {
       "link": "See who is away",
@@ -6759,7 +6832,8 @@
       "submitted": "Request {number} was sent for approval.",
       "previewFailed": "The days could not be counted. Try again.",
       "uploadFailed": "The document was not uploaded. Try again.",
-      "hours": "Hours"
+      "hours": "Hours",
+      "fromHr": "Balance from HR, read {at}."
     },
     "mine": {
       "title": "My requests",
@@ -6813,7 +6887,8 @@
         "replacement": "Replacement saved.",
         "shorten": "Change saved.",
         "cancel": "Change saved."
-      }
+      },
+      "hr": "HR system"
     },
     "admin": {
       "title": "Leave",
@@ -6878,6 +6953,41 @@
         "save": "Save policy",
         "create": "Add policy",
         "delete": "Delete policy"
+      }
+    },
+    "hrState": {
+      "queued": "Waiting for HR to record it",
+      "recorded": "Recorded in HR",
+      "failed": "Not recorded in HR yet. Your HR team can see it and will send it again.",
+      "unavailable": "Not sent to HR"
+    },
+    "adjustments": {
+      "title": "Balance adjustments",
+      "intro": "Pick a person you cover to see their leave ledger and add or remove days. Every adjustment needs a reason and is audited.",
+      "person": "Person",
+      "type": "Leave type",
+      "year": "Leave year",
+      "delta": "Days to add or remove",
+      "deltaHint": "Use a minus sign to remove days, for example -2.",
+      "note": "Reason",
+      "save": "Save adjustment",
+      "saved": "Adjustment saved.",
+      "working": "Saving…",
+      "failed": "The adjustment could not be saved.",
+      "empty": "No ledger entries yet.",
+      "ledger": "Leave ledger",
+      "at": "When",
+      "change": "Change",
+      "reason": "Reason",
+      "reasons": {
+        "request": "Approved leave",
+        "cancel": "Cancelled or shortened leave",
+        "recount": "Recounted after a calendar change",
+        "accrual": "Accrual",
+        "carry_over": "Carried over",
+        "lapse": "Lapsed",
+        "adjustment": "Adjustment",
+        "other": "Other"
       }
     }
   }

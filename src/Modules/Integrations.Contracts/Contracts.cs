@@ -802,6 +802,76 @@ public interface IHrRecords
     Task<HrRecordRead> CurrentAsync(Guid userId, CancellationToken ct = default);
 }
 
+/// <summary>Who keeps leave balances (spec 019 FR-013): TeamBeats' own ledger, or the HR system.</summary>
+public static class HrLeaveSources
+{
+    public const string TeamBeats = "teambeats";
+    public const string Hr = "hr";
+
+    public static readonly IReadOnlyList<string> All = [TeamBeats, Hr];
+}
+
+/// <summary>
+/// The leave balance source setting (spec 019 US7, FR-013), versioned. <paramref name="AllowStaleSubmit"/> lets people
+/// send a request on the last known balance when HR cannot be read (US7 scenario 2). <paramref name="FromHr"/> is true
+/// only when HR is chosen and the plan includes <c>hr.integration</c>.
+/// </summary>
+public sealed record HrLeaveSetting(string Source, bool AllowStaleSubmit, int Version, bool FromHr);
+
+public sealed record HrLeaveBalance(string TypeKey, decimal Balance);
+
+/// <summary>
+/// One person's balances as HR reports them. <see cref="State"/> is <c>ok</c> (read now), <c>stale</c> (HR did not
+/// answer; <see cref="Balances"/> are the last known, read at <see cref="AsOf"/>), <c>not_matched</c> or
+/// <c>unavailable</c> (nothing known).
+/// </summary>
+public sealed record HrLeaveBalances(string State, IReadOnlyList<HrLeaveBalance> Balances, DateTimeOffset? AsOf)
+{
+    public const string Ok = "ok";
+    public const string Stale = "stale";
+    public const string NotMatched = "not_matched";
+    public const string Unavailable = "unavailable";
+}
+
+/// <summary>
+/// Leave handed to HR (spec 022 FR-006, spec 019 US7 scenario 1): an approved request, a cancellation, or a change of
+/// dates or days. <paramref name="Kind"/> is <c>approved</c>, <c>cancelled</c> or <c>changed</c>.
+/// </summary>
+public sealed record HrLeaveHandOffRequest(Guid RequestId, Guid UserId, string Kind, string TypeKey, DateOnly Start, DateOnly End, bool StartHalf, bool EndHalf,
+    decimal Days)
+{
+    public const string Approved = "approved";
+    public const string Cancelled = "cancelled";
+    public const string Changed = "changed";
+}
+
+/// <summary>States of a leave hand-off: queued (sent or waiting to retry), recorded (HR confirmed), failed, unavailable (no usable HR connection).</summary>
+public static class HrLeaveHandOffStates
+{
+    public const string Queued = "queued";
+    public const string Recorded = "recorded";
+    public const string Failed = "failed";
+    public const string Unavailable = "unavailable";
+}
+
+/// <summary>
+/// HR as the leave balance source (spec 019 US7, spec 022 FR-006). Balances are read live from the HR connection, with
+/// the last known kept for when HR does not answer. Hand-offs are durable connector jobs keyed by request, kind and
+/// change, retried hourly when HR is unavailable, so an approval never waits on HR. Tenant comes from context.
+/// </summary>
+public interface IHrLeave
+{
+    Task<HrLeaveSetting> SettingAsync(CancellationToken ct = default);
+
+    Task<HrLeaveBalances> BalancesAsync(Guid userId, CancellationToken ct = default);
+
+    /// <summary>Hands one change to HR and returns its state; the same request, kind and change number is sent once.</summary>
+    Task<string> HandOffAsync(HrLeaveHandOffRequest request, int change, CancellationToken ct = default);
+}
+
+/// <summary>A leave hand-off changed state (queued, recorded, failed). IDs and the HR reference only.</summary>
+public sealed record HrLeaveHandOffChanged(Guid RequestId, string Kind, string State, string? ExternalReference, int Change = 0) : IIntegrationEvent;
+
 /// <summary>An HR sync applied its changes (spec 019 section 12). Counts only, never HR values.</summary>
 public sealed record HrSyncCompleted(Guid ConnectionId, Guid RunId, int Matched, int Changed) : IIntegrationEvent;
 

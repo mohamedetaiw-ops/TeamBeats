@@ -11,7 +11,7 @@ import { PersonPicker } from "@/features/services/PersonPicker";
 import { TaskDecisionPanel } from "@/features/services/TaskDecisionPanel";
 import { problemMessages } from "@/lib/notifications/types";
 import { pick } from "@/lib/services/types";
-import { statusTone, type LeaveRequest } from "@/lib/leave";
+import { HR_LEAVE_STATES, statusTone, type LeaveRequest } from "@/lib/leave";
 import "./leave.css";
 
 /**
@@ -96,6 +96,20 @@ export function LeaveRequestDetail({ initial, taskId }: { initial: LeaveRequest;
           </dd>
           <dt>{t("detail.days")}</dt>
           <dd>{t("form.takes", { days: number(request.days), unit: request.unit })}</dd>
+          {request.hrState && (HR_LEAVE_STATES as readonly string[]).includes(request.hrState) ? (
+            <>
+              <dt>{t("detail.hr")}</dt>
+              <dd>
+                {t(`hrState.${request.hrState}`)}
+                {request.hrReference ? (
+                  <span className="field-hint">
+                    {" "}
+                    <bdi dir="ltr">{request.hrReference}</bdi>
+                  </span>
+                ) : null}
+              </dd>
+            </>
+          ) : null}
           <dt>{t("detail.replacement")}</dt>
           <dd>
             {request.replacement ? (

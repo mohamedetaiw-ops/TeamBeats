@@ -468,6 +468,13 @@ export type HrRestSettings = HrMappingSettings & {
   payslipRecordsPath?: string | null;
   payslipFields?: Record<string, string> | null;
   payslipPdfPath?: string | null;
+  leaveBalancesPath?: string | null;
+  leaveBalanceRecordsPath?: string | null;
+  leaveBalanceFields?: { type?: string; balance?: string } | null;
+  leaveSubmitPath?: string | null;
+  leaveReferencePath?: string | null;
+  leaveIdempotencyHeader?: string | null;
+  leaveTypeCodes?: Record<string, string> | null;
   recordsPath: string | null;
   paging: string | null;
   pageParam: string | null;
@@ -558,3 +565,23 @@ export type HrOrgCode = {
 
 /** Where each payslip value is in payroll's answer (spec 019 US6). */
 export const HR_PAYSLIP_FIELDS = ["period", "gross", "deductions", "net", "currency"] as const;
+
+/** The leave balance source (spec 019 US7, FR-013): TeamBeats keeps balances, or HR does. */
+export const HR_LEAVE_SOURCES = ["teambeats", "hr"] as const;
+export type HrLeaveSetting = { source: string; allowStaleSubmit: boolean; version: number; fromHr: boolean };
+
+export const HR_LEAVE_HANDOFF_STATES = ["queued", "recorded", "failed"] as const;
+export const HR_LEAVE_HANDOFF_KINDS = ["approved", "cancelled", "changed"] as const;
+export type HrLeaveHandOff = {
+  id: string;
+  requestId: string;
+  change: number;
+  kind: string;
+  state: string;
+  attempt: number;
+  externalReference: string | null;
+  errorClass: string | null;
+  createdAt: string;
+  recordedAt: string | null;
+  nextRetryAt: string | null;
+};

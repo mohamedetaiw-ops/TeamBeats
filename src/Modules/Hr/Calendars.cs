@@ -13,6 +13,8 @@ namespace TeamBeats.Modules.Hr;
 
 public sealed record HolidayView(DateOnly Date, IReadOnlyDictionary<string, string> Name, bool HalfDay);
 
+public sealed record PeriodView(Guid Id, IReadOnlyDictionary<string, string> Name, DateOnly Start, DateOnly End, decimal Hours);
+
 public sealed record CalendarView(
     Guid Id,
     IReadOnlyDictionary<string, string> Name,
@@ -23,7 +25,8 @@ public sealed record CalendarView(
     int Version,
     IReadOnlyList<Guid> AssignedUnits,
     bool CanEdit,
-    IReadOnlyList<HolidayView>? Holidays)
+    IReadOnlyList<HolidayView>? Holidays,
+    IReadOnlyList<PeriodView>? Periods = null)
 {
     public string ETag => CalendarService.ETag(Version);
 }
@@ -34,11 +37,15 @@ public sealed record HolidayInput(DateOnly Date, IReadOnlyDictionary<string, str
 
 public sealed record HolidaysRequest(int Year, IReadOnlyList<HolidayInput>? Holidays);
 
+public sealed record PeriodInput(IReadOnlyDictionary<string, string>? Name, DateOnly Start, DateOnly End, decimal Hours);
+
+public sealed record PeriodsRequest(IReadOnlyList<PeriodInput>? Periods);
+
 public sealed record AssignmentRequest(Guid? CalendarId);
 
 public sealed record AssignmentView(Guid OrgUnitId, Guid CalendarId);
 
-public sealed record PreviewDay(DateOnly Date, decimal Fraction);
+public sealed record PreviewDay(DateOnly Date, decimal Fraction, decimal? ReducedHours = null);
 
 public sealed record WorkingDaysPreview(Guid? CalendarId, DateOnly From, DateOnly To, decimal WorkingDays, IReadOnlyList<PreviewDay> Days);
 
@@ -58,6 +65,8 @@ public sealed partial class CalendarService(
 {
     public const int MaxHolidaysPerYear = 100;
     public const int MaxPreviewDays = 366;
+    public const int MaxPeriods = 50;
+    public const int MaxPeriodDays = 100;
     public static readonly int[] DefaultWeek = [1, 2, 3, 4, 5];
 
     public static string ETag(int version) => $"\"v{version}\"";
@@ -79,7 +88,7 @@ public sealed partial class CalendarService(
     {
         var coverage = await RequireCoverageAsync(ct);
         var row = await VisibleAsync(id, coverage, ct);
-        return View(row, coverage, await AssignmentsAsync(ct), await HolidaysAsync(id, ct));
+        return View(row, coverage, await AssignmentsAsync(ct), await HolidaysAsync(id, ct)) with { Periods = await PeriodsAsync(id, ct) };
     }
 
     public async Task<CalendarView> CreateAsync(CalendarRequest request, CancellationToken ct)
@@ -192,6 +201,60 @@ public sealed partial class CalendarService(
         return await GetAsync(id, ct);
     }
 
+    /// <summary>
+    /// Replaces the reduced hours periods of a calendar (US2 scenario 3, for example Ramadan). Working days stay the
+    /// same, so the change moves no due date and recounts no leave; attendance reads the hours.
+    /// </summary>
+    public async Task<CalendarView> SetPeriodsAsync(Guid id, string? ifMatch, PeriodsRequest request, CancellationToken ct)
+    {
+        var coverage = await RequireCoverageAsync(ct);
+        var row = await VisibleAsync(id, coverage, ct);
+        await DemandManageAsync(row.Owner, ct);
+        RequireVersion(row, ifMatch);
+
+        var errors = new ValidationErrors();
+        var periods = request.Periods ?? [];
+        if (periods.Count > MaxPeriods)
+        {
+            errors.Add("periods", "validation.calendar.too_many_periods");
+        }
+        var named = periods.Select(p => (Period: p, Name: CleanName(p.Name))).ToList();
+        if (named.Any(n => n.Name is null))
+        {
+            errors.Add("periods", "validation.calendar.period_name");
+        }
+        if (periods.Any(p => p.End < p.Start || p.End.DayNumber - p.Start.DayNumber >= MaxPeriodDays || p.Start.Year is < 2000 or > 2100))
+        {
+            errors.Add("periods", "validation.calendar.period_dates");
+        }
+        if (periods.Any(p => p.Hours is <= 0 or >= 24 || decimal.Round(p.Hours * 4) != p.Hours * 4))
+        {
+            errors.Add("periods", "validation.calendar.period_hours");
+        }
+        var ordered = periods.OrderBy(p => p.Start).ToList();
+        if (ordered.Zip(ordered.Skip(1)).Any(pair => pair.Second.Start <= pair.First.End))
+        {
+            errors.Add("periods", "validation.calendar.period_overlap");
+        }
+        errors.ThrowIfAny();
+
+        await session.ExecAsync("delete from hr.calendar_period where calendar_id = @id", new { id }, ct);
+        foreach (var (p, name) in named)
+        {
+            await session.ExecAsync(
+                """
+                insert into hr.calendar_period (tenant_id, id, calendar_id, name, start_date, end_date, hours)
+                values (platform.current_tenant_id(), @pid, @id, @name, @start, @end, @hours)
+                """, new { pid = Ids.New(), id, name = Jsonb.From(name!), start = p.Start, end = p.End, hours = p.Hours }, ct);
+        }
+        await session.ExecAsync(
+            "update hr.working_calendar set version = version + 1, updated_at = @now, updated_by = @actor where id = @id",
+            new { id, now = clock.UtcNow, actor = context.ActorId }, ct);
+        await ChangedAsync(id, "periods_replaced", [], [],
+            new { periods = ordered.Select(p => new { start = p.Start, end = p.End, hours = p.Hours }) }, ct);
+        return await GetAsync(id, ct);
+    }
+
     public async Task<IReadOnlyList<AssignmentView>> ListAssignmentsAsync(CancellationToken ct)
     {
         var coverage = await RequireCoverageAsync(ct);
@@ -268,7 +331,7 @@ public sealed partial class CalendarService(
         var days = new List<PreviewDay>();
         for (var d = from; d <= to; d = d.AddDays(1))
         {
-            days.Add(new PreviewDay(d, snapshot.WorkingFraction(d)));
+            days.Add(new PreviewDay(d, snapshot.WorkingFraction(d), snapshot.ReducedHours(d)));
         }
         return new WorkingDaysPreview(snapshot.CalendarId, from, to, snapshot.CountWorkingDays(from, to), days);
     }
@@ -340,6 +403,14 @@ public sealed partial class CalendarService(
             new { id },
             r => new HolidayView(DateOnly.FromDateTime(r.GetDateTime(0)),
                 JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(1)) ?? [], r.GetBoolean(2)),
+            ct);
+
+    private Task<List<PeriodView>> PeriodsAsync(Guid id, CancellationToken ct) =>
+        session.QueryAsync(
+            "select id, name::text, start_date, end_date, hours from hr.calendar_period where calendar_id = @id order by start_date",
+            new { id },
+            r => new PeriodView(r.GetGuid(0), JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(1)) ?? [],
+                DateOnly.FromDateTime(r.GetDateTime(2)), DateOnly.FromDateTime(r.GetDateTime(3)), r.GetDecimal(4)),
             ct);
 
     private Task<List<AssignmentView>> AssignmentsAsync(CancellationToken ct) =>

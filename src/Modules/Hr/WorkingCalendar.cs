@@ -64,7 +64,10 @@ public sealed class WorkingCalendar(IDbSession session, IOrganizationHierarchy h
         var holidays = await session.QueryAsync(
             "select date, half_day from hr.calendar_holiday where calendar_id = @calendarId",
             new { calendarId }, r => new HolidayDay(DateOnly.FromDateTime(r.GetDateTime(0)), r.GetBoolean(1)), ct);
-        var snapshot = new WorkingCalendarSnapshot(calendarId, row.Version, row.Week.Select(d => ToDayOfWeek(d)), holidays, await ZoneAsync(ct));
+        var periods = await session.QueryAsync(
+            "select start_date, end_date, hours from hr.calendar_period where calendar_id = @calendarId",
+            new { calendarId }, r => new ReducedHoursPeriod(DateOnly.FromDateTime(r.GetDateTime(0)), DateOnly.FromDateTime(r.GetDateTime(1)), r.GetDecimal(2)), ct);
+        var snapshot = new WorkingCalendarSnapshot(calendarId, row.Version, row.Week.Select(d => ToDayOfWeek(d)), holidays, await ZoneAsync(ct), periods);
         _snapshots[calendarId] = snapshot;
         return snapshot;
     }

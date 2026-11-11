@@ -29,6 +29,8 @@ public static class HrModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<LeaveTaskSource>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<LeaveTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, LeaveTaskSource>("hr.leave_notify_approval");
+        services.AddMessageHandler<WorkingCalendarChanged, LeaveRecountHandler>("hr.leave_recount");
+        services.AddMessageHandler<Integrations.Contracts.HrLeaveHandOffChanged, LeaveHrAnswered>("hr.leave_hr_answered");
         services.AddSingleton<Services.Contracts.IModuleServiceSource, LeaveModuleServices>();
         return services;
     }
@@ -80,6 +82,15 @@ public static class HrModule
             CancellationToken ct) =>
         {
             var view = await calendars.SetHolidaysAsync(id, IfMatch(http), request, ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = view.ETag;
+            return Results.Ok(view);
+        });
+
+        hr.MapPut("/calendars/{id:guid}/periods", async (Guid id, PeriodsRequest request, HttpRequest http, CalendarService calendars, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await calendars.SetPeriodsAsync(id, IfMatch(http), request, ct);
             await session.CommitAsync(ct);
             http.HttpContext.Response.Headers.ETag = view.ETag;
             return Results.Ok(view);
