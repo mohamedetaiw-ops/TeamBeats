@@ -2549,7 +2549,11 @@
       "attendanceRequest": "طلب حضور",
       "letterRequest": "طلب خطاب",
       "dataChangeRequest": "تغيير بيانات",
-      "expenseClaim": "مطالبة مصروفات"
+      "expenseClaim": "مطالبة مصروفات",
+      "tabsLabel": "طرق عرض صندوق المهام",
+      "approvalsTab": "الموافقات والطلبات",
+      "myTasksTab": "مهامي",
+      "myTasksFailed": "تعذر تحميل مهامك."
     },
     "delegation": {
       "title": "أثناء غيابك",
@@ -9469,6 +9473,303 @@
       "never": "لم تتم",
       "syncNow": "زامن الآن",
       "failed": "لم تتم المزامنة."
+    }
+  },
+  "spaces": {
+    "pageTitle": "المساحات",
+    "pageIntro": "مساحات المشاريع والفرق بمهامها ومراحلها وأشخاصها.",
+    "unavailableTitle": "المساحات غير متاحة",
+    "unavailable": "مساحات المشاريع والفرق ليست ضمن باقة مؤسستك.",
+    "privateTitle": "هذه المساحة خاصة",
+    "private": "يمكن لأعضائها فقط فتحها. اطلب من أحد المالكين إضافتك.",
+    "tasksTitle": "المهام",
+    "membersTitle": "الأعضاء",
+    "settingsTitle": "الإعدادات",
+    "settingsDeniedTitle": "المالكون فقط يغيرون الإعدادات",
+    "settingsDenied": "اطلب من أحد مالكي هذه المساحة إجراء التغيير.",
+    "kind": {
+      "project": "مساحة مشروع",
+      "team": "مساحة فريق"
+    },
+    "parts": {
+      "visibility": {
+        "public": "عامة",
+        "private": "خاصة",
+        "secret": "سرية"
+      },
+      "role": {
+        "owner": "مالك",
+        "member": "عضو",
+        "viewer": "مشاهد"
+      },
+      "guest": "ضيف",
+      "priority": {
+        "low": "منخفضة",
+        "normal": "عادية",
+        "high": "عالية",
+        "urgent": "عاجلة"
+      },
+      "status": {
+        "on_track": "على المسار",
+        "at_risk": "معرّض للخطر",
+        "off_track": "خارج المسار",
+        "done": "مكتمل"
+      },
+      "overdueOn": "متأخرة منذ {date}",
+      "dueOn": "مستحقة في {date}",
+      "nav": {
+        "label": "صفحات المساحة",
+        "overview": "نظرة عامة",
+        "tasks": "المهام",
+        "members": "الأعضاء",
+        "settings": "الإعدادات"
+      }
+    },
+    "directory": {
+      "failed": "تعذر تحميل المساحات.",
+      "scope": {
+        "label": "عرض",
+        "directory": "الدليل",
+        "mine": "مساحاتي",
+        "all": "كل المساحات"
+      },
+      "search": "ابحث في المساحات",
+      "searching": "جارٍ البحث",
+      "find": "بحث",
+      "emptyTitle": "لا توجد مساحات هنا",
+      "emptyMine": "لست في أي مساحة بعد.",
+      "empty": "لا توجد مساحة مطابقة. جرّب كلمات أخرى أو أنشئ مساحة.",
+      "listLabel": "المساحات",
+      "archived": "مؤرشفة",
+      "kind": {
+        "project": "مساحة مشروع",
+        "team": "مساحة فريق"
+      },
+      "members": "{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضوًا} other {# عضو}}",
+      "privateHint": "خاصة: اطلب من أحد المالكين إضافتك.",
+      "join": "انضمام"
+    },
+    "create": {
+      "pageTitle": "مساحة جديدة",
+      "pageIntro": "ابدأ من قالب. ستصبح المالك ويمكنك إضافة الأشخاص بعد ذلك.",
+      "deniedTitle": "لا يمكنك إنشاء مساحات",
+      "denied": "تحدد مؤسستك من ينشئ المساحات، أو أن المساحات ليست ضمن باقتك.",
+      "failed": "تعذر إنشاء المساحة.",
+      "name": "الاسم",
+      "description": "الوصف",
+      "template": "القالب",
+      "templateHint": "يمنح القالب قوائم المهام وأعمدة اللوحة ومهام البداية.",
+      "builtIn": "{name} (قياسي)",
+      "visibility": "من يمكنه رؤيتها",
+      "visibilityOption": {
+        "public": "عامة",
+        "private": "خاصة",
+        "secret": "سرية"
+      },
+      "visibilityHint": {
+        "public": "يمكن لكل من في المؤسسة قراءتها والعثور عليها.",
+        "private": "تظهر في الدليل، لكن الأعضاء فقط يقرؤونها.",
+        "secret": "الأعضاء فقط يعرفون بوجودها."
+      },
+      "allowJoin": "السماح للأشخاص بالانضمام بأنفسهم",
+      "allowJoinHint": "يمكن لأي شخص في المؤسسة الانضمام كعضو.",
+      "startsOn": "تبدأ في",
+      "endsOn": "تنتهي في",
+      "creating": "جارٍ الإنشاء",
+      "submit": "إنشاء المساحة"
+    },
+    "manage": {
+      "pageTitle": "قواعد المساحات",
+      "pageIntro": "حدد ما إذا كان يمكن دعوة الضيوف ومن أي القوالب يبدأ الأشخاص.",
+      "deniedTitle": "مسؤولو المساحات فقط يديرون هذا",
+      "denied": "تحتاج إلى دور مسؤول المساحات.",
+      "failed": "تعذر حفظ التغيير.",
+      "saved": "تم الحفظ",
+      "rulesTitle": "القواعد",
+      "everyoneCreates": "يمكن لكل من لديه صلاحية إنشاء المساحات إنشاؤها.",
+      "unitsCreate": "{count, plural, zero {لا وحدات} one {الأشخاص في وحدة واحدة فقط ينشئون المساحات.} two {الأشخاص في وحدتين فقط ينشئون المساحات.} few {الأشخاص في # وحدات فقط ينشئون المساحات.} many {الأشخاص في # وحدة فقط ينشئون المساحات.} other {الأشخاص في # وحدة فقط ينشئون المساحات.}}",
+      "guests": "السماح بالضيوف في المساحات",
+      "guestsHint": "يمكن للمالكين دعوة الشركاء بالبريد الإلكتروني إلى المساحات التي يملكونها.",
+      "guestsNotInPlan": "الضيوف ليسوا ضمن باقتك.",
+      "guestDays": "مدة صلاحية الضيوف (بالأيام)",
+      "guestDaysHint": "من 7 إلى 365 يومًا.",
+      "save": "حفظ القواعد",
+      "templatesTitle": "القوالب",
+      "templatesHint": "تغيير القالب أو إيقافه لا يغير أبدًا المساحات التي أُنشئت منه.",
+      "noTemplatesTitle": "لا توجد قوالب خاصة بمؤسستك",
+      "noTemplates": "يبدأ الأشخاص من قالبي المشروع والفريق القياسيين.",
+      "kind": {
+        "project": "مشروع",
+        "team": "فريق"
+      },
+      "retired": "موقوف",
+      "retire": "إيقاف"
+    },
+    "overview": {
+      "failed": "تعذر حفظ التغيير.",
+      "archivedTitle": "مؤرشفة",
+      "archived": "هذه المساحة للقراءة فقط حتى يستعيدها أحد المالكين.",
+      "statusTitle": "الحالة",
+      "setBy": "حددها {name} في {date}",
+      "noStatus": "لم يحدد المالكون حالة بعد.",
+      "status": "الحالة",
+      "statusOption": {
+        "on_track": "على المسار",
+        "at_risk": "معرّض للخطر",
+        "off_track": "خارج المسار",
+        "done": "مكتمل"
+      },
+      "note": "ملاحظة",
+      "saving": "جارٍ الحفظ",
+      "setStatus": "تحديد الحالة",
+      "history": "سجل الحالة",
+      "milestonesTitle": "المراحل",
+      "noMilestones": "لا توجد مراحل بعد.",
+      "reached": "تم بلوغها",
+      "progressOf": "تقدم {name}",
+      "progress": "اكتملت {done} من {total} مهام",
+      "milestoneName": "مرحلة جديدة",
+      "milestoneDue": "مستحقة في",
+      "addMilestone": "إضافة مرحلة",
+      "tasksTitle": "المهام",
+      "counts": "{open} مفتوحة، {done} مكتملة",
+      "noOverdueTitle": "لا شيء متأخر",
+      "noOverdue": "كل المهام المفتوحة في موعدها.",
+      "overdueTitle": "{count, plural, zero {لا مهام متأخرة} one {مهمة متأخرة واحدة} two {مهمتان متأخرتان} few {# مهام متأخرة} many {# مهمة متأخرة} other {# مهمة متأخرة}}",
+      "overdueList": "المهام المتأخرة",
+      "owners": "المالكون: {names}"
+    },
+    "board": {
+      "failed": "تعذر تغيير المهمة.",
+      "noListsTitle": "لا توجد قوائم مهام",
+      "noLists": "أضف قائمة لبدء متابعة العمل.",
+      "checklist": "{done}/{total} منجزة",
+      "comments": "{count, plural, zero {لا تعليقات} one {تعليق واحد} two {تعليقان} few {# تعليقات} many {# تعليقًا} other {# تعليق}}",
+      "moveTo": "نقل {title} إلى",
+      "viewLabel": "العرض",
+      "boardView": "لوحة",
+      "listView": "قائمة",
+      "list": "قائمة المهام",
+      "export": "تصدير CSV",
+      "newTask": "مهمة جديدة في {list}",
+      "add": "إضافة مهمة",
+      "readOnly": "يمكنك قراءة هذه المهام. يغيرها أعضاء المساحة.",
+      "boardLabel": "لوحة {list}",
+      "emptyTitle": "لا توجد مهام بعد",
+      "empty": "أضف أول مهمة في هذه القائمة.",
+      "tableCaption": "مهام {list}",
+      "done": "منجزة",
+      "task": "المهمة",
+      "column": "العمود",
+      "assignees": "المكلّفون",
+      "due": "الاستحقاق",
+      "completeTask": "إنجاز {title}",
+      "newList": "قائمة مهام جديدة",
+      "addList": "إضافة قائمة"
+    },
+    "task": {
+      "failed": "تعذر تغيير المهمة.",
+      "saved": "تم الحفظ",
+      "reopen": "إعادة فتح",
+      "complete": "تحديد كمنجزة",
+      "title": "العنوان",
+      "description": "الوصف",
+      "priority": "الأولوية",
+      "priorityOption": {
+        "low": "منخفضة",
+        "normal": "عادية",
+        "high": "عالية",
+        "urgent": "عاجلة"
+      },
+      "dueOn": "مستحقة في",
+      "milestone": "المرحلة",
+      "noMilestone": "بلا مرحلة",
+      "labels": "التسميات",
+      "labelsHint": "افصل التسميات بفواصل.",
+      "assignees": "المكلّفون",
+      "noWorkers": "أضف أعضاء إلى المساحة لتكليفهم بالمهام.",
+      "saving": "جارٍ الحفظ",
+      "save": "حفظ المهمة",
+      "delete": "حذف المهمة",
+      "deleteQuestion": "هل تريد حذف هذه المهمة مع قائمة التحقق والتعليقات؟",
+      "deleteConfirm": "حذف",
+      "cancel": "إلغاء",
+      "assignedTo": "مكلّفة إلى {names}",
+      "nobody": "لا أحد",
+      "commentsTitle": "التعليقات",
+      "noComments": "لا توجد تعليقات بعد.",
+      "commentBy": "{name} في {date}",
+      "comment": "تعليق",
+      "addComment": "إضافة تعليق",
+      "checklistTitle": "قائمة التحقق",
+      "checked": "{done} من {total} منجزة",
+      "noChecklist": "لا توجد بنود في قائمة التحقق.",
+      "removeItem": "إزالة {text}",
+      "newItem": "بند جديد",
+      "addItem": "إضافة بند",
+      "createdBy": "أنشأها {name} في {date}"
+    },
+    "members": {
+      "failed": "تعذر حفظ التغيير.",
+      "join": "الانضمام إلى هذه المساحة",
+      "leave": "مغادرة هذه المساحة",
+      "title": "{count, plural, zero {لا أعضاء} one {عضو واحد} two {عضوان} few {# أعضاء} many {# عضوًا} other {# عضو}}",
+      "listLabel": "الأعضاء",
+      "roleOf": "دور {name}",
+      "role": {
+        "owner": "مالك",
+        "member": "عضو",
+        "viewer": "مشاهد"
+      },
+      "remove": "إزالة",
+      "addTitle": "إضافة أشخاص",
+      "search": "ابحث عن أشخاص",
+      "newRole": "الدور",
+      "find": "بحث",
+      "noMatch": "لا يوجد أحد مطابق.",
+      "results": "الأشخاص الذين عُثر عليهم",
+      "change": "تغيير الدور",
+      "add": "إضافة"
+    },
+    "mine": {
+      "failed": "تعذر تغيير المهمة.",
+      "emptyTitle": "لا توجد مهام مفتوحة",
+      "empty": "تظهر هنا المهام التي كُلّفت بها في المساحات.",
+      "listLabel": "مهامي",
+      "complete": "إنجاز {title}"
+    },
+    "settings": {
+      "failed": "تعذر حفظ التغيير.",
+      "saved": "تم الحفظ",
+      "name": "الاسم",
+      "description": "الوصف",
+      "visibility": "من يمكنه رؤيتها",
+      "visibilityOption": {
+        "public": "عامة",
+        "private": "خاصة",
+        "secret": "سرية"
+      },
+      "visibilityHint": {
+        "public": "يمكن لكل من في المؤسسة قراءتها والعثور عليها.",
+        "private": "تظهر في الدليل، لكن الأعضاء فقط يقرؤونها.",
+        "secret": "الأعضاء فقط يعرفون بوجودها."
+      },
+      "allowJoin": "السماح للأشخاص بالانضمام بأنفسهم",
+      "confidential": "سرية",
+      "confidentialHint": "يصنّف المساحة ومحتواها على أنها سرية.",
+      "startsOn": "تبدأ في",
+      "endsOn": "تنتهي في",
+      "saving": "جارٍ الحفظ",
+      "save": "حفظ الإعدادات",
+      "archiveTitle": "الأرشفة",
+      "restoreTitle": "الاستعادة",
+      "archiveHint": "تغادر المساحة المؤرشفة الدليل وتصبح للقراءة فقط. يمكن للمالكين ومسؤولي المساحات استعادتها.",
+      "restoreHint": "تعيد الاستعادة المساحة نشطة.",
+      "archive": "أرشفة المساحة",
+      "archiveQuestion": "هل تريد أرشفة هذه المساحة؟ ستصبح للقراءة فقط.",
+      "archiveConfirm": "أرشفة",
+      "cancel": "إلغاء",
+      "restore": "استعادة المساحة"
     }
   }
 }

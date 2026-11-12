@@ -12,8 +12,8 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Spaces;
 
-/// <summary>What the viewer may do across spaces: create one, and manage the tenant's space rules and templates.</summary>
-public sealed record SpacesRights(bool CanCreate, bool CanManage, bool Guests);
+/// <summary>Whether spaces are in the package, and what the viewer may do across them: create one, and manage the tenant's space rules and templates.</summary>
+public sealed record SpacesRights(bool Enabled, bool CanCreate, bool CanManage, bool Guests);
 
 /// <summary>Project and team spaces (spec 029, module map: Spaces).</summary>
 public static class SpacesModule
@@ -41,6 +41,7 @@ public static class SpacesModule
         {
             var enabled = await entitlements.IsEnabledAsync(Capabilities.SpacesProjects, ct);
             return Results.Ok(new SpacesRights(
+                enabled,
                 enabled && await spaces.MayCreateAsync(ct),
                 enabled && (await authz.CheckAsync(Permissions.SpacesManage, AuthzTarget.Tenant, ct)).Allowed,
                 enabled && await entitlements.IsEnabledAsync(Capabilities.SpacesGuests, ct)));

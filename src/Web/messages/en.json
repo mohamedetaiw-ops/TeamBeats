@@ -2549,7 +2549,11 @@
       "attendanceRequest": "Attendance request",
       "letterRequest": "Letter request",
       "dataChangeRequest": "Data change",
-      "expenseClaim": "Expense claim"
+      "expenseClaim": "Expense claim",
+      "tabsLabel": "Task inbox views",
+      "approvalsTab": "Approvals and requests",
+      "myTasksTab": "My tasks",
+      "myTasksFailed": "Your tasks could not be loaded."
     },
     "delegation": {
       "title": "While you are away",
@@ -9469,6 +9473,303 @@
       "never": "never",
       "syncNow": "Sync now",
       "failed": "The sync did not run."
+    }
+  },
+  "spaces": {
+    "pageTitle": "Spaces",
+    "pageIntro": "Project and team spaces with their tasks, milestones and people.",
+    "unavailableTitle": "Spaces are not available",
+    "unavailable": "Project and team spaces are not part of your organization's plan.",
+    "privateTitle": "This space is private",
+    "private": "Only its members can open it. Ask an owner to add you.",
+    "tasksTitle": "Tasks",
+    "membersTitle": "Members",
+    "settingsTitle": "Settings",
+    "settingsDeniedTitle": "Only owners change settings",
+    "settingsDenied": "Ask an owner of this space to make the change.",
+    "kind": {
+      "project": "Project space",
+      "team": "Team space"
+    },
+    "parts": {
+      "visibility": {
+        "public": "Public",
+        "private": "Private",
+        "secret": "Secret"
+      },
+      "role": {
+        "owner": "Owner",
+        "member": "Member",
+        "viewer": "Viewer"
+      },
+      "guest": "Guest",
+      "priority": {
+        "low": "Low",
+        "normal": "Normal",
+        "high": "High",
+        "urgent": "Urgent"
+      },
+      "status": {
+        "on_track": "On track",
+        "at_risk": "At risk",
+        "off_track": "Off track",
+        "done": "Done"
+      },
+      "overdueOn": "Overdue since {date}",
+      "dueOn": "Due {date}",
+      "nav": {
+        "label": "Space pages",
+        "overview": "Overview",
+        "tasks": "Tasks",
+        "members": "Members",
+        "settings": "Settings"
+      }
+    },
+    "directory": {
+      "failed": "The spaces could not be loaded.",
+      "scope": {
+        "label": "Show",
+        "directory": "Directory",
+        "mine": "My spaces",
+        "all": "All spaces"
+      },
+      "search": "Search spaces",
+      "searching": "Searching",
+      "find": "Find",
+      "emptyTitle": "No spaces here",
+      "emptyMine": "You are not in any space yet.",
+      "empty": "No space matches. Try other words or create one.",
+      "listLabel": "Spaces",
+      "archived": "Archived",
+      "kind": {
+        "project": "Project space",
+        "team": "Team space"
+      },
+      "members": "{count, plural, one {# member} other {# members}}",
+      "privateHint": "Private: ask an owner to add you.",
+      "join": "Join"
+    },
+    "create": {
+      "pageTitle": "New space",
+      "pageIntro": "Start from a template. You become the owner and can add people next.",
+      "deniedTitle": "You cannot create spaces",
+      "denied": "Your organization limits who creates spaces, or spaces are not in your plan.",
+      "failed": "The space could not be created.",
+      "name": "Name",
+      "description": "Description",
+      "template": "Template",
+      "templateHint": "The template gives the task lists, board columns and starter tasks.",
+      "builtIn": "{name} (standard)",
+      "visibility": "Who can see it",
+      "visibilityOption": {
+        "public": "Public",
+        "private": "Private",
+        "secret": "Secret"
+      },
+      "visibilityHint": {
+        "public": "Everyone in the organization can read it and find it.",
+        "private": "Listed in the directory, but only members read it.",
+        "secret": "Only members know it exists."
+      },
+      "allowJoin": "Let people join on their own",
+      "allowJoinHint": "Anyone in the organization can join as a member.",
+      "startsOn": "Starts on",
+      "endsOn": "Ends on",
+      "creating": "Creating",
+      "submit": "Create space"
+    },
+    "manage": {
+      "pageTitle": "Space rules",
+      "pageIntro": "Decide whether guests can be invited and which templates people start from.",
+      "deniedTitle": "Only spaces administrators manage this",
+      "denied": "You need the spaces administrator role.",
+      "failed": "The change could not be saved.",
+      "saved": "Saved",
+      "rulesTitle": "Rules",
+      "everyoneCreates": "Everyone with the right to create spaces can create them.",
+      "unitsCreate": "{count, plural, one {Only people in # unit create spaces.} other {Only people in # units create spaces.}}",
+      "guests": "Allow guests in spaces",
+      "guestsHint": "Owners can invite partners by email to the spaces they own.",
+      "guestsNotInPlan": "Guests are not part of your plan.",
+      "guestDays": "Guest access lasts (days)",
+      "guestDaysHint": "From 7 to 365 days.",
+      "save": "Save rules",
+      "templatesTitle": "Templates",
+      "templatesHint": "Changing or retiring a template never changes spaces already made from it.",
+      "noTemplatesTitle": "No templates of your own",
+      "noTemplates": "People start from the standard project and team templates.",
+      "kind": {
+        "project": "Project",
+        "team": "Team"
+      },
+      "retired": "Retired",
+      "retire": "Retire"
+    },
+    "overview": {
+      "failed": "The change could not be saved.",
+      "archivedTitle": "Archived",
+      "archived": "This space is read-only until an owner restores it.",
+      "statusTitle": "Status",
+      "setBy": "Set by {name} on {date}",
+      "noStatus": "The owners have not set a status yet.",
+      "status": "Status",
+      "statusOption": {
+        "on_track": "On track",
+        "at_risk": "At risk",
+        "off_track": "Off track",
+        "done": "Done"
+      },
+      "note": "Note",
+      "saving": "Saving",
+      "setStatus": "Set status",
+      "history": "Status history",
+      "milestonesTitle": "Milestones",
+      "noMilestones": "No milestones yet.",
+      "reached": "Reached",
+      "progressOf": "Progress of {name}",
+      "progress": "{done} of {total} tasks done",
+      "milestoneName": "New milestone",
+      "milestoneDue": "Due on",
+      "addMilestone": "Add milestone",
+      "tasksTitle": "Tasks",
+      "counts": "{open} open, {done} done",
+      "noOverdueTitle": "Nothing overdue",
+      "noOverdue": "Every open task is on time.",
+      "overdueTitle": "{count, plural, one {# overdue task} other {# overdue tasks}}",
+      "overdueList": "Overdue tasks",
+      "owners": "Owners: {names}"
+    },
+    "board": {
+      "failed": "The task could not be changed.",
+      "noListsTitle": "No task lists",
+      "noLists": "Add a list to start tracking work.",
+      "checklist": "{done}/{total} checked",
+      "comments": "{count, plural, one {# comment} other {# comments}}",
+      "moveTo": "Move {title} to",
+      "viewLabel": "View",
+      "boardView": "Board",
+      "listView": "List",
+      "list": "Task list",
+      "export": "Export CSV",
+      "newTask": "New task in {list}",
+      "add": "Add task",
+      "readOnly": "You can read these tasks. Members of the space change them.",
+      "boardLabel": "Board of {list}",
+      "emptyTitle": "No tasks yet",
+      "empty": "Add the first task of this list.",
+      "tableCaption": "Tasks of {list}",
+      "done": "Done",
+      "task": "Task",
+      "column": "Column",
+      "assignees": "Assigned to",
+      "due": "Due",
+      "completeTask": "Complete {title}",
+      "newList": "New task list",
+      "addList": "Add list"
+    },
+    "task": {
+      "failed": "The task could not be changed.",
+      "saved": "Saved",
+      "reopen": "Reopen",
+      "complete": "Mark done",
+      "title": "Title",
+      "description": "Description",
+      "priority": "Priority",
+      "priorityOption": {
+        "low": "Low",
+        "normal": "Normal",
+        "high": "High",
+        "urgent": "Urgent"
+      },
+      "dueOn": "Due on",
+      "milestone": "Milestone",
+      "noMilestone": "No milestone",
+      "labels": "Labels",
+      "labelsHint": "Separate labels with commas.",
+      "assignees": "Assigned to",
+      "noWorkers": "Add members to the space to assign tasks.",
+      "saving": "Saving",
+      "save": "Save task",
+      "delete": "Delete task",
+      "deleteQuestion": "Delete this task with its checklist and comments?",
+      "deleteConfirm": "Delete",
+      "cancel": "Cancel",
+      "assignedTo": "Assigned to {names}",
+      "nobody": "nobody",
+      "commentsTitle": "Comments",
+      "noComments": "No comments yet.",
+      "commentBy": "{name} on {date}",
+      "comment": "Comment",
+      "addComment": "Add comment",
+      "checklistTitle": "Checklist",
+      "checked": "{done} of {total} checked",
+      "noChecklist": "No checklist items.",
+      "removeItem": "Remove {text}",
+      "newItem": "New item",
+      "addItem": "Add item",
+      "createdBy": "Created by {name} on {date}"
+    },
+    "members": {
+      "failed": "The change could not be saved.",
+      "join": "Join this space",
+      "leave": "Leave this space",
+      "title": "{count, plural, one {# member} other {# members}}",
+      "listLabel": "Members",
+      "roleOf": "Role of {name}",
+      "role": {
+        "owner": "Owner",
+        "member": "Member",
+        "viewer": "Viewer"
+      },
+      "remove": "Remove",
+      "addTitle": "Add people",
+      "search": "Search people",
+      "newRole": "Role",
+      "find": "Find",
+      "noMatch": "Nobody matches.",
+      "results": "People found",
+      "change": "Change role",
+      "add": "Add"
+    },
+    "mine": {
+      "failed": "The task could not be changed.",
+      "emptyTitle": "No open tasks",
+      "empty": "Tasks given to you in spaces show here.",
+      "listLabel": "My tasks",
+      "complete": "Complete {title}"
+    },
+    "settings": {
+      "failed": "The change could not be saved.",
+      "saved": "Saved",
+      "name": "Name",
+      "description": "Description",
+      "visibility": "Who can see it",
+      "visibilityOption": {
+        "public": "Public",
+        "private": "Private",
+        "secret": "Secret"
+      },
+      "visibilityHint": {
+        "public": "Everyone in the organization can read it and find it.",
+        "private": "Listed in the directory, but only members read it.",
+        "secret": "Only members know it exists."
+      },
+      "allowJoin": "Let people join on their own",
+      "confidential": "Confidential",
+      "confidentialHint": "Marks the space and its content as confidential.",
+      "startsOn": "Starts on",
+      "endsOn": "Ends on",
+      "saving": "Saving",
+      "save": "Save settings",
+      "archiveTitle": "Archive",
+      "restoreTitle": "Restore",
+      "archiveHint": "An archived space leaves the directory and becomes read-only. Owners and spaces administrators can restore it.",
+      "restoreHint": "Restoring makes the space active again.",
+      "archive": "Archive space",
+      "archiveQuestion": "Archive this space? It becomes read-only.",
+      "archiveConfirm": "Archive",
+      "cancel": "Cancel",
+      "restore": "Restore space"
     }
   }
 }

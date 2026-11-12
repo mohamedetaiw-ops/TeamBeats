@@ -884,6 +884,7 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - `GET /api/v1/spaces/my-tasks` lists the viewer's open tasks across the active spaces they are still in, by due date with the space name (`?done=true` adds completed ones). `GET /{id}/tasks.csv` exports the tasks for readers with spreadsheet formula protection.
 - Notifications through 015 in category `space_activity`: assignment to the new assignees and completion to the task's watchers, each grouped per space and kind, and never to the person who acted or to anyone who cannot read the space. `SpacesMaintenanceWorker` sends the day-before reminder at 09:00 in each assignee's time zone (their unit's working calendar), once per due date.
 - Tasks are a search source (`space_tasks`, kind `task`) with the space's reading rule. Events `TaskAssigned` and `TaskCompleted` are published.
+- Web pages under `/spaces`: the directory with my spaces (and all spaces for administrators), a new space form, and per space the overview (status, history, milestones, overdue tasks), tasks as a board or a list with a "Move to" menu as the keyboard alternative to dragging, the task page with checklist and comments, members and settings; `/spaces/manage` holds the rules and retires templates. My tasks is a tab of the task inbox at `/tasks?tab=mine`, shown when `GET /api/v1/spaces/rights` says spaces are in the plan (`enabled`). `tests/Acceptance/specs/spaces.spec.ts` covers the flow in English and Arabic with axe.
 
 ### Smallest safe defaults
 - A task's watchers are its assignees and the person who made it; there is no separate follow button yet. Status changes go to every member; spec 029's "followers" are the members until a follow feature exists.
@@ -891,4 +892,5 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A task belongs to at most one milestone (a column on the task instead of the plan's `milestone_task` table, which is enough for one-to-many).
 - Limits: 5,000 tasks, 20 lists, 12 columns per list, 50 milestones per space; 20 assignees, 10 labels of 30 characters, 100 checklist items and 10,000 characters of description per task; comments of 4,000 characters.
 - "Overdue" uses the viewer's own calendar day. A task that changes due date can be reminded again for the new date.
-- My tasks appears in the 016 inbox as its own tab on the inbox page (slice 2 web), not as inbox entries, so approvals are not buried under everyday work.
+- My tasks appears in the 016 inbox as its own tab on the inbox page, not as inbox entries, so approvals are not buried under everyday work.
+- Tenant template editing on the web is a follow-up: administrators retire templates there and create or change them through the API until the editor lands.
