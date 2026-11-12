@@ -79,8 +79,14 @@ jobs:
   e2e:
     # Playwright end-to-end suite (tests/Acceptance, docs/testing/e2e-plan.md): web, development API host and
     # PostgreSQL together, in Arabic and English, with axe accessibility checks.
+    # Two shards side by side: the whole suite on one runner had grown to the job's time limit (about 34 minutes of
+    # 35 on main). Each shard runs half the files with its own database and servers.
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     services:
       postgres:
         image: pgvector/pgvector:pg18
@@ -128,14 +134,14 @@ jobs:
           timeout 120 npx playwright install-deps chromium || echo "::warning::Playwright OS packages could not be installed; using the runner image's libraries"
         working-directory: tests/Acceptance
       - name: Playwright
-        run: npx playwright test
+        run: npx playwright test --shard=${{ matrix.shard }}/2
         working-directory: tests/Acceptance
       # Uploaded only on failure, and kept briefly, to stay inside the artifact storage budget.
       - name: Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}
           path: |
             tests/Acceptance/playwright-report
             tests/Acceptance/test-results

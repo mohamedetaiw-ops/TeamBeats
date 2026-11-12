@@ -17,6 +17,12 @@ public sealed class AuthorizationService(
 {
     private EffectiveGrants? _current;
 
+    /// <summary>
+    /// Drops the grants read for this request, after a module changed the caller's own roles in it (a space owner who
+    /// just made the space, spec 029), so the next decision reads them again at the new grants version.
+    /// </summary>
+    internal void Forget() => _current = null;
+
     private async Task<EffectiveGrants> CurrentAsync(CancellationToken ct)
     {
         if (context.ActorType != ActorType.User || context.ActorId is null || context.TenantId is null)

@@ -857,3 +857,40 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 
 ### Follow-ups
 - A rule is still applied inside the request that creates it, with a few statements per learner. That meets the target with room to spare, but if tenants grow well past 20,000 people per rule, the first application should move to a background job with the rule showing "assigning" until it is done.
+
+## Project and team spaces (spec 029, slice 1: T001 to T003; US1)
+
+### Built
+- A `Spaces` module with its own schema (`spaces.setting`, `template`, `space`, `space_member`, `task_list`, `task_column`, `task`, all with forced row level security) and the routes under `/api/v1/spaces`: rights, templates, the directory (`?scope=mine` for my spaces), create, get, change, `:archive`, `:restore`, `:join`, `:leave`, members, and `manage/settings` and `manage/templates` for `spaces.manage`.
+- Permissions `spaces.create`, `spaces.manage`, `spaces.view`, `spaces.contribute` and `spaces.own`. The last three are only ever held through resource scoped built-in roles (`space_owner`, `space_member`, `space_viewer`) that Spaces gives through `IAuthorizationProvisioning.SetResourceRoleAsync`. Role administration refuses to assign them (`validation.role.module_assigned`) and a custom role cannot carry those permissions. A new role `spaces_administrator` holds `spaces.create` and `spaces.manage`; employees hold `spaces.create`.
+- Capabilities `spaces.projects`, `spaces.guests` and `spaces.max_spaces` in every package except Workplace (Workplace Plus allows 200 spaces, larger packages have no limit).
+- Built-in project and team templates plus up to 50 tenant templates; a template gives lists, board columns and starter tasks once, and later changes or retiring never touch spaces already made (FR-012).
+- Spaces are a search source (kind `space`) filtered by the same reading rule as the page. Members are told when they are added (category `space_activity`). When the last owner leaves the company, ownership passes to the creator's manager, or the spaces administrators are asked.
+
+### Smallest safe defaults
+- Public spaces are readable by everyone in the tenant. Private spaces appear in the directory with name, description and owners, but only members read them. Secret spaces are invisible to anyone who is not a member.
+- The tenant administrator and spaces administrators see a space's metadata and members so they can archive, restore and reassign owners, but they do not read private or secret content unless they are members.
+- Space rules default to everyone with `spaces.create` creating spaces, guests off and 90 days of guest access (7 to 365).
+- Built-in template names and starter content use the tenant's default language at the time the space is made.
+- A space always keeps at least one owner (`conflict.spaces.last_owner`). Joining is allowed only for public spaces that allow it.
+- An archived space is read only and leaves the directory, but stays in my spaces and the administrators' list.
+
+## Space tasks, milestones and status (spec 029, slice 2: T004 to T007 backend; US2, US3, US7)
+
+### Built
+- Tasks with assignees, due date, priority, labels, a checklist and comments (`spaces.task`, `task_assignee`, `checklist_item`, `task_comment`). `GET /api/v1/spaces/{id}/tasks` returns the lists, their columns and every task, so the list view and the board read the same data; `:move` places a task in a column at a position, and `:complete` and `:reopen` move it to the list's first done or open column. A done column completes the task and leaving it reopens it. Members add lists (with To do, In progress and Done in the tenant's language) and columns.
+- Members and owners change tasks; viewers and people who only read a public space are refused by the server (`authz.denied.spaces_contribute`), and archived spaces are read-only. Edits carry the task version (`conflict.spaces.task_changed`).
+- Milestones (`spaces.milestone`) count their linked tasks; when all are done the milestone is reached once and `MilestoneReached` is published, and a reopened task opens it again. Owners set the status (on track, at risk, off track, done) with a note; every entry is kept in `spaces.status_entry`, the members who can read the space are told and `SpaceStatusChanged` is published. `GET /{id}/overview` gives the status with its history, milestone progress and overdue tasks.
+- `GET /api/v1/spaces/my-tasks` lists the viewer's open tasks across the active spaces they are still in, by due date with the space name (`?done=true` adds completed ones). `GET /{id}/tasks.csv` exports the tasks for readers with spreadsheet formula protection.
+- Notifications through 015 in category `space_activity`: assignment to the new assignees and completion to the task's watchers, each grouped per space and kind, and never to the person who acted or to anyone who cannot read the space. `SpacesMaintenanceWorker` sends the day-before reminder at 09:00 in each assignee's time zone (their unit's working calendar), once per due date.
+- Tasks are a search source (`space_tasks`, kind `task`) with the space's reading rule. Events `TaskAssigned` and `TaskCompleted` are published.
+- Web pages under `/spaces`: the directory with my spaces (and all spaces for administrators), a new space form, and per space the overview (status, history, milestones, overdue tasks), tasks as a board or a list with a "Move to" menu as the keyboard alternative to dragging, the task page with checklist and comments, members and settings; `/spaces/manage` holds the rules and retires templates. My tasks is a tab of the task inbox at `/tasks?tab=mine`, shown when `GET /api/v1/spaces/rights` says spaces are in the plan (`enabled`). `tests/Acceptance/specs/spaces.spec.ts` covers the flow in English and Arabic with axe.
+
+### Smallest safe defaults
+- A task's watchers are its assignees and the person who made it; there is no separate follow button yet. Status changes go to every member; spec 029's "followers" are the members until a follow feature exists.
+- Only owners and members hold tasks, guests among them when they are invited as members (section 17); viewers cannot be assigned.
+- A task belongs to at most one milestone (a column on the task instead of the plan's `milestone_task` table, which is enough for one-to-many).
+- Limits: 5,000 tasks, 20 lists, 12 columns per list, 50 milestones per space; 20 assignees, 10 labels of 30 characters, 100 checklist items and 10,000 characters of description per task; comments of 4,000 characters.
+- "Overdue" uses the viewer's own calendar day. A task that changes due date can be reminded again for the new date.
+- My tasks appears in the 016 inbox as its own tab on the inbox page, not as inbox entries, so approvals are not buried under everyday work.
+- Tenant template editing on the web is a follow-up: administrators retire templates there and create or change them through the API until the editor lands.

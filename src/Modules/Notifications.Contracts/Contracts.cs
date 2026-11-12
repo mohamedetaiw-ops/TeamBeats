@@ -79,6 +79,9 @@ public static class NotificationCategories
     public const string IntegrationAlert = "integration_alert";
     public const string System = "system";
 
+    /// <summary>Spec 029: tasks given to the person, their due dates, and changes in spaces they belong to.</summary>
+    public const string SpaceActivity = "space_activity";
+
     public static readonly IReadOnlyList<NotificationCategory> All =
     [
         new(SecurityNotice, Mandatory: true, EmailByDefault: true),
@@ -95,6 +98,7 @@ public static class NotificationCategories
         new(Recognition, Mandatory: false, EmailByDefault: false),
         new(IntegrationAlert, Mandatory: false, EmailByDefault: true),
         new(System, Mandatory: false, EmailByDefault: false),
+        new(SpaceActivity, Mandatory: false, EmailByDefault: true),
     ];
 
     public static NotificationCategory? Find(string key) => All.FirstOrDefault(c => c.Key == key);

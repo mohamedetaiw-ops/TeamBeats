@@ -155,6 +155,62 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
     public Task<bool> IsBuiltInRoleKeyAsync(string roleKey, CancellationToken ct = default) =>
         session.ScalarAsync<bool>("select exists (select 1 from authz.role where key = @k and is_builtin)", new { k = roleKey }, ct);
 
+    public async Task SetResourceRoleAsync(Guid userId, string resourceType, Guid resourceId, string? builtInRoleKey, Guid? grantedBy, CancellationToken ct = default)
+    {
+        var current = await session.QueryAsync(
+            """
+            select a.id, r.key from authz.role_assignment a join authz.role r on r.id = a.role_id
+            where a.subject_type = 'user' and a.subject_id = @u and a.scope_type = 'resource' and a.scope_id = @rid and a.scope_resource_type = @rt
+              and a.revoked_at is null and r.is_builtin
+            """, new { u = userId, rid = resourceId, rt = resourceType }, r => (Id: r.GetGuid(0), Role: r.GetString(1)), ct);
+        if (builtInRoleKey is not null && current.Count == 1 && current[0].Role == builtInRoleKey)
+        {
+            return;
+        }
+        foreach (var (id, role) in current)
+        {
+            await session.ExecAsync("update authz.role_assignment set revoked_at = now() where id = @id", new { id }, ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.RoleRevoked, "role_assignment", id.ToString(),
+                Changes: new { subjectType = "user", subjectId = userId, role, scopeType = "resource", scopeId = resourceId, scopeResourceType = resourceType, system = true }), ct);
+            await outbox.EnqueueAsync(new RoleAssignmentChanged(id, userId, role, "revoked"), ct);
+        }
+        if (builtInRoleKey is null)
+        {
+            if (current.Count > 0)
+            {
+                await store.BumpAsync(ct);
+                ForgetGrants();
+            }
+            return;
+        }
+        var roleId = await session.ScalarAsync<Guid?>("select id from authz.role where key = @k and is_builtin", new { k = builtInRoleKey }, ct)
+            ?? throw new InvalidOperationException($"Built-in role {builtInRoleKey} is not seeded.");
+        var assignment = Ids.New();
+        await store.InsertAssignmentAsync(assignment, "user", userId, roleId, ScopeType.Resource, resourceId, resourceType, grantedBy, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.RoleAssigned, "role_assignment", assignment.ToString(),
+            Changes: new { subjectType = "user", subjectId = userId, role = builtInRoleKey, scopeType = "resource", scopeId = resourceId, scopeResourceType = resourceType, system = true }), ct);
+        await outbox.EnqueueAsync(new RoleAssignmentChanged(assignment, userId, builtInRoleKey, "assigned"), ct);
+        ForgetGrants();
+    }
+
+    private void ForgetGrants()
+    {
+        services.GetRequiredService<EffectiveGrantsLoader>().GrantsChanged();
+        services.GetRequiredService<AuthorizationService>().Forget();
+    }
+
+    public async Task ClearResourceRolesAsync(string resourceType, Guid resourceId, CancellationToken ct = default)
+    {
+        var revoked = await session.ExecAsync(
+            "update authz.role_assignment set revoked_at = now() where scope_type = 'resource' and scope_id = @rid and scope_resource_type = @rt and revoked_at is null",
+            new { rid = resourceId, rt = resourceType }, ct);
+        if (revoked > 0)
+        {
+            await store.BumpAsync(ct);
+            ForgetGrants();
+        }
+    }
+
     public async Task<bool> RevokeSystemAssignmentAsync(Guid assignmentId, string reason, CancellationToken ct = default)
     {
         var a = await session.QuerySingleOrDefaultAsync(

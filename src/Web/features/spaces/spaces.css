@@ -1,0 +1,186 @@
+/* Spec 029 spaces pages. Colors and spacing come from tokens; logical properties keep the board right to left in Arabic. */
+.spaces {
+  display: grid;
+  gap: var(--tb-space-lg);
+  min-inline-size: 0;
+}
+
+.spaces-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  min-inline-size: 0;
+}
+
+.spaces-section h2,
+.spaces-section h3 {
+  margin: 0;
+}
+
+.spaces-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  min-inline-size: 0;
+}
+
+.spaces-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.spaces-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spaces-card {
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  min-inline-size: 0;
+}
+
+.spaces-card h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+}
+
+.spaces-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spaces-list > li {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  min-inline-size: 0;
+}
+
+.spaces-list > li:last-child {
+  border-block-end: 0;
+}
+
+.spaces-meta {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.spaces-form {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 40rem;
+}
+
+.spaces-split {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+  gap: var(--tb-space-lg);
+  align-items: start;
+}
+
+@media (width <= 56rem) {
+  .spaces-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The board: columns follow the reading direction, so they flow right to left in Arabic, and scroll sideways on a phone. */
+.spaces-board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(16rem, 1fr);
+  gap: var(--tb-space-md);
+  overflow-x: auto;
+  padding-block-end: var(--tb-space-sm);
+}
+
+.spaces-column {
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-sm);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+  min-block-size: 8rem;
+}
+
+.spaces-column[data-drop="true"] {
+  outline: var(--tb-border-width-thick) dashed var(--tb-color-focus-ring);
+}
+
+.spaces-column h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-sm);
+}
+
+.spaces-task {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-raised);
+  min-inline-size: 0;
+}
+
+.spaces-task[draggable="true"] {
+  cursor: grab;
+}
+
+.spaces-task[data-done="true"] a {
+  text-decoration: line-through;
+}
+
+.spaces-table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.spaces-table th,
+.spaces-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: top;
+}
+
+.spaces-table-wrap {
+  overflow-x: auto;
+}
+
+/* A member: the name, then the role and the remove action when the viewer manages the space. */
+.spaces-list > li.spaces-member {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 14rem) auto;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+@media (width <= 40rem) {
+  .spaces-list > li.spaces-member {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

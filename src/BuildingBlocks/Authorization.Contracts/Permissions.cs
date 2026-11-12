@@ -142,6 +142,15 @@ public static class Permissions
     public const string LearningReport = "learning.report";
     public const string LearningAssignLinked = "learning.assign_linked";
 
+    // Spec 029 (R2): people create spaces where the tenant allows; spaces administrators set the tenant rules and see
+    // every space's metadata. Inside a space, view, contribute and own come only from the space roles, which are built-in
+    // roles assigned on the space itself.
+    public const string SpacesCreate = "spaces.create";
+    public const string SpacesManage = "spaces.manage";
+    public const string SpacesView = "spaces.view";
+    public const string SpacesContribute = "spaces.contribute";
+    public const string SpacesOwn = "spaces.own";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -151,6 +160,13 @@ public static class Permissions
         TenantSettingsManage, TenantAdminsManage, OrgUnitManage, RolesManage, RolesAssign, InheritanceRulesManage, UsersManage,
         IdentityConfigManage, AuditRetentionManage, IntegrationManage, AiPolicyManage, SecurityManage,
     };
+
+    /// <summary>
+    /// Permissions granted only on one resource by the role of that resource (spec 029 FR-002: owner, member and viewer
+    /// of a space). The tenant administrator does not hold them tenant-wide, so a private or secret space stays with its
+    /// members (spec 029 FR-003); spaces administrators see metadata through <see cref="SpacesManage"/>.
+    /// </summary>
+    public static readonly IReadOnlySet<string> ResourceOnly = new HashSet<string>(StringComparer.Ordinal) { SpacesView, SpacesContribute, SpacesOwn };
 
     public static readonly IReadOnlyList<string> All =
     [
@@ -178,6 +194,7 @@ public static class Permissions
         AnalyticsView,
         EngagementParticipate, EngagementModerate, EngagementManage, EngagementSurveyPublish, EngagementRecognitionApprove,
         LearningTake, LearningManage, LearningTeamView, LearningReport, LearningAssignLinked,
+        SpacesCreate, SpacesManage, SpacesView, SpacesContribute, SpacesOwn,
     ];
 }
 
@@ -204,5 +221,23 @@ public static class BuiltInRoles
     public const string EvaluationReviewer = "evaluation_reviewer";
     public const string EngagementAdministrator = "engagement_administrator";
     public const string LearningAdministrator = "learning_administrator";
+    public const string SpacesAdministrator = "spaces_administrator";
 
+    // Spec 029: the space roles, assigned only on a space by the Spaces module.
+    public const string SpaceOwner = "space_owner";
+    public const string SpaceMember = "space_member";
+    public const string SpaceViewer = "space_viewer";
+
+}
+
+/// <summary>Maps a module's resource role to the built-in role that carries it, so modules never name roles (spec 029 FR-002).</summary>
+public static class ResourceRoles
+{
+    /// <summary>The built-in role for a space role: owner, member, or viewer for anything else.</summary>
+    public static string Space(string role) => role switch
+    {
+        "owner" => BuiltInRoles.SpaceOwner,
+        "member" => BuiltInRoles.SpaceMember,
+        _ => BuiltInRoles.SpaceViewer,
+    };
 }

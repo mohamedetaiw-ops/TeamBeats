@@ -410,6 +410,17 @@ public static class AuditActions
     public const string LearningAssignmentWithdrawn = "learning.assignment_withdrawn";
     public const string LearningEvidenceExported = "learning.evidence_exported";
 
+    // 029
+    public const string SpacesCreated = "spaces.created";
+    public const string SpacesChanged = "spaces.changed";
+    public const string SpacesArchived = "spaces.archived";
+    public const string SpacesRestored = "spaces.restored";
+    public const string SpacesMemberAdded = "spaces.member_added";
+    public const string SpacesMemberRemoved = "spaces.member_removed";
+    public const string SpacesOwnerReassigned = "spaces.owner_reassigned";
+    public const string SpacesSettingsChanged = "spaces.settings_changed";
+    public const string SpacesTemplateChanged = "spaces.template_changed";
+
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
 
@@ -471,6 +482,8 @@ public static class AuditActions
         EngagementSurveyPublished, EngagementSurveyClosed, EngagementSurveyThresholdChanged, EngagementPointsConfigChanged, EngagementRecognitionCatalogueChanged,
         EngagementAwardOpened, EngagementAwardDecided, EngagementCelebrationSettingsChanged,
         LearningCoursePublished, LearningCourseRetired, LearningPathPublished, LearningAttemptsGranted, LearningAssignmentCreated, LearningAssignmentWithdrawn, LearningEvidenceExported,
+        SpacesCreated, SpacesChanged, SpacesArchived, SpacesRestored, SpacesMemberAdded, SpacesMemberRemoved, SpacesOwnerReassigned, SpacesSettingsChanged,
+        SpacesTemplateChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

@@ -69,6 +69,11 @@ public static class Capabilities
     public const string LearningMandatory = "learning.mandatory";
     public const string LearningScorm = "learning.scorm";
     public const string LearningLmsConnector = "learning.lms_connector";
+
+    // Spec 029 section 9: project and team spaces and guests Workplace Plus and above, with a limit on spaces.
+    public const string SpacesProjects = "spaces.projects";
+    public const string SpacesGuests = "spaces.guests";
+    public const string SpacesMaxSpaces = "spaces.max_spaces";
     public const string AnalyticsCore = "analytics.core";
     public const string AnalyticsAdvanced = "analytics.advanced";
     public const string AnalyticsExport = "analytics.export";

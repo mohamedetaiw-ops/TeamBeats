@@ -75,7 +75,7 @@ Each row is added in the same PR as the feature, by the build thread, so a story
 | 1 | Now (this PR) | Suite, smoke and R0 screen tests, CI job on every PR |
 | 2 | With Entra sign-in (first R1 build PR) | Fake OIDC provider; sign-in tests use it. Development sign-in stays for setup only |
 | 3 | With the experience layer (008, 032, 033) | Screenshot baselines, keyboard builder walkthrough, zero serious axe gate |
-| 4 | When the suite passes 5 minutes | Shard the CI job; PRs run Chromium; a nightly run adds Firefox, WebKit and a mobile viewport |
+| 4 | When the suite passes 5 minutes | Shard the CI job (done: two shards, each with its own database and servers, once the single job reached its 35 minute limit); PRs run Chromium; a nightly run adds Firefox, WebKit and a mobile viewport |
 | 5 | With Fly.io staging | After each staging deploy, a smoke run with `E2E_TARGET=remote` (signed-out pages, sign-in, home, admin shell). It only reads data and creates tenants with the `e2e-` prefix, which a cleanup job closes |
 | 6 | Before the first design-partner tenant | Full R1 journey set green in `ar` and `en` as an R1 exit check |
 

@@ -114,6 +114,16 @@ public interface IAuthorizationProvisioning
 
     Task<IReadOnlyList<RoleAssignmentSummary>> GetUserAssignmentsAsync(Guid userId, CancellationToken ct = default);
 
+    /// <summary>
+    /// Gives a user exactly one built-in role on one resource the calling module owns, revoking any other built-in role
+    /// they hold on it, or revokes them all when <paramref name="builtInRoleKey"/> is null (spec 029 space roles). The
+    /// owning module checks the caller's right first and audits the membership change in its own terms.
+    /// </summary>
+    Task SetResourceRoleAsync(Guid userId, string resourceType, Guid resourceId, string? builtInRoleKey, Guid? grantedBy, CancellationToken ct = default);
+
+    /// <summary>Revokes every assignment on a resource, for a resource that is deleted.</summary>
+    Task ClearResourceRolesAsync(string resourceType, Guid resourceId, CancellationToken ct = default);
+
     /// <summary>The permissions a role of the current tenant holds; empty for an unknown key.</summary>
     Task<IReadOnlySet<string>> RolePermissionsAsync(string roleKey, CancellationToken ct = default);
 

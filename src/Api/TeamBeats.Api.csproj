@@ -30,6 +30,7 @@
     <ProjectReference Include="../Modules/Policies/TeamBeats.Modules.Policies.csproj" />
     <ProjectReference Include="../Modules/Engagement/TeamBeats.Modules.Engagement.csproj" />
     <ProjectReference Include="../Modules/Learning/TeamBeats.Modules.Learning.csproj" />
+    <ProjectReference Include="../Modules/Spaces/TeamBeats.Modules.Spaces.csproj" />
     <ProjectReference Include="../Modules/AiGateway/TeamBeats.Modules.AiGateway.csproj" />
     <ProjectReference Include="../Modules/AiGateway.OpenRouter/TeamBeats.Modules.AiGateway.OpenRouter.csproj" />
     <ProjectReference Include="../Modules/Experience/TeamBeats.Modules.Experience.csproj" />
