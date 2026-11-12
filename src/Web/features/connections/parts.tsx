@@ -30,7 +30,7 @@ export function StatusBadge({ status }: { status: string }) {
 }
 
 /**
- * The mark of the product a connection reaches (spec 036 DLS-075): the owner's published mark, unaltered, from
+ * The mark of the product a connection reaches (spec 036 DLS-076): the owner's published mark, unaltered, from
  * `public/connectors`, or an icon from the icon set for types without one. Always beside the type's name, so it is
  * decorative.
  */
@@ -50,7 +50,7 @@ export function ProductMark({ kind, size = "md" }: { kind: string; size?: "sm" |
   );
 }
 
-/** Where the administrator is in the "Add connection" wizard (spec 006 FR-016, spec 036 DLS-076). */
+/** Where the administrator is in the "Add connection" wizard (spec 006 FR-016, spec 036 DLS-077). */
 export function WizardSteps({ current }: { current: WizardStep }) {
   const t = useTranslations("connections");
   const at = WIZARD_STEPS.indexOf(current);

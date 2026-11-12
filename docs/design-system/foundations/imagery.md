@@ -9,7 +9,7 @@ Images make the intranet feel like the organization's own place. They must be re
 | Photography | News heroes, event cards, people profiles, campaign banners | Real people and places of the organization. Natural light, authentic moments, diverse and representative, culturally appropriate for the region. No staged stock clichés |
 | Illustration | Empty states, onboarding, sign-in, sample content | Flat shapes in the design's palette, as in the gallery samples (`public/design-system`). Simple enough to read at small sizes |
 | Brand assets | Logo, lockup, favicon, default and sign-in images | Uploaded per tenant in Administration, Brand; PNG, JPEG or sanitized SVG up to 1 MB (spec 033) |
-| Product marks | Connections area and its "Add connection" wizard | The published mark of a product TeamBeats connects to, unaltered, on a plain plate beside its name (spec 036 DLS-075). Files and sources are listed below |
+| Product marks | Connections area and its "Add connection" wizard | The published mark of a product TeamBeats connects to, unaltered, on a plain plate beside its name (spec 036 DLS-076). Files and sources are listed below |
 | Avatars | People everywhere | Photo when the person provided one, otherwise initials on the accent tint (`<Avatar>`) |
 
 ## Rules

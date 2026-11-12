@@ -2,7 +2,7 @@ import type { IconName } from "@/components/ui/Icon";
 import { PACK_KINDS, type Microsoft365Connection, type PackConnection } from "./types";
 
 /**
- * How each connection type looks in the Connections area (spec 006 FR-016, spec 036 DLS-075): its group in the "Add
+ * How each connection type looks in the Connections area (spec 006 FR-016, spec 036 DLS-076): its group in the "Add
  * connection" wizard and its product mark, or an icon from the icon set when the type has no published mark. This is
  * presentation only: whether a type is in the tenant's package, and every rule about it, comes from the API.
  */

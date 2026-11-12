@@ -140,7 +140,7 @@
   color: var(--tb-color-text-secondary);
 }
 
-/* Product marks (spec 036 DLS-075): the owner's mark unaltered on a plain plate, or an icon from the set. */
+/* Product marks (spec 036 DLS-076): the owner's mark unaltered on a plain plate, or an icon from the set. */
 .connections-mark {
   display: inline-grid;
   flex: none;
@@ -236,7 +236,7 @@
   }
 }
 
-/* The wizard (spec 036 DLS-076): numbered steps in reading order, the current one marked in words and by aria-current. */
+/* The wizard (spec 036 DLS-077): numbered steps in reading order, the current one marked in words and by aria-current. */
 .connections-steps {
   display: flex;
   flex-wrap: wrap;
