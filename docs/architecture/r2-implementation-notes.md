@@ -450,5 +450,34 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 |---|---|
 | Department membership (plan, key decisions) | The plan stores unit members in `community_member` from 002 events; slice 1 reads them live from the organization contract instead, which needs no sync and cannot drift |
 | Images and files in posts (FR-003) | Wait for the galleries slice (T014), which brings scanning through spec 026 |
-| Moderator removal of comments | Authors remove their own comments; moderator removal comes with the moderation slice (T005, T006) |
+| Moderator removal of comments | Done in slice 2 (T005, T006) |
 | Home widgets (FR-022) | T015 |
+
+## Moderation (spec 023, slice 2: T005 and T006; US8, FR-018 to FR-021)
+
+### Built
+- Reports on posts and comments with a reason and an optional note. Only someone who takes part in the community may report, never their own item, and a second report from the same person changes nothing. At three open reports from different people the item is hidden and audited, and a hidden post leaves search.
+- The tenant keyword filter: versioned configuration (constitution XXIX) that engagement administrators change with If-Match. A word or phrase matches whole and ignoring case. A post or comment that matches is held: nobody but the author and moderators sees it, and mentions and search wait until a moderator approves it.
+- The moderation queue at `/communities/moderation`: held, hidden and reported items in the communities the viewer moderates, with report counts by reason and the reporters' notes but never who reported. Approve (or keep, for an item still shown) publishes it and closes its reports; remove needs a reason the author reads on the item and is told about.
+- Mutes per community: a moderator mutes a member for 1 to 365 days with a reason; the member still reads and reacts but cannot post or comment, and the community page says until when. Muting and unmuting are audited and the member is told.
+- `GET /api/v1/engagement/rights` now also says whether to offer the queue (`canModerate`) and the keyword filter (`canManageKeywords`). The queue link also shows on each community a person moderates.
+- The test world's seeded people now renew their sign-in time before a change once it is five minutes old. Seeded sessions used to age past the ten minute step-up window once the suite ran longer than ten minutes, so step-up actions late in the run failed with 401.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Keyword holds on comments and edits | They apply to comments and to edits of a post too |
+| Telling moderators about new items | No notice; the queue is the place to look |
+| Showing reporters | Never shown to moderators or the author |
+| Who can be muted, and for how long | Not oneself and not an owner; at most 365 days; the web offers 1, 7, 30 or 90 days |
+| Removal notice | Says the item was removed; the author reads the reason on the item |
+| Answer to a reporter | The same however many people reported it |
+| Comments of a removed post | Leave view with the post |
+| Deleting a removed post | The author cannot, so the moderator's decision stays on record |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Moderators scoped to an org unit | Reach the queue from their community's page; the directory link covers community roles and tenant wide rights |
+| Notices to moderators about new items | Not in the spec; can come with a later notification setting |
+

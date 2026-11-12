@@ -5,7 +5,16 @@ export type CommunityKind = "open" | "approval" | "closed";
 
 export type ChannelView = { id: string; key: string; names: Record<string, string> };
 
-export type CommunityRights = { member: boolean; pending: boolean; canJoin: boolean; canLeave: boolean; canPost: boolean; canModerate: boolean; canManage: boolean };
+export type CommunityRights = {
+  member: boolean;
+  pending: boolean;
+  canJoin: boolean;
+  canLeave: boolean;
+  canPost: boolean;
+  canModerate: boolean;
+  canManage: boolean;
+  mutedUntil: string | null;
+};
 
 export type CommunityView = {
   id: string;
@@ -20,11 +29,38 @@ export type CommunityView = {
   version: number;
 };
 
-export type DirectoryRights = { canCreate: boolean };
+export type DirectoryRights = { canCreate: boolean; canModerate: boolean; canManageKeywords: boolean };
 
 export type MemberRole = "member" | "moderator" | "owner";
 
 export type MemberView = { userId: string; displayName: string; role: MemberRole; status: "active" | "pending"; source: "community" | "org_unit" };
+
+/** Where a post or comment stands (spec 023 US8): shown, waiting for a moderator, or removed by one. */
+export type ContentStatus = "published" | "visible" | "held" | "hidden" | "removed";
+export type HeldReason = "keyword" | "reports";
+
+export const reportReasons = ["spam", "harassment", "inappropriate", "misinformation", "other"] as const;
+export type ReportReason = (typeof reportReasons)[number];
+
+export type ModerationItem = {
+  type: "post" | "comment";
+  id: string;
+  postId: string;
+  communityId: string;
+  communityNames: Record<string, string>;
+  author: EngagementPerson;
+  text: string;
+  body: BodyDocument | null;
+  status: ContentStatus;
+  heldReason: HeldReason | null;
+  reports: { reason: ReportReason; count: number }[];
+  notes: string[];
+  createdAt: string;
+};
+
+export type MuteView = { userId: string; displayName: string; until: string; reason: string | null };
+
+export type KeywordFilterView = { keywords: string[]; version: number };
 
 export type EngagementPerson = { id: string; displayName: string; active: boolean };
 
@@ -51,6 +87,10 @@ export type PostView = {
   canEdit: boolean;
   canPin: boolean;
   canComment: boolean;
+  status: ContentStatus;
+  heldReason: HeldReason | null;
+  removedReason: string | null;
+  canReport: boolean;
 };
 
 export type FeedPage = { items: PostView[]; nextCursor: string | null };
@@ -68,6 +108,10 @@ export type CommentView = {
   reactions: ReactionCounts;
   mine: boolean;
   canRemove: boolean;
+  status: ContentStatus;
+  heldReason: HeldReason | null;
+  removedReason: string | null;
+  canReport: boolean;
 };
 
 export type CommentSaved = { comment: CommentView; notReachable: EngagementPerson[] };

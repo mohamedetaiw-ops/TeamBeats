@@ -1606,5 +1606,19 @@
   "validation.engagement.reaction": "Choose one of the reactions offered.",
   "validation.engagement.reply_level": "Replies go under a comment of this post, one level deep.",
   "validation.engagement.role": "Choose member, moderator or owner.",
-  "validation.engagement.user": "Choose a person in this organization."
+  "validation.engagement.user": "Choose a person in this organization.",
+  "conflict.engagement.keywords_changed": "Someone else changed the keyword filter. Reload it and try again.",
+  "notifications.template.engagement.content.removed.body": "A moderator removed something you wrote in a community. Open it to see the reason.",
+  "notifications.template.engagement.content.removed.title": "A moderator removed your post or comment",
+  "notifications.template.engagement.member.muted.body": "A moderator muted you in a community for a while. You can still read it. Open it to see until when.",
+  "notifications.template.engagement.member.muted.title": "You were muted in a community",
+  "validation.engagement.keyword": "Use keywords of 2 to 60 characters.",
+  "validation.engagement.keywords_count": "The filter can hold up to 500 keywords.",
+  "validation.engagement.mute_owner": "Owners cannot be muted. Change their role first.",
+  "validation.engagement.mute_reason": "Keep the reason to 500 characters.",
+  "validation.engagement.mute_self": "You cannot mute yourself.",
+  "validation.engagement.mute_until": "Choose an end time in the future, within a year.",
+  "validation.engagement.removal_reason": "Give a reason of up to 500 characters. The author will read it.",
+  "validation.engagement.report_note": "Keep the note to 500 characters.",
+  "validation.engagement.report_reason": "Choose why you are reporting this."
 }

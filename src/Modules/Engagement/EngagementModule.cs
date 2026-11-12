@@ -16,6 +16,8 @@ public static class EngagementModule
     {
         services.AddScoped<Communities>();
         services.AddScoped<Posts>();
+        services.AddScoped<KeywordFilters>();
+        services.AddScoped<Moderation>();
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
         return services;
     }
@@ -185,6 +187,69 @@ public static class EngagementModule
         });
 
         root.MapGet("/hashtags/{tag}", async (string tag, Posts posts, CancellationToken ct) => Results.Ok(await posts.HashtagAsync(tag, ct)));
+
+        // ---- Moderation (US8) ----
+
+        root.MapPost("/posts/{id:guid}:report", async (Guid id, ReportRequest request, Moderation moderation, IDbSession session, CancellationToken ct) =>
+        {
+            await moderation.ReportAsync("post", id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapPost("/comments/{id:guid}:report", async (Guid id, ReportRequest request, Moderation moderation, IDbSession session, CancellationToken ct) =>
+        {
+            await moderation.ReportAsync("comment", id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapGet("/moderation", async (Guid? communityId, Moderation moderation, CancellationToken ct) => Results.Ok(await moderation.QueueAsync(communityId, ct)));
+
+        root.MapPost("/moderation/{type}/{id:guid}:approve", async (string type, Guid id, Moderation moderation, IDbSession session, CancellationToken ct) =>
+        {
+            await moderation.ApproveAsync(type, id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapPost("/moderation/{type}/{id:guid}:remove", async (string type, Guid id, RemoveRequest request, Moderation moderation, IDbSession session, CancellationToken ct) =>
+        {
+            await moderation.RemoveAsync(type, id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapGet("/communities/{id:guid}/mutes", async (Guid id, Moderation moderation, CancellationToken ct) => Results.Ok(await moderation.MutesAsync(id, ct)));
+
+        root.MapPut("/communities/{id:guid}/mutes", async (Guid id, MuteRequest request, Moderation moderation, IDbSession session, CancellationToken ct) =>
+        {
+            var mutes = await moderation.MuteAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(mutes);
+        });
+
+        root.MapDelete("/communities/{id:guid}/mutes/{userId:guid}", async (Guid id, Guid userId, Moderation moderation, IDbSession session, CancellationToken ct) =>
+        {
+            var mutes = await moderation.UnmuteAsync(id, userId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(mutes);
+        });
+
+        root.MapGet("/settings/keywords", async (KeywordFilters filters, HttpResponse response, CancellationToken ct) =>
+        {
+            var view = await filters.GetAsync(ct);
+            response.Headers.ETag = KeywordFilters.ETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        root.MapPut("/settings/keywords", async (KeywordFilterRequest request, HttpRequest http, KeywordFilters filters, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await filters.SetAsync(request, IfMatch(http), ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = KeywordFilters.ETag(view.Version);
+            return Results.Ok(view);
+        });
 
         return app;
     }

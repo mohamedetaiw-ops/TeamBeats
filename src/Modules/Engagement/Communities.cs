@@ -39,7 +39,7 @@ public sealed record MemberRequest(Guid UserId, string? Role);
 public sealed record ChannelView(Guid Id, string Key, IReadOnlyDictionary<string, string> Names);
 
 /// <summary>What the viewer may do in a community; worked out on the server so the page only shows it.</summary>
-public sealed record CommunityRights(bool Member, bool Pending, bool CanJoin, bool CanLeave, bool CanPost, bool CanModerate, bool CanManage);
+public sealed record CommunityRights(bool Member, bool Pending, bool CanJoin, bool CanLeave, bool CanPost, bool CanModerate, bool CanManage, DateTimeOffset? MutedUntil);
 
 public sealed record CommunityView(
     Guid Id,
@@ -54,7 +54,8 @@ public sealed record CommunityView(
     int Version);
 
 /// <summary>What the viewer may do in the communities area as a whole (the directory page shows the create action from it).</summary>
-public sealed record DirectoryRights(bool CanCreate);
+/// <summary>What the viewer may do across communities: create one, and open the moderation queue and keyword filter.</summary>
+public sealed record DirectoryRights(bool CanCreate, bool CanModerate, bool CanManageKeywords);
 
 public sealed record MemberView(Guid UserId, string DisplayName, string Role, string Status, string Source);
 
@@ -71,8 +72,12 @@ internal sealed record CommunityRow(Guid Id, Dictionary<string, string> Names, D
 }
 
 /// <summary>The viewer's standing in one community.</summary>
-internal sealed record Standing(CommunityRow Community, bool Member, bool Pending, string? Role, bool Moderates, bool Manages, bool Participates, bool Stored)
+internal sealed record Standing(CommunityRow Community, bool Member, bool Pending, string? Role, bool Moderates, bool Manages, bool Participates, bool Stored,
+    DateTimeOffset? MutedUntil = null)
 {
+    /// <summary>A muted member reads but neither posts nor comments until the mute ends (FR-021).</summary>
+    public bool Muted => MutedUntil is not null;
+
     /// <summary>
     /// Who reads a community's content: its members in every kind, anyone who takes part in an open community, and
     /// the moderators in scope, who must see what they moderate. Everyone else does not even see a closed community.
@@ -82,7 +87,7 @@ internal sealed record Standing(CommunityRow Community, bool Member, bool Pendin
     /// <summary>Whether the community is listed for the viewer at all (FR-001: closed communities are invisible).</summary>
     public bool Sees => Reads || (Participates && Community.Kind == CommunityKinds.Approval) || Pending;
 
-    public bool Posts => Community.Status == "active" && Participates && (Member || (Community.Kind == CommunityKinds.Open && Moderates));
+    public bool Posts => Community.Status == "active" && Participates && !Muted && (Member || (Community.Kind == CommunityKinds.Open && Moderates));
 }
 
 /// <summary>
@@ -139,7 +144,10 @@ public sealed class Communities(
         var role = stored.Status == "active" ? stored.Role : member ? MemberRoles.Member : null;
         var moderates = role is MemberRoles.Owner or MemberRoles.Moderator || (await authz.CheckAsync(Permissions.EngagementModerate, c.Scope, ct)).Allowed;
         var manages = role == MemberRoles.Owner || (await authz.CheckAsync(Permissions.EngagementManage, AuthzTarget.Tenant, ct)).Allowed;
-        return new Standing(c, member, stored.Status == "pending", role, moderates, manages, participates, stored.Status == "active");
+        var mutes = await session.QueryAsync("select until from engagement.mute where community_id = @id and user_id = @user and until > @now",
+            new { id = c.Id, user, now = clock.UtcNow }, r => r.GetFieldValue<DateTimeOffset>(0), ct);
+        DateTimeOffset? mutedUntil = mutes.Count > 0 ? mutes[0] : null;
+        return new Standing(c, member, stored.Status == "pending", role, moderates, manages, participates, stored.Status == "active", mutedUntil);
     }
 
     /// <summary>A community the viewer can see; anything else is not found, so closed communities stay invisible.</summary>
@@ -198,7 +206,7 @@ public sealed class Communities(
         var rights = new CommunityRights(s.Member, s.Pending,
             CanJoin: c.Status == "active" && s.Participates && !s.Member && !s.Pending && c.OrgUnitId is null && c.Kind != CommunityKinds.Closed,
             CanLeave: s.Stored,
-            CanPost: s.Posts, CanModerate: s.Moderates, CanManage: s.Manages);
+            CanPost: s.Posts, CanModerate: s.Moderates, CanManage: s.Manages, MutedUntil: s.MutedUntil);
         return new CommunityView(c.Id, c.Names, c.Descriptions, c.Kind, c.OrgUnitId, c.Status, await MemberCountAsync(c, ct),
             s.Reads || s.Manages ? await ChannelsAsync(c.Id, ct) : [], rights, c.Version);
     }
@@ -235,7 +243,13 @@ public sealed class Communities(
     public async Task<DirectoryRights> RightsAsync(CancellationToken ct)
     {
         await RequireAsync(ct);
-        return new DirectoryRights((await authz.CheckAsync(Permissions.EngagementManage, AuthzTarget.Tenant, ct)).Allowed);
+        var manages = (await authz.CheckAsync(Permissions.EngagementManage, AuthzTarget.Tenant, ct)).Allowed;
+        // A moderator scoped to one org unit reaches the queue from that community's page; this flag covers the rest.
+        var moderates = manages || (await authz.CheckAsync(Permissions.EngagementModerate, AuthzTarget.Tenant, ct)).Allowed
+            || await session.ScalarAsync<bool>(
+                "select exists (select 1 from engagement.community_member where user_id = @user and status = 'active' and role in ('owner', 'moderator'))",
+                new { user = context.RequireUser() }, ct);
+        return new DirectoryRights(manages, moderates, manages);
     }
 
     // ---- Create and change ----

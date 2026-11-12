@@ -40,7 +40,11 @@ public sealed record PostView(
     bool Mine,
     bool CanEdit,
     bool CanPin,
-    bool CanComment);
+    bool CanComment,
+    string Status,
+    string? HeldReason,
+    string? RemovedReason,
+    bool CanReport);
 
 public sealed record FeedPage(IReadOnlyList<PostView> Items, string? NextCursor);
 
@@ -48,19 +52,32 @@ public sealed record FeedPage(IReadOnlyList<PostView> Items, string? NextCursor)
 public sealed record PostSaved(PostView Post, IReadOnlyList<Person> NotReachable);
 
 public sealed record CommentView(Guid Id, Guid PostId, Guid? ParentId, Person Author, string Body, DateTimeOffset CreatedAt, DateTimeOffset? EditedAt, ReactionCounts Reactions,
-    bool Mine, bool CanRemove);
+    bool Mine, bool CanRemove, string Status, string? HeldReason, string? RemovedReason, bool CanReport);
 
 public sealed record CommentSaved(CommentView Comment, IReadOnlyList<Person> NotReachable);
 
 public sealed record HashtagPage(string Tag, IReadOnlyList<PostView> Items);
 
 internal sealed record PostRow(Guid Id, Guid CommunityId, Guid ChannelId, Guid AuthorId, BodyDocument Body, string Text, string Status, bool Pinned,
-    DateTimeOffset PublishedAt, DateTimeOffset? EditedAt, int CommentCount)
+    DateTimeOffset PublishedAt, DateTimeOffset? EditedAt, int CommentCount, string? HeldReason, string? RemovedReason, Guid[]? PendingMentions)
 {
-    public const string Columns = "id, community_id, channel_id, author_id, body::text, text, status, pinned, published_at, edited_at, comment_count";
+    public const string Columns =
+        "id, community_id, channel_id, author_id, body::text, text, status, pinned, published_at, edited_at, comment_count, held_reason, removed_reason, pending_mentions";
 
     public static PostRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.GetGuid(2), r.GetGuid(3), EngagementJson.Read<BodyDocument>(r.GetString(4)),
-        r.GetString(5), r.GetString(6), r.GetBoolean(7), r.GetFieldValue<DateTimeOffset>(8), r.Get<DateTimeOffset?>("edited_at"), r.GetInt32(10));
+        r.GetString(5), r.GetString(6), r.GetBoolean(7), r.GetFieldValue<DateTimeOffset>(8), r.Get<DateTimeOffset?>("edited_at"), r.GetInt32(10),
+        r.Get<string?>("held_reason"), r.Get<string?>("removed_reason"), r.IsDBNull(13) ? null : r.GetFieldValue<Guid[]>(13));
+}
+
+/// <summary>Where a post or comment stands: shown to readers, waiting for a moderator, removed by one, or deleted by its author.</summary>
+public static class ContentStatus
+{
+    public const string Published = "published";
+    public const string Visible = "visible";
+    public const string Held = "held";
+    public const string Hidden = "hidden";
+    public const string Removed = "removed";
+    public const string Deleted = "deleted";
 }
 
 /// <summary>
@@ -77,6 +94,7 @@ public sealed partial class Posts(
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,
+    KeywordFilters keywords,
     IClock clock)
 {
     public const int MaxPostCharacters = 10_000;
@@ -105,19 +123,29 @@ public sealed partial class Posts(
 
     public static string Link(Guid communityId, Guid postId) => $"/communities/{communityId}/posts/{postId}";
 
-    private async Task<PostRow?> RowAsync(Guid id, CancellationToken ct) =>
+    internal async Task<PostRow?> RowAsync(Guid id, CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync($"select {PostRow.Columns} from engagement.post where id = @id", new { id }, PostRow.Read, ct);
 
-    /// <summary>A published post the viewer may read, with their standing in its community.</summary>
-    private async Task<(PostRow Post, Standing Standing)> ReadableAsync(Guid id, CancellationToken ct)
+    /// <summary>
+    /// A published post the viewer may read, with their standing in its community. With <paramref name="any"/>, the
+    /// author also reaches their own post while it is held, hidden or removed (to see why), and moderators reach held
+    /// and hidden posts; nobody reaches a post its author deleted.
+    /// </summary>
+    internal async Task<(PostRow Post, Standing Standing)> ReadableAsync(Guid id, CancellationToken ct, bool any = false)
     {
         await communities.RequireAsync(ct);
         var post = await RowAsync(id, ct);
-        if (post is null || post.Status != "published")
+        if (post is null || post.Status == ContentStatus.Deleted || (post.Status != ContentStatus.Published && !any))
         {
             throw AppException.NotFound();
         }
-        return (post, await communities.ReadableAsync(post.CommunityId, ct));
+        var s = await communities.ReadableAsync(post.CommunityId, ct);
+        var mine = post.AuthorId == context.RequireUser();
+        if (post.Status != ContentStatus.Published && !mine && !(s.Moderates && post.Status is ContentStatus.Held or ContentStatus.Hidden))
+        {
+            throw AppException.NotFound();
+        }
+        return (post, s);
     }
 
     // ---- Views ----
@@ -164,9 +192,11 @@ public sealed partial class Posts(
         {
             var s = standing(r.CommunityId);
             var mine = r.AuthorId == user;
+            var live = r.Status == ContentStatus.Published;
             return new PostView(r.Id, r.CommunityId, r.ChannelId, people[r.AuthorId], r.Body, tags[r.Id].ToList(), mentions[r.Id].Select(m => people[m]).ToList(),
                 r.Pinned, r.PublishedAt, r.EditedAt, r.CommentCount, reactions[r.Id], following.Contains(r.Id), mine,
-                CanEdit: mine && s.Posts, CanPin: s.Moderates && s.Community.Status == "active", CanComment: s.Posts);
+                CanEdit: mine && s.Posts && live, CanPin: live && s.Moderates && s.Community.Status == "active", CanComment: live && s.Posts,
+                r.Status, r.HeldReason, mine ? r.RemovedReason : null, CanReport: live && !mine && s.Participates);
         }).ToList();
     }
 
@@ -202,10 +232,11 @@ public sealed partial class Posts(
         var rows = await session.QueryAsync(
             $"""
             select {PostRow.Columns} from engagement.post
-            where community_id = @communityId and status = 'published' and not pinned and (@channelId::uuid is null or channel_id = @channelId)
+            where community_id = @communityId and not pinned and (@channelId::uuid is null or channel_id = @channelId)
+              and (status = 'published' or (author_id = @user and status in ('held', 'hidden')))
               and (@at::timestamptz is null or (published_at, id) < (@at, @id))
             order by published_at desc, id desc limit @take
-            """, new { communityId, channelId, at = after?.At, id = after?.Id ?? Guid.Empty, take = size + 1 }, PostRow.Read, ct);
+            """, new { communityId, channelId, user = context.RequireUser(), at = after?.At, id = after?.Id ?? Guid.Empty, take = size + 1 }, PostRow.Read, ct);
         var page = rows.Take(size).ToList();
         var views = await ViewsAsync(pinned.Concat(page).ToList(), _ => s, ct);
         return new FeedPage(views, rows.Count > size ? Cursor(page[^1]) : null);
@@ -213,7 +244,7 @@ public sealed partial class Posts(
 
     public async Task<PostView> GetAsync(Guid id, CancellationToken ct)
     {
-        var (post, s) = await ReadableAsync(id, ct);
+        var (post, s) = await ReadableAsync(id, ct, any: true);
         return (await ViewsAsync([post], _ => s, ct))[0];
     }
 
@@ -287,7 +318,7 @@ public sealed partial class Posts(
     /// Tells the mentioned people who can read the community (FR-004) and returns those who cannot. Mentions of people
     /// outside the tenant never match, since users are read inside the tenant only.
     /// </summary>
-    private async Task<IReadOnlyList<Person>> MentionAsync(CommunityRow c, Guid postId, Guid? commentId, IReadOnlyList<Guid> mentioned, CancellationToken ct)
+    internal async Task<IReadOnlyList<Person>> MentionAsync(CommunityRow c, Guid postId, Guid? commentId, IReadOnlyList<Guid> mentioned, CancellationToken ct)
     {
         if (mentioned.Count == 0)
         {
@@ -366,13 +397,24 @@ public sealed partial class Posts(
         errors.ThrowIfAny();
         var id = Ids.New();
         var text = BodyValidator.PlainText(request.Body!);
+        // A post with a word on the tenant's filter waits for a moderator (FR-019); the people it mentions are told
+        // only once it is published.
+        var held = await keywords.MatchesAsync(text, ct);
         await session.ExecAsync(
             """
-            insert into engagement.post (tenant_id, id, community_id, channel_id, author_id, body, text, published_at)
-            values (platform.current_tenant_id(), @id, @communityId, @channel, @user, @body, @text, @now)
-            """, new { id, communityId, channel, user, body = EngagementJson.Jsonb(request.Body), text, now = clock.UtcNow }, ct);
+            insert into engagement.post (tenant_id, id, community_id, channel_id, author_id, body, text, published_at, status, held_reason, pending_mentions)
+            values (platform.current_tenant_id(), @id, @communityId, @channel, @user, @body, @text, @now, @status, @heldReason, @pending)
+            """, new
+            {
+                id, communityId, channel, user, body = EngagementJson.Jsonb(request.Body), text, now = clock.UtcNow,
+                status = held ? ContentStatus.Held : ContentStatus.Published, heldReason = held ? "keyword" : null, pending = held ? mentioned.ToArray() : null,
+            }, ct);
         await SaveHashtagsAsync(id, text, ct);
         await FollowAsync(id, user, ct);
+        if (held)
+        {
+            return new PostSaved(await GetAsync(id, ct), []);
+        }
         var missed = await MentionAsync(s.Community, id, null, mentioned, ct);
         await outbox.EnqueueAsync(new PostPublished(id, communityId, channel!.Value), ct);
         await outbox.EnqueueAsync(new Search.Contracts.SearchItemChanged(EngagementSearchSource.Name, id), ct);
@@ -397,20 +439,30 @@ public sealed partial class Posts(
         await SaveHashtagsAsync(id, text, ct);
         // Only people newly mentioned are told.
         var already = (await session.QueryAsync("select user_id from engagement.mention where post_id = @id and comment_id is null", new { id }, r => r.GetGuid(0), ct)).ToHashSet();
-        var missed = await MentionAsync(s.Community, id, null, mentioned.Where(m => !already.Contains(m)).ToList(), ct);
+        var added = mentioned.Where(m => !already.Contains(m)).ToList();
+        // An edit that brings in a filtered word takes the post back to the queue (FR-019).
+        if (await keywords.MatchesAsync(text, ct))
+        {
+            await session.ExecAsync("update engagement.post set status = 'held', held_reason = 'keyword', pending_mentions = @pending where id = @id",
+                new { id, pending = added.ToArray() }, ct);
+            await outbox.EnqueueAsync(new Search.Contracts.SearchItemChanged(EngagementSearchSource.Name, id), ct);
+            return new PostSaved(await GetAsync(id, ct), []);
+        }
+        var missed = await MentionAsync(s.Community, id, null, added, ct);
         await outbox.EnqueueAsync(new Search.Contracts.SearchItemChanged(EngagementSearchSource.Name, id), ct);
         return new PostSaved(await GetAsync(id, ct), missed);
     }
 
-    /// <summary>The author deletes their own post. Moderator removal with a reason is US8.</summary>
+    /// <summary>The author deletes their own post, also while it waits for a moderator. Moderator removal is in <see cref="Moderation"/>.</summary>
     public async Task DeleteAsync(Guid id, CancellationToken ct)
     {
-        var (post, _) = await ReadableAsync(id, ct);
-        if (post.AuthorId != context.RequireUser())
+        var (post, _) = await ReadableAsync(id, ct, any: true);
+        if (post.AuthorId != context.RequireUser() || post.Status == ContentStatus.Removed)
         {
             throw AppException.Denied();
         }
-        await session.ExecAsync("update engagement.post set status = 'removed', row_version = row_version + 1 where id = @id", new { id }, ct);
+        await session.ExecAsync("update engagement.post set status = 'deleted', row_version = row_version + 1 where id = @id", new { id }, ct);
+        await session.ExecAsync("update engagement.report set resolved_at = @now where target_type = 'post' and target_id = @id and resolved_at is null", new { id, now = clock.UtcNow }, ct);
         await outbox.EnqueueAsync(new PostRemoved(id, post.CommunityId), ct);
         await outbox.EnqueueAsync(new Search.Contracts.SearchItemChanged(EngagementSearchSource.Name, id), ct);
     }
@@ -476,18 +528,32 @@ public sealed partial class Posts(
 
     // ---- Comments ----
 
+    /// <summary>
+    /// The visible comments of a post, and the viewer's own comments that wait for a moderator or were removed, with
+    /// the reason. Replies to a comment that is no longer visible are left out with it.
+    /// </summary>
     public async Task<IReadOnlyList<CommentView>> CommentsAsync(Guid postId, CancellationToken ct)
     {
         var (_, s) = await ReadableAsync(postId, ct);
         var user = context.RequireUser();
         var rows = await session.QueryAsync(
-            $"select id, parent_id, author_id, body, created_at, edited_at from engagement.comment where post_id = @postId and status = 'visible' order by created_at, id limit {CommentPage}",
-            new { postId }, r => (Id: r.GetGuid(0), Parent: r.Get<Guid?>("parent_id"), Author: r.GetGuid(2), Body: r.GetString(3), At: r.GetFieldValue<DateTimeOffset>(4),
-                Edited: r.Get<DateTimeOffset?>("edited_at")), ct);
+            $"""
+            select c.id, c.parent_id, c.author_id, c.body, c.created_at, c.edited_at, c.status, c.held_reason, c.removed_reason from engagement.comment c
+            where c.post_id = @postId and (c.status = 'visible' or (c.author_id = @user and c.status in ('held', 'hidden', 'removed')))
+              and (c.parent_id is null or exists (select 1 from engagement.comment p where p.id = c.parent_id and p.status = 'visible'))
+            order by c.created_at, c.id limit {CommentPage}
+            """,
+            new { postId, user }, r => (Id: r.GetGuid(0), Parent: r.Get<Guid?>("parent_id"), Author: r.GetGuid(2), Body: r.GetString(3), At: r.GetFieldValue<DateTimeOffset>(4),
+                Edited: r.Get<DateTimeOffset?>("edited_at"), Status: r.GetString(6), Held: r.Get<string?>("held_reason"), Removed: r.Get<string?>("removed_reason")), ct);
         var people = await PeopleAsync(rows.Select(r => r.Author), ct);
         var reactions = rows.Count == 0 ? [] : await ReactionsAsync("comment", rows.Select(r => r.Id).ToList(), ct);
-        return rows.Select(r => new CommentView(r.Id, postId, r.Parent, people[r.Author], r.Body, r.At, r.Edited, reactions[r.Id], r.Author == user,
-            CanRemove: r.Author == user)).ToList();
+        return rows.Select(r =>
+        {
+            var mine = r.Author == user;
+            var live = r.Status == ContentStatus.Visible;
+            return new CommentView(r.Id, postId, r.Parent, people[r.Author], r.Body, r.At, r.Edited, reactions[r.Id], mine,
+                CanRemove: mine && r.Status != ContentStatus.Removed, r.Status, r.Held, mine ? r.Removed : null, CanReport: live && !mine && s.Participates);
+        }).ToList();
     }
 
     public async Task<CommentSaved> CommentAsync(Guid postId, CommentRequest request, CancellationToken ct)
@@ -518,18 +584,30 @@ public sealed partial class Posts(
         errors.ThrowIfAny();
         var id = Ids.New();
         var now = clock.UtcNow;
+        var held = await keywords.MatchesAsync(body!, ct);
         await session.ExecAsync(
             """
-            insert into engagement.comment (tenant_id, id, post_id, parent_id, author_id, body, created_at)
-            values (platform.current_tenant_id(), @id, @postId, @parent, @user, @body, @now)
-            """, new { id, postId, parent = request.ParentId, user, body, now }, ct);
-        await session.ExecAsync("update engagement.post set comment_count = comment_count + 1 where id = @postId", new { postId }, ct);
-        var missed = await MentionAsync(s.Community, postId, id, mentioned, ct);
-        await TellFollowersAsync(s.Community, post, user, mentioned, ct);
+            insert into engagement.comment (tenant_id, id, post_id, parent_id, author_id, body, created_at, status, held_reason, pending_mentions)
+            values (platform.current_tenant_id(), @id, @postId, @parent, @user, @body, @now, @status, @heldReason, @pending)
+            """, new
+            {
+                id, postId, parent = request.ParentId, user, body, now,
+                status = held ? ContentStatus.Held : ContentStatus.Visible, heldReason = held ? "keyword" : null, pending = held ? mentioned.ToArray() : null,
+            }, ct);
         await FollowAsync(postId, user, ct);
-        await outbox.EnqueueAsync(new CommentAdded(id, postId, post.CommunityId), ct);
+        IReadOnlyList<Person> missed = held ? [] : await PublishCommentAsync(s.Community, post, id, user, mentioned, ct);
         var view = (await CommentsAsync(postId, ct)).First(c => c.Id == id);
         return new CommentSaved(view, missed);
+    }
+
+    /// <summary>What happens when a comment becomes visible: the count, mentions, followers and the event.</summary>
+    internal async Task<IReadOnlyList<Person>> PublishCommentAsync(CommunityRow c, PostRow post, Guid commentId, Guid author, IReadOnlyList<Guid> mentioned, CancellationToken ct)
+    {
+        await session.ExecAsync("update engagement.post set comment_count = comment_count + 1 where id = @postId", new { postId = post.Id }, ct);
+        var missed = await MentionAsync(c, post.Id, commentId, mentioned, ct);
+        await TellFollowersAsync(c, post, author, mentioned, ct);
+        await outbox.EnqueueAsync(new CommentAdded(commentId, post.Id, post.CommunityId), ct);
+        return missed;
     }
 
     /// <summary>
@@ -561,10 +639,11 @@ public sealed partial class Posts(
         await session.ExecAsync("update engagement.post_follow set notified_at = @now where post_id = @id and user_id = any(@due)", new { id = post.Id, due = due.ToArray(), now }, ct);
     }
 
+    /// <summary>The author deletes their own comment (and the replies under it), also while it waits for a moderator.</summary>
     public async Task DeleteCommentAsync(Guid commentId, CancellationToken ct)
     {
-        var row = await session.QuerySingleOrDefaultAsync("select post_id, author_id from engagement.comment where id = @commentId and status = 'visible'", new { commentId },
-            r => (Post: r.GetGuid(0), Author: r.GetGuid(1)), ct);
+        var row = await session.QuerySingleOrDefaultAsync("select post_id, author_id, status from engagement.comment where id = @commentId and status in ('visible', 'held', 'hidden')",
+            new { commentId }, r => (Post: r.GetGuid(0), Author: r.GetGuid(1), Status: r.GetString(2)), ct);
         if (row == default)
         {
             throw AppException.NotFound();
@@ -574,8 +653,12 @@ public sealed partial class Posts(
         {
             throw AppException.Denied();
         }
-        var removed = await session.ExecAsync("update engagement.comment set status = 'removed' where (id = @commentId or parent_id = @commentId) and status = 'visible'",
+        var visible = await session.ScalarAsync<int>(
+            "select count(*)::int from engagement.comment where (id = @commentId or parent_id = @commentId) and status = 'visible'", new { commentId }, ct);
+        await session.ExecAsync("update engagement.comment set status = 'deleted' where (id = @commentId or parent_id = @commentId) and status in ('visible', 'held', 'hidden')",
             new { commentId }, ct);
-        await session.ExecAsync("update engagement.post set comment_count = greatest(comment_count - @removed, 0) where id = @post", new { post = row.Post, removed }, ct);
+        await session.ExecAsync("update engagement.report set resolved_at = @now where target_type = 'comment' and target_id = @commentId and resolved_at is null",
+            new { commentId, now = clock.UtcNow }, ct);
+        await session.ExecAsync("update engagement.post set comment_count = greatest(comment_count - @visible, 0) where id = @post", new { post = row.Post, visible }, ct);
     }
 }

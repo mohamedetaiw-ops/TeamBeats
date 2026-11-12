@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -43,6 +43,7 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
   const t = useTranslations("engagement");
   const locale = useLocale();
   const channelName = useChannelName();
+  const format = useFormatter();
   const [community, setCommunity] = useState(initial);
   const [channel, setChannel] = useState("");
   const [posts, setPosts] = useState<PostView[]>(feed?.items ?? []);
@@ -102,6 +103,11 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
             {community.kind === "approval" ? t("community.askToJoin") : t("community.join")}
           </Button>
         ) : null}
+        {r.canModerate ? (
+          <ButtonLink size="sm" variant="quiet" icon="alert" href={`/communities/moderation?communityId=${encodeURIComponent(community.id)}`}>
+            {t("moderation.queueLink")}
+          </ButtonLink>
+        ) : null}
         {r.pending ? <Badge tone="warning">{t("directory.pending")}</Badge> : null}
         {r.canLeave ? (
           <Button size="sm" variant="quiet" busy={busy === ":leave"} busyLabel={t("working")} onClick={() => void membership(":leave")}>
@@ -113,6 +119,11 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
         <p className="engagement-meta" dir="auto">
           {localName(community.descriptions, locale)}
         </p>
+      ) : null}
+      {r.mutedUntil ? (
+        <Alert tone="warning" title={t("moderation.mutedTitle")}>
+          {t("moderation.mutedText", { until: format.dateTime(new Date(r.mutedUntil), { dateStyle: "medium", timeStyle: "short" }) })}
+        </Alert>
       ) : null}
       {notice ? <Alert tone="success" title={notice} live /> : null}
       {messages.length > 0 ? (
@@ -192,14 +203,14 @@ function Composer({
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
   const [notReachable, setNotReachable] = useState<EngagementPerson[]>([]);
-  const [posted, setPosted] = useState(false);
+  const [posted, setPosted] = useState<"published" | "held" | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setMessages([]);
     setNotReachable([]);
-    setPosted(false);
+    setPosted(null);
     try {
       const response = await send(`${engagementApi}/communities/${community.id}/posts`, "POST", {
         channelId: target || channelId,
@@ -213,7 +224,7 @@ function Composer({
         setBody(emptyBody());
         setMentions([]);
         setVersion((v) => v + 1);
-        setPosted(true);
+        setPosted(saved.post.status === "held" ? "held" : "published");
       } else {
         setMessages(await problemMessages(response));
       }
@@ -245,7 +256,12 @@ function Composer({
             {messages.join(" ")}
           </Alert>
         ) : null}
-        {posted ? <Alert tone="success" title={t("composer.posted")} live /> : null}
+        {posted === "published" ? <Alert tone="success" title={t("composer.posted")} live /> : null}
+        {posted === "held" ? (
+          <Alert tone="warning" title={t("moderation.heldTitle")} live>
+            {t("moderation.heldText")}
+          </Alert>
+        ) : null}
         <NotReachable people={notReachable} />
         <div className="engagement-row">
           <Button type="submit" variant="primary" busy={busy} busyLabel={t("working")}>

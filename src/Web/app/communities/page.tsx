@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import type { CommunityView, DirectoryRights } from "@/lib/engagement";
 import { Header } from "@/components/shell/Header";
+import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StateView } from "@/components/ui/StateView";
 import { CommunityDirectory } from "@/features/engagement/CommunityDirectory";
@@ -19,7 +20,18 @@ export default async function CommunitiesPage() {
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("pageTitle"), href: "/communities" }]} />
       <main id="main" className="page">
-        <PageHeader title={t("pageTitle")} description={t("pageIntro")} icon="chat" />
+        <PageHeader
+          title={t("pageTitle")}
+          description={t("pageIntro")}
+          icon="chat"
+          actions={
+            rights.ok && rights.data.canModerate ? (
+              <ButtonLink variant="secondary" icon="alert" href="/communities/moderation">
+                {t("moderation.queueLink")}
+              </ButtonLink>
+            ) : null
+          }
+        />
         {list.ok ? (
           <CommunityDirectory initial={list.data} canCreate={rights.ok && rights.data.canCreate} locales={me.data.tenant.enabledLocales} />
         ) : (
