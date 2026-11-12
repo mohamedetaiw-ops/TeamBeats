@@ -420,6 +420,7 @@ public static class AuditActions
     public const string SpacesOwnerReassigned = "spaces.owner_reassigned";
     public const string SpacesSettingsChanged = "spaces.settings_changed";
     public const string SpacesTemplateChanged = "spaces.template_changed";
+    public const string SpacesEventChanged = "spaces.event_changed";
 
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
@@ -483,7 +484,7 @@ public static class AuditActions
         EngagementAwardOpened, EngagementAwardDecided, EngagementCelebrationSettingsChanged,
         LearningCoursePublished, LearningCourseRetired, LearningPathPublished, LearningAttemptsGranted, LearningAssignmentCreated, LearningAssignmentWithdrawn, LearningEvidenceExported,
         SpacesCreated, SpacesChanged, SpacesArchived, SpacesRestored, SpacesMemberAdded, SpacesMemberRemoved, SpacesOwnerReassigned, SpacesSettingsChanged,
-        SpacesTemplateChanged,
+        SpacesTemplateChanged, SpacesEventChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

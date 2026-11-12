@@ -7,7 +7,7 @@ import { hostOrigin } from "../support/stack";
  * Spec 029 slices 1 and 2: the administrator creates a private project space from the standard template, adds Layla
  * as a member, adds a task, gives it to her with a due date and moves another task to Done from the keyboard menu;
  * Layla finds the task under My tasks in the task inbox and completes it there. Slice 3: a file goes into the space's
- * library and is linked to the task, and an update is posted in the space's discussion. Visibility, roles, viewer refusal,
+ * library and is linked to the task, and an update is posted in the space's discussion, and an event goes on the team calendar. Visibility, roles, viewer refusal,
  * milestones, status, reminders and the tenant boundary are covered by SpacesTests and SpaceTaskTests. In English and
  * Arabic, with axe. Names are fictional.
  */
@@ -73,6 +73,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: m("engagement.composer.submit"), exact: true }).click();
       await expect(page.getByText(m("engagement.composer.posted"))).toBeVisible();
       await expectAccessible(page, testInfo, `spaces-discussion-${locale}`);
+
+      // The team calendar (US6): add an event and find it in the month.
+      await spaceNav.getByRole("link", { name: m("spaces.parts.nav.calendar") }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("spaces.calendarTitle"));
+      const kickoff = locale === "ar" ? "اجتماع الانطلاق" : "Kick-off meeting";
+      await main.getByLabel(m("spaces.calendar.title"), { exact: true }).fill(kickoff);
+      await main.getByRole("button", { name: m("spaces.calendar.add") }).click();
+      await expect(page.getByRole("status").filter({ hasText: kickoff })).toBeVisible();
+      await expect(main.getByRole("list", { name: m("spaces.calendar.eventsTitle") }).getByText(kickoff)).toBeVisible();
+      await expectAccessible(page, testInfo, `spaces-calendar-${locale}`);
 
       await page.getByRole("navigation", { name: m("spaces.parts.nav.label") }).getByRole("link", { name: m("spaces.parts.nav.tasks") }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("spaces.tasksTitle"));

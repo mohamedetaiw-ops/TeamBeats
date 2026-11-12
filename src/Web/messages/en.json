@@ -9525,7 +9525,8 @@
         "members": "Members",
         "settings": "Settings",
         "files": "Files",
-        "discussion": "Discussion"
+        "discussion": "Discussion",
+        "calendar": "Calendar"
       }
     },
     "directory": {
@@ -9786,6 +9787,50 @@
     "filesUnavailable": "Files are not part of your organization's plan, so this space has no library.",
     "discussionTitle": "Discussion",
     "discussionUnavailableTitle": "No discussion yet",
-    "discussionUnavailable": "Communities are not part of your organization's plan, so this space has no discussion."
+    "discussionUnavailable": "Communities are not part of your organization's plan, so this space has no discussion.",
+    "calendarTitle": "Team calendar",
+    "calendar": {
+      "failed": "The calendar could not be changed. Try again.",
+      "monthLabel": "Month",
+      "legend": "Events, milestones, task due dates and members away on leave appear on their days.",
+      "milestoneItem": "Milestone: {name}",
+      "dueItem": "Due: {title}",
+      "awayItem": "{name} away",
+      "eventsTitle": "Events",
+      "noEvents": "No events this month.",
+      "eventTime": "{date}, {start} to {end}",
+      "deleteEvent": "Delete {title}",
+      "newEvent": "New event",
+      "title": "Title",
+      "date": "Date",
+      "start": "Starts",
+      "end": "Ends",
+      "allDay": "All day",
+      "description": "Description",
+      "add": "Add event",
+      "added": "{title} was added.",
+      "deleted": "{title} was deleted.",
+      "busyTitle": "Free and busy",
+      "busyIntro": "See when members are busy on a day. Only times show, never what the meeting is, and only where their Outlook shares it with you.",
+      "busyDay": "Day",
+      "showBusy": "Show free and busy",
+      "loading": "Loading",
+      "busyNobody": "No other members to show.",
+      "busyState": {
+        "turned_off": "Free and busy is not turned on for your organization.",
+        "not_connected": "Connect your Outlook to see free and busy.",
+        "reconnect": "Sign in to Outlook again to see free and busy.",
+        "other": "Free and busy is not available right now."
+      },
+      "notShared": "Not shared",
+      "free": "Free all day",
+      "block": "{start} to {end} {status}",
+      "status": {
+        "busy": "busy",
+        "tentative": "tentative",
+        "oof": "away",
+        "working_elsewhere": "working elsewhere"
+      }
+    }
   }
 }

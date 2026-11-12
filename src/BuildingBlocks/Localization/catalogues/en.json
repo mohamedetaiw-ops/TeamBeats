@@ -1938,5 +1938,11 @@
   "validation.spaces.task_file": "Choose a file from the library that you can open.",
   "validation.spaces.task_file_count": "A task can link to at most 20 files.",
   "conflict.documents.space_permissions": "Permissions in a space library follow the space. Change who is in the space instead.",
-  "conflict.engagement.space_community": "This discussion belongs to a space. Change its name and members in the space."
+  "conflict.engagement.space_community": "This discussion belongs to a space. Change its name and members in the space.",
+  "validation.spaces.calendar_range": "Choose a range of up to 62 days, with the end on or after the start.",
+  "validation.spaces.event_title": "Give the event a title of up to 120 characters.",
+  "validation.spaces.event_description": "Keep the description to 2,000 characters.",
+  "validation.spaces.event_time": "The event must end after it starts and last at most 31 days.",
+  "conflict.spaces.event_limit": "This space has reached its limit of 1,000 events. Delete old events to add new ones.",
+  "conflict.spaces.event_changed": "Someone changed this event since you opened it. Reload it and try again."
 }

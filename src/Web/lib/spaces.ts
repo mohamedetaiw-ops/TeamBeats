@@ -11,6 +11,7 @@ export const spaceTasksHref = (id: string) => `/spaces/${id}/tasks`;
 export const spaceMembersHref = (id: string) => `/spaces/${id}/members`;
 export const spaceFilesHref = (id: string) => `/spaces/${id}/files`;
 export const spaceDiscussionHref = (id: string) => `/spaces/${id}/discussion`;
+export const spaceCalendarHref = (id: string, month?: string) => `/spaces/${id}/calendar${month ? `?month=${month}` : ""}`;
 export const spaceSettingsHref = (id: string) => `/spaces/${id}/settings`;
 export const taskHref = (space: string, task: string) => `/spaces/${space}/tasks/${task}`;
 export const myTasksHref = "/tasks?tab=mine";
@@ -107,6 +108,26 @@ export type TaskDetail = {
 export type TaskFile = { documentId: string; name: string; version: string; fileName: string; contentType: string; bytes: number };
 
 export type MyTask = { task: TaskCard; spaceId: string; spaceName: string };
+
+export type SpaceEvent = { id: string; title: string; description: string; startsAt: string; endsAt: string; allDay: boolean; createdBy: PersonRef; version: number };
+
+/** The team calendar (US6): never the leave type. `end` of an absence is exclusive. */
+export type SpaceCalendarData = {
+  from: string;
+  to: string;
+  timeZone: string;
+  events: SpaceEvent[];
+  milestones: { id: string; name: string; dueOn: string; reached: boolean }[];
+  tasks: { id: string; title: string; dueOn: string; status: "open" | "done"; assignees: PersonRef[] }[];
+  away: { person: PersonRef; start: string; end: string; startHalf: boolean; endHalf: boolean }[];
+  canEdit: boolean;
+};
+
+export type SpaceAvailability = {
+  state: string;
+  date: string;
+  members: { person: PersonRef; shared: boolean; blocks: { status: string; start: string; end: string }[] }[];
+};
 
 export type MilestoneView = { id: string; name: string; dueOn: string | null; done: number; total: number; reached: boolean; overdue: boolean; version: number };
 export type StatusView = { id: string; status: StatusValue; note: string; setBy: PersonRef; setAt: string };

@@ -26,6 +26,7 @@ public static class SpacesModule
         services.AddScoped<SpaceSettings>();
         services.AddScoped<SpaceTasks>();
         services.AddScoped<SpaceMilestones>();
+        services.AddScoped<SpaceCalendar>();
         services.AddScoped<IResourceDescriptorProvider, SpaceDescriptorProvider>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpacesSearchSource>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpaceTaskSearchSource>();
@@ -166,6 +167,26 @@ public static class SpacesModule
         var space = root.MapGroup("/{id:guid}");
 
         space.MapGet("/overview", async (Guid id, SpaceMilestones milestones, CancellationToken ct) => Results.Ok(await milestones.OverviewAsync(id, ct)));
+
+        // The team calendar (US6, FR-009): events, milestones, due dates and approved leave; free and busy through spec 018.
+        space.MapGet("/calendar", async (Guid id, DateOnly? from, DateOnly? to, SpaceCalendar calendar, CancellationToken ct) =>
+            Results.Ok(await calendar.GetAsync(id, from, to, ct)));
+        space.MapGet("/calendar/availability", async (Guid id, DateOnly? date, SpaceCalendar calendar, CancellationToken ct) =>
+            Results.Ok(await calendar.AvailabilityAsync(id, date, ct)));
+        space.MapPost("/events", async (Guid id, SpaceEventRequest request, SpaceCalendar calendar, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await calendar.CreateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/spaces/{id}/events/{view.Id}", view);
+        });
+        space.MapPut("/events/{eventId:guid}", async (Guid id, Guid eventId, SpaceEventRequest request, SpaceCalendar calendar, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await calendar.UpdateAsync(id, eventId, request, ct), ct));
+        space.MapDelete("/events/{eventId:guid}", async (Guid id, Guid eventId, SpaceCalendar calendar, IDbSession session, CancellationToken ct) =>
+        {
+            await calendar.DeleteAsync(id, eventId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
 
         space.MapPost("/status", async (Guid id, StatusRequest request, SpaceMilestones milestones, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await milestones.SetStatusAsync(id, request, ct), ct));
