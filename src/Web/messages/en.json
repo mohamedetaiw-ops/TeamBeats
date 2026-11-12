@@ -5079,7 +5079,8 @@
       "finance_rest": "Finance hand-off",
       "google_workspace": "Google Workspace",
       "hr_rest": "HR system (REST API)",
-      "hr_sftp": "HR system (SFTP and CSV)"
+      "hr_sftp": "HR system (SFTP and CSV)",
+      "microsoft365": "Microsoft 365"
     },
     "status": {
       "healthy": "Healthy",
@@ -5107,7 +5108,10 @@
       "finance_rest": "Sends approved expense claims to your finance system over REST and reads back their payment status.",
       "google_workspace": "Reads users and groups for directory sync, and files in chosen shared drives, through a service account with domain-wide delegation.",
       "hr_rest": "Reads the full employee list from an HR system's REST API every night.",
-      "hr_sftp": "Reads the newest full employee export that an HR system drops on an SFTP server every night."
+      "hr_sftp": "Reads the newest full employee export that an HR system drops on an SFTP server every night.",
+      "microsoft365": "Directory sync, mail, calendar and free and busy times from your Microsoft 365 tenant, each with its own consent.",
+      "servicenow": "Services and agents create incidents in ServiceNow and read their status.",
+      "jira_service_management": "Services and agents create requests in Jira Service Management and read their status."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -5872,6 +5876,75 @@
       "dataChangePath": "Data change address",
       "dataChangePathHint": "Approved changes to an employee's details are sent here, for example /data-changes.",
       "dataChangeReferencePathHint": "For example $.id. HR must answer with a reference for the change to show as recorded."
+    },
+    "overview": {
+      "add": "Add connection",
+      "emptyMessage": "Add a connection to bring your directory, mail, service desk or HR system into TeamBeats.",
+      "summary": "{total, plural, one {# connection} other {# connections}} · {attention, plural, =0 {none need attention} one {# needs attention} other {# need attention}} · {off, plural, =0 {all on} other {# off}}",
+      "search": "Search connections",
+      "noMatch": "No connection matches your search.",
+      "test": "Test",
+      "testOf": "Test {name}",
+      "testFailed": "Some checks failed. Open the connection to see them.",
+      "turnOnOf": "Turn on {name}",
+      "turnOffOf": "Turn off {name}",
+      "manage": "Manage",
+      "manageOf": "Manage {name}",
+      "neverRan": "No successful run yet",
+      "continueSetup": "Continue setting up {name}"
+    },
+    "wizard": {
+      "title": "Add a connection",
+      "intro": "Choose what to connect, set it up, test it, then turn it on. It stays off until you do.",
+      "progress": "Steps to add a connection",
+      "steps": {
+        "choose": "Choose a type",
+        "setup": "Set up",
+        "test": "Test",
+        "enable": "Turn on"
+      },
+      "stepState": {
+        "done": ", done",
+        "current": ", current step"
+      },
+      "choose": {
+        "title": "What do you want to connect?",
+        "intro": "Pick the system. Each type asks only for what it needs.",
+        "search": "Search connection types",
+        "noMatch": "No connection type matches your search.",
+        "unavailableTitle": "Not in your package",
+        "unavailableNote": "These types need another package. Ask the person who manages your plan."
+      },
+      "groups": {
+        "workplace": "Workplace and directory",
+        "service_desk": "Service desks",
+        "people_time": "HR and time",
+        "finance": "Finance",
+        "custom": "Your own systems"
+      },
+      "setup": {
+        "save": "Save and continue",
+        "changeType": "Choose another type",
+        "notAvailable": "This type is not included in your package."
+      },
+      "test": {
+        "title": "Test the connection",
+        "intro": "TeamBeats checks the settings, the credential and the address without changing anything in the other system. The connection stays off while you test.",
+        "failedNote": "Fix what failed: add a missing host below, or change the settings on the connection's page. You can also turn it on later.",
+        "continue": "Continue",
+        "changeSettings": "Change settings",
+        "consentTitle": "Grant consent and test",
+        "consentIntro": "A Microsoft 365 administrator grants consent for each feature in Microsoft. Then test each feature.",
+        "noFeatures": "No feature is turned on yet. Turn features on from the connection's page."
+      },
+      "enable": {
+        "title": "Turn on the connection",
+        "intro": "{name} is saved and off. Turn it on now, or leave it off and turn it on later from its page.",
+        "alreadyOn": "{name} is on.",
+        "turnOn": "Turn on now",
+        "later": "Leave it off for now",
+        "open": "Open the connection"
+      }
     }
   },
   "components_gallery": {

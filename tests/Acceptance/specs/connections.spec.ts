@@ -1,15 +1,32 @@
+import type { Page } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { msg, type LaunchLocale } from "../support/messages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
 
 /**
- * Spec 017 T005, T007, T010 and T012: the Connections area. The administrator allows a host, adds a custom REST connection
- * (it starts turned off), tests it, turns it on and off, defines an action without code, reads the run history and
+ * Spec 006 US5 and FR-016, spec 017 T005, T007, T010 and T012: the Connections area. The administrator allows a host,
+ * adds a custom REST connection through the "Add connection" wizard (type grid with product marks, setup, test, turn
+ * on; it starts turned off), manages it from the overview, turns it off, defines an action without code, reads the run history and
  * deletes the connection, in English and Arabic with axe. Nothing calls an external system: the test only checks the
  * allowlist, and no action runs. A ServiceNow connection is added in a tenant of its own and its test stops at the
  * missing credential. A clock data import takes an uploaded CSV file and lists the row it could not match. The API decides every rule.
  */
+/** Opens the "Add connection" wizard and picks a type from its grid (spec 006 FR-016). */
+async function chooseType(page: Page, locale: LaunchLocale, kind: string) {
+  await page.getByRole("link", { name: msg(locale, "connections.overview.add") }).first().click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.wizard.title"));
+  await page.getByRole("link", { name: msg(locale, `connections.kinds.${kind}`), exact: true }).click();
+  await expect(page.locator('[aria-current="step"]')).toContainText(msg(locale, "connections.wizard.steps.setup"));
+}
+
+/** After "Save and continue" the wizard is on its test step; this opens the new connection's own page. */
+async function openSaved(page: Page, locale: LaunchLocale, name: string) {
+  await expect(page.locator('[aria-current="step"]')).toContainText(msg(locale, "connections.wizard.steps.test"));
+  await page.getByRole("link", { name: msg(locale, "connections.wizard.test.changeSettings") }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+}
+
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`connections in ${locale}`, () => {
     test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
@@ -35,23 +52,52 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
       await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", host) })).toBeVisible();
 
+      // The wizard: choose a type from the grid of product marks, set it up, test it, turn it on.
+      await page.getByRole("link", { name: msg(locale, "connections.overview.add") }).first().click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.wizard.title"));
+      await expect(page.locator('[aria-current="step"]')).toContainText(msg(locale, "connections.wizard.steps.choose"));
+      await expect(page.getByRole("heading", { name: msg(locale, "connections.wizard.groups.workplace"), level: 3 })).toBeVisible();
+      await expect(page.getByTestId("type-slack").locator("img")).toHaveAttribute("src", "/connectors/slack.svg");
+      await expect(page.getByTestId("type-microsoft365").locator("img")).toHaveAttribute("src", "/connectors/microsoft.svg");
+      await expect(page.getByTestId("type-custom_rest").locator("img")).toHaveCount(0);
+      await page.getByLabel(msg(locale, "connections.wizard.choose.search")).fill("Slack");
+      await expect(page.getByTestId("type-google_workspace")).toHaveCount(0);
+      await expect(page.getByTestId("type-slack")).toBeVisible();
+      await page.getByLabel(msg(locale, "connections.wizard.choose.search")).fill("");
+      await expectAccessible(page, testInfo, `connection-types-${locale}`);
+      await page.getByRole("link", { name: msg(locale, "connections.kinds.custom_rest"), exact: true }).click();
+
       const addRest = page.getByRole("region", { name: msg(locale, "connections.add.title") });
       await addRest.getByLabel(msg(locale, "connections.settings.name")).fill(name);
       await addRest.getByLabel(msg(locale, "connections.settings.baseUrl")).fill(`https://${host}/v1`);
       await addRest.getByLabel(msg(locale, "connections.settings.authType")).selectOption("none");
-      await addRest.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+      await expectAccessible(page, testInfo, `connection-setup-${locale}`);
+      await addRest.getByRole("button", { name: msg(locale, "connections.wizard.setup.save") }).click();
 
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await expect(page.locator('[aria-current="step"]')).toContainText(msg(locale, "connections.wizard.steps.test"));
+      await expect(page.getByText(name, { exact: true })).toBeVisible();
       await expect(page.getByText(msg(locale, "connections.status.disabled"), { exact: true })).toBeVisible();
-      await expectAccessible(page, testInfo, `connection-${locale}`);
-
       await page.getByRole("button", { name: msg(locale, "connections.detail.test"), exact: true }).click();
       await expect(page.getByRole("status").filter({ hasText: msg(locale, "connections.detail.testPassed") })).toBeVisible();
       await expect(page.getByText(msg(locale, "connections.checks.host_allowed"))).toBeVisible();
+      await expectAccessible(page, testInfo, `connection-test-${locale}`);
+      await page.getByRole("link", { name: msg(locale, "connections.wizard.test.continue") }).click();
 
-      await page.getByRole("button", { name: msg(locale, "connections.detail.enable"), exact: true }).click();
-      await expect(page.getByRole("status").filter({ hasText: msg(locale, "connections.detail.enabled") })).toBeVisible();
+      await expect(page.locator('[aria-current="step"]')).toContainText(msg(locale, "connections.wizard.steps.enable"));
+      await page.getByRole("button", { name: msg(locale, "connections.wizard.enable.turnOn"), exact: true }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
       await expect(page.getByText(msg(locale, "connections.status.healthy"), { exact: true })).toBeVisible();
+      await expectAccessible(page, testInfo, `connection-${locale}`);
+
+      // The overview lists it with its status and quick actions.
+      await page.getByRole("link", { name: msg(locale, "connections.back") }).click();
+      const row = page.getByTestId("connection-row").filter({ hasText: name });
+      await expect(row.getByText(msg(locale, "connections.status.healthy"), { exact: true })).toBeVisible();
+      await row.getByRole("button", { name: msg(locale, "connections.overview.testOf").replace("{name}", name) }).click();
+      await expect(row.getByRole("status").filter({ hasText: msg(locale, "connections.detail.testPassed") })).toBeVisible();
+      await expectAccessible(page, testInfo, `connections-overview-${locale}`);
+      await row.getByRole("link", { name: msg(locale, "connections.overview.manageOf").replace("{name}", name) }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
       await page.getByRole("button", { name: msg(locale, "connections.detail.disable"), exact: true }).click();
       await expect(page.getByRole("status").filter({ hasText: msg(locale, "connections.detail.disabled") })).toBeVisible();
 
@@ -108,15 +154,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
       await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", host) })).toBeVisible();
 
+      await chooseType(page, locale, "servicenow");
       const add = page.getByRole("region", { name: msg(locale, "connections.ticketing.servicenow.addTitle") });
       await expect(add.getByLabel(msg(locale, "connections.settings.authType")).locator("option")).toHaveCount(2);
       await add.getByLabel(msg(locale, "connections.settings.name")).fill(name);
       await add.getByLabel(msg(locale, "connections.settings.baseUrl")).fill(`https://${host}`);
       await add.getByLabel(msg(locale, "connections.settings.secretRef")).fill(`secret://tenants/${own.id}/service-desk`);
       await add.getByLabel(msg(locale, "connections.settings.username")).fill("teambeats.integration");
-      await add.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+      await add.getByRole("button", { name: msg(locale, "connections.wizard.setup.save") }).click();
 
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await openSaved(page, locale, name);
       await expect(page.getByText(msg(locale, "connections.status.disabled"), { exact: true })).toBeVisible();
       await expect(page.getByLabel(msg(locale, "connections.settings.username"))).toHaveValue("teambeats.integration");
       await expectAccessible(page, testInfo, `servicenow-connection-${locale}`);
@@ -137,13 +184,14 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
       await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", "slack.com") })).toBeVisible();
 
+      await chooseType(page, locale, "slack");
       const add = page.getByRole("form", { name: msg(locale, "connections.slack.formLabel") });
       await expect(add.getByLabel(msg(locale, "connections.slack.baseUrl"))).toHaveValue("https://slack.com/api");
       await add.getByLabel(msg(locale, "connections.settings.name")).fill(name);
       await add.getByLabel(msg(locale, "connections.slack.botToken")).fill(`secret://tenants/${own.id}/slack-bot`);
-      await add.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+      await add.getByRole("button", { name: msg(locale, "connections.wizard.setup.save") }).click();
 
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await openSaved(page, locale, name);
       await expect(page.getByLabel(msg(locale, "connections.slack.botToken"))).toHaveValue(`secret://tenants/${own.id}/slack-bot`);
       await expectAccessible(page, testInfo, `slack-connection-${locale}`);
 
@@ -158,15 +206,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
       await signInWithDevForm(page, own.key, own.adminEmail, locale);
       await page.goto(`${hostOrigin(own.key)}/admin/connections`);
+      await chooseType(page, locale, "clock_import");
       const add = page.getByRole("form", { name: msg(locale, "connections.clock.formLabel") });
       await add.getByLabel(msg(locale, "connections.settings.name")).fill(name);
       await add.getByLabel(msg(locale, "connections.clock.source")).selectOption("upload");
       await add.getByLabel(msg(locale, "connections.clock.columns.employeeNumber"), { exact: true }).fill("Badge");
       await add.getByLabel(msg(locale, "connections.clock.columns.timestamp"), { exact: true }).fill("When");
       await add.getByLabel(msg(locale, "connections.clock.timeZone"), { exact: true }).fill("Asia/Riyadh");
-      await add.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+      await add.getByRole("button", { name: msg(locale, "connections.wizard.setup.save") }).click();
 
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await openSaved(page, locale, name);
       await page.getByRole("button", { name: msg(locale, "connections.detail.enable"), exact: true }).click();
       await expect(page.getByRole("status").filter({ hasText: msg(locale, "connections.detail.enabled") })).toBeVisible();
 
@@ -200,6 +249,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
       await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", host) })).toBeVisible();
 
+      await chooseType(page, locale, "finance_rest");
       const add = page.getByRole("form", { name: msg(locale, "connections.finance.formLabel") });
       await add.getByLabel(msg(locale, "connections.settings.name")).fill(name);
       await add.getByLabel(msg(locale, "connections.settings.baseUrl")).fill(`https://${host}/api`);
@@ -209,9 +259,9 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await add.getByLabel(msg(locale, "connections.finance.fields.amount"), { exact: true }).fill("total.value");
       await add.getByLabel(msg(locale, "connections.finance.fields.currency"), { exact: true }).fill("total.currency");
       await add.getByLabel(msg(locale, "connections.finance.statuses.paid"), { exact: true }).fill("PAID, SETTLED");
-      await add.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+      await add.getByRole("button", { name: msg(locale, "connections.wizard.setup.save") }).click();
 
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await openSaved(page, locale, name);
       await expect(page.getByLabel(msg(locale, "connections.finance.fields.employee_number"), { exact: true })).toHaveValue("employee.code");
       await expect(page.getByLabel(msg(locale, "connections.finance.statuses.paid"), { exact: true })).toHaveValue("PAID, SETTLED");
       const panel = page.getByRole("region", { name: msg(locale, "connections.finance.handoffs.title") });
@@ -235,6 +285,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
         await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", host) })).toBeVisible();
       }
 
+      await chooseType(page, locale, "google_workspace");
       const add = page.getByRole("form", { name: msg(locale, "connections.google.formLabel") });
       await add.getByLabel(msg(locale, "connections.settings.name")).fill(name);
       await add.getByLabel(msg(locale, "connections.google.domain"), { exact: true }).fill(`${own.key}.example`);
@@ -243,9 +294,9 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await add.getByLabel(msg(locale, "connections.google.keyRef"), { exact: true }).fill(`secret://tenants/${own.id}/google-key`);
       await add.getByLabel(msg(locale, "connections.google.features.drive"), { exact: true }).check();
       await add.getByLabel(msg(locale, "connections.google.sharedDrives"), { exact: true }).fill("0AAbcDriveFinance1");
-      await add.getByRole("button", { name: msg(locale, "connections.add.submit") }).click();
+      await add.getByRole("button", { name: msg(locale, "connections.wizard.setup.save") }).click();
 
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await openSaved(page, locale, name);
       await expect(page.getByLabel(msg(locale, "connections.google.sharedDrives"), { exact: true })).toHaveValue("0AAbcDriveFinance1");
       await expect(page.getByRole("button", { name: msg(locale, "connections.google.useForDirectory") })).toBeVisible();
       await expectAccessible(page, testInfo, `google-connection-${locale}`);
@@ -262,13 +313,20 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin/connections`);
+      await chooseType(page, locale, "microsoft365");
       const add = page.getByRole("form", { name: msg(locale, "connections.m365.addTitle") });
+      // Each feature lists the Microsoft permissions it needs before anything is saved (spec 006 US5 scenario 2).
+      await expect(add.getByText("Mail.ReadBasic").first()).toBeVisible();
       await add.getByLabel(msg(locale, "connections.m365.tenantId")).fill(tenantId);
       await add.getByLabel(msg(locale, "connections.m365.name")).fill(name);
       await add.getByLabel(mail, { exact: true }).check();
-      await add.getByRole("button", { name: msg(locale, "connections.m365.add") }).click();
+      await add.getByRole("button", { name: msg(locale, "connections.wizard.setup.save") }).click();
 
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      // The wizard's third step asks for consent per feature, then the test.
+      await expect(page.getByRole("heading", { name: msg(locale, "connections.wizard.test.consentTitle"), level: 2 })).toBeVisible();
+      await expect(page.getByRole("link", { name: msg(locale, "connections.m365.grantConsent").replace("{feature}", mail) })).toBeVisible();
+      await expectAccessible(page, testInfo, `m365-consent-${locale}`);
+      await openSaved(page, locale, name);
       await expect(page.getByText(msg(locale, "connections.status.needs_consent"), { exact: true })).toBeVisible();
       await expect(page.getByText(msg(locale, "connections.m365.permissions.mail_read_basic"))).toBeVisible();
       await expect(page.getByRole("link", { name: msg(locale, "connections.m365.grantConsent").replace("{feature}", mail) })).toBeVisible();
@@ -283,7 +341,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await deletion.getByRole("button", { name: msg(locale, "connections.detail.delete"), exact: true }).click();
       await page.getByRole("button", { name: msg(locale, "connections.detail.deleteConfirm"), exact: true }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
-      await expect(page.getByText(msg(locale, "connections.m365.empty"))).toBeVisible();
+      await expect(page.getByTestId("connection-row").filter({ hasText: name })).toHaveCount(0);
     });
 
     test("an administrator adds a webhook that sends an event and receives deliveries, reads its inbound address and deletes it", async ({ page }, testInfo) => {
@@ -297,6 +355,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: msg(locale, "connections.allowlist.add") }).click();
       await expect(page.getByRole("button", { name: msg(locale, "connections.allowlist.removeHost").replace("{host}", host) })).toBeVisible();
 
+      await chooseType(page, locale, "webhook");
       const form = page.getByRole("form", { name: msg(locale, "connections.webhooks.formLabel") });
       await form.getByLabel(msg(locale, "connections.webhooks.name")).fill(name);
       await form.getByLabel(msg(locale, "connections.webhooks.url")).fill(`https://${host}/teambeats`);
@@ -307,9 +366,9 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await form.getByLabel(msg(locale, "connections.webhooks.targetName")).fill("permits.approved");
       await form.getByLabel(msg(locale, "connections.webhooks.fields"), { exact: true }).fill("status: $.permit.status");
       await expectAccessible(page, testInfo, `webhook-add-${locale}`);
-      await form.getByRole("button", { name: msg(locale, "connections.webhooks.add") }).click();
+      await form.getByRole("button", { name: msg(locale, "connections.wizard.setup.save") }).click();
 
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await openSaved(page, locale, name);
       await expect(page.getByText(msg(locale, "connections.status.disabled"), { exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: msg(locale, "connections.webhooks.inboundTitle"), level: 2 })).toBeVisible();
       await expect(page.getByText("/api/v1/integrations/inbound/")).toBeVisible();
@@ -326,15 +385,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin/connections`);
+      await chooseType(page, locale, "onprem_ad");
       const form = page.getByRole("form", { name: msg(locale, "connections.onprem.formLabel") });
       await form.getByLabel(msg(locale, "connections.onprem.name")).fill(name);
       await form.getByLabel(msg(locale, "connections.onprem.host")).fill(`dc01.${locale}.corp.example`);
       await form.getByLabel(msg(locale, "connections.onprem.port")).selectOption("3269");
       await form.getByLabel(msg(locale, "connections.onprem.baseDn")).fill("DC=corp,DC=example");
       await expectAccessible(page, testInfo, `onprem-add-${locale}`);
-      await form.getByRole("button", { name: msg(locale, "connections.onprem.add") }).click();
+      await form.getByRole("button", { name: msg(locale, "connections.wizard.setup.save") }).click();
 
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(name);
+      await openSaved(page, locale, name);
       const agents = page.getByRole("region", { name: msg(locale, "connections.agents.title") });
       await expect(agents.getByText(msg(locale, "connections.agents.empty"))).toBeVisible();
       await agents.getByRole("button", { name: msg(locale, "connections.agents.makeCode") }).click();

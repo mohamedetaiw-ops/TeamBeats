@@ -206,7 +206,7 @@ Acme runs Active Directory on premises and uses TeamBeats SaaS.
 Microsoft 365 features keep their own keys (`integration.microsoft365`, spec 006).
 
 ## 10. UX, localization and accessibility
-- The Connections area shows every connection with type, features, status, last success and owner; a connection page has tabs for features, credentials, actions, webhooks, run history and dependents.
+- The Connections area shows every established connection with its product mark, type, features, status, last success and owner, with Test, Turn on or off and Manage on each; a new connection is added through the "Add connection" wizard of spec 006 FR-016 (choose a type, set up, test, turn on). A connection page has tabs for features, credentials, actions, webhooks, run history and dependents.
 - Errors are shown as plain classes ("the system refused the credential", "the system is not responding") with the technical detail behind a disclosure.
 - All screens in Arabic and English, RTL, keyboard operable; mappings use field pickers, not free text.
 
