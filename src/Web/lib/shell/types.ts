@@ -53,6 +53,8 @@ export type Shell = {
   homeViews?: HomeView[] | null;
   /** True when the viewer may open at least one administration section, so the account menu offers Administration (FR-062). */
   administration: boolean;
+  /** Bottom navigation on phones (spec 030 FR-005): at most five global menu entries this viewer may open. */
+  mobileNav?: NavLink[] | null;
 };
 
 export type Crumb = { label: string; href: string };

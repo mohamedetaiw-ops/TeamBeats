@@ -19,7 +19,7 @@ namespace TeamBeats.Modules.Experience.Shell;
 /// </summary>
 public sealed record ShellDefinition(IReadOnlyList<string> Start, IReadOnlyList<string> Center, IReadOnlyList<string> End,
     IReadOnlyList<string> Below, IReadOnlyList<string> Utilities, Guid? HomePageId = null, ShellFooter? Footer = null,
-    IReadOnlyList<HomeViewConfig>? HomeViews = null);
+    IReadOnlyList<HomeViewConfig>? HomeViews = null, IReadOnlyList<Guid>? MobileNav = null);
 
 /// <summary>One footer link (spec 008 FR-056): a kind the footer knows, its label per locale and where it goes.</summary>
 public sealed record FooterLink(string Kind, IReadOnlyDictionary<string, string> Labels, string Url);
@@ -60,7 +60,8 @@ public sealed record OrganizationIndicator(Guid Id, string Name, bool Primary);
 /// <param name="Administration">True when the caller may open at least one administration section (FR-062).</param>
 public sealed record ShellView(int Version, ShellDefinition Layout, IReadOnlyList<NavLink> GlobalMenu,
     IReadOnlyList<OrganizationMenu> OrganizationMenus, IReadOnlyList<OrganizationIndicator> Organizations, bool CanSwitchOrganization,
-    string? Home = null, bool Assistant = false, FooterView? Footer = null, IReadOnlyList<HomeViewLink>? HomeViews = null, bool Administration = false);
+    string? Home = null, bool Assistant = false, FooterView? Footer = null, IReadOnlyList<HomeViewLink>? HomeViews = null, bool Administration = false,
+    IReadOnlyList<NavLink>? MobileNav = null);
 
 public sealed record OrganizationMenu(Guid OrgUnitId, string Name, IReadOnlyList<NavLink> Items);
 
@@ -116,6 +117,12 @@ public sealed partial class ShellService(
 
     private const int MaxFooterLinks = 8;
     private const int MaxHomeViews = 5;
+
+    /// <summary>Bottom navigation on phones (spec 030 FR-005): at most this many items with labels; "More" holds the rest.</summary>
+    public const int MaxMobileNav = 5;
+
+    /// <summary>Items shown when the tenant chose none: the first entries of the global menu, leaving room for "More".</summary>
+    public const int DefaultMobileNav = 4;
     private const int MaxLabel = 80;
 
     // Shell
@@ -204,14 +211,19 @@ public sealed partial class ShellService(
         }
 
         var home = await HomeSlugAsync(layout.HomePageId, ct);
+        var globalLinks = global is null ? [] : await LinksAsync(global.Items, nodes, visible, locale, ct);
+        // Bottom navigation (spec 030 FR-005): the chosen global menu entries this viewer may see, in the chosen order.
+        var mobile = layout.MobileNav is { Count: > 0 } chosen
+            ? chosen.Select(id => globalLinks.FirstOrDefault(l => l.NodeId == id)).OfType<NavLink>().Take(MaxMobileNav).ToList()
+            : globalLinks.Take(DefaultMobileNav).ToList();
         // The footer and home views go out resolved for this viewer; their configuration (pages, audience rules) stays with editors.
         return new ShellView(version, layout with { Footer = null, HomeViews = null },
-            global is null ? [] : await LinksAsync(global.Items, nodes, visible, locale, ct), orgMenus,
+            globalLinks, orgMenus,
             organizations, organizations.Count > 1, home,
             // The Ask TeamBeats button (spec 008 FR-056) appears only when the tenant's package has the assistant.
             await entitlements.IsEnabledAsync(Capabilities.AiAssistant, ct),
             FooterFor(layout.Footer, locale),
-            home is null ? [] : await HomeViewsAsync(layout.HomeViews ?? [], locale, ct));
+            home is null ? [] : await HomeViewsAsync(layout.HomeViews ?? [], locale, ct), MobileNav: mobile);
     }
 
     /// <summary>The footer in the viewer's language (spec 008 FR-056); absent when the tenant configured nothing.</summary>
@@ -585,9 +597,15 @@ public sealed partial class ShellService(
                 errors.Add($"homeViews[{i}].labels", "validation.shell.label");
             }
         }
+        var mobileNav = request.MobileNav ?? [];
+        if (mobileNav.Count > MaxMobileNav || mobileNav.Distinct().Count() != mobileNav.Count)
+        {
+            errors.Add("mobileNav", "validation.shell.mobile_nav");
+        }
         errors.ThrowIfAny();
         return new ShellDefinition(request.Start ?? [], request.Center ?? [], request.End ?? [], request.Below ?? [], utilities, request.HomePageId,
-            footer is null ? null : new ShellFooter(footer.Organization, links, footer.Classification), views.Count == 0 ? null : views);
+            footer is null ? null : new ShellFooter(footer.Organization, links, footer.Classification), views.Count == 0 ? null : views,
+            mobileNav.Count == 0 ? null : mobileNav);
     }
 
     /// <summary>Labels per supported locale, each one line of at most 80 characters.</summary>

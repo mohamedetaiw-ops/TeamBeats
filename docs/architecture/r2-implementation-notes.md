@@ -1023,3 +1023,20 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A closure can be set from today up to a year ahead, with a reason of up to 500 characters that the holders see.
 - Cleared bookings keep the empty id as holder, as the columns are required; nobody sees them as theirs.
 - The grid shows 30 minute slots whatever the tenant's slot length, so a day fits on a phone.
+
+## Mobile app (spec 030, slice 1: T001 to T004; US1, US5)
+
+### Built
+- Installable app (FR-001): `GET /api/v1/experience/manifest.webmanifest` gives the web app manifest for the signed-in viewer: the tenant's display name (spec 001), a short name of up to 12 characters, the accent and surface colours of the brand of the viewer's primary unit (spec 033) as theme and background colours, and its icons. The icons are the brand's favicon when it has one, an SVG of the tenant's initials on the brand colour (`GET /api/v1/experience/app-icon.svg`, also as a maskable icon) and the platform PNGs at 192 and 512 px. Both need the session and the `mobile.pwa` capability; the tenant comes from the session, so a manifest is never another tenant's.
+- Capabilities (Entitlements migration 0025): `mobile.pwa` and `mobile.push` in every package, `mobile.offline` and `mobile.kiosk` in workplace_plus and enterprise_gov, `mobile.native_shell` (R3) in enterprise_gov.
+- Service worker (FR-002, FR-019): `public/sw.js`, versioned by the release. It keeps only the app shell: the offline page, fetched without cookies so it holds nothing about anyone, the icons and the hashed build files. It never handles `/api` or `/dev` and never stores a page, so nothing is kept across people or tenants. Pages come from the network and the offline page answers when there is none.
+- Updates (FR-002): a new release waits. The app shows "A new version is ready" with Reload and Later, hides it while a field has focus, and applies it only on Reload.
+- Bottom navigation (FR-004, FR-005): Shell settings lets the experience administrator tick up to five global menu entries. The shell definition takes them as `mobileNav`, up to five global menu entries in order, validated as `validation.shell.mobile_nav`. The shell gives each viewer the chosen entries they may open as `mobileNav`. Under 40rem the shell draws them as a bar at the bottom with labels, 56 px tall targets, "More" for the rest of the global menu and logical properties so it mirrors in Arabic.
+- Phone layouts (FR-003): `mobile.spec.ts` opens every page of R1 and R2 that needs no id at 360 px in Arabic and English and fails on any horizontal page scroll. The pages that scrolled sideways (tenant settings, users, plan, search settings, agent policy, HR integration) all had one cause: a grid whose single column grew to the widest child, such as a long option in a list or a wide table. Inside a page, children of grids and flex rows may now shrink below their content, fields never grow past their box, admin text wraps like page text, and segmented control labels wrap on phones.
+- The add connection page sorted names with the device language, so the server and an Arabic browser put them in a different order; it now sorts with the page language, as does the connections list.
+
+### Smallest safe defaults
+- The spec does not say which brand an installed app follows when the tenant has several. It follows the brand of the viewer's primary unit, the same one the shell shows them, and the tenant's default otherwise.
+- With no entries chosen, the bar shows the first four global menu entries. When there are more entries than places, "More" takes the fifth place, so the bar never has more than five targets.
+- The offline page is stored in the language of the install. It is a static page with no personal content.
+- In development the build files are not stored, since their names do not change between edits.

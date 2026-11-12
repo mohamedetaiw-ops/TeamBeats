@@ -1,0 +1,31 @@
+/* The "new version" prompt (spec 030 FR-002) floats at the bottom until the person reloads or picks Later. */
+.app-update {
+  position: fixed;
+  z-index: 25;
+  inset-block-end: var(--tb-space-lg);
+  inset-inline: var(--tb-space-md);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  max-inline-size: 28rem;
+  margin-inline: auto;
+  padding-block: var(--tb-space-sm);
+  padding-inline: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-md);
+}
+
+.app-update-title {
+  flex: 1 1 10rem;
+  margin: 0;
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.app-update-actions {
+  display: flex;
+  gap: var(--tb-space-xs);
+}

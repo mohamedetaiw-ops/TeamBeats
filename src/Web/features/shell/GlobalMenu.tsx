@@ -23,13 +23,13 @@ const iconPrefixes: [string, IconName][] = [
   ["/notifications", "bell"],
 ];
 
-function iconFor(href: string): IconName {
+export function iconFor(href: string): IconName {
   if (href === "/") return "home";
   if (!href.startsWith("/")) return "link";
   return iconPrefixes.find(([prefix]) => href === prefix || href.startsWith(`${prefix}/`) || href.startsWith(`${prefix}?`))?.[1] ?? "link";
 }
 
-function isCurrent(href: string, path: string): boolean {
+export function isCurrent(href: string, path: string): boolean {
   if (!href.startsWith("/")) return false;
   const target = href.split(/[?#]/)[0]!;
   return target === "/" ? path === "/" : path === target || path.startsWith(`${target}/`);

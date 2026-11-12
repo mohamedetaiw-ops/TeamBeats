@@ -9,6 +9,7 @@ import { CriticalNotices } from "@/features/content/CriticalNotices";
 import { AccountMenu } from "./AccountMenu";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { GlobalMenu } from "./GlobalMenu";
+import { MobileNav } from "./MobileNav";
 import { QuickNav } from "./QuickNav";
 import { SettingsPanel } from "./SettingsPanel";
 import { Icon } from "@/components/ui/Icon";
@@ -109,6 +110,7 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
           <span>{t("ask")}</span>
         </Link>
       ) : null}
+      {shell.ok && regions.includes("global_navigation") && shell.data.mobileNav?.length ? <MobileNav items={shell.data.mobileNav} all={shell.data.globalMenu} /> : null}
     </header>
   );
 }

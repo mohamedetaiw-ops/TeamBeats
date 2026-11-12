@@ -1,7 +1,21 @@
 {
   "app": {
     "name": "TeamBeats",
-    "skipToContent": "Skip to main content"
+    "skipToContent": "Skip to main content",
+    "offline": {
+      "title": "You are offline",
+      "message": "There is no connection. Pages open again when you are back online.",
+      "retry": "Try again"
+    },
+    "update": {
+      "title": "A new version is ready",
+      "reload": "Reload",
+      "later": "Later"
+    },
+    "nav": {
+      "label": "Shortcuts",
+      "more": "More"
+    }
   },
   "home": {
     "title": "Welcome, {name}",
@@ -616,7 +630,8 @@
       "engagement": "Communities and engagement",
       "learning": "Learning",
       "spaces": "Spaces",
-      "booking": "Space booking"
+      "booking": "Space booking",
+      "mobile": "Mobile app"
     },
     "plan": {
       "description": "The package this workspace uses and everything it includes.",
@@ -762,7 +777,12 @@
         "booking_rooms": "Room booking",
         "booking_desks": "Desk booking",
         "booking_resources": "Parking and equipment booking",
-        "booking_reports": "Booking reports"
+        "booking_reports": "Booking reports",
+        "mobile_pwa": "Installable app",
+        "mobile_push": "Push notifications",
+        "mobile_offline": "Offline reading",
+        "mobile_kiosk": "Kiosk and shared devices",
+        "mobile_native_shell": "Store apps for iOS and Android"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -1430,6 +1450,12 @@
         "audience": "Audience"
       },
       "removeShort": "Remove"
+    },
+    "mobile": {
+      "title": "Bottom navigation on phones",
+      "intro": "Choose up to {max} entries of the global menu for the bar at the bottom of phone screens. More holds the rest.",
+      "noEntries": "Publish the global menu first; its entries can then go in the bottom navigation.",
+      "default": "Nothing chosen: phones show the first four entries of the global menu."
     }
   },
   "personalization": {

@@ -1001,6 +1001,7 @@
   "validation.shell.home_unknown": "اختر صفحة من صفحات هذه المؤسسة لتكون الصفحة الرئيسية",
   "validation.shell.home_views_need_home": "اختر الصفحة الرئيسية قبل إضافة عروض أخرى لها",
   "validation.shell.home_views_too_many": "أضف خمسة عروض للصفحة الرئيسية على الأكثر",
+  "validation.shell.mobile_nav": "اختر 5 عناصر على الأكثر من القائمة لشريط التنقل السفلي، كل عنصر مرة واحدة.",
   "validation.shell.home_view_id": "أعط كل عرض معرّفًا قصيرًا خاصًا به من حروف لاتينية صغيرة وأرقام وشرطات",
   "validation.shell.label": "اكتب كل تسمية بالعربية أو الإنجليزية في سطر واحد لا يزيد على 80 حرفًا",
   "validation.shell.footer_too_many": "أضف ثمانية روابط على الأكثر في تذييل الصفحة",

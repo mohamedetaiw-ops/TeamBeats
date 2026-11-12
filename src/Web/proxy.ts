@@ -15,6 +15,9 @@ export function contentSecurityPolicy(nonce: string, dev: boolean): string {
     "font-src 'self'",
     "connect-src 'self'",
     "frame-src 'self'",
+    // The app's service worker (spec 030 FR-002) is a script of this host.
+    "worker-src 'self'",
+    "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

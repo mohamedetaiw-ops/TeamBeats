@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import "./shell-settings.css";
@@ -16,10 +17,16 @@ type ViewConfig = { id: string; labels: Labels; pageId: string; audienceRuleId: 
 
 export type ShellAdmin = {
   version: number;
-  definition: Record<string, unknown> & { homePageId?: string | null; footer?: FooterConfig | null; homeViews?: ViewConfig[] | null };
+  definition: Record<string, unknown> & { homePageId?: string | null; footer?: FooterConfig | null; homeViews?: ViewConfig[] | null; mobileNav?: string[] | null };
 };
 
 export type AudienceOption = { id: string; labels: Labels };
+
+/** A global menu entry that can go in the bottom navigation on phones (spec 030 FR-005). */
+export type MenuEntry = { nodeId: string; label: string };
+
+/** At most this many entries in the bottom navigation; the API checks it too. */
+const MOBILE_NAV_MAX = 5;
 
 type LinkRow = { key: string; kind: LinkKind; en: string; ar: string; url: string };
 type ViewRow = { key: string; id: string; en: string; ar: string; pageId: string; audienceRuleId: string };
@@ -39,7 +46,17 @@ function labels(en: string, ar: string): Labels | null {
  * The shell settings form (spec 008 FR-056, FR-058). It edits only the footer and the home views and sends the rest of
  * the published shell back as it was. What is valid, who may save and which audiences exist are the API's answers.
  */
-export function ShellSettings({ initial, pages, audiences }: { initial: ShellAdmin; pages: { id: string; slug: string }[]; audiences: AudienceOption[] | null }) {
+export function ShellSettings({
+  initial,
+  pages,
+  audiences,
+  entries,
+}: {
+  initial: ShellAdmin;
+  pages: { id: string; slug: string }[];
+  audiences: AudienceOption[] | null;
+  entries: MenuEntry[];
+}) {
   const t = useTranslations("shell_settings");
   const locale = useLocale();
   const router = useRouter();
@@ -58,6 +75,7 @@ export function ShellSettings({ initial, pages, audiences }: { initial: ShellAdm
   const [result, setResult] = useState<{ ok: boolean; messages: string[] } | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const [mobile, setMobile] = useState<string[]>(definition.mobileNav ?? []);
   const home = definition.homePageId ?? null;
   const pageOptions = [{ value: "", label: t("views.choosePage") }, ...pages.filter((p) => p.id !== home).map((p) => ({ value: p.id, label: p.slug }))];
   const audienceOptions = [
@@ -80,6 +98,8 @@ export function ShellSettings({ initial, pages, audiences }: { initial: ShellAdm
       homeViews: views.length > 0
         ? views.map((v) => ({ id: v.id.trim(), labels: labels(v.en, v.ar) ?? {}, pageId: v.pageId || null, audienceRuleId: v.audienceRuleId || null }))
         : null,
+      // In the order of the global menu, so the bar reads as the menu does.
+      mobileNav: mobile.length > 0 ? entries.map((e) => e.nodeId).filter((id) => mobile.includes(id)) : null,
     };
     const response = await fetch("/api/v1/experience/shell/definition", {
       method: "PUT",
@@ -246,6 +266,31 @@ export function ShellSettings({ initial, pages, audiences }: { initial: ShellAdm
           })}
         </ol>
         {home ? <Button icon="plus" onClick={() => setViews((rows) => [...rows, { key: newKey(), id: "", en: "", ar: "", pageId: "", audienceRuleId: "" }])}>{t("views.add")}</Button> : null}
+      </section>
+
+      <section className="shell-settings-section" aria-labelledby="shell-settings-mobile">
+        <h2 id="shell-settings-mobile">{t("mobile.title")}</h2>
+        <p className="shell-settings-hint">{t("mobile.intro", { max: MOBILE_NAV_MAX })}</p>
+        {entries.length === 0 ? (
+          <p className="shell-settings-hint">{t("mobile.noEntries")}</p>
+        ) : (
+          <fieldset className="shell-settings-mobile">
+            <legend className="visually-hidden">{t("mobile.title")}</legend>
+            {entries.map((entry) => {
+              const on = mobile.includes(entry.nodeId);
+              return (
+                <Checkbox
+                  key={entry.nodeId}
+                  label={entry.label}
+                  checked={on}
+                  disabled={!on && mobile.length >= MOBILE_NAV_MAX}
+                  onChange={(e) => setMobile((ids) => (e.target.checked ? [...ids, entry.nodeId] : ids.filter((id) => id !== entry.nodeId)))}
+                />
+              );
+            })}
+          </fieldset>
+        )}
+        {mobile.length === 0 && entries.length > 0 ? <p className="shell-settings-hint">{t("mobile.default")}</p> : null}
       </section>
 
       {result ? (

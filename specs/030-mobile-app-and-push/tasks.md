@@ -3,10 +3,10 @@
 Depends on 003, 008, 015, 026, 033. R2.
 
 ## Phase 1: PWA base (P1)
-- [ ] T001 [P] [US1] Tests: manifest per tenant and brand; update prompt never during input
-- [ ] T002 [US1] Manifest endpoint, service worker, update flow
-- [ ] T003 [P] [US5] Mobile viewport e2e suite for all routes in ar and en
-- [ ] T004 [US5] Responsive fixes and bottom navigation
+- [x] T001 [P] [US1] Tests: manifest per tenant and brand; update prompt never during input
+- [x] T002 [US1] Manifest endpoint, service worker, update flow
+- [x] T003 [P] [US5] Mobile viewport e2e suite for all routes in ar and en
+- [x] T004 [US5] Responsive fixes and bottom navigation
 
 ## Phase 2: User Story 2, push (P1)
 - [ ] T005 [P] [US2] Tests: prompt timing, decline memory, preferences, no Confidential payload, removal on sign-out and gone

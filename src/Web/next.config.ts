@@ -6,10 +6,24 @@ const apiOrigin = process.env.TEAMBEATS_API_ORIGIN ?? "http://localhost:5080";
 const config: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
+  // The development badge sits over the bottom navigation on phones; build errors still show in the overlay.
+  devIndicators: false,
   // The release in frontend error reports (spec 021 US9): the deployed commit, or "dev" locally.
   env: { NEXT_PUBLIC_TEAMBEATS_RELEASE: process.env.TEAMBEATS_RELEASE ?? "dev" },
   // One origin per tenant host (r0-solution-structure section 5). In deployed environments the ingress routes
   // /api and /dev to the API directly; these rewrites serve local development.
+  // The service worker (spec 030 FR-002) is fetched fresh every time, so a new release is found at once.
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       { source: "/api/:path*", destination: `${apiOrigin}/api/:path*` },

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { SearchField } from "@/components/ui/Inputs";
@@ -57,10 +57,12 @@ function useTypeText() {
 export function ChooseType({ types }: { types: TypeChoice[] }) {
   const t = useTranslations("connections");
   const text = useTypeText();
+  // The page language, not the device's, so the server and the browser sort the same way.
+  const locale = useLocale();
   const [query, setQuery] = useState("");
   const needle = query.trim().toLocaleLowerCase();
   const matches = (kind: string) => !needle || text.name(kind).toLocaleLowerCase().includes(needle) || text.description(kind).toLocaleLowerCase().includes(needle);
-  const byName = (a: TypeChoice, b: TypeChoice) => text.name(a.kind).localeCompare(text.name(b.kind));
+  const byName = (a: TypeChoice, b: TypeChoice) => text.name(a.kind).localeCompare(text.name(b.kind), locale);
   const available = types.filter((c) => c.inPackage && matches(c.kind)).sort(byName);
   const unavailable = types.filter((c) => !c.inPackage && matches(c.kind)).sort(byName);
 
