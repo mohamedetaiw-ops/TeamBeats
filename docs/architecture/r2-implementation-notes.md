@@ -765,3 +765,36 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | How a video plays | It opens in the document library, which already previews and scans it; the player does not embed media |
 | Where the learning pages appear in the menu | Tenants add `/learning` to their navigation; the menu shows it with the book icon |
 | Who sees a course in search | The same people the catalogue shows it to, plus anyone who already has it |
+
+## Assignment rules, reminders, overdue escalation and recurrence (spec 028, slice 3: T006 to T008; US2, US4, FR-005 to FR-008, FR-011, FR-012, FR-017)
+
+### Built
+- `AssignmentRules`: a rule gives a published course to an audience of units, named people, or everyone within the unit the administrator manages (`learning.manage` on that unit), with due days, an optional recurrence in months and a grace period. At most 50 rules per course. Creating and ending a rule are audited (`learning.assignment_created`, `learning.assignment_withdrawn`).
+- Each person a rule covers gets their own due date, counted from the day they are covered. A person covered by several rules has one open assignment with the earliest date (FR-017). Leaving the unit or being disabled withdraws open assignments that only rules gave; completions stay in history.
+- Membership changes (`OrganizationMembershipChanged`, `TenantMembershipDisabled`) re-apply the rules for that person at once. A maintenance job (`LearningMaintenanceWorker`) re-evaluates every active rule hourly, sends reminders, marks overdue assignments, notifies their manager and expires recurring completions into a new assignment.
+- A retraining version (`CoursePublished` with retraining) gives the course again to everyone whose last completion is of an older version.
+- `CourseOverdue` is published once per assignment. Completion sets the assignment's and the certificate's expiry from the shortest recurrence among the rules covering the learner.
+- Builder: an Assignment rules tab on the course builder lists rules with who they cover and creates or ends them.
+- Training other modules ask for, through `ILearningObligations` (Learning.Contracts): one obligation per person, course and source key, done when the course is completed, cancelled with its source. A cancelled source withdraws only the assignments nothing else asks for.
+- Onboarding (022): a `training` journey step names 1 to 10 published courses. When it opens, the joiner is given them due with the step; `CourseCompleted` (and the journey worker) close the step once every course is completed. A joiner who already completed them skips the step; a cancelled journey cancels what is still owed.
+- Policies (025): `PUT /api/v1/policies/{id}/training` links a published course (compliance officers with `policy.manage` and `learning.assign_linked`, audited as `policy.training_linked`). A material version in force gives the course to everyone the policy applies to; a completion from before that version does not count. With "attest only after the course", attesting is refused until it is completed, and the attest panel links to the course.
+- Pages: an Assignment rules tab on the course builder; a Training step type and its courses in the journey template editor, with an Open My learning link on the journey; Linked training on the policy page; the training notice on the attest panel.
+- Tests: `LearningAssignmentTests` (5 tests: newcomers and leavers, duplicates and scope, reminders and weekly escalation, recurrence and retraining, entitlement and retirement), `LearningObligationTests` (2 tests: the onboarding training step, and policy linked training with the attestation wait), `learning.spec.ts` (a rule from the builder).
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Which package has rules | `learning.mandatory`; without it the rule endpoints are refused and the job does nothing |
+| What scope a rule has | Its own unit; the audience and the named people must sit inside it. A rule with no unit needs `learning.manage` for the whole tenant |
+| A due date on a weekend or holiday | Moved to the next working day on the learner's calendar (020) |
+| Notification category | Reminders and overdue notices use `attestation_due`; a new assignment uses `request_update` |
+| Due date for retraining when no rule covers the learner | 30 days |
+| Which recurrence applies when several rules cover a learner | The shortest |
+| Pause during long leave (edge case) | Not built yet; assignments keep running during leave |
+| How group and role changes reach rules | The hourly re-evaluation; unit membership changes apply at once |
+| Overdue restrictions (open question) | None, only escalation |
+| Package for training from onboarding and policies | `learning.mandatory`; without it a training step is skipped and a policy link is refused |
+| Due date of a training step | The step's due time, or 5 working days when the step has none, like an attestation step |
+| Due date of policy linked training | 30 days after the version came into force |
+| Which policy versions assign training | Material ones, the first version included |
+| How a course is chosen for a step or a policy | Paste its link or ID, as for lesson sources |

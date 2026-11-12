@@ -4,6 +4,7 @@ using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Content.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Learning.Contracts;
 using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
@@ -32,17 +33,19 @@ internal sealed record PolicyRow(
     DateTimeOffset? NextReviewAt,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    bool OnboardingRequired)
+    bool OnboardingRequired,
+    Guid? CourseId,
+    bool TrainingFirst)
 {
     public const string Columns =
         "id, code, names::text, category_id, owner_user_id, org_unit_id, audience::text, classification, binding_locale, route::text, review_months, related, status, " +
-        "current_version, effective_from, next_review_at, created_at, updated_at, onboarding_required";
+        "current_version, effective_from, next_review_at, created_at, updated_at, onboarding_required, course_id, training_first";
 
     public static PolicyRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), PolicyJson.Read<Dictionary<string, string>>(r.GetString(2)),
         r.Get<Guid?>("category_id"), r.GetGuid(4), r.Get<Guid?>("org_unit_id"), PolicyJson.Read<ContentAudience>(r.GetString(6)), r.GetString(7),
         r.Get<string>("binding_locale"), PolicyJson.Read<List<RouteStepSetting>>(r.GetString(9)), r.GetInt32(10), r.GetFieldValue<Guid[]>(11), r.GetString(12),
         r.Get<int?>("current_version"), r.Get<DateTimeOffset?>("effective_from"), r.Get<DateTimeOffset?>("next_review_at"), r.GetFieldValue<DateTimeOffset>(16),
-        r.GetFieldValue<DateTimeOffset>(17), r.GetBoolean(18));
+        r.GetFieldValue<DateTimeOffset>(17), r.GetBoolean(18), r.Get<Guid?>("course_id"), r.GetBoolean(20));
 
     public AuthzTarget Target => OrgUnitId is { } unit ? AuthzTarget.OrgUnit(unit) : AuthzTarget.Tenant;
 
@@ -491,7 +494,40 @@ public sealed class PolicyRegister(
             scheduled is { Number: { } n, EffectiveFrom: { } from } && (edit || manage || history) ? new ScheduledVersion(scheduled.Id, n, from) : null,
             new PolicyRights(manage, edit && policy.Status != PolicyStatuses.Retired, review, history, await FollowsPeopleAsync(ct), await AsksAsync(policy, ct),
                 history && policy.CurrentVersion is not null && await entitlements.IsEnabledAsync(Capabilities.AnalyticsCore, ct)),
-            policy.CreatedAt, policy.UpdatedAt, policy.OnboardingRequired);
+            policy.CreatedAt, policy.UpdatedAt, policy.OnboardingRequired,
+            policy.CourseId is { } course ? new PolicyTraining(course, policy.TrainingFirst) : null);
+    }
+
+    /// <summary>
+    /// Links a published training course to the policy, or unlinks it (spec 028 US4 scenario 2): compliance officers who
+    /// may also give linked training (<c>learning.assign_linked</c>). The next material version in force gives the course
+    /// to everyone the policy applies to; with <c>beforeAttestation</c> they attest only once it is completed.
+    /// </summary>
+    public async Task<PolicyView> LinkTrainingAsync(Guid id, TrainingRequest request, ILearningObligations training, CancellationToken ct)
+    {
+        var policy = await VisibleAsync(id, forUpdate: true, ct);
+        if (!await ManagesAsync(policy, ct))
+        {
+            throw AppException.Denied();
+        }
+        await authz.DemandAsync(Permissions.LearningAssignLinked, policy.Target, ct);
+        await entitlements.DemandAsync(Capabilities.LearningMandatory, ct);
+        if (policy.Status == PolicyStatuses.Retired)
+        {
+            throw AppException.Conflict("conflict.policies.retired");
+        }
+        if (request.CourseId is { } course && !(await training.PublishedAsync([course], ct)).Contains(course))
+        {
+            throw AppException.Validation("courseId", "validation.policies.course");
+        }
+        var first = request.CourseId is not null && request.BeforeAttestation;
+        await session.ExecAsync(
+            "update policies.policy set course_id = @course, training_first = @first, updated_at = @now, row_version = row_version + 1 where id = @id",
+            new { id, course = request.CourseId, first, now = clock.UtcNow }, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.PolicyTrainingLinked, Securables.Policy, id.ToString(), TargetOrgUnitId: policy.OrgUnitId,
+            Changes: new { before = new { course = policy.CourseId, beforeAttestation = policy.TrainingFirst }, after = new { course = request.CourseId, beforeAttestation = first } }),
+            ct);
+        return await GetAsync(id, ct);
     }
 
     private async Task<bool> AsksAsync(PolicyRow policy, CancellationToken ct) =>

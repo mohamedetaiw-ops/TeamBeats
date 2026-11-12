@@ -141,7 +141,13 @@ public sealed record PolicyView(
     PolicyRights Rights,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    bool OnboardingRequired);
+    bool OnboardingRequired,
+    PolicyTraining? Training = null);
+
+/// <summary>The training course linked to a policy (spec 028 US4), and whether attesting waits for its completion.</summary>
+public sealed record PolicyTraining(Guid CourseId, bool BeforeAttestation);
+
+public sealed record TrainingRequest(Guid? CourseId, bool BeforeAttestation);
 
 public sealed record PolicyListItem(
     Guid Id,
@@ -247,7 +253,8 @@ public sealed record AttestationView(Guid Id, Guid PolicyId, int Version, Guid? 
 public sealed record AttestationDue(Guid? CampaignId, int Version, DateTimeOffset DueAt, bool Overdue, IReadOnlyDictionary<string, string> Text);
 
 /// <summary>The current user's attestation state for one policy, for the policy page.</summary>
-public sealed record MyAttestation(AttestationDue? Due, int? LastVersion, DateTimeOffset? LastAt);
+/// <summary>What the person owes on a policy. <paramref name="TrainingFirst"/> names the course to complete before attesting.</summary>
+public sealed record MyAttestation(AttestationDue? Due, int? LastVersion, DateTimeOffset? LastAt, Guid? TrainingFirst = null);
 
 /// <summary>One line of My policies: action needed when <see cref="Due"/> is set, accepted when the last attestation is for the version in force.</summary>
 public sealed record MyPolicyItem(PolicySummary Policy, int? CurrentVersion, DateTimeOffset? EffectiveFrom, AttestationDue? Due, int? AttestedVersion, DateTimeOffset? AttestedAt);

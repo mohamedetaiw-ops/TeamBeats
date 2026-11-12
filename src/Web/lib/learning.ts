@@ -154,6 +154,20 @@ export type CourseLearner = {
 
 // ---- Helpers ----
 
+export type AssignmentRule = {
+  id: string;
+  courseId: string;
+  orgUnitId: string | null;
+  audience: Audience;
+  people: { id: string; displayName: string }[];
+  dueDays: number;
+  recurrenceMonths: number | null;
+  graceDays: number;
+  status: "active" | "ended";
+  createdAt: string;
+  covered: number;
+};
+
 export const learningHref = "/learning";
 export const catalogueHref = "/learning/catalogue";
 export const manageHref = "/learning/manage";

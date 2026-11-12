@@ -30,6 +30,7 @@ public static class PoliciesModule
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, PolicyCampaigns>("policies.campaign_membership");
         services.AddMessageHandler<Tenancy.Contracts.TenantMembershipDisabled, PolicyCampaigns>("policies.campaign_disabled");
         services.AddMessageHandler<Contracts.PolicyPublished, PolicyCampaigns>("policies.campaign_outdated");
+        services.AddMessageHandler<Contracts.PolicyPublished, LinkedTraining>("policies.linked_training");
         return services;
     }
 
@@ -63,6 +64,14 @@ public static class PoliciesModule
         root.MapPut("/{id:guid}", async (Guid id, PolicyRequest request, PolicyRegister register, IDbSession session, CancellationToken ct) =>
         {
             var view = await register.UpdateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPut("/{id:guid}/training", async (Guid id, TrainingRequest request, PolicyRegister register, Learning.Contracts.ILearningObligations training,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var view = await register.LinkTrainingAsync(id, request, training, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

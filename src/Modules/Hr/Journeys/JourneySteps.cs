@@ -55,7 +55,7 @@ public sealed record ExitReasonGroup(Guid? OrgUnitId, int Interviews, IReadOnlyL
 public sealed record ExitReasonsView(DateOnly From, DateOnly To, int MinimumGroupSize, int Interviews, int Declined, IReadOnlyList<ExitReasonCount> Reasons,
     IReadOnlyList<ExitReasonGroup> Units, int Hidden);
 
-internal sealed record OpenedStep(Guid Journey, string Key, string Type, Guid User, Guid? Unit, Guid Instance, DateTimeOffset? DueAt, string[] Systems);
+internal sealed record OpenedStep(Guid Journey, string Key, string Type, Guid User, Guid? Unit, Guid Instance, DateTimeOffset? DueAt, string[] Systems, Guid[] Courses);
 
 /// <summary>
 /// The typed journey steps of T019: attestation (spec 025 FR-017), the access removal checklist with its escalation
@@ -78,6 +78,19 @@ public sealed partial class JourneyService
             if (await obligations.RequireOnboardingAsync(step.User, BusinessKey(step.Journey, step.Key), due, ct) == 0)
             {
                 // Nothing to attest to: the step is not needed.
+                await engine.WithdrawAsync(step.Instance, ct);
+                await CloseStepAsync((await RowAsync(step.Journey, true, ct))!, step.Key, JourneyStepOutcomes.Skipped, null, null, ct);
+            }
+        }
+        else if (step.Type == JourneyStepTypes.Training)
+        {
+            var due = step.DueAt ?? await EndOfWorkingDaysAsync(step.Unit, DefaultAttestationWorkingDays, ct);
+            var calendar = await calendars.ForUserAsync(step.User, ct);
+            // The step's deadline is the end of a day; the course is due on the last day before it.
+            var dueOn = calendar.Today(due.AddTicks(-1));
+            if (await training.RequireAsync([step.User], step.Courses, "onboarding", BusinessKey(step.Journey, step.Key), dueOn, null, ct) == 0)
+            {
+                // Already completed, or nothing left to take (retired courses, no learning in the plan): the step is not needed.
                 await engine.WithdrawAsync(step.Instance, ct);
                 await CloseStepAsync((await RowAsync(step.Journey, true, ct))!, step.Key, JourneyStepOutcomes.Skipped, null, null, ct);
             }
@@ -152,6 +165,36 @@ public sealed partial class JourneyService
         foreach (var step in open)
         {
             if (await obligations.OpenCountAsync(BusinessKey(step.Journey, step.Key), ct) > 0
+                || await RowAsync(step.Journey, true, ct) is not { Status: JourneyStatuses.Active } journey)
+            {
+                continue;
+            }
+            if (step.Instance is { } instance && await engine.GetInstanceAsync(instance, ct) is { Status: "active" })
+            {
+                await engine.WithdrawAsync(instance, ct);
+            }
+            await CloseStepAsync(journey, step.Key, JourneyStepOutcomes.Done, step.User, null, ct);
+            settled++;
+        }
+        return settled;
+    }
+
+    /// <summary>
+    /// Closes open training steps whose courses are all completed (or retired), for one person after they completed a
+    /// course or for everyone on the worker's tick (spec 028 US4 scenario 1). The person is recorded as having done it.
+    /// </summary>
+    public async Task<int> SettleTrainingAsync(Guid? userId, CancellationToken ct)
+    {
+        var open = await session.QueryAsync(
+            """
+            select s.journey_id, s.key, s.instance_id, j.user_id from hr.journey_step s join hr.journey j on j.id = s.journey_id
+            where s.status = 'open' and s.type = 'training' and j.status = 'active' and (@userId::uuid is null or j.user_id = @userId)
+            order by s.opened_at limit 500
+            """, new { userId }, r => (Journey: r.GetGuid(0), Key: r.GetString(1), Instance: r.Get<Guid?>("instance_id"), User: r.GetGuid(3)), ct);
+        var settled = 0;
+        foreach (var step in open)
+        {
+            if (await training.OpenCountAsync(BusinessKey(step.Journey, step.Key), ct) > 0
                 || await RowAsync(step.Journey, true, ct) is not { Status: JourneyStatuses.Active } journey)
             {
                 continue;

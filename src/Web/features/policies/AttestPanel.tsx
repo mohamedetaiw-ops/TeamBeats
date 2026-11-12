@@ -4,7 +4,8 @@ import { useId, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { problemMessages } from "@/lib/notifications/types";
 import { nameIn, type AttestationView, type MyAttestation } from "@/lib/policies/types";
-import { Button } from "@/components/ui/Button";
+import { Button, ButtonLink } from "@/components/ui/Button";
+import { courseHref } from "@/lib/learning";
 import "./policies.css";
 
 /**
@@ -72,6 +73,14 @@ export function AttestPanel({ policyId, initial, locale }: { policyId: string; i
       <p className={due.overdue ? "field-error" : "policies-meta"}>
         {t(due.overdue ? "overdue" : "due", { number: due.version, date: format.dateTime(new Date(due.dueAt), { dateStyle: "long" }) })}
       </p>
+      {state.trainingFirst ? (
+        <div className="notice" role="note">
+          <p>{t("trainingFirst")}</p>
+          <ButtonLink size="sm" href={courseHref(state.trainingFirst)} icon="book">
+            {t("openTraining")}
+          </ButtonLink>
+        </div>
+      ) : null}
       <blockquote>
         <bdi>{nameIn(due.text, locale)}</bdi>
       </blockquote>
@@ -87,7 +96,7 @@ export function AttestPanel({ policyId, initial, locale }: { policyId: string; i
         </div>
       ) : null}
       <div className="button-row">
-        <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>
+        <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")} disabled={Boolean(state.trainingFirst)}>
           {t("submit")}
         </Button>
       </div>

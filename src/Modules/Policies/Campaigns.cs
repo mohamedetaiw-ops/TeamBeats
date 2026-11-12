@@ -5,6 +5,7 @@ using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Localization;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Content.Contracts;
+using TeamBeats.Modules.Learning.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Modules.Policies.Contracts;
@@ -67,7 +68,8 @@ public sealed class PolicyCampaigns(
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,
-    IClock clock)
+    IClock clock,
+    ILearningObligations training)
     : IPersonalTaskSource, IMessageHandler<AttestationNoticeBatch>, IMessageHandler<OrganizationMembershipChanged>, IMessageHandler<TenantMembershipDisabled>,
         IMessageHandler<PolicyPublished>
 {
@@ -364,7 +366,22 @@ public sealed class PolicyCampaigns(
         var policy = await register.VisibleAsync(id, false, ct);
         var owed = (await OwedAsync(user, policy.Id, ct)).FirstOrDefault();
         var last = await LastAttestationAsync(user, policy.Id, ct);
-        return new MyAttestation(owed is null ? null : Due(owed), last?.Version, last?.At);
+        return new MyAttestation(owed is null ? null : Due(owed), last?.Version, last?.At,
+            owed is null ? null : await TrainingFirstAsync(policy, owed.Version, user, ct));
+    }
+
+    /// <summary>
+    /// The course the person must complete before attesting to the version (spec 028 US4 scenario 2): the policy's
+    /// linked course when its owner chose that, unless a completion made since the version came into force counts.
+    /// </summary>
+    private async Task<Guid?> TrainingFirstAsync(PolicyRow policy, int version, Guid user, CancellationToken ct)
+    {
+        if (policy is not { TrainingFirst: true, CourseId: { } course } || !await entitlements.IsEnabledAsync(Capabilities.LearningMandatory, ct))
+        {
+            return null;
+        }
+        var since = (await register.VersionByNumberAsync(policy.Id, version, ct))?.EffectiveFrom;
+        return await training.CompletedAsync(user, course, since, ct) ? null : course;
     }
 
     /// <summary>
@@ -417,6 +434,10 @@ public sealed class PolicyCampaigns(
         var asked = owed[0];
         var campaign = asked.Campaign;
         var version = await register.VersionByNumberAsync(policy.Id, asked.Version, ct) ?? throw AppException.NotFound();
+        if (await TrainingFirstAsync(policy, asked.Version, user, ct) is not null)
+        {
+            throw AppException.Conflict("conflict.policies.training_first");
+        }
         var channel = request.Channel ?? AttestationChannels.Web;
         var errors = new ValidationErrors();
         if (!AttestationChannels.Online.Contains(channel))

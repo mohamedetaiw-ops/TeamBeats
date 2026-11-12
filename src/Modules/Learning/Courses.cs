@@ -143,7 +143,7 @@ public sealed class Courses(
     }
 
     /// <summary>The row when the caller may manage the course; 404 otherwise, so a course outside their scope is not revealed.</summary>
-    private async Task<CourseRow> ManagedAsync(Guid id, bool forUpdate, CancellationToken ct)
+    internal async Task<CourseRow> ManagedAsync(Guid id, bool forUpdate, CancellationToken ct)
     {
         await RequireBuilderAsync(ct);
         var row = await RowAsync(id, forUpdate, ct) ?? throw AppException.NotFound();
@@ -377,8 +377,12 @@ public sealed class Courses(
         }
         var now = clock.UtcNow;
         await session.ExecAsync("update learning.course set status = 'retired', updated_at = @now where id = @id", new { id, now }, ct);
-        var learners = await session.QueryAsync("update learning.assignment set status = 'withdrawn' where course_id = @id and status = 'open' returning learner_id",
-            new { id }, r => r.GetGuid(0), ct);
+        var learners = await session.QueryAsync("update learning.assignment set status = 'withdrawn', ended_at = @now where course_id = @id and status = 'open' returning learner_id",
+            new { id, now }, r => r.GetGuid(0), ct);
+        // Its assignment rules end with it (spec 028 US2): nobody is given a retired course again.
+        await session.ExecAsync("delete from learning.rule_target t using learning.assignment_rule r where r.id = t.rule_id and r.course_id = @id", new { id }, ct);
+        await session.ExecAsync("update learning.assignment_rule set status = 'ended', ended_by = @user, ended_at = @now where course_id = @id and status = 'active'",
+            new { id, user = context.ActorId, now }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.LearningCourseRetired, "course", id.ToString(), TargetOrgUnitId: row.OrgUnitId,
             Changes: new { withdrawn = learners.Count }), ct);
         await outbox.EnqueueAsync(new SearchItemChanged(LearningSearchSource.Name, id), ct);

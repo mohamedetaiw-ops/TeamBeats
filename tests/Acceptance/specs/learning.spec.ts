@@ -6,7 +6,8 @@ import { hostOrigin } from "../support/stack";
 /**
  * Spec 028 T004 and T005: the administrator builds a course with a quiz, opens it for enrolment and publishes it; Layla
  * finds it in the catalogue, starts it, passes the quiz and opens the certificate, then checks it by its ID. Scope,
- * audiences, attempts, sources and retraining are covered by LearningCourseTests. In English and Arabic, with axe.
+ * audiences, attempts, sources and retraining are covered by LearningCourseTests; the administrator then makes the
+ * course required for everyone with a rule (rules in detail: LearningAssignmentTests). In English and Arabic, with axe.
  * Names are fictional.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
@@ -81,6 +82,22 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/learning`);
       const completed = page.getByRole("region", { name: m("learning.mine.completed") });
       await expect(completed.getByRole("link", { name: course })).toBeVisible();
+    });
+
+    test("an administrator makes the course required for everyone with a rule", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/learning/manage`);
+      await page.getByRole("main").getByRole("link", { name: course }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(course);
+      await page.getByRole("tab", { name: m("learning.builder.rulesTab") }).click();
+      await expect(page.getByText(m("learning.rules.emptyTitle"))).toBeVisible();
+      await page.getByLabel(m("learning.rules.dueDays")).fill("14");
+      await page.getByLabel(m("learning.rules.recurrence")).fill("12");
+      await expectAccessible(page, testInfo, `learning-rules-${locale}`);
+      await page.getByRole("button", { name: m("learning.rules.create") }).click();
+      const rules = page.getByRole("list", { name: m("learning.rules.title") });
+      await expect(rules.getByText(m("learning.rules.status.active"))).toBeVisible();
+      await expect(rules.getByText(m("learning.rules.everyoneInScope"))).toBeVisible();
     });
   });
 }
