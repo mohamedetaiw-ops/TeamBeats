@@ -169,9 +169,10 @@ public sealed class LearningPackageTests(TenantWorld world)
 
         // Another tenant's host does not know the token, and an expired launch opens nothing.
         var other = await world.CreateTenantAsync("lpo-" + Guid.NewGuid().ToString("N")[..8], "enterprise_gov");
-        Assert.Equal(HttpStatusCode.NotFound, (await world.Factory.TenantClient(other.Key).GetAsync(url)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await world.Factory.TenantClient(other.Key).GetAsync(url)).StatusCode);
         await world.Database.OwnerExecInTenantAsync(t.Id, "update learning.package_launch set expires_at = now() - interval '1 minute'");
-        Assert.Equal(HttpStatusCode.NotFound, (await anonymous.GetAsync(url)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync(url)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anonymous.GetAsync($"{root}/__tb/xapi/statements")).StatusCode);
     }
 
     [Fact]

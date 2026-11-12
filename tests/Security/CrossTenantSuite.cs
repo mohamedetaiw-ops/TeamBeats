@@ -39,6 +39,9 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         // covers unknown, expired and other tenants' links.
         "GET /api/v1/preboarding/{token}",
         "GET /api/v1/letters/verify/{code}",
+        // Spec 028 US7: package content is opened with its launch token, not a session; a CORS preflight carries neither.
+        // Every other content route refuses an unknown token, which this suite checks.
+        "OPTIONS /api/v1/learning/content/{token}/{**path}",
     ];
 
     private IReadOnlyList<(string Method, string Pattern)> TenantRoutes() =>

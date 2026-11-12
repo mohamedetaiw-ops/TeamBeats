@@ -278,6 +278,14 @@ public static class LearningModule
                 headers.AccessControlAllowHeaders = "Authorization, Content-Type, X-Experience-API-Version";
                 headers.AccessControlAllowMethods = "GET, PUT, POST, DELETE, OPTIONS";
                 headers["X-Experience-API-Version"] = "1.0.3";
+                // The launch token is the content's only credential: an unknown or expired one is refused like a missing session.
+                // A CORS preflight carries no credentials, so it is answered without one.
+                if (!HttpMethods.IsOptions(http.Request.Method)
+                    && (http.GetRouteValue("token") is not string token
+                        || await http.RequestServices.GetRequiredService<PackageRuntime>().FindAsync(token, http.RequestAborted) is null))
+                {
+                    return Results.Unauthorized();
+                }
                 return await next(ctx);
             });
 
