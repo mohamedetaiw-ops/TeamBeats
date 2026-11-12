@@ -1839,5 +1839,9 @@
   "notifications.template.learning.course.retraining.body": "تغيّرت دورة {course} ويجب أخذها مرة أخرى. أكملها قبل {due}.",
   "validation.journey.courses": "تحدد خطوة التدريب من 1 إلى 10 دورات منشورة مختلفة، ولا تحدد الدورات إلا خطوة التدريب.",
   "validation.policies.course": "اختر دورة منشورة.",
-  "conflict.policies.training_first": "أكمل دورة التدريب المرتبطة قبل أن تقر بهذه السياسة."
+  "conflict.policies.training_first": "أكمل دورة التدريب المرتبطة قبل أن تقر بهذه السياسة.",
+  "validation.learning.team_course": "اختر دورة منشورة يمكن لزميلك أخذها.",
+  "validation.learning.team_due": "اختر تاريخ استحقاق بعد اليوم وخلال سنة.",
+  "authz.denied.learning_team": "يمكنك منح الدورات فقط لمن يتبعونك مباشرة.",
+  "authz.denied.learning_report": "ليست لديك تقارير التعلم لهذا النطاق."
 }

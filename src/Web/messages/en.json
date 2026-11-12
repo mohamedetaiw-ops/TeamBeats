@@ -9302,6 +9302,86 @@
       "peopleField": "People",
       "peopleHint": "Paste profile links or IDs, one or more.",
       "create": "Create rule"
+    },
+    "reports": {
+      "pageTitle": "Learning reports",
+      "pageIntro": "Completion of each course in the units you report on, with the evidence to export.",
+      "courseIntro": "Assigned, completed, overdue and expired, per unit in your scope. A unit counts the units below it.",
+      "unavailableTitle": "Reports are not available",
+      "unavailable": "You need learning reports for at least one unit.",
+      "courses": "Courses",
+      "noCoursesTitle": "No courses yet",
+      "noCourses": "Published courses appear here.",
+      "retired": "Retired",
+      "byUnit": "By unit",
+      "wholeTenant": "You report on the whole organization.",
+      "scoped": "You report on the units you look after.",
+      "total": "Total in your scope",
+      "count": {
+        "assigned": "{count} assigned",
+        "completed": "{count} completed",
+        "overdue": "{count} overdue",
+        "expired": "{count} expired"
+      },
+      "column": {
+        "assigned": "Assigned",
+        "completed": "Completed",
+        "overdue": "Overdue",
+        "expired": "Expired"
+      },
+      "tableCaption": "Counts per unit",
+      "noUnitsTitle": "No units in scope",
+      "noUnits": "Nobody in your scope has this course.",
+      "unit": "Unit",
+      "everyone": "Everyone in scope",
+      "people": "People",
+      "export": "Export evidence (CSV)",
+      "exportOf": "The export lists the people of {unit} and the units below it. Exports are audited.",
+      "exportAll": "The export lists everyone in your scope. Exports are audited.",
+      "failed": "The report could not load.",
+      "noPeopleTitle": "Nobody here has this course",
+      "noPeople": "Choose another unit.",
+      "person": "Person",
+      "state": "Status",
+      "source": "Given by",
+      "due": "Due",
+      "completed": "Completed",
+      "version": "Version",
+      "score": "Score",
+      "certificate": "Certificate",
+      "percent": "{value}%",
+      "stateName": {
+        "assigned": "Assigned",
+        "overdue": "Overdue",
+        "completed": "Completed",
+        "expired": "Expired"
+      }
+    },
+    "team": {
+      "pageTitle": "My team's learning",
+      "pageIntro": "The courses of the people who report to you directly.",
+      "emptyTitle": "Nobody reports to you",
+      "empty": "When people report to you directly, their courses appear here.",
+      "title": "{count, plural, one {# direct report} other {# direct reports}}",
+      "listLabel": "Direct reports",
+      "noCourses": "No courses yet.",
+      "state": {
+        "assigned": "Assigned",
+        "overdue": "Overdue",
+        "completed": "Completed",
+        "expired": "Expired"
+      },
+      "due": "Due {date}",
+      "give": "Give a course",
+      "giveHint": "Choose a published course your colleague can take. They are told by notification.",
+      "person": "Person",
+      "course": "Course",
+      "dueOn": "Due on",
+      "dueOnHint": "Leave empty for 30 days from today.",
+      "assign": "Give course",
+      "assigned": "Course given",
+      "assignedHint": "It shows in their My learning.",
+      "failed": "The course could not be given."
     }
   }
 }

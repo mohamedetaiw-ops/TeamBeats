@@ -24,6 +24,7 @@ public static class LearningModule
         services.AddScoped<CourseLearners>();
         services.AddScoped<AssignmentRules>();
         services.AddScoped<LearningObligations>();
+        services.AddScoped<LearningReports>();
         services.AddScoped<Contracts.ILearningObligations>(sp => sp.GetRequiredService<LearningObligations>());
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, AssignmentRules>("learning.rule_membership");
         services.AddMessageHandler<Tenancy.Contracts.TenantMembershipDisabled, AssignmentRules>("learning.rule_disabled");
@@ -97,6 +98,29 @@ public static class LearningModule
             var view = await rules.EndAsync(id, ruleId, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
+        });
+
+        root.MapGet("/reports/courses", async (LearningReports reports, CancellationToken ct) => Results.Ok(await reports.CoursesAsync(ct)));
+
+        root.MapGet("/reports/courses/{id:guid}", async (Guid id, LearningReports reports, CancellationToken ct) => Results.Ok(await reports.CourseAsync(id, ct)));
+
+        root.MapGet("/reports/courses/{id:guid}/people", async (Guid id, Guid? unit, LearningReports reports, CancellationToken ct) =>
+            Results.Ok(await reports.PeopleAsync(id, unit, ct)));
+
+        root.MapGet("/reports/courses/{id:guid}/evidence", async (Guid id, Guid? unit, LearningReports reports, IDbSession session, CancellationToken ct) =>
+        {
+            var (name, content) = await reports.EvidenceAsync(id, unit, ct);
+            await session.CommitAsync(ct);
+            return Results.File(content, "text/csv; charset=utf-8", name);
+        });
+
+        root.MapGet("/team", async (LearningReports reports, CancellationToken ct) => Results.Ok(await reports.TeamAsync(ct)));
+
+        root.MapPost("/team/{userId:guid}/assignments", async (Guid userId, TeamAssignRequest request, LearningReports reports, IDbSession session, CancellationToken ct) =>
+        {
+            var team = await reports.AssignAsync(userId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(team);
         });
 
         root.MapGet("/manage/paths", async (Paths paths, CancellationToken ct) => Results.Ok(await paths.ManagedListAsync(ct)));

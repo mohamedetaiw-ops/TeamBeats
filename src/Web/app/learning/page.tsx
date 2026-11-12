@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { catalogueHref, learningHref, manageHref, type LearningRights, type MyLearning as Mine, type PathSummary } from "@/lib/learning";
+import { catalogueHref, learningHref, manageHref, reportsHref, teamHref, type LearningRights, type MyLearning as Mine, type PathSummary } from "@/lib/learning";
 import { Header } from "@/components/shell/Header";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -33,9 +33,19 @@ export default async function LearningPage() {
               <ButtonLink href={catalogueHref} icon="search">
                 {t("catalogue.pageTitle")}
               </ButtonLink>
-              {rights.ok && (rights.data.manage || rights.data.report) ? (
+              {rights.ok && rights.data.manage ? (
                 <ButtonLink href={manageHref} icon="edit">
                   {t("manage.pageTitle")}
+                </ButtonLink>
+              ) : null}
+              {rights.ok && rights.data.report ? (
+                <ButtonLink href={reportsHref} icon="policy">
+                  {t("reports.pageTitle")}
+                </ButtonLink>
+              ) : null}
+              {rights.ok && rights.data.team ? (
+                <ButtonLink href={teamHref} icon="people">
+                  {t("team.pageTitle")}
                 </ButtonLink>
               ) : null}
             </>

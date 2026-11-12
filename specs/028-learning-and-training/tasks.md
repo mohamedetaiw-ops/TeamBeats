@@ -15,7 +15,7 @@ Depends on 002, 009, 011, 015, 017, 022, 025. R2.
 - [x] T006 [P] [US2] [US4] Tests: unit assignment, new members, leavers, recurrence, reminders and escalation, duplicates, scope limit, onboarding and policy triggers, retraining
 - [x] T007 [US2] Assignment rules and job
 - [x] T008 [US4] Consumers for 022 and 025
-- [ ] T009 [US5] Reports and evidence export
+- [x] T009 [US5] Reports and evidence export
 
 ## Phase 4: User Stories 6 and 7 (P2)
 - [ ] T010 [US6] LMS connector contract and generic pack
