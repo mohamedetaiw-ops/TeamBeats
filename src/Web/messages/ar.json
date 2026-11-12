@@ -8739,6 +8739,45 @@
       "showAnniversariesHint": "تأتي ذكريات الانضمام من تاريخ التعيين في الملفات الشخصية. يمكن لكل شخص إخفاء ذكراه.",
       "showJoiners": "عرض الموظفين الجدد",
       "saveSettings": "حفظ الإعدادات"
+    },
+    "gallery": {
+      "pageTitle": "الصور",
+      "link": "الصور",
+      "albumsTitle": "الألبومات",
+      "noAlbumsTitle": "لا توجد ألبومات بعد",
+      "noAlbums": "تظهر هنا الألبومات التي ينشئها الأعضاء.",
+      "photoCount": "{count, plural, =0 {لا توجد صور} one {صورة واحدة} two {صورتان} few {# صور} many {# صورة} other {# صورة}}",
+      "openAlbum": "فتح الألبوم",
+      "createTitle": "إنشاء ألبوم",
+      "albumTitle": "عنوان الألبوم",
+      "albumDescription": "الوصف",
+      "requiresApproval": "يوافق مشرف على كل صورة",
+      "requiresApprovalHint": "تنتظر الصور موافقة مشرف قبل أن يراها الآخرون.",
+      "create": "إنشاء الألبوم",
+      "failed": "لم ينجح ذلك. حاول مرة أخرى.",
+      "working": "جارٍ العمل",
+      "pendingTitle": "بانتظار المراجعة",
+      "photosTitle": "الصور",
+      "noPhotosTitle": "لا توجد صور بعد",
+      "noPhotos": "تظهر هنا الصور المضافة إلى هذا الألبوم.",
+      "uploadTitle": "إضافة صور",
+      "uploadReviewed": "يراجع مشرف كل صورة قبل ظهورها.",
+      "uploadChecked": "تُفحص كل صورة من البرمجيات الضارة والمحتوى المخالف قبل ظهورها.",
+      "caption": "التعليق",
+      "choosePhotos": "اختيار الصور",
+      "uploadHint": "PNG أو JPEG، حتى 10 ميجابايت لكل صورة. تُحذف بيانات الموقع والكاميرا.",
+      "photoBy": "صورة شاركها {name}",
+      "held": {
+        "approval": "بانتظار الموافقة",
+        "safety": "محجوزة للمراجعة",
+        "unchecked": "بانتظار الفحص"
+      },
+      "inPhoto": "في هذه الصورة:",
+      "approve": "موافقة",
+      "tagPeople": "الإشارة إلى أشخاص",
+      "removeMyTag": "إزالة الإشارة إليّ",
+      "remove": "إزالة",
+      "saveTags": "حفظ الإشارات"
     }
   }
 }

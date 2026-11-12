@@ -13,6 +13,7 @@ import { problemMessages } from "@/lib/notifications/types";
 import type { BodyDocument } from "@/lib/content/types";
 import { languageName } from "@/lib/format";
 import {
+  albumsHref,
   communityHref,
   engagementApi,
   localName,
@@ -104,6 +105,11 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
         {readable ? (
           <ButtonLink size="sm" variant="quiet" icon="trend-up" href={`${communityHref(community.id)}/polls`}>
             {t("polls.link")}
+          </ButtonLink>
+        ) : null}
+        {readable ? (
+          <ButtonLink size="sm" variant="quiet" icon="image" href={albumsHref(community.id)}>
+            {t("gallery.link")}
           </ButtonLink>
         ) : null}
         {r.canJoin ? (
