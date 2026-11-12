@@ -1001,6 +1001,7 @@
   "validation.shell.home_unknown": "Choose a page of this organization as the home page",
   "validation.shell.home_views_need_home": "Choose the home page before adding more home views",
   "validation.shell.home_views_too_many": "Add at most five home views",
+  "validation.shell.mobile_nav": "Choose at most 5 menu items for the bottom navigation, each once.",
   "validation.shell.home_view_id": "Give each home view its own short id of lowercase letters, digits and dashes",
   "validation.shell.label": "Write each label in English or Arabic, on one line of up to 80 characters",
   "validation.shell.footer_too_many": "Add at most eight footer links",

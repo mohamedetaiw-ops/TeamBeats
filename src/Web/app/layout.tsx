@@ -41,6 +41,7 @@ import "@/components/ui/designs.css";
 import { MessagesProvider } from "@/components/ui/Messages";
 import { designOf } from "@/lib/experience/design";
 import { ShellFooter } from "@/features/shell/Footer";
+import { AppUpdate } from "@/features/app/AppUpdate";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("app");
@@ -64,11 +65,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html lang={locale} dir={dir} data-design={design.preset} data-nav={design.navigation} data-mode={mode} data-density={density} data-motion={prefs.motion} style={scale ? { fontSize: scale } : undefined}>
       <body>
         {theme.ok ? <ThemeLinks variants={theme.data.variants} density={density} mode={mode} /> : null}
+        {/* The installable app (spec 030 FR-001): the manifest is per tenant and brand, so it needs the session cookie. */}
+        {theme.ok ? <link rel="manifest" href="/api/v1/experience/manifest.webmanifest" crossOrigin="use-credentials" /> : null}
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <a className="skip-link" href="#main">
           {t("skipToContent")}
         </a>
         <NextIntlClientProvider>
           <MessagesProvider>{children}</MessagesProvider>
+          <AppUpdate release={process.env.NEXT_PUBLIC_TEAMBEATS_RELEASE ?? "dev"} />
         </NextIntlClientProvider>
         <ShellFooter />
       </body>

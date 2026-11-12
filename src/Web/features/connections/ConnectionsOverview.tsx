@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { SearchField } from "@/components/ui/Inputs";
 import { StateView } from "@/components/ui/StateView";
@@ -113,8 +113,9 @@ function Row({ row }: { row: OverviewRow }) {
  */
 export function ConnectionsOverview({ rows }: { rows: OverviewRow[] }) {
   const t = useTranslations("connections");
+  const locale = useLocale();
   const [query, setQuery] = useState("");
-  const sorted = useMemo(() => [...rows].sort((a, b) => (ORDER[a.status] ?? 0) - (ORDER[b.status] ?? 0) || a.name.localeCompare(b.name)), [rows]);
+  const sorted = useMemo(() => [...rows].sort((a, b) => (ORDER[a.status] ?? 0) - (ORDER[b.status] ?? 0) || a.name.localeCompare(b.name, locale)), [rows, locale]);
   const needle = query.trim().toLocaleLowerCase();
   const typeName = (kind: string) => (isConnectionType(kind) ? t(`kinds.${kind}`) : t("kinds.other"));
   const shown = needle ? sorted.filter((r) => r.name.toLocaleLowerCase().includes(needle) || typeName(r.kind).toLocaleLowerCase().includes(needle)) : sorted;

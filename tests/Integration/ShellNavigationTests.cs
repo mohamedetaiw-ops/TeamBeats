@@ -132,6 +132,56 @@ public sealed class ShellNavigationTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task Phones_get_up_to_five_bottom_navigation_items_in_the_chosen_order()
+    {
+        var t = await FreshAsync();
+        await world.SeedUserAsync(t, "employee", "employee");
+        var (live, _) = await PageAsync(t);
+        var (draft, _) = await PageAsync(t, publish: false);
+        var nodes = new List<Guid>();
+        for (var i = 0; i < 6; i++)
+        {
+            nodes.Add(await NodeAsync(t, Slug(), url: $"/m{i}"));
+        }
+        var hidden = await NodeAsync(t, Slug(), page: draft);
+        var shown = await NodeAsync(t, Slug(), page: live);
+        Assert.True((await PutMenuAsync(t, "global", "tenant", nodes.Append(hidden).Append(shown).Select(n => new { nodeId = n }).ToArray())).IsSuccessStatusCode);
+
+        // With nothing chosen, phones show the first four entries and keep the last place for "More" (spec 030 FR-005).
+        var shell = await t["employee"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
+        Assert.Equal(nodes.Take(4), shell.GetProperty("mobileNav").EnumerateArray().Select(l => l.GetProperty("nodeId").GetGuid()));
+
+        object Definition(IEnumerable<Guid> mobile) => new
+        {
+            start = new[] { "identity", "global_navigation" },
+            center = new[] { "search" },
+            end = new[] { "settings" },
+            below = new[] { "breadcrumbs" },
+            utilities = Array.Empty<string>(),
+            mobileNav = mobile,
+        };
+        // The chosen order wins, and an entry the viewer may not open is left out for them.
+        var chosen = new[] { shown, hidden, nodes[5], nodes[0] };
+        var set = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", Definition(chosen));
+        Assert.True(set.IsSuccessStatusCode, await set.Content.ReadAsStringAsync());
+        shell = await t["employee"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
+        Assert.Equal([shown, nodes[5], nodes[0]], shell.GetProperty("mobileNav").EnumerateArray().Select(l => l.GetProperty("nodeId").GetGuid()));
+        var definition = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell/definition");
+        Assert.Equal(4, definition.GetProperty("definition").GetProperty("mobileNav").GetArrayLength());
+
+        // More than five, or the same entry twice, is refused.
+        foreach (var bad in new[] { nodes.Take(6).ToArray(), new[] { nodes[0], nodes[0] } })
+        {
+            var refused = await t["admin"].Client.PutAsJsonAsync("/api/v1/experience/shell/definition", Definition(bad));
+            Assert.Equal(HttpStatusCode.BadRequest, refused.StatusCode);
+            Assert.Contains("validation.shell.mobile_nav", await refused.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+        }
+        // Another tenant's shell is untouched.
+        var other = await world.B["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/experience/shell");
+        Assert.DoesNotContain(other.GetProperty("mobileNav").EnumerateArray(), l => chosen.Contains(l.GetProperty("nodeId").GetGuid()));
+    }
+
+    [Fact]
     public async Task Shell_definition_is_validated_and_needs_shell_edit()
     {
         var t = await FreshAsync();

@@ -40,6 +40,7 @@ public static class ExperienceModule
         services.AddScoped<PageService>();
         services.AddScoped<Telemetry.PageTelemetry>();
         services.AddScoped<ThemeService>();
+        services.AddScoped<AppManifest>();
         services.AddScoped<ShellService>();
         return services;
     }
@@ -214,6 +215,11 @@ public static class ExperienceModule
     }
 
     /// <summary>Brands, assignments, locks and the effective theme (spec 033 R1). Every call commits, so first-use seeding is kept.</summary>
+    private static readonly System.Text.Json.JsonSerializerOptions ManifestJson = new(System.Text.Json.JsonSerializerDefaults.Web)
+    {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+    };
+
     private static void MapThemeEndpoints(IEndpointRouteBuilder app)
     {
         var x = app.MapGroup("/api/v1/experience").RequireTenantUser().WithTags("Experience: themes");
@@ -337,6 +343,23 @@ public static class ExperienceModule
             var theme = await themes.ThemeAsync(scope, ct);
             await session.CommitAsync(ct);
             return Results.Ok(theme);
+        });
+
+        // The installable app (spec 030 FR-001): read on every start of the app, so it is never cached for long.
+        x.MapGet("/manifest.webmanifest", async (AppManifest manifests, HttpResponse response, IDbSession session, CancellationToken ct) =>
+        {
+            var manifest = await manifests.ManifestAsync(ct);
+            await session.CommitAsync(ct);
+            response.Headers.CacheControl = "private, no-cache";
+            return Results.Json(manifest, ManifestJson, "application/manifest+json");
+        });
+
+        x.MapGet("/app-icon.svg", async (bool? maskable, AppManifest manifests, HttpResponse response, IDbSession session, CancellationToken ct) =>
+        {
+            var svg = await manifests.IconSvgAsync(maskable == true, ct);
+            await session.CommitAsync(ct);
+            response.Headers.CacheControl = "private, max-age=3600";
+            return Results.Text(svg, "image/svg+xml; charset=utf-8");
         });
 
         // The tenant comes from the session, never from the URL; v is the content hash, so a matching URL can be cached for a year.

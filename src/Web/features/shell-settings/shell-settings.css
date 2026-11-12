@@ -97,3 +97,11 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.shell-settings-mobile {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}

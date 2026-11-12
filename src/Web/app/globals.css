@@ -161,6 +161,19 @@ main tbody tr:where(:hover) > * {
   max-inline-size: 28rem;
 }
 
+/*
+ * Phone widths (spec 030 FR-003): inside a page, grid and flex children may shrink below the width of their content, so
+ * a wide table, a long option or a long word never widens the page into a sideways scroll. Buttons and links keep their
+ * own size; fields never grow past their box; tables scroll inside their own frame.
+ */
+:where(main) :where(*:not(button, a, svg, img, [role="button"])) {
+  min-inline-size: 0;
+}
+
+:where(main) :where(input, select, textarea) {
+  max-inline-size: 100%;
+}
+
 .admin {
   display: grid;
   grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
@@ -204,6 +217,7 @@ main tbody tr:where(:hover) > * {
 
 .admin-content {
   padding: var(--tb-space-md);
+  overflow-wrap: anywhere; /* long names, keys and addresses wrap instead of widening a phone screen */
 }
 
 .icon {

@@ -4533,6 +4533,39 @@
         }
       }
     },
+    "/api/v1/experience/manifest.webmanifest": {
+      "get": {
+        "tags": [
+          "Experience: themes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/experience/app-icon.svg": {
+      "get": {
+        "tags": [
+          "Experience: themes"
+        ],
+        "parameters": [
+          {
+            "name": "maskable",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/experience/theme.css": {
       "get": {
         "tags": [
@@ -30258,6 +30291,16 @@
             ],
             "items": {
               "$ref": "#/components/schemas/HomeViewConfig"
+            }
+          },
+          "mobileNav": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         }
