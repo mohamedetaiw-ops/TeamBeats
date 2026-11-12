@@ -89,7 +89,21 @@ export function Player({ initial, startPath }: { initial: LearnerCourse; startPa
           {course.minutes ? <Badge icon="clock">{t("minutes", { count: course.minutes })}</Badge> : null}
           {reading !== locale ? <Badge tone="info" icon="globe">{t("otherLanguage")}</Badge> : null}
         </div>
-        {course.me.state !== "none" ? (
+        {course.external ? (
+          course.external.available && course.external.launchUrl ? (
+            <div className="learning-row">
+              <ButtonLink variant="primary" icon="external" href={course.external.launchUrl} target="_blank" rel="noopener noreferrer">
+                {t("openLms")}
+              </ButtonLink>
+              <p className="learning-meta">{t("lmsHint")}</p>
+            </div>
+          ) : (
+            <Alert tone="warning" title={t("lmsUnavailableTitle")}>
+              {t("lmsUnavailable")}
+            </Alert>
+          )
+        ) : null}
+        {course.me.state !== "none" && !course.external ? (
           <Progress label={t("progressOf", { title })} value={course.me.percent} valueText={t("percent", { value: course.me.percent })} />
         ) : null}
         {course.me.state === "completed" && course.me.certificateId ? (

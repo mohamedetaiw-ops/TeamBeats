@@ -18,7 +18,7 @@ Depends on 002, 009, 011, 015, 017, 022, 025. R2.
 - [x] T009 [US5] Reports and evidence export
 
 ## Phase 4: User Stories 6 and 7 (P2)
-- [ ] T010 [US6] LMS connector contract and generic pack
+- [x] T010 [US6] LMS connector contract and generic pack
 - [ ] T011 [US7] SCORM 1.2 and xAPI import and sandboxed player
 
 ## Final phase

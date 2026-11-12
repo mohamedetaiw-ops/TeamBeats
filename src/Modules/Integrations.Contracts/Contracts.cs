@@ -993,3 +993,42 @@ public sealed record EmployeeLeft(Guid UserId, string RecordId, DateOnly LastWor
 
 /// <summary>A former employee is active again (US4 scenario 3). <paramref name="Reactivate"/> is the tenant's choice to reopen the old account.</summary>
 public sealed record EmployeeRehired(Guid? UserId, string RecordId, DateOnly StartDate, bool Reactivate, Guid RunId, Guid ChangeId) : IIntegrationEvent;
+
+/// <summary>A course in the tenant's LMS (spec 028 US6): its ID there, its title and summary, the address that opens it, and its language when the LMS gives one.</summary>
+public sealed record LmsCourse(string ExternalId, string Title, string? Summary, string LaunchUrl, string? Language);
+
+/// <summary>A completion the LMS recorded: which course, whose work email, when, and the score in percent when it has one.</summary>
+public sealed record LmsCompletion(string ExternalCourseId, string LearnerEmail, DateTimeOffset CompletedAt, int? Score);
+
+/// <summary>An assignment pushed to the LMS. <paramref name="AssignmentId"/> is the TeamBeats assignment; it is sent once.</summary>
+public sealed record LmsAssignment(Guid AssignmentId, string ExternalCourseId, string LearnerEmail, DateOnly? DueOn);
+
+/// <summary>How a call to the LMS went: done (or queued, for a push), no LMS connection, the LMS did not answer, or it refused the request.</summary>
+public static class LmsResults
+{
+    public const string Ok = "ok";
+    public const string NotConfigured = "not_configured";
+    public const string Unavailable = "unavailable";
+    public const string Refused = "refused";
+}
+
+/// <summary>A list read from the LMS. <paramref name="Items"/> is empty unless <paramref name="Result"/> is <see cref="LmsResults.Ok"/>.</summary>
+public sealed record LmsRead<T>(string Result, IReadOnlyList<T> Items);
+
+/// <summary>
+/// The learning management system contract (spec 028 FR-015, through spec 017). The tenant's LMS connection is the
+/// oldest enabled one of the generic LMS pack. Catalogue and completion reads run inline; a push is a durable connector
+/// job keyed by the assignment, so it is sent once however often it is asked. Every answer is canonical: no LMS shapes
+/// leave this contract.
+/// </summary>
+public interface ILmsConnector
+{
+    Task<bool> ConfiguredAsync(CancellationToken ct = default);
+
+    Task<LmsRead<LmsCourse>> CatalogueAsync(CancellationToken ct = default);
+
+    Task<LmsRead<LmsCompletion>> CompletionsAsync(DateTimeOffset since, CancellationToken ct = default);
+
+    /// <summary>Returns <see cref="LmsResults.Ok"/> once the push is queued.</summary>
+    Task<string> AssignAsync(LmsAssignment assignment, CancellationToken ct = default);
+}

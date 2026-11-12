@@ -1843,5 +1843,11 @@
   "validation.learning.team_course": "Choose a published course your colleague can take.",
   "validation.learning.team_due": "Choose a due date after today and within a year.",
   "authz.denied.learning_team": "You can only give courses to people who report to you directly.",
-  "authz.denied.learning_report": "You do not have learning reports for this scope."
+  "authz.denied.learning_report": "You do not have learning reports for this scope.",
+  "validation.lms.path": "Enter a path that starts with /, for example /courses. The completions path needs {since} where the time goes, for example /completions?since={since}.",
+  "validation.lms.response_path": "Enter a path into the JSON answer, for example $.items or $.id.",
+  "validation.lms.field_name": "Use a field name of letters, numbers and underscores, with dots for nested fields, for example learner.email.",
+  "validation.lms.field_twice": "Two fields go to the same place in the request body. Give each its own place.",
+  "validation.lms.fields_required": "Map every required field: the course ID, title and launch address for courses; the course ID and learner email for assignments; and the course ID, learner email and completion time for completions.",
+  "conflict.learning.external_course": "This course comes from your LMS. Change it in the LMS; the next sync brings the change here."
 }

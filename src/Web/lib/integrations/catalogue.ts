@@ -9,7 +9,7 @@ import { PACK_KINDS, type Microsoft365Connection, type PackConnection } from "./
 export const CONNECTION_TYPES = ["microsoft365", ...PACK_KINDS] as const;
 export type ConnectionType = (typeof CONNECTION_TYPES)[number];
 
-export const TYPE_GROUPS = ["workplace", "service_desk", "people_time", "finance", "custom"] as const;
+export const TYPE_GROUPS = ["workplace", "service_desk", "people_time", "learning", "finance", "custom"] as const;
 export type TypeGroup = (typeof TYPE_GROUPS)[number];
 
 type Look = { group: TypeGroup; mark?: string; icon: IconName };
@@ -24,6 +24,7 @@ const LOOKS: Record<ConnectionType, Look> = {
   hr_rest: { group: "people_time", icon: "people" },
   hr_sftp: { group: "people_time", icon: "folder" },
   clock_import: { group: "people_time", icon: "clock" },
+  lms_rest: { group: "learning", icon: "book" },
   finance_rest: { group: "finance", icon: "files" },
   custom_rest: { group: "custom", icon: "globe" },
   webhook: { group: "custom", icon: "link" },

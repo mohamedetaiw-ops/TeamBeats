@@ -25,6 +25,8 @@ public static class LearningModule
         services.AddScoped<AssignmentRules>();
         services.AddScoped<LearningObligations>();
         services.AddScoped<LearningReports>();
+        services.AddScoped<LmsAvailability>();
+        services.AddScoped<LmsSync>();
         services.AddScoped<Contracts.ILearningObligations>(sp => sp.GetRequiredService<LearningObligations>());
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, AssignmentRules>("learning.rule_membership");
         services.AddMessageHandler<Tenancy.Contracts.TenantMembershipDisabled, AssignmentRules>("learning.rule_disabled");
@@ -96,6 +98,17 @@ public static class LearningModule
         root.MapPost("/manage/courses/{id:guid}/rules/{ruleId:guid}:end", async (Guid id, Guid ruleId, AssignmentRules rules, IDbSession session, CancellationToken ct) =>
         {
             var view = await rules.EndAsync(id, ruleId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // ---- The LMS (US6) ----
+
+        root.MapGet("/manage/lms", async (LmsSync lms, CancellationToken ct) => Results.Ok(await lms.StatusAsync(ct)));
+
+        root.MapPost("/manage/lms:sync", async (LmsSync lms, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await lms.SyncNowAsync(ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

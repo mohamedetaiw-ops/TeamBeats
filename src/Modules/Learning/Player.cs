@@ -71,17 +71,21 @@ public sealed record LearnerCourse(
     IReadOnlyList<LearnerLesson> Lessons,
     LearnerState Me,
     bool CanEnrol,
-    bool Manages);
+    bool Manages,
+    LearnerExternal? External = null);
+
+/// <summary>A course from the LMS: the address that opens it there, which is left out while the LMS is unavailable (US6 scenario 3).</summary>
+public sealed record LearnerExternal(bool Available, string? LaunchUrl);
 
 public sealed record PositionRequest(string? LessonKey);
 
 public sealed record AttemptResult(int Score, bool Passed, LearnerCourse Course);
 
 public sealed record CatalogueCourse(Guid Id, IReadOnlyDictionary<string, string> Titles, IReadOnlyDictionary<string, string> Summaries, string? Category, int? Minutes,
-    int Lessons, bool OpenEnrolment, string State, int Percent);
+    int Lessons, bool OpenEnrolment, string State, int Percent, bool External = false);
 
 public sealed record MyCourse(Guid CourseId, Guid AssignmentId, IReadOnlyDictionary<string, string> Titles, string? Category, int? Minutes, string Source,
-    DateOnly? DueOn, string State, int Percent, DateTimeOffset? StartedAt, DateTimeOffset? CompletedAt, Guid? CertificateId);
+    DateOnly? DueOn, string State, int Percent, DateTimeOffset? StartedAt, DateTimeOffset? CompletedAt, Guid? CertificateId, bool External = false);
 
 /// <summary>My learning (US3 scenario 1): assigned courses by due date, courses in progress, and completed ones with certificates.</summary>
 public sealed record MyLearning(IReadOnlyList<MyCourse> Assigned, IReadOnlyList<MyCourse> InProgress, IReadOnlyList<MyCourse> Completed);
@@ -106,7 +110,8 @@ public sealed class Player(
     IAnalyticsEvents analytics,
     IOutbox outbox,
     IClock clock,
-    IWorkingCalendar calendars)
+    IWorkingCalendar calendars,
+    LmsAvailability lms)
 {
     internal sealed record AssignmentRow(Guid Id, Guid CourseId, Guid LearnerId, string Source, string Status, DateOnly? DueOn, int Cycle, string? LastLessonKey,
         DateTimeOffset? StartedAt, DateTimeOffset? CompletedAt, int? CompletedVersion, DateTimeOffset CreatedAt);
@@ -229,8 +234,14 @@ public sealed class Player(
         var me = new LearnerState(state, active?.Id, active?.Source, active?.DueOn, active?.LastLessonKey, Percent(definition, done), active?.StartedAt,
             active?.CompletedAt, active?.CompletedVersion, certificate);
         var canEnrol = state is LearnerStates.None or LearnerStates.Retraining && row.OpenEnrolment && await audiences.IncludesAsync(row.AudienceValue, learner, ct);
+        LearnerExternal? external = null;
+        if (row.ExternalId is not null)
+        {
+            var available = await lms.AvailableAsync(ct);
+            external = new LearnerExternal(available, available ? row.LaunchUrl : null);
+        }
         return new LearnerCourse(row.Id, row.PublishedVersion!.Value, row.Category, definition.Titles, definition.Summaries, definition.Minutes, definition.Locales, lessons,
-            me, canEnrol, manages);
+            me, canEnrol, manages, external);
     }
 
     // ---- Enrolment ----
@@ -399,13 +410,22 @@ public sealed class Player(
         {
             return (await CurrentAssignmentAsync(row.Id, assignment.LearnerId, false, ct))!;
         }
+        return await FinishAsync(row, assignment, clock.UtcNow, ct);
+    }
+
+    /// <summary>
+    /// Completes an open assignment at <paramref name="at"/> and issues its certificate: when every lesson is done, or when
+    /// the LMS reported the completion of a course from it.
+    /// </summary>
+    internal async Task<AssignmentRow> FinishAsync(Courses.CourseRow row, AssignmentRow assignment, DateTimeOffset at, CancellationToken ct)
+    {
         var now = clock.UtcNow;
         var version = row.PublishedVersion!.Value;
         // Under a recurring rule the completion expires (FR-008), and so does its certificate.
-        var expires = await AssignmentRules.ExpiryAsync(session, calendars, row.Id, assignment.LearnerId, now, ct);
+        var expires = await AssignmentRules.ExpiryAsync(session, calendars, row.Id, assignment.LearnerId, at, ct);
         await session.ExecAsync(
-            "update learning.assignment set status = 'completed', completed_at = @now, completed_version = @version, expires_on = @expires where id = @id and status = 'open'",
-            new { id = assignment.Id, now, version, expires }, ct);
+            "update learning.assignment set status = 'completed', completed_at = @at, completed_version = @version, expires_on = @expires where id = @id and status = 'open'",
+            new { id = assignment.Id, at, version, expires }, ct);
         // Training an onboarding step or a policy asked for is done (FR-011); they hear of it from CourseCompleted.
         await session.ExecAsync("update learning.obligation set status = 'done', done_at = @now where user_id = @learner and course_id = @course and status = 'open'",
             new { learner = assignment.LearnerId, course = row.Id, now }, ct);
@@ -450,7 +470,7 @@ public sealed class Player(
             var state = StateOf(assignment, row.RetrainingVersion);
             var percent = state is LearnerStates.Open or LearnerStates.Completed ? Percent(definition, await DoneAsync(assignment!.Id, ct)) : 0;
             result.Add(new CatalogueCourse(row.Id, definition.Titles, definition.Summaries, row.Category, definition.Minutes, definition.Lessons.Count, row.OpenEnrolment, state,
-                percent));
+                percent, row.ExternalId is not null));
         }
         return result;
     }
@@ -482,7 +502,7 @@ public sealed class Player(
                 ? await session.ScalarAsync<Guid?>("select id from learning.certificate where assignment_id = @id", new { id = assignment.Id }, ct)
                 : null;
             var item = new MyCourse(course.Id, assignment.Id, definition.Titles, course.Category, definition.Minutes, assignment.Source, assignment.DueOn, state,
-                state == LearnerStates.Retraining ? 0 : Percent(definition, done), assignment.StartedAt, assignment.CompletedAt, certificate);
+                state == LearnerStates.Retraining ? 0 : Percent(definition, done), assignment.StartedAt, assignment.CompletedAt, certificate, course.ExternalId is not null);
             if (assignment.Status == AssignmentStatuses.Completed)
             {
                 completed.Add(item);

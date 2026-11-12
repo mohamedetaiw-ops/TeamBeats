@@ -42,6 +42,8 @@ export type LearnerCourse = {
   me: LearnerState;
   canEnrol: boolean;
   manages: boolean;
+  /** A course from the LMS: the address that opens it there, left out while the LMS is unavailable. */
+  external?: { available: boolean; launchUrl: string | null } | null;
 };
 
 export type AttemptResult = { score: number; passed: boolean; course: LearnerCourse };
@@ -56,6 +58,7 @@ export type CatalogueCourse = {
   openEnrolment: boolean;
   state: LearnerStateKind;
   percent: number;
+  external?: boolean;
 };
 
 export type MyCourse = {
@@ -71,6 +74,7 @@ export type MyCourse = {
   startedAt: string | null;
   completedAt: string | null;
   certificateId: string | null;
+  external?: boolean;
 };
 
 export type MyLearning = { assigned: MyCourse[]; inProgress: MyCourse[]; completed: MyCourse[] };
@@ -125,6 +129,8 @@ export type CourseDetail = {
   publishedVersion: number | null;
   changedSources: { lessonKey: string; locale: string }[];
   updatedAt: string;
+  externalId?: string | null;
+  launchUrl?: string | null;
 };
 
 export type CourseSummary = {
@@ -137,6 +143,18 @@ export type CourseSummary = {
   draftChanged: boolean;
   lessons: number;
   updatedAt: string;
+  external?: boolean;
+};
+
+/** Where the LMS sync stands (spec 028 US6). */
+export type LmsStatus = {
+  configured: boolean;
+  available: boolean;
+  catalogueAt: string | null;
+  completionsAt: string | null;
+  courses: number;
+  waiting: number;
+  refused: number;
 };
 
 export type QuizStanding = { lessonKey: string; used: number; allowed: number; bestScore: number | null; passed: boolean };

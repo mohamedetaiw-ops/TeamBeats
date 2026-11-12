@@ -30,6 +30,7 @@ import { Allowlist } from "./Allowlist";
 import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
 import { FinanceSettingsForm } from "./FinanceSettingsForm";
+import { LmsSettingsForm } from "./LmsSettingsForm";
 import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
 import { HrRestSettingsForm, HrSftpSettingsForm, type HrSftpBody } from "./HrSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
@@ -195,6 +196,8 @@ function setupHeading(kind: ConnectionType): { title: string; intro: string } {
       return { title: "google.addTitle", intro: "google.addIntro" };
     case "finance_rest":
       return { title: "finance.addTitle", intro: "finance.addIntro" };
+    case "lms_rest":
+      return { title: "lms.addTitle", intro: "lms.addIntro" };
     case "slack":
       return { title: "slack.addTitle", intro: "slack.addIntro" };
   }
@@ -236,6 +239,7 @@ export function SetupStep({ kind, catalogue, webhookEvents }: { kind: Connection
   else if (kind === "clock_import") form = <ClockSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "google_workspace") form = <GoogleSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "finance_rest") form = <FinanceSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
+  else if (kind === "lms_rest") form = <LmsSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "hr_rest") form = <HrRestSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "hr_sftp") form = <HrSftpSettingsForm submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;
   else if (kind === "webhook") form = <WebhookSettingsForm events={webhookEvents} submitLabel={save} busy={busy} onSubmit={(b) => void create(b)} />;

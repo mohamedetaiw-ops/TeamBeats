@@ -816,3 +816,19 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Which courses a manager can give | Published courses whose audience includes the report; due within a year, 30 days when not given |
 | Export size | Up to 10,000 people in one synchronous CSV |
 | Score in the evidence | The best quiz score of the assignment that completed |
+
+## LMS connector (spec 028, slice 4: T010; US6, FR-015)
+
+### Built
+- An `ILmsConnector` contract in `Integrations.Contracts` and a generic `lms_rest` pack (framework key `integration.connectors`). Settings: the https address on the allowlist and its sign-in (secret manager references), the courses path with where the list is and where each course field is inside an item (ID, title, summary, launch address, language), the assignments path with where each assignment field goes in the body (dotted names make nested objects; only mapped fields are sent), the completions path with `{since}` and where each completion field is (course ID, learner work email, completion time, score), an optional next page link, and an optional idempotency header. Reads run inline through the connector runtime; an assignment is a durable connector job keyed by the TeamBeats assignment, so it is sent once.
+- In Learning, `LmsSync` runs from the maintenance worker and from "Sync now" (`POST /api/v1/learning/manage/lms:sync`, `learning.manage` on the tenant and capability `learning.lms_connector`; status at `GET /api/v1/learning/manage/lms`). Each LMS course becomes a published course with no lessons, an `external_id` and a `launch_url`; a changed title or summary is published as a new version. Open assignments of LMS courses are pushed by the learner's work email. Completions complete the open assignment at the time the LMS gives, store the score as an attempt, mark obligations done and issue a certificate, so My learning, reports, the evidence export, onboarding and policies see them.
+- Learners see an "Open in your LMS" button on an LMS course, or "LMS unavailable" while the LMS does not answer. Builders can change who sees an LMS course, its category, owner and open enrolment; its titles, lessons and publishing stay with the LMS (`conflict.learning.external_course`). The Connections wizard has an LMS group and form.
+
+### Smallest safe defaults
+- The catalogue is read every 6 hours and completions every 15 minutes, with one hour of overlap and 30 days back on the first read. A completion already recorded is not recorded again.
+- A course the LMS no longer lists is left as it is for an administrator to retire, so a short or partial answer never withdraws assignments. A course an administrator retired stays retired when the LMS lists it again.
+- New LMS courses target everyone with open enrolment off; administrators choose who sees them and assign them with rules.
+- Learners are matched by active work email only. A completion for an unknown person or course is skipped. A person without an email has the push marked refused.
+- A launch address must be https on an allowed host; items without one are not imported. Sign-in at the LMS is the LMS's own single sign-on with the tenant's identity provider; TeamBeats only links to it.
+- "Unavailable" means the LMS did not answer the last time the sync called it, or there is no enabled LMS connection. Built courses, the catalogue and My learning keep working.
+- A push that keeps failing after the runtime's retries shows in the connection's run history; it is not retried by Learning.
