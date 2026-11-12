@@ -42,7 +42,8 @@ public sealed class SignInService(
     SessionService sessions,
     IAuditWriter audit,
     IOutbox outbox,
-    Sso.GroupRoleSync groupRoles)
+    Sso.GroupRoleSync groupRoles,
+    IEnumerable<IGuestInvitationSource> guestSources)
 {
     public async Task<SignInResult> SignInAsync(TenantInfo tenant, string issuer, string subject, string email, string displayName,
         string method, string createdVia, CancellationToken ct, ProviderSignInPolicy? policy = null)
@@ -65,7 +66,20 @@ public sealed class SignInService(
             var normalizedEmail = email.Trim().ToLowerInvariant();
             var pending = normalizedEmail.Length > 0 && await memberships.HasPendingAdminAppointmentAsync(normalizedEmail, ct);
             var jit = !pending && policy is { JitEnabled: true } && AllowedDomain(normalizedEmail, policy.JitDomains);
-            if (!pending && !jit)
+            // Someone invited to a space by email arrives as a guest (spec 026 FR-009); a member rule always wins.
+            var guest = false;
+            if (!pending && !jit && normalizedEmail.Length > 0)
+            {
+                foreach (var source in guestSources)
+                {
+                    if (await source.HasPendingAsync(normalizedEmail, ct))
+                    {
+                        guest = true;
+                        break;
+                    }
+                }
+            }
+            if (!pending && !jit && !guest)
             {
                 await RefuseAsync(policy is { JitEnabled: true } ? "jit_domain_not_allowed" : "unknown_identity", issuer, subjectHash, ct);
                 return new SignInResult(SignInOutcome.RefusedNoAccess, null, null);
@@ -84,6 +98,7 @@ public sealed class SignInService(
             {
                 createdVia = "jit";
             }
+
             userId = Ids.New();
             await session.ExecAsync(
                 """
@@ -93,9 +108,19 @@ public sealed class SignInService(
             await session.ExecAsync(
                 "insert into identity.external_identity (tenant_id, id, idp_config_id, issuer, subject, user_id) values (@t, @id, @idp, @i, @s, @u)",
                 new { t = tenant.Id, id = Ids.New(), idp = policy?.IdpConfigId, i = issuer, s = subject, u = userId }, ct);
-            await memberships.CreateAsync(userId.Value, MembershipTypes.Employee, ct);
+            await memberships.CreateAsync(userId.Value, guest ? MembershipTypes.Guest : MembershipTypes.Employee, ct);
             context.SetActor(ActorType.System, null);
-            await memberships.ClaimAdminAppointmentsAsync(normalizedEmail, userId.Value, ct);
+            if (guest)
+            {
+                foreach (var source in guestSources)
+                {
+                    await source.ClaimAsync(normalizedEmail, userId.Value, ct);
+                }
+            }
+            else
+            {
+                await memberships.ClaimAdminAppointmentsAsync(normalizedEmail, userId.Value, ct);
+            }
             await outbox.EnqueueAsync(new UserProvisioned(userId.Value, createdVia), ct);
         }
 

@@ -27,6 +27,8 @@ public static class SpacesModule
         services.AddScoped<SpaceTasks>();
         services.AddScoped<SpaceMilestones>();
         services.AddScoped<SpaceCalendar>();
+        services.AddScoped<SpaceGuests>();
+        services.AddScoped<IGuestInvitationSource>(sp => sp.GetRequiredService<SpaceGuests>());
         services.AddScoped<IResourceDescriptorProvider, SpaceDescriptorProvider>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpacesSearchSource>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpaceTaskSearchSource>();
@@ -114,15 +116,27 @@ public static class SpacesModule
             return Results.NoContent();
         });
 
+        // Guests (US4, FR-007, FR-008). Inviting and renewing a guest are sensitive actions that need a fresh sign-in (spec 026).
+        root.MapGet("/{id:guid}/guests", async (Guid id, SpaceGuests guests, CancellationToken ct) => Results.Ok(await guests.ListAsync(id, ct)));
+        root.MapPost("/{id:guid}/guests", async (Guid id, GuestInviteRequest request, SpaceGuests guests, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await guests.InviteAsync(id, request, ct), ct)).RequireStepUp();
+        root.MapPut("/{id:guid}/guests/{userId:guid}", async (Guid id, Guid userId, GuestRenewRequest request, SpaceGuests guests, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await guests.RenewAsync(id, userId, request, ct), ct)).RequireStepUp();
+        root.MapDelete("/{id:guid}/guests/invitations/{invitationId:guid}", async (Guid id, Guid invitationId, SpaceGuests guests, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await guests.CancelInvitationAsync(id, invitationId, ct), ct));
+        root.MapPut("/{id:guid}/guests/files", async (Guid id, GuestFilesRequest request, SpaceGuests guests, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await guests.SetFilesAsync(id, request, ct), ct));
+
         MapTaskEndpoints(root);
 
         // ---- Tenant rules and templates (spaces administrators) ----
 
         root.MapGet("/manage/settings", async (SpaceSettings settings, CancellationToken ct) => Results.Ok(await settings.GetRulesAsync(ct)));
 
-        root.MapPut("/manage/settings", async (SpaceRulesRequest request, SpaceSettings settings, IDbSession session, CancellationToken ct) =>
+        root.MapPut("/manage/settings", async (SpaceRulesRequest request, SpaceSettings settings, SpaceGuests guests, IDbSession session, CancellationToken ct) =>
         {
             var rules = await settings.SetRulesAsync(request, ct);
+            await guests.SyncFilesAsync(rules.GuestConfidential, ct);
             await session.CommitAsync(ct);
             return Results.Ok(rules);
         });

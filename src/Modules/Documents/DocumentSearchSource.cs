@@ -95,7 +95,9 @@ internal sealed class DocumentSearchSource(IDbSession session, IEntitlementServi
             var securables = group.Select(r => new Securable(r.Type, r.Securable, r.Type == Securables.Document ? r.Classification : library.ClassificationDefault))
                 .DistinctBy(s => s.Id).ToList();
             var rights = await access.RightsAsync(library, securables, ct);
-            allowed.UnionWith(group.Where(r => rights.TryGetValue(r.Securable, out var right) && right.View).Select(r => r.Id));
+            var closed = await access.ClosedAsync(library, ct);
+            allowed.UnionWith(group.Where(r => rights.TryGetValue(r.Securable, out var right) && right.View && !closed.Contains(r.Classification, StringComparer.Ordinal))
+                .Select(r => r.Id));
         }
         return allowed;
     }

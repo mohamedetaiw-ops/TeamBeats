@@ -7,7 +7,9 @@ import { hostOrigin } from "../support/stack";
  * Spec 029 slices 1 and 2: the administrator creates a private project space from the standard template, adds Layla
  * as a member, adds a task, gives it to her with a due date and moves another task to Done from the keyboard menu;
  * Layla finds the task under My tasks in the task inbox and completes it there. Slice 3: a file goes into the space's
- * library and is linked to the task, and an update is posted in the space's discussion, and an event goes on the team calendar. Visibility, roles, viewer refusal,
+ * library and is linked to the task, and an update is posted in the space's discussion, and an event goes on the team calendar.
+ * Slice 4: the administrator lets guests in, invites a partner by email, and the partner signs in and finds only that
+ * space, labelled as a guest. Visibility, roles, viewer refusal, classified files for guests, guest expiry,
  * milestones, status, reminders and the tenant boundary are covered by SpacesTests and SpaceTaskTests. In English and
  * Arabic, with axe. Names are fictional.
  */
@@ -128,6 +130,33 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `spaces-my-tasks-${locale}`);
       await main.getByLabel(m("spaces.mine.complete", { title: task })).check();
       await expect(main.getByLabel(m("spaces.mine.complete", { title: task }))).toBeChecked();
+    });
+
+    test("the administrator invites a partner, who signs in as a guest and finds only that space", async ({ page }, testInfo) => {
+      const partner = `rania@partner-${tenant.key}.example`;
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/spaces/manage`);
+      const main = page.getByRole("main");
+      await main.getByLabel(m("spaces.manage.guests")).check();
+      await main.getByRole("button", { name: m("spaces.manage.save") }).click();
+      await expect(page.getByText(m("spaces.manage.saved"))).toBeVisible();
+
+      await page.goto(`${hostOrigin(tenant.key)}/spaces`);
+      await main.getByRole("link", { name: space }).first().click();
+      await page.getByRole("navigation", { name: m("spaces.parts.nav.label") }).getByRole("link", { name: m("spaces.parts.nav.members") }).click();
+      await main.getByLabel(m("spaces.guests.emailLabel")).fill(partner);
+      await main.getByRole("button", { name: m("spaces.guests.invite") }).click();
+      await expect(page.getByRole("status").filter({ hasText: m("spaces.guests.invited", { email: partner }) })).toBeVisible();
+      await expect(main.getByRole("list", { name: m("spaces.guests.invitationsTitle") }).getByText(partner)).toBeVisible();
+      await expectAccessible(page, testInfo, `spaces-guests-${locale}`);
+
+      await page.context().clearCookies();
+      await signInWithDevForm(page, tenant.key, partner, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/spaces`);
+      await expect(main.getByRole("link", { name: space })).toHaveCount(1);
+      await main.getByRole("link", { name: space }).click();
+      await page.getByRole("navigation", { name: m("spaces.parts.nav.label") }).getByRole("link", { name: m("spaces.parts.nav.members") }).click();
+      await expect(main.getByRole("list", { name: m("spaces.members.listLabel") }).getByText(m("spaces.parts.guest"))).toBeVisible();
     });
   });
 }

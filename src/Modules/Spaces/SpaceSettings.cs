@@ -11,9 +11,10 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Spaces;
 
 /// <summary>The tenant's space rules (FR-017). An empty unit list lets everyone with <c>spaces.create</c> create spaces.</summary>
-public sealed record SpaceRules(IReadOnlyList<Guid> CreationUnits, bool GuestsAllowed, int GuestDays, int Version);
+/// <summary>The tenant's space rules (FR-017). GuestConfidential is the classification rule of FR-008: whether owners may let guests open Confidential files.</summary>
+public sealed record SpaceRules(IReadOnlyList<Guid> CreationUnits, bool GuestsAllowed, int GuestDays, int Version, bool GuestConfidential = false);
 
-public sealed record SpaceRulesRequest(IReadOnlyList<Guid>? CreationUnits, bool? GuestsAllowed, int? GuestDays, int? Version);
+public sealed record SpaceRulesRequest(IReadOnlyList<Guid>? CreationUnits, bool? GuestsAllowed, int? GuestDays, int? Version, bool? GuestConfidential = null);
 
 /// <summary>A template a creator can pick: a built-in one by key, or the tenant's by ID.</summary>
 public sealed record TemplateOption(string Key, string Name, string Kind, bool BuiltIn);
@@ -41,9 +42,10 @@ public sealed class SpaceSettings(
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
     internal async Task<SpaceRules> CurrentAsync(CancellationToken ct) =>
-        await session.QuerySingleOrDefaultAsync("select creation_units, guests_allowed, guest_days, version from spaces.setting", null,
-            r => new SpaceRules(r.GetFieldValue<Guid[]>(0), r.GetBoolean(1), r.GetInt32(2), r.GetInt32(3)), ct)
-        // Defaults: everyone with spaces.create may create, guests off until the tenant turns them on (spec 026), 90 days.
+        await session.QuerySingleOrDefaultAsync("select creation_units, guests_allowed, guest_days, version, guest_confidential from spaces.setting", null,
+            r => new SpaceRules(r.GetFieldValue<Guid[]>(0), r.GetBoolean(1), r.GetInt32(2), r.GetInt32(3), r.GetBoolean(4)), ct)
+        // Defaults: everyone with spaces.create may create, guests off until the tenant turns them on (spec 026), 90 days,
+        // and Confidential files closed to guests.
         ?? new SpaceRules([], false, DefaultGuestDays, 0);
 
     private async Task ManageAsync(CancellationToken ct)
@@ -91,17 +93,19 @@ public sealed class SpaceSettings(
             errors.Add("guestDays", "validation.spaces.guest_days");
         }
         errors.ThrowIfAny();
+        var confidential = request.GuestConfidential ?? false;
         var version = current.Version + 1;
         await session.ExecAsync(
             """
-            insert into spaces.setting (tenant_id, creation_units, guests_allowed, guest_days, version, updated_by, updated_at)
-            values (platform.current_tenant_id(), @units, @guests, @days, @version, @user, @now)
+            insert into spaces.setting (tenant_id, creation_units, guests_allowed, guest_days, guest_confidential, version, updated_by, updated_at)
+            values (platform.current_tenant_id(), @units, @guests, @days, @confidential, @version, @user, @now)
             on conflict (tenant_id) do update set creation_units = excluded.creation_units, guests_allowed = excluded.guests_allowed,
-              guest_days = excluded.guest_days, version = excluded.version, updated_by = excluded.updated_by, updated_at = excluded.updated_at
-            """, new { units, guests, days, version, user = context.RequireUser(), now = clock.UtcNow }, ct);
+              guest_days = excluded.guest_days, guest_confidential = excluded.guest_confidential, version = excluded.version, updated_by = excluded.updated_by,
+              updated_at = excluded.updated_at
+            """, new { units, guests, days, confidential, version, user = context.RequireUser(), now = clock.UtcNow }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.SpacesSettingsChanged, "spaces_setting", null,
-            Changes: new { version, creationUnits = units.Length, guestsAllowed = guests, guestDays = days }), ct);
-        return new SpaceRules(units, guests, days, version);
+            Changes: new { version, creationUnits = units.Length, guestsAllowed = guests, guestDays = days, guestConfidential = confidential }), ct);
+        return new SpaceRules(units, guests, days, version, confidential);
     }
 
     // ---- Templates ----

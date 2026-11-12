@@ -387,6 +387,10 @@ public sealed class DocumentFiles(
         {
             throw AppException.NotFound();
         }
+        if ((await Access.ClosedAsync(library, ct)).Contains(doc.Classification, StringComparer.Ordinal))
+        {
+            throw AppException.Denied("authz.denied.documents_guest_classified");
+        }
         return (library, doc, rights);
     }
 
@@ -545,6 +549,7 @@ public sealed class DocumentFiles(
             and ((d.checked_in and d.securable_id = any(@contribute))
               or (d.checked_in and d.effective_version_id is not null and d.securable_id = any(@view))
               or (not d.checked_in and d.checked_out_by = @user))
+            and d.classification <> all(@closed)
             """);
         if (query.Recursive)
         {
@@ -619,7 +624,7 @@ public sealed class DocumentFiles(
             """, ct);
         Sql.Bind(cmd, new
         {
-            lib = library.Id, contribute, view, user, folder = query.FolderId, type = query.TypeId,
+            lib = library.Id, contribute, view, user, folder = query.FolderId, type = query.TypeId, closed = await Access.ClosedAsync(library, ct),
             text = string.IsNullOrWhiteSpace(query.Text) ? null : "%" + Like(query.Text.Trim()) + "%",
             limit = Math.Clamp(limit, 1, MaxPage), offset = Math.Max(offset, 0),
         });

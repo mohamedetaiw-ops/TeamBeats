@@ -51,4 +51,9 @@ public sealed class SpaceLibraries(IDbSession session, ITenantContext context, I
         await session.ExecAsync(
             "update documents.library set status = @status, updated_at = @now, row_version = row_version + 1 where id = @libraryId and scope = 'space'",
             new { libraryId, status = archived ? "archived" : "active", now = clock.UtcNow }, ct);
+
+    public async Task SetGuestConfidentialAsync(Guid libraryId, bool allowed, CancellationToken ct = default) =>
+        await session.ExecAsync(
+            "update documents.library set guest_confidential = @allowed, updated_at = @now where id = @libraryId and scope = 'space' and guest_confidential <> @allowed",
+            new { libraryId, allowed, now = clock.UtcNow }, ct);
 }

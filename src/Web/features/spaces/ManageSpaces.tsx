@@ -11,7 +11,7 @@ import { StateView } from "@/components/ui/StateView";
 import { call, send, spacesApi } from "@/lib/spaces";
 import "./spaces.css";
 
-export type SpaceRules = { creationUnits: string[]; guestsAllowed: boolean; guestDays: number; version: number };
+export type SpaceRules = { creationUnits: string[]; guestsAllowed: boolean; guestDays: number; version: number; guestConfidential: boolean };
 export type TemplateView = { id: string; name: string; kind: "project" | "team"; status: "active" | "retired"; version: number; updatedAt: string };
 
 /**
@@ -23,6 +23,7 @@ export function ManageSpaces({ initialRules, initialTemplates, guestsInPlan }: {
   const [rules, setRules] = useState(initialRules);
   const [guests, setGuests] = useState(initialRules.guestsAllowed);
   const [days, setDays] = useState(String(initialRules.guestDays));
+  const [confidential, setConfidential] = useState(initialRules.guestConfidential);
   const [templates, setTemplates] = useState(initialTemplates);
   const [messages, setMessages] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
@@ -30,7 +31,9 @@ export function ManageSpaces({ initialRules, initialTemplates, guestsInPlan }: {
   async function save() {
     setSaved(false);
     const result = await call<SpaceRules>(
-      () => send(`${spacesApi}/manage/settings`, "PUT", { creationUnits: rules.creationUnits, guestsAllowed: guests, guestDays: Number(days), version: rules.version }),
+      () => send(`${spacesApi}/manage/settings`, "PUT", {
+        creationUnits: rules.creationUnits, guestsAllowed: guests, guestDays: Number(days), guestConfidential: confidential, version: rules.version,
+      }),
       t("failed"),
     );
     if (!result.ok) return setMessages(result.messages);
@@ -67,6 +70,8 @@ export function ManageSpaces({ initialRules, initialTemplates, guestsInPlan }: {
           <Checkbox label={t("guests")} hint={guestsInPlan ? t("guestsHint") : t("guestsNotInPlan")} checked={guests} disabled={!guestsInPlan}
             onChange={(e) => setGuests(e.target.checked)} />
           <FormField label={t("guestDays")} hint={t("guestDaysHint")} name="guestDays" type="number" min={7} max={365} value={days} onChange={(e) => setDays(e.target.value)} />
+          <Checkbox label={t("guestConfidential")} hint={t("guestConfidentialHint")} checked={confidential} disabled={!guestsInPlan}
+            onChange={(e) => setConfidential(e.target.checked)} />
           <div className="spaces-row">
             <Button type="submit" variant="primary">
               {t("save")}

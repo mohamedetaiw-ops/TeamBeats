@@ -92,6 +92,19 @@ public interface ITenantMemberships
 }
 
 /// <summary>
+/// Somewhere a guest can be invited to by email before they have an account (spec 026 FR-009, spec 029 FR-007), such as
+/// a project space. At a first sign-in that matches no member rule, an identity with a pending invitation becomes a
+/// guest: the membership is made, then every source turns its invitations for the email into access.
+/// </summary>
+public interface IGuestInvitationSource
+{
+    Task<bool> HasPendingAsync(string email, CancellationToken ct = default);
+
+    /// <summary>Gives the new guest what they were invited to; returns how many invitations were taken up.</summary>
+    Task<int> ClaimAsync(string email, Guid userId, CancellationToken ct = default);
+}
+
+/// <summary>
 /// Memberships the platform makes for synthetic test identities of evaluation personas (spec 034 FR-006): a tenant
 /// membership and one primary org membership. The calling module checks the person's right and audits the persona.
 /// </summary>

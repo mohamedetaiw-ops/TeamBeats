@@ -11,8 +11,8 @@ namespace TeamBeats.Modules.Spaces;
 
 /// <summary>
 /// Every minute, for every active tenant with spaces, in its own scope and transaction: sends the day-before due
-/// reminders of space tasks (spec 029 US2). Runs as the system actor. Hosted by the worker, and by the development
-/// host when <c>Spaces:Maintenance:InProcess</c> is true.
+/// reminders of space tasks (spec 029 US2), and ends, announces and re-sends guest access and invitations (US4). Runs
+/// as the system actor. Hosted by the worker, and by the development host when <c>Spaces:Maintenance:InProcess</c> is true.
 /// </summary>
 public sealed class SpacesMaintenanceWorker(IServiceScopeFactory scopes, IClock clock, ILogger<SpacesMaintenanceWorker> logger) : BackgroundService
 {
@@ -56,6 +56,11 @@ public sealed class SpacesMaintenanceWorker(IServiceScopeFactory scopes, IClock 
                     continue;
                 }
                 await scope.ServiceProvider.GetRequiredService<SpaceTasks>().RemindDueAsync(now, RemindersPerTick, ct);
+                // Guest access ends on its date even after the plan or the tenant's rule stopped new guests (spec 026 US3 scenario 4).
+                var guests = scope.ServiceProvider.GetRequiredService<SpaceGuests>();
+                await guests.ExpireAsync(now, RemindersPerTick, ct);
+                await guests.RemindExpiringAsync(now, RemindersPerTick, ct);
+                await guests.RetryEmailsAsync(now, 100, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

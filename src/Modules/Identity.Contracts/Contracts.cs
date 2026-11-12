@@ -52,8 +52,12 @@ public interface ISignInHistory
 
 public sealed record SignInAddress(Guid UserId, string Address);
 
-/// <summary>Which ways in the tenant has (spec 026 FR-017 posture): an enabled single sign-on provider, and development sign-in.</summary>
-public sealed record SignInMethods(bool SsoEnabled, bool DevSignInEnabled);
+/// <summary>
+/// Which ways in the tenant has (spec 026 FR-017 posture): an enabled single sign-on provider, and development sign-in.
+/// MemberDomains are the email domains the provider turns into members on first sign-in: the tenant's own domains, whose
+/// people are members and never guests (spec 026 edge case).
+/// </summary>
+public sealed record SignInMethods(bool SsoEnabled, bool DevSignInEnabled, IReadOnlyList<string>? MemberDomains = null);
 
 public interface ISignInMethods
 {

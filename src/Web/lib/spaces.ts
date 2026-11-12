@@ -66,7 +66,21 @@ export type SpaceSummary = {
   updatedAt: string;
 };
 
-export type SpaceMember = { userId: string; displayName: string; role: SpaceRole; guest: boolean; addedAt: string };
+export type SpaceMember = { userId: string; displayName: string; role: SpaceRole; guest: boolean; addedAt: string; expiresAt?: string | null };
+
+export type SpaceGuest = { userId: string; displayName: string; role: SpaceRole; expiresAt: string | null };
+export type GuestInvitation = { id: string; email: string; role: SpaceRole; expiresAt: string; emailState: "sent" | "retry" | "bounced" | "failed"; invitedAt: string };
+/** The guests of a space for its owners (spec 029 US4). The server decides whether guests are allowed and the most days an owner can give. */
+export type SpaceGuests = {
+  allowed: boolean;
+  canInvite: boolean;
+  maxDays: number;
+  limit: number;
+  confidential: boolean;
+  confidentialAllowed: boolean;
+  guests: SpaceGuest[];
+  invitations: GuestInvitation[];
+};
 export type TemplateOption = { key: string; name: string; kind: SpaceKind; builtIn: boolean };
 
 export type ColumnView = { id: string; name: string; done: boolean; position: number };
