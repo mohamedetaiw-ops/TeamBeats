@@ -595,3 +595,30 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Flagging mutual recognition loops to administrators (spec section on gaming) | Not built yet; the daily caps and no self recognition are in place |
 | Recognition and leaderboard widgets for home (008) | T015 |
 | Shout-outs in search | Not built |
+
+## Team and star of the period (spec 023, slice 7: T012; US5, FR-014)
+
+### Built
+- An engagement administrator opens an award period for a person or a team, for the whole tenant or an org unit and everything below it, with the last day for nominations (from today to a year ahead). Opening is audited (`engagement.award_opened`). Awards use the `engagement.recognition` capability.
+- Anyone who takes part nominates one person or one team in the period's scope, with a reason. Nobody nominates themselves, people who left cannot be nominated, and one nomination per person is kept: sending again replaces it. Nominations close after the last day in the tenant's time zone.
+- Recognition approvers with `engagement.recognition_approve` on the period's unit (or on the tenant for a tenant-wide period) see the nominations, grouped by nominee with every reason and who gave it, and pick one to five winners from the nominees, also after nominations close. That ends the period and is audited (`engagement.award_decided`).
+- Winning people are told under the `recognition` category. Everyone sees the winners on the awards page.
+- An announcement draft (type `announcement`, default site) starts in content (009) through the new `IAnnouncementDrafts` contract, in every enabled locale, with the award title and the winners as a list. Communicators finish and publish it under the normal spec 009 rules; approvers and engagement administrators get a link to it.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Who may nominate | Anyone who takes part; only the nominee must be in scope |
+| Nominations per person | One per period, replaced when sent again |
+| Number of winners | 1 to 5, chosen from the nominees |
+| Choosing before nominations close | Allowed; choosing ends the period |
+| Who sees nominations | Approvers in scope only; others see their own |
+| Announcement author check | The draft is a hand-off: it skips the author check because only someone with publish rights can make it visible |
+| No content in the package | No draft; the winners still stand |
+| Team winners | Not notified one by one; the announcement covers them |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Reminders before nominations close | Not built |
+| Awards on home (008) | T015 |

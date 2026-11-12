@@ -20,6 +20,7 @@ public static class ContentModule
         services.AddScoped<Sites>();
         services.AddScoped<Contracts.ISiteDirectory, SiteDirectory>();
         services.AddScoped<Contracts.IKnowledgeContent, KnowledgeContent>();
+        services.AddScoped<Contracts.IAnnouncementDrafts, AnnouncementDrafts>();
         services.AddScoped<Items>();
         services.AddScoped<ContentSlackShare>();
         services.AddScoped<AudienceFactsLoader>();

@@ -23,6 +23,7 @@ public static class EngagementModule
         services.AddScoped<Polls>();
         services.AddScoped<Surveys>();
         services.AddScoped<Recognition>();
+        services.AddScoped<Awards>();
         services.AddMessageHandler<Contracts.PostPublished, Points>("engagement.points_post");
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
         return services;
@@ -395,6 +396,35 @@ public static class EngagementModule
         root.MapPut("/settings/recognition", async (RecognitionCatalogueRequest request, Recognition recognition, IDbSession session, CancellationToken ct) =>
         {
             var view = await recognition.SetCatalogueAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // ---- Team and star of the period (US5) ----
+
+        root.MapGet("/awards", async (Awards awards, CancellationToken ct) => Results.Ok(await awards.ListAsync(ct)));
+
+        root.MapPost("/awards", async (AwardPeriodRequest request, Awards awards, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await awards.OpenAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/engagement/awards/{view.Id}", view);
+        });
+
+        root.MapGet("/awards/{id:guid}", async (Guid id, Awards awards, CancellationToken ct) => Results.Ok(await awards.GetAsync(id, ct)));
+
+        root.MapPut("/awards/{id:guid}/nomination", async (Guid id, AwardNominationRequest request, Awards awards, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await awards.NominateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/awards/{id:guid}/nominations", async (Guid id, Awards awards, CancellationToken ct) => Results.Ok(await awards.NominationsAsync(id, ct)));
+
+        root.MapPost("/awards/{id:guid}/winners", async (Guid id, AwardWinnersRequest request, Awards awards, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await awards.DecideAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
