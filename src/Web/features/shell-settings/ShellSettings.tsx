@@ -100,34 +100,76 @@ export function ShellSettings({ initial, pages, audiences }: { initial: ShellAdm
       <section className="shell-settings-section" aria-labelledby="shell-settings-footer">
         <h2 id="shell-settings-footer">{t("footer.title")}</h2>
         <p className="shell-settings-hint">{t("footer.intro")}</p>
-        <div className="shell-settings-pair">
+        <div className="shell-settings-grid">
           <FormField label={t("footer.organizationEn")} name="organizationEn" lang="en" dir="ltr" value={orgEn} onChange={(e) => setOrgEn(e.target.value)} />
           <FormField label={t("footer.organizationAr")} name="organizationAr" lang="ar" dir="rtl" value={orgAr} onChange={(e) => setOrgAr(e.target.value)} />
         </div>
-        <div className="shell-settings-pair">
+        <div className="shell-settings-grid">
           <FormField label={t("footer.classificationEn")} name="classificationEn" lang="en" dir="ltr" value={classEn} onChange={(e) => setClassEn(e.target.value)} />
           <FormField label={t("footer.classificationAr")} name="classificationAr" lang="ar" dir="rtl" value={classAr} onChange={(e) => setClassAr(e.target.value)} />
         </div>
         <h3>{t("footer.links")}</h3>
         {links.length === 0 ? <p className="shell-settings-hint">{t("footer.noLinks")}</p> : null}
         <ol className="shell-settings-rows">
-          {links.map((link, i) => (
-            <li key={link.key} className="shell-settings-row">
-              <SelectField
-                label={t("footer.kind", { number: i + 1 })}
-                name={`linkKind${i}`}
-                value={link.kind}
-                onChange={(e) => updateLink(link.key, { kind: e.target.value as LinkKind })}
-                options={kinds.map((k) => ({ value: k, label: t(`footer.kinds.${k}`) }))}
-              />
-              <FormField label={t("footer.labelEn", { number: i + 1 })} name={`linkEn${i}`} lang="en" dir="ltr" value={link.en} onChange={(e) => updateLink(link.key, { en: e.target.value })} />
-              <FormField label={t("footer.labelAr", { number: i + 1 })} name={`linkAr${i}`} lang="ar" dir="rtl" value={link.ar} onChange={(e) => updateLink(link.key, { ar: e.target.value })} />
-              <FormField label={t("footer.url", { number: i + 1 })} hint={t("footer.urlHint")} name={`linkUrl${i}`} dir="ltr" value={link.url} onChange={(e) => updateLink(link.key, { url: e.target.value })} />
-              <Button onClick={() => setLinks((rows) => rows.filter((r) => r.key !== link.key))}>{t("footer.removeLink", { number: i + 1 })}</Button>
-            </li>
-          ))}
+          {links.map((link, i) => {
+            const number = i + 1;
+            const titleId = `shell-settings-link-${link.key}`;
+            return (
+              <li key={link.key} className="shell-settings-row" role="group" aria-labelledby={titleId}>
+                <div className="shell-settings-row-head">
+                  <h4 id={titleId}>{t("footer.linkTitle", { number })}</h4>
+                  <Button
+                    variant="quiet"
+                    size="sm"
+                    icon="trash"
+                    aria-label={t("footer.removeLink", { number })}
+                    onClick={() => setLinks((rows) => rows.filter((r) => r.key !== link.key))}
+                  >
+                    {t("footer.remove")}
+                  </Button>
+                </div>
+                <div className="shell-settings-grid">
+                  <SelectField
+                    label={t("footer.fields.kind")}
+                    aria-label={t("footer.kind", { number })}
+                    name={`linkKind${i}`}
+                    value={link.kind}
+                    onChange={(e) => updateLink(link.key, { kind: e.target.value as LinkKind })}
+                    options={kinds.map((k) => ({ value: k, label: t(`footer.kinds.${k}`) }))}
+                  />
+                  <FormField
+                    label={t("footer.fields.url")}
+                    aria-label={t("footer.url", { number })}
+                    hint={t("footer.urlHint")}
+                    name={`linkUrl${i}`}
+                    dir="ltr"
+                    value={link.url}
+                    onChange={(e) => updateLink(link.key, { url: e.target.value })}
+                  />
+                  <FormField
+                    label={t("footer.fields.labelEn")}
+                    aria-label={t("footer.labelEn", { number })}
+                    name={`linkEn${i}`}
+                    lang="en"
+                    dir="ltr"
+                    value={link.en}
+                    onChange={(e) => updateLink(link.key, { en: e.target.value })}
+                  />
+                  <FormField
+                    label={t("footer.fields.labelAr")}
+                    aria-label={t("footer.labelAr", { number })}
+                    name={`linkAr${i}`}
+                    lang="ar"
+                    dir="rtl"
+                    value={link.ar}
+                    onChange={(e) => updateLink(link.key, { ar: e.target.value })}
+                  />
+                </div>
+              </li>
+            );
+          })}
         </ol>
-        <Button onClick={() => setLinks((rows) => [...rows, { key: newKey(), kind: "privacy", en: "", ar: "", url: "" }])}>{t("footer.addLink")}</Button>
+        <Button icon="plus" onClick={() => setLinks((rows) => [...rows, { key: newKey(), kind: "privacy", en: "", ar: "", url: "" }])}>{t("footer.addLink")}</Button>
       </section>
 
       <section className="shell-settings-section" aria-labelledby="shell-settings-views">
@@ -135,26 +177,75 @@ export function ShellSettings({ initial, pages, audiences }: { initial: ShellAdm
         <p className="shell-settings-hint">{home ? t("views.intro") : t("views.needHome")}</p>
         {views.length === 0 ? <p className="shell-settings-hint">{t("views.none")}</p> : null}
         <ol className="shell-settings-rows">
-          {views.map((view, i) => (
-            <li key={view.key} className="shell-settings-row">
-              <FormField label={t("views.id", { number: i + 1 })} hint={t("views.idHint")} name={`viewId${i}`} dir="ltr" value={view.id} onChange={(e) => updateView(view.key, { id: e.target.value })} />
-              <FormField label={t("views.labelEn", { number: i + 1 })} name={`viewEn${i}`} lang="en" dir="ltr" value={view.en} onChange={(e) => updateView(view.key, { en: e.target.value })} />
-              <FormField label={t("views.labelAr", { number: i + 1 })} name={`viewAr${i}`} lang="ar" dir="rtl" value={view.ar} onChange={(e) => updateView(view.key, { ar: e.target.value })} />
-              <SelectField label={t("views.page", { number: i + 1 })} name={`viewPage${i}`} value={view.pageId} onChange={(e) => updateView(view.key, { pageId: e.target.value })} options={pageOptions} />
-              {audiences !== null ? (
-                <SelectField
-                  label={t("views.audience", { number: i + 1 })}
-                  name={`viewAudience${i}`}
-                  value={view.audienceRuleId}
-                  onChange={(e) => updateView(view.key, { audienceRuleId: e.target.value })}
-                  options={audienceOptions}
-                />
-              ) : null}
-              <Button onClick={() => setViews((rows) => rows.filter((r) => r.key !== view.key))}>{t("views.remove", { number: i + 1 })}</Button>
-            </li>
-          ))}
+          {views.map((view, i) => {
+            const number = i + 1;
+            const titleId = `shell-settings-view-${view.key}`;
+            return (
+              <li key={view.key} className="shell-settings-row" role="group" aria-labelledby={titleId}>
+                <div className="shell-settings-row-head">
+                  <h4 id={titleId}>{t("views.viewTitle", { number })}</h4>
+                  <Button
+                    variant="quiet"
+                    size="sm"
+                    icon="trash"
+                    aria-label={t("views.remove", { number })}
+                    onClick={() => setViews((rows) => rows.filter((r) => r.key !== view.key))}
+                  >
+                    {t("views.removeShort")}
+                  </Button>
+                </div>
+                <div className="shell-settings-grid">
+                  <FormField
+                    label={t("views.fields.id")}
+                    aria-label={t("views.id", { number })}
+                    hint={t("views.idHint")}
+                    name={`viewId${i}`}
+                    dir="ltr"
+                    value={view.id}
+                    onChange={(e) => updateView(view.key, { id: e.target.value })}
+                  />
+                  <SelectField
+                    label={t("views.fields.page")}
+                    aria-label={t("views.page", { number })}
+                    name={`viewPage${i}`}
+                    value={view.pageId}
+                    onChange={(e) => updateView(view.key, { pageId: e.target.value })}
+                    options={pageOptions}
+                  />
+                  <FormField
+                    label={t("views.fields.labelEn")}
+                    aria-label={t("views.labelEn", { number })}
+                    name={`viewEn${i}`}
+                    lang="en"
+                    dir="ltr"
+                    value={view.en}
+                    onChange={(e) => updateView(view.key, { en: e.target.value })}
+                  />
+                  <FormField
+                    label={t("views.fields.labelAr")}
+                    aria-label={t("views.labelAr", { number })}
+                    name={`viewAr${i}`}
+                    lang="ar"
+                    dir="rtl"
+                    value={view.ar}
+                    onChange={(e) => updateView(view.key, { ar: e.target.value })}
+                  />
+                  {audiences !== null ? (
+                    <SelectField
+                      label={t("views.fields.audience")}
+                      aria-label={t("views.audience", { number })}
+                      name={`viewAudience${i}`}
+                      value={view.audienceRuleId}
+                      onChange={(e) => updateView(view.key, { audienceRuleId: e.target.value })}
+                      options={audienceOptions}
+                    />
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ol>
-        {home ? <Button onClick={() => setViews((rows) => [...rows, { key: newKey(), id: "", en: "", ar: "", pageId: "", audienceRuleId: "" }])}>{t("views.add")}</Button> : null}
+        {home ? <Button icon="plus" onClick={() => setViews((rows) => [...rows, { key: newKey(), id: "", en: "", ar: "", pageId: "", audienceRuleId: "" }])}>{t("views.add")}</Button> : null}
       </section>
 
       {result ? (
