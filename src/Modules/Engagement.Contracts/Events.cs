@@ -19,3 +19,20 @@ public sealed record SurveyClosed(Guid SurveyId, Guid OrgUnitId) : IIntegrationE
 
 /// <summary>Someone thanked people or a team (spec 023 US4). Recipients is empty for a team shout-out.</summary>
 public sealed record RecognitionGiven(Guid RecognitionId, Guid GiverId, IReadOnlyList<Guid> Recipients, Guid? TeamUnitId) : IIntegrationEvent;
+
+/// <summary>
+/// The discussion of a project or team space (spec 029 FR-006): a closed community with one channel whose members are
+/// the space's members, decided by the space roles on the space. Owners of the space moderate it. It is not listed in
+/// the community directory and nobody joins or leaves it there. Spaces calls this after deciding the caller may.
+/// </summary>
+public interface ISpaceChannels
+{
+    /// <summary>Creates the space's community and returns its ID, or null when communities are not in the plan.</summary>
+    Task<Guid?> CreateAsync(Guid spaceId, string name, string classification, CancellationToken ct = default);
+
+    /// <summary>Follows the space's name and classification.</summary>
+    Task UpdateAsync(Guid communityId, string name, string classification, CancellationToken ct = default);
+
+    /// <summary>An archived space's discussion stays readable and takes no posts (FR-013).</summary>
+    Task SetArchivedAsync(Guid communityId, bool archived, CancellationToken ct = default);
+}

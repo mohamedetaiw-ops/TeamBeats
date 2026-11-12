@@ -20,6 +20,7 @@ public static class EngagementModule
         services.AddScoped<EngagementActivity>();
         services.AddScoped<PostAttachments>();
         services.AddScoped<Communities>();
+        services.AddScoped<Contracts.ISpaceChannels, SpaceChannels>();
         services.AddScoped<Posts>();
         services.AddScoped<KeywordFilters>();
         services.AddScoped<Moderation>();

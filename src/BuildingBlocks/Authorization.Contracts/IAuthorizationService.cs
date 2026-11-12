@@ -18,8 +18,16 @@ public enum ResourceVisibility
 }
 
 /// <summary>Describes a resource for a decision. Supplied by the owning module, so authorization never reads its tables.</summary>
-/// <remarks><paramref name="Classification"/> is one of <see cref="ConditionAttributes.Classifications"/>, or null when the type has none.</remarks>
-public sealed record ResourceDescriptor(string ResourceType, Guid ResourceId, Guid? OwningOrgUnitId, ResourceVisibility Visibility, string? Classification = null);
+/// <remarks>
+/// <paramref name="Classification"/> is one of <see cref="ConditionAttributes.Classifications"/>, or null when the type has none.
+/// <paramref name="Container"/> is the resource this one belongs to, such as the space of a space library (spec 029 FR-006):
+/// a role assigned on the container applies to what it holds, so the container's members are the audience.
+/// </remarks>
+public sealed record ResourceDescriptor(string ResourceType, Guid ResourceId, Guid? OwningOrgUnitId, ResourceVisibility Visibility, string? Classification = null,
+    ResourceRef? Container = null);
+
+/// <summary>A resource named by type and ID.</summary>
+public sealed record ResourceRef(string ResourceType, Guid ResourceId);
 
 /// <summary>What a decision is about.</summary>
 public abstract record AuthzTarget
@@ -132,6 +140,12 @@ public interface IAuthorizationProvisioning
     /// can tell them something (for example security alerts, spec 026). Conditions on the assignment are not evaluated.
     /// </summary>
     Task<IReadOnlyList<Guid>> TenantHoldersAsync(string permission, CancellationToken ct = default);
+
+    /// <summary>
+    /// Users holding the permission through a live role assignment on one resource (spec 029: the members of a space, the
+    /// audience of its library and discussion). Users only, as resource roles are given to users.
+    /// </summary>
+    Task<IReadOnlyList<Guid>> ResourceHoldersAsync(string permission, string resourceType, Guid resourceId, CancellationToken ct = default);
 
     /// <summary>The groups the user is a member of, product and directory groups alike (audiences such as spec 016).</summary>
     Task<IReadOnlySet<Guid>> GroupIdsOfAsync(Guid userId, CancellationToken ct = default);

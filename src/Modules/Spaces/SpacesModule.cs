@@ -59,7 +59,8 @@ public static class SpacesModule
             return Results.Created($"/api/v1/spaces/{view.Id}", view);
         });
 
-        root.MapGet("/{id:guid}", async (Guid id, SpacesService spaces, CancellationToken ct) => Results.Ok(await spaces.GetAsync(id, ct)));
+        // Opening a space may give it its library and discussion (FR-006), so the read commits.
+        root.MapGet("/{id:guid}", async (Guid id, SpacesService spaces, IDbSession session, CancellationToken ct) => await CommitAsync(session, await spaces.GetAsync(id, ct), ct));
 
         root.MapPut("/{id:guid}", async (Guid id, SpaceRequest request, SpacesService spaces, IDbSession session, CancellationToken ct) =>
         {
@@ -243,5 +244,11 @@ public static class SpacesModule
 
         space.MapPost("/tasks/{taskId:guid}/comments", async (Guid id, Guid taskId, CommentRequest request, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await tasks.CommentAsync(id, taskId, request, ct), ct));
+
+        space.MapPost("/tasks/{taskId:guid}/files", async (Guid id, Guid taskId, TaskFileRequest request, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await tasks.LinkFileAsync(id, taskId, request, ct), ct));
+
+        space.MapDelete("/tasks/{taskId:guid}/files/{documentId:guid}", async (Guid id, Guid taskId, Guid documentId, SpaceTasks tasks, IDbSession session,
+            CancellationToken ct) => await CommitAsync(session, await tasks.UnlinkFileAsync(id, taskId, documentId, ct), ct));
     }
 }

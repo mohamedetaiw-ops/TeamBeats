@@ -3,6 +3,8 @@ using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.Documents.Contracts;
+using TeamBeats.Modules.Engagement.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.Search.Contracts;
@@ -51,7 +53,9 @@ public sealed record SpaceView(
     SpaceRights Rights,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    int Version);
+    int Version,
+    Guid? LibraryId = null,
+    Guid? CommunityId = null);
 
 /// <summary>A space in the directory or in "my spaces". CanOpen is false for a private space the viewer is not in.</summary>
 public sealed record SpaceSummary(Guid Id, string Kind, string Visibility, string Name, string Description, string Status, int MemberCount, string? Role, bool CanOpen,
@@ -75,14 +79,18 @@ internal sealed record SpaceRow(
     Guid CreatedBy,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
-    int Version)
+    int Version,
+    Guid? LibraryId = null,
+    Guid? CommunityId = null)
 {
     public const string Columns =
-        "id, kind, visibility, name, description, allow_join, classification, starts_on, ends_on, template, org_unit_id, status, created_by, created_at, updated_at, row_version";
+        "id, kind, visibility, name, description, allow_join, classification, starts_on, ends_on, template, org_unit_id, status, created_by, created_at, updated_at, row_version, "
+        + "library_id, community_id";
 
     public static SpaceRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetString(4), r.GetBoolean(5), r.GetString(6),
         r.IsDBNull(7) ? null : r.GetFieldValue<DateOnly>(7), r.IsDBNull(8) ? null : r.GetFieldValue<DateOnly>(8), r.GetString(9), r.Get<Guid?>("org_unit_id"),
-        r.GetString(11), r.GetGuid(12), r.GetFieldValue<DateTimeOffset>(13), r.GetFieldValue<DateTimeOffset>(14), r.GetInt32(15));
+        r.GetString(11), r.GetGuid(12), r.GetFieldValue<DateTimeOffset>(13), r.GetFieldValue<DateTimeOffset>(14), r.GetInt32(15), r.Get<Guid?>("library_id"),
+        r.Get<Guid?>("community_id"));
 
     public bool Active => Status == SpaceStatuses.Active;
 
@@ -119,6 +127,8 @@ public sealed class SpacesService(
     IUserDirectory users,
     ITenantSettingsReader tenantSettings,
     SpaceSettings settings,
+    ISpaceLibraries libraries,
+    ISpaceChannels channels,
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,
@@ -203,10 +213,38 @@ public sealed class SpacesService(
         var canLeave = standing.Role is not null && !(standing.Role == SpaceRoles.Owner && ownerIds.Count == 1);
         // Name, description and owners are what the directory shows; tasks, files and discussion need read access.
         return new SpaceView(s.Id, s.Kind, s.Visibility, s.Name, s.Description, s.AllowJoin, s.Classification, s.StartsOn, s.EndsOn, s.Status, count, owners,
-            new SpaceRights(standing.Role, standing.Reads, standing.Contributes, standing.Owns, standing.Manages, canJoin, canLeave), s.CreatedAt, s.UpdatedAt, s.Version);
+            new SpaceRights(standing.Role, standing.Reads, standing.Contributes, standing.Owns, standing.Manages, canJoin, canLeave), s.CreatedAt, s.UpdatedAt, s.Version,
+            standing.Reads ? s.LibraryId : null, standing.Reads ? s.CommunityId : null);
     }
 
-    public async Task<SpaceView> GetAsync(Guid id, CancellationToken ct) => await ViewAsync(await VisibleAsync(id, ct), ct);
+    public async Task<SpaceView> GetAsync(Guid id, CancellationToken ct)
+    {
+        var standing = await VisibleAsync(id, ct);
+        if (standing.Reads && standing.Space.Active && (standing.Space.LibraryId is null || standing.Space.CommunityId is null))
+        {
+            standing = standing with { Space = await ProvisionPartsAsync(standing.Space, ct) };
+        }
+        return await ViewAsync(standing, ct);
+    }
+
+    /// <summary>
+    /// Gives the space its library (spec 011) and discussion (spec 023) when it has none yet (FR-006): at creation, and
+    /// for a space made before they existed or while they were not in the plan, the next time a member opens it. A part
+    /// whose capability is not in the plan is left out and tried again later.
+    /// </summary>
+    private async Task<SpaceRow> ProvisionPartsAsync(SpaceRow space, CancellationToken ct)
+    {
+        await session.ExecAsync("select id from spaces.space where id = @id for update", new { id = space.Id }, ct);
+        var current = (await RowAsync(space.Id, ct))!;
+        var library = current.LibraryId ?? await libraries.CreateAsync(current.Id, current.Name, current.Classification, ct);
+        var community = current.CommunityId ?? await channels.CreateAsync(current.Id, current.Name, current.Classification, ct);
+        if (library != current.LibraryId || community != current.CommunityId)
+        {
+            await session.ExecAsync("update spaces.space set library_id = @library, community_id = @community where id = @id",
+                new { id = current.Id, library, community }, ct);
+        }
+        return current with { LibraryId = library, CommunityId = community };
+    }
 
     /// <summary>
     /// The directory (US1): with <paramref name="mine"/> the spaces the viewer belongs to; otherwise every active public
@@ -235,7 +273,7 @@ public sealed class SpacesService(
             order by s.updated_at desc, s.id
             limit 500
             """, new { user, search, mine, everything },
-            r => (Row: SpaceRow.Read(r), Role: r.Get<string>("role"), Guest: !r.IsDBNull(17) && r.GetBoolean(17), Count: r.GetInt32(18)), ct);
+            r => (Row: SpaceRow.Read(r), Role: r.Get<string>("role"), Guest: !r.IsDBNull(19) && r.GetBoolean(19), Count: r.GetInt32(20)), ct);
         if (rows.Count == 0)
         {
             return [];
@@ -400,6 +438,7 @@ public sealed class SpacesService(
                 creator, now,
             }, ct);
         await StartFromTemplateAsync(id, definition!, creator, now, ct);
+        await ProvisionPartsAsync((await RowAsync(id, ct))!, ct);
 
         await AddMemberRowAsync(id, creator, SpaceRoles.Owner, creator, now, ct);
         foreach (var (user, role) in people)
@@ -484,6 +523,18 @@ public sealed class SpacesService(
         {
             await outbox.EnqueueAsync(new ResourcePermissionChanged(ResourceType, id), ct);
         }
+        var classification = request.Classification ?? s.Classification;
+        if (request.Name!.Trim() != s.Name || classification != s.Classification)
+        {
+            if (s.LibraryId is { } library)
+            {
+                await libraries.UpdateAsync(library, request.Name.Trim(), classification, ct);
+            }
+            if (s.CommunityId is { } community)
+            {
+                await channels.UpdateAsync(community, request.Name.Trim(), classification, ct);
+            }
+        }
         await outbox.EnqueueAsync(new SearchItemChanged(SpacesSearchSource.Name, id), ct);
         return await GetAsync(id, ct);
     }
@@ -508,6 +559,15 @@ public sealed class SpacesService(
             if (archive)
             {
                 await outbox.EnqueueAsync(new SpaceArchived(id), ct);
+            }
+            // The library and the discussion are read-only while the space is archived (FR-013).
+            if (standing.Space.LibraryId is { } library)
+            {
+                await libraries.SetArchivedAsync(library, archive, ct);
+            }
+            if (standing.Space.CommunityId is { } community)
+            {
+                await channels.SetArchivedAsync(community, archive, ct);
             }
             await outbox.EnqueueAsync(new SearchItemChanged(SpacesSearchSource.Name, id), ct);
         }

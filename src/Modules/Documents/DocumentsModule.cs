@@ -35,6 +35,7 @@ public static class DocumentsModule
         services.AddScoped<KnowledgeBase>();
         services.AddScoped<Contracts.IKnowledgeIndex>(sp => sp.GetRequiredService<KnowledgeBase>());
         services.AddScoped<Contracts.IDocumentReferences, DocumentReferences>();
+        services.AddScoped<Contracts.ISpaceLibraries, SpaceLibraries>();
         services.AddScoped<IResourceDescriptorProvider, LibraryDescriptorProvider>();
         services.AddScoped<IResourceDescriptorProvider, FolderDescriptorProvider>();
         services.AddScoped<IResourceDescriptorProvider, DocumentDescriptorProviderForFiles>();

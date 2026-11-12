@@ -1935,5 +1935,8 @@
   "notifications.template.spaces.task.due.body": "\"{task}\" مستحقة غدًا.",
   "notifications.template.spaces.space.status.title": "حالة جديدة لـ {space}",
   "notifications.template.spaces.space.status.body": "حدّث أحد المالكين حالة {space}. افتح المساحة لقراءة الملاحظة.",
-  "conflict.learning.not_a_package": "هذا الدرس لا يشغّل حزمة."
+  "validation.spaces.task_file": "اختر ملفًا من المكتبة يمكنك فتحه.",
+  "validation.spaces.task_file_count": "يمكن ربط المهمة بعشرين ملفًا كحد أقصى.",
+  "conflict.documents.space_permissions": "تتبع الأذونات في مكتبة المساحة أعضاء المساحة. غيّر أعضاء المساحة بدلًا من ذلك.",
+  "conflict.engagement.space_community": "هذا النقاش تابع لمساحة. غيّر اسمه وأعضاءه من المساحة."
 }

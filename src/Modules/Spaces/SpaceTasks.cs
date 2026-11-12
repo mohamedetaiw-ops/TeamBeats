@@ -2,6 +2,7 @@ using System.Text;
 using Npgsql;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Hr.Contracts;
+using TeamBeats.Modules.Documents.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.Search.Contracts;
@@ -65,8 +66,14 @@ public sealed record ChecklistItemView(Guid Id, string Text, bool Done);
 
 public sealed record CommentView(Guid Id, PersonRef Author, string Body, DateTimeOffset CreatedAt);
 
+/// <summary>A library file linked to a task, as the viewer gets it: the version readers get now (US5 scenario 3).</summary>
+public sealed record TaskFileView(Guid DocumentId, string Name, string Version, string FileName, string ContentType, long Bytes);
+
+public sealed record TaskFileRequest(Guid? DocumentId);
+
+/// <summary>A task with everything on its page. Files lists only the linked files the viewer may open.</summary>
 public sealed record TaskDetail(TaskCard Task, string Description, PersonRef CreatedBy, DateTimeOffset CreatedAt, DateTimeOffset? CompletedAt,
-    IReadOnlyList<ChecklistItemView> Checklist, IReadOnlyList<CommentView> Comments, bool CanEdit);
+    IReadOnlyList<ChecklistItemView> Checklist, IReadOnlyList<CommentView> Comments, bool CanEdit, IReadOnlyList<TaskFileView>? Files = null);
 
 public sealed record ColumnView(Guid Id, string Name, bool Done, int Position);
 
@@ -89,6 +96,7 @@ public sealed class SpaceTasks(
     ITenantContext context,
     SpacesService spaces,
     SpaceMilestones milestones,
+    IDocumentReferences documents,
     IUserDirectory users,
     IWorkingCalendar calendars,
     INotificationSender notifications,
@@ -105,6 +113,7 @@ public sealed class SpaceTasks(
     public const int MaxChecklistItems = 100;
     public const int MaxChecklistText = 300;
     public const int MaxCommentLength = 4000;
+    public const int MaxFiles = 20;
     public const int MyTasksMax = 500;
     public const string AssignedTemplate = "spaces.task.assigned";
     public const string CompletedTemplate = "spaces.task.completed";
@@ -190,8 +199,17 @@ public sealed class SpaceTasks(
             r => (Id: r.GetGuid(0), Author: r.GetGuid(1), Body: r.GetString(2), At: r.GetFieldValue<DateTimeOffset>(3)), ct);
         var names = await users.GetManyAsync(comments.Select(c => c.Author).Append(extra.CreatedBy).Distinct().ToList(), ct);
         PersonRef Person(Guid id) => new(id, names.TryGetValue(id, out var u) ? u.DisplayName : "");
+        var files = new List<TaskFileView>();
+        foreach (var document in await session.QueryAsync("select document_id from spaces.task_file where task_id = @taskId order by added_at, document_id", new { taskId },
+                     r => r.GetGuid(0), ct))
+        {
+            if (await documents.ReadableAsync(document, ct) is { } f)
+            {
+                files.Add(new TaskFileView(f.DocumentId, f.Name, f.Label, f.FileName, f.ContentType, f.Bytes));
+            }
+        }
         return new TaskDetail(card, extra.Description, Person(extra.CreatedBy), extra.CreatedAt, extra.CompletedAt, checklist,
-            comments.Select(c => new CommentView(c.Id, Person(c.Author), c.Body, c.At)).ToList(), standing.Contributes);
+            comments.Select(c => new CommentView(c.Id, Person(c.Author), c.Body, c.At)).ToList(), standing.Contributes, files);
     }
 
     // ---- Lists and columns ----
@@ -567,6 +585,43 @@ public sealed class SpaceTasks(
         await session.ExecAsync(
             "insert into spaces.task_comment (tenant_id, id, task_id, author_id, body, created_at) values (platform.current_tenant_id(), @id, @taskId, @user, @body, @now)",
             new { id = Ids.New(), taskId, user = context.RequireUser(), body, now = clock.UtcNow }, ct);
+        return await DetailAsync(standing, taskId, ct);
+    }
+
+    /// <summary>
+    /// Links a library file to the task (US5 scenario 3). The caller must be able to open the file now; readers of the
+    /// task see it only if they can open it too, and always at the version in force.
+    /// </summary>
+    public async Task<TaskDetail> LinkFileAsync(Guid spaceId, Guid taskId, TaskFileRequest request, CancellationToken ct)
+    {
+        var (standing, _) = await ChangeableAsync(spaceId, taskId, ct);
+        if (request.DocumentId is not { } document || await documents.ReadableAsync(document, ct) is null)
+        {
+            throw AppException.Validation("documentId", "validation.spaces.task_file");
+        }
+        var count = await session.ScalarAsync<int>("select count(*)::int from spaces.task_file where task_id = @taskId", new { taskId }, ct);
+        if (count >= MaxFiles)
+        {
+            throw AppException.Validation("documentId", "validation.spaces.task_file_count");
+        }
+        await session.ExecAsync(
+            """
+            insert into spaces.task_file (tenant_id, task_id, document_id, added_by, added_at)
+            values (platform.current_tenant_id(), @taskId, @document, @user, @now)
+            on conflict do nothing
+            """, new { taskId, document, user = context.RequireUser(), now = clock.UtcNow }, ct);
+        await TouchAsync(taskId, ct);
+        return await DetailAsync(standing, taskId, ct);
+    }
+
+    public async Task<TaskDetail> UnlinkFileAsync(Guid spaceId, Guid taskId, Guid documentId, CancellationToken ct)
+    {
+        var (standing, _) = await ChangeableAsync(spaceId, taskId, ct);
+        if (await session.ExecAsync("delete from spaces.task_file where task_id = @taskId and document_id = @documentId", new { taskId, documentId }, ct) == 0)
+        {
+            throw AppException.NotFound();
+        }
+        await TouchAsync(taskId, ct);
         return await DetailAsync(standing, taskId, ct);
     }
 
