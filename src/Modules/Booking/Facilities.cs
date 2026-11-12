@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
+using QRCoder;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
@@ -26,6 +28,8 @@ public sealed partial class Facilities(
     ITenantSettingsReader tenantSettings,
     IRoomMailboxes roomMailboxes,
     BookingCancellations cancellations,
+    ITenantRegistry tenants,
+    IOptions<HostResolutionOptions> hosts,
     IAuditWriter audit,
     IClock clock)
 {
@@ -268,9 +272,11 @@ public sealed partial class Facilities(
         session.QuerySingleOrDefaultAsync($"select {ResourceRow.Columns} from booking.resource where id = @id", new { id }, ResourceRow.Read, ct);
 
     internal static ResourceView View(ResourceRow r, bool manages) => new(r.Id, r.SiteId, r.FloorId, r.ZoneId, r.Kind, r.Names, r.Capacity, r.Attributes, manages ? r.FixedUserId : null,
-        manages ? r.Mailbox : null, r.CheckIn, r.NeedsApproval, r.Status, manages ? r.QrCode : null, r.Version);
+        manages ? r.Mailbox : null, r.CheckIn, r.NeedsApproval, r.Status, manages ? r.QrCode : null, r.Version, manages ? r.ApproverIds : []);
 
-    private async Task<(Dictionary<string, string> Names, string[] Attributes, string? Mailbox)> ValidateResourceAsync(Guid siteId, string kind, ResourceRequest request, Guid? self,
+    public const int MaxApprovers = 10;
+
+    private async Task<(Dictionary<string, string> Names, string[] Attributes, string? Mailbox, Guid[] Approvers)> ValidateResourceAsync(Guid siteId, string kind, ResourceRequest request, Guid? self,
         CancellationToken ct)
     {
         var errors = new ValidationErrors();
@@ -303,6 +309,23 @@ public sealed partial class Facilities(
         {
             errors.Add("fixedUserId", "validation.booking.fixed_user");
         }
+        // Named approvers of a restricted resource (FR-007): active members of the tenant.
+        var approvers = (request.ApproverIds ?? []).Distinct().ToArray();
+        if (approvers.Length > MaxApprovers)
+        {
+            errors.Add("approverIds", "validation.booking.approvers");
+        }
+        else
+        {
+            foreach (var approver in approvers)
+            {
+                if (await memberships.GetAsync(approver, ct) is not { Status: MembershipStatus.Active })
+                {
+                    errors.Add("approverIds", "validation.booking.approvers");
+                    break;
+                }
+            }
+        }
         var mailbox = Blank(request.Mailbox)?.ToLowerInvariant();
         if (mailbox is not null && (kind != ResourceKinds.Room || mailbox.Length > 254 || !MailboxPattern().IsMatch(mailbox)))
         {
@@ -322,7 +345,7 @@ public sealed partial class Facilities(
                 throw AppException.Conflict("conflict.booking.mailbox_taken");
             }
         }
-        return (names, attributes, mailbox);
+        return (names, attributes, mailbox, approvers);
     }
 
     public async Task<ResourceView> CreateResourceAsync(ResourceRequest request, CancellationToken ct)
@@ -338,22 +361,23 @@ public sealed partial class Facilities(
             throw AppException.Validation("kind", "validation.booking.kind");
         }
         await entitlements.DemandAsync(ResourceKinds.Capability(kind), ct);
-        var (names, attributes, mailbox) = await ValidateResourceAsync(site.Id, kind, request, null, ct);
+        var (names, attributes, mailbox, approvers) = await ValidateResourceAsync(site.Id, kind, request, null, ct);
         var id = Ids.New();
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
             insert into booking.resource (tenant_id, id, site_id, floor_id, zone_id, kind, names, capacity, attributes, fixed_user_id, mailbox, check_in, needs_approval,
-              qr_code, created_by, created_at, updated_at)
-            values (platform.current_tenant_id(), @id, @site, @floor, @zone, @kind, @names, @capacity, @attributes, @fixedUser, @mailbox, @checkIn, false,
-              @qr, @actor, @now, @now)
+              approver_ids, qr_code, created_by, created_at, updated_at)
+            values (platform.current_tenant_id(), @id, @site, @floor, @zone, @kind, @names, @capacity, @attributes, @fixedUser, @mailbox, @checkIn, @needsApproval,
+              @approvers, @qr, @actor, @now, @now)
             """, new
             {
                 id, site = site.Id, floor = request.FloorId, zone = request.ZoneId, kind, names = Jsonb.From(names), capacity = request.Capacity, attributes,
-                fixedUser = request.FixedUserId, mailbox, checkIn = request.CheckIn ?? kind != ResourceKinds.Equipment, qr = NewCode(), actor = context.RequireUser(), now,
+                fixedUser = request.FixedUserId, mailbox, checkIn = request.CheckIn ?? kind != ResourceKinds.Equipment, needsApproval = request.NeedsApproval ?? false, approvers,
+                qr = NewCode(), actor = context.RequireUser(), now,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.BookingResourceCreated, ResourceType, id.ToString(), TargetOrgUnitId: site.OrgUnitId,
-            Changes: new { kind, site = site.Id, capacity = request.Capacity }), ct);
+            Changes: new { kind, site = site.Id, capacity = request.Capacity, needsApproval = request.NeedsApproval ?? false, approvers = approvers.Length }), ct);
         return View((await ResourceRowAsync(id, ct))!, true);
     }
 
@@ -369,17 +393,22 @@ public sealed partial class Facilities(
         {
             throw AppException.Conflict("conflict.booking.changed");
         }
-        var (names, attributes, mailbox) = await ValidateResourceAsync(resource.SiteId, resource.Kind, request, id, ct);
+        var (names, attributes, mailbox, approvers) = await ValidateResourceAsync(resource.SiteId, resource.Kind, request, id, ct);
         await session.ExecAsync(
             """
             update booking.resource set floor_id = @floor, zone_id = @zone, names = @names, capacity = @capacity, attributes = @attributes, fixed_user_id = @fixedUser,
-              mailbox = @mailbox, check_in = @checkIn, updated_at = @now, row_version = row_version + 1
+              mailbox = @mailbox, check_in = @checkIn, needs_approval = @needsApproval, approver_ids = @approvers, updated_at = @now, row_version = row_version + 1
             where id = @id
             """, new
             {
                 id, floor = request.FloorId, zone = request.ZoneId, names = Jsonb.From(names), capacity = request.Capacity, attributes, fixedUser = request.FixedUserId,
-                mailbox, checkIn = request.CheckIn ?? resource.CheckIn, now = clock.UtcNow,
+                mailbox, checkIn = request.CheckIn ?? resource.CheckIn, needsApproval = request.NeedsApproval ?? resource.NeedsApproval, approvers, now = clock.UtcNow,
             }, ct);
+        if (resource.NeedsApproval != (request.NeedsApproval ?? resource.NeedsApproval) || !resource.ApproverIds.Order().SequenceEqual(approvers.Order()))
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.BookingRulesChanged, ResourceType, id.ToString(), TargetOrgUnitId: (await SiteRowAsync(resource.SiteId, ct))!.OrgUnitId,
+                Changes: new { needsApproval = new { from = resource.NeedsApproval, to = request.NeedsApproval ?? resource.NeedsApproval }, approvers = approvers.Length }), ct);
+        }
         return View((await ResourceRowAsync(id, ct))!, true);
     }
 
@@ -420,6 +449,30 @@ public sealed partial class Facilities(
             """, new { siteId },
             r => new QrLabel(r.GetGuid(0), r.GetString(1), Names.Read(r, 2), r.IsDBNull(3) ? null : Names.Read(r, 3), r.IsDBNull(4) ? null : Names.Read(r, 4), r.GetString(5),
                 CheckInLink(r.GetString(5))), ct);
+    }
+
+    /// <summary>
+    /// The QR image of a resource's label (US1 scenario 1) as SVG: the full check-in address on the tenant's host, so a
+    /// phone camera opens it; medium error correction survives a scuffed label.
+    /// </summary>
+    public async Task<string> QrSvgAsync(Guid resourceId, CancellationToken ct)
+    {
+        var resource = await ResourceRowAsync(resourceId, ct) is { Active: true } r ? r : throw AppException.NotFound();
+        await ManagedSiteAsync(resource.SiteId, ct);
+        var url = await TenantOriginAsync(ct) + CheckInLink(resource.QrCode);
+        using var data = QRCodeGenerator.GenerateQrCode(url, QRCodeGenerator.ECCLevel.M);
+        return new SvgQRCode(data).GetGraphic(8, "#000000", "#ffffff", drawQuietZones: true, sizingMode: SvgQRCode.SizingMode.ViewBoxAttribute);
+    }
+
+    private async Task<string> TenantOriginAsync(CancellationToken ct)
+    {
+        var h = hosts.Value;
+        if (h.Mode == InstallationMode.Dedicated)
+        {
+            return $"https://{h.BaseDomain}";
+        }
+        var tenant = await tenants.FindByIdAsync(context.RequireTenant(), ct) ?? throw AppException.NotFound();
+        return $"https://{tenant.Key}.{h.BaseDomain}";
     }
 
     /// <summary>Where the printed code leads: the check-in page of the scanning user's own tenant.</summary>

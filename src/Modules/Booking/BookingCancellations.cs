@@ -12,13 +12,14 @@ namespace TeamBeats.Modules.Booking;
 /// Ends live bookings that will not happen and tells their holders (spec 031 FR-013, FR-015, FR-016): a resource or site
 /// removed, a person who left, or a facilities administrator cancelling with a reason.
 /// </summary>
-public sealed class BookingCancellations(IDbSession session, ITenantSettingsReader tenantSettings, INotificationSender notifications, IOutbox outbox, IClock clock)
+public sealed class BookingCancellations(IDbSession session, ITenantSettingsReader tenantSettings, INotificationSender notifications, BookingApprovals approvals, IOutbox outbox,
+    IClock clock)
 {
     public const string RemovedTemplate = "booking.removed";
     public const string CancelledByAdminTemplate = "booking.cancelled_by_admin";
 
     internal sealed record Ended(Guid Id, Guid ResourceId, Guid HolderId, DateTimeOffset StartsAt, DateTimeOffset EndsAt, string Kind, Guid SiteId, Guid? ZoneId,
-        Dictionary<string, string> ResourceNames, string TimeZone);
+        Dictionary<string, string> ResourceNames, string TimeZone, Guid? InstanceId);
 
     /// <summary>
     /// Cancels the live bookings that have not ended and match <paramref name="where"/> (a condition on the booking with
@@ -32,16 +33,21 @@ public sealed class BookingCancellations(IDbSession session, ITenantSettingsRead
             with cancelled as (
               update booking.booking set status = 'cancelled', ended_at = @now, end_reason = @reason, row_version = row_version + 1
               where {where} and status in ('tentative', 'confirmed', 'checked_in') and ends_at > @now
-              returning id, resource_id, holder_id, starts_at, ends_at
+              returning id, resource_id, holder_id, starts_at, ends_at, instance_id
             )
-            select c.id, c.resource_id, c.holder_id, c.starts_at, c.ends_at, r.kind, r.site_id, r.zone_id, r.names::text, s.time_zone
+            select c.id, c.resource_id, c.holder_id, c.starts_at, c.ends_at, r.kind, r.site_id, r.zone_id, r.names::text, s.time_zone, c.instance_id
             from cancelled c
             join booking.resource r on r.id = c.resource_id
             join booking.site s on s.id = r.site_id
             order by c.starts_at
             """, new { key, reason, now },
             r => new Ended(r.GetGuid(0), r.GetGuid(1), r.GetGuid(2), r.GetFieldValue<DateTimeOffset>(3), r.GetFieldValue<DateTimeOffset>(4), r.GetString(5), r.GetGuid(6),
-                r.Get<Guid?>("zone_id"), Names.Read(r, 8), r.GetString(9)), ct);
+                r.Get<Guid?>("zone_id"), Names.Read(r, 8), r.GetString(9), r.Get<Guid?>("instance_id")), ct);
+        // A request nobody needs to decide any more leaves the approvers' inbox.
+        foreach (var instance in ended.Select(e => e.InstanceId).OfType<Guid>().Distinct())
+        {
+            await approvals.EndIfIdleAsync(instance, ct);
+        }
         foreach (var e in ended)
         {
             await outbox.EnqueueAsync(new BookingCancelled(e.Id, e.ResourceId, e.SiteId, e.Kind, e.HolderId, adminReason is not null || reason != "cancelled"), ct);

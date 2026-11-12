@@ -65,6 +65,12 @@
   overflow-wrap: anywhere;
 }
 
+.booking-qr {
+  inline-size: 10rem;
+  block-size: 10rem;
+  max-inline-size: 100%;
+}
+
 .booking-meta {
   margin: 0;
   color: var(--tb-color-text-secondary);

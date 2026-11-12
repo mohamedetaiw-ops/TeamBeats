@@ -10,6 +10,9 @@ export const manageBookingHref = "/booking/manage";
 export const manageSiteHref = (id: string) => `/booking/manage/sites/${id}`;
 export const siteLabelsHref = (id: string) => `/booking/manage/sites/${id}/labels`;
 export const calendarFileHref = (id: string) => `${bookingApi}/bookings/${id}/calendar.ics`;
+export const scanHref = (code: string) => `/booking/scan/${code}`;
+export const kioskHref = (siteId: string) => `/booking/kiosk/${siteId}`;
+export const qrImageHref = (resourceId: string) => `${bookingApi}/manage/resources/${resourceId}/qr.svg`;
 
 export type ResourceKind = "room" | "desk" | "parking" | "equipment";
 export const resourceKinds: ResourceKind[] = ["room", "desk", "parking", "equipment"];
@@ -52,6 +55,7 @@ export type ResourceView = {
   status: "active" | "removed";
   qrCode: string | null;
   version: number;
+  approverIds: string[];
 };
 
 export type SiteDetail = { site: SiteView; floors: FloorView[]; resources: ResourceView[] };
@@ -85,7 +89,30 @@ export type BookingView = {
   endReason: string | null;
   canCancel: boolean;
   version: number;
+  /** A tentative booking waits for approval until then (FR-007). */
+  holdUntil: string | null;
+  /** The approver's reason when they rejected it. */
+  decisionNote: string | null;
+  checkInMethod: "qr" | "booking" | "kiosk" | null;
+  /** The check-in window (FR-008), when the resource needs check-in. */
+  checkInFrom: string | null;
+  checkInUntil: string | null;
+  canCheckIn: boolean;
 };
+
+/** What a scanned code shows: the resource, and the viewer's booking of it for now. */
+export type ScanView = {
+  resourceId: string;
+  kind: ResourceKind;
+  resourceNames: Names;
+  siteId: string;
+  siteNames: Names;
+  timeZone: string;
+  checkIn: boolean;
+  booking: BookingView | null;
+};
+
+export type KioskView = { siteId: string; siteNames: Names; timeZone: string; bookings: BookingView[] };
 
 export type BookResult = { bookings: BookingView[]; seriesId: string | null; skipped: { date: string; reason: "holiday" | "non_working_day" | "rules" }[] };
 

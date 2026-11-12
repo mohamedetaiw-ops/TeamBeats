@@ -2561,7 +2561,8 @@
       "tabsLabel": "Task inbox views",
       "approvalsTab": "Approvals and requests",
       "myTasksTab": "My tasks",
-      "myTasksFailed": "Your tasks could not be loaded."
+      "myTasksFailed": "Your tasks could not be loaded.",
+      "bookingRequest": "Booking request"
     },
     "delegation": {
       "title": "While you are away",
@@ -9979,8 +9980,15 @@
         "cancelled_by_admin": "Cancelled by facilities.",
         "resource_removed": "Cancelled because the resource was removed.",
         "site_removed": "Cancelled because the site was removed.",
-        "left": "Cancelled because the person left."
-      }
+        "left": "Cancelled because the person left.",
+        "rejected": "Not approved",
+        "expired": "Nobody approved it in time",
+        "no_show": "Released because nobody checked in"
+      },
+      "waiting": "Waiting for approval until {until}",
+      "rejectedReason": "Reason: {reason}",
+      "checkedIn": "Checked in at {at}",
+      "checkInWindow": "Check in from {from} to {until}"
     },
     "manage": {
       "pageTitle": "Manage booking",
@@ -10056,7 +10064,29 @@
       "checkIn": "People check in",
       "checkInHint": "Bookings without a check-in are released after the grace period.",
       "addResource": "Add resource",
-      "resourceAdded": "{name} was added."
+      "resourceAdded": "{name} was added.",
+      "kiosk": "Open the kiosk",
+      "needsApproval": "Needs approval",
+      "approval": "Needs approval",
+      "approvalHint": "Bookings are held until an approver or a facilities administrator of the site approves them.",
+      "approver": "Approver",
+      "qrAlt": "QR code to check in to {name}"
+    },
+    "checkIn": {
+      "pageTitle": "Check in",
+      "kioskTitle": "Kiosk check-in",
+      "action": "Check in",
+      "failed": "Could not check in",
+      "doneTitle": "You are checked in",
+      "done": "Enjoy your booking.",
+      "open": "Open the booking",
+      "noneTitle": "No booking to check in to",
+      "none": "You have no booking of this resource today. Find a free one to book.",
+      "noneNoCheckIn": "This resource needs no check-in. Find a free one to book.",
+      "find": "Find a space",
+      "kioskEmptyTitle": "Nothing to check in to",
+      "kioskEmpty": "You have no bookings at this site for the rest of today.",
+      "kioskLabel": "Your bookings here today"
     }
   }
 }

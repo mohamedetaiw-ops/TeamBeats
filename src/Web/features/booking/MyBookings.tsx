@@ -22,6 +22,8 @@ import {
   send,
   type BookingStatus,
   type BookingView,
+  type KioskView,
+  type ScanView,
 } from "@/lib/booking";
 import "./booking.css";
 
@@ -45,6 +47,60 @@ function When({ booking }: { booking: BookingView }) {
       {otherZone(booking.timeZone) ? ` ${t("zone", { zone: booking.timeZone })}` : ""}
     </span>
   );
+}
+
+/** When a booking's hold or check-in window ends, in the site's time zone. */
+function useAt() {
+  const format = useFormatter();
+  return (iso: string, timeZone: string) => format.dateTime(new Date(iso), { dateStyle: "medium", timeStyle: "short", timeZone });
+}
+
+/**
+ * Check-in (spec 031 US4, FR-008): offered while the window is open; the API decides whether it still is. `via`
+ * says where it was done: from the booking, at a kiosk, or by the scanned code.
+ */
+function CheckIn({ booking, via, code, onDone, onFailed }: {
+  booking: BookingView;
+  via: "booking" | "kiosk" | "qr";
+  code?: string;
+  onDone: (b: BookingView) => void;
+  onFailed: (messages: string[]) => void;
+}) {
+  const tc = useTranslations("booking.checkIn");
+  const [busy, setBusy] = useState(false);
+  if (!booking.canCheckIn) return null;
+  async function run() {
+    setBusy(true);
+    const url = via === "qr" && code ? `${bookingApi}/scan/${code}:check-in` : `${bookingApi}/bookings/${booking.id}:check-in?via=${via}`;
+    const result = await call<BookingView>(() => send(url, "POST"), tc("failed"));
+    setBusy(false);
+    if (!result.ok) return onFailed(result.messages);
+    onDone(result.value);
+  }
+  return (
+    <Button variant="primary" size="sm" icon="check" disabled={busy} onClick={() => void run()}>
+      {tc("action")}
+    </Button>
+  );
+}
+
+/** Where a booking stands beyond its status: waiting for approval, rejected with a reason, or checked in. */
+function Standing({ booking }: { booking: BookingView }) {
+  const t = useTranslations("booking.mine");
+  const at = useAt();
+  if (booking.status === "tentative" && booking.holdUntil) {
+    return <span className="booking-meta">{t("waiting", { until: at(booking.holdUntil, booking.timeZone) })}</span>;
+  }
+  if (booking.status === "rejected" && booking.decisionNote) {
+    return <span className="booking-meta">{t("rejectedReason", { reason: booking.decisionNote })}</span>;
+  }
+  if (booking.status === "checked_in" && booking.checkedInAt) {
+    return <span className="booking-meta">{t("checkedIn", { at: at(booking.checkedInAt, booking.timeZone) })}</span>;
+  }
+  if (booking.status === "confirmed" && booking.checkInFrom && booking.checkInUntil) {
+    return <span className="booking-meta">{t("checkInWindow", { from: at(booking.checkInFrom, booking.timeZone), until: at(booking.checkInUntil, booking.timeZone) })}</span>;
+  }
+  return null;
 }
 
 /** My bookings (spec 031 US2): what the viewer holds or made for others, with cancel and the calendar file. */
@@ -90,8 +146,14 @@ export function MyBookings({ initial }: { initial: BookingView[] }) {
             <div className="booking-row">
               <Badge tone={tones[b.status]}>{ts(b.status)}</Badge>
               {b.seriesId ? <Badge>{t("series")}</Badge> : null}
+              <Standing booking={b} />
             </div>
             <div className="booking-row">
+              <CheckIn booking={b} via="booking" onFailed={setMessages}
+                onDone={(done) => {
+                  setMessages([]);
+                  setBookings((list) => list.map((x) => (x.id === done.id ? done : x)));
+                }} />
               <ButtonLink size="sm" variant="quiet" icon="download" href={calendarFileHref(b.id)}>
                 {t("calendar")}
               </ButtonLink>
@@ -146,8 +208,14 @@ export function BookingDetail({ initial, own }: { initial: BookingView; own: boo
         <div className="booking-row">
           <Badge tone={tones[booking.status]}>{ts(booking.status)}</Badge>
           {booking.endReason ? <span className="booking-meta">{t(`reasons.${booking.endReason}`)}</span> : null}
+          <Standing booking={booking} />
         </div>
         <div className="booking-row">
+          <CheckIn booking={booking} via="booking" onFailed={setMessages}
+            onDone={(done) => {
+              setMessages([]);
+              setBooking(done);
+            }} />
           <ButtonLink size="sm" icon="download" href={calendarFileHref(booking.id)}>
             {t("calendar")}
           </ButtonLink>
@@ -167,6 +235,104 @@ export function BookingDetail({ initial, own }: { initial: BookingView; own: boo
           </div>
         </section>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * A scanned resource code (spec 031 US4 scenario 1, FR-008): the resource, and the viewer's booking of it for now with
+ * check-in while its window is open. Someone with no booking is pointed to finding one.
+ */
+export function ScanCheckIn({ initial, code }: { initial: ScanView; code: string }) {
+  const tc = useTranslations("booking.checkIn");
+  const ts = useTranslations("booking.status");
+  const locale = useLocale();
+  const [booking, setBooking] = useState(initial.booking);
+  const [messages, setMessages] = useState<string[]>([]);
+  return (
+    <div className="booking">
+      {messages.length > 0 ? (
+        <Alert tone="danger" title={tc("failed")} live>
+          {messages.join(" ")}
+        </Alert>
+      ) : null}
+      <section className="booking-section" aria-labelledby="booking-scan">
+        <h2 id="booking-scan">
+          <bdi>{pick(initial.resourceNames, locale)}</bdi>
+        </h2>
+        <p className="booking-meta">
+          <bdi>{pick(initial.siteNames, locale)}</bdi>
+        </p>
+        {booking ? (
+          <>
+            <When booking={booking} />
+            <div className="booking-row">
+              <Badge tone={tones[booking.status]}>{ts(booking.status)}</Badge>
+              <Standing booking={booking} />
+            </div>
+            {booking.status === "checked_in" ? (
+              <Alert tone="success" title={tc("doneTitle")} live>
+                {tc("done")}
+              </Alert>
+            ) : null}
+            <div className="booking-row">
+              <CheckIn booking={booking} via="qr" code={code} onFailed={setMessages}
+                onDone={(done) => {
+                  setMessages([]);
+                  setBooking(done);
+                }} />
+              <ButtonLink size="sm" variant="quiet" href={bookingDetailHref(booking.id)}>
+                {tc("open")}
+              </ButtonLink>
+            </div>
+          </>
+        ) : (
+          <StateView kind="empty" title={tc("noneTitle")} message={initial.checkIn ? tc("none") : tc("noneNoCheckIn")} icon="calendar"
+            action={<ButtonLink href={`${bookingHref}?site=${initial.siteId}&kind=${initial.kind}`} icon="search">{tc("find")}</ButtonLink>} />
+        )}
+      </section>
+    </div>
+  );
+}
+
+/** A site's kiosk (spec 031 FR-008): the signed-in person's bookings there today, with check-in while each window is open. */
+export function Kiosk({ initial }: { initial: KioskView }) {
+  const tc = useTranslations("booking.checkIn");
+  const ts = useTranslations("booking.status");
+  const locale = useLocale();
+  const [bookings, setBookings] = useState(initial.bookings);
+  const [messages, setMessages] = useState<string[]>([]);
+  if (bookings.length === 0) {
+    return <StateView kind="empty" title={tc("kioskEmptyTitle")} message={tc("kioskEmpty")} icon="calendar" />;
+  }
+  return (
+    <div className="booking">
+      {messages.length > 0 ? (
+        <Alert tone="danger" title={tc("failed")} live>
+          {messages.join(" ")}
+        </Alert>
+      ) : null}
+      <ul className="booking-list" aria-label={tc("kioskLabel")}>
+        {bookings.map((b) => (
+          <li key={b.id} className="booking-card">
+            <h3>
+              <bdi>{pick(b.resourceNames, locale)}</bdi>
+            </h3>
+            <When booking={b} />
+            <div className="booking-row">
+              <Badge tone={tones[b.status]}>{ts(b.status)}</Badge>
+              <Standing booking={b} />
+            </div>
+            <div className="booking-row">
+              <CheckIn booking={b} via="kiosk" onFailed={setMessages}
+                onDone={(done) => {
+                  setMessages([]);
+                  setBookings((list) => list.map((x) => (x.id === done.id ? done : x)));
+                }} />
+            </div>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

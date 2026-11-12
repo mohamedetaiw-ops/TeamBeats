@@ -29,6 +29,7 @@ public sealed class Bookings(
     Facilities facilities,
     BookingRules rules,
     BookingCancellations cancellations,
+    BookingApprovals approvals,
     IWorkingCalendar calendars,
     IOrganizationHierarchy hierarchy,
     IUserDirectory users,
@@ -137,6 +138,18 @@ public sealed class Bookings(
         await entitlements.DemandAsync(ResourceKinds.Capability(resource.Kind), ct);
     }
 
+    /// <summary>
+    /// The person's rule with the no-show restriction applied (US4 scenario 3): while restricted, they book at most
+    /// the restricted number of days ahead.
+    /// </summary>
+    private async Task<Func<Rule, Rule>> RestrictionAsync(Guid userId, DateTimeOffset now, CancellationToken ct)
+    {
+        var days = await session.QuerySingleOrDefaultAsync(
+            "select advance_days from booking.no_show_notice where user_id = @userId and restricted_until > @now and advance_days is not null",
+            new { userId, now }, r => (int?)r.GetInt32(0), ct);
+        return days is { } d ? rule => rule with { AdvanceDays = Math.Min(rule.AdvanceDays, d) } : rule => rule;
+    }
+
     // ---- Search and availability ----
 
     /// <summary>
@@ -175,7 +188,8 @@ public sealed class Bookings(
             order by r.kind, f.sort nulls first, r.capacity nulls first, r.created_at, r.id
             limit 2000
             """, new { siteId, wanted, capacity, wantedAttributes, zoneId, user },
-            r => (Row: ResourceRow.Read(r), Floor: r.IsDBNull(15) ? null : Names.Read(r, 15), Zone: r.IsDBNull(16) ? null : Names.Read(r, 16)), ct);
+            r => (Row: ResourceRow.Read(r), Floor: r.IsDBNull(ResourceRow.Count) ? null : Names.Read(r, ResourceRow.Count),
+                Zone: r.IsDBNull(ResourceRow.Count + 1) ? null : Names.Read(r, ResourceRow.Count + 1)), ct);
         if (candidates.Count == 0)
         {
             return new SearchResult(site.Id, site.TimeZone, span.StartsAt, span.EndsAt, []);
@@ -184,11 +198,12 @@ public sealed class Bookings(
         var settings = await rules.SettingsAsync(ct);
         var calendar = await CalendarAsync(site, ct);
         var now = clock.UtcNow;
+        var restrict = await RestrictionAsync(user, now, ct);
         var subtrees = new Dictionary<string, IReadOnlySet<Guid>>();
         var bookable = new List<(ResourceRow Row, IReadOnlyDictionary<string, string>? Floor, IReadOnlyDictionary<string, string>? Zone, Rule Rule)>();
         foreach (var (row, floor, zone) in candidates)
         {
-            var rule = resolve(row);
+            var rule = restrict(resolve(row));
             var check = new ValidationErrors();
             CheckSpan(span, rule, settings, site, calendar, now, check);
             if (!check.Any && await InUnitsAsync(rule, user, subtrees, ct))
@@ -267,14 +282,14 @@ public sealed class Bookings(
         if (title is { Length: > MaxTitleLength }) errors.Add("title", "validation.booking.title");
         errors.ThrowIfAny();
 
-        var rule = await rules.ForAsync(resource, ct);
+        var now = clock.UtcNow;
+        var rule = (await RestrictionAsync(holder, now, ct))(await rules.ForAsync(resource, ct));
         var settings = await rules.SettingsAsync(ct);
         if (!await InUnitsAsync(rule, holder, [], ct))
         {
             throw AppException.Denied("authz.denied.booking_units");
         }
         var calendar = await CalendarAsync(site, ct);
-        var now = clock.UtcNow;
         var first = SpanOf(request.Date!.Value, request.Start!.Value, request.End!.Value, site.Zone);
         CheckSpan(first, rule, settings, site, calendar, now, errors);
         errors.ThrowIfAny();
@@ -358,6 +373,10 @@ public sealed class Bookings(
                 values (platform.current_tenant_id(), @seriesId, @resource, @holder, @pattern, @until, @skipped, @bookedBy, @now)
                 """, new { seriesId, resource = resource.Id, holder, pattern, until = request.Repeat!.Until!.Value, skipped = Jsonb.From(skipped), bookedBy, now }, ct);
         }
+        // A restricted resource is held as tentative until its approval, for the approval hold or until the start (FR-007).
+        var restricted = resource.NeedsApproval;
+        var status = restricted ? BookingStatuses.Tentative : BookingStatuses.Confirmed;
+        DateTimeOffset? holdUntil = restricted ? Min(now.AddHours(settings.ApprovalHoldHours), first.StartsAt) : null;
         var ids = new List<Guid>();
         try
         {
@@ -366,11 +385,14 @@ public sealed class Bookings(
                 var id = Ids.New();
                 await session.ExecAsync(
                     """
-                    insert into booking.booking (tenant_id, id, resource_id, holder_id, booked_by, series_id, starts_at, ends_at, held, title, status, created_at)
+                    insert into booking.booking (tenant_id, id, resource_id, holder_id, booked_by, series_id, starts_at, ends_at, held, title, status, hold_until, created_at)
                     values (platform.current_tenant_id(), @id, @resource, @holder, @bookedBy, @seriesId, @starts, @ends, tstzrange(@starts, @heldUntil, '[)'), @title,
-                      'confirmed', @now)
-                    """, new { id, resource = resource.Id, holder, bookedBy, seriesId, starts = span.StartsAt, ends = span.EndsAt, heldUntil = span.EndsAt.AddMinutes(rule.BufferMinutes), title, now },
-                    ct);
+                      @status, @holdUntil, @now)
+                    """, new
+                    {
+                        id, resource = resource.Id, holder, bookedBy, seriesId, starts = span.StartsAt, ends = span.EndsAt, heldUntil = span.EndsAt.AddMinutes(rule.BufferMinutes), title,
+                        status, holdUntil, now,
+                    }, ct);
                 ids.Add(id);
             }
         }
@@ -379,19 +401,40 @@ public sealed class Bookings(
             throw AppException.Conflict("conflict.booking.taken");
         }
 
-        foreach (var (id, span) in ids.Zip(spans))
-        {
-            await outbox.EnqueueAsync(new BookingConfirmed(id, resource.Id, site.Id, resource.Kind, holder, span.StartsAt, span.EndsAt), ct);
-        }
         var locale = (await tenantSettings.GetLocaleSettingsAsync(ct)).DefaultLocale;
         var parameters = BookingCancellations.Describe(resource.Names, site.TimeZone, first.StartsAt, first.EndsAt, locale);
         parameters["count"] = ids.Count.ToString(CultureInfo.InvariantCulture);
-        await notifications.SendAsync(new NotificationRequest([holder], NotificationCategories.Bookings, seriesId is null ? ConfirmedTemplate : SeriesTemplate, Link(ids[0]),
-            parameters, DedupeKey: $"booking:{ids[0]:N}:confirmed"), ct);
+        if (restricted)
+        {
+            var instance = await approvals.StartAsync(resource, site, ids[0], holder, bookedBy, ct);
+            await session.ExecAsync("update booking.booking set instance_id = @instance where id = any(@ids)", new { instance, ids = ids.ToArray() }, ct);
+            await notifications.SendAsync(new NotificationRequest([holder], NotificationCategories.Bookings, BookingApprovals.RequestedTemplate, Link(ids[0]),
+                parameters, DedupeKey: $"booking:{ids[0]:N}:requested"), ct);
+        }
+        else
+        {
+            foreach (var (id, span) in ids.Zip(spans))
+            {
+                await outbox.EnqueueAsync(new BookingConfirmed(id, resource.Id, site.Id, resource.Kind, holder, span.StartsAt, span.EndsAt), ct);
+            }
+            await notifications.SendAsync(new NotificationRequest([holder], NotificationCategories.Bookings, seriesId is null ? ConfirmedTemplate : SeriesTemplate, Link(ids[0]),
+                parameters, DedupeKey: $"booking:{ids[0]:N}:confirmed"), ct);
+        }
 
         var views = await ViewsAsync("b.id = any(@ids)", new { ids = ids.ToArray() }, ct);
         return new BookResult(views, seriesId, skipped);
     }
+
+    private static DateTimeOffset Min(DateTimeOffset a, DateTimeOffset b) => a < b ? a : b;
+
+    private static DateTimeOffset Max(DateTimeOffset a, DateTimeOffset b) => a > b ? a : b;
+
+    /// <summary>
+    /// The check-in window of a booking (FR-008): from the settings' minutes before the start until the grace period
+    /// after it, or after the booking was made when that was later. Null when the resource needs no check-in.
+    /// </summary>
+    internal static (DateTimeOffset From, DateTimeOffset Until)? CheckInWindow(BookingRow row, bool checkIn, Settings settings) =>
+        checkIn ? (row.StartsAt.AddMinutes(-settings.CheckInBeforeMinutes), Max(row.StartsAt, row.CreatedAt).AddMinutes(settings.CheckInGraceMinutes)) : null;
 
     // ---- Reading ----
 
@@ -401,7 +444,7 @@ public sealed class Bookings(
         var rows = await session.QueryAsync(
             $"""
             select {string.Join(", ", BookingRow.Columns.Split(", ").Select(c => "b." + c))}, r.kind, r.names::text as resource_names, s.id as site, s.names::text as site_names,
-                   s.time_zone, s.org_unit_id
+                   s.time_zone, s.org_unit_id, r.check_in
             from booking.booking b
             join booking.resource r on r.id = b.resource_id
             join booking.site s on s.id = r.site_id
@@ -409,9 +452,11 @@ public sealed class Bookings(
             order by b.starts_at, b.id
             limit 500
             """, args,
-            r => (Row: BookingRow.Read(r), Kind: r.GetString(12), Resource: Names.Read(r, 13), Site: r.GetGuid(14), SiteNames: Names.Read(r, 15), Zone: r.GetString(16),
-                Unit: r.Get<Guid?>("org_unit_id")), ct);
+            r => (Row: BookingRow.Read(r), Kind: r.GetString(BookingRow.Count), Resource: Names.Read(r, BookingRow.Count + 1), Site: r.GetGuid(BookingRow.Count + 2),
+                SiteNames: Names.Read(r, BookingRow.Count + 3), Zone: r.GetString(BookingRow.Count + 4), Unit: r.Get<Guid?>("org_unit_id"),
+                CheckIn: r.GetBoolean(BookingRow.Count + 6)), ct);
         var now = clock.UtcNow;
+        var settings = rows.Count == 0 ? Settings.Defaults : await rules.SettingsAsync(ct);
         var views = new List<BookingView>();
         var manages = new Dictionary<Guid, bool>();
         foreach (var x in rows)
@@ -425,9 +470,12 @@ public sealed class Bookings(
             var start = TimeZoneInfo.ConvertTime(x.Row.StartsAt, zone);
             var end = TimeZoneInfo.ConvertTime(x.Row.EndsAt, zone);
             var own = x.Row.HolderId == me || x.Row.BookedBy == me;
+            var window = x.Row.Status is BookingStatuses.Confirmed or BookingStatuses.CheckedIn ? CheckInWindow(x.Row, x.CheckIn, settings) : null;
+            var canCheckIn = window is { } w && x.Row.Status == BookingStatuses.Confirmed && x.Row.HolderId == me && now >= w.From && now <= w.Until;
             views.Add(new BookingView(x.Row.Id, x.Row.ResourceId, x.Kind, x.Resource, x.Site, x.SiteNames, x.Zone, x.Row.StartsAt, x.Row.EndsAt,
                 DateOnly.FromDateTime(start.DateTime), TimeOnly.FromDateTime(start.DateTime), TimeOnly.FromDateTime(end.DateTime), x.Row.Status, x.Row.Title, x.Row.HolderId,
-                x.Row.BookedBy, x.Row.SeriesId, x.Row.CheckedInAt, x.Row.EndReason, x.Row.Live && x.Row.EndsAt > now && (own || m), x.Row.Version));
+                x.Row.BookedBy, x.Row.SeriesId, x.Row.CheckedInAt, x.Row.EndReason, x.Row.Live && x.Row.EndsAt > now && (own || m), x.Row.Version, x.Row.HoldUntil,
+                x.Row.DecisionNote, x.Row.CheckInMethod, window?.From, window?.Until, canCheckIn));
         }
         return views;
     }
@@ -508,6 +556,121 @@ public sealed class Bookings(
             .Append(view.Status is BookingStatuses.Cancelled or BookingStatuses.Released or BookingStatuses.Rejected or BookingStatuses.Expired ? "STATUS:CANCELLED\r\n" : "STATUS:CONFIRMED\r\n")
             .Append("END:VEVENT\r\nEND:VCALENDAR\r\n");
         return ($"booking-{view.LocalDate:yyyy-MM-dd}.ics", Encoding.UTF8.GetBytes(text.ToString()));
+    }
+
+    // ---- Check-in (US4, FR-008) ----
+
+    /// <summary>
+    /// Checks the holder in to a confirmed booking whose window is open, by <paramref name="method"/>. Only the person
+    /// booked for checks in: being there is the point. Checking in twice returns the booking as it is.
+    /// </summary>
+    public async Task<BookingView> CheckInAsync(Guid id, string? method, CancellationToken ct)
+    {
+        method ??= CheckInMethods.Booking;
+        if (method is not (CheckInMethods.Booking or CheckInMethods.Kiosk))
+        {
+            throw AppException.Validation("via", "validation.booking.check_in_method");
+        }
+        var view = await GetAsync(id, ct);
+        if (view.HolderId != context.RequireUser())
+        {
+            throw AppException.Denied("authz.denied.booking_check_in");
+        }
+        return await CheckInCoreAsync(view, method, ct);
+    }
+
+    private async Task<BookingView> CheckInCoreAsync(BookingView view, string method, CancellationToken ct)
+    {
+        if (view.Status == BookingStatuses.CheckedIn)
+        {
+            return view;
+        }
+        if (view.Status != BookingStatuses.Confirmed)
+        {
+            throw AppException.Conflict(view.Status == BookingStatuses.Tentative ? "conflict.booking.check_in_tentative" : "conflict.booking.not_live");
+        }
+        if (view.CheckInFrom is not { } from || view.CheckInUntil is not { } until)
+        {
+            throw AppException.Conflict("conflict.booking.check_in_off");
+        }
+        var now = clock.UtcNow;
+        if (now < from)
+        {
+            throw new AppException(ProblemCodes.Conflict, 409, "conflict.booking.check_in_early", null, new Dictionary<string, object?> { ["opens"] = from });
+        }
+        if (now > until)
+        {
+            throw AppException.Conflict("conflict.booking.check_in_closed");
+        }
+        var changed = await session.ExecAsync(
+            """
+            update booking.booking set status = 'checked_in', checked_in_at = @now, check_in_method = @method, row_version = row_version + 1
+            where id = @id and status = 'confirmed'
+            """, new { id = view.Id, now, method }, ct);
+        if (changed == 1)
+        {
+            await outbox.EnqueueAsync(new CheckedIn(view.Id, view.ResourceId, view.SiteId, view.Kind, view.HolderId, method), ct);
+        }
+        return await GetAsync(view.Id, ct);
+    }
+
+    private async Task<ResourceRow> ScannedAsync(string code, CancellationToken ct)
+    {
+        await facilities.RequireAnyAsync(ct);
+        var clean = (code ?? "").Trim().ToLowerInvariant();
+        // A code is 32 hex characters; anything else, or a code of another tenant, is not found.
+        var resource = clean.Length == 32 && clean.All(Uri.IsHexDigit)
+            ? await session.QuerySingleOrDefaultAsync($"select {ResourceRow.Columns} from booking.resource where qr_code = @clean and status = 'active'", new { clean },
+                ResourceRow.Read, ct)
+            : null;
+        if (resource is null)
+        {
+            throw AppException.NotFound();
+        }
+        await DemandBookAsync(resource, ct);
+        return resource;
+    }
+
+    /// <summary>The scanning person's booking of the resource for now: the one whose window is open, else their next one today.</summary>
+    private async Task<BookingView?> NowAsync(ResourceRow resource, SiteRow site, CancellationToken ct)
+    {
+        var now = clock.UtcNow;
+        var localToday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, site.Zone).DateTime);
+        var endOfDay = At(localToday.AddDays(1), TimeOnly.MinValue, site.Zone);
+        var views = await ViewsAsync("b.resource_id = @resource and b.holder_id = @me and b.status in ('tentative', 'confirmed', 'checked_in') and b.ends_at > @now and b.starts_at < @endOfDay",
+            new { resource = resource.Id, me = context.RequireUser(), now, endOfDay }, ct);
+        return views.FirstOrDefault(v => v.CanCheckIn) ?? views.FirstOrDefault(v => v.Status == BookingStatuses.CheckedIn) ?? views.FirstOrDefault();
+    }
+
+    /// <summary>What a scanned code shows (FR-008): the resource and the person's booking of it for now, if any.</summary>
+    public async Task<ScanView> ScanAsync(string code, CancellationToken ct)
+    {
+        var resource = await ScannedAsync(code, ct);
+        var site = await facilities.ActiveSiteAsync(resource.SiteId, ct);
+        return new ScanView(resource.Id, resource.Kind, resource.Names, site.Id, site.Names, site.TimeZone, resource.CheckIn, await NowAsync(resource, site, ct));
+    }
+
+    /// <summary>Checks in by the scanned code to the person's booking of the resource whose window is open.</summary>
+    public async Task<BookingView> ScanCheckInAsync(string code, CancellationToken ct)
+    {
+        var resource = await ScannedAsync(code, ct);
+        var site = await facilities.ActiveSiteAsync(resource.SiteId, ct);
+        var booking = await NowAsync(resource, site, ct) ?? throw AppException.Conflict("conflict.booking.no_booking_now");
+        return await CheckInCoreAsync(booking, CheckInMethods.Qr, ct);
+    }
+
+    /// <summary>A site's kiosk (FR-008): the signed-in person's bookings at the site today that have not ended.</summary>
+    public async Task<KioskView> KioskAsync(Guid siteId, CancellationToken ct)
+    {
+        await facilities.RequireAnyAsync(ct);
+        await authz.DemandAsync(Permissions.BookingBook, AuthzTarget.Tenant, ct);
+        var site = await facilities.ActiveSiteAsync(siteId, ct);
+        var now = clock.UtcNow;
+        var localToday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, site.Zone).DateTime);
+        var views = await ViewsAsync(
+            "s.id = @siteId and b.holder_id = @me and b.status in ('tentative', 'confirmed', 'checked_in') and b.ends_at > @now and b.starts_at < @endOfDay",
+            new { siteId, me = context.RequireUser(), now, endOfDay = At(localToday.AddDays(1), TimeOnly.MinValue, site.Zone) }, ct);
+        return new KioskView(site.Id, site.Names, site.TimeZone, views);
     }
 
     /// <summary>A person left the tenant: their future bookings are cancelled (FR-016).</summary>

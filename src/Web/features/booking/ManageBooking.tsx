@@ -11,11 +11,14 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import { StateView } from "@/components/ui/StateView";
+import { PersonPicker } from "@/features/services/PersonPicker";
 import {
   bookingApi,
   call,
+  kioskHref,
   manageSiteHref,
   pick,
+  qrImageHref,
   send,
   siteLabelsHref,
   type FloorView,
@@ -118,6 +121,8 @@ export function SiteAdmin({ initial, inPlan }: { initial: SiteDetail; inPlan: Re
   const [placement, setPlacement] = useState("");
   const [mailbox, setMailbox] = useState("");
   const [checkIn, setCheckIn] = useState(true);
+  const [needsApproval, setNeedsApproval] = useState(false);
+  const [approver, setApprover] = useState<string | null>(null);
   const [ruleFor, setRuleFor] = useState<string | null>(null);
   const [rule, setRule] = useState<RuleView | null>(null);
   const siteId = detail.site.id;
@@ -154,12 +159,16 @@ export function SiteAdmin({ initial, inPlan }: { initial: SiteDetail; inPlan: Re
       attributes: attributes.split(",").map((a) => a.trim()).filter(Boolean),
       mailbox: kind === "room" && mailbox.trim() ? mailbox.trim() : null,
       checkIn,
+      needsApproval,
+      approverIds: needsApproval && approver ? [approver] : [],
     };
     if (await apply<ResourceView>(() => send(`${bookingApi}/manage/resources`, "POST", body), t("resourceAdded", { name: resourceName.trim() }))) {
       setResourceName("");
       setCapacity("");
       setAttributes("");
       setMailbox("");
+      setNeedsApproval(false);
+      setApprover(null);
     }
   }
 
@@ -245,6 +254,9 @@ export function SiteAdmin({ initial, inPlan }: { initial: SiteDetail; inPlan: Re
           <ButtonLink size="sm" icon="download" href={siteLabelsHref(siteId)}>
             {t("labels")}
           </ButtonLink>
+          <ButtonLink size="sm" variant="quiet" icon="check" href={kioskHref(siteId)}>
+            {t("kiosk")}
+          </ButtonLink>
         </div>
         <ul className="booking-list" aria-label={t("resourcesLabel")}>
           {detail.resources.map((r) => (
@@ -263,6 +275,7 @@ export function SiteAdmin({ initial, inPlan }: { initial: SiteDetail; inPlan: Re
                 ))}
                 {r.fixedUserId ? <Badge tone="info">{t("fixed")}</Badge> : null}
                 {!r.checkIn ? <Badge>{t("noCheckIn")}</Badge> : null}
+                {r.needsApproval ? <Badge tone="warning">{t("needsApproval")}</Badge> : null}
               </div>
               <div className="booking-row">
                 <Button size="sm" variant="quiet" icon="settings" onClick={() => void openRule(r)}>
@@ -327,6 +340,8 @@ export function SiteAdmin({ initial, inPlan }: { initial: SiteDetail; inPlan: Re
             ) : null}
           </div>
           <Checkbox label={t("checkIn")} hint={t("checkInHint")} checked={checkIn} onChange={(e) => setCheckIn(e.target.checked)} />
+          <Checkbox label={t("approval")} hint={t("approvalHint")} checked={needsApproval} onChange={(e) => setNeedsApproval(e.target.checked)} />
+          {needsApproval ? <PersonPicker label={t("approver")} value={approver} onChange={setApprover} /> : null}
           <div className="booking-row">
             <Button type="submit" variant="primary" icon="plus">
               {t("addResource")}
@@ -354,6 +369,8 @@ export function Labels({ labels, origin }: { labels: { resourceId: string; kind:
       <ul className="booking-labels" aria-label={t("labels")}>
         {labels.map((l) => (
           <li key={l.resourceId} className="booking-label">
+            {/* eslint-disable-next-line @next/next/no-img-element -- the API draws the code as SVG; next/image adds nothing for it. */}
+            <img src={qrImageHref(l.resourceId)} alt={t("qrAlt", { name: pick(l.names, locale) })} width={160} height={160} className="booking-qr" />
             <strong>
               <bdi>{pick(l.names, locale)}</bdi>
             </strong>
