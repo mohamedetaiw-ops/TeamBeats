@@ -64,9 +64,11 @@ public sealed record CommunityView(
     CommunityRights Rights,
     int Version);
 
-/// <summary>What the viewer may do across communities: create one, and open the moderation queue and keyword filter.</summary>
-/// <summary>What the communities directory offers this viewer. Surveys says the tenant's package includes surveys.</summary>
-public sealed record DirectoryRights(bool CanCreate, bool CanModerate, bool CanManageKeywords, bool Surveys);
+/// <summary>
+/// What the viewer may do across communities: create one, and open the moderation queue and keyword filter. Surveys and
+/// Recognition say whether the tenant's package includes them, for the links on the directory.
+/// </summary>
+public sealed record DirectoryRights(bool CanCreate, bool CanModerate, bool CanManageKeywords, bool Surveys, bool Recognition);
 
 public sealed record MemberView(Guid UserId, string DisplayName, string Role, string Status, string Source);
 
@@ -270,7 +272,8 @@ public sealed class Communities(
             || await session.ScalarAsync<bool>(
                 "select exists (select 1 from engagement.community_member where user_id = @user and status = 'active' and role in ('owner', 'moderator'))",
                 new { user = context.RequireUser() }, ct);
-        return new DirectoryRights(manages, moderates, manages, await entitlements.IsEnabledAsync(Capabilities.EngagementSurveys, ct));
+        return new DirectoryRights(manages, moderates, manages, await entitlements.IsEnabledAsync(Capabilities.EngagementSurveys, ct),
+            await entitlements.IsEnabledAsync(Capabilities.EngagementRecognition, ct));
     }
 
     // ---- Create and change ----

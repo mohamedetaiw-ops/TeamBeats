@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { surveysHref, type CommunityView, type DirectoryRights } from "@/lib/engagement";
+import { recognitionHref, surveysHref, type CommunityView, type DirectoryRights } from "@/lib/engagement";
 import { Header } from "@/components/shell/Header";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -26,6 +26,11 @@ export default async function CommunitiesPage() {
           icon="chat"
           actions={
             <>
+              {rights.ok && rights.data.recognition ? (
+                <ButtonLink variant="secondary" icon="star" href={recognitionHref}>
+                  {t("recognition.link")}
+                </ButtonLink>
+              ) : null}
               {rights.ok && rights.data.surveys ? (
                 <ButtonLink variant="secondary" icon="tasks" href={surveysHref}>
                   {t("surveys.link")}

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Messaging;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
@@ -21,6 +22,8 @@ public static class EngagementModule
         services.AddScoped<SpeakUp>();
         services.AddScoped<Polls>();
         services.AddScoped<Surveys>();
+        services.AddScoped<Recognition>();
+        services.AddMessageHandler<Contracts.PostPublished, Points>("engagement.points_post");
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
         return services;
     }
@@ -353,6 +356,65 @@ public static class EngagementModule
             var view = await surveys.SetSettingsAsync(request, IfMatch(http), ct);
             await session.CommitAsync(ct);
             http.HttpContext.Response.Headers.ETag = Surveys.SettingsETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        // ---- Recognition and points (US4) ----
+
+        root.MapGet("/recognition/options", async (Recognition recognition, CancellationToken ct) => Results.Ok(await recognition.OptionsAsync(ct)));
+
+        root.MapGet("/recognitions", async (string? cursor, Recognition recognition, CancellationToken ct) => Results.Ok(await recognition.WallAsync(cursor, ct)));
+
+        root.MapPost("/recognitions", async (RecognitionRequest request, Recognition recognition, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await recognition.GiveAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/engagement/recognitions/{view.Id}", view);
+        });
+
+        root.MapDelete("/recognitions/{id:guid}", async (Guid id, Recognition recognition, IDbSession session, CancellationToken ct) =>
+        {
+            await recognition.RemoveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapGet("/people/{userId:guid}/recognitions", async (Guid userId, Recognition recognition, CancellationToken ct) => Results.Ok(await recognition.ReceivedAsync(userId, ct)));
+
+        root.MapGet("/recognition/preferences", async (Recognition recognition, CancellationToken ct) => Results.Ok(await recognition.PreferenceAsync(ct)));
+
+        root.MapPut("/recognition/preferences", async (RecognitionPreferenceRequest request, Recognition recognition, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await recognition.SetPreferenceAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/settings/recognition", async (Recognition recognition, CancellationToken ct) => Results.Ok(await recognition.CatalogueAsync(ct)));
+
+        root.MapPut("/settings/recognition", async (RecognitionCatalogueRequest request, Recognition recognition, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await recognition.SetCatalogueAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/points/me", async (Points points, CancellationToken ct) => Results.Ok(await points.MineAsync(ct)));
+
+        root.MapGet("/leaderboard", async (string? period, Guid? unit, Points points, CancellationToken ct) => Results.Ok(await points.LeaderboardAsync(period, unit, ct)));
+
+        root.MapGet("/settings/points", async (Points points, HttpResponse response, CancellationToken ct) =>
+        {
+            var view = await points.GetSettingsAsync(ct);
+            response.Headers.ETag = Points.ETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        root.MapPut("/settings/points", async (PointsSettingsRequest request, HttpRequest http, Points points, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await points.SetSettingsAsync(request, IfMatch(http), ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = Points.ETag(view.Version);
             return Results.Ok(view);
         });
 

@@ -50,7 +50,7 @@ public static class PollResults
 /// poll counts votes with nobody named and keeps only "has voted" apart, deleted at close; its votes cannot be changed.
 /// After the first vote options can only be added. A poll closes at its end time or earlier by its author or a moderator.
 /// </summary>
-public sealed class Polls(IDbSession session, ITenantContext context, Communities communities, IUserDirectory users, IOutbox outbox, IClock clock)
+public sealed class Polls(IDbSession session, ITenantContext context, Communities communities, IUserDirectory users, Points points, IOutbox outbox, IClock clock)
 {
     public const int MaxOptions = 20;
     public const int MaxQuestion = 300;
@@ -325,6 +325,11 @@ public sealed class Polls(IDbSession session, ITenantContext context, Communitie
                 await session.ExecAsync(
                     "insert into engagement.poll_vote (tenant_id, poll_id, option_id, user_id, voted_at) values (platform.current_tenant_id(), @id, @option, @user, @now)",
                     new { id, option, user, now = clock.UtcNow }, ct);
+            }
+            // A vote earns points once per poll, and only in a named poll: an entry would name an anonymous voter.
+            if (!had)
+            {
+                await points.AwardAsync(user, PointActions.PollVote, id, ct);
             }
         }
         return await ViewAsync(row, s, ct);

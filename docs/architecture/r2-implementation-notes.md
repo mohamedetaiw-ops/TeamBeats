@@ -566,3 +566,32 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Notifying the audience on publish | Not built; the survey shows under "To answer" |
 | Survey widget for home (008) | T015 |
 
+
+## Recognition and points (spec 023, slice 6: T010 and T011; US4, FR-011 to FR-013)
+
+### Built
+- Anyone who takes part thanks up to 20 people, or one team (an org unit), with a message and optionally a company value and a badge. Nobody can recognize themselves. Recognition is in every package (`engagement.recognition`).
+- Engagement administrators keep the values and badges. Each badge has an icon from the design system set and can be limited to givers in one org unit and below; the give form offers only the badges the giver may give, and the API refuses others. Entries left out are retired, never deleted, so old shout-outs keep their value and badge.
+- Shout-outs show on the recognition wall, newest first, and on the person's profile (spec 010) unless they turn that off. A hidden list looks the same as an empty one. The people thanked and their managers (from the reporting line) are told, under a new notification category, `recognition`, that people can mute. `RecognitionGiven` is published.
+- The giver or an engagement administrator removes a shout-out; its points go with it.
+- Points need `engagement.points` (Workplace Plus and above) and the tenant setting. Defaults from the spec: 10 for a shout-out received, 2 for a post, 1 for a poll vote, at most 50 a day per person, and only the giver's first 5 shout-outs each day earn points. Points for posts come from the `PostPublished` event. Settings are versioned and changed with If-Match, and every change is audited (`engagement.points_config_changed`).
+- When points are off, or not in the package, the points and leaderboard endpoints answer not found, the page shows no counts, and nothing more is recorded.
+- Leaderboards are off until an administrator turns them on. They cover this week (Sunday to Saturday), this month or this quarter in the tenant's time zone, for the whole tenant or one org unit and below, and leave out people who opted out and people who left.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Team shout-outs and points | A team shout-out earns nobody points |
+| Points for anonymous posts and anonymous poll votes | None, since a points entry would name the person |
+| Points for a held post | Earned when it is published, through `PostPublished` |
+| Changing a poll vote | Earns nothing more; one entry per poll |
+| Who removes a shout-out | The giver and engagement administrators |
+| Leaderboard size | Top 20 |
+| Notification category | New `recognition` category, not mandatory, no email by default |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Flagging mutual recognition loops to administrators (spec section on gaming) | Not built yet; the daily caps and no self recognition are in place |
+| Recognition and leaderboard widgets for home (008) | T015 |
+| Shout-outs in search | Not built |

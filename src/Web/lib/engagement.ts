@@ -32,7 +32,7 @@ export type CommunityView = {
   version: number;
 };
 
-export type DirectoryRights = { canCreate: boolean; canModerate: boolean; canManageKeywords: boolean; surveys: boolean };
+export type DirectoryRights = { canCreate: boolean; canModerate: boolean; canManageKeywords: boolean; surveys: boolean; recognition: boolean };
 
 export type MemberRole = "member" | "moderator" | "owner";
 
@@ -240,3 +240,39 @@ export type SurveySettingsView = { threshold: number; version: number };
 
 export const surveysHref = "/communities/surveys";
 export const surveyHref = (id: string) => `/communities/surveys/${encodeURIComponent(id)}`;
+
+export type RecognitionValueView = { id: string; key: string; names: Record<string, string>; active: boolean };
+export type RecognitionBadgeView = { id: string; key: string; names: Record<string, string>; icon: string; giverUnitId: string | null; active: boolean };
+
+export type RecognitionView = {
+  id: string;
+  giver: EngagementPerson;
+  recipients: EngagementPerson[];
+  team: { unitId: string; names: Record<string, string> } | null;
+  message: string;
+  value: RecognitionValueView | null;
+  badge: RecognitionBadgeView | null;
+  createdAt: string;
+  canRemove: boolean;
+};
+
+export type RecognitionPage = { items: RecognitionView[]; nextCursor: string | null };
+export type RecognitionOptions = { values: RecognitionValueView[]; badges: RecognitionBadgeView[]; pointsOn: boolean; leaderboard: boolean; canManage: boolean };
+export type RecognitionCatalogue = { values: RecognitionValueView[]; badges: RecognitionBadgeView[] };
+export type RecognitionPreference = { showOnProfile: boolean; leaderboardOptOut: boolean };
+export type MyPoints = { today: number; thisMonth: number; total: number; dailyCap: number; leaderboard: boolean };
+export type LeaderboardView = { period: "week" | "month" | "quarter"; from: string; to: string; unit: string | null; entries: { rank: number; person: EngagementPerson; points: number }[] };
+export type PointsSettingsView = {
+  inPackage: boolean;
+  enabled: boolean;
+  leaderboard: boolean;
+  recognitionReceived: number;
+  post: number;
+  pollVote: number;
+  dailyCap: number;
+  giverDailyLimit: number;
+  version: number;
+};
+
+export const recognitionHref = "/communities/recognition";
+export const badgeIcons = ["star", "spark", "trend-up", "check", "megaphone", "people", "book", "globe", "lock", "clock"] as const;
