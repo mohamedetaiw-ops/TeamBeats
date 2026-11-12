@@ -3407,7 +3407,9 @@
       "submit": "Accept",
       "busy": "Saving",
       "failed": "Your attestation could not be saved. Try again.",
-      "given": "You accepted version {number} on {date}."
+      "given": "You accepted version {number} on {date}.",
+      "trainingFirst": "Complete the linked training course first. You can attest once it is done.",
+      "openTraining": "Open the course"
     },
     "history": {
       "title": "Versions",
@@ -3617,6 +3619,22 @@
       "overdue": "Version {number} overdue since {date}",
       "accepted": "Accepted version {number} on {date}",
       "notAsked": "Not asked to accept yet"
+    },
+    "training": {
+      "title": "Linked training",
+      "hint": "Link a published course to this policy. When a material version comes into force, everyone it applies to is given the course, due in 30 days.",
+      "linked": "Linked course.",
+      "waits": "Attesting waits until it is completed.",
+      "doesNotWait": "Attesting does not wait for it.",
+      "none": "No course is linked.",
+      "course": "Course link or ID",
+      "courseHint": "Paste the link of a published course.",
+      "beforeAttestation": "Attest only after completing the course",
+      "save": "Save link",
+      "unlink": "Remove link",
+      "saving": "Saving…",
+      "saved": "Linked training saved.",
+      "failed": "The link could not be saved."
     }
   },
   "ai": {
@@ -7339,20 +7357,24 @@
         "attestation": "Policy acceptance",
         "access_removal": "Access removal checklist",
         "exit_interview": "Exit interview",
-        "preboarding": "Pre-boarding welcome"
+        "preboarding": "Pre-boarding welcome",
+        "training": "Training"
       },
       "typeHints": {
         "task": "Marked done by whoever does it.",
         "attestation": "The person accepts every policy marked as required at onboarding that applies to them. Done by the person.",
         "access_removal": "One line per connected system and per system you list. Lines not confirmed after one working day go to IT and security officers.",
         "exit_interview": "Reasons from a fixed list for reporting, and a comment only HR officers can read. Offboarding only.",
-        "preboarding": "A welcome before day one, in an onboarding template started by a hire. When pre-boarding is on, a joiner without an account gets it by a personal link sent to the email HR holds."
+        "preboarding": "A welcome before day one, in an onboarding template started by a hire. When pre-boarding is on, a joiner without an account gets it by a personal link sent to the email HR holds.",
+        "training": "The joiner takes the courses named below in My learning; the step is done when every one is completed."
       },
       "systems": "Other systems",
       "systemsHint": "Systems that are not connected, one per line, such as Payroll or Door badges. Connected systems are added on their own.",
       "contentEn": "Welcome text (English)",
       "contentAr": "Welcome text (Arabic)",
-      "contentHint": "Plain text, up to 2,000 characters. This is all the pre-boarding page shows."
+      "contentHint": "Plain text, up to 2,000 characters. This is all the pre-boarding page shows.",
+      "courses": "Courses",
+      "coursesHint": "Paste the links or IDs of published courses, up to 10. The joiner is given them and the step is done when all are completed."
     },
     "dashboard": {
       "title": "Journeys in your units",
@@ -7484,7 +7506,8 @@
         "health": "Health",
         "retirement": "Retirement",
         "other": "Something else"
-      }
+      },
+      "openLearning": "Open My learning"
     },
     "page": {
       "title": "My journeys",
@@ -9205,7 +9228,8 @@
         "best": "best {score}%",
         "passed": "Passed",
         "grant": "Give one more attempt"
-      }
+      },
+      "rulesTab": "Assignment rules"
     },
     "pathBuilder": {
       "eyebrow": "Path builder",
@@ -9236,6 +9260,48 @@
       "add": "Add",
       "save": "Save",
       "publish": "Publish path"
+    },
+    "rules": {
+      "failed": "Assignment rules could not load or save.",
+      "title": "Assignment rules",
+      "hint": "A rule gives this course to everyone it covers, with a due date counted from the day they are covered. People who join later get their own date; people who leave lose what only the rule gave them.",
+      "emptyTitle": "No rules yet",
+      "empty": "Add a rule below to make this course required for a group or for named people.",
+      "wholeOrganization": "Whole organization",
+      "status": {
+        "active": "Active",
+        "ended": "Ended"
+      },
+      "covered": "{count, plural, one {Covers # person} other {Covers # people}}",
+      "terms": "Due {due, plural, one {# day} other {# days}} after joining, with {grace, plural, =0 {no grace period} one {# day of grace} other {# days of grace}}.",
+      "recurs": "Taken again every {months, plural, one {month} other {# months}}.",
+      "once": "Taken once.",
+      "units": "Units: {names}",
+      "onlyPeople": "Only the people named",
+      "everyoneInScope": "Everyone in the scope",
+      "people": "People: {names}",
+      "createdOn": "Created {date}",
+      "end": "End rule",
+      "endQuestion": "End this rule? Open assignments that only this rule gave are withdrawn. Completions stay.",
+      "endConfirm": "End rule",
+      "cancel": "Cancel",
+      "ended": "Rule ended",
+      "created": "{count, plural, =0 {Rule created. Nobody new was given the course.} one {Rule created and given to # person.} other {Rule created and given to # people.}}",
+      "noticeHint": "Learners are told by notification.",
+      "new": "New rule",
+      "publishFirst": "Only a published course can be given by rule.",
+      "scope": "Scope",
+      "scopeHint": "You can only target people inside a unit you manage.",
+      "dueDays": "Due after (days)",
+      "dueDaysHint": "Moved to the next working day when it falls on a weekend or holiday.",
+      "recurrence": "Repeat every (months)",
+      "recurrenceHint": "Leave empty for a course taken once.",
+      "grace": "Grace period (days)",
+      "graceHint": "Days after the due date before the course counts as overdue.",
+      "audienceHint": "Choose units, name people, or both. With neither, the rule covers everyone in the scope.",
+      "peopleField": "People",
+      "peopleHint": "Paste profile links or IDs, one or more.",
+      "create": "Create rule"
     }
   }
 }

@@ -62,6 +62,8 @@ export type PolicyView = {
   createdAt: string;
   updatedAt: string;
   onboardingRequired: boolean;
+  /** The training course linked to the policy (spec 028 US4), and whether attesting waits for it. */
+  training?: { courseId: string; beforeAttestation: boolean } | null;
 };
 
 export type PolicyListItem = {
@@ -95,7 +97,8 @@ export type VersionHistoryItem = {
 /** What the person owes: through a campaign, or without one for an onboarding policy (spec 025 FR-017). */
 export type AttestationDue = { campaignId: string | null; version: number; dueAt: string; overdue: boolean; text: Names };
 
-export type MyAttestation = { due: AttestationDue | null; lastVersion: number | null; lastAt: string | null };
+/** What the person owes; trainingFirst names a linked course to complete before attesting (spec 028 US4). */
+export type MyAttestation = { due: AttestationDue | null; lastVersion: number | null; lastAt: string | null; trainingFirst?: string | null };
 
 export type MyPolicyItem = {
   policy: PolicySummary;

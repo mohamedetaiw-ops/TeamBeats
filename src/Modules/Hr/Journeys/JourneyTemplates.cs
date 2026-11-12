@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Modules.Learning.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Persistence;
@@ -57,7 +58,8 @@ public static class JourneyAssignees
 /// every line is confirmed (FR-017). <c>exit_interview</c>: a form with structured reasons (FR-018).
 /// <c>preboarding</c>: a welcome before day one in an onboarding template started by a hire (FR-016). A joiner with no
 /// account yet gets it by a time-limited link to the personal email from HR, when the tenant turns pre-boarding on; a
-/// joiner with an account reads it as their own step.
+/// joiner with an account reads it as their own step. <c>training</c>: the joiner is given the courses the step names in
+/// the learning module (spec 028 US4), due with the step, and the step is done when every one is completed.
 /// </summary>
 public static class JourneyStepTypes
 {
@@ -66,8 +68,9 @@ public static class JourneyStepTypes
     public const string AccessRemoval = "access_removal";
     public const string ExitInterview = "exit_interview";
     public const string Preboarding = "preboarding";
+    public const string Training = "training";
 
-    public static readonly IReadOnlyList<string> All = [Task, Attestation, AccessRemoval, ExitInterview, Preboarding];
+    public static readonly IReadOnlyList<string> All = [Task, Attestation, AccessRemoval, ExitInterview, Preboarding, Training];
 }
 
 /// <summary>
@@ -76,7 +79,7 @@ public static class JourneyStepTypes
 /// fallback when that person is missing or has left (<c>hr.manage</c> when not given). <paramref name="Type"/> is a
 /// <see cref="JourneyStepTypes"/> value (<c>task</c> when not given); <paramref name="Systems"/> names systems that are
 /// not connected for an access removal checklist. <paramref name="Content"/> is a pre-boarding step's text, by language:
-/// the only content a pre-boarding page shows.
+/// the only content a pre-boarding page shows. <paramref name="Courses"/> are a training step's published courses.
 /// </summary>
 public sealed record JourneyStepSpec(
     string Key,
@@ -88,7 +91,8 @@ public sealed record JourneyStepSpec(
     int? DueWorkingDays = null,
     string? Type = null,
     IReadOnlyList<string>? Systems = null,
-    IReadOnlyDictionary<string, string>? Content = null);
+    IReadOnlyDictionary<string, string>? Content = null,
+    IReadOnlyList<Guid>? Courses = null);
 
 public sealed record JourneyTemplateRequest(
     string? Key,
@@ -139,7 +143,8 @@ public sealed partial class JourneyTemplates(
     IAuditWriter audit,
     IOrganizationHierarchy hierarchy,
     ITenantMemberships memberships,
-    IProcessEngine engine)
+    IProcessEngine engine,
+    ILearningObligations training)
 {
     public const int MaxTemplates = 100;
     public const int MaxSteps = 50;
@@ -147,6 +152,7 @@ public sealed partial class JourneyTemplates(
     public const int MinOffset = -60;
     public const int MaxOffset = 365;
     public const int MaxDueWorkingDays = 60;
+    public const int MaxCourses = 10;
     public const int MaxSystems = 20;
     public const int MaxSystemLength = 80;
     public const int MaxContentLength = 2000;
@@ -298,7 +304,7 @@ public sealed partial class JourneyTemplates(
             Changes: new
             {
                 operation, row.Kind, row.StartOn, row.ServiceId, row.AnchorField, row.Active, row.Version,
-                steps = row.Steps.Select(s => new { s.Key, s.Type, s.OffsetDays, s.Assignee, s.Permission, users = s.Users?.Count ?? 0, s.DueWorkingDays, systems = s.Systems?.Count ?? 0 }),
+                steps = row.Steps.Select(s => new { s.Key, s.Type, s.OffsetDays, s.Assignee, s.Permission, users = s.Users?.Count ?? 0, s.DueWorkingDays, systems = s.Systems?.Count ?? 0, courses = s.Courses?.Count ?? 0 }),
             }), ct);
 
     /// <summary>One single step route per step, published under the version so open journeys keep theirs.</summary>
@@ -457,6 +463,8 @@ public sealed partial class JourneyTemplates(
             if (!JourneyStepTypes.All.Contains(type)
                 // The person attests for themselves; nobody removes their own access; an exit interview belongs to offboarding.
                 || type == JourneyStepTypes.Attestation && s.Assignee != JourneyAssignees.Person
+                // Training is the joiner's own, in onboarding.
+                || type == JourneyStepTypes.Training && (kind != JourneyKinds.Onboarding || s.Assignee != JourneyAssignees.Person)
                 || type == JourneyStepTypes.AccessRemoval && s.Assignee is JourneyAssignees.Person or JourneyAssignees.Buddy
                 || type == JourneyStepTypes.ExitInterview && (kind != JourneyKinds.Offboarding || s.Assignee == JourneyAssignees.Buddy)
                 // Pre-boarding is the joiner's own welcome before day one, from an onboarding template a hire starts.
@@ -472,6 +480,13 @@ public sealed partial class JourneyTemplates(
             {
                 errors.Add($"{field}.systems", "validation.journey.systems");
             }
+            var stepCourses = (s.Courses ?? []).Distinct().ToList();
+            if (type == JourneyStepTypes.Training
+                    ? stepCourses.Count is 0 or > MaxCourses || stepCourses.Count != s.Courses!.Count || (await training.PublishedAsync(stepCourses, ct)).Count != stepCourses.Count
+                    : s.Courses is { Count: > 0 })
+            {
+                errors.Add($"{field}.courses", "validation.journey.courses");
+            }
             var content = CleanContent(s.Content);
             if (type == JourneyStepTypes.Preboarding ? content is null : s.Content is { Count: > 0 })
             {
@@ -481,7 +496,7 @@ public sealed partial class JourneyTemplates(
             {
                 steps.Add(new JourneyStepSpec(s.Key, stepNames, s.OffsetDays, s.Assignee ?? string.Empty, s.Assignee == JourneyAssignees.Users ? users : null,
                     permission, s.DueWorkingDays, type, type == JourneyStepTypes.AccessRemoval ? systems : null,
-                    type == JourneyStepTypes.Preboarding ? content : null));
+                    type == JourneyStepTypes.Preboarding ? content : null, type == JourneyStepTypes.Training ? stepCourses : null));
             }
         }
         errors.ThrowIfAny();

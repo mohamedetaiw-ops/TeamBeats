@@ -28,6 +28,7 @@ import {
 } from "@/lib/learning";
 import { statusTones } from "./ManageHome";
 import { toggle, useUnits } from "./parts";
+import { Rules } from "./Rules";
 import "./learning.css";
 
 type EditOption = { uid: string; key: string; labels: Texts; correct: boolean };
@@ -89,6 +90,7 @@ export function CourseBuilder({ initial, locales }: { initial: CourseDetail; loc
       tabs={[
         { key: "course", label: t("courseTab"), icon: "edit", content: <CourseForm initial={initial} locales={locales} /> },
         { key: "learners", label: t("learnersTab"), icon: "people", content: <Learners course={initial} /> },
+        { key: "rules", label: t("rulesTab"), icon: "calendar", content: <Rules course={initial} /> },
       ]}
     />
   );

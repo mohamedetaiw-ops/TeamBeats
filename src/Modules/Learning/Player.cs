@@ -4,6 +4,7 @@ using TeamBeats.Messaging;
 using TeamBeats.Modules.Content.Contracts;
 using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Modules.Documents.Contracts;
+using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Learning.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -104,7 +105,8 @@ public sealed class Player(
     Courses courses,
     IAnalyticsEvents analytics,
     IOutbox outbox,
-    IClock clock)
+    IClock clock,
+    IWorkingCalendar calendars)
 {
     internal sealed record AssignmentRow(Guid Id, Guid CourseId, Guid LearnerId, string Source, string Status, DateOnly? DueOn, int Cycle, string? LastLessonKey,
         DateTimeOffset? StartedAt, DateTimeOffset? CompletedAt, int? CompletedVersion, DateTimeOffset CreatedAt);
@@ -124,7 +126,7 @@ public sealed class Player(
     }
 
     /// <summary>The learner's open assignment, else their latest completed one.</summary>
-    private Task<AssignmentRow?> CurrentAssignmentAsync(Guid courseId, Guid learner, bool forUpdate, CancellationToken ct) =>
+    internal Task<AssignmentRow?> CurrentAssignmentAsync(Guid courseId, Guid learner, bool forUpdate, CancellationToken ct) =>
         session.QuerySingleOrDefaultAsync(
             $"""
             select {AssignmentColumns} from learning.assignment
@@ -399,16 +401,23 @@ public sealed class Player(
         }
         var now = clock.UtcNow;
         var version = row.PublishedVersion!.Value;
-        await session.ExecAsync("update learning.assignment set status = 'completed', completed_at = @now, completed_version = @version where id = @id and status = 'open'",
-            new { id = assignment.Id, now, version }, ct);
+        // Under a recurring rule the completion expires (FR-008), and so does its certificate.
+        var expires = await AssignmentRules.ExpiryAsync(session, calendars, row.Id, assignment.LearnerId, now, ct);
+        await session.ExecAsync(
+            "update learning.assignment set status = 'completed', completed_at = @now, completed_version = @version, expires_on = @expires where id = @id and status = 'open'",
+            new { id = assignment.Id, now, version, expires }, ct);
+        // Training an onboarding step or a policy asked for is done (FR-011); they hear of it from CourseCompleted.
+        await session.ExecAsync("update learning.obligation set status = 'done', done_at = @now where user_id = @learner and course_id = @course and status = 'open'",
+            new { learner = assignment.LearnerId, course = row.Id, now }, ct);
         var certificate = Ids.New();
         await session.ExecAsync(
             """
-            insert into learning.certificate (tenant_id, id, assignment_id, course_id, learner_id, version, code, issued_at)
-            values (@tenant, @certificate, @a, @course, @learner, @version, @code, @now)
+            insert into learning.certificate (tenant_id, id, assignment_id, course_id, learner_id, version, code, issued_at, expires_at)
+            values (@tenant, @certificate, @a, @course, @learner, @version, @code, @now, @expiresAt)
             """, new
             {
                 tenant = context.RequireTenant(), certificate, a = assignment.Id, course = row.Id, learner = assignment.LearnerId, version, code = Certificates.NewCode(), now,
+                expiresAt = expires is { } e ? new DateTimeOffset(e.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero) : (DateTimeOffset?)null,
             }, ct);
         await analytics.EmitAsync(AnalyticsEvents.LearningProgress, new Dictionary<string, object?> { ["courseId"] = row.Id, ["status"] = "course_completed" }, ct);
         await outbox.EnqueueAsync(new CourseCompleted(assignment.Id, row.Id, assignment.LearnerId, version), ct);

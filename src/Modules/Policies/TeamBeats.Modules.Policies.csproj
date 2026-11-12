@@ -16,6 +16,7 @@
     <ProjectReference Include="../Notifications.Contracts/TeamBeats.Modules.Notifications.Contracts.csproj" />
     <ProjectReference Include="../Workflow.Contracts/TeamBeats.Modules.Workflow.Contracts.csproj" />
     <ProjectReference Include="../Policies.Contracts/TeamBeats.Modules.Policies.Contracts.csproj" />
+    <ProjectReference Include="../Learning.Contracts/TeamBeats.Modules.Learning.Contracts.csproj" />
     <ProjectReference Include="../Search.Contracts/TeamBeats.Modules.Search.Contracts.csproj" />
     <ProjectReference Include="../Analytics.Contracts/TeamBeats.Modules.Analytics.Contracts.csproj" />
   </ItemGroup>

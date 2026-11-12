@@ -101,7 +101,8 @@ public sealed class JourneyStarter(IEntitlementService entitlements, LeaveLedger
 /// them; a queue (permission) step is found in the inbox. An overdue step publishes <see cref="JourneyStepOverdue"/>.
 /// </summary>
 public sealed class JourneyTaskSource(ITenantContext context, JourneyService journeys, IReportingLine reporting, IUserDirectory users, INotificationSender notifications,
-    IOutbox outbox, IEntitlementService entitlements) : ITaskSource, IMessageHandler<UserTaskCreated>, IMessageHandler<UserTaskDue>, IMessageHandler<PolicyAttested>
+    IOutbox outbox, IEntitlementService entitlements) : ITaskSource, IMessageHandler<UserTaskCreated>, IMessageHandler<UserTaskDue>, IMessageHandler<PolicyAttested>,
+    IMessageHandler<Learning.Contracts.CourseCompleted>
 {
     public const string TaskWaiting = "hr.journey_task_waiting";
 
@@ -186,6 +187,15 @@ public sealed class JourneyTaskSource(ITenantContext context, JourneyService jou
         if (await entitlements.IsEnabledAsync(Capabilities.HrJourneys, ct))
         {
             await journeys.SettleAttestationsAsync(message.UserId, ct);
+        }
+    }
+
+    /// <summary>The person completed a course: their training steps with nothing left are done (spec 028 US4 scenario 1).</summary>
+    public async Task HandleAsync(Learning.Contracts.CourseCompleted message, CancellationToken ct)
+    {
+        if (await entitlements.IsEnabledAsync(Capabilities.HrJourneys, ct))
+        {
+            await journeys.SettleTrainingAsync(message.LearnerId, ct);
         }
     }
 
