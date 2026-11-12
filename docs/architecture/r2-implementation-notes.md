@@ -910,3 +910,15 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A space library has no owning unit and no ACL of its own, so tenant and unit roles never reach into it, matching the space itself (section 7).
 - One general channel per space. Owners can add more channels in the discussion as in any community.
 - At most 20 linked files per task.
+
+## Team calendar (spec 029, slice 3: T011; US6, FR-009)
+
+### Built
+- `GET /api/v1/spaces/{id}/calendar?from&to` (up to 62 days, the viewer's current month by default) gives readers the space's events (`spaces.space_event`), milestones and task due dates in the range, and the members' approved leave from `IHrCalendarFeed` (spec 022). The leave type is always dropped, and pending leave never shows, even where the viewer could see it elsewhere.
+- Members and owners add, change (with the version, `conflict.spaces.event_changed`) and delete events; viewers read. Events are audited as `spaces.event_changed`.
+- `GET /{id}/calendar/availability?date` reads the members' free and busy for one day through `IAvailability` (spec 018) as the viewer, so Outlook's own sharing decides; only status blocks come back, never subjects. When the viewer's Outlook is not connected, needs a new sign-in or free and busy is off, the state says so and no one is listed.
+- Web: the space's Calendar page shows the month with events, milestones, due dates and members away, a list of the month's events with a form to add one, and a free and busy panel for a chosen day.
+
+### Smallest safe defaults
+- Events have a title, an optional description, a start and an end (or all day) and last at most 31 days; at most 1,000 per space. There is no recurrence and no RSVP yet, and events are not sent to Outlook.
+- Free and busy is read for the first 30 other members of the space, one day at a time.

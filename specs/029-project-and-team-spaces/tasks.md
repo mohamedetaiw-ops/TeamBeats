@@ -17,7 +17,7 @@ Depends on 004, 011, 015, 016, 022, 023, 026. R2.
 - [x] T008 [US5] Library and channel provisioning through 011 and 023
 - [ ] T009 [P] [US4] Tests: guest scope, classified files, expiry, cross-tenant guest
 - [ ] T010 [US4] Guest invitations
-- [ ] T011 [US6] Team calendar
+- [x] T011 [US6] Team calendar
 
 ## Final phase
 - [ ] T012 Performance tests; OpenAPI; R2 implementation notes; spec evidence
