@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Npgsql;
 using TeamBeats.Audit.Contracts;
+using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Content.Contracts;
 using TeamBeats.Modules.Engagement.Contracts;
@@ -44,7 +45,9 @@ public sealed record PostView(
     string Status,
     string? HeldReason,
     string? RemovedReason,
-    bool CanReport);
+    bool CanReport,
+    bool Anonymous = false,
+    bool EditedByModerator = false);
 
 public sealed record FeedPage(IReadOnlyList<PostView> Items, string? NextCursor);
 
@@ -58,15 +61,18 @@ public sealed record CommentSaved(CommentView Comment, IReadOnlyList<Person> Not
 
 public sealed record HashtagPage(string Tag, IReadOnlyList<PostView> Items);
 
+/// <summary>A post as stored. An anonymous Speak Up post has no author; <see cref="AuthorId"/> is then <see cref="Guid.Empty"/>, which matches nobody.</summary>
 internal sealed record PostRow(Guid Id, Guid CommunityId, Guid ChannelId, Guid AuthorId, BodyDocument Body, string Text, string Status, bool Pinned,
-    DateTimeOffset PublishedAt, DateTimeOffset? EditedAt, int CommentCount, string? HeldReason, string? RemovedReason, Guid[]? PendingMentions)
+    DateTimeOffset PublishedAt, DateTimeOffset? EditedAt, int CommentCount, string? HeldReason, string? RemovedReason, Guid[]? PendingMentions,
+    bool Anonymous = false, bool EditedByModerator = false)
 {
     public const string Columns =
-        "id, community_id, channel_id, author_id, body::text, text, status, pinned, published_at, edited_at, comment_count, held_reason, removed_reason, pending_mentions";
+        "id, community_id, channel_id, author_id, body::text, text, status, pinned, published_at, edited_at, comment_count, held_reason, removed_reason, pending_mentions, anonymous, edited_by_moderator";
 
-    public static PostRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.GetGuid(2), r.GetGuid(3), EngagementJson.Read<BodyDocument>(r.GetString(4)),
-        r.GetString(5), r.GetString(6), r.GetBoolean(7), r.GetFieldValue<DateTimeOffset>(8), r.Get<DateTimeOffset?>("edited_at"), r.GetInt32(10),
-        r.Get<string?>("held_reason"), r.Get<string?>("removed_reason"), r.IsDBNull(13) ? null : r.GetFieldValue<Guid[]>(13));
+    public static PostRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.GetGuid(2), r.IsDBNull(3) ? Guid.Empty : r.GetGuid(3),
+        EngagementJson.Read<BodyDocument>(r.GetString(4)), r.GetString(5), r.GetString(6), r.GetBoolean(7), r.GetFieldValue<DateTimeOffset>(8),
+        r.Get<DateTimeOffset?>("edited_at"), r.GetInt32(10), r.Get<string?>("held_reason"), r.Get<string?>("removed_reason"),
+        r.IsDBNull(13) ? null : r.GetFieldValue<Guid[]>(13), r.GetBoolean(14), r.GetBoolean(15));
 }
 
 /// <summary>Where a post or comment stands: shown to readers, waiting for a moderator, removed by one, or deleted by its author.</summary>
@@ -95,6 +101,7 @@ public sealed partial class Posts(
     IAuditWriter audit,
     IOutbox outbox,
     KeywordFilters keywords,
+    IEntitlementService entitlements,
     IClock clock)
 {
     public const int MaxPostCharacters = 10_000;
@@ -153,7 +160,7 @@ public sealed partial class Posts(
     private async Task<Dictionary<Guid, Person>> PeopleAsync(IEnumerable<Guid> ids, CancellationToken ct)
     {
         var list = ids.Distinct().ToList();
-        var found = await users.GetManyAsync(list, ct);
+        var found = await users.GetManyAsync(list.Where(id => id != Guid.Empty).ToList(), ct);
         // Authors who left keep their name, shown as a former employee (edge case).
         return list.ToDictionary(id => id, id => found.TryGetValue(id, out var u) ? new Person(id, u.DisplayName, u.Status == "active") : new Person(id, "", false));
     }
@@ -196,7 +203,7 @@ public sealed partial class Posts(
             return new PostView(r.Id, r.CommunityId, r.ChannelId, people[r.AuthorId], r.Body, tags[r.Id].ToList(), mentions[r.Id].Select(m => people[m]).ToList(),
                 r.Pinned, r.PublishedAt, r.EditedAt, r.CommentCount, reactions[r.Id], following.Contains(r.Id), mine,
                 CanEdit: mine && s.Posts && live, CanPin: live && s.Moderates && s.Community.Status == "active", CanComment: live && s.Posts,
-                r.Status, r.HeldReason, mine ? r.RemovedReason : null, CanReport: live && !mine && s.Participates);
+                r.Status, r.HeldReason, mine ? r.RemovedReason : null, CanReport: live && !mine && s.Participates, r.Anonymous, r.EditedByModerator);
         }).ToList();
     }
 
@@ -280,7 +287,7 @@ public sealed partial class Posts(
 
     // ---- Writing ----
 
-    private static void ValidateBody(BodyDocument? body, ValidationErrors errors)
+    internal static void ValidateBody(BodyDocument? body, ValidationErrors errors)
     {
         if (body?.Blocks is not { Count: > 0 } blocks)
         {
@@ -366,7 +373,7 @@ public sealed partial class Posts(
             on conflict do nothing
             """, new { postId, userId, now = clock.UtcNow }, ct);
 
-    private async Task SaveHashtagsAsync(Guid postId, string text, CancellationToken ct)
+    internal async Task SaveHashtagsAsync(Guid postId, string text, CancellationToken ct)
     {
         await session.ExecAsync("delete from engagement.post_hashtag where post_id = @postId", new { postId }, ct);
         foreach (var tag in Hashtags(text))
@@ -386,20 +393,24 @@ public sealed partial class Posts(
         var errors = new ValidationErrors();
         ValidateBody(request.Body, errors);
         var mentioned = Mentioned(request.Mentions, user, errors);
-        var channel = request.ChannelId is { } chosen
-            ? await session.ScalarAsync<Guid?>("select id from engagement.channel where id = @chosen and community_id = @communityId", new { chosen, communityId }, ct)
-            : await session.ScalarAsync<Guid?>("select id from engagement.channel where community_id = @communityId and key = @key",
-                new { communityId, key = Communities.GeneralChannel }, ct);
-        if (channel is null)
+        var target = await ChannelAsync(communityId, request.ChannelId, ct);
+        if (target is null)
         {
             errors.Add("channelId", "validation.engagement.channel");
         }
         errors.ThrowIfAny();
+        Guid? channel = target!.Value.Id;
+        var speakUp = target.Value.Kind == ChannelKinds.SpeakUp;
+        if (speakUp)
+        {
+            await entitlements.DemandAsync(Capabilities.EngagementSpeakUp, ct);
+        }
         var id = Ids.New();
         var text = BodyValidator.PlainText(request.Body!);
-        // A post with a word on the tenant's filter waits for a moderator (FR-019); the people it mentions are told
-        // only once it is published.
-        var held = await keywords.MatchesAsync(text, ct);
+        // Every Speak Up post passes the review queue first (FR-007). Elsewhere, a post with a word on the tenant's
+        // filter waits for a moderator (FR-019). The people it mentions are told only once it is published.
+        var heldReason = speakUp ? "speak_up" : await keywords.MatchesAsync(text, ct) ? "keyword" : null;
+        var held = heldReason is not null;
         await session.ExecAsync(
             """
             insert into engagement.post (tenant_id, id, community_id, channel_id, author_id, body, text, published_at, status, held_reason, pending_mentions)
@@ -407,7 +418,7 @@ public sealed partial class Posts(
             """, new
             {
                 id, communityId, channel, user, body = EngagementJson.Jsonb(request.Body), text, now = clock.UtcNow,
-                status = held ? ContentStatus.Held : ContentStatus.Published, heldReason = held ? "keyword" : null, pending = held ? mentioned.ToArray() : null,
+                status = held ? ContentStatus.Held : ContentStatus.Published, heldReason, pending = held ? mentioned.ToArray() : null,
             }, ct);
         await SaveHashtagsAsync(id, text, ct);
         await FollowAsync(id, user, ct);
@@ -419,6 +430,15 @@ public sealed partial class Posts(
         await outbox.EnqueueAsync(new PostPublished(id, communityId, channel!.Value), ct);
         await outbox.EnqueueAsync(new Search.Contracts.SearchItemChanged(EngagementSearchSource.Name, id), ct);
         return new PostSaved(await GetAsync(id, ct), missed);
+    }
+
+    /// <summary>The channel a post goes to: the one chosen, or the community's general channel.</summary>
+    internal async Task<(Guid Id, string Kind, bool AllowAnonymous)?> ChannelAsync(Guid communityId, Guid? channelId, CancellationToken ct)
+    {
+        var rows = await session.QueryAsync(
+            "select id, kind, allow_anonymous from engagement.channel where community_id = @communityId and (id = @channelId or (@channelId::uuid is null and key = @key))",
+            new { communityId, channelId, key = Communities.GeneralChannel }, r => (r.GetGuid(0), r.GetString(1), r.GetBoolean(2)), ct);
+        return rows.Count > 0 ? rows[0] : null;
     }
 
     public async Task<PostSaved> UpdateAsync(Guid id, PostRequest request, CancellationToken ct)
@@ -440,11 +460,12 @@ public sealed partial class Posts(
         // Only people newly mentioned are told.
         var already = (await session.QueryAsync("select user_id from engagement.mention where post_id = @id and comment_id is null", new { id }, r => r.GetGuid(0), ct)).ToHashSet();
         var added = mentioned.Where(m => !already.Contains(m)).ToList();
-        // An edit that brings in a filtered word takes the post back to the queue (FR-019).
-        if (await keywords.MatchesAsync(text, ct))
+        // An edit in a Speak Up channel goes back to review (FR-007), and so does one that brings in a filtered word (FR-019).
+        var speakUp = (await ChannelAsync(post.CommunityId, post.ChannelId, ct))?.Kind == ChannelKinds.SpeakUp;
+        if (speakUp || await keywords.MatchesAsync(text, ct))
         {
-            await session.ExecAsync("update engagement.post set status = 'held', held_reason = 'keyword', pending_mentions = @pending where id = @id",
-                new { id, pending = added.ToArray() }, ct);
+            await session.ExecAsync("update engagement.post set status = 'held', held_reason = @reason, pending_mentions = @pending where id = @id",
+                new { id, reason = speakUp ? "speak_up" : "keyword", pending = added.ToArray() }, ct);
             await outbox.EnqueueAsync(new Search.Contracts.SearchItemChanged(EngagementSearchSource.Name, id), ct);
             return new PostSaved(await GetAsync(id, ct), []);
         }

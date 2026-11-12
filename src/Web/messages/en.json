@@ -7969,7 +7969,14 @@
       "keyHint": "Lowercase letters, digits or underscores, such as events.",
       "name": "Channel name in {language}",
       "add": "Add channel",
-      "added": "The channel was added."
+      "added": "The channel was added.",
+      "kind": "Channel type",
+      "kinds": {
+        "discussion": "Discussion",
+        "speak_up": "Speak Up (reviewed first)"
+      },
+      "allowAnonymous": "Allow anonymous posts",
+      "allowAnonymousHint": "Members can post without their name. Only engagement administrators can turn this on."
     },
     "composer": {
       "title": "Write a post",
@@ -8108,7 +8115,8 @@
       },
       "types": {
         "post": "Post",
-        "comment": "Comment"
+        "comment": "Comment",
+        "anonymous": "Anonymous Speak Up"
       },
       "open": "Open",
       "embed": "Embedded content",
@@ -8138,7 +8146,55 @@
       "muteFor": "For how long",
       "days": "{count, plural, one {# day} other {# days}}",
       "muteReason": "Reason",
-      "muteReasonHint": "The member reads this."
+      "muteReasonHint": "The member reads this.",
+      "anonymous": "Anonymous",
+      "speakUpHeld": "Waiting because Speak Up posts are reviewed first.",
+      "answered": "Answer sent. The author reads it through their link.",
+      "declined": "Declined. The author reads the reason through their link.",
+      "editBody": "Words to publish",
+      "anonymousNote": "Nobody can see who wrote this. Take out anything that names a person before publishing.",
+      "answer": "Your answer",
+      "declineReason": "Reason for declining",
+      "answerHint": "Only the author reads this, through their private link.",
+      "declineHint": "The author reads this through their private link.",
+      "publish": "Publish",
+      "edit": "Edit before publishing",
+      "answerAction": "Answer privately",
+      "decline": "Decline",
+      "sendAnswer": "Send answer",
+      "confirmDecline": "Decline"
+    },
+    "speakUp": {
+      "anonymous": "Anonymous",
+      "badge": "Speak Up",
+      "editedByModerator": "edited by a moderator",
+      "reviewed": "Posts here go to a moderator first and appear once they are approved.",
+      "postAnonymously": "Post anonymously",
+      "anonymousHint": "Your name is not saved with the post.",
+      "anonymousTitle": "Nobody will know this was you",
+      "anonymousText": "The post is saved without your name or anything that points to you. Moderators, administrators and the audit log cannot see who wrote it. Do not include details that would identify you.",
+      "sentTitle": "Sent for review",
+      "sentText": "A moderator will review your post before others can see it.",
+      "anonymousSentTitle": "Sent anonymously for review",
+      "anonymousSentText": "Keep this link to read the moderator's decision. It is shown only now and works once after a decision is made.",
+      "replyLink": "Your private link",
+      "replyTitle": "Speak Up reply",
+      "replyDescription": "Read what a moderator decided about your anonymous post.",
+      "failed": "That did not work",
+      "working": "Working",
+      "replyPendingTitle": "Still waiting",
+      "replyPending": "A moderator has not decided yet. Open the link again later.",
+      "replyPublishedTitle": "Your post was published",
+      "replyOpenPost": "Open the post",
+      "replyAnsweredTitle": "A moderator answered you",
+      "replyDeclinedTitle": "Your post was not published",
+      "replyFormLabel": "Read a reply",
+      "replyIntro": "Open your private link, or paste it here, then read the decision. After a decision is shown the link stops working.",
+      "replyPaste": "Link or code (optional)",
+      "replyPasteHint": "Leave empty if you opened your private link.",
+      "replyMissingTitle": "No reply found",
+      "replyMissing": "The link is not valid or has already been used.",
+      "replyRead": "Read the decision"
     }
   }
 }

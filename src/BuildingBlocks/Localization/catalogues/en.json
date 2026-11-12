@@ -1620,5 +1620,9 @@
   "validation.engagement.mute_until": "Choose an end time in the future, within a year.",
   "validation.engagement.removal_reason": "Give a reason of up to 500 characters. The author will read it.",
   "validation.engagement.report_note": "Keep the note to 500 characters.",
-  "validation.engagement.report_reason": "Choose why you are reporting this."
+  "validation.engagement.report_reason": "Choose why you are reporting this.",
+  "validation.engagement.channel_kind": "Choose a discussion or Speak Up channel.",
+  "validation.engagement.anonymous_channel": "Anonymous posts are only for Speak Up channels that allow them.",
+  "validation.engagement.anonymous_limit": "You have reached today's limit of anonymous posts. Try again tomorrow.",
+  "validation.engagement.anonymous_answer": "Write an answer of up to 2,000 characters."
 }

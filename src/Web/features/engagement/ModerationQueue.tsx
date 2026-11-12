@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { SelectField, TextAreaField } from "@/components/ui/FormField";
 import { StateView } from "@/components/ui/StateView";
 import { BodyView } from "@/features/content/BodyView";
+import { BlockEditor } from "@/features/content/editor/BlockEditor";
+import type { BodyDocument } from "@/lib/content/types";
 import { PersonPicker } from "@/features/services/PersonPicker";
 import { problemMessages } from "@/lib/notifications/types";
 import { engagementApi, localName, postHref, send, type KeywordFilterView, type ModerationItem, type MuteView } from "@/lib/engagement";
@@ -38,6 +40,15 @@ export function ModerationQueue({ initial }: { initial: ModerationItem[] }) {
       <ul className="engagement-feed" aria-label={t("queueLabel")}>
         {items.map((item) => (
           <li key={`${item.type}-${item.id}`}>
+            {item.type === "anonymous" ? (
+              <AnonymousEntry
+                item={item}
+                onDone={(message) => {
+                  setItems((all) => all.filter((x) => x.id !== item.id));
+                  setNotice(message);
+                }}
+              />
+            ) : (
             <QueueEntry
               item={item}
               onDone={(message) => {
@@ -45,6 +56,7 @@ export function ModerationQueue({ initial }: { initial: ModerationItem[] }) {
                 setNotice(message);
               }}
             />
+            )}
           </li>
         ))}
       </ul>
@@ -81,7 +93,7 @@ function QueueEntry({ item, onDone }: { item: ModerationItem; onDone: (message: 
     <article className="engagement-post" aria-labelledby={headingId}>
       <div className="engagement-post-head">
         <h2 id={headingId} className="engagement-post-author">
-          <bdi>{item.author.displayName}</bdi>
+          <bdi>{item.author?.displayName ?? t("anonymous")}</bdi>
         </h2>
         <Badge tone="neutral">{item.type === "post" ? t("types.post") : t("types.comment")}</Badge>
         <Badge tone={item.status === "published" || item.status === "visible" ? "info" : "warning"}>{state}</Badge>
@@ -101,6 +113,7 @@ function QueueEntry({ item, onDone }: { item: ModerationItem; onDone: (message: 
         </p>
       )}
       {item.heldReason === "keyword" ? <p className="engagement-meta">{t("keywordHeld")}</p> : null}
+      {item.heldReason === "speak_up" ? <p className="engagement-meta">{t("speakUpHeld")}</p> : null}
       {item.reports.length > 0 ? (
         <ul className="engagement-tags" aria-label={t("reportsLabel")}>
           {item.reports.map((r) => (
@@ -155,6 +168,114 @@ function QueueEntry({ item, onDone }: { item: ModerationItem; onDone: (message: 
           </Button>
         </div>
       )}
+    </article>
+  );
+}
+
+/**
+ * An anonymous Speak Up post (spec 023 US2). It has no author and only the day it came in. The moderator publishes it,
+ * after changing the words if needed (the post then says so), answers it privately, or declines it with a reason; the
+ * author reads the answer or reason through their one-time link.
+ */
+function AnonymousEntry({ item, onDone }: { item: ModerationItem; onDone: (message: string) => void }) {
+  const t = useTranslations("engagement.moderation");
+  const format = useFormatter();
+  const locale = useLocale();
+  const [mode, setMode] = useState<"view" | "edit" | "answer" | "decline">("view");
+  const [body, setBody] = useState<BodyDocument>(item.body ?? { blocks: [] });
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [messages, setMessages] = useState<string[]>([]);
+  const headingId = `queue-${item.id}`;
+
+  async function decide(action: "publish" | "answer" | "decline") {
+    setBusy(true);
+    setMessages([]);
+    const payload = action === "publish" ? { body: mode === "edit" ? body : null } : action === "answer" ? { answer: text } : { reason: text };
+    try {
+      const response = await send(`${engagementApi}/moderation/anonymous/${item.id}:${action}`, "POST", payload);
+      if (response.ok) onDone(action === "publish" ? t("approved") : action === "answer" ? t("answered") : t("declined"));
+      else setMessages(await problemMessages(response));
+    } catch {
+      setMessages([t("failed")]);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <article className="engagement-post" aria-labelledby={headingId}>
+      <div className="engagement-post-head">
+        <h2 id={headingId} className="engagement-post-author">
+          {t("anonymous")}
+        </h2>
+        <Badge tone="accent">{t("types.anonymous")}</Badge>
+        <Badge tone="warning">{t("states.held")}</Badge>
+        <p className="engagement-meta">
+          <bdi>{localName(item.communityNames, locale)}</bdi>
+          {" · "}
+          <time dateTime={item.createdAt.slice(0, 10)}>{format.dateTime(new Date(item.createdAt), { dateStyle: "medium", timeZone: "UTC" })}</time>
+        </p>
+      </div>
+      {mode === "edit" ? (
+        <BlockEditor label={t("editBody")} value={body} onChange={setBody} locale={locale} />
+      ) : item.body ? (
+        <BodyView body={item.body} embedTitle={t("embed")} />
+      ) : null}
+      <p className="engagement-meta">{t("anonymousNote")}</p>
+      {mode === "answer" || mode === "decline" ? (
+        <TextAreaField
+          label={mode === "answer" ? t("answer") : t("declineReason")}
+          name={`${mode}-${item.id}`}
+          hint={mode === "answer" ? t("answerHint") : t("declineHint")}
+          value={text}
+          maxLength={mode === "answer" ? 2000 : 500}
+          rows={3}
+          dir="auto"
+          onChange={(e) => setText(e.target.value)}
+        />
+      ) : null}
+      {messages.length > 0 ? (
+        <Alert tone="danger" title={t("failed")} live>
+          {messages.join(" ")}
+        </Alert>
+      ) : null}
+      <div className="engagement-row">
+        {mode === "view" || mode === "edit" ? (
+          <>
+            <Button variant="primary" size="sm" icon="check" busy={busy} busyLabel={t("working")} onClick={() => void decide("publish")}>
+              {t("publish")}
+            </Button>
+            {mode === "view" ? (
+              <Button variant="secondary" size="sm" icon="edit" onClick={() => setMode("edit")}>
+                {t("edit")}
+              </Button>
+            ) : null}
+            <Button variant="secondary" size="sm" onClick={() => setMode("answer")}>
+              {t("answerAction")}
+            </Button>
+            <Button variant="secondary" size="sm" icon="close" onClick={() => setMode("decline")}>
+              {t("decline")}
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button
+              variant={mode === "decline" ? "destructive" : "primary"}
+              size="sm"
+              busy={busy}
+              busyLabel={t("working")}
+              disabled={!text.trim()}
+              onClick={() => void decide(mode)}
+            >
+              {mode === "answer" ? t("sendAnswer") : t("confirmDecline")}
+            </Button>
+            <Button variant="quiet" size="sm" onClick={() => setMode("view")}>
+              {t("cancel")}
+            </Button>
+          </>
+        )}
+      </div>
     </article>
   );
 }

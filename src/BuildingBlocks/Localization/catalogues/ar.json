@@ -1620,5 +1620,9 @@
   "validation.engagement.mute_until": "اختر وقت انتهاء في المستقبل خلال سنة.",
   "validation.engagement.removal_reason": "اكتب سببا في حدود 500 حرف. سيقرؤه الكاتب.",
   "validation.engagement.report_note": "اجعل الملاحظة في حدود 500 حرف.",
-  "validation.engagement.report_reason": "اختر سبب الإبلاغ."
+  "validation.engagement.report_reason": "اختر سبب الإبلاغ.",
+  "validation.engagement.channel_kind": "اختر قناة نقاش أو قناة تحدث بصراحة.",
+  "validation.engagement.anonymous_channel": "المنشورات المجهولة متاحة فقط في قنوات تحدث بصراحة التي تسمح بها.",
+  "validation.engagement.anonymous_limit": "وصلت إلى حد المنشورات المجهولة لليوم. حاول مرة أخرى غدا.",
+  "validation.engagement.anonymous_answer": "اكتب ردا لا يزيد على 2000 حرف."
 }

@@ -14,5 +14,7 @@ internal static class EngagementJson
 
     public static T Read<T>(string json) => JsonSerializer.Deserialize<T>(json, Options)!;
 
+    public static string Write<T>(T value) => JsonSerializer.Serialize(value, Options);
+
     public static Jsonb Jsonb<T>(T value) => new(JsonSerializer.Serialize(value, Options));
 }
