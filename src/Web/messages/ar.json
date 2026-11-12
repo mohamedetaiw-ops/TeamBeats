@@ -9523,7 +9523,9 @@
         "overview": "نظرة عامة",
         "tasks": "المهام",
         "members": "الأعضاء",
-        "settings": "الإعدادات"
+        "settings": "الإعدادات",
+        "files": "الملفات",
+        "discussion": "النقاش"
       }
     },
     "directory": {
@@ -9708,7 +9710,14 @@
       "removeItem": "إزالة {text}",
       "newItem": "بند جديد",
       "addItem": "إضافة بند",
-      "createdBy": "أنشأها {name} في {date}"
+      "createdBy": "أنشأها {name} في {date}",
+      "filesTitle": "الملفات",
+      "noFiles": "لا توجد ملفات مرتبطة بهذه المهمة.",
+      "fileVersion": "الإصدار {version}",
+      "unlinkFile": "إلغاء ربط {name}",
+      "linkFileLabel": "ملف من مكتبة المساحة",
+      "chooseFile": "اختر ملفًا",
+      "linkFile": "ربط الملف"
     },
     "members": {
       "failed": "تعذر حفظ التغيير.",
@@ -9771,6 +9780,12 @@
       "archiveConfirm": "أرشفة",
       "cancel": "إلغاء",
       "restore": "استعادة المساحة"
-    }
+    },
+    "filesTitle": "الملفات",
+    "filesUnavailableTitle": "لا توجد مكتبة بعد",
+    "filesUnavailable": "الملفات ليست ضمن خطة مؤسستك، لذلك لا توجد مكتبة لهذه المساحة.",
+    "discussionTitle": "النقاش",
+    "discussionUnavailableTitle": "لا يوجد نقاش بعد",
+    "discussionUnavailable": "المجتمعات ليست ضمن خطة مؤسستك، لذلك لا يوجد نقاش لهذه المساحة."
   }
 }

@@ -9523,7 +9523,9 @@
         "overview": "Overview",
         "tasks": "Tasks",
         "members": "Members",
-        "settings": "Settings"
+        "settings": "Settings",
+        "files": "Files",
+        "discussion": "Discussion"
       }
     },
     "directory": {
@@ -9708,7 +9710,14 @@
       "removeItem": "Remove {text}",
       "newItem": "New item",
       "addItem": "Add item",
-      "createdBy": "Created by {name} on {date}"
+      "createdBy": "Created by {name} on {date}",
+      "filesTitle": "Files",
+      "noFiles": "No files are linked to this task.",
+      "fileVersion": "Version {version}",
+      "unlinkFile": "Unlink {name}",
+      "linkFileLabel": "File from the space library",
+      "chooseFile": "Choose a file",
+      "linkFile": "Link file"
     },
     "members": {
       "failed": "The change could not be saved.",
@@ -9771,6 +9780,12 @@
       "archiveConfirm": "Archive",
       "cancel": "Cancel",
       "restore": "Restore space"
-    }
+    },
+    "filesTitle": "Files",
+    "filesUnavailableTitle": "No library yet",
+    "filesUnavailable": "Files are not part of your organization's plan, so this space has no library.",
+    "discussionTitle": "Discussion",
+    "discussionUnavailableTitle": "No discussion yet",
+    "discussionUnavailable": "Communities are not part of your organization's plan, so this space has no discussion."
   }
 }

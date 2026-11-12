@@ -894,3 +894,19 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - "Overdue" uses the viewer's own calendar day. A task that changes due date can be reminded again for the new date.
 - My tasks appears in the 016 inbox as its own tab on the inbox page, not as inbox entries, so approvals are not buried under everyday work.
 - Tenant template editing on the web is a follow-up: administrators retire templates there and create or change them through the API until the editor lands.
+
+## Space library, discussion and task files (spec 029, slice 3: T008; US5, FR-006)
+
+### Built
+- Every space gets a library (spec 011) and a discussion (spec 023) when it is created, through `ISpaceLibraries` (Documents.Contracts) and `ISpaceChannels` (Engagement.Contracts). Spaces keeps their IDs (`library_id`, `community_id`) and `GET /api/v1/spaces/{id}` returns them to readers. A space made before this, or while the capability was not in the plan, gets them the next time a member opens it.
+- The space is the audience. `ResourceDescriptor` gained an optional `Container`: a role assigned on a resource also applies to what it contains, so the space roles reach the space library (scope `space`) and the space community without copying members anywhere. Owners manage the library, members add files and viewers read (the space roles now carry `doc.view`, `doc.contribute` and, for owners, `doc.manage`; migration `0028`). In the discussion, readers of the space are members, contributors post and owners moderate. Everyone else gets "not found", and removing someone from the space ends their access at once.
+- Permissions in a space library follow the space: breaking inheritance is refused (`conflict.documents.space_permissions`) and the ACL editor does not find it. The space community is not listed in the community directory, and joining, leaving, membership and archiving there are refused (`conflict.engagement.space_community`); its members are listed from the space roles.
+- Renaming the space or changing its classification carries over to both. Archiving makes both read-only (`conflict.documents.library_archived`, no posting); restoring opens them again. Space posts carry the space's classification into search.
+- Tasks link library files (`spaces.task_file`, `POST /{id}/tasks/{taskId}/files`, `DELETE .../files/{documentId}`). The caller must be able to open the file; each reader sees only the linked files they can open, always at the version readers get now (through `IDocumentReferences`).
+- Web: the space's Files page shows the library with upload, the Discussion page shows the channel feed, and the task page lists linked files with a picker from the space library. The e2e spec uploads a file, posts in the discussion and links the file to the task.
+
+### Smallest safe defaults
+- The discussion is for members only, also in a public space: people who only read a public space see its tasks and files list but not its discussion, as spec 029 FR-006 names the space's members as the channel's audience.
+- A space library has no owning unit and no ACL of its own, so tenant and unit roles never reach into it, matching the space itself (section 7).
+- One general channel per space. Owners can add more channels in the discussion as in any community.
+- At most 20 linked files per task.

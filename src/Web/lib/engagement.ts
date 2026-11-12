@@ -30,6 +30,8 @@ export type CommunityView = {
   channels: ChannelView[];
   rights: CommunityRights;
   version: number;
+  /** Set for a project or team space's discussion (spec 029): its members and name follow the space. */
+  spaceId?: string | null;
 };
 
 export type DirectoryRights = { canCreate: boolean; canModerate: boolean; canManageKeywords: boolean; surveys: boolean; recognition: boolean };

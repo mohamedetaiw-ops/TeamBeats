@@ -97,13 +97,18 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
   return (
     <div className="engagement">
       <div className="engagement-row">
-        <Badge tone={community.kind === "open" ? "success" : community.kind === "approval" ? "info" : "neutral"}>{t(`kinds.${community.kind}`)}</Badge>
+        {/* A space's discussion has the space's members, listed on the space's own Members page. */}
+        {community.spaceId ? null : (
+          <Badge tone={community.kind === "open" ? "success" : community.kind === "approval" ? "info" : "neutral"}>{t(`kinds.${community.kind}`)}</Badge>
+        )}
         {community.orgUnitId ? <Badge tone="accent">{t("directory.department")}</Badge> : null}
         {community.status === "archived" ? <Badge tone="warning">{t("community.archived")}</Badge> : null}
         <span className="engagement-meta">{t("directory.members", { count: community.memberCount })}</span>
-        <ButtonLink size="sm" variant="quiet" icon="people" href={`${communityHref(community.id)}/members`}>
-          {t("community.membersLink")}
-        </ButtonLink>
+        {community.spaceId ? null : (
+          <ButtonLink size="sm" variant="quiet" icon="people" href={`${communityHref(community.id)}/members`}>
+            {t("community.membersLink")}
+          </ButtonLink>
+        )}
         {readable ? (
           <ButtonLink size="sm" variant="quiet" icon="trend-up" href={`${communityHref(community.id)}/polls`}>
             {t("polls.link")}

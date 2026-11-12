@@ -14,7 +14,7 @@ Depends on 004, 011, 015, 016, 022, 023, 026. R2.
 - [x] T007 [US7] My tasks and 016 inbox tab
 
 ## Phase 3: User Stories 4 to 6 (P1, P2)
-- [ ] T008 [US5] Library and channel provisioning through 011 and 023
+- [x] T008 [US5] Library and channel provisioning through 011 and 023
 - [ ] T009 [P] [US4] Tests: guest scope, classified files, expiry, cross-tenant guest
 - [ ] T010 [US4] Guest invitations
 - [ ] T011 [US6] Team calendar

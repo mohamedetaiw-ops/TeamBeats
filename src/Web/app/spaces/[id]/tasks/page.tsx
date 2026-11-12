@@ -36,7 +36,7 @@ export default async function SpaceTasksPage({ params }: { params: Promise<{ id:
       />
       <main id="main" className="page">
         <PageHeader title={t("tasksTitle")} eyebrow={space.data.name} icon="tasks"
-          nav={<SpaceNav id={id} current="tasks" settings={space.data.rights.owns || space.data.rights.manages} />} />
+          nav={<SpaceNav id={id} current="tasks" settings={space.data.rights.owns || space.data.rights.manages} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
         {board?.ok ? <Board spaceId={id} initial={board.data} /> : <StateView kind="denied" title={t("privateTitle")} message={t("private")} />}
       </main>
     </>
