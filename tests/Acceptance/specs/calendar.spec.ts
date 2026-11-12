@@ -111,6 +111,10 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
       // A non-manager is offered no team view.
       await expect(page.getByRole("radio", { name: m("calendar.views.team") })).toHaveCount(0);
+      // A link to the team view opens the usual view for them instead of an error.
+      await page.goto(`${hostOrigin(tenant.key)}/calendar?view=team&date=${today}`);
+      await expect(page.locator(".ui-cal-row").filter({ hasText: town })).toHaveCount(1);
+      await expect(page.getByRole("radio", { name: m("calendar.views.agenda") })).toBeChecked();
       // Turning the company layer off hides the event; turning it on brings it back.
       const chip = page.getByRole("button", { name: m("calendar.layers.company"), exact: true });
       await chip.click();
