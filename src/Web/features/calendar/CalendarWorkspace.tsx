@@ -56,7 +56,9 @@ export function CalendarWorkspace({ canManage }: { canManage: boolean }) {
   const prefs = saved ?? (prefLoad.state === "ok" ? prefLoad.data : null);
 
   const asked = params.get("view");
-  const view: CalendarView = (VIEWS as readonly string[]).includes(asked ?? "") ? (asked as CalendarView) : prefs?.view ?? "agenda";
+  // The team view is offered only when the API gives the team leave layer; a link to it for anyone else opens their usual view.
+  const offered = (v: string) => (VIEWS as readonly string[]).includes(v) && (v !== "team" || (prefs?.available.includes("team_leave") ?? false));
+  const view: CalendarView = asked && offered(asked) ? (asked as CalendarView) : prefs?.view ?? "agenda";
   const browserToday = hydrated && now !== null ? new Date(now).toISOString().slice(0, 10) : null;
   const dateParam = params.get("date");
   const date = isoDay(dateParam) ? dateParam : browserToday;
