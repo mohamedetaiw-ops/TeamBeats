@@ -48,6 +48,8 @@ public static class AnalyticsEvents
     public const string EngagementAnonymousAction = "engagement.anonymous_action";
     public const string LearningProgress = "learning.progress";
     public const string BookingActivity = "booking.activity";
+    public const string MobileInstall = "mobile.install";
+    public const string MobilePushOptIn = "mobile.push_optin";
 
     /// <summary>The sources whose items are viewed: content items, policies and documents.</summary>
     public static readonly IReadOnlySet<string> ItemSources = new HashSet<string>(StringComparer.Ordinal) { "content", "policies", "documents" };
@@ -80,12 +82,18 @@ public static class AnalyticsEvents
         "booked", "requested", "approved", "rejected", "expired", "checked_in", "released", "cancelled",
     };
 
+    /// <summary>Platform families of the installed app and push (spec 030 section 13); never a device identifier.</summary>
+    public static readonly IReadOnlySet<string> MobilePlatforms = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "android", "ios", "windows", "macos", "linux", "other",
+    };
+
     public static readonly IReadOnlySet<string> BookingKinds = new HashSet<string>(StringComparer.Ordinal) { "room", "desk", "parking", "equipment" };
 
     /// <summary>Events only modules emit; the web collection endpoint drops them, so nobody can add to these counts by hand.</summary>
     public static readonly IReadOnlySet<string> ServerOnly = new HashSet<string>(StringComparer.Ordinal)
     {
-        EngagementAction, EngagementAnonymousAction, LearningProgress, BookingActivity,
+        EngagementAction, EngagementAnonymousAction, LearningProgress, BookingActivity, MobilePushOptIn,
     };
 
     public static readonly IReadOnlySet<string> ErrorKinds = new HashSet<string>(StringComparer.Ordinal) { "render", "boundary", "network", "chunk" };
@@ -139,6 +147,14 @@ public static class AnalyticsEvents
             ["action"] = new(AnalyticsFieldType.Key, true, BookingActions),
             ["type"] = new(AnalyticsFieldType.Key, true, BookingKinds),
             ["siteId"] = new(AnalyticsFieldType.Id, true),
+        }, Unkeyed: true),
+        [MobileInstall] = new(MobileInstall, false, new Dictionary<string, AnalyticsField>
+        {
+            ["platform"] = new(AnalyticsFieldType.Key, true, MobilePlatforms),
+        }, Unkeyed: true),
+        [MobilePushOptIn] = new(MobilePushOptIn, false, new Dictionary<string, AnalyticsField>
+        {
+            ["platform"] = new(AnalyticsFieldType.Key, true, MobilePlatforms),
         }, Unkeyed: true),
         [UiError] = new(UiError, true, new Dictionary<string, AnalyticsField>
         {

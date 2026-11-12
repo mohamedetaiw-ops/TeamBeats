@@ -1040,3 +1040,20 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - With no entries chosen, the bar shows the first four global menu entries. When there are more entries than places, "More" takes the fifth place, so the bar never has more than five targets.
 - The offline page is stored in the language of the install. It is a static page with no personal content.
 - In development the build files are not stored, since their names do not change between edits.
+
+## Mobile app (spec 030, slice 2: T005, T006; US2)
+
+### Built
+- Web Push adapter (FR-007): `Integrations/WebPush/WebPushClient.cs` behind the `IWebPush` contract. Each message is encrypted for the browser's keys with aes128gcm (RFC 8291), so the push service cannot read it, and carries a VAPID token (RFC 8292, ES256, 12 hours, audience of that push service only). It uses only the .NET cryptography in the platform, so no library was added. The key pair comes from the secret manager as `Integrations:WebPush:PrivateKey` and `PublicKey` (base64url). Development and test hosts without one get a new pair per process; any other host without one has no push. The staging deploy creates the pair on its first run and gives it to the API and the workers.
+- Push channel in Notifications (spec 015): `push` is a delivery channel next to email and Slack. Each category has a push choice (on by default), quiet hours apply as for email, and a delivery goes only to people with a device. A message holds the category name (marked when mandatory), a fixed short text and the link to the item, never the title or body of the item, so no Confidential content leaves the platform. Titles are clipped to 60 characters and the text to 120.
+- Subscriptions: `GET /api/v1/me/push`, `POST /api/v1/me/push/subscriptions`, `POST /api/v1/me/push/subscriptions:remove`. Endpoints must be https on the default port on a known push service (FCM, Mozilla, Apple, Windows), so the platform never posts to an address a client chose. Keys must be 65 and 16 bytes. Each device is tied to the session that subscribed it. Publishes `PushSubscriptionCreated` and `PushSubscriptionRemoved`, and `mobile.push_optin` telemetry with only the platform family.
+- Removal (FR-008): sign-out and session end, session revocation and leaving the organization remove the devices; a push service answer of 404, 410 or 403 removes the device at once. Sign-out also forgets the subscription in the browser. Timeouts, 429 and 5xx retry with the email backoff for up to two hours.
+- The offer (FR-006): never on a first visit. A submitted leave request or service request dispatches the shared `tb:meaningful-action` event; the offer then appears once, only when the browser has not been asked yet and the person may get push. "Not now" is remembered on this device for 90 days for that person. The browser's own permission prompt opens only after "Turn on".
+- Notification preferences: "Turn on for this device" and "Turn off for this device", a push column per category, and an explanation with email as the fallback where the device cannot receive push (iPhone and iPad outside an installed app) or the browser blocked notifications.
+- Service worker: shows each message with the app icon and opens or focuses the app on the item's link when tapped. Only links inside the app are followed.
+
+### Smallest safe defaults
+- The spec does not say which categories push by default. Push is on for every category, as in-app is, but only reaches devices where the person turned it on.
+- At most 10 devices per person; the oldest is dropped when an 11th subscribes.
+- A message lives 24 hours at the push service. Urgent notifications are sent with high urgency.
+- The VAPID contact defaults to an address in the reserved `.invalid` domain; staging sets it to the staging site address.

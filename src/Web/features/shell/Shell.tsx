@@ -10,6 +10,7 @@ import { AccountMenu } from "./AccountMenu";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { GlobalMenu } from "./GlobalMenu";
 import { MobileNav } from "./MobileNav";
+import { PushOffer } from "@/features/app/PushOffer";
 import { QuickNav } from "./QuickNav";
 import { SettingsPanel } from "./SettingsPanel";
 import { Icon } from "@/components/ui/Icon";
@@ -111,6 +112,7 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
         </Link>
       ) : null}
       {shell.ok && regions.includes("global_navigation") && shell.data.mobileNav?.length ? <MobileNav items={shell.data.mobileNav} all={shell.data.globalMenu} /> : null}
+      <PushOffer owner={`${me.tenant.id}:${me.id}`} />
     </header>
   );
 }

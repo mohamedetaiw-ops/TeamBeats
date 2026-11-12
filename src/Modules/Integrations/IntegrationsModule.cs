@@ -49,6 +49,9 @@ public static class IntegrationsModule
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, OutlookComponents>();
         services.AddHttpClient(OpenMeteoWeather.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
         services.AddScoped<IWeather, OpenMeteoWeather>();
+        // Web Push (spec 030 US2): one key pair per installation, so the client is a singleton.
+        services.AddHttpClient(WebPush.WebPushClient.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
+        services.AddSingleton<IWebPush, WebPush.WebPushClient>();
         services.AddSingleton<ConnectorRateLimits>();
         services.AddScoped<ConnectorRuntime>();
         services.AddScoped<IConnectorRuntime>(sp => sp.GetRequiredService<ConnectorRuntime>());

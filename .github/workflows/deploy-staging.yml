@@ -109,6 +109,27 @@ jobs:
             echo "Generated $name"
           done
 
+      - name: Generate the Web Push key pair on first run
+        run: |
+          # Spec 030 push: the VAPID pair signs every push message. API (subscriptions) and workers (delivery) share it;
+          # a new pair makes every browser subscription unusable, so both get one only when either lacks it.
+          has_secret() { flyctl secrets list --app "$1" --json | jq -e --arg n "$2" 'map(.Name // .name) | index($n)' >/dev/null; }
+          if has_secret "$API_APP" Integrations__WebPush__PrivateKey && has_secret "$WORKERS_APP" Integrations__WebPush__PrivateKey; then
+            echo "Web Push key pair already set"
+            exit 0
+          fi
+          b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+          pem=$(openssl ecparam -name prime256v1 -genkey -noout)
+          # The raw 32 byte private key sits after the 7 byte DER prefix; the 65 byte public point ends the public key DER.
+          private=$(printf '%s\n' "$pem" | openssl ec -no_public -outform DER 2>/dev/null | tail -c +8 | head -c 32 | b64url)
+          public=$(printf '%s\n' "$pem" | openssl ec -pubout -outform DER 2>/dev/null | tail -c 65 | b64url)
+          echo "::add-mask::$private"
+          for app in "$API_APP" "$WORKERS_APP"; do
+            printf 'Integrations__WebPush__PrivateKey=%s\nIntegrations__WebPush__PublicKey=%s\n' "$private" "$public" \
+              | flyctl secrets import --app "$app" --stage
+          done
+          echo "Generated the Web Push key pair"
+
       - name: Deploy database
         run: >-
           flyctl deploy . --app "$DB_APP" --config deploy/fly/staging/db.toml

@@ -122,6 +122,10 @@ public sealed class NotificationSender(
     {
         var deliveries = new List<(Guid NotificationId, Guid UserId, string Channel, string Status, string? Address, DateTimeOffset NotBefore)>();
         var slackAvailable = true;
+        // One read for the batch: who has a device with push. The channel itself checks the package at delivery.
+        var pushUsers = (await session.QueryAsync(
+            "select distinct user_id from notifications.push_subscription where user_id = any(@userIds)",
+            new { userIds = rows.Select(r => r.UserId).ToArray() }, r => r.GetGuid(0), ct)).ToHashSet();
         foreach (var (notificationId, userId) in rows)
         {
             var choice = await preferences.ChannelChoiceAsync(userId, request.Category, mandatory, ct);
@@ -139,6 +143,11 @@ public sealed class NotificationSender(
             if (choice.Slack && slackAvailable && await slack.StatusAsync(userId, ct) is var status && (slackAvailable = status.Available) && status.Linked)
             {
                 deliveries.Add((notificationId, userId, NotificationChannels.Slack, "pending", null, await ReleaseAsync()));
+            }
+            // Push (spec 030 US2) to people with at least one device that allowed it; never in the digest.
+            if (choice.Push && pushUsers.Contains(userId))
+            {
+                deliveries.Add((notificationId, userId, NotificationChannels.Push, "pending", null, await ReleaseAsync()));
             }
         }
         if (deliveries.Count == 0)

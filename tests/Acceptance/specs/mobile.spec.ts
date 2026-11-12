@@ -199,3 +199,94 @@ test.describe("installed app", () => {
     await context.setOffline(false);
   });
 });
+
+/**
+ * Spec 030 slice 2 (US2): push on this device. The offer appears only after a meaningful action and "Not now" keeps it
+ * away for 90 days; the preferences page turns push on and off for the device and per category. The browser's push
+ * service is replaced with a stand-in subscription on a known push host, because the test browser has none; the
+ * encryption, signing and delivery are covered by PushTests.
+ */
+test.describe("push on this device", () => {
+  let tenant: TestTenant;
+  test.beforeAll(async () => {
+    tenant = await createTenant("push-en", "en", "workplace_plus");
+  });
+
+  test("the offer waits for a meaningful action and Not now is remembered", async ({ page }) => {
+    // A headless browser answers "denied" without ever asking; a real one starts at "default", not asked yet.
+    await page.addInitScript(() => Object.defineProperty(Notification, "permission", { get: () => "default" }));
+    await signInWithDevForm(page, tenant.key, tenant.adminEmail, "en");
+    const offer = page.getByRole("region", { name: msg("en", "app.push.title"), exact: true });
+    expect(await page.evaluate(() => Notification.permission)).toBe("default");
+    // Never on a first visit.
+    await expect(offer).toHaveCount(0);
+
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent("tb:meaningful-action")));
+    await expect(offer).toBeVisible();
+    await offer.getByRole("button", { name: msg("en", "app.push.notNow"), exact: true }).click();
+    await expect(offer).toHaveCount(0);
+
+    await page.reload();
+    await page.evaluate(() => window.dispatchEvent(new CustomEvent("tb:meaningful-action")));
+    await page.waitForTimeout(500);
+    await expect(offer).toHaveCount(0);
+    const declined = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("tb:push-declined:")).length);
+    expect(declined).toBe(1);
+  });
+
+  test("the preferences page turns push on and off for this device and per category", async ({ page }) => {
+    await page.addInitScript(() => {
+      // The person allows notifications when the browser asks; a headless browser would answer "denied" on its own.
+      let permission: NotificationPermission = "default";
+      Object.defineProperty(Notification, "permission", { get: () => permission });
+      Notification.requestPermission = async () => (permission = "granted");
+      let current: PushSubscription | null = null;
+      const b64 = (bytes: ArrayBuffer | Uint8Array) =>
+        btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+      PushManager.prototype.subscribe = async function (options?: PushSubscriptionOptionsInit) {
+        const pair = (await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"])) as CryptoKeyPair;
+        const p256dh = b64(await crypto.subtle.exportKey("raw", pair.publicKey));
+        const auth = b64(crypto.getRandomValues(new Uint8Array(16)));
+        const endpoint = `https://fcm.googleapis.com/fcm/send/e2e-${crypto.randomUUID()}`;
+        const key = options?.applicationServerKey;
+        current = {
+          endpoint,
+          expirationTime: null,
+          options: { userVisibleOnly: true, applicationServerKey: key instanceof Uint8Array ? key.buffer : (key as ArrayBuffer) ?? null },
+          getKey: () => null,
+          toJSON: () => ({ endpoint, keys: { p256dh, auth } }),
+          unsubscribe: async () => {
+            current = null;
+            return true;
+          },
+        } as unknown as PushSubscription;
+        return current;
+      };
+      PushManager.prototype.getSubscription = async () => current;
+    });
+    await signInWithDevForm(page, tenant.key, tenant.adminEmail, "en");
+    await page.goto(`${hostOrigin(tenant.key)}/notifications/preferences`);
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    const m = (key: string) => msg("en", `notifications.preferences.${key}`);
+    await expect(page.getByText(m("pushIsOff"), { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: m("pushTurnOn"), exact: true }).click();
+    await expect(page.getByRole("status").getByText(m("pushTurnedOn"), { exact: true })).toBeVisible();
+    await expect(page.getByText(m("pushIsOn"), { exact: true })).toBeVisible();
+    const devices = () => page.evaluate(async () => ((await (await fetch("/api/v1/me/push")).json()) as { devices: number }).devices);
+    expect(await devices()).toBe(1);
+    await page.getByRole("button", { name: m("pushTurnOff"), exact: true }).click();
+    await expect(page.getByRole("status").getByText(m("pushTurnedOff"), { exact: true })).toBeVisible();
+    expect(await devices()).toBe(0);
+
+    // One category without push, kept after saving.
+    const category = page.locator("tr[data-category]").filter({ has: page.locator("input:not([disabled])") }).first();
+    const box = category.getByRole("checkbox", { name: /^Push for / });
+    await expect(box).toBeChecked();
+    await box.uncheck();
+    await page.getByRole("button", { name: m("save"), exact: true }).click();
+    await expect(page.getByRole("status").getByText(m("saved"), { exact: true })).toBeVisible();
+    await page.reload();
+    await expect(page.locator("tr[data-category]").filter({ has: page.locator("input:not([disabled])") }).first().getByRole("checkbox", { name: /^Push for / })).not.toBeChecked();
+
+  });
+});

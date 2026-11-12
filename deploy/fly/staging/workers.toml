@@ -5,6 +5,8 @@ primary_region = "fra"
 
 [env]
   ASPNETCORE_ENVIRONMENT = "Staging"
+  # Push services may contact this address about our VAPID signed messages (spec 030 push, RFC 8292).
+  Integrations__WebPush__Subject = "https://teambeats-staging-web.fly.dev"
   # The production workers image has no fake Microsoft 365; on staging the API host runs directory sync against the fakes.
   Workers__DirectorySync__Enabled = "false"
   # Email on staging goes to the captured mailbox, which the API host fills itself (spec 015 plan, Staging).

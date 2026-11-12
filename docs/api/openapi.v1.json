@@ -5108,6 +5108,62 @@
         }
       }
     },
+    "/api/v1/me/push": {
+      "get": {
+        "tags": [
+          "Notifications: my notifications"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/push/subscriptions": {
+      "post": {
+        "tags": [
+          "Notifications: my notifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushSubscribeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/push/subscriptions:remove": {
+      "post": {
+        "tags": [
+          "Notifications: my notifications"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushUnsubscribeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/notifications/count": {
       "get": {
         "tags": [
@@ -28361,6 +28417,12 @@
               "null",
               "boolean"
             ]
+          },
+          "push": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -28465,6 +28527,73 @@
               "string"
             ],
             "format": "double"
+          }
+        }
+      },
+      "PushKeys": {
+        "required": [
+          "p256dh",
+          "auth"
+        ],
+        "type": "object",
+        "properties": {
+          "p256dh": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "auth": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PushSubscribeRequest": {
+        "required": [
+          "endpoint",
+          "keys",
+          "platform"
+        ],
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "keys": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/PushKeys"
+              }
+            ]
+          },
+          "platform": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PushUnsubscribeRequest": {
+        "required": [
+          "endpoint"
+        ],
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

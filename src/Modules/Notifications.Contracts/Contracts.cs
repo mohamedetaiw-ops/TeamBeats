@@ -114,7 +114,14 @@ public static class NotificationChannels
     public const string InApp = "in_app";
     public const string Email = "email";
     public const string Slack = "slack";
+    public const string Push = "push";
 }
+
+/// <summary>A device allowed push notifications for this person (spec 030 section 12). Only the platform family is told, never the device.</summary>
+public sealed record PushSubscriptionCreated(Guid UserId, string Platform) : IIntegrationEvent;
+
+/// <summary>A push subscription was removed: signed out, revoked, turned off, or the push service said it is gone.</summary>
+public sealed record PushSubscriptionRemoved(Guid UserId, string Reason) : IIntegrationEvent;
 
 public sealed record NotificationDelivered(Guid NotificationId, Guid UserId, string Channel) : IIntegrationEvent;
 
