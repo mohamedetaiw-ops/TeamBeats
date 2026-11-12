@@ -10,3 +10,6 @@ public sealed record PostRemoved(Guid PostId, Guid CommunityId) : IIntegrationEv
 
 /// <summary>A comment or reply was added to a post.</summary>
 public sealed record CommentAdded(Guid CommentId, Guid PostId, Guid CommunityId) : IIntegrationEvent;
+
+/// <summary>A poll closed, at its end time or earlier by its author or a moderator (spec 023 section 12).</summary>
+public sealed record PollClosed(Guid PollId, Guid CommunityId) : IIntegrationEvent;

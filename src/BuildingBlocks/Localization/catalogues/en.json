@@ -1624,5 +1624,15 @@
   "validation.engagement.channel_kind": "Choose a discussion or Speak Up channel.",
   "validation.engagement.anonymous_channel": "Anonymous posts are only for Speak Up channels that allow them.",
   "validation.engagement.anonymous_limit": "You have reached today's limit of anonymous posts. Try again tomorrow.",
-  "validation.engagement.anonymous_answer": "Write an answer of up to 2,000 characters."
+  "validation.engagement.anonymous_answer": "Write an answer of up to 2,000 characters.",
+  "conflict.engagement.already_voted": "You have already voted in this poll.",
+  "conflict.engagement.poll_closed": "This poll is closed.",
+  "validation.engagement.poll_question": "Write a question of up to 300 characters.",
+  "validation.engagement.poll_options": "Give between 2 and 20 options.",
+  "validation.engagement.poll_option": "Each option needs up to 120 characters of text.",
+  "validation.engagement.poll_option_repeated": "Each option must be different.",
+  "validation.engagement.poll_results": "Choose when results show.",
+  "validation.engagement.poll_anonymous_change": "Anonymous votes cannot be changed, so turn off changing votes or make the poll named.",
+  "validation.engagement.poll_closes": "Choose an end time in the future, within a year.",
+  "validation.engagement.poll_choice": "Choose one option, or more where the poll allows it."
 }

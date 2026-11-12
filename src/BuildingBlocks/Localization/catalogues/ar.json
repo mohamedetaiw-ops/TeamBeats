@@ -1624,5 +1624,15 @@
   "validation.engagement.channel_kind": "اختر قناة نقاش أو قناة تحدث بصراحة.",
   "validation.engagement.anonymous_channel": "المنشورات المجهولة متاحة فقط في قنوات تحدث بصراحة التي تسمح بها.",
   "validation.engagement.anonymous_limit": "وصلت إلى حد المنشورات المجهولة لليوم. حاول مرة أخرى غدا.",
-  "validation.engagement.anonymous_answer": "اكتب ردا لا يزيد على 2000 حرف."
+  "validation.engagement.anonymous_answer": "اكتب ردا لا يزيد على 2000 حرف.",
+  "conflict.engagement.already_voted": "لقد صوّت في هذا الاستطلاع من قبل.",
+  "conflict.engagement.poll_closed": "هذا الاستطلاع مغلق.",
+  "validation.engagement.poll_question": "اكتب سؤالا لا يزيد على 300 حرف.",
+  "validation.engagement.poll_options": "أضف من خيارين إلى 20 خيارا.",
+  "validation.engagement.poll_option": "يحتاج كل خيار إلى نص لا يزيد على 120 حرفا.",
+  "validation.engagement.poll_option_repeated": "يجب أن يختلف كل خيار عن غيره.",
+  "validation.engagement.poll_results": "اختر متى تظهر النتائج.",
+  "validation.engagement.poll_anonymous_change": "لا يمكن تغيير الأصوات المجهولة، لذا أوقف تغيير الأصوات أو اجعل الاستطلاع باسم المصوتين.",
+  "validation.engagement.poll_closes": "اختر وقت انتهاء في المستقبل خلال سنة.",
+  "validation.engagement.poll_choice": "اختر خيارا واحدا، أو أكثر إذا سمح الاستطلاع بذلك."
 }
