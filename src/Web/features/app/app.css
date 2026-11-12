@@ -29,3 +29,20 @@
   display: flex;
   gap: var(--tb-space-xs);
 }
+
+/* The push offer (spec 030 FR-006) uses the same floating card, above the bottom navigation on a phone. */
+.push-offer .push-offer-title {
+  margin: 0;
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.push-offer .field-hint {
+  margin: 0;
+}
+
+/* On a phone the floating cards sit above the bottom navigation, so neither covers the other. */
+@media (width <= 40rem) {
+  .app-update {
+    inset-block-end: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}

@@ -9,6 +9,7 @@ import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { isHrSource, isShown, pick, type AttachmentView, type FieldValue, type FormDefinition, type FormField } from "@/lib/services/types";
 import { PersonPicker } from "./PersonPicker";
 import "./services.css";
+import { announceMeaningfulAction } from "@/lib/push";
 
 type Target = { kind: "new"; serviceId: string; preparedId?: string } | { kind: "resubmit"; requestId: string } | { kind: "preview" };
 
@@ -139,6 +140,7 @@ export function RequestForm({
             });
       if (response.ok) {
         const detail = (await response.json()) as { request: { id: string } };
+        announceMeaningfulAction();
         router.push(`/requests/${detail.request.id}`);
         router.refresh();
         return;

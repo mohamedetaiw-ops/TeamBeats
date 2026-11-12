@@ -1,16 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { problemMessages, type Preferences } from "@/lib/notifications/types";
+import { deviceSubscription, pushSupported, turnOffPush, turnOnPush } from "@/lib/push";
 import "./notifications.css";
 
 /**
  * An employee's notification preferences (spec 015 US2, US3, US8): email, digest and Slack per category, quiet hours,
  * digest time and time zone. In-app is always on. Slack shows only when the organization connected it, and works once
- * the person linked their Slack account. Mandatory categories show as fixed; the API ignores any change to them anyway.
+ * the person linked their Slack account. Push (spec 030 US2) shows when the plan includes it: the person turns it on for
+ * this device and picks the categories; a device that cannot receive push says so and points to email. Mandatory
+ * categories show as fixed; the API ignores any change to them anyway.
  */
 export function NotificationPreferences({ initial }: { initial: Preferences }) {
   const t = useTranslations("notifications.preferences");
@@ -23,6 +26,54 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
   const [result, setResult] = useState<{ ok: boolean; messages: string[] } | null>(null);
   const [linking, setLinking] = useState(false);
   const slack = prefs.slack.available;
+  const push = prefs.push.available && prefs.push.publicKey !== null;
+  // What this browser allows is only known after hydration: "unknown" renders nothing until then.
+  const [device, setDevice] = useState<"unknown" | "unsupported" | "blocked" | "off" | "on">("unknown");
+  const [switching, setSwitching] = useState(false);
+
+  useEffect(() => {
+    if (!push) return;
+    let live = true;
+    const look = async (): Promise<typeof device> => {
+      if (!pushSupported()) return "unsupported";
+      if (Notification.permission === "denied") return "blocked";
+      const subscription = await deviceSubscription().catch(() => null);
+      return subscription && Notification.permission === "granted" ? "on" : "off";
+    };
+    void look().then((state) => live && setDevice(state));
+    return () => {
+      live = false;
+    };
+  }, [push]);
+
+  async function switchDevice(on: boolean) {
+    setSwitching(true);
+    setResult(null);
+    try {
+      if (on) {
+        const outcome = await turnOnPush(prefs.push.publicKey!);
+        if (outcome === "on") {
+          setDevice("on");
+          setPrefs((p) => ({ ...p, push: { ...p.push, devices: p.push.devices + 1 } }));
+          setResult({ ok: true, messages: [t("pushTurnedOn")] });
+        } else if (outcome === "denied") {
+          setDevice(Notification.permission === "denied" ? "blocked" : "off");
+          setResult({ ok: false, messages: [t("pushDenied")] });
+        } else if (outcome === "unsupported") {
+          setDevice("unsupported");
+        } else {
+          setResult({ ok: false, messages: [t("failed")] });
+        }
+      } else if (await turnOffPush()) {
+        setDevice("off");
+        setResult({ ok: true, messages: [t("pushTurnedOff")] });
+      } else {
+        setResult({ ok: false, messages: [t("failed")] });
+      }
+    } finally {
+      setSwitching(false);
+    }
+  }
 
   async function link(on: boolean) {
     setLinking(true);
@@ -42,7 +93,7 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
     }
   }
 
-  function setCategory(category: string, change: { email?: boolean; digest?: boolean; slack?: boolean }) {
+  function setCategory(category: string, change: { email?: boolean; digest?: boolean; slack?: boolean; push?: boolean }) {
     setPrefs((p) => ({ ...p, categories: p.categories.map((c) => (c.category === category ? { ...c, ...change } : c)) }));
   }
 
@@ -56,7 +107,7 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
         body: JSON.stringify({
           categories: prefs.categories
             .filter((c) => !c.mandatory)
-            .map((c) => ({ category: c.category, email: c.email, digest: c.email && c.digest, ...(slack ? { slack: c.slack } : {}) })),
+            .map((c) => ({ category: c.category, email: c.email, digest: c.email && c.digest, ...(slack ? { slack: c.slack } : {}), ...(push ? { push: c.push } : {}) })),
           quietHours: quiet ? { start, end } : null,
           digestTime: prefs.digestTime,
           timeZone: prefs.timeZone,
@@ -97,6 +148,22 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
           </Button>
         </div>
       ) : null}
+      {push && device !== "unknown" ? (
+        <div className="notification-row" data-push={device}>
+          {device === "unsupported" ? (
+            <p className="notice">{t("pushUnsupported")}</p>
+          ) : device === "blocked" ? (
+            <p className="notice">{t("pushBlocked")}</p>
+          ) : (
+            <>
+              <p>{t(device === "on" ? "pushIsOn" : "pushIsOff")}</p>
+              <Button busy={switching} busyLabel={t("saving")} onClick={() => void switchDevice(device !== "on")}>
+                {t(device === "on" ? "pushTurnOff" : "pushTurnOn")}
+              </Button>
+            </>
+          )}
+        </div>
+      ) : null}
       <div className="notification-table-wrap">
         <table className="notification-table">
           <caption className="visually-hidden">{t("tableCaption")}</caption>
@@ -106,6 +173,7 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
               <th scope="col">{t("email")}</th>
               <th scope="col">{t("digest")}</th>
               {slack ? <th scope="col">{t("slack")}</th> : null}
+              {push ? <th scope="col">{t("push")}</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -141,6 +209,17 @@ export function NotificationPreferences({ initial }: { initial: Preferences }) {
                       checked={prefs.slack.linked && c.slack}
                       disabled={c.mandatory || !prefs.slack.linked}
                       onChange={(e) => setCategory(c.category, { slack: e.target.checked })}
+                    />
+                  </td>
+                ) : null}
+                {push ? (
+                  <td>
+                    <input
+                      type="checkbox"
+                      aria-label={t("pushFor", { category: tc(c.category) })}
+                      checked={c.push}
+                      disabled={c.mandatory}
+                      onChange={(e) => setCategory(c.category, { push: e.target.checked })}
                     />
                   </td>
                 ) : null}

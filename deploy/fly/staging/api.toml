@@ -6,6 +6,8 @@ primary_region = "fra"
 
 [env]
   ASPNETCORE_ENVIRONMENT = "Staging"
+  # Push services may contact this address about our VAPID signed messages (spec 030 push, RFC 8292).
+  Integrations__WebPush__Subject = "https://teambeats-staging-web.fly.dev"
 
 [[vm]]
   size = "shared-cpu-1x"

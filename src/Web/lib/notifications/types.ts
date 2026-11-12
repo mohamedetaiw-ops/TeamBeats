@@ -1,3 +1,5 @@
+import type { PushStatus } from "@/lib/push";
+
 /** Shapes of the spec 015 notification API, as the browser reads them. */
 export type NotificationItem = {
   id: string;
@@ -17,7 +19,7 @@ export type NotificationPage = { items: NotificationItem[]; nextCursor: string |
 
 export type NotificationFilter = "all" | "unread" | "mandatory";
 
-export type CategoryPreference = { category: string; mandatory: boolean; email: boolean; digest: boolean; slack: boolean };
+export type CategoryPreference = { category: string; mandatory: boolean; email: boolean; digest: boolean; slack: boolean; push: boolean };
 
 export type Preferences = {
   categories: CategoryPreference[];
@@ -27,6 +29,8 @@ export type Preferences = {
   emailPaused: boolean;
   /** Slack direct messages (spec 015 US8): available when the organization connected Slack; linked once the person linked their account. */
   slack: { available: boolean; linked: boolean };
+  /** Web Push (spec 030 US2): available when the plan includes it and the installation has a VAPID key; devices counts this person's. */
+  push: PushStatus;
 };
 
 export type RelaySettings = { host: string; port: number; username: string | null; secretReference: string | null; startTls: boolean };

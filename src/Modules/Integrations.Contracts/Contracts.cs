@@ -1042,3 +1042,37 @@ public interface IRoomMailboxes
     /// <summary>Whether the address is one of the tenant's Microsoft 365 room mailboxes, ignoring case.</summary>
     Task<bool> IsRoomMailboxAsync(string address, CancellationToken ct = default);
 }
+
+/// <summary>A browser's push subscription (spec 030 US2): the push service address and the browser's keys, as the browser gave them.</summary>
+public sealed record WebPushTarget(string Endpoint, string P256dh, string Auth);
+
+/// <summary>
+/// What happened to a push message. <c>Gone</c>: the push service no longer knows the subscription, so it must be
+/// deleted at once (spec 030 US2 scenario 4). <c>Transient</c>: try again later. <c>Rejected</c>: the message itself
+/// was refused. <c>Unavailable</c>: push is not set up on this installation.
+/// </summary>
+public enum WebPushOutcome
+{
+    Sent,
+    Gone,
+    Transient,
+    Rejected,
+    Unavailable,
+}
+
+/// <summary>
+/// Web Push (RFC 8030, 8291, 8292) behind the spec 015 push channel (spec 030 FR-007). Messages are encrypted for the
+/// browser and signed with the installation's VAPID key, whose private half stays in the secret manager. Only push
+/// services on the allow list are ever called, so a subscription cannot make the platform call another address.
+/// </summary>
+public interface IWebPush
+{
+    /// <summary>The VAPID public key, base64url, for the browser's subscribe call; null when push is not set up.</summary>
+    string? PublicKey { get; }
+
+    /// <summary>True for an https address of a known push service.</summary>
+    bool IsAllowedEndpoint(string endpoint);
+
+    /// <summary>Encrypts <paramref name="payload"/> for the subscription and posts it. <paramref name="urgent"/> asks the push service to wake the device.</summary>
+    Task<WebPushOutcome> SendAsync(WebPushTarget target, string payload, TimeSpan timeToLive, bool urgent, CancellationToken ct = default);
+}

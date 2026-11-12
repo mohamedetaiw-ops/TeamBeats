@@ -10,6 +10,7 @@ import { PersonPicker } from "@/features/services/PersonPicker";
 import { problemMessages } from "@/lib/notifications/types";
 import { pick } from "@/lib/services/types";
 import { todayIso, type LeavePreview, type LeaveRequest, type LeaveType } from "@/lib/leave";
+import { announceMeaningfulAction } from "@/lib/push";
 
 type Upload = { id: string; fileName: string; scanState: string };
 
@@ -109,6 +110,7 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
         setReplacement(null);
         setAttached(null);
         onSubmitted(request);
+        announceMeaningfulAction();
       } else {
         const list = await problemMessages(response);
         setMessages(list.length > 0 ? list : [t("failed")]);

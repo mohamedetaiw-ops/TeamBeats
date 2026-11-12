@@ -15,6 +15,12 @@
     "nav": {
       "label": "Shortcuts",
       "more": "More"
+    },
+    "push": {
+      "title": "Get notifications on this device?",
+      "message": "We will tell you when something needs you, such as an approval or a reply. You can change this any time in notification preferences.",
+      "turnOn": "Turn on",
+      "notNow": "Not now"
     }
   },
   "home": {
@@ -1941,7 +1947,18 @@
       "slackIsLinked": "Your Slack account is linked. Choose the categories you want as Slack direct messages.",
       "slackNotLinked": "Your organization uses Slack. Link your account with your work email to get notifications as direct messages.",
       "slackLinked": "Your Slack account is linked.",
-      "slackUnlinked": "Your Slack account is unlinked."
+      "slackUnlinked": "Your Slack account is unlinked.",
+      "push": "Push",
+      "pushFor": "Push for {category}",
+      "pushIsOn": "Push notifications are on for this device.",
+      "pushIsOff": "Push notifications are off for this device. Turn them on to get alerts even when TeamBeats is closed.",
+      "pushTurnOn": "Turn on for this device",
+      "pushTurnOff": "Turn off for this device",
+      "pushTurnedOn": "This device will now get push notifications.",
+      "pushTurnedOff": "This device will no longer get push notifications.",
+      "pushDenied": "The browser did not allow notifications. You can allow them in the browser's site settings.",
+      "pushUnsupported": "This device cannot show push notifications. On iPhone and iPad, add TeamBeats to the home screen first. Email keeps you informed in the meantime.",
+      "pushBlocked": "Notifications are blocked for TeamBeats in this browser. Allow them in the browser's site settings to turn push on."
     },
     "settings": {
       "title": "Notifications",

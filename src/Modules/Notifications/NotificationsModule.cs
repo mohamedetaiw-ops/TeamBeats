@@ -7,6 +7,7 @@ using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Localization;
+using TeamBeats.Messaging;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Persistence;
@@ -37,6 +38,12 @@ public static class NotificationsModule
         services.AddScoped<EmailDelivery>();
         services.AddScoped<IExternalEmail, ExternalEmail>();
         services.AddScoped<SlackDelivery>();
+        // Push (spec 030 US2): subscriptions follow the session that made them.
+        services.AddScoped<PushSubscriptions>();
+        services.AddScoped<PushDelivery>();
+        services.AddMessageHandler<SessionEnded, DropPushOnSessionEnded>("notifications.push_session_ended");
+        services.AddMessageHandler<SessionRevoked, DropPushOnSessionRevoked>("notifications.push_session_revoked");
+        services.AddMessageHandler<UserDeprovisioned, DropPushOnUserDeprovisioned>("notifications.push_user_deprovisioned");
         services.AddScoped<CapturedMailbox>();
         if (EmailOptions.IsCapture(configuration))
         {
@@ -64,6 +71,25 @@ public static class NotificationsModule
                 _ => throw AppException.Validation("filter", "validation.notification.filter_invalid"),
             };
             return Results.Ok(await centre.ListAsync(context.RequireUser(), parsed, category, cursor, limit ?? 20, ct));
+        });
+
+        // Push on this device (spec 030 US2): the key to subscribe with, then the browser's subscription.
+        me.MapGet("/push", async (ITenantContext context, PushSubscriptions push, CancellationToken ct) =>
+            Results.Ok(await push.StatusAsync(context.RequireUser(), ct)));
+
+        me.MapPost("/push/subscriptions", async (PushSubscribeRequest request, ITenantContext context, PushSubscriptions push, IDbSession session, CancellationToken ct) =>
+        {
+            var status = await push.SubscribeAsync(context.RequireUser(), request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(status);
+        });
+
+        me.MapPost("/push/subscriptions:remove", async (PushUnsubscribeRequest request, ITenantContext context, PushSubscriptions push, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var status = await push.UnsubscribeAsync(context.RequireUser(), request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(status);
         });
 
         me.MapGet("/notifications/count", async (ITenantContext context, NotificationCentre centre, HttpResponse response, CancellationToken ct) =>
