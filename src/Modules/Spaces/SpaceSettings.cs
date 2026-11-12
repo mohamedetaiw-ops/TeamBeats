@@ -150,7 +150,7 @@ public sealed class SpaceSettings(
         var name = request.Name?.Trim() ?? "";
         if (name.Length is 0 or > SpaceTemplates.MaxNameLength)
         {
-            errors.Add("name", "validation.spaces.name");
+            errors.Add("name", "validation.spaces.short_name");
         }
         if (request.Kind is not { } kind || !SpaceKinds.All.Contains(kind))
         {

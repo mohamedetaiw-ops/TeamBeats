@@ -179,7 +179,7 @@ public sealed class SpacesService(
         return standing.Contributes ? standing : throw AppException.Denied("authz.denied.spaces_contribute");
     }
 
-    private async Task<SpaceStanding> OwnedAsync(Guid id, bool orManager, CancellationToken ct)
+    internal async Task<SpaceStanding> OwnedAsync(Guid id, bool orManager, CancellationToken ct)
     {
         var standing = await VisibleAsync(id, ct);
         return standing.Owns || (orManager && standing.Manages) ? standing : throw AppException.Denied("authz.denied.spaces_owner");

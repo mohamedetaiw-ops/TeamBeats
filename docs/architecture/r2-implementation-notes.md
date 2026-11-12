@@ -874,3 +874,21 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Built-in template names and starter content use the tenant's default language at the time the space is made.
 - A space always keeps at least one owner (`conflict.spaces.last_owner`). Joining is allowed only for public spaces that allow it.
 - An archived space is read only and leaves the directory, but stays in my spaces and the administrators' list.
+
+## Space tasks, milestones and status (spec 029, slice 2: T004 to T007 backend; US2, US3, US7)
+
+### Built
+- Tasks with assignees, due date, priority, labels, a checklist and comments (`spaces.task`, `task_assignee`, `checklist_item`, `task_comment`). `GET /api/v1/spaces/{id}/tasks` returns the lists, their columns and every task, so the list view and the board read the same data; `:move` places a task in a column at a position, and `:complete` and `:reopen` move it to the list's first done or open column. A done column completes the task and leaving it reopens it. Members add lists (with To do, In progress and Done in the tenant's language) and columns.
+- Members and owners change tasks; viewers and people who only read a public space are refused by the server (`authz.denied.spaces_contribute`), and archived spaces are read-only. Edits carry the task version (`conflict.spaces.task_changed`).
+- Milestones (`spaces.milestone`) count their linked tasks; when all are done the milestone is reached once and `MilestoneReached` is published, and a reopened task opens it again. Owners set the status (on track, at risk, off track, done) with a note; every entry is kept in `spaces.status_entry`, the members who can read the space are told and `SpaceStatusChanged` is published. `GET /{id}/overview` gives the status with its history, milestone progress and overdue tasks.
+- `GET /api/v1/spaces/my-tasks` lists the viewer's open tasks across the active spaces they are still in, by due date with the space name (`?done=true` adds completed ones). `GET /{id}/tasks.csv` exports the tasks for readers with spreadsheet formula protection.
+- Notifications through 015 in category `space_activity`: assignment to the new assignees and completion to the task's watchers, each grouped per space and kind, and never to the person who acted or to anyone who cannot read the space. `SpacesMaintenanceWorker` sends the day-before reminder at 09:00 in each assignee's time zone (their unit's working calendar), once per due date.
+- Tasks are a search source (`space_tasks`, kind `task`) with the space's reading rule. Events `TaskAssigned` and `TaskCompleted` are published.
+
+### Smallest safe defaults
+- A task's watchers are its assignees and the person who made it; there is no separate follow button yet. Status changes go to every member; spec 029's "followers" are the members until a follow feature exists.
+- Only owners and members hold tasks, guests among them when they are invited as members (section 17); viewers cannot be assigned.
+- A task belongs to at most one milestone (a column on the task instead of the plan's `milestone_task` table, which is enough for one-to-many).
+- Limits: 5,000 tasks, 20 lists, 12 columns per list, 50 milestones per space; 20 assignees, 10 labels of 30 characters, 100 checklist items and 10,000 characters of description per task; comments of 4,000 characters.
+- "Overdue" uses the viewer's own calendar day. A task that changes due date can be reminded again for the new date.
+- My tasks appears in the 016 inbox as its own tab on the inbox page (slice 2 web), not as inbox entries, so approvals are not buried under everyday work.

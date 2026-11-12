@@ -100,7 +100,7 @@ public static class SpaceTemplates
             var name = lists[i].Name?.Trim() ?? "";
             if (name.Length is 0 or > MaxNameLength)
             {
-                errors.Add($"{field}.lists[{i}].name", "validation.spaces.name");
+                errors.Add($"{field}.lists[{i}].name", "validation.spaces.short_name");
             }
             var columns = lists[i].Columns ?? [];
             if (columns.Count is 0 or > MaxColumns)
@@ -113,7 +113,7 @@ public static class SpaceTemplates
                 var column = columns[c].Name?.Trim() ?? "";
                 if (column.Length is 0 or > MaxNameLength)
                 {
-                    errors.Add($"{field}.lists[{i}].columns[{c}].name", "validation.spaces.name");
+                    errors.Add($"{field}.lists[{i}].columns[{c}].name", "validation.spaces.short_name");
                 }
                 cleanColumns.Add(new TemplateColumn(column, columns[c].Done));
             }

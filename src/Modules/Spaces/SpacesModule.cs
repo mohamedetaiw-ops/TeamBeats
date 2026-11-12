@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Localization;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
@@ -22,8 +24,11 @@ public static class SpacesModule
     {
         services.AddScoped<SpacesService>();
         services.AddScoped<SpaceSettings>();
+        services.AddScoped<SpaceTasks>();
+        services.AddScoped<SpaceMilestones>();
         services.AddScoped<IResourceDescriptorProvider, SpaceDescriptorProvider>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpacesSearchSource>();
+        services.AddScoped<Modules.Search.Contracts.ISearchSource, SpaceTaskSearchSource>();
         services.AddMessageHandler<Tenancy.Contracts.TenantMembershipDisabled, SpaceLeavers>("spaces.ownerless");
         return services;
     }
@@ -106,6 +111,8 @@ public static class SpacesModule
             return Results.NoContent();
         });
 
+        MapTaskEndpoints(root);
+
         // ---- Tenant rules and templates (spaces administrators) ----
 
         root.MapGet("/manage/settings", async (SpaceSettings settings, CancellationToken ct) => Results.Ok(await settings.GetRulesAsync(ct)));
@@ -141,5 +148,99 @@ public static class SpacesModule
         });
 
         return app;
+    }
+
+    private static async Task<IResult> CommitAsync<T>(IDbSession session, T value, CancellationToken ct)
+    {
+        await session.CommitAsync(ct);
+        return Results.Ok(value);
+    }
+
+    /// <summary>Tasks, milestones, status and My tasks (spec 029 US2, US3, US7).</summary>
+    private static void MapTaskEndpoints(RouteGroupBuilder root)
+    {
+        root.MapGet("/my-tasks", async (bool? done, SpaceTasks tasks, CancellationToken ct) => Results.Ok(await tasks.MineAsync(done ?? false, ct)));
+
+        var space = root.MapGroup("/{id:guid}");
+
+        space.MapGet("/overview", async (Guid id, SpaceMilestones milestones, CancellationToken ct) => Results.Ok(await milestones.OverviewAsync(id, ct)));
+
+        space.MapPost("/status", async (Guid id, StatusRequest request, SpaceMilestones milestones, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await milestones.SetStatusAsync(id, request, ct), ct));
+
+        space.MapGet("/milestones", async (Guid id, SpaceMilestones milestones, CancellationToken ct) => Results.Ok(await milestones.MilestonesAsync(id, ct)));
+
+        space.MapPost("/milestones", async (Guid id, MilestoneRequest request, SpaceMilestones milestones, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await milestones.CreateAsync(id, request, ct), ct));
+
+        space.MapPut("/milestones/{milestoneId:guid}", async (Guid id, Guid milestoneId, MilestoneRequest request, SpaceMilestones milestones, IDbSession session,
+            CancellationToken ct) => await CommitAsync(session, await milestones.UpdateAsync(id, milestoneId, request, ct), ct));
+
+        space.MapDelete("/milestones/{milestoneId:guid}", async (Guid id, Guid milestoneId, SpaceMilestones milestones, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await milestones.DeleteAsync(id, milestoneId, ct), ct));
+
+        space.MapPost("/lists", async (Guid id, ListRequest request, SpaceTasks tasks, ILocalizer text, ITenantSettingsReader tenantSettings, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var locale = (await tenantSettings.GetLocaleSettingsAsync(ct)).DefaultLocale;
+            (string, bool)[] columns =
+            [
+                (text.Get("spaces.template.column.todo", locale), false),
+                (text.Get("spaces.template.column.doing", locale), false),
+                (text.Get("spaces.template.column.done", locale), true),
+            ];
+            return await CommitAsync(session, await tasks.AddListAsync(id, request, columns, ct), ct);
+        });
+
+        space.MapPost("/lists/{listId:guid}/columns", async (Guid id, Guid listId, ColumnRequest request, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await tasks.AddColumnAsync(id, listId, request, ct), ct));
+
+        space.MapGet("/tasks", async (Guid id, Guid? list, SpaceTasks tasks, CancellationToken ct) => Results.Ok(await tasks.BoardAsync(id, list, ct)));
+
+        space.MapGet("/tasks.csv", async (Guid id, SpaceTasks tasks, CancellationToken ct) =>
+        {
+            var (name, content) = await tasks.ExportAsync(id, ct);
+            return Results.File(content, "text/csv; charset=utf-8", name);
+        });
+
+        space.MapPost("/tasks", async (Guid id, TaskRequest request, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+        {
+            var task = await tasks.CreateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/spaces/{id}/tasks/{task.Task.Id}", task);
+        });
+
+        space.MapGet("/tasks/{taskId:guid}", async (Guid id, Guid taskId, SpaceTasks tasks, CancellationToken ct) => Results.Ok(await tasks.GetAsync(id, taskId, ct)));
+
+        space.MapPut("/tasks/{taskId:guid}", async (Guid id, Guid taskId, TaskRequest request, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await tasks.UpdateAsync(id, taskId, request, ct), ct));
+
+        space.MapDelete("/tasks/{taskId:guid}", async (Guid id, Guid taskId, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+        {
+            await tasks.DeleteAsync(id, taskId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        space.MapPost("/tasks/{taskId:guid}:move", async (Guid id, Guid taskId, MoveRequest request, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await tasks.MoveAsync(id, taskId, request, ct), ct));
+
+        space.MapPost("/tasks/{taskId:guid}:complete", async (Guid id, Guid taskId, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await tasks.CompleteAsync(id, taskId, true, ct), ct));
+
+        space.MapPost("/tasks/{taskId:guid}:reopen", async (Guid id, Guid taskId, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await tasks.CompleteAsync(id, taskId, false, ct), ct));
+
+        space.MapPost("/tasks/{taskId:guid}/checklist", async (Guid id, Guid taskId, ChecklistRequest request, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await tasks.AddChecklistItemAsync(id, taskId, request, ct), ct));
+
+        space.MapPut("/tasks/{taskId:guid}/checklist/{itemId:guid}", async (Guid id, Guid taskId, Guid itemId, ChecklistRequest request, SpaceTasks tasks, IDbSession session,
+            CancellationToken ct) => await CommitAsync(session, await tasks.SetChecklistItemAsync(id, taskId, itemId, request, ct), ct));
+
+        space.MapDelete("/tasks/{taskId:guid}/checklist/{itemId:guid}", async (Guid id, Guid taskId, Guid itemId, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await tasks.RemoveChecklistItemAsync(id, taskId, itemId, ct), ct));
+
+        space.MapPost("/tasks/{taskId:guid}/comments", async (Guid id, Guid taskId, CommentRequest request, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await tasks.CommentAsync(id, taskId, request, ct), ct));
     }
 }
