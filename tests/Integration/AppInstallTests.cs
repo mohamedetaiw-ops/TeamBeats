@@ -121,6 +121,25 @@ public sealed class AppInstallTests(TenantWorld world)
         }
     }
 
+    [Fact]
+    public async Task An_install_is_counted_by_platform_family_without_the_person()
+    {
+        var t = await FreshAsync();
+        async Task<int> SendAsync(string platform)
+        {
+            var response = await t["admin"].Client.PostAsJsonAsync("/api/v1/analytics/events",
+                new { events = new[] { new { name = "mobile.install", fields = new { platform } } } });
+            Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
+            return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("accepted").GetInt32();
+        }
+
+        Assert.Equal(1, await SendAsync("android"));
+        // Only the coarse family is kept: anything that could name a device is dropped.
+        Assert.Equal(0, await SendAsync("Pixel 8 Pro 4f2a"));
+        Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from analytics.event where name = 'mobile.install' and user_key is null and fields->>'platform' = 'android'"));
+    }
+
     [Theory]
     [InlineData("Acme Holding", "AH")]
     [InlineData("acme", "A")]

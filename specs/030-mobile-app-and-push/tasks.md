@@ -21,4 +21,4 @@ Depends on 003, 008, 015, 026, 033. R2.
 - [x] T010 [US4] Kiosk devices, badge sign-in and kiosk session type
 
 ## Final phase
-- [ ] T011 Lighthouse checks in CI; OpenAPI; R2 implementation notes; spec evidence
+- [x] T011 Lighthouse checks in CI; OpenAPI; R2 implementation notes; spec evidence

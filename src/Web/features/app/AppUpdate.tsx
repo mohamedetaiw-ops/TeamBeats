@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
+import { platform } from "@/lib/push";
 import "./app.css";
 
 /** True while the person is typing, so the prompt never shows over unsaved input (spec 030 FR-002). */
@@ -58,6 +59,16 @@ export function AppUpdate({ release }: { release: string }) {
       navigator.serviceWorker.removeEventListener("controllerchange", changed);
     };
   }, [release]);
+
+  // The install is counted by platform family only, never a device (spec 030 section 13, mobile.install).
+  useEffect(() => {
+    const installed = () => {
+      const body = JSON.stringify({ events: [{ name: "mobile.install", fields: { platform: platform() } }] });
+      void fetch("/api/v1/analytics/events", { method: "POST", headers: { "content-type": "application/json" }, body, keepalive: true }).catch(() => undefined);
+    };
+    window.addEventListener("appinstalled", installed);
+    return () => window.removeEventListener("appinstalled", installed);
+  }, []);
 
   useEffect(() => {
     const update = () => setHidden(typing());

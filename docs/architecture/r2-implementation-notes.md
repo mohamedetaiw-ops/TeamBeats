@@ -1089,3 +1089,14 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Notifications, offline reading and push offers are closed on kiosks.
 - Desk and room check-in is a kiosk feature, as the floor and room kiosks of spec 031 already use it.
 - Camera scanning is an extra where the browser offers it; nothing is recorded and the camera stops when the dialog closes.
+
+## Mobile app (spec 030, final phase: T011)
+
+### Built
+- Mobile performance budgets (section 15): `tests/Acceptance/budgets/mobile.spec.ts` runs in the new CI job `mobile-budgets` on a production build (`E2E_WEB_MODE=production`, `next build` then `next start`) in English and Arabic. It applies the Lighthouse mobile profile in the browser: a 412 by 823 phone screen, slow 4G (150 ms round trip, 1.6 Mbps down, 750 kbps up) and a CPU four times slower. A first visit must reach its Largest Contentful Paint on the signed-in home page within 3 seconds. A later visit, with the service worker keeping the app shell, must paint within 1 second. Locally the two were about 0.85 s and 0.25 s.
+- Install telemetry (section 13): the app sends `mobile.install` with the platform family when the browser reports the app installed. The event was declared but never sent before.
+- Spec evidence in `specs/030-mobile-app-and-push/evidence.md`.
+
+### Deviations
+- The `lighthouse` package is not used. Version 13 depends on Sentry packages, one under the Functional Source License, which is not OSI approved (CLAUDE.md rule 6). The same mobile profile is applied through the browser's own throttling, so the budgets need no new dependency.
+- Lighthouse no longer has a PWA installability category. What it checked (manifest fields, icons, a service worker that answers offline) is covered by `AppInstallTests` and `mobile.spec.ts`.
