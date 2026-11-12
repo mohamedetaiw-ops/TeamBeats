@@ -497,7 +497,9 @@
         "spaces_administrator": "مسؤول المساحات",
         "space_owner": "مالك المساحة",
         "space_member": "عضو المساحة",
-        "space_viewer": "مشاهد المساحة"
+        "space_viewer": "مشاهد المساحة",
+        "facilities_administrator": "مسؤول المرافق",
+        "facilities_analyst": "محلل المرافق"
       },
       "tabs": "أقسام الأدوار والوصول",
       "unknownUnit": "وحدة خارج نطاق عرضك",
@@ -755,7 +757,11 @@
         "learning_lms_connector": "ربط نظام إدارة التعلم",
         "spaces_projects": "مساحات المشاريع والفرق",
         "spaces_guests": "الضيوف في المساحات",
-        "spaces_max_spaces": "المساحات"
+        "spaces_max_spaces": "المساحات",
+        "booking_rooms": "حجز القاعات",
+        "booking_desks": "حجز المكاتب",
+        "booking_resources": "حجز المواقف والمعدات",
+        "booking_reports": "تقارير الحجز"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",
@@ -1868,7 +1874,8 @@
       "recognition": "التقدير",
       "integration_alert": "تنبيهات الاتصالات",
       "system": "رسائل النظام",
-      "space_activity": "النشاط في مساحاتك"
+      "space_activity": "النشاط في مساحاتك",
+      "bookings": "حجوزاتك"
     },
     "filter": {
       "label": "عرض",

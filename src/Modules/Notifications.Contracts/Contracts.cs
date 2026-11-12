@@ -82,6 +82,9 @@ public static class NotificationCategories
     /// <summary>Spec 029: tasks given to the person, their due dates, and changes in spaces they belong to.</summary>
     public const string SpaceActivity = "space_activity";
 
+    /// <summary>Spec 031: confirmations, reminders, releases and cancellations of the person's bookings.</summary>
+    public const string Bookings = "bookings";
+
     public static readonly IReadOnlyList<NotificationCategory> All =
     [
         new(SecurityNotice, Mandatory: true, EmailByDefault: true),
@@ -99,6 +102,7 @@ public static class NotificationCategories
         new(IntegrationAlert, Mandatory: false, EmailByDefault: true),
         new(System, Mandatory: false, EmailByDefault: false),
         new(SpaceActivity, Mandatory: false, EmailByDefault: true),
+        new(Bookings, Mandatory: false, EmailByDefault: true),
     ];
 
     public static NotificationCategory? Find(string key) => All.FirstOrDefault(c => c.Key == key);

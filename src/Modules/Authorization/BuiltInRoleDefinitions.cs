@@ -28,7 +28,7 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.SecurityOfficer, Delegable: false, DelegatedAdmin: false,
             [P.OrgUnitView, P.AuditView, P.AuditExport, P.UsersView, P.RolesView, P.AccessExplain, P.ConfigHistoryView, P.SecurityView, P.SecurityRespond, P.AiPolicyView,
              P.AgentView, P.AgentSecurityView, P.AgentSuspend, P.EvalView]),
-        new(BuiltInRoles.Employee, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PersonalLayoutEdit, P.PeopleView, P.EngagementParticipate, P.LearningTake, P.SpacesCreate]),
+        new(BuiltInRoles.Employee, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PersonalLayoutEdit, P.PeopleView, P.EngagementParticipate, P.LearningTake, P.SpacesCreate, P.BookingBook]),
         new(BuiltInRoles.PageEditor, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit]),
         new(BuiltInRoles.PagePublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit, P.PagePublish]),
         new(BuiltInRoles.BrandManager, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ThemeEdit]),
@@ -42,6 +42,8 @@ public static class BuiltInRoleDefinitions
             [P.OrgUnitView, P.PeopleView, P.LearningTake, P.LearningManage, P.LearningReport]),
         new(BuiltInRoles.ComplianceOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.PolicyAuthor, P.PolicyManage, P.LearningReport, P.LearningAssignLinked]),
         new(BuiltInRoles.SpacesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.SpacesCreate, P.SpacesManage]),
+        new(BuiltInRoles.FacilitiesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.BookingBook, P.BookingManage, P.BookingReport]),
+        new(BuiltInRoles.FacilitiesAnalyst, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.BookingReport]),
         // Spec 029 FR-002: the space roles. Only Spaces assigns them, on one space (see ModuleAssignedRoles).
         new(BuiltInRoles.SpaceOwner, Delegable: false, DelegatedAdmin: false, [P.SpacesView, P.SpacesContribute, P.SpacesOwn, P.DocView, P.DocContribute, P.DocManage]),
         new(BuiltInRoles.SpaceMember, Delegable: false, DelegatedAdmin: false, [P.SpacesView, P.SpacesContribute, P.DocView, P.DocContribute]),

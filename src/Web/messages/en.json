@@ -497,7 +497,9 @@
         "spaces_administrator": "Spaces administrator",
         "space_owner": "Space owner",
         "space_member": "Space member",
-        "space_viewer": "Space viewer"
+        "space_viewer": "Space viewer",
+        "facilities_administrator": "Facilities administrator",
+        "facilities_analyst": "Facilities analyst"
       },
       "tabs": "Roles and access sections",
       "unknownUnit": "a unit outside your view",
@@ -755,7 +757,11 @@
         "learning_lms_connector": "LMS connector",
         "spaces_projects": "Project and team spaces",
         "spaces_guests": "Guests in spaces",
-        "spaces_max_spaces": "Spaces"
+        "spaces_max_spaces": "Spaces",
+        "booking_rooms": "Room booking",
+        "booking_desks": "Desk booking",
+        "booking_resources": "Parking and equipment booking",
+        "booking_reports": "Booking reports"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -1868,7 +1874,8 @@
       "recognition": "Recognition",
       "integration_alert": "Connection alerts",
       "system": "System messages",
-      "space_activity": "Activity in your spaces"
+      "space_activity": "Activity in your spaces",
+      "bookings": "Your bookings"
     },
     "filter": {
       "label": "Show",

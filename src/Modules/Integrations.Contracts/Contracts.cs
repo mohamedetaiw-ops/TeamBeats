@@ -1032,3 +1032,13 @@ public interface ILmsConnector
     /// <summary>Returns <see cref="LmsResults.Ok"/> once the push is queued.</summary>
     Task<string> AssignAsync(LmsAssignment assignment, CancellationToken ct = default);
 }
+
+/// <summary>
+/// The tenant's Microsoft 365 room mailboxes (spec 018 US5), so that workplace booking (spec 031 FR-002) never takes a
+/// room that Outlook books. Tenant comes from context.
+/// </summary>
+public interface IRoomMailboxes
+{
+    /// <summary>Whether the address is one of the tenant's Microsoft 365 room mailboxes, ignoring case.</summary>
+    Task<bool> IsRoomMailboxAsync(string address, CancellationToken ct = default);
+}
