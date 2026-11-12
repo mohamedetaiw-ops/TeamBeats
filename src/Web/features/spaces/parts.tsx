@@ -3,7 +3,7 @@
 import { useFormatter, useTranslations } from "next-intl";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { SectionNav } from "@/components/ui/SectionNav";
-import { spaceHref, spaceMembersHref, spaceSettingsHref, spaceTasksHref, type Priority, type SpaceRole, type StatusValue, type Visibility } from "@/lib/spaces";
+import { spaceCalendarHref, spaceDiscussionHref, spaceFilesHref, spaceHref, spaceMembersHref, spaceSettingsHref, spaceTasksHref, type Priority, type SpaceRole, type StatusValue, type Visibility } from "@/lib/spaces";
 
 const visibilityIcons = { public: "globe", private: "lock", secret: "eye" } as const;
 
@@ -52,11 +52,17 @@ export function DueBadge({ dueOn, overdue }: { dueOn: string | null; overdue: bo
 }
 
 /** The pages of one space. Settings shows only to owners and spaces administrators; the API checks again. */
-export function SpaceNav({ id, current, settings }: { id: string; current: "overview" | "tasks" | "members" | "settings"; settings: boolean }) {
+type SpacePage = "overview" | "tasks" | "calendar" | "files" | "discussion" | "members" | "settings";
+
+/** The space's pages. Files and Discussion appear once the space has its library and discussion (FR-006). */
+export function SpaceNav({ id, current, settings, files = false, discussion = false }: { id: string; current: SpacePage; settings: boolean; files?: boolean; discussion?: boolean }) {
   const t = useTranslations("spaces.parts");
   const items = [
     { key: "overview", href: spaceHref(id), label: t("nav.overview") },
     { key: "tasks", href: spaceTasksHref(id), label: t("nav.tasks") },
+    { key: "calendar", href: spaceCalendarHref(id), label: t("nav.calendar") },
+    ...(files ? [{ key: "files", href: spaceFilesHref(id), label: t("nav.files") }] : []),
+    ...(discussion ? [{ key: "discussion", href: spaceDiscussionHref(id), label: t("nav.discussion") }] : []),
     { key: "members", href: spaceMembersHref(id), label: t("nav.members") },
     ...(settings ? [{ key: "settings", href: spaceSettingsHref(id), label: t("nav.settings") }] : []),
   ];

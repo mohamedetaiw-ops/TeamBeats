@@ -9523,7 +9523,10 @@
         "overview": "نظرة عامة",
         "tasks": "المهام",
         "members": "الأعضاء",
-        "settings": "الإعدادات"
+        "settings": "الإعدادات",
+        "files": "الملفات",
+        "discussion": "النقاش",
+        "calendar": "التقويم"
       }
     },
     "directory": {
@@ -9708,7 +9711,14 @@
       "removeItem": "إزالة {text}",
       "newItem": "بند جديد",
       "addItem": "إضافة بند",
-      "createdBy": "أنشأها {name} في {date}"
+      "createdBy": "أنشأها {name} في {date}",
+      "filesTitle": "الملفات",
+      "noFiles": "لا توجد ملفات مرتبطة بهذه المهمة.",
+      "fileVersion": "الإصدار {version}",
+      "unlinkFile": "إلغاء ربط {name}",
+      "linkFileLabel": "ملف من مكتبة المساحة",
+      "chooseFile": "اختر ملفًا",
+      "linkFile": "ربط الملف"
     },
     "members": {
       "failed": "تعذر حفظ التغيير.",
@@ -9771,6 +9781,56 @@
       "archiveConfirm": "أرشفة",
       "cancel": "إلغاء",
       "restore": "استعادة المساحة"
+    },
+    "filesTitle": "الملفات",
+    "filesUnavailableTitle": "لا توجد مكتبة بعد",
+    "filesUnavailable": "الملفات ليست ضمن خطة مؤسستك، لذلك لا توجد مكتبة لهذه المساحة.",
+    "discussionTitle": "النقاش",
+    "discussionUnavailableTitle": "لا يوجد نقاش بعد",
+    "discussionUnavailable": "المجتمعات ليست ضمن خطة مؤسستك، لذلك لا يوجد نقاش لهذه المساحة.",
+    "calendarTitle": "تقويم الفريق",
+    "calendar": {
+      "failed": "تعذّر تغيير التقويم. حاول مرة أخرى.",
+      "monthLabel": "الشهر",
+      "legend": "تظهر الفعاليات والمراحل ومواعيد استحقاق المهام والأعضاء الذين في إجازة في أيامها.",
+      "milestoneItem": "مرحلة: {name}",
+      "dueItem": "مستحقة: {title}",
+      "awayItem": "{name} في إجازة",
+      "eventsTitle": "الفعاليات",
+      "noEvents": "لا توجد فعاليات هذا الشهر.",
+      "eventTime": "{date}، من {start} إلى {end}",
+      "deleteEvent": "حذف {title}",
+      "newEvent": "فعالية جديدة",
+      "title": "العنوان",
+      "date": "التاريخ",
+      "start": "البداية",
+      "end": "النهاية",
+      "allDay": "طوال اليوم",
+      "description": "الوصف",
+      "add": "إضافة فعالية",
+      "added": "تمت إضافة {title}.",
+      "deleted": "تم حذف {title}.",
+      "busyTitle": "الأوقات المتاحة والمشغولة",
+      "busyIntro": "اعرف متى يكون الأعضاء مشغولين في يوم ما. تظهر الأوقات فقط دون تفاصيل الاجتماع، وفقط حيث يشاركها Outlook معك.",
+      "busyDay": "اليوم",
+      "showBusy": "عرض الأوقات",
+      "loading": "جارٍ التحميل",
+      "busyNobody": "لا يوجد أعضاء آخرون لعرضهم.",
+      "busyState": {
+        "turned_off": "عرض الأوقات المتاحة والمشغولة غير مفعّل لمؤسستك.",
+        "not_connected": "اربط Outlook لعرض الأوقات المتاحة والمشغولة.",
+        "reconnect": "سجّل الدخول إلى Outlook مرة أخرى لعرض الأوقات.",
+        "other": "عرض الأوقات غير متاح الآن."
+      },
+      "notShared": "غير مُشارك",
+      "free": "متاح طوال اليوم",
+      "block": "من {start} إلى {end} {status}",
+      "status": {
+        "busy": "مشغول",
+        "tentative": "مبدئي",
+        "oof": "خارج المكتب",
+        "working_elsewhere": "يعمل من مكان آخر"
+      }
     }
   }
 }

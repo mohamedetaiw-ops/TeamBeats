@@ -6,7 +6,8 @@ import { hostOrigin } from "../support/stack";
 /**
  * Spec 029 slices 1 and 2: the administrator creates a private project space from the standard template, adds Layla
  * as a member, adds a task, gives it to her with a due date and moves another task to Done from the keyboard menu;
- * Layla finds the task under My tasks in the task inbox and completes it there. Visibility, roles, viewer refusal,
+ * Layla finds the task under My tasks in the task inbox and completes it there. Slice 3: a file goes into the space's
+ * library and is linked to the task, and an update is posted in the space's discussion, and an event goes on the team calendar. Visibility, roles, viewer refusal,
  * milestones, status, reminders and the tenant boundary are covered by SpacesTests and SpaceTaskTests. In English and
  * Arabic, with axe. Names are fictional.
  */
@@ -53,6 +54,36 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(main.getByRole("list", { name: m("spaces.members.listLabel") }).getByRole("listitem")).toHaveCount(2);
       await expectAccessible(page, testInfo, `spaces-members-${locale}`);
 
+      // The space's library and discussion (FR-006): upload a file and post an update.
+      const spaceNav = page.getByRole("navigation", { name: m("spaces.parts.nav.label") });
+      await spaceNav.getByRole("link", { name: m("spaces.parts.nav.files") }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("spaces.filesTitle"));
+      await page.getByRole("button", { name: m("documents.upload.open") }).click();
+      const dialog = page.getByRole("dialog", { name: m("documents.upload.title") });
+      await dialog.getByLabel(m("documents.upload.file")).setInputFiles({ name: "purchase-steps.txt", mimeType: "text/plain", buffer: Buffer.from("Raise, approve, order.") });
+      await dialog.getByRole("button", { name: m("documents.upload.submit") }).click();
+      await expect(dialog).toBeHidden();
+      await expect(main.getByRole("link", { name: "purchase-steps.txt" })).toBeVisible();
+      await expectAccessible(page, testInfo, `spaces-files-${locale}`);
+
+      await spaceNav.getByRole("link", { name: m("spaces.parts.nav.discussion") }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("spaces.discussionTitle"));
+      await page.getByRole("textbox", { name: m("engagement.composer.body") }).click();
+      await page.keyboard.type(locale === "ar" ? "بدأنا مراجعة خطوات الشراء." : "We started on the purchase steps.");
+      await page.getByRole("button", { name: m("engagement.composer.submit"), exact: true }).click();
+      await expect(page.getByText(m("engagement.composer.posted"))).toBeVisible();
+      await expectAccessible(page, testInfo, `spaces-discussion-${locale}`);
+
+      // The team calendar (US6): add an event and find it in the month.
+      await spaceNav.getByRole("link", { name: m("spaces.parts.nav.calendar") }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("spaces.calendarTitle"));
+      const kickoff = locale === "ar" ? "اجتماع الانطلاق" : "Kick-off meeting";
+      await main.getByLabel(m("spaces.calendar.title"), { exact: true }).fill(kickoff);
+      await main.getByRole("button", { name: m("spaces.calendar.add") }).click();
+      await expect(page.getByRole("status").filter({ hasText: kickoff })).toBeVisible();
+      await expect(main.getByRole("list", { name: m("spaces.calendar.eventsTitle") }).getByText(kickoff)).toBeVisible();
+      await expectAccessible(page, testInfo, `spaces-calendar-${locale}`);
+
       await page.getByRole("navigation", { name: m("spaces.parts.nav.label") }).getByRole("link", { name: m("spaces.parts.nav.tasks") }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("spaces.tasksTitle"));
       // The list's name comes from the template in the organization's language, so the field is found by the start of its label.
@@ -79,6 +110,9 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await main.getByLabel(m("spaces.task.newItem")).fill(locale === "ar" ? "طلبات الشراء" : "Purchase requests");
       await main.getByRole("button", { name: m("spaces.task.addItem") }).click();
       await expect(main.getByRole("list", { name: m("spaces.task.checklistTitle") }).getByRole("listitem")).toHaveCount(1);
+      await main.getByLabel(m("spaces.task.linkFileLabel")).selectOption({ label: "purchase-steps.txt" });
+      await main.getByRole("button", { name: m("spaces.task.linkFile") }).click();
+      await expect(main.getByRole("list", { name: m("spaces.task.filesTitle") }).getByRole("link", { name: "purchase-steps.txt" })).toBeVisible();
       await main.getByRole("button", { name: m("spaces.task.save") }).click();
       await expect(page.getByRole("status").filter({ hasText: m("spaces.task.saved") })).toBeVisible();
       await expectAccessible(page, testInfo, `spaces-task-${locale}`);

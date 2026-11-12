@@ -137,6 +137,15 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
             where a.scope_type = 'tenant' and a.revoked_at is null and (a.subject_type = 'user' or m.user_id is not null)
             """, new { p = permission }, r => r.GetGuid(0), ct);
 
+    public async Task<IReadOnlyList<Guid>> ResourceHoldersAsync(string permission, string resourceType, Guid resourceId, CancellationToken ct = default) =>
+        await session.QueryAsync(
+            """
+            select distinct a.subject_id
+            from authz.role_assignment a
+            join authz.role_permission p on p.role_id = a.role_id and p.permission_key = @p
+            where a.scope_type = 'resource' and a.scope_resource_type = @rt and a.scope_id = @rid and a.subject_type = 'user' and a.revoked_at is null
+            """, new { p = permission, rt = resourceType, rid = resourceId }, r => r.GetGuid(0), ct);
+
     public async Task<bool> UserHoldsAsync(Guid userId, string permission, AuthzTarget target, CancellationToken ct = default)
     {
         context.RequireTenant();

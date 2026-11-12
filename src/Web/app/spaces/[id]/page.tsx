@@ -35,7 +35,7 @@ export default async function SpacePage({ params }: { params: Promise<{ id: stri
         ]}
       />
       <main id="main" className="page">
-        <PageHeader title={space.data.name} eyebrow={t(`kind.${space.data.kind}`)} icon="folder" nav={<SpaceNav id={id} current="overview" settings={settings} />} />
+        <PageHeader title={space.data.name} eyebrow={t(`kind.${space.data.kind}`)} icon="folder" nav={<SpaceNav id={id} current="overview" settings={settings} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
         {overview?.ok ? (
           <Overview space={space.data} initial={overview.data} />
         ) : (

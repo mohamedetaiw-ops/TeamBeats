@@ -35,7 +35,7 @@ export default async function SpaceSettingsPage({ params }: { params: Promise<{ 
         ]}
       />
       <main id="main" className="page">
-        <PageHeader title={t("settingsTitle")} eyebrow={space.data.name} icon="settings" nav={<SpaceNav id={id} current="settings" settings={allowed} />} />
+        <PageHeader title={t("settingsTitle")} eyebrow={space.data.name} icon="settings" nav={<SpaceNav id={id} current="settings" settings={allowed} files={!!space.data.libraryId} discussion={!!space.data.communityId} />} />
         {allowed ? <Settings initial={space.data} /> : <StateView kind="denied" title={t("settingsDeniedTitle")} message={t("settingsDenied")} />}
       </main>
     </>

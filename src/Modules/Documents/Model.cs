@@ -3,12 +3,19 @@ using TeamBeats.Persistence;
 
 namespace TeamBeats.Modules.Documents;
 
-/// <summary>Where a library lives (FR-001): the whole tenant, one org unit, or a spec 009 site.</summary>
+/// <summary>
+/// Where a library lives (FR-001): the whole tenant, one org unit, or a spec 009 site. A space library (spec 029) is
+/// created only by Spaces through <see cref="Contracts.ISpaceLibraries"/>, never through the library form.
+/// </summary>
 public static class LibraryScopes
 {
     public const string Tenant = "tenant";
     public const string OrgUnit = "org_unit";
     public const string Site = "site";
+    public const string Space = "space";
+
+    /// <summary>The resource type of a space in authorization (spec 029), the container of a space library.</summary>
+    public const string SpaceResource = "space";
 
     public static readonly IReadOnlyList<string> All = [Tenant, OrgUnit, Site];
 }

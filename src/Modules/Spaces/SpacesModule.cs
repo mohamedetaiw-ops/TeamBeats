@@ -26,6 +26,7 @@ public static class SpacesModule
         services.AddScoped<SpaceSettings>();
         services.AddScoped<SpaceTasks>();
         services.AddScoped<SpaceMilestones>();
+        services.AddScoped<SpaceCalendar>();
         services.AddScoped<IResourceDescriptorProvider, SpaceDescriptorProvider>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpacesSearchSource>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpaceTaskSearchSource>();
@@ -59,7 +60,8 @@ public static class SpacesModule
             return Results.Created($"/api/v1/spaces/{view.Id}", view);
         });
 
-        root.MapGet("/{id:guid}", async (Guid id, SpacesService spaces, CancellationToken ct) => Results.Ok(await spaces.GetAsync(id, ct)));
+        // Opening a space may give it its library and discussion (FR-006), so the read commits.
+        root.MapGet("/{id:guid}", async (Guid id, SpacesService spaces, IDbSession session, CancellationToken ct) => await CommitAsync(session, await spaces.GetAsync(id, ct), ct));
 
         root.MapPut("/{id:guid}", async (Guid id, SpaceRequest request, SpacesService spaces, IDbSession session, CancellationToken ct) =>
         {
@@ -166,6 +168,26 @@ public static class SpacesModule
 
         space.MapGet("/overview", async (Guid id, SpaceMilestones milestones, CancellationToken ct) => Results.Ok(await milestones.OverviewAsync(id, ct)));
 
+        // The team calendar (US6, FR-009): events, milestones, due dates and approved leave; free and busy through spec 018.
+        space.MapGet("/calendar", async (Guid id, DateOnly? from, DateOnly? to, SpaceCalendar calendar, CancellationToken ct) =>
+            Results.Ok(await calendar.GetAsync(id, from, to, ct)));
+        space.MapGet("/calendar/availability", async (Guid id, DateOnly? date, SpaceCalendar calendar, CancellationToken ct) =>
+            Results.Ok(await calendar.AvailabilityAsync(id, date, ct)));
+        space.MapPost("/events", async (Guid id, SpaceEventRequest request, SpaceCalendar calendar, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await calendar.CreateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/spaces/{id}/events/{view.Id}", view);
+        });
+        space.MapPut("/events/{eventId:guid}", async (Guid id, Guid eventId, SpaceEventRequest request, SpaceCalendar calendar, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await calendar.UpdateAsync(id, eventId, request, ct), ct));
+        space.MapDelete("/events/{eventId:guid}", async (Guid id, Guid eventId, SpaceCalendar calendar, IDbSession session, CancellationToken ct) =>
+        {
+            await calendar.DeleteAsync(id, eventId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
         space.MapPost("/status", async (Guid id, StatusRequest request, SpaceMilestones milestones, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await milestones.SetStatusAsync(id, request, ct), ct));
 
@@ -243,5 +265,11 @@ public static class SpacesModule
 
         space.MapPost("/tasks/{taskId:guid}/comments", async (Guid id, Guid taskId, CommentRequest request, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await tasks.CommentAsync(id, taskId, request, ct), ct));
+
+        space.MapPost("/tasks/{taskId:guid}/files", async (Guid id, Guid taskId, TaskFileRequest request, SpaceTasks tasks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await tasks.LinkFileAsync(id, taskId, request, ct), ct));
+
+        space.MapDelete("/tasks/{taskId:guid}/files/{documentId:guid}", async (Guid id, Guid taskId, Guid documentId, SpaceTasks tasks, IDbSession session,
+            CancellationToken ct) => await CommitAsync(session, await tasks.UnlinkFileAsync(id, taskId, documentId, ct), ct));
     }
 }

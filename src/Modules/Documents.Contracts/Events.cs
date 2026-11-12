@@ -58,3 +58,20 @@ public interface IDocumentReferences
     /// <summary>The version in force when the caller may read the document and it has passed the malware scan; otherwise null.</summary>
     Task<DocumentReference?> ReadableAsync(Guid documentId, CancellationToken ct = default);
 }
+
+/// <summary>
+/// The document library of a project or team space (spec 029 FR-006). The space is the library's audience: the space
+/// roles assigned on the space apply to the library, so owners manage it, members add files and viewers read, and
+/// nobody else reaches it. Spaces calls this after it has decided the caller may create or change the space.
+/// </summary>
+public interface ISpaceLibraries
+{
+    /// <summary>Creates the space's library and returns its ID, or null when document libraries are not in the plan.</summary>
+    Task<Guid?> CreateAsync(Guid spaceId, string name, string classification, CancellationToken ct = default);
+
+    /// <summary>Follows the space's name and classification.</summary>
+    Task UpdateAsync(Guid libraryId, string name, string classification, CancellationToken ct = default);
+
+    /// <summary>An archived space's library stays readable and takes no changes (FR-013).</summary>
+    Task SetArchivedAsync(Guid libraryId, bool archived, CancellationToken ct = default);
+}

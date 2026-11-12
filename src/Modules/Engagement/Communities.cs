@@ -62,7 +62,8 @@ public sealed record CommunityView(
     int MemberCount,
     IReadOnlyList<ChannelView> Channels,
     CommunityRights Rights,
-    int Version);
+    int Version,
+    Guid? SpaceId = null);
 
 /// <summary>
 /// What the viewer may do across communities: create one, and open the moderation queue and keyword filter. Surveys and
@@ -73,20 +74,28 @@ public sealed record DirectoryRights(bool CanCreate, bool CanModerate, bool CanM
 public sealed record MemberView(Guid UserId, string DisplayName, string Role, string Status, string Source);
 
 internal sealed record CommunityRow(Guid Id, Dictionary<string, string> Names, Dictionary<string, string> Descriptions, string Kind, Guid? OrgUnitId, string Status,
-    DateTimeOffset CreatedAt, int Version)
+    DateTimeOffset CreatedAt, int Version, Guid? SpaceId = null, string Classification = "internal")
 {
-    public const string Columns = "id, names::text, descriptions::text, kind, org_unit_id, status, created_at, row_version";
+    public const string Columns = "id, names::text, descriptions::text, kind, org_unit_id, status, created_at, row_version, space_id, classification";
+
+    /// <summary>The resource type of a space in authorization (spec 029), whose roles decide a space community's members.</summary>
+    public const string SpaceResource = "space";
 
     public static CommunityRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), EngagementJson.Read<Dictionary<string, string>>(r.GetString(1)),
         EngagementJson.Read<Dictionary<string, string>>(r.GetString(2)), r.GetString(3), r.Get<Guid?>("org_unit_id"), r.GetString(5),
-        r.GetFieldValue<DateTimeOffset>(6), r.GetInt32(7));
+        r.GetFieldValue<DateTimeOffset>(6), r.GetInt32(7), r.Get<Guid?>("space_id"), r.GetString(9));
 
     public AuthzTarget Scope => OrgUnitId is { } unit ? AuthzTarget.OrgUnit(unit) : AuthzTarget.Tenant;
+
+    /// <summary>A space community is restricted and contained by its space, so the space roles decide who is in it.</summary>
+    public AuthzTarget? SpaceTarget => SpaceId is { } space
+        ? AuthzTarget.Resource(new ResourceDescriptor("community", Id, null, ResourceVisibility.Restricted, Classification, new ResourceRef(SpaceResource, space)))
+        : null;
 }
 
 /// <summary>The viewer's standing in one community.</summary>
 internal sealed record Standing(CommunityRow Community, bool Member, bool Pending, string? Role, bool Moderates, bool Manages, bool Participates, bool Stored,
-    DateTimeOffset? MutedUntil = null)
+    DateTimeOffset? MutedUntil = null, bool ReadOnly = false)
 {
     /// <summary>A muted member reads but neither posts nor comments until the mute ends (FR-021).</summary>
     public bool Muted => MutedUntil is not null;
@@ -100,7 +109,8 @@ internal sealed record Standing(CommunityRow Community, bool Member, bool Pendin
     /// <summary>Whether the community is listed for the viewer at all (FR-001: closed communities are invisible).</summary>
     public bool Sees => Reads || (Participates && Community.Kind == CommunityKinds.Approval) || Pending;
 
-    public bool Posts => Community.Status == "active" && Participates && !Muted && (Member || (Community.Kind == CommunityKinds.Open && Moderates));
+    /// <remarks>A viewer of a space reads its discussion but does not post (<see cref="ReadOnly"/>).</remarks>
+    public bool Posts => Community.Status == "active" && Participates && !Muted && !ReadOnly && (Member || (Community.Kind == CommunityKinds.Open && Moderates));
 }
 
 /// <summary>
@@ -149,6 +159,10 @@ public sealed class Communities(
 
     internal async Task<Standing> StandingAsync(CommunityRow c, CancellationToken ct)
     {
+        if (c.SpaceTarget is { } space)
+        {
+            return await SpaceStandingAsync(c, space, ct);
+        }
         var user = context.RequireUser();
         var stored = await session.QuerySingleOrDefaultAsync(
             "select role, status from engagement.community_member where community_id = @id and user_id = @user", new { id = c.Id, user },
@@ -162,6 +176,24 @@ public sealed class Communities(
             new { id = c.Id, user, now = clock.UtcNow }, r => r.GetFieldValue<DateTimeOffset>(0), ct);
         DateTimeOffset? mutedUntil = mutes.Count > 0 ? mutes[0] : null;
         return new Standing(c, member, stored.Status == "pending", role, moderates, manages, participates, stored.Status == "active", mutedUntil);
+    }
+
+    /// <summary>
+    /// The viewer's standing in a space's community (spec 029 FR-006): the space's readers are its members, its
+    /// contributors post and its owners moderate and manage it. Engagement moderators in the tenant moderate it too.
+    /// </summary>
+    private async Task<Standing> SpaceStandingAsync(CommunityRow c, AuthzTarget space, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var participates = (await authz.CheckAsync(Permissions.EngagementParticipate, AuthzTarget.Tenant, ct)).Allowed;
+        var reads = (await authz.CheckAsync(Permissions.SpacesView, space, ct)).Allowed;
+        var contributes = reads && (await authz.CheckAsync(Permissions.SpacesContribute, space, ct)).Allowed;
+        var owns = reads && (await authz.CheckAsync(Permissions.SpacesOwn, space, ct)).Allowed;
+        var moderates = owns || (reads && (await authz.CheckAsync(Permissions.EngagementModerate, AuthzTarget.Tenant, ct)).Allowed);
+        var mutes = await session.QueryAsync("select until from engagement.mute where community_id = @id and user_id = @user and until > @now",
+            new { id = c.Id, user, now = clock.UtcNow }, r => r.GetFieldValue<DateTimeOffset>(0), ct);
+        return new Standing(c, reads, false, owns ? MemberRoles.Owner : reads ? MemberRoles.Member : null, moderates, owns, participates, false,
+            mutes.Count > 0 ? mutes[0] : null, ReadOnly: !contributes);
     }
 
     /// <summary>A community the viewer can see; anything else is not found, so closed communities stay invisible.</summary>
@@ -186,6 +218,10 @@ public sealed class Communities(
     /// </summary>
     internal async Task<bool> CanReadAsync(CommunityRow c, Guid userId, CancellationToken ct)
     {
+        if (c.SpaceTarget is { } space)
+        {
+            return await grants.UserHoldsAsync(userId, Permissions.SpacesView, space, ct);
+        }
         var stored = await session.ScalarAsync<string>(
             "select role from engagement.community_member where community_id = @id and user_id = @userId and status = 'active'", new { id = c.Id, userId }, ct);
         if (stored is not null || (c.OrgUnitId is { } unit && await InUnitAsync(userId, unit, ct)))
@@ -209,8 +245,16 @@ public sealed class Communities(
     /// </summary>
     private async Task<bool> AllowsAnonymousAsync(CancellationToken ct) => (await authz.CheckAsync(Permissions.EngagementManage, AuthzTarget.Tenant, ct)).Allowed;
 
+    /// <summary>The people of a space's community: the space's readers, from the space roles.</summary>
+    private Task<IReadOnlyList<Guid>> SpaceMembersAsync(CommunityRow c, CancellationToken ct) =>
+        grants.ResourceHoldersAsync(Permissions.SpacesView, CommunityRow.SpaceResource, c.SpaceId!.Value, ct);
+
     private async Task<int> MemberCountAsync(CommunityRow c, CancellationToken ct)
     {
+        if (c.SpaceId is not null)
+        {
+            return (await SpaceMembersAsync(c, ct)).Count;
+        }
         var stored = (await session.QueryAsync("select user_id from engagement.community_member where community_id = @id and status = 'active'", new { id = c.Id },
             r => r.GetGuid(0), ct)).ToHashSet();
         if (c.OrgUnitId is { } unit)
@@ -232,7 +276,7 @@ public sealed class Communities(
             rights = rights with { CanAddSpeakUp = true, CanAllowAnonymous = await AllowsAnonymousAsync(ct) };
         }
         return new CommunityView(c.Id, c.Names, c.Descriptions, c.Kind, c.OrgUnitId, c.Status, await MemberCountAsync(c, ct),
-            s.Reads || s.Manages ? await ChannelsAsync(c.Id, ct) : [], rights, c.Version);
+            s.Reads || s.Manages ? await ChannelsAsync(c.Id, ct) : [], rights, c.Version, c.SpaceId);
     }
 
     public static string ETag(int version) => $"\"v{version}\"";
@@ -243,8 +287,9 @@ public sealed class Communities(
     public async Task<IReadOnlyList<CommunityView>> ListAsync(string? q, CancellationToken ct)
     {
         await RequireAsync(ct);
-        var rows = await session.QueryAsync($"select {CommunityRow.Columns} from engagement.community where status = 'active' order by created_at, id", null,
-            CommunityRow.Read, ct);
+        // A space's discussion is opened from the space, not listed here (spec 029 FR-006).
+        var rows = await session.QueryAsync($"select {CommunityRow.Columns} from engagement.community where status = 'active' and space_id is null order by created_at, id",
+            null, CommunityRow.Read, ct);
         var text = string.IsNullOrWhiteSpace(q) ? null : q.Trim();
         var views = new List<CommunityView>();
         foreach (var c in rows)
@@ -348,7 +393,7 @@ public sealed class Communities(
 
     public async Task<CommunityView> UpdateAsync(Guid id, CommunityRequest request, string? ifMatch, CancellationToken ct)
     {
-        var s = await VisibleAsync(id, ct);
+        var s = NotInSpace(await VisibleAsync(id, ct));
         if (!s.Manages)
         {
             throw AppException.Denied();
@@ -381,7 +426,7 @@ public sealed class Communities(
     /// <summary>Archives a community: it stays readable by its members and takes no new posts (edge case for deleted units too).</summary>
     public async Task<CommunityView> ArchiveAsync(Guid id, CancellationToken ct)
     {
-        var s = await VisibleAsync(id, ct);
+        var s = NotInSpace(await VisibleAsync(id, ct));
         if (!s.Manages)
         {
             throw AppException.Denied();
@@ -407,6 +452,9 @@ public sealed class Communities(
         }
     }
 
+    /// <summary>A space's community follows its space: its name, members and archiving are changed in the space (spec 029 FR-006).</summary>
+    private static Standing NotInSpace(Standing s) => s.Community.SpaceId is null ? s : throw AppException.Conflict("conflict.engagement.space_community");
+
     // ---- Membership ----
 
     /// <summary>
@@ -415,7 +463,7 @@ public sealed class Communities(
     /// </summary>
     public async Task<CommunityView> JoinAsync(Guid id, CancellationToken ct)
     {
-        var s = await VisibleAsync(id, ct);
+        var s = NotInSpace(await VisibleAsync(id, ct));
         var c = s.Community;
         if (!s.Participates)
         {
@@ -442,7 +490,7 @@ public sealed class Communities(
 
     public async Task<CommunityView> LeaveAsync(Guid id, CancellationToken ct)
     {
-        var s = await VisibleAsync(id, ct);
+        var s = NotInSpace(await VisibleAsync(id, ct));
         var user = context.RequireUser();
         if (s.Role == MemberRoles.Owner && await session.ScalarAsync<long>(
                 "select count(*) from engagement.community_member where community_id = @id and role = 'owner' and status = 'active'", new { id }, ct) <= 1)
@@ -463,6 +511,11 @@ public sealed class Communities(
             r => (User: r.GetGuid(0), Role: r.GetString(1), Status: r.GetString(2)), ct);
         // Pending requests are for the people who decide them.
         var rows = stored.Where(m => m.Status == "active" || s.Manages).Select(m => (m.User, m.Role, m.Status, Source: "community")).ToList();
+        if (c.SpaceId is not null)
+        {
+            var owners = (await grants.ResourceHoldersAsync(Permissions.SpacesOwn, CommunityRow.SpaceResource, c.SpaceId.Value, ct)).ToHashSet();
+            rows.AddRange((await SpaceMembersAsync(c, ct)).Select(u => (u, owners.Contains(u) ? MemberRoles.Owner : MemberRoles.Member, "active", "space")));
+        }
         if (c.OrgUnitId is { } unit)
         {
             var known = rows.Select(r => r.User).ToHashSet();
@@ -479,7 +532,7 @@ public sealed class Communities(
     /// <summary>Owners add people, accept requests and make members moderators or owners.</summary>
     public async Task<IReadOnlyList<MemberView>> SetMemberAsync(Guid id, MemberRequest request, CancellationToken ct)
     {
-        var s = await VisibleAsync(id, ct);
+        var s = NotInSpace(await VisibleAsync(id, ct));
         if (!s.Manages)
         {
             throw AppException.Denied();
@@ -517,7 +570,7 @@ public sealed class Communities(
     /// <summary>Owners remove a member or turn down a request. Department members leave with their unit, not here.</summary>
     public async Task<IReadOnlyList<MemberView>> RemoveMemberAsync(Guid id, Guid userId, CancellationToken ct)
     {
-        var s = await VisibleAsync(id, ct);
+        var s = NotInSpace(await VisibleAsync(id, ct));
         if (!s.Manages)
         {
             throw AppException.Denied();

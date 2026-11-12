@@ -47,7 +47,8 @@ public static class Evaluator
             {
                 ScopeType.Tenant => true,
                 ScopeType.OrgUnit or ScopeType.OrgSubtree => unit is { } u && grant.CoveredUnits.Contains(u),
-                ScopeType.Resource => descriptor is { } d && grant.ScopeId == d.ResourceId && grant.ScopeResourceType == d.ResourceType,
+                ScopeType.Resource => descriptor is { } d && ((grant.ScopeId == d.ResourceId && grant.ScopeResourceType == d.ResourceType)
+                    || (d.Container is { } c && grant.ScopeId == c.ResourceId && grant.ScopeResourceType == c.ResourceType)),
                 _ => false,
             };
             if (covers)

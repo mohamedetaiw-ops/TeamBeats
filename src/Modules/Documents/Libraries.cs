@@ -600,6 +600,10 @@ public sealed class Libraries(
     public async Task<FolderView> BreakFolderAsync(Guid folderId, BreakRequest request, CancellationToken ct)
     {
         var (library, folder) = await FolderForManagerAsync(folderId, ct);
+        if (library.InSpace)
+        {
+            throw AppException.Conflict("conflict.documents.space_permissions");
+        }
         if (!folder.Inherits)
         {
             throw AppException.Conflict("conflict.documents.already_broken");
@@ -633,6 +637,10 @@ public sealed class Libraries(
     public async Task<DocRights> BreakDocumentAsync(Guid documentId, CancellationToken ct)
     {
         var (library, doc) = await DocumentForManagerAsync(documentId, ct);
+        if (library.InSpace)
+        {
+            throw AppException.Conflict("conflict.documents.space_permissions");
+        }
         if (!doc.Inherits)
         {
             throw AppException.Conflict("conflict.documents.already_broken");

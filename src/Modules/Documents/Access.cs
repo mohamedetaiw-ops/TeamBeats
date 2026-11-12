@@ -23,6 +23,11 @@ internal sealed record LibraryRow(
 
     /// <summary>Where library-wide decisions (create, manage) are taken: the owning unit, or the tenant.</summary>
     public AuthzTarget ScopeTarget => OrgUnitId is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant;
+
+    /// <summary>A space library: its permissions follow the space (spec 029 FR-006) and cannot be changed in Documents.</summary>
+    public bool InSpace => Scope == LibraryScopes.Space;
+
+    public bool Active => Status == "active";
 }
 
 /// <summary>A node whose permissions apply to the documents under it: the library, or a folder or document after a break.</summary>
@@ -44,9 +49,14 @@ public sealed record DocRights(bool View, bool Contribute, bool Manage)
 /// </summary>
 internal sealed class DocumentAccess(IDbSession session, IAuthorizationService authz)
 {
+    /// <summary>
+    /// A space library is restricted and contained by its space, so the space roles decide who reads, adds files and
+    /// manages; tenant libraries are read by every member.
+    /// </summary>
     public static ResourceDescriptor Describe(LibraryRow library, Securable s) =>
         new(s.Type, s.Id, library.OrgUnitId,
-            s.Type == Securables.Library && library.OrgUnitId is null ? ResourceVisibility.Tenant : ResourceVisibility.Restricted, s.Classification);
+            s.Type == Securables.Library && library.OrgUnitId is null && !library.InSpace ? ResourceVisibility.Tenant : ResourceVisibility.Restricted, s.Classification,
+            library.InSpace && library.ScopeId is { } space ? new ResourceRef(LibraryScopes.SpaceResource, space) : null);
 
     public Task<LibraryRow?> LibraryAsync(Guid id, CancellationToken ct, bool forUpdate = false) =>
         session.QuerySingleOrDefaultAsync($"select {LibraryRow.Columns} from documents.library where id = @id" + (forUpdate ? " for update" : ""), new { id }, LibraryRow.Read, ct);
@@ -74,10 +84,11 @@ internal sealed class DocumentAccess(IDbSession session, IAuthorizationService a
         var manage = await Allowed(Permissions.DocManage);
         var contribute = await Allowed(Permissions.DocContribute);
         var view = await Allowed(Permissions.DocView);
+        // An archived library (the library of an archived space) is read-only (spec 029 FR-013).
         return securables.ToDictionary(s => s.Id, s =>
         {
-            var m = manage.Contains(s.Id);
-            var c = m || contribute.Contains(s.Id);
+            var m = library.Active && manage.Contains(s.Id);
+            var c = m || (library.Active && contribute.Contains(s.Id));
             return new DocRights(c || view.Contains(s.Id), c, m);
         });
     }
@@ -117,7 +128,8 @@ internal abstract class DocumentDescriptorProvider(IDbSession session, DocumentA
     public async Task<ResourceDescriptor?> DescribeAsync(Guid resourceId, CancellationToken ct)
     {
         var row = await session.QuerySingleOrDefaultAsync(Lookup, new { id = resourceId }, r => (Library: r.GetGuid(0), Classification: r.Get<string>("classification")), ct);
-        if (row.Library == Guid.Empty || await access.LibraryAsync(row.Library, ct) is not { } library)
+        // A space library's audience is the space; its permissions are not edited here (spec 029 FR-006).
+        if (row.Library == Guid.Empty || await access.LibraryAsync(row.Library, ct) is not { } library || library.InSpace)
         {
             return null;
         }
