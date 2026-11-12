@@ -106,5 +106,9 @@ public sealed class LearningPerformanceTests(TenantWorld world, ITestOutputHelpe
         Assert.NotEmpty(page.GetProperty("lessons").EnumerateArray());
         output.WriteLine($"player p95 {P95(timings):F1} ms");
         Assert.True(P95(timings) < 2000, $"Player p95 {P95(timings):F1} ms is over 2 seconds");
+
+        // The 20,000 assignment events are dispatched here, so tests that drain the shared outbox a few batches at a
+        // time are not left behind them.
+        await world.DispatchTenantAsync(t.Id, 400);
     }
 }
