@@ -48,7 +48,9 @@ public sealed record CourseDetail(
     bool DraftChanged,
     int? PublishedVersion,
     IReadOnlyList<ChangedSource> ChangedSources,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    string? ExternalId = null,
+    string? LaunchUrl = null);
 
 public sealed record CourseSummary(
     Guid Id,
@@ -59,9 +61,11 @@ public sealed record CourseSummary(
     int? PublishedVersion,
     bool DraftChanged,
     int Lessons,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    bool External = false);
 
-public sealed record LearningRights(bool Take, bool Manage, bool Report);
+/// <summary>What the viewer may do in learning; <paramref name="Team"/>: they have direct reports to follow.</summary>
+public sealed record LearningRights(bool Take, bool Manage, bool Report, bool Team = false);
 
 /// <summary>
 /// The course builder (spec 028 US1, FR-001 to FR-003). Learning administrators with <c>learning.manage</c> on a
@@ -84,7 +88,8 @@ public sealed class Courses(
     IOutbox outbox,
     INotificationSender notifications,
     IAuditWriter audit,
-    IClock clock)
+    IClock clock,
+    People.Contracts.IReportingLine reportingLine)
 {
     public const int MaxCategory = 60;
     public const string WithdrawnTemplate = "learning.course.withdrawn";
@@ -93,7 +98,7 @@ public sealed class Courses(
     public static string CoursePath(Guid id) => $"/learning/courses/{id}";
 
     internal sealed record CourseRow(Guid Id, Guid? OrgUnitId, string? Category, string Status, string Draft, int DraftRevision, int? PublishedRevision,
-        int? PublishedVersion, int? RetrainingVersion, string Audience, bool OpenEnrolment, DateTimeOffset UpdatedAt)
+        int? PublishedVersion, int? RetrainingVersion, string Audience, bool OpenEnrolment, DateTimeOffset UpdatedAt, string? ExternalId = null, string? LaunchUrl = null)
     {
         public CourseDefinition DraftDefinition => LearningJson.Read<CourseDefinition>(Draft);
 
@@ -104,11 +109,11 @@ public sealed class Courses(
         public AuthzTarget Scope => OrgUnitId is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant;
     }
 
-    internal const string Columns = "id, org_unit_id, category, status, draft::text, draft_revision, published_revision, published_version, retraining_version, audience::text, open_enrolment, updated_at";
+    internal const string Columns = "id, org_unit_id, category, status, draft::text, draft_revision, published_revision, published_version, retraining_version, audience::text, open_enrolment, updated_at, external_id, launch_url";
 
     internal static CourseRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.Get<Guid?>("org_unit_id"), r.Get<string>("category"), r.GetString(3), r.GetString(4),
         r.GetInt32(5), r.Get<int?>("published_revision"), r.Get<int?>("published_version"), r.Get<int?>("retraining_version"), r.GetString(9), r.GetBoolean(10),
-        r.GetFieldValue<DateTimeOffset>(11));
+        r.GetFieldValue<DateTimeOffset>(11), r.Get<string>("external_id"), r.Get<string>("launch_url"));
 
     internal Task<CourseRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
         session.QuerySingleOrDefaultAsync($"select {Columns} from learning.course where id = @id{(forUpdate ? " for update" : "")}", new { id }, Read, ct);
@@ -129,7 +134,7 @@ public sealed class Courses(
             return new LearningRights(false, false, false);
         }
         return new LearningRights(await AllowedAsync(Permissions.LearningTake, AuthzTarget.Tenant, ct), await authz.HoldsAnywhereAsync(Permissions.LearningManage, ct),
-            await authz.HoldsAnywhereAsync(Permissions.LearningReport, ct));
+            await authz.HoldsAnywhereAsync(Permissions.LearningReport, ct), (await reportingLine.DirectReportsAsync(context.RequireUser(), ct)).Count > 0);
     }
 
     private async Task RequireBuilderAsync(CancellationToken ct)
@@ -143,7 +148,7 @@ public sealed class Courses(
     }
 
     /// <summary>The row when the caller may manage the course; 404 otherwise, so a course outside their scope is not revealed.</summary>
-    private async Task<CourseRow> ManagedAsync(Guid id, bool forUpdate, CancellationToken ct)
+    internal async Task<CourseRow> ManagedAsync(Guid id, bool forUpdate, CancellationToken ct)
     {
         await RequireBuilderAsync(ct);
         var row = await RowAsync(id, forUpdate, ct) ?? throw AppException.NotFound();
@@ -164,7 +169,8 @@ public sealed class Courses(
             if (await ManagesAsync(row, ct))
             {
                 var draft = row.DraftDefinition;
-                result.Add(new CourseSummary(row.Id, draft.Titles, row.Category, row.Status, row.OrgUnitId, row.PublishedVersion, row.DraftChanged, draft.Lessons.Count, row.UpdatedAt));
+                result.Add(new CourseSummary(row.Id, draft.Titles, row.Category, row.Status, row.OrgUnitId, row.PublishedVersion, row.DraftChanged, draft.Lessons.Count, row.UpdatedAt,
+                    row.ExternalId is not null));
             }
         }
         return result;
@@ -176,7 +182,7 @@ public sealed class Courses(
     {
         var names = row.OrgUnitId is { } unit ? (await hierarchy.GetNamesAsync([unit], ct)).GetValueOrDefault(unit) : null;
         return new CourseDetail(row.Id, row.OrgUnitId, names, row.Category, row.Status, row.AudienceValue, row.OpenEnrolment, row.DraftDefinition, row.DraftRevision,
-            row.DraftChanged, row.PublishedVersion, await ChangedSourcesAsync(row, ct), row.UpdatedAt);
+            row.DraftChanged, row.PublishedVersion, await ChangedSourcesAsync(row, ct), row.UpdatedAt, row.ExternalId, row.LaunchUrl);
     }
 
     /// <summary>Lessons of the published version whose page or file has a newer version than the one published (US1 scenario 1).</summary>
@@ -286,8 +292,16 @@ public sealed class Courses(
             throw AppException.Conflict("conflict.learning.course_revision");
         }
         var errors = new ValidationErrors();
-        var (definition, audience, category) = await CleanAsync(request, errors, ct);
+        // A course from the LMS keeps what the LMS says it teaches; only who sees it, its category and unit change here.
+        var external = row.ExternalId is not null;
+        var current = row.DraftDefinition;
+        var (definition, audience, category) = await CleanAsync(
+            external ? request with { Definition = new CourseDefinitionInput(current.Titles, current.Summaries, current.Minutes, []) } : request, errors, ct);
         errors.ThrowIfAny();
+        if (external)
+        {
+            definition = current;
+        }
         if (request.OrgUnitId != row.OrgUnitId)
         {
             await DemandScopeAsync(request.OrgUnitId, ct);
@@ -295,7 +309,8 @@ public sealed class Courses(
         await session.ExecAsync(
             """
             update learning.course set org_unit_id = @unit, category = @category, draft = @draft, draft_revision = draft_revision + 1, audience = @audience,
-              open_enrolment = @open, updated_at = @now
+              open_enrolment = @open, updated_at = @now,
+              published_revision = case when external_id is not null then draft_revision + 1 else published_revision end
             where id = @id
             """, new
             {
@@ -320,6 +335,11 @@ public sealed class Courses(
         if (request.Revision != row.DraftRevision)
         {
             throw AppException.Conflict("conflict.learning.course_revision");
+        }
+        if (row.ExternalId is not null)
+        {
+            // The LMS publishes its own courses; the catalogue sync brings each change.
+            throw AppException.Conflict("conflict.learning.external_course");
         }
         var definition = row.DraftDefinition;
         var errors = new ValidationErrors();
@@ -377,8 +397,12 @@ public sealed class Courses(
         }
         var now = clock.UtcNow;
         await session.ExecAsync("update learning.course set status = 'retired', updated_at = @now where id = @id", new { id, now }, ct);
-        var learners = await session.QueryAsync("update learning.assignment set status = 'withdrawn' where course_id = @id and status = 'open' returning learner_id",
-            new { id }, r => r.GetGuid(0), ct);
+        var learners = await session.QueryAsync("update learning.assignment set status = 'withdrawn', ended_at = @now where course_id = @id and status = 'open' returning learner_id",
+            new { id, now }, r => r.GetGuid(0), ct);
+        // Its assignment rules end with it (spec 028 US2): nobody is given a retired course again.
+        await session.ExecAsync("delete from learning.rule_target t using learning.assignment_rule r where r.id = t.rule_id and r.course_id = @id", new { id }, ct);
+        await session.ExecAsync("update learning.assignment_rule set status = 'ended', ended_by = @user, ended_at = @now where course_id = @id and status = 'active'",
+            new { id, user = context.ActorId, now }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.LearningCourseRetired, "course", id.ToString(), TargetOrgUnitId: row.OrgUnitId,
             Changes: new { withdrawn = learners.Count }), ct);
         await outbox.EnqueueAsync(new SearchItemChanged(LearningSearchSource.Name, id), ct);

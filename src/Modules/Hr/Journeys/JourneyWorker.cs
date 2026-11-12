@@ -85,6 +85,7 @@ public sealed class JourneyWorker(IServiceScopeFactory scopes, ILogger<JourneyWo
             var journeys = sp.GetRequiredService<JourneyService>();
             opened = await journeys.OpenDueAsync(null, ct);
             await journeys.SettleAttestationsAsync(null, ct);
+            await journeys.SettleTrainingAsync(null, ct);
             await journeys.EscalateAccessAsync(ct);
             await sp.GetRequiredService<Preboarding>().SendDueAsync(ct);
         }

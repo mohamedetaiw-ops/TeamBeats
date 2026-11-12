@@ -765,3 +765,70 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | How a video plays | It opens in the document library, which already previews and scans it; the player does not embed media |
 | Where the learning pages appear in the menu | Tenants add `/learning` to their navigation; the menu shows it with the book icon |
 | Who sees a course in search | The same people the catalogue shows it to, plus anyone who already has it |
+
+## Assignment rules, reminders, overdue escalation and recurrence (spec 028, slice 3: T006 to T008; US2, US4, FR-005 to FR-008, FR-011, FR-012, FR-017)
+
+### Built
+- `AssignmentRules`: a rule gives a published course to an audience of units, named people, or everyone within the unit the administrator manages (`learning.manage` on that unit), with due days, an optional recurrence in months and a grace period. At most 50 rules per course. Creating and ending a rule are audited (`learning.assignment_created`, `learning.assignment_withdrawn`).
+- Each person a rule covers gets their own due date, counted from the day they are covered. A person covered by several rules has one open assignment with the earliest date (FR-017). Leaving the unit or being disabled withdraws open assignments that only rules gave; completions stay in history.
+- Membership changes (`OrganizationMembershipChanged`, `TenantMembershipDisabled`) re-apply the rules for that person at once. A maintenance job (`LearningMaintenanceWorker`) re-evaluates every active rule hourly, sends reminders, marks overdue assignments, notifies their manager and expires recurring completions into a new assignment.
+- A retraining version (`CoursePublished` with retraining) gives the course again to everyone whose last completion is of an older version.
+- `CourseOverdue` is published once per assignment. Completion sets the assignment's and the certificate's expiry from the shortest recurrence among the rules covering the learner.
+- Builder: an Assignment rules tab on the course builder lists rules with who they cover and creates or ends them.
+- Training other modules ask for, through `ILearningObligations` (Learning.Contracts): one obligation per person, course and source key, done when the course is completed, cancelled with its source. A cancelled source withdraws only the assignments nothing else asks for.
+- Onboarding (022): a `training` journey step names 1 to 10 published courses. When it opens, the joiner is given them due with the step; `CourseCompleted` (and the journey worker) close the step once every course is completed. A joiner who already completed them skips the step; a cancelled journey cancels what is still owed.
+- Policies (025): `PUT /api/v1/policies/{id}/training` links a published course (compliance officers with `policy.manage` and `learning.assign_linked`, audited as `policy.training_linked`). A material version in force gives the course to everyone the policy applies to; a completion from before that version does not count. With "attest only after the course", attesting is refused until it is completed, and the attest panel links to the course.
+- Pages: an Assignment rules tab on the course builder; a Training step type and its courses in the journey template editor, with an Open My learning link on the journey; Linked training on the policy page; the training notice on the attest panel.
+- Tests: `LearningAssignmentTests` (5 tests: newcomers and leavers, duplicates and scope, reminders and weekly escalation, recurrence and retraining, entitlement and retirement), `LearningObligationTests` (2 tests: the onboarding training step, and policy linked training with the attestation wait), `learning.spec.ts` (a rule from the builder).
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Which package has rules | `learning.mandatory`; without it the rule endpoints are refused and the job does nothing |
+| What scope a rule has | Its own unit; the audience and the named people must sit inside it. A rule with no unit needs `learning.manage` for the whole tenant |
+| A due date on a weekend or holiday | Moved to the next working day on the learner's calendar (020) |
+| Notification category | Reminders and overdue notices use `attestation_due`; a new assignment uses `request_update` |
+| Due date for retraining when no rule covers the learner | 30 days |
+| Which recurrence applies when several rules cover a learner | The shortest |
+| Pause during long leave (edge case) | Not built yet; assignments keep running during leave |
+| How group and role changes reach rules | The hourly re-evaluation; unit membership changes apply at once |
+| Overdue restrictions (open question) | None, only escalation |
+| Package for training from onboarding and policies | `learning.mandatory`; without it a training step is skipped and a policy link is refused |
+| Due date of a training step | The step's due time, or 5 working days when the step has none, like an attestation step |
+| Due date of policy linked training | 30 days after the version came into force |
+| Which policy versions assign training | Material ones, the first version included |
+| How a course is chosen for a step or a policy | Paste its link or ID, as for lesson sources |
+
+## Learning reports, team view and evidence export (spec 028, slice 3: T009; US5, FR-013, FR-014)
+
+### Built
+- `LearningReports`: for a course, people with an assignment counted as assigned, completed, overdue (past the due date and grace) and expired, per unit in the viewer's `learning.report` scope; a parent unit counts the units below it. Drill down to people with source, due date, completion time, version, best score and certificate.
+- Evidence export: `GET /api/v1/learning/reports/courses/{id}/evidence[?unit=]`, a UTF-8 CSV (person, status, source, due date, completion time, version, score, certificate ID), audited as `learning.evidence_exported` with the course, the scope and the row count. Cells are protected against spreadsheet formulas.
+- Team view: `GET /api/v1/learning/team` lists the viewer's direct reports and their courses; `POST /api/v1/learning/team/{userId}/assignments` gives a direct report a published course whose audience includes them (source `manager`, audited).
+- Pages: `/learning/reports`, `/learning/reports/{id}`, `/learning/team`, linked from My learning when the viewer has reports or direct reports.
+- Tests: `LearningReportTests` (2 tests: scoped counts, drill down, export and audit, learner and cross-tenant denial; direct reports only and manager assignment), `learning.spec.ts` (report and export).
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| What counts as assigned | Everyone with an assignment of the course that was not withdrawn; completed, overdue and expired are parts of it |
+| Who is a line manager here | The reporting line (010): direct reports only, no role or permission needed, like the leave team view |
+| Which courses a manager can give | Published courses whose audience includes the report; due within a year, 30 days when not given |
+| Export size | Up to 10,000 people in one synchronous CSV |
+| Score in the evidence | The best quiz score of the assignment that completed |
+
+## LMS connector (spec 028, slice 4: T010; US6, FR-015)
+
+### Built
+- An `ILmsConnector` contract in `Integrations.Contracts` and a generic `lms_rest` pack (framework key `integration.connectors`). Settings: the https address on the allowlist and its sign-in (secret manager references), the courses path with where the list is and where each course field is inside an item (ID, title, summary, launch address, language), the assignments path with where each assignment field goes in the body (dotted names make nested objects; only mapped fields are sent), the completions path with `{since}` and where each completion field is (course ID, learner work email, completion time, score), an optional next page link, and an optional idempotency header. Reads run inline through the connector runtime; an assignment is a durable connector job keyed by the TeamBeats assignment, so it is sent once.
+- In Learning, `LmsSync` runs from the maintenance worker and from "Sync now" (`POST /api/v1/learning/manage/lms:sync`, `learning.manage` on the tenant and capability `learning.lms_connector`; status at `GET /api/v1/learning/manage/lms`). Each LMS course becomes a published course with no lessons, an `external_id` and a `launch_url`; a changed title or summary is published as a new version. Open assignments of LMS courses are pushed by the learner's work email. Completions complete the open assignment at the time the LMS gives, store the score as an attempt, mark obligations done and issue a certificate, so My learning, reports, the evidence export, onboarding and policies see them.
+- Learners see an "Open in your LMS" button on an LMS course, or "LMS unavailable" while the LMS does not answer. Builders can change who sees an LMS course, its category, owner and open enrolment; its titles, lessons and publishing stay with the LMS (`conflict.learning.external_course`). The Connections wizard has an LMS group and form.
+
+### Smallest safe defaults
+- The catalogue is read every 6 hours and completions every 15 minutes, with one hour of overlap and 30 days back on the first read. A completion already recorded is not recorded again.
+- A course the LMS no longer lists is left as it is for an administrator to retire, so a short or partial answer never withdraws assignments. A course an administrator retired stays retired when the LMS lists it again.
+- New LMS courses target everyone with open enrolment off; administrators choose who sees them and assign them with rules.
+- Learners are matched by active work email only. A completion for an unknown person or course is skipped. A person without an email has the push marked refused.
+- A launch address must be https on an allowed host; items without one are not imported. Sign-in at the LMS is the LMS's own single sign-on with the tenant's identity provider; TeamBeats only links to it.
+- "Unavailable" means the LMS did not answer the last time the sync called it, or there is no enabled LMS connection. Built courses, the catalogue and My learning keep working.
+- A push that keeps failing after the runtime's retries shows in the connection's run history; it is not retried by Learning.

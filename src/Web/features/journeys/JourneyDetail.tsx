@@ -150,6 +150,11 @@ export function JourneyDetail({ initial }: { initial: Journey }) {
                         {t("openPolicies")}
                       </ButtonLink>
                     ) : null}
+                    {s.status === "open" && s.type === "training" ? (
+                      <ButtonLink size="sm" href="/learning">
+                        {t("openLearning")}
+                      </ButtonLink>
+                    ) : null}
                     {s.myTaskId && s.type === "access_removal" ? <span className="field-hint">{t("useChecklist")}</span> : null}
                     {s.myTaskId && s.type === "exit_interview" ? <span className="field-hint">{t("useForm")}</span> : null}
                     {s.myTaskId && (s.type === "task" || s.type === "preboarding") ? (

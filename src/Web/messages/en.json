@@ -3408,7 +3408,9 @@
       "submit": "Accept",
       "busy": "Saving",
       "failed": "Your attestation could not be saved. Try again.",
-      "given": "You accepted version {number} on {date}."
+      "given": "You accepted version {number} on {date}.",
+      "trainingFirst": "Complete the linked training course first. You can attest once it is done.",
+      "openTraining": "Open the course"
     },
     "history": {
       "title": "Versions",
@@ -3618,6 +3620,22 @@
       "overdue": "Version {number} overdue since {date}",
       "accepted": "Accepted version {number} on {date}",
       "notAsked": "Not asked to accept yet"
+    },
+    "training": {
+      "title": "Linked training",
+      "hint": "Link a published course to this policy. When a material version comes into force, everyone it applies to is given the course, due in 30 days.",
+      "linked": "Linked course.",
+      "waits": "Attesting waits until it is completed.",
+      "doesNotWait": "Attesting does not wait for it.",
+      "none": "No course is linked.",
+      "course": "Course link or ID",
+      "courseHint": "Paste the link of a published course.",
+      "beforeAttestation": "Attest only after completing the course",
+      "save": "Save link",
+      "unlink": "Remove link",
+      "saving": "Saving…",
+      "saved": "Linked training saved.",
+      "failed": "The link could not be saved."
     }
   },
   "ai": {
@@ -5088,7 +5106,8 @@
       "google_workspace": "Google Workspace",
       "hr_rest": "HR system (REST API)",
       "hr_sftp": "HR system (SFTP and CSV)",
-      "microsoft365": "Microsoft 365"
+      "microsoft365": "Microsoft 365",
+      "lms_rest": "Learning management system (LMS)"
     },
     "status": {
       "healthy": "Healthy",
@@ -5119,7 +5138,8 @@
       "hr_sftp": "Reads the newest full employee export that an HR system drops on an SFTP server every night.",
       "microsoft365": "Directory sync, mail, calendar and free and busy times from your Microsoft 365 tenant, each with its own consent.",
       "servicenow": "Services and agents create incidents in ServiceNow and read their status.",
-      "jira_service_management": "Services and agents create requests in Jira Service Management and read their status."
+      "jira_service_management": "Services and agents create requests in Jira Service Management and read their status.",
+      "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -5928,7 +5948,8 @@
         "service_desk": "Service desks",
         "people_time": "HR and time",
         "finance": "Finance",
-        "custom": "Your own systems"
+        "custom": "Your own systems",
+        "learning": "Learning"
       },
       "setup": {
         "save": "Save and continue",
@@ -5952,6 +5973,47 @@
         "turnOn": "Turn on now",
         "later": "Leave it off for now",
         "open": "Open the connection"
+      }
+    },
+    "lms": {
+      "formLabel": "LMS settings",
+      "addTitle": "Add your LMS",
+      "addIntro": "Bring your LMS courses into the TeamBeats catalogue, send assignments of them to the LMS and read completions back. Add the LMS host to the allowlist and store its credential in your secret manager. Only the fields you map below are sent.",
+      "coursesTitle": "Course catalogue",
+      "coursesPath": "Courses path",
+      "coursesPathHint": "The path TeamBeats reads the course list from, for example /courses.",
+      "itemsPath": "List in the answer",
+      "pathHint": "Where the list is in the JSON answer, for example $.items. Use $ when the answer is the list itself.",
+      "itemPathHint": "Where the field is inside each item, for example $.id.",
+      "courseFields": {
+        "external_id": "Course ID",
+        "title": "Title",
+        "summary": "Summary",
+        "launch_url": "Address that opens the course",
+        "language": "Language"
+      },
+      "nextPath": "Next page link (optional)",
+      "nextPathHint": "Where the link to the next page is in the answer, for example $.next. Leave it empty if the list comes in one page.",
+      "assignTitle": "Assignments",
+      "assignPath": "Assignments path",
+      "assignPathHint": "The path TeamBeats posts each assignment to, for example /enrolments.",
+      "assignFieldsHint": "Where each assignment field goes in the request body. Use dots for nested fields, for example user.email. Leave a field empty to leave it out.",
+      "assignFields": {
+        "reference": "TeamBeats assignment ID",
+        "course_id": "Course ID",
+        "learner_email": "Learner work email",
+        "due_on": "Due date"
+      },
+      "idempotencyHeader": "Idempotency header (optional)",
+      "idempotencyHeaderHint": "If the LMS accepts an idempotency key, name its header, for example Idempotency-Key. Without it, an assignment whose sending timed out is not sent again automatically.",
+      "completionsTitle": "Completions",
+      "completionsPath": "Completions path",
+      "completionsPathHint": "The path TeamBeats reads completions from. Use '{since}' where the time goes, for example /completions?since='{since}'.",
+      "completionFields": {
+        "course_id": "Course ID",
+        "learner_email": "Learner work email",
+        "completed_at": "Completion time",
+        "score": "Score in percent"
       }
     }
   },
@@ -7340,20 +7402,24 @@
         "attestation": "Policy acceptance",
         "access_removal": "Access removal checklist",
         "exit_interview": "Exit interview",
-        "preboarding": "Pre-boarding welcome"
+        "preboarding": "Pre-boarding welcome",
+        "training": "Training"
       },
       "typeHints": {
         "task": "Marked done by whoever does it.",
         "attestation": "The person accepts every policy marked as required at onboarding that applies to them. Done by the person.",
         "access_removal": "One line per connected system and per system you list. Lines not confirmed after one working day go to IT and security officers.",
         "exit_interview": "Reasons from a fixed list for reporting, and a comment only HR officers can read. Offboarding only.",
-        "preboarding": "A welcome before day one, in an onboarding template started by a hire. When pre-boarding is on, a joiner without an account gets it by a personal link sent to the email HR holds."
+        "preboarding": "A welcome before day one, in an onboarding template started by a hire. When pre-boarding is on, a joiner without an account gets it by a personal link sent to the email HR holds.",
+        "training": "The joiner takes the courses named below in My learning; the step is done when every one is completed."
       },
       "systems": "Other systems",
       "systemsHint": "Systems that are not connected, one per line, such as Payroll or Door badges. Connected systems are added on their own.",
       "contentEn": "Welcome text (English)",
       "contentAr": "Welcome text (Arabic)",
-      "contentHint": "Plain text, up to 2,000 characters. This is all the pre-boarding page shows."
+      "contentHint": "Plain text, up to 2,000 characters. This is all the pre-boarding page shows.",
+      "courses": "Courses",
+      "coursesHint": "Paste the links or IDs of published courses, up to 10. The joiner is given them and the step is done when all are completed."
     },
     "dashboard": {
       "title": "Journeys in your units",
@@ -7485,7 +7551,8 @@
         "health": "Health",
         "retirement": "Retirement",
         "other": "Something else"
-      }
+      },
+      "openLearning": "Open My learning"
     },
     "page": {
       "title": "My journeys",
@@ -8972,7 +9039,8 @@
       "open": "Open to enrol",
       "shape": "{lessons, plural, one {# lesson} other {# lessons}} · {minutes, plural, =0 {length not given} one {# minute} other {# minutes}}",
       "progressOf": "Progress in {title}",
-      "percent": "{value}% done"
+      "percent": "{value}% done",
+      "fromLms": "From your LMS"
     },
     "player": {
       "about": "About this course",
@@ -9021,7 +9089,11 @@
         "submit": "Submit answers",
         "attemptsLeft": "{count, plural, one {# attempt left} other {# attempts left}}",
         "failed": "Your answers could not be sent. Try again."
-      }
+      },
+      "openLms": "Open in your LMS",
+      "lmsHint": "The course opens in your LMS. Your completion shows here after the next sync.",
+      "lmsUnavailableTitle": "LMS unavailable",
+      "lmsUnavailable": "Your LMS is not answering at the moment. Try again later; your other courses work as usual."
     },
     "path": {
       "eyebrow": "Learning path",
@@ -9100,7 +9172,8 @@
       "createPath": "Create path",
       "paths": "Learning paths",
       "pathsEmpty": "No learning paths yet.",
-      "pathMeta": "{count, plural, one {# course} other {# courses}}"
+      "pathMeta": "{count, plural, one {# course} other {# courses}}",
+      "fromLms": "From your LMS"
     },
     "builder": {
       "eyebrow": "Course builder",
@@ -9206,7 +9279,10 @@
         "best": "best {score}%",
         "passed": "Passed",
         "grant": "Give one more attempt"
-      }
+      },
+      "rulesTab": "Assignment rules",
+      "fromLmsTitle": "This course comes from your LMS",
+      "fromLms": "Its titles and content are kept in your LMS, and each sync brings changes here. You choose who sees it, its category and its owner, and you can retire it."
     },
     "pathBuilder": {
       "eyebrow": "Path builder",
@@ -9237,6 +9313,142 @@
       "add": "Add",
       "save": "Save",
       "publish": "Publish path"
+    },
+    "rules": {
+      "failed": "Assignment rules could not load or save.",
+      "title": "Assignment rules",
+      "hint": "A rule gives this course to everyone it covers, with a due date counted from the day they are covered. People who join later get their own date; people who leave lose what only the rule gave them.",
+      "emptyTitle": "No rules yet",
+      "empty": "Add a rule below to make this course required for a group or for named people.",
+      "wholeOrganization": "Whole organization",
+      "status": {
+        "active": "Active",
+        "ended": "Ended"
+      },
+      "covered": "{count, plural, one {Covers # person} other {Covers # people}}",
+      "terms": "Due {due, plural, one {# day} other {# days}} after joining, with {grace, plural, =0 {no grace period} one {# day of grace} other {# days of grace}}.",
+      "recurs": "Taken again every {months, plural, one {month} other {# months}}.",
+      "once": "Taken once.",
+      "units": "Units: {names}",
+      "onlyPeople": "Only the people named",
+      "everyoneInScope": "Everyone in the scope",
+      "people": "People: {names}",
+      "createdOn": "Created {date}",
+      "end": "End rule",
+      "endQuestion": "End this rule? Open assignments that only this rule gave are withdrawn. Completions stay.",
+      "endConfirm": "End rule",
+      "cancel": "Cancel",
+      "ended": "Rule ended",
+      "created": "{count, plural, =0 {Rule created. Nobody new was given the course.} one {Rule created and given to # person.} other {Rule created and given to # people.}}",
+      "noticeHint": "Learners are told by notification.",
+      "new": "New rule",
+      "publishFirst": "Only a published course can be given by rule.",
+      "scope": "Scope",
+      "scopeHint": "You can only target people inside a unit you manage.",
+      "dueDays": "Due after (days)",
+      "dueDaysHint": "Moved to the next working day when it falls on a weekend or holiday.",
+      "recurrence": "Repeat every (months)",
+      "recurrenceHint": "Leave empty for a course taken once.",
+      "grace": "Grace period (days)",
+      "graceHint": "Days after the due date before the course counts as overdue.",
+      "audienceHint": "Choose units, name people, or both. With neither, the rule covers everyone in the scope.",
+      "peopleField": "People",
+      "peopleHint": "Paste profile links or IDs, one or more.",
+      "create": "Create rule"
+    },
+    "reports": {
+      "pageTitle": "Learning reports",
+      "pageIntro": "Completion of each course in the units you report on, with the evidence to export.",
+      "courseIntro": "Assigned, completed, overdue and expired, per unit in your scope. A unit counts the units below it.",
+      "unavailableTitle": "Reports are not available",
+      "unavailable": "You need learning reports for at least one unit.",
+      "courses": "Courses",
+      "noCoursesTitle": "No courses yet",
+      "noCourses": "Published courses appear here.",
+      "retired": "Retired",
+      "byUnit": "By unit",
+      "wholeTenant": "You report on the whole organization.",
+      "scoped": "You report on the units you look after.",
+      "total": "Total in your scope",
+      "count": {
+        "assigned": "{count} assigned",
+        "completed": "{count} completed",
+        "overdue": "{count} overdue",
+        "expired": "{count} expired"
+      },
+      "column": {
+        "assigned": "Assigned",
+        "completed": "Completed",
+        "overdue": "Overdue",
+        "expired": "Expired"
+      },
+      "tableCaption": "Counts per unit",
+      "noUnitsTitle": "No units in scope",
+      "noUnits": "Nobody in your scope has this course.",
+      "unit": "Unit",
+      "everyone": "Everyone in scope",
+      "people": "People",
+      "export": "Export evidence (CSV)",
+      "exportOf": "The export lists the people of {unit} and the units below it. Exports are audited.",
+      "exportAll": "The export lists everyone in your scope. Exports are audited.",
+      "failed": "The report could not load.",
+      "noPeopleTitle": "Nobody here has this course",
+      "noPeople": "Choose another unit.",
+      "person": "Person",
+      "state": "Status",
+      "source": "Given by",
+      "due": "Due",
+      "completed": "Completed",
+      "version": "Version",
+      "score": "Score",
+      "certificate": "Certificate",
+      "percent": "{value}%",
+      "stateName": {
+        "assigned": "Assigned",
+        "overdue": "Overdue",
+        "completed": "Completed",
+        "expired": "Expired"
+      }
+    },
+    "team": {
+      "pageTitle": "My team's learning",
+      "pageIntro": "The courses of the people who report to you directly.",
+      "emptyTitle": "Nobody reports to you",
+      "empty": "When people report to you directly, their courses appear here.",
+      "title": "{count, plural, one {# direct report} other {# direct reports}}",
+      "listLabel": "Direct reports",
+      "noCourses": "No courses yet.",
+      "state": {
+        "assigned": "Assigned",
+        "overdue": "Overdue",
+        "completed": "Completed",
+        "expired": "Expired"
+      },
+      "due": "Due {date}",
+      "give": "Give a course",
+      "giveHint": "Choose a published course your colleague can take. They are told by notification.",
+      "person": "Person",
+      "course": "Course",
+      "dueOn": "Due on",
+      "dueOnHint": "Leave empty for 30 days from today.",
+      "assign": "Give course",
+      "assigned": "Course given",
+      "assignedHint": "It shows in their My learning.",
+      "failed": "The course could not be given."
+    },
+    "lms": {
+      "title": "Your LMS",
+      "notConfigured": "No LMS is connected. An administrator can add one in",
+      "connections": "Connections",
+      "available": "LMS answering",
+      "unavailable": "LMS unavailable",
+      "courses": "{count, plural, one {# course from the LMS} other {# courses from the LMS}}",
+      "waiting": "{count, plural, one {# assignment waiting to be sent} other {# assignments waiting to be sent}}",
+      "refused": "{count, plural, one {# assignment the LMS refused} other {# assignments the LMS refused}}",
+      "lastRead": "Catalogue last read {catalogue}. Completions last read {completions}.",
+      "never": "never",
+      "syncNow": "Sync now",
+      "failed": "The sync did not run."
     }
   }
 }

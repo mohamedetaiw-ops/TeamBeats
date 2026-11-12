@@ -6,7 +6,9 @@ import { hostOrigin } from "../support/stack";
 /**
  * Spec 028 T004 and T005: the administrator builds a course with a quiz, opens it for enrolment and publishes it; Layla
  * finds it in the catalogue, starts it, passes the quiz and opens the certificate, then checks it by its ID. Scope,
- * audiences, attempts, sources and retraining are covered by LearningCourseTests. In English and Arabic, with axe.
+ * audiences, attempts, sources and retraining are covered by LearningCourseTests; the administrator then makes the
+ * course required for everyone with a rule (rules in detail: LearningAssignmentTests) and reads the report and exports
+ * the evidence (scopes and the team view: LearningReportTests). In English and Arabic, with axe.
  * Names are fictional.
  */
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
@@ -81,6 +83,38 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/learning`);
       const completed = page.getByRole("region", { name: m("learning.mine.completed") });
       await expect(completed.getByRole("link", { name: course })).toBeVisible();
+    });
+
+    test("an administrator makes the course required for everyone with a rule", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/learning/manage`);
+      await page.getByRole("main").getByRole("link", { name: course }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(course);
+      await page.getByRole("tab", { name: m("learning.builder.rulesTab") }).click();
+      await expect(page.getByText(m("learning.rules.emptyTitle"))).toBeVisible();
+      await page.getByLabel(m("learning.rules.dueDays")).fill("14");
+      await page.getByLabel(m("learning.rules.recurrence")).fill("12");
+      await expectAccessible(page, testInfo, `learning-rules-${locale}`);
+      await page.getByRole("button", { name: m("learning.rules.create") }).click();
+      const rules = page.getByRole("list", { name: m("learning.rules.title") });
+      await expect(rules.getByText(m("learning.rules.status.active"))).toBeVisible();
+      await expect(rules.getByText(m("learning.rules.everyoneInScope"))).toBeVisible();
+    });
+
+    test("an administrator reads the course report and exports the evidence", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/learning`);
+      await page.getByRole("link", { name: m("learning.reports.pageTitle") }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("learning.reports.pageTitle"));
+      await page.getByRole("main").getByRole("link", { name: course }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(course);
+      await expect(page.getByRole("group", { name: m("learning.reports.total") }).getByText(m("learning.reports.count.completed", { count: 1 }))).toBeVisible();
+      const people = page.getByRole("region", { name: m("learning.reports.people") });
+      await expect(people.getByRole("cell", { name: m("learning.reports.stateName.completed") })).toBeVisible();
+      await expectAccessible(page, testInfo, `learning-report-${locale}`);
+      const download = page.waitForEvent("download");
+      await page.getByRole("link", { name: m("learning.reports.export") }).click();
+      expect((await download).suggestedFilename()).toMatch(/^evidence-[0-9a-f]{32}\.csv$/);
     });
   });
 }

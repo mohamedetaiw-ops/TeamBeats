@@ -323,6 +323,7 @@ public static class AuditActions
     public const string PolicyCampaignReminded = "policy.campaign_reminded";
     public const string PolicyCampaignClosed = "policy.campaign_closed";
     public const string PolicyAttested = "policy.attested";
+    public const string PolicyTrainingLinked = "policy.training_linked";
 
     // 013
     public const string AiPolicyChanged = "ai.policy_changed";
@@ -405,6 +406,9 @@ public static class AuditActions
     public const string LearningCourseRetired = "learning.course_retired";
     public const string LearningPathPublished = "learning.path_published";
     public const string LearningAttemptsGranted = "learning.attempts_granted";
+    public const string LearningAssignmentCreated = "learning.assignment_created";
+    public const string LearningAssignmentWithdrawn = "learning.assignment_withdrawn";
+    public const string LearningEvidenceExported = "learning.evidence_exported";
 
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
@@ -452,7 +456,7 @@ public static class AuditActions
         DocRestoredFromBin, DocPurged, DocReleaseSubmitted, DocReleaseWithdrawn, DocReleaseApproved, DocReleaseReturned, DocVersionEffective, DocReviewed,
         DocReadConfirmed,
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
-        PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested,
+        PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested, PolicyTrainingLinked,
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled,
@@ -466,7 +470,7 @@ public static class AuditActions
         EngagementContentApproved, EngagementContentHidden, EngagementContentRemoved, EngagementMemberMuted, EngagementMemberUnmuted, EngagementKeywordsChanged, EngagementSpeakUpAnswered, EngagementSpeakUpDeclined,
         EngagementSurveyPublished, EngagementSurveyClosed, EngagementSurveyThresholdChanged, EngagementPointsConfigChanged, EngagementRecognitionCatalogueChanged,
         EngagementAwardOpened, EngagementAwardDecided, EngagementCelebrationSettingsChanged,
-        LearningCoursePublished, LearningCourseRetired, LearningPathPublished, LearningAttemptsGranted,
+        LearningCoursePublished, LearningCourseRetired, LearningPathPublished, LearningAttemptsGranted, LearningAssignmentCreated, LearningAssignmentWithdrawn, LearningEvidenceExported,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

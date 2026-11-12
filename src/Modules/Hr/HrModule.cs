@@ -69,6 +69,7 @@ public static class HrModule
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, JourneyTaskSource>("hr.journey_notify_task");
         services.AddMessageHandler<Workflow.Contracts.UserTaskDue, JourneyTaskSource>("hr.journey_step_overdue");
         services.AddMessageHandler<Policies.Contracts.PolicyAttested, JourneyTaskSource>("hr.journey_attested");
+        services.AddMessageHandler<Learning.Contracts.CourseCompleted, JourneyTaskSource>("hr.journey_trained");
         services.AddMessageHandler<Integrations.Contracts.EmployeeHired, JourneyStarter>("hr.journey_start_hire");
         services.AddMessageHandler<Integrations.Contracts.EmployeeRehired, JourneyStarter>("hr.journey_start_rehire");
         services.AddMessageHandler<Integrations.Contracts.EmployeeTerminated, JourneyStarter>("hr.journey_start_termination");

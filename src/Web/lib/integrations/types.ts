@@ -159,7 +159,7 @@ export const CHECK_RESULTS = [
 ] as const;
 
 /** Connector pack kinds with their own name on these pages. */
-export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp"] as const;
+export const PACK_KINDS = ["custom_rest", "webhook", "onprem_ad", "servicenow", "jira_service_management", "slack", "clock_import", "finance_rest", "google_workspace", "hr_rest", "hr_sftp", "lms_rest"] as const;
 
 /** Settings of a clock data connection (spec 017 US7). Columns are header names, or numbers from 1 without a header row. */
 export type ClockColumns = {
@@ -231,6 +231,24 @@ export type GoogleSettings = {
   expiresOn: string | null;
 };
 export const GOOGLE_FEATURES = ["directory", "drive", "calendar"] as const;
+
+/** Settings of an LMS connection beyond address and sign-in (spec 028 US6). */
+export type LmsSettings = {
+  coursesPath: string | null;
+  coursesItemsPath: string | null;
+  courseFields: Record<string, string> | null;
+  assignPath: string | null;
+  assignFields: Record<string, string> | null;
+  completionsPath: string | null;
+  completionsItemsPath: string | null;
+  completionFields: Record<string, string> | null;
+  nextPath: string | null;
+  idempotencyHeader: string | null;
+};
+export const LMS_AUTH = ["api_key", "bearer", "basic", "oauth_client_credentials"] as const;
+export const LMS_COURSE_FIELDS = ["external_id", "title", "summary", "launch_url", "language"] as const;
+export const LMS_ASSIGN_FIELDS = ["reference", "course_id", "learner_email", "due_on"] as const;
+export const LMS_COMPLETION_FIELDS = ["course_id", "learner_email", "completed_at", "score"] as const;
 
 /** Settings of a finance hand-off connection beyond address and sign-in (spec 017 FR-021). */
 export type FinanceSettings = {

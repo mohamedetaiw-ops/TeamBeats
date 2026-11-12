@@ -43,14 +43,15 @@ export function Catalogue({ courses, q }: { courses: CatalogueCourse[]; q: strin
                     <div className="learning-row">
                       <StateBadge state={course.state} />
                       {course.openEnrolment ? <Badge tone="accent">{t("open")}</Badge> : null}
+                      {course.external ? <Badge tone="info" icon="link">{t("fromLms")}</Badge> : null}
                     </div>
                   }
                 >
                   <p className="learning-meta">
                     <bdi>{localText(course.summaries, locale)}</bdi>
                   </p>
-                  <p className="learning-meta">{t("shape", { lessons: course.lessons, minutes: course.minutes ?? 0 })}</p>
-                  {course.state === "open" ? (
+                  {course.external ? null : <p className="learning-meta">{t("shape", { lessons: course.lessons, minutes: course.minutes ?? 0 })}</p>}
+                  {course.state === "open" && !course.external ? (
                     <Progress label={t("progressOf", { title })} value={course.percent} valueText={t("percent", { value: course.percent })} />
                   ) : null}
                 </Card>

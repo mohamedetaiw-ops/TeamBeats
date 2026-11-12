@@ -37,6 +37,7 @@ type StepText = {
   due: string;
   type: JourneyStepType;
   systems: string;
+  courses: string;
   contentEn: string;
   contentAr: string;
 };
@@ -52,6 +53,7 @@ const blankStep = (): StepText => ({
   due: "",
   type: "task",
   systems: "",
+  courses: "",
   contentEn: "",
   contentAr: "",
 });
@@ -174,6 +176,7 @@ function TemplateForm({
           due: s.dueWorkingDays == null ? "" : String(s.dueWorkingDays),
           type: s.type ?? "task",
           systems: (s.systems ?? []).join("\n"),
+          courses: (s.courses ?? []).join("\n"),
           contentEn: s.content?.en ?? "",
           contentAr: s.content?.ar ?? "",
         }))
@@ -210,6 +213,7 @@ function TemplateForm({
                 .filter(Boolean)
             : null,
         content: s.type === "preboarding" ? names(s.contentEn, s.contentAr) : null,
+        courses: s.type === "training" ? [...new Set(s.courses.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) ?? [])] : null,
       })),
     });
 
@@ -315,6 +319,16 @@ function TemplateForm({
               rows={3}
               value={s.systems}
               onChange={(e) => setStep(i, { systems: e.target.value })}
+            />
+          ) : null}
+          {s.type === "training" ? (
+            <TextAreaField
+              label={t("courses")}
+              hint={t("coursesHint")}
+              name={`${prefix}-s${i}-courses`}
+              rows={2}
+              value={s.courses}
+              onChange={(e) => setStep(i, { courses: e.target.value })}
             />
           ) : null}
           {s.type === "preboarding" ? (

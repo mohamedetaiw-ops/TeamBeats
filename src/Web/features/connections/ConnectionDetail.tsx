@@ -10,6 +10,7 @@ import { TICKETING_KINDS, isTicketing, type PackCheck, type PackConnection, type
 import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
 import { FinanceSettingsForm } from "./FinanceSettingsForm";
+import { LmsSettingsForm } from "./LmsSettingsForm";
 import { HrRestSettingsForm, HrSftpSettingsForm, type HrSftpBody } from "./HrSettingsForm";
 import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
@@ -191,6 +192,19 @@ export function ConnectionDetail({ initial, webhookEvents = [] }: { initial: Pac
         <section className="connections-section" aria-labelledby="settings-heading">
           <h2 id="settings-heading">{t("detail.settings")}</h2>
           <FinanceSettingsForm
+            key={JSON.stringify(view.settings)}
+            initial={view}
+            submitLabel={t("detail.save")}
+            busy={busy === "save"}
+            onSubmit={(body: SettingsBody) => void run<PackConnection>("save", "PATCH", base, body, (v) => (setView(v), t("detail.saved")))}
+          />
+        </section>
+      ) : null}
+
+      {view.kind === "lms_rest" ? (
+        <section className="connections-section" aria-labelledby="settings-heading">
+          <h2 id="settings-heading">{t("detail.settings")}</h2>
+          <LmsSettingsForm
             key={JSON.stringify(view.settings)}
             initial={view}
             submitLabel={t("detail.save")}

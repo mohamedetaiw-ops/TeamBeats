@@ -10,7 +10,7 @@ export type QuestionKind = "single" | "multiple" | "true_false";
 export type LearnerStateKind = "none" | "open" | "completed" | "retraining";
 export type AssignmentSource = "self" | "rule" | "manager" | "onboarding" | "policy";
 
-export type LearningRights = { take: boolean; manage: boolean; report: boolean };
+export type LearningRights = { take: boolean; manage: boolean; report: boolean; team: boolean };
 
 export type LearnerOption = { key: string; labels: Texts };
 export type LearnerQuestion = { key: string; kind: QuestionKind; prompts: Texts; options: LearnerOption[] };
@@ -42,6 +42,8 @@ export type LearnerCourse = {
   me: LearnerState;
   canEnrol: boolean;
   manages: boolean;
+  /** A course from the LMS: the address that opens it there, left out while the LMS is unavailable. */
+  external?: { available: boolean; launchUrl: string | null } | null;
 };
 
 export type AttemptResult = { score: number; passed: boolean; course: LearnerCourse };
@@ -56,6 +58,7 @@ export type CatalogueCourse = {
   openEnrolment: boolean;
   state: LearnerStateKind;
   percent: number;
+  external?: boolean;
 };
 
 export type MyCourse = {
@@ -71,6 +74,7 @@ export type MyCourse = {
   startedAt: string | null;
   completedAt: string | null;
   certificateId: string | null;
+  external?: boolean;
 };
 
 export type MyLearning = { assigned: MyCourse[]; inProgress: MyCourse[]; completed: MyCourse[] };
@@ -125,6 +129,8 @@ export type CourseDetail = {
   publishedVersion: number | null;
   changedSources: { lessonKey: string; locale: string }[];
   updatedAt: string;
+  externalId?: string | null;
+  launchUrl?: string | null;
 };
 
 export type CourseSummary = {
@@ -137,6 +143,18 @@ export type CourseSummary = {
   draftChanged: boolean;
   lessons: number;
   updatedAt: string;
+  external?: boolean;
+};
+
+/** Where the LMS sync stands (spec 028 US6). */
+export type LmsStatus = {
+  configured: boolean;
+  available: boolean;
+  catalogueAt: string | null;
+  completionsAt: string | null;
+  courses: number;
+  waiting: number;
+  refused: number;
 };
 
 export type QuizStanding = { lessonKey: string; used: number; allowed: number; bestScore: number | null; passed: boolean };
@@ -154,9 +172,45 @@ export type CourseLearner = {
 
 // ---- Helpers ----
 
+export type AssignmentRule = {
+  id: string;
+  courseId: string;
+  orgUnitId: string | null;
+  audience: Audience;
+  people: { id: string; displayName: string }[];
+  dueDays: number;
+  recurrenceMonths: number | null;
+  graceDays: number;
+  status: "active" | "ended";
+  createdAt: string;
+  covered: number;
+};
+
+export type ReportState = "assigned" | "overdue" | "completed" | "expired";
+export type ReportCounts = { assigned: number; completed: number; overdue: number; expired: number };
+export type ReportCourse = { id: string; titles: Texts; status: string; category: string | null };
+export type UnitReport = { orgUnitId: string; names: Texts; parentId: string | null; counts: ReportCounts };
+export type CourseReport = { courseId: string; titles: Texts; wholeTenant: boolean; total: ReportCounts; units: UnitReport[] };
+export type ReportPerson = {
+  person: { id: string; displayName: string };
+  state: ReportState;
+  source: AssignmentSource;
+  dueOn: string | null;
+  completedAt: string | null;
+  version: number | null;
+  score: number | null;
+  certificateCode: string | null;
+  certificateId: string | null;
+};
+export type TeamCourse = { courseId: string; titles: Texts; state: ReportState; source: AssignmentSource; dueOn: string | null; completedAt: string | null };
+export type TeamMember = { person: { id: string; displayName: string }; courses: TeamCourse[] };
+
 export const learningHref = "/learning";
 export const catalogueHref = "/learning/catalogue";
 export const manageHref = "/learning/manage";
+export const reportsHref = "/learning/reports";
+export const teamHref = "/learning/team";
+export const reportHref = (id: string) => `/learning/reports/${encodeURIComponent(id)}`;
 export const courseHref = (id: string) => `/learning/courses/${encodeURIComponent(id)}`;
 export const pathHref = (id: string) => `/learning/paths/${encodeURIComponent(id)}`;
 export const builderHref = (id: string) => `/learning/manage/courses/${encodeURIComponent(id)}`;

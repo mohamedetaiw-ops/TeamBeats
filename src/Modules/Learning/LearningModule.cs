@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using TeamBeats.Messaging;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
@@ -21,6 +22,15 @@ public static class LearningModule
         services.AddScoped<Paths>();
         services.AddScoped<Certificates>();
         services.AddScoped<CourseLearners>();
+        services.AddScoped<AssignmentRules>();
+        services.AddScoped<LearningObligations>();
+        services.AddScoped<LearningReports>();
+        services.AddScoped<LmsAvailability>();
+        services.AddScoped<LmsSync>();
+        services.AddScoped<Contracts.ILearningObligations>(sp => sp.GetRequiredService<LearningObligations>());
+        services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, AssignmentRules>("learning.rule_membership");
+        services.AddMessageHandler<Tenancy.Contracts.TenantMembershipDisabled, AssignmentRules>("learning.rule_disabled");
+        services.AddMessageHandler<Contracts.CoursePublished, AssignmentRules>("learning.retraining");
         return services;
     }
 
@@ -75,6 +85,56 @@ public static class LearningModule
         });
 
         // ---- Building paths ----
+
+        root.MapGet("/manage/courses/{id:guid}/rules", async (Guid id, AssignmentRules rules, CancellationToken ct) => Results.Ok(await rules.ListAsync(id, ct)));
+
+        root.MapPost("/manage/courses/{id:guid}/rules", async (Guid id, RuleRequest request, AssignmentRules rules, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await rules.CreateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/learning/manage/courses/{id}/rules/{view.Id}", view);
+        });
+
+        root.MapPost("/manage/courses/{id:guid}/rules/{ruleId:guid}:end", async (Guid id, Guid ruleId, AssignmentRules rules, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await rules.EndAsync(id, ruleId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // ---- The LMS (US6) ----
+
+        root.MapGet("/manage/lms", async (LmsSync lms, CancellationToken ct) => Results.Ok(await lms.StatusAsync(ct)));
+
+        root.MapPost("/manage/lms:sync", async (LmsSync lms, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await lms.SyncNowAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/reports/courses", async (LearningReports reports, CancellationToken ct) => Results.Ok(await reports.CoursesAsync(ct)));
+
+        root.MapGet("/reports/courses/{id:guid}", async (Guid id, LearningReports reports, CancellationToken ct) => Results.Ok(await reports.CourseAsync(id, ct)));
+
+        root.MapGet("/reports/courses/{id:guid}/people", async (Guid id, Guid? unit, LearningReports reports, CancellationToken ct) =>
+            Results.Ok(await reports.PeopleAsync(id, unit, ct)));
+
+        root.MapGet("/reports/courses/{id:guid}/evidence", async (Guid id, Guid? unit, LearningReports reports, IDbSession session, CancellationToken ct) =>
+        {
+            var (name, content) = await reports.EvidenceAsync(id, unit, ct);
+            await session.CommitAsync(ct);
+            return Results.File(content, "text/csv; charset=utf-8", name);
+        });
+
+        root.MapGet("/team", async (LearningReports reports, CancellationToken ct) => Results.Ok(await reports.TeamAsync(ct)));
+
+        root.MapPost("/team/{userId:guid}/assignments", async (Guid userId, TeamAssignRequest request, LearningReports reports, IDbSession session, CancellationToken ct) =>
+        {
+            var team = await reports.AssignAsync(userId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(team);
+        });
 
         root.MapGet("/manage/paths", async (Paths paths, CancellationToken ct) => Results.Ok(await paths.ManagedListAsync(ct)));
 

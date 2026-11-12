@@ -7,6 +7,7 @@ using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Hr.Leave;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Integrations.Contracts;
+using TeamBeats.Modules.Learning.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.Policies.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
@@ -125,6 +126,7 @@ public sealed partial class JourneyService(
     LeaveLedger people,
     JourneyTemplates templates,
     IPolicyObligations obligations,
+    ILearningObligations training,
     IConnectedSystems systems,
     INotificationSender notifications,
     IWorkingCalendar calendars)
@@ -230,15 +232,15 @@ public sealed partial class JourneyService(
             await session.ExecAsync(
                 """
                 insert into hr.journey_step (tenant_id, journey_id, key, position, names, offset_days, assignee, users, permission, due_working_days, scheduled_on, status,
-                  type, systems, content)
+                  type, systems, content, courses)
                 values (platform.current_tenant_id(), @id, @key, @position, @names, @offset, @assignee, @users, @permission, @due, @scheduled, 'scheduled', @type, @systems,
-                  @content)
+                  @content, @courses)
                 """, new
                 {
                     id, key = step.Key, position = position++, names = Jsonb.From(step.Names), offset = step.OffsetDays, assignee = step.Assignee,
                     users = (step.Users ?? []).ToArray(), permission = step.Permission, due = step.DueWorkingDays, scheduled = anchor.AddDays(step.OffsetDays),
                     type = step.Type ?? JourneyStepTypes.Task, systems = (step.Systems ?? []).ToArray(),
-                    content = step.Content is { } text ? Jsonb.From(text) : null,
+                    content = step.Content is { } text ? Jsonb.From(text) : null, courses = (step.Courses ?? []).ToArray(),
                 }, ct);
         }
         await audit.WriteAsync(new AuditEntry(AuditActions.HrJourneyStarted, "journey", id.ToString(), TargetOrgUnitId: person.PrimaryUnit,
@@ -279,14 +281,15 @@ public sealed partial class JourneyService(
         var today = await people.TodayAsync(ct);
         var due = await session.QueryAsync(
             """
-            select s.journey_id, s.key, s.assignee, t.key, j.template_version, j.user_id, j.buddy_user_id, j.org_unit_id, s.type, s.systems
+            select s.journey_id, s.key, s.assignee, t.key, j.template_version, j.user_id, j.buddy_user_id, j.org_unit_id, s.type, s.systems, s.courses
             from hr.journey_step s join hr.journey j on j.id = s.journey_id join hr.journey_template t on t.id = j.template_id
             where s.status = 'scheduled' and s.scheduled_on <= @today and j.status = 'active' and (@journeyId::uuid is null or j.id = @journeyId)
             order by s.scheduled_on, s.journey_id, s.position limit @batch
             for update of s skip locked
             """, new { today, journeyId, batch = DueBatch },
             r => (Journey: r.GetGuid(0), Step: r.GetString(1), Assignee: r.GetString(2), Template: r.GetString(3), Version: r.GetInt32(4), User: r.GetGuid(5),
-                Buddy: r.Get<Guid?>("buddy_user_id"), Unit: r.Get<Guid?>("org_unit_id"), Type: r.GetString(8), Systems: r.GetFieldValue<string[]>(9)), ct);
+                Buddy: r.Get<Guid?>("buddy_user_id"), Unit: r.Get<Guid?>("org_unit_id"), Type: r.GetString(8), Systems: r.GetFieldValue<string[]>(9),
+                Courses: r.GetFieldValue<Guid[]>(10)), ct);
         foreach (var step in due)
         {
             // The person does their own steps; nobody else's step about them is theirs to complete (no self-approval).
@@ -300,7 +303,7 @@ public sealed partial class JourneyService(
                 update hr.journey_step set status = 'open', instance_id = @instance, task_id = @task, due_at = @dueAt, opened_at = @now
                 where journey_id = @journey and key = @key
                 """, new { instance = instance.Id, task = task?.Id, dueAt = task?.DueAt, journey = step.Journey, key = step.Step, now = clock.UtcNow }, ct);
-            await OpenedAsync(new OpenedStep(step.Journey, step.Step, step.Type, step.User, step.Unit, instance.Id, task?.DueAt, step.Systems), ct);
+            await OpenedAsync(new OpenedStep(step.Journey, step.Step, step.Type, step.User, step.Unit, instance.Id, task?.DueAt, step.Systems, step.Courses), ct);
         }
         return due.Count;
     }
@@ -454,6 +457,10 @@ public sealed partial class JourneyService(
         foreach (var step in (await StepsAsync(id, ct)).Where(s => s.Status == JourneyStepStatuses.Open && s.Type == JourneyStepTypes.Attestation))
         {
             await obligations.CancelAsync(BusinessKey(id, step.Key), ct);
+        }
+        foreach (var step in (await StepsAsync(id, ct)).Where(s => s.Status == JourneyStepStatuses.Open && s.Type == JourneyStepTypes.Training))
+        {
+            await training.CancelAsync(BusinessKey(id, step.Key), ct);
         }
         var now = clock.UtcNow;
         await session.ExecAsync("update hr.journey_step set status = 'cancelled' where journey_id = @id and status in ('scheduled', 'open')", new { id }, ct);

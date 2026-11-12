@@ -8,6 +8,7 @@ import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { PolicyDocument } from "@/features/policies/PolicyDocument";
 import { AttestPanel } from "@/features/policies/AttestPanel";
+import { TrainingLink } from "@/features/policies/TrainingLink";
 import { VersionList } from "@/features/policies/VersionList";
 import { AskAgentLink } from "@/features/agents/AskAgentLink";
 import { ViewBeacon } from "@/features/analytics/ViewBeacon";
@@ -92,6 +93,7 @@ export default async function PolicyPage({ params, searchParams }: { params: Pro
           </>
         )}
         {attestation.ok ? <AttestPanel policyId={p.id} initial={attestation.data} locale={shown} /> : null}
+        {p.rights.manage && p.status !== "retired" ? <TrainingLink policy={p} /> : null}
         {history?.ok && history.data.length > 0 ? <VersionList policyId={p.id} versions={history.data} /> : null}
       </main>
     </>

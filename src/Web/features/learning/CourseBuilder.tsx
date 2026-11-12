@@ -28,6 +28,7 @@ import {
 } from "@/lib/learning";
 import { statusTones } from "./ManageHome";
 import { toggle, useUnits } from "./parts";
+import { Rules } from "./Rules";
 import "./learning.css";
 
 type EditOption = { uid: string; key: string; labels: Texts; correct: boolean };
@@ -89,6 +90,7 @@ export function CourseBuilder({ initial, locales }: { initial: CourseDetail; loc
       tabs={[
         { key: "course", label: t("courseTab"), icon: "edit", content: <CourseForm initial={initial} locales={locales} /> },
         { key: "learners", label: t("learnersTab"), icon: "people", content: <Learners course={initial} /> },
+        { key: "rules", label: t("rulesTab"), icon: "calendar", content: <Rules course={initial} /> },
       ]}
     />
   );
@@ -120,6 +122,8 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
   const [notice, setNotice] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const readOnly = detail.status === "retired";
+  // A course from the LMS keeps its titles and lessons from there; who sees it is decided here.
+  const fromLms = detail.externalId != null;
 
   const change = <T,>(set: (v: T) => void) => (v: T) => {
     set(v);
@@ -229,6 +233,11 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
           {detail.draftChanged && detail.publishedVersion ? <Badge tone="info" icon="edit">{t("unpublishedChanges")}</Badge> : null}
           {detail.publishedVersion && detail.status === "published" ? <Link href={courseHref(detail.id)}>{t("openAsLearner")}</Link> : null}
         </div>
+        {fromLms ? (
+          <Alert tone="info" title={t("fromLmsTitle")}>
+            {t("fromLms")}
+          </Alert>
+        ) : null}
         {detail.changedSources.length > 0 ? (
           <Alert tone="warning" title={t("sourcesChangedTitle")}>
             {t("sourcesChanged", { count: detail.changedSources.length })}
@@ -258,7 +267,7 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
                 name="course-language"
                 label={languageName(l, locale)}
                 checked={langs.includes(l)}
-                disabled={langs.length === 1 && langs.includes(l)}
+                disabled={fromLms || (langs.length === 1 && langs.includes(l))}
                 onChange={(e) => change(setLangs)(toggle(langs, l, e.target.checked))}
               />
             ))}
@@ -270,6 +279,7 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
               label={t("titleIn", { language: languageName(l, locale) })}
               name={`course-title-${l}`}
               value={titles[l] ?? ""}
+              disabled={fromLms}
               maxLength={200}
               lang={l}
               dir="auto"
@@ -279,6 +289,7 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
               label={t("summaryIn", { language: languageName(l, locale) })}
               name={`course-summary-${l}`}
               value={summaries[l] ?? ""}
+              disabled={fromLms}
               maxLength={2000}
               rows={2}
               lang={l}
@@ -296,6 +307,7 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
             min={1}
             max={600}
             value={minutes}
+            disabled={fromLms}
             onChange={(e) => change(setMinutes)(e.target.value)}
           />
           <SelectField
@@ -330,6 +342,7 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
         <p className="learning-meta">{audienceUnits.length === 0 ? t("everyone") : t("targeted", { count: audienceUnits.length })}</p>
       </fieldset>
 
+      {fromLms ? null : (
       <fieldset className="learning-section" disabled={readOnly}>
         <legend>{t("lessons")}</legend>
         {lessons.length === 0 ? <p className="learning-meta">{t("noLessons")}</p> : null}
@@ -379,22 +392,25 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
           </Button>
         </div>
       </fieldset>
+      )}
 
       {readOnly ? (
         <p className="learning-meta">{t("retiredHint")}</p>
       ) : (
         <section className="learning-section" aria-labelledby="builder-actions">
           <h2 id="builder-actions">{t("actions")}</h2>
-          {detail.publishedVersion ? (
+          {detail.publishedVersion && !fromLms ? (
             <Checkbox name="course-retraining" label={t("requiresRetraining")} hint={t("requiresRetrainingHint")} checked={retraining} onChange={(e) => setRetraining(e.target.checked)} />
           ) : null}
           <div className="learning-row">
             <Button type="submit" busy={busy} icon="check">
               {t("save")}
             </Button>
-            <Button variant="primary" busy={busy} icon="upload" onClick={() => void publish()}>
-              {detail.publishedVersion ? t("publishNew") : t("publish")}
-            </Button>
+            {fromLms ? null : (
+              <Button variant="primary" busy={busy} icon="upload" onClick={() => void publish()}>
+                {detail.publishedVersion ? t("publishNew") : t("publish")}
+              </Button>
+            )}
             {detail.status === "published" ? (
               <ConfirmAction label={t("retire")} question={t("retireQuestion")} confirmLabel={t("retireConfirm")} cancelLabel={t("cancel")} onConfirm={retire} />
             ) : null}

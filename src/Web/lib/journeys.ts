@@ -16,7 +16,7 @@ export type JourneyStatus = (typeof JOURNEY_STATUSES)[number];
 export const STEP_STATUSES = ["scheduled", "open", "done", "cancelled"] as const;
 export type StepStatus = (typeof STEP_STATUSES)[number];
 
-export const JOURNEY_STEP_TYPES = ["task", "attestation", "access_removal", "exit_interview", "preboarding"] as const;
+export const JOURNEY_STEP_TYPES = ["task", "attestation", "access_removal", "exit_interview", "preboarding", "training"] as const;
 export type JourneyStepType = (typeof JOURNEY_STEP_TYPES)[number];
 
 /** The structured exit reasons (spec 022 FR-018), as the API lists them. */
@@ -49,6 +49,8 @@ export type JourneyStepSpec = {
   systems?: string[] | null;
   /** A pre-boarding step's welcome text, by language. */
   content?: Names | null;
+  /** A training step's published courses (spec 028). */
+  courses?: string[] | null;
 };
 
 export type JourneyTemplate = {
