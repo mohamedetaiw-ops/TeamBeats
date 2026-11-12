@@ -326,6 +326,7 @@ public sealed class BookingTests(TenantWorld world)
         var problem = await OkAsync(Task.FromResult(refused), HttpStatusCode.Conflict);
         Assert.Equal("conflict.booking.limit", problem.GetProperty("detailKey").GetString());
         Assert.Equal(3, problem.GetProperty("limit").GetInt32());
+        Assert.Contains("(3)", problem.GetProperty("detail").GetString());
 
         // A series names every taken date before anything is booked, and runs no longer than the rules allow.
         var taken = await OkAsync(BookAsync(o.T["omar"].Client, desks[3], mon.AddDays(3), new TimeOnly(9, 0), new TimeOnly(12, 0)), HttpStatusCode.Created);

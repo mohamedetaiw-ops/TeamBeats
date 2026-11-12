@@ -274,7 +274,16 @@ public static class ProblemWriter
         if (problem.DetailKey is not null)
         {
             body["detailKey"] = problem.DetailKey;
-            body["detail"] = localizer.Get(problem.DetailKey, locale);
+            var detail = localizer.Get(problem.DetailKey, locale);
+            // Simple extension values fill their placeholders, such as {limit} in "the most active bookings allowed ({limit})".
+            foreach (var (k, v) in problem.Extensions ?? new Dictionary<string, object?>())
+            {
+                if (v is string or int or long or decimal)
+                {
+                    detail = detail.Replace("{" + k + "}", Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
+                }
+            }
+            body["detail"] = detail;
         }
         if (problem.Errors is not null)
         {
