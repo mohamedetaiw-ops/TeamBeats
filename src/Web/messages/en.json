@@ -8868,6 +8868,38 @@
       "removeMyTag": "Remove my tag",
       "remove": "Remove",
       "saveTags": "Save tags"
+    },
+    "home": {
+      "recognitionTitle": "Recognition",
+      "recognitionAll": "Recognition wall",
+      "recognitionEmpty": "No recognitions yet",
+      "recognitionLine": "<giver>{giverName}</giver> thanked <to>{toName}</to>",
+      "leaderboardTitle": "Leaderboard",
+      "leaderboardAll": "Recognition",
+      "leaderboardEmpty": "No points this month yet",
+      "leaderboardLabel": "Most points this month",
+      "points": "{count, plural, one {# point} other {# points}}",
+      "celebrationsTitle": "Celebrations",
+      "celebrationsAll": "All celebrations",
+      "celebrationsEmpty": "Nothing to celebrate this week",
+      "today": "Today",
+      "awardsTitle": "Awards",
+      "awardsAll": "All awards",
+      "awardsEmpty": "No awards yet",
+      "winners": "Winners",
+      "nominationsClose": "Nominations close {date}",
+      "failed": "This card could not load.",
+      "retry": "Try again",
+      "discussionsTitle": "Latest discussions",
+      "discussionsAll": "Open community",
+      "discussionsEmpty": "No posts yet",
+      "discussionsOpen": "Open post",
+      "anonymous": "Anonymous",
+      "comments": "{count, plural, =0 {No comments} one {# comment} other {# comments}}",
+      "pollTitle": "Active poll",
+      "pollAll": "All polls",
+      "pollEmpty": "No open poll",
+      "pollVoted": "You voted"
     }
   }
 }

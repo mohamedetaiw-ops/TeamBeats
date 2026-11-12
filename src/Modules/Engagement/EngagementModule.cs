@@ -15,6 +15,7 @@ public static class EngagementModule
 
     public static IServiceCollection AddEngagementModule(this IServiceCollection services)
     {
+        services.AddSingleton<Experience.Contracts.IComponentRegistration, EngagementComponents>();
         services.AddScoped<Communities>();
         services.AddScoped<Posts>();
         services.AddScoped<KeywordFilters>();

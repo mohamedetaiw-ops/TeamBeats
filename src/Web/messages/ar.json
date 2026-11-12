@@ -8868,6 +8868,38 @@
       "removeMyTag": "إزالة الإشارة إليّ",
       "remove": "إزالة",
       "saveTags": "حفظ الإشارات"
+    },
+    "home": {
+      "recognitionTitle": "التقدير",
+      "recognitionAll": "حائط التقدير",
+      "recognitionEmpty": "لا توجد رسائل تقدير بعد",
+      "recognitionLine": "<giver>{giverName}</giver> شكر <to>{toName}</to>",
+      "leaderboardTitle": "لوحة الصدارة",
+      "leaderboardAll": "التقدير",
+      "leaderboardEmpty": "لا توجد نقاط هذا الشهر بعد",
+      "leaderboardLabel": "الأعلى نقاطًا هذا الشهر",
+      "points": "{count, plural, zero {لا نقاط} one {نقطة واحدة} two {نقطتان} few {# نقاط} many {# نقطة} other {# نقطة}}",
+      "celebrationsTitle": "المناسبات",
+      "celebrationsAll": "كل المناسبات",
+      "celebrationsEmpty": "لا توجد مناسبات هذا الأسبوع",
+      "today": "اليوم",
+      "awardsTitle": "الجوائز",
+      "awardsAll": "كل الجوائز",
+      "awardsEmpty": "لا توجد جوائز بعد",
+      "winners": "الفائزون",
+      "nominationsClose": "يُغلق الترشيح في {date}",
+      "failed": "تعذر تحميل هذه البطاقة.",
+      "retry": "حاول مرة أخرى",
+      "discussionsTitle": "أحدث النقاشات",
+      "discussionsAll": "فتح المجتمع",
+      "discussionsEmpty": "لا توجد منشورات بعد",
+      "discussionsOpen": "فتح المنشور",
+      "anonymous": "مجهول",
+      "comments": "{count, plural, =0 {لا تعليقات} one {تعليق واحد} two {تعليقان} few {# تعليقات} many {# تعليقًا} other {# تعليق}}",
+      "pollTitle": "الاستطلاع الحالي",
+      "pollAll": "كل الاستطلاعات",
+      "pollEmpty": "لا يوجد استطلاع مفتوح",
+      "pollVoted": "صوّتّ"
     }
   }
 }

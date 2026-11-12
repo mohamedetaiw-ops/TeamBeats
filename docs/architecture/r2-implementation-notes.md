@@ -675,3 +675,20 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Resizing (US7 scenario 1) | Follow-up. There is no image library in the stack yet, so photos are stored at their cleaned original size; adding one needs the dependency review of hard rule 6 |
 | EXIF orientation | Lost with the metadata; comes back with resizing |
 | Videos and reporting a photo | Follow-ups |
+
+## Home cards and performance (spec 023, slice 10: first part of T015; FR-022, spec 008 FR-055)
+
+### Built
+- Six components that any page, the home included, can place: latest discussions and the active poll of one community, recognition, the points leaderboard, celebrations and awards. Each is registered by Engagement for spec 032 with the capability behind it, so a tenant whose package lacks it is not offered the card.
+- Every card reads the same endpoint as the full page it links to (FR-022). The discussions card is the community's first feed page and the poll card is the community's polls list, so a closed community shows nothing to someone who cannot read it. A card whose feature is off for the viewer shows as empty, never as an error.
+- Performance (section "Non-functional"):
+  - `EngagementPerformanceTests.A_community_feed_first_page_stays_under_800_ms_p95_at_10000_posts`: about 10 ms p95 locally.
+  - `EngagementPerformanceTests.An_anonymous_survey_of_10000_respondents_aggregates_in_under_10_seconds`: four questions over ten groups, about 0.2 seconds locally.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Which community the discussions and poll cards show | The one the page editor picks; there is no cross-community feed on home yet |
+| Cards on every employee's default home | None added. The cards are offered in the page builder and in home personalization, so no tenant's home changes on its own |
+| Leaderboard period on the card | This month |
+| Picker category | `people` |
