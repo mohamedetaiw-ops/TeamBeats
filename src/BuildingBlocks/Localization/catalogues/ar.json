@@ -2071,6 +2071,7 @@
   "notifications.push.category.bookings": "حجوزاتك",
   "notifications.push.body": "افتح TeamBeats لقراءته.",
   "conflict.push.unavailable": "الإشعارات الفورية غير مُعدّة في هذا التثبيت.",
+  "conflict.offline.unavailable": "القراءة دون اتصال غير مُعدّة في هذا التثبيت.",
   "validation.push.endpoint": "يستخدم هذا المتصفح خدمة إشعارات لا يرسل إليها TeamBeats.",
   "validation.push.keys": "لم يقدّم المتصفح مفاتيح إشعارات صالحة. حاول تشغيل الإشعارات مرة أخرى."
 }

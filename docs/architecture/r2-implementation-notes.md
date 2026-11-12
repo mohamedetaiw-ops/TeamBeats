@@ -1057,3 +1057,18 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - At most 10 devices per person; the oldest is dropped when an 11th subscribes.
 - A message lives 24 hours at the push service. Urgent notifications are sent with high urgency.
 - The VAPID contact defaults to an address in the reserved `.invalid` domain; staging sets it to the staging site address.
+
+## Mobile app (spec 030, slice 3: T007, T008; US3)
+
+### Built
+- Offline bundle (FR-009, FR-010): `GET /api/v1/me/offline` in Experience composes the `IOfflineSource` contract (Content.Contracts). Content gives the live critical announcements targeted to the person and Policies gives the policies that apply to them, in the version they owe or else the one in force, each clause under its numbered heading. Both leave out anything above Internal and anything the person may not read now. The bundle keeps the newest items within the tenant's item and size limits, names its owner (tenant and person), carries server times for the sync and the expiry, and is sent with `Cache-Control: no-store`. It needs `mobile.offline` and a browser session.
+- Key: each session gets its own 32 byte key, an HMAC of the tenant, person and session under `Mobile:OfflineKey` from the secret manager. Development and test hosts without one make one per process; other hosts without one answer `conflict.offline.unavailable`. The staging deploy creates it on its first run.
+- Limits (section 6): the tenant security policy has `offlineMaxItems` (0 to 200, default 50), `offlineMaxMb` (1 to 200, default 50) and `offlineDays` (1 to 30, default 7), set on the security page by whoever may change the security policy. A change is audited as `security.policy_changed` and also as `mobile.offline_policy_changed` with the limits before and after.
+- Device cache (FR-011): `lib/offline.ts` syncs on the first page of a visit, every five minutes after and when the connection comes back. Each item is encrypted with AES-GCM under the session key, kept as a non-extractable key in IndexedDB, and the whole cache is replaced at each sync, so withdrawn items and items the person lost access to are pruned. Sign-out, the sign-in page (reached after session expiry or revocation), a refused sync and expiry delete it.
+- Offline page (FR-012): `public/offline-reader.js`, kept by the service worker, lists the kept items and opens one under "Offline. Last updated" with the sync time. It writes text only, never markup. Expiry uses the server time recorded at the sync; a device clock set back before that time wipes the cache. The page is now rendered per request so the reader script carries the response's nonce under the content security policy; the service worker keeps the page and its policy together.
+
+### Smallest safe defaults
+- The spec lists saved items and recent pages as offline content, but the platform has no saved items yet and recent pages would mean keeping arbitrary pages on the device. Slice 3 keeps critical announcements and policies only; saved items join when they exist.
+- The experience administrator's choice of offline critical categories is not built: every critical announcement targeted to the person is kept. Recorded as a gap for the experience settings.
+- "Mandatory policies" means the policies that apply to the person (spec 025), whether or not they have attested yet.
+- One person's cache per tenant host: the next sign-in on the device starts with nothing.

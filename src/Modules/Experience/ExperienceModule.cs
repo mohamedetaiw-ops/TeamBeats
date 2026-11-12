@@ -41,6 +41,8 @@ public static class ExperienceModule
         services.AddScoped<Telemetry.PageTelemetry>();
         services.AddScoped<ThemeService>();
         services.AddScoped<AppManifest>();
+        services.AddSingleton<Offline.OfflineKeySource>();
+        services.AddScoped<Offline.OfflineBundles>();
         services.AddScoped<ShellService>();
         return services;
     }
@@ -353,6 +355,14 @@ public static class ExperienceModule
             response.Headers.CacheControl = "private, no-cache";
             return Results.Json(manifest, ManifestJson, "application/manifest+json");
         });
+
+        // Offline reading (spec 030 US3): the device's encrypted cache for this person and session. Never cached anywhere.
+        app.MapGet("/api/v1/me/offline", async (Offline.OfflineBundles bundles, HttpResponse response, CancellationToken ct) =>
+        {
+            var bundle = await bundles.BundleAsync(ct);
+            response.Headers.CacheControl = "no-store";
+            return Results.Ok(bundle);
+        }).RequireTenantUser().WithTags("Experience: offline");
 
         x.MapGet("/app-icon.svg", async (bool? maskable, AppManifest manifests, HttpResponse response, IDbSession session, CancellationToken ct) =>
         {

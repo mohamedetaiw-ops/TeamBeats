@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { apiGet, type SignInOptions } from "@/lib/api";
 import { DevSignInForm, type DevSignInMode } from "./DevSignInForm";
+import { OfflineWipe } from "@/features/app/OfflineSync";
 
 // Read the sign-in mode at request time, so one web image serves staging and production.
 export const dynamic = "force-dynamic";
@@ -27,6 +28,7 @@ export default async function SignInPage() {
   return (
     <main id="main" className="page narrow">
       <h1>{t("title")}</h1>
+      <OfflineWipe />
       {sso ? (
         <a className="button" href="/api/v1/auth/signin/sso">
           {t("ssoMicrosoft")}

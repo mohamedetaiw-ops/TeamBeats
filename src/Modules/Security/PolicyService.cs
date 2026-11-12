@@ -26,7 +26,10 @@ public sealed record SecurityPolicyView(
     int RememberDeviceDays,
     bool ScopedRulesAvailable,
     string? YourAddress,
-    int Version)
+    int Version,
+    int OfflineMaxItems,
+    int OfflineMaxMb,
+    int OfflineDays)
 {
     public string ETag => PolicyService.ETag(Version);
 }
@@ -43,7 +46,10 @@ public sealed record SecurityPolicyRequest(
     int? MaxSessions,
     bool? NoSessionLimit,
     int? RememberDeviceDays,
-    string? Confirmation);
+    string? Confirmation,
+    int? OfflineMaxItems = null,
+    int? OfflineMaxMb = null,
+    int? OfflineDays = null);
 
 /// <summary>How many members would be refused by proposed tenant rules, from their sign-ins in the last 30 days (spec 026 section 10).</summary>
 public sealed record LockoutPreview(int PeopleOutside, string? YourAddress, bool YouWouldBeRefused);
@@ -101,7 +107,7 @@ public sealed partial class PolicyService(
     private async Task<SecurityPolicyView> ViewAsync(SecurityPolicySnapshot p, CancellationToken ct) =>
         new(p.IpAllow, p.IpBlock, p.AdminIpAllow, p.NetworkZones, p.RequireMfa, await MfaClaimSeenAsync(ct), p.StepUpMinutes, p.IdleMinutes,
             p.AbsoluteHours, p.MaxSessions, p.RememberDeviceDays, await entitlements.IsEnabledAsync(Capabilities.SecurityIpRulesScoped, ct), Caller(),
-            Math.Max(p.Version, 1));
+            Math.Max(p.Version, 1), p.OfflineMaxItems, p.OfflineMaxMb, p.OfflineDays);
 
     private static List<string> Ranges(IReadOnlyList<string>? input, IReadOnlyList<string> current, string field, ValidationErrors errors)
     {
@@ -188,6 +194,9 @@ public sealed partial class PolicyService(
             errors.Add("maxSessions", "validation.security.out_of_range");
         }
         var remember = Number(request.RememberDeviceDays, current.RememberDeviceDays, 0, 90, "rememberDeviceDays", errors);
+        var offlineItems = Number(request.OfflineMaxItems, current.OfflineMaxItems, 0, 200, "offlineMaxItems", errors);
+        var offlineMb = Number(request.OfflineMaxMb, current.OfflineMaxMb, 1, 200, "offlineMaxMb", errors);
+        var offlineDays = Number(request.OfflineDays, current.OfflineDays, 1, 30, "offlineDays", errors);
         errors.ThrowIfAny();
 
         // Admin area and per role network rules are in Workplace Plus and above (section 9).
@@ -196,7 +205,8 @@ public sealed partial class PolicyService(
             await entitlements.DemandAsync(Capabilities.SecurityIpRulesScoped, ct);
         }
 
-        var next = new SecurityPolicySnapshot(allow, block, admin, zones, requireMfa, stepUp, idle, absolute, maxSessions, remember, current.Version + 1);
+        var next = new SecurityPolicySnapshot(allow, block, admin, zones, requireMfa, stepUp, idle, absolute, maxSessions, remember, current.Version + 1,
+            offlineItems, offlineMb, offlineDays);
         var caller = Caller();
         var callerAddress = caller is null ? null : IPAddress.Parse(caller);
         if (NetworkRules.Refusal(next, callerAddress, adminArea: true) is not null && NetworkRules.Refusal(current, callerAddress, adminArea: true) is null
@@ -216,15 +226,26 @@ public sealed partial class PolicyService(
             """
             update security.policy set ip_allow = @allow::cidr[], ip_block = @block::cidr[], admin_ip_allow = @admin::cidr[], network_zones = @zones,
               require_mfa = @mfa, step_up_minutes = @stepUp, idle_minutes = @idle, absolute_hours = @absolute, max_sessions = @maxSessions,
-              remember_device_days = @remember, version = @version, updated_at = @now, updated_by = @actor
+              remember_device_days = @remember, offline_max_items = @offlineItems, offline_max_mb = @offlineMb, offline_days = @offlineDays,
+              version = @version, updated_at = @now, updated_by = @actor
             """,
             new
             {
                 allow = allow.ToArray(), block = block.ToArray(), admin = admin.ToArray(), zones = Jsonb.From(zones), mfa = requireMfa, stepUp, idle, absolute,
-                maxSessions, remember, version = next.Version, now = clock.UtcNow, actor = context.ActorId,
+                maxSessions, remember, offlineItems, offlineMb, offlineDays, version = next.Version, now = clock.UtcNow, actor = context.ActorId,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.SecurityPolicyChanged, "security_policy", null,
             Changes: new { settings = changed, before = Values(current), after = Values(next) }), ct);
+        if (changed.Any(c => c.StartsWith("offline", StringComparison.Ordinal)))
+        {
+            // Spec 030 section 11: the offline limits have their own audit entry, with the limits and the actor.
+            await audit.WriteAsync(new AuditEntry(AuditActions.MobileOfflinePolicyChanged, "security_policy", null,
+                Changes: new
+                {
+                    before = new { maxItems = current.OfflineMaxItems, maxMb = current.OfflineMaxMb, days = current.OfflineDays },
+                    after = new { maxItems = next.OfflineMaxItems, maxMb = next.OfflineMaxMb, days = next.OfflineDays },
+                }), ct);
+        }
         await outbox.EnqueueAsync(new SecurityPolicyChanged(next.Version, changed), ct);
         var tenant = context.RequireTenant();
         session.OnCommitted(() => store.Forget(tenant));
@@ -238,7 +259,7 @@ public sealed partial class PolicyService(
     {
         ipAllow = p.IpAllow, ipBlock = p.IpBlock, adminIpAllow = p.AdminIpAllow, networkZones = p.NetworkZones, requireMfa = p.RequireMfa,
         stepUpMinutes = p.StepUpMinutes, idleMinutes = p.IdleMinutes, absoluteHours = p.AbsoluteHours, maxSessions = p.MaxSessions,
-        rememberDeviceDays = p.RememberDeviceDays,
+        rememberDeviceDays = p.RememberDeviceDays, offlineMaxItems = p.OfflineMaxItems, offlineMaxMb = p.OfflineMaxMb, offlineDays = p.OfflineDays,
     };
 
     private static List<string> Changed(SecurityPolicySnapshot a, SecurityPolicySnapshot b)
@@ -254,6 +275,9 @@ public sealed partial class PolicyService(
         if (a.AbsoluteHours != b.AbsoluteHours) result.Add("absoluteHours");
         if (a.MaxSessions != b.MaxSessions) result.Add("maxSessions");
         if (a.RememberDeviceDays != b.RememberDeviceDays) result.Add("rememberDeviceDays");
+        if (a.OfflineMaxItems != b.OfflineMaxItems) result.Add("offlineMaxItems");
+        if (a.OfflineMaxMb != b.OfflineMaxMb) result.Add("offlineMaxMb");
+        if (a.OfflineDays != b.OfflineDays) result.Add("offlineDays");
         return result;
     }
 

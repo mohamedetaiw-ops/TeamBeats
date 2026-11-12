@@ -148,6 +148,44 @@ public sealed class CriticalAnnouncements(
         return new PendingCritical(modal, banners);
     }
 
+    /// <summary>
+    /// Critical announcements to keep for reading offline (spec 030 US3): every live critical item targeted to the person,
+    /// answered or not, that they may read now and that is classified up to Internal, in their language, newest first.
+    /// </summary>
+    public async Task<IReadOnlyList<OfflineItem>> OfflineAsync(int max, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        if (max <= 0 || !await entitlements.IsEnabledAsync(Capabilities.ContentCore, ct) || !await entitlements.IsEnabledAsync(Capabilities.ContentCriticalAck, ct))
+        {
+            return [];
+        }
+        var rows = await session.QueryAsync(
+            $"""
+            select {Prefixed} from content.audience_member m
+            join content.content_item i on i.tenant_id = m.tenant_id and i.id = m.item_id
+            where m.user_id = @user and i.status = 'published' and i.critical is not null and i.classification in ('public', 'internal')
+            order by i.published_at desc, i.id limit @limit
+            """, new { user, limit = Math.Min(max, OfflineMax) }, Items.Read, ct);
+        var locales = await tenantSettings.GetLocaleSettingsAsync(ct);
+        var list = new List<OfflineItem>();
+        foreach (var item in rows)
+        {
+            if (!OfflineClassifications.Allowed(item.Classification) || item.PublishedVersion is not { } number
+                || !await items.MayReadAsync(item, await SiteAsync(item.SiteId, ct), ct))
+            {
+                continue;
+            }
+            var version = (await items.VersionAsync(item.Id, number, ct))!;
+            var (locale, variant) = Items.Pick(version.Variants, requestLocale.Locale, locales.DefaultLocale, item.PrimaryLocale);
+            list.Add(new OfflineItem(OfflineKinds.Announcement, item.Id, version.Number, locale, variant.Title, variant.Summary, variant.Body,
+                $"/content/read/{item.Id}", item.PublishedAt ?? item.UpdatedAt));
+        }
+        return list;
+    }
+
+    /// <summary>No tenant keeps more than this many items offline (spec 030 section 6).</summary>
+    public const int OfflineMax = 200;
+
     /// <summary>Item columns with the <c>i.</c> prefix, in the order <see cref="Items.Read"/> expects.</summary>
     private static readonly string Prefixed = string.Join(", ", Items.Columns.Split(',', StringSplitOptions.TrimEntries)
         .Select(c => "i." + c));

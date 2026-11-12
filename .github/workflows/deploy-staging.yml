@@ -94,9 +94,10 @@ jobs:
         run: |
           # Integrations__Microsoft365__TokenKey encrypts stored Microsoft 365 tokens (staging uses the fake Microsoft 365).
           # Ai__DebugLog__Key encrypts AI debug window entries (spec 013 US8), so they stay readable across restarts.
+          # Mobile__OfflineKey derives each session's key for the encrypted offline cache on devices (spec 030 US3).
           # API and workers share each key; if either lacks it, both get a new one (data under the old key becomes unreadable).
           has_secret() { flyctl secrets list --app "$1" --json | jq -e --arg n "$2" 'map(.Name // .name) | index($n)' >/dev/null; }
-          for name in Integrations__Microsoft365__TokenKey Ai__DebugLog__Key; do
+          for name in Integrations__Microsoft365__TokenKey Ai__DebugLog__Key Mobile__OfflineKey; do
             if has_secret "$API_APP" "$name" && has_secret "$WORKERS_APP" "$name"; then
               echo "$name already set"
               continue

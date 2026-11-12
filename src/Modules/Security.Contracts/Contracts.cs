@@ -18,8 +18,16 @@ public sealed record SecurityPolicySnapshot(
     int AbsoluteHours,
     int? MaxSessions,
     int RememberDeviceDays,
-    int Version)
+    int Version,
+    int OfflineMaxItems = SecurityPolicySnapshot.DefaultOfflineItems,
+    int OfflineMaxMb = SecurityPolicySnapshot.DefaultOfflineMb,
+    int OfflineDays = SecurityPolicySnapshot.DefaultOfflineDays)
 {
+    /// <summary>Spec 030 section 6: a device keeps up to 50 items and 50 MB for 7 days unless the tenant says otherwise.</summary>
+    public const int DefaultOfflineItems = 50;
+    public const int DefaultOfflineMb = 50;
+    public const int DefaultOfflineDays = 7;
+
     /// <summary>Section 6 defaults: no network rules, step-up after 10 minutes, idle 30 minutes, absolute 12 hours.</summary>
     public static readonly SecurityPolicySnapshot Default = new([], [], [], new Dictionary<string, IReadOnlyList<string>>(), false, 10, 30, 12, null, 0, 0);
 }

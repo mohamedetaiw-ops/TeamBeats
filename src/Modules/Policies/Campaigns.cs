@@ -394,6 +394,44 @@ public sealed class PolicyCampaigns(
         return await PoliciesOfAsync(context.RequireUser(), ct);
     }
 
+    /// <summary>
+    /// Mandatory policies to keep for reading offline (spec 030 US3): the policies that apply to the person, in the version
+    /// they owe an attestation for or else the one in force, classified up to Internal, as one document with each clause
+    /// under its numbered heading.
+    /// </summary>
+    public async Task<IReadOnlyList<OfflineItem>> OfflineAsync(int max, string requested, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        if (max <= 0 || !await entitlements.IsEnabledAsync(Capabilities.PolicyCore, ct))
+        {
+            return [];
+        }
+        var list = new List<OfflineItem>();
+        foreach (var mine in await PoliciesOfAsync(user, ct))
+        {
+            var policy = await register.RowAsync(mine.Policy.Id, false, ct);
+            if (policy is null || policy.Status == PolicyStatuses.Retired || !OfflineClassifications.Allowed(policy.Classification)
+                || (mine.Due?.Version ?? mine.CurrentVersion) is not { } owedOrCurrent
+                || await register.VersionByNumberAsync(policy.Id, owedOrCurrent, ct) is not { Number: { } number } version)
+            {
+                continue;
+            }
+            var locale = version.Locales.Contains(requested) ? requested
+                : policy.BindingLocale is { } binding && version.Locales.Contains(binding) ? binding : version.Locales.FirstOrDefault() ?? requested;
+            var blocks = new List<Block>();
+            foreach (var clause in ClauseRules.Views(version.Clauses))
+            {
+                var heading = $"{clause.Number} {clause.Titles.GetValueOrDefault(locale) ?? clause.Titles.Values.FirstOrDefault() ?? string.Empty}".Trim();
+                blocks.Add(new Block(BlockTypes.Heading, [new Inline(heading)], Level: Math.Clamp(clause.Level + 1, 2, 4)));
+                blocks.AddRange((clause.Bodies.GetValueOrDefault(locale) ?? clause.Bodies.Values.FirstOrDefault() ?? BodyDocument.Empty).Blocks);
+            }
+            var title = version.Titles.GetValueOrDefault(locale) ?? policy.Names.GetValueOrDefault(locale) ?? policy.Code;
+            list.Add(new OfflineItem(OfflineKinds.Policy, policy.Id, number, locale, title, policy.Code, new BodyDocument(blocks), PolicySearchSource.Link(policy.Id),
+                version.EffectiveFrom ?? policy.UpdatedAt));
+        }
+        return list.OrderByDescending(i => i.UpdatedAt).Take(max).ToList();
+    }
+
     /// <summary>The policies that apply to one person with what they owe and last attested; the caller checks who may see it.</summary>
     internal async Task<IReadOnlyList<MyPolicyItem>> PoliciesOfAsync(Guid user, CancellationToken ct)
     {

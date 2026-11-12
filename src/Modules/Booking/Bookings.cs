@@ -759,12 +759,23 @@ public sealed class Bookings(
         return resource;
     }
 
+    /// <summary>
+    /// How far ahead "today" reaches for a scan or a kiosk: the end of the day at the site, or later when a booking just after
+    /// midnight already has its check-in window open, so it can be checked in to before the date changes.
+    /// </summary>
+    private async Task<DateTimeOffset> HorizonAsync(DateTimeOffset now, SiteRow site, CancellationToken ct)
+    {
+        var localToday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, site.Zone).DateTime);
+        var endOfDay = At(localToday.AddDays(1), TimeOnly.MinValue, site.Zone);
+        var windowOpens = now.AddMinutes((await rules.SettingsAsync(ct)).CheckInBeforeMinutes).AddTicks(1);
+        return windowOpens > endOfDay ? windowOpens : endOfDay;
+    }
+
     /// <summary>The scanning person's booking of the resource for now: the one whose window is open, else their next one today.</summary>
     private async Task<BookingView?> NowAsync(ResourceRow resource, SiteRow site, CancellationToken ct)
     {
         var now = clock.UtcNow;
-        var localToday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, site.Zone).DateTime);
-        var endOfDay = At(localToday.AddDays(1), TimeOnly.MinValue, site.Zone);
+        var endOfDay = await HorizonAsync(now, site, ct);
         var views = await ViewsAsync("b.resource_id = @resource and b.holder_id = @me and b.status in ('tentative', 'confirmed', 'checked_in') and b.ends_at > @now and b.starts_at < @endOfDay",
             new { resource = resource.Id, me = context.RequireUser(), now, endOfDay }, ct);
         return views.FirstOrDefault(v => v.CanCheckIn) ?? views.FirstOrDefault(v => v.Status == BookingStatuses.CheckedIn) ?? views.FirstOrDefault();
@@ -794,10 +805,9 @@ public sealed class Bookings(
         await authz.DemandAsync(Permissions.BookingBook, AuthzTarget.Tenant, ct);
         var site = await facilities.ActiveSiteAsync(siteId, ct);
         var now = clock.UtcNow;
-        var localToday = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, site.Zone).DateTime);
         var views = await ViewsAsync(
             "s.id = @siteId and b.holder_id = @me and b.status in ('tentative', 'confirmed', 'checked_in') and b.ends_at > @now and b.starts_at < @endOfDay",
-            new { siteId, me = context.RequireUser(), now, endOfDay = At(localToday.AddDays(1), TimeOnly.MinValue, site.Zone) }, ct);
+            new { siteId, me = context.RequireUser(), now, endOfDay = await HorizonAsync(now, site, ct) }, ct);
         return new KioskView(site.Id, site.Names, site.TimeZone, views);
     }
 

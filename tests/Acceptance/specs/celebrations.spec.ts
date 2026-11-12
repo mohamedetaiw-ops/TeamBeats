@@ -29,9 +29,12 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test.beforeAll(async () => {
       tenant = await createTenant(`ce-${locale}`, locale, "workplace_plus", ["layla"]);
       const layla = await signedIn(tenant, `layla@${tenant.key}.example`);
-      const today = new Date();
+      // Today in the tenant's time zone (Asia/Dubai), as the service counts it: after 20:00 UTC it is already tomorrow there.
+      const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Dubai", month: "numeric", day: "numeric" }).formatToParts(new Date());
+      const part = (type: string) => Number(parts.find((p) => p.type === type)!.value);
+      const [month, day] = [part("month"), part("day")];
       const saved = await layla.put("/api/v1/engagement/celebrations/preferences", {
-        data: { birthdayMonth: today.getUTCMonth() + 1, birthdayDay: today.getUTCDate(), anniversaryOptOut: false },
+        data: { birthdayMonth: month, birthdayDay: day, anniversaryOptOut: false },
       });
       expect(saved.ok(), await saved.text()).toBe(true);
       await layla.dispose();
