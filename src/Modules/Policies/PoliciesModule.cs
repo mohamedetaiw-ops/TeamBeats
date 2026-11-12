@@ -23,6 +23,7 @@ public static class PoliciesModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<PolicyTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, PolicyTaskSource>("policies.notify_approval");
         services.AddScoped<PolicyCampaigns>();
+        services.AddScoped<Content.Contracts.IOfflineSource, PolicyOfflineSource>();
         services.AddScoped<PolicyCompliance>();
         services.AddScoped<Contracts.IPolicyObligations, PolicyObligations>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<PolicyCampaigns>());

@@ -290,3 +290,81 @@ test.describe("push on this device", () => {
 
   });
 });
+
+/**
+ * Spec 030 slice 3 (US3): offline reading. While online the app keeps the critical announcement targeted to the person,
+ * encrypted; with no connection the offline page lists it and opens it under the "offline, last updated" banner; signing
+ * out deletes the cache. Eligibility, limits, pruning and the key are covered by OfflineTests.
+ */
+test.describe("offline reading", () => {
+  let tenant: TestTenant;
+  const title = "Gas leak drill on Monday";
+  const body = "Meet at the north gate at 9.";
+
+  test.beforeAll(async () => {
+    tenant = await createTenant("off-en", "en", "workplace_plus");
+    const api = await tenantApi(tenant);
+    const created = await api.post("/api/v1/content/items", {
+      data: { type: "announcement", variants: { en: { title, body: { blocks: [{ type: "paragraph", children: [{ text: body }] }] } } }, critical: { presentation: "banner" } },
+    });
+    expect(created.status(), await created.text()).toBe(201);
+    const id = ((await created.json()) as { id: string }).id;
+    expect((await api.post(`/api/v1/content/items/${id}/publish`, { data: { material: true } })).ok()).toBe(true);
+    // The audience step runs in the background; wait until the item is the administrator's.
+    await expect
+      .poll(async () => ((await (await api.get("/api/v1/me/offline")).json()) as { items: { id: string }[] }).items.some((i) => i.id === id))
+      .toBe(true);
+    await api.dispose();
+  });
+
+  const kept = (page: Page) =>
+    page.evaluate(
+      () =>
+        new Promise<number>((resolve) => {
+          const request = indexedDB.open("tb-offline", 1);
+          request.onupgradeneeded = () => request.transaction?.abort();
+          request.onerror = () => resolve(0);
+          request.onsuccess = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains("cache")) return resolve(0);
+            const get = db.transaction("cache").objectStore("cache").get("current");
+            get.onsuccess = () => {
+              const value = get.result as { items: { data: ArrayBuffer }[] } | undefined;
+              // The stored item is ciphertext: its bytes never contain the title.
+              const plain = value?.items.some((i) => new TextDecoder().decode(i.data).includes("Gas leak"));
+              db.close();
+              resolve(plain ? -1 : (value?.items.length ?? 0));
+            };
+          };
+        }),
+    );
+
+  test("a kept announcement opens with no connection under the offline banner, and sign-out deletes it", async ({ page, context }, testInfo) => {
+    await signInWithDevForm(page, tenant.key, tenant.adminEmail, "en");
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) await new Promise((r) => navigator.serviceWorker.addEventListener("controllerchange", r, { once: true }));
+    });
+    await expect.poll(() => kept(page)).toBe(1);
+
+    await context.setOffline(true);
+    await page.goto(`${hostOrigin(tenant.key)}/people`).catch(() => undefined);
+    const library = page.getByRole("region", { name: msg("en", "app.offline.library.title"), exact: true });
+    await expect(library).toBeVisible();
+    await expect(library.getByText(/^Offline\. Last updated /)).toBeVisible();
+    await library.getByRole("button", { name: new RegExp(title) }).click();
+    await expect(page.getByRole("heading", { name: title, level: 2 })).toBeFocused();
+    await expect(page.getByText(body, { exact: true })).toBeVisible();
+    await expect(page.getByText(/^Offline\. Last updated /)).toBeVisible();
+    await expectAccessible(page, testInfo, "offline reader");
+    await page.getByRole("button", { name: msg("en", "app.offline.library.back"), exact: true }).click();
+    await expect(library).toBeVisible();
+    await context.setOffline(false);
+
+    await page.goto(`${hostOrigin(tenant.key)}/`);
+    await page.getByRole("button", { name: /^Account/ }).click();
+    await page.getByRole("button", { name: msg("en", "shell.signOut"), exact: true }).click();
+    await page.waitForURL(/\/signin/);
+    await expect.poll(() => kept(page)).toBe(0);
+  });
+});

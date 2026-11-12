@@ -38,7 +38,8 @@ public sealed class CelebrationTests(TenantWorld world)
             : [];
     }
 
-    private static readonly DateOnly Today = DateOnly.FromDateTime(DateTime.UtcNow);
+    /// <summary>Today in the test tenants' time zone (Asia/Dubai), as the service counts it: after 20:00 UTC it is already tomorrow there.</summary>
+    private static DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTime.UtcNow, "Asia/Dubai"));
 
     private async Task<TestTenant> SetupAsync()
     {

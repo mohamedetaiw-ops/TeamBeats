@@ -147,6 +147,18 @@
         }
       }
     },
+    "/api/v1/me/offline": {
+      "get": {
+        "tags": [
+          "Experience: offline"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/leave": {
       "get": {
         "tags": [
@@ -30036,6 +30048,33 @@
               "null",
               "string"
             ]
+          },
+          "offlineMaxItems": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "offlineMaxMb": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "offlineDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -32247,6 +32286,9 @@
     },
     {
       "name": "Integrations: webhooks"
+    },
+    {
+      "name": "Experience: offline"
     },
     {
       "name": "Leave"

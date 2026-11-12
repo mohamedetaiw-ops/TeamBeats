@@ -11,6 +11,10 @@ export type SecurityPolicy = {
   absoluteHours: number;
   maxSessions: number | null;
   rememberDeviceDays: number;
+  /** Offline reading on devices (spec 030 US3): items, megabytes and days a device may keep. */
+  offlineMaxItems: number;
+  offlineMaxMb: number;
+  offlineDays: number;
   scopedRulesAvailable: boolean;
   yourAddress: string | null;
   version: number;

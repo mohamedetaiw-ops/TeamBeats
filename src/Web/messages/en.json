@@ -5,7 +5,14 @@
     "offline": {
       "title": "You are offline",
       "message": "There is no connection. Pages open again when you are back online.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "library": {
+        "title": "Saved for offline reading",
+        "banner": "Offline. Last updated {time}.",
+        "back": "Back to the list",
+        "announcement": "Announcement",
+        "policy": "Policy"
+      }
     },
     "update": {
       "title": "A new version is ready",
@@ -2311,6 +2318,14 @@
         "maxHint": "Leave empty for no limit. The oldest session ends when a new one goes over the limit.",
         "remember": "Remember a device for, in days",
         "rememberHint": "0 means never. Longer periods ask for the second factor less often."
+      },
+      "offline": {
+        "title": "Offline reading on devices",
+        "hint": "Critical announcements and the policies that apply to a person are kept on their device, encrypted, so they can read them with no connection. Confidential items are never kept.",
+        "items": "Most items per device",
+        "itemsHint": "0 turns offline reading off.",
+        "mb": "Most space per device, in MB",
+        "days": "Keep items for, in days"
       },
       "save": "Save policy",
       "saving": "Saving",

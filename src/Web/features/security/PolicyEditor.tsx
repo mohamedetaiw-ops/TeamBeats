@@ -42,6 +42,9 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
   const [absolute, setAbsolute] = useState(String(initial.absoluteHours));
   const [maxSessions, setMaxSessions] = useState(initial.maxSessions === null ? "" : String(initial.maxSessions));
   const [remember, setRemember] = useState(String(initial.rememberDeviceDays));
+  const [offlineItems, setOfflineItems] = useState(String(initial.offlineMaxItems));
+  const [offlineMb, setOfflineMb] = useState(String(initial.offlineMaxMb));
+  const [offlineDays, setOfflineDays] = useState(String(initial.offlineDays));
   const [preview, setPreview] = useState<LockoutPreview | null>(null);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [confirmation, setConfirmation] = useState("");
@@ -78,6 +81,9 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
       absoluteHours: Number(absolute),
       ...(maxSessions.trim() === "" ? { noSessionLimit: true } : { maxSessions: Number(maxSessions) }),
       rememberDeviceDays: Number(remember),
+      offlineMaxItems: Number(offlineItems),
+      offlineMaxMb: Number(offlineMb),
+      offlineDays: Number(offlineDays),
       ...(needsConfirmation ? { confirmation } : {}),
     };
     try {
@@ -180,6 +186,14 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
         <FormField label={t("sessions.absolute")} hint={t("sessions.absoluteHint")} name="absoluteHours" type="number" min={1} max={72} value={absolute} onChange={(e) => setAbsolute(e.target.value)} />
         <FormField label={t("sessions.max")} hint={t("sessions.maxHint")} name="maxSessions" type="number" min={1} max={20} value={maxSessions} onChange={(e) => setMaxSessions(e.target.value)} />
         <FormField label={t("sessions.remember")} hint={t("sessions.rememberHint")} name="rememberDeviceDays" type="number" min={0} max={90} value={remember} onChange={(e) => setRemember(e.target.value)} />
+      </section>
+
+      <section className="security-section" aria-labelledby="security-offline-title">
+        <h2 id="security-offline-title">{t("offline.title")}</h2>
+        <p className="field-hint">{t("offline.hint")}</p>
+        <FormField label={t("offline.items")} hint={t("offline.itemsHint")} name="offlineMaxItems" type="number" min={0} max={200} value={offlineItems} onChange={(e) => setOfflineItems(e.target.value)} />
+        <FormField label={t("offline.mb")} name="offlineMaxMb" type="number" min={1} max={200} value={offlineMb} onChange={(e) => setOfflineMb(e.target.value)} />
+        <FormField label={t("offline.days")} name="offlineDays" type="number" min={1} max={30} value={offlineDays} onChange={(e) => setOfflineDays(e.target.value)} />
       </section>
 
       {result ? (

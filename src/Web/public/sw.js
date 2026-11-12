@@ -2,7 +2,7 @@
  * TeamBeats service worker (spec 030 US1, FR-002, FR-019).
  *
  * It keeps the app shell: the offline page, the platform icons and the hashed build files under /_next/static, which
- * hold no personal or tenant data. It never stores an API response or a page, so nothing one person or tenant saw is
+ * hold no personal or tenant data, and the offline reader script. It never stores an API response or a page, so nothing one person or tenant saw is
  * kept for another; offline reading of critical items is a separate, encrypted store. Pages always come from the
  * network, and the offline page answers when there is none.
  *
@@ -13,7 +13,7 @@
  */
 const VERSION = new URL(self.location.href).searchParams.get("v") || "dev";
 const SHELL = `tb-shell-${VERSION}`;
-const SHELL_FILES = ["/offline", "/icons/icon-192.png", "/icons/icon-512.png"];
+const SHELL_FILES = ["/offline", "/offline-reader.js", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   // Fetched without cookies, so the stored offline page is the signed-out one and carries nothing about this person.
@@ -43,6 +43,12 @@ self.addEventListener("fetch", (event) => {
 
   if (request.mode === "navigate") {
     event.respondWith(fetch(request).catch(() => caches.match("/offline").then((r) => r || Response.error())));
+    return;
+  }
+
+  // The offline reader and the icons come from the shell cache first, so the offline page works with no connection.
+  if (SHELL_FILES.includes(url.pathname) && url.pathname !== "/offline") {
+    event.respondWith(caches.match(url.pathname).then((hit) => hit || fetch(request)));
     return;
   }
 

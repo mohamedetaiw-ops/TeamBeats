@@ -13,8 +13,8 @@ Depends on 003, 008, 015, 026, 033. R2.
 - [x] T006 [US2] Web Push adapter in 015 and subscription endpoints
 
 ## Phase 3: User Story 3, offline (P1)
-- [ ] T007 [P] [US3] Tests: eligible items only, limits, encryption, wipe and prune, offline banner
-- [ ] T008 [US3] Offline cache and server cache marks
+- [x] T007 [P] [US3] Tests: eligible items only, limits, encryption, wipe and prune, offline banner
+- [x] T008 [US3] Offline cache and server cache marks
 
 ## Phase 4: User Story 4, kiosk (P1)
 - [ ] T009 [P] [US4] Tests: enrolment, badge and PIN, lockout, inactivity sign-out, nothing left on device, feature block by URL, revocation within 1 minute, cross-tenant badge

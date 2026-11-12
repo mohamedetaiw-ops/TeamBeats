@@ -46,3 +46,62 @@
     inset-block-end: calc(4.5rem + env(safe-area-inset-bottom));
   }
 }
+
+/* The offline reader (spec 030 US3): written by public/offline-reader.js on the offline page. */
+.offline-library,
+.offline-item {
+  display: grid;
+  gap: var(--tb-space-md);
+  margin-block-end: var(--tb-space-lg);
+}
+
+.offline-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.offline-entry {
+  display: grid;
+  gap: var(--tb-space-xs);
+  inline-size: 100%;
+  min-block-size: 2.75rem;
+  padding-block: var(--tb-space-sm);
+  padding-inline: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.offline-kind {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.offline-entry-title {
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.offline-item .button {
+  justify-self: start;
+}
+
+.offline-body {
+  overflow-wrap: anywhere;
+}
+
+.offline-table {
+  border-collapse: collapse;
+}
+
+.offline-table td {
+  padding: var(--tb-space-xs) var(--tb-space-xs);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}

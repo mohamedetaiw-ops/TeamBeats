@@ -34,6 +34,7 @@ public static class ContentModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ContentTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, ContentTaskSource>("content.notify_review");
         services.AddScoped<CriticalAnnouncements>();
+        services.AddScoped<Contracts.IOfflineSource, ContentOfflineSource>();
         services.AddScoped<ContentGovernance>();
         services.AddScoped<ContentSocial>();
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ContentComponents>();

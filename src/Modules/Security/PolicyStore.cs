@@ -45,12 +45,13 @@ public sealed class PolicyStore(IDbSession session, TenantContextAccessor contex
         await session.QuerySingleOrDefaultAsync(
             """
             select ip_allow::text[], ip_block::text[], admin_ip_allow::text[], network_zones::text, require_mfa, step_up_minutes,
-                   idle_minutes, absolute_hours, max_sessions, remember_device_days, version
+                   idle_minutes, absolute_hours, max_sessions, remember_device_days, version, offline_max_items, offline_max_mb, offline_days
             from security.policy
             """, null,
             r => new SecurityPolicySnapshot(
                 r.GetFieldValue<string[]>(0), r.GetFieldValue<string[]>(1), r.GetFieldValue<string[]>(2), Zones(r.GetString(3)),
-                r.GetBoolean(4), r.GetInt32(5), r.GetInt32(6), r.GetInt32(7), r.IsDBNull(8) ? null : r.GetInt32(8), r.GetInt32(9), r.GetInt32(10)), ct);
+                r.GetBoolean(4), r.GetInt32(5), r.GetInt32(6), r.GetInt32(7), r.IsDBNull(8) ? null : r.GetInt32(8), r.GetInt32(9), r.GetInt32(10),
+                r.GetInt32(11), r.GetInt32(12), r.GetInt32(13)), ct);
 
     public void Forget(Guid tenant) => cache.Remove(Key(tenant));
 
