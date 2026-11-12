@@ -59,6 +59,9 @@ public static class BookingModule
             return Results.Created($"/api/v1/booking/bookings/{result.Bookings[0].Id}", result);
         });
 
+        root.MapPost("/bookings:team", async (TeamBookRequest request, Bookings bookings, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await bookings.BookTeamAsync(request, ct), ct));
+
         root.MapGet("/bookings/mine", async (Bookings bookings, CancellationToken ct) => Results.Ok(await bookings.MineAsync(ct)));
 
         root.MapGet("/bookings/{id:guid}", async (Guid id, Bookings bookings, CancellationToken ct) => Results.Ok(await bookings.GetAsync(id, ct)));

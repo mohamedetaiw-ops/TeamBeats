@@ -16,6 +16,7 @@
     <ProjectReference Include="../Integrations.Contracts/TeamBeats.Modules.Integrations.Contracts.csproj" />
     <ProjectReference Include="../Booking.Contracts/TeamBeats.Modules.Booking.Contracts.csproj" />
     <ProjectReference Include="../Workflow.Contracts/TeamBeats.Modules.Workflow.Contracts.csproj" />
+    <ProjectReference Include="../People.Contracts/TeamBeats.Modules.People.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="QRCoder" />

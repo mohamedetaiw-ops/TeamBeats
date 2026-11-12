@@ -2036,5 +2036,10 @@
   "notifications.template.booking.no_show_rule.title": "You missed {count} bookings",
   "notifications.template.booking.no_show_rule.body": "You did not check in to {count} bookings in the last {days} days. Cancel bookings you will not use so others can have them.",
   "notifications.template.booking.no_show_restricted.title": "You missed {count} bookings",
-  "notifications.template.booking.no_show_restricted.body": "You did not check in to {count} bookings in the last {days} days. For the next {restrictDays} days you can book up to {advanceDays} days ahead."
+  "notifications.template.booking.no_show_restricted.body": "You did not check in to {count} bookings in the last {days} days. For the next {restrictDays} days you can book up to {advanceDays} days ahead.",
+  "authz.denied.booking_for": "You can book only for people who delegated to you, or for a team you manage.",
+  "validation.booking.team": "Choose from 1 to 50 people.",
+  "conflict.booking.none_free": "No free resource of this kind is left for this time.",
+  "notifications.template.booking.booked_for_you.title": "{by} booked {resource} for you",
+  "notifications.template.booking.booked_for_you.body": "{date} from {start} to {end} ({timeZone}). You can cancel it from the booking."
 }

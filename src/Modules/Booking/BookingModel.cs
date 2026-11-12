@@ -79,7 +79,14 @@ public sealed record RepeatRequest(string? Pattern, DateOnly? Until);
 /// A booking request. Date and times are in the site's time zone (FR-017); an end at or before the start means the
 /// next day, which only resources whose rules allow overnight bookings accept.
 /// </summary>
-public sealed record BookRequest(Guid? ResourceId, DateOnly? Date, TimeOnly? Start, TimeOnly? End, string? Title, RepeatRequest? Repeat);
+/// <remarks><paramref name="ForUserId"/> books on behalf of someone who delegated to the caller (FR-011).</remarks>
+public sealed record BookRequest(Guid? ResourceId, DateOnly? Date, TimeOnly? Start, TimeOnly? End, string? Title, RepeatRequest? Repeat, Guid? ForUserId = null);
+
+/// <summary>
+/// A team booking (US5 scenario 2, FR-012): one resource of the kind for each person, in the zone when one is given,
+/// each an individual booking under that person's own rules and limits.
+/// </summary>
+public sealed record TeamBookRequest(Guid? SiteId, Guid? ZoneId, string? Kind, DateOnly? Date, TimeOnly? Start, TimeOnly? End, string? Title, IReadOnlyList<Guid>? People);
 
 public sealed record CancelRequest(string? Reason);
 
@@ -187,6 +194,11 @@ public sealed record ScanView(Guid ResourceId, string Kind, IReadOnlyDictionary<
 
 /// <summary>A site's kiosk for the signed-in person: their bookings there today that they can check in to or did.</summary>
 public sealed record KioskView(Guid SiteId, IReadOnlyDictionary<string, string> SiteNames, string TimeZone, IReadOnlyList<BookingView> Bookings);
+
+/// <summary>What a team booking did for one person: their booking, or the resource key of why none was made.</summary>
+public sealed record TeamOutcome(Guid PersonId, string? Name, BookingView? Booking, string? Problem);
+
+public sealed record TeamBookResult(IReadOnlyList<TeamOutcome> People);
 
 /// <summary>What a booking request made: the bookings, and for a series the dates left out with why (FR-006).</summary>
 public sealed record BookResult(IReadOnlyList<BookingView> Bookings, Guid? SeriesId, IReadOnlyList<SkippedDate> Skipped);

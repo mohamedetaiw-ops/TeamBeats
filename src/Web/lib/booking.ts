@@ -114,6 +114,8 @@ export type ScanView = {
 
 export type KioskView = { siteId: string; siteNames: Names; timeZone: string; bookings: BookingView[] };
 
+export type TeamBookResult = { people: { personId: string; name: string | null; booking: BookingView | null; problem: string | null }[] };
+
 export type BookResult = { bookings: BookingView[]; seriesId: string | null; skipped: { date: string; reason: "holiday" | "non_working_day" | "rules" }[] };
 
 /** "10:00:00" as "10:00". */

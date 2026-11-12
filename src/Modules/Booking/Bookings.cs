@@ -9,6 +9,8 @@ using TeamBeats.Modules.Booking.Contracts;
 using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
+using TeamBeats.Modules.People.Contracts;
+using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -33,6 +35,9 @@ public sealed class Bookings(
     IWorkingCalendar calendars,
     IOrganizationHierarchy hierarchy,
     IUserDirectory users,
+    ITenantMemberships memberships,
+    IDelegations delegations,
+    IReportingLine reporting,
     ITenantSettingsReader tenantSettings,
     INotificationSender notifications,
     IAuditWriter audit,
@@ -41,6 +46,8 @@ public sealed class Bookings(
 {
     public const string ConfirmedTemplate = "booking.confirmed";
     public const string SeriesTemplate = "booking.series_confirmed";
+    public const string BookedForTemplate = "booking.booked_for_you";
+    public const int MaxTeam = 50;
     public const int MaxTitleLength = 200;
     public const int MaxCancelReasonLength = 500;
 
@@ -257,8 +264,101 @@ public sealed class Bookings(
     public async Task<BookResult> BookAsync(BookRequest request, CancellationToken ct)
     {
         var user = context.RequireUser();
+        if (request.ForUserId is { } holder && holder != user)
+        {
+            await facilities.RequireAnyAsync(ct);
+            if (!await MayBookForAsync(holder, false, ct))
+            {
+                throw AppException.Denied("authz.denied.booking_for");
+            }
+            return await PlaceAsync(request, holder, user, ct);
+        }
         return await PlaceAsync(request, user, user, ct);
     }
+
+    /// <summary>
+    /// Whether the caller may book for <paramref name="holder"/>, an active member: as their delegate today (FR-011,
+    /// spec 016 delegation), or for a team booking also as their manager anywhere up the reporting line.
+    /// </summary>
+    private async Task<bool> MayBookForAsync(Guid holder, bool team, CancellationToken ct)
+    {
+        var me = context.RequireUser();
+        if (holder == me)
+        {
+            return true;
+        }
+        if (await memberships.GetAsync(holder, ct) is not { Status: MembershipStatus.Active })
+        {
+            return false;
+        }
+        return (await delegations.DelegatorsOfAsync(me, clock.UtcNow, ct)).Contains(holder) || (team && await reporting.IsManagerOfAsync(me, holder, ct));
+    }
+
+    /// <summary>
+    /// Books one resource of a kind for each person of a team (US5 scenario 2, FR-012), in the zone when one is given.
+    /// Each person gets their own booking under their own rules and limits; a person who cannot be booked is listed
+    /// with why, and the others are still booked.
+    /// </summary>
+    public async Task<TeamBookResult> BookTeamAsync(TeamBookRequest request, CancellationToken ct)
+    {
+        await facilities.RequireAnyAsync(ct);
+        await authz.DemandAsync(Permissions.BookingBook, AuthzTarget.Tenant, ct);
+        var people = (request.People ?? []).Distinct().ToList();
+        var errors = new ValidationErrors();
+        if (people.Count is 0 or > MaxTeam) errors.Add("people", "validation.booking.team");
+        if (request.Kind is not { } kind || !ResourceKinds.All.Contains(kind)) errors.Add("kind", "validation.booking.kind");
+        if (request.SiteId is null) errors.Add("siteId", "validation.booking.site");
+        errors.ThrowIfAny();
+        var site = await facilities.ActiveSiteAsync(request.SiteId!.Value, ct);
+        await entitlements.DemandAsync(ResourceKinds.Capability(request.Kind!), ct);
+        var me = context.RequireUser();
+        var candidates = await session.QueryAsync(
+            """
+            select r.id, r.fixed_user_id from booking.resource r
+            left join booking.floor f on f.id = r.floor_id
+            where r.site_id = @siteId and r.kind = @kind and r.status = 'active' and (@zoneId::uuid is null or r.zone_id = @zoneId)
+            order by f.sort nulls first, r.zone_id nulls last, r.created_at, r.id
+            limit 500
+            """, new { siteId = site.Id, kind = request.Kind, zoneId = request.ZoneId }, r => (Id: r.GetGuid(0), Fixed: r.Get<Guid?>("fixed_user_id")), ct);
+        var names = await users.GetManyAsync(people, ct);
+        var used = new HashSet<Guid>();
+        var outcomes = new List<TeamOutcome>();
+        foreach (var person in people)
+        {
+            var name = names.TryGetValue(person, out var u) ? u.DisplayName : null;
+            if (!await MayBookForAsync(person, true, ct))
+            {
+                outcomes.Add(new TeamOutcome(person, name, null, "authz.denied.booking_for"));
+                continue;
+            }
+            // A person with a fixed desk here gets that one; the others take the next free resource nobody in the team has.
+            var mine = candidates.Where(c => !used.Contains(c.Id) && (c.Fixed is null || c.Fixed == person)).OrderBy(c => c.Fixed == person ? 0 : 1).ToList();
+            BookingView? booked = null;
+            var problem = "conflict.booking.none_free";
+            foreach (var c in mine)
+            {
+                try
+                {
+                    booked = (await PlaceAsync(new BookRequest(c.Id, request.Date, request.Start, request.End, request.Title, null), person, me, ct)).Bookings[0];
+                    used.Add(c.Id);
+                    break;
+                }
+                catch (AppException ex) when (ex.DetailKey == "conflict.booking.taken")
+                {
+                    used.Add(c.Id);
+                }
+                catch (AppException ex) when (ex.Status is 400 or 403 or 409)
+                {
+                    // The person's own rules or limits refuse it; another resource of the same kind would too.
+                    problem = ex.DetailKey ?? ex.Errors?.Values.FirstOrDefault()?.FirstOrDefault() ?? problem;
+                    break;
+                }
+            }
+            outcomes.Add(new TeamOutcome(person, name, booked, booked is null ? problem : null));
+        }
+        return new TeamBookResult(outcomes);
+    }
+
 
     /// <summary>
     /// Places a booking, or a recurring series, for <paramref name="holder"/>; <paramref name="bookedBy"/> differs for a
@@ -417,7 +517,13 @@ public sealed class Bookings(
             {
                 await outbox.EnqueueAsync(new BookingConfirmed(id, resource.Id, site.Id, resource.Kind, holder, span.StartsAt, span.EndsAt), ct);
             }
-            await notifications.SendAsync(new NotificationRequest([holder], NotificationCategories.Bookings, seriesId is null ? ConfirmedTemplate : SeriesTemplate, Link(ids[0]),
+            if (bookedBy != holder)
+            {
+                // FR-011: the person booked for is told who booked it.
+                parameters["by"] = (await users.GetAsync(bookedBy, ct))?.DisplayName ?? "";
+            }
+            await notifications.SendAsync(new NotificationRequest([holder], NotificationCategories.Bookings,
+                bookedBy != holder ? BookedForTemplate : seriesId is null ? ConfirmedTemplate : SeriesTemplate, Link(ids[0]),
                 parameters, DedupeKey: $"booking:{ids[0]:N}:confirmed"), ct);
         }
 

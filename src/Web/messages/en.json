@@ -9953,7 +9953,20 @@
       "seats": "{count, plural, one {# seat} other {# seats}}",
       "book": "Book {name}",
       "noSitesTitle": "No sites yet",
-      "noSites": "Facilities have not added any sites to book."
+      "noSites": "Facilities have not added any sites to book.",
+      "forSomeone": "Book for someone who delegated to you",
+      "teamTitle": "Book for a team",
+      "teamIntro": "Each person gets their own desk or space for the time above, under their own rules. You can book for people you manage or who delegated to you.",
+      "teamMember": "Person {number}",
+      "teamAdd": "Add a person",
+      "teamBook": "Book for the team",
+      "teamResultLabel": "Team booking results",
+      "teamProblems": {
+        "limit": "Already has the most active bookings allowed",
+        "none_free": "No free one left",
+        "booking_for": "Not in your team",
+        "rules": "The rules do not allow it"
+      }
     },
     "mine": {
       "pageTitle": "My bookings",
