@@ -39,6 +39,7 @@ public sealed record AnonymousDeclineRequest(string? Reason);
 /// </summary>
 public sealed class SpeakUp(
     IDbSession session,
+    EngagementActivity activity,
     ITenantContext context,
     Communities communities,
     Posts posts,
@@ -84,6 +85,7 @@ public sealed class SpeakUp(
                 id = Guid.NewGuid(), communityId, channel = channel!.Value.Id, body = EngagementJson.Jsonb(request.Body), text = BodyValidator.PlainText(request.Body!),
                 today = Today, hash = Hash(token),
             }, ct);
+        await activity.AnonymousAsync("speak_up_post", ct);
         return new AnonymousReceipt(token);
     }
 

@@ -97,6 +97,7 @@ public static class SurveyStatuses
 /// </summary>
 public sealed class Surveys(
     IDbSession session,
+    EngagementActivity activity,
     ITenantContext context,
     IAuthorizationService authz,
     IEntitlementService entitlements,
@@ -616,6 +617,14 @@ public sealed class Surveys(
                 insert into engagement.survey_answer (tenant_id, id, response_id, question_id, option_id, value, text)
                 values (platform.current_tenant_id(), @answerId, @responseId, @question, @option, @value, @text)
                 """, new { answerId = Guid.NewGuid(), responseId, question = r.Question, option = r.Option, value = r.Value, text = r.Text }, ct);
+        }
+        if (row.Anonymous)
+        {
+            await activity.AnonymousAsync("survey_response", ct);
+        }
+        else
+        {
+            await activity.ActedAsync("respond", null, ct);
         }
         return await ViewAsync(row, ct);
     }

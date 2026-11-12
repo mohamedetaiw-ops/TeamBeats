@@ -1755,5 +1755,14 @@
   "experience.component.engagement_poll.description": "The newest open poll of one community, with a link to vote",
   "experience.component.engagement_poll.props.title": "Title",
   "experience.component.engagement_poll.props.top": "Polls to show",
-  "experience.component.engagement_poll.props.community": "Community"
+  "experience.component.engagement_poll.props.community": "Community",
+  "validation.engagement.attachment_unsafe": "This image does not look fit for the workplace, so it was not added.",
+  "conflict.engagement.attachment_check_unavailable": "The image could not be checked right now, so it was not added. Try again later.",
+  "conflict.engagement.attachment_scan_unavailable": "The file could not be checked for malware right now, so it was not added. Try again later.",
+  "validation.engagement.attachment_type": "Choose a PNG or JPEG image, or a PDF, Word, Excel, PowerPoint, text or CSV file.",
+  "validation.engagement.attachment_size": "Choose a file of up to 25 MB, or an image of up to 10 MB.",
+  "validation.engagement.attachment_name": "The file needs a name.",
+  "validation.engagement.attachment_unknown": "One of the attachments is not yours or belongs to another post or community.",
+  "validation.engagement.attachment_count": "A post can have up to 10 images and 5 files.",
+  "validation.engagement.attachment_speak_up": "Speak Up posts cannot have attachments, so nothing ties them to you."
 }

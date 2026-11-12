@@ -1755,5 +1755,14 @@
   "experience.component.engagement_poll.description": "أحدث استطلاع مفتوح في مجتمع واحد مع رابط للتصويت",
   "experience.component.engagement_poll.props.title": "العنوان",
   "experience.component.engagement_poll.props.top": "عدد الاستطلاعات المعروضة",
-  "experience.component.engagement_poll.props.community": "المجتمع"
+  "experience.component.engagement_poll.props.community": "المجتمع",
+  "validation.engagement.attachment_unsafe": "لا تبدو هذه الصورة مناسبة لبيئة العمل، لذلك لم تُضف.",
+  "conflict.engagement.attachment_check_unavailable": "تعذر فحص الصورة الآن، لذلك لم تُضف. حاول لاحقًا.",
+  "conflict.engagement.attachment_scan_unavailable": "تعذر فحص الملف من البرمجيات الضارة الآن، لذلك لم يُضف. حاول لاحقًا.",
+  "validation.engagement.attachment_type": "اختر صورة PNG أو JPEG، أو ملف PDF أو Word أو Excel أو PowerPoint أو نصًا أو CSV.",
+  "validation.engagement.attachment_size": "اختر ملفًا حتى 25 ميجابايت، أو صورة حتى 10 ميجابايت.",
+  "validation.engagement.attachment_name": "يجب أن يكون للملف اسم.",
+  "validation.engagement.attachment_unknown": "أحد المرفقات ليس لك أو يخص منشورًا أو مجتمعًا آخر.",
+  "validation.engagement.attachment_count": "يمكن أن يحتوي المنشور على 10 صور و5 ملفات كحد أقصى.",
+  "validation.engagement.attachment_speak_up": "لا يمكن إرفاق ملفات بمنشورات تحدث بصراحة، حتى لا يرتبط بك شيء منها."
 }

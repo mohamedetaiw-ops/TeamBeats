@@ -16,6 +16,9 @@ public static class EngagementModule
     public static IServiceCollection AddEngagementModule(this IServiceCollection services)
     {
         services.AddSingleton<Experience.Contracts.IComponentRegistration, EngagementComponents>();
+        services.AddScoped<MediaChecks>();
+        services.AddScoped<EngagementActivity>();
+        services.AddScoped<PostAttachments>();
         services.AddScoped<Communities>();
         services.AddScoped<Posts>();
         services.AddScoped<KeywordFilters>();
@@ -120,6 +123,34 @@ public static class EngagementModule
             var saved = await posts.CreateAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/engagement/posts/{saved.Post.Id}", saved);
+        });
+
+        // Images and files for posts (FR-003): uploaded first, joined to the post when it is saved.
+        root.MapPost("/communities/{id:guid}/attachments", async (Guid id, string? name, HttpRequest http, PostAttachments attachments, IDbSession session, CancellationToken ct) =>
+        {
+            var limit = Math.Max(PhotoFiles.MaxBytes, PostAttachments.MaxFileBytes);
+            var buffer = new byte[limit + 1];
+            int read, total = 0;
+            while ((read = await http.Body.ReadAsync(buffer.AsMemory(total, buffer.Length - total), ct)) > 0)
+            {
+                total += read;
+                if (total > limit)
+                {
+                    throw Primitives.AppException.Validation("file", "validation.engagement.attachment_size");
+                }
+            }
+            var view = await attachments.UploadAsync(id, name, http.ContentType, buffer[..total], ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/engagement/attachments/{view.Id}/file", view);
+        }).DisableAntiforgery();
+
+        root.MapGet("/attachments/{id:guid}/file", async (Guid id, Posts posts, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, type, name) = await posts.OpenAttachmentAsync(id, ct);
+            response.Headers.CacheControl = "private, no-cache";
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            // Images show in the post; documents always download, so none of them runs in the intranet's pages.
+            return type.StartsWith("image/", StringComparison.Ordinal) ? Results.File(content, type) : Results.File(content, type, name);
         });
 
         root.MapGet("/posts/{id:guid}", async (Guid id, Posts posts, CancellationToken ct) => Results.Ok(await posts.GetAsync(id, ct)));

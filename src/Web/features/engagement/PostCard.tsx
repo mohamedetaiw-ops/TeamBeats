@@ -28,6 +28,7 @@ import {
   type ReactionKind,
 } from "@/lib/engagement";
 import { ReportControl, StatusNote } from "./ModerationNotes";
+import { PostAttachmentList } from "./Attachments";
 
 /** Reactions on a post or comment. Choosing your current reaction again takes it back. */
 function ReactionBar({ url, initial, label }: { url: string; initial: ReactionCounts; label: string }) {
@@ -340,7 +341,10 @@ export function PostCard({
           </div>
         </div>
       ) : (
-        <BodyView body={post.body} embedTitle={t("post.embed")} />
+        <>
+          <BodyView body={post.body} embedTitle={t("post.embed")} />
+          <PostAttachmentList attachments={post.attachments} />
+        </>
       )}
       <StatusNote status={post.status} heldReason={post.heldReason} removedReason={post.removedReason} />
       {post.hashtags.length > 0 ? (

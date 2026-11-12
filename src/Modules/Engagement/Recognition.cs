@@ -54,6 +54,7 @@ public sealed record RecognitionPreferenceView(bool ShowOnProfile, bool Leaderbo
 /// </summary>
 public sealed partial class Recognition(
     IDbSession session,
+    EngagementActivity activity,
     ITenantContext context,
     IAuthorizationService authz,
     IEntitlementService entitlements,
@@ -270,6 +271,7 @@ public sealed partial class Recognition(
         }
         await NotifyAsync(id, giver, recipients, ct);
         await outbox.EnqueueAsync(new RecognitionGiven(id, giver, recipients, request.TeamUnitId), ct);
+        await activity.ActedAsync("recognize", null, ct);
         return (await ViewsAsync([id], ct)).Single();
     }
 
