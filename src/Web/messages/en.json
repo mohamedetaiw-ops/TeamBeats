@@ -35,6 +35,7 @@
     },
     "day": {
       "title": "Your day",
+      "counts": "Your day in numbers",
       "inbox": "Task inbox",
       "toApprove": "to approve",
       "overdue": "overdue",
@@ -1537,8 +1538,7 @@
         "unread": "Unread",
         "important": "High importance",
         "attachment": "Has attachment"
-      },
-      "markerSeparator": ", "
+      }
     },
     "calendar": {
       "title": "My calendar",
@@ -2782,6 +2782,7 @@
     "home": {
       "tasks": {
         "title": "Your tasks",
+        "counts": "Your tasks in numbers",
         "inbox": "Task inbox",
         "retry": "Try again",
         "failed": "Your tasks could not be loaded.",

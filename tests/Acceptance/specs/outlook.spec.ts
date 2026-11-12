@@ -158,8 +158,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(main.getByRole("link", { name: new RegExp(msg(locale, "outlook.mail.compose")) })).toHaveAttribute("href", "https://outlook.office.com/mail/deeplink/compose");
 
       // The Focused and All switch asks for the other view.
-      await main.getByRole("button", { name: msg(locale, "outlook.mail.views.all") }).click();
-      await expect(main.getByRole("button", { name: msg(locale, "outlook.mail.views.all") })).toHaveAttribute("aria-pressed", "true");
+      await main.getByRole("radio", { name: msg(locale, "outlook.mail.views.all") }).check();
+      await expect(main.getByRole("radio", { name: msg(locale, "outlook.mail.views.all") })).toBeChecked();
       await expect(main.getByRole("listitem").first()).toContainText("Subject other");
       expect(seen).toContain("/api/v1/me/mail?view=all&top=5");
 

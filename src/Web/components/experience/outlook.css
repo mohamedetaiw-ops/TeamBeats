@@ -28,25 +28,6 @@
   font-size: var(--tb-font-size-md);
 }
 
-.outlook-badge {
-  padding-block: var(--tb-space-xs);
-  padding-inline: var(--tb-space-sm);
-  border-radius: var(--tb-radius-full);
-  background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-link);
-  font-size: var(--tb-font-size-sm);
-  font-weight: var(--tb-font-weight-bold);
-}
-
-.outlook-switch {
-  display: flex;
-  gap: var(--tb-space-xs);
-}
-
-.outlook-switch [aria-pressed="true"] {
-  border-block-end: var(--tb-border-width-thick) solid var(--tb-color-accent-base);
-}
-
 .outlook-day {
   display: grid;
   gap: var(--tb-space-xs);
@@ -85,7 +66,14 @@
 }
 
 .outlook-time,
-.outlook-markers,
+.outlook-markers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
 .outlook-preview {
   color: var(--tb-color-text-secondary);
   font-size: var(--tb-font-size-sm);

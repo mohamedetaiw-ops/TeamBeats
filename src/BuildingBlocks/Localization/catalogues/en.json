@@ -1934,5 +1934,6 @@
   "notifications.template.spaces.task.due.title": "Task due tomorrow in {space}",
   "notifications.template.spaces.task.due.body": "\"{task}\" is due tomorrow.",
   "notifications.template.spaces.space.status.title": "New status for {space}",
-  "notifications.template.spaces.space.status.body": "An owner updated the status of {space}. Open the space to read the note."
+  "notifications.template.spaces.space.status.body": "An owner updated the status of {space}. Open the space to read the note.",
+  "conflict.learning.not_a_package": "This lesson does not play a package."
 }

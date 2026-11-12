@@ -1934,5 +1934,6 @@
   "notifications.template.spaces.task.due.title": "مهمة مستحقة غدًا في {space}",
   "notifications.template.spaces.task.due.body": "\"{task}\" مستحقة غدًا.",
   "notifications.template.spaces.space.status.title": "حالة جديدة لـ {space}",
-  "notifications.template.spaces.space.status.body": "حدّث أحد المالكين حالة {space}. افتح المساحة لقراءة الملاحظة."
+  "notifications.template.spaces.space.status.body": "حدّث أحد المالكين حالة {space}. افتح المساحة لقراءة الملاحظة.",
+  "conflict.learning.not_a_package": "هذا الدرس لا يشغّل حزمة."
 }

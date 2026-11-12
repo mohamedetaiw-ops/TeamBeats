@@ -29,50 +29,6 @@
   font-weight: var(--tb-font-weight-medium);
 }
 
-.home-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
-  gap: var(--tb-space-sm);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.home-stats li {
-  display: grid;
-  gap: var(--tb-space-xs);
-  padding: var(--tb-space-md);
-  border-radius: var(--tb-radius-md);
-  background: var(--tb-color-surface-sunken);
-}
-
-.home-stats li[data-tone="warm"] {
-  background: var(--tb-color-tint-warm);
-  color: var(--tb-color-tint-warm-text);
-}
-
-.home-stats li[data-tone="accent"] {
-  background: var(--tb-color-tint-cool);
-  color: var(--tb-color-tint-cool-text);
-}
-
-.home-stats li[data-tone="fresh"] {
-  background: var(--tb-color-tint-fresh);
-  color: var(--tb-color-tint-fresh-text);
-}
-
-.home-stats strong {
-  font-family: var(--tb-font-family-heading);
-  font-size: var(--tb-font-size-xxl);
-  line-height: var(--tb-font-line-height-heading);
-}
-
-.home-stats span {
-  color: inherit;
-  font-size: var(--tb-font-size-sm);
-  font-weight: var(--tb-font-weight-medium);
-}
-
 .home-meta {
   color: var(--tb-color-text-secondary);
   font-size: var(--tb-font-size-sm);
@@ -88,7 +44,7 @@
 
 .home-agenda-item {
   display: grid;
-  grid-template-columns: 4rem 1fr auto;
+  grid-template-columns: minmax(4rem, max-content) 1fr auto;
   align-items: start;
   gap: var(--tb-space-sm);
   padding-block: var(--tb-space-sm);
@@ -100,6 +56,7 @@
 }
 
 .home-agenda-time {
+  white-space: nowrap;
   font-weight: var(--tb-font-weight-bold);
   font-variant-numeric: tabular-nums;
 }
@@ -114,17 +71,6 @@
   color: var(--tb-color-text-primary);
   font-weight: var(--tb-font-weight-medium);
   text-decoration: none;
-}
-
-.home-agenda-soon {
-  padding-block: var(--tb-space-xs);
-  padding-inline: var(--tb-space-sm);
-  border-radius: var(--tb-radius-full);
-  background: var(--tb-color-tint-warm);
-  color: var(--tb-color-tint-warm-text);
-  font-size: var(--tb-font-size-xs);
-  font-weight: var(--tb-font-weight-bold);
-  white-space: nowrap;
 }
 
 .home-list {
