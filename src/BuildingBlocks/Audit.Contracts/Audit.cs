@@ -381,6 +381,8 @@ public static class AuditActions
     public const string EngagementMemberMuted = "engagement.member_muted";
     public const string EngagementMemberUnmuted = "engagement.member_unmuted";
     public const string EngagementKeywordsChanged = "engagement.keywords_changed";
+    public const string EngagementSpeakUpAnswered = "engagement.speak_up_answered";
+    public const string EngagementSpeakUpDeclined = "engagement.speak_up_declined";
 
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
@@ -438,7 +440,7 @@ public static class AuditActions
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
         EvalRubricCalibrated, EvalRubricDemoted,
         EngagementCommunityCreated, EngagementCommunityChanged, EngagementCommunityArchived, EngagementMemberChanged, EngagementPostPinned,
-        EngagementContentApproved, EngagementContentHidden, EngagementContentRemoved, EngagementMemberMuted, EngagementMemberUnmuted, EngagementKeywordsChanged,
+        EngagementContentApproved, EngagementContentHidden, EngagementContentRemoved, EngagementMemberMuted, EngagementMemberUnmuted, EngagementKeywordsChanged, EngagementSpeakUpAnswered, EngagementSpeakUpDeclined,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

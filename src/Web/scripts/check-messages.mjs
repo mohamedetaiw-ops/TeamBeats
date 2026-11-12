@@ -40,7 +40,7 @@ const walk = (dir) => {
 walk(root);
 for (const file of files) {
   const source = readFileSync(file, "utf8");
-  const ns = /(?:getTranslations|useTranslations)\(\s*"([a-z_.]+)"\s*\)/.exec(source)?.[1];
+  const ns = /(?:getTranslations|useTranslations)\(\s*"([A-Za-z_.]+)"\s*\)/.exec(source)?.[1];
   for (const match of source.matchAll(/\bt\(\s*"([a-zA-Z_.]+)"/g)) {
     const key = ns && !match[1].includes(".") ? `${ns}.${match[1]}` : match[1];
     if (!en.has(key) && !(ns && en.has(`${ns}.${match[1]}`))) errors.push(`${file.replace(root, "")}: unknown key ${key}`);

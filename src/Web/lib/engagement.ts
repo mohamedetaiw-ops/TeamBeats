@@ -3,7 +3,8 @@ import type { BodyDocument } from "@/lib/content/types";
 /** Communities and posts (spec 023 US1): the shapes the API returns. Who may read, post or manage is worked out there. */
 export type CommunityKind = "open" | "approval" | "closed";
 
-export type ChannelView = { id: string; key: string; names: Record<string, string> };
+/** A discussion channel, or a Speak Up channel whose posts a moderator reviews first and which may allow anonymous posts (spec 023 US2). */
+export type ChannelView = { id: string; key: string; names: Record<string, string>; kind: "discussion" | "speak_up"; allowAnonymous: boolean };
 
 export type CommunityRights = {
   member: boolean;
@@ -14,6 +15,8 @@ export type CommunityRights = {
   canModerate: boolean;
   canManage: boolean;
   mutedUntil: string | null;
+  canAddSpeakUp: boolean;
+  canAllowAnonymous: boolean;
 };
 
 export type CommunityView = {
@@ -37,18 +40,18 @@ export type MemberView = { userId: string; displayName: string; role: MemberRole
 
 /** Where a post or comment stands (spec 023 US8): shown, waiting for a moderator, or removed by one. */
 export type ContentStatus = "published" | "visible" | "held" | "hidden" | "removed";
-export type HeldReason = "keyword" | "reports";
+export type HeldReason = "keyword" | "reports" | "speak_up";
 
 export const reportReasons = ["spam", "harassment", "inappropriate", "misinformation", "other"] as const;
 export type ReportReason = (typeof reportReasons)[number];
 
 export type ModerationItem = {
-  type: "post" | "comment";
+  type: "post" | "comment" | "anonymous";
   id: string;
   postId: string;
   communityId: string;
   communityNames: Record<string, string>;
-  author: EngagementPerson;
+  author: EngagementPerson | null;
   text: string;
   body: BodyDocument | null;
   status: ContentStatus;
@@ -91,6 +94,8 @@ export type PostView = {
   heldReason: HeldReason | null;
   removedReason: string | null;
   canReport: boolean;
+  anonymous: boolean;
+  editedByModerator: boolean;
 };
 
 export type FeedPage = { items: PostView[]; nextCursor: string | null };
@@ -113,6 +118,13 @@ export type CommentView = {
   removedReason: string | null;
   canReport: boolean;
 };
+
+/** What the anonymous author keeps: the token for the one-time link where they read the moderator's decision. */
+export type AnonymousReceipt = { replyToken: string };
+
+export type AnonymousReply = { status: "pending" | "published" | "answered" | "declined"; answer: string | null; reason: string | null; communityId: string; postId: string | null };
+
+export const speakUpReplyPath = "/communities/speak-up/reply";
 
 export type CommentSaved = { comment: CommentView; notReachable: EngagementPerson[] };
 

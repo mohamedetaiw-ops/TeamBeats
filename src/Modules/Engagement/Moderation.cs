@@ -21,8 +21,9 @@ public sealed record MuteView(Guid UserId, string DisplayName, DateTimeOffset Un
 public sealed record ReportCount(string Reason, int Count);
 
 /// <summary>
-/// One item in a moderator's queue: a post or comment held by the keyword filter, hidden after reports, or still
-/// published with open reports. Report notes are shown; reporters are not, so the queue cannot be used to pressure them.
+/// One item in a moderator's queue: a post or comment held by the keyword filter or Speak Up review, hidden after
+/// reports, or still published with open reports; or an anonymous Speak Up post (type "anonymous", no author, only the
+/// day it came in). PostId and CommunityId point to where the item lives; for an anonymous post PostId is empty. Report notes are shown; reporters are not, so the queue cannot be used to pressure them.
 /// </summary>
 public sealed record ModerationItem(
     string Type,
@@ -30,7 +31,7 @@ public sealed record ModerationItem(
     Guid PostId,
     Guid CommunityId,
     IReadOnlyDictionary<string, string> CommunityNames,
-    Person Author,
+    Person? Author,
     string Text,
     BodyDocument? Body,
     string Status,
@@ -55,6 +56,7 @@ public sealed class Moderation(
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,
+    SpeakUp speakUp,
     IClock clock)
 {
     public const int HideThreshold = 3;
@@ -201,7 +203,7 @@ public sealed class Moderation(
             order by 10, 2
             limit 500
             """, new { community = communityId },
-            r => (Type: r.GetString(0), Id: r.GetGuid(1), Post: r.GetGuid(2), Community: r.GetGuid(3), Author: r.GetGuid(4), Text: r.GetString(5),
+            r => (Type: r.GetString(0), Id: r.GetGuid(1), Post: r.GetGuid(2), Community: r.GetGuid(3), Author: r.IsDBNull(4) ? Guid.Empty : r.GetGuid(4), Text: r.GetString(5),
                 Body: r.IsDBNull(6) ? null : EngagementJson.Read<BodyDocument>(r.GetString(6)), Status: r.GetString(7), Held: r.Get<string?>("held_reason"),
                 At: r.GetFieldValue<DateTimeOffset>(9)), ct);
         var standings = new Dictionary<Guid, Standing?>();
@@ -211,21 +213,23 @@ public sealed class Moderation(
             standings[id] = c is null ? null : await communities.StandingAsync(c, ct);
         }
         var mine = rows.Where(r => standings[r.Community] is { Moderates: true }).ToList();
+        var anonymous = await speakUp.QueueAsync(communityId, ct);
         if (mine.Count == 0)
         {
-            return [];
+            return anonymous;
         }
         var ids = mine.Select(r => r.Id).ToArray();
         var reports = await session.QueryAsync(
             "select target_id, reason, count(*)::int, array_remove(array_agg(note order by created_at), null) from engagement.report where target_id = any(@ids) and resolved_at is null group by 1, 2",
             new { ids }, r => (Id: r.GetGuid(0), Reason: r.GetString(1), Count: r.GetInt32(2), Notes: r.GetFieldValue<string[]>(3)), ct);
         var byItem = reports.ToLookup(r => r.Id);
-        var people = await users.GetManyAsync(mine.Select(r => r.Author).Distinct().ToList(), ct);
-        return mine.Select(r => new ModerationItem(r.Type, r.Id, r.Post, r.Community, standings[r.Community]!.Community.Names,
-            people.TryGetValue(r.Author, out var u) ? new Person(r.Author, u.DisplayName, u.Status == "active") : new Person(r.Author, "", false),
+        var people = await users.GetManyAsync(mine.Select(r => r.Author).Where(a => a != Guid.Empty).Distinct().ToList(), ct);
+        var named = mine.Select(r => new ModerationItem(r.Type, r.Id, r.Post, r.Community, standings[r.Community]!.Community.Names,
+            r.Author == Guid.Empty ? null : people.TryGetValue(r.Author, out var u) ? new Person(r.Author, u.DisplayName, u.Status == "active") : new Person(r.Author, "", false),
             r.Text, r.Body, r.Status, r.Held,
             byItem[r.Id].OrderBy(x => x.Reason, StringComparer.Ordinal).Select(x => new ReportCount(x.Reason, x.Count)).ToList(),
-            byItem[r.Id].SelectMany(x => x.Notes).ToList(), r.At)).ToList();
+            byItem[r.Id].SelectMany(x => x.Notes).ToList(), r.At));
+        return named.Concat(anonymous).OrderBy(i => i.CreatedAt).ThenBy(i => i.Id).ToList();
     }
 
     private async Task<(Target Target, Standing Standing)> ModeratedAsync(string type, Guid id, CancellationToken ct)
@@ -263,7 +267,8 @@ public sealed class Moderation(
             var mentioned = t.PendingMentions ?? [];
             if (type == "post")
             {
-                if (t.HeldReason == "keyword")
+                // A post that was never shown (keyword filter or Speak Up review) is published as new.
+                if (t.HeldReason is "keyword" or "speak_up")
                 {
                     await session.ExecAsync("update engagement.post set published_at = @now where id = @id", new { id, now = clock.UtcNow }, ct);
                     await posts.MentionAsync(s.Community, id, null, mentioned, ct);
@@ -313,10 +318,15 @@ public sealed class Moderation(
             await outbox.EnqueueAsync(new PostRemoved(id, t.Post.CommunityId), ct);
             await outbox.EnqueueAsync(new Search.Contracts.SearchItemChanged(EngagementSearchSource.Name, id), ct);
         }
+        // An anonymous post has no author to record or tell (FR-005).
+        var anonymous = t.AuthorId == Guid.Empty;
         await audit.WriteAsync(new AuditEntry(AuditActions.EngagementContentRemoved, type, id.ToString(),
-            Changes: new { community = t.Post.CommunityId, post = t.Post.Id, author = t.AuthorId, reason }), ct);
-        await notifications.SendAsync(new NotificationRequest([t.AuthorId], NotificationCategories.System, RemovedTemplate, Posts.Link(t.Post.CommunityId, t.Post.Id),
-            DedupeKey: $"engagement.removed:{id:N}"), ct);
+            Changes: new { community = t.Post.CommunityId, post = t.Post.Id, author = anonymous ? (Guid?)null : t.AuthorId, reason }), ct);
+        if (!anonymous)
+        {
+            await notifications.SendAsync(new NotificationRequest([t.AuthorId], NotificationCategories.System, RemovedTemplate, Posts.Link(t.Post.CommunityId, t.Post.Id),
+                DedupeKey: $"engagement.removed:{id:N}"), ct);
+        }
     }
 
     // ---- Mutes ----

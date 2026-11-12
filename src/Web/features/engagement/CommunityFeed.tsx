@@ -5,6 +5,7 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/Alert";
 import { Badge } from "@/components/ui/Badge";
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import { StateView } from "@/components/ui/StateView";
 import { BlockEditor } from "@/features/content/editor/BlockEditor";
@@ -16,6 +17,8 @@ import {
   engagementApi,
   localName,
   send,
+  speakUpReplyPath,
+  type AnonymousReceipt,
   type ChannelView,
   type CommunityView,
   type EngagementPerson,
@@ -203,7 +206,12 @@ function Composer({
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
   const [notReachable, setNotReachable] = useState<EngagementPerson[]>([]);
-  const [posted, setPosted] = useState<"published" | "held" | null>(null);
+  const [posted, setPosted] = useState<"published" | "held" | "review" | null>(null);
+  const [anonymous, setAnonymous] = useState(false);
+  const [replyLink, setReplyLink] = useState<string | null>(null);
+  const channel = community.channels.find((c) => c.id === (target || channelId));
+  const speakUp = channel?.kind === "speak_up";
+  const anonymousAllowed = speakUp && channel?.allowAnonymous === true;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -211,7 +219,21 @@ function Composer({
     setMessages([]);
     setNotReachable([]);
     setPosted(null);
+    setReplyLink(null);
     try {
+      if (anonymous && anonymousAllowed) {
+        // The person is not named anywhere: the server keeps only the post and a hash of the link token.
+        const response = await send(`${engagementApi}/communities/${community.id}/anonymous-posts`, "POST", { channelId: target || channelId, body });
+        if (response.ok) {
+          const receipt = (await response.json()) as AnonymousReceipt;
+          setReplyLink(`${window.location.origin}${speakUpReplyPath}#${receipt.replyToken}`);
+          setBody(emptyBody());
+          setVersion((v) => v + 1);
+        } else {
+          setMessages(await problemMessages(response));
+        }
+        return;
+      }
       const response = await send(`${engagementApi}/communities/${community.id}/posts`, "POST", {
         channelId: target || channelId,
         body,
@@ -224,7 +246,7 @@ function Composer({
         setBody(emptyBody());
         setMentions([]);
         setVersion((v) => v + 1);
-        setPosted(saved.post.status === "held" ? "held" : "published");
+        setPosted(saved.post.status !== "held" ? "published" : saved.post.heldReason === "speak_up" ? "review" : "held");
       } else {
         setMessages(await problemMessages(response));
       }
@@ -250,13 +272,35 @@ function Composer({
         ) : null}
         <BlockEditor key={version} label={t("composer.body")} value={body} onChange={setBody} locale={locale} />
         <p className="engagement-meta">{t("composer.hint")}</p>
-        <MentionPicker value={mentions} onChange={setMentions} />
+        {speakUp ? <p className="engagement-meta">{t("speakUp.reviewed")}</p> : null}
+        {anonymousAllowed ? (
+          <>
+            <Checkbox label={t("speakUp.postAnonymously")} hint={t("speakUp.anonymousHint")} checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} />
+            {anonymous ? (
+              <Alert tone="info" title={t("speakUp.anonymousTitle")}>
+                {t("speakUp.anonymousText")}
+              </Alert>
+            ) : null}
+          </>
+        ) : null}
+        {anonymous && anonymousAllowed ? null : <MentionPicker value={mentions} onChange={setMentions} />}
         {messages.length > 0 ? (
           <Alert tone="danger" title={t("failed")} live>
             {messages.join(" ")}
           </Alert>
         ) : null}
         {posted === "published" ? <Alert tone="success" title={t("composer.posted")} live /> : null}
+        {posted === "review" ? (
+          <Alert tone="info" title={t("speakUp.sentTitle")} live>
+            {t("speakUp.sentText")}
+          </Alert>
+        ) : null}
+        {replyLink ? (
+          <Alert tone="success" title={t("speakUp.anonymousSentTitle")} live>
+            <p>{t("speakUp.anonymousSentText")}</p>
+            <FormField label={t("speakUp.replyLink")} name="speak-up-link" value={replyLink} readOnly dir="ltr" onFocus={(e) => e.target.select()} />
+          </Alert>
+        ) : null}
         {posted === "held" ? (
           <Alert tone="warning" title={t("moderation.heldTitle")} live>
             {t("moderation.heldText")}
@@ -278,6 +322,8 @@ function AddChannel({ community, locales, onAdded }: { community: CommunityView;
   const locale = useLocale();
   const [key, setKey] = useState("");
   const [names, setNames] = useState<Record<string, string>>({});
+  const [kind, setKind] = useState<"discussion" | "speak_up">("discussion");
+  const [allowAnonymous, setAllowAnonymous] = useState(false);
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
   const [added, setAdded] = useState(false);
@@ -288,11 +334,13 @@ function AddChannel({ community, locales, onAdded }: { community: CommunityView;
     setMessages([]);
     setAdded(false);
     try {
-      const response = await send(`${engagementApi}/communities/${community.id}/channels`, "POST", { key, names });
+      const response = await send(`${engagementApi}/communities/${community.id}/channels`, "POST", { key, names, kind, allowAnonymous: kind === "speak_up" && allowAnonymous });
       if (response.ok) {
         onAdded((await response.json()) as CommunityView);
         setKey("");
         setNames({});
+        setKind("discussion");
+        setAllowAnonymous(false);
         setAdded(true);
       } else {
         setMessages(await problemMessages(response));
@@ -322,6 +370,21 @@ function AddChannel({ community, locales, onAdded }: { community: CommunityView;
             />
           ))}
         </div>
+        {community.rights.canAddSpeakUp ? (
+          <SelectField
+            label={t("channels.kind")}
+            name="channel-kind"
+            value={kind}
+            onChange={(e) => setKind(e.target.value as "discussion" | "speak_up")}
+            options={[
+              { value: "discussion", label: t("channels.kinds.discussion") },
+              { value: "speak_up", label: t("channels.kinds.speak_up") },
+            ]}
+          />
+        ) : null}
+        {kind === "speak_up" && community.rights.canAllowAnonymous ? (
+          <Checkbox label={t("channels.allowAnonymous")} hint={t("channels.allowAnonymousHint")} checked={allowAnonymous} onChange={(e) => setAllowAnonymous(e.target.checked)} />
+        ) : null}
         {messages.length > 0 ? (
           <Alert tone="danger" title={t("failed")} live>
             {messages.join(" ")}

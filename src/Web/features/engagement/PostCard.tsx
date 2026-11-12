@@ -303,13 +303,15 @@ export function PostCard({
     <article className="engagement-post" data-pinned={post.pinned || undefined} aria-labelledby={headingId}>
       <div className="engagement-post-head">
         <h3 id={headingId} className="engagement-post-author">
-          <bdi>{post.author.active ? post.author.displayName : t("formerEmployee", { name: post.author.displayName })}</bdi>
+          {post.anonymous ? t("speakUp.anonymous") : <bdi>{post.author.active ? post.author.displayName : t("formerEmployee", { name: post.author.displayName })}</bdi>}
         </h3>
+        {post.anonymous ? <Badge tone="accent">{t("speakUp.badge")}</Badge> : null}
         <p className="engagement-meta">
           <Link href={postHref(post.communityId, post.id)}>
             <time dateTime={post.publishedAt}>{format.dateTime(new Date(post.publishedAt), { dateStyle: "medium", timeStyle: "short" })}</time>
           </Link>
           {post.editedAt ? ` · ${t("post.edited")}` : null}
+          {post.editedByModerator ? ` · ${t("speakUp.editedByModerator")}` : null}
           {channelName ? ` · ${channelName}` : null}
           {showCommunity && communityName ? (
             <>

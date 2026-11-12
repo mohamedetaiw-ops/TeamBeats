@@ -14,7 +14,7 @@ Depends on 002, 004, 009, 010, 011, 012, 015, 026. R2.
 
 ## Phase 3: User Stories 2 and 3, Speak Up, polls and surveys (P1)
 - [ ] T007 [P] [US2] [US3] Tests: no identity stored for anonymous items; daily hash; review queue; one vote; threshold hiding everywhere; responded marker deleted at close
-- [ ] T008 [US2] Speak Up channel and review queue
+- [x] T008 [US2] Speak Up channel and review queue
 - [ ] T009 [US3] Polls, survey builder, results and export
 
 ## Phase 4: User Stories 4 to 7 (P1 to P3)

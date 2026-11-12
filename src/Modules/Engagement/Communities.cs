@@ -32,14 +32,25 @@ public static class MemberRoles
 
 public sealed record CommunityRequest(Dictionary<string, string>? Names, Dictionary<string, string>? Descriptions, string? Kind, Guid? OrgUnitId);
 
-public sealed record ChannelRequest(string? Key, Dictionary<string, string>? Names);
+/// <summary>A new channel. Kind is discussion (the default) or speak_up (spec 023 US2); only a Speak Up channel can allow anonymous posts.</summary>
+public sealed record ChannelRequest(string? Key, Dictionary<string, string>? Names, string? Kind = null, bool AllowAnonymous = false);
 
 public sealed record MemberRequest(Guid UserId, string? Role);
 
-public sealed record ChannelView(Guid Id, string Key, IReadOnlyDictionary<string, string> Names);
+public sealed record ChannelView(Guid Id, string Key, IReadOnlyDictionary<string, string> Names, string Kind = ChannelKinds.Discussion, bool AllowAnonymous = false);
 
-/// <summary>What the viewer may do in a community; worked out on the server so the page only shows it.</summary>
-public sealed record CommunityRights(bool Member, bool Pending, bool CanJoin, bool CanLeave, bool CanPost, bool CanModerate, bool CanManage, DateTimeOffset? MutedUntil);
+public static class ChannelKinds
+{
+    public const string Discussion = "discussion";
+    public const string SpeakUp = "speak_up";
+}
+
+/// <summary>
+/// What the viewer may do in a community; worked out on the server so the page only shows it. CanAddSpeakUp and
+/// CanAllowAnonymous say whether the channel form may offer a Speak Up channel and anonymous posting in it.
+/// </summary>
+public sealed record CommunityRights(bool Member, bool Pending, bool CanJoin, bool CanLeave, bool CanPost, bool CanModerate, bool CanManage, DateTimeOffset? MutedUntil,
+    bool CanAddSpeakUp = false, bool CanAllowAnonymous = false);
 
 public sealed record CommunityView(
     Guid Id,
@@ -53,7 +64,6 @@ public sealed record CommunityView(
     CommunityRights Rights,
     int Version);
 
-/// <summary>What the viewer may do in the communities area as a whole (the directory page shows the create action from it).</summary>
 /// <summary>What the viewer may do across communities: create one, and open the moderation queue and keyword filter.</summary>
 public sealed record DirectoryRights(bool CanCreate, bool CanModerate, bool CanManageKeywords);
 
@@ -186,8 +196,14 @@ public sealed class Communities(
     }
 
     private async Task<IReadOnlyList<ChannelView>> ChannelsAsync(Guid communityId, CancellationToken ct) =>
-        await session.QueryAsync("select id, key, names::text from engagement.channel where community_id = @communityId order by position, key",
-            new { communityId }, r => new ChannelView(r.GetGuid(0), r.GetString(1), EngagementJson.Read<Dictionary<string, string>>(r.GetString(2))), ct);
+        await session.QueryAsync("select id, key, names::text, kind, allow_anonymous from engagement.channel where community_id = @communityId order by position, key",
+            new { communityId }, r => new ChannelView(r.GetGuid(0), r.GetString(1), EngagementJson.Read<Dictionary<string, string>>(r.GetString(2)), r.GetString(3), r.GetBoolean(4)), ct);
+
+    /// <summary>
+    /// Anonymous posting is a tenant decision (spec 023 section 2): only engagement administrators turn it on for a
+    /// Speak Up channel, never a community owner alone.
+    /// </summary>
+    private async Task<bool> AllowsAnonymousAsync(CancellationToken ct) => (await authz.CheckAsync(Permissions.EngagementManage, AuthzTarget.Tenant, ct)).Allowed;
 
     private async Task<int> MemberCountAsync(CommunityRow c, CancellationToken ct)
     {
@@ -207,6 +223,10 @@ public sealed class Communities(
             CanJoin: c.Status == "active" && s.Participates && !s.Member && !s.Pending && c.OrgUnitId is null && c.Kind != CommunityKinds.Closed,
             CanLeave: s.Stored,
             CanPost: s.Posts, CanModerate: s.Moderates, CanManage: s.Manages, MutedUntil: s.MutedUntil);
+        if (s.Manages && await entitlements.IsEnabledAsync(Capabilities.EngagementSpeakUp, ct))
+        {
+            rights = rights with { CanAddSpeakUp = true, CanAllowAnonymous = await AllowsAnonymousAsync(ct) };
+        }
         return new CommunityView(c.Id, c.Names, c.Descriptions, c.Kind, c.OrgUnitId, c.Status, await MemberCountAsync(c, ct),
             s.Reads || s.Manages ? await ChannelsAsync(c.Id, ct) : [], rights, c.Version);
     }
@@ -532,6 +552,26 @@ public sealed class Communities(
         {
             errors.Add("names", "validation.engagement.names");
         }
+        var kind = request.Kind ?? ChannelKinds.Discussion;
+        if (kind is not (ChannelKinds.Discussion or ChannelKinds.SpeakUp))
+        {
+            errors.Add("kind", "validation.engagement.channel_kind");
+        }
+        if (kind == ChannelKinds.SpeakUp)
+        {
+            await entitlements.DemandAsync(Capabilities.EngagementSpeakUp, ct);
+        }
+        if (request.AllowAnonymous)
+        {
+            if (kind != ChannelKinds.SpeakUp)
+            {
+                errors.Add("allowAnonymous", "validation.engagement.anonymous_channel");
+            }
+            else if (!await AllowsAnonymousAsync(ct))
+            {
+                throw AppException.Denied();
+            }
+        }
         var count = await session.ScalarAsync<long>("select count(*) from engagement.channel where community_id = @id", new { id }, ct);
         if (count >= MaxChannels)
         {
@@ -543,8 +583,11 @@ public sealed class Communities(
         }
         errors.ThrowIfAny();
         await session.ExecAsync(
-            "insert into engagement.channel (tenant_id, id, community_id, key, names, position, created_at) values (platform.current_tenant_id(), @channel, @id, @key, @names, @position, @now)",
-            new { channel = Ids.New(), id, key, names = Jsonb.From(Trimmed(request.Names)), position = (int)count, now = clock.UtcNow }, ct);
+            """
+            insert into engagement.channel (tenant_id, id, community_id, key, names, kind, allow_anonymous, position, created_at)
+            values (platform.current_tenant_id(), @channel, @id, @key, @names, @kind, @anonymous, @position, @now)
+            """,
+            new { channel = Ids.New(), id, key, names = Jsonb.From(Trimmed(request.Names)), kind, anonymous = request.AllowAnonymous, position = (int)count, now = clock.UtcNow }, ct);
         return await GetAsync(id, ct);
     }
 }

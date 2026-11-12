@@ -18,6 +18,7 @@ public static class EngagementModule
         services.AddScoped<Posts>();
         services.AddScoped<KeywordFilters>();
         services.AddScoped<Moderation>();
+        services.AddScoped<SpeakUp>();
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
         return services;
     }
@@ -216,6 +217,44 @@ public static class EngagementModule
         root.MapPost("/moderation/{type}/{id:guid}:remove", async (string type, Guid id, RemoveRequest request, Moderation moderation, IDbSession session, CancellationToken ct) =>
         {
             await moderation.RemoveAsync(type, id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // ---- Speak Up (US2) ----
+
+        root.MapPost("/communities/{id:guid}/anonymous-posts", async (Guid id, AnonymousPostRequest request, SpeakUp speakUp, IDbSession session, CancellationToken ct) =>
+        {
+            var receipt = await speakUp.SubmitAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(receipt);
+        });
+
+        // The token travels in the body, not the address, so it does not land in request logs.
+        root.MapPost("/speak-up/reply", async (AnonymousReplyRequest request, SpeakUp speakUp, IDbSession session, CancellationToken ct) =>
+        {
+            var reply = await speakUp.ReplyAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(reply);
+        });
+
+        root.MapPost("/moderation/anonymous/{id:guid}:publish", async (Guid id, AnonymousPublishRequest request, SpeakUp speakUp, IDbSession session, CancellationToken ct) =>
+        {
+            var postId = await speakUp.PublishAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(new { postId });
+        });
+
+        root.MapPost("/moderation/anonymous/{id:guid}:answer", async (Guid id, AnonymousAnswerRequest request, SpeakUp speakUp, IDbSession session, CancellationToken ct) =>
+        {
+            await speakUp.AnswerAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapPost("/moderation/anonymous/{id:guid}:decline", async (Guid id, AnonymousDeclineRequest request, SpeakUp speakUp, IDbSession session, CancellationToken ct) =>
+        {
+            await speakUp.DeclineAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
         });

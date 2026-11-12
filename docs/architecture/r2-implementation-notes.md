@@ -481,3 +481,31 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Moderators scoped to an org unit | Reach the queue from their community's page; the directory link covers community roles and tenant wide rights |
 | Notices to moderators about new items | Not in the spec; can come with a later notification setting |
 
+## Speak Up (spec 023, slice 3: T008 and the Speak Up half of T007; US2, FR-005 to FR-007, FR-025)
+
+### Built
+- Channels have a kind: discussion or Speak Up. Every post in a Speak Up channel waits in the review queue (held reason `speak_up`), and so does an edit to one. A Speak Up channel needs the `engagement.speak_up` capability, which is off in Workplace.
+- Anonymous posting in a Speak Up channel that allows it. Only engagement administrators can allow anonymous posts in a channel; a community owner alone cannot. The page tells the person plainly, before they post, that their name is not kept.
+- An anonymous post is written by its own use case to `engagement.anon_post`. That table has no user column and no time of day, and its random id carries no time. Nothing is audited, followed or sent as an event when it is posted. The person is checked only to see that they may post and are within the limit.
+- The daily limit (5 anonymous posts a person a day) counts by an HMAC of the user id under a random key for the day. Keys and counts from earlier days are deleted on the next post, so an old hash cannot be matched to anyone.
+- In the moderation queue an anonymous post has no author and shows only its day. A moderator publishes it, optionally after changing the words (the post then shows "edited by a moderator"); answers it privately; or declines it with a reason. The published post has no author. After a decision the queue row keeps only the outcome.
+- The author gets a private link once, when they post. The token sits after `#`, so it never reaches the server in an address, and the reply page posts it in the request body. The link works while the post waits. It stops working once a decision has been shown.
+- The web message check now reads camelCase namespaces such as `engagement.speakUp`; before this, files with such a namespace were not checked.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Who turns anonymity on | Engagement administrators, per Speak Up channel |
+| Anonymous daily limit | 5 a person a day |
+| "One-time reply link" | Shown once at posting; readable while pending; stops after a decision has been shown |
+| What "answers it" means | A private answer to the author through the link; nothing is published |
+| Moderator edits | Only for anonymous posts before publishing; named Speak Up authors edit their own posts, which go back to review |
+| Comments on published anonymous posts | Allowed and named, as anywhere else |
+| Words kept after a decision | The queue row drops the words; a published post keeps them on the post |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Analytics counts for anonymous items (FR-024) | Come with T015 with the other engagement counts |
+| Session last-seen times | The session table records when a person was last active, which is not tied to any post; noted in case a stricter reading of FR-005 is wanted |
+
