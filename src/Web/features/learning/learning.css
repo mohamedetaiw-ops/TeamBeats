@@ -155,3 +155,25 @@
   unicode-bidi: isolate;
   direction: ltr;
 }
+
+.learning-table {
+  overflow-x: auto;
+}
+
+.learning-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.learning-table th,
+.learning-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: top;
+}
+
+.learning-table td[data-number] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

@@ -61,7 +61,8 @@ public sealed record CourseSummary(
     int Lessons,
     DateTimeOffset UpdatedAt);
 
-public sealed record LearningRights(bool Take, bool Manage, bool Report);
+/// <summary>What the viewer may do in learning; <paramref name="Team"/>: they have direct reports to follow.</summary>
+public sealed record LearningRights(bool Take, bool Manage, bool Report, bool Team = false);
 
 /// <summary>
 /// The course builder (spec 028 US1, FR-001 to FR-003). Learning administrators with <c>learning.manage</c> on a
@@ -84,7 +85,8 @@ public sealed class Courses(
     IOutbox outbox,
     INotificationSender notifications,
     IAuditWriter audit,
-    IClock clock)
+    IClock clock,
+    People.Contracts.IReportingLine reportingLine)
 {
     public const int MaxCategory = 60;
     public const string WithdrawnTemplate = "learning.course.withdrawn";
@@ -129,7 +131,7 @@ public sealed class Courses(
             return new LearningRights(false, false, false);
         }
         return new LearningRights(await AllowedAsync(Permissions.LearningTake, AuthzTarget.Tenant, ct), await authz.HoldsAnywhereAsync(Permissions.LearningManage, ct),
-            await authz.HoldsAnywhereAsync(Permissions.LearningReport, ct));
+            await authz.HoldsAnywhereAsync(Permissions.LearningReport, ct), (await reportingLine.DirectReportsAsync(context.RequireUser(), ct)).Count > 0);
     }
 
     private async Task RequireBuilderAsync(CancellationToken ct)

@@ -798,3 +798,21 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Due date of policy linked training | 30 days after the version came into force |
 | Which policy versions assign training | Material ones, the first version included |
 | How a course is chosen for a step or a policy | Paste its link or ID, as for lesson sources |
+
+## Learning reports, team view and evidence export (spec 028, slice 3: T009; US5, FR-013, FR-014)
+
+### Built
+- `LearningReports`: for a course, people with an assignment counted as assigned, completed, overdue (past the due date and grace) and expired, per unit in the viewer's `learning.report` scope; a parent unit counts the units below it. Drill down to people with source, due date, completion time, version, best score and certificate.
+- Evidence export: `GET /api/v1/learning/reports/courses/{id}/evidence[?unit=]`, a UTF-8 CSV (person, status, source, due date, completion time, version, score, certificate ID), audited as `learning.evidence_exported` with the course, the scope and the row count. Cells are protected against spreadsheet formulas.
+- Team view: `GET /api/v1/learning/team` lists the viewer's direct reports and their courses; `POST /api/v1/learning/team/{userId}/assignments` gives a direct report a published course whose audience includes them (source `manager`, audited).
+- Pages: `/learning/reports`, `/learning/reports/{id}`, `/learning/team`, linked from My learning when the viewer has reports or direct reports.
+- Tests: `LearningReportTests` (2 tests: scoped counts, drill down, export and audit, learner and cross-tenant denial; direct reports only and manager assignment), `learning.spec.ts` (report and export).
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| What counts as assigned | Everyone with an assignment of the course that was not withdrawn; completed, overdue and expired are parts of it |
+| Who is a line manager here | The reporting line (010): direct reports only, no role or permission needed, like the leave team view |
+| Which courses a manager can give | Published courses whose audience includes the report; due within a year, 30 days when not given |
+| Export size | Up to 10,000 people in one synchronous CSV |
+| Score in the evidence | The best quiz score of the assignment that completed |

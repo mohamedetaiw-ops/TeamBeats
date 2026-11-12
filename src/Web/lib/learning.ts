@@ -10,7 +10,7 @@ export type QuestionKind = "single" | "multiple" | "true_false";
 export type LearnerStateKind = "none" | "open" | "completed" | "retraining";
 export type AssignmentSource = "self" | "rule" | "manager" | "onboarding" | "policy";
 
-export type LearningRights = { take: boolean; manage: boolean; report: boolean };
+export type LearningRights = { take: boolean; manage: boolean; report: boolean; team: boolean };
 
 export type LearnerOption = { key: string; labels: Texts };
 export type LearnerQuestion = { key: string; kind: QuestionKind; prompts: Texts; options: LearnerOption[] };
@@ -168,9 +168,31 @@ export type AssignmentRule = {
   covered: number;
 };
 
+export type ReportState = "assigned" | "overdue" | "completed" | "expired";
+export type ReportCounts = { assigned: number; completed: number; overdue: number; expired: number };
+export type ReportCourse = { id: string; titles: Texts; status: string; category: string | null };
+export type UnitReport = { orgUnitId: string; names: Texts; parentId: string | null; counts: ReportCounts };
+export type CourseReport = { courseId: string; titles: Texts; wholeTenant: boolean; total: ReportCounts; units: UnitReport[] };
+export type ReportPerson = {
+  person: { id: string; displayName: string };
+  state: ReportState;
+  source: AssignmentSource;
+  dueOn: string | null;
+  completedAt: string | null;
+  version: number | null;
+  score: number | null;
+  certificateCode: string | null;
+  certificateId: string | null;
+};
+export type TeamCourse = { courseId: string; titles: Texts; state: ReportState; source: AssignmentSource; dueOn: string | null; completedAt: string | null };
+export type TeamMember = { person: { id: string; displayName: string }; courses: TeamCourse[] };
+
 export const learningHref = "/learning";
 export const catalogueHref = "/learning/catalogue";
 export const manageHref = "/learning/manage";
+export const reportsHref = "/learning/reports";
+export const teamHref = "/learning/team";
+export const reportHref = (id: string) => `/learning/reports/${encodeURIComponent(id)}`;
 export const courseHref = (id: string) => `/learning/courses/${encodeURIComponent(id)}`;
 export const pathHref = (id: string) => `/learning/paths/${encodeURIComponent(id)}`;
 export const builderHref = (id: string) => `/learning/manage/courses/${encodeURIComponent(id)}`;

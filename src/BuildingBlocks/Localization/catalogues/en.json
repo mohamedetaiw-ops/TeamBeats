@@ -1839,5 +1839,9 @@
   "notifications.template.learning.course.retraining.body": "{course} changed and needs to be taken again. Complete it by {due}.",
   "validation.journey.courses": "A training step names 1 to 10 different published courses, and only a training step names courses.",
   "validation.policies.course": "Choose a published course.",
-  "conflict.policies.training_first": "Complete the linked training course before you attest to this policy."
+  "conflict.policies.training_first": "Complete the linked training course before you attest to this policy.",
+  "validation.learning.team_course": "Choose a published course your colleague can take.",
+  "validation.learning.team_due": "Choose a due date after today and within a year.",
+  "authz.denied.learning_team": "You can only give courses to people who report to you directly.",
+  "authz.denied.learning_report": "You do not have learning reports for this scope."
 }
