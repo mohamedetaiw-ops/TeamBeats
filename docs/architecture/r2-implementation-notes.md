@@ -535,3 +535,34 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Active poll widget for home (008) | T015 |
 | Points for poll votes | T011 |
 
+## Surveys (spec 023, slice 5: the rest of T009 and T007; US3 scenarios 2 to 5, FR-005, FR-009, FR-010)
+
+### Built
+- Surveys need `engagement.surveys`, so Workplace runs polls without surveys. A person with `engagement.survey_publish` on an org unit builds a survey for that unit and every unit below it, so a survey for Acme Gulf leaves Acme Africa out. Survey authors find the page from the communities directory.
+- The builder takes a title, an introduction, anonymous or named, a minimum number of responses, an end date and up to 50 questions: one choice, several choices, a rating from 1 to 5, or a written answer, each optional or required. A draft changes as a whole until it is published; after that the questions and audience are fixed.
+- People in the audience answer once. An anonymous response has a random id, no user and no time, only the group it counts in. "Has responded" is kept in its own table and deleted at close, so nothing is left that says who answered. Nothing about a response goes to the audit trail.
+- Groups are the units directly below the survey's unit (or the unit itself for people placed there). In an anonymous survey nothing shows before close, nothing shows when the survey is under the threshold, and any group under it is hidden in the results, the group filter and the export. When the hidden groups could still be worked out from the total (only one hidden, or together under the threshold), the next smallest group is hidden too.
+- The author and publishers on the unit see results and export them as CSV: the whole survey, then each group that shows, with written answers listed in alphabetical order without names. A named survey also shows them who answered what.
+- Engagement administrators set the tenant threshold (default 5, range 3 to 50) with If-Match; a survey may raise it up to 50 but never go below it.
+- Publishing and closing are audited (`engagement.survey_published`, `engagement.survey_closed`), as are threshold changes. A survey closes at its end date the first time anyone opens it, or earlier by its author or a publisher, and sends `SurveyClosed`.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Audience | One org unit and everything below it; richer audiences (spec 009 clauses) can come later |
+| Groups for the threshold | The units directly below the survey's unit |
+| When anonymous results show | Only after close, so nobody can watch a single answer arrive |
+| Working a hidden group out from the others | The next smallest group is hidden as well (complementary suppression) |
+| Threshold for named surveys | Not applied; managers already see names |
+| Who sees results | The author and people with survey publishing on the survey's unit |
+| Changing an answer | Not allowed |
+| Order of written answers | Alphabetical, so the order says nothing about who or when |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Reminders to people who have not answered | Not built; the "has responded" table is ready for it |
+| Sharing results with managers (spec open question) | Not built; results stay with the author and publishers |
+| Notifying the audience on publish | Not built; the survey shows under "To answer" |
+| Survey widget for home (008) | T015 |
+

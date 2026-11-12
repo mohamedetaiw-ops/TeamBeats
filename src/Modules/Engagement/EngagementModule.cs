@@ -20,6 +20,7 @@ public static class EngagementModule
         services.AddScoped<Moderation>();
         services.AddScoped<SpeakUp>();
         services.AddScoped<Polls>();
+        services.AddScoped<Surveys>();
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
         return services;
     }
@@ -264,6 +265,94 @@ public static class EngagementModule
         {
             var view = await polls.CloseAsync(id, ct);
             await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // ---- Surveys (US3) ----
+
+        // Reading can close surveys that passed their end date, so the reads commit too.
+        root.MapGet("/surveys", async (Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var list = await surveys.ListAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(list);
+        });
+
+        root.MapPost("/surveys", async (SurveyRequest request, Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await surveys.CreateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/engagement/surveys/{view.Id}", view);
+        });
+
+        root.MapGet("/surveys/{id:guid}", async (Guid id, Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await surveys.GetAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPut("/surveys/{id:guid}", async (Guid id, SurveyRequest request, Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await surveys.UpdateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/surveys/{id:guid}:publish", async (Guid id, Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await surveys.PublishAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/surveys/{id:guid}:close", async (Guid id, Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await surveys.CloseAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/surveys/{id:guid}/responses", async (Guid id, SurveyResponseRequest request, Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await surveys.RespondAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/surveys/{id:guid}/responses", async (Guid id, Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var list = await surveys.ResponsesAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(list);
+        });
+
+        root.MapGet("/surveys/{id:guid}/results", async (Guid id, Guid? group, Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var results = await surveys.ResultsAsync(id, group, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(results);
+        });
+
+        root.MapGet("/surveys/{id:guid}/results.csv", async (Guid id, Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var (name, content) = await surveys.ExportAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.File(content, "text/csv; charset=utf-8", name);
+        });
+
+        root.MapGet("/settings/surveys", async (Surveys surveys, HttpResponse response, CancellationToken ct) =>
+        {
+            var view = await surveys.GetSettingsAsync(ct);
+            response.Headers.ETag = Surveys.SettingsETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        root.MapPut("/settings/surveys", async (SurveySettingsRequest request, HttpRequest http, Surveys surveys, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await surveys.SetSettingsAsync(request, IfMatch(http), ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = Surveys.SettingsETag(view.Version);
             return Results.Ok(view);
         });
 

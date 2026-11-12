@@ -1658,5 +1658,21 @@
   "validation.engagement.poll_results": "اختر متى تظهر النتائج.",
   "validation.engagement.poll_anonymous_change": "لا يمكن تغيير الأصوات المجهولة، لذا أوقف تغيير الأصوات أو اجعل الاستطلاع باسم المصوتين.",
   "validation.engagement.poll_closes": "اختر وقت انتهاء في المستقبل خلال سنة.",
-  "validation.engagement.poll_choice": "اختر خيارا واحدا، أو أكثر إذا سمح الاستطلاع بذلك."
+  "validation.engagement.poll_choice": "اختر خيارا واحدا، أو أكثر إذا سمح الاستطلاع بذلك.",
+  "conflict.engagement.already_responded": "لقد أجبت عن هذا الاستبيان من قبل.",
+  "conflict.engagement.survey_published": "تم نشر هذا الاستبيان، فلم يعد بالإمكان تغييره.",
+  "conflict.engagement.survey_not_open": "هذا الاستبيان غير مفتوح.",
+  "conflict.engagement.survey_settings_changed": "غيّر شخص آخر إعدادات الاستبيانات. أعد تحميلها ثم حاول مرة أخرى.",
+  "validation.engagement.survey_unit": "اختر الوحدة التنظيمية التي يستهدفها الاستبيان.",
+  "validation.engagement.survey_title": "اكتب عنوانا لا يزيد على 200 حرف.",
+  "validation.engagement.survey_intro": "اجعل المقدمة في حدود 2000 حرف.",
+  "validation.engagement.survey_threshold": "اختر حدا أدنى لعدد الردود بين إعداد الجهة و50.",
+  "validation.engagement.survey_closes": "اختر تاريخ انتهاء في المستقبل، في غضون سنة.",
+  "validation.engagement.survey_questions": "أضف من سؤال واحد إلى 50 سؤالا.",
+  "validation.engagement.survey_question_kind": "اختر نوع السؤال.",
+  "validation.engagement.survey_prompt": "اكتب كل سؤال في حدود 300 حرف.",
+  "validation.engagement.survey_options": "أسئلة الاختيار تحتاج من 2 إلى 20 خيارا مختلفا لا يزيد كل منها على 120 حرفا، والأسئلة الأخرى بلا خيارات.",
+  "validation.engagement.survey_answer": "راجع إجاباتك: اختر من الخيارات المعروضة، أو تقييما من 1 إلى 5، أو نصا لا يزيد على 2000 حرف.",
+  "validation.engagement.survey_required": "أجب عن كل سؤال مطلوب.",
+  "validation.engagement.survey_empty": "أجب عن سؤال واحد على الأقل."
 }

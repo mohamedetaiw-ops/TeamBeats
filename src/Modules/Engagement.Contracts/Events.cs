@@ -13,3 +13,6 @@ public sealed record CommentAdded(Guid CommentId, Guid PostId, Guid CommunityId)
 
 /// <summary>A poll closed, at its end time or earlier by its author or a moderator (spec 023 section 12).</summary>
 public sealed record PollClosed(Guid PollId, Guid CommunityId) : IIntegrationEvent;
+
+/// <summary>A survey closed, at its end date or earlier by its author or a publisher (spec 023 section 12).</summary>
+public sealed record SurveyClosed(Guid SurveyId, Guid OrgUnitId) : IIntegrationEvent;

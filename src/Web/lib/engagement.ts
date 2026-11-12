@@ -32,7 +32,7 @@ export type CommunityView = {
   version: number;
 };
 
-export type DirectoryRights = { canCreate: boolean; canModerate: boolean; canManageKeywords: boolean };
+export type DirectoryRights = { canCreate: boolean; canModerate: boolean; canManageKeywords: boolean; surveys: boolean };
 
 export type MemberRole = "member" | "moderator" | "owner";
 
@@ -176,3 +176,67 @@ export type PollView = {
   canAddOptions: boolean;
   createdAt: string;
 };
+
+export type SurveyKind = "single" | "multiple" | "scale" | "text";
+export type SurveyStatus = "draft" | "open" | "closed";
+export type SurveyOptionView = { id: string; label: string };
+export type SurveyQuestionView = { id: string; kind: SurveyKind; prompt: string; required: boolean; options: SurveyOptionView[] };
+
+export type SurveyView = {
+  id: string;
+  orgUnitId: string;
+  unitNames: Record<string, string>;
+  author: EngagementPerson;
+  title: string;
+  intro: string | null;
+  anonymous: boolean;
+  threshold: number;
+  status: SurveyStatus;
+  closesAt: string | null;
+  publishedAt: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  questions: SurveyQuestionView[];
+  responded: boolean;
+  canRespond: boolean;
+  manages: boolean;
+  canEdit: boolean;
+};
+
+export type SurveyList = { canCreate: boolean; defaultThreshold: number; toAnswer: SurveyView[]; managed: SurveyView[] };
+
+export type SurveyQuestionResult = {
+  id: string;
+  kind: SurveyKind;
+  prompt: string;
+  answered: number;
+  options: { id: string; label: string; count: number }[];
+  scale: number[] | null;
+  average: number | null;
+  texts: string[] | null;
+};
+
+export type SurveyGroupResult = { unitId: string; names: Record<string, string>; responses: number | null; visible: boolean };
+
+export type SurveyResults = {
+  surveyId: string;
+  anonymous: boolean;
+  threshold: number;
+  status: SurveyStatus;
+  group: string | null;
+  responses: number;
+  visible: boolean;
+  groups: SurveyGroupResult[];
+  questions: SurveyQuestionResult[];
+};
+
+export type SurveyNamedResponse = {
+  person: EngagementPerson;
+  submittedAt: string;
+  answers: { questionId: string; optionIds: string[]; value: number | null; text: string | null }[];
+};
+
+export type SurveySettingsView = { threshold: number; version: number };
+
+export const surveysHref = "/communities/surveys";
+export const surveyHref = (id: string) => `/communities/surveys/${encodeURIComponent(id)}`;
