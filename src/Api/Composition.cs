@@ -21,6 +21,7 @@ using TeamBeats.Modules.AiGateway.OpenRouter;
 using TeamBeats.Modules.Calendar;
 using TeamBeats.Modules.Policies;
 using TeamBeats.Modules.Engagement;
+using TeamBeats.Modules.Learning;
 using TeamBeats.Modules.Search;
 using TeamBeats.Modules.Agents;
 using TeamBeats.Modules.Evaluation;
@@ -62,6 +63,7 @@ public static class TeamBeatsModules
         DocumentsModule.Migrations,
         PoliciesModule.Migrations,
         EngagementModule.Migrations,
+        LearningModule.Migrations,
         AiGatewayModule.Migrations,
         SearchModule.Migrations,
         AgentsModule.Migrations,
@@ -128,6 +130,7 @@ public static class TeamBeatsModules
         services.AddDocumentsModule();
         services.AddPoliciesModule();
         services.AddEngagementModule();
+        services.AddLearningModule();
         services.AddAiGatewayModule();
         services.AddOpenRouterAdapter();
         services.AddSearchModule();
@@ -213,6 +216,7 @@ public static class ApiComposition
         app.MapDocumentsEndpoints();
         app.MapPoliciesEndpoints();
         app.MapEngagementEndpoints();
+        app.MapLearningEndpoints();
         app.MapAiGatewayEndpoints();
         app.MapSearchEndpoints();
         app.MapAgentsEndpoints();

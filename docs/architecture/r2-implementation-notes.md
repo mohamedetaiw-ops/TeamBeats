@@ -724,3 +724,27 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Which actions count | The seven named and three anonymous actions above; views are already counted by the page events |
 | Detail kept for anonymous counts | The action and the day only |
 | Engagement panels on the spec 021 dashboard | A follow-up; the counts are stored and can be queried from now on |
+
+## Courses, quizzes, paths and certificates (spec 028, slice 1: T001 to T003, API of T004 and T005; US1, US3, FR-001 to FR-004, FR-009, FR-010, FR-012, FR-018, FR-019)
+
+### Built
+- The `Learning` module (ADR-0013) with schema `learning` and forced RLS on every table: courses and their published versions, assignments, lesson progress, quiz attempts, extra attempts, certificates, paths and their courses.
+- Permissions `learning.take`, `learning.manage`, `learning.team_view`, `learning.report` and `learning.assign_linked`, the learning administrator built-in role, and the capabilities of section 9 (`learning.scorm` Enterprise and Government only).
+- Two new contracts so lessons reference material and never copy it: `IPublishedPages` in Content (a published page of any type the caller may read) and `IDocumentReferences` in Documents (the version in force, once scanned clean).
+- The builder (`/api/v1/learning/manage/courses`): a draft definition of titles and summaries per language, page, document, video and quiz lessons, and quizzes of single choice, multiple choice and true or false questions. Publishing checks each source is published, readable and, for a video lesson, a video, keeps each source's version, and shows a later change of a source as "changed since publishing" until the next publish.
+- The player (`/api/v1/learning/courses/{id}`): learners in the audience, with an assignment, or following a path that holds the course see the latest published version, never the right answers. Lessons finish only when the learner can open their material; quizzes are scored on the server within their attempts; the last lesson is kept for resuming; the last lesson done completes the course and issues a certificate. `CourseAssigned`, `CourseCompleted`, `CertificateIssued` and `CoursePublished` go through the outbox, and `learning.progress` goes to analytics as a server-only event.
+- Certificates: an ID of twelve characters without look-alikes, verified by the holder and by people with `learning.report` covering one of the holder's units, inside the tenant only. The PDF is printed through the HTML route of the document converter when downloaded.
+- Paths: ordered courses, published once every course in them is published. A path opens its courses to its audience even when a course is not open for enrolment on its own, and a course that needs the one before it stays locked until that one is completed.
+- Tests: `LearningCourseTests` (5 tests), `LearningRulesTests` (unit).
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Which version of a page a learner reads | The page as published now; the course keeps the version it was published with only to show the builder what changed |
+| Who verifies a certificate (FR-010 "authorized users") | The holder and people with `learning.report` covering one of the holder's org units or the tenant |
+| When the certificate PDF is made | When it is downloaded, in the holder's language when the course has it; the record and its ID are kept at completion |
+| Retraining on the first version | Ignored: nobody has completed a course before its first version |
+| Self enrolment | Only in courses marked open whose audience includes the learner, or through a published path |
+| Attempts after a pass | Refused; the score of each attempt is kept and the answers are not |
+| Learner who cannot open a lesson's material | The lesson cannot be marked done; the builder is responsible for giving the audience access |
+| Catalogue search through 012 | The catalogue filters by text in any language for now; indexing courses in search comes with the learning pages |

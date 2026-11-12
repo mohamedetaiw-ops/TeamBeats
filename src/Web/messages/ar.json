@@ -491,7 +491,8 @@
         "agent_designer": "مصمم الوكلاء",
         "evaluation_reviewer": "مراجع التقييم",
         "finance_officer": "مسؤول المالية",
-        "engagement_administrator": "مسؤول التفاعل"
+        "engagement_administrator": "مسؤول التفاعل",
+        "learning_administrator": "مسؤول التعلم"
       },
       "tabs": "أقسام الأدوار والوصول",
       "unknownUnit": "وحدة خارج نطاق عرضك",
@@ -605,7 +606,8 @@
       "users": "الأشخاص",
       "roles": "الأدوار",
       "records": "السجلات",
-      "engagement": "المجتمعات والمشاركة"
+      "engagement": "المجتمعات والمشاركة",
+      "learning": "التعلم"
     },
     "plan": {
       "description": "الباقة التي تستخدمها مساحة العمل هذه وكل ما تتضمنه.",
@@ -740,7 +742,11 @@
         "engagement_surveys": "الاستبيانات",
         "engagement_recognition": "التقدير",
         "engagement_points": "النقاط ولوحات الصدارة",
-        "engagement_galleries": "معارض الصور"
+        "engagement_galleries": "معارض الصور",
+        "learning_courses": "الدورات ومسارات التعلم",
+        "learning_mandatory": "التدريب الإلزامي",
+        "learning_scorm": "استيراد SCORM وxAPI",
+        "learning_lms_connector": "ربط نظام إدارة التعلم"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",
