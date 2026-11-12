@@ -1606,5 +1606,19 @@
   "validation.engagement.reaction": "اختر أحد التفاعلات المتاحة.",
   "validation.engagement.reply_level": "تكون الردود تحت تعليق على هذا المنشور بمستوى واحد فقط.",
   "validation.engagement.role": "اختر عضوًا أو مشرفًا أو مالكًا.",
-  "validation.engagement.user": "اختر شخصًا من هذه الجهة."
+  "validation.engagement.user": "اختر شخصًا من هذه الجهة.",
+  "conflict.engagement.keywords_changed": "غيّر شخص آخر قائمة الكلمات المحظورة. أعد تحميلها وحاول مرة أخرى.",
+  "notifications.template.engagement.content.removed.body": "أزال مشرف شيئا كتبته في مجتمع. افتحه لترى السبب.",
+  "notifications.template.engagement.content.removed.title": "أزال مشرف منشورك أو تعليقك",
+  "notifications.template.engagement.member.muted.body": "كتمك مشرف في مجتمع لفترة. ما زال بإمكانك القراءة. افتحه لترى حتى متى.",
+  "notifications.template.engagement.member.muted.title": "تم كتمك في مجتمع",
+  "validation.engagement.keyword": "استخدم كلمات من 2 إلى 60 حرفا.",
+  "validation.engagement.keywords_count": "يمكن أن تضم القائمة حتى 500 كلمة.",
+  "validation.engagement.mute_owner": "لا يمكن كتم المالكين. غيّر دورهم أولا.",
+  "validation.engagement.mute_reason": "اجعل السبب في حدود 500 حرف.",
+  "validation.engagement.mute_self": "لا يمكنك كتم نفسك.",
+  "validation.engagement.mute_until": "اختر وقت انتهاء في المستقبل خلال سنة.",
+  "validation.engagement.removal_reason": "اكتب سببا في حدود 500 حرف. سيقرؤه الكاتب.",
+  "validation.engagement.report_note": "اجعل الملاحظة في حدود 500 حرف.",
+  "validation.engagement.report_reason": "اختر سبب الإبلاغ."
 }

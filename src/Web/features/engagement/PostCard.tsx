@@ -27,6 +27,7 @@ import {
   type ReactionCounts,
   type ReactionKind,
 } from "@/lib/engagement";
+import { ReportControl, StatusNote } from "./ModerationNotes";
 
 /** Reactions on a post or comment. Choosing your current reaction again takes it back. */
 function ReactionBar({ url, initial, label }: { url: string; initial: ReactionCounts; label: string }) {
@@ -107,7 +108,7 @@ function Comments({ post, canComment, onCount }: { post: PostView; canComment: b
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
   const [notReachable, setNotReachable] = useState<EngagementPerson[]>([]);
-
+  const [held, setHeld] = useState(false);
   const [reload, setReload] = useState(0);
   const load = () => setReload((n) => n + 1);
 
@@ -138,7 +139,9 @@ function Comments({ post, canComment, onCount }: { post: PostView; canComment: b
     try {
       const response = await send(`${engagementApi}/posts/${post.id}/comments`, "POST", { body: draft, parentId: replyTo?.id ?? null, mentions: [] });
       if (response.ok) {
-        setNotReachable(((await response.json()) as CommentSaved).notReachable);
+        const saved = (await response.json()) as CommentSaved;
+        setNotReachable(saved.notReachable);
+        setHeld(saved.comment.status === "held");
         setDraft("");
         setReplyTo(null);
         load();
@@ -173,8 +176,10 @@ function Comments({ post, canComment, onCount }: { post: PostView; canComment: b
       <p className="engagement-comment-body" dir="auto">
         {c.body}
       </p>
+      <StatusNote status={c.status} heldReason={c.heldReason} removedReason={c.removedReason} />
       <div className="engagement-actions">
-        <ReactionBar url={`${engagementApi}/comments/${c.id}/reaction`} initial={c.reactions} label={t("reactions.commentLabel")} />
+        {c.status === "visible" ? <ReactionBar url={`${engagementApi}/comments/${c.id}/reaction`} initial={c.reactions} label={t("reactions.commentLabel")} /> : null}
+        {c.canReport ? <ReportControl type="comment" id={c.id} /> : null}
         {!reply && canComment ? (
           <Button size="xs" variant="quiet" onClick={() => setReplyTo(c)}>
             {t("comments.reply")}
@@ -210,6 +215,11 @@ function Comments({ post, canComment, onCount }: { post: PostView; canComment: b
             </Alert>
           ) : null}
           <NotReachable people={notReachable} />
+          {held ? (
+            <Alert tone="warning" title={t("moderation.heldTitle")} live>
+              {t("moderation.heldText")}
+            </Alert>
+          ) : null}
           <div className="engagement-row">
             <Button type="submit" size="sm" variant="primary" busy={busy} busyLabel={t("working")} disabled={!draft.trim()}>
               {t("comments.send")}
@@ -330,6 +340,7 @@ export function PostCard({
       ) : (
         <BodyView body={post.body} embedTitle={t("post.embed")} />
       )}
+      <StatusNote status={post.status} heldReason={post.heldReason} removedReason={post.removedReason} />
       {post.hashtags.length > 0 ? (
         <ul className="engagement-tags" aria-label={t("post.hashtags")}>
           {post.hashtags.map((tag) => (
@@ -352,8 +363,10 @@ export function PostCard({
         </Alert>
       ) : null}
       <NotReachable people={notReachable} />
-      <ReactionBar url={`${engagementApi}/posts/${post.id}/reaction`} initial={post.reactions} label={t("reactions.postLabel")} />
-      <div className="engagement-actions">
+      {post.status === "published" ? (
+        <>
+          <ReactionBar url={`${engagementApi}/posts/${post.id}/reaction`} initial={post.reactions} label={t("reactions.postLabel")} />
+          <div className="engagement-actions">
         <Button size="sm" variant="quiet" icon="chat" aria-expanded={comments} onClick={() => setComments((c) => !c)}>
           {t("post.comments", { count })}
         </Button>
@@ -365,6 +378,7 @@ export function PostCard({
             {post.pinned ? t("post.unpin") : t("post.pin")}
           </Button>
         ) : null}
+        {post.canReport ? <ReportControl type="post" id={post.id} /> : null}
         {post.canEdit && !editing ? (
           <>
             <Button size="sm" variant="quiet" icon="edit" onClick={() => setEditing({ body: post.body, mentions: post.mentions })}>
@@ -373,8 +387,14 @@ export function PostCard({
             <ConfirmAction label={t("post.delete")} question={t("post.deleteQuestion")} confirmLabel={t("post.deleteConfirm")} cancelLabel={t("post.cancel")} onConfirm={remove} />
           </>
         ) : null}
-      </div>
-      {comments ? <Comments post={post} canComment={canComment} onCount={setCount} /> : null}
+          </div>
+          {comments ? <Comments post={post} canComment={canComment} onCount={setCount} /> : null}
+        </>
+      ) : post.mine && post.status !== "removed" ? (
+        <div className="engagement-actions">
+          <ConfirmAction label={t("post.delete")} question={t("post.deleteQuestion")} confirmLabel={t("post.deleteConfirm")} cancelLabel={t("post.cancel")} onConfirm={remove} />
+        </div>
+      ) : null}
     </article>
   );
 }

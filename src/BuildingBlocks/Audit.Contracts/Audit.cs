@@ -375,6 +375,12 @@ public static class AuditActions
     public const string EngagementCommunityArchived = "engagement.community_archived";
     public const string EngagementMemberChanged = "engagement.member_changed";
     public const string EngagementPostPinned = "engagement.post_pinned";
+    public const string EngagementContentApproved = "engagement.content_approved";
+    public const string EngagementContentHidden = "engagement.content_hidden";
+    public const string EngagementContentRemoved = "engagement.content_removed";
+    public const string EngagementMemberMuted = "engagement.member_muted";
+    public const string EngagementMemberUnmuted = "engagement.member_unmuted";
+    public const string EngagementKeywordsChanged = "engagement.keywords_changed";
 
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
@@ -432,6 +438,7 @@ public static class AuditActions
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
         EvalRubricCalibrated, EvalRubricDemoted,
         EngagementCommunityCreated, EngagementCommunityChanged, EngagementCommunityArchived, EngagementMemberChanged, EngagementPostPinned,
+        EngagementContentApproved, EngagementContentHidden, EngagementContentRemoved, EngagementMemberMuted, EngagementMemberUnmuted, EngagementKeywordsChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =
