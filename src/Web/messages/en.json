@@ -9609,7 +9609,27 @@
       "retired": "Retired",
       "retire": "Retire",
       "guestConfidential": "Let owners open Confidential files to guests",
-      "guestConfidentialHint": "Each owner still decides for their space. Restricted files always stay closed to guests."
+      "guestConfidentialHint": "Each owner still decides for their space. Restricted files always stay closed to guests.",
+      "editor": {
+        "new": "New template",
+        "newTitle": "New template",
+        "editTitle": "Change template",
+        "edit": "Change {name}",
+        "name": "Template name",
+        "kind": "Kind",
+        "listLegend": "Task list {number}",
+        "listName": "List name",
+        "columns": "Board columns",
+        "columnsHint": "One per line. The last column is where tasks count as done.",
+        "tasks": "Starter tasks",
+        "tasksHint": "One per line. They start in the first column.",
+        "removeList": "Remove list {number}",
+        "addList": "Add a task list",
+        "save": "Save template",
+        "cancel": "Cancel",
+        "defaultList": "Tasks",
+        "defaultColumns": "To do\nDoing\nDone"
+      }
     },
     "overview": {
       "failed": "The change could not be saved.",

@@ -184,3 +184,16 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* A task list of the template editor: a fieldset drawn as a card. */
+fieldset.spaces-card {
+  margin: 0;
+  min-inline-size: 0;
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+fieldset.spaces-card legend {
+  padding-inline: var(--tb-space-xs);
+  font-weight: var(--tb-font-weight-semibold);
+}
