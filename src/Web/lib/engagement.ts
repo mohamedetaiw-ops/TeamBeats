@@ -298,3 +298,11 @@ export type AwardList = { canCreate: boolean; periods: AwardPeriodView[] };
 export type AwardNomineeSummary = { nominee: AwardNominee; count: number; reasons: { nominator: EngagementPerson; reason: string; at: string }[] };
 
 export const awardsHref = "/communities/awards";
+
+export type CelebrationKind = "birthday" | "anniversary" | "joiner";
+export type CelebrationEntry = { person: EngagementPerson; kind: CelebrationKind; on: string; years: number | null; today: boolean; canGreet: boolean };
+export type CelebrationsView = { scope: "unit" | "all"; today: CelebrationEntry[]; upcoming: CelebrationEntry[]; joiners: CelebrationEntry[] };
+export type CelebrationPreference = { birthdayMonth: number | null; birthdayDay: number | null; anniversaryOptOut: boolean; birthdaysOn: boolean; anniversariesOn: boolean };
+export type CelebrationSettingsView = { birthdays: boolean; anniversaries: boolean; joiners: boolean; version: number };
+
+export const celebrationsHref = "/communities/celebrations";

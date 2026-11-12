@@ -13459,6 +13459,124 @@
         }
       }
     },
+    "/api/v1/engagement/celebrations": {
+      "get": {
+        "tags": [
+          "Engagement"
+        ],
+        "parameters": [
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/engagement/celebrations/{userId}/greetings": {
+      "post": {
+        "tags": [
+          "Engagement"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GreetingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/engagement/celebrations/preferences": {
+      "get": {
+        "tags": [
+          "Engagement"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Engagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CelebrationPreferenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/engagement/settings/celebrations": {
+      "get": {
+        "tags": [
+          "Engagement"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Engagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CelebrationSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/engagement/points/me": {
       "get": {
         "tags": [
@@ -19005,6 +19123,68 @@
           }
         }
       },
+      "CelebrationPreferenceRequest": {
+        "required": [
+          "birthdayMonth",
+          "birthdayDay",
+          "anniversaryOptOut"
+        ],
+        "type": "object",
+        "properties": {
+          "birthdayMonth": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "birthdayDay": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "anniversaryOptOut": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "CelebrationSettingsRequest": {
+        "required": [
+          "birthdays",
+          "anniversaries",
+          "joiners"
+        ],
+        "type": "object",
+        "properties": {
+          "birthdays": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "anniversaries": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "joiners": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
       "ChangeTemplateRequest": {
         "required": [
           "templateId",
@@ -21168,6 +21348,20 @@
         "type": "object",
         "properties": {
           "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "GreetingRequest": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
             "type": [
               "null",
               "string"
