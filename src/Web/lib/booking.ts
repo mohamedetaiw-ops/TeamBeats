@@ -168,3 +168,40 @@ export type RuleView = {
 export function tomorrowIso(now: number = Date.now()): string {
   return new Date(now + 86_400_000).toISOString().slice(0, 10);
 }
+
+// ---- Usage reports (spec 031 US6, FR-014): counts and hours only ----
+
+export const bookingReportsHref = "/booking/reports";
+export const reportGroups = ["resource", "zone", "site", "week"] as const;
+export type ReportGroup = (typeof reportGroups)[number];
+export type ReportSite = { id: string; names: Names; timeZone: string; status: string };
+export type UsageRow = {
+  key: string;
+  names: Names | null;
+  weekStart: string | null;
+  resources: number;
+  bookings: number;
+  checkedIn: number;
+  noShows: number;
+  cancelled: number;
+  bookedHours: number;
+  usedHours: number;
+  availableHours: number;
+  utilization: number | null;
+  noShowRate: number | null;
+};
+export type UsageReport = {
+  siteId: string;
+  siteNames: Names;
+  timeZone: string;
+  from: string;
+  to: string;
+  groupBy: ReportGroup;
+  total: UsageRow;
+  rows: UsageRow[];
+};
+
+/** The last four whole weeks up to today, as ISO dates. */
+export function lastWeeksIso(now: number = Date.now()): { from: string; to: string } {
+  return { from: new Date(now - 27 * 86_400_000).toISOString().slice(0, 10), to: new Date(now).toISOString().slice(0, 10) };
+}

@@ -10100,6 +10100,50 @@
       "kioskEmptyTitle": "Nothing to check in to",
       "kioskEmpty": "You have no bookings at this site for the rest of today.",
       "kioskLabel": "Your bookings here today"
+    },
+    "reports": {
+      "pageTitle": "Space usage",
+      "pageIntro": "How sites, zones and resources are used, and how often booked space goes unused. Counts only, never who booked.",
+      "unavailableTitle": "Reports are not available",
+      "unavailable": "You need the space reports right for a site, and your organization's plan must include space reports.",
+      "noSitesTitle": "No sites to report on",
+      "noSites": "No site is in your report scope yet.",
+      "filters": "Report",
+      "site": "Site",
+      "from": "From",
+      "to": "To",
+      "groupBy": "Group by",
+      "group": {
+        "resource": "Resources",
+        "zone": "Zones",
+        "site": "Site",
+        "week": "Weeks"
+      },
+      "rangeHint": "Choose up to 92 days. Available hours are the site's opening hours on working days.",
+      "failed": "The report could not be loaded.",
+      "total": "{site} in total",
+      "totalLabel": "Totals for the site",
+      "utilizationOf": "Utilization {value}",
+      "noShowRateOf": "No-show rate {value}",
+      "bookingsOf": "{count, plural, =0 {No bookings} one {# booking} other {# bookings}}",
+      "explain": "Utilization is used hours over available hours. Used hours are checked-in hours, or booked hours where check-in is off. The no-show rate is no-shows over bookings that needed a check-in.",
+      "noRowsTitle": "Nothing to show",
+      "noRows": "There is nothing to report for this range.",
+      "caption": "Usage for the chosen range",
+      "none": "Not applicable",
+      "noZone": "No zone",
+      "weekOf": "Week of {date}",
+      "column": {
+        "resources": "Resources",
+        "bookings": "Bookings",
+        "checkedIn": "Checked in",
+        "noShows": "No-shows",
+        "cancelled": "Cancelled",
+        "usedHours": "Used hours",
+        "availableHours": "Available hours",
+        "utilization": "Utilization",
+        "noShowRate": "No-show rate"
+      }
     }
   }
 }

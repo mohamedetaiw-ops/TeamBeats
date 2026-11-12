@@ -87,3 +87,26 @@
     break-inside: avoid;
   }
 }
+
+/* Usage reports (spec 031 US6): numbers align to the end and stay tabular in both directions. */
+.booking-table {
+  overflow-x: auto;
+}
+
+.booking-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.booking-table th,
+.booking-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: top;
+}
+
+.booking-table td[data-number] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

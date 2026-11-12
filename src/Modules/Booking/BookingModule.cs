@@ -26,6 +26,7 @@ public static class BookingModule
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<BookingApprovals>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, BookingApprovals>("booking.approval_waiting");
         services.AddScoped<BookingMaintenance>();
+        services.AddScoped<BookingReports>();
         services.AddMessageHandler<TenantMembershipDisabled, BookingLeavers>("booking.leaver");
         return services;
     }
@@ -88,6 +89,11 @@ public static class BookingModule
         });
 
         // ---- Sites, resources and rules (US1) ----
+
+        root.MapGet("/reports/sites", async (BookingReports reports, CancellationToken ct) => Results.Ok(await reports.SitesAsync(ct)));
+
+        root.MapGet("/reports/utilization", async (Guid site, DateOnly? from, DateOnly? to, string? groupBy, BookingReports reports, CancellationToken ct) =>
+            Results.Ok(await reports.UtilizationAsync(site, from, to, groupBy, ct)));
 
         var manage = root.MapGroup("/manage");
 

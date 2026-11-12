@@ -17,7 +17,7 @@ Depends on 002, 015, 016, 018, 022, 030. R2.
 
 ## Phase 4: User Stories 5 and 6 (P2)
 - [x] T008 [US5] On behalf and team booking
-- [ ] T009 [US6] Utilization reports
+- [x] T009 [US6] Utilization reports
 
 ## Final phase
-- [ ] T010 Performance tests; OpenAPI; R2 implementation notes; spec evidence
+- [x] T010 Performance tests; OpenAPI; R2 implementation notes; spec evidence
