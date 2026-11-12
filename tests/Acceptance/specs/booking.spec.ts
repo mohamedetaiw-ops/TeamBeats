@@ -10,9 +10,19 @@ function nextTuesday(): string {
   return day.toISOString().slice(0, 10);
 }
 
+/** The next quarter hour in Riyadh (UTC+3, no daylight saving) as a date and a time, so check-in is open for a booking there. */
+function nextRiyadhSlot(): { date: string; start: string; end: string } {
+  const local = new Date(Date.now() + 3 * 3_600_000);
+  local.setUTCMinutes(Math.floor(local.getUTCMinutes() / 15) * 15 + 15, 0, 0);
+  const end = new Date(local.getTime() + 3_600_000);
+  const hhmm = (d: Date) => d.toISOString().slice(11, 16);
+  return { date: local.toISOString().slice(0, 10), start: hhmm(local), end: hhmm(end) };
+}
+
 /**
- * Spec 031 slice 1: the administrator adds a site with a floor and a desk and opens its labels; Layla finds the desk
- * free on a Tuesday, books it, sees it under My bookings and cancels it. Rules, the parallel race, recurring series,
+ * Spec 031 slices 1 and 2: the administrator adds a site with a floor and a desk and opens its labels; Layla finds the desk
+ * free on a Tuesday, books it, sees it under My bookings and cancels it; then she scans a camera kit's code, books it
+ * for now and checks in from the scan page. Approval holds, expiry, release, the no-show rule, rules, the parallel race, recurring series,
  * limits, removal, leavers and the tenant boundary are covered by BookingTests. In English and Arabic, with axe.
  * Names are fictional.
  */
@@ -24,6 +34,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     const m = (key: string, values: Record<string, string | number> = {}) => msg(locale, key, values as Record<string, string>);
     const site = locale === "ar" ? "مكتب الرياض" : "Riyadh office";
     const desk = locale === "ar" ? "مكتب 1.01" : "Desk 1.01";
+    const camera = locale === "ar" ? "طقم الكاميرا" : "Camera kit";
+    let code = "";
 
     test.beforeAll(async () => {
       tenant = await createTenant(`bkg-${locale}`, locale, "workplace_plus", ["layla"]);
@@ -47,11 +59,20 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await main.getByLabel(m("booking.manage.resourceName")).fill(desk);
       await main.getByRole("button", { name: m("booking.manage.addResource") }).click();
       await expect(page.getByText(m("booking.manage.resourceAdded", { name: desk }))).toBeVisible();
+      await main.getByLabel(m("booking.manage.kind")).selectOption("equipment");
+      await main.getByLabel(m("booking.manage.resourceName")).fill(camera);
+      await main.getByRole("button", { name: m("booking.manage.addResource") }).click();
+      await expect(page.getByText(m("booking.manage.resourceAdded", { name: camera }))).toBeVisible();
       await expectAccessible(page, testInfo, `booking-site-${locale}`);
 
       await main.getByRole("link", { name: m("booking.manage.labels") }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("booking.manage.labels"));
-      await expect(page.getByRole("list", { name: m("booking.manage.labels") }).getByRole("listitem")).toHaveCount(1);
+      const labels = page.getByRole("list", { name: m("booking.manage.labels") }).getByRole("listitem");
+      await expect(labels).toHaveCount(2);
+      const cameraLabel = labels.filter({ hasText: camera });
+      await expect(cameraLabel.getByRole("img", { name: m("booking.manage.qrAlt", { name: camera }) })).toBeVisible();
+      code = (await cameraLabel.locator("code").textContent())?.trim() ?? "";
+      expect(code).toMatch(/^[0-9a-f]{32}$/);
       await expectAccessible(page, testInfo, `booking-labels-${locale}`);
     });
 
@@ -78,6 +99,33 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await list.getByRole("button", { name: m("booking.mine.cancel") }).click();
       await list.getByRole("button", { name: m("booking.mine.cancelConfirm") }).click();
       await expect(list.getByText(m("booking.status.cancelled"))).toBeVisible();
+    });
+
+    test("an employee scans a code, books the equipment for now and checks in", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, `layla@${tenant.key}.example`, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/booking/scan/${code}`);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("booking.checkIn.pageTitle"));
+      const main = page.getByRole("main");
+      await expect(main.getByText(m("booking.checkIn.noneTitle"))).toBeVisible();
+      await expectAccessible(page, testInfo, `booking-scan-none-${locale}`);
+
+      const slot = nextRiyadhSlot();
+      await main.getByRole("link", { name: m("booking.checkIn.find") }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("booking.pageTitle"));
+      await main.getByLabel(m("booking.find.kind")).selectOption("equipment");
+      await main.getByLabel(m("booking.find.date")).fill(slot.date);
+      await main.getByLabel(m("booking.find.start")).fill(slot.start);
+      await main.getByLabel(m("booking.find.end")).fill(slot.end);
+      await main.getByRole("button", { name: m("booking.find.search") }).click();
+      const results = main.getByRole("list", { name: m("booking.find.resultsLabel") });
+      await results.getByRole("button", { name: m("booking.find.book", { name: camera }) }).click();
+      await expect(page.getByText(m("booking.find.bookedTitle"))).toBeVisible();
+
+      await page.goto(`${hostOrigin(tenant.key)}/booking/scan/${code}`);
+      await main.getByRole("button", { name: m("booking.checkIn.action") }).click();
+      await expect(main.getByText(m("booking.checkIn.doneTitle"))).toBeVisible();
+      await expect(main.getByText(m("booking.status.checked_in"), { exact: true })).toBeVisible();
+      await expectAccessible(page, testInfo, `booking-scan-done-${locale}`);
     });
   });
 }

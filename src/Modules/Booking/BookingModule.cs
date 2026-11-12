@@ -22,6 +22,10 @@ public static class BookingModule
         services.AddScoped<BookingCancellations>();
         services.AddScoped<Bookings>();
         services.AddScoped<BookingLeavers>();
+        services.AddScoped<BookingApprovals>();
+        services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<BookingApprovals>());
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, BookingApprovals>("booking.approval_waiting");
+        services.AddScoped<BookingMaintenance>();
         services.AddMessageHandler<TenantMembershipDisabled, BookingLeavers>("booking.leaver");
         return services;
     }
@@ -61,6 +65,18 @@ public static class BookingModule
 
         root.MapPost("/bookings/{id:guid}:cancel", async (Guid id, bool? series, CancelRequest? request, Bookings bookings, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await bookings.CancelAsync(id, series ?? false, request, ct), ct));
+
+        // ---- Check-in (US4) ----
+
+        root.MapPost("/bookings/{id:guid}:check-in", async (Guid id, string? via, Bookings bookings, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await bookings.CheckInAsync(id, via, ct), ct));
+
+        root.MapGet("/scan/{code}", async (string code, Bookings bookings, CancellationToken ct) => Results.Ok(await bookings.ScanAsync(code, ct)));
+
+        root.MapPost("/scan/{code}:check-in", async (string code, Bookings bookings, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await bookings.ScanCheckInAsync(code, ct), ct));
+
+        root.MapGet("/sites/{id:guid}/kiosk", async (Guid id, Bookings bookings, CancellationToken ct) => Results.Ok(await bookings.KioskAsync(id, ct)));
 
         root.MapGet("/bookings/{id:guid}/calendar.ics", async (Guid id, Bookings bookings, RequestLocale locale, CancellationToken ct) =>
         {
@@ -109,6 +125,9 @@ public static class BookingModule
         });
 
         manage.MapGet("/sites/{id:guid}/labels", async (Guid id, Facilities facilities, CancellationToken ct) => Results.Ok(await facilities.LabelsAsync(id, ct)));
+
+        manage.MapGet("/resources/{id:guid}/qr.svg", async (Guid id, Facilities facilities, CancellationToken ct) =>
+            Results.Text(await facilities.QrSvgAsync(id, ct), "image/svg+xml; charset=utf-8"));
 
         manage.MapPost("/resources", async (ResourceRequest request, Facilities facilities, IDbSession session, CancellationToken ct) =>
         {

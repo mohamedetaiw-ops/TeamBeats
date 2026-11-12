@@ -55,7 +55,8 @@ public sealed record ResourceRequest(
     string? Mailbox,
     bool? CheckIn,
     bool? NeedsApproval,
-    int? Version);
+    int? Version,
+    IReadOnlyList<Guid>? ApproverIds = null);
 
 public sealed record RuleRequest(
     IReadOnlyList<Guid>? UnitIds,
@@ -81,6 +82,16 @@ public sealed record RepeatRequest(string? Pattern, DateOnly? Until);
 public sealed record BookRequest(Guid? ResourceId, DateOnly? Date, TimeOnly? Start, TimeOnly? End, string? Title, RepeatRequest? Repeat);
 
 public sealed record CancelRequest(string? Reason);
+
+/// <summary>Check-in methods (FR-008): scanning the resource's QR code, from the booking, or at a site's kiosk.</summary>
+public static class CheckInMethods
+{
+    public const string Qr = "qr";
+    public const string Booking = "booking";
+    public const string Kiosk = "kiosk";
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Qr, Booking, Kiosk };
+}
 
 // ---- Views ----
 
@@ -108,7 +119,8 @@ public sealed record ResourceView(
     bool NeedsApproval,
     string Status,
     string? QrCode,
-    int Version);
+    int Version,
+    IReadOnlyList<Guid> ApproverIds);
 
 /// <summary>A site with its floors, zones and resources, for facilities administrators.</summary>
 public sealed record SiteDetail(SiteView Site, IReadOnlyList<FloorView> Floors, IReadOnlyList<ResourceView> Resources);
@@ -158,7 +170,23 @@ public sealed record BookingView(
     DateTimeOffset? CheckedInAt,
     string? EndReason,
     bool CanCancel,
-    int Version);
+    int Version,
+    DateTimeOffset? HoldUntil,
+    string? DecisionNote,
+    string? CheckInMethod,
+    DateTimeOffset? CheckInFrom,
+    DateTimeOffset? CheckInUntil,
+    bool CanCheckIn);
+
+/// <summary>
+/// What scanning a resource's code finds (FR-008): the resource, and the scanning person's booking of it whose check-in
+/// window is open, or the next one today.
+/// </summary>
+public sealed record ScanView(Guid ResourceId, string Kind, IReadOnlyDictionary<string, string> ResourceNames, Guid SiteId, IReadOnlyDictionary<string, string> SiteNames,
+    string TimeZone, bool CheckIn, BookingView? Booking);
+
+/// <summary>A site's kiosk for the signed-in person: their bookings there today that they can check in to or did.</summary>
+public sealed record KioskView(Guid SiteId, IReadOnlyDictionary<string, string> SiteNames, string TimeZone, IReadOnlyList<BookingView> Bookings);
 
 /// <summary>What a booking request made: the bookings, and for a series the dates left out with why (FR-006).</summary>
 public sealed record BookResult(IReadOnlyList<BookingView> Bookings, Guid? SeriesId, IReadOnlyList<SkippedDate> Skipped);
@@ -189,25 +217,34 @@ internal sealed record SiteRow(Guid Id, Dictionary<string, string> Names, string
 }
 
 internal sealed record ResourceRow(Guid Id, Guid SiteId, Guid? FloorId, Guid? ZoneId, string Kind, Dictionary<string, string> Names, int? Capacity, string[] Attributes,
-    Guid? FixedUserId, string? Mailbox, bool CheckIn, bool NeedsApproval, string QrCode, string Status, int Version)
+    Guid? FixedUserId, string? Mailbox, bool CheckIn, bool NeedsApproval, string QrCode, string Status, int Version, Guid[] ApproverIds)
 {
-    public const string Columns = "id, site_id, floor_id, zone_id, kind, names::text, capacity, attributes, fixed_user_id, mailbox, check_in, needs_approval, qr_code, status, row_version";
+    public const int Count = 16;
+
+    public const string Columns =
+        "id, site_id, floor_id, zone_id, kind, names::text, capacity, attributes, fixed_user_id, mailbox, check_in, needs_approval, qr_code, status, row_version, approver_ids";
 
     public static ResourceRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.Get<Guid?>("floor_id"), r.Get<Guid?>("zone_id"), r.GetString(4), Booking.Names.Read(r, 5),
         r.Get<int?>("capacity"), r.GetFieldValue<string[]>(7), r.Get<Guid?>("fixed_user_id"), r.Get<string>("mailbox"), r.GetBoolean(10), r.GetBoolean(11), r.GetString(12),
-        r.GetString(13), r.GetInt32(14));
+        r.GetString(13), r.GetInt32(14), r.GetFieldValue<Guid[]>(15));
 
     public bool Active => Status == "active";
 }
 
 internal sealed record BookingRow(Guid Id, Guid ResourceId, Guid HolderId, Guid BookedBy, Guid? SeriesId, DateTimeOffset StartsAt, DateTimeOffset EndsAt, string? Title,
-    string Status, DateTimeOffset? CheckedInAt, string? EndReason, int Version)
+    string Status, DateTimeOffset? CheckedInAt, string? EndReason, int Version, DateTimeOffset? HoldUntil, Guid? InstanceId, string? DecisionNote, string? CheckInMethod,
+    DateTimeOffset CreatedAt)
 {
-    public const string Columns = "id, resource_id, holder_id, booked_by, series_id, starts_at, ends_at, title, status, checked_in_at, end_reason, row_version";
+    public const int Count = 17;
+
+    public const string Columns =
+        "id, resource_id, holder_id, booked_by, series_id, starts_at, ends_at, title, status, checked_in_at, end_reason, row_version, hold_until, instance_id, decision_note, "
+        + "check_in_method, created_at";
 
     public static BookingRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.GetGuid(2), r.GetGuid(3), r.Get<Guid?>("series_id"),
         r.GetFieldValue<DateTimeOffset>(5), r.GetFieldValue<DateTimeOffset>(6), r.Get<string>("title"), r.GetString(8), r.Get<DateTimeOffset?>("checked_in_at"),
-        r.Get<string>("end_reason"), r.GetInt32(11));
+        r.Get<string>("end_reason"), r.GetInt32(11), r.Get<DateTimeOffset?>("hold_until"), r.Get<Guid?>("instance_id"), r.Get<string>("decision_note"),
+        r.Get<string>("check_in_method"), r.GetFieldValue<DateTimeOffset>(16));
 
     public bool Live => BookingStatuses.Live.Contains(Status);
 }

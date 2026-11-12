@@ -965,4 +965,19 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Default rules: 14 days ahead, 15 minute slots, within opening hours on working days, no gap. Rooms up to 8 hours and 10 active bookings per person; desks and parking up to 12 hours and 3 active bookings; equipment up to 7 days, overnight and outside opening hours, 3 active bookings, and no check-in. A series counts once against the limit and may run up to 90 days; only its first day is checked against how far ahead the rules allow.
 - Notifications cannot carry files, so the confirmation links to the booking, which offers the calendar file.
 - Colleagues see a taken slot as booked without a name unless the tenant turns on showing names (the open question default); facilities administrators of the site always see names.
-- Resources that need approval (US3), check-in and release (US4), booking on behalf and team booking (US5), the QR images and the scan page, and reports follow in the next slices.
+- Booking on behalf and team booking (US5) and reports (US6) follow in the next slices.
+
+## Workplace booking (spec 031, slice 2: T003 QR images, T005 to T007; US3, US4)
+
+### Built
+- Restricted resources (FR-007): a resource may need approval and name up to 10 approvers. Its bookings are held as tentative until the approval hold of the settings runs out (24 hours by default) or the booking starts, whichever comes first, and the slot cannot be taken meanwhile. The approval runs on the spec 024 engine with one route per resource (`booking.approval:{resource}`, source `booking_route`), so it shows in the spec 016 task inbox through a new `ITaskSource`. A series waits on one approval for all its occurrences. Approved, the bookings are confirmed and `BookingConfirmed` is published; rejected, the slot frees and the holder sees the approver's reason; cancelling a request, or the holder leaving, withdraws its approval.
+- Check-in (FR-008): from the booking, by scanning the resource's code (`GET /scan/{code}` and `POST /scan/{code}:check-in`, page `/booking/scan/{code}`), or at a site's kiosk page (`/booking/kiosk/{site}`, the signed-in person's bookings there today). Only the person booked for checks in, within the window from the settings' minutes before the start to the grace period after it (or after the booking was made, when that was later). `CheckedIn` is published.
+- The QR labels now carry an SVG QR image (`GET /manage/resources/{id}/qr.svg`, facilities administrators) of the full check-in address on the tenant's host.
+- `BookingMaintenance`, every minute per tenant in the worker (and the development host): tentative holds that ran out expire and the holder is told; holders are told once when check-in opens; bookings of resources with check-in on that nobody checked in to by the end of the grace period are released (`BookingReleased`) and the holder is pointed to the same zone. Resources with check-in off are never released.
+- The no-show rule (FR-010) is tenant configuration in the booking settings: on reaching the limit within the window (3 in 30 days by default) the person is reminded once per window; when the tenant turns restriction on, they may then book only the set number of days ahead (1 by default) for the set number of days (14 by default). Search and booking both apply it.
+
+### Smallest safe defaults
+- The spec names a resource approver without saying who it is when none is named, so the facilities administrators of the site can always decide as well; a request never waits on an approver who left. The person booked for and the person who booked never decide.
+- A kiosk is a page the person signs in to on the site's device; a separate kiosk device sign-in is not in the spec.
+- The labels page uses the QR images; the page itself prints them through the browser.
+- New package `QRCoder` (MIT): the stack has no QR encoder, and a QR code needs Reed-Solomon error correction and masking that are easy to get wrong by hand. It draws SVG on the server with no native dependency.
