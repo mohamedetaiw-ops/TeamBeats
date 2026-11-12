@@ -17,7 +17,7 @@ import {
   type Microsoft365Connection,
   type Microsoft365TestResult,
 } from "@/lib/integrations/types";
-import { Messages, StatusBadge } from "./parts";
+import { Messages, StatusBadge, TestLine } from "./parts";
 import { send } from "./request";
 
 /** Mail and calendar options (spec 018): the API checks the ranges and changes the permissions the feature asks for. */
@@ -54,29 +54,6 @@ function FeatureOptions({ feature, busy, onSave }: { feature: FeatureView; busy:
         </Button>
       </div>
     </form>
-  );
-}
-
-function TestLine({ result }: { result: FeatureTestResult }) {
-  const t = useTranslations("connections");
-  const key = checkResult(result.resultKey);
-  return (
-    <p data-ok={result.ok}>
-      <span className="connections-check-mark">{t(result.ok ? "checks.passed" : "checks.failedMark")}</span> {known(M365_TEST_RESULTS, key) ? t(`m365.tests.${key}`) : key}
-      {result.users != null ? <> {t("m365.counts", { users: result.users, groups: result.groups ?? 0 })}</> : null}
-      {result.missing.length > 0 ? (
-        <>
-          {" "}
-          {t("m365.missing")} <bdi dir="ltr">{result.missing.join(", ")}</bdi>
-        </>
-      ) : null}
-      {result.broader.length > 0 ? (
-        <>
-          {" "}
-          {t("m365.broader")} <bdi dir="ltr">{result.broader.join(", ")}</bdi>
-        </>
-      ) : null}
-    </p>
   );
 }
 

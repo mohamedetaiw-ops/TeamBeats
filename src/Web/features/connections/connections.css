@@ -77,13 +77,6 @@
   align-items: center;
 }
 
-.connections-status {
-  display: inline-block;
-  padding-inline: var(--tb-space-sm);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-full);
-  font-weight: var(--tb-font-weight-bold);
-}
 
 .connections-facts {
   display: grid;
@@ -131,4 +124,225 @@
 .connections-table td[data-number] {
   text-align: end;
   font-variant-numeric: tabular-nums;
+}
+
+.connections-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.connections-section-head p,
+.connections-summary {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+}
+
+/* Product marks (spec 036 DLS-075): the owner's mark unaltered on a plain plate, or an icon from the set. */
+.connections-mark {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-secondary);
+}
+
+.connections-mark[data-size="sm"] {
+  inline-size: 2rem;
+  block-size: 2rem;
+  border-radius: var(--tb-radius-sm);
+}
+
+.connections-mark[data-size="lg"] {
+  inline-size: 3.25rem;
+  block-size: 3.25rem;
+}
+
+.connections-mark img {
+  display: block;
+  object-fit: contain;
+}
+
+/* Established connections: one row each, actions at the end, stacked on narrow screens. */
+.connections-entries {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.connections-entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: var(--tb-space-sm) var(--tb-space-md);
+  align-items: center;
+  padding-block: var(--tb-space-md);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.connections-entry:last-child {
+  border-block-end: 0;
+}
+
+.connections-entry-text {
+  display: grid;
+  gap: var(--tb-space-xs);
+  min-inline-size: 0;
+}
+
+.connections-entry-name {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.connections-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  align-items: center;
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.connections-entry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  justify-content: flex-end;
+}
+
+.connections-entry-result {
+  grid-column: 2 / -1;
+}
+
+@media (width < 48rem) {
+  .connections-entry {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .connections-entry-status,
+  .connections-entry-actions,
+  .connections-entry-result {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
+  }
+}
+
+/* The wizard (spec 036 DLS-076): numbered steps in reading order, the current one marked in words and by aria-current. */
+.connections-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm) var(--tb-space-lg);
+  margin: 0 0 var(--tb-space-lg);
+  padding: 0;
+  list-style: none;
+}
+
+.connections-steps li {
+  display: inline-flex;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  color: var(--tb-color-text-secondary);
+}
+
+.connections-steps li[data-state="current"] {
+  color: var(--tb-color-text-primary);
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.connections-step-mark {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-surface-raised);
+  font-size: var(--tb-font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.connections-steps li[data-state="current"] .connections-step-mark {
+  border-color: var(--tb-color-accent-base);
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
+}
+
+.connections-steps li[data-state="done"] .connections-step-mark {
+  border-color: var(--tb-color-accent-base);
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-accent-base);
+}
+
+.connections-step-head {
+  display: flex;
+  gap: var(--tb-space-md);
+  align-items: center;
+}
+
+.connections-step-head p {
+  margin: 0;
+}
+
+.connections-step-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  justify-content: flex-end;
+  padding-block-start: var(--tb-space-sm);
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.connections-group {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.connections-group h3,
+.connections-group p {
+  margin: 0;
+}
+
+.connections-unavailable {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm) var(--tb-space-lg);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--tb-color-text-secondary);
+}
+
+.connections-unavailable li {
+  display: inline-flex;
+  gap: var(--tb-space-sm);
+  align-items: center;
+}
+
+.connections-feature {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.connections-permissions {
+  margin: 0;
+  padding-inline-start: var(--tb-space-xl);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.connections-section > .connections-step-head + h2 {
+  margin-block-start: var(--tb-space-sm);
+}
+
+.connections-group + .connections-group {
+  margin-block-start: var(--tb-space-md);
 }

@@ -16,4 +16,5 @@ Icons help people scan and recognise; words still do the explaining. TeamBeats u
 - **One meaning per icon.** `trash` always deletes, `edit` always edits. Do not reuse an icon for a different action.
 - **Contrast.** An icon that carries meaning needs 3:1 against its background (WCAG 1.4.11). Icons inherit the text colour, which already passes.
 - **No inline SVG elsewhere.** New glyphs are added to the set (same grid and stroke) through a pull request with a gallery check. The design gate (`npm run check:design`) fails on inline `<svg>` outside the icon set and the shell brand mark.
+- **Product marks are images, not icons.** The mark of a product TeamBeats connects to is a local image file shown beside the product name (see imagery, product marks; spec 036 DLS-075). It is never added to the icon set or drawn as inline SVG.
 - **No emoji as interface icons.** Emoji render differently per device and read badly with screen readers.

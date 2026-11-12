@@ -1,45 +1,63 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { ButtonLink } from "@/components/ui/Button";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { apiGet } from "@/lib/api";
-import type { AllowlistEntry, FeatureView, Microsoft365Connection, Pack, PackConnection, WebhookEventChoice } from "@/lib/integrations/types";
-import { ConnectionList } from "@/features/connections/ConnectionList";
-import { Microsoft365Connections } from "@/features/connections/Microsoft365Connections";
+import { NEW_CONNECTION, overviewRows, wizardHref } from "@/lib/integrations/catalogue";
+import type { AllowlistEntry, Microsoft365Connection, PackConnection } from "@/lib/integrations/types";
+import { Allowlist } from "@/features/connections/Allowlist";
+import { ConnectionsOverview } from "@/features/connections/ConnectionsOverview";
 import { connectionsSection } from "@/features/connections/guard";
 import "@/features/connections/connections.css";
 
-/** The Connections area: Microsoft 365 and connector packs (spec 006 US5, spec 017 T005, T007, T012). */
-export default async function ConnectionsPage({ searchParams }: { searchParams: Promise<{ consent?: string }> }) {
-  const { consent } = await searchParams;
+/**
+ * The Connections area (spec 006 US5, FR-010, FR-016): the tenant's established connections for managing them, and
+ * the allowed hosts. Adding a connection is the separate wizard at /admin/connections/new.
+ */
+export default async function ConnectionsPage({ searchParams }: { searchParams: Promise<{ consent?: string; connection?: string }> }) {
+  const { consent, connection } = await searchParams;
   await connectionsSection();
-  const [connections, packs, allowlist, microsoft, catalogue, webhookEvents] = await Promise.all([
+  const [packs, allowlist, microsoft] = await Promise.all([
     apiGet<PackConnection[]>("/api/v1/integrations/pack-connections"),
-    apiGet<Pack[]>("/api/v1/integrations/packs"),
     apiGet<AllowlistEntry[]>("/api/v1/integrations/allowlist"),
     apiGet<Microsoft365Connection[]>("/api/v1/integrations/connections"),
-    apiGet<FeatureView[]>("/api/v1/integrations/catalogue/microsoft365"),
-    apiGet<WebhookEventChoice[]>("/api/v1/integrations/webhook-events"),
   ]);
-  if (!connections.ok || !packs.ok) {
+  if (!packs.ok) {
     notFound();
   }
   const t = await getTranslations("connections");
+  const m365 = microsoft.ok ? microsoft.data : [];
+  const consented = connection ? m365.find((c) => c.id === connection) : undefined;
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
-      {microsoft.ok && catalogue.ok ? (
-        <Microsoft365Connections
-          initial={microsoft.data}
-          catalogue={catalogue.data}
-          consent={consent === "granted" || consent === "failed" ? consent : null}
-        />
-      ) : null}
-      <ConnectionList
-        initial={connections.data}
-        packs={packs.data}
-        allowlist={allowlist.ok ? allowlist.data : null}
-        webhookEvents={webhookEvents.ok ? webhookEvents.data : []}
+      <PageHeader
+        title={t("title")}
+        description={t("intro")}
+        icon="link"
+        actions={
+          <ButtonLink variant="primary" icon="plus" href={NEW_CONNECTION}>
+            {t("overview.add")}
+          </ButtonLink>
+        }
       />
+      {consent === "granted" ? (
+        <div role="status" className="notice">
+          <p>
+            {t("m365.consentGranted")}{" "}
+            {consented ? <Link href={wizardHref("microsoft365", consented.id, "test")}>{t("overview.continueSetup", { name: consented.displayName })}</Link> : null}
+          </p>
+        </div>
+      ) : null}
+      {consent === "failed" ? (
+        <div role="alert" className="notice notice-error">
+          <p>{t("m365.consentFailed")}</p>
+        </div>
+      ) : null}
+      <div className="connections">
+        <ConnectionsOverview rows={overviewRows(m365, packs.data)} />
+        <Allowlist initial={allowlist.ok ? allowlist.data : null} returnTo="/admin/connections" />
+      </div>
     </>
   );
 }
