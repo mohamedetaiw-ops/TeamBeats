@@ -97,7 +97,7 @@ public sealed class TenantWorld : IAsyncLifetime
             await session.CommitAsync();
             return (userId, tokenValue);
         });
-        var user = new TestUser(name, id, email, token, Factory.TenantClient(tenant.Key, token));
+        var user = new TestUser(name, id, email, token, Factory.SeededUserClient(tenant.Key, tenant.Id, token));
         tenant.Users[name] = user;
         return user;
     }
