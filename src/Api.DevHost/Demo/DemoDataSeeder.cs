@@ -97,6 +97,7 @@ public sealed partial class DemoDataSeeder(IServiceScopeFactory scopes, IConfigu
         await AreaAsync(run, "documents", () => SeedDocumentsAsync(run, ct));
         await AreaAsync(run, "policies", () => SeedPoliciesAsync(run, ct));
         await AreaAsync(run, "calendars", () => SeedCalendarsAsync(run, ct));
+        await AreaAsync(run, "calendar events", () => SeedEventsAsync(run, ct));
         await DispatchAsync(ct);
         await AreaAsync(run, "search", () => SeedSearchAsync(run, ct));
         await AreaAsync(run, "assistant", () => SeedAssistantAsync(run, ct));

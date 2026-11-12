@@ -63,7 +63,7 @@ public sealed class StagingHomeSeedTests(TenantWorld world)
         var hero = regions["hero"].GetProperty("placements").EnumerateArray().ToArray();
         Assert.Equal(["briefing", "your-day"], hero.Select(p => p.GetProperty("id").GetString()!).ToArray());
         var grid = regions["grid"].GetProperty("placements").EnumerateArray().ToArray();
-        Assert.Equal(["news", "services", "home-outlook-my-calendar", "home-outlook-my-mail", "campaign-band"], grid.Select(p => p.GetProperty("id").GetString()!).ToArray());
+        Assert.Equal(["news", "services", "home-calendar-overview", "home-outlook-my-mail", "campaign-band"], grid.Select(p => p.GetProperty("id").GetString()!).ToArray());
         // The Safety Week band closes the home (spec 008 home composition) and links to the seeded story.
         Assert.Equal($"/content/read/{safety.GetProperty("id").GetGuid()}", grid[^1].GetProperty("props").GetProperty("link").GetString());
 

@@ -177,7 +177,7 @@ public sealed class GraphCalendar(DelegatedAccessService access, IMicrosoftGraph
             async () =>
             {
                 var path = $"me/calendarView?startDateTime={from}&endDateTime={until}&$top=250&$orderby=start/dateTime"
-                    + "&$select=id,subject,start,end,isAllDay,showAs,sensitivity,isCancelled,responseStatus,location,onlineMeeting,webLink";
+                    + "&$select=id,subject,start,end,isAllDay,showAs,sensitivity,isCancelled,responseStatus,location,onlineMeeting,webLink,iCalUId";
                 var list = await graph.DelegatedSendAsync(grant.AccessToken!, HttpMethod.Get, path, null, ct);
                 return new Occurrences(list.GetProperty("value").EnumerateArray().Select(Map).ToList());
             });
@@ -209,7 +209,8 @@ public sealed class GraphCalendar(DelegatedAccessService access, IMicrosoftGraph
             },
             string.IsNullOrWhiteSpace(location) ? null : location,
             string.IsNullOrWhiteSpace(join) ? null : join,
-            GraphMailbox.Text(e, "webLink") ?? string.Empty);
+            GraphMailbox.Text(e, "webLink") ?? string.Empty,
+            GraphMailbox.Text(e, "iCalUId"));
     }
 }
 

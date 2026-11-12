@@ -17,6 +17,7 @@
     <ProjectReference Include="../Modules/Audit/TeamBeats.Modules.Audit.csproj" />
     <ProjectReference Include="../Modules/Administration/TeamBeats.Modules.Administration.csproj" />
     <ProjectReference Include="../Modules/Integrations/TeamBeats.Modules.Integrations.csproj" />
+    <ProjectReference Include="../Modules/Calendar/TeamBeats.Modules.Calendar.csproj" />
     <ProjectReference Include="../Modules/Notifications/TeamBeats.Modules.Notifications.csproj" />
     <ProjectReference Include="../Modules/Hr/TeamBeats.Modules.Hr.csproj" />
     <ProjectReference Include="../Modules/Analytics/TeamBeats.Modules.Analytics.csproj" />

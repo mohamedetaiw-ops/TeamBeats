@@ -16,6 +16,8 @@ public static class GoogleHosts
 
     public const string DirectoryScope = "https://www.googleapis.com/auth/admin.directory.user.readonly https://www.googleapis.com/auth/admin.directory.group.readonly";
     public const string DriveScope = "https://www.googleapis.com/auth/drive.readonly";
+    public const string CalendarBase = "https://www.googleapis.com/calendar/v3";
+    public const string CalendarScope = "https://www.googleapis.com/auth/calendar.events.readonly";
 
     /// <summary>The hosts each feature needs, the token host first.</summary>
     public static IReadOnlyList<Uri> For(IEnumerable<string> features)
@@ -23,7 +25,12 @@ public static class GoogleHosts
         var hosts = new List<Uri> { new(TokenUrl) };
         foreach (var f in features)
         {
-            hosts.Add(new Uri(f == GoogleFeatures.Directory ? DirectoryBase : DriveBase));
+            hosts.Add(new Uri(f switch
+            {
+                GoogleFeatures.Directory => DirectoryBase,
+                GoogleFeatures.Calendar => CalendarBase,
+                _ => DriveBase,
+            }));
         }
         return hosts;
     }

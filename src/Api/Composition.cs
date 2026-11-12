@@ -18,6 +18,7 @@ using TeamBeats.Modules.Content;
 using TeamBeats.Modules.Documents;
 using TeamBeats.Modules.AiGateway;
 using TeamBeats.Modules.AiGateway.OpenRouter;
+using TeamBeats.Modules.Calendar;
 using TeamBeats.Modules.Policies;
 using TeamBeats.Modules.Engagement;
 using TeamBeats.Modules.Search;
@@ -66,6 +67,7 @@ public static class TeamBeatsModules
         AgentsModule.Migrations,
         EvaluationModule.Migrations,
         AnalyticsModule.Migrations,
+        CalendarModule.Migrations,
     ];
 
     public static IServiceCollection AddTeamBeatsCore(this IServiceCollection services, IConfiguration configuration)
@@ -112,6 +114,8 @@ public static class TeamBeatsModules
         services.AddEntitlementsModule();
         services.AddAuditModule();
         services.AddAdministrationModule();
+        // Calendar before Integrations so its home card comes first among the personal defaults (spec 008 FR-051).
+        services.AddCalendarModule();
         services.AddIntegrationsModule();
         services.AddExperienceModule();
         services.AddNotificationsModule(configuration);
@@ -216,6 +220,7 @@ public static class ApiComposition
         app.MapAnalyticsEndpoints();
         app.MapPeopleEndpoints();
         app.MapSecurityEndpoints();
+        app.MapCalendarEndpoints();
         extraEndpoints?.Invoke(app);
         return app;
     }

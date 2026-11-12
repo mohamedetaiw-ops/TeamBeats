@@ -45,6 +45,9 @@ public sealed class DemoPack
 
     public List<DemoCalendar> Calendars { get; init; } = [];
 
+    /// <summary>Company, department and important-date events of the unified calendar (spec 037).</summary>
+    public List<DemoEvent> Events { get; init; } = [];
+
     public DemoSearch? Search { get; init; }
 
     public List<DemoConversation> Assistant { get; init; } = [];
@@ -66,6 +69,7 @@ public sealed class DemoPack
         PolicyCategories = [.. PolicyCategories, .. other.PolicyCategories],
         Policies = [.. Policies, .. other.Policies],
         Calendars = [.. Calendars, .. other.Calendars],
+        Events = [.. Events, .. other.Events],
         Search = other.Search ?? Search,
         Assistant = [.. Assistant, .. other.Assistant],
     };
@@ -76,6 +80,24 @@ public sealed class DemoPack
 /// values spelled two ways and the other-locale names of the units by their directory name.
 /// </summary>
 public sealed record DemoOrgMapping(List<string> Levels, Dictionary<string, string>? Aliases, Dictionary<string, Dictionary<string, string>>? UnitNames);
+
+/// <summary>
+/// A calendar event created once, found again by its English title. <c>InDays</c> counts from the seeding day in the
+/// tenant zone; a timed event has <c>Start</c> and <c>End</c> as HH:mm, an all-day one <c>Days</c>. <c>Weekly</c> repeats it
+/// that many times on the same weekday.
+/// </summary>
+public sealed record DemoEvent(
+    Dictionary<string, string> Titles,
+    Dictionary<string, string>? Descriptions,
+    string Kind = "company",
+    int InDays = 0,
+    string? Start = null,
+    string? End = null,
+    int Days = 1,
+    string? Location = null,
+    string? OnlineUrl = null,
+    bool Rsvp = false,
+    int? Weekly = null);
 
 /// <summary>A person's names per locale (so Arabic pages show Arabic names) and own time zone.</summary>
 public sealed record DemoProfile(string Person, Dictionary<string, string>? Names, string? TimeZone);

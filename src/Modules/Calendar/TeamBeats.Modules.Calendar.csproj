@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+  <PropertyGroup><RootNamespace>TeamBeats.Modules.Calendar</RootNamespace><AssemblyName>TeamBeats.Modules.Calendar</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlocks/Persistence/TeamBeats.Persistence.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Messaging/TeamBeats.Messaging.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Authorization.Contracts/TeamBeats.Authorization.Contracts.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Entitlements.Contracts/TeamBeats.Entitlements.Contracts.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Audit.Contracts/TeamBeats.Audit.Contracts.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/TenantContext/TeamBeats.TenantContext.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Localization/TeamBeats.Localization.csproj" />
+    <ProjectReference Include="../Tenancy.Contracts/TeamBeats.Modules.Tenancy.Contracts.csproj" />
+    <ProjectReference Include="../Identity.Contracts/TeamBeats.Modules.Identity.Contracts.csproj" />
+    <ProjectReference Include="../People.Contracts/TeamBeats.Modules.People.Contracts.csproj" />
+    <ProjectReference Include="../Content.Contracts/TeamBeats.Modules.Content.Contracts.csproj" />
+    <ProjectReference Include="../Hr.Contracts/TeamBeats.Modules.Hr.Contracts.csproj" />
+    <ProjectReference Include="../Integrations.Contracts/TeamBeats.Modules.Integrations.Contracts.csproj" />
+    <ProjectReference Include="../Experience.Contracts/TeamBeats.Modules.Experience.Contracts.csproj" />
+    <ProjectReference Include="../Agents.Contracts/TeamBeats.Modules.Agents.Contracts.csproj" />
+    <ProjectReference Include="../Calendar.Contracts/TeamBeats.Modules.Calendar.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="TeamBeats.Unit.Tests" />
+    <EmbeddedResource Include="Migrations/*.sql" />
+  </ItemGroup>
+</Project>

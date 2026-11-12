@@ -157,7 +157,7 @@ Omar's start date is entered in HR. Ten days before, the journey starts: IT gets
 - **FR-006 / LVA-006**: When the HR system owns balances, the system MUST read balances from it and queue writes when it is unavailable.
 - **FR-007 / LVA-007**: *(R1)* HR officers MUST manage public holiday and working week calendars per country and location (reduced hours periods from R2), and these calendars MUST be the working-day source for specs 016 and 024 through the `Hr` working-day contract (count and add working days for an org unit or location). Calendars are part of every package and have no capability key, because workflow due times depend on them.
 - **FR-008 / LVA-008**: Changes to holidays MUST recount affected approved leave and notify affected people.
-- **FR-009 / LVA-009**: The system MUST provide a team availability view by team and unit with privacy rules on leave types.
+- **FR-009 / LVA-009**: The system MUST provide a team availability view by team and unit with privacy rules on leave types. For managers the calendar workspace of spec 037 also shows team availability (heatmap, staffing threshold, upcoming leave) from the `Hr` calendar feed contract, which applies these privacy rules inside `Hr`; holidays of the employee's location and their own leave ranges appear in the same calendar.
 - **FR-010 / LVA-010**: Attendance MUST support web and mobile sign in with optional location check, clock data import, working hours rules, exception detection and correction requests.
 - **FR-011 / LVA-011**: Compensation days MUST be credited by policy after approval.
 - **FR-012 / LVA-012**: Monthly attendance summaries MUST be viewable and exportable for payroll.
