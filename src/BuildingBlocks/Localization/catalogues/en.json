@@ -1658,5 +1658,21 @@
   "validation.engagement.poll_results": "Choose when results show.",
   "validation.engagement.poll_anonymous_change": "Anonymous votes cannot be changed, so turn off changing votes or make the poll named.",
   "validation.engagement.poll_closes": "Choose an end time in the future, within a year.",
-  "validation.engagement.poll_choice": "Choose one option, or more where the poll allows it."
+  "validation.engagement.poll_choice": "Choose one option, or more where the poll allows it.",
+  "conflict.engagement.already_responded": "You have already answered this survey.",
+  "conflict.engagement.survey_published": "This survey is already published, so it can no longer be changed.",
+  "conflict.engagement.survey_not_open": "This survey is not open.",
+  "conflict.engagement.survey_settings_changed": "Someone else changed the survey settings. Reload them and try again.",
+  "validation.engagement.survey_unit": "Choose the organization unit the survey is for.",
+  "validation.engagement.survey_title": "Write a title of up to 200 characters.",
+  "validation.engagement.survey_intro": "Keep the introduction to 2000 characters.",
+  "validation.engagement.survey_threshold": "Choose a minimum number of responses between the tenant setting and 50.",
+  "validation.engagement.survey_closes": "Choose an end date in the future, within a year.",
+  "validation.engagement.survey_questions": "Add between 1 and 50 questions.",
+  "validation.engagement.survey_question_kind": "Choose a question type.",
+  "validation.engagement.survey_prompt": "Write each question in up to 300 characters.",
+  "validation.engagement.survey_options": "Choice questions need 2 to 20 different options of up to 120 characters; other questions take none.",
+  "validation.engagement.survey_answer": "Check your answers: choose from the options given, a rating from 1 to 5, or text of up to 2000 characters.",
+  "validation.engagement.survey_required": "Answer every required question.",
+  "validation.engagement.survey_empty": "Answer at least one question."
 }
