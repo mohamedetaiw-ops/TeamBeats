@@ -22,7 +22,7 @@ function nextRiyadhSlot(): { date: string; start: string; end: string } {
 /**
  * Spec 031 slices 1 and 2: the administrator adds a site with a floor and a desk and opens its labels; Layla finds the desk
  * free on a Tuesday, books it, sees it under My bookings and cancels it; then she scans a camera kit's code, books it
- * for now and checks in from the scan page. Approval holds, expiry, release, the no-show rule, rules, the parallel race, recurring series,
+ * for now and checks in from the scan page; the administrator then reads the site's usage report. Approval holds, expiry, release, the no-show rule, rules, the parallel race, recurring series,
  * limits, removal, leavers and the tenant boundary are covered by BookingTests. In English and Arabic, with axe.
  * Names are fictional.
  */
@@ -126,6 +126,22 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(main.getByText(m("booking.checkIn.doneTitle"))).toBeVisible();
       await expect(main.getByText(m("booking.status.checked_in"), { exact: true })).toBeVisible();
       await expectAccessible(page, testInfo, `booking-scan-done-${locale}`);
+    });
+
+    test("an administrator sees how the site was used without names", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/booking`);
+      await page.getByRole("main").getByRole("link", { name: m("booking.reports.pageTitle") }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("booking.reports.pageTitle"));
+      const main = page.getByRole("main");
+      await expect(main.getByRole("heading", { name: m("booking.reports.total", { site }) })).toBeVisible();
+      const table = main.getByRole("table");
+      await expect(table.getByRole("rowheader", { name: camera })).toBeVisible();
+      await expect(table.getByRole("rowheader", { name: desk })).toBeVisible();
+      await expect(table).not.toContainText("layla");
+      await main.getByLabel(m("booking.reports.groupBy")).selectOption("week");
+      await expect(main.getByRole("heading", { level: 2, name: m("booking.reports.group.week") })).toBeVisible();
+      await expectAccessible(page, testInfo, `booking-reports-${locale}`);
     });
   });
 }

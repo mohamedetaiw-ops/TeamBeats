@@ -2039,6 +2039,8 @@
   "notifications.template.booking.no_show_restricted.body": "لم تسجل حضورك في {count} حجوزات خلال آخر {days} يومًا. خلال الأيام الـ {restrictDays} القادمة يمكنك الحجز قبل {advanceDays} أيام كحد أقصى.",
   "authz.denied.booking_for": "يمكنك الحجز فقط لمن فوّضك أو لفريق تديره.",
   "validation.booking.team": "اختر من شخص واحد إلى 50 شخصًا.",
+  "validation.booking.group_by": "اختر التجميع حسب المورد أو المنطقة أو الموقع أو الأسبوع.",
+  "validation.booking.report_range": "اختر فترة لا تزيد على 92 يومًا، على أن تكون نهايتها في يوم البداية أو بعده.",
   "conflict.booking.none_free": "لم يعد هناك مورد متاح من هذا النوع في هذا الوقت.",
   "notifications.template.booking.booked_for_you.title": "حجز {by} {resource} لك",
   "notifications.template.booking.booked_for_you.body": "{date} من {start} إلى {end} ({timeZone}). يمكنك إلغاؤه من صفحة الحجز."

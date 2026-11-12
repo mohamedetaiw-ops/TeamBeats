@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { bookingApi, bookingHref, manageBookingHref, myBookingsHref, tomorrowIso, type BookingRights, type SiteView } from "@/lib/booking";
+import { bookingApi, bookingHref, bookingReportsHref, manageBookingHref, myBookingsHref, tomorrowIso, type BookingRights, type SiteView } from "@/lib/booking";
 import { Header } from "@/components/shell/Header";
 import { ButtonLink } from "@/components/ui/Button";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -34,6 +34,11 @@ export default async function BookingPage({ searchParams }: { searchParams: Prom
               {rights.ok && rights.data.manage ? (
                 <ButtonLink href={manageBookingHref} icon="settings">
                   {t("manage.pageTitle")}
+                </ButtonLink>
+              ) : null}
+              {rights.ok && rights.data.report ? (
+                <ButtonLink href={bookingReportsHref} icon="trend-up">
+                  {t("reports.pageTitle")}
                 </ButtonLink>
               ) : null}
             </>

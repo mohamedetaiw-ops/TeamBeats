@@ -992,3 +992,20 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 ### Smallest safe defaults
 - The spec does not say who may book for a team. The booker may include themselves, people who delegated to them, and anyone below them in the reporting line (spec 010), up to 50 people.
 - Booking on behalf needs a delegation; being someone's manager is not enough on its own, as FR-011 asks for a delegation relation.
+
+## Workplace booking (spec 031, slice 4: T009, T010; US6)
+
+### Built
+- Usage reports (FR-014): `GET /reports/utilization?site=&from=&to=&groupBy=` gives, for one site and up to 92 days, the resources, bookings, check-ins, no-shows and cancellations with booked, used and available hours, the utilization and the no-show rate, by resource, zone, site or week, with the site total. Only counts and hours are returned, never who booked. `GET /reports/sites` lists the sites the viewer may report on.
+- Access: the `booking.reports` capability (workplace_plus) and `booking.report` in the site's scope (facilities analysts and facilities administrators). Anyone else is told the site is not found.
+- Web: a Space usage page (`/booking/reports`), linked from Book a space for people with the report right, with the site, dates and grouping, the totals and a table.
+- Performance (section 15): `BookingPerformanceTests` times search and the report at a site with 1,000 desks, half of them booked; both stay far under 700 ms p95 (about 30 ms locally).
+
+### Smallest safe defaults
+- Utilization is used hours over available hours. Used hours are checked-in hours, or confirmed hours for resources with check-in off, as nothing else shows they were used. Available hours are the site's opening hours on each working day of the site's calendar (spec 022), for every resource active in the range; a resource removed during the range still counts.
+- The no-show rate is no-shows over bookings that needed a check-in (checked in plus no-show). Cancelled, rejected and expired bookings count only as cancelled.
+- A booking counts on the day it starts in the site's time zone; its hours are clipped to the range. Weeks start on Monday.
+- The spec allows a facilities administrator to see names on a single booking; the report itself never shows them, and the booking page already does for administrators.
+
+### Gaps
+- Closing a site for one day (a new holiday or an emergency) does not yet cancel that day's bookings with notice (section 4 edge case); it follows as its own slice.
