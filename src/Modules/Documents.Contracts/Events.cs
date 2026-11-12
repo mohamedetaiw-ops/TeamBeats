@@ -44,3 +44,17 @@ public interface IKnowledgeIndex
 {
     Task<IReadOnlyList<KnowledgeUnit>> UnitsAsync(Guid articleId, CancellationToken ct = default);
 }
+
+/// <summary>The version of a document that readers get: its name, file name, content type and size.</summary>
+public sealed record DocumentReference(Guid DocumentId, string Name, Guid VersionId, string Label, string FileName, string ContentType, long Bytes);
+
+/// <summary>
+/// Documents and videos for another module that links to them (spec 028 FR-001, a course lesson made of a document or a
+/// video). The caller keeps the document ID; the reader opens the file through the Documents routes, which check access
+/// again. Every call is in the current tenant, as the current user.
+/// </summary>
+public interface IDocumentReferences
+{
+    /// <summary>The version in force when the caller may read the document and it has passed the malware scan; otherwise null.</summary>
+    Task<DocumentReference?> ReadableAsync(Guid documentId, CancellationToken ct = default);
+}

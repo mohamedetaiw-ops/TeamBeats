@@ -400,6 +400,12 @@ public static class AuditActions
     public const string EngagementAwardDecided = "engagement.award_decided";
     public const string EngagementCelebrationSettingsChanged = "engagement.celebration_settings_changed";
 
+    // 028
+    public const string LearningCoursePublished = "learning.course_published";
+    public const string LearningCourseRetired = "learning.course_retired";
+    public const string LearningPathPublished = "learning.path_published";
+    public const string LearningAttemptsGranted = "learning.attempts_granted";
+
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
 
@@ -460,6 +466,7 @@ public static class AuditActions
         EngagementContentApproved, EngagementContentHidden, EngagementContentRemoved, EngagementMemberMuted, EngagementMemberUnmuted, EngagementKeywordsChanged, EngagementSpeakUpAnswered, EngagementSpeakUpDeclined,
         EngagementSurveyPublished, EngagementSurveyClosed, EngagementSurveyThresholdChanged, EngagementPointsConfigChanged, EngagementRecognitionCatalogueChanged,
         EngagementAwardOpened, EngagementAwardDecided, EngagementCelebrationSettingsChanged,
+        LearningCoursePublished, LearningCourseRetired, LearningPathPublished, LearningAttemptsGranted,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

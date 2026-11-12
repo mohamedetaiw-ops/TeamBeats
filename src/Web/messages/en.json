@@ -491,7 +491,8 @@
         "agent_designer": "Agent designer",
         "evaluation_reviewer": "Evaluation reviewer",
         "finance_officer": "Finance officer",
-        "engagement_administrator": "Engagement administrator"
+        "engagement_administrator": "Engagement administrator",
+        "learning_administrator": "Learning administrator"
       },
       "tabs": "Roles and access sections",
       "unknownUnit": "a unit outside your view",
@@ -605,7 +606,8 @@
       "users": "People",
       "roles": "Roles",
       "records": "Records",
-      "engagement": "Communities and engagement"
+      "engagement": "Communities and engagement",
+      "learning": "Learning"
     },
     "plan": {
       "description": "The package this workspace uses and everything it includes.",
@@ -740,7 +742,11 @@
         "engagement_surveys": "Surveys",
         "engagement_recognition": "Recognition",
         "engagement_points": "Points and leaderboards",
-        "engagement_galleries": "Galleries"
+        "engagement_galleries": "Galleries",
+        "learning_courses": "Courses and learning paths",
+        "learning_mandatory": "Mandatory training",
+        "learning_scorm": "SCORM and xAPI import",
+        "learning_lms_connector": "LMS connector"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",

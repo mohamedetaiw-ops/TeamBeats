@@ -46,6 +46,7 @@ public static class AnalyticsEvents
     public const string UiError = "ui.error";
     public const string EngagementAction = "engagement.action";
     public const string EngagementAnonymousAction = "engagement.anonymous_action";
+    public const string LearningProgress = "learning.progress";
 
     /// <summary>The sources whose items are viewed: content items, policies and documents.</summary>
     public static readonly IReadOnlySet<string> ItemSources = new HashSet<string>(StringComparer.Ordinal) { "content", "policies", "documents" };
@@ -66,8 +67,14 @@ public static class AnalyticsEvents
         "speak_up_post", "survey_response", "poll_vote",
     };
 
+    /// <summary>What a learner did in a course (spec 028 section 13).</summary>
+    public static readonly IReadOnlySet<string> LearningStatuses = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "started", "lesson_completed", "quiz_passed", "quiz_failed", "course_completed",
+    };
+
     /// <summary>Events only modules emit; the web collection endpoint drops them, so nobody can add to these counts by hand.</summary>
-    public static readonly IReadOnlySet<string> ServerOnly = new HashSet<string>(StringComparer.Ordinal) { EngagementAction, EngagementAnonymousAction };
+    public static readonly IReadOnlySet<string> ServerOnly = new HashSet<string>(StringComparer.Ordinal) { EngagementAction, EngagementAnonymousAction, LearningProgress };
 
     public static readonly IReadOnlySet<string> ErrorKinds = new HashSet<string>(StringComparer.Ordinal) { "render", "boundary", "network", "chunk" };
 
@@ -109,6 +116,12 @@ public static class AnalyticsEvents
         {
             ["action"] = new(AnalyticsFieldType.Key, true, EngagementAnonymousActions),
         }, Unkeyed: true),
+        [LearningProgress] = new(LearningProgress, false, new Dictionary<string, AnalyticsField>
+        {
+            ["courseId"] = new(AnalyticsFieldType.Id, true),
+            ["lesson"] = new(AnalyticsFieldType.Key),
+            ["status"] = new(AnalyticsFieldType.Key, true, LearningStatuses),
+        }),
         [UiError] = new(UiError, true, new Dictionary<string, AnalyticsField>
         {
             ["kind"] = new(AnalyticsFieldType.Key, true, ErrorKinds),

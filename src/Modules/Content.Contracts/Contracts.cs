@@ -80,3 +80,17 @@ public interface IAnnouncementDrafts
     /// <summary>Creates the draft as the current user and returns its item ID. Needs the <c>content.core</c> capability.</summary>
     Task<Guid> CreateAsync(AnnouncementDraft draft, CancellationToken ct = default);
 }
+
+/// <summary>A published content item the caller may read, with its title and body in every locale of that version.</summary>
+public sealed record PublishedPage(Guid ItemId, string Type, int Version, IReadOnlyDictionary<string, string> Titles, IReadOnlyDictionary<string, BodyDocument> Bodies);
+
+/// <summary>
+/// Published pages of any type for another module that shows them inside its own screens (spec 028 FR-001, a course
+/// lesson made of a page). The lesson keeps the item ID and reads the page here, so the page is referenced, never
+/// copied. Every call is in the current tenant, as the current user.
+/// </summary>
+public interface IPublishedPages
+{
+    /// <summary>The item's published version when the caller may read it; otherwise null.</summary>
+    Task<PublishedPage?> ReadableAsync(Guid itemId, CancellationToken ct = default);
+}
