@@ -30,6 +30,7 @@ using TeamBeats.Modules.Evaluation;
 using TeamBeats.Modules.Services;
 using TeamBeats.Modules.Workflow;
 using TeamBeats.Modules.Identity;
+using TeamBeats.Modules.Identity.Kiosk;
 using TeamBeats.Modules.Integrations;
 using TeamBeats.Modules.Notifications;
 using TeamBeats.Modules.Tenancy;
@@ -175,6 +176,11 @@ public static class ApiComposition
             o.AddPolicy(TeamBeats.Modules.Hr.Letters.LetterEndpoints.VerifyRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
                 http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1) }));
+            // Kiosk sign-in and enrolment are guessing paths (spec 030 FR-015): limit per device, or per address before enrolment.
+            o.AddPolicy(KioskEndpoints.RateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
+                http.Request.Cookies[KioskRules.DeviceCookie] is { Length: > 0 } device ? "kiosk:" + SessionTokens.Hash(device)
+                    : "kiosk-ip:" + (http.Connection.RemoteIpAddress?.ToString() ?? "anonymous"),
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1) }));
             // People search is a scraping path (spec 010 FR-017): limit per user.
             o.AddPolicy(PeopleModule.SearchRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
                 http.RequestServices.GetRequiredService<ITenantContext>().ActorId?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
@@ -200,6 +206,7 @@ public static class ApiComposition
             await next(http);
         });
         app.UseTeamBeatsSessions();
+        app.UseSharedDeviceRules();
         app.UseNetworkRules();
         app.UseStepUp();
         app.UseRateLimiter();

@@ -127,3 +127,8 @@ public interface IDirectoryReader
 
 /// <summary>Published after each successful directory sync run.</summary>
 public sealed record DirectorySynced(Guid ConnectionId) : IIntegrationEvent;
+
+/// <summary>A kiosk device was enrolled or revoked (spec 030 section 12).</summary>
+public sealed record DeviceEnrolled(Guid DeviceId, Guid OrgUnitId) : IIntegrationEvent;
+
+public sealed record DeviceRevoked(Guid DeviceId, Guid OrgUnitId) : IIntegrationEvent;

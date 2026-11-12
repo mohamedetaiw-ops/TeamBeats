@@ -616,6 +616,12 @@ public sealed partial class PageService(
         var regions = layout.Regions.Select(lr =>
         {
             var placements = personal.Regions.TryGetValue(lr.Id, out var list) ? list : [];
+            // On a shared kiosk device (spec 030 FR-017) a component that reads from a feature the kiosk does not allow is left out.
+            if (context.SharedDevice is { } device)
+            {
+                placements = placements.Where(item => registry.Find(item.Placement.ComponentRef) is not { } m
+                    || m.Data.All(d => SharedDeviceRules.AllowsDataPath(d, device.Features))).ToList();
+            }
             return new RenderedRegion(lr.Id, lr.Span, lr.Section, placements.Select(item =>
             {
                 var p = item.Placement;
