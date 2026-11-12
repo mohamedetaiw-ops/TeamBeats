@@ -1,0 +1,41 @@
+{
+  "$comment": "Demo data package, part 9: project and team spaces (spec 029) with members, milestones, tasks and a status. A space has one name, taken in the tenant's default language. Fictional.",
+  "spaces": [
+    {
+      "names": { "en": "Finance system rollout", "ar": "إطلاق النظام المالي" },
+      "descriptions": { "en": "Moving purchasing and expenses to the new finance system before the year end.", "ar": "نقل المشتريات والمصروفات إلى النظام المالي الجديد قبل نهاية العام." },
+      "owner": "omar",
+      "kind": "project",
+      "visibility": "private",
+      "members": { "layla": "member", "ahmed": "member", "priya": "member", "huda": "viewer" },
+      "milestones": [
+        { "key": "pilot", "names": { "en": "Pilot in Gulf", "ar": "التجربة في الخليج" }, "dueInDays": 14 },
+        { "key": "golive", "names": { "en": "Go live", "ar": "بدء التشغيل" }, "dueInDays": 45 }
+      ],
+      "tasks": [
+        { "titles": { "en": "Map the purchase approval steps", "ar": "رسم خطوات اعتماد المشتريات" }, "assignees": ["layla"], "dueInDays": 3, "priority": "high", "milestone": "pilot", "done": true },
+        { "titles": { "en": "Load the supplier list", "ar": "تحميل قائمة الموردين" }, "assignees": ["ahmed"], "dueInDays": 6, "milestone": "pilot" },
+        { "titles": { "en": "Train the pilot team", "ar": "تدريب فريق التجربة" }, "assignees": ["priya", "layla"], "dueInDays": 12, "milestone": "pilot" },
+        { "titles": { "en": "Agree the cut-over weekend", "ar": "الاتفاق على عطلة الانتقال" }, "assignees": ["omar"], "dueInDays": 30, "priority": "urgent", "milestone": "golive" },
+        { "titles": { "en": "Write the expense claim guide", "ar": "كتابة دليل مطالبات المصروفات" }, "assignees": ["priya"], "dueInDays": 35, "milestone": "golive" }
+      ],
+      "status": "at_risk",
+      "statusNotes": { "en": "Supplier data arrives a week late; the pilot date holds if loading finishes by Thursday.", "ar": "تصل بيانات الموردين متأخرة أسبوعا، ويبقى موعد التجربة إذا انتهى التحميل يوم الخميس." }
+    },
+    {
+      "names": { "en": "People team", "ar": "فريق شؤون الموظفين" },
+      "descriptions": { "en": "Our recurring work: onboarding, reviews and the wellbeing calendar.", "ar": "عملنا المتكرر: استقبال الموظفين الجدد والمراجعات وتقويم العافية." },
+      "owner": "noura",
+      "kind": "team",
+      "visibility": "public",
+      "members": { "fatima": "member", "maryam": "member", "sarah": "viewer" },
+      "tasks": [
+        { "titles": { "en": "Prepare the welcome packs for next month", "ar": "تجهيز حقائب الترحيب للشهر القادم" }, "assignees": ["fatima"], "dueInDays": 10 },
+        { "titles": { "en": "Book the wellbeing week speakers", "ar": "حجز متحدثي أسبوع العافية" }, "assignees": ["maryam"], "dueInDays": 20, "priority": "high" },
+        { "titles": { "en": "Send the review reminders", "ar": "إرسال تذكيرات المراجعات" }, "assignees": ["noura"], "dueInDays": 2, "done": true }
+      ],
+      "status": "on_track",
+      "statusNotes": { "en": "Everything is on schedule for the quarter.", "ar": "كل شيء في موعده لهذا الربع." }
+    }
+  ]
+}

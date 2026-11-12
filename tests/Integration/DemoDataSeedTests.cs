@@ -67,6 +67,9 @@ public sealed class DemoDataSeedTests(TenantWorld world)
         Assert.Equal(pack.Policies.Sum(p => p.Campaign?.AttestedBy?.Count(Personas.Contains) ?? 0), added.GetValueOrDefault("attestations"));
         Assert.True(added.GetValueOrDefault("holidays") > 40);
         Assert.Equal(pack.Search!.Synonyms!.Count, added.GetValueOrDefault("synonym sets"));
+        Assert.Equal(pack.Spaces.Count, added.GetValueOrDefault("spaces"));
+        Assert.Equal(pack.Spaces.Sum(s => s.Tasks?.Count ?? 0), added.GetValueOrDefault("space tasks"));
+        Assert.Equal(pack.Spaces.Sum(s => s.Milestones?.Count ?? 0), added.GetValueOrDefault("space milestones"));
         // The chief executive is not a user here: their story is written by the administrator, their reactions are skipped.
         Assert.Contains("hassan not found", first.Skipped);
         Assert.DoesNotContain(first.Skipped, s => s.Contains("failed", StringComparison.Ordinal));
@@ -97,6 +100,7 @@ public sealed class DemoDataSeedTests(TenantWorld world)
         Assert.Equal(0, await world.Database.CountInTenantAsync(other.Id, "select count(*) from content.content_item"));
         Assert.Equal(0, await world.Database.CountInTenantAsync(other.Id, "select count(*) from services.request"));
         Assert.Equal(0, await world.Database.CountInTenantAsync(other.Id, "select count(*) from policies.policy"));
+        Assert.Equal(0, await world.Database.CountInTenantAsync(other.Id, "select count(*) from spaces.space"));
     }
 
     [Fact]
