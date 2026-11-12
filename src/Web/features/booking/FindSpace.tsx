@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import { StateView } from "@/components/ui/StateView";
+import { PersonPicker } from "@/features/services/PersonPicker";
 import {
   bookingApi,
   bookingDetailHref,
@@ -19,6 +20,7 @@ import {
   type ResourceKind,
   type SearchResult,
   type SiteView,
+  type TeamBookResult,
 } from "@/lib/booking";
 import "./booking.css";
 
@@ -48,6 +50,9 @@ export function FindSpace({ sites, kinds, initial }: { sites: SiteView[]; kinds:
   const [messages, setMessages] = useState<string[]>([]);
   const [booked, setBooked] = useState<BookResult | null>(null);
   const [busy, setBusy] = useState(false);
+  const [forUser, setForUser] = useState<string | null>(null);
+  const [team, setTeam] = useState<(string | null)[]>([null]);
+  const [teamResult, setTeamResult] = useState<TeamBookResult | null>(null);
   const zone = sites.find((s) => s.id === site)?.timeZone ?? "";
 
   if (sites.length === 0) return <StateView kind="empty" title={t("noSitesTitle")} message={t("noSites")} icon="building" />;
@@ -78,6 +83,7 @@ export function FindSpace({ sites, kinds, initial }: { sites: SiteView[]; kinds:
       end,
       title: title.trim() || null,
       repeat: repeat === "none" ? null : { pattern: repeat, until: until || null },
+      forUserId: forUser,
     };
     const made = await call<BookResult>(() => send(`${bookingApi}/bookings`, "POST", body), t("failed"));
     setBusy(false);
@@ -85,6 +91,18 @@ export function FindSpace({ sites, kinds, initial }: { sites: SiteView[]; kinds:
     setMessages([]);
     setBooked(made.value);
     setResult((r) => (r ? { ...r, resources: r.resources.filter((x) => x.id !== resourceId) } : r));
+  }
+
+  async function bookTeam() {
+    setBusy(true);
+    setBooked(null);
+    const people = team.filter((p): p is string => Boolean(p));
+    const body = { siteId: site, zoneId: initial.zone && initial.site === site ? initial.zone : null, kind, date, start, end, title: title.trim() || null, people };
+    const made = await call<TeamBookResult>(() => send(`${bookingApi}/bookings:team`, "POST", body), t("failed"));
+    setBusy(false);
+    if (!made.ok) return setMessages(made.messages);
+    setMessages([]);
+    setTeamResult(made.value);
   }
 
   const day = (iso: string) => format.dateTime(new Date(`${iso}T00:00:00`), { dateStyle: "medium" });
@@ -150,6 +168,7 @@ export function FindSpace({ sites, kinds, initial }: { sites: SiteView[]; kinds:
             <FormField label={t("title")} name="title" maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} />
             <SelectField label={t("repeat")} name="repeat" value={repeat} onChange={(e) => setRepeat(e.target.value)}
               options={["none", "daily", "weekly"].map((r) => ({ value: r, label: t(`repeats.${r}`) }))} />
+            <PersonPicker label={t("forSomeone")} value={forUser} onChange={setForUser} />
             {repeat !== "none" ? (
               <FormField label={t("until")} name="until" type="date" value={until} min={date} onChange={(e) => setUntil(e.target.value)} required />
             ) : null}
@@ -181,6 +200,47 @@ export function FindSpace({ sites, kinds, initial }: { sites: SiteView[]; kinds:
           </ul>
         </section>
       ) : null}
+
+      <section className="booking-section booking-form" aria-labelledby="booking-team">
+        <h2 id="booking-team">{t("teamTitle")}</h2>
+        <p className="booking-meta">{t("teamIntro")}</p>
+        {team.map((p, i) => (
+          <PersonPicker key={i} label={t("teamMember", { number: i + 1 })} value={p} onChange={(id) => setTeam((list) => list.map((x, j) => (j === i ? id : x)))} />
+        ))}
+        <div className="booking-row">
+          <Button size="sm" variant="quiet" icon="plus" disabled={team.length >= 50} onClick={() => setTeam((list) => [...list, null])}>
+            {t("teamAdd")}
+          </Button>
+          <Button variant="primary" icon="check" disabled={busy || !team.some(Boolean)} onClick={() => void bookTeam()}>
+            {t("teamBook")}
+          </Button>
+        </div>
+        {teamResult ? (
+          <ul className="booking-list" aria-label={t("teamResultLabel")}>
+            {teamResult.people.map((p) => (
+              <li key={p.personId} className="booking-card">
+                <strong>
+                  <bdi>{p.name ?? p.personId}</bdi>
+                </strong>
+                {p.booking ? (
+                  <Link href={bookingDetailHref(p.booking.id)}>
+                    <bdi>{pick(p.booking.resourceNames, locale)}</bdi>
+                  </Link>
+                ) : (
+                  <span className="booking-meta">{t(`teamProblems.${problemKey(p.problem)}`)}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
     </div>
   );
+}
+
+/** The team outcome reasons the page names; any other refusal reads as the rules not allowing it. */
+const teamProblems = ["limit", "none_free", "booking_for"] as const;
+function problemKey(problem: string | null): string {
+  const last = problem?.split(".").pop() ?? "";
+  return (teamProblems as readonly string[]).includes(last) ? last : "rules";
 }

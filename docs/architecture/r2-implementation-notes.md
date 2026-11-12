@@ -965,7 +965,7 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Default rules: 14 days ahead, 15 minute slots, within opening hours on working days, no gap. Rooms up to 8 hours and 10 active bookings per person; desks and parking up to 12 hours and 3 active bookings; equipment up to 7 days, overnight and outside opening hours, 3 active bookings, and no check-in. A series counts once against the limit and may run up to 90 days; only its first day is checked against how far ahead the rules allow.
 - Notifications cannot carry files, so the confirmation links to the booking, which offers the calendar file.
 - Colleagues see a taken slot as booked without a name unless the tenant turns on showing names (the open question default); facilities administrators of the site always see names.
-- Booking on behalf and team booking (US5) and reports (US6) follow in the next slices.
+- Reports (US6) follow in the next slice.
 
 ## Workplace booking (spec 031, slice 2: T003 QR images, T005 to T007; US3, US4)
 
@@ -981,3 +981,14 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A kiosk is a page the person signs in to on the site's device; a separate kiosk device sign-in is not in the spec.
 - The labels page uses the QR images; the page itself prints them through the browser.
 - New package `QRCoder` (MIT): the stack has no QR encoder, and a QR code needs Reed-Solomon error correction and masking that are easy to get wrong by hand. It draws SVG on the server with no native dependency.
+
+## Workplace booking (spec 031, slice 3: T008; US5)
+
+### Built
+- Booking on behalf (FR-011): `POST /bookings` takes `forUserId`. It is allowed only while the person has delegated to the caller today (spec 016 delegation, through `IDelegations`). The booking is the person's own: their rules, units, fixed desk and limits apply, they are told who booked it (`booking.booked_for_you`), and both of them see and can cancel it.
+- Team booking (FR-012): `POST /bookings:team` books one resource of a kind for each person at a site, in a zone when given, at the same time. Each person gets an individual booking under their own rules and limits; a person who cannot be booked is listed with why (over their limit, nothing free, not in the team, or their rules) and the others are still booked. A person with a fixed desk at the site gets that desk.
+- Web: Book a space offers "book for someone who delegated to you" and a "book for a team" section with one person picker per member and the outcome for each.
+
+### Smallest safe defaults
+- The spec does not say who may book for a team. The booker may include themselves, people who delegated to them, and anyone below them in the reporting line (spec 010), up to 50 people.
+- Booking on behalf needs a delegation; being someone's manager is not enough on its own, as FR-011 asks for a delegation relation.

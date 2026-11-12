@@ -16,7 +16,7 @@ Depends on 002, 015, 016, 018, 022, 030. R2.
 - [x] T007 [US4] Check-in and release job
 
 ## Phase 4: User Stories 5 and 6 (P2)
-- [ ] T008 [US5] On behalf and team booking
+- [x] T008 [US5] On behalf and team booking
 - [ ] T009 [US6] Utilization reports
 
 ## Final phase
