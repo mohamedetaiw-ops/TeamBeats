@@ -50,6 +50,7 @@ export function ManageHome({ courses, paths }: { courses: CourseSummary[]; paths
                   </Link>
                   <Badge tone={statusTones[course.status]}>{t(`status.${course.status}`)}</Badge>
                   {course.publishedVersion ? <Badge>{t("version", { version: course.publishedVersion })}</Badge> : null}
+                  {course.external ? <Badge tone="info" icon="link">{t("fromLms")}</Badge> : null}
                   {course.draftChanged && course.status !== "draft" ? <Badge tone="info" icon="edit">{t("unpublishedChanges")}</Badge> : null}
                 </div>
                 <p className="learning-meta">

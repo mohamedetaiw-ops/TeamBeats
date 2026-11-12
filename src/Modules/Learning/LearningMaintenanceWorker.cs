@@ -9,7 +9,7 @@ namespace TeamBeats.Modules.Learning;
 
 /// <summary>
 /// Every minute, for every active tenant in its own scope and transaction: brings assignment rules up to date, sends
-/// course reminders, tells overdue learners and their managers, and renews recurring training (spec 028 US2). Runs as the
+/// course reminders, tells overdue learners and their managers, renews recurring training (spec 028 US2), and syncs the LMS when it is due (US6). Runs as the
 /// system actor. Hosted by the worker, and by the development host when <c>Learning:Maintenance:InProcess</c> is true.
 /// </summary>
 public sealed class LearningMaintenanceWorker(IServiceScopeFactory scopes, IClock clock, ILogger<LearningMaintenanceWorker> logger) : BackgroundService
@@ -49,6 +49,7 @@ public sealed class LearningMaintenanceWorker(IServiceScopeFactory scopes, ICloc
                 context.SetTenant(tenant.Id);
                 context.SetActor(ActorType.System, null);
                 await scope.ServiceProvider.GetRequiredService<AssignmentRules>().RunDueAsync(now, 1000, ct);
+                await scope.ServiceProvider.GetRequiredService<LmsSync>().RunDueAsync(now, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

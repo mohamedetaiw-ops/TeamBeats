@@ -79,6 +79,9 @@ public static class IntegrationsModule
         services.AddScoped<Finance.FinanceHandOffs>();
         services.AddScoped<IFinanceHandOff>(sp => sp.GetRequiredService<Finance.FinanceHandOffs>());
         services.AddScoped<IConnectionDependents, Finance.FinanceDependents>();
+        services.AddScoped<Lms.LmsPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Lms.LmsPack>());
+        services.AddScoped<ILmsConnector, Lms.LmsConnector>();
         services.AddScoped<Hr.HrSync>();
         services.AddScoped<Hr.HrRecords>();
         services.AddScoped<IHrRecords>(sp => sp.GetRequiredService<Hr.HrRecords>());

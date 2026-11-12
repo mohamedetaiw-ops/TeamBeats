@@ -14545,6 +14545,30 @@
         }
       }
     },
+    "/api/v1/learning/manage/lms": {
+      "get": {
+        "tags": [
+          "Learning"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/learning/manage/lms:sync": {
+      "post": {
+        "tags": [
+          "Learning"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/learning/reports/courses": {
       "get": {
         "tags": [

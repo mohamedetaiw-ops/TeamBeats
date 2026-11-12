@@ -5105,7 +5105,8 @@
       "google_workspace": "Google Workspace",
       "hr_rest": "HR system (REST API)",
       "hr_sftp": "HR system (SFTP and CSV)",
-      "microsoft365": "Microsoft 365"
+      "microsoft365": "Microsoft 365",
+      "lms_rest": "Learning management system (LMS)"
     },
     "status": {
       "healthy": "Healthy",
@@ -5136,7 +5137,8 @@
       "hr_sftp": "Reads the newest full employee export that an HR system drops on an SFTP server every night.",
       "microsoft365": "Directory sync, mail, calendar and free and busy times from your Microsoft 365 tenant, each with its own consent.",
       "servicenow": "Services and agents create incidents in ServiceNow and read their status.",
-      "jira_service_management": "Services and agents create requests in Jira Service Management and read their status."
+      "jira_service_management": "Services and agents create requests in Jira Service Management and read their status.",
+      "lms_rest": "Brings your LMS courses into the catalogue, sends assignments of them to the LMS and reads completions back."
     },
     "add": {
       "title": "Add a custom REST connection",
@@ -5945,7 +5947,8 @@
         "service_desk": "Service desks",
         "people_time": "HR and time",
         "finance": "Finance",
-        "custom": "Your own systems"
+        "custom": "Your own systems",
+        "learning": "Learning"
       },
       "setup": {
         "save": "Save and continue",
@@ -5969,6 +5972,47 @@
         "turnOn": "Turn on now",
         "later": "Leave it off for now",
         "open": "Open the connection"
+      }
+    },
+    "lms": {
+      "formLabel": "LMS settings",
+      "addTitle": "Add your LMS",
+      "addIntro": "Bring your LMS courses into the TeamBeats catalogue, send assignments of them to the LMS and read completions back. Add the LMS host to the allowlist and store its credential in your secret manager. Only the fields you map below are sent.",
+      "coursesTitle": "Course catalogue",
+      "coursesPath": "Courses path",
+      "coursesPathHint": "The path TeamBeats reads the course list from, for example /courses.",
+      "itemsPath": "List in the answer",
+      "pathHint": "Where the list is in the JSON answer, for example $.items. Use $ when the answer is the list itself.",
+      "itemPathHint": "Where the field is inside each item, for example $.id.",
+      "courseFields": {
+        "external_id": "Course ID",
+        "title": "Title",
+        "summary": "Summary",
+        "launch_url": "Address that opens the course",
+        "language": "Language"
+      },
+      "nextPath": "Next page link (optional)",
+      "nextPathHint": "Where the link to the next page is in the answer, for example $.next. Leave it empty if the list comes in one page.",
+      "assignTitle": "Assignments",
+      "assignPath": "Assignments path",
+      "assignPathHint": "The path TeamBeats posts each assignment to, for example /enrolments.",
+      "assignFieldsHint": "Where each assignment field goes in the request body. Use dots for nested fields, for example user.email. Leave a field empty to leave it out.",
+      "assignFields": {
+        "reference": "TeamBeats assignment ID",
+        "course_id": "Course ID",
+        "learner_email": "Learner work email",
+        "due_on": "Due date"
+      },
+      "idempotencyHeader": "Idempotency header (optional)",
+      "idempotencyHeaderHint": "If the LMS accepts an idempotency key, name its header, for example Idempotency-Key. Without it, an assignment whose sending timed out is not sent again automatically.",
+      "completionsTitle": "Completions",
+      "completionsPath": "Completions path",
+      "completionsPathHint": "The path TeamBeats reads completions from. Use '{since}' where the time goes, for example /completions?since='{since}'.",
+      "completionFields": {
+        "course_id": "Course ID",
+        "learner_email": "Learner work email",
+        "completed_at": "Completion time",
+        "score": "Score in percent"
       }
     }
   },
@@ -8994,7 +9038,8 @@
       "open": "Open to enrol",
       "shape": "{lessons, plural, one {# lesson} other {# lessons}} · {minutes, plural, =0 {length not given} one {# minute} other {# minutes}}",
       "progressOf": "Progress in {title}",
-      "percent": "{value}% done"
+      "percent": "{value}% done",
+      "fromLms": "From your LMS"
     },
     "player": {
       "about": "About this course",
@@ -9043,7 +9088,11 @@
         "submit": "Submit answers",
         "attemptsLeft": "{count, plural, one {# attempt left} other {# attempts left}}",
         "failed": "Your answers could not be sent. Try again."
-      }
+      },
+      "openLms": "Open in your LMS",
+      "lmsHint": "The course opens in your LMS. Your completion shows here after the next sync.",
+      "lmsUnavailableTitle": "LMS unavailable",
+      "lmsUnavailable": "Your LMS is not answering at the moment. Try again later; your other courses work as usual."
     },
     "path": {
       "eyebrow": "Learning path",
@@ -9122,7 +9171,8 @@
       "createPath": "Create path",
       "paths": "Learning paths",
       "pathsEmpty": "No learning paths yet.",
-      "pathMeta": "{count, plural, one {# course} other {# courses}}"
+      "pathMeta": "{count, plural, one {# course} other {# courses}}",
+      "fromLms": "From your LMS"
     },
     "builder": {
       "eyebrow": "Course builder",
@@ -9229,7 +9279,9 @@
         "passed": "Passed",
         "grant": "Give one more attempt"
       },
-      "rulesTab": "Assignment rules"
+      "rulesTab": "Assignment rules",
+      "fromLmsTitle": "This course comes from your LMS",
+      "fromLms": "Its titles and content are kept in your LMS, and each sync brings changes here. You choose who sees it, its category and its owner, and you can retire it."
     },
     "pathBuilder": {
       "eyebrow": "Path builder",
@@ -9382,6 +9434,20 @@
       "assigned": "Course given",
       "assignedHint": "It shows in their My learning.",
       "failed": "The course could not be given."
+    },
+    "lms": {
+      "title": "Your LMS",
+      "notConfigured": "No LMS is connected. An administrator can add one in",
+      "connections": "Connections",
+      "available": "LMS answering",
+      "unavailable": "LMS unavailable",
+      "courses": "{count, plural, one {# course from the LMS} other {# courses from the LMS}}",
+      "waiting": "{count, plural, one {# assignment waiting to be sent} other {# assignments waiting to be sent}}",
+      "refused": "{count, plural, one {# assignment the LMS refused} other {# assignments the LMS refused}}",
+      "lastRead": "Catalogue last read {catalogue}. Completions last read {completions}.",
+      "never": "never",
+      "syncNow": "Sync now",
+      "failed": "The sync did not run."
     }
   }
 }
