@@ -11,13 +11,18 @@ import { stack } from "./support/stack";
  */
 const isCI = !!process.env.CI;
 const local = stack.target === "local";
+// A production build runs only the mobile performance budgets (spec 030 section 7); the acceptance specs need the development
+// sign-in form and the reference component packs, which a production build leaves out.
+const production = stack.webMode === "production";
+const hosts = local ? { args: [`--host-resolver-rules=MAP *.${stack.baseDomain} 127.0.0.1`] } : {};
 
 export default defineConfig({
-  testDir: "./specs",
+  testDir: production ? "./budgets" : "./specs",
   fullyParallel: true,
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
-  workers: isCI ? 2 : undefined,
+  // Measurements run one at a time, so two pages never share the machine while they are timed.
+  workers: production ? 1 : isCI ? 2 : undefined,
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: isCI ? [["github"], ["html", { open: "never" }], ["list"]] : [["list"], ["html", { open: "never" }]],
@@ -28,11 +33,11 @@ export default defineConfig({
   },
   projects: [
     {
-      name: "chromium",
+      name: production ? "budgets" : "chromium",
       use: {
         ...devices["Desktop Chrome"],
         // Every tenant is a subdomain of the base domain; map them all to this machine for the local target.
-        launchOptions: local ? { args: [`--host-resolver-rules=MAP *.${stack.baseDomain} 127.0.0.1`] } : {},
+        launchOptions: hosts,
       },
     },
   ],
@@ -55,11 +60,11 @@ export default defineConfig({
         },
         {
           name: "web",
-          command: "npm run dev -- --port " + stack.webPort,
+          command: production ? `npm run build && npm run start -- --port ${stack.webPort}` : `npm run dev -- --port ${stack.webPort}`,
           cwd: "../../src/Web",
           url: `http://localhost:${stack.webPort}`,
           reuseExistingServer: !isCI,
-          timeout: 180_000,
+          timeout: production ? 900_000 : 180_000,
           env: {
             TEAMBEATS_API_ORIGIN: stack.apiOrigin,
             TEAMBEATS_DEV_SIGNIN: "true",

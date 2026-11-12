@@ -12,7 +12,8 @@ type Region = { id: string; placements: Placement[] } & Record<string, unknown>;
 type PageView = { id: string; slug: string; eTag: string; draft: { regions: Region[] } & Record<string, unknown> };
 type PickerItem = { componentRef: string; eligible: boolean; category: string };
 
-export async function tenantApi(tenant: TestTenant): Promise<APIRequestContext> {
+/** A session of the tenant administrator from the development sign-in, for a browser cookie or API calls. */
+export async function sessionToken(tenant: TestTenant): Promise<string> {
   const host = `${tenant.key}.${stack.baseDomain}`;
   const anonymous = await request.newContext({ baseURL: stack.apiOrigin, extraHTTPHeaders: { "x-forwarded-host": host } });
   const response = await anonymous.post("/dev/signin", { data: { email: tenant.adminEmail } });
@@ -21,6 +22,12 @@ export async function tenantApi(tenant: TestTenant): Promise<APIRequestContext> 
   if (!response.ok() || !token) {
     throw new Error(`Tenant sign-in failed with ${response.status()}.`);
   }
+  return token;
+}
+
+export async function tenantApi(tenant: TestTenant): Promise<APIRequestContext> {
+  const host = `${tenant.key}.${stack.baseDomain}`;
+  const token = await sessionToken(tenant);
   return request.newContext({ baseURL: stack.apiOrigin, extraHTTPHeaders: { "x-forwarded-host": host, cookie: `tb_session=${token}` } });
 }
 
