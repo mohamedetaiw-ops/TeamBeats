@@ -74,6 +74,12 @@ public static class Capabilities
     public const string SpacesProjects = "spaces.projects";
     public const string SpacesGuests = "spaces.guests";
     public const string SpacesMaxSpaces = "spaces.max_spaces";
+
+    // Spec 031 section 9: rooms, desks, parking and equipment, and usage reports, Workplace Plus and above.
+    public const string BookingRooms = "booking.rooms";
+    public const string BookingDesks = "booking.desks";
+    public const string BookingResources = "booking.resources";
+    public const string BookingReports = "booking.reports";
     public const string AnalyticsCore = "analytics.core";
     public const string AnalyticsAdvanced = "analytics.advanced";
     public const string AnalyticsExport = "analytics.export";

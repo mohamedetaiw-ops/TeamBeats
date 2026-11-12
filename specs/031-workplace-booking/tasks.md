@@ -3,12 +3,12 @@
 Depends on 002, 015, 016, 018, 022, 030. R2.
 
 ## Phase 1: Module setup
-- [ ] T001 `Booking` module skeleton; migration with exclusion constraint (forced RLS); permissions, capability keys, audit actions
+- [x] T001 `Booking` module skeleton; migration with exclusion constraint (forced RLS); permissions, capability keys, audit actions
 
 ## Phase 2: User Stories 1 and 2 (P1)
-- [ ] T002 [P] [US1] [US2] Tests: resources and rules, M365 room refusal, search, parallel race, recurring skips, limits
+- [x] T002 [P] [US1] [US2] Tests: resources and rules, M365 room refusal, search, parallel race, recurring skips, limits
 - [ ] T003 [US1] Locations, resources, rules, QR codes
-- [ ] T004 [US2] Search, booking, recurring series, .ics
+- [x] T004 [US2] Search, booking, recurring series, .ics
 
 ## Phase 3: User Stories 3 and 4 (P1, P2)
 - [ ] T005 [P] [US3] [US4] Tests: tentative hold and expiry, approval outcomes, check-in window, auto release, no-show rule

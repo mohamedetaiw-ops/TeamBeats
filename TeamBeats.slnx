@@ -128,6 +128,12 @@
   <Folder Name="/src/Modules/Learning/">
     <Project Path="src/Modules/Learning/TeamBeats.Modules.Learning.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/Booking/">
+    <Project Path="src/Modules/Booking/TeamBeats.Modules.Booking.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Booking.Contracts/">
+    <Project Path="src/Modules/Booking.Contracts/TeamBeats.Modules.Booking.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/Spaces/">
     <Project Path="src/Modules/Spaces/TeamBeats.Modules.Spaces.csproj" />
   </Folder>

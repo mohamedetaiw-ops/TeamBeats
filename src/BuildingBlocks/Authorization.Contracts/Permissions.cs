@@ -151,6 +151,12 @@ public static class Permissions
     public const string SpacesContribute = "spaces.contribute";
     public const string SpacesOwn = "spaces.own";
 
+    // Spec 031 (R2): employees book rooms, desks, parking and equipment within the rules; facilities administrators
+    // define sites, resources and rules and cancel bookings in their location scope; facilities analysts see usage counts.
+    public const string BookingBook = "booking.book";
+    public const string BookingManage = "booking.manage";
+    public const string BookingReport = "booking.report";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -195,6 +201,7 @@ public static class Permissions
         EngagementParticipate, EngagementModerate, EngagementManage, EngagementSurveyPublish, EngagementRecognitionApprove,
         LearningTake, LearningManage, LearningTeamView, LearningReport, LearningAssignLinked,
         SpacesCreate, SpacesManage, SpacesView, SpacesContribute, SpacesOwn,
+        BookingBook, BookingManage, BookingReport,
     ];
 }
 
@@ -222,6 +229,8 @@ public static class BuiltInRoles
     public const string EngagementAdministrator = "engagement_administrator";
     public const string LearningAdministrator = "learning_administrator";
     public const string SpacesAdministrator = "spaces_administrator";
+    public const string FacilitiesAdministrator = "facilities_administrator";
+    public const string FacilitiesAnalyst = "facilities_analyst";
 
     // Spec 029: the space roles, assigned only on a space by the Spaces module.
     public const string SpaceOwner = "space_owner";

@@ -1,0 +1,83 @@
+/* Spec 031 booking pages. Colors and spacing come from tokens; logical properties keep the pages right to left in Arabic. */
+.booking {
+  display: grid;
+  gap: var(--tb-space-lg);
+  min-inline-size: 0;
+}
+
+.booking-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  min-inline-size: 0;
+}
+
+.booking-section h2,
+.booking-card h3 {
+  margin: 0;
+}
+
+.booking-form {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.booking-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+  min-inline-size: 0;
+}
+
+.booking-list,
+.booking-labels {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.booking-plain {
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.booking-card,
+.booking-label {
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  min-inline-size: 0;
+}
+
+.booking-label code {
+  overflow-wrap: anywhere;
+}
+
+.booking-meta {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+@media print {
+  .booking-noprint {
+    display: none;
+  }
+
+  .booking-label {
+    break-inside: avoid;
+  }
+}

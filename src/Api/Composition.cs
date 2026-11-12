@@ -21,6 +21,7 @@ using TeamBeats.Modules.AiGateway.OpenRouter;
 using TeamBeats.Modules.Calendar;
 using TeamBeats.Modules.Policies;
 using TeamBeats.Modules.Engagement;
+using TeamBeats.Modules.Booking;
 using TeamBeats.Modules.Learning;
 using TeamBeats.Modules.Spaces;
 using TeamBeats.Modules.Search;
@@ -65,6 +66,7 @@ public static class TeamBeatsModules
         PoliciesModule.Migrations,
         EngagementModule.Migrations,
         LearningModule.Migrations,
+        BookingModule.Migrations,
         SpacesModule.Migrations,
         AiGatewayModule.Migrations,
         SearchModule.Migrations,
@@ -133,6 +135,7 @@ public static class TeamBeatsModules
         services.AddPoliciesModule();
         services.AddEngagementModule();
         services.AddLearningModule();
+        services.AddBookingModule();
         services.AddSpacesModule();
         services.AddAiGatewayModule();
         services.AddOpenRouterAdapter();
@@ -220,6 +223,7 @@ public static class ApiComposition
         app.MapPoliciesEndpoints();
         app.MapEngagementEndpoints();
         app.MapLearningEndpoints();
+        app.MapBookingEndpoints();
         app.MapSpacesEndpoints();
         app.MapAiGatewayEndpoints();
         app.MapSearchEndpoints();
@@ -270,7 +274,16 @@ public static class ProblemWriter
         if (problem.DetailKey is not null)
         {
             body["detailKey"] = problem.DetailKey;
-            body["detail"] = localizer.Get(problem.DetailKey, locale);
+            var detail = localizer.Get(problem.DetailKey, locale);
+            // Simple extension values fill their placeholders, such as {limit} in "the most active bookings allowed ({limit})".
+            foreach (var (k, v) in problem.Extensions ?? new Dictionary<string, object?>())
+            {
+                if (v is string or int or long or decimal)
+                {
+                    detail = detail.Replace("{" + k + "}", Convert.ToString(v, System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal);
+                }
+            }
+            body["detail"] = detail;
         }
         if (problem.Errors is not null)
         {
