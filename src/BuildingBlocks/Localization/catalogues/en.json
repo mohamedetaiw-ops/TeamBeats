@@ -1692,5 +1692,19 @@
   "validation.engagement.recognition_badge": "Choose a badge you are allowed to give.",
   "validation.engagement.recognition_values": "Give up to 30 values, each with a unique key and a name in each language of up to 80 characters.",
   "validation.engagement.recognition_badges": "Give up to 50 badges, each with a unique key, an icon and a name in each language of up to 80 characters.",
-  "validation.engagement.recognition_badge_unit": "Badge units must exist."
+  "validation.engagement.recognition_badge_unit": "Badge units must exist.",
+  "notifications.template.engagement.award.won.title": "You won {award}",
+  "notifications.template.engagement.award.won.body": "Congratulations. Your colleagues nominated you and the approvers chose you. Open awards to see it.",
+  "engagement.award.announcement.title": "Winners of {award}",
+  "engagement.award.announcement.intro": "Thank you to everyone who sent a nomination for {award}. The winners are:",
+  "conflict.engagement.award_closed": "Nominations for this award are closed.",
+  "conflict.engagement.award_decided": "The winners of this award have already been chosen.",
+  "validation.engagement.award_kind": "Choose a person award or a team award.",
+  "validation.engagement.award_title": "Write a title of up to 200 characters.",
+  "validation.engagement.award_unit": "Choose an org unit that exists.",
+  "validation.engagement.award_close_on": "Choose a closing date from today to one year ahead.",
+  "validation.engagement.award_nominee": "Choose an active person or a team in this award's scope.",
+  "validation.engagement.award_self": "You cannot nominate yourself.",
+  "validation.engagement.award_reason": "Write a reason of up to 1000 characters.",
+  "validation.engagement.award_winners": "Choose between 1 and 5 winners from the nominees."
 }

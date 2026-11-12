@@ -66,3 +66,17 @@ public interface IKnowledgeContent
     /// <summary>The sections of the published version in every locale, or empty when the caller may not read it.</summary>
     Task<IReadOnlyList<ContentSection>> SectionsAsync(Guid itemId, CancellationToken ct = default);
 }
+
+/// <summary>An announcement draft another module hands to communicators: titles and bodies per locale.</summary>
+public sealed record AnnouncementDraft(IReadOnlyDictionary<string, string> Titles, IReadOnlyDictionary<string, BodyDocument> Bodies);
+
+/// <summary>
+/// Lets another module start an announcement for communicators to finish and publish (spec 023 FR-014, the period
+/// award announcement). The draft goes on the default site as type <c>announcement</c>; it is never published here,
+/// so readers see it only after someone with publish rights on the site publishes it.
+/// </summary>
+public interface IAnnouncementDrafts
+{
+    /// <summary>Creates the draft as the current user and returns its item ID. Needs the <c>content.core</c> capability.</summary>
+    Task<Guid> CreateAsync(AnnouncementDraft draft, CancellationToken ct = default);
+}

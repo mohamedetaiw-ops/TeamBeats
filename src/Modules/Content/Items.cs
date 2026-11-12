@@ -396,12 +396,19 @@ public sealed class Items(
 
     // ---- Create and edit ----
 
-    public async Task<ItemView> CreateAsync(ItemRequest request, CancellationToken ct)
+    public Task<ItemView> CreateAsync(ItemRequest request, CancellationToken ct) => CreateAsync(request, handOff: false, ct);
+
+    /// <summary>
+    /// Creates the draft. A hand-off draft (another module asks for a draft for communicators to finish, such as the
+    /// spec 023 award announcement) skips the author check, because it only becomes visible to readers once someone
+    /// with publish rights on the site publishes it.
+    /// </summary>
+    internal async Task<ItemView> CreateAsync(ItemRequest request, bool handOff, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.ContentCore, ct);
         var user = context.RequireUser();
         var site = request.SiteId is { } siteId ? await sites.RowAsync(siteId, false, ct) ?? throw AppException.NotFound() : await sites.DefaultAsync(ct);
-        if (!await MayWriteAsync(site, null, user, ct))
+        if (!handOff && !await MayWriteAsync(site, null, user, ct))
         {
             throw AppException.Denied();
         }

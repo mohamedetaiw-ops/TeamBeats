@@ -396,6 +396,8 @@ public static class AuditActions
     public const string EngagementSurveyThresholdChanged = "engagement.survey_threshold_changed";
     public const string EngagementPointsConfigChanged = "engagement.points_config_changed";
     public const string EngagementRecognitionCatalogueChanged = "engagement.recognition_catalogue_changed";
+    public const string EngagementAwardOpened = "engagement.award_opened";
+    public const string EngagementAwardDecided = "engagement.award_decided";
 
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
@@ -456,6 +458,7 @@ public static class AuditActions
         EngagementCommunityCreated, EngagementCommunityChanged, EngagementCommunityArchived, EngagementMemberChanged, EngagementPostPinned,
         EngagementContentApproved, EngagementContentHidden, EngagementContentRemoved, EngagementMemberMuted, EngagementMemberUnmuted, EngagementKeywordsChanged, EngagementSpeakUpAnswered, EngagementSpeakUpDeclined,
         EngagementSurveyPublished, EngagementSurveyClosed, EngagementSurveyThresholdChanged, EngagementPointsConfigChanged, EngagementRecognitionCatalogueChanged,
+        EngagementAwardOpened, EngagementAwardDecided,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

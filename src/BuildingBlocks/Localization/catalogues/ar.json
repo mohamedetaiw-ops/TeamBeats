@@ -1692,5 +1692,19 @@
   "validation.engagement.recognition_badge": "اختر شارة مسموحا لك بمنحها.",
   "validation.engagement.recognition_values": "أضف حتى 30 قيمة، لكل منها مفتاح فريد واسم بكل لغة لا يزيد على 80 حرفا.",
   "validation.engagement.recognition_badges": "أضف حتى 50 شارة، لكل منها مفتاح فريد وأيقونة واسم بكل لغة لا يزيد على 80 حرفا.",
-  "validation.engagement.recognition_badge_unit": "يجب أن تكون وحدات الشارات موجودة."
+  "validation.engagement.recognition_badge_unit": "يجب أن تكون وحدات الشارات موجودة.",
+  "notifications.template.engagement.award.won.title": "فزت بجائزة {award}",
+  "notifications.template.engagement.award.won.body": "تهانينا. رشّحك زملاؤك واختارك المعتمدون. افتح صفحة الجوائز لمشاهدة التفاصيل.",
+  "engagement.award.announcement.title": "الفائزون بجائزة {award}",
+  "engagement.award.announcement.intro": "شكرًا لكل من أرسل ترشيحًا لجائزة {award}. الفائزون هم:",
+  "conflict.engagement.award_closed": "انتهت الترشيحات لهذه الجائزة.",
+  "conflict.engagement.award_decided": "تم اختيار الفائزين بهذه الجائزة من قبل.",
+  "validation.engagement.award_kind": "اختر جائزة لشخص أو جائزة لفريق.",
+  "validation.engagement.award_title": "اكتب عنوانًا لا يزيد على 200 حرف.",
+  "validation.engagement.award_unit": "اختر وحدة تنظيمية موجودة.",
+  "validation.engagement.award_close_on": "اختر تاريخ إغلاق من اليوم حتى سنة قادمة.",
+  "validation.engagement.award_nominee": "اختر شخصًا نشطًا أو فريقًا ضمن نطاق هذه الجائزة.",
+  "validation.engagement.award_self": "لا يمكنك ترشيح نفسك.",
+  "validation.engagement.award_reason": "اكتب سببًا لا يزيد على 1000 حرف.",
+  "validation.engagement.award_winners": "اختر من 1 إلى 5 فائزين من بين المرشحين."
 }

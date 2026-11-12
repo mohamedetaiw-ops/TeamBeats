@@ -41,7 +41,7 @@ type Loaded = {
   pointsSettings: PointsSettingsView | null;
 };
 
-async function call<T>(request: () => Promise<Response>, failed: string): Promise<{ ok: true; value: T } | { ok: false; messages: string[] }> {
+export async function call<T>(request: () => Promise<Response>, failed: string): Promise<{ ok: true; value: T } | { ok: false; messages: string[] }> {
   try {
     const response = await request();
     if (response.ok) return { ok: true, value: (response.status === 204 ? null : await response.json()) as T };
@@ -51,7 +51,7 @@ async function call<T>(request: () => Promise<Response>, failed: string): Promis
   }
 }
 
-function useUnits(): OrgUnitView[] {
+export function useUnits(): OrgUnitView[] {
   const [units, setUnits] = useState<OrgUnitView[]>([]);
   useEffect(() => {
     let live = true;

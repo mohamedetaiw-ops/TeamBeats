@@ -276,3 +276,25 @@ export type PointsSettingsView = {
 
 export const recognitionHref = "/communities/recognition";
 export const badgeIcons = ["star", "spark", "trend-up", "check", "megaphone", "people", "book", "globe", "lock", "clock"] as const;
+
+export type AwardKind = "person" | "team";
+export type AwardNominee = { id: string; person: EngagementPerson | null; unitNames: Record<string, string> | null };
+export type AwardPeriodView = {
+  id: string;
+  kind: AwardKind;
+  title: string;
+  orgUnitId: string | null;
+  unitNames: Record<string, string> | null;
+  nominationsCloseOn: string;
+  status: "open" | "decided";
+  nominationsOpen: boolean;
+  myNomination: { nominee: AwardNominee; reason: string } | null;
+  winners: AwardNominee[];
+  canDecide: boolean;
+  announcementItemId: string | null;
+  createdAt: string;
+};
+export type AwardList = { canCreate: boolean; periods: AwardPeriodView[] };
+export type AwardNomineeSummary = { nominee: AwardNominee; count: number; reasons: { nominator: EngagementPerson; reason: string; at: string }[] };
+
+export const awardsHref = "/communities/awards";
