@@ -622,3 +622,29 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 |---|---|
 | Reminders before nominations close | Not built |
 | Awards on home (008) | T015 |
+
+## Celebrations (spec 023, slice 8: T013; US6, FR-015, FR-016)
+
+### Built
+- People who want to share their birthday give a month and a day on the celebrations page. No year is asked for or stored, and choosing not to share deletes both values. Nobody else's birthday is stored or shown.
+- Work anniversaries come from the hire date in people profiles (010) and new joiners follow the people newcomer rules of FR-009, including the person's opt-out. Engagement reads both through the new `ICelebrationDates` contract and never queries people tables.
+- The page lists today and the next six days in the tenant's time zone. By default it covers the people in the viewer's org units and the units below them, and the viewer can switch to the whole organization. A viewer with no unit sees everyone.
+- On the day, colleagues send a greeting. The person gets one notification (category `recognition`) per colleague and occasion, however often the button is pressed. Nobody greets themselves, and a greeting for someone who is not celebrated that day answers not found.
+- Engagement administrators switch birthdays, anniversaries and joiners on or off. Settings are versioned, changed with If-Match and audited (`engagement.celebration_settings_changed`).
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Birthdays for the tenant | On, but each person still has to opt in |
+| Work anniversaries | Off until an administrator turns them on, because the hire date is a managers and HR field; each person can leave theirs out |
+| New joiners | On, following the people newcomer window and opt-out |
+| 29 February birthdays and hire dates | Celebrated on 28 February in other years |
+| How far ahead | Today and the next six days |
+| Greeting notification category | `recognition` |
+| Capability | `engagement.communities` |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Celebrations widget for home (008) | T015, with the other engagement widgets |
+| Birthdays from HR (019) | Not used; birthdays come only from the person's own opt-in, so no birth year ever reaches TeamBeats |

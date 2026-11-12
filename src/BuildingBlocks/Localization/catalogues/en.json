@@ -1706,5 +1706,16 @@
   "validation.engagement.award_nominee": "Choose an active person or a team in this award's scope.",
   "validation.engagement.award_self": "You cannot nominate yourself.",
   "validation.engagement.award_reason": "Write a reason of up to 1000 characters.",
-  "validation.engagement.award_winners": "Choose between 1 and 5 winners from the nominees."
+  "validation.engagement.award_winners": "Choose between 1 and 5 winners from the nominees.",
+  "notifications.template.engagement.celebration.birthday.title": "{sender} wished you a happy birthday",
+  "notifications.template.engagement.celebration.birthday.body": "A colleague sent you birthday wishes from the celebrations page.",
+  "notifications.template.engagement.celebration.anniversary.title": "{sender} congratulated you on your work anniversary",
+  "notifications.template.engagement.celebration.anniversary.body": "A colleague marked your work anniversary from the celebrations page.",
+  "notifications.template.engagement.celebration.joiner.title": "{sender} welcomed you",
+  "notifications.template.engagement.celebration.joiner.body": "A colleague welcomed you to the organization from the celebrations page.",
+  "conflict.engagement.celebrations_changed": "Someone else changed the celebration settings. Reload them and try again.",
+  "validation.engagement.celebration_settings": "Choose whether to show birthdays, work anniversaries and new joiners.",
+  "validation.engagement.celebration_birthday": "Choose a month and a day that exists in that month, or leave both empty.",
+  "validation.engagement.celebration_scope": "Choose your teams or the whole organization.",
+  "validation.engagement.celebration_kind": "Choose a birthday, a work anniversary or a new joiner."
 }

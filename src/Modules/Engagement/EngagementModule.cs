@@ -24,6 +24,7 @@ public static class EngagementModule
         services.AddScoped<Surveys>();
         services.AddScoped<Recognition>();
         services.AddScoped<Awards>();
+        services.AddScoped<Celebrations>();
         services.AddMessageHandler<Contracts.PostPublished, Points>("engagement.points_post");
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
         return services;
@@ -426,6 +427,41 @@ public static class EngagementModule
         {
             var view = await awards.DecideAsync(id, request, ct);
             await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // ---- Celebrations (US6) ----
+
+        root.MapGet("/celebrations", async (string? scope, Celebrations celebrations, CancellationToken ct) => Results.Ok(await celebrations.ListAsync(scope, ct)));
+
+        root.MapPost("/celebrations/{userId:guid}/greetings", async (Guid userId, GreetingRequest request, Celebrations celebrations, IDbSession session, CancellationToken ct) =>
+        {
+            await celebrations.GreetAsync(userId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapGet("/celebrations/preferences", async (Celebrations celebrations, CancellationToken ct) => Results.Ok(await celebrations.PreferenceAsync(ct)));
+
+        root.MapPut("/celebrations/preferences", async (CelebrationPreferenceRequest request, Celebrations celebrations, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await celebrations.SetPreferenceAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/settings/celebrations", async (Celebrations celebrations, HttpResponse response, CancellationToken ct) =>
+        {
+            var view = await celebrations.GetSettingsAsync(ct);
+            response.Headers.ETag = Celebrations.SettingsETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        root.MapPut("/settings/celebrations", async (CelebrationSettingsRequest request, HttpRequest http, Celebrations celebrations, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await celebrations.SetSettingsAsync(request, IfMatch(http), ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = Celebrations.SettingsETag(view.Version);
             return Results.Ok(view);
         });
 

@@ -8694,6 +8694,51 @@
       "reasons": "Reasons given",
       "confirmWinners": "Confirm winners",
       "announcement": "Open the announcement draft"
+    },
+    "celebrations": {
+      "pageTitle": "Celebrations",
+      "pageIntro": "Birthdays, work anniversaries and new joiners around you.",
+      "link": "Celebrations",
+      "unavailableTitle": "Celebrations are not available",
+      "unavailable": "Celebrations could not be loaded. Try again in a moment.",
+      "failed": "That did not work",
+      "working": "Working",
+      "scope": "Show",
+      "scopeUnit": "My teams",
+      "scopeAll": "Whole organization",
+      "emptyTitle": "Nothing to celebrate this week",
+      "empty": "Birthdays of people who share them, work anniversaries and new joiners appear here.",
+      "todayTitle": "Today",
+      "upcomingTitle": "This week",
+      "joinersTitle": "New joiners",
+      "joinedOn": "Joined on {date}",
+      "anniversary": "{years, plural, one {# year} other {# years}} with us",
+      "kinds": {
+        "birthday": "Birthday",
+        "anniversary": "Work anniversary",
+        "joiner": "New joiner"
+      },
+      "greet": {
+        "birthday": "Wish a happy birthday",
+        "anniversary": "Congratulate",
+        "joiner": "Welcome"
+      },
+      "sent": "Your greeting was sent",
+      "preferencesTitle": "Your celebrations",
+      "birthdayHint": "Share your birthday if you like. Only the day and month are kept, never the year.",
+      "birthdayMonth": "Birthday month",
+      "birthdayDay": "Birthday day",
+      "noBirthday": "Do not share my birthday",
+      "chooseDay": "Choose a day",
+      "anniversaryOptOut": "Leave my work anniversary out",
+      "saved": "Saved",
+      "savePreferences": "Save my choices",
+      "settingsTitle": "Celebration settings",
+      "showBirthdays": "Show birthdays of people who share them",
+      "showAnniversaries": "Show work anniversaries",
+      "showAnniversariesHint": "Anniversaries come from the hire date in people profiles. People can leave theirs out.",
+      "showJoiners": "Show new joiners",
+      "saveSettings": "Save settings"
     }
   }
 }

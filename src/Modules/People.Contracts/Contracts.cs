@@ -65,3 +65,19 @@ public interface IEmployeeNumbers
 {
     Task<IReadOnlyDictionary<string, Guid>> ResolveAsync(IReadOnlyCollection<string> employeeNumbers, CancellationToken ct = default);
 }
+
+/// <summary>A person and a work date: the day they joined, or their hire date for an anniversary.</summary>
+public sealed record WorkDate(Guid UserId, DateOnly On);
+
+/// <summary>
+/// Joiners and hire dates for celebrations (spec 023 US6, FR-016), read from the profile (spec 010). Only active
+/// members who are not guests are listed. Joiners follow the newcomer rules of FR-009, including the person's opt-out.
+/// </summary>
+public interface ICelebrationDates
+{
+    /// <summary>People who joined within the tenant's newcomer window and did not opt out, newest first.</summary>
+    Task<IReadOnlyList<WorkDate>> JoinersAsync(CancellationToken ct = default);
+
+    /// <summary>People whose hire date falls on one of the given month and day pairs (the caller works out the years).</summary>
+    Task<IReadOnlyList<WorkDate>> HireDatesOnAsync(IReadOnlyCollection<(int Month, int Day)> days, CancellationToken ct = default);
+}

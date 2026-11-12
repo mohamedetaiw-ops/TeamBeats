@@ -8694,6 +8694,51 @@
       "reasons": "الأسباب المذكورة",
       "confirmWinners": "تأكيد الفائزين",
       "announcement": "فتح مسودة الإعلان"
+    },
+    "celebrations": {
+      "pageTitle": "المناسبات",
+      "pageIntro": "أعياد الميلاد وذكريات الانضمام والموظفون الجدد من حولك.",
+      "link": "المناسبات",
+      "unavailableTitle": "المناسبات غير متاحة",
+      "unavailable": "تعذر تحميل المناسبات. حاول مرة أخرى بعد قليل.",
+      "failed": "لم تنجح العملية",
+      "working": "جارٍ التنفيذ",
+      "scope": "عرض",
+      "scopeUnit": "فرقي",
+      "scopeAll": "المؤسسة كلها",
+      "emptyTitle": "لا مناسبات هذا الأسبوع",
+      "empty": "تظهر هنا أعياد ميلاد من يشاركونها وذكريات الانضمام والموظفون الجدد.",
+      "todayTitle": "اليوم",
+      "upcomingTitle": "هذا الأسبوع",
+      "joinersTitle": "الموظفون الجدد",
+      "joinedOn": "انضم في {date}",
+      "anniversary": "{years, plural, zero {أقل من سنة معنا} one {سنة واحدة معنا} two {سنتان معنا} few {# سنوات معنا} many {# سنة معنا} other {# سنة معنا}}",
+      "kinds": {
+        "birthday": "عيد ميلاد",
+        "anniversary": "ذكرى الانضمام",
+        "joiner": "موظف جديد"
+      },
+      "greet": {
+        "birthday": "هنّئ بعيد الميلاد",
+        "anniversary": "هنّئ",
+        "joiner": "رحّب"
+      },
+      "sent": "تم إرسال تهنئتك",
+      "preferencesTitle": "مناسباتك",
+      "birthdayHint": "شارك تاريخ ميلادك إن أردت. نحتفظ باليوم والشهر فقط، ولا نحتفظ بالسنة أبدًا.",
+      "birthdayMonth": "شهر الميلاد",
+      "birthdayDay": "يوم الميلاد",
+      "noBirthday": "لا تشارك تاريخ ميلادي",
+      "chooseDay": "اختر يومًا",
+      "anniversaryOptOut": "لا تعرض ذكرى انضمامي",
+      "saved": "تم الحفظ",
+      "savePreferences": "حفظ اختياراتي",
+      "settingsTitle": "إعدادات المناسبات",
+      "showBirthdays": "عرض أعياد ميلاد من يشاركونها",
+      "showAnniversaries": "عرض ذكريات الانضمام",
+      "showAnniversariesHint": "تأتي ذكريات الانضمام من تاريخ التعيين في الملفات الشخصية. يمكن لكل شخص إخفاء ذكراه.",
+      "showJoiners": "عرض الموظفين الجدد",
+      "saveSettings": "حفظ الإعدادات"
     }
   }
 }

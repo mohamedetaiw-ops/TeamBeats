@@ -1706,5 +1706,16 @@
   "validation.engagement.award_nominee": "اختر شخصًا نشطًا أو فريقًا ضمن نطاق هذه الجائزة.",
   "validation.engagement.award_self": "لا يمكنك ترشيح نفسك.",
   "validation.engagement.award_reason": "اكتب سببًا لا يزيد على 1000 حرف.",
-  "validation.engagement.award_winners": "اختر من 1 إلى 5 فائزين من بين المرشحين."
+  "validation.engagement.award_winners": "اختر من 1 إلى 5 فائزين من بين المرشحين.",
+  "notifications.template.engagement.celebration.birthday.title": "هنّأك {sender} بعيد ميلادك",
+  "notifications.template.engagement.celebration.birthday.body": "أرسل لك أحد الزملاء تهنئة بعيد ميلادك من صفحة المناسبات.",
+  "notifications.template.engagement.celebration.anniversary.title": "هنّأك {sender} بذكرى انضمامك",
+  "notifications.template.engagement.celebration.anniversary.body": "هنّأك أحد الزملاء بذكرى انضمامك للعمل من صفحة المناسبات.",
+  "notifications.template.engagement.celebration.joiner.title": "رحّب بك {sender}",
+  "notifications.template.engagement.celebration.joiner.body": "رحّب بك أحد الزملاء في المؤسسة من صفحة المناسبات.",
+  "conflict.engagement.celebrations_changed": "غيّر شخص آخر إعدادات المناسبات. أعد تحميلها وحاول مرة أخرى.",
+  "validation.engagement.celebration_settings": "اختر ما إذا كانت أعياد الميلاد وذكريات الانضمام والموظفون الجدد تظهر.",
+  "validation.engagement.celebration_birthday": "اختر شهرًا ويومًا موجودًا في ذلك الشهر، أو اترك الاثنين فارغين.",
+  "validation.engagement.celebration_scope": "اختر فرقك أو المؤسسة كلها.",
+  "validation.engagement.celebration_kind": "اختر عيد ميلاد أو ذكرى انضمام أو موظفًا جديدًا."
 }
