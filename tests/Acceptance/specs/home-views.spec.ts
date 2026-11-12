@@ -24,7 +24,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const footer = page.getByRole("contentinfo");
       await expect(footer.getByText(locale === "ar" ? "TeamBeats التجريبية" : "TeamBeats Demo")).toBeVisible();
       const links = footer.getByRole("navigation", { name: msg(locale, "shell.footer.label") });
-      await expect(links.getByRole("link", { name: locale === "ar" ? "الخصوصية" : "Privacy" })).toHaveAttribute("href", "/policies");
+      await expect(links.getByRole("link", { name: locale === "ar" ? "الخصوصية" : "Privacy" })).toHaveAttribute("href", "/policies?q=LEG-001");
+      await expect(links.getByRole("link", { name: locale === "ar" ? "الاستخدام المقبول" : "Acceptable use" })).toHaveAttribute("href", "/policies?q=SEC-001");
       await expect(links.getByRole("link", { name: locale === "ar" ? "إمكانية الوصول" : "Accessibility" })).toHaveAttribute("href", "/settings");
       await expect(footer.getByText(msg(locale, "shell.footer.classification", { value: locale === "ar" ? "داخلي" : "Internal" }))).toBeVisible();
       await expectAccessible(page, testInfo, `home-footer-${locale}`);
@@ -84,8 +85,71 @@ test.describe("shell settings", () => {
 
     await page.goto(`${hostOrigin(tenant.key)}/`);
     await expect(page.getByRole("contentinfo").getByText("Northwind Works")).toBeVisible();
-    await expect(page.getByRole("contentinfo").getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/policies");
+    await expect(page.getByRole("contentinfo").getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/policies?q=LEG-001");
     const tabs = page.getByRole("navigation", { name: msg("en", "home.views.label") });
     await expect(tabs.getByRole("link")).toHaveText(["My day", "Plant floor"]);
   });
 });
+
+/**
+ * The shell settings layout (spec 036 DLS-049, DLS-050, DLS-067): at desktop and phone widths, in English and Arabic,
+ * every control and hint stays inside its link or view card, no two controls overlap, labels in one grid row line up,
+ * and the page never scrolls sideways.
+ */
+for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
+  test.describe(`shell settings layout in ${locale}`, () => {
+    test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
+    let tenant: TestTenant;
+
+    test.beforeAll(async () => {
+      tenant = await createTenant(`shelllayout-${locale}`, locale, "workplace_plus");
+      await seedHome(tenant, { extras: true });
+    });
+
+    test("fields stay inside their cards at desktop and phone widths", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      for (const [name, size] of [
+        ["desktop", { width: 1440, height: 900 }],
+        ["phone", { width: 390, height: 844 }],
+      ] as const) {
+        await page.setViewportSize(size);
+        await page.goto(`${hostOrigin(tenant.key)}/admin/shell`);
+        await expect(page.getByRole("heading", { level: 1, name: msg(locale, "shell_settings.title") })).toBeVisible();
+        await expect(page.getByRole("group", { name: msg(locale, "shell_settings.footer.linkTitle", { number: "1" }) })).toBeVisible();
+        const problems = await page.evaluate(() => {
+          const found: string[] = [];
+          const inside = (a: DOMRect, b: DOMRect) => a.left >= b.left - 0.5 && a.right <= b.right + 0.5;
+          const overlap = (a: DOMRect, b: DOMRect) => a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom - 0.5 && b.top < a.bottom - 0.5;
+          if (document.documentElement.scrollWidth > window.innerWidth + 1) found.push("page scrolls sideways");
+          document.querySelectorAll(".shell-settings-section").forEach((section, s) => {
+            const card = section.getBoundingClientRect();
+            section.querySelectorAll(".field").forEach((field, f) => {
+              const box = field.getBoundingClientRect();
+              if (!inside(box, card)) found.push(`section ${s} field ${f} leaves the card`);
+              field.querySelectorAll("input, select, .field-hint").forEach((part) => {
+                if (!inside(part.getBoundingClientRect(), box)) found.push(`section ${s} field ${f} ${part.tagName} leaves its field`);
+              });
+            });
+            const controls = [...section.querySelectorAll("input, select")].map((c) => c.getBoundingClientRect());
+            controls.forEach((a, i) => controls.slice(i + 1).forEach((b, j) => overlap(a, b) && found.push(`section ${s} controls ${i} and ${i + j + 1} overlap`)));
+          });
+          document.querySelectorAll(".shell-settings-grid").forEach((grid, g) => {
+            const tops = new Map<number, number[]>();
+            [...grid.children].forEach((field) => {
+              const row = Math.round((field as HTMLElement).offsetTop);
+              const label = field.querySelector("label")?.getBoundingClientRect().top ?? 0;
+              tops.set(row, [...(tops.get(row) ?? []), label]);
+            });
+            tops.forEach((labels) => {
+              if (Math.max(...labels) - Math.min(...labels) > 1) found.push(`grid ${g} labels do not line up`);
+            });
+          });
+          return found;
+        });
+        expect(problems, `${name} ${locale}`).toEqual([]);
+        await page.screenshot({ path: testInfo.outputPath(`shell-settings-${locale}-${name}.png`), fullPage: true });
+      }
+      await expectAccessible(page, testInfo, `shell-settings-${locale}`);
+    });
+  });
+}

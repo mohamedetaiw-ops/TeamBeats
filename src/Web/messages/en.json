@@ -1374,7 +1374,15 @@
         "acceptable_use": "Acceptable use",
         "accessibility": "Accessibility",
         "other": "Other"
-      }
+      },
+      "linkTitle": "Link {number}",
+      "fields": {
+        "kind": "Kind",
+        "labelEn": "Label (English)",
+        "labelAr": "Label (Arabic)",
+        "url": "Address"
+      },
+      "remove": "Remove"
     },
     "views": {
       "title": "Home views",
@@ -1390,7 +1398,16 @@
       "choosePage": "Choose a published page",
       "everyone": "Everyone",
       "remove": "Remove view {number}",
-      "add": "Add a view"
+      "add": "Add a view",
+      "viewTitle": "View {number}",
+      "fields": {
+        "id": "Short id",
+        "labelEn": "Tab name (English)",
+        "labelAr": "Tab name (Arabic)",
+        "page": "Page",
+        "audience": "Audience"
+      },
+      "removeShort": "Remove"
     }
   },
   "personalization": {
