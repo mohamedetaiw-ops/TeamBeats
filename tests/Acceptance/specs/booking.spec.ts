@@ -21,7 +21,7 @@ function nextRiyadhSlot(): { date: string; start: string; end: string } {
 
 /**
  * Spec 031 slices 1 and 2: the administrator adds a site with a floor and a desk and opens its labels; Layla finds the desk
- * free on a Tuesday, books it, sees it under My bookings and cancels it; then she scans a camera kit's code, books it
+ * free on a Tuesday, books it, sees it under My bookings and cancels it; picks a free time from the desk's day, then she scans a camera kit's code, books it
  * for now and checks in from the scan page; the administrator then reads the site's usage report. Approval holds, expiry, release, the no-show rule, rules, the parallel race, recurring series,
  * limits, removal, leavers and the tenant boundary are covered by BookingTests. In English and Arabic, with axe.
  * Names are fictional.
@@ -101,6 +101,24 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(list.getByText(m("booking.status.cancelled"))).toBeVisible();
     });
 
+    test("an employee picks a free time from the day of a desk", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, `layla@${tenant.key}.example`, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/booking`);
+      const main = page.getByRole("main");
+      await main.getByLabel(m("booking.find.kind")).selectOption("desk");
+      await main.getByLabel(m("booking.find.date")).fill(nextTuesday());
+      await main.getByRole("button", { name: m("booking.find.search") }).click();
+      const results = main.getByRole("list", { name: m("booking.find.resultsLabel") });
+      await results.getByRole("button", { name: m("booking.find.grid.show") }).click();
+      const grid = main.getByRole("group", { name: m("booking.find.grid.label", { name: desk }) });
+      const slot = grid.getByRole("button", { name: m("booking.find.grid.free", { start: "11:00", end: "11:30" }) });
+      await slot.focus();
+      await page.keyboard.press("Enter");
+      await expect(main.getByLabel(m("booking.find.start"), { exact: true })).toHaveValue("11:00");
+      await expect(main.getByLabel(m("booking.find.end"), { exact: true })).toHaveValue("11:30");
+      await expectAccessible(page, testInfo, `booking-grid-${locale}`);
+    });
+
     test("an employee scans a code, books the equipment for now and checks in", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, `layla@${tenant.key}.example`, locale);
       await page.goto(`${hostOrigin(tenant.key)}/booking/scan/${code}`);
@@ -142,6 +160,24 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await main.getByLabel(m("booking.reports.groupBy")).selectOption("week");
       await expect(main.getByRole("heading", { level: 2, name: m("booking.reports.group.week") })).toBeVisible();
       await expectAccessible(page, testInfo, `booking-reports-${locale}`);
+    });
+
+    test("an administrator closes the site for a day and opens it again", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/booking/manage`);
+      await page.getByRole("main").getByRole("link", { name: site }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(site);
+      const closures = page.getByRole("region", { name: m("booking.closures.title") });
+      const reason = locale === "ar" ? "تسرب مياه في الطابق الأول" : "Water leak on the first floor";
+      await closures.getByLabel(m("booking.closures.date")).fill(nextTuesday());
+      await closures.getByLabel(m("booking.closures.reason")).fill(reason);
+      await closures.getByRole("button", { name: m("booking.closures.close") }).click();
+      const list = closures.getByRole("list", { name: m("booking.closures.listLabel") });
+      await expect(list.getByText(reason)).toBeVisible();
+      await expectAccessible(page, testInfo, `booking-closures-${locale}`);
+      await list.getByRole("button", { name: m("booking.closures.reopen") }).click();
+      await list.getByRole("button", { name: m("booking.closures.reopenConfirm") }).click();
+      await expect(closures.getByText(m("booking.closures.none"))).toBeVisible();
     });
   });
 }

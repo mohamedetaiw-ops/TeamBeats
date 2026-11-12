@@ -17,7 +17,7 @@ namespace TeamBeats.Modules.Booking;
 /// that ran out expire, holders are told when check-in opens, bookings nobody checked in to by the end of the grace
 /// period are released so others can book them, and people who reach the tenant's no-show limit are reminded of the
 /// rule and, when the tenant says so, may book fewer days ahead for a while. Resources with check-in off are never
-/// released.
+/// released. Bookings that ended more than a year ago lose who held them (section 8).
 /// </summary>
 public sealed class BookingMaintenance(
     IDbSession session,
@@ -25,7 +25,8 @@ public sealed class BookingMaintenance(
     BookingApprovals approvals,
     ITenantSettingsReader tenantSettings,
     INotificationSender notifications,
-    IOutbox outbox)
+    IOutbox outbox,
+    BookingActivity activity)
 {
     public const string CheckInOpenTemplate = "booking.check_in_open";
     public const string ReleasedTemplate = "booking.released";
@@ -33,7 +34,9 @@ public sealed class BookingMaintenance(
     public const string NoShowRestrictedTemplate = "booking.no_show_restricted";
     public const int Batch = 500;
 
-    public sealed record Run(int Expired, int Reminded, int Released, int Noticed);
+    public const int RetentionDays = 365;
+
+    public sealed record Run(int Expired, int Reminded, int Released, int Noticed, int Anonymized = 0);
 
     public async Task<Run> RunDueAsync(DateTimeOffset now, CancellationToken ct)
     {
@@ -88,6 +91,7 @@ public sealed class BookingMaintenance(
         foreach (var b in released)
         {
             await outbox.EnqueueAsync(new BookingReleased(b.Id, b.Resource, b.Site, b.Kind, b.Holder), ct);
+            await activity.RecordAsync("released", b.Kind, b.Site, ct);
             await notifications.SendAsync(new NotificationRequest([b.Holder], NotificationCategories.Bookings, ReleasedTemplate,
                 $"/booking?site={b.Site}&kind={b.Kind}" + (b.ZoneId is { } z ? $"&zone={z}" : ""),
                 BookingCancellations.Describe(b.Names, b.Zone, b.Start, b.End, locale), DedupeKey: $"booking:{b.Id:N}:released"), ct);
@@ -125,7 +129,22 @@ public sealed class BookingMaintenance(
                 "/booking/bookings", parameters, DedupeKey: $"booking:no_show:{holder:N}:{now:yyyyMMddHHmm}"), ct);
             noticed++;
         }
-        return new Run(expired, open.Count, released.Count, noticed);
+        // Section 8: a booking that ended more than a year ago keeps only what counts need.
+        var cutoff = now.AddDays(-RetentionDays);
+        var anonymized = await session.ExecAsync(
+            """
+            update booking.booking set holder_id = '00000000-0000-0000-0000-000000000000', booked_by = '00000000-0000-0000-0000-000000000000', decided_by = null,
+              title = null, decision_note = null, row_version = row_version + 1
+            where id in (select id from booking.booking where ends_at < @cutoff and holder_id <> '00000000-0000-0000-0000-000000000000' order by ends_at limit @batch)
+            """, new { cutoff, batch = Batch }, ct);
+        await session.ExecAsync(
+            """
+            update booking.series s set holder_id = '00000000-0000-0000-0000-000000000000', created_by = '00000000-0000-0000-0000-000000000000'
+            where s.holder_id <> '00000000-0000-0000-0000-000000000000' and s.until < @day
+              and not exists (select 1 from booking.booking b where b.series_id = s.id and b.holder_id <> '00000000-0000-0000-0000-000000000000')
+            """, new { day = DateOnly.FromDateTime(cutoff.UtcDateTime) }, ct);
+        await session.ExecAsync("delete from booking.no_show_notice where noticed_at < @cutoff and (restricted_until is null or restricted_until < @now)", new { cutoff, now }, ct);
+        return new Run(expired, open.Count, released.Count, noticed, anonymized);
     }
 }
 

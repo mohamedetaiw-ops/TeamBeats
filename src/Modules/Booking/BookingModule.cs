@@ -27,7 +27,11 @@ public static class BookingModule
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, BookingApprovals>("booking.approval_waiting");
         services.AddScoped<BookingMaintenance>();
         services.AddScoped<BookingReports>();
+        services.AddScoped<BookingClosures>();
+        services.AddScoped<BookingActivity>();
         services.AddMessageHandler<TenantMembershipDisabled, BookingLeavers>("booking.leaver");
+        services.AddScoped<BookingHolidayHandler>();
+        services.AddMessageHandler<Hr.Contracts.WorkingCalendarChanged, BookingHolidayHandler>("booking.holiday");
         return services;
     }
 
@@ -114,6 +118,22 @@ public static class BookingModule
         manage.MapDelete("/sites/{id:guid}", async (Guid id, Facilities facilities, IDbSession session, CancellationToken ct) =>
         {
             await facilities.RemoveSiteAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        manage.MapGet("/sites/{id:guid}/closures", async (Guid id, BookingClosures closures, CancellationToken ct) => Results.Ok(await closures.ListAsync(id, ct)));
+
+        manage.MapPost("/sites/{id:guid}/closures", async (Guid id, ClosureRequest request, BookingClosures closures, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await closures.CloseAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/booking/manage/sites/{id}/closures", view);
+        });
+
+        manage.MapDelete("/sites/{id:guid}/closures/{date}", async (Guid id, DateOnly date, BookingClosures closures, IDbSession session, CancellationToken ct) =>
+        {
+            await closures.ReopenAsync(id, date, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
         });

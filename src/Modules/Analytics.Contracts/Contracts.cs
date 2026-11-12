@@ -47,6 +47,7 @@ public static class AnalyticsEvents
     public const string EngagementAction = "engagement.action";
     public const string EngagementAnonymousAction = "engagement.anonymous_action";
     public const string LearningProgress = "learning.progress";
+    public const string BookingActivity = "booking.activity";
 
     /// <summary>The sources whose items are viewed: content items, policies and documents.</summary>
     public static readonly IReadOnlySet<string> ItemSources = new HashSet<string>(StringComparer.Ordinal) { "content", "policies", "documents" };
@@ -73,8 +74,19 @@ public static class AnalyticsEvents
         "started", "lesson_completed", "quiz_passed", "quiz_failed", "course_completed",
     };
 
+    /// <summary>What happened to a booking (spec 031 section 13), counted by resource type and site with no names.</summary>
+    public static readonly IReadOnlySet<string> BookingActions = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "booked", "requested", "approved", "rejected", "expired", "checked_in", "released", "cancelled",
+    };
+
+    public static readonly IReadOnlySet<string> BookingKinds = new HashSet<string>(StringComparer.Ordinal) { "room", "desk", "parking", "equipment" };
+
     /// <summary>Events only modules emit; the web collection endpoint drops them, so nobody can add to these counts by hand.</summary>
-    public static readonly IReadOnlySet<string> ServerOnly = new HashSet<string>(StringComparer.Ordinal) { EngagementAction, EngagementAnonymousAction, LearningProgress };
+    public static readonly IReadOnlySet<string> ServerOnly = new HashSet<string>(StringComparer.Ordinal)
+    {
+        EngagementAction, EngagementAnonymousAction, LearningProgress, BookingActivity,
+    };
 
     public static readonly IReadOnlySet<string> ErrorKinds = new HashSet<string>(StringComparer.Ordinal) { "render", "boundary", "network", "chunk" };
 
@@ -122,6 +134,12 @@ public static class AnalyticsEvents
             ["lesson"] = new(AnalyticsFieldType.Key),
             ["status"] = new(AnalyticsFieldType.Key, true, LearningStatuses),
         }),
+        [BookingActivity] = new(BookingActivity, false, new Dictionary<string, AnalyticsField>
+        {
+            ["action"] = new(AnalyticsFieldType.Key, true, BookingActions),
+            ["type"] = new(AnalyticsFieldType.Key, true, BookingKinds),
+            ["siteId"] = new(AnalyticsFieldType.Id, true),
+        }, Unkeyed: true),
         [UiError] = new(UiError, true, new Dictionary<string, AnalyticsField>
         {
             ["kind"] = new(AnalyticsFieldType.Key, true, ErrorKinds),

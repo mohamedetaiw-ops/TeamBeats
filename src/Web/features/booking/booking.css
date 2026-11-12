@@ -110,3 +110,48 @@
   text-align: end;
   font-variant-numeric: tabular-nums;
 }
+
+/* The day of one resource (spec 031 section 10): slots flow in reading order, so the grid runs right to left in Arabic. */
+.booking-grid {
+  display: grid;
+  gap: var(--tb-space-xs);
+  min-inline-size: 0;
+}
+
+.booking-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.booking-slot {
+  min-inline-size: 3.5rem;
+  min-block-size: 2.75rem;
+  padding: var(--tb-space-xs) var(--tb-space-xs);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.booking-slot:focus-visible {
+  outline: var(--tb-border-width-thick) solid var(--tb-color-focus-ring);
+  outline-offset: var(--tb-border-width-thick);
+}
+
+.booking-slot:hover:not(:disabled) {
+  border-color: var(--tb-color-border-strong);
+}
+
+.booking-slot[data-taken] {
+  background: var(--tb-color-surface-sunken);
+  color: var(--tb-color-text-secondary);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}

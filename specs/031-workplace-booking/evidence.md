@@ -1,6 +1,6 @@
 # Spec 031 evidence (R2)
 
-The spec stays Approved, not Implemented. Built so far: sites, floors, zones and resources with QR labels, rules on the server for every path, search, the parallel booking race, recurring series that skip non-working days, approval holds on the task inbox, check-in by QR, from the booking and at a kiosk, release of no-shows and the no-show rule, booking on behalf and for a team, cancellations with calendar files, leavers, and usage reports. Still to come in R2, recorded in the spec 031 sections of `docs/architecture/r2-implementation-notes.md`: closing a site for a day when a holiday is added or in an emergency, the availability time grid on Find a space, the one year retention of bookings and the `booking.activity` telemetry. Test classes are in `tests/Integration` unless marked e2e. The e2e suite (`booking.spec.ts`) runs in English and Arabic with axe.
+The spec stays Approved, not Implemented. Everything in its R2 scope is built: sites, floors, zones and resources with QR labels, rules on the server for every path, search, the parallel booking race, recurring series that skip non-working days, approval holds on the task inbox, check-in by QR, from the booking and at a kiosk, release of no-shows and the no-show rule, booking on behalf and for a team, cancellations with calendar files, leavers, usage reports, closed days and holidays, the time grid, retention and telemetry. The spec 031 sections of `docs/architecture/r2-implementation-notes.md` (slices 1 to 5) hold the defaults and deviations. Test classes are in `tests/Integration` unless marked e2e. The e2e suite (`booking.spec.ts`) runs in English and Arabic with axe.
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -22,11 +22,11 @@ The spec stays Approved, not Implemented. Built so far: sites, floors, zones and
 | FR-016 leavers' future bookings cancelled | Met | Same test |
 | FR-017 the site's time zone, shown when it differs | Met | `BookingTests.Rules_apply_on_the_server_...` (site zone), the booking views carry the site zone and the pages show it when it differs |
 | FR-018 resource keys and RTL | Met | The catalogue and message checks in `npm run verify`; `booking.spec.ts` in Arabic |
-| Edge case: a site closed for a day cancels that day's bookings with notice | Not yet | Follows in the next slice |
-| Section 8 retention: bookings kept one year, then counts only | Not yet | Follows in the next slice |
-| Section 10 time grid on Find a space | Not yet | The availability endpoint exists (`GET /resources/{id}/availability`); the grid follows in the next slice |
+| Edge case: a site closed for a day cancels that day's bookings with notice | Met | `BookingClosureTests.An_administrator_closes_a_site_for_a_day_which_cancels_its_bookings_with_the_reason_and_refuses_new_ones_until_it_opens_again`, `BookingClosureTests.A_new_holiday_cancels_that_days_bookings_of_resources_that_keep_working_days_with_notice`, `booking.spec.ts` (closes a day) |
+| Section 8 retention: bookings kept one year, then counts only | Met | `BookingClosureTests.Bookings_that_ended_over_a_year_ago_keep_counts_only_and_activity_is_counted_without_people` |
+| Section 10 time grid on Find a space | Met | `booking.spec.ts` (picks a free slot from the grid with the keyboard, in English and Arabic with axe) |
 | Package entitlements (section 9) | Met | `BookingTests.Workplace_has_no_booking`, `BookingFlowTests.Workplace_has_no_check_in`, `BookingReportTests.People_without_the_report_right_in_the_site_scope_other_tenants_and_smaller_packages_get_no_report` |
-| Audit events (section 13) | Met | Site, resource, rule, settings and administrator cancellation changes are written to the audit log (`BookingTests` reads them); `booking.activity` telemetry follows in the next slice |
+| Audit events (section 13) | Met | Site, resource, rule, settings and administrator cancellation changes are written to the audit log (`BookingTests` and `BookingClosureTests` read them); `booking.activity` is counted without people (`BookingClosureTests.Bookings_that_ended_over_a_year_ago_...`) |
 | Search under 700 ms p95 at 1,000 resources | Met | `BookingPerformanceTests.Search_and_the_usage_report_stay_under_700_ms_p95_at_1000_resources` (about 30 ms locally) |
 | Release job every minute | Met | `BookingMaintenanceWorker` ticks every minute per tenant |
 | SC-001 no-show rate under 10% after two months in pilots | Not proven | Needs pilot tenants; the usage report measures it |
