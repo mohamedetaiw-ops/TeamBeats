@@ -151,3 +151,28 @@ export async function send(url: string, method: "POST" | "PUT" | "DELETE", body?
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
+
+/** A poll in a community (spec 023 US3). Counts are null until results show for this viewer; voters only for the author and moderators of a named poll. */
+export type PollOptionView = { id: string; label: string; count: number | null; voters: EngagementPerson[] | null };
+
+export type PollView = {
+  id: string;
+  communityId: string;
+  author: EngagementPerson;
+  question: string;
+  multiple: boolean;
+  anonymous: boolean;
+  allowChange: boolean;
+  results: "after_vote" | "after_close";
+  closesAt: string;
+  closed: boolean;
+  voted: boolean;
+  myChoices: string[];
+  resultsVisible: boolean;
+  voters: number | null;
+  options: PollOptionView[];
+  canVote: boolean;
+  canClose: boolean;
+  canAddOptions: boolean;
+  createdAt: string;
+};

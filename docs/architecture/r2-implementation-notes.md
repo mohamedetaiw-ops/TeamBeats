@@ -509,3 +509,29 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Analytics counts for anonymous items (FR-024) | Come with T015 with the other engagement counts |
 | Session last-seen times | The session table records when a person was last active, which is not tied to any post; noted in case a stricter reading of FR-005 is wanted |
 
+## Polls (spec 023, slice 4: the poll part of T009 and T007; US3 scenario 1, FR-008)
+
+### Built
+- Polls belong to a community and come with communities, so Workplace has them too (as the capability migration recorded). Anyone who can post in the community starts one. Everyone who reads it and takes part votes.
+- Single or multiple choice, an end time within a year, and results shown either after a person votes or only after close. The author and the community's moderators always see results, and in a named poll they also see who chose what.
+- One vote per person. Where the poll allows it, a vote can be changed until close. In an anonymous poll votes go into counts that have no user column. Only the fact that a person voted is kept, in a separate table that is deleted when the poll closes. Anonymous votes cannot be changed.
+- After the first vote, options can only be added (edge case). The author adds them while the poll is open, up to 20.
+- A poll closes at its end time the first time anyone opens it afterwards, or earlier when its author or a moderator closes it. Closing sends `PollClosed`.
+- Each community has a Polls page, linked from the community page. In English and Arabic.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Where polls live | In a community, open to its readers; surveys carry audience targeting |
+| Who starts a poll | Anyone who can post in the community |
+| Who sees results early and who voted | The author and the community's moderators; voters only in named polls |
+| Changing an anonymous vote | Not allowed, since nothing links the vote to the person |
+| Muted members | Still vote, as they still react |
+| Closing at the end time | Done when the poll is next opened; no background job |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Active poll widget for home (008) | T015 |
+| Points for poll votes | T011 |
+

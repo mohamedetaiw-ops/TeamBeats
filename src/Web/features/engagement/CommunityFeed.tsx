@@ -101,6 +101,11 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
         <ButtonLink size="sm" variant="quiet" icon="people" href={`${communityHref(community.id)}/members`}>
           {t("community.membersLink")}
         </ButtonLink>
+        {readable ? (
+          <ButtonLink size="sm" variant="quiet" icon="trend-up" href={`${communityHref(community.id)}/polls`}>
+            {t("polls.link")}
+          </ButtonLink>
+        ) : null}
         {r.canJoin ? (
           <Button size="sm" variant="primary" busy={busy === ":join"} busyLabel={t("working")} onClick={() => void membership(":join")}>
             {community.kind === "approval" ? t("community.askToJoin") : t("community.join")}

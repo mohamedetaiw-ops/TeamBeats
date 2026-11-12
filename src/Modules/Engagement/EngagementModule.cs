@@ -19,6 +19,7 @@ public static class EngagementModule
         services.AddScoped<KeywordFilters>();
         services.AddScoped<Moderation>();
         services.AddScoped<SpeakUp>();
+        services.AddScoped<Polls>();
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
         return services;
     }
@@ -219,6 +220,51 @@ public static class EngagementModule
             await moderation.RemoveAsync(type, id, request, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
+        });
+
+        // ---- Polls (US3) ----
+
+        root.MapGet("/communities/{id:guid}/polls", async (Guid id, Polls polls, IDbSession session, CancellationToken ct) =>
+        {
+            var list = await polls.ListAsync(id, ct);
+            // Reading can close polls that passed their end time.
+            await session.CommitAsync(ct);
+            return Results.Ok(list);
+        });
+
+        root.MapPost("/communities/{id:guid}/polls", async (Guid id, PollRequest request, Polls polls, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await polls.CreateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/engagement/polls/{view.Id}", view);
+        });
+
+        root.MapGet("/polls/{id:guid}", async (Guid id, Polls polls, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await polls.GetAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPut("/polls/{id:guid}/vote", async (Guid id, VoteRequest request, Polls polls, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await polls.VoteAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/polls/{id:guid}/options", async (Guid id, PollOptionsRequest request, Polls polls, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await polls.AddOptionsAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapPost("/polls/{id:guid}:close", async (Guid id, Polls polls, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await polls.CloseAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         // ---- Speak Up (US2) ----
