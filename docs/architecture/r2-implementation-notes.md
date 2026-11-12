@@ -848,3 +848,12 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A pass counts once per launch. The xAPI actor is an account on the tenant host with the TeamBeats user ID, never an email, so no personal data reaches the content.
 - Content responses allow any origin without credentials, because the sandboxed frame has an opaque origin; the token is the only key and it ends with the launch.
 - A package belongs to one course. Changing the package of a published lesson is a new course version, like any other source change.
+
+## Learning performance and evidence (spec 028, slice 6: T012)
+
+### Built
+- `LearningPerformanceTests` writes 20,000 active members into the tenant, publishes a course and creates one rule for everyone through the API, then times the player for a learner. Locally the rule gives the course to 20,001 people in about 75 seconds against the 5 minute target, and the player's p95 is about 7 ms against 2 seconds.
+- `specs/028-learning-and-training/evidence.md` maps every requirement to its tests. The OpenAPI document was regenerated with slices 4 and 5.
+
+### Follow-ups
+- A rule is applied inside the request that creates it, one learner at a time. That meets the target, but a request of more than a minute is long for a browser behind a proxy. If tenants grow past about 20,000 people per rule, the first application should move to a background job with the rule showing "assigning" until it is done.

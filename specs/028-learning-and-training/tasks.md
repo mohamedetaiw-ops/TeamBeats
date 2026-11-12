@@ -22,4 +22,4 @@ Depends on 002, 009, 011, 015, 017, 022, 025. R2.
 - [x] T011 [US7] SCORM 1.2 and xAPI import and sandboxed player
 
 ## Final phase
-- [ ] T012 Performance test with 20,000 learners; OpenAPI; R2 implementation notes; spec evidence
+- [x] T012 Performance test with 20,000 learners; OpenAPI; R2 implementation notes; spec evidence
