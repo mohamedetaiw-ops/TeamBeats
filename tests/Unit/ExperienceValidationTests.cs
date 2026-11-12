@@ -250,6 +250,18 @@ public sealed class ExperienceValidationTests
     }
 
     [Fact]
+    public void The_my_learning_card_needs_courses_and_reads_only_the_viewers_own_learning()
+    {
+        var registry = new ComponentRegistry([new TeamBeats.Modules.Learning.LearningComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        Assert.Empty(registry.Rejected);
+        var card = registry.Find("learning.my@1")!;
+        Assert.Equal([TeamBeats.Entitlements.Contracts.Capabilities.LearningCourses], card.Requires.Capabilities);
+        Assert.Equal(["/api/v1/learning/me"], card.Data);
+        Assert.Empty(PropertyValidator.Validate(card.Properties, JsonSerializer.SerializeToElement(new { top = 10 })));
+        Assert.NotEmpty(PropertyValidator.Validate(card.Properties, JsonSerializer.SerializeToElement(new { top = 11 })));
+    }
+
+    [Fact]
     public void The_engagement_home_cards_need_their_capability_and_bound_their_counts()
     {
         var registry = new ComponentRegistry([new TeamBeats.Modules.Engagement.EngagementComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);

@@ -747,4 +747,21 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Self enrolment | Only in courses marked open whose audience includes the learner, or through a published path |
 | Attempts after a pass | Refused; the score of each attempt is kept and the answers are not |
 | Learner who cannot open a lesson's material | The lesson cannot be marked done; the builder is responsible for giving the audience access |
-| Catalogue search through 012 | The catalogue filters by text in any language for now; indexing courses in search comes with the learning pages |
+| Catalogue search through 012 | The catalogue filters by text in any language; courses are also in search since slice 2 |
+
+## Learning pages, home card and courses in search (spec 028, slice 2: T004 and T005; US1, US3, FR-004, FR-009, FR-010, FR-018, FR-019)
+
+### Built
+- Pages under `/learning`: My learning (assigned, in progress and completed courses, and paths), the course catalogue with search, the course player (enrol, lesson outline, resume at the last lesson, page, document and video lessons opened where they live, quizzes with attempts left), paths with locked steps, certificates with the PDF download, and a page to check a certificate ID.
+- Building under `/learning/manage`: course and path lists, the course builder (languages, titles and summaries, category, owning unit, audience by unit, open enrolment, lessons in order, quiz questions and answers, save, publish with or without retraining, retire) with a Learners tab that shows progress and quiz attempts and gives one more attempt, and the path builder (courses in order, prerequisites, audience, publish).
+- The `learning.my` home card (spec 032 component, needs `learning.courses`): the viewer's open courses, nearest due date first.
+- Courses in search (spec 012): a `learning` source with the `course` kind. A published course gives one unit per language with its summary, category and lesson titles; a person finds it only when its audience includes them or they already have it. Publishing, retiring and editing a published course reindex it.
+- Tests: `LearningCourseTests` (6 tests, search added), `ExperienceValidationTests` (the card), `learning.spec.ts` (end to end in English and Arabic, with axe).
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| How a builder picks a lesson's page or file | Paste its link or ID; the builder takes the ID from the link and the API checks it on publish. A picker can follow |
+| How a video plays | It opens in the document library, which already previews and scans it; the player does not embed media |
+| Where the learning pages appear in the menu | Tenants add `/learning` to their navigation; the menu shows it with the book icon |
+| Who sees a course in search | The same people the catalogue shows it to, plus anyone who already has it |

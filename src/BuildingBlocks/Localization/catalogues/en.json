@@ -1814,5 +1814,9 @@
   "learning.certificate.pdf.date": "Date",
   "learning.certificate.pdf.code": "Certificate ID",
   "notifications.template.learning.course.withdrawn.title": "{course} was withdrawn",
-  "notifications.template.learning.course.withdrawn.body": "This course is no longer offered, so it was taken off your learning. Courses you completed stay in your history."
+  "notifications.template.learning.course.withdrawn.body": "This course is no longer offered, so it was taken off your learning. Courses you completed stay in your history.",
+  "experience.component.learning_my.name": "My learning",
+  "experience.component.learning_my.description": "Your open courses, the ones due first, with how far you are in each",
+  "experience.component.learning_my.props.title": "Title",
+  "experience.component.learning_my.props.top": "Courses to show"
 }
