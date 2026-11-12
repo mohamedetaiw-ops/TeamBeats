@@ -21,6 +21,7 @@ It adds no product behavior: every item goes in through the existing use cases o
 | `05-documents.json` | Documents | 4 libraries with folders and 13 files (English PDFs, Arabic Markdown) |
 | `06-policies.json` | Policies | 4 categories, 6 approved policies with clauses, one attestation campaign |
 | `07-calendars-search-assistant.json` | Calendars, search, assistant | UAE, Saudi and Egypt working calendars with public holidays for 2026 and 2027, best bets, synonym sets, assistant conversations |
+| `08-calendar-events.json` | Calendar events (spec 037) | A town hall with RSVP, a weekly wellness series, a fire drill, a three day book fair and a family day, published by the administrator to the whole company |
 
 Every name, email address and number is invented. People are addressed by persona key (for example `layla`); `admin` is always the first configured test administrator. In staging the persona emails come from the `staging-demo` scenario; set `Dev:SeedDemo:People:<persona>` to point a persona at another account.
 

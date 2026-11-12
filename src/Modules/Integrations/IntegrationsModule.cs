@@ -101,6 +101,8 @@ public static class IntegrationsModule
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Google.GooglePack>());
         services.AddScoped<IPackDirectory, Google.GoogleDirectory>();
         services.AddScoped<IDocumentRepository, Google.GoogleDrive>();
+        services.AddScoped<Google.GoogleCalendar>();
+        services.AddScoped<IMeetingCalendars, Google.MeetingCalendars>();
         services.AddScoped<Webhooks.WebhookPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.WebhookPack>());
         services.AddScoped<Webhooks.InboundWebhooks>();

@@ -230,7 +230,7 @@ export type GoogleSettings = {
   sharedDrives: string[];
   expiresOn: string | null;
 };
-export const GOOGLE_FEATURES = ["directory", "drive"] as const;
+export const GOOGLE_FEATURES = ["directory", "drive", "calendar"] as const;
 
 /** Settings of a finance hand-off connection beyond address and sign-in (spec 017 FR-021). */
 export type FinanceSettings = {

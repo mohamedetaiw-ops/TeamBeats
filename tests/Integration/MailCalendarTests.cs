@@ -124,9 +124,9 @@ public sealed class MailCalendarTests(TenantWorld world)
         Assert.Equal("validation.personalization.feature_off", (await PanelAsync())["outlook.my_mail@1"].GetProperty("reasonKey").GetString());
     }
 
-    /// <summary>Spec 008 FR-051 and T013: the default home offers My calendar and My mail in its personal region.</summary>
+    /// <summary>Spec 008 FR-051 and spec 037 FR-007: the default home offers the calendar card and My mail in its personal region.</summary>
     [Fact]
-    public async Task The_default_home_shows_My_calendar_and_My_mail_in_the_personal_region_while_their_features_are_on()
+    public async Task The_default_home_shows_the_calendar_card_and_My_mail_in_the_personal_region()
     {
         var s = await SetupAsync(["mail", "calendar"], "workplace_plus", "colleague");
         var slug = "home-" + Guid.NewGuid().ToString("N")[..8];
@@ -139,7 +139,7 @@ public sealed class MailCalendarTests(TenantWorld world)
             return grid.GetProperty("placements").EnumerateArray().Select(p => p.GetProperty("componentRef").GetString()!).ToArray();
         }
 
-        Assert.Equal(["outlook.my_calendar@1", "outlook.my_mail@1"], await GridAsync());
+        Assert.Equal(["calendar.overview@1", "outlook.my_mail@1"], await GridAsync());
         var hero = (await GetAsync(s.Tenant, $"/api/v1/experience/render?slug={slug}")).GetProperty("regions").EnumerateArray()
             .Single(r => r.GetProperty("id").GetString() == "hero");
         Assert.Empty(hero.GetProperty("placements").EnumerateArray());
@@ -151,34 +151,35 @@ public sealed class MailCalendarTests(TenantWorld world)
             operations = new object[]
             {
                 new { op = "move", placementId = "home-outlook-my-mail", regionId = "grid", position = 0 },
-                new { op = "remove", placementId = "home-outlook-my-calendar" },
+                new { op = "remove", placementId = "home-calendar-overview" },
             },
         });
         Assert.True(saved.IsSuccessStatusCode, await saved.Content.ReadAsStringAsync());
         Assert.Equal(["outlook.my_mail@1"], await GridAsync());
         // Another employee still gets both.
-        Assert.Equal(["outlook.my_calendar@1", "outlook.my_mail@1"], await GridAsync("colleague"));
+        Assert.Equal(["calendar.overview@1", "outlook.my_mail@1"], await GridAsync("colleague"));
 
         // Mail turned off: the suggestion goes, and the saved move is reported as skipped rather than lost.
         Assert.True((await s.Tenant["admin"].Client.PostAsync($"/api/v1/integrations/connections/{s.Connection}/features/mail:disable", null)).IsSuccessStatusCode);
         Assert.Empty(await GridAsync());
-        Assert.Equal(["outlook.my_calendar@1"], await GridAsync("colleague"));
+        Assert.Equal(["calendar.overview@1"], await GridAsync("colleague"));
     }
 
     [Fact]
-    public async Task The_default_home_suggests_nothing_without_the_entitlement_or_the_feature()
+    public async Task The_default_home_suggests_only_the_calendar_card_without_the_mail_entitlement_or_feature()
     {
+        // The calendar card needs no capability (spec 037 FR-007); My mail needs its entitlement and feature.
+        static string[] Placed(JsonElement page) => page.GetProperty("regions").EnumerateArray()
+            .SelectMany(r => r.GetProperty("placements").EnumerateArray()).Select(p => p.GetProperty("componentRef").GetString()!).ToArray();
         var workplace = await SetupAsync([], package: "workplace");
         var slug = "home-" + Guid.NewGuid().ToString("N")[..8];
         await HomeAsync(workplace.Tenant, slug);
-        var page = await GetAsync(workplace.Tenant, $"/api/v1/experience/render?slug={slug}");
-        Assert.All(page.GetProperty("regions").EnumerateArray(), r => Assert.Empty(r.GetProperty("placements").EnumerateArray()));
+        Assert.Equal(["calendar.overview@1"], Placed(await GetAsync(workplace.Tenant, $"/api/v1/experience/render?slug={slug}")));
 
         var none = await SetupAsync([]);
         var other = "home-" + Guid.NewGuid().ToString("N")[..8];
         await HomeAsync(none.Tenant, other);
-        page = await GetAsync(none.Tenant, $"/api/v1/experience/render?slug={other}");
-        Assert.All(page.GetProperty("regions").EnumerateArray(), r => Assert.Empty(r.GetProperty("placements").EnumerateArray()));
+        Assert.Equal(["calendar.overview@1"], Placed(await GetAsync(none.Tenant, $"/api/v1/experience/render?slug={other}")));
     }
 
     [Fact]

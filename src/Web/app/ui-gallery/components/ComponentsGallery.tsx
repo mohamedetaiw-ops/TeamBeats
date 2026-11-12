@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/Switch";
 import { AssistantGallery } from "./AssistantGallery";
 import { ChartsGallery } from "./ChartsGallery";
 import { DataGallery } from "./DataGallery";
+import { CalendarGallery } from "./CalendarGallery";
 import { InputsGallery } from "./InputsGallery";
 import { OverlaysGallery } from "./OverlaysGallery";
 
@@ -252,6 +253,7 @@ export function ComponentsGallery() {
       <DataGallery />
       <AssistantGallery />
       <ChartsGallery />
+      <CalendarGallery />
     </div>
   );
 }

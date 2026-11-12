@@ -353,7 +353,7 @@ public sealed class GoogleWorkspaceTests(TenantWorld world)
                 serviceAccountEmail = "someone@gmail.com",
                 privateKeyRef = SecretReferences.For(Guid.NewGuid(), "google-key"),
                 customerId = "x",
-                features = new[] { "directory", "calendar" },
+                features = new[] { "directory", "chat" },
                 sharedDrives = new[] { "bad id!" },
             },
         });

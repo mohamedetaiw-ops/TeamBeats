@@ -35,6 +35,9 @@ Depends on 033 (theme engine, brand manager), 008 (shell), 032 (templates), 007.
 - [x] T025 Pages: Your day empty state, request rows, person cards, own profile values and tags, knowledge article header and feedback toggles, documents filter bar, sort direction and folder chips, service form column
 - [ ] T026 Move the shell panels onto the T016 popover and T018 notification panel and settings blocks once they merge, keeping the DLS-045 to DLS-047 look
 
+## Phase 6: Calendar parts (DLS-069 to DLS-074, spec 037)
+- [ ] T027 Calendar header, layer chips, week strip, agenda rows, month with ranges, day panel and bottom sheet, availability stats and heatmap in `components/ui`, gallery section `cg-calendar`, keyboard coverage
+
 ## R2
 - [ ] T011 Design review checklist in the spec 033 theme draft and approval flow
 - [ ] T012 Firefox and WebKit in the design suite after the browser matrix decision

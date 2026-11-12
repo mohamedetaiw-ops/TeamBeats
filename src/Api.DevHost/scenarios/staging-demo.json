@@ -2371,8 +2371,8 @@
           {
             "pattern": "team",
             "subject": {
-              "en": "Team stand-up",
-              "ar": "الاجتماع اليومي للفريق"
+              "en": "{team} stand-up",
+              "ar": "الاجتماع اليومي لفريق {team}"
             },
             "dayOffsets": [
               0,
@@ -2386,8 +2386,8 @@
           {
             "pattern": "team",
             "subject": {
-              "en": "Weekly team meeting",
-              "ar": "الاجتماع الأسبوعي للفريق"
+              "en": "{team} weekly meeting",
+              "ar": "الاجتماع الأسبوعي لفريق {team}"
             },
             "dayOffsets": [
               1

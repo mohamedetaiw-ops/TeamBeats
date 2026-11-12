@@ -16,6 +16,8 @@ export type CalendarEvent = {
   start?: string;
   end?: string;
   tone?: Exclude<BadgeTone, "neutral">;
+  /** A chart colour step (1 to 8) for a calendar layer (DLS-070); it wins over the tone. */
+  swatch?: number;
   href?: string;
 };
 
@@ -37,11 +39,11 @@ function EventChip({ event, time }: { event: CalendarEvent; time?: string }) {
     </>
   );
   return event.href ? (
-    <Link className="ui-event" data-tone={event.tone} href={event.href}>
+    <Link className="ui-event" data-tone={event.tone} data-swatch={event.swatch} href={event.href}>
       {content}
     </Link>
   ) : (
-    <span className="ui-event" data-tone={event.tone}>
+    <span className="ui-event" data-tone={event.tone} data-swatch={event.swatch}>
       {content}
     </span>
   );

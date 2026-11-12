@@ -1,5 +1,6 @@
 using System.Globalization;
 using TeamBeats.Modules.Agents;
+using TeamBeats.Modules.Calendar;
 using TeamBeats.Modules.Hr;
 using TeamBeats.Modules.Search;
 
@@ -40,6 +41,42 @@ public sealed partial class DemoDataSeeder
                 var holidays = plan.Holidays.Select(h => new HolidayInput(DateOnly.ParseExact(h.Date, "yyyy-MM-dd", CultureInfo.InvariantCulture), h.Names, h.HalfDay)).ToList();
                 await calendars.SetHolidaysAsync(calendar.Id, calendar.ETag, new HolidaysRequest(plan.Year, holidays), ct);
                 run.Report.Add("holidays", holidays.Count);
+            }, ct));
+        }
+    }
+
+    /// <summary>Calendar events (spec 037), created by the administrator once each, dated from today in the tenant zone.</summary>
+    private async Task SeedEventsAsync(Run run, CancellationToken ct)
+    {
+        if (run.Pack.Events.Count == 0)
+        {
+            return;
+        }
+        var (existing, today, zone) = await AsAsync(run, AdminPersona, 0, async sp =>
+        {
+            var calendar = sp.GetRequiredService<UnifiedCalendar>();
+            var list = await sp.GetRequiredService<CompanyEvents>().ListAdminAsync(ct);
+            return (list.Select(e => e.Titles.GetValueOrDefault("en")).ToHashSet(StringComparer.Ordinal), await calendar.TodayAsync(ct), (await calendar.ZoneAsync(ct)).Id);
+        }, ct);
+        foreach (var plan in run.Pack.Events)
+        {
+            var en = plan.Titles.GetValueOrDefault("en") ?? string.Empty;
+            if (existing.Contains(en))
+            {
+                continue;
+            }
+            await ItemAsync(run, $"event {en}", () => AsAsync(run, AdminPersona, 0, async sp =>
+            {
+                var day = today.AddDays(plan.InDays);
+                var tz = TimeZoneInfo.FindSystemTimeZoneById(zone);
+                DateTimeOffset? At(string? hhmm) => hhmm is null ? null
+                    : new DateTimeOffset(day.ToDateTime(TimeOnly.ParseExact(hhmm, "HH:mm", CultureInfo.InvariantCulture)), tz.GetUtcOffset(day.ToDateTime(TimeOnly.MinValue)));
+                var allDay = plan.Start is null;
+                var request = new EventRequest(plan.Titles, plan.Descriptions, plan.Kind, null, allDay, At(plan.Start), At(plan.End),
+                    allDay ? day : null, allDay ? day.AddDays(Math.Max(1, plan.Days)) : null, zone, plan.Location, plan.OnlineUrl, null,
+                    plan.Weekly is { } count ? new RecurrenceRule("weekly", Count: count) : null, plan.Rsvp);
+                await sp.GetRequiredService<CompanyEvents>().CreateAsync(request, ct);
+                run.Report.Add("calendar events");
             }, ct));
         }
     }

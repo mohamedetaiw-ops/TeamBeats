@@ -28,6 +28,7 @@ public static class HrModule
         services.AddScoped<LeaveDocuments>();
         services.AddScoped<LeaveRequests>();
         services.AddScoped<ILeave>(sp => sp.GetRequiredService<LeaveRequests>());
+        services.AddScoped<IHrCalendarFeed, Leave.LeaveCalendarFeed>();
         services.AddScoped<LeaveTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<LeaveTaskSource>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<LeaveTaskSource>());

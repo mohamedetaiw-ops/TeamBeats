@@ -39,7 +39,8 @@ Status values: Proposed, Approved, In Progress, Implemented, Deprecated, Retired
 | [033 Brands, themes, white labeling and multi-organization experience](033-themes-and-white-labeling/spec.md) | experience | R1, R2 | Approved | CX-BRD-001 to CX-BRD-015, CX-ORG-001 to CX-ORG-011, CX-TMP-011, CX-LOC-006, ADM-001 (branding) |
 | [034 AI Evaluation Layer](034-ai-evaluation/spec.md) | ai | R1 to R3 | Approved | EVL-001 to EVL-030, AI-008 (quality part), AI-010 (evidence part), UC-07, UC-13 |
 | [035 Public API, MCP server and app access](035-public-api-and-mcp-server/spec.md) | integrations | R2, R3 | Approved | API-001 to API-030 (new) |
-| [036 TeamBeats Design Language System](036-design-language-system/spec.md) | experience | R1, R2, R3 | Approved | DLS-001 to DLS-024 (new) |
+| [036 TeamBeats Design Language System](036-design-language-system/spec.md) | experience | R1, R2, R3 | Approved | DLS-001 to DLS-074 (new) |
+| [037 Unified employee and team calendar](037-unified-calendar/spec.md) | experience | R2, R3 | Approved | CAL-001 to CAL-032 (new), INT-002 (calendar part), UC-10 (calendar part), LVA-009 (calendar part) |
 
 Open questions across these specs, with defaults: [open-questions.md](open-questions.md). Release plan: [roadmap](../docs/product/roadmap.md).
 

@@ -6,6 +6,12 @@
  */
 const paths = {
   "chevron-forward": "M9 6l6 6-6 6",
+  "chevron-back": "M15 6l-6 6 6 6",
+  video: "M15 10l5-3v10l-5-3M5 5h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z",
+  building: "M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h3a1 1 0 0 1 1 1v11M2 21h20M8 7h4M8 11h4M8 15h4",
+  sun: "M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4",
+  leave: "M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M5 7h14a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zM9 7v13M15 7v13",
+  pin: "M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z",
   external: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
   tasks: "M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9",
   bell: "M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0",
@@ -60,7 +66,7 @@ const paths = {
 export type IconName = keyof typeof paths;
 
 /** Icons that point along the reading direction and so mirror in right-to-left layouts. */
-const directional: ReadonlySet<IconName> = new Set<IconName>(["chevron-forward", "arrow-forward"]);
+const directional: ReadonlySet<IconName> = new Set<IconName>(["chevron-forward", "chevron-back", "arrow-forward"]);
 
 export const iconNames = Object.keys(paths) as IconName[];
 

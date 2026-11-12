@@ -146,6 +146,7 @@ public sealed partial class ArchitectureTests
             ["Agents"] = "agents",
             ["Evaluation"] = "evaluation",
             ["Analytics"] = "analytics",
+            ["Calendar"] = "calendar",
             ["Engagement"] = "engagement",
         };
         var violations = new List<string>();

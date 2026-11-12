@@ -1,0 +1,51 @@
+{
+  "$comment": "Demo data package, part 8: company events and important dates for the unified calendar (spec 037), dated from the seeding day. Fictional.",
+  "events": [
+    {
+      "titles": { "en": "Quarterly town hall", "ar": "اللقاء الربعي المفتوح" },
+      "descriptions": { "en": "Results of the quarter and open questions to the leadership team.", "ar": "نتائج الربع وأسئلة مفتوحة لفريق القيادة." },
+      "kind": "company",
+      "inDays": 1,
+      "start": "13:00",
+      "end": "14:00",
+      "location": "Main hall, level 2",
+      "onlineUrl": "https://teams.example/town-hall",
+      "rsvp": true
+    },
+    {
+      "titles": { "en": "Wellness Wednesday", "ar": "أربعاء العافية" },
+      "descriptions": { "en": "A short walk and a healthy breakfast together.", "ar": "مشي قصير وفطور صحي معًا." },
+      "kind": "company",
+      "inDays": 2,
+      "start": "08:30",
+      "end": "09:00",
+      "location": "Lobby",
+      "weekly": 8
+    },
+    {
+      "titles": { "en": "Fire drill", "ar": "تمرين إخلاء" },
+      "kind": "important",
+      "inDays": 3,
+      "start": "11:00",
+      "end": "11:30",
+      "location": "All floors"
+    },
+    {
+      "titles": { "en": "Annual book fair", "ar": "معرض الكتاب السنوي" },
+      "descriptions": { "en": "Book stands from local publishers in the atrium.", "ar": "أجنحة كتب من دور نشر محلية في الردهة." },
+      "kind": "important",
+      "inDays": 7,
+      "days": 3,
+      "location": "Atrium"
+    },
+    {
+      "titles": { "en": "Family day", "ar": "يوم العائلة" },
+      "kind": "company",
+      "inDays": 12,
+      "start": "16:00",
+      "end": "20:00",
+      "location": "Corniche park",
+      "rsvp": true
+    }
+  ]
+}
