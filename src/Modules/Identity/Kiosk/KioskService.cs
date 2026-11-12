@@ -388,7 +388,7 @@ public sealed class KioskService(
             context.SetActor(ActorType.System, null);
             await audit.WriteAsync(new AuditEntry(AuditActions.DeviceKioskLockout, "user", badge.UserId.ToString(), AuditOutcome.Denied, device.OrgUnitId,
                 new { device = device.Id, failures, lockedUntil = until }), ct);
-            await notifications.SendAsync(new NotificationRequest([badge.UserId], NotificationCategories.SecurityNotice, "kiosk.badge_locked", "/settings/kiosk",
+            await notifications.SendAsync(new NotificationRequest([badge.UserId], NotificationCategories.SecurityNotice, "kiosk.badge_locked", "/settings",
                 new Dictionary<string, string> { ["device"] = device.Name, ["minutes"] = ((int)KioskRules.Lockout.TotalMinutes).ToString(System.Globalization.CultureInfo.InvariantCulture) },
                 Urgent: true), ct);
             context.SetActor(ActorType.Anonymous, null);

@@ -25,7 +25,7 @@ const routes = [
   "/booking/bookings", "/booking/manage", "/booking/reports", "/admin", "/admin/tenant", "/admin/users", "/admin/roles", "/admin/organization",
   "/admin/organization/directory", "/admin/identity", "/admin/plan", "/admin/branding", "/admin/shell", "/admin/pages", "/admin/pages/new",
   "/admin/templates", "/admin/people", "/admin/services", "/admin/notifications", "/admin/search", "/admin/connections",
-  "/admin/connections/new", "/admin/calendars", "/admin/security", "/admin/security/alerts", "/admin/security/posture", "/admin/audit",
+  "/admin/connections/new", "/admin/calendars", "/admin/kiosks", "/admin/security", "/admin/security/alerts", "/admin/security/posture", "/admin/audit",
   "/admin/analytics", "/admin/analytics/errors", "/admin/ai", "/admin/ai/assistant", "/admin/ai/routing", "/admin/ai/usage", "/admin/agents",
   "/admin/agents/policy", "/admin/agents/runs", "/admin/evaluation", "/admin/evaluation/settings", "/admin/leave", "/admin/attendance",
   "/admin/letters", "/admin/expenses", "/admin/journeys", "/admin/data-changes", "/admin/hr-integration", "/learning/certificates/verify",

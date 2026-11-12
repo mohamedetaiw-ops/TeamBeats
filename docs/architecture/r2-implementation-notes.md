@@ -1072,3 +1072,20 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - The experience administrator's choice of offline critical categories is not built: every critical announcement targeted to the person is kept. Recorded as a gap for the experience settings.
 - "Mandatory policies" means the policies that apply to the person (spec 025), whether or not they have attested yet.
 - One person's cache per tenant host: the next sign-in on the device starts with nothing.
+
+## Mobile app (spec 030, slice 4: T009, T010; US4)
+
+### Built
+- Kiosk devices (FR-014): `identity.kiosk_device` holds the name, organization unit, location, allowed features, idle time (1 to 15 minutes, default 2) and whether people from other units may sign in. A device administrator (new role `device_administrator`, permission `device.manage`, section Admin, Kiosks) adds a kiosk and gets a one-time code (XXXX-XXXX-XXXX, 30 minutes). The tablet opens `/kiosk`, enters the code and gets an HttpOnly device cookie `tb_kiosk`; only its hash is kept. A new code for the same kiosk replaces the tablet: the old cookie stops working and its sessions end. Revoking ends every session on the kiosk at once, and the start screen checks its enrolment every 30 seconds, so a revoked kiosk stops offering sign-in within a minute.
+- Badges and PINs (FR-015): `identity.kiosk_badge` keeps a hash of the badge code (TB plus 20 Crockford characters, printed with a QR) and a PBKDF2 hash of the PIN (4 to 8 digits). The code and QR are shown once. People sign in with the badge (scanner, typing, or the tablet camera where the browser has a barcode reader) or with their employee number once a PIN is set. A first badge chooses its PIN at the kiosk, typed twice. Five wrong PINs lock the badge for 15 minutes, audited as `device.kiosk_lockout`, and the owner gets a security notice. People set or change their own PIN in Settings after a fresh sign-in, which also lifts a lock; a device administrator can reset it.
+- Who may sign in: an active account in the kiosk's unit or below (unless the kiosk allows other units) holding `kiosk.signin` at that unit (new role `kiosk_user`; tenant administrators hold both new permissions). Refusals are audited.
+- Kiosk session (FR-016): a session with method `kiosk`, tied to the device, is valid only with that device's cookie, so a session cookie copied to another browser is refused. One person at a time: a new sign-in ends the previous one. The server ends the session after the idle time and the app signs out on the same timer with a warning 30 seconds before. The session cookie has no lifetime, so it ends with the browser. Sign-out and the start screen wipe browser storage, the offline cache, the device's push registration and every cache except the app shell.
+- Feature block: `SharedDeviceRules` lists the API routes and pages each kiosk feature reaches (announcements, policies, leave, shifts, services, booking check-in), plus the home page, profile basics and the shell. A central guard after session authentication refuses any other route with `authz.denied.shared_device`, so typing the address of another feature does not help. The shell leaves out links to closed features and the home page leaves out placements whose data is closed. Everything needs `mobile.kiosk`.
+
+### Smallest safe defaults
+- The spec does not fix the badge format: an opaque random code with a QR, plus the employee number as a fallback. A first PIN can be chosen only by scanning or typing the badge code, not by employee number alone.
+- Reissuing a badge keeps the PIN; an administrator reset clears it.
+- The feature block is a list of routes in code reviewed with the spec, not tenant configuration; a tenant chooses only which listed features a kiosk offers.
+- Notifications, offline reading and push offers are closed on kiosks.
+- Desk and room check-in is a kiosk feature, as the floor and room kiosks of spec 031 already use it.
+- Camera scanning is an extra where the browser offers it; nothing is recorded and the camera stops when the dialog closes.

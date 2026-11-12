@@ -1,4 +1,4 @@
-import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { useId, type InputHTMLAttributes, type ReactNode, type Ref, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 
 type Props = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
@@ -9,6 +9,8 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
   leading?: ReactNode;
   /** A part after the text: a unit, a domain, a small action. */
   trailing?: ReactNode;
+  /** The input itself, for a form that moves focus to it. */
+  ref?: Ref<HTMLInputElement>;
 };
 
 /**

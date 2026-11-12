@@ -33,7 +33,7 @@ public sealed class TenantManagementTests(TenantWorld world)
         var id = tenant.GetProperty("id").GetGuid();
         Assert.Equal("active", tenant.GetProperty("status").GetString());
 
-        Assert.Equal(26, await world.Database.CountInTenantAsync(id, "select count(*) from authz.role where is_builtin"));
+        Assert.Equal(28, await world.Database.CountInTenantAsync(id, "select count(*) from authz.role where is_builtin"));
         Assert.Equal(1, await world.Database.CountInTenantAsync(id,
             "select count(*) from entitlements.subscription s join entitlements.package_version v on v.id = s.package_version_id where v.package_key = 'workplace' and s.status = 'active'"));
         Assert.Equal(1, await world.Database.CountInTenantAsync(id,

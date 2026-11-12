@@ -10,6 +10,8 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { OutlookSettings } from "@/features/shell/OutlookSettings";
 import { PagesReset } from "@/features/shell/PagesReset";
 import { PreferenceControls } from "@/features/shell/SettingsPanel";
+import { KioskBadgeSettings } from "@/features/kiosk/KioskBadgeSettings";
+import type { Badge } from "@/lib/kiosk";
 import "@/features/shell/preferences.css";
 
 /** One section of the page: a heading and one line of help on the start side, the controls on the end side. */
@@ -40,7 +42,8 @@ export default async function PreferencesPage() {
   if (!me.ok) {
     redirect("/signin");
   }
-  const [values, t] = await Promise.all([getPreferences(), getTranslations("preferences")]);
+  // The kiosk badge section shows only to someone who has a badge, in a package with kiosks.
+  const [values, t, badge] = await Promise.all([getPreferences(), getTranslations("preferences"), apiGet<Badge>("/api/v1/me/kiosk-badge")]);
   const locales = me.data.tenant.enabledLocales.filter((l) => l === "ar" || l === "en");
   return (
     <>
@@ -63,6 +66,11 @@ export default async function PreferencesPage() {
         <Section id="pref-apps" icon="link" title={t("apps.title")} hint={t("apps.hint")}>
           <OutlookSettings unavailable={<p className="preferences-none">{t("apps.none")}</p>} />
         </Section>
+        {badge.ok && badge.data.issued ? (
+          <Section id="pref-kiosk" icon="lock" title={t("kiosk.title")} hint={t("kiosk.hint")}>
+            <KioskBadgeSettings initial={badge.data} />
+          </Section>
+        ) : null}
         <Section id="pref-pages" icon="home" title={t("pages.title")} hint={t("pages.hint")}>
           <PagesReset />
         </Section>

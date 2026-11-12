@@ -42,6 +42,11 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         // Spec 028 US7: package content is opened with its launch token, not a session; a CORS preflight carries neither.
         // Every other content route refuses an unknown token, which this suite checks.
         "OPTIONS /api/v1/learning/content/{token}/{**path}",
+        // Spec 030 US4: a kiosk tablet checks its own enrolment, enrols with a one-time code and offers badge sign-in before
+        // anyone is signed in; each needs the device cookie or the code, and KioskTests covers the checks and the tenant boundary.
+        "GET /api/v1/kiosk/device",
+        "POST /api/v1/kiosk/enrol",
+        "POST /api/v1/kiosk/signin",
     ];
 
     private IReadOnlyList<(string Method, string Pattern)> TenantRoutes() =>
