@@ -118,7 +118,7 @@ public sealed class Libraries(
     /// <summary>A permission change reaching more documents than this asks for confirmation first (section 14).</summary>
     public const int ConfirmAbove = 500;
 
-    internal DocumentAccess Access { get; } = new(session, authz);
+    internal DocumentAccess Access { get; } = new(session, authz, context, memberships);
 
     // Settings
 

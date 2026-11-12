@@ -61,7 +61,8 @@ public sealed record SpaceView(
 public sealed record SpaceSummary(Guid Id, string Kind, string Visibility, string Name, string Description, string Status, int MemberCount, string? Role, bool CanOpen,
     DateTimeOffset UpdatedAt);
 
-public sealed record SpaceMemberView(Guid UserId, string DisplayName, string Role, bool Guest, DateTimeOffset AddedAt);
+/// <summary>A member of a space. A guest is labelled as one wherever members show (US4 scenario 1); ExpiresAt is when their access ends.</summary>
+public sealed record SpaceMemberView(Guid UserId, string DisplayName, string Role, bool Guest, DateTimeOffset AddedAt, DateTimeOffset? ExpiresAt = null);
 
 internal sealed record SpaceRow(
     Guid Id,
@@ -103,10 +104,13 @@ internal sealed record SpaceRow(
 }
 
 /// <summary>The viewer's standing in a space.</summary>
-internal sealed record SpaceStanding(SpaceRow Space, string? Role, bool Reads, bool Contributes, bool Owns, bool Manages, bool Guest)
+internal sealed record SpaceStanding(SpaceRow Space, string? Role, bool Reads, bool Contributes, bool Owns, bool Manages, bool Guest, bool OutsideGuest = false)
 {
-    /// <summary>Secret spaces are known only to their members and spaces administrators (FR-003); private ones are listed.</summary>
-    public bool Sees => Reads || Role is not null || Manages || Space.Visibility == SpaceVisibilities.Private;
+    /// <summary>
+    /// Secret spaces are known only to their members and spaces administrators (FR-003); private ones are listed. A
+    /// guest knows only the spaces they are invited to (US4 scenario 2).
+    /// </summary>
+    public bool Sees => !OutsideGuest && (Reads || Role is not null || Manages || Space.Visibility == SpaceVisibilities.Private);
 }
 
 /// <summary>
@@ -159,7 +163,8 @@ public sealed class SpacesService(
         var contributes = space.Active && (await authz.CheckAsync(Permissions.SpacesContribute, target, ct)).Allowed;
         var owns = (await authz.CheckAsync(Permissions.SpacesOwn, target, ct)).Allowed;
         var manages = (await authz.CheckAsync(Permissions.SpacesManage, AuthzTarget.Tenant, ct)).Allowed;
-        return new SpaceStanding(space, member.Role, reads, contributes, owns, manages, member.Guest);
+        var outsideGuest = member.Role is null && await memberships.GetAsync(user, ct) is { MembershipType: MembershipTypes.Guest };
+        return new SpaceStanding(space, member.Role, reads, contributes, owns, manages, member.Guest, outsideGuest);
     }
 
     /// <summary>A space the viewer may know about; anything else is not found, so secret spaces stay invisible.</summary>
@@ -242,6 +247,13 @@ public sealed class SpacesService(
         {
             await session.ExecAsync("update spaces.space set library_id = @library, community_id = @community where id = @id",
                 new { id = current.Id, library, community }, ct);
+            // A library made after the owner opened Confidential files to guests follows that choice and the tenant's rule (FR-008).
+            if (library is { } made && made != current.LibraryId
+                && await session.ScalarAsync<bool>("select guest_confidential from spaces.space where id = @id", new { id = current.Id }, ct)
+                && (await settings.CurrentAsync(ct)).GuestConfidential)
+            {
+                await libraries.SetGuestConfidentialAsync(made, true, ct);
+            }
         }
         return current with { LibraryId = library, CommunityId = community };
     }
@@ -296,10 +308,13 @@ public sealed class SpacesService(
             throw AppException.Denied("authz.denied.spaces_private");
         }
         var rows = await session.QueryAsync(
-            "select user_id, role, guest, added_at from spaces.space_member where space_id = @id order by case role when 'owner' then 0 when 'member' then 1 else 2 end, added_at",
-            new { id }, r => (User: r.GetGuid(0), Role: r.GetString(1), Guest: r.GetBoolean(2), At: r.GetFieldValue<DateTimeOffset>(3)), ct);
+            """
+            select user_id, role, guest, added_at, expires_at from spaces.space_member where space_id = @id
+            order by case role when 'owner' then 0 when 'member' then 1 else 2 end, added_at
+            """,
+            new { id }, r => (User: r.GetGuid(0), Role: r.GetString(1), Guest: r.GetBoolean(2), At: r.GetFieldValue<DateTimeOffset>(3), Expires: r.Get<DateTimeOffset?>("expires_at")), ct);
         var names = await users.GetManyAsync(rows.Select(r => r.User).ToList(), ct);
-        return rows.Select(r => new SpaceMemberView(r.User, names.TryGetValue(r.User, out var u) ? u.DisplayName : "", r.Role, r.Guest, r.At)).ToList();
+        return rows.Select(r => new SpaceMemberView(r.User, names.TryGetValue(r.User, out var u) ? u.DisplayName : "", r.Role, r.Guest, r.At, r.Guest ? r.Expires : null)).ToList();
     }
 
     // ---- Creating and changing ----
@@ -631,6 +646,12 @@ public sealed class SpacesService(
         else if (request.Role is { } r && !SpaceRoles.All.Contains(r))
         {
             errors.Add("role", "validation.spaces.role");
+        }
+        else if (request.Role == SpaceRoles.Owner && await session.ScalarAsync<bool>("select guest from spaces.space_member where space_id = @id and user_id = @user",
+            new { id, user = request.UserId }, ct))
+        {
+            // Guests read or contribute; they never own a space (spec 026 FR-009).
+            errors.Add("role", "validation.spaces.guest_role");
         }
         errors.ThrowIfAny();
         var role = request.Role ?? SpaceRoles.Member;

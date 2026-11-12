@@ -20,6 +20,10 @@ public sealed class SignInMethodsReader(Sso.IdentityProviderStore providers, Mic
 {
     public const string DevSignInKey = "Auth:DevSignIn:Enabled";
 
-    public async Task<SignInMethods> CurrentAsync(CancellationToken ct = default) =>
-        new(await providers.GetEnabledAsync(ct) is not null, Microsoft.Extensions.Configuration.ConfigurationBinder.GetValue<bool>(configuration, DevSignInKey));
+    public async Task<SignInMethods> CurrentAsync(CancellationToken ct = default)
+    {
+        var provider = await providers.GetEnabledAsync(ct);
+        return new(provider is not null, Microsoft.Extensions.Configuration.ConfigurationBinder.GetValue<bool>(configuration, DevSignInKey),
+            provider is { JitEnabled: true } ? provider.JitDomains : []);
+    }
 }

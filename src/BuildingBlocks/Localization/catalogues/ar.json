@@ -1944,5 +1944,21 @@
   "validation.spaces.event_description": "اجعل الوصف في حدود 2000 حرف.",
   "validation.spaces.event_time": "يجب أن تنتهي الفعالية بعد بدايتها وألا تزيد مدتها على 31 يومًا.",
   "conflict.spaces.event_limit": "وصلت هذه المساحة إلى حد 1000 فعالية. احذف الفعاليات القديمة لإضافة فعاليات جديدة.",
-  "conflict.spaces.event_changed": "غيّر شخص آخر هذه الفعالية منذ فتحتها. أعد تحميلها وحاول مرة أخرى."
+  "conflict.spaces.event_changed": "غيّر شخص آخر هذه الفعالية منذ فتحتها. أعد تحميلها وحاول مرة أخرى.",
+  "validation.spaces.guest_member_domain": "هذا العنوان يتبع مؤسستك، لذا أضف الشخص عضوا بدلا من ضيف.",
+  "validation.spaces.guest_role": "يمكن أن يكون الضيوف أعضاء أو مشاهدين، ولا يكونون مالكين أبدا.",
+  "validation.spaces.guest_access_days": "اختر عدد أيام وصول الضيف، بحد أقصى ما تسمح به مؤسستك.",
+  "validation.spaces.guest_count": "يمكن أن تضم المساحة حتى 50 ضيفا ودعوة مفتوحة.",
+  "validation.spaces.guest_is_member": "هذا الشخص ينتمي إلى مؤسستك بالفعل. أضفه عضوا بدلا من ذلك.",
+  "validation.spaces.guest_confidential_rule": "لا تسمح مؤسستك للضيوف بفتح الملفات السرية.",
+  "conflict.spaces.guests_off": "الضيوف غير مفعلين في مساحات مؤسستك.",
+  "conflict.spaces.guest_exists": "هذا الضيف موجود في المساحة بالفعل.",
+  "conflict.spaces.guest_invited": "لهذا العنوان دعوة مفتوحة إلى المساحة بالفعل.",
+  "authz.denied.documents_guest_classified": "لا يمكن للضيوف فتح الملفات بهذا التصنيف.",
+  "notifications.template.spaces.guest.invited.title": "أنت مدعو إلى {space}",
+  "notifications.template.spaces.guest.invited.body": "تمت دعوتك ضيفا إلى المساحة {space} حتى {until}. سجّل الدخول بحساب عملك لفتحها.",
+  "notifications.template.spaces.guest.expiring.title": "وصول الضيف إلى {space} ينتهي قريبا",
+  "notifications.template.spaces.guest.expiring.body": "يمكن لـ {guest} استخدام {space} حتى {until}. جدد وصوله من صفحة الأعضاء إذا كان لا يزال يحتاج إليه.",
+  "notifications.template.spaces.guest.expired.title": "انتهى وصول الضيف إلى {space}",
+  "notifications.template.spaces.guest.expired.body": "لم يعد لدى {guest} وصول إلى {space}. ادعه مرة أخرى إذا كان لا يزال يحتاج إليه."
 }

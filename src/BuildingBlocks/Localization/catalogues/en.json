@@ -1944,5 +1944,21 @@
   "validation.spaces.event_description": "Keep the description to 2,000 characters.",
   "validation.spaces.event_time": "The event must end after it starts and last at most 31 days.",
   "conflict.spaces.event_limit": "This space has reached its limit of 1,000 events. Delete old events to add new ones.",
-  "conflict.spaces.event_changed": "Someone changed this event since you opened it. Reload it and try again."
+  "conflict.spaces.event_changed": "Someone changed this event since you opened it. Reload it and try again.",
+  "validation.spaces.guest_member_domain": "This address belongs to your organization, so add the person as a member instead of a guest.",
+  "validation.spaces.guest_role": "Guests can be members or viewers, never owners.",
+  "validation.spaces.guest_access_days": "Choose how many days the guest has access, up to your organization's limit.",
+  "validation.spaces.guest_count": "A space can have up to 50 guests and open invitations.",
+  "validation.spaces.guest_is_member": "This person is already part of your organization. Add them as a member instead.",
+  "validation.spaces.guest_confidential_rule": "Your organization does not let guests open Confidential files.",
+  "conflict.spaces.guests_off": "Guests are turned off for spaces in your organization.",
+  "conflict.spaces.guest_exists": "This guest is already in the space.",
+  "conflict.spaces.guest_invited": "This address already has an open invitation to the space.",
+  "authz.denied.documents_guest_classified": "Guests cannot open files with this classification.",
+  "notifications.template.spaces.guest.invited.title": "You are invited to {space}",
+  "notifications.template.spaces.guest.invited.body": "You have been invited as a guest to the space {space} until {until}. Sign in with your work account to open it.",
+  "notifications.template.spaces.guest.expiring.title": "Guest access to {space} ends soon",
+  "notifications.template.spaces.guest.expiring.body": "{guest} can use {space} until {until}. Renew their access on the members page if they still need it.",
+  "notifications.template.spaces.guest.expired.title": "Guest access to {space} ended",
+  "notifications.template.spaces.guest.expired.body": "{guest} no longer has access to {space}. Invite them again if they still need it."
 }

@@ -1,6 +1,8 @@
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
+using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Documents;
 
@@ -14,12 +16,13 @@ internal sealed record LibraryRow(
     int? MaxFileMb,
     string ClassificationDefault,
     string Status,
-    int Version)
+    int Version,
+    bool GuestConfidential = false)
 {
-    public const string Columns = "id, names::text, scope, scope_id, org_unit_id, allowed_extensions, max_file_mb, classification_default, status, row_version";
+    public const string Columns = "id, names::text, scope, scope_id, org_unit_id, allowed_extensions, max_file_mb, classification_default, status, row_version, guest_confidential";
 
     public static LibraryRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), DocJson.Read<Dictionary<string, string>>(r.GetString(1)), r.GetString(2),
-        r.Get<Guid?>("scope_id"), r.Get<Guid?>("org_unit_id"), r.Get<string[]>("allowed_extensions"), r.Get<int?>("max_file_mb"), r.GetString(7), r.GetString(8), r.GetInt32(9));
+        r.Get<Guid?>("scope_id"), r.Get<Guid?>("org_unit_id"), r.Get<string[]>("allowed_extensions"), r.Get<int?>("max_file_mb"), r.GetString(7), r.GetString(8), r.GetInt32(9), r.GetBoolean(10));
 
     /// <summary>Where library-wide decisions (create, manage) are taken: the owning unit, or the tenant.</summary>
     public AuthzTarget ScopeTarget => OrgUnitId is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant;
@@ -47,8 +50,24 @@ public sealed record DocRights(bool View, bool Contribute, bool Manage)
 /// open to every member for reading; unit and site libraries are restricted and start with an ACL entry for the unit's
 /// members. Contributors and managers come from role assignments at the owning unit or from ACL entries.
 /// </summary>
-internal sealed class DocumentAccess(IDbSession session, IAuthorizationService authz)
+internal sealed class DocumentAccess(IDbSession session, IAuthorizationService authz, ITenantContext context, ITenantMemberships memberships)
 {
+    private static readonly string[] Open = [];
+    private static readonly string[] GuestClosed = ["confidential", "restricted"];
+    private static readonly string[] GuestRestricted = ["restricted"];
+    private bool? _guest;
+
+    /// <summary>
+    /// The classifications whose files the caller may not open in this library, however their rights read. Guests never
+    /// open Restricted files (spec 026 FR-011) and open Confidential ones only in a space library whose tenant rule and
+    /// owner both allow it (spec 029 FR-008); everyone else has nothing closed.
+    /// </summary>
+    public async Task<string[]> ClosedAsync(LibraryRow library, CancellationToken ct)
+    {
+        _guest ??= context.ActorId is { } user && await memberships.GetAsync(user, ct) is { MembershipType: MembershipTypes.Guest };
+        return _guest.Value ? (library.InSpace && library.GuestConfidential ? GuestRestricted : GuestClosed) : Open;
+    }
+
     /// <summary>
     /// A space library is restricted and contained by its space, so the space roles decide who reads, adds files and
     /// manages; tenant libraries are read by every member.

@@ -74,4 +74,10 @@ public interface ISpaceLibraries
 
     /// <summary>An archived space's library stays readable and takes no changes (FR-013).</summary>
     Task SetArchivedAsync(Guid libraryId, bool archived, CancellationToken ct = default);
+
+    /// <summary>
+    /// Whether the space's guests may open Confidential files (spec 029 FR-008). Restricted files stay closed to guests
+    /// whatever this says (spec 026 FR-011).
+    /// </summary>
+    Task SetGuestConfidentialAsync(Guid libraryId, bool allowed, CancellationToken ct = default);
 }

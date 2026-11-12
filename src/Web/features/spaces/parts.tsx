@@ -14,10 +14,10 @@ export function VisibilityBadge({ visibility }: { visibility: Visibility }) {
 
 export function RoleBadge({ role, guest = false }: { role: SpaceRole | null; guest?: boolean }) {
   const t = useTranslations("spaces.parts");
-  if (!role) return null;
+  if (!role && !guest) return null;
   return (
     <>
-      <Badge tone={role === "owner" ? "info" : "neutral"}>{t(`role.${role}`)}</Badge>
+      {role ? <Badge tone={role === "owner" ? "info" : "neutral"}>{t(`role.${role}`)}</Badge> : null}
       {guest ? <Badge tone="warning">{t("guest")}</Badge> : null}
     </>
   );

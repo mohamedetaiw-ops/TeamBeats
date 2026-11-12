@@ -922,3 +922,21 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 ### Smallest safe defaults
 - Events have a title, an optional description, a start and an end (or all day) and last at most 31 days; at most 1,000 per space. There is no recurrence and no RSVP yet, and events are not sent to Outlook.
 - Free and busy is read for the first 30 other members of the space, one day at a time.
+
+## Guests (spec 029, slice 4: T009, T010; US4, FR-007, FR-008)
+
+### Built
+- Owners invite partners by email (`POST /api/v1/spaces/{id}/guests`, step-up) while the plan has `spaces.guests` and the tenant's space rules allow guests. The partner gets an invitation email through `IExternalEmail` with a link to the space; a relay that is down is tried again by the spaces worker, five times at most. The audit names the invitation, never the address.
+- Tenancy.Contracts `IGuestInvitationSource`: at a first sign-in that matches no administrator appointment and no member domain, an identity with a pending invitation becomes a guest membership (never the default Employee role), and Spaces turns each invitation into a guest member of its space with its end date. Someone already a guest of the tenant is added at once with one identity across spaces.
+- Guests see and open only the spaces they are invited to; any other space, public or private, is not found. They have no directory, search outside their spaces or space creation, because guests hold no tenant role. Guests are labelled on the members page with their end date.
+- Owners renew access (step-up), cancel invitations and see each invitation's email state on the members page. Guests are members or viewers, never owners.
+- Classified files (FR-008): Documents closes Restricted files to guests in every library (spec 026 FR-011) and Confidential files unless the tenant's rule (`guestConfidential` in the space rules) and the space's owner both allow them; closed files are left out of lists and search and refused when opened (`authz.denied.documents_guest_classified`). Spaces keeps the library's flag in step through `ISpaceLibraries.SetGuestConfidentialAsync`.
+- The spaces worker tells owners seven days before a guest's access ends, once per end date, and ends it on the date: the guest leaves the space (`spaces.guest_expired`) and the owners are told; a guest left in no space is disabled and signed out. Invitations nobody took up lapse on the same date.
+
+### Smallest safe defaults
+- Guests join as viewers unless the owner picks member. Access lasts the tenant's guest days (90 by default) and an owner can give at most that; renewal starts again from today.
+- An address in the tenant's member domains (the single sign-on provider's just-in-time domains) is refused as a guest, and so is anyone who already has a member account.
+- At most 50 guests and open invitations per space.
+- Turning guests off in the tenant's rules stops new invitations and pending sign-ins; guests already in spaces keep access until their date.
+- Until spec 026 builds the reduced guest shell, a guest signs in to the normal shell; every page outside their spaces refuses them.
+- Guests sign in through the tenant's own provider (for example as Entra business-to-business guests the tenant admitted), so the tenant's identity team still adds them there; TeamBeats holds no guest passwords.

@@ -87,7 +87,9 @@ export function Members({ space, initial }: { space: SpaceView; initial: SpaceMe
               {manage ? (
                 <>
                   <SelectField label={t("roleOf", { name: m.displayName })} name={`role-${m.userId}`} value={m.role}
-                    onChange={(e) => void setMember(m.userId, e.target.value)} options={roles.map((r) => ({ value: r, label: t(`role.${r}`) }))} />
+                    onChange={(e) => void setMember(m.userId, e.target.value)}
+                    options={roles.map((r) => ({ value: r, label: t(`role.${r}`) }))} />
+                  {m.guest ? <RoleBadge role={null} guest /> : null}
                   <Button size="sm" variant="quiet" onClick={() => void remove(m.userId)}>
                     {t("remove")}
                   </Button>
