@@ -114,7 +114,7 @@ export function HrIntegrationAdmin({ initial, initialRuns, initialRecords }: { i
           </p>
         ) : (
           <p className="notice">
-            {t("status.noConnection")} <Link href="/admin/connections">{t("status.addConnection")}</Link>
+            {t("status.noConnection")} <Link href="/admin/connections/new">{t("status.addConnection")}</Link>
           </p>
         )}
         <dl className="hr-integration-counts">

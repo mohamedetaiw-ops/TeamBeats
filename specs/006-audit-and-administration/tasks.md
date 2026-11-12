@@ -26,5 +26,8 @@ Depends on 001 Phase 1 and ADR-0008. `IAuditWriter` should land early because 00
 - [x] T013 [US4] Users list and detail at `/admin/users` with disable, enable and sign out everywhere (groups are listed under Roles and access)
 - [x] T014 Audit search UI at `/admin/audit` (filters, entry details, seal check, retention, export; user time zone, RTL)
 
+## Phase 6: User Story 5, Connections area (P1)
+- [x] T016 [US5] Connections overview at `/admin/connections` for established connections only (product mark, type, status, last success, Test, Turn on or off, Manage) and the "Add connection" wizard at `/admin/connections/new` (choose type with product marks, set up, test with allowed hosts, turn on), FR-010 and FR-016, e2e in `tests/Acceptance/specs/connections.spec.ts`
+
 ## Final phase
 - [ ] T015 Contract test listing every audit event named in specs 001 to 005; OpenAPI; spec evidence

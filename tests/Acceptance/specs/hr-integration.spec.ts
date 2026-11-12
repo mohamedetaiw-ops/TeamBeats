@@ -47,15 +47,18 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("region", { name: msg(locale, "hr_integration.settings.title") }).getByLabel(msg(locale, "hr_integration.settings.threshold"))).toHaveValue("12");
       await expect(page.getByRole("region", { name: msg(locale, "hr_integration.settings.title") }).getByLabel(msg(locale, "hr_integration.settings.leadDays"))).toHaveValue("3");
 
-      // Both HR packs are in the catalogue, each with its own add form.
+      // Both HR packs are in the "Add connection" wizard, each with its own setup form.
       await page.getByRole("link", { name: msg(locale, "hr_integration.status.addConnection") }).click();
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.wizard.title"));
       await expect(page.getByText(msg(locale, "connections.catalogue.hr_rest"))).toBeVisible();
+      await expectAccessible(page, testInfo, `hr-connections-${locale}`);
+      await page.getByRole("link", { name: msg(locale, "connections.kinds.hr_rest"), exact: true }).click();
       await expect(page.getByRole("region", { name: msg(locale, "connections.hr.addRestTitle") }).getByLabel(msg(locale, "connections.hr.employeesPath"))).toBeVisible();
       await expect(page.getByRole("region", { name: msg(locale, "connections.hr.addRestTitle") }).getByLabel(msg(locale, "connections.hr.employeePath"), { exact: true })).toBeVisible();
+      await page.getByRole("link", { name: msg(locale, "connections.wizard.setup.changeType") }).click();
+      await page.getByRole("link", { name: msg(locale, "connections.kinds.hr_sftp"), exact: true }).click();
       const sftp = page.getByRole("region", { name: msg(locale, "connections.hr.addSftpTitle") });
       await expect(sftp.getByLabel(msg(locale, "connections.hr.fields.record_id"))).toBeVisible();
-      await expectAccessible(page, testInfo, `hr-connections-${locale}`);
     });
 
     test("a person with no HR record opens My payslips and is told why there are none", async ({ page }, testInfo) => {
