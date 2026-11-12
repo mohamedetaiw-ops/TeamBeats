@@ -52,6 +52,9 @@ public sealed class DemoPack
 
     public List<DemoConversation> Assistant { get; init; } = [];
 
+    /// <summary>Project and team spaces with members, milestones and tasks (spec 029).</summary>
+    public List<DemoSpace> Spaces { get; init; } = [];
+
     /// <summary>Adds the lists of another file to this one; people and single sections from the later file win.</summary>
     public DemoPack Merge(DemoPack other) => new()
     {
@@ -72,6 +75,7 @@ public sealed class DemoPack
         Events = [.. Events, .. other.Events],
         Search = other.Search ?? Search,
         Assistant = [.. Assistant, .. other.Assistant],
+        Spaces = [.. Spaces, .. other.Spaces],
     };
 }
 
@@ -192,3 +196,26 @@ public sealed record DemoSynonyms(string? Locale, List<string> Terms);
 public sealed record DemoSearch(List<DemoBestBet>? BestBets, List<DemoSynonyms>? Synonyms);
 
 public sealed record DemoConversation(string Person, List<string> Questions);
+
+/// <summary>A milestone of a space, due that many days from the seeding day. Tasks name it by its key.</summary>
+public sealed record DemoMilestone(string Key, Dictionary<string, string> Names, int DueInDays);
+
+/// <summary>A task of a space; a done task is completed by the owner after it is made.</summary>
+public sealed record DemoSpaceTask(Dictionary<string, string> Titles, List<string>? Assignees = null, int? DueInDays = null, string Priority = "normal",
+    string? Milestone = null, bool Done = false);
+
+/// <summary>
+/// A space created once by its owner, found again by its name. A space has one name, so the text is taken in the
+/// tenant's default language. Members are persona key to role (member or viewer); the status is set with its note.
+/// </summary>
+public sealed record DemoSpace(
+    Dictionary<string, string> Names,
+    Dictionary<string, string> Descriptions,
+    string Owner,
+    string Kind = "project",
+    string Visibility = "private",
+    Dictionary<string, string>? Members = null,
+    List<DemoMilestone>? Milestones = null,
+    List<DemoSpaceTask>? Tasks = null,
+    string? Status = null,
+    Dictionary<string, string>? StatusNotes = null);

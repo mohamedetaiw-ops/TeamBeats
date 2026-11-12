@@ -2,7 +2,7 @@
 
 The demo data package fills a tenant with realistic, fictional Arabic and English content so that every in-app area of the intranet has something to show in a product demo or a test session. It sits beside the fake connections ([fake-systems.md](fake-systems.md)): the fakes give the connector data (directory, Outlook mail and calendar, rooms), and this package gives the data that lives in TeamBeats itself.
 
-It adds no product behavior: every item goes in through the existing use cases of spec 002 (org units), spec 004 (roles), spec 009 (news and knowledge), spec 010 (profiles), spec 011 (documents), spec 012 (search tuning), spec 014 (assistant), spec 016 (services and requests), spec 022 (working calendars) and spec 025 (policies and attestations).
+It adds no product behavior: every item goes in through the existing use cases of spec 002 (org units), spec 004 (roles), spec 009 (news and knowledge), spec 010 (profiles), spec 011 (documents), spec 012 (search tuning), spec 014 (assistant), spec 016 (services and requests), spec 022 (working calendars), spec 025 (policies and attestations) and spec 029 (spaces).
 
 ## Where it lives
 
@@ -22,6 +22,7 @@ It adds no product behavior: every item goes in through the existing use cases o
 | `06-policies.json` | Policies | 4 categories, 6 approved policies with clauses, one attestation campaign |
 | `07-calendars-search-assistant.json` | Calendars, search, assistant | UAE, Saudi and Egypt working calendars with public holidays for 2026 and 2027, best bets, synonym sets, assistant conversations |
 | `08-calendar-events.json` | Calendar events (spec 037) | A town hall with RSVP, a weekly wellness series, a fire drill, a three day book fair and a family day, published by the administrator to the whole company |
+| `09-spaces.json` | Spaces (spec 029) | A private finance rollout project with members, two milestones, five tasks and an at risk status, and a public People team space with three tasks |
 
 Every name, email address and number is invented. People are addressed by persona key (for example `layla`); `admin` is always the first configured test administrator. In staging the persona emails come from the `staging-demo` scenario; set `Dev:SeedDemo:People:<persona>` to point a persona at another account.
 

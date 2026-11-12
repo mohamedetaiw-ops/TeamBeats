@@ -8,7 +8,7 @@ import { hostOrigin } from "../support/stack";
  * as a member, adds a task, gives it to her with a due date and moves another task to Done from the keyboard menu;
  * Layla finds the task under My tasks in the task inbox and completes it there. Slice 3: a file goes into the space's
  * library and is linked to the task, and an update is posted in the space's discussion, and an event goes on the team calendar.
- * Slice 4: the administrator lets guests in, invites a partner by email, and the partner signs in and finds only that
+ * Slice 4: the administrator lets guests in, adds a template, invites a partner by email, and the partner signs in and finds only that
  * space, labelled as a guest. Visibility, roles, viewer refusal, classified files for guests, guest expiry,
  * milestones, status, reminders and the tenant boundary are covered by SpacesTests and SpaceTaskTests. In English and
  * Arabic, with axe. Names are fictional.
@@ -140,6 +140,15 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await main.getByLabel(m("spaces.manage.guests")).check();
       await main.getByRole("button", { name: m("spaces.manage.save") }).click();
       await expect(page.getByText(m("spaces.manage.saved"))).toBeVisible();
+
+      // A template of the organization's own (FR-012): one list with its columns and a starter task.
+      const template = locale === "ar" ? "إغلاق الشهر" : "Month-end close";
+      await main.getByRole("button", { name: m("spaces.manage.editor.new") }).click();
+      await main.getByLabel(m("spaces.manage.editor.name")).fill(template);
+      await main.getByLabel(m("spaces.manage.editor.tasks")).fill(locale === "ar" ? "مطابقة الحسابات البنكية" : "Reconcile the bank accounts");
+      await main.getByRole("button", { name: m("spaces.manage.editor.save") }).click();
+      await expect(main.getByRole("list", { name: m("spaces.manage.templatesTitle") }).getByText(template, { exact: true })).toBeVisible();
+      await expectAccessible(page, testInfo, `spaces-manage-${locale}`);
 
       await page.goto(`${hostOrigin(tenant.key)}/spaces`);
       await main.getByRole("link", { name: space }).first().click();

@@ -940,3 +940,10 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Turning guests off in the tenant's rules stops new invitations and pending sign-ins; guests already in spaces keep access until their date.
 - Until spec 026 builds the reduced guest shell, a guest signs in to the normal shell; every page outside their spaces refuses them.
 - Guests sign in through the tenant's own provider (for example as Entra business-to-business guests the tenant admitted), so the tenant's identity team still adds them there; TeamBeats holds no guest passwords.
+
+## Spaces performance, demo data and evidence (spec 029, slice 5: T012)
+
+- `SpacesPerformanceTests` adds 500 tasks to one board and 200 open tasks for one person across 10 spaces through the API, then measures the board (target 1.5 seconds p95) and My tasks (target 800 ms p95). Locally they take about 22 ms and 32 ms.
+- The demo package gains `09-spaces.json`: a private finance rollout project with members, milestones, tasks and an at risk status, and a public People team space. Each space is created by its owner and found again by its name in the tenant's default language.
+- `specs/029-project-and-team-spaces/evidence.md` maps every requirement to its tests.
+- `/spaces/manage` now creates and changes tenant templates as well as retiring them: a template has a name, a kind and one or more task lists, each with its board columns and starter tasks one per line. In the editor the last column of a list is its done column and starter tasks start in the first column; templates made through the API with another done column take that layout when changed here.

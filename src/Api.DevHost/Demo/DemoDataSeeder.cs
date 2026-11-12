@@ -12,7 +12,7 @@ namespace TeamBeats.Api.DevHost.Demo;
 /// Fills the seeded test tenant with the demo data package (docs/testing/demo-data.md) when <c>Dev:SeedDemo:Folder</c>
 /// names a folder of pack files: organization units, names and time zones, news and knowledge with reactions and
 /// comments, a service catalogue with requests at every stage, document libraries, published policies with an
-/// attestation campaign, holiday calendars, search tuning and assistant conversations.
+/// attestation campaign, holiday calendars, project and team spaces, search tuning and assistant conversations.
 /// <para>
 /// Everything goes through the modules' own use cases, acting as the person the file names, so the data is validated,
 /// authorized, audited, indexed and notified exactly as if those people had done it. Each step runs in its own scope and
@@ -98,6 +98,7 @@ public sealed partial class DemoDataSeeder(IServiceScopeFactory scopes, IConfigu
         await AreaAsync(run, "policies", () => SeedPoliciesAsync(run, ct));
         await AreaAsync(run, "calendars", () => SeedCalendarsAsync(run, ct));
         await AreaAsync(run, "calendar events", () => SeedEventsAsync(run, ct));
+        await AreaAsync(run, "spaces", () => SeedSpacesAsync(run, ct));
         await DispatchAsync(ct);
         await AreaAsync(run, "search", () => SeedSearchAsync(run, ct));
         await AreaAsync(run, "assistant", () => SeedAssistantAsync(run, ct));

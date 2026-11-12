@@ -20,4 +20,4 @@ Depends on 004, 011, 015, 016, 022, 023, 026. R2.
 - [x] T011 [US6] Team calendar
 
 ## Final phase
-- [ ] T012 Performance tests; OpenAPI; R2 implementation notes; spec evidence
+- [x] T012 Performance tests; OpenAPI; R2 implementation notes; spec evidence
