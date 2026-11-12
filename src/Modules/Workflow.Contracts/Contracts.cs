@@ -12,6 +12,9 @@ public static class RouteSources
     public const string LeaveRoute = "leave_route";
     public const string JourneyRoute = "journey_route";
     public const string AttendanceRoute = "attendance_route";
+    public const string LetterRoute = "letter_route";
+    public const string DataChangeRoute = "data_change_route";
+    public const string ExpenseRoute = "expense_route";
 }
 
 /// <summary>Outcomes a user task can end with. Approve continues to the next step; reject and return end the instance.</summary>

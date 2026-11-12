@@ -20,6 +20,7 @@ using TeamBeats.Modules.AiGateway;
 using TeamBeats.Modules.AiGateway.OpenRouter;
 using TeamBeats.Modules.Calendar;
 using TeamBeats.Modules.Policies;
+using TeamBeats.Modules.Engagement;
 using TeamBeats.Modules.Search;
 using TeamBeats.Modules.Agents;
 using TeamBeats.Modules.Evaluation;
@@ -60,6 +61,7 @@ public static class TeamBeatsModules
         ContentModule.Migrations,
         DocumentsModule.Migrations,
         PoliciesModule.Migrations,
+        EngagementModule.Migrations,
         AiGatewayModule.Migrations,
         SearchModule.Migrations,
         AgentsModule.Migrations,
@@ -125,6 +127,7 @@ public static class TeamBeatsModules
         services.AddContentModule();
         services.AddDocumentsModule();
         services.AddPoliciesModule();
+        services.AddEngagementModule();
         services.AddAiGatewayModule();
         services.AddOpenRouterAdapter();
         services.AddSearchModule();
@@ -159,6 +162,10 @@ public static class ApiComposition
             o.AddPolicy("audit", http => RateLimitPartition.GetFixedWindowLimiter(
                 http.RequestServices.GetRequiredService<ITenantContext>().ActorId?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
+            // Letter verification is a guessing path (spec 022 FR-022): limit per client address, as nobody is signed in.
+            o.AddPolicy(TeamBeats.Modules.Hr.Letters.LetterEndpoints.VerifyRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
+                http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1) }));
             // People search is a scraping path (spec 010 FR-017): limit per user.
             o.AddPolicy(PeopleModule.SearchRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
                 http.RequestServices.GetRequiredService<ITenantContext>().ActorId?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
@@ -205,6 +212,7 @@ public static class ApiComposition
         app.MapContentEndpoints();
         app.MapDocumentsEndpoints();
         app.MapPoliciesEndpoints();
+        app.MapEngagementEndpoints();
         app.MapAiGatewayEndpoints();
         app.MapSearchEndpoints();
         app.MapAgentsEndpoints();

@@ -47,12 +47,29 @@ public sealed class OpenRouterProvider(IHttpClientFactory http, IConfiguration c
         return message;
     }
 
+    /// <summary>
+    /// A message with files as content parts: images as data URLs and PDFs as files, both inline, so nothing is stored
+    /// at the provider beyond the call.
+    /// </summary>
+    internal static JsonArray Parts(string text, IReadOnlyList<AiAttachment> files)
+    {
+        var parts = new JsonArray { new JsonObject { ["type"] = "text", ["text"] = text } };
+        foreach (var file in files)
+        {
+            var url = $"data:{file.MediaType};base64,{Convert.ToBase64String(file.Data)}";
+            parts.Add(file.MediaType == "application/pdf"
+                ? new JsonObject { ["type"] = "file", ["file"] = new JsonObject { ["filename"] = "document.pdf", ["file_data"] = url } }
+                : new JsonObject { ["type"] = "image_url", ["image_url"] = new JsonObject { ["url"] = url } });
+        }
+        return parts;
+    }
+
     internal static JsonObject ChatBody(ProviderChat request, bool stream)
     {
         var messages = new JsonArray();
         foreach (var m in request.Messages)
         {
-            var message = new JsonObject { ["role"] = m.Role, ["content"] = m.Content };
+            var message = new JsonObject { ["role"] = m.Role, ["content"] = m.Attachments is { Count: > 0 } files ? Parts(m.Content, files) : m.Content };
             if (m.ToolCallId is not null)
             {
                 message["tool_call_id"] = m.ToolCallId;

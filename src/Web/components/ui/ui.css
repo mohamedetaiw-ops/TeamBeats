@@ -261,6 +261,12 @@
   border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
 
+/* Footer actions of a linked card stay their own targets, above the covering link. */
+.ui-card[data-linked] .ui-card-footer {
+  position: relative;
+  z-index: 1;
+}
+
 /* Badges and chips: 6px corners, 22 to 24px high, a tint of their own colour; tone carries meaning only (DLS-058, DLS-060). */
 .ui-badge {
   display: inline-flex;

@@ -3,14 +3,14 @@
 Depends on 002, 004, 009, 010, 011, 012, 015, 026. R2.
 
 ## Phase 1: Module setup
-- [ ] T001 `Engagement` module skeleton per ADR-0013; migration for section 8 entities (forced RLS)
-- [ ] T002 Permissions, relations, capability keys and audit actions of sections 3, 9 and 13
+- [x] T001 `Engagement` module skeleton per ADR-0013; migration for section 8 entities (forced RLS)
+- [x] T002 Permissions, relations, capability keys and audit actions of sections 3, 9 and 13
 
 ## Phase 2: User Stories 1 and 8, communities and moderation (P1)
-- [ ] T003 [P] [US1] Tests: community types, closed invisibility, department membership, mentions, grouped notifications, search access
-- [ ] T004 [US1] Communities, channels, posts, comments, reactions, hashtags, following
-- [ ] T005 [P] [US8] Tests: reports and auto hide, keyword hold, removal reason and search removal, mutes
-- [ ] T006 [US8] Moderator queue and actions
+- [x] T003 [P] [US1] Tests: community types, closed invisibility, department membership, mentions, grouped notifications, search access
+- [x] T004 [US1] Communities, channels, posts, comments, reactions, hashtags, following
+- [x] T005 [P] [US8] Tests: reports and auto hide, keyword hold, removal reason and search removal, mutes
+- [x] T006 [US8] Moderator queue and actions
 
 ## Phase 3: User Stories 2 and 3, Speak Up, polls and surveys (P1)
 - [ ] T007 [P] [US2] [US3] Tests: no identity stored for anonymous items; daily hash; review queue; one vote; threshold hiding everywhere; responded marker deleted at close

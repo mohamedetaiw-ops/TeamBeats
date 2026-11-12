@@ -392,3 +392,12 @@ ol.people-chart {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Out of office from approved leave (spec 022 FR-005). */
+.people-away {
+  display: block;
+  margin-block-start: var(--tb-space-xs);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-semibold);
+}

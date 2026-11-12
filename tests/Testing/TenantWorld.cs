@@ -97,7 +97,7 @@ public sealed class TenantWorld : IAsyncLifetime
             await session.CommitAsync();
             return (userId, tokenValue);
         });
-        var user = new TestUser(name, id, email, token, Factory.TenantClient(tenant.Key, token));
+        var user = new TestUser(name, id, email, token, Factory.SeededUserClient(tenant.Key, tenant.Id, token));
         tenant.Users[name] = user;
         return user;
     }
@@ -162,6 +162,48 @@ public sealed class TenantWorld : IAsyncLifetime
             await AssignAsync(t, "orgadmin", "organization_administrator", "org_subtree", gulf);
         }
         return t;
+    }
+
+    /// <summary>
+    /// Publishes a package version with these capabilities and moves the tenant to it, then publishes the package's
+    /// capabilities as they were again. New tenants take the latest published version, so without that second publish
+    /// every tenant created later in the run would get the cut-down package. Returns the tenant's new version.
+    /// </summary>
+    public async Task<int> PinPackageVersionAsync(TestTenant tenant, string packageKey, object capabilities)
+    {
+        var current = (await (await tenant["admin"].Client.GetAsync("/api/v1/tenant/entitlements")).ReadAsync<JsonElement>()).GetProperty("capabilities");
+        var version = await PublishPackageAsync(packageKey, capabilities);
+        (await Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{tenant.Id}/subscription", new { packageKey, version })).EnsureSuccessStatusCode();
+        await PublishPackageAsync(packageKey, current);
+        return version;
+    }
+
+    /// <summary>Publishes a new version of a package and returns its number.</summary>
+    public async Task<int> PublishPackageAsync(string packageKey, object capabilities)
+    {
+        var draft = await (await Platform.PostAsJsonAsync($"/api/v1/platform/packages/{packageKey}/versions", new { capabilities })).ReadAsync<JsonElement>();
+        var version = draft.GetProperty("version").GetInt32();
+        (await Platform.PostAsync($"/api/v1/platform/packages/{packageKey}/versions/{version}:publish", null)).EnsureSuccessStatusCode();
+        return version;
+    }
+
+    /// <summary>
+    /// Delivers the tenant's waiting messages, and what their handlers publish in turn, however many messages other
+    /// tests left in the shared outbox ahead of them. A fixed number of batches can stop short of this tenant's rows.
+    /// </summary>
+    public async Task DispatchTenantAsync(Guid tenantId, int maxBatches = 200)
+    {
+        var dispatcher = Factory.Services.GetRequiredService<TeamBeats.Messaging.OutboxDispatcher>();
+        for (var i = 0; i < maxBatches; i++)
+        {
+            var waiting = await Database.OwnerScalarAsync<long>("select count(*) from messaging.outbox where tenant_id = @t and dispatched_at is null", ("t", tenantId));
+            if (waiting == 0)
+            {
+                return;
+            }
+            await dispatcher.DispatchBatchAsync(500, CancellationToken.None);
+        }
+        throw new InvalidOperationException($"The outbox of tenant {tenantId} did not drain in {maxBatches} batches.");
     }
 
     public async Task DisposeAsync()

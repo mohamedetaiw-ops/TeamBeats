@@ -1,0 +1,87 @@
+/* Spec 022 data change pages. Colors and spacing come from tokens. */
+.data-changes {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.data-changes-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  min-inline-size: 0;
+}
+
+.data-changes-section h2,
+.data-changes-section h3 {
+  margin: 0;
+}
+
+.data-changes-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.data-changes-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.data-changes-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.data-changes-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: var(--tb-space-sm);
+  margin: 0;
+}
+
+.data-changes-facts div {
+  padding: var(--tb-space-sm);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+}
+
+.data-changes-facts dt {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.data-changes-facts dd {
+  margin: 0;
+  font-weight: var(--tb-font-weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.data-changes-link {
+  color: var(--tb-color-link);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.data-changes-group {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+}
+
+.data-changes-reason {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

@@ -475,6 +475,9 @@ export type HrRestSettings = HrMappingSettings & {
   leaveSubmitPath?: string | null;
   leaveReferencePath?: string | null;
   leaveIdempotencyHeader?: string | null;
+  dataChangePath?: string | null;
+  dataChangeReferencePath?: string | null;
+  dataChangeIdempotencyHeader?: string | null;
   leaveTypeCodes?: Record<string, string> | null;
   recordsPath: string | null;
   paging: string | null;

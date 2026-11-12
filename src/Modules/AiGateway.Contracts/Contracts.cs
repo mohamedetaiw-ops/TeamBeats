@@ -65,8 +65,24 @@ public static class AiRoles
     public const string Tool = "tool";
 }
 
-/// <summary>One message of a conversation. <paramref name="ToolCallId"/> links a tool result to the call it answers.</summary>
-public sealed record AiMessage(string Role, string Content, string? ToolCallId = null, IReadOnlyList<AiToolCall>? ToolCalls = null);
+/// <summary>
+/// One message of a conversation. <paramref name="ToolCallId"/> links a tool result to the call it answers.
+/// <paramref name="Attachments"/> are files the model reads with the text of a user message, such as a receipt image
+/// (spec 022 FR-024); they count towards the request's classification like the text and are never logged or kept.
+/// </summary>
+public sealed record AiMessage(string Role, string Content, string? ToolCallId = null, IReadOnlyList<AiToolCall>? ToolCalls = null,
+    IReadOnlyList<AiAttachment>? Attachments = null);
+
+/// <summary>A file sent with a message: a PNG or JPEG image, or a PDF, of at most <see cref="MaxBytes"/>.</summary>
+public sealed record AiAttachment(string MediaType, byte[] Data)
+{
+    public const int MaxBytes = 10 * 1024 * 1024;
+
+    public static readonly IReadOnlySet<string> MediaTypes = new HashSet<string>(StringComparer.Ordinal) { "image/png", "image/jpeg", "application/pdf" };
+
+    /// <summary>Tokens counted for one attachment before the call, for the context check (an estimate; the provider reports the real use).</summary>
+    public const int EstimatedTokens = 1500;
+}
 
 /// <summary>A tool the model may call, with a JSON schema for its arguments.</summary>
 public sealed record AiTool(string Name, string Description, JsonElement Parameters);

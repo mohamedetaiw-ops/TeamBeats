@@ -400,10 +400,7 @@ public sealed class DocumentLibraryTests(TenantWorld world)
             {
                 capabilities[k] = v;
             }
-            var draft = await OkAsync(world.Platform.PostAsJsonAsync("/api/v1/platform/packages/workplace/versions", new { capabilities }), HttpStatusCode.Created);
-            var version = draft.GetProperty("version").GetInt32();
-            (await world.Platform.PostAsync($"/api/v1/platform/packages/workplace/versions/{version}:publish", null)).EnsureSuccessStatusCode();
-            (await world.Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{tenant.Id}/subscription", new { packageKey = "workplace", version })).EnsureSuccessStatusCode();
+            await world.PinPackageVersionAsync(tenant, "workplace", capabilities);
             return tenant;
         }
 

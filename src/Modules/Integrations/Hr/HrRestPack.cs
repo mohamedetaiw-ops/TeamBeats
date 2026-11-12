@@ -29,6 +29,9 @@ namespace TeamBeats.Modules.Integrations.Hr;
 /// <paramref name="LeaveSubmitPath"/> takes approved leave, cancellations and changes as a POST, answering with the HR
 /// reference at <paramref name="LeaveReferencePath"/>. <paramref name="LeaveTypeCodes"/> maps TeamBeats leave type keys
 /// to HR's codes when they differ; <paramref name="LeaveIdempotencyHeader"/> makes a repeated send safe.
+/// Employee data changes (spec 022 FR-019) are optional too: <paramref name="DataChangePath"/> takes an approved change
+/// as a POST, answering with the HR reference at <paramref name="DataChangeReferencePath"/>;
+/// <paramref name="DataChangeIdempotencyHeader"/> makes a repeated send safe.
 /// </summary>
 public sealed record HrRestSettings(
     string? BaseUrl,
@@ -57,7 +60,10 @@ public sealed record HrRestSettings(
     string? LeaveSubmitPath = null,
     string? LeaveReferencePath = null,
     string? LeaveIdempotencyHeader = null,
-    IReadOnlyDictionary<string, string>? LeaveTypeCodes = null)
+    IReadOnlyDictionary<string, string>? LeaveTypeCodes = null,
+    string? DataChangePath = null,
+    string? DataChangeReferencePath = null,
+    string? DataChangeIdempotencyHeader = null)
 {
     public RestSettings Rest => new(BaseUrl!, Auth!);
 }
@@ -73,6 +79,8 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
     public const string SyncEmployees = "sync_employees";
     public const string SubmitLeave = "submit_leave";
     public const string LeaveRefused = "leave_refused";
+    public const string SubmitDataChange = "submit_data_change";
+    public const string DataChangeRefused = "data_change_refused";
     public const int MaxLeaveBalances = 200;
     public const int MaxPages = 500;
     public const int DefaultPageSize = 200;
@@ -91,18 +99,28 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
     [
         new(SyncEmployees, ConnectorSideEffects.Read, true, [], JobTimeout: TimeSpan.FromMinutes(5)),
         new(SubmitLeave, ConnectorSideEffects.Write, false, [LeaveRefused]),
+        new(SubmitDataChange, ConnectorSideEffects.Write, false, [DataChangeRefused]),
     ];
 
     private static readonly IReadOnlyDictionary<int, string> LeaveErrors = new Dictionary<int, string> { [400] = LeaveRefused, [409] = LeaveRefused, [422] = LeaveRefused };
+
+    private static readonly IReadOnlyDictionary<int, string> DataChangeErrors =
+        new Dictionary<int, string> { [400] = DataChangeRefused, [409] = DataChangeRefused, [422] = DataChangeRefused };
 
     /// <summary>Leave goes to HR only when the connection has a submit address; with an idempotency header a retry is safe.</summary>
     public Task<IReadOnlyList<ConnectorActionDefinition>> ActionsForAsync(PackConnection connection, CancellationToken ct)
     {
         var s = Parse(connection.Settings);
-        IReadOnlyList<ConnectorActionDefinition> list = s?.LeaveSubmitPath is null
-            ? [Actions[0]]
-            : [Actions[0], Actions[1] with { Idempotent = s.LeaveIdempotencyHeader is not null }];
-        return Task.FromResult(list);
+        var list = new List<ConnectorActionDefinition> { Actions[0] };
+        if (s?.LeaveSubmitPath is not null)
+        {
+            list.Add(Actions[1] with { Idempotent = s.LeaveIdempotencyHeader is not null });
+        }
+        if (s?.DataChangePath is not null)
+        {
+            list.Add(Actions[2] with { Idempotent = s.DataChangeIdempotencyHeader is not null });
+        }
+        return Task.FromResult<IReadOnlyList<ConnectorActionDefinition>>(list);
     }
 
     [GeneratedRegex(@"^[A-Za-z0-9-]{1,64}$")]
@@ -161,6 +179,10 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
 
     public async Task<PackCallResult> CallAsync(PackCall call, CancellationToken ct)
     {
+        if (call.Action == SubmitDataChange)
+        {
+            return await SubmitDataChangeAsync(call, ct);
+        }
         if (call.Action == SubmitLeave)
         {
             return await SubmitLeaveAsync(call, ct);
@@ -390,6 +412,71 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
             }
         }
         return (balances.Select(b => new HrLeaveBalance(b.Key, b.Value)).ToList(), null);
+    }
+
+    /// <summary>
+    /// Sends one approved employee data change to HR (spec 022 FR-019): the employee by HR record ID and number, the group
+    /// and the new values by spec 022 field keys, and the TeamBeats request ID so HR can tell a repeat.
+    /// </summary>
+    private async Task<PackCallResult> SubmitDataChangeAsync(PackCall call, CancellationToken ct)
+    {
+        if (Parse(call.Connection.Settings) is not { DataChangePath: { } path } s)
+        {
+            return PackCallResult.Fatal(ConnectorErrorClasses.RequestRefused);
+        }
+        var input = call.Input;
+        string? Field(string name) => input.ValueKind == JsonValueKind.Object && input.TryGetProperty(name, out var v) ? Text(v) : null;
+        if (Field("record_id") is not { } recordId || Field("request_id") is not { } requestId || Field("group") is not { } group
+            || !input.TryGetProperty("values", out var values) || values.ValueKind != JsonValueKind.Object)
+        {
+            return PackCallResult.Fatal(ConnectorErrorClasses.InvalidInput);
+        }
+        var changed = new System.Text.Json.Nodes.JsonObject();
+        foreach (var value in values.EnumerateObject())
+        {
+            changed[value.Name] = Text(value.Value);
+        }
+        var body = new System.Text.Json.Nodes.JsonObject
+        {
+            ["request_id"] = requestId,
+            ["record_id"] = recordId,
+            ["employee_number"] = Field("employee_number"),
+            ["group"] = group,
+            ["values"] = changed,
+        };
+        var baseUri = new Uri(s.BaseUrl!.TrimEnd('/') + "/");
+        var uri = new Uri(s.BaseUrl!.TrimEnd('/') + path);
+        if (uri.Scheme != Uri.UriSchemeHttps || !string.Equals(uri.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase) || !await signIn.IsAllowedAsync(baseUri, ct))
+        {
+            return PackCallResult.Fatal(ConnectorErrorClasses.HostNotAllowed);
+        }
+        using var request = new HttpRequestMessage(HttpMethod.Post, uri)
+        {
+            Content = new StringContent(body.ToJsonString(), System.Text.Encoding.UTF8, "application/json"),
+        };
+        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        if (s.DataChangeIdempotencyHeader is { } header)
+        {
+            request.Headers.TryAddWithoutValidation(header, $"teambeats-data-change-{requestId}");
+        }
+        if (await signIn.AuthorizeAsync(call.Connection, s.Rest, request, ct) is { } refused)
+        {
+            return refused;
+        }
+        using var client = httpClients.CreateClient(SafeHttp.ClientName);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        if (signIn.MapStatus(call.Connection, s.Rest, response, DataChangeErrors) is { } failure)
+        {
+            return failure;
+        }
+        var answer = await RestSignIn.ReadJsonAsync(response, ct);
+        var reference = answer is { ValueKind: JsonValueKind.Object } json ? Text(RestDefinitions.Select(json, s.DataChangeReferencePath ?? "$.id")) : null;
+        if (reference is null || !Reference().IsMatch(reference))
+        {
+            return PackCallResult.Technical(ConnectorErrorClasses.InvalidResponse, mayHaveActed: true);
+        }
+        // HR's reference only: the values never come back as output.
+        return PackCallResult.Ok(JsonSerializer.SerializeToElement(new { reference }), reference);
     }
 
     /// <summary>
@@ -650,6 +737,20 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
         {
             errors.Add("leaveIdempotencyHeader", "validation.hr.leave_idempotency_header");
         }
+        var changePath = Blank(s.DataChangePath);
+        if (changePath is not null && (!PathShape().IsMatch(changePath) || changePath.Contains("..", StringComparison.Ordinal)))
+        {
+            errors.Add("dataChangePath", "validation.hr.data_change_path");
+        }
+        if (s.DataChangeReferencePath is not null && !RecordPath().IsMatch(s.DataChangeReferencePath))
+        {
+            errors.Add("dataChangeReferencePath", "validation.hr.record_path");
+        }
+        var changeHeader = Blank(s.DataChangeIdempotencyHeader);
+        if (changeHeader is not null && (!HeaderName().IsMatch(changeHeader) || changeHeader.Equals("authorization", StringComparison.OrdinalIgnoreCase)))
+        {
+            errors.Add("dataChangeIdempotencyHeader", "validation.hr.leave_idempotency_header");
+        }
         var typeCodes = (s.LeaveTypeCodes ?? new Dictionary<string, string>()).Where(c => !string.IsNullOrWhiteSpace(c.Value))
             .ToDictionary(c => c.Key, c => c.Value.Trim(), StringComparer.Ordinal);
         if (typeCodes.Count > 50 || typeCodes.Any(c => !LeaveKey().IsMatch(c.Key) || !LeaveCode().IsMatch(c.Value)))
@@ -666,7 +767,8 @@ public sealed partial class HrRestPack(ITenantContext context, RestSignIn signIn
             Blank(s.EmployeePath), Blank(s.EmployeePath) is null ? null : s.EmployeeRecordPath ?? "$",
             payslipsPath, payslipsPath is null ? null : s.PayslipRecordsPath ?? "$", payslipsPath is null ? null : payslipFields, payslipsPath is null ? null : pdfPath,
             balancesPath, balancesPath is null ? null : s.LeaveBalanceRecordsPath ?? "$", balancesPath is null ? null : balanceFields,
-            submitPath, submitPath is null ? null : s.LeaveReferencePath ?? "$.id", submitPath is null ? null : idempotency, typeCodes.Count == 0 ? null : typeCodes);
+            submitPath, submitPath is null ? null : s.LeaveReferencePath ?? "$.id", submitPath is null ? null : idempotency, typeCodes.Count == 0 ? null : typeCodes,
+            changePath, changePath is null ? null : s.DataChangeReferencePath ?? "$.id", changePath is null ? null : changeHeader);
         return JsonSerializer.SerializeToElement(stored, JsonDefaults.Options);
     }
 

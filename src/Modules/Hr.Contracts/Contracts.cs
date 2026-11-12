@@ -160,13 +160,29 @@ public interface ILeave
 
     /// <summary>Approved leave of the given people between two dates, with the type only where the viewer may see it.</summary>
     Task<IReadOnlyList<LeaveAbsence>> AvailabilityAsync(IReadOnlyCollection<Guid> userIds, DateOnly from, DateOnly to, CancellationToken ct = default);
+
+    /// <summary>
+    /// The person's approved leave that covers today in the tenant's time zone, as the first and last day of the run of
+    /// leave days around it, for the "out of office" profile status (FR-005). Dates only, never the type; null when they
+    /// are not on leave today or the plan has no <c>hr.leave</c>.
+    /// </summary>
+    Task<LeaveAway?> AwayAsync(Guid userId, CancellationToken ct = default);
 }
+
+/// <summary>Out of office from the first to the last day of approved leave (spec 022 FR-005).</summary>
+public sealed record LeaveAway(DateOnly From, DateOnly To);
 
 /// <summary>Leave was approved (spec 022 section 12). IDs and dates only.</summary>
 public sealed record LeaveApproved(Guid RequestId, Guid UserId, DateOnly From, DateOnly To) : IIntegrationEvent;
 
 /// <summary>An approved correction changed a person's attendance day (spec 022 section 12). IDs and the date only.</summary>
 public sealed record AttendanceCorrected(Guid RequestId, Guid UserId, DateOnly Date) : IIntegrationEvent;
+
+/// <summary>An HR letter was issued as a PDF (spec 022 section 12). IDs and the reference only, never the letter's content.</summary>
+public sealed record LetterIssued(Guid LetterId, Guid UserId, string Reference) : IIntegrationEvent;
+
+/// <summary>An expense claim was approved by finance (spec 022 section 12). The total in the policy currency, no lines or receipts.</summary>
+public sealed record ExpenseApproved(Guid ClaimId, Guid UserId, string Reference, decimal Total, string Currency) : IIntegrationEvent;
 
 /// <summary>Approved leave was cancelled, or shortened (then <see cref="From"/> and <see cref="To"/> are the days given back).</summary>
 public sealed record LeaveCancelled(Guid RequestId, Guid UserId, DateOnly From, DateOnly To) : IIntegrationEvent;

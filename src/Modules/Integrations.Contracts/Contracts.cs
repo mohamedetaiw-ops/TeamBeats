@@ -929,6 +929,38 @@ public interface IHrLeave
 /// <summary>A leave hand-off changed state (queued, recorded, failed). IDs and the HR reference only.</summary>
 public sealed record HrLeaveHandOffChanged(Guid RequestId, string Kind, string State, string? ExternalReference, int Change = 0) : IIntegrationEvent;
 
+/// <summary>
+/// An approved employee data change for HR (spec 022 FR-019): the group of fields and their new values, by the field
+/// keys of spec 022. The values are plain text and sensitive (bank details); they are kept only until HR answers.
+/// </summary>
+public sealed record HrDataChangeHandOffRequest(Guid RequestId, Guid UserId, string Group, IReadOnlyDictionary<string, string> Values);
+
+/// <summary>States of a data change hand-off: queued (sent or waiting to retry), recorded (HR confirmed), failed, unavailable (no connection takes data changes).</summary>
+public static class HrDataChangeHandOffStates
+{
+    public const string Queued = "queued";
+    public const string Recorded = "recorded";
+    public const string Failed = "failed";
+    public const string Unavailable = "unavailable";
+}
+
+/// <summary>
+/// Writing employee data changes back to HR (spec 019 scope, spec 022 FR-019). A hand-off is a durable connector job,
+/// retried hourly for three days when HR is unavailable; the values are cleared once HR records or refuses the change.
+/// Tenant comes from context.
+/// </summary>
+public interface IHrDataChange
+{
+    /// <summary>True when an enabled HR connection takes data changes and the plan has <c>hr.integration</c>.</summary>
+    Task<bool> AvailableAsync(CancellationToken ct = default);
+
+    /// <summary>Hands one approved change to HR and returns its state; the same request is sent once.</summary>
+    Task<string> HandOffAsync(HrDataChangeHandOffRequest request, CancellationToken ct = default);
+}
+
+/// <summary>A data change hand-off finished (recorded or failed). IDs and the HR reference only, never the values.</summary>
+public sealed record HrDataChangeHandOffChanged(Guid RequestId, string State, string? ExternalReference) : IIntegrationEvent;
+
 /// <summary>An HR sync applied its changes (spec 019 section 12). Counts only, never HR values.</summary>
 public sealed record HrSyncCompleted(Guid ConnectionId, Guid RunId, int Matched, int Changed) : IIntegrationEvent;
 

@@ -178,6 +178,24 @@ public static class AuditActions
     public const string HrAttendanceCorrected = "hr.attendance_corrected";
     public const string HrCompensationCredited = "hr.compensation_credited";
     public const string HrAttendanceRequestRejected = "hr.attendance_request_rejected";
+    public const string HrLetterTypeChanged = "hr.letter_type_changed";
+    public const string HrLetterSettingsChanged = "hr.letter_settings_changed";
+    public const string HrLetterRequested = "hr.letter_requested";
+    public const string HrLetterIssued = "hr.letter_issued";
+    public const string HrLetterRejected = "hr.letter_rejected";
+    public const string HrLetterVerified = "hr.letter_verified";
+    public const string HrDataChangeSettingsChanged = "hr.data_change_settings_changed";
+    public const string HrDataChangeRequested = "hr.data_change_requested";
+    public const string HrDataChangeApproved = "hr.data_change_approved";
+    public const string HrDataChangeRejected = "hr.data_change_rejected";
+    public const string HrDataChangeWrittenBack = "hr.data_change_written_back";
+    public const string HrDataChangeWriteFailed = "hr.data_change_write_failed";
+    public const string HrExpensePolicyChanged = "hr.expense_policy_changed";
+    public const string HrExpenseRatesChanged = "hr.expense_rates_changed";
+    public const string HrExpenseSubmitted = "hr.expense_submitted";
+    public const string HrExpenseApproved = "hr.expense_approved";
+    public const string HrExpenseRejected = "hr.expense_rejected";
+    public const string HrExpenseHandedOff = "hr.expense_handed_off";
 
     // 037
     public const string CalendarEventCreated = "calendar.event_created";
@@ -359,6 +377,19 @@ public static class AuditActions
     public const string EvalRubricCalibrated = "eval.rubric_calibrated";
     public const string EvalRubricDemoted = "eval.rubric_demoted";
 
+    // 023
+    public const string EngagementCommunityCreated = "engagement.community_created";
+    public const string EngagementCommunityChanged = "engagement.community_changed";
+    public const string EngagementCommunityArchived = "engagement.community_archived";
+    public const string EngagementMemberChanged = "engagement.member_changed";
+    public const string EngagementPostPinned = "engagement.post_pinned";
+    public const string EngagementContentApproved = "engagement.content_approved";
+    public const string EngagementContentHidden = "engagement.content_hidden";
+    public const string EngagementContentRemoved = "engagement.content_removed";
+    public const string EngagementMemberMuted = "engagement.member_muted";
+    public const string EngagementMemberUnmuted = "engagement.member_unmuted";
+    public const string EngagementKeywordsChanged = "engagement.keywords_changed";
+
     // 021
     public const string AnalyticsPrivacySettingChanged = "analytics.privacy_setting_changed";
 
@@ -389,7 +420,7 @@ public static class AuditActions
         HrPayslipViewed, HrPayslipDownloaded,
         HrLeaveSubmitted, HrLeaveApproved, HrLeaveRejected, HrLeaveCancelled, HrLeaveShortened, HrLeaveOnBehalf, HrBalanceAdjusted, HrLeaveTypeChanged, HrLeavePolicyChanged,
         HrLeaveRecounted, HrLeaveSourceChanged, HrLeaveHandOffRetried,
-        HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected,
+        HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected, HrLetterTypeChanged, HrLetterSettingsChanged, HrLetterRequested, HrLetterIssued, HrLetterRejected, HrLetterVerified, HrDataChangeSettingsChanged, HrDataChangeRequested, HrDataChangeApproved, HrDataChangeRejected, HrDataChangeWrittenBack, HrDataChangeWriteFailed, HrExpensePolicyChanged, HrExpenseRatesChanged, HrExpenseSubmitted, HrExpenseApproved, HrExpenseRejected, HrExpenseHandedOff,
         CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarSettingsChanged, CalendarTeamViewed,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
@@ -415,6 +446,8 @@ public static class AuditActions
         AgentRetired, AgentKillSwitch,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,
         EvalRubricCalibrated, EvalRubricDemoted,
+        EngagementCommunityCreated, EngagementCommunityChanged, EngagementCommunityArchived, EngagementMemberChanged, EngagementPostPinned,
+        EngagementContentApproved, EngagementContentHidden, EngagementContentRemoved, EngagementMemberMuted, EngagementMemberUnmuted, EngagementKeywordsChanged,
     ];
 
     public static readonly IReadOnlyList<string> DeferredToLaterReleases =

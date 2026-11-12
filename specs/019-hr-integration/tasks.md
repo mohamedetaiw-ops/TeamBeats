@@ -24,4 +24,4 @@ Depends on 002, 003, 010, 016, 017, 022, 026. R2.
 - [x] T013 [US7] HR leave balance source for 022
 
 ## Final phase
-- [ ] T014 Performance test with 20,000 employees; OpenAPI; R2 implementation notes; spec evidence
+- [x] T014 Performance test with 20,000 employees; OpenAPI; R2 implementation notes; spec evidence

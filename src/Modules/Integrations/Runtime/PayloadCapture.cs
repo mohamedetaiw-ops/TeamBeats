@@ -109,7 +109,7 @@ public sealed class PayloadCapture(IDbSession session, IAuditWriter audit, ICloc
               case when @output::text is null then null when octet_length(@output::text) <= @max then @output::jsonb else '{"truncated":true}'::jsonb end,
               @now, @expires
             from integrations.run r join integrations.connection c on c.id = r.connection_id
-            where r.id = @runId and c.capture_until > @now
+            where r.id = @runId and c.capture_until > @now and r.action <> 'submit_data_change'
             on conflict (tenant_id, run_id) do update set input = excluded.input, output = excluded.output, captured_at = excluded.captured_at,
               expires_at = excluded.expires_at
             """, new { runId, output = text, now, expires = now + Retention, max = MaxBytes }, ct);

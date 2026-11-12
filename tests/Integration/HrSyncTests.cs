@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using TeamBeats.Audit.Contracts;
+using TeamBeats.Authorization.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Integrations.Contracts;
@@ -43,6 +44,9 @@ public sealed partial class HrSyncTests(TenantWorld world)
 
         public byte[]? Pdf { get; set; }
 
+        /// <summary>How long payroll takes to list payslips, for the section 15 check.</summary>
+        public TimeSpan PayslipDelay { get; set; }
+
         /// <summary>Leave balances by record ID, as HR reports them (spec 019 US7).</summary>
         public Dictionary<string, List<Dictionary<string, object?>>> Leave { get; } = [];
 
@@ -51,6 +55,12 @@ public sealed partial class HrSyncTests(TenantWorld world)
 
         /// <summary>When set, HR answers a leave submission with this status instead of taking it.</summary>
         public HttpStatusCode? LeaveAnswer { get; set; }
+
+        /// <summary>Data changes sent to HR (spec 022 FR-019), with the idempotency key they came with.</summary>
+        public List<(JsonElement Body, string? Key)> DataChangesSent { get; } = [];
+
+        /// <summary>When set, HR answers a data change with this status instead of taking it.</summary>
+        public HttpStatusCode? DataChangeAnswer { get; set; }
 
         /// <summary>Every path asked for, so a test can see whose records were read.</summary>
         public List<string> Asked { get; } = [];
@@ -81,6 +91,18 @@ public sealed partial class HrSyncTests(TenantWorld world)
                     return FakeRestApi.Json(HttpStatusCode.Created, JsonSerializer.Serialize(new { @ref = $"HR-LV-{LeaveSent.Count}" }));
                 }
             }
+            if (sent.Method == "POST" && sent.Uri.AbsolutePath == "/v1/data-changes")
+            {
+                if (DataChangeAnswer is { } refused)
+                {
+                    return FakeRestApi.Json(refused, """{"error":"not allowed"}""");
+                }
+                lock (DataChangesSent)
+                {
+                    DataChangesSent.Add((JsonDocument.Parse(sent.Body!).RootElement.Clone(), sent.Headers.GetValueOrDefault("Idempotency-Key")));
+                    return FakeRestApi.Json(HttpStatusCode.Created, JsonSerializer.Serialize(new { result = new { id = $"HR-DC-{DataChangesSent.Count}" } }));
+                }
+            }
             if (sent.Uri.AbsolutePath.StartsWith("/v1/employees/", StringComparison.Ordinal))
             {
                 var parts = sent.Uri.AbsolutePath["/v1/employees/".Length..].Split('/').Select(Uri.UnescapeDataString).ToArray();
@@ -90,7 +112,7 @@ public sealed partial class HrSyncTests(TenantWorld world)
                         ? FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { data = one }))
                         : new HttpResponseMessage(HttpStatusCode.NotFound),
                     [var id, "leave"] => FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { items = Leave.GetValueOrDefault(id) ?? [] })),
-                    [var id, "payslips"] => FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { items = Payslips.GetValueOrDefault(id) ?? [] })),
+                    [var id, "payslips"] => Wait(PayslipDelay) ?? FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { items = Payslips.GetValueOrDefault(id) ?? [] })),
                     [var id, "payslips", var period, "pdf"] when Pdf is not null && Payslips.GetValueOrDefault(id)?.Any(p => (string?)p["month"] == period) == true =>
                         new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Pdf) { Headers = { ContentType = new("application/pdf") } } },
                     _ => new HttpResponseMessage(HttpStatusCode.NotFound),
@@ -103,6 +125,15 @@ public sealed partial class HrSyncTests(TenantWorld world)
             var items = Employees.Skip((page - 1) * size).Take(size).ToList();
             return FakeRestApi.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new { data = new { items } }));
         }
+    }
+
+    private static HttpResponseMessage? Wait(TimeSpan delay)
+    {
+        if (delay > TimeSpan.Zero)
+        {
+            Thread.Sleep(delay);
+        }
+        return null;
     }
 
     private static Dictionary<string, object?> Person(string id, string? email, string? number = null, string status = "Active", string title = "Accountant",
@@ -133,7 +164,7 @@ public sealed partial class HrSyncTests(TenantWorld world)
         return t;
     }
 
-    private async Task<(Guid Id, FakeHr Hr)> RestConnectionAsync(TestTenant t, bool payslips = false, bool leave = false)
+    private async Task<(Guid Id, FakeHr Hr)> RestConnectionAsync(TestTenant t, bool payslips = false, bool leave = false, bool dataChange = false, int pageSize = 2)
     {
         var host = $"hr-{Guid.NewGuid():N}"[..20] + ".hr.test";
         var fake = new FakeHr();
@@ -166,9 +197,12 @@ public sealed partial class HrSyncTests(TenantWorld world)
                 leaveReferencePath = leave ? "$.ref" : null,
                 leaveIdempotencyHeader = leave ? "Idempotency-Key" : null,
                 leaveTypeCodes = leave ? new Dictionary<string, string> { ["annual"] = "AL" } : null,
+                dataChangePath = dataChange ? "/data-changes" : null,
+                dataChangeReferencePath = dataChange ? "$.result.id" : null,
+                dataChangeIdempotencyHeader = dataChange ? "Idempotency-Key" : null,
                 paging = "page",
                 pageSizeParam = "size",
-                pageSize = 2,
+                pageSize,
                 fields = RestFields,
                 statusValues = StatusValues,
                 timeZone = "Asia/Riyadh",
@@ -438,6 +472,62 @@ public sealed partial class HrSyncTests(TenantWorld world)
         var refused = await workplace["admin"].Client.PostAsJsonAsync(Packs, new { kind = HrRestPack.KindName, displayName = "HR", settings = new { } });
         Assert.Equal(HttpStatusCode.Forbidden, refused.StatusCode);
         Assert.Empty(await world.Factory.InScopeAsync(workplace.Id, sp => sp.GetRequiredService<IHrRecords>().MatchedAsync()));
+    }
+
+    private static async Task<Dictionary<string, string?>> FieldsOfAsync(TestUser viewer, Guid person)
+    {
+        var response = await viewer.Client.GetAsync($"/api/v1/people/{person}");
+        Assert.True(response.StatusCode == HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+        return (await response.ReadAsync<JsonElement>()).GetProperty("fields").EnumerateArray()
+            .ToDictionary(f => f.GetProperty("key").GetString()!, f => f.GetProperty("value").ValueKind == JsonValueKind.String ? f.GetProperty("value").GetString() : null);
+    }
+
+    /// <summary>FR-015 and FR-017: unmatched records are retried at every sync and listed as stale after 30 days; HR fields on a profile show only to those the field's visibility allows.</summary>
+    [Fact]
+    public async Task Unmatched_records_are_retried_then_listed_as_stale_and_hr_fields_show_only_where_profile_visibility_allows()
+    {
+        var t = await TenantAsync(people: ["sara", "omar", "hr_gulf", "hr_africa"]);
+        var holding = await world.CreateUnitAsync(t, "Holding", null, "organization");
+        var gulf = await world.CreateUnitAsync(t, "Gulf", holding, "subsidiary");
+        var africa = await world.CreateUnitAsync(t, "Africa", holding, "subsidiary");
+        await world.AddMembershipAsync(t, "sara", "Gulf");
+        await world.AddMembershipAsync(t, "omar", "Gulf");
+        await world.AssignAsync(t, "hr_gulf", BuiltInRoles.HrOfficer, "org_subtree", gulf);
+        await world.AssignAsync(t, "hr_africa", BuiltInRoles.HrOfficer, "org_subtree", africa);
+        var (_, hr) = await RestConnectionAsync(t);
+        hr.Employees = [Person("R1", t["sara"].Email, "E-100"), Person("R2", t["omar"].Email, "E-200"), Person("R3", "joiner@hr.example", "E-300")];
+        Assert.Equal((2, 1, 0), Counts(await SyncAsync(t)));
+
+        // Thirty days on, the record is still retried but listed apart as stale.
+        Assert.Equal(1L, await world.Database.TenantScalarAsync<long>(t.Id,
+            "with u as (update integrations.hr_employee set first_seen_at = now() - interval '31 days' where record_id = 'R3' returning 1) select count(*) from u"));
+        Assert.Equal((2, 0, 1), Counts(await SyncAsync(t)));
+        Assert.Equal(["R3"], (await RecordsAsync(t, "stale")).Select(r => r.GetProperty("recordId").GetString()!).ToArray());
+        Assert.Empty(await RecordsAsync(t, "unmatched"));
+
+        // Once the person has an account the next sync matches them.
+        await world.SeedUserAsync(t, "joiner", MembershipTypes.Employee);
+        hr.Employees[2] = Person("R3", t["joiner"].Email, "E-300");
+        Assert.Equal((3, 0, 0), Counts(await SyncAsync(t)));
+        Assert.Empty(await RecordsAsync(t, "stale"));
+
+        // FR-017: the grade, cost centre and employee number are for HR in scope; the job title is for everyone.
+        var own = await OwnFieldsAsync(t["sara"]);
+        Assert.Equal("G7", own["grade"].GetProperty("value").GetString());
+        var inScope = await FieldsOfAsync(t["hr_gulf"], t["sara"].Id);
+        Assert.Equal(("G7", "CC-100", "E-100"), (inScope.GetValueOrDefault("grade"), inScope.GetValueOrDefault("costCentre"), inScope.GetValueOrDefault("employeeNumber")));
+        foreach (var viewer in new[] { "omar", "hr_africa" })
+        {
+            var seen = await FieldsOfAsync(t[viewer], t["sara"].Id);
+            Assert.Equal("Accountant", seen["jobTitle"]);
+            Assert.All(new[] { "grade", "costCentre", "employeeNumber" }, key => Assert.Null(seen.GetValueOrDefault(key)));
+        }
+    }
+
+    private static (int Matched, int Unmatched, int Stale) Counts(JsonElement overview)
+    {
+        var c = overview.GetProperty("counts");
+        return (c.GetProperty("matched").GetInt32(), c.GetProperty("unmatched").GetInt32(), c.GetProperty("stale").GetInt32());
     }
 
     [Fact]

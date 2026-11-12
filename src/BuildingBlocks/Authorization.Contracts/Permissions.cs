@@ -70,6 +70,9 @@ public static class Permissions
     /// <summary>Spec 022 R2: leave types and policies, leave on behalf, balance adjustments and leave types of the people in scope.</summary>
     public const string HrManage = "hr.manage";
 
+    /// <summary>Spec 022 R2: expense policy, exchange rates and the finance step of expense claims of the people in scope.</summary>
+    public const string FinanceProcess = "finance.process";
+
     public const string PeopleView = "people.view";
     public const string PeopleHrView = "people.hr_view";
     public const string PeopleManage = "people.manage";
@@ -118,6 +121,15 @@ public static class Permissions
     public const string EvalPolicyManage = "eval.policy_manage";
     public const string EvalView = "eval.view";
 
+    // Spec 023 (R2): employees take part in communities, polls, surveys and recognition; moderators review content in
+    // their org scope; engagement administrators configure engagement for the tenant; survey authors publish to an
+    // audience in scope; recognition approvers choose the team and star of the period.
+    public const string EngagementParticipate = "engagement.participate";
+    public const string EngagementModerate = "engagement.moderate";
+    public const string EngagementManage = "engagement.manage";
+    public const string EngagementSurveyPublish = "engagement.survey_publish";
+    public const string EngagementRecognitionApprove = "engagement.recognition_approve";
+
     // Spec 021 (R1): adoption basics and frontend error reports for the whole tenant.
     public const string AnalyticsView = "analytics.view";
 
@@ -144,7 +156,7 @@ public static class Permissions
         ThemeEdit, ThemePublish, ConfigLockManage,
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
         NotificationsManage,
-        HrCalendarManage, HrIntegrationManage, HrManage,
+        HrCalendarManage, HrIntegrationManage, HrManage, FinanceProcess,
         PeopleView, PeopleHrView, PeopleManage,
         SecurityManage, SecurityView, SecurityRespond,
         ServiceManage, ServiceRequestOnBehalf,
@@ -155,6 +167,7 @@ public static class Permissions
         AgentDesign, AgentPublish, AgentView, AgentSecurityView, AgentSuspend,
         EvalDesign, EvalReview, EvalPolicyManage, EvalView,
         AnalyticsView,
+        EngagementParticipate, EngagementModerate, EngagementManage, EngagementSurveyPublish, EngagementRecognitionApprove,
     ];
 }
 
@@ -175,8 +188,10 @@ public static class BuiltInRoles
     public const string PagePublisher = "page_publisher";
     public const string BrandManager = "brand_manager";
     public const string HrOfficer = "hr_officer";
+    public const string FinanceOfficer = "finance_officer";
     public const string ComplianceOfficer = "compliance_officer";
     public const string AgentDesigner = "agent_designer";
     public const string EvaluationReviewer = "evaluation_reviewer";
+    public const string EngagementAdministrator = "engagement_administrator";
 
 }

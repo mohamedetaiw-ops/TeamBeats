@@ -660,6 +660,45 @@ public sealed partial class LeaveRequests(
         return await AbsencesAsync(userIds.ToList(), from, to, includePending: false, ct);
     }
 
+    public async Task<LeaveAway?> AwayAsync(Guid userId, CancellationToken ct = default)
+    {
+        if (!await entitlements.IsEnabledAsync(Capabilities.HrLeave, ct))
+        {
+            return null;
+        }
+        var today = await ledger.TodayAsync(ct);
+        // Leave days are working days, so a run over a weekend or holiday is joined when the gap holds no working day.
+        var days = (await AbsencesAsync([userId], today.AddDays(-AwayWindow), today.AddDays(AwayWindow), includePending: false, ct)).Select(a => a.Date).ToHashSet();
+        if (!days.Contains(today))
+        {
+            return null;
+        }
+        var calendar = await calendars.ForUserAsync(userId, ct);
+        DateOnly Step(DateOnly from, int by)
+        {
+            var next = from.AddDays(by);
+            while (Math.Abs(next.DayNumber - today.DayNumber) <= AwayWindow && !days.Contains(next) && calendar.WorkingFraction(next) == 0)
+            {
+                next = next.AddDays(by);
+            }
+            return next;
+        }
+        var first = today;
+        while (days.Contains(Step(first, -1)))
+        {
+            first = Step(first, -1);
+        }
+        var last = today;
+        while (days.Contains(Step(last, 1)))
+        {
+            last = Step(last, 1);
+        }
+        return new LeaveAway(first, last);
+    }
+
+    /// <summary>How far around today the out of office status looks for the start and end of leave.</summary>
+    private const int AwayWindow = 62;
+
     /// <summary>
     /// The team view (FR-009): by default the viewer's colleagues and reports; for a unit, its members when the viewer
     /// belongs to it, or its whole subtree for an HR officer covering it.
