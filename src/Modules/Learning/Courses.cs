@@ -64,8 +64,8 @@ public sealed record CourseSummary(
     DateTimeOffset UpdatedAt,
     bool External = false);
 
-/// <summary>What the viewer may do in learning; <paramref name="Team"/>: they have direct reports to follow.</summary>
-public sealed record LearningRights(bool Take, bool Manage, bool Report, bool Team = false);
+/// <summary>What the viewer may do in learning; <paramref name="Team"/>: they have direct reports to follow; <paramref name="Packages"/>: they may import SCORM and xAPI packages.</summary>
+public sealed record LearningRights(bool Take, bool Manage, bool Report, bool Team = false, bool Packages = false);
 
 /// <summary>
 /// The course builder (spec 028 US1, FR-001 to FR-003). Learning administrators with <c>learning.manage</c> on a
@@ -133,8 +133,10 @@ public sealed class Courses(
         {
             return new LearningRights(false, false, false);
         }
-        return new LearningRights(await AllowedAsync(Permissions.LearningTake, AuthzTarget.Tenant, ct), await authz.HoldsAnywhereAsync(Permissions.LearningManage, ct),
-            await authz.HoldsAnywhereAsync(Permissions.LearningReport, ct), (await reportingLine.DirectReportsAsync(context.RequireUser(), ct)).Count > 0);
+        var manage = await authz.HoldsAnywhereAsync(Permissions.LearningManage, ct);
+        return new LearningRights(await AllowedAsync(Permissions.LearningTake, AuthzTarget.Tenant, ct), manage,
+            await authz.HoldsAnywhereAsync(Permissions.LearningReport, ct), (await reportingLine.DirectReportsAsync(context.RequireUser(), ct)).Count > 0,
+            manage && await entitlements.IsEnabledAsync(Capabilities.LearningScorm, ct));
     }
 
     private async Task RequireBuilderAsync(CancellationToken ct)
@@ -200,7 +202,7 @@ public sealed class Courses(
         {
             foreach (var (locale, source) in lesson.Sources!)
             {
-                var now = await SourceVersionAsync(lesson.Kind, source, ct);
+                var now = await SourceVersionAsync(row.Id, lesson.Kind, source, ct);
                 if (now is not null && sources.GetValueOrDefault(SourceKey(lesson.Key, locale)) != now)
                 {
                     changed.Add(new ChangedSource(lesson.Key, locale));
@@ -213,8 +215,15 @@ public sealed class Courses(
     private static string SourceKey(string lesson, string locale) => $"{lesson}:{locale}";
 
     /// <summary>The version of a page or file the caller may read, or null when it is not readable or not of the right kind.</summary>
-    private async Task<string?> SourceVersionAsync(string kind, Guid id, CancellationToken ct)
+    private async Task<string?> SourceVersionAsync(Guid courseId, string kind, Guid id, CancellationToken ct)
     {
+        if (kind == LessonKinds.Package)
+        {
+            // A package belongs to the course it was imported into, and never changes once imported.
+            return await session.ScalarAsync<bool>("select exists (select 1 from learning.package where id = @id and course_id = @courseId)", new { id, courseId }, ct)
+                ? $"package:{id:N}"
+                : null;
+        }
         if (kind == LessonKinds.Page)
         {
             return await pages.ReadableAsync(id, ct) is { } page ? $"page:{page.Version}" : null;
@@ -342,6 +351,10 @@ public sealed class Courses(
             throw AppException.Conflict("conflict.learning.external_course");
         }
         var definition = row.DraftDefinition;
+        if (definition.Lessons.Any(l => l.Kind == LessonKinds.Package))
+        {
+            await entitlements.DemandAsync(Capabilities.LearningScorm, ct);
+        }
         var errors = new ValidationErrors();
         CourseModel.CheckPublishable(definition, errors);
         var sources = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -350,13 +363,18 @@ public sealed class Courses(
             var lesson = definition.Lessons[i];
             foreach (var (locale, source) in lesson.Sources ?? new Dictionary<string, Guid>())
             {
-                if (await SourceVersionAsync(lesson.Kind, source, ct) is { } sourceVersion)
+                if (await SourceVersionAsync(row.Id, lesson.Kind, source, ct) is { } sourceVersion)
                 {
                     sources[SourceKey(lesson.Key, locale)] = sourceVersion;
                 }
                 else
                 {
-                    errors.Add($"lessons[{i}].sources", lesson.Kind == LessonKinds.Video ? "validation.learning.source_not_video" : "validation.learning.source_unreadable");
+                    errors.Add($"lessons[{i}].sources", lesson.Kind switch
+                    {
+                        LessonKinds.Video => "validation.learning.source_not_video",
+                        LessonKinds.Package => "validation.learning.source_package",
+                        _ => "validation.learning.source_unreadable",
+                    });
                 }
             }
         }

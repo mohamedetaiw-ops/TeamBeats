@@ -832,3 +832,28 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A launch address must be https on an allowed host; items without one are not imported. Sign-in at the LMS is the LMS's own single sign-on with the tenant's identity provider; TeamBeats only links to it.
 - "Unavailable" means the LMS did not answer the last time the sync called it, or there is no enabled LMS connection. Built courses, the catalogue and My learning keep working.
 - A push that keeps failing after the runtime's retries shows in the connection's run history; it is not retried by Learning.
+
+## SCORM and xAPI packages (spec 028, slice 5: T011; US7)
+
+### Built
+- A course builder with capability `learning.scorm` can upload a zip on a lesson of kind "package" (`POST /api/v1/learning/manage/courses/{id}/packages`, list with `GET`). The upload streams to a temporary file, is scanned before anything reads it, and is unpacked into tenant object storage under `learning/packages/{id}/`. The manifest (`imsmanifest.xml` for SCORM 1.2, `tincan.xml` for xAPI) gives the title, the launch file and, for xAPI, the activity ID. A course with package lessons publishes only while the tenant has `learning.scorm`.
+- A learner starts a package with `POST /api/v1/learning/courses/{id}/lessons/{key}:launch`, which returns a launch address with a random token. Only the token's hash is stored. Content is served from `/api/v1/learning/content/{token}/...`, so it needs no session cookie and never sees the TeamBeats session. The token is the content's only credential: every content route except the CORS preflight answers 401 to an unknown or expired token.
+- The player shows the content in an iframe sandboxed without `allow-same-origin`, and every content response carries its own sandbox content policy, `no-referrer`, `nosniff` and `no-store`. SCORM 1.2 pages get an in-house `API` script that reports to `__tb/runtime`; xAPI content gets an endpoint and an auth token in the launch query and uses the statements and state routes.
+- Lesson status `passed` or `completed`, or an xAPI `completed` or `passed` statement on the package's own activity, completes the lesson through the same path as other lessons, with the score kept as an attempt. `failed` records a failed attempt. A package lesson cannot be marked done by hand (`conflict.learning.package_needs_launch`).
+
+### Smallest safe defaults
+- SCORM 1.2 and xAPI (Tin Can packages) only. SCORM 2004, AICC and cmi5 packages are refused with `validation.learning.package_version`.
+- Upload limit 500 MB, at most 10,000 files and 2 GB unpacked, with a compression ratio check; a path holding `..` is refused, and backslashes and a leading slash are normalised first. Manifests are read with DTDs prohibited.
+- A launch is valid for 8 hours. A new launch carries over the saved suspend data and xAPI state, so the learner resumes where they stopped. Suspend data is capped at 4,096 characters as in SCORM 1.2, and only the standard `cmi.core` and `cmi.suspend_data` keys are stored.
+- A pass counts once per launch. The xAPI actor is an account on the tenant host with the TeamBeats user ID, never an email, so no personal data reaches the content.
+- Content responses allow any origin without credentials, because the sandboxed frame has an opaque origin; the token is the only key and it ends with the launch.
+- A package belongs to one course. Changing the package of a published lesson is a new course version, like any other source change.
+
+## Learning performance and evidence (spec 028, slice 6: T012)
+
+### Built
+- `LearningPerformanceTests` writes 20,000 active members into the tenant, publishes a course and creates one rule for everyone through the API, then times the player for a learner. Locally the rule gives the course to 20,001 people in about 35 seconds against the 5 minute target, and the player's p95 is about 10 ms against 2 seconds. The first run took about 75 seconds locally and over 100 seconds on CI, past the HTTP client's limit; a whole rule now reads primary units and each unit's calendar once, writes the grace period with the assignment, and tells learners in one notification per due date.
+- `specs/028-learning-and-training/evidence.md` maps every requirement to its tests. The OpenAPI document was regenerated with slices 4 and 5.
+
+### Follow-ups
+- A rule is still applied inside the request that creates it, with a few statements per learner. That meets the target with room to spare, but if tenants grow well past 20,000 people per rule, the first application should move to a background job with the rule showing "assigning" until it is done.

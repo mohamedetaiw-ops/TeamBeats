@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { builderHref, isGuid, learningHref, localText, manageHref, type CourseDetail } from "@/lib/learning";
+import { builderHref, isGuid, learningHref, localText, manageHref, type CourseDetail, type LearningRights } from "@/lib/learning";
 import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CourseBuilder } from "@/features/learning/CourseBuilder";
@@ -16,7 +16,7 @@ export default async function CourseBuilderPage({ params }: { params: Promise<{ 
   if (!isGuid(id)) {
     notFound();
   }
-  const course = await apiGet<CourseDetail>(`/api/v1/learning/manage/courses/${id}`);
+  const [course, rights] = await Promise.all([apiGet<CourseDetail>(`/api/v1/learning/manage/courses/${id}`), apiGet<LearningRights>("/api/v1/learning/rights")]);
   if (!course.ok) {
     notFound();
   }
@@ -34,7 +34,7 @@ export default async function CourseBuilderPage({ params }: { params: Promise<{ 
       />
       <main id="main" className="page">
         <PageHeader title={title} eyebrow={t("builder.eyebrow")} icon="edit" />
-        <CourseBuilder initial={course.data} locales={me.data.tenant.enabledLocales} />
+        <CourseBuilder initial={course.data} locales={me.data.tenant.enabledLocales} packages={rights.ok && rights.data.packages === true} />
       </main>
     </>
   );

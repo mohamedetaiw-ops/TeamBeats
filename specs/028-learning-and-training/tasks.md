@@ -19,7 +19,7 @@ Depends on 002, 009, 011, 015, 017, 022, 025. R2.
 
 ## Phase 4: User Stories 6 and 7 (P2)
 - [x] T010 [US6] LMS connector contract and generic pack
-- [ ] T011 [US7] SCORM 1.2 and xAPI import and sandboxed player
+- [x] T011 [US7] SCORM 1.2 and xAPI import and sandboxed player
 
 ## Final phase
-- [ ] T012 Performance test with 20,000 learners; OpenAPI; R2 implementation notes; spec evidence
+- [x] T012 Performance test with 20,000 learners; OpenAPI; R2 implementation notes; spec evidence

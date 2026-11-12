@@ -177,3 +177,12 @@
   text-align: end;
   font-variant-numeric: tabular-nums;
 }
+
+.learning-package {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 32rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}

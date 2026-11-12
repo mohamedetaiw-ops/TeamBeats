@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
+import { FileUpload, type UploadItem } from "@/components/ui/FileUpload";
 import { FormField, SelectField, TextAreaField } from "@/components/ui/FormField";
 import { StateView } from "@/components/ui/StateView";
 import { Tabs } from "@/components/ui/Tabs";
@@ -23,6 +24,7 @@ import {
   type CourseDetail,
   type CourseLearner,
   type LessonKind,
+  type PackageView,
   type QuestionKind,
   type Texts,
 } from "@/lib/learning";
@@ -82,13 +84,13 @@ function editable(detail: CourseDetail): EditLesson[] {
  * a quiz), who sees it in the catalogue, then publish as a new version, with or without retraining, or retire it. The
  * lessons point at pages and files that stay where they are; the API checks each one can be read before publishing.
  */
-export function CourseBuilder({ initial, locales }: { initial: CourseDetail; locales: string[] }) {
+export function CourseBuilder({ initial, locales, packages = false }: { initial: CourseDetail; locales: string[]; packages?: boolean }) {
   const t = useTranslations("learning.builder");
   return (
     <Tabs
       label={t("tabs")}
       tabs={[
-        { key: "course", label: t("courseTab"), icon: "edit", content: <CourseForm initial={initial} locales={locales} /> },
+        { key: "course", label: t("courseTab"), icon: "edit", content: <CourseForm initial={initial} locales={locales} packages={packages} /> },
         { key: "learners", label: t("learnersTab"), icon: "people", content: <Learners course={initial} /> },
         { key: "rules", label: t("rulesTab"), icon: "calendar", content: <Rules course={initial} /> },
       ]}
@@ -96,7 +98,7 @@ export function CourseBuilder({ initial, locales }: { initial: CourseDetail; loc
   );
 }
 
-function CourseForm({ initial, locales }: { initial: CourseDetail; locales: string[] }) {
+function CourseForm({ initial, locales, packages }: { initial: CourseDetail; locales: string[]; packages: boolean }) {
   const t = useTranslations("learning.builder");
   const locale = useLocale();
   const units = useUnits();
@@ -350,6 +352,7 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
           {lessons.map((lesson, index) => (
             <li key={lesson.uid}>
               <LessonEditor
+                courseId={detail.id}
                 lesson={lesson}
                 index={index}
                 count={lessons.length}
@@ -378,7 +381,10 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
             name="lesson-kind"
             value={addKind}
             onChange={(e) => setAddKind(e.target.value as LessonKind)}
-            options={(["page", "document", "video", "quiz"] as const).map((k) => ({ value: k, label: t(`kind.${k}`) }))}
+            options={(packages ? (["page", "document", "video", "quiz", "package"] as const) : (["page", "document", "video", "quiz"] as const)).map((k) => ({
+              value: k,
+              label: t(`kind.${k}`),
+            }))}
           />
           <Button
             icon="plus"
@@ -422,6 +428,7 @@ function CourseForm({ initial, locales }: { initial: CourseDetail; locales: stri
 }
 
 function LessonEditor({
+  courseId,
   lesson,
   index,
   count,
@@ -430,6 +437,7 @@ function LessonEditor({
   onMove,
   onRemove,
 }: {
+  courseId: string;
   lesson: EditLesson;
   index: number;
   count: number;
@@ -466,7 +474,14 @@ function LessonEditor({
             dir="auto"
             onChange={(e) => onChange((x) => ({ ...x, titles: { ...x.titles, [l]: e.target.value } }))}
           />
-          {lesson.kind !== "quiz" ? (
+          {lesson.kind === "package" ? (
+            <PackageUpload
+              courseId={courseId}
+              language={languageName(l, locale)}
+              packageId={lesson.sources[l] ?? ""}
+              onImported={(p) => onChange((x) => ({ ...x, sources: { ...x.sources, [l]: p.id } }))}
+            />
+          ) : lesson.kind !== "quiz" ? (
             <FormField
               label={t(lesson.kind === "page" ? "pageIn" : "fileIn", { language: languageName(l, locale) })}
               name={`${id}-source-${l}`}
@@ -490,6 +505,50 @@ function LessonEditor({
         onChange={(e) => onChange((x) => ({ ...x, minutes: e.target.value }))}
       />
       {lesson.quiz ? <QuizEditor quiz={lesson.quiz} id={id} langs={langs} onChange={(quiz) => onChange((x) => ({ ...x, quiz }))} /> : null}
+    </div>
+  );
+}
+
+/**
+ * Imports a SCORM 1.2 or xAPI zip for one language of a package lesson (spec 028 US7). The API scans and checks it and
+ * answers with the package, which the lesson then points at; refusals come back in the viewer's language.
+ */
+function PackageUpload({ courseId, language, packageId, onImported }: { courseId: string; language: string; packageId: string; onImported: (p: PackageView) => void }) {
+  const t = useTranslations("learning.builder");
+  const [items, setItems] = useState<UploadItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  async function add(files: File[]) {
+    const file = files[0];
+    if (!file) return;
+    setError(null);
+    setItems([{ key: file.name, name: file.name, size: file.size, progress: 0 }]);
+    const result = await call<PackageView>(
+      () => fetch(`${learningApi}/manage/courses/${courseId}/packages`, { method: "POST", headers: { "content-type": "application/zip" }, body: file }),
+      t("packageFailed"),
+    );
+    if (result.ok) {
+      setItems([{ key: file.name, name: result.value.title, size: file.size }]);
+      onImported(result.value);
+    } else {
+      setItems([]);
+      setError(result.messages.join(" "));
+    }
+  }
+
+  return (
+    <div className="learning">
+      <FileUpload
+        label={t("packageIn", { language })}
+        hint={t("packageHint")}
+        accept=".zip,application/zip"
+        multiple={false}
+        items={items}
+        onAdd={(files) => void add(files)}
+        onRemove={() => setItems([])}
+        error={error}
+      />
+      {packageId ? <p className="learning-meta">{t("packageChosen")}</p> : null}
     </div>
   );
 }

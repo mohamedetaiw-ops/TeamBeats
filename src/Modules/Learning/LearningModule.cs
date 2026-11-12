@@ -27,6 +27,8 @@ public static class LearningModule
         services.AddScoped<LearningReports>();
         services.AddScoped<LmsAvailability>();
         services.AddScoped<LmsSync>();
+        services.AddScoped<Packages>();
+        services.AddScoped<PackageRuntime>();
         services.AddScoped<Contracts.ILearningObligations>(sp => sp.GetRequiredService<LearningObligations>());
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, AssignmentRules>("learning.rule_membership");
         services.AddMessageHandler<Tenancy.Contracts.TenantMembershipDisabled, AssignmentRules>("learning.rule_disabled");
@@ -36,6 +38,7 @@ public static class LearningModule
 
     public static IEndpointRouteBuilder MapLearningEndpoints(this IEndpointRouteBuilder app)
     {
+        MapPackageContent(app);
         var root = app.MapGroup("/api/v1/learning").RequireTenantUser().WithTags("Learning");
 
         root.MapGet("/rights", async (Courses courses, CancellationToken ct) => Results.Ok(await courses.RightsAsync(ct)));
@@ -101,6 +104,30 @@ public static class LearningModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        // ---- SCORM 1.2 and xAPI packages (US7) ----
+
+        root.MapGet("/manage/courses/{id:guid}/packages", async (Guid id, Packages packages, CancellationToken ct) => Results.Ok(await packages.ListAsync(id, ct)));
+
+        // The zip is the request body. The service enforces 500 MB while streaming; the server-wide cap is lifted to that.
+        root.MapPost("/manage/courses/{id:guid}/packages", async (Guid id, HttpRequest http, Packages packages, IDbSession session, CancellationToken ct) =>
+        {
+            if (http.HttpContext.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } size)
+            {
+                size.MaxRequestBodySize = Packages.MaxBytes + 1;
+            }
+            var view = await packages.ImportAsync(id, http.Body, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/learning/manage/courses/{id}/packages/{view.Id}", view);
+        }).DisableAntiforgery();
+
+        root.MapPost("/courses/{id:guid}/lessons/{key}:launch", async (Guid id, string key, LaunchRequest? request, Player player, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await player.LaunchAsync(id, key, request ?? new LaunchRequest(null), ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
 
         // ---- The LMS (US6) ----
 
@@ -220,5 +247,112 @@ public static class LearningModule
         });
 
         return app;
+    }
+
+    /// <summary>
+    /// Package content and runtime (US7, FR-016). No session: the tenant comes from the host and the launch token in the
+    /// path is the only key, so the sandboxed frame needs no cookie. Every answer carries the sandbox policy, no referrer
+    /// (the token stays out of other sites' logs) and an open CORS answer without credentials, because the frame's
+    /// opaque origin is not the host's.
+    /// </summary>
+    private static void MapPackageContent(IEndpointRouteBuilder app)
+    {
+        var content = app.MapGroup(PackageRuntime.ContentBase + "/{token}").WithTags("Learning").ExcludeFromDescription()
+            .AddEndpointFilter(async (ctx, next) =>
+            {
+                var http = ctx.HttpContext;
+                var tenant = http.RequestServices.GetRequiredService<ITenantContext>();
+                if (tenant.Host.Kind != HostScopeKind.Tenant || tenant.Host.Tenant is not { Status: TenantLifecycleStatus.Active } t)
+                {
+                    return Results.NotFound();
+                }
+                var accessor = http.RequestServices.GetRequiredService<TenantContextAccessor>();
+                accessor.SetTenant(t.Id);
+                accessor.SetActor(ActorType.System, null);
+                var headers = http.Response.Headers;
+                headers.ContentSecurityPolicy = PackageRuntime.ContentPolicy;
+                headers["Referrer-Policy"] = "no-referrer";
+                headers["X-Content-Type-Options"] = "nosniff";
+                headers.CacheControl = "private, no-store";
+                headers.AccessControlAllowOrigin = "*";
+                headers.AccessControlAllowHeaders = "Authorization, Content-Type, X-Experience-API-Version";
+                headers.AccessControlAllowMethods = "GET, PUT, POST, DELETE, OPTIONS";
+                headers["X-Experience-API-Version"] = "1.0.3";
+                // The launch token is the content's only credential: an unknown or expired one is refused like a missing session.
+                // A CORS preflight carries no credentials, so it is answered without one.
+                if (!HttpMethods.IsOptions(http.Request.Method)
+                    && (http.GetRouteValue("token") is not string token
+                        || await http.RequestServices.GetRequiredService<PackageRuntime>().FindAsync(token, http.RequestAborted) is null))
+                {
+                    return Results.Unauthorized();
+                }
+                return await next(ctx);
+            });
+
+        content.MapMethods("/{**path}", ["OPTIONS"], () => Results.NoContent());
+
+        content.MapGet("/__tb/scorm.js", async (string token, PackageRuntime runtime, CancellationToken ct) =>
+            await runtime.BridgeAsync(token, ct) is { } script ? Results.Text(script, "text/javascript") : Results.NotFound());
+
+        content.MapPost("/__tb/runtime", async (string token, HttpRequest http, PackageRuntime runtime, IDbSession session, CancellationToken ct) =>
+        {
+            var body = await ReadTextAsync(http, ct);
+            if (body is null || !await runtime.ReportScormAsync(token, body, ct))
+            {
+                return Results.NotFound();
+            }
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        }).DisableAntiforgery();
+
+        content.MapGet("/__tb/xapi/about", () => Results.Json(new { version = new[] { "1.0.3", "1.0.0" } }));
+
+        content.MapGet("/__tb/xapi/statements", () => Results.Json(new { statements = Array.Empty<object>(), more = "" }));
+
+        content.MapMethods("/__tb/xapi/statements", ["POST", "PUT"], async (string token, string? statementId, HttpRequest http, PackageRuntime runtime, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var body = await ReadTextAsync(http, ct);
+            if (body is null || await runtime.StatementsAsync(token, body, statementId, ct) is not { } ids)
+            {
+                return Results.BadRequest();
+            }
+            await session.CommitAsync(ct);
+            return http.Method == "PUT" ? Results.NoContent() : Results.Json(ids);
+        }).DisableAntiforgery();
+
+        content.MapGet("/__tb/xapi/activities/state", async (string token, string? stateId, PackageRuntime runtime, CancellationToken ct) =>
+        {
+            var (found, document) = await runtime.StateAsync(token, stateId, ct);
+            return !found ? Results.BadRequest() : document is null ? Results.NotFound() : Results.Text(document, "application/json");
+        });
+
+        content.MapMethods("/__tb/xapi/activities/state", ["PUT", "POST", "DELETE"], async (string token, string? stateId, HttpRequest http, PackageRuntime runtime,
+            IDbSession session, CancellationToken ct) =>
+        {
+            var body = http.Method == "DELETE" ? null : await ReadTextAsync(http, ct);
+            if (http.Method != "DELETE" && body is null || !await runtime.SaveStateAsync(token, stateId, body, ct))
+            {
+                return Results.BadRequest();
+            }
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        }).DisableAntiforgery();
+
+        content.MapGet("/{**path}", async (string token, string? path, PackageRuntime runtime, CancellationToken ct) =>
+            await runtime.OpenAsync(token, path ?? "", ct) is { } file ? Results.Stream(file.Content, file.Type, enableRangeProcessing: true) : Results.NotFound());
+    }
+
+    private static async Task<string?> ReadTextAsync(HttpRequest http, CancellationToken ct)
+    {
+        using var reader = new StreamReader(http.Body);
+        var buffer = new char[PackageRuntime.MaxReportBytes + 1];
+        var total = 0;
+        int read;
+        while (total <= PackageRuntime.MaxReportBytes && (read = await reader.ReadAsync(buffer.AsMemory(total), ct)) > 0)
+        {
+            total += read;
+        }
+        return total > PackageRuntime.MaxReportBytes ? null : new string(buffer, 0, total);
     }
 }

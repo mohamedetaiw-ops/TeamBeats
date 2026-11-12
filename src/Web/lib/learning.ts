@@ -5,12 +5,18 @@ export const learningApi = "/api/v1/learning";
 
 export type Texts = Record<string, string>;
 
-export type LessonKind = "page" | "document" | "video" | "quiz";
+export type LessonKind = "page" | "document" | "video" | "quiz" | "package";
 export type QuestionKind = "single" | "multiple" | "true_false";
 export type LearnerStateKind = "none" | "open" | "completed" | "retraining";
 export type AssignmentSource = "self" | "rule" | "manager" | "onboarding" | "policy";
 
-export type LearningRights = { take: boolean; manage: boolean; report: boolean; team: boolean };
+export type LearningRights = { take: boolean; manage: boolean; report: boolean; team: boolean; packages?: boolean };
+
+/** Where a package plays: a sandboxed content address holding a launch token (spec 028 US7). */
+export type LaunchView = { url: string; kind: "scorm12" | "xapi"; expiresAt: string };
+
+/** An imported SCORM 1.2 or xAPI package. */
+export type PackageView = { id: string; courseId: string; kind: "scorm12" | "xapi"; title: string; launchPath: string; files: number; bytes: number; createdAt: string };
 
 export type LearnerOption = { key: string; labels: Texts };
 export type LearnerQuestion = { key: string; kind: QuestionKind; prompts: Texts; options: LearnerOption[] };

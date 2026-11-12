@@ -79,6 +79,12 @@ public sealed record LearnerExternal(bool Available, string? LaunchUrl);
 
 public sealed record PositionRequest(string? LessonKey);
 
+/// <summary>Which language version of a package lesson to start, when the course has more than one.</summary>
+public sealed record LaunchRequest(string? Locale);
+
+/// <summary>Where the sandboxed frame opens a package: a content address that holds a launch token, and the package kind.</summary>
+public sealed record LaunchView(string Url, string Kind, DateTimeOffset ExpiresAt);
+
 public sealed record AttemptResult(int Score, bool Passed, LearnerCourse Course);
 
 public sealed record CatalogueCourse(Guid Id, IReadOnlyDictionary<string, string> Titles, IReadOnlyDictionary<string, string> Summaries, string? Category, int? Minutes,
@@ -271,17 +277,17 @@ public sealed class Player(
     }
 
     /// <summary>Creates the learner's open assignment of the course, in the cycle after their last one.</summary>
-    internal async Task<AssignmentRow> AssignAsync(Guid courseId, Guid learner, string source, DateOnly? dueOn, CancellationToken ct)
+    internal async Task<AssignmentRow> AssignAsync(Guid courseId, Guid learner, string source, DateOnly? dueOn, CancellationToken ct, int grace = 0)
     {
         var id = Ids.New();
         var row = await session.QuerySingleOrDefaultAsync(
             $"""
-            insert into learning.assignment (tenant_id, id, course_id, learner_id, source, due_on, cycle, created_at)
-            values (@tenant, @id, @courseId, @learner, @source, @dueOn,
+            insert into learning.assignment (tenant_id, id, course_id, learner_id, source, due_on, grace_days, cycle, created_at)
+            values (@tenant, @id, @courseId, @learner, @source, @dueOn, @grace,
               coalesce((select max(cycle) from learning.assignment where course_id = @courseId and learner_id = @learner), 0) + 1, @now)
             on conflict (tenant_id, course_id, learner_id) where status = 'open' do nothing
             returning {AssignmentColumns}
-            """, new { tenant = context.RequireTenant(), id, courseId, learner, source, dueOn, now = clock.UtcNow }, ReadAssignment, ct);
+            """, new { tenant = context.RequireTenant(), id, courseId, learner, source, dueOn, grace, now = clock.UtcNow }, ReadAssignment, ct);
         if (row is null)
         {
             return (await CurrentAssignmentAsync(courseId, learner, false, ct))!;
@@ -331,6 +337,11 @@ public sealed class Player(
         if (lesson.Kind == LessonKinds.Quiz)
         {
             throw AppException.Conflict("conflict.learning.quiz_needs_attempt");
+        }
+        if (lesson.Kind == LessonKinds.Package)
+        {
+            // A package reports its own completion through its launch; the learner cannot mark it done.
+            throw AppException.Conflict("conflict.learning.package_needs_launch");
         }
         var readable = false;
         foreach (var source in lesson.Sources!.Values.Distinct())
@@ -400,6 +411,77 @@ public sealed class Player(
             current = await CompleteIfDoneAsync(row, definition, assignment, ct);
         }
         return new AttemptResult(score, passed, await ViewAsync(row, definition, current, learner, false, ct));
+    }
+
+    /// <summary>
+    /// Starts a package lesson (US7): a launch for the learner's open assignment, with a random token that is the only key
+    /// to the package files and its runtime, valid for <see cref="PackageRuntime.LaunchLifetime"/>. Only its hash is kept.
+    /// The values the package saved at its last launch (suspend data, location) carry over, so the learner resumes.
+    /// </summary>
+    public async Task<LaunchView> LaunchAsync(Guid id, string key, LaunchRequest request, CancellationToken ct)
+    {
+        var learner = await RequireLearnerAsync(ct);
+        var (row, definition, assignment, lesson) = await OpenLessonAsync(id, key, learner, ct);
+        if (lesson.Kind != LessonKinds.Package || lesson.Sources is not { Count: > 0 } sources)
+        {
+            throw AppException.Conflict("conflict.learning.not_a_package");
+        }
+        var package = request.Locale is { } l && sources.TryGetValue(l, out var chosen) ? chosen
+            : sources.TryGetValue(definition.Locales[0], out var first) ? first : sources.Values.First();
+        var found = await session.QuerySingleOrDefaultAsync("select kind, launch_path, activity_id from learning.package where id = @package",
+            new { package }, r => (Kind: r.GetString(0), Launch: r.GetString(1), Activity: r.Get<string>("activity_id")), ct);
+        if (found.Kind is null)
+        {
+            throw AppException.NotFound();
+        }
+        var token = PackageRuntime.NewToken();
+        var now = clock.UtcNow;
+        var expires = now + PackageRuntime.LaunchLifetime;
+        var launchId = Ids.New();
+        await session.ExecAsync(
+            """
+            insert into learning.package_launch (tenant_id, id, token_hash, assignment_id, lesson_key, package_id, course_version, expires_at, created_at, state)
+            values (@tenant, @launchId, @hash, @assignment, @key, @package, @version, @expires, @now,
+              coalesce((select l.state from learning.package_launch l where l.assignment_id = @assignment and l.lesson_key = @key order by l.created_at desc limit 1), '{}'))
+            """, new { tenant = context.RequireTenant(), launchId, hash = PackageRuntime.Hash(token), assignment = assignment.Id, key, package, version = row.PublishedVersion, expires, now },
+            ct);
+        await StartAsync(assignment, key, ct);
+        return new LaunchView(PackageRuntime.LaunchUrl(token, found.Kind, found.Launch, found.Activity, launchId, learner), found.Kind, expires);
+    }
+
+    /// <summary>
+    /// What a package reported through its launch: the lesson is done when it completed or passed, and its score counts as
+    /// an attempt. Ignored once the assignment is no longer open. Completes the course when every lesson is done.
+    /// </summary>
+    internal async Task RecordPackageAsync(Guid assignmentId, string lessonKey, int version, bool done, int? score, bool passed, CancellationToken ct)
+    {
+        var assignment = await session.QuerySingleOrDefaultAsync($"select {AssignmentColumns} from learning.assignment where id = @assignmentId for update",
+            new { assignmentId }, ReadAssignment, ct);
+        if (assignment is not { Status: AssignmentStatuses.Open } || await courses.RowAsync(assignment.CourseId, false, ct) is not { PublishedVersion: { } current } row)
+        {
+            return;
+        }
+        if (score is { } s)
+        {
+            await session.ExecAsync(
+                """
+                insert into learning.attempt (tenant_id, id, assignment_id, lesson_key, course_version, score, passed, created_at)
+                values (@tenant, @id, @assignmentId, @lessonKey, @version, @s, @passed, @now)
+                """, new { tenant = context.RequireTenant(), id = Ids.New(), assignmentId, lessonKey, version, s, passed, now = clock.UtcNow }, ct);
+        }
+        if (!done)
+        {
+            return;
+        }
+        var definition = (await courses.VersionAsync(row.Id, current, ct))!;
+        if (definition.Lessons.All(l => l.Key != lessonKey))
+        {
+            return;
+        }
+        await session.ExecAsync(
+            "insert into learning.lesson_progress (tenant_id, assignment_id, lesson_key, completed_at) values (@tenant, @assignmentId, @lessonKey, @now) on conflict do nothing",
+            new { tenant = context.RequireTenant(), assignmentId, lessonKey, now = clock.UtcNow }, ct);
+        await CompleteIfDoneAsync(row, definition, assignment, ct);
     }
 
     /// <summary>Completes the assignment and issues the certificate once every lesson of the current version is done.</summary>
