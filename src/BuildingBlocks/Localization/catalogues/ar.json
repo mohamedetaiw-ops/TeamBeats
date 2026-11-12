@@ -1849,5 +1849,14 @@
   "validation.lms.field_name": "استخدم اسم حقل من حروف وأرقام وشرطات سفلية، مع نقاط للحقول المتداخلة، مثل learner.email.",
   "validation.lms.field_twice": "حقلان يذهبان إلى الموضع نفسه في نص الطلب. اجعل لكل منهما موضعه.",
   "validation.lms.fields_required": "اربط كل الحقول المطلوبة: معرّف الدورة وعنوانها وعنوان فتحها للدورات، ومعرّف الدورة وبريد المتعلم للتكليفات، ومعرّف الدورة وبريد المتعلم ووقت الإكمال للإكمالات.",
-  "conflict.learning.external_course": "هذه الدورة من نظام إدارة التعلم لديكم. عدّلها هناك، وستصل التعديلات مع المزامنة التالية."
+  "conflict.learning.external_course": "هذه الدورة من نظام إدارة التعلم لديكم. عدّلها هناك، وستصل التعديلات مع المزامنة التالية.",
+  "validation.learning.package_size": "حجم الحزمة أكبر من 500 ميجابايت.",
+  "validation.learning.package_infected": "عثر الفحص على برمجية خبيثة في هذه الحزمة، فلم تُستورد.",
+  "validation.learning.package_zip": "لا يمكن فتح هذه الحزمة بأمان. ارفع ملف zip فيه 10,000 ملف على الأكثر، وتبقى مساراته داخله.",
+  "validation.learning.package_manifest": "لا تحتوي الحزمة على ملف وصف صالح. تحتاج حزمة SCORM 1.2 إلى imsmanifest.xml وملف تشغيل، وتحتاج حزمة xAPI إلى tincan.xml فيه نشاط وملف تشغيله.",
+  "validation.learning.package_version": "يمكن استيراد حزم SCORM 1.2 وxAPI فقط. صدّر الدورة بصيغة SCORM 1.2 أو xAPI.",
+  "validation.learning.source_package": "اختر حزمة مستوردة إلى هذه الدورة.",
+  "conflict.learning.package_scan_failed": "تعذر فحص الحزمة الآن. حاول مرة أخرى بعد دقائق.",
+  "conflict.learning.package_needs_launch": "يكتمل هذا الدرس من داخل الحزمة نفسها. ابدأها وأنهها هناك.",
+  "conflict.learning.not_a_package": "هذا الدرس لا يشغّل حزمة."
 }

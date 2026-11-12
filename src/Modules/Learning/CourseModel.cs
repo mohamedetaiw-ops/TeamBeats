@@ -11,10 +11,13 @@ public static class LessonKinds
     public const string Video = "video";
     public const string Quiz = "quiz";
 
-    public static readonly IReadOnlyList<string> All = [Page, Document, Video, Quiz];
+    /// <summary>An imported SCORM 1.2 or xAPI package (FR-016), played in a sandboxed frame.</summary>
+    public const string Package = "package";
 
-    /// <summary>Kinds that point at a page or a file in each language of the course.</summary>
-    public static bool HasSources(string kind) => kind is Page or Document or Video;
+    public static readonly IReadOnlyList<string> All = [Page, Document, Video, Quiz, Package];
+
+    /// <summary>Kinds that point at a page, a file or a package in each language of the course.</summary>
+    public static bool HasSources(string kind) => kind is Page or Document or Video or Package;
 }
 
 public static class QuestionKinds

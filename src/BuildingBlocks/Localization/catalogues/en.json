@@ -1849,5 +1849,14 @@
   "validation.lms.field_name": "Use a field name of letters, numbers and underscores, with dots for nested fields, for example learner.email.",
   "validation.lms.field_twice": "Two fields go to the same place in the request body. Give each its own place.",
   "validation.lms.fields_required": "Map every required field: the course ID, title and launch address for courses; the course ID and learner email for assignments; and the course ID, learner email and completion time for completions.",
-  "conflict.learning.external_course": "This course comes from your LMS. Change it in the LMS; the next sync brings the change here."
+  "conflict.learning.external_course": "This course comes from your LMS. Change it in the LMS; the next sync brings the change here.",
+  "validation.learning.package_size": "The package is larger than 500 MB.",
+  "validation.learning.package_infected": "The scanner found malware in this package, so it was not imported.",
+  "validation.learning.package_zip": "This is not a package we can open safely. Upload a zip with at most 10,000 files whose paths stay inside it.",
+  "validation.learning.package_manifest": "The package has no usable manifest. A SCORM 1.2 package needs imsmanifest.xml with a launch file, and an xAPI package needs tincan.xml with an activity and its launch file.",
+  "validation.learning.package_version": "Only SCORM 1.2 and xAPI packages can be imported. Export the course as SCORM 1.2 or xAPI.",
+  "validation.learning.source_package": "Choose a package imported into this course.",
+  "conflict.learning.package_scan_failed": "The package could not be scanned just now. Try again in a few minutes.",
+  "conflict.learning.package_needs_launch": "This lesson is completed by the package itself. Start it and finish it there.",
+  "conflict.learning.not_a_package": "This lesson does not play a package."
 }

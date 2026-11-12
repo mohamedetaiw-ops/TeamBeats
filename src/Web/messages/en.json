@@ -9064,12 +9064,14 @@
         "page": "Page",
         "document": "Document",
         "video": "Video",
-        "quiz": "Quiz"
+        "quiz": "Quiz",
+        "package": "Interactive package"
       },
       "open": {
         "page": "Read the page, then come back and mark the lesson done.",
         "document": "Read the document, then come back and mark the lesson done.",
-        "video": "Watch the video, then come back and mark the lesson done."
+        "video": "Watch the video, then come back and mark the lesson done.",
+        "package": "This lesson plays inside the page. It records your progress and score itself."
       },
       "openSource": "Open in a new tab",
       "markDone": "Mark lesson done",
@@ -9092,7 +9094,10 @@
       "openLms": "Open in your LMS",
       "lmsHint": "The course opens in your LMS. Your completion shows here after the next sync.",
       "lmsUnavailableTitle": "LMS unavailable",
-      "lmsUnavailable": "Your LMS is not answering at the moment. Try again later; your other courses work as usual."
+      "lmsUnavailable": "Your LMS is not answering at the moment. Try again later; your other courses work as usual.",
+      "packageFrame": "Lesson: {title}",
+      "packageStart": "Start the lesson",
+      "packageDone": "I have finished, update my progress"
     },
     "path": {
       "eyebrow": "Learning path",
@@ -9219,7 +9224,8 @@
         "page": "Page",
         "document": "Document",
         "video": "Video",
-        "quiz": "Quiz"
+        "quiz": "Quiz",
+        "package": "SCORM or xAPI package"
       },
       "addLesson": "Add lesson",
       "lessonNumber": "Lesson {number}: {kind}",
@@ -9281,7 +9287,11 @@
       },
       "rulesTab": "Assignment rules",
       "fromLmsTitle": "This course comes from your LMS",
-      "fromLms": "Its titles and content are kept in your LMS, and each sync brings changes here. You choose who sees it, its category and its owner, and you can retire it."
+      "fromLms": "Its titles and content are kept in your LMS, and each sync brings changes here. You choose who sees it, its category and its owner, and you can retire it.",
+      "packageIn": "Package in {language}",
+      "packageHint": "A SCORM 1.2 or xAPI zip, up to 500 MB. It is scanned before it is imported.",
+      "packageFailed": "The package was not imported.",
+      "packageChosen": "A package is chosen for this language. Upload another to replace it."
     },
     "pathBuilder": {
       "eyebrow": "Path builder",

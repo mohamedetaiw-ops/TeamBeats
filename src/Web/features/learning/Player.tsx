@@ -23,12 +23,13 @@ import {
   type AttemptResult,
   type LearnerCourse,
   type LearnerLesson,
+  type LaunchView,
   type LearnerQuestion,
 } from "@/lib/learning";
 import { StateBadge, useDue } from "./parts";
 import "./learning.css";
 
-const lessonIcons = { page: "news", document: "files", video: "video", quiz: "tasks" } as const;
+const lessonIcons = { page: "news", document: "files", video: "video", quiz: "tasks", package: "folder" } as const;
 
 /**
  * The course player (spec 028 US3): enrol where the course is open, take the lessons in order or in any order, resume at
@@ -68,6 +69,9 @@ export function Player({ initial, startPath }: { initial: LearnerCourse; startPa
     setCurrent(key);
     if (open) void run<LearnerCourse>(() => send(`${learningApi}/courses/${course.id}/position`, "PUT", { lessonKey: key }), setCourse);
   }
+
+  // A package reports its own progress; the learner refreshes to see it once they close it.
+  const refresh = () => run<LearnerCourse>(() => fetch(`${learningApi}/courses/${course.id}`), setCourse);
 
   const complete = (key: string) =>
     run<LearnerCourse>(() => send(`${learningApi}/courses/${course.id}/lessons/${encodeURIComponent(key)}:complete`, "POST"), (view) => {
@@ -161,6 +165,7 @@ export function Player({ initial, startPath }: { initial: LearnerCourse; startPa
             busy={busy}
             onComplete={() => void complete(lesson.key)}
             onAttempt={(result) => setCourse(result.course)}
+            onRefresh={refresh}
           />
         ) : (
           <p className="learning-meta">{t("noLessons")}</p>
@@ -178,6 +183,7 @@ function Lesson({
   busy,
   onComplete,
   onAttempt,
+  onRefresh,
 }: {
   courseId: string;
   lesson: LearnerLesson;
@@ -186,6 +192,7 @@ function Lesson({
   busy: boolean;
   onComplete: () => void;
   onAttempt: (result: AttemptResult) => void;
+  onRefresh: () => void;
 }) {
   const t = useTranslations("learning.player");
   const source = lesson.sources ? (lesson.sources[reading] ?? Object.values(lesson.sources)[0] ?? null) : null;
@@ -200,7 +207,9 @@ function Lesson({
         {lesson.minutes ? <Badge icon="clock">{t("minutes", { count: lesson.minutes })}</Badge> : null}
         {lesson.done ? <Badge tone="success" icon="check">{t("done")}</Badge> : null}
       </div>
-      {lesson.quiz ? (
+      {lesson.kind === "package" ? (
+        <PackageFrame courseId={courseId} lesson={lesson} reading={reading} open={open} busy={busy} onRefresh={onRefresh} />
+      ) : lesson.quiz ? (
         <Quiz courseId={courseId} lesson={lesson} reading={reading} open={open} onAttempt={onAttempt} />
       ) : (
         <>
@@ -222,6 +231,74 @@ function Lesson({
         </>
       )}
     </section>
+  );
+}
+
+/**
+ * A SCORM or xAPI package (spec 028 US7) in a sandboxed frame: scripts run, but the frame has its own opaque origin, so
+ * it never reaches the TeamBeats session or page. It reports its progress through its launch address.
+ */
+function PackageFrame({
+  courseId,
+  lesson,
+  reading,
+  open,
+  busy,
+  onRefresh,
+}: {
+  courseId: string;
+  lesson: LearnerLesson;
+  reading: string;
+  open: boolean;
+  busy: boolean;
+  onRefresh: () => void;
+}) {
+  const t = useTranslations("learning.player");
+  const [launch, setLaunch] = useState<LaunchView | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [messages, setMessages] = useState<string[]>([]);
+
+  async function start() {
+    setStarting(true);
+    setMessages([]);
+    const result = await call<LaunchView>(() => send(`${learningApi}/courses/${courseId}/lessons/${encodeURIComponent(lesson.key)}:launch`, "POST", { locale: reading }), t("failed"));
+    setStarting(false);
+    if (result.ok) setLaunch(result.value);
+    else setMessages(result.messages);
+  }
+
+  return (
+    <>
+      <p className="learning-meta">{t("open.package")}</p>
+      {launch ? (
+        <>
+          <iframe
+            className="learning-package"
+            src={launch.url}
+            title={t("packageFrame", { title: localText(lesson.titles, reading) })}
+            sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+            referrerPolicy="no-referrer"
+            allow="fullscreen"
+          />
+          <div className="learning-row">
+            <Button icon="check" busy={busy} onClick={onRefresh}>
+              {t("packageDone")}
+            </Button>
+          </div>
+        </>
+      ) : open && !lesson.done ? (
+        <div className="learning-row">
+          <Button variant="primary" icon="arrow-forward" busy={starting} onClick={() => void start()}>
+            {t("packageStart")}
+          </Button>
+        </div>
+      ) : null}
+      {messages.length > 0 ? (
+        <Alert tone="danger" title={t("failed")} live>
+          {messages.join(" ")}
+        </Alert>
+      ) : null}
+    </>
   );
 }
 
