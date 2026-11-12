@@ -285,10 +285,7 @@ public sealed class AgentRegistryTests(TenantWorld world)
             [Capabilities.AiAssistantMonthlyRequests] = new { enabled = true, limit = 9999 },
             [Capabilities.OrgHierarchy] = new { enabled = true },
         };
-        var created = await OkAsync(world.Platform.PostAsJsonAsync("/api/v1/platform/packages/workplace/versions", new { capabilities }), HttpStatusCode.Created);
-        var version = created.GetProperty("version").GetInt32();
-        (await world.Platform.PostAsync($"/api/v1/platform/packages/workplace/versions/{version}:publish", null)).EnsureSuccessStatusCode();
-        (await world.Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{tenant.Id}/subscription", new { packageKey = "workplace", version })).EnsureSuccessStatusCode();
+        await world.PinPackageVersionAsync(tenant, "workplace", capabilities);
 
         foreach (var call in new Func<Task<HttpResponseMessage>>[]
         {

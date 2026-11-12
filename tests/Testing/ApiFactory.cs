@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Api;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Modules.Identity;
 using TeamBeats.Modules.Identity.Sso;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -114,6 +115,38 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
     }
 
     public HttpClient TenantClient(string tenantKey, string? token = null) => ClientFor($"{tenantKey}.{BaseDomain}", token);
+
+    /// <summary>
+    /// A client for a person the test world seeded. Such a person stands for someone who has just signed in, so before a
+    /// change the handler renews the sign-in time of their session when it is older than five minutes. Without it the
+    /// sessions seeded at the start of the run fall outside the ten minute step-up window (spec 026 FR-005) once the
+    /// suite runs longer than that, and step-up actions late in the run fail with 401. Only sessions made with the test
+    /// method are renewed; the step-up tests use real sign-in sessions and age them on purpose.
+    /// </summary>
+    public HttpClient SeededUserClient(string tenantKey, Guid tenantId, string token)
+    {
+        var client = CreateDefaultClient(new Uri($"https://{tenantKey}.{BaseDomain}"), new FreshSignInHandler(this, tenantId, SessionTokens.Hash(token)));
+        client.DefaultRequestHeaders.Add("Cookie", $"tb_session={token}");
+        return client;
+    }
+
+    private sealed class FreshSignInHandler(ApiFactory factory, Guid tenantId, string tokenHash) : DelegatingHandler
+    {
+        private static readonly TimeSpan RenewAfter = TimeSpan.FromMinutes(5);
+        private DateTimeOffset renewed = DateTimeOffset.UtcNow;
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var now = factory.Services.GetRequiredService<IClock>().UtcNow;
+            if (request.Method != HttpMethod.Get && now - renewed > RenewAfter)
+            {
+                await factory.Database.OwnerExecInTenantAsync(tenantId,
+                    "update identity.user_session set authenticated_at = @now where token_hash = @h and method = 'test'", ("now", now), ("h", tokenHash));
+                renewed = now;
+            }
+            return await base.SendAsync(request, cancellationToken);
+        }
+    }
 
     public HttpClient PlatformClient(string? token = null) => ClientFor($"platform.{BaseDomain}", token);
 

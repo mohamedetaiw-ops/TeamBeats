@@ -97,7 +97,7 @@ public sealed class TenantWorld : IAsyncLifetime
             await session.CommitAsync();
             return (userId, tokenValue);
         });
-        var user = new TestUser(name, id, email, token, Factory.TenantClient(tenant.Key, token));
+        var user = new TestUser(name, id, email, token, Factory.SeededUserClient(tenant.Key, tenant.Id, token));
         tenant.Users[name] = user;
         return user;
     }
@@ -162,6 +162,29 @@ public sealed class TenantWorld : IAsyncLifetime
             await AssignAsync(t, "orgadmin", "organization_administrator", "org_subtree", gulf);
         }
         return t;
+    }
+
+    /// <summary>
+    /// Publishes a package version with these capabilities and moves the tenant to it, then publishes the package's
+    /// capabilities as they were again. New tenants take the latest published version, so without that second publish
+    /// every tenant created later in the run would get the cut-down package. Returns the tenant's new version.
+    /// </summary>
+    public async Task<int> PinPackageVersionAsync(TestTenant tenant, string packageKey, object capabilities)
+    {
+        var current = (await (await tenant["admin"].Client.GetAsync("/api/v1/tenant/entitlements")).ReadAsync<JsonElement>()).GetProperty("capabilities");
+        var version = await PublishPackageAsync(packageKey, capabilities);
+        (await Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{tenant.Id}/subscription", new { packageKey, version })).EnsureSuccessStatusCode();
+        await PublishPackageAsync(packageKey, current);
+        return version;
+    }
+
+    /// <summary>Publishes a new version of a package and returns its number.</summary>
+    public async Task<int> PublishPackageAsync(string packageKey, object capabilities)
+    {
+        var draft = await (await Platform.PostAsJsonAsync($"/api/v1/platform/packages/{packageKey}/versions", new { capabilities })).ReadAsync<JsonElement>();
+        var version = draft.GetProperty("version").GetInt32();
+        (await Platform.PostAsync($"/api/v1/platform/packages/{packageKey}/versions/{version}:publish", null)).EnsureSuccessStatusCode();
+        return version;
     }
 
     /// <summary>

@@ -121,6 +121,15 @@ public static class Permissions
     public const string EvalPolicyManage = "eval.policy_manage";
     public const string EvalView = "eval.view";
 
+    // Spec 023 (R2): employees take part in communities, polls, surveys and recognition; moderators review content in
+    // their org scope; engagement administrators configure engagement for the tenant; survey authors publish to an
+    // audience in scope; recognition approvers choose the team and star of the period.
+    public const string EngagementParticipate = "engagement.participate";
+    public const string EngagementModerate = "engagement.moderate";
+    public const string EngagementManage = "engagement.manage";
+    public const string EngagementSurveyPublish = "engagement.survey_publish";
+    public const string EngagementRecognitionApprove = "engagement.recognition_approve";
+
     // Spec 021 (R1): adoption basics and frontend error reports for the whole tenant.
     public const string AnalyticsView = "analytics.view";
 
@@ -158,6 +167,7 @@ public static class Permissions
         AgentDesign, AgentPublish, AgentView, AgentSecurityView, AgentSuspend,
         EvalDesign, EvalReview, EvalPolicyManage, EvalView,
         AnalyticsView,
+        EngagementParticipate, EngagementModerate, EngagementManage, EngagementSurveyPublish, EngagementRecognitionApprove,
     ];
 }
 
@@ -182,5 +192,6 @@ public static class BuiltInRoles
     public const string ComplianceOfficer = "compliance_officer";
     public const string AgentDesigner = "agent_designer";
     public const string EvaluationReviewer = "evaluation_reviewer";
+    public const string EngagementAdministrator = "engagement_administrator";
 
 }
