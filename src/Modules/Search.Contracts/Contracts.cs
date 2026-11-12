@@ -16,8 +16,10 @@ public static class SearchKinds
     public const string Service = "service";
     public const string Discussion = "discussion";
     public const string Course = "course";
+    public const string Space = "space";
+    public const string Task = "task";
 
-    public static readonly IReadOnlyList<string> All = [Person, Content, Document, Knowledge, Policy, Service, Discussion, Course];
+    public static readonly IReadOnlyList<string> All = [Person, Content, Document, Knowledge, Policy, Service, Discussion, Course, Space, Task];
 }
 
 /// <summary>

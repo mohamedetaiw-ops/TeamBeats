@@ -10,7 +10,7 @@ public static class BuiltInRoleDefinitions
 {
     public static readonly IReadOnlyList<RoleDefinition> All =
     [
-        new(BuiltInRoles.TenantAdministrator, Delegable: false, DelegatedAdmin: false, P.All),
+        new(BuiltInRoles.TenantAdministrator, Delegable: false, DelegatedAdmin: false, P.All.Where(p => !P.ResourceOnly.Contains(p)).ToList()),
         new(BuiltInRoles.OrganizationAdministrator, Delegable: true, DelegatedAdmin: true,
         [
             P.OrgUnitView, P.OrgUnitManage, P.OrgMembershipManage, P.RolesView, P.RolesAssign, P.UsersView, P.AuditView,
@@ -28,7 +28,7 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.SecurityOfficer, Delegable: false, DelegatedAdmin: false,
             [P.OrgUnitView, P.AuditView, P.AuditExport, P.UsersView, P.RolesView, P.AccessExplain, P.ConfigHistoryView, P.SecurityView, P.SecurityRespond, P.AiPolicyView,
              P.AgentView, P.AgentSecurityView, P.AgentSuspend, P.EvalView]),
-        new(BuiltInRoles.Employee, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PersonalLayoutEdit, P.PeopleView, P.EngagementParticipate, P.LearningTake]),
+        new(BuiltInRoles.Employee, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PersonalLayoutEdit, P.PeopleView, P.EngagementParticipate, P.LearningTake, P.SpacesCreate]),
         new(BuiltInRoles.PageEditor, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit]),
         new(BuiltInRoles.PagePublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit, P.PagePublish]),
         new(BuiltInRoles.BrandManager, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ThemeEdit]),
@@ -41,5 +41,19 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.LearningAdministrator, Delegable: true, DelegatedAdmin: false,
             [P.OrgUnitView, P.PeopleView, P.LearningTake, P.LearningManage, P.LearningReport]),
         new(BuiltInRoles.ComplianceOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.PolicyAuthor, P.PolicyManage, P.LearningReport, P.LearningAssignLinked]),
+        new(BuiltInRoles.SpacesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.SpacesCreate, P.SpacesManage]),
+        // Spec 029 FR-002: the space roles. Only Spaces assigns them, on one space (see ModuleAssignedRoles).
+        new(BuiltInRoles.SpaceOwner, Delegable: false, DelegatedAdmin: false, [P.SpacesView, P.SpacesContribute, P.SpacesOwn]),
+        new(BuiltInRoles.SpaceMember, Delegable: false, DelegatedAdmin: false, [P.SpacesView, P.SpacesContribute]),
+        new(BuiltInRoles.SpaceViewer, Delegable: false, DelegatedAdmin: false, [P.SpacesView]),
     ];
+
+    /// <summary>
+    /// Roles a module assigns on its own resources and keeps in step with its own records (spec 029 space roles). The
+    /// role administration endpoints refuse them, so a space's members are always the ones the space shows.
+    /// </summary>
+    public static readonly IReadOnlySet<string> ModuleAssignedRoles = new HashSet<string>(StringComparer.Ordinal)
+    {
+        BuiltInRoles.SpaceOwner, BuiltInRoles.SpaceMember, BuiltInRoles.SpaceViewer,
+    };
 }

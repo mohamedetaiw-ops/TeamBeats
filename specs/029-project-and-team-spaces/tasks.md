@@ -3,11 +3,11 @@
 Depends on 004, 011, 015, 016, 022, 023, 026. R2.
 
 ## Phase 1: Module setup
-- [ ] T001 `Spaces` module skeleton; migration (forced RLS); relations in 004; capability keys; audit actions
+- [x] T001 `Spaces` module skeleton; migration (forced RLS); relations in 004; capability keys; audit actions
 
 ## Phase 2: User Stories 1, 2, 3 and 7 (P1)
-- [ ] T002 [P] [US1] Tests: templates, visibility types, non-member invisibility in search and notifications
-- [ ] T003 [US1] Spaces, templates, directory
+- [x] T002 [P] [US1] Tests: templates, visibility types, non-member invisibility in search and notifications
+- [x] T003 [US1] Spaces, templates, directory
 - [ ] T004 [P] [US2] [US3] [US7] Tests: assignment notifications, board moves, viewer refusal, milestone progress, status history, My tasks
 - [ ] T005 [US2] Tasks, list and board views
 - [ ] T006 [US3] Milestones and status

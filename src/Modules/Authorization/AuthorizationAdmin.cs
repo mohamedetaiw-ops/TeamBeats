@@ -80,8 +80,9 @@ public sealed class AuthorizationAdmin(
         {
             errors.Add("permissions", "validation.role.permissions_required");
         }
-        else if (request.Permissions.Any(p => !Permissions.All.Contains(p)))
+        else if (request.Permissions.Any(p => !Permissions.All.Contains(p) || Permissions.ResourceOnly.Contains(p)))
         {
+            // Space permissions come only with the space roles (spec 029 FR-002), never from a custom role.
             errors.Add("permissions", "validation.role.unknown_permission");
         }
         errors.ThrowIfAny();
@@ -169,6 +170,11 @@ public sealed class AuthorizationAdmin(
         if (role == default)
         {
             throw AppException.Validation("roleKey", "validation.role.unknown");
+        }
+        if (BuiltInRoleDefinitions.ModuleAssignedRoles.Contains(role.Key))
+        {
+            // Space roles follow the space's own members (spec 029 FR-002); they are given in the space.
+            throw AppException.Validation("roleKey", "validation.role.module_assigned");
         }
 
         // Scope must exist in this tenant; another tenant's unit is indistinguishable from a missing one.

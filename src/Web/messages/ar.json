@@ -492,7 +492,11 @@
         "evaluation_reviewer": "مراجع التقييم",
         "finance_officer": "مسؤول المالية",
         "engagement_administrator": "مسؤول التفاعل",
-        "learning_administrator": "مسؤول التعلم"
+        "learning_administrator": "مسؤول التعلم",
+        "spaces_administrator": "مسؤول المساحات",
+        "space_owner": "مالك المساحة",
+        "space_member": "عضو المساحة",
+        "space_viewer": "مشاهد المساحة"
       },
       "tabs": "أقسام الأدوار والوصول",
       "unknownUnit": "وحدة خارج نطاق عرضك",
@@ -607,7 +611,8 @@
       "roles": "الأدوار",
       "records": "السجلات",
       "engagement": "المجتمعات والمشاركة",
-      "learning": "التعلم"
+      "learning": "التعلم",
+      "spaces": "المساحات"
     },
     "plan": {
       "description": "الباقة التي تستخدمها مساحة العمل هذه وكل ما تتضمنه.",
@@ -746,7 +751,10 @@
         "learning_courses": "الدورات ومسارات التعلم",
         "learning_mandatory": "التدريب الإلزامي",
         "learning_scorm": "استيراد SCORM وxAPI",
-        "learning_lms_connector": "ربط نظام إدارة التعلم"
+        "learning_lms_connector": "ربط نظام إدارة التعلم",
+        "spaces_projects": "مساحات المشاريع والفرق",
+        "spaces_guests": "الضيوف في المساحات",
+        "spaces_max_spaces": "المساحات"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",
@@ -1859,7 +1867,8 @@
       "document_update": "تحديثات المستندات",
       "recognition": "التقدير",
       "integration_alert": "تنبيهات الاتصالات",
-      "system": "رسائل النظام"
+      "system": "رسائل النظام",
+      "space_activity": "النشاط في مساحاتك"
     },
     "filter": {
       "label": "عرض",
@@ -3848,7 +3857,9 @@
       "policy": "سياسة",
       "service": "خدمة",
       "discussion": "نقاش",
-      "course": "دورة"
+      "course": "دورة",
+      "space": "مساحة",
+      "task": "مهمة"
     },
     "admin": {
       "title": "البحث",

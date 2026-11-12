@@ -57,8 +57,20 @@ public sealed class EffectiveGrantsLoader(
 {
     public static readonly TimeSpan MaxStaleness = TimeSpan.FromSeconds(60);
 
+    private bool _changedInScope;
+
+    /// <summary>
+    /// Grants changed in this scope's transaction, which is not committed yet: from now on grants are read fresh and
+    /// never shared, so a version that might still roll back is never cached for other requests.
+    /// </summary>
+    internal void GrantsChanged() => _changedInScope = true;
+
     public async Task<EffectiveGrants> LoadAsync(Guid userId, CancellationToken ct)
     {
+        if (_changedInScope)
+        {
+            return await LoadUncachedAsync(userId, ct);
+        }
         var tenantId = context.RequireTenant();
         var grantsVersion = await session.ScalarAsync<long?>("select version from authz.grants_version", null, ct) ?? 0;
         var hierarchyVersion = await hierarchy.GetVersionAsync(ct);

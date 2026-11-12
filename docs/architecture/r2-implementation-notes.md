@@ -857,3 +857,20 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 
 ### Follow-ups
 - A rule is still applied inside the request that creates it, with a few statements per learner. That meets the target with room to spare, but if tenants grow well past 20,000 people per rule, the first application should move to a background job with the rule showing "assigning" until it is done.
+
+## Project and team spaces (spec 029, slice 1: T001 to T003; US1)
+
+### Built
+- A `Spaces` module with its own schema (`spaces.setting`, `template`, `space`, `space_member`, `task_list`, `task_column`, `task`, all with forced row level security) and the routes under `/api/v1/spaces`: rights, templates, the directory (`?scope=mine` for my spaces), create, get, change, `:archive`, `:restore`, `:join`, `:leave`, members, and `manage/settings` and `manage/templates` for `spaces.manage`.
+- Permissions `spaces.create`, `spaces.manage`, `spaces.view`, `spaces.contribute` and `spaces.own`. The last three are only ever held through resource scoped built-in roles (`space_owner`, `space_member`, `space_viewer`) that Spaces gives through `IAuthorizationProvisioning.SetResourceRoleAsync`. Role administration refuses to assign them (`validation.role.module_assigned`) and a custom role cannot carry those permissions. A new role `spaces_administrator` holds `spaces.create` and `spaces.manage`; employees hold `spaces.create`.
+- Capabilities `spaces.projects`, `spaces.guests` and `spaces.max_spaces` in every package except Workplace (Workplace Plus allows 200 spaces, larger packages have no limit).
+- Built-in project and team templates plus up to 50 tenant templates; a template gives lists, board columns and starter tasks once, and later changes or retiring never touch spaces already made (FR-012).
+- Spaces are a search source (kind `space`) filtered by the same reading rule as the page. Members are told when they are added (category `space_activity`). When the last owner leaves the company, ownership passes to the creator's manager, or the spaces administrators are asked.
+
+### Smallest safe defaults
+- Public spaces are readable by everyone in the tenant. Private spaces appear in the directory with name, description and owners, but only members read them. Secret spaces are invisible to anyone who is not a member.
+- The tenant administrator and spaces administrators see a space's metadata and members so they can archive, restore and reassign owners, but they do not read private or secret content unless they are members.
+- Space rules default to everyone with `spaces.create` creating spaces, guests off and 90 days of guest access (7 to 365).
+- Built-in template names and starter content use the tenant's default language at the time the space is made.
+- A space always keeps at least one owner (`conflict.spaces.last_owner`). Joining is allowed only for public spaces that allow it.
+- An archived space is read only and leaves the directory, but stays in my spaces and the administrators' list.

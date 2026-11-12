@@ -492,7 +492,11 @@
         "evaluation_reviewer": "Evaluation reviewer",
         "finance_officer": "Finance officer",
         "engagement_administrator": "Engagement administrator",
-        "learning_administrator": "Learning administrator"
+        "learning_administrator": "Learning administrator",
+        "spaces_administrator": "Spaces administrator",
+        "space_owner": "Space owner",
+        "space_member": "Space member",
+        "space_viewer": "Space viewer"
       },
       "tabs": "Roles and access sections",
       "unknownUnit": "a unit outside your view",
@@ -607,7 +611,8 @@
       "roles": "Roles",
       "records": "Records",
       "engagement": "Communities and engagement",
-      "learning": "Learning"
+      "learning": "Learning",
+      "spaces": "Spaces"
     },
     "plan": {
       "description": "The package this workspace uses and everything it includes.",
@@ -746,7 +751,10 @@
         "learning_courses": "Courses and learning paths",
         "learning_mandatory": "Mandatory training",
         "learning_scorm": "SCORM and xAPI import",
-        "learning_lms_connector": "LMS connector"
+        "learning_lms_connector": "LMS connector",
+        "spaces_projects": "Project and team spaces",
+        "spaces_guests": "Guests in spaces",
+        "spaces_max_spaces": "Spaces"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -1859,7 +1867,8 @@
       "document_update": "Document updates",
       "recognition": "Recognition",
       "integration_alert": "Connection alerts",
-      "system": "System messages"
+      "system": "System messages",
+      "space_activity": "Activity in your spaces"
     },
     "filter": {
       "label": "Show",
@@ -3848,7 +3857,9 @@
       "policy": "Policy",
       "service": "Service",
       "discussion": "Discussion",
-      "course": "Course"
+      "course": "Course",
+      "space": "Space",
+      "task": "Task"
     },
     "admin": {
       "title": "Search",
