@@ -1,5 +1,7 @@
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type SignInOptions } from "@/lib/api";
+import type { KioskDeviceInfo } from "@/lib/kiosk";
 import { DevSignInForm, type DevSignInMode } from "./DevSignInForm";
 import { OfflineWipe } from "@/features/app/OfflineSync";
 
@@ -21,6 +23,11 @@ function devSignInMode(): DevSignInMode | null {
 }
 
 export default async function SignInPage() {
+  // An enrolled kiosk signs people in with badges only (spec 030 US4): every way to the sign-in page leads to its start screen.
+  const kiosk = await apiGet<KioskDeviceInfo>("/api/v1/kiosk/device");
+  if (kiosk.ok && kiosk.data.enrolled) {
+    redirect("/kiosk");
+  }
   const t = await getTranslations("signin");
   const mode = devSignInMode();
   const options = await apiGet<SignInOptions>("/api/v1/auth/signin/options");

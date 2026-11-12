@@ -17,8 +17,8 @@ Depends on 003, 008, 015, 026, 033. R2.
 - [x] T008 [US3] Offline cache and server cache marks
 
 ## Phase 4: User Story 4, kiosk (P1)
-- [ ] T009 [P] [US4] Tests: enrolment, badge and PIN, lockout, inactivity sign-out, nothing left on device, feature block by URL, revocation within 1 minute, cross-tenant badge
-- [ ] T010 [US4] Kiosk devices, badge sign-in and kiosk session type
+- [x] T009 [P] [US4] Tests: enrolment, badge and PIN, lockout, inactivity sign-out, nothing left on device, feature block by URL, revocation within 1 minute, cross-tenant badge
+- [x] T010 [US4] Kiosk devices, badge sign-in and kiosk session type
 
 ## Final phase
 - [ ] T011 Lighthouse checks in CI; OpenAPI; R2 implementation notes; spec evidence

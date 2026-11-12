@@ -23,6 +23,7 @@ public static class IdentityModule
     {
         services.Configure<SessionOptions>(configuration.GetSection(SessionOptions.Section));
         services.AddScoped<SessionService>();
+        services.AddScoped<Kiosk.KioskService>();
         services.AddScoped<ISessionRevocation>(sp => sp.GetRequiredService<SessionService>());
         services.AddScoped<ISignInHistory, SignInHistory>();
         services.AddScoped<ISignInMethods, SignInMethodsReader>();
@@ -61,6 +62,7 @@ public static class IdentityModule
         }).WithTags("Auth");
 
         app.MapSsoEndpoints();
+        Kiosk.KioskEndpoints.MapKioskEndpoints(app);
         Directory.DirectoryEndpoints.MapDirectoryEndpoints(app);
 
         var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me");
@@ -79,6 +81,8 @@ public static class IdentityModule
                 locale = locale.Locale,
                 dir = locale.Direction,
                 tenant = new { id = context.TenantId, key = context.Host.Tenant?.Key, branding.DisplayName, tenant.EnabledLocales, tenant.DefaultLocale, tenant.TimeZone, tenant.NumberingSystem },
+                // On a shared kiosk device (spec 030 US4): how long the app waits before it signs out and wipes the device.
+                sharedDevice = context.SharedDevice is { } device ? new { device.IdleMinutes, features = device.Features.Order(StringComparer.Ordinal).ToList() } : null,
             });
         });
 

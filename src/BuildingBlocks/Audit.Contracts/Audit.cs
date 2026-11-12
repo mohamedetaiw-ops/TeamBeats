@@ -229,6 +229,15 @@ public static class AuditActions
 
     // Spec 030 (R2): offline storage limits.
     public const string MobileOfflinePolicyChanged = "mobile.offline_policy_changed";
+
+    // Spec 030 US4 (R2): kiosk devices and badges.
+    public const string DeviceKioskEnrolled = "device.kiosk_enrolled";
+    public const string DeviceKioskChanged = "device.kiosk_changed";
+    public const string DeviceKioskRevoked = "device.kiosk_revoked";
+    public const string DeviceKioskSignIn = "device.kiosk_signin";
+    public const string DeviceKioskLockout = "device.kiosk_lockout";
+    public const string DeviceBadgeIssued = "device.badge_issued";
+    public const string DeviceBadgePinReset = "device.badge_pin_reset";
     public const string SecurityRequestBlockedNetwork = "security.request_blocked_network";
     public const string SecurityMfaMissing = "security.mfa_missing";
     public const string SecurityStepUpCompleted = "security.step_up_completed";
@@ -470,7 +479,8 @@ public static class AuditActions
         HrJourneyTemplateChanged, HrJourneyStarted, HrJourneyRescheduled, HrJourneyStepCompleted, HrJourneyCancelled, HrAccessRemovalConfirmed, HrAccessRemovalEscalated, HrExitInterviewRecorded, HrJourneySettingsChanged, HrPreboardingSent, HrAttendanceSettingsChanged, HrWorkRuleChanged, HrAttendanceExported, HrAttendanceRequested, HrAttendanceCorrected, HrCompensationCredited, HrAttendanceRequestRejected, HrLetterTypeChanged, HrLetterSettingsChanged, HrLetterRequested, HrLetterIssued, HrLetterRejected, HrLetterVerified, HrDataChangeSettingsChanged, HrDataChangeRequested, HrDataChangeApproved, HrDataChangeRejected, HrDataChangeWrittenBack, HrDataChangeWriteFailed, HrExpensePolicyChanged, HrExpenseRatesChanged, HrExpenseSubmitted, HrExpenseApproved, HrExpenseRejected, HrExpenseHandedOff,
         CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarSettingsChanged, CalendarTeamViewed,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
-        SecurityPolicyChanged, MobileOfflinePolicyChanged, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
+        SecurityPolicyChanged, MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
+        DeviceBadgeIssued, DeviceBadgePinReset, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
         ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,
         TaskApproved, TaskRejected, TaskReturned, DelegationSet, DelegationChanged, DelegationEnded,

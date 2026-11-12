@@ -32,18 +32,19 @@ public static class SessionTokens
 public sealed class SessionService(IDbSession session, ITenantContext context, IAuditWriter audit, IOutbox outbox, IClock clock,
     Microsoft.Extensions.Options.IOptions<SessionOptions> options, TeamBeats.Modules.Security.Contracts.ISecurityPolicy policies) : ISessionRevocation
 {
-    public async Task<string> CreateUserSessionAsync(Guid userId, string method, CancellationToken ct)
+    /// <param name="kioskDeviceId">Set for a kiosk session (spec 030 US4): it lives only while that device stays enrolled.</param>
+    public async Task<string> CreateUserSessionAsync(Guid userId, string method, CancellationToken ct, Guid? kioskDeviceId = null)
     {
         var token = SessionTokens.NewToken();
         await session.ExecAsync(
             """
-            insert into identity.user_session (tenant_id, id, user_id, token_hash, method, expires_at, source_ip, authenticated_at, last_seen_at)
-            values (@t, @id, @u, @h, @m, @exp, @ip::inet, @now, @now)
+            insert into identity.user_session (tenant_id, id, user_id, token_hash, method, expires_at, source_ip, authenticated_at, last_seen_at, kiosk_device_id)
+            values (@t, @id, @u, @h, @m, @exp, @ip::inet, @now, @now, @kiosk)
             """,
             new
             {
                 t = context.RequireTenant(), id = Ids.New(), u = userId, h = SessionTokens.Hash(token), m = method, exp = clock.UtcNow + options.Value.Lifetime,
-                ip = System.Net.IPAddress.TryParse(context.SourceIp, out var address) ? address.ToString() : null, now = clock.UtcNow,
+                ip = System.Net.IPAddress.TryParse(context.SourceIp, out var address) ? address.ToString() : null, now = clock.UtcNow, kiosk = kioskDeviceId,
             }, ct);
 
         // Concurrent session limit (spec 026 FR-003): the oldest sessions beyond the limit end on a new sign-in.
@@ -68,14 +69,15 @@ public sealed class SessionService(IDbSession session, ITenantContext context, I
         return token;
     }
 
-    public void SetCookie(HttpResponse response, string token) =>
+    /// <param name="persistent">False for a kiosk session: the cookie goes when the browser closes (spec 030 FR-016).</param>
+    public void SetCookie(HttpResponse response, string token, bool persistent = true) =>
         response.Cookies.Append(options.Value.CookieName, token, new CookieOptions
         {
             HttpOnly = true,
             Secure = true,
             SameSite = SameSiteMode.Lax,
             Path = "/",
-            MaxAge = options.Value.Lifetime,
+            MaxAge = persistent ? options.Value.Lifetime : null,
         });
 
     public void ClearCookie(HttpResponse response) =>

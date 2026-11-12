@@ -35,9 +35,9 @@ public static class SessionRules
         return null;
     }
 
-    public static async Task TouchAsync(IServiceProvider services, Guid sessionId, DateTimeOffset lastSeen, CancellationToken ct)
+    public static async Task TouchAsync(IServiceProvider services, Guid sessionId, DateTimeOffset lastSeen, CancellationToken ct, TimeSpan? every = null)
     {
-        if (services.GetRequiredService<IClock>().UtcNow - lastSeen < TouchEvery)
+        if (services.GetRequiredService<IClock>().UtcNow - lastSeen < (every ?? TouchEvery))
         {
             return;
         }

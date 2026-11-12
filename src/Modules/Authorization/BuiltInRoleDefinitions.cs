@@ -44,6 +44,8 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.SpacesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.SpacesCreate, P.SpacesManage]),
         new(BuiltInRoles.FacilitiesAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.BookingBook, P.BookingManage, P.BookingReport]),
         new(BuiltInRoles.FacilitiesAnalyst, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.BookingReport]),
+        new(BuiltInRoles.DeviceAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.DeviceManage]),
+        new(BuiltInRoles.KioskUser, Delegable: true, DelegatedAdmin: false, [P.KioskSignIn]),
         // Spec 029 FR-002: the space roles. Only Spaces assigns them, on one space (see ModuleAssignedRoles).
         new(BuiltInRoles.SpaceOwner, Delegable: false, DelegatedAdmin: false, [P.SpacesView, P.SpacesContribute, P.SpacesOwn, P.DocView, P.DocContribute, P.DocManage]),
         new(BuiltInRoles.SpaceMember, Delegable: false, DelegatedAdmin: false, [P.SpacesView, P.SpacesContribute, P.DocView, P.DocContribute]),

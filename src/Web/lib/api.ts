@@ -23,6 +23,9 @@ async function apiRequest<T>(path: string, init: { method: string; body?: unknow
   const cookieStore = await cookies();
   const incoming = await headers();
   const session = cookieStore.get("tb_session")?.value;
+  // On a shared kiosk (spec 030 US4) the session is bound to the device, so the device cookie goes along with it.
+  const kiosk = cookieStore.get("tb_kiosk")?.value;
+  const cookie = [session ? `tb_session=${session}` : null, kiosk ? `tb_kiosk=${kiosk}` : null].filter(Boolean).join("; ");
   const address = clientAddress(incoming.get("x-forwarded-for"));
   let response: Response;
   try {
@@ -33,7 +36,7 @@ async function apiRequest<T>(path: string, init: { method: string; body?: unknow
         "x-forwarded-host": incoming.get("host") ?? "",
         ...(address ? { "x-forwarded-for": address } : {}),
         ...(init.body === undefined ? {} : { "content-type": "application/json" }),
-        ...(session ? { cookie: `tb_session=${session}` } : {}),
+        ...(cookie ? { cookie } : {}),
       },
       body: init.body === undefined ? undefined : JSON.stringify(init.body),
       cache: "no-store",
@@ -67,6 +70,8 @@ export type Me = {
   locale: string;
   dir: "rtl" | "ltr";
   tenant: { id: string; key: string; displayName?: string; enabledLocales: string[]; defaultLocale: string };
+  /** Set on a shared kiosk device (spec 030 US4): the app signs out and wipes the device after this many idle minutes. */
+  sharedDevice?: { idleMinutes: number; features: string[] } | null;
 };
 
 /** An admin shell section; badge counts items that need attention, such as open security alerts (spec 026). */

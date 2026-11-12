@@ -481,7 +481,7 @@ public sealed partial class ShellService(
         var visible = await VisibleNodesAsync(nodes, ct);
         var owners = await OwnerNamesAsync(nodes.Values, locale, ct);
         var result = nodes.Values
-            .Where(n => visible.Contains(n.Id))
+            .Where(n => visible.Contains(n.Id) && OnThisDevice(n))
             .Where(n => n.Slug.Contains(term, StringComparison.OrdinalIgnoreCase)
                 || n.Labels.Values.Any(l => l.Contains(term, StringComparison.CurrentCultureIgnoreCase)))
             .Select(n => new QuickNavItem(Label(n.Labels, locale) ?? n.Slug, Href(n), n.Owner is { } o ? owners.GetValueOrDefault(o) : null))
@@ -708,7 +708,7 @@ public sealed partial class ShellService(
     {
         var owners = await OwnerNamesAsync(nodes.Values, locale, ct);
         NavLink? Link(MenuItemInput item) =>
-            nodes.TryGetValue(item.NodeId, out var node) && visible.Contains(node.Id)
+            nodes.TryGetValue(item.NodeId, out var node) && visible.Contains(node.Id) && OnThisDevice(node)
                 ? new NavLink(node.Id, Label(node.Labels, locale) ?? node.Slug, Href(node), node.Owner is { } o ? owners.GetValueOrDefault(o) : null,
                     (item.Children ?? []).Select(Link).OfType<NavLink>().ToList())
                 : null;
@@ -727,6 +727,14 @@ public sealed partial class ShellService(
     }
 
     private static string Href(Node node) => node.Url ?? "/" + node.Slug;
+
+    /// <summary>
+    /// On a shared kiosk device (spec 030 US4) the navigation leaves out module pages of features the kiosk does not allow;
+    /// content pages stay, as their rendering already leaves out components the kiosk cannot reach.
+    /// </summary>
+    private bool OnThisDevice(Node node) =>
+        context.SharedDevice is not { } device || node.Url is not { } url || url.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+        || SharedDeviceRules.AllowsPage(url, device.Features);
 
     private static string? Label(IReadOnlyDictionary<string, string>? labels, string locale) =>
         labels is null || labels.Count == 0 ? null

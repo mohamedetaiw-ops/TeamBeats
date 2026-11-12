@@ -24,6 +24,9 @@ public interface ITenantContext
     /// <summary>Client IP for audit records, when the work came from HTTP.</summary>
     string? SourceIp { get; }
 
+    /// <summary>Set when the session was opened on a shared kiosk device (spec 030 US4): only its features are reachable.</summary>
+    SharedDeviceSession? SharedDevice => null;
+
     /// <summary>The tenant ID or a fail-closed exception when missing.</summary>
     Guid RequireTenant();
 
@@ -39,6 +42,7 @@ public sealed class TenantContextAccessor : ITenantContext
     public Guid? SessionId { get; private set; }
     public HostScope Host { get; private set; } = HostScope.Unknown;
     public string? SourceIp { get; set; }
+    public SharedDeviceSession? SharedDevice { get; set; }
 
     /// <summary>Raised when the tenant changes so the open database transaction can re-apply context.</summary>
     public event Action<Guid?>? TenantChanged;

@@ -12,6 +12,7 @@ import { GlobalMenu } from "./GlobalMenu";
 import { MobileNav } from "./MobileNav";
 import { PushOffer } from "@/features/app/PushOffer";
 import { OfflineSync } from "@/features/app/OfflineSync";
+import { KioskSession } from "@/features/kiosk/KioskSession";
 import { QuickNav } from "./QuickNav";
 import { SettingsPanel } from "./SettingsPanel";
 import { Icon } from "@/components/ui/Icon";
@@ -113,8 +114,15 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
         </Link>
       ) : null}
       {shell.ok && regions.includes("global_navigation") && shell.data.mobileNav?.length ? <MobileNav items={shell.data.mobileNav} all={shell.data.globalMenu} /> : null}
-      <PushOffer owner={`${me.tenant.id}:${me.id}`} />
-      <OfflineSync />
+      {me.sharedDevice ? (
+        // A shared kiosk keeps nothing on the device: no push offer, no offline copy, and a timer that signs out (spec 030 US4).
+        <KioskSession idleMinutes={me.sharedDevice.idleMinutes} />
+      ) : (
+        <>
+          <PushOffer owner={`${me.tenant.id}:${me.id}`} />
+          <OfflineSync />
+        </>
+      )}
     </header>
   );
 }

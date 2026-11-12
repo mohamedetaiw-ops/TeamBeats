@@ -157,6 +157,11 @@ public static class Permissions
     public const string BookingManage = "booking.manage";
     public const string BookingReport = "booking.report";
 
+    // Spec 030 US4 (R2): frontline people sign in on a shared kiosk device; device administrators enrol and revoke
+    // kiosks and issue badges. Kiosk sign-in is given by group through the kiosk user role.
+    public const string KioskSignIn = "kiosk.signin";
+    public const string DeviceManage = "device.manage";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -202,6 +207,7 @@ public static class Permissions
         LearningTake, LearningManage, LearningTeamView, LearningReport, LearningAssignLinked,
         SpacesCreate, SpacesManage, SpacesView, SpacesContribute, SpacesOwn,
         BookingBook, BookingManage, BookingReport,
+        KioskSignIn, DeviceManage,
     ];
 }
 
@@ -231,6 +237,8 @@ public static class BuiltInRoles
     public const string SpacesAdministrator = "spaces_administrator";
     public const string FacilitiesAdministrator = "facilities_administrator";
     public const string FacilitiesAnalyst = "facilities_analyst";
+    public const string DeviceAdministrator = "device_administrator";
+    public const string KioskUser = "kiosk_user";
 
     // Spec 029: the space roles, assigned only on a space by the Spaces module.
     public const string SpaceOwner = "space_owner";

@@ -68,24 +68,43 @@ public static class SessionAuthenticationMiddleware
                         context.SetTenant(tenant.Id);
                         var s = await db.QuerySingleOrDefaultAsync(
                             """
-                            select s.id, s.user_id, s.created_at, s.last_seen_at, s.authenticated_at, s.method from identity.user_session s
+                            select s.id, s.user_id, s.created_at, s.last_seen_at, s.authenticated_at, s.method, s.kiosk_device_id,
+                              d.revoked_at is null and d.token_hash is not null, d.token_hash, d.features, d.idle_minutes
+                            from identity.user_session s
                             join identity.user_account u on u.id = s.user_id
+                            left join identity.kiosk_device d on d.id = s.kiosk_device_id
                             where s.token_hash = @h and s.revoked_at is null and s.expires_at > now() and u.status = 'active' and not u.test_identity
                             """, new { h = SessionTokens.Hash(token) },
                             r => (Session: r.GetGuid(0), User: r.GetGuid(1), Created: r.GetFieldValue<DateTimeOffset>(2), LastSeen: r.GetFieldValue<DateTimeOffset>(3),
-                                Authenticated: r.GetFieldValue<DateTimeOffset>(4), Method: r.GetString(5)),
+                                Authenticated: r.GetFieldValue<DateTimeOffset>(4), Method: r.GetString(5),
+                                Kiosk: r.IsDBNull(6) ? (Guid?)null : r.GetGuid(6), KioskActive: !r.IsDBNull(7) && r.GetBoolean(7),
+                                KioskToken: r.IsDBNull(8) ? null : r.GetString(8), KioskFeatures: r.IsDBNull(9) ? [] : r.GetFieldValue<string[]>(9),
+                                KioskIdle: r.IsDBNull(10) ? 0 : r.GetInt32(10)),
                             http.RequestAborted);
                         var membership = s == default ? null
                             : await services.GetRequiredService<ITenantMemberships>().GetAsync(s.User, http.RequestAborted);
+                        var now = services.GetRequiredService<IClock>().UtcNow;
                         var ended = membership is { Status: MembershipStatus.Active }
-                            ? SessionRules.Ended(await services.GetRequiredService<ISecurityPolicy>().GetAsync(http.RequestAborted), s.Created, s.LastSeen,
-                                services.GetRequiredService<IClock>().UtcNow)
+                            ? SessionRules.Ended(await services.GetRequiredService<ISecurityPolicy>().GetAsync(http.RequestAborted), s.Created, s.LastSeen, now)
                             : null;
+                        // A kiosk session (spec 030 US4) also ends when its device is revoked, when its cookie is used away from
+                        // that device, or after the device's own short inactivity time.
+                        if (ended is null && s.Kiosk is not null)
+                        {
+                            var deviceToken = http.Request.Cookies[Kiosk.KioskRules.DeviceCookie];
+                            var sameDevice = !string.IsNullOrEmpty(deviceToken) && SessionTokens.Hash(deviceToken) == s.KioskToken;
+                            ended = Kiosk.KioskRules.Ended(s.KioskActive, sameDevice, s.KioskIdle, s.LastSeen, now);
+                        }
                         if (membership is { Status: MembershipStatus.Active } && ended is null)
                         {
                             context.SetActor(ActorType.User, s.User, s.Session);
                             http.Features.Set(new SessionAssurance(s.Authenticated, s.Method));
-                            await SessionRules.TouchAsync(services, s.Session, s.LastSeen, http.RequestAborted);
+                            if (s.Kiosk is { } device)
+                            {
+                                context.SharedDevice = new SharedDeviceSession(device, s.KioskFeatures.ToHashSet(StringComparer.Ordinal), s.KioskIdle);
+                            }
+                            await SessionRules.TouchAsync(services, s.Session, s.LastSeen, http.RequestAborted,
+                                s.Kiosk is null ? SessionRules.TouchEvery : Kiosk.KioskRules.TouchEvery);
                         }
                         else if (ended is not null)
                         {

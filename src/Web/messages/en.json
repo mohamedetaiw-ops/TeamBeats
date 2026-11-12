@@ -130,7 +130,8 @@
       "attendance": "Attendance",
       "letters": "HR letters",
       "data_changes": "Data changes",
-      "expenses": "Expenses"
+      "expenses": "Expenses",
+      "kiosks": "Kiosks"
     },
     "navBadge": "{count, plural, one {# needs attention} other {# need attention}}",
     "common": {
@@ -526,7 +527,9 @@
         "space_member": "Space member",
         "space_viewer": "Space viewer",
         "facilities_administrator": "Facilities administrator",
-        "facilities_analyst": "Facilities analyst"
+        "facilities_analyst": "Facilities analyst",
+        "device_administrator": "Device administrator",
+        "kiosk_user": "Kiosk user"
       },
       "tabs": "Roles and access sections",
       "unknownUnit": "a unit outside your view",
@@ -6925,6 +6928,10 @@
       "title": "Profile",
       "hint": "Your photo, contact details and who can see them.",
       "link": "Edit my profile"
+    },
+    "kiosk": {
+      "title": "Kiosk badge",
+      "hint": "The PIN you use with your badge on shared kiosks."
     }
   },
   "hr_integration": {
@@ -10232,6 +10239,136 @@
       "reopenQuestion": "Open the site again on {date}? Bookings cancelled for that day stay cancelled.",
       "reopenConfirm": "Open it",
       "keep": "Keep it closed"
+    }
+  },
+  "kiosk": {
+    "title": "Kiosk",
+    "enrol": {
+      "title": "Set up this tablet as a kiosk",
+      "intro": "Enter the one-time code your device administrator gave you. The code works once and expires after 30 minutes.",
+      "code": "Kiosk code",
+      "codeHint": "For example ABCD-EFGH-JKLM. Letters or digits, with or without dashes.",
+      "submit": "Set up kiosk",
+      "failed": "The tablet could not be set up. Try again.",
+      "whoTitle": "Who can do this",
+      "who": "A device administrator creates the kiosk in Admin, then Kiosks, and reads the code out to the person at the tablet."
+    },
+    "signIn": {
+      "title": "Sign in",
+      "intro": "Scan your badge or type your employee number, then enter your PIN.",
+      "chooseTitle": "Choose your PIN",
+      "chooseIntro": "This is the first time you use your badge. Choose a PIN of 4 to 8 digits and type it twice.",
+      "refused": "Sign-in did not work",
+      "badge": "Badge or employee number",
+      "badgeHint": "A badge scanner fills this in for you.",
+      "scan": "Scan badge with camera",
+      "pin": "PIN",
+      "newPin": "New PIN",
+      "pinHint": "4 to 8 digits.",
+      "confirmPin": "Type the PIN again",
+      "back": "Start again",
+      "choose": "Save PIN and sign in",
+      "submit": "Sign in",
+      "deviceAt": "Kiosk {name} at {location}",
+      "device": "Kiosk {name}",
+      "privacy": "This is a shared tablet. You are signed out after {minutes, plural, one {# minute} other {# minutes}} without use, and nothing you saw stays on it.",
+      "pinMismatch": "The two PINs are not the same.",
+      "pinFormat": "A PIN is 4 to 8 digits.",
+      "failed": "Sign-in did not work. Try again.",
+      "scanTitle": "Scan your badge",
+      "scanIntro": "Hold the QR code on your badge in front of the camera. Nothing is recorded.",
+      "scanClose": "Close",
+      "cameraFailed": "The camera could not be used. Type your badge code or employee number instead.",
+      "cameraLabel": "Camera view for reading the badge"
+    },
+    "session": {
+      "label": "Shared kiosk session",
+      "bar": "Shared kiosk. You are signed out after {minutes, plural, one {# minute} other {# minutes}} without use.",
+      "signOut": "Sign out",
+      "warningTitle": "Are you still there?",
+      "warning": "You will be signed out in {seconds} seconds.",
+      "keepGoing": "Keep going"
+    },
+    "badge": {
+      "pinSet": "Your badge has a PIN. You can change it here.",
+      "noPin": "Your badge has no PIN yet. Set one here, or choose it the first time you scan your badge at a kiosk.",
+      "locked": "Your badge is locked after too many wrong PINs. Setting a new PIN unlocks it.",
+      "refused": "The PIN was not saved",
+      "saved": "Your PIN is saved.",
+      "newPin": "New PIN",
+      "confirmPin": "Type the PIN again",
+      "pinHint": "4 to 8 digits. You confirm your sign-in first.",
+      "pinFormat": "A PIN is 4 to 8 digits.",
+      "pinMismatch": "The two PINs are not the same.",
+      "failed": "The PIN could not be saved. Try again.",
+      "set": "Set PIN",
+      "change": "Change PIN"
+    },
+    "admin": {
+      "title": "Kiosks",
+      "intro": "Shared tablets where people sign in with a badge and a PIN, and the features each one offers.",
+      "listTitle": "Kiosks",
+      "empty": "There are no kiosks yet.",
+      "codeTitle": "Code for {name}",
+      "codeDone": "Done",
+      "codeHow": "On the tablet, open TeamBeats at /kiosk and enter this code before {time}. It is shown only once.",
+      "status": {
+        "waiting": "Waiting for the tablet",
+        "enrolled": "Ready",
+        "revoked": "Revoked"
+      },
+      "idle": "Signs out after {minutes, plural, one {# minute} other {# minutes}} without use",
+      "feature": {
+        "announcements": "Announcements",
+        "policies": "Policies",
+        "leave": "Leave",
+        "shifts": "Shifts and attendance",
+        "services": "Services and requests",
+        "booking": "Desk and room check-in"
+      },
+      "homeOnly": "Home page only",
+      "lastSeen": "Last used {time}",
+      "failed": "The change was not saved. Try again.",
+      "edit": "Edit",
+      "newCode": "New code",
+      "replaceTablet": "Replace tablet",
+      "revoke": "Revoke",
+      "revokeQuestion": "Revoke {name}? Anyone signed in there is signed out at once and the tablet stops offering sign-in.",
+      "revokeConfirm": "Revoke kiosk",
+      "cancel": "Cancel",
+      "save": "Save",
+      "createTitle": "Add a kiosk",
+      "createIntro": "You get a one-time code to enter on the tablet.",
+      "create": "Add kiosk",
+      "name": "Name",
+      "unit": "Organization unit",
+      "unitHint": "People in this unit and the units under it can sign in.",
+      "location": "Location",
+      "locationHint": "Optional. For example the warehouse entrance.",
+      "features": "Features",
+      "featuresHint": "The home page is always offered. Everything else stays closed on this kiosk.",
+      "idleMinutes": "Sign out after",
+      "idleHint": "From 1 to 15 minutes without use.",
+      "minutes": "minutes",
+      "allowOtherUnits": "Allow people from other units",
+      "allowOtherUnitsHint": "Anyone with kiosk access can sign in here, not only this unit.",
+      "badgesTitle": "Badges",
+      "badgesIntro": "Issue a badge to print for someone. Its code and QR are shown once.",
+      "person": "Person",
+      "badgeReady": "Has a badge and a PIN",
+      "badgeNoPin": "Has a badge, no PIN yet",
+      "badgeNone": "No badge yet",
+      "badgeLocked": "Locked after too many wrong PINs",
+      "resetPin": "Reset PIN",
+      "resetPinQuestion": "Reset this PIN? The person chooses a new one the next time they scan their badge.",
+      "resetPinConfirm": "Reset PIN",
+      "reissue": "Reissue badge",
+      "reissueQuestion": "Reissue this badge? The old badge stops working. The PIN stays the same.",
+      "reissueConfirm": "Reissue badge",
+      "issue": "Issue badge",
+      "qrAlt": "QR code for the badge",
+      "printHint": "Print this now. The code is not shown again.",
+      "print": "Print"
     }
   }
 }

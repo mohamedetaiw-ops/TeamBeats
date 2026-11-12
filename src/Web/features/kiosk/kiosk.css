@@ -1,0 +1,116 @@
+/* Kiosk and shared device mode (spec 030 US4). Tokens only; logical properties so the layout mirrors in Arabic. */
+.kiosk-start {
+  display: grid;
+  gap: var(--tb-space-lg);
+  max-inline-size: 32rem;
+  margin-inline: auto;
+}
+
+.kiosk-panel {
+  display: grid;
+  gap: var(--tb-space-md);
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+}
+
+.kiosk-form {
+  display: grid;
+  gap: var(--tb-space-md);
+}
+
+.kiosk-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  justify-content: flex-end;
+}
+
+.kiosk-actions .button,
+.kiosk-actions button {
+  min-block-size: 2.75rem;
+}
+
+.kiosk-camera {
+  inline-size: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+  object-fit: cover;
+}
+
+.kiosk-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-md);
+  background: var(--tb-color-surface-sunken);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.kiosk-bar p {
+  margin: 0;
+}
+
+.kiosk-code {
+  font-family: var(--tb-font-family-latin);
+  font-size: var(--tb-font-size-lg);
+  letter-spacing: 0.08em;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+.kiosk-qr {
+  inline-size: 12rem;
+  max-inline-size: 100%;
+}
+
+.kiosk-qr svg {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
+
+.kiosk-list {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kiosk-item {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+}
+
+.kiosk-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-xs);
+}
+
+.kiosk-item-head h3 {
+  margin: 0;
+}
+
+.kiosk-features {
+  display: grid;
+  gap: var(--tb-space-xs);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 12rem), 1fr));
+}
+
+@media print {
+  .kiosk-print-hide {
+    display: none;
+  }
+}
