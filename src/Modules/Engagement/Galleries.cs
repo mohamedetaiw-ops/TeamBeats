@@ -48,8 +48,7 @@ public sealed class Galleries(
     Communities communities,
     IUserDirectory users,
     TenantObjectStorage storage,
-    IMalwareScanner scanner,
-    IAiGateway gateway,
+    MediaChecks checks,
     INotificationSender notifications,
     IAuditWriter audit,
     IClock clock)
@@ -200,51 +199,6 @@ public sealed class Galleries(
     // ---- Photos ----
 
     /// <summary>The content safety check of spec 026 through the AI Gateway: true safe, false flagged, null not checked.</summary>
-    private async Task<bool?> SafeAsync(CleanPhoto photo, CancellationToken ct)
-    {
-        if (photo.Data.Length > AiAttachment.MaxBytes)
-        {
-            return null;
-        }
-        AiResult result;
-        try
-        {
-            result = await gateway.ChatAsync(new AiRequest(AiUseCases.Summarize,
-                [new AiMessage(AiRoles.System, SafetyPrompt), new AiMessage(AiRoles.User, "Check this photo.", Attachments: [new AiAttachment(photo.ContentType, photo.Data)])],
-                DataClassification.Internal, ResponseSchema: SafetySchema, MaxTokens: 50, Temperature: 0), ct);
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException && !ct.IsCancellationRequested)
-        {
-            return null;
-        }
-        if (result.Completion is not { } completion)
-        {
-            return null;
-        }
-        try
-        {
-            using var doc = JsonDocument.Parse(completion.Content);
-            return doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("safe", out var safe) && safe.ValueKind is JsonValueKind.True or JsonValueKind.False
-                ? safe.GetBoolean()
-                : null;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private const string SafetyPrompt =
-        "You check photos shared on a company intranet. Answer only with JSON. Set safe to false when the photo shows nudity, sexual content, " +
-        "graphic violence or gore, hate symbols, weapons used to threaten, drugs, or anything clearly unfit for a workplace; otherwise set safe to true.";
-
-    private static readonly JsonElement SafetySchema = JsonSerializer.SerializeToElement(new
-    {
-        type = "object",
-        properties = new { safe = new { type = "boolean" } },
-        required = new[] { "safe" },
-        additionalProperties = false,
-    });
 
     public async Task<PhotoView> UploadAsync(Guid albumId, string? caption, string? contentType, byte[] data, CancellationToken ct)
     {
@@ -259,11 +213,7 @@ public sealed class Galleries(
             throw AppException.Validation("caption", "validation.engagement.photo_caption");
         }
         var photo = PhotoFiles.Clean(contentType, data);
-        ScanVerdict verdict;
-        using (var scan = new MemoryStream(data, writable: false))
-        {
-            verdict = await scanner.ScanAsync(scan, ct);
-        }
+        var verdict = await checks.ScanAsync(data, ct);
         if (verdict == ScanVerdict.Infected)
         {
             throw AppException.Validation("file", "validation.engagement.photo_infected");
@@ -272,7 +222,7 @@ public sealed class Galleries(
         {
             throw AppException.Conflict("conflict.engagement.photo_scan_unavailable");
         }
-        var safe = await SafeAsync(photo, ct);
+        var safe = await checks.SafeAsync(photo, ct);
         var held = safe switch { false => "safety", null => "unchecked", true => album.RequiresApproval ? "approval" : null };
         var id = Ids.New();
         using (var stream = new MemoryStream(photo.Data, writable: false))

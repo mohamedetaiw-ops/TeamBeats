@@ -692,3 +692,35 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 | Cards on every employee's default home | None added. The cards are offered in the page builder and in home personalization, so no tenant's home changes on its own |
 | Leaderboard period on the card | This month |
 | Picker category | `people` |
+
+## Images and files in posts (spec 023, slice 11: FR-003; US1)
+
+### Built
+- A member uploads images and files to a community before posting (`POST /api/v1/engagement/communities/{id}/attachments`), then names the uploads on the post. A post takes at most 10 images and 5 files, and only the author's own uploads in the same community.
+- Every upload is scanned for malware. Images lose their metadata the same way gallery photos do and pass the content safety check through the AI Gateway; the scan and the check are shared with galleries in `MediaChecks`.
+- Files are PDF, Word, Excel, PowerPoint, plain text and CSV, and the bytes must match the declared type.
+- `GET /api/v1/engagement/attachments/{id}/file` opens an attachment for whoever may read its post. A loose upload opens only for its uploader. Images show inline and documents always download, with `nosniff`.
+- Editing a post without the attachments list keeps them; an empty list removes them and their stored objects.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| A flagged image, or one the safety check could not judge | Refused, not held for review; the person can try again later |
+| Attachments on Speak Up posts | None, named or anonymous, so a file cannot reveal its author |
+| Sizes | 10 MB per image, 25 MB per file |
+| Uploads never used in a post | Removed after one day, on the uploader's next upload |
+
+## Engagement counts for analytics (spec 023, slice 12: FR-024)
+
+### Built
+- Engagement emits `engagement.action` for named posts, comments, reactions, poll votes, recognition, survey responses and joins, with the community where there is one. These go through the outbox like other module events and carry the pseudonymous key and unit.
+- Anonymous actions (an anonymous Speak Up post, a vote in an anonymous poll, a response to an anonymous survey) emit `engagement.anonymous_action`, a schema marked unkeyed. It is written at once in the request's transaction, never queued, because a queued message keeps the correlation and exact time. The row holds no person, unit, location or locale, and its times are cut to the day.
+- Both events are server only: the web collector drops them.
+- Tests: `EngagementAnalyticsTests`.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Which actions count | The seven named and three anonymous actions above; views are already counted by the page events |
+| Detail kept for anonymous counts | The action and the day only |
+| Engagement panels on the spec 021 dashboard | A follow-up; the counts are stored and can be queried from now on |

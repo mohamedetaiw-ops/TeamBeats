@@ -183,6 +183,8 @@ public sealed class AnalyticsWriter(IDbSession session, IClock clock, AnalyticsP
     internal static void CountDropped(int events) => Dropped.Add(events);
 
     /// <returns>How many events were written; the rest were dropped.</returns>
+    private static DateTimeOffset Day(DateTimeOffset at) => new(at.UtcDateTime.Date, TimeSpan.Zero);
+
     internal async Task<int> WriteAsync(IReadOnlyList<CheckedEvent> events, Guid? userId, string? locale, CancellationToken ct)
     {
         if (events.Count == 0)
@@ -217,8 +219,9 @@ public sealed class AnalyticsWriter(IDbSession session, IClock clock, AnalyticsP
                 """,
                 new
                 {
-                    name = e.Schema.Name, occurred = e.OccurredAt, now, key = keyed ? key : null, unit = keyed ? unit : null,
-                    location = keyed ? location : null, channel = e.Channel, locale, fields = new Jsonb(JsonSerializer.Serialize(e.Fields)),
+                    name = e.Schema.Name, occurred = e.Schema.Unkeyed ? Day(e.OccurredAt) : e.OccurredAt, now = e.Schema.Unkeyed ? Day(now) : now,
+                    key = keyed ? key : null, unit = keyed ? unit : null, location = keyed ? location : null, channel = e.Channel,
+                    locale = e.Schema.Unkeyed ? null : locale, fields = new Jsonb(JsonSerializer.Serialize(e.Fields)),
                 }, ct);
         }
         Stored.Add(kept.Count);
@@ -249,6 +252,7 @@ public sealed class AnalyticsCollector(ITenantContext context, RequestLocale loc
         {
             var channel = e.Channel ?? AnalyticsChannels.Web;
             if (e.Name is null || !AnalyticsEvents.Schemas.TryGetValue(e.Name, out var schema) || channel == AnalyticsChannels.Server
+                || AnalyticsEvents.ServerOnly.Contains(e.Name)
                 || !AnalyticsChannels.All.Contains(channel)
                 || AnalyticsSchemaCheck.Fields(schema, (e.Fields ?? []).Select(f => new KeyValuePair<string, object?>(f.Key, f.Value)), out _) is not { } fields)
             {
@@ -267,7 +271,7 @@ public sealed class AnalyticsCollector(ITenantContext context, RequestLocale loc
 /// The module side of the pipeline (<see cref="IAnalyticsEvents"/>): checks the event now, so a module learns of a bad
 /// event in its own tests, and queues it through the outbox, so the action that caused it is never slowed (section 15).
 /// </summary>
-public sealed class AnalyticsEventsEmitter(ITenantContext context, RequestLocale locale, IOutbox outbox, IClock clock) : IAnalyticsEvents
+public sealed class AnalyticsEventsEmitter(ITenantContext context, RequestLocale locale, IOutbox outbox, AnalyticsWriter writer, IClock clock) : IAnalyticsEvents
 {
     public async Task EmitAsync(string name, IReadOnlyDictionary<string, object?> fields, CancellationToken ct = default)
     {
@@ -278,6 +282,13 @@ public sealed class AnalyticsEventsEmitter(ITenantContext context, RequestLocale
         if (AnalyticsSchemaCheck.Fields(schema, fields, out var droppedFields) is not { } kept || droppedFields > 0)
         {
             throw new ArgumentException($"Analytics event {name} does not match its schema.", nameof(fields));
+        }
+        if (schema.Unkeyed)
+        {
+            // A count of an anonymous action is written at once in the same transaction, never queued: a queued message
+            // keeps the request's correlation and exact time. The row holds no person, locale or time finer than the day.
+            await writer.WriteAsync([new CheckedEvent(schema, clock.UtcNow, AnalyticsChannels.Server, kept)], null, null, ct);
+            return;
         }
         var user = context.ActorType == ActorType.User ? context.ActorId : null;
         await outbox.EnqueueAsync(new AnalyticsEventEmitted(name, user, AnalyticsChannels.Server, locale.Locale, clock.UtcNow,

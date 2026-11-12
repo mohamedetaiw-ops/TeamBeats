@@ -8900,6 +8900,17 @@
       "pollAll": "All polls",
       "pollEmpty": "No open poll",
       "pollVoted": "You voted"
+    },
+    "attachments": {
+      "add": "Add images or files",
+      "hint": "PNG or JPEG images up to 10 MB, and PDF, Word, Excel, PowerPoint, text or CSV files up to 25 MB. Up to 10 images and 5 files. Location and camera details are removed from images.",
+      "chosen": "Attached",
+      "remove": "Remove {name}",
+      "images": "Images",
+      "files": "Files",
+      "imageAlt": "Image {name}",
+      "size": "{size} KB",
+      "failed": "That did not work. Try again."
     }
   }
 }

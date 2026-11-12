@@ -96,7 +96,11 @@ export type PostView = {
   canReport: boolean;
   anonymous: boolean;
   editedByModerator: boolean;
+  attachments?: AttachmentView[];
 };
+
+export type AttachmentView = { id: string; kind: "image" | "file"; name: string; contentType: string; bytes: number; width: number | null; height: number | null };
+export const attachmentFile = (id: string) => `${engagementApi}/attachments/${encodeURIComponent(id)}/file`;
 
 export type FeedPage = { items: PostView[]; nextCursor: string | null };
 
