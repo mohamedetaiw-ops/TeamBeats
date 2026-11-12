@@ -1,13 +1,20 @@
-/* Shell settings (spec 008 FR-056, FR-058): two sections of plain form rows, one card each. */
+/*
+ * Shell settings (spec 008 FR-056, FR-058): two sections, one card each. Every link and view is its own group with a
+ * title and its remove action on one line, then its fields in a two column grid that drops to one column when the card
+ * is narrow. Fields start at the top so labels line up across a row and hints never push a neighbour (DLS-049).
+ */
 .shell-settings {
   display: grid;
   gap: var(--tb-space-lg);
   max-inline-size: 60rem;
+  min-inline-size: 0;
 }
 
 .shell-settings-section {
+  container-type: inline-size;
   display: grid;
   gap: var(--tb-space-md);
+  min-inline-size: 0;
   padding: var(--tb-space-lg);
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-lg);
@@ -18,14 +25,31 @@
   margin: 0;
 }
 
+.shell-settings-section > h3 {
+  margin-block-start: var(--tb-space-sm);
+  font-size: var(--tb-font-size-md);
+}
+
 .shell-settings-hint {
   color: var(--tb-color-text-secondary);
 }
 
-.shell-settings-pair {
+.shell-settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--tb-space-md);
+  align-items: start;
+}
+
+/* The grid owns the spacing; each field fills its cell and never grows past it. */
+.shell-settings-grid > .field {
+  min-inline-size: 0;
+  margin: 0;
+}
+
+.shell-settings-grid > .field > :is(input, select) {
+  inline-size: 100%;
+  min-inline-size: 0;
 }
 
 .shell-settings-rows {
@@ -38,15 +62,38 @@
 
 .shell-settings-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: var(--tb-space-sm) var(--tb-space-md);
-  align-items: end;
+  gap: var(--tb-space-md);
+  min-inline-size: 0;
   padding: var(--tb-space-md);
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-base);
+}
+
+.shell-settings-row-head {
+  display: flex;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.shell-settings-row-head h4 {
+  margin: 0;
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.shell-settings-section > .button {
+  justify-self: start;
 }
 
 .shell-settings-actions {
   display: flex;
   justify-content: flex-end;
+}
+
+@container (inline-size < 36rem) {
+  .shell-settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

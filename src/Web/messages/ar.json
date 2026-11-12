@@ -1374,7 +1374,15 @@
         "acceptable_use": "الاستخدام المقبول",
         "accessibility": "إمكانية الوصول",
         "other": "أخرى"
-      }
+      },
+      "linkTitle": "الرابط {number}",
+      "fields": {
+        "kind": "النوع",
+        "labelEn": "الاسم (بالإنجليزية)",
+        "labelAr": "الاسم (بالعربية)",
+        "url": "العنوان"
+      },
+      "remove": "إزالة"
     },
     "views": {
       "title": "طرق عرض الصفحة الرئيسية",
@@ -1390,7 +1398,16 @@
       "choosePage": "اختر صفحة منشورة",
       "everyone": "الجميع",
       "remove": "إزالة العرض {number}",
-      "add": "إضافة طريقة عرض"
+      "add": "إضافة طريقة عرض",
+      "viewTitle": "العرض {number}",
+      "fields": {
+        "id": "معرّف قصير",
+        "labelEn": "اسم العلامة (بالإنجليزية)",
+        "labelAr": "اسم العلامة (بالعربية)",
+        "page": "الصفحة",
+        "audience": "الجمهور"
+      },
+      "removeShort": "إزالة"
     }
   },
   "personalization": {
