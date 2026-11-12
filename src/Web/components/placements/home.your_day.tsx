@@ -9,6 +9,8 @@ import { useNow } from "@/lib/clock";
 import { StateView } from "@/components/ui/StateView";
 import { connectHref } from "@/components/experience/outlook";
 import { Icon } from "@/components/ui/Icon";
+import { Badge } from "@/components/ui/Badge";
+import { StatCards } from "@/components/ui/Blocks";
 import "@/features/services/home.css";
 
 type Meeting = { id: string; subject: string | null; start: string; end: string; isAllDay: boolean; isPrivate: boolean; location: string | null; webLink: string; source: string };
@@ -28,7 +30,7 @@ async function read<T>(url: string): Promise<T | null> {
 }
 
 /**
- * Your day (spec 008 FR-057, docs/design-system/components.md): three tinted counts (tasks to approve, overdue tasks
+ * Your day (spec 008 FR-057, docs/design-system/components.md): three tinted stat cards (spec 036 DLS-039) (tasks to approve, overdue tasks
  * and meetings left today) and today's agenda from the viewer's own calendar (spec 018), each meeting with its time
  * and a "starts in" badge for the next hour. Both sources are read with the viewer's session; when the calendar is not
  * connected the agenda becomes one line with the connect link, and the meetings tile is left out, never guessed.
@@ -76,26 +78,21 @@ export default function YourDay({ props }: PlacementProps) {
 
   return shell(
     <>
-      <ul className="home-stats">
-        {sources.tasks ? (
-          <>
-            <li data-tone="warm">
-              <strong>{format.number(tasks.length)}</strong>
-              <span>{t("toApprove")}</span>
-            </li>
-            <li data-tone="accent">
-              <strong>{format.number(overdue)}</strong>
-              <span>{t("overdue")}</span>
-            </li>
-          </>
-        ) : null}
-        {connected ? (
-          <li data-tone="fresh">
-            <strong>{format.number(meetings.length)}</strong>
-            <span>{t("meetings", { count: meetings.length })}</span>
-          </li>
-        ) : null}
-      </ul>
+      <StatCards
+        label={t("counts")}
+        dense
+        stats={[
+          ...(sources.tasks
+            ? [
+                { key: "approve", label: t("toApprove"), value: format.number(tasks.length), icon: "inbox" as const, tone: "warm" as const, href: "/tasks" },
+                { key: "overdue", label: t("overdue"), value: format.number(overdue), icon: "alert" as const, tone: "cool" as const, href: "/tasks" },
+              ]
+            : []),
+          ...(connected
+            ? [{ key: "meetings", label: t("meetings", { count: meetings.length }), value: format.number(meetings.length), icon: "calendar" as const, tone: "fresh" as const, href: "/calendar" }]
+            : []),
+        ]}
+      />
       {!connected ? (
         sources.calendar?.state === "not_connected" || sources.calendar?.state === "reconnect" ? (
           <div className="home-connect">
@@ -130,7 +127,7 @@ export default function YourDay({ props }: PlacementProps) {
                     </span>
                   ) : null}
                 </span>
-                {soon ? <span className="home-agenda-soon">{t("startsIn", { minutes: Math.max(1, Math.round((starts - now) / 60_000)) })}</span> : starts <= now ? <span className="home-agenda-soon">{t("now")}</span> : null}
+                {soon ? <Badge tone="warning">{t("startsIn", { minutes: Math.max(1, Math.round((starts - now) / 60_000)) })}</Badge> : starts <= now ? <Badge tone="warning">{t("now")}</Badge> : null}
               </li>
             );
           })}

@@ -148,3 +148,283 @@
     font-weight: var(--tb-font-weight-medium);
   }
 }
+
+/*
+ * Studio surfaces (spec 036 DLS-030, DLS-039): the BoardUI style catalogue look on every page, not only in the
+ * gallery. Every card is a white surface with a hairline and the softest shadow; tabs between pages are a segmented
+ * track with a raised white thumb; stat cards stay white with a tinted icon; the briefing is a light card instead of
+ * the night surface; list rows sit between hairlines. Only structure and the design's own tokens, so a tenant accent
+ * and dark mode follow.
+ */
+:root[data-design="studio"] :is(.home-card, .outlook, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .home-tiles a),
+:root[data-design="studio"] :is(.services-section, .work-items, .preferences-section, .documents-card, .documents-table, .kb-article),
+:root[data-design="studio"] :is(.people-section, .people-cards .people-item, .people-identity, .content-article, .content-social),
+:root[data-design="studio"] :is(.ui-filter-bar, .ui-rows, .toolbox) {
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+:root[data-design="studio"] :is(.home-card, .outlook, .content-card, .ui-card, .services-section, .work-items, .preferences-section),
+:root[data-design="studio"] :is(.documents-card, .documents-table, .kb-article, .people-section, .people-identity, .content-article) {
+  border-radius: var(--tb-radius-md);
+}
+
+:root[data-design="studio"] :is(.ui-tile, .home-tiles a, .content-side-item) {
+  border-radius: var(--tb-radius-md);
+  transition: border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard),
+    box-shadow var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
+}
+
+:root[data-design="studio"] :is(.ui-tile, .home-tiles a, .content-side-item):hover {
+  border-color: var(--tb-color-border-strong);
+  box-shadow: var(--tb-shadow-md);
+}
+
+:root[data-design="studio"] .home-tiles a {
+  background: var(--tb-color-surface-raised);
+}
+
+/* Card heads: a smaller, tighter title and a quiet link, as in a dashboard. */
+:root[data-design="studio"] :is(.home-card-head h2, .outlook-title, .cal-card h2) {
+  font-size: var(--tb-font-size-md);
+  font-weight: var(--tb-font-weight-bold);
+  letter-spacing: -0.01em;
+}
+
+:root[data-design="studio"] .home-card-head a {
+  font-size: var(--tb-font-size-sm);
+}
+
+/* The home calendar gets the same card frame as its neighbours. */
+:root[data-design="studio"] .cal-card {
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+:root[data-design="studio"] .cal-card-views {
+  display: inline-flex;
+  justify-self: start;
+  gap: 0;
+  padding: var(--tb-space-xs);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+}
+
+:root[data-design="studio"] .cal-card-view {
+  padding-block: var(--tb-space-xs);
+  border-radius: calc(var(--tb-radius-sm) * 0.75);
+  background: transparent;
+  color: var(--tb-color-text-secondary);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+:root[data-design="studio"] .cal-card-view:hover {
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  text-decoration: none;
+}
+
+/* Section tabs and home views: a segmented track with a raised white thumb on the current page. */
+:root[data-design="studio"] .ui-section-nav ul {
+  gap: 0;
+  border: 0;
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+}
+
+:root[data-design="studio"] .ui-section-nav a {
+  min-block-size: 2.25rem;
+  border-radius: calc(var(--tb-radius-sm) * 0.75);
+  color: var(--tb-color-text-secondary);
+}
+
+:root[data-design="studio"] .ui-section-nav a:where(:hover) {
+  background: transparent;
+  color: var(--tb-color-text-primary);
+}
+
+:root[data-design="studio"] .ui-section-nav [aria-current="page"] {
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-text-primary);
+}
+
+/* Icon tiles: a white square with a hairline and the tone kept in the glyph, the BoardUI icon box. */
+:root[data-design="studio"] .ui-icon-tile {
+  inline-size: 2.5rem;
+  block-size: 2.5rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+}
+
+:root[data-design="studio"] .ui-icon-tile[data-size="lg"] {
+  inline-size: 3rem;
+  block-size: 3rem;
+}
+
+/* Stat cards: white in every tone; the tone moves to the icon box, and the icon shows in the dense form too. */
+:root[data-design="studio"] .ui-stats-dense .ui-stat-icon {
+  display: inline-grid;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+}
+
+:root[data-design="studio"] .ui-stats-dense .ui-stat-label {
+  flex-direction: column;
+  order: 0;
+  align-items: start;
+  gap: var(--tb-space-xs);
+}
+
+:root[data-design="studio"] .ui-stats-dense .ui-stat-value {
+  font-size: var(--tb-font-size-xl);
+}
+
+:root[data-design="studio"] .ui-stat[data-tone] {
+  border-color: var(--tb-color-border-default);
+  background: var(--tb-color-surface-raised);
+}
+
+:root[data-design="studio"] .ui-stat[data-tone] .ui-stat-label {
+  color: var(--tb-color-text-secondary);
+}
+
+:root[data-design="studio"] .ui-stat[data-tone] .ui-stat-value {
+  color: var(--tb-color-text-primary);
+}
+
+:root[data-design="studio"] .ui-stat[data-tone="warm"] .ui-stat-icon {
+  background: var(--tb-color-tint-warm);
+}
+
+:root[data-design="studio"] .ui-stat[data-tone="cool"] .ui-stat-icon {
+  background: var(--tb-color-tint-cool);
+}
+
+:root[data-design="studio"] .ui-stat[data-tone="fresh"] .ui-stat-icon {
+  background: var(--tb-color-tint-fresh);
+}
+
+/* The briefing: a light card with the accent mark; rows between hairlines; the actions are Studio buttons. */
+:root[data-design="studio"] .home-briefing {
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-text-primary);
+}
+
+:root[data-design="studio"] .home-briefing-mark,
+:root[data-design="studio"] .home-briefing-date .icon {
+  color: var(--tb-color-accent-base);
+}
+
+:root[data-design="studio"] .home-briefing-mark {
+  opacity: 0.16;
+}
+
+:root[data-design="studio"] .home-briefing-date,
+:root[data-design="studio"] .home-briefing-foot {
+  color: var(--tb-color-text-secondary);
+  opacity: 1;
+}
+
+:root[data-design="studio"] .home-briefing-title {
+  font-size: var(--tb-font-size-xl);
+  letter-spacing: -0.02em;
+}
+
+:root[data-design="studio"] .home-briefing-rows {
+  gap: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+}
+
+:root[data-design="studio"] .home-briefing-row {
+  border-radius: 0;
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+:root[data-design="studio"] .home-briefing-row:last-child {
+  border-block-end: 0;
+}
+
+:root[data-design="studio"] .home-briefing-row::before {
+  display: none;
+}
+
+:root[data-design="studio"] .home-briefing-time {
+  flex: none;
+  min-inline-size: 0;
+  padding-block: 0.125rem;
+  padding-inline: var(--tb-space-sm);
+  border-radius: calc(var(--tb-radius-sm) * 0.75);
+  background: var(--tb-color-tint-warm);
+  color: var(--tb-color-tint-warm-text);
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+:root[data-design="studio"] .home-briefing-text span {
+  color: var(--tb-color-text-secondary);
+  opacity: 1;
+}
+
+:root[data-design="studio"] .home-briefing-action {
+  min-block-size: 2.25rem;
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-accent-base);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-accent-text);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+:root[data-design="studio"] .home-briefing-action-quiet {
+  border-color: var(--tb-color-border-default);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+:root[data-design="studio"] .home-briefing-action:hover {
+  filter: none;
+  background: var(--tb-color-link);
+}
+
+:root[data-design="studio"] .home-briefing-action-quiet:hover {
+  border-color: var(--tb-color-border-strong);
+  background: var(--tb-color-surface-base);
+}
+
+:root[data-design="studio"] .home-briefing :focus-visible {
+  outline-color: var(--tb-color-focus-ring);
+}
+
+/* The lead story: the picture and its text in one white card, no accent frame. */
+:root[data-design="studio"] .content-lead {
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+:root[data-design="studio"] .content-lead-body {
+  margin: 0;
+  border-radius: 0;
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+/* Agenda and list rows: a hairline between rows, the time in tabular figures in the secondary color. */
+:root[data-design="studio"] .home-agenda-time {
+  color: var(--tb-color-text-secondary);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+/* Page headers: the icon box and a hairline under the header, as in a product dashboard. */
+:root[data-design="studio"] .ui-page-header {
+  padding-block-end: var(--tb-space-lg);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}

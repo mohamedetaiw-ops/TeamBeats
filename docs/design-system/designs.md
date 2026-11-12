@@ -18,7 +18,7 @@ TeamBeats ships four complete designs. A tenant administrator picks one in **Adm
 
 The token values are in `src/Modules/Experience/Themes/DesignPresets.cs`; Beats is the platform default in `Tokens.cs`. Dark mode values are defined for every color in all four designs.
 
-Studio recreates the look of modern product dashboards (it was modeled on the BoardUI component library): one accent, neutral surfaces and a careful finish. Its filled buttons and current sidebar page carry a soft shade and a light top edge, drawn in `components/ui/designs.css` from the design's own tokens. Its accent is dark enough for white text to pass the strict contrast check.
+Studio recreates the look of modern product dashboards (it was modeled on the BoardUI component library): one accent, neutral surfaces and a careful finish. Its filled buttons and current sidebar page carry a soft shade and a light top edge, drawn in `components/ui/designs.css` from the design's own tokens. Its accent is dark enough for white text to pass the strict contrast check. The finish reaches every page (DLS-075): cards, tiles, stat cards, filter bars and row lists are white with a hairline and the soft shadow, section tabs are a segmented track with a raised white current page, icon boxes are white with a hairline, and the home briefing is a light card with bordered rows instead of the night surface.
 
 ## How a design is applied
 

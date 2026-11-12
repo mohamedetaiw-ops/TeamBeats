@@ -38,6 +38,9 @@ Depends on 033 (theme engine, brand manager), 008 (shell), 032 (templates), 007.
 ## Phase 6: Calendar parts (DLS-069 to DLS-074, spec 037)
 - [ ] T027 Calendar header, layer chips, week strip, agenda rows, month with ranges, day panel and bottom sheet, availability stats and heatmap in `components/ui`, gallery section `cg-calendar`, keyboard coverage
 
+## Phase 7: Designs on every page (DLS-075)
+- [x] T028 Home widgets on catalogue blocks (Your day and Your tasks on `StatCards` with tones, My mail view switch on `SegmentedControl`, unread count and markers as `Badge`, agenda "starts in" as `Badge`); Studio finish for page cards, tiles, section tabs, icon boxes, stat cards, briefing, lead story and page headers in `designs.css`
+
 ## R2
 - [ ] T011 Design review checklist in the spec 033 theme draft and approval flow
 - [ ] T012 Firefox and WebKit in the design suite after the browser matrix decision

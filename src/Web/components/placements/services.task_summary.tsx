@@ -8,6 +8,7 @@ import { pick, type InboxItem } from "@/lib/services/types";
 import { useNow } from "@/lib/clock";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { StatCards } from "@/components/ui/Blocks";
 import { isolate } from "@/lib/bidi";
 import "@/features/services/home.css";
 
@@ -74,20 +75,15 @@ export default function TaskSummary({ props }: PlacementProps) {
   const href = (i: InboxItem) => (i.requestId ? `/requests/${i.requestId}?task=${i.taskId}` : i.link && /^\/(?!\/)/.test(i.link) ? i.link : "/tasks");
   return shell(
     <>
-      <ul className="home-stats">
-        <li data-tone="warm">
-          <strong>{format.number(answer.length)}</strong>
-          <span>{t("waiting", { count: answer.length })}</span>
-        </li>
-        <li data-tone="accent">
-          <strong>{format.number(overdue)}</strong>
-          <span>{t("overdue", { count: overdue })}</span>
-        </li>
-        <li data-tone="fresh">
-          <strong>{format.number(soon)}</strong>
-          <span>{t("dueSoon", { count: soon })}</span>
-        </li>
-      </ul>
+      <StatCards
+        label={t("counts")}
+        dense
+        stats={[
+          { key: "waiting", label: t("waiting", { count: answer.length }), value: format.number(answer.length), icon: "inbox", tone: "warm" },
+          { key: "overdue", label: t("overdue", { count: overdue }), value: format.number(overdue), icon: "alert", tone: "cool" },
+          { key: "soon", label: t("dueSoon", { count: soon }), value: format.number(soon), icon: "clock", tone: "fresh" },
+        ]}
+      />
       {oldest.length === 0 ? (
         <p>{t("none")}</p>
       ) : (
