@@ -14,6 +14,7 @@ const iconPrefixes: [string, IconName][] = [
   ["/people", "people"],
   ["/documents", "files"],
   ["/kb", "book"],
+  ["/learning", "book"],
   ["/policies", "policy"],
   ["/content", "news"],
   ["/news", "news"],

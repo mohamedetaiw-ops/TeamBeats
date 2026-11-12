@@ -448,4 +448,41 @@ public sealed class LearningCourseTests(TenantWorld world)
         Assert.Equal(HttpStatusCode.Forbidden, (await o.T["laila"].Client.GetAsync($"{Api}/catalogue")).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await o.T["admin"].Client.PostAsJsonAsync($"{Api}/manage/courses", new { definition = new { titles = new { en = "x" } } })).StatusCode);
     }
+    private static async Task<Guid[]> SearchAsync(HttpClient client, string q) =>
+        (await OkAsync(client.GetAsync($"/api/v1/search?q={Uri.EscapeDataString(q)}&kind=course"))).GetProperty("results").EnumerateArray()
+        .Select(r => r.GetProperty("itemId").GetGuid()).ToArray();
+
+    [Fact]
+    public async Task Search_finds_a_published_course_only_for_people_its_catalogue_shows_it_to()
+    {
+        var o = await SetupAsync();
+        var mona = o.T["mona"].Client;
+        var (id, revision) = await CreateAsync(mona, Definition(o, PageLesson(o)), o.Gulf, Audience(o.Gulf));
+        await world.DispatchTenantAsync(o.T.Id);
+        // A draft is not in the index.
+        Assert.Empty(await SearchAsync(o.T["laila"].Client, "security basics"));
+
+        await OkAsync(PublishAsync(mona, id, revision));
+        await world.DispatchTenantAsync(o.T.Id);
+        var found = await OkAsync(o.T["laila"].Client.GetAsync($"/api/v1/search?q={Uri.EscapeDataString("security basics")}&kind=course"));
+        var hit = found.GetProperty("results").EnumerateArray().Single();
+        Assert.Equal(id, hit.GetProperty("itemId").GetGuid());
+        Assert.Equal($"/learning/courses/{id}", hit.GetProperty("link").GetString());
+        // The Arabic version is found by its Arabic title, and the lesson titles count.
+        Assert.Contains(id, await SearchAsync(o.T["laila"].Client, "أساسيات أمن المعلومات"));
+        Assert.Contains(id, await SearchAsync(o.T["omar"].Client, "passwords"));
+
+        // Kofi in Africa is outside the audience and finds nothing, as in the catalogue.
+        Assert.Empty(await SearchAsync(o.T["kofi"].Client, "security basics"));
+
+        // A retired course leaves the index.
+        await OkAsync(mona.PostAsync($"{Api}/manage/courses/{id}:retire", null));
+        await world.DispatchTenantAsync(o.T.Id);
+        Assert.Empty(await SearchAsync(o.T["laila"].Client, "security basics"));
+        Assert.Equal(0L, await world.Database.TenantScalarAsync<long>(o.T.Id, "select count(*) from search.unit where item_id = @i", ("i", id)));
+
+        // Another tenant finds nothing.
+        var other = await world.CreateTenantAsync("lcs-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
+        Assert.Empty(await SearchAsync(other["admin"].Client, "security basics"));
+    }
 }

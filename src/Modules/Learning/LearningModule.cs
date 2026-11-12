@@ -14,6 +14,8 @@ public static class LearningModule
 
     public static IServiceCollection AddLearningModule(this IServiceCollection services)
     {
+        services.AddSingleton<Experience.Contracts.IComponentRegistration, LearningComponents>();
+        services.AddScoped<Search.Contracts.ISearchSource, LearningSearchSource>();
         services.AddScoped<Courses>();
         services.AddScoped<Player>();
         services.AddScoped<Paths>();

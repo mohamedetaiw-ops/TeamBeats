@@ -15,8 +15,9 @@ public static class SearchKinds
     public const string Policy = "policy";
     public const string Service = "service";
     public const string Discussion = "discussion";
+    public const string Course = "course";
 
-    public static readonly IReadOnlyList<string> All = [Person, Content, Document, Knowledge, Policy, Service, Discussion];
+    public static readonly IReadOnlyList<string> All = [Person, Content, Document, Knowledge, Policy, Service, Discussion, Course];
 }
 
 /// <summary>

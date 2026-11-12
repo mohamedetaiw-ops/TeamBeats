@@ -1814,5 +1814,9 @@
   "learning.certificate.pdf.date": "التاريخ",
   "learning.certificate.pdf.code": "رقم الشهادة",
   "notifications.template.learning.course.withdrawn.title": "تم سحب دورة {course}",
-  "notifications.template.learning.course.withdrawn.body": "لم تعد هذه الدورة متاحة، لذا أُزيلت من قائمة تعلمك. تبقى الدورات التي أكملتها في سجلك."
+  "notifications.template.learning.course.withdrawn.body": "لم تعد هذه الدورة متاحة، لذا أُزيلت من قائمة تعلمك. تبقى الدورات التي أكملتها في سجلك.",
+  "experience.component.learning_my.name": "تعلّمي",
+  "experience.component.learning_my.description": "دوراتك المفتوحة، الأقرب موعدًا أولًا، ومدى تقدمك في كل منها",
+  "experience.component.learning_my.props.title": "العنوان",
+  "experience.component.learning_my.props.top": "عدد الدورات المعروضة"
 }

@@ -6,6 +6,7 @@ using TeamBeats.Modules.Content.Contracts;
 using TeamBeats.Modules.Documents.Contracts;
 using TeamBeats.Modules.Learning.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
+using TeamBeats.Modules.Search.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -88,6 +89,8 @@ public sealed class Courses(
     public const int MaxCategory = 60;
     public const string WithdrawnTemplate = "learning.course.withdrawn";
     public const string MyLearningPath = "/learning";
+
+    public static string CoursePath(Guid id) => $"/learning/courses/{id}";
 
     internal sealed record CourseRow(Guid Id, Guid? OrgUnitId, string? Category, string Status, string Draft, int DraftRevision, int? PublishedRevision,
         int? PublishedVersion, int? RetrainingVersion, string Audience, bool OpenEnrolment, DateTimeOffset UpdatedAt)
@@ -299,6 +302,11 @@ public sealed class Courses(
                 id, unit = request.OrgUnitId, category, draft = LearningJson.Jsonb(definition), audience = LearningJson.Jsonb(audience), open = request.OpenEnrolment,
                 now = clock.UtcNow,
             }, ct);
+        if (row.Status == CourseStatuses.Published)
+        {
+            // The category and owning unit are not versioned, so search reads them again.
+            await outbox.EnqueueAsync(new SearchItemChanged(LearningSearchSource.Name, id), ct);
+        }
         return await DetailAsync((await RowAsync(id, false, ct))!, ct);
     }
 
@@ -355,6 +363,7 @@ public sealed class Courses(
         await audit.WriteAsync(new AuditEntry(AuditActions.LearningCoursePublished, "course", id.ToString(), TargetOrgUnitId: row.OrgUnitId,
             Changes: new { version, retraining }), ct);
         await outbox.EnqueueAsync(new CoursePublished(id, version, retraining), ct);
+        await outbox.EnqueueAsync(new SearchItemChanged(LearningSearchSource.Name, id), ct);
         return await DetailAsync((await RowAsync(id, false, ct))!, ct);
     }
 
@@ -372,6 +381,7 @@ public sealed class Courses(
             new { id }, r => r.GetGuid(0), ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.LearningCourseRetired, "course", id.ToString(), TargetOrgUnitId: row.OrgUnitId,
             Changes: new { withdrawn = learners.Count }), ct);
+        await outbox.EnqueueAsync(new SearchItemChanged(LearningSearchSource.Name, id), ct);
         if (learners.Count > 0)
         {
             await notifications.SendAsync(new NotificationRequest(learners, NotificationCategories.RequestUpdate, WithdrawnTemplate, MyLearningPath,

@@ -42,6 +42,8 @@ const product: Record<string, Loader> = {
   "engagement.awards@1": () => import("@/components/placements/engagement.awards"),
   "engagement.discussions@1": () => import("@/components/placements/engagement.discussions"),
   "engagement.poll@1": () => import("@/components/placements/engagement.poll"),
+  // My learning home card (spec 028 T005).
+  "learning.my@1": () => import("@/components/placements/learning.my"),
 };
 
 const reference: Record<string, Loader> =
