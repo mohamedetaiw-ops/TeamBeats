@@ -103,11 +103,15 @@ export async function syncOffline(): Promise<SyncResult> {
   } catch {
     return "skipped";
   }
-  if (response.status === 401 || response.status === 403 || response.status === 409) {
-    await wipeOffline();
-    return "wiped";
+  if (!response.ok) {
+    // Read the answer to the end, so the request is complete and nothing stays open.
+    await response.text().catch(() => "");
+    if (response.status === 401 || response.status === 403 || response.status === 409) {
+      await wipeOffline();
+      return "wiped";
+    }
+    return "skipped";
   }
-  if (!response.ok) return "skipped";
   const bundle = (await response.json()) as OfflineBundle;
   const key = await crypto.subtle.importKey("raw", keyBytes(bundle.key), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
   const encoder = new TextEncoder();

@@ -24,7 +24,7 @@ export function PushOffer({ owner }: { owner: string }) {
       if (asked || !pushSupported() || Notification.permission !== "default" || declinedRecently(owner)) return;
       asked = true;
       void fetch("/api/v1/me/push")
-        .then((r) => (r.ok ? (r.json() as Promise<PushStatus>) : null))
+        .then((r) => (r.ok ? (r.json() as Promise<PushStatus>) : r.text().then(() => null)))
         .then((s) => {
           if (s?.available && s.publicKey) setStatus(s);
         })
