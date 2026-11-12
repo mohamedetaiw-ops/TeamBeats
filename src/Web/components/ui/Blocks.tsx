@@ -26,22 +26,29 @@ export type Stat = {
   goodWhen?: "up" | "down" | "neither";
   /** The period compared with, such as "last month". */
   period?: string;
+  /** An optional tint for a card that stands for a kind of work, such as tasks to approve. The words carry the meaning. */
+  tone?: "warm" | "cool" | "fresh";
+  /** Where the card leads, such as the list the number counts. */
+  href?: string;
 };
 
-/** Stat cards (spec 036 DLS-039): headline numbers with their change against the previous period, as a named list. */
-export function StatCards({ label, stats }: { label: string; stats: readonly Stat[] }) {
+/**
+ * Stat cards (spec 036 DLS-039): headline numbers with their change against the previous period, as a named list.
+ * `dense` fits three or more cards into a narrow column, such as Your day on the home.
+ */
+export function StatCards({ label, stats, dense = false }: { label: string; stats: readonly Stat[]; dense?: boolean }) {
   const t = useTranslations("ui.data");
   const locale = useLocale();
   const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1, signDisplay: "exceptZero" });
   return (
-    <ul className="ui-stats" aria-label={label}>
+    <ul className={dense ? "ui-stats ui-stats-dense" : "ui-stats"} aria-label={label}>
       {stats.map((s) => {
         const direction = s.change === undefined ? null : s.change > 0 ? "up" : s.change < 0 ? "down" : "flat";
         const good = s.goodWhen ?? "up";
         const tone: BadgeTone =
           direction === null || direction === "flat" || good === "neither" ? "neutral" : direction === good ? "success" : "danger";
         return (
-          <li key={s.key} className="ui-stat">
+          <li key={s.key} className="ui-stat" data-tone={s.tone}>
             <p className="ui-stat-label">
               {s.icon ? (
                 <span className="ui-stat-icon">
@@ -51,7 +58,13 @@ export function StatCards({ label, stats }: { label: string; stats: readonly Sta
               <span>{s.label}</span>
             </p>
             <p className="ui-stat-value">
-              <bdi>{s.value}</bdi>
+              {s.href ? (
+                <Link className="ui-stat-link" href={s.href} aria-label={`${s.value} ${s.label}`}>
+                  <bdi>{s.value}</bdi>
+                </Link>
+              ) : (
+                <bdi>{s.value}</bdi>
+              )}
             </p>
             {s.change !== undefined && s.period ? (
               <p className="ui-stat-change">
