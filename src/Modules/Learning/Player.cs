@@ -277,17 +277,17 @@ public sealed class Player(
     }
 
     /// <summary>Creates the learner's open assignment of the course, in the cycle after their last one.</summary>
-    internal async Task<AssignmentRow> AssignAsync(Guid courseId, Guid learner, string source, DateOnly? dueOn, CancellationToken ct)
+    internal async Task<AssignmentRow> AssignAsync(Guid courseId, Guid learner, string source, DateOnly? dueOn, CancellationToken ct, int grace = 0)
     {
         var id = Ids.New();
         var row = await session.QuerySingleOrDefaultAsync(
             $"""
-            insert into learning.assignment (tenant_id, id, course_id, learner_id, source, due_on, cycle, created_at)
-            values (@tenant, @id, @courseId, @learner, @source, @dueOn,
+            insert into learning.assignment (tenant_id, id, course_id, learner_id, source, due_on, grace_days, cycle, created_at)
+            values (@tenant, @id, @courseId, @learner, @source, @dueOn, @grace,
               coalesce((select max(cycle) from learning.assignment where course_id = @courseId and learner_id = @learner), 0) + 1, @now)
             on conflict (tenant_id, course_id, learner_id) where status = 'open' do nothing
             returning {AssignmentColumns}
-            """, new { tenant = context.RequireTenant(), id, courseId, learner, source, dueOn, now = clock.UtcNow }, ReadAssignment, ct);
+            """, new { tenant = context.RequireTenant(), id, courseId, learner, source, dueOn, grace, now = clock.UtcNow }, ReadAssignment, ct);
         if (row is null)
         {
             return (await CurrentAssignmentAsync(courseId, learner, false, ct))!;

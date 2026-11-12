@@ -312,15 +312,43 @@ public sealed class AssignmentRules(
         }
         var now = clock.UtcNow;
         var changed = 0;
-        foreach (var learner in targets.Where(t => !existing.Contains(t)))
+        var newcomers = targets.Where(t => !existing.Contains(t)).ToList();
+        // A whole rule can cover tens of thousands of people (section 15: 20,000 within 5 minutes), so their primary
+        // units are read once, each unit's calendar once, and the learners told in one notification per due date.
+        Func<Guid, Task<WorkingCalendarSnapshot>> calendarOf = learner => calendars.ForUserAsync(learner, ct);
+        if (newcomers.Count > 1)
         {
-            var calendar = await calendars.ForUserAsync(learner, ct);
+            var primary = (await hierarchy.ListActiveMembershipsAsync(ct)).Where(m => m.IsPrimary).GroupBy(m => m.UserId).ToDictionary(g => g.Key, g => g.First().OrgUnitId);
+            var byUnit = new Dictionary<Guid, WorkingCalendarSnapshot>();
+            WorkingCalendarSnapshot? fallback = null;
+            calendarOf = async learner =>
+            {
+                if (!primary.TryGetValue(learner, out var unit))
+                {
+                    return fallback ??= await calendars.TenantDefaultAsync(ct);
+                }
+                if (!byUnit.TryGetValue(unit, out var calendar))
+                {
+                    calendar = byUnit[unit] = await calendars.ForUnitAsync(unit, ct);
+                }
+                return calendar;
+            };
+        }
+        var told = new List<(Guid Learner, DateOnly Due)>();
+        foreach (var learner in newcomers)
+        {
+            var calendar = await calendarOf(learner);
             var due = NextWorkingDay(calendar, calendar.Today(now).AddDays(rule.DueDays));
             await session.ExecAsync(
                 "insert into learning.rule_target (tenant_id, rule_id, learner_id, due_on, added_at) values (@tenant, @rule, @learner, @due, @now) on conflict do nothing",
                 new { tenant = context.RequireTenant(), rule = rule.Id, learner, due, now }, ct);
-            await GiveAsync(course, learner, due, rule.GraceDays, AssignmentSources.Rule, ct);
+            await GiveAsync(course, learner, due, rule.GraceDays, AssignmentSources.Rule, ct, told: told);
             changed++;
+        }
+        foreach (var group in told.GroupBy(t => t.Due))
+        {
+            await NotifyAsync(group.Select(g => g.Learner).ToList(), course, AssignedTemplate, NotificationCategories.RequestUpdate,
+                $"{rule.Id:N}:{group.Key:yyyyMMdd}:assigned", ct, group.Key);
         }
         foreach (var learner in existing.Where(e => !targets.Contains(e)))
         {
@@ -353,7 +381,9 @@ public sealed class AssignmentRules(
     /// it is unless <paramref name="again"/> asks for the course to be taken again; otherwise a new assignment starts and
     /// the learner is told.
     /// </summary>
-    internal async Task GiveAsync(Courses.CourseRow course, Guid learner, DateOnly due, int grace, string source, CancellationToken ct, bool again = false)
+    /// <param name="told">When given, the learner is added to it to be told with others instead of on their own.</param>
+    internal async Task GiveAsync(Courses.CourseRow course, Guid learner, DateOnly due, int grace, string source, CancellationToken ct, bool again = false,
+        List<(Guid Learner, DateOnly Due)>? told = null)
     {
         var current = await player.CurrentAssignmentAsync(course.Id, learner, true, ct);
         if (current is { Status: AssignmentStatuses.Open })
@@ -366,8 +396,12 @@ public sealed class AssignmentRules(
         {
             return;
         }
-        var created = await player.AssignAsync(course.Id, learner, source, due, ct);
-        await session.ExecAsync("update learning.assignment set grace_days = @grace where id = @id", new { id = created.Id, grace }, ct);
+        var created = await player.AssignAsync(course.Id, learner, source, due, ct, grace);
+        if (told is not null)
+        {
+            told.Add((learner, due));
+            return;
+        }
         await NotifyAsync([learner], course, AssignedTemplate, NotificationCategories.RequestUpdate, $"{created.Id:N}:assigned", ct, due);
     }
 
