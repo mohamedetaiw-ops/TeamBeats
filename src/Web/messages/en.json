@@ -9937,7 +9937,8 @@
       "skipped": {
         "holiday": "{date} was left out because it is a holiday.",
         "non_working_day": "{date} was left out because the site is closed.",
-        "rules": "{date} was left out because the rules do not allow it."
+        "rules": "{date} was left out because the rules do not allow it.",
+        "closed": "{date} was left out because facilities closed the site that day."
       },
       "resultsTitle": "{count, plural, =0 {Nothing free} one {# free} other {# free}}",
       "none": "Nothing that matches is free at this time. Try another time or fewer filters.",
@@ -9966,6 +9967,16 @@
         "none_free": "No free one left",
         "booking_for": "Not in your team",
         "rules": "The rules do not allow it"
+      },
+      "grid": {
+        "show": "Show the day",
+        "label": "The day of {name}",
+        "hint": "Times are in {zone}. Choose a free time to book it.",
+        "free": "{start} to {end}, free",
+        "taken": "{start} to {end}, booked",
+        "takenBy": "{start} to {end}, booked by {name}",
+        "closed": "The site is closed that day.",
+        "failed": "The day could not be loaded."
       }
     },
     "mine": {
@@ -9996,7 +10007,9 @@
         "left": "Cancelled because the person left.",
         "rejected": "Not approved",
         "expired": "Nobody approved it in time",
-        "no_show": "Released because nobody checked in"
+        "no_show": "Released because nobody checked in",
+        "site_closed": "Cancelled because the site was closed that day.",
+        "holiday": "Cancelled because the day became a holiday."
       },
       "waiting": "Waiting for approval until {until}",
       "rejectedReason": "Reason: {reason}",
@@ -10144,6 +10157,23 @@
         "utilization": "Utilization",
         "noShowRate": "No-show rate"
       }
+    },
+    "closures": {
+      "title": "Closed days",
+      "intro": "Close the site for a day, for an emergency or anything its calendar does not know. That day's bookings are cancelled, the people are told your reason, and nobody can book the site that day. Holidays from the site's calendar are handled for you.",
+      "failed": "That did not work.",
+      "formLabel": "Close the site for a day",
+      "date": "Date",
+      "reason": "Reason, told to the people with bookings",
+      "close": "Close the site that day",
+      "closed": "{count, plural, =0 {The site is closed on {date}. No bookings needed cancelling.} one {The site is closed on {date}. # booking was cancelled.} other {The site is closed on {date}. # bookings were cancelled.}}",
+      "reopened": "The site is open again on {date}. Cancelled bookings stay cancelled.",
+      "none": "No closed days ahead.",
+      "listLabel": "Closed days ahead",
+      "reopen": "Open again",
+      "reopenQuestion": "Open the site again on {date}? Bookings cancelled for that day stay cancelled.",
+      "reopenConfirm": "Open it",
+      "keep": "Keep it closed"
     }
   }
 }

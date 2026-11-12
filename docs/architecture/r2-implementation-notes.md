@@ -1007,5 +1007,19 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A booking counts on the day it starts in the site's time zone; its hours are clipped to the range. Weeks start on Monday.
 - The spec allows a facilities administrator to see names on a single booking; the report itself never shows them, and the booking page already does for administrators.
 
-### Gaps
-- Closing a site for one day (a new holiday or an emergency) does not yet cancel that day's bookings with notice (section 4 edge case); it follows as its own slice.
+
+## Workplace booking (spec 031, slice 5: closed days, time grid, retention, telemetry)
+
+### Built
+- Closed days (section 4 edge case, FR-015): a facilities administrator closes a site for a day with a reason (`POST /manage/sites/{id}/closures`, listed with `GET` and opened again with `DELETE /manage/sites/{id}/closures/{date}`). That day's live bookings are cancelled and the holders told the reason with a link to find another space; nobody can book the site that day, search finds nothing, the day shows closed and a series leaves it out. Audited as `booking.site_closed` and `booking.site_reopened`.
+- Holidays (section 12, consumes holiday calendars from 022): Booking handles `WorkingCalendarChanged`. On each changed date that is now not a working day for a site's calendar, the bookings there of resources whose rule keeps to working hours are cancelled and the holders told (`booking.holiday`).
+- Time grid (section 10): each result on Find a space can show the resource's day as slots of the opening hours. Each slot is a button that reads its time and whether it is free (with the name only where names are shown), works with the keyboard and runs right to left; a free slot sets the time to book.
+- Retention (section 8): the booking job clears who held, made and decided a booking, and its title and note, once it ended more than a year ago, so only counts remain for the reports. Old series lose their holder too, and no-show notices over a year old are deleted.
+- Telemetry (section 13): `booking.activity` counts booked, requested, approved, rejected, expired, checked in, released and cancelled by resource type and site. It is an unkeyed analytics event: no person, unit, locale or time finer than the day.
+
+### Smallest safe defaults
+- A closed day refuses every booking at the site, equipment too; a holiday cancels only resources that keep to working hours, since equipment may be booked outside them.
+- Opening a closed day again does not bring cancelled bookings back; the holders were already told.
+- A closure can be set from today up to a year ahead, with a reason of up to 500 characters that the holders see.
+- Cleared bookings keep the empty id as holder, as the columns are required; nobody sees them as theirs.
+- The grid shows 30 minute slots whatever the tenant's slot length, so a day fits on a phone.

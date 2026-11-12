@@ -42,6 +42,7 @@ public sealed class Bookings(
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,
+    BookingActivity activity,
     IClock clock)
 {
     public const string ConfirmedTemplate = "booking.confirmed";
@@ -76,6 +77,11 @@ public sealed class Bookings(
     private async Task<WorkingCalendarSnapshot> CalendarAsync(SiteRow site, CancellationToken ct) =>
         site.OrgUnitId is { } unit ? await calendars.ForUnitAsync(unit, ct) : await calendars.TenantDefaultAsync(ct);
 
+    /// <summary>The days in a range on which a facilities administrator closed the site.</summary>
+    internal async Task<IReadOnlySet<DateOnly>> ClosedAsync(Guid siteId, DateOnly from, DateOnly to, CancellationToken ct) =>
+        (await session.QueryAsync("select day from booking.site_closure where site_id = @siteId and day between @from and @to", new { siteId, from, to },
+            r => r.GetFieldValue<DateOnly>(0), ct)).ToHashSet();
+
     /// <summary>Whether the person is in one of the rule's units or below one (section 7: a parent unit includes its children).</summary>
     private async Task<bool> InUnitsAsync(Rule rule, Guid userId, Dictionary<string, IReadOnlySet<Guid>> subtrees, CancellationToken ct)
     {
@@ -94,9 +100,14 @@ public sealed class Bookings(
     }
 
     /// <summary>The rule checks that need no other booking (FR-003). Each failure is a field and a resource key.</summary>
-    private static void CheckSpan(Span span, Rule rule, Settings settings, SiteRow site, WorkingCalendarSnapshot calendar, DateTimeOffset now, ValidationErrors errors,
-        bool first = true)
+    private static void CheckSpan(Span span, Rule rule, Settings settings, SiteRow site, WorkingCalendarSnapshot calendar, IReadOnlySet<DateOnly> closed, DateTimeOffset now,
+        ValidationErrors errors, bool first = true)
     {
+        // A day the site was closed (section 4 edge case) refuses every booking, whatever the rule says about working hours.
+        if (closed.Contains(span.Date))
+        {
+            errors.Add("date", "validation.booking.site_closed");
+        }
         if (span.Start.Minute % settings.SlotMinutes != 0 || span.End.Minute % settings.SlotMinutes != 0 || span.Start.Second != 0 || span.End.Second != 0)
         {
             errors.Add("start", "validation.booking.slot");
@@ -204,6 +215,7 @@ public sealed class Bookings(
         var resolve = await rules.ResolverAsync(ct);
         var settings = await rules.SettingsAsync(ct);
         var calendar = await CalendarAsync(site, ct);
+        var closed = await ClosedAsync(site.Id, span.Date, span.Date, ct);
         var now = clock.UtcNow;
         var restrict = await RestrictionAsync(user, now, ct);
         var subtrees = new Dictionary<string, IReadOnlySet<Guid>>();
@@ -212,7 +224,7 @@ public sealed class Bookings(
         {
             var rule = restrict(resolve(row));
             var check = new ValidationErrors();
-            CheckSpan(span, rule, settings, site, calendar, now, check);
+            CheckSpan(span, rule, settings, site, calendar, closed, now, check);
             if (!check.Any && await InUnitsAsync(rule, user, subtrees, ct))
             {
                 bookable.Add((row, floor, zone, rule));
@@ -254,7 +266,8 @@ public sealed class Bookings(
         var showNames = (await rules.SettingsAsync(ct)).ShowNames || await facilities.ManagesAsync(site, ct);
         var names = showNames ? await users.GetManyAsync(rows.Select(x => x.Holder).Distinct().ToList(), ct) : new Dictionary<Guid, UserInfo>();
         var me = context.RequireUser();
-        return new AvailabilityView(resourceId, date, site.TimeZone, site.OpensAt, site.ClosesAt, calendar.IsWorkingDay(date),
+        var closed = (await ClosedAsync(site.Id, date, date, ct)).Count > 0;
+        return new AvailabilityView(resourceId, date, site.TimeZone, site.OpensAt, site.ClosesAt, calendar.IsWorkingDay(date) && !closed,
             rows.Select(x => new BusySlot(x.Start, x.End, x.Status,
                 x.Holder == me || showNames ? (names.TryGetValue(x.Holder, out var u) ? u.DisplayName : null) : null)).ToList());
     }
@@ -391,7 +404,8 @@ public sealed class Bookings(
         }
         var calendar = await CalendarAsync(site, ct);
         var first = SpanOf(request.Date!.Value, request.Start!.Value, request.End!.Value, site.Zone);
-        CheckSpan(first, rule, settings, site, calendar, now, errors);
+        var closed = await ClosedAsync(site.Id, first.Date, request.Repeat?.Until is { } last && last > first.Date ? last : first.Date, ct);
+        CheckSpan(first, rule, settings, site, calendar, closed, now, errors);
         errors.ThrowIfAny();
 
         // The occurrences of a series (FR-006): non-working days of the site's calendar are skipped and listed.
@@ -412,6 +426,11 @@ public sealed class Bookings(
             var step = pattern == "daily" ? 1 : 7;
             for (var d = first.Date.AddDays(step); d <= until; d = d.AddDays(step))
             {
+                if (closed.Contains(d))
+                {
+                    skipped.Add(new SkippedDate(d, "closed"));
+                    continue;
+                }
                 if (!calendar.IsWorkingDay(d))
                 {
                     // A daily series runs on working days; weekends are not listed, holidays are.
@@ -423,7 +442,7 @@ public sealed class Bookings(
                 }
                 var span = SpanOf(d, first.Start, first.End, site.Zone);
                 var check = new ValidationErrors();
-                CheckSpan(span, rule, settings, site, calendar, now, check, first: false);
+                CheckSpan(span, rule, settings, site, calendar, closed, now, check, first: false);
                 if (check.Any)
                 {
                     skipped.Add(new SkippedDate(d, "rules"));
@@ -510,6 +529,7 @@ public sealed class Bookings(
             await session.ExecAsync("update booking.booking set instance_id = @instance where id = any(@ids)", new { instance, ids = ids.ToArray() }, ct);
             await notifications.SendAsync(new NotificationRequest([holder], NotificationCategories.Bookings, BookingApprovals.RequestedTemplate, Link(ids[0]),
                 parameters, DedupeKey: $"booking:{ids[0]:N}:requested"), ct);
+            await activity.RecordAsync("requested", resource.Kind, site.Id, ids.Count, ct);
         }
         else
         {
@@ -517,6 +537,7 @@ public sealed class Bookings(
             {
                 await outbox.EnqueueAsync(new BookingConfirmed(id, resource.Id, site.Id, resource.Kind, holder, span.StartsAt, span.EndsAt), ct);
             }
+            await activity.RecordAsync("booked", resource.Kind, site.Id, ids.Count, ct);
             if (bookedBy != holder)
             {
                 // FR-011: the person booked for is told who booked it.
@@ -716,6 +737,7 @@ public sealed class Bookings(
         if (changed == 1)
         {
             await outbox.EnqueueAsync(new CheckedIn(view.Id, view.ResourceId, view.SiteId, view.Kind, view.HolderId, method), ct);
+            await activity.RecordAsync("checked_in", view.Kind, view.SiteId, ct);
         }
         return await GetAsync(view.Id, ct);
     }

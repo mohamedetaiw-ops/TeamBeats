@@ -205,3 +205,26 @@ export type UsageReport = {
 export function lastWeeksIso(now: number = Date.now()): { from: string; to: string } {
   return { from: new Date(now - 27 * 86_400_000).toISOString().slice(0, 10), to: new Date(now).toISOString().slice(0, 10) };
 }
+
+// ---- Closed days (spec 031 section 4 edge case) ----
+
+export type ClosureView = { siteId: string; date: string; reason: string; closedAt: string; cancelled: number };
+
+// ---- The day of one resource (spec 031 section 10 time grid) ----
+
+export type BusySlot = { startsAt: string; endsAt: string; status: string; holder: string | null };
+export type AvailabilityView = { resourceId: string; date: string; timeZone: string; opensAt: string; closesAt: string; workingDay: boolean; busy: BusySlot[] };
+
+/** Minutes after midnight on <paramref name="date"/> in the site's time zone, clamped to the day. */
+export function minutesOnDay(iso: string, date: string, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .formatToParts(new Date(iso));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "00";
+  const day = `${get("year")}-${get("month")}-${get("day")}`;
+  if (day < date) return 0;
+  if (day > date) return 24 * 60;
+  return Number(get("hour")) * 60 + Number(get("minute"));
+}
+
+/** "HH:mm" for minutes after midnight. */
+export const clock = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;

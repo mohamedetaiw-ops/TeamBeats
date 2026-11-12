@@ -27,6 +27,7 @@ public sealed class BookingApprovals(
     INotificationSender notifications,
     ILocalizer localizer,
     IOutbox outbox,
+    BookingActivity activity,
     IClock clock) : ITaskSource, IMessageHandler<UserTaskCreated>
 {
     public const string KeyPrefix = "booking.approval:";
@@ -114,6 +115,7 @@ public sealed class BookingApprovals(
                 await outbox.EnqueueAsync(new BookingConfirmed(b.Id, b.ResourceId, b.SiteId, b.Kind, b.HolderId, b.StartsAt, b.EndsAt), ct);
             }
         }
+        await activity.RecordAsync(approved ? "approved" : "rejected", first.Kind, first.SiteId, decided.Count, ct);
         var parameters = await DescribeAsync(first, decided.Count, ct);
         if (!approved)
         {
@@ -136,6 +138,7 @@ public sealed class BookingApprovals(
         {
             var ids = group.Select(e => e.Id).ToArray();
             var rows = await session.QueryAsync($"{HeldSelect} where b.id = any(@ids) order by b.starts_at", new { ids }, ReadHeld, ct);
+            await activity.RecordAsync("expired", rows[0].Kind, rows[0].SiteId, rows.Count, ct);
             if (group.Key is { } instance)
             {
                 await EndIfIdleAsync(instance, ct);
