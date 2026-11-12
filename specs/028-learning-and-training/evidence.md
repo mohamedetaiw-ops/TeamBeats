@@ -29,8 +29,8 @@ The spec stays Approved, not Implemented. Every part of the spec is built: cours
 | Package entitlements (section 9) | Met | `LearningCourseTests.Workplace_has_no_courses`, `LearningAssignmentTests.Workplace_has_no_mandatory_training_and_retiring_a_course_ends_its_rules`, `LearningLmsTests.Only_learning_administrators_with_the_package_sync_and_other_tenants_see_nothing`, `LearningPackageTests.Unsafe_or_unknown_packages_...` (Plus has no SCORM) |
 | Audit events (section 13) | Met | The course, report and rule tests above read `learning.course_published`, `learning.assignment_created`, `learning.attempts_granted` and `learning.evidence_exported` from the audit log |
 | Resource keys and RTL | Met | The catalogue and message checks in `npm run verify`, and `learning.spec.ts` in Arabic |
-| A course assigned to 20,000 people within 5 minutes | Met | `LearningPerformanceTests.A_rule_assigns_a_course_to_20000_people_within_5_minutes_and_the_player_opens_under_2_seconds_p95` (about 75 seconds locally) |
-| Player first lesson under 2 seconds p95 | Met | Same test (about 7 ms locally) |
+| A course assigned to 20,000 people within 5 minutes | Met | `LearningPerformanceTests.A_rule_assigns_a_course_to_20000_people_within_5_minutes_and_the_player_opens_under_2_seconds_p95` (about 35 seconds locally) |
+| Player first lesson under 2 seconds p95 | Met | Same test (about 10 ms locally) |
 | SC-001 95% on-time completion of mandatory training | Not proven | Needs pilot tenants; the FR-013 reports measure it |
 | SC-002 evidence export for a course in under 2 minutes | Met for the export itself | `LearningReportTests.A_compliance_officer_sees_counts_per_unit_...` returns the export in one request; the time a compliance officer takes is to be checked in the pilot |
 | Cross-tenant, org boundary and package denial | Met | Every class above has a case for another tenant, a sibling unit (Gulf and Africa) and the Workplace package |
