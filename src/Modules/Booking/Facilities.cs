@@ -124,7 +124,7 @@ public sealed partial class Facilities(
     {
         var clean = (names ?? []).Where(n => !string.IsNullOrWhiteSpace(n.Value))
             .ToDictionary(n => n.Key.Trim(), n => n.Value.Trim(), StringComparer.Ordinal);
-        if (clean.Count == 0 || clean.Count > 10 || clean.Any(n => n.Value.Length > Names.MaxLength || !Primitives.Locales.IsValid(n.Key)))
+        if (clean.Count == 0 || clean.Count > 10 || clean.Any(n => n.Value.Length > Names.MaxLength || !Primitives.Locales.IsSupported(n.Key)))
         {
             errors.Add(field, "validation.booking.name");
         }
@@ -299,7 +299,7 @@ public sealed partial class Facilities(
             errors.Add("attributes", "validation.booking.attributes");
         }
         if (request.FixedUserId is { } fixedUser
-            && (kind != ResourceKinds.Desk || await memberships.GetAsync(fixedUser, ct) is not { Status: TenantMembershipStatuses.Active }))
+            && (kind != ResourceKinds.Desk || await memberships.GetAsync(fixedUser, ct) is not { Status: MembershipStatus.Active }))
         {
             errors.Add("fixedUserId", "validation.booking.fixed_user");
         }

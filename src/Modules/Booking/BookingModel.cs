@@ -182,7 +182,7 @@ internal sealed record SiteRow(Guid Id, Dictionary<string, string> Names, string
 {
     public const string Columns = "id, names::text, location_key, org_unit_id, time_zone, opens_at, closes_at, status, row_version";
 
-    public static SiteRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), Names.Read(r, 1), r.Get<string>("location_key"), r.Get<Guid?>("org_unit_id"), r.GetString(4),
+    public static SiteRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), Booking.Names.Read(r, 1), r.Get<string>("location_key"), r.Get<Guid?>("org_unit_id"), r.GetString(4),
         r.GetFieldValue<TimeOnly>(5), r.GetFieldValue<TimeOnly>(6), r.GetString(7), r.GetInt32(8));
 
     public TimeZoneInfo Zone => TimeZoneInfo.FindSystemTimeZoneById(TimeZone);
@@ -193,7 +193,7 @@ internal sealed record ResourceRow(Guid Id, Guid SiteId, Guid? FloorId, Guid? Zo
 {
     public const string Columns = "id, site_id, floor_id, zone_id, kind, names::text, capacity, attributes, fixed_user_id, mailbox, check_in, needs_approval, qr_code, status, row_version";
 
-    public static ResourceRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.Get<Guid?>("floor_id"), r.Get<Guid?>("zone_id"), r.GetString(4), Names.Read(r, 5),
+    public static ResourceRow Read(NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.Get<Guid?>("floor_id"), r.Get<Guid?>("zone_id"), r.GetString(4), Booking.Names.Read(r, 5),
         r.Get<int?>("capacity"), r.GetFieldValue<string[]>(7), r.Get<Guid?>("fixed_user_id"), r.Get<string>("mailbox"), r.GetBoolean(10), r.GetBoolean(11), r.GetString(12),
         r.GetString(13), r.GetInt32(14));
 
