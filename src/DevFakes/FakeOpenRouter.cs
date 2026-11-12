@@ -116,7 +116,9 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
             var judging = properties?["verdict"] is not null;
             // Receipt reading (spec 022 FR-024) answers with the JSON of [fake:receipt:{...}] found inside an attached file,
             // or with nothing read.
-            reply = properties?["merchant"] is not null ? Receipt(messages) : judging
+            // The photo safety check (spec 023 FR-017) answers safe, unless an attached file carries [fake:unsafe].
+            reply = properties?["safe"] is not null ? JsonSerializer.Serialize(new { safe = !Attached(messages).Any(t => t.Contains("[fake:unsafe]", StringComparison.Ordinal)) })
+                : properties?["merchant"] is not null ? Receipt(messages) : judging
                 ? JsonSerializer.Serialize(last.Contains("[fake:judge:fail]", StringComparison.Ordinal)
                     ? new { verdict = "fail", score = 0.0, reason = "Fake judge: marked to fail." }
                     : new { verdict = "pass", score = 1.0, reason = "Fake judge: passes by default." })
@@ -181,6 +183,20 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
         JsonArray parts => string.Join(" ", parts.Select(p => p?["text"]?.GetValue<string>()).OfType<string>()),
         _ => string.Empty,
     };
+
+    /// <summary>The text of every attached file, decoded from its data URL.</summary>
+    private static IEnumerable<string> Attached(JsonArray messages)
+    {
+        foreach (var part in messages.SelectMany(m => m?["content"] is JsonArray parts ? parts : []))
+        {
+            var url = part?["image_url"]?["url"]?.GetValue<string>() ?? part?["file"]?["file_data"]?.GetValue<string>();
+            var comma = url?.IndexOf(',', StringComparison.Ordinal) ?? -1;
+            if (url is not null && comma >= 0)
+            {
+                yield return Encoding.Latin1.GetString(Convert.FromBase64String(url[(comma + 1)..]));
+            }
+        }
+    }
 
     /// <summary>The fields a receipt reader returns: the marker's JSON from the first attached file that has one, else all empty.</summary>
     private static string Receipt(JsonArray messages)

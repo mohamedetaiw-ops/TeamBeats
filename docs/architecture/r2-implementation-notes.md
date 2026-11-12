@@ -648,3 +648,30 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 |---|---|
 | Celebrations widget for home (008) | T015, with the other engagement widgets |
 | Birthdays from HR (019) | Not used; birthdays come only from the person's own opt-in, so no birth year ever reaches TeamBeats |
+
+## Photo galleries (spec 023, slice 9: T014; US7, FR-017)
+
+### Built
+- Members who may post in a community make albums, and an album can ask a moderator to approve each photo. Everyone who can read the community opens its albums.
+- Photos are PNG or JPEG up to 10 MB. Before anything is stored, the file is checked to be the image it claims to be, and location, camera and other metadata (EXIF, XMP, comments and text chunks) are removed. The tenant's malware scanner (spec 001) then checks the cleaned file, and only a clean result is stored, in tenant scoped object storage under `engagement/photos/`.
+- The content safety check goes through the AI Gateway (use case Summarize, classification Internal) with a structured yes or no answer. A safe photo shows at once, unless the album needs approval. A photo the check flags, or one it could not check, waits for a moderator, and only the uploader and the moderators see it until then.
+- Moderators approve or remove photos, and both are audited. The uploader can delete their own photo. Removing a photo deletes its file and tags.
+- The uploader tags up to 20 people who can read the community. A tagged person is notified when the photo shows (category `mention`) and can remove their own tag.
+- Galleries need the `engagement.galleries` capability.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Who makes albums | Members who may post in the community |
+| Scan result other than clean | Nothing is stored; an infected file is refused and an unavailable scanner asks to try later |
+| Safety check flags the photo or is unavailable | Held for a moderator, never shown or refused on its own |
+| Who can be tagged | People who can read the community, at most 20 per photo |
+| Tag notification category | `mention` |
+| File types and size | PNG and JPEG, 10 MB, at most 12000 pixels a side |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Resizing (US7 scenario 1) | Follow-up. There is no image library in the stack yet, so photos are stored at their cleaned original size; adding one needs the dependency review of hard rule 6 |
+| EXIF orientation | Lost with the metadata; comes back with resizing |
+| Videos and reporting a photo | Follow-ups |

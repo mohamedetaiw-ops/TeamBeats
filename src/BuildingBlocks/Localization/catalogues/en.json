@@ -1717,5 +1717,17 @@
   "validation.engagement.celebration_settings": "Choose whether to show birthdays, work anniversaries and new joiners.",
   "validation.engagement.celebration_birthday": "Choose a month and a day that exists in that month, or leave both empty.",
   "validation.engagement.celebration_scope": "Choose your teams or the whole organization.",
-  "validation.engagement.celebration_kind": "Choose a birthday, a work anniversary or a new joiner."
+  "validation.engagement.celebration_kind": "Choose a birthday, a work anniversary or a new joiner.",
+  "notifications.template.engagement.photo.tagged.title": "You were tagged in a photo",
+  "notifications.template.engagement.photo.tagged.body": "Someone tagged you in a photo in the album {album}. You can remove the tag from the photo.",
+  "conflict.engagement.photo_scan_unavailable": "The photo could not be checked for malware right now, so it was not saved. Try again later.",
+  "conflict.engagement.photo_not_pending": "This photo is not waiting for review.",
+  "validation.engagement.album_title": "Write an album title of up to 120 characters.",
+  "validation.engagement.album_description": "Write a description of up to 1000 characters.",
+  "validation.engagement.photo_type": "Choose a PNG or JPEG photo.",
+  "validation.engagement.photo_size": "Choose a photo of up to 10 MB and 12000 pixels on each side.",
+  "validation.engagement.photo_infected": "This file contains malware and was refused.",
+  "validation.engagement.photo_caption": "Write a caption of up to 300 characters.",
+  "validation.engagement.photo_tags": "Tag at most 20 people.",
+  "validation.engagement.photo_tag_person": "Everyone you tag must be active and able to see this community."
 }

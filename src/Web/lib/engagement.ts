@@ -306,3 +306,36 @@ export type CelebrationPreference = { birthdayMonth: number | null; birthdayDay:
 export type CelebrationSettingsView = { birthdays: boolean; anniversaries: boolean; joiners: boolean; version: number };
 
 export const celebrationsHref = "/communities/celebrations";
+
+export type AlbumView = {
+  id: string;
+  communityId: string;
+  title: string;
+  description: string | null;
+  requiresApproval: boolean;
+  createdBy: EngagementPerson;
+  createdAt: string;
+  photoCount: number;
+  coverPhotoId: string | null;
+};
+export type AlbumList = { canCreate: boolean; albums: AlbumView[] };
+export type PhotoView = {
+  id: string;
+  albumId: string;
+  uploader: EngagementPerson;
+  caption: string | null;
+  width: number;
+  height: number;
+  status: "pending" | "visible";
+  heldReason: "approval" | "safety" | "unchecked" | null;
+  createdAt: string;
+  tags: EngagementPerson[];
+  canManage: boolean;
+  canModerate: boolean;
+  taggedMe: boolean;
+};
+export type AlbumPage = { album: AlbumView; canUpload: boolean; canModerate: boolean; photos: PhotoView[]; pending: PhotoView[] };
+
+export const albumsHref = (communityId: string) => `${communityHref(communityId)}/albums`;
+export const albumHref = (communityId: string, albumId: string) => `${albumsHref(communityId)}/${encodeURIComponent(albumId)}`;
+export const photoFile = (photoId: string) => `${engagementApi}/photos/${encodeURIComponent(photoId)}/file`;

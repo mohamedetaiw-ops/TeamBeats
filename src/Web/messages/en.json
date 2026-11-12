@@ -8756,6 +8756,45 @@
       "showAnniversariesHint": "Anniversaries come from the hire date in people profiles. People can leave theirs out.",
       "showJoiners": "Show new joiners",
       "saveSettings": "Save settings"
+    },
+    "gallery": {
+      "pageTitle": "Photos",
+      "link": "Photos",
+      "albumsTitle": "Albums",
+      "noAlbumsTitle": "No albums yet",
+      "noAlbums": "Albums that members make show here.",
+      "photoCount": "{count, plural, =0 {No photos} one {# photo} other {# photos}}",
+      "openAlbum": "Open album",
+      "createTitle": "Make an album",
+      "albumTitle": "Album title",
+      "albumDescription": "Description",
+      "requiresApproval": "A moderator approves each photo",
+      "requiresApprovalHint": "Photos wait for a moderator before anyone else sees them.",
+      "create": "Make album",
+      "failed": "That did not work. Try again.",
+      "working": "Working",
+      "pendingTitle": "Waiting for review",
+      "photosTitle": "Photos",
+      "noPhotosTitle": "No photos yet",
+      "noPhotos": "Photos added to this album show here.",
+      "uploadTitle": "Add photos",
+      "uploadReviewed": "A moderator reviews each photo before it shows.",
+      "uploadChecked": "Each photo is checked for malware and for content that breaks the rules before it shows.",
+      "caption": "Caption",
+      "choosePhotos": "Choose photos",
+      "uploadHint": "PNG or JPEG, up to 10 MB each. Location and camera details are removed.",
+      "photoBy": "Photo shared by {name}",
+      "held": {
+        "approval": "Waiting for approval",
+        "safety": "Held for review",
+        "unchecked": "Waiting for a check"
+      },
+      "inPhoto": "In this photo:",
+      "approve": "Approve",
+      "tagPeople": "Tag people",
+      "removeMyTag": "Remove my tag",
+      "remove": "Remove",
+      "saveTags": "Save tags"
     }
   }
 }
