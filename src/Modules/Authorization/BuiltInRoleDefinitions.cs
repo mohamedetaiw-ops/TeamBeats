@@ -17,7 +17,7 @@ public static class BuiltInRoleDefinitions
             P.ContentView, P.ContentAuthor, P.ContentEdit, P.ContentPublish, P.PageView, P.PageEdit, P.PagePublish, P.TemplateEdit,
             P.ThemeEdit, P.ThemePublish, P.NavigationEdit, P.PersonalizationPolicy, P.PeopleView, P.PeopleManage,
             P.ServiceManage, P.ServiceRequestOnBehalf, P.DocView, P.DocContribute, P.DocManage, P.KbEdit,
-            P.EngagementModerate, P.EngagementSurveyPublish, P.EngagementRecognitionApprove,
+            P.EngagementModerate, P.EngagementSurveyPublish, P.EngagementRecognitionApprove, P.LearningManage, P.LearningReport,
         ]),
         new(BuiltInRoles.ContentEditor, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ContentView, P.ContentAuthor, P.ContentEdit, P.KbEdit]),
         new(BuiltInRoles.ContentPublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ContentView, P.ContentAuthor, P.ContentEdit, P.ContentPublish, P.KbEdit]),
@@ -28,7 +28,7 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.SecurityOfficer, Delegable: false, DelegatedAdmin: false,
             [P.OrgUnitView, P.AuditView, P.AuditExport, P.UsersView, P.RolesView, P.AccessExplain, P.ConfigHistoryView, P.SecurityView, P.SecurityRespond, P.AiPolicyView,
              P.AgentView, P.AgentSecurityView, P.AgentSuspend, P.EvalView]),
-        new(BuiltInRoles.Employee, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PersonalLayoutEdit, P.PeopleView, P.EngagementParticipate]),
+        new(BuiltInRoles.Employee, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PersonalLayoutEdit, P.PeopleView, P.EngagementParticipate, P.LearningTake]),
         new(BuiltInRoles.PageEditor, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit]),
         new(BuiltInRoles.PagePublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit, P.PagePublish]),
         new(BuiltInRoles.BrandManager, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ThemeEdit]),
@@ -38,6 +38,8 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.EvaluationReviewer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.EvalReview]),
         new(BuiltInRoles.EngagementAdministrator, Delegable: true, DelegatedAdmin: false,
             [P.OrgUnitView, P.PeopleView, P.EngagementParticipate, P.EngagementModerate, P.EngagementManage, P.EngagementSurveyPublish, P.EngagementRecognitionApprove]),
-        new(BuiltInRoles.ComplianceOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.PolicyAuthor, P.PolicyManage]),
+        new(BuiltInRoles.LearningAdministrator, Delegable: true, DelegatedAdmin: false,
+            [P.OrgUnitView, P.PeopleView, P.LearningTake, P.LearningManage, P.LearningReport]),
+        new(BuiltInRoles.ComplianceOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.PolicyAuthor, P.PolicyManage, P.LearningReport, P.LearningAssignLinked]),
     ];
 }

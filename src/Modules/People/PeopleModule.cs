@@ -30,6 +30,7 @@ public static class PeopleModule
         services.AddScoped<IProfiles>(sp => sp.GetRequiredService<Profiles>());
         services.AddScoped<PeopleService>();
         services.AddScoped<IEmployeeNumbers, EmployeeNumbers>();
+        services.AddScoped<ICelebrationDates, CelebrationDates>();
         services.AddScoped<DirectoryProfiles>();
         services.AddScoped<HrProfiles>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, PeopleComponents>();

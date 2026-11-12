@@ -14,7 +14,7 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Engagement;
 
-public sealed record PostRequest(Guid? ChannelId, BodyDocument? Body, IReadOnlyList<Guid>? Mentions);
+public sealed record PostRequest(Guid? ChannelId, BodyDocument? Body, IReadOnlyList<Guid>? Mentions, IReadOnlyList<Guid>? Attachments = null);
 
 public sealed record CommentRequest(string? Body, Guid? ParentId, IReadOnlyList<Guid>? Mentions);
 
@@ -47,7 +47,8 @@ public sealed record PostView(
     string? RemovedReason,
     bool CanReport,
     bool Anonymous = false,
-    bool EditedByModerator = false);
+    bool EditedByModerator = false,
+    IReadOnlyList<AttachmentView>? Attachments = null);
 
 public sealed record FeedPage(IReadOnlyList<PostView> Items, string? NextCursor);
 
@@ -94,6 +95,7 @@ public static class ContentStatus
 /// </summary>
 public sealed partial class Posts(
     IDbSession session,
+    EngagementActivity activity,
     ITenantContext context,
     Communities communities,
     IUserDirectory users,
@@ -101,6 +103,7 @@ public sealed partial class Posts(
     IAuditWriter audit,
     IOutbox outbox,
     KeywordFilters keywords,
+    PostAttachments attachments,
     IEntitlementService entitlements,
     IClock clock)
 {
@@ -195,6 +198,7 @@ public sealed partial class Posts(
             r => r.GetGuid(0), ct)).ToHashSet();
         var people = await PeopleAsync(rows.Select(r => r.AuthorId).Concat(mentions.SelectMany(m => m)), ct);
         var reactions = await ReactionsAsync("post", ids, ct);
+        var files = await attachments.ForPostsAsync(ids, ct);
         return rows.Select(r =>
         {
             var s = standing(r.CommunityId);
@@ -203,7 +207,8 @@ public sealed partial class Posts(
             return new PostView(r.Id, r.CommunityId, r.ChannelId, people[r.AuthorId], r.Body, tags[r.Id].ToList(), mentions[r.Id].Select(m => people[m]).ToList(),
                 r.Pinned, r.PublishedAt, r.EditedAt, r.CommentCount, reactions[r.Id], following.Contains(r.Id), mine,
                 CanEdit: mine && s.Posts && live, CanPin: live && s.Moderates && s.Community.Status == "active", CanComment: live && s.Posts,
-                r.Status, r.HeldReason, mine ? r.RemovedReason : null, CanReport: live && !mine && s.Participates, r.Anonymous, r.EditedByModerator);
+                r.Status, r.HeldReason, mine ? r.RemovedReason : null, CanReport: live && !mine && s.Participates, r.Anonymous, r.EditedByModerator,
+                files[r.Id].ToList());
         }).ToList();
     }
 
@@ -404,6 +409,7 @@ public sealed partial class Posts(
         if (speakUp)
         {
             await entitlements.DemandAsync(Capabilities.EngagementSpeakUp, ct);
+            NoAttachments(request);
         }
         var id = Ids.New();
         var text = BodyValidator.PlainText(request.Body!);
@@ -420,6 +426,7 @@ public sealed partial class Posts(
                 id, communityId, channel, user, body = EngagementJson.Jsonb(request.Body), text, now = clock.UtcNow,
                 status = held ? ContentStatus.Held : ContentStatus.Published, heldReason, pending = held ? mentioned.ToArray() : null,
             }, ct);
+        await attachments.AttachAsync(id, communityId, request.Attachments, ct);
         await SaveHashtagsAsync(id, text, ct);
         await FollowAsync(id, user, ct);
         if (held)
@@ -427,9 +434,38 @@ public sealed partial class Posts(
             return new PostSaved(await GetAsync(id, ct), []);
         }
         var missed = await MentionAsync(s.Community, id, null, mentioned, ct);
+        await activity.ActedAsync("post", communityId, ct);
         await outbox.EnqueueAsync(new PostPublished(id, communityId, channel!.Value), ct);
         await outbox.EnqueueAsync(new Search.Contracts.SearchItemChanged(EngagementSearchSource.Name, id), ct);
         return new PostSaved(await GetAsync(id, ct), missed);
+    }
+
+    /// <summary>Speak Up posts take no attachments: an upload names its uploader, which would tie an anonymous post to its author.</summary>
+    private static void NoAttachments(PostRequest request)
+    {
+        if (request.Attachments is { Count: > 0 })
+        {
+            throw AppException.Validation("attachments", "validation.engagement.attachment_speak_up");
+        }
+    }
+
+    /// <summary>
+    /// Opens an image or file of a post for someone who may read the post (a held post only for its author and the
+    /// moderators). An upload not yet joined to a post opens only for the person who uploaded it.
+    /// </summary>
+    public async Task<(Stream Content, string ContentType, string Name)> OpenAttachmentAsync(Guid id, CancellationToken ct)
+    {
+        await communities.RequireAsync(ct);
+        var row = await attachments.RowAsync(id, ct) ?? throw AppException.NotFound();
+        if (row.PostId is { } postId)
+        {
+            await ReadableAsync(postId, ct, any: true);
+        }
+        else if (row.UploaderId != context.RequireUser())
+        {
+            throw AppException.NotFound();
+        }
+        return (await attachments.OpenAsync(id, ct), row.ContentType, row.Name);
     }
 
     /// <summary>The channel a post goes to: the one chosen, or the community's general channel.</summary>
@@ -454,14 +490,23 @@ public sealed partial class Posts(
         var mentioned = Mentioned(request.Mentions, user, errors);
         errors.ThrowIfAny();
         var text = BodyValidator.PlainText(request.Body!);
+        var speakUp = (await ChannelAsync(post.CommunityId, post.ChannelId, ct))?.Kind == ChannelKinds.SpeakUp;
+        if (speakUp)
+        {
+            NoAttachments(request);
+        }
         await session.ExecAsync("update engagement.post set body = @body, text = @text, edited_at = @now, row_version = row_version + 1 where id = @id",
             new { id, body = EngagementJson.Jsonb(request.Body), text, now = clock.UtcNow }, ct);
+        // Leaving the list out keeps the attachments the post has; an empty list takes them all off.
+        if (request.Attachments is not null)
+        {
+            await attachments.AttachAsync(id, post.CommunityId, request.Attachments, ct);
+        }
         await SaveHashtagsAsync(id, text, ct);
         // Only people newly mentioned are told.
         var already = (await session.QueryAsync("select user_id from engagement.mention where post_id = @id and comment_id is null", new { id }, r => r.GetGuid(0), ct)).ToHashSet();
         var added = mentioned.Where(m => !already.Contains(m)).ToList();
         // An edit in a Speak Up channel goes back to review (FR-007), and so does one that brings in a filtered word (FR-019).
-        var speakUp = (await ChannelAsync(post.CommunityId, post.ChannelId, ct))?.Kind == ChannelKinds.SpeakUp;
         if (speakUp || await keywords.MatchesAsync(text, ct))
         {
             await session.ExecAsync("update engagement.post set status = 'held', held_reason = @reason, pending_mentions = @pending where id = @id",
@@ -543,6 +588,7 @@ public sealed partial class Posts(
                 values (platform.current_tenant_id(), @targetType, @targetId, @user, @kind, @now)
                 on conflict (tenant_id, target_type, target_id, user_id) do update set kind = excluded.kind, created_at = excluded.created_at
                 """, new { targetType, targetId, user, kind = request.Kind, now = clock.UtcNow }, ct);
+            await activity.ActedAsync("react", s.Community.Id, ct);
         }
         return (await ReactionsAsync(targetType, [targetId], ct))[targetId];
     }
@@ -618,6 +664,7 @@ public sealed partial class Posts(
         await FollowAsync(postId, user, ct);
         IReadOnlyList<Person> missed = held ? [] : await PublishCommentAsync(s.Community, post, id, user, mentioned, ct);
         var view = (await CommentsAsync(postId, ct)).First(c => c.Id == id);
+        await activity.ActedAsync("comment", post.CommunityId, ct);
         return new CommentSaved(view, missed);
     }
 

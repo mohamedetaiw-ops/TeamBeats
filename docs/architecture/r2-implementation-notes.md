@@ -622,3 +622,146 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 |---|---|
 | Reminders before nominations close | Not built |
 | Awards on home (008) | T015 |
+
+## Celebrations (spec 023, slice 8: T013; US6, FR-015, FR-016)
+
+### Built
+- People who want to share their birthday give a month and a day on the celebrations page. No year is asked for or stored, and choosing not to share deletes both values. Nobody else's birthday is stored or shown.
+- Work anniversaries come from the hire date in people profiles (010) and new joiners follow the people newcomer rules of FR-009, including the person's opt-out. Engagement reads both through the new `ICelebrationDates` contract and never queries people tables.
+- The page lists today and the next six days in the tenant's time zone. By default it covers the people in the viewer's org units and the units below them, and the viewer can switch to the whole organization. A viewer with no unit sees everyone.
+- On the day, colleagues send a greeting. The person gets one notification (category `recognition`) per colleague and occasion, however often the button is pressed. Nobody greets themselves, and a greeting for someone who is not celebrated that day answers not found.
+- Engagement administrators switch birthdays, anniversaries and joiners on or off. Settings are versioned, changed with If-Match and audited (`engagement.celebration_settings_changed`).
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Birthdays for the tenant | On, but each person still has to opt in |
+| Work anniversaries | Off until an administrator turns them on, because the hire date is a managers and HR field; each person can leave theirs out |
+| New joiners | On, following the people newcomer window and opt-out |
+| 29 February birthdays and hire dates | Celebrated on 28 February in other years |
+| How far ahead | Today and the next six days |
+| Greeting notification category | `recognition` |
+| Capability | `engagement.communities` |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Celebrations widget for home (008) | T015, with the other engagement widgets |
+| Birthdays from HR (019) | Not used; birthdays come only from the person's own opt-in, so no birth year ever reaches TeamBeats |
+
+## Photo galleries (spec 023, slice 9: T014; US7, FR-017)
+
+### Built
+- Members who may post in a community make albums, and an album can ask a moderator to approve each photo. Everyone who can read the community opens its albums.
+- Photos are PNG or JPEG up to 10 MB. Before anything is stored, the file is checked to be the image it claims to be, and location, camera and other metadata (EXIF, XMP, comments and text chunks) are removed. The tenant's malware scanner (spec 001) then checks the cleaned file, and only a clean result is stored, in tenant scoped object storage under `engagement/photos/`.
+- The content safety check goes through the AI Gateway (use case Summarize, classification Internal) with a structured yes or no answer. A safe photo shows at once, unless the album needs approval. A photo the check flags, or one it could not check, waits for a moderator, and only the uploader and the moderators see it until then.
+- Moderators approve or remove photos, and both are audited. The uploader can delete their own photo. Removing a photo deletes its file and tags.
+- The uploader tags up to 20 people who can read the community. A tagged person is notified when the photo shows (category `mention`) and can remove their own tag.
+- Galleries need the `engagement.galleries` capability.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Who makes albums | Members who may post in the community |
+| Scan result other than clean | Nothing is stored; an infected file is refused and an unavailable scanner asks to try later |
+| Safety check flags the photo or is unavailable | Held for a moderator, never shown or refused on its own |
+| Who can be tagged | People who can read the community, at most 20 per photo |
+| Tag notification category | `mention` |
+| File types and size | PNG and JPEG, 10 MB, at most 12000 pixels a side |
+
+### Differences and follow-ups
+| Item | Status |
+|---|---|
+| Resizing (US7 scenario 1) | Follow-up. There is no image library in the stack yet, so photos are stored at their cleaned original size; adding one needs the dependency review of hard rule 6 |
+| EXIF orientation | Lost with the metadata; comes back with resizing |
+| Videos and reporting a photo | Follow-ups |
+
+## Home cards and performance (spec 023, slice 10: first part of T015; FR-022, spec 008 FR-055)
+
+### Built
+- Six components that any page, the home included, can place: latest discussions and the active poll of one community, recognition, the points leaderboard, celebrations and awards. Each is registered by Engagement for spec 032 with the capability behind it, so a tenant whose package lacks it is not offered the card.
+- Every card reads the same endpoint as the full page it links to (FR-022). The discussions card is the community's first feed page and the poll card is the community's polls list, so a closed community shows nothing to someone who cannot read it. A card whose feature is off for the viewer shows as empty, never as an error.
+- Performance (section "Non-functional"):
+  - `EngagementPerformanceTests.A_community_feed_first_page_stays_under_800_ms_p95_at_10000_posts`: about 10 ms p95 locally.
+  - `EngagementPerformanceTests.An_anonymous_survey_of_10000_respondents_aggregates_in_under_10_seconds`: four questions over ten groups, about 0.2 seconds locally.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Which community the discussions and poll cards show | The one the page editor picks; there is no cross-community feed on home yet |
+| Cards on every employee's default home | None added. The cards are offered in the page builder and in home personalization, so no tenant's home changes on its own |
+| Leaderboard period on the card | This month |
+| Picker category | `people` |
+
+## Images and files in posts (spec 023, slice 11: FR-003; US1)
+
+### Built
+- A member uploads images and files to a community before posting (`POST /api/v1/engagement/communities/{id}/attachments`), then names the uploads on the post. A post takes at most 10 images and 5 files, and only the author's own uploads in the same community.
+- Every upload is scanned for malware. Images lose their metadata the same way gallery photos do and pass the content safety check through the AI Gateway; the scan and the check are shared with galleries in `MediaChecks`.
+- Files are PDF, Word, Excel, PowerPoint, plain text and CSV, and the bytes must match the declared type.
+- `GET /api/v1/engagement/attachments/{id}/file` opens an attachment for whoever may read its post. A loose upload opens only for its uploader. Images show inline and documents always download, with `nosniff`.
+- Editing a post without the attachments list keeps them; an empty list removes them and their stored objects.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| A flagged image, or one the safety check could not judge | Refused, not held for review; the person can try again later |
+| Attachments on Speak Up posts | None, named or anonymous, so a file cannot reveal its author |
+| Sizes | 10 MB per image, 25 MB per file |
+| Uploads never used in a post | Removed after one day, on the uploader's next upload |
+
+## Engagement counts for analytics (spec 023, slice 12: FR-024)
+
+### Built
+- Engagement emits `engagement.action` for named posts, comments, reactions, poll votes, recognition, survey responses and joins, with the community where there is one. These go through the outbox like other module events and carry the pseudonymous key and unit.
+- Anonymous actions (an anonymous Speak Up post, a vote in an anonymous poll, a response to an anonymous survey) emit `engagement.anonymous_action`, a schema marked unkeyed. It is written at once in the request's transaction, never queued, because a queued message keeps the correlation and exact time. The row holds no person, unit, location or locale, and its times are cut to the day.
+- Both events are server only: the web collector drops them.
+- Tests: `EngagementAnalyticsTests`.
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Which actions count | The seven named and three anonymous actions above; views are already counted by the page events |
+| Detail kept for anonymous counts | The action and the day only |
+| Engagement panels on the spec 021 dashboard | A follow-up; the counts are stored and can be queried from now on |
+
+## Courses, quizzes, paths and certificates (spec 028, slice 1: T001 to T003, API of T004 and T005; US1, US3, FR-001 to FR-004, FR-009, FR-010, FR-012, FR-018, FR-019)
+
+### Built
+- The `Learning` module (ADR-0013) with schema `learning` and forced RLS on every table: courses and their published versions, assignments, lesson progress, quiz attempts, extra attempts, certificates, paths and their courses.
+- Permissions `learning.take`, `learning.manage`, `learning.team_view`, `learning.report` and `learning.assign_linked`, the learning administrator built-in role, and the capabilities of section 9 (`learning.scorm` Enterprise and Government only).
+- Two new contracts so lessons reference material and never copy it: `IPublishedPages` in Content (a published page of any type the caller may read) and `IDocumentReferences` in Documents (the version in force, once scanned clean).
+- The builder (`/api/v1/learning/manage/courses`): a draft definition of titles and summaries per language, page, document, video and quiz lessons, and quizzes of single choice, multiple choice and true or false questions. Publishing checks each source is published, readable and, for a video lesson, a video, keeps each source's version, and shows a later change of a source as "changed since publishing" until the next publish.
+- The player (`/api/v1/learning/courses/{id}`): learners in the audience, with an assignment, or following a path that holds the course see the latest published version, never the right answers. Lessons finish only when the learner can open their material; quizzes are scored on the server within their attempts; the last lesson is kept for resuming; the last lesson done completes the course and issues a certificate. `CourseAssigned`, `CourseCompleted`, `CertificateIssued` and `CoursePublished` go through the outbox, and `learning.progress` goes to analytics as a server-only event.
+- Certificates: an ID of twelve characters without look-alikes, verified by the holder and by people with `learning.report` covering one of the holder's units, inside the tenant only. The PDF is printed through the HTML route of the document converter when downloaded.
+- Paths: ordered courses, published once every course in them is published. A path opens its courses to its audience even when a course is not open for enrolment on its own, and a course that needs the one before it stays locked until that one is completed.
+- Tests: `LearningCourseTests` (5 tests), `LearningRulesTests` (unit).
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| Which version of a page a learner reads | The page as published now; the course keeps the version it was published with only to show the builder what changed |
+| Who verifies a certificate (FR-010 "authorized users") | The holder and people with `learning.report` covering one of the holder's org units or the tenant |
+| When the certificate PDF is made | When it is downloaded, in the holder's language when the course has it; the record and its ID are kept at completion |
+| Retraining on the first version | Ignored: nobody has completed a course before its first version |
+| Self enrolment | Only in courses marked open whose audience includes the learner, or through a published path |
+| Attempts after a pass | Refused; the score of each attempt is kept and the answers are not |
+| Learner who cannot open a lesson's material | The lesson cannot be marked done; the builder is responsible for giving the audience access |
+| Catalogue search through 012 | The catalogue filters by text in any language; courses are also in search since slice 2 |
+
+## Learning pages, home card and courses in search (spec 028, slice 2: T004 and T005; US1, US3, FR-004, FR-009, FR-010, FR-018, FR-019)
+
+### Built
+- Pages under `/learning`: My learning (assigned, in progress and completed courses, and paths), the course catalogue with search, the course player (enrol, lesson outline, resume at the last lesson, page, document and video lessons opened where they live, quizzes with attempts left), paths with locked steps, certificates with the PDF download, and a page to check a certificate ID.
+- Building under `/learning/manage`: course and path lists, the course builder (languages, titles and summaries, category, owning unit, audience by unit, open enrolment, lessons in order, quiz questions and answers, save, publish with or without retraining, retire) with a Learners tab that shows progress and quiz attempts and gives one more attempt, and the path builder (courses in order, prerequisites, audience, publish).
+- The `learning.my` home card (spec 032 component, needs `learning.courses`): the viewer's open courses, nearest due date first.
+- Courses in search (spec 012): a `learning` source with the `course` kind. A published course gives one unit per language with its summary, category and lesson titles; a person finds it only when its audience includes them or they already have it. Publishing, retiring and editing a published course reindex it.
+- Tests: `LearningCourseTests` (6 tests, search added), `ExperienceValidationTests` (the card), `learning.spec.ts` (end to end in English and Arabic, with axe).
+
+### Smallest safe defaults
+| Gap | Default |
+|---|---|
+| How a builder picks a lesson's page or file | Paste its link or ID; the builder takes the ID from the link and the API checks it on publish. A picker can follow |
+| How a video plays | It opens in the document library, which already previews and scans it; the player does not embed media |
+| Where the learning pages appear in the menu | Tenants add `/learning` to their navigation; the menu shows it with the book icon |
+| Who sees a course in search | The same people the catalogue shows it to, plus anyone who already has it |

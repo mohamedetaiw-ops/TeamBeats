@@ -35,6 +35,15 @@ const product: Record<string, Loader> = {
   // Services and the task inbox (spec 016, home components of spec 008).
   "services.my_services@1": () => import("@/components/placements/services.my_services"),
   "services.task_summary@1": () => import("@/components/placements/services.task_summary"),
+  // Communities and engagement home cards (spec 008 FR-055, spec 023 T015).
+  "engagement.recognition@1": () => import("@/components/placements/engagement.recognition"),
+  "engagement.leaderboard@1": () => import("@/components/placements/engagement.leaderboard"),
+  "engagement.celebrations@1": () => import("@/components/placements/engagement.celebrations"),
+  "engagement.awards@1": () => import("@/components/placements/engagement.awards"),
+  "engagement.discussions@1": () => import("@/components/placements/engagement.discussions"),
+  "engagement.poll@1": () => import("@/components/placements/engagement.poll"),
+  // My learning home card (spec 028 T005).
+  "learning.my@1": () => import("@/components/placements/learning.my"),
 };
 
 const reference: Record<string, Loader> =

@@ -21,8 +21,8 @@ Depends on 002, 004, 009, 010, 011, 012, 015, 026. R2.
 - [x] T010 [P] [US4] [US5] Tests: recognition, no self recognition, caps, points off hides all
 - [x] T011 [US4] Recognition, badges, values, points and leaderboard
 - [x] T012 [US5] Period awards
-- [ ] T013 [US6] Celebrations and widget
-- [ ] T014 [US7] Galleries with scanning
+- [x] T013 [US6] Celebrations and widget (the home widget ships with the other engagement widgets in T015)
+- [x] T014 [US7] Galleries with scanning (resizing is a follow-up, see the R2 notes)
 
 ## Final phase
-- [ ] T015 Home widgets for 008; performance tests; OpenAPI; R2 implementation notes; spec evidence
+- [x] T015 Home widgets for 008; performance tests; OpenAPI; R2 implementation notes; spec evidence

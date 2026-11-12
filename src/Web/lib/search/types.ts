@@ -1,5 +1,5 @@
 /** Search API shapes (spec 012, /api/v1/search). */
-export const searchKinds = ["person", "content", "document", "knowledge", "policy", "service", "discussion"] as const;
+export const searchKinds = ["person", "content", "document", "knowledge", "policy", "service", "discussion", "course"] as const;
 export type SearchKind = (typeof searchKinds)[number];
 
 export type SearchResult = {

@@ -13,12 +13,14 @@ import { problemMessages } from "@/lib/notifications/types";
 import type { BodyDocument } from "@/lib/content/types";
 import { languageName } from "@/lib/format";
 import {
+  albumsHref,
   communityHref,
   engagementApi,
   localName,
   send,
   speakUpReplyPath,
   type AnonymousReceipt,
+  type AttachmentView,
   type ChannelView,
   type CommunityView,
   type EngagementPerson,
@@ -27,6 +29,7 @@ import {
   type PostView,
 } from "@/lib/engagement";
 import { MentionPicker, NotReachable, PostCard } from "./PostCard";
+import { AttachmentPicker } from "./Attachments";
 import "./engagement.css";
 
 const emptyBody = (): BodyDocument => ({ blocks: [] });
@@ -104,6 +107,11 @@ export function CommunityFeed({ initial, feed, locales }: { initial: CommunityVi
         {readable ? (
           <ButtonLink size="sm" variant="quiet" icon="trend-up" href={`${communityHref(community.id)}/polls`}>
             {t("polls.link")}
+          </ButtonLink>
+        ) : null}
+        {readable ? (
+          <ButtonLink size="sm" variant="quiet" icon="image" href={albumsHref(community.id)}>
+            {t("gallery.link")}
           </ButtonLink>
         ) : null}
         {r.canJoin ? (
@@ -206,6 +214,7 @@ function Composer({
   const locale = useLocale();
   const [body, setBody] = useState<BodyDocument>(emptyBody);
   const [mentions, setMentions] = useState<EngagementPerson[]>([]);
+  const [attachments, setAttachments] = useState<AttachmentView[]>([]);
   const [target, setTarget] = useState(channelId);
   const [version, setVersion] = useState(0);
   const [busy, setBusy] = useState(false);
@@ -243,6 +252,7 @@ function Composer({
         channelId: target || channelId,
         body,
         mentions: mentions.map((p) => p.id),
+        attachments: speakUp ? [] : attachments.map((a) => a.id),
       });
       if (response.ok) {
         const saved = (await response.json()) as PostSaved;
@@ -250,6 +260,7 @@ function Composer({
         setNotReachable(saved.notReachable);
         setBody(emptyBody());
         setMentions([]);
+        setAttachments([]);
         setVersion((v) => v + 1);
         setPosted(saved.post.status !== "held" ? "published" : saved.post.heldReason === "speak_up" ? "review" : "held");
       } else {
@@ -289,6 +300,7 @@ function Composer({
           </>
         ) : null}
         {anonymous && anonymousAllowed ? null : <MentionPicker value={mentions} onChange={setMentions} />}
+        {speakUp ? null : <AttachmentPicker communityId={community.id} value={attachments} onChange={setAttachments} />}
         {messages.length > 0 ? (
           <Alert tone="danger" title={t("failed")} live>
             {messages.join(" ")}

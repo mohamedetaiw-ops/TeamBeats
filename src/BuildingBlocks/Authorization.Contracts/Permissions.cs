@@ -133,6 +133,15 @@ public static class Permissions
     // Spec 021 (R1): adoption basics and frontend error reports for the whole tenant.
     public const string AnalyticsView = "analytics.view";
 
+    // Spec 028 (R2): employees take courses; learning administrators build and assign them in their org scope; managers
+    // see their direct reports (through the manager relation); compliance officers report on their scope; policy owners
+    // link a course to a policy version.
+    public const string LearningTake = "learning.take";
+    public const string LearningManage = "learning.manage";
+    public const string LearningTeamView = "learning.team_view";
+    public const string LearningReport = "learning.report";
+    public const string LearningAssignLinked = "learning.assign_linked";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -168,6 +177,7 @@ public static class Permissions
         EvalDesign, EvalReview, EvalPolicyManage, EvalView,
         AnalyticsView,
         EngagementParticipate, EngagementModerate, EngagementManage, EngagementSurveyPublish, EngagementRecognitionApprove,
+        LearningTake, LearningManage, LearningTeamView, LearningReport, LearningAssignLinked,
     ];
 }
 
@@ -193,5 +203,6 @@ public static class BuiltInRoles
     public const string AgentDesigner = "agent_designer";
     public const string EvaluationReviewer = "evaluation_reviewer";
     public const string EngagementAdministrator = "engagement_administrator";
+    public const string LearningAdministrator = "learning_administrator";
 
 }

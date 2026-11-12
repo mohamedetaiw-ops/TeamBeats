@@ -62,6 +62,13 @@ public static class Capabilities
     public const string EngagementRecognition = "engagement.recognition";
     public const string EngagementPoints = "engagement.points";
     public const string EngagementGalleries = "engagement.galleries";
+
+    // Spec 028 section 9: courses, mandatory training and the LMS connector Workplace Plus and above; SCORM and xAPI
+    // import Enterprise and Government only.
+    public const string LearningCourses = "learning.courses";
+    public const string LearningMandatory = "learning.mandatory";
+    public const string LearningScorm = "learning.scorm";
+    public const string LearningLmsConnector = "learning.lms_connector";
     public const string AnalyticsCore = "analytics.core";
     public const string AnalyticsAdvanced = "analytics.advanced";
     public const string AnalyticsExport = "analytics.export";

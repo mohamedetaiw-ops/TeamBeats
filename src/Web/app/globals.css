@@ -163,7 +163,7 @@ main tbody tr:where(:hover) > * {
 
 .admin {
   display: grid;
-  grid-template-columns: minmax(12rem, 16rem) 1fr;
+  grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
   min-block-size: calc(100vh - 4rem);
 }
 

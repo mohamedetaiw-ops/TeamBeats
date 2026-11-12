@@ -578,6 +578,29 @@
   }
 }
 
+/*
+ * The launcher floats over the page, so the end of every page leaves room for it: scrolled to the bottom, it sits in
+ * that room and never covers the last action of a form or the footer's classification (spec 036 DLS-050, DLS-066).
+ */
+body:has(.shell-ask) .shell-footer,
+body:has(.shell-ask):not(:has(.shell-footer)) .admin-content {
+  padding-block-end: calc(2.5rem + 2 * var(--tb-space-lg));
+}
+
+@media (width <= 40rem) {
+  body:has(.shell-ask) .shell-footer,
+  body:has(.shell-ask):not(:has(.shell-footer)) .admin-content {
+    padding-block-end: calc(2.75rem + 2 * var(--tb-space-md));
+  }
+}
+
+/* On wide screens admin pages keep a gutter at the inline end for the launcher, so it floats beside the forms. */
+@media (width > 64rem) {
+  body:has(.shell-ask) .admin-content {
+    padding-inline-end: calc(11rem + var(--tb-space-lg));
+  }
+}
+
 /* The place the page fills with its own actions, such as "Arrange this page" (spec 008 FR-059). */
 .shell-page-actions {
   display: contents;

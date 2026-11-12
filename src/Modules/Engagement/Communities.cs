@@ -112,6 +112,7 @@ internal sealed record Standing(CommunityRow Community, bool Member, bool Pendin
 /// </summary>
 public sealed class Communities(
     IDbSession session,
+    EngagementActivity activity,
     ITenantContext context,
     IAuthorizationService authz,
     IAuthorizationProvisioning grants,
@@ -435,6 +436,7 @@ public sealed class Communities(
             values (platform.current_tenant_id(), @id, @user, 'member', @status, @now)
             on conflict (tenant_id, community_id, user_id) do nothing
             """, new { id, user = context.RequireUser(), status, now = clock.UtcNow }, ct);
+        await activity.ActedAsync("join", id, ct);
         return await GetAsync(id, ct);
     }
 

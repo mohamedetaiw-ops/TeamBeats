@@ -3,13 +3,13 @@
 Depends on 002, 009, 011, 015, 017, 022, 025. R2.
 
 ## Phase 1: Module setup
-- [ ] T001 `Learning` module skeleton; migration for section 8 entities (forced RLS)
-- [ ] T002 Permissions, capability keys and audit actions
+- [x] T001 `Learning` module skeleton; migration for section 8 entities (forced RLS)
+- [x] T002 Permissions, capability keys and audit actions
 
 ## Phase 2: User Stories 1 and 3, courses and learning (P1)
-- [ ] T003 [P] [US1] [US3] Tests: referenced lessons, versioning, quiz pass and attempts, language versions, resume, catalogue targeting
-- [ ] T004 [US1] Course builder, quizzes and paths
-- [ ] T005 [US3] Course player, My learning page and widget, certificates
+- [x] T003 [P] [US1] [US3] Tests: referenced lessons, versioning, quiz pass and attempts, language versions, resume, catalogue targeting
+- [x] T004 [US1] Course builder, quizzes and paths
+- [x] T005 [US3] Course player, My learning page and widget, certificates
 
 ## Phase 3: User Stories 2, 4 and 5, assignments and compliance (P1)
 - [ ] T006 [P] [US2] [US4] Tests: unit assignment, new members, leavers, recurrence, reminders and escalation, duplicates, scope limit, onboarding and policy triggers, retraining

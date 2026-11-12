@@ -250,6 +250,45 @@ public sealed class ExperienceValidationTests
     }
 
     [Fact]
+    public void The_my_learning_card_needs_courses_and_reads_only_the_viewers_own_learning()
+    {
+        var registry = new ComponentRegistry([new TeamBeats.Modules.Learning.LearningComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        Assert.Empty(registry.Rejected);
+        var card = registry.Find("learning.my@1")!;
+        Assert.Equal([TeamBeats.Entitlements.Contracts.Capabilities.LearningCourses], card.Requires.Capabilities);
+        Assert.Equal(["/api/v1/learning/me"], card.Data);
+        Assert.Empty(PropertyValidator.Validate(card.Properties, JsonSerializer.SerializeToElement(new { top = 10 })));
+        Assert.NotEmpty(PropertyValidator.Validate(card.Properties, JsonSerializer.SerializeToElement(new { top = 11 })));
+    }
+
+    [Fact]
+    public void The_engagement_home_cards_need_their_capability_and_bound_their_counts()
+    {
+        var registry = new ComponentRegistry([new TeamBeats.Modules.Engagement.EngagementComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);
+        Assert.Empty(registry.Rejected);
+        Assert.Equal(["engagement.awards@1", "engagement.celebrations@1", "engagement.discussions@1", "engagement.leaderboard@1", "engagement.poll@1", "engagement.recognition@1"],
+            registry.All.Select(c => c.Reference).Order(StringComparer.Ordinal).ToArray());
+        Assert.Equal([TeamBeats.Entitlements.Contracts.Capabilities.EngagementPoints], registry.Find("engagement.leaderboard@1")!.Requires.Capabilities);
+        Assert.Equal([TeamBeats.Entitlements.Contracts.Capabilities.EngagementCommunities], registry.Find("engagement.celebrations@1")!.Requires.Capabilities);
+        Assert.Equal([TeamBeats.Entitlements.Contracts.Capabilities.EngagementRecognition], registry.Find("engagement.recognition@1")!.Requires.Capabilities);
+        Assert.Equal([TeamBeats.Entitlements.Contracts.Capabilities.EngagementRecognition], registry.Find("engagement.awards@1")!.Requires.Capabilities);
+        foreach (var reference in new[] { "engagement.discussions@1", "engagement.poll@1" })
+        {
+            var card = registry.Find(reference)!;
+            Assert.Equal([TeamBeats.Entitlements.Contracts.Capabilities.EngagementCommunities], card.Requires.Capabilities);
+            // These two show one community, so the community is required.
+            Assert.NotEmpty(PropertyValidator.Validate(card.Properties, null));
+            Assert.Empty(PropertyValidator.Validate(card.Properties, JsonSerializer.SerializeToElement(new { community = Guid.NewGuid().ToString(), top = 1 })));
+        }
+        foreach (var component in registry.All.Where(c => c.Id is not ("engagement.discussions" or "engagement.poll")))
+        {
+            Assert.Empty(PropertyValidator.Validate(component.Properties, null));
+            Assert.Empty(PropertyValidator.Validate(component.Properties, JsonSerializer.SerializeToElement(new { title = new { en = "Our team", ar = "فريقنا" }, top = 3 })));
+            Assert.NotEmpty(PropertyValidator.Validate(component.Properties, JsonSerializer.SerializeToElement(new { top = 11 })));
+        }
+    }
+
+    [Fact]
     public void Content_components_register_with_the_content_capability_and_validate_their_properties()
     {
         var registry = new ComponentRegistry([new TeamBeats.Modules.Content.ContentComponents()], Localizer, NullLogger<ComponentRegistry>.Instance);

@@ -15,6 +15,10 @@ public static class EngagementModule
 
     public static IServiceCollection AddEngagementModule(this IServiceCollection services)
     {
+        services.AddSingleton<Experience.Contracts.IComponentRegistration, EngagementComponents>();
+        services.AddScoped<MediaChecks>();
+        services.AddScoped<EngagementActivity>();
+        services.AddScoped<PostAttachments>();
         services.AddScoped<Communities>();
         services.AddScoped<Posts>();
         services.AddScoped<KeywordFilters>();
@@ -24,6 +28,8 @@ public static class EngagementModule
         services.AddScoped<Surveys>();
         services.AddScoped<Recognition>();
         services.AddScoped<Awards>();
+        services.AddScoped<Celebrations>();
+        services.AddScoped<Galleries>();
         services.AddMessageHandler<Contracts.PostPublished, Points>("engagement.points_post");
         services.AddScoped<Search.Contracts.ISearchSource, EngagementSearchSource>();
         return services;
@@ -117,6 +123,34 @@ public static class EngagementModule
             var saved = await posts.CreateAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/engagement/posts/{saved.Post.Id}", saved);
+        });
+
+        // Images and files for posts (FR-003): uploaded first, joined to the post when it is saved.
+        root.MapPost("/communities/{id:guid}/attachments", async (Guid id, string? name, HttpRequest http, PostAttachments attachments, IDbSession session, CancellationToken ct) =>
+        {
+            var limit = Math.Max(PhotoFiles.MaxBytes, PostAttachments.MaxFileBytes);
+            var buffer = new byte[limit + 1];
+            int read, total = 0;
+            while ((read = await http.Body.ReadAsync(buffer.AsMemory(total, buffer.Length - total), ct)) > 0)
+            {
+                total += read;
+                if (total > limit)
+                {
+                    throw Primitives.AppException.Validation("file", "validation.engagement.attachment_size");
+                }
+            }
+            var view = await attachments.UploadAsync(id, name, http.ContentType, buffer[..total], ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/engagement/attachments/{view.Id}/file", view);
+        }).DisableAntiforgery();
+
+        root.MapGet("/attachments/{id:guid}/file", async (Guid id, Posts posts, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, type, name) = await posts.OpenAttachmentAsync(id, ct);
+            response.Headers.CacheControl = "private, no-cache";
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            // Images show in the post; documents always download, so none of them runs in the intranet's pages.
+            return type.StartsWith("image/", StringComparison.Ordinal) ? Results.File(content, type) : Results.File(content, type, name);
         });
 
         root.MapGet("/posts/{id:guid}", async (Guid id, Posts posts, CancellationToken ct) => Results.Ok(await posts.GetAsync(id, ct)));
@@ -427,6 +461,107 @@ public static class EngagementModule
             var view = await awards.DecideAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
+        });
+
+        // ---- Celebrations (US6) ----
+
+        root.MapGet("/celebrations", async (string? scope, Celebrations celebrations, CancellationToken ct) => Results.Ok(await celebrations.ListAsync(scope, ct)));
+
+        root.MapPost("/celebrations/{userId:guid}/greetings", async (Guid userId, GreetingRequest request, Celebrations celebrations, IDbSession session, CancellationToken ct) =>
+        {
+            await celebrations.GreetAsync(userId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapGet("/celebrations/preferences", async (Celebrations celebrations, CancellationToken ct) => Results.Ok(await celebrations.PreferenceAsync(ct)));
+
+        root.MapPut("/celebrations/preferences", async (CelebrationPreferenceRequest request, Celebrations celebrations, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await celebrations.SetPreferenceAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapGet("/settings/celebrations", async (Celebrations celebrations, HttpResponse response, CancellationToken ct) =>
+        {
+            var view = await celebrations.GetSettingsAsync(ct);
+            response.Headers.ETag = Celebrations.SettingsETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        root.MapPut("/settings/celebrations", async (CelebrationSettingsRequest request, HttpRequest http, Celebrations celebrations, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await celebrations.SetSettingsAsync(request, IfMatch(http), ct);
+            await session.CommitAsync(ct);
+            http.HttpContext.Response.Headers.ETag = Celebrations.SettingsETag(view.Version);
+            return Results.Ok(view);
+        });
+
+        // ---- Galleries (US7) ----
+
+        root.MapGet("/communities/{id:guid}/albums", async (Guid id, Galleries galleries, CancellationToken ct) => Results.Ok(await galleries.AlbumsAsync(id, ct)));
+
+        root.MapPost("/communities/{id:guid}/albums", async (Guid id, AlbumRequest request, Galleries galleries, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await galleries.CreateAlbumAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/engagement/albums/{view.Id}", view);
+        });
+
+        root.MapGet("/albums/{id:guid}", async (Guid id, Galleries galleries, CancellationToken ct) => Results.Ok(await galleries.AlbumPageAsync(id, ct)));
+
+        root.MapPost("/albums/{id:guid}/photos", async (Guid id, string? caption, HttpRequest http, Galleries galleries, IDbSession session, CancellationToken ct) =>
+        {
+            var buffer = new byte[PhotoFiles.MaxBytes + 1];
+            int read, total = 0;
+            while ((read = await http.Body.ReadAsync(buffer.AsMemory(total, buffer.Length - total), ct)) > 0)
+            {
+                total += read;
+                if (total > PhotoFiles.MaxBytes)
+                {
+                    throw Primitives.AppException.Validation("file", "validation.engagement.photo_size");
+                }
+            }
+            var view = await galleries.UploadAsync(id, caption, http.ContentType, buffer[..total], ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/engagement/photos/{view.Id}", view);
+        }).DisableAntiforgery();
+
+        root.MapGet("/photos/{id:guid}/file", async (Guid id, Galleries galleries, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, type) = await galleries.OpenAsync(id, ct);
+            response.Headers.CacheControl = "private, no-cache";
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            return Results.File(content, type);
+        });
+
+        root.MapPost("/photos/{id:guid}:approve", async (Guid id, Galleries galleries, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await galleries.ApproveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapDelete("/photos/{id:guid}", async (Guid id, Galleries galleries, IDbSession session, CancellationToken ct) =>
+        {
+            await galleries.RemoveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        root.MapPut("/photos/{id:guid}/tags", async (Guid id, PhotoTagsRequest request, Galleries galleries, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await galleries.SetTagsAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        root.MapDelete("/photos/{id:guid}/tags/me", async (Guid id, Galleries galleries, IDbSession session, CancellationToken ct) =>
+        {
+            await galleries.UntagMeAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
 
         root.MapGet("/points/me", async (Points points, CancellationToken ct) => Results.Ok(await points.MineAsync(ct)));

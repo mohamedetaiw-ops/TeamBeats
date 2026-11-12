@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
-import { CHECK_RESULTS, TICKETING_KINDS, checkResult, isTicketing, known, type PackCheck, type PackConnection, type PackTestResult, type WebhookEventChoice } from "@/lib/integrations/types";
+import { TICKETING_KINDS, isTicketing, type PackCheck, type PackConnection, type PackTestResult, type WebhookEventChoice } from "@/lib/integrations/types";
 import { ClockSettingsForm, type ClockBody } from "./ClockSettingsForm";
 import { ConnectionSettingsForm, type SettingsBody } from "./ConnectionSettingsForm";
 import { FinanceSettingsForm } from "./FinanceSettingsForm";
@@ -15,30 +15,8 @@ import { GoogleSettingsForm, type GoogleBody } from "./GoogleSettingsForm";
 import { OnPremSettingsForm, type OnPremBody } from "./OnPremSettingsForm";
 import { SlackSettingsForm, type SlackBody } from "./SlackSettingsForm";
 import { WebhookSettingsForm, type WebhookBody } from "./WebhookSettingsForm";
-import { ErrorText, Messages, StatusBadge } from "./parts";
+import { Checks, Messages, StatusBadge } from "./parts";
 import { send } from "./request";
-
-function Checks({ checks }: { checks: PackCheck[] }) {
-  const t = useTranslations("connections");
-  return (
-    <ul className="connections-checks">
-      {checks.map((c) => {
-        const result = checkResult(c.resultKey);
-        return (
-          <li key={c.name} data-ok={c.ok}>
-            <span className="connections-check-mark">{t(c.ok ? "checks.passed" : "checks.failedMark")}</span> {known(CHECK_RESULTS, result) ? t(`checks.${result}`) : result}
-            {c.errorClass ? (
-              <>
-                {" "}
-                (<ErrorText errorClass={c.errorClass} />)
-              </>
-            ) : null}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
 
 /**
  * One connection (spec 017 US1): status, the last test with each check, test, enable, disable, change settings and

@@ -1,0 +1,157 @@
+/* Spec 028 learning pages. Colors and spacing come from tokens; logical properties keep the layout right in Arabic. */
+.learning {
+  display: grid;
+  gap: var(--tb-space-lg);
+  min-inline-size: 0;
+}
+
+.learning-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  min-inline-size: 0;
+}
+
+.learning-section h2,
+.learning-section h3,
+.learning-section h4 {
+  margin: 0;
+}
+
+.learning-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.learning-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learning-list {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learning-list > li {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  min-inline-size: 0;
+}
+
+.learning-list > li:last-child {
+  border-block-end: 0;
+}
+
+.learning-meta {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+.learning-player {
+  display: grid;
+  grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  gap: var(--tb-space-lg);
+  align-items: start;
+}
+
+@media (width <= 48rem) {
+  .learning-player {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.learning-outline {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.learning-outline button {
+  display: flex;
+  gap: var(--tb-space-xs);
+  align-items: center;
+  inline-size: 100%;
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid transparent;
+  border-radius: var(--tb-radius-sm);
+  background: transparent;
+  color: var(--tb-color-text-primary);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.learning-outline button[aria-current="step"] {
+  border-color: var(--tb-color-border-strong);
+  background: var(--tb-color-surface-sunken);
+}
+
+.learning-outline button:focus-visible {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+  outline-offset: var(--tb-border-width-focus);
+}
+
+.learning-question {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.learning-question legend {
+  font-weight: var(--tb-font-weight-semibold);
+  padding: 0;
+  margin-block-end: var(--tb-space-xs);
+}
+
+.learning-builder-lesson {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-base);
+  min-inline-size: 0;
+}
+
+.learning-certificate {
+  display: grid;
+  gap: var(--tb-space-sm);
+  justify-items: center;
+  padding: var(--tb-space-xl) var(--tb-space-md);
+  border: var(--tb-border-width-thick) solid var(--tb-color-border-strong);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  text-align: center;
+}
+
+.learning-certificate p {
+  margin: 0;
+}
+
+.learning-code {
+  letter-spacing: 0.08em;
+  unicode-bidi: isolate;
+  direction: ltr;
+}

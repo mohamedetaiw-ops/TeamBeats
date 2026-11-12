@@ -26,11 +26,13 @@ public sealed record AnalyticsField(AnalyticsFieldType Type, bool Required = fal
 /// <summary>
 /// One declared analytics event (spec 021 FR-003, FR-017). <paramref name="Essential"/> events are operational telemetry
 /// that continue when the tenant turns nonessential analytics off and never carry a user key (FR-018);
-/// the rest carry the pseudonymous key of the person, their org unit and location at event time.
+/// the rest carry the pseudonymous key of the person, their org unit and location at event time, except
+/// <paramref name="Unkeyed"/> events: counts of anonymous actions (spec 023 FR-024), which follow the tenant's choice like
+/// other nonessential events but never carry a user, key, unit, location or locale, and keep only the day they happened.
 /// </summary>
-public sealed record AnalyticsSchema(string Name, bool Essential, IReadOnlyDictionary<string, AnalyticsField> Fields)
+public sealed record AnalyticsSchema(string Name, bool Essential, IReadOnlyDictionary<string, AnalyticsField> Fields, bool Unkeyed = false)
 {
-    public bool UserKeyed => !Essential;
+    public bool UserKeyed => !Essential && !Unkeyed;
 }
 
 /// <summary>The declared events. An event or field not declared here is dropped and counted, never stored.</summary>
@@ -42,6 +44,9 @@ public static class AnalyticsEvents
     public const string PersonalizationChanged = "personalization.changed";
     public const string TaskOutcome = "task.outcome";
     public const string UiError = "ui.error";
+    public const string EngagementAction = "engagement.action";
+    public const string EngagementAnonymousAction = "engagement.anonymous_action";
+    public const string LearningProgress = "learning.progress";
 
     /// <summary>The sources whose items are viewed: content items, policies and documents.</summary>
     public static readonly IReadOnlySet<string> ItemSources = new HashSet<string>(StringComparer.Ordinal) { "content", "policies", "documents" };
@@ -49,6 +54,27 @@ public static class AnalyticsEvents
     public static readonly IReadOnlySet<string> TaskOutcomes = new HashSet<string>(StringComparer.Ordinal) { "start", "complete", "abandon" };
 
     public static readonly IReadOnlySet<string> PersonalizationActions = new HashSet<string>(StringComparer.Ordinal) { "customize", "reset" };
+
+    /// <summary>What a person did in communities and engagement (spec 023 FR-024, SC-001).</summary>
+    public static readonly IReadOnlySet<string> EngagementActions = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "post", "comment", "react", "vote", "recognize", "respond", "join",
+    };
+
+    /// <summary>Anonymous actions, counted with no identity at all (spec 023 FR-005, FR-024).</summary>
+    public static readonly IReadOnlySet<string> EngagementAnonymousActions = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "speak_up_post", "survey_response", "poll_vote",
+    };
+
+    /// <summary>What a learner did in a course (spec 028 section 13).</summary>
+    public static readonly IReadOnlySet<string> LearningStatuses = new HashSet<string>(StringComparer.Ordinal)
+    {
+        "started", "lesson_completed", "quiz_passed", "quiz_failed", "course_completed",
+    };
+
+    /// <summary>Events only modules emit; the web collection endpoint drops them, so nobody can add to these counts by hand.</summary>
+    public static readonly IReadOnlySet<string> ServerOnly = new HashSet<string>(StringComparer.Ordinal) { EngagementAction, EngagementAnonymousAction, LearningProgress };
 
     public static readonly IReadOnlySet<string> ErrorKinds = new HashSet<string>(StringComparer.Ordinal) { "render", "boundary", "network", "chunk" };
 
@@ -80,6 +106,21 @@ public static class AnalyticsEvents
             ["flow"] = new(AnalyticsFieldType.Key, true),
             ["step"] = new(AnalyticsFieldType.Key),
             ["outcome"] = new(AnalyticsFieldType.Key, true, TaskOutcomes),
+        }),
+        [EngagementAction] = new(EngagementAction, false, new Dictionary<string, AnalyticsField>
+        {
+            ["action"] = new(AnalyticsFieldType.Key, true, EngagementActions),
+            ["communityId"] = new(AnalyticsFieldType.Id),
+        }),
+        [EngagementAnonymousAction] = new(EngagementAnonymousAction, false, new Dictionary<string, AnalyticsField>
+        {
+            ["action"] = new(AnalyticsFieldType.Key, true, EngagementAnonymousActions),
+        }, Unkeyed: true),
+        [LearningProgress] = new(LearningProgress, false, new Dictionary<string, AnalyticsField>
+        {
+            ["courseId"] = new(AnalyticsFieldType.Id, true),
+            ["lesson"] = new(AnalyticsFieldType.Key),
+            ["status"] = new(AnalyticsFieldType.Key, true, LearningStatuses),
         }),
         [UiError] = new(UiError, true, new Dictionary<string, AnalyticsField>
         {
