@@ -25,4 +25,4 @@ Depends on 002, 004, 009, 010, 011, 012, 015, 026. R2.
 - [x] T014 [US7] Galleries with scanning (resizing is a follow-up, see the R2 notes)
 
 ## Final phase
-- [ ] T015 Home widgets for 008; performance tests; OpenAPI; R2 implementation notes; spec evidence
+- [x] T015 Home widgets for 008; performance tests; OpenAPI; R2 implementation notes; spec evidence
