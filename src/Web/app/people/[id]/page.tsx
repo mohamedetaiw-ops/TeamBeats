@@ -3,7 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { initials, isPhoneField, localName, locationName, personName, type OrgChart, type PersonView } from "@/lib/people/types";
+import type { RecognitionView } from "@/lib/engagement";
 import { Header } from "@/components/shell/Header";
+import { RecognitionCard } from "@/features/engagement/RecognitionWall";
 import { OrgChartView } from "@/features/people/OrgChartView";
 import { PeopleNav } from "@/features/people/PeopleNav";
 import { PersonItem } from "@/features/people/PersonItem";
@@ -41,7 +43,10 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
     );
   }
   const p = person.data;
-  const chart = await apiGet<OrgChart>(`/api/v1/people/${encodeURIComponent(id)}/org-chart`);
+  const [chart, recognitions] = await Promise.all([
+    apiGet<OrgChart>(`/api/v1/people/${encodeURIComponent(id)}/org-chart`),
+    apiGet<RecognitionView[]>(`/api/v1/engagement/people/${encodeURIComponent(id)}/recognitions`),
+  ]);
   const name = personName(p, locale);
   const email = p.fields.find((f) => f.key === "email")?.value;
   const phones = p.fields.filter((f) => isPhoneField(f.key));
@@ -122,6 +127,19 @@ export default async function PersonPage({ params }: { params: Promise<{ id: str
             <dd>{t("profile.reports", { count: p.directReports })}</dd>
           </dl>
         </section>
+
+        {recognitions.ok && recognitions.data.length > 0 ? (
+          <section aria-labelledby="person-recognition" className="people-section">
+            <h2 id="person-recognition">{t("profile.recognition")}</h2>
+            <ul className="engagement-feed">
+              {recognitions.data.map((r) => (
+                <li key={r.id}>
+                  <RecognitionCard item={r} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         {chart.ok ? <OrgChartView chart={chart.data} reportsHref={p.isSelf ? "/people/team" : null} /> : null}
       </main>

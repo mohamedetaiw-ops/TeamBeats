@@ -38,6 +38,7 @@ const look: Record<string, { icon: IconName; tone?: "accent" | "danger" | "warni
   comment: { icon: "chat" },
   announcement: { icon: "megaphone" },
   document_update: { icon: "files" },
+  recognition: { icon: "star" },
   integration_alert: { icon: "link", tone: "warning" },
   system: { icon: "info" },
 };

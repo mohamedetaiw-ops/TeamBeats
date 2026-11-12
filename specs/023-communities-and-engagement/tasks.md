@@ -18,8 +18,8 @@ Depends on 002, 004, 009, 010, 011, 012, 015, 026. R2.
 - [x] T009 [US3] Polls, survey builder, results and export
 
 ## Phase 4: User Stories 4 to 7 (P1 to P3)
-- [ ] T010 [P] [US4] [US5] Tests: recognition, no self recognition, caps, points off hides all
-- [ ] T011 [US4] Recognition, badges, values, points and leaderboard
+- [x] T010 [P] [US4] [US5] Tests: recognition, no self recognition, caps, points off hides all
+- [x] T011 [US4] Recognition, badges, values, points and leaderboard
 - [ ] T012 [US5] Period awards
 - [ ] T013 [US6] Celebrations and widget
 - [ ] T014 [US7] Galleries with scanning

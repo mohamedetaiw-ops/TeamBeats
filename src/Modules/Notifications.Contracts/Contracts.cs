@@ -75,6 +75,7 @@ public static class NotificationCategories
     public const string Comment = "comment";
     public const string Announcement = "announcement";
     public const string DocumentUpdate = "document_update";
+    public const string Recognition = "recognition";
     public const string IntegrationAlert = "integration_alert";
     public const string System = "system";
 
@@ -91,6 +92,7 @@ public static class NotificationCategories
         new(Comment, Mandatory: false, EmailByDefault: false),
         new(Announcement, Mandatory: false, EmailByDefault: false),
         new(DocumentUpdate, Mandatory: false, EmailByDefault: false),
+        new(Recognition, Mandatory: false, EmailByDefault: false),
         new(IntegrationAlert, Mandatory: false, EmailByDefault: true),
         new(System, Mandatory: false, EmailByDefault: false),
     ];

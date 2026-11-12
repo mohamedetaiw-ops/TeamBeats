@@ -16,3 +16,6 @@ public sealed record PollClosed(Guid PollId, Guid CommunityId) : IIntegrationEve
 
 /// <summary>A survey closed, at its end date or earlier by its author or a publisher (spec 023 section 12).</summary>
 public sealed record SurveyClosed(Guid SurveyId, Guid OrgUnitId) : IIntegrationEvent;
+
+/// <summary>Someone thanked people or a team (spec 023 US4). Recipients is empty for a team shout-out.</summary>
+public sealed record RecognitionGiven(Guid RecognitionId, Guid GiverId, IReadOnlyList<Guid> Recipients, Guid? TeamUnitId) : IIntegrationEvent;
