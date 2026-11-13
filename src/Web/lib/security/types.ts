@@ -15,6 +15,8 @@ export type SecurityPolicy = {
   offlineMaxItems: number;
   offlineMaxMb: number;
   offlineDays: number;
+  guestAllowDomains: string[];
+  guestBlockDomains: string[];
   scopedRulesAvailable: boolean;
   yourAddress: string | null;
   version: number;

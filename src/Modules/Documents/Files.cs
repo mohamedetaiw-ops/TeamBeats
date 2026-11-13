@@ -6,6 +6,8 @@ using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Documents.Contracts;
+using TeamBeats.Modules.Identity.Contracts;
+using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -109,9 +111,14 @@ public sealed class DocumentFiles(
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,
+    IUserDirectory users,
+    IPdfStamp stamp,
     IClock clock)
 {
     public const int MaxNameLength = 200;
+
+    /// <summary>The largest PDF a guest downloads with a watermark; larger PDFs are refused to guests (spec 026 US3).</summary>
+    public const long MaxStampedBytes = 50L * 1024 * 1024;
     public const int MaxPage = 200;
     public static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(5);
     public const string QuarantinedTemplate = "documents.quarantined";
@@ -757,7 +764,12 @@ public sealed class DocumentFiles(
     {
         // The key is built by this module, so it is relative to the tenant's prefix; strip nothing, add nothing.
         var content = await storage.OpenReadAsync(key, ct) ?? throw AppException.NotFound();
-        if (classification is "confidential" or "restricted")
+        var guest = await Access.IsGuestAsync(ct);
+        if (guest && string.Equals(type, "application/pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            content = await StampAsync(content, size, principal, ct);
+        }
+        if (guest || classification is "confidential" or "restricted")
         {
             await audit.WriteAsync(new AuditEntry(AuditActions.DocDownloaded, Securables.Document, doc.ToString(),
                 Changes: new { version, library, size }), ct);
@@ -765,6 +777,26 @@ public sealed class DocumentFiles(
         // Download volume counts the app itself when an app reads as itself (spec 026 US5 with spec 035).
         await outbox.EnqueueAsync(new DocumentDownloaded(doc, library, principal, size), ct);
         return (content, type, name);
+    }
+
+    /// <summary>
+    /// Spec 026 US3 scenario 3: a guest's PDF carries the guest's address and the time on every page. A PDF that cannot
+    /// carry the stamp, or is too large to stamp, is not handed out to a guest.
+    /// </summary>
+    private async Task<Stream> StampAsync(Stream content, long size, Guid principal, CancellationToken ct)
+    {
+        await using (content)
+        {
+            if (size > MaxStampedBytes)
+            {
+                throw AppException.Conflict("conflict.documents.guest_pdf_too_large");
+            }
+            using var buffer = new MemoryStream((int)Math.Max(size, 0));
+            await content.CopyToAsync(buffer, ct);
+            var who = (await users.GetAsync(principal, ct))?.Email ?? principal.ToString();
+            var marked = stamp.Apply(buffer.ToArray(), $"{who}  {clock.UtcNow:yyyy-MM-dd HH:mm} UTC");
+            return marked is null ? throw AppException.Conflict("conflict.documents.guest_pdf_unmarkable") : new MemoryStream(marked, writable: false);
+        }
     }
 
     private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');

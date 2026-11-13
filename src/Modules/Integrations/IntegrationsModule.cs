@@ -119,6 +119,7 @@ public static class IntegrationsModule
         services.AddScoped<Siem.SiemPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Siem.SiemPack>());
         services.AddScoped<ISiemDelivery, Siem.SiemDelivery>();
+        services.AddSingleton<IPdfStamp, Hr.PdfStamp>();
         services.AddScoped<Webhooks.InboundWebhooks>();
         services.AddScoped<SyncAgents.OnPremDirectoryPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<SyncAgents.OnPremDirectoryPack>());

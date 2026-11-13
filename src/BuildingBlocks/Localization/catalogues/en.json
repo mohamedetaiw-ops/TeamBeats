@@ -2182,5 +2182,11 @@
   "validation.siem.port": "Enter a port from 1 to 65535.",
   "conflict.siem.limit": "This organization already has 2 SIEM destinations. Remove one first.",
   "notifications.template.security.alert.siem_failing.title": "Security events are not reaching your SIEM",
-  "notifications.template.security.alert.siem_failing.body": "A SIEM destination has failed for a day. TeamBeats keeps the events and sends them once it works again. Check the destination on the security page."
+  "notifications.template.security.alert.siem_failing.body": "A SIEM destination has failed for a day. TeamBeats keeps the events and sends them once it works again. Check the destination on the security page.",
+  "validation.security.domain": "Enter a domain name, such as partner.example.",
+  "validation.spaces.guest_domain_blocked": "Your organization does not allow guests from this email domain.",
+  "validation.spaces.guest_domain_not_allowed": "Your organization allows guests only from listed email domains, and this one is not on the list.",
+  "validation.spaces.guest_space_limit": "Your package's limit on spaces with guests is reached. Remove the guests of another space or ask about a larger package.",
+  "conflict.documents.guest_pdf_too_large": "This PDF is too large to download as a guest. Ask the space owner for a smaller copy.",
+  "conflict.documents.guest_pdf_unmarkable": "This PDF cannot carry the guest watermark, so it cannot be downloaded as a guest. Ask the space owner for another copy."
 }

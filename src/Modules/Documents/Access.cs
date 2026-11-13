@@ -62,10 +62,14 @@ internal sealed class DocumentAccess(IDbSession session, IAuthorizationService a
     /// open Restricted files (spec 026 FR-011) and open Confidential ones only in a space library whose tenant rule and
     /// owner both allow it (spec 029 FR-008); everyone else has nothing closed.
     /// </summary>
-    public async Task<string[]> ClosedAsync(LibraryRow library, CancellationToken ct)
+    public async Task<string[]> ClosedAsync(LibraryRow library, CancellationToken ct) =>
+        await IsGuestAsync(ct) ? (library.InSpace && library.GuestConfidential ? GuestRestricted : GuestClosed) : Open;
+
+    /// <summary>Whether the caller is a guest of the tenant (spec 026 FR-009).</summary>
+    public async Task<bool> IsGuestAsync(CancellationToken ct)
     {
         _guest ??= context.ActorId is { } user && await memberships.GetAsync(user, ct) is { MembershipType: MembershipTypes.Guest };
-        return _guest.Value ? (library.InSpace && library.GuestConfidential ? GuestRestricted : GuestClosed) : Open;
+        return _guest.Value;
     }
 
     /// <summary>

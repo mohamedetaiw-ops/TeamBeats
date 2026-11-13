@@ -29,7 +29,9 @@ public sealed record SecurityPolicyView(
     int Version,
     int OfflineMaxItems,
     int OfflineMaxMb,
-    int OfflineDays)
+    int OfflineDays,
+    IReadOnlyList<string> GuestAllowDomains,
+    IReadOnlyList<string> GuestBlockDomains)
 {
     public string ETag => PolicyService.ETag(Version);
 }
@@ -49,7 +51,9 @@ public sealed record SecurityPolicyRequest(
     string? Confirmation,
     int? OfflineMaxItems = null,
     int? OfflineMaxMb = null,
-    int? OfflineDays = null);
+    int? OfflineDays = null,
+    IReadOnlyList<string>? GuestAllowDomains = null,
+    IReadOnlyList<string>? GuestBlockDomains = null);
 
 /// <summary>How many members would be refused by proposed tenant rules, from their sign-ins in the last 30 days (spec 026 section 10).</summary>
 public sealed record LockoutPreview(int PeopleOutside, string? YourAddress, bool YouWouldBeRefused);
@@ -72,12 +76,16 @@ public sealed partial class PolicyService(
     ISignInHistory signIns)
 {
     public const int MaxZones = 20;
+    public const int MaxDomains = 200;
     public const string Provider = "entra";
 
     public static string ETag(int version) => $"\"v{version}\"";
 
     [GeneratedRegex("^[a-z0-9_]{1,40}$")]
     private static partial Regex ZoneName();
+
+    [GeneratedRegex(@"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$")]
+    private static partial Regex DomainPattern();
 
     private string? Caller() =>
         IPAddress.TryParse(context.SourceIp, out var ip) ? (ip.IsIPv4MappedToIPv6 ? ip.MapToIPv4() : ip).ToString() : null;
@@ -107,7 +115,36 @@ public sealed partial class PolicyService(
     private async Task<SecurityPolicyView> ViewAsync(SecurityPolicySnapshot p, CancellationToken ct) =>
         new(p.IpAllow, p.IpBlock, p.AdminIpAllow, p.NetworkZones, p.RequireMfa, await MfaClaimSeenAsync(ct), p.StepUpMinutes, p.IdleMinutes,
             p.AbsoluteHours, p.MaxSessions, p.RememberDeviceDays, await entitlements.IsEnabledAsync(Capabilities.SecurityIpRulesScoped, ct), Caller(),
-            Math.Max(p.Version, 1), p.OfflineMaxItems, p.OfflineMaxMb, p.OfflineDays);
+            Math.Max(p.Version, 1), p.OfflineMaxItems, p.OfflineMaxMb, p.OfflineDays, p.GuestAllowDomains ?? [], p.GuestBlockDomains ?? []);
+
+    /// <summary>Guest domain rules (section 14): lower case domain names, no duplicates, at most 200.</summary>
+    private static List<string> Domains(IReadOnlyList<string>? input, IReadOnlyList<string>? current, string field, ValidationErrors errors)
+    {
+        if (input is null)
+        {
+            return [.. current ?? []];
+        }
+        var result = new List<string>();
+        if (input.Count > MaxDomains)
+        {
+            errors.Add(field, "validation.security.too_many");
+            return result;
+        }
+        foreach (var (text, index) in input.Select((t, i) => (t, i)))
+        {
+            var domain = (text ?? "").Trim().TrimStart('@').ToLowerInvariant();
+            if (domain.Length > 253 || !DomainPattern().IsMatch(domain))
+            {
+                errors.Add($"{field}[{index}]", "validation.security.domain");
+                continue;
+            }
+            if (!result.Contains(domain, StringComparer.Ordinal))
+            {
+                result.Add(domain);
+            }
+        }
+        return result;
+    }
 
     private static List<string> Ranges(IReadOnlyList<string>? input, IReadOnlyList<string> current, string field, ValidationErrors errors)
     {
@@ -197,6 +234,8 @@ public sealed partial class PolicyService(
         var offlineItems = Number(request.OfflineMaxItems, current.OfflineMaxItems, 0, 200, "offlineMaxItems", errors);
         var offlineMb = Number(request.OfflineMaxMb, current.OfflineMaxMb, 1, 200, "offlineMaxMb", errors);
         var offlineDays = Number(request.OfflineDays, current.OfflineDays, 1, 30, "offlineDays", errors);
+        var guestAllow = Domains(request.GuestAllowDomains, current.GuestAllowDomains, "guestAllowDomains", errors);
+        var guestBlock = Domains(request.GuestBlockDomains, current.GuestBlockDomains, "guestBlockDomains", errors);
         errors.ThrowIfAny();
 
         // Admin area and per role network rules are in Workplace Plus and above (section 9).
@@ -206,7 +245,7 @@ public sealed partial class PolicyService(
         }
 
         var next = new SecurityPolicySnapshot(allow, block, admin, zones, requireMfa, stepUp, idle, absolute, maxSessions, remember, current.Version + 1,
-            offlineItems, offlineMb, offlineDays);
+            offlineItems, offlineMb, offlineDays, guestAllow, guestBlock);
         var caller = Caller();
         var callerAddress = caller is null ? null : IPAddress.Parse(caller);
         if (NetworkRules.Refusal(next, callerAddress, adminArea: true) is not null && NetworkRules.Refusal(current, callerAddress, adminArea: true) is null
@@ -227,12 +266,13 @@ public sealed partial class PolicyService(
             update security.policy set ip_allow = @allow::cidr[], ip_block = @block::cidr[], admin_ip_allow = @admin::cidr[], network_zones = @zones,
               require_mfa = @mfa, step_up_minutes = @stepUp, idle_minutes = @idle, absolute_hours = @absolute, max_sessions = @maxSessions,
               remember_device_days = @remember, offline_max_items = @offlineItems, offline_max_mb = @offlineMb, offline_days = @offlineDays,
-              version = @version, updated_at = @now, updated_by = @actor
+              guest_allow_domains = @guestAllow, guest_block_domains = @guestBlock, version = @version, updated_at = @now, updated_by = @actor
             """,
             new
             {
                 allow = allow.ToArray(), block = block.ToArray(), admin = admin.ToArray(), zones = Jsonb.From(zones), mfa = requireMfa, stepUp, idle, absolute,
-                maxSessions, remember, offlineItems, offlineMb, offlineDays, version = next.Version, now = clock.UtcNow, actor = context.ActorId,
+                maxSessions, remember, offlineItems, offlineMb, offlineDays, guestAllow = guestAllow.ToArray(), guestBlock = guestBlock.ToArray(),
+                version = next.Version, now = clock.UtcNow, actor = context.ActorId,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.SecurityPolicyChanged, "security_policy", null,
             Changes: new { settings = changed, before = Values(current), after = Values(next) }), ct);
@@ -260,6 +300,7 @@ public sealed partial class PolicyService(
         ipAllow = p.IpAllow, ipBlock = p.IpBlock, adminIpAllow = p.AdminIpAllow, networkZones = p.NetworkZones, requireMfa = p.RequireMfa,
         stepUpMinutes = p.StepUpMinutes, idleMinutes = p.IdleMinutes, absoluteHours = p.AbsoluteHours, maxSessions = p.MaxSessions,
         rememberDeviceDays = p.RememberDeviceDays, offlineMaxItems = p.OfflineMaxItems, offlineMaxMb = p.OfflineMaxMb, offlineDays = p.OfflineDays,
+        guestAllowDomains = p.GuestAllowDomains ?? [], guestBlockDomains = p.GuestBlockDomains ?? [],
     };
 
     private static List<string> Changed(SecurityPolicySnapshot a, SecurityPolicySnapshot b)
@@ -278,6 +319,8 @@ public sealed partial class PolicyService(
         if (a.OfflineMaxItems != b.OfflineMaxItems) result.Add("offlineMaxItems");
         if (a.OfflineMaxMb != b.OfflineMaxMb) result.Add("offlineMaxMb");
         if (a.OfflineDays != b.OfflineDays) result.Add("offlineDays");
+        if (!(a.GuestAllowDomains ?? []).SequenceEqual(b.GuestAllowDomains ?? [])) result.Add("guestAllowDomains");
+        if (!(a.GuestBlockDomains ?? []).SequenceEqual(b.GuestBlockDomains ?? [])) result.Add("guestBlockDomains");
         return result;
     }
 

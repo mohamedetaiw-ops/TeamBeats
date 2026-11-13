@@ -5,6 +5,7 @@ using TeamBeats.Messaging;
 using TeamBeats.Modules.Documents.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
+using TeamBeats.Modules.Security.Contracts;
 using TeamBeats.Modules.Spaces.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
@@ -18,6 +19,9 @@ public sealed record GuestInviteRequest(string? Email, string? Role, int? Days);
 public sealed record GuestRenewRequest(int? Days);
 
 public sealed record GuestFilesRequest(bool? Confidential);
+
+/// <summary>A space the caller is a guest of, for the guest home (spec 026 section 10): who invited them and until when.</summary>
+public sealed record GuestSpaceView(Guid SpaceId, string Name, string Role, string SponsorName, DateTimeOffset? ExpiresAt);
 
 public sealed record GuestView(Guid UserId, string DisplayName, string Role, DateTimeOffset? ExpiresAt);
 
@@ -61,6 +65,7 @@ public sealed class SpaceGuests(
     ISpaceLibraries libraries,
     INotificationSender notifications,
     IExternalEmail email,
+    ISecurityPolicy securityPolicy,
     IAuditWriter audit,
     IOutbox outbox,
     IClock clock) : IGuestInvitationSource
@@ -103,6 +108,24 @@ public sealed class SpaceGuests(
             rows.Select(r => new GuestView(r.User, names.TryGetValue(r.User, out var u) ? u.DisplayName : "", r.Role, r.Expires)).ToList(), invitations);
     }
 
+    /// <summary>
+    /// The spaces the caller is a guest of, soonest end first, with the person who invited them (the sponsor). Empty for
+    /// members of the tenant, who use the space directory.
+    /// </summary>
+    public async Task<IReadOnlyList<GuestSpaceView>> MineAsync(CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var rows = await session.QueryAsync(
+            """
+            select s.id, s.name, m.role, m.added_by, m.expires_at from spaces.space_member m join spaces.space s on s.id = m.space_id
+            where m.user_id = @user and m.guest and s.status = 'active' and (m.expires_at is null or m.expires_at > @now)
+            order by m.expires_at nulls last, s.name
+            """, new { user, now = clock.UtcNow },
+            r => (Id: r.GetGuid(0), Name: r.GetString(1), Role: r.GetString(2), By: r.Get<Guid?>("added_by"), Expires: r.Get<DateTimeOffset?>("expires_at")), ct);
+        var names = await users.GetManyAsync(rows.Where(r => r.By is not null).Select(r => r.By!.Value).ToList(), ct);
+        return rows.Select(r => new GuestSpaceView(r.Id, r.Name, r.Role, r.By is { } by && names.TryGetValue(by, out var u) ? u.DisplayName : "", r.Expires)).ToList();
+    }
+
     /// <summary>Invites a partner by email (US4 scenario 1). Read-only by default (spec 026 US3 scenario 3); member lets them add and comment.</summary>
     public async Task<SpaceGuestsView> InviteAsync(Guid id, GuestInviteRequest request, CancellationToken ct)
     {
@@ -128,6 +151,11 @@ public sealed class SpaceGuests(
         {
             errors.Add("email", "validation.spaces.guest_member_domain");
         }
+        else if ((await securityPolicy.GetAsync(ct)).GuestDomainRefusal(address[(at + 1)..]) is { } refusal)
+        {
+            // Spec 026 section 14: the tenant's guest domain rules (blocked domains, and allowed domains when set).
+            errors.Add("email", refusal);
+        }
         var role = request.Role ?? SpaceRoles.Viewer;
         if (role is not (SpaceRoles.Member or SpaceRoles.Viewer))
         {
@@ -140,9 +168,14 @@ public sealed class SpaceGuests(
         }
         errors.ThrowIfAny();
         await session.ExecAsync("select id from spaces.space where id = @id for update", new { id }, ct);
-        if (await CountAsync(id, ct) >= MaxGuests)
+        var count = await CountAsync(id, ct);
+        if (count >= MaxGuests)
         {
             throw AppException.Validation("email", "validation.spaces.guest_count");
+        }
+        if (count == 0)
+        {
+            await DemandGuestSpaceAsync(ct);
         }
         var now = clock.UtcNow;
         var expires = now.AddDays(days);
@@ -188,6 +221,30 @@ public sealed class SpaceGuests(
         await audit.WriteAsync(new AuditEntry(AuditActions.SpacesGuestInvited, SpacesService.ResourceType, id.ToString(),
             Changes: new { invitation, role, expiresAt = expires, email = sent }), ct);
         return await ListAsync(id, ct);
+    }
+
+    /// <summary>
+    /// Spec 026 section 9: <c>security.max_guest_spaces</c> limits how many spaces have guests or open invitations. A
+    /// space's first invitation counts it; the check is serialized per tenant.
+    /// </summary>
+    private async Task DemandGuestSpaceAsync(CancellationToken ct)
+    {
+        if (await entitlements.GetLimitAsync(Capabilities.SecurityMaxGuestSpaces, ct) is not { } max)
+        {
+            return;
+        }
+        await session.ExecAsync("select pg_advisory_xact_lock(hashtextextended(platform.current_tenant_id()::text || ':spaces.guest_spaces', 0))", null, ct);
+        var used = await session.ScalarAsync<long>(
+            """
+            select count(*) from spaces.space s where s.status = 'active' and (
+              exists (select 1 from spaces.space_member m where m.space_id = s.id and m.guest)
+              or exists (select 1 from spaces.guest_invitation i where i.space_id = s.id and i.status = 'pending'))
+            """, null, ct);
+        if (used >= max)
+        {
+            throw new AppException(ProblemCodes.EntitlementQuotaExhausted, 403, "validation.spaces.guest_space_limit", null,
+                new Dictionary<string, object?> { ["capability"] = Capabilities.SecurityMaxGuestSpaces, ["limit"] = max });
+        }
     }
 
     private static string State(string outcome, int attempts) => outcome switch

@@ -16873,6 +16873,18 @@
         }
       }
     },
+    "/api/v1/spaces/as-guest": {
+      "get": {
+        "tags": [
+          "Spaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/spaces/{id}/guests": {
       "get": {
         "tags": [
@@ -31768,6 +31780,24 @@
               "string"
             ],
             "format": "int32"
+          },
+          "guestAllowDomains": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "guestBlockDomains": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           }
         }
       },

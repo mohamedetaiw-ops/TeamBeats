@@ -19,6 +19,7 @@
     <ProjectReference Include="../Documents.Contracts/TeamBeats.Modules.Documents.Contracts.csproj" />
     <ProjectReference Include="../Engagement.Contracts/TeamBeats.Modules.Engagement.Contracts.csproj" />
     <ProjectReference Include="../Integrations.Contracts/TeamBeats.Modules.Integrations.Contracts.csproj" />
+    <ProjectReference Include="../Security.Contracts/TeamBeats.Modules.Security.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="TeamBeats.Unit.Tests" />

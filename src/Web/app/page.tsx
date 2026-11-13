@@ -13,6 +13,8 @@ import { PlacementTools, RegionTools } from "@/features/personalization/Tools";
 import type { LayoutView } from "@/features/personalization/types";
 import { SectionNav } from "@/components/ui/SectionNav";
 import type { HomeView } from "@/lib/shell/types";
+import { GuestHome } from "@/features/spaces/GuestHome";
+import type { GuestSpace } from "@/lib/spaces";
 import "./home-views.css";
 
 /**
@@ -27,6 +29,15 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ v
     redirect("/signin");
   }
   const shell = await getShell();
+  if (shell.ok && shell.data.guest) {
+    const spaces = await apiGet<GuestSpace[]>("/api/v1/spaces/as-guest");
+    return (
+      <>
+        <Header me={me.data} />
+        <GuestHome spaces={spaces.ok ? spaces.data : []} ok={spaces.ok} />
+      </>
+    );
+  }
   const views = shell.ok ? (shell.data.homeViews ?? []) : [];
   const { view: requested } = await searchParams;
   const view = views.find((v) => v.id === requested) ?? null;

@@ -61,7 +61,7 @@ public sealed record OrganizationIndicator(Guid Id, string Name, bool Primary);
 public sealed record ShellView(int Version, ShellDefinition Layout, IReadOnlyList<NavLink> GlobalMenu,
     IReadOnlyList<OrganizationMenu> OrganizationMenus, IReadOnlyList<OrganizationIndicator> Organizations, bool CanSwitchOrganization,
     string? Home = null, bool Assistant = false, FooterView? Footer = null, IReadOnlyList<HomeViewLink>? HomeViews = null, bool Administration = false,
-    IReadOnlyList<NavLink>? MobileNav = null);
+    IReadOnlyList<NavLink>? MobileNav = null, bool Guest = false);
 
 public sealed record OrganizationMenu(Guid OrgUnitId, string Name, IReadOnlyList<NavLink> Items);
 
@@ -91,7 +91,8 @@ public sealed partial class ShellService(
     IAuditWriter audit,
     IOutbox outbox,
     IEntitlementService entitlements,
-    AudienceEvaluator audiences)
+    AudienceEvaluator audiences,
+    ITenantMemberships tenantMemberships)
 {
     public const string TenantScope = "tenant";
     public static readonly IReadOnlyList<string> Regions =
@@ -109,6 +110,12 @@ public sealed partial class ShellService(
     public static readonly ShellDefinition DefaultShell = new(
         ["identity", "global_navigation"], ["search"], ["notifications", "task_badge", "utilities", "settings"],
         ["organization_indicator", "breadcrumbs", "contextual_actions"], []);
+
+    /// <summary>
+    /// The reduced guest shell (spec 026 section 10): the tenant's name, notifications, settings and breadcrumbs. No
+    /// navigation, search, assistant, organization menus or home page; a guest's home lists their spaces.
+    /// </summary>
+    public static readonly ShellDefinition GuestShell = new(["identity"], [], ["notifications", "settings"], ["breadcrumbs"], []);
 
     private const int MaxMenuItems = 50;
 
@@ -181,6 +188,10 @@ public sealed partial class ShellService(
     public async Task<ShellView> GetShellAsync(string locale, CancellationToken ct)
     {
         var (version, layout) = await LiveShellAsync(ct);
+        if (context.ActorId is { } caller && await tenantMemberships.GetAsync(caller, ct) is { MembershipType: MembershipTypes.Guest })
+        {
+            return new ShellView(version, GuestShell, [], [], [], false, null, false, FooterFor(layout.Footer, locale), [], MobileNav: [], Guest: true);
+        }
         var nodes = await NodesAsync(ct);
         var visible = await VisibleNodesAsync(nodes, ct);
         var menus = await MenusAsync(ct);

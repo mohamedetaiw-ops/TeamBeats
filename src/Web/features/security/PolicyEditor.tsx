@@ -45,6 +45,8 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
   const [offlineItems, setOfflineItems] = useState(String(initial.offlineMaxItems));
   const [offlineMb, setOfflineMb] = useState(String(initial.offlineMaxMb));
   const [offlineDays, setOfflineDays] = useState(String(initial.offlineDays));
+  const [guestAllow, setGuestAllow] = useState(initial.guestAllowDomains.join("\n"));
+  const [guestBlock, setGuestBlock] = useState(initial.guestBlockDomains.join("\n"));
   const [preview, setPreview] = useState<LockoutPreview | null>(null);
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
   const [confirmation, setConfirmation] = useState("");
@@ -84,6 +86,8 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
       offlineMaxItems: Number(offlineItems),
       offlineMaxMb: Number(offlineMb),
       offlineDays: Number(offlineDays),
+      guestAllowDomains: ranges(guestAllow),
+      guestBlockDomains: ranges(guestBlock),
       ...(needsConfirmation ? { confirmation } : {}),
     };
     try {
@@ -194,6 +198,13 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
         <FormField label={t("offline.items")} hint={t("offline.itemsHint")} name="offlineMaxItems" type="number" min={0} max={200} value={offlineItems} onChange={(e) => setOfflineItems(e.target.value)} />
         <FormField label={t("offline.mb")} name="offlineMaxMb" type="number" min={1} max={200} value={offlineMb} onChange={(e) => setOfflineMb(e.target.value)} />
         <FormField label={t("offline.days")} name="offlineDays" type="number" min={1} max={30} value={offlineDays} onChange={(e) => setOfflineDays(e.target.value)} />
+      </section>
+
+      <section className="security-section" aria-labelledby="security-guests-title">
+        <h2 id="security-guests-title">{t("guests.title")}</h2>
+        <p className="field-hint">{t("guests.intro")}</p>
+        <RangeList label={t("guests.allow")} hint={t("guests.allowHint")} value={guestAllow} onChange={setGuestAllow} />
+        <RangeList label={t("guests.block")} hint={t("guests.blockHint")} value={guestBlock} onChange={setGuestBlock} />
       </section>
 
       {result ? (

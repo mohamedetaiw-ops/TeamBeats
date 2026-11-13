@@ -21,8 +21,28 @@ public sealed record SecurityPolicySnapshot(
     int Version,
     int OfflineMaxItems = SecurityPolicySnapshot.DefaultOfflineItems,
     int OfflineMaxMb = SecurityPolicySnapshot.DefaultOfflineMb,
-    int OfflineDays = SecurityPolicySnapshot.DefaultOfflineDays)
+    int OfflineDays = SecurityPolicySnapshot.DefaultOfflineDays,
+    IReadOnlyList<string>? GuestAllowDomains = null,
+    IReadOnlyList<string>? GuestBlockDomains = null)
 {
+    /// <summary>
+    /// Spec 026 US3 and section 14: whether the tenant's guest domain rules refuse an email domain. An entry covers the
+    /// domain and its subdomains. Blocked wins over allowed; an empty allowed list allows every domain not blocked.
+    /// Returns null when allowed, otherwise the validation key to show.
+    /// </summary>
+    public string? GuestDomainRefusal(string domain)
+    {
+        static bool Covers(string entry, string d) =>
+            d.Equals(entry, StringComparison.OrdinalIgnoreCase) || d.EndsWith("." + entry, StringComparison.OrdinalIgnoreCase);
+        var block = GuestBlockDomains ?? [];
+        var allow = GuestAllowDomains ?? [];
+        if (block.Any(b => Covers(b, domain)))
+        {
+            return "validation.spaces.guest_domain_blocked";
+        }
+        return allow.Count > 0 && !allow.Any(a => Covers(a, domain)) ? "validation.spaces.guest_domain_not_allowed" : null;
+    }
+
     /// <summary>Spec 030 section 6: a device keeps up to 50 items and 50 MB for 7 days unless the tenant says otherwise.</summary>
     public const int DefaultOfflineItems = 50;
     public const int DefaultOfflineMb = 50;
