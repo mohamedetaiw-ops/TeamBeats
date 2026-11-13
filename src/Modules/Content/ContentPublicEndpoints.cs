@@ -13,6 +13,12 @@ public sealed record PublicContentSummary(Guid Id, Guid SiteId, string Type, str
 public sealed record PublicContentItem(Guid Id, Guid SiteId, string Type, string Locale, IReadOnlyList<string> Locales, string Title, string? Summary,
     BodyDocument Body, int Version, DateTimeOffset PublishedAt, DateTimeOffset UpdatedAt, bool Expired, string WebUrl);
 
+/// <summary>A news or page draft from a delegated app: one language, the title, an optional summary and the structured body.</summary>
+public sealed record PublicDraftRequest(Guid? SiteId, string? Type, string? Locale, string? Title, string? Summary, BodyDocument? Body);
+
+/// <summary>The draft as stored. It is never published by the API; its author opens it in TeamBeats to review and publish.</summary>
+public sealed record PublicDraft(Guid Id, Guid SiteId, string Type, string Status, string Locale, string Title, string WebUrl);
+
 /// <summary>
 /// The public operations of <c>content:read</c> (spec 035 section 6, spec 009). The list is the news feed: for a person
 /// it is targeted as in TeamBeats, and for an application app, which has no audience, it is every live item the app's
@@ -40,6 +46,23 @@ public static class ContentPublicEndpoints
             return PublicEndpoints.Resource(http, new PublicContentItem(view.Id, view.SiteId, view.Type, view.Locale, view.Locales, view.Title, view.Summary,
                 view.Body, view.Version, view.PublishedAt, view.UpdatedAt, view.Expired, WebUrl(Origin(http), view.Id)));
         }).RequireScope(ScopeCatalogue.ContentRead).Produces<PublicContentItem>();
+
+        // content:draft (delegated only): a draft in the person's name, with their authoring rights at the site; never published.
+        content.MapPost("/content/drafts", async (PublicDraftRequest request, HttpContext http, Items items, TeamBeats.Persistence.IDbSession session,
+            TeamBeats.Localization.RequestLocale locale, CancellationToken ct) =>
+        {
+            if (request.Type is not (ContentTypes.News or ContentTypes.Page))
+            {
+                throw TeamBeats.Primitives.AppException.Validation("type", "validation.api.draft_type");
+            }
+            var language = request.Locale ?? locale.Locale;
+            var view = await items.CreateAsync(new ItemRequest(request.SiteId, request.Type, null, null, null, null, null, null, null,
+                new Dictionary<string, VariantInput> { [language] = new(request.Title, request.Summary, request.Body) }, null, null), ct);
+            await session.CommitAsync(ct);
+            var draft = new PublicDraft(view.Id, view.SiteId, view.Type, view.Status, view.PrimaryLocale,
+                view.Variants.TryGetValue(view.PrimaryLocale, out var v) ? v.Title : request.Title ?? string.Empty, $"{Origin(http)}/content/items/{view.Id}");
+            return Results.Created($"{PublicEndpoints.Version1}/content/drafts/{view.Id}", draft);
+        }).RequireScope(ScopeCatalogue.ContentDraft).Idempotent().Produces<PublicDraft>(StatusCodes.Status201Created);
     }
 
     private static string Origin(HttpContext http) => $"{http.Request.Scheme}://{http.Request.Host}";

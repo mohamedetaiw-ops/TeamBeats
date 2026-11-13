@@ -302,6 +302,7 @@ public static class AgentsModule
             return Results.Ok(view);
         });
 
+        app.MapAssistantPublicEndpoints();
         return app;
     }
 }

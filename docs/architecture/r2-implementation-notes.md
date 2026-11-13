@@ -1196,3 +1196,17 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - An app's directory is the people placed in the units its own `people.view` covers. It sees only the fields every employee sees, since it is in no unit and manages no one, and it is never told who is on leave.
 - Policies apply to people through their audience. An app is in no audience, so it reads the published policies whose unit its own `content.view` covers (the whole tenant for a tenant-wide policy), never drafts, and it owes no attestation. No new permission was added for this.
 - Lists the owning module pages by offset (documents, people, policies) carry the offset inside the opaque cursor. The people search keeps its own page cap of 50, so a page can be shorter than `limit` with a `nextCursor`.
+
+## Public API and MCP server (spec 035, slice 3d: T011 search, assistant, task inbox and news drafts)
+
+### Built
+- `search:query` (spec 012), in `Search`: `GET /api/public/v1/search` with `q`, `kind`, `from` and `to`, 20 results a page with the page in the cursor. Each owning module filters the candidates for the caller, as in TeamBeats.
+- `assistant:ask` (spec 014), in `Agents`, for delegated apps: `POST /api/public/v1/assistant/answers` with a question and an optional conversation. The answer is cited and marked as AI generated. It is idempotent.
+- `tasks:read` (spec 016), in `Services`, for delegated apps: `GET /api/public/v1/tasks`, the person's own inbox with a link to each task in TeamBeats. There is no operation to decide a task.
+- `content:draft` (spec 009), in `Content`, for delegated apps: `POST /api/public/v1/content/drafts` creates a news or page draft in the person's name, with their authoring rights at the site. It is never published, and it is idempotent.
+
+### Smallest safe defaults
+- In search, an application app finds the people its own `people.view` covers. It finds no services, since the catalogue is offered by audience and an app is in no audience, and it finds no community posts, since it is a member of no community. Learning was already limited to people.
+- A draft from the API has one language, the caller's unless `locale` says otherwise. Announcements are not drafted from the API, because the catalogue names news and pages.
+- The 20 an hour limit for `ask_teambeats` (section 6) belongs to the MCP tool and comes with slice 4. The REST answer is held by the per app and per user minute limits and by the tenant AI budget.
+- Services, requests and document uploads, for people and for apps, are the next slice. They need a rule for what an app reads in the catalogue and in whose name an app submits.

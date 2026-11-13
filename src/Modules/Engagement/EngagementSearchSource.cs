@@ -10,7 +10,8 @@ namespace TeamBeats.Modules.Engagement;
 /// language with its text and comments left out; who may read it is decided at query time by the same rule as the
 /// community page, so closed and approval communities stay with their members.
 /// </summary>
-internal sealed class EngagementSearchSource(IDbSession session, IEntitlementService entitlements, ITenantSettingsReader tenantSettings, Communities communities) : ISearchSource
+internal sealed class EngagementSearchSource(IDbSession session, IEntitlementService entitlements, ITenantSettingsReader tenantSettings, Communities communities,
+    TeamBeats.TenantContext.ITenantContext context) : ISearchSource
 {
     public const string Name = "engagement";
 
@@ -41,7 +42,8 @@ internal sealed class EngagementSearchSource(IDbSession session, IEntitlementSer
 
     public async Task<IReadOnlySet<Guid>> ReadableAsync(IReadOnlyCollection<Guid> itemIds, CancellationToken ct = default)
     {
-        if (itemIds.Count == 0 || !await entitlements.IsEnabledAsync(Capabilities.EngagementCommunities, ct))
+        // Communities are read by their members; an application app is a member of none (spec 035 section 7).
+        if (itemIds.Count == 0 || context.ActorType != TeamBeats.TenantContext.ActorType.User || !await entitlements.IsEnabledAsync(Capabilities.EngagementCommunities, ct))
         {
             return new HashSet<Guid>();
         }

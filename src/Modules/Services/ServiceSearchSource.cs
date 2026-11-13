@@ -8,7 +8,8 @@ namespace TeamBeats.Modules.Services;
 /// Catalogue services for search (spec 012 section 2, spec 016): published services with their names, descriptions and
 /// synonyms per locale. A person finds a service only when its audience includes them, as in the catalogue (FR-001).
 /// </summary>
-internal sealed class ServiceSearchSource(IDbSession session, IEntitlementService entitlements, Catalogue catalogue) : ISearchSource
+internal sealed class ServiceSearchSource(IDbSession session, IEntitlementService entitlements, Catalogue catalogue, TeamBeats.TenantContext.ITenantContext context)
+    : ISearchSource
 {
     public string Source => "services";
 
@@ -45,7 +46,8 @@ internal sealed class ServiceSearchSource(IDbSession session, IEntitlementServic
 
     public async Task<IReadOnlySet<Guid>> ReadableAsync(IReadOnlyCollection<Guid> itemIds, CancellationToken ct = default)
     {
-        if (itemIds.Count == 0 || !await entitlements.IsEnabledAsync(Capabilities.WorkflowCatalogue, ct))
+        // The catalogue is offered to people by audience; an application app is in no audience, so it finds no services.
+        if (itemIds.Count == 0 || context.ActorType != TeamBeats.TenantContext.ActorType.User || !await entitlements.IsEnabledAsync(Capabilities.WorkflowCatalogue, ct))
         {
             return new HashSet<Guid>();
         }

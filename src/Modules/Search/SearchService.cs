@@ -73,7 +73,7 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
     {
         var query = Validate(q, kind, page);
         await entitlements.DemandAsync(Capabilities.SearchCore, ct);
-        context.RequireUser();
+        context.RequirePrincipal();
         var terms = SearchText.Terms(query);
         var language = SearchText.QueryLanguage(query);
         var groups = await GroupsAsync(terms, language, ct);

@@ -2140,6 +2140,7 @@
   "notifications.template.publicapi.quota_100.body": "Apps have made all {limit} calls this month allows. API calls are refused until next month or until more calls are added. TeamBeats itself keeps working.",
   "validation.api.page_size": "Choose a page size from 1 to 200.",
   "validation.api.cursor": "The cursor is not valid. Start again from the first page.",
+  "validation.api.draft_type": "A draft from an app is a news item or a page.",
   "problem.api.idempotency_key_invalid": "The Idempotency-Key header must be 1 to 255 visible characters",
   "problem.api.idempotency_key_reused": "This Idempotency-Key was already used for a different request",
   "problem.api.idempotency_in_progress": "A request with this Idempotency-Key is still being processed",
