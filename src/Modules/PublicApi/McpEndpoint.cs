@@ -98,7 +98,7 @@ public static class McpEndpoint
                 scoped.UnionWith(scope.Tools ?? []);
             }
         }
-        return (new ExternalCaller(app.Id, app.ClientId, caller.UserId!.Value), scoped);
+        return (new ExternalCaller(app.Id, app.ClientId, caller.UserId!.Value, app.Name), scoped);
     }
 
     internal static async ValueTask<ListToolsResult> ListAsync(HttpContext http, CancellationToken ct)

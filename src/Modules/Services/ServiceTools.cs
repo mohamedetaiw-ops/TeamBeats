@@ -1,6 +1,7 @@
 using System.Text.Json;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Agents.Contracts;
+using TeamBeats.Modules.Services.Contracts;
 
 namespace TeamBeats.Modules.Services;
 
@@ -59,4 +60,47 @@ public sealed class ListMyTasksTool(Tasks tasks, IEntitlementService entitlement
     };
 
     public Task<ToolResult> ExecuteAsync(JsonElement arguments, ToolCallContext context, CancellationToken ct) => inner.ExecuteAsync(arguments, context, ct);
+}
+
+/// <summary>
+/// <c>submit_service_request</c> (spec 035 section 6, scope <c>requests:submit</c>), a write tool for external AI clients
+/// only: it submits a request for a form service in the employee's own name, with their rights, exactly as they would.
+/// The gateway never runs it on the client's call; it runs once the employee confirmed the exact values inside TeamBeats.
+/// Values are taken only for the fields of the form, and the form checks them as in TeamBeats.
+/// </summary>
+public sealed class SubmitServiceRequestTool(Catalogue catalogue, Requests requests) : IAgentTool
+{
+    public const string Name = "submit_service_request";
+
+    public ToolDefinition Definition { get; } = new(
+        Name, "services", 1, ToolSideEffects.WriteSelf, ToolApprovalRules.Confirm,
+        ServiceToolJson.Schema(
+            """
+            {"type":"object","additionalProperties":false,"required":["serviceId"],
+             "properties":{"serviceId":{"type":"string","minLength":36,"maxLength":36},
+                           "fields":{"type":"array","maxItems":50,"items":{"type":"object","additionalProperties":false,"required":["key","value"],
+                             "properties":{"key":{"type":"string","minLength":1,"maxLength":60},"value":{"type":"string","maxLength":2000}}}}}}
+            """),
+        "internal", Idempotent: false, TimeoutSeconds: 20,
+        "Submit a request for a form service in TeamBeats in the employee's name. Give the service ID and the form fields as key and value pairs (dates as YYYY-MM-DD, several choices separated by commas). The employee must confirm it in TeamBeats before anything is submitted.",
+        Capabilities.WorkflowCatalogue, Exposable: true);
+
+    public async Task<ToolResult> ExecuteAsync(JsonElement arguments, ToolCallContext context, CancellationToken ct)
+    {
+        if (ToolArgs.Id(arguments, "serviceId") is not { } serviceId)
+        {
+            return ToolResult.Failed("tool.invalid_arguments");
+        }
+        var detail = await catalogue.DetailAsync(serviceId, ct);
+        if (detail.Service.Kind != ServiceKinds.Form || detail.Version is null)
+        {
+            return ToolResult.Failed("tool.denied");
+        }
+        var data = RequestPrepareTool.Values(detail.Form, arguments);
+        var (submitted, _) = await requests.SubmitAsync(new RequestSubmit(serviceId, data, null, context.IdempotencyKey), ct);
+        var request = submitted.Request;
+        var link = RequestNotifier.Link(request.Id);
+        var content = ToolArgs.Json(new { id = request.Id, number = request.Number, status = request.Status, submittedAt = request.SubmittedAt, link });
+        return new ToolResult(true, content, "internal", [new ToolSource("requests", request.Id, request.Number, link, "internal")]);
+    }
 }

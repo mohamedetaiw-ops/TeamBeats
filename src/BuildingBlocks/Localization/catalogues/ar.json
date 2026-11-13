@@ -2148,5 +2148,9 @@
   "problem.api.idempotency_key_invalid": "يجب أن يتكون عنوان Idempotency-Key من 1 إلى 255 حرفًا ظاهرًا",
   "problem.api.idempotency_key_reused": "استُخدم مفتاح Idempotency-Key هذا من قبل لطلب مختلف",
   "problem.api.idempotency_in_progress": "ما زال طلب بمفتاح Idempotency-Key هذا قيد المعالجة",
-  "authz.denied.api_application_only": "هذه العملية متاحة فقط للتطبيقات التي تعمل باسمها."
+  "authz.denied.api_application_only": "هذه العملية متاحة فقط للتطبيقات التي تعمل باسمها.",
+  "conflict.agent.external_action_closed": "لم يعد هذا الإجراء بانتظارك، فقد تقرر من قبل أو انتهت مدته.",
+  "conflict.agent.external_action_changed": "تغير هذا الإجراء منذ فتحته. افتحه مرة أخرى وراجعه قبل التأكيد.",
+  "notifications.template.agents.external_action.title": "تطبيق ذكاء اصطناعي يطلب منك تأكيد إجراء",
+  "notifications.template.agents.external_action.body": "طلب {app} تنفيذ إجراء نيابة عنك في TeamBeats. لن يحدث شيء حتى تراجعه وتؤكده. تنتهي مدته خلال 15 دقيقة."
 }

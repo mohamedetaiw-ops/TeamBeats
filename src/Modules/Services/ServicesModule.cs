@@ -29,6 +29,7 @@ public static class ServicesModule
         services.AddScoped<Agents.Contracts.IAgentTool, TaskInboxTool>();
         services.AddScoped<Agents.Contracts.IAgentTool, RequestPrepareTool>();
         services.AddScoped<Agents.Contracts.IAgentTool, ListServicesTool>();
+        services.AddScoped<Agents.Contracts.IAgentTool, SubmitServiceRequestTool>();
         services.AddScoped<Agents.Contracts.IAgentTool, ListMyRequestsTool>();
         services.AddScoped<Agents.Contracts.IAgentTool, ListMyTasksTool>();
         services.AddScoped<PreparedRequests>();

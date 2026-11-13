@@ -32,6 +32,7 @@ public static class ContentModule
         services.AddScoped<ContentFeed>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, GetPageTool>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, ListNewsTool>();
+        services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, DraftNewsTool>();
         services.AddScoped<ContentTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<ContentTaskSource>());
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, ContentTaskSource>("content.notify_review");

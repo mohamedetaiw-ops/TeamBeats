@@ -196,6 +196,139 @@ public sealed class PublicMcpTests(TenantWorld world)
         Assert.Equal("tool.denied", Error(await CallAsync(t, client.Token, "get_policy", new { id = Guid.NewGuid() })));
     }
 
+    private Task<HttpResponseMessage> DecideAsync(TestTenant t, string user, Guid action, bool confirm, string? hash) =>
+        t[user].Client.PostAsJsonAsync($"/api/v1/me/ai-actions/{action}/decision", new { confirm, hash });
+
+    private static Guid ActionId(JsonElement call) => call.GetProperty("content").GetProperty("actionId").GetGuid();
+
+    private Task<long> DraftsAsync(TestTenant t, string title) =>
+        world.Database.CountInTenantAsync(t.Id, "select count(*) from content.content_version where variants::text like @title", ("title", $"%\"{title}\"%"));
+
+    [Fact]
+    public async Task A_write_tool_acts_only_once_the_employee_confirms_the_exact_parameters_in_TeamBeats()
+    {
+        var t = await FreshAsync();
+        var client = await ClientAsync(t, "admin", ["content:read", "content:draft"]);
+        // Write tools stay off until the organization turns them on.
+        Assert.DoesNotContain("draft_news", await ToolNamesAsync(t, client.Token));
+        Assert.Equal("tool.unknown", Error(await CallAsync(t, client.Token, "draft_news", new { title = "Early", text = "Body" })));
+        await ExternalPolicyAsync(t, "aip", true, (client.ClientId, "internal"));
+        var listed = (await RpcAsync(t, client.Token, "tools/list")).GetProperty("tools").EnumerateArray().Single(x => x.GetProperty("name").GetString() == "draft_news");
+        Assert.False(listed.GetProperty("annotations").GetProperty("readOnlyHint").GetBoolean());
+
+        // The call creates nothing: it asks the employee, who is notified and sees it in their task inbox.
+        var asked = await CallAsync(t, client.Token, "draft_news", new { title = "Canteen menu", text = "Soup on Monday.\n\nFish on Friday." });
+        Assert.Null(Error(asked));
+        Assert.Equal("pending_confirmation", asked.GetProperty("content").GetProperty("status").GetString());
+        var action = ActionId(asked);
+        Assert.Equal(0, await DraftsAsync(t, "Canteen menu"));
+        Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from notifications.notification where user_id = @u and template_key = 'agents.external_action' and link = @link",
+            ("u", t["admin"].Id), ("link", $"/ai-actions/{action}")));
+        var tasks = await JsonAsync(await t["admin"].Client.GetAsync("/api/v1/tasks"));
+        Assert.Contains($"/ai-actions/{action}", tasks.GetRawText(), StringComparison.Ordinal);
+        // Asking again is the same pending action.
+        Assert.Equal(action, ActionId(await CallAsync(t, client.Token, "draft_news", new { title = "Canteen menu", text = "Soup on Monday.\n\nFish on Friday." })));
+
+        // The card shows the client and every parameter; nobody else sees it.
+        var card = await JsonAsync(await t["admin"].Client.GetAsync($"/api/v1/me/ai-actions/{action}"));
+        Assert.Equal("pending", card.GetProperty("status").GetString());
+        Assert.Equal("Canteen menu", card.GetProperty("parameters").GetProperty("title").GetString());
+        Assert.Equal(HttpStatusCode.NotFound, (await t["gia"].Client.GetAsync($"/api/v1/me/ai-actions/{action}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await DecideAsync(t, "gia", action, true, card.GetProperty("hash").GetString())).StatusCode);
+        Assert.Single((await JsonAsync(await t["admin"].Client.GetAsync("/api/v1/me/ai-actions"))).GetProperty("items").EnumerateArray());
+
+        // Confirming needs the hash of what the card shows, then runs exactly that, once.
+        Assert.Equal(HttpStatusCode.Conflict, (await DecideAsync(t, "admin", action, true, "0000")).StatusCode);
+        var done = await JsonAsync(await DecideAsync(t, "admin", action, true, card.GetProperty("hash").GetString()));
+        Assert.Equal("confirmed", done.GetProperty("status").GetString());
+        Assert.Equal("draft", done.GetProperty("result").GetProperty("status").GetString());
+        Assert.Equal(1, await DraftsAsync(t, "Canteen menu"));
+        Assert.Equal(HttpStatusCode.Conflict, (await DecideAsync(t, "admin", action, true, card.GetProperty("hash").GetString())).StatusCode);
+        Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from notifications.notification where user_id = @u and template_key = 'agents.external_action' and read_at is null", ("u", t["admin"].Id)));
+        var result = await CallAsync(t, client.Token, "draft_news", new { title = "Canteen menu", text = "Soup on Monday.\n\nFish on Friday." });
+        Assert.Equal(done.GetProperty("result").GetProperty("id").GetGuid(), result.GetProperty("content").GetProperty("id").GetGuid());
+        Assert.Equal(1, await DraftsAsync(t, "Canteen menu"));
+        Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from agents.external_call where app_id = @a and tool = 'draft_news' and decision = 'confirmed' and parameter_hash = @h",
+            ("a", client.AppId), ("h", card.GetProperty("hash").GetString()!)));
+
+        // Rejected: the client is told once, and asking again asks the employee again.
+        var other = new { title = "Parking", text = "Level 2 is closed." };
+        var second = ActionId(await CallAsync(t, client.Token, "draft_news", other));
+        await JsonAsync(await DecideAsync(t, "admin", second, false, null));
+        Assert.Equal("tool.rejected", Error(await CallAsync(t, client.Token, "draft_news", other)));
+        Assert.NotEqual(second, ActionId(await CallAsync(t, client.Token, "draft_news", other)));
+        Assert.Equal(0, await DraftsAsync(t, "Parking"));
+    }
+
+    [Fact]
+    public async Task A_pending_action_expires_after_15_minutes_and_the_checks_run_again_when_confirmed()
+    {
+        var t = await FreshAsync();
+        var client = await ClientAsync(t, "admin", ["content:draft"]);
+        await ExternalPolicyAsync(t, "aip", true, (client.ClientId, "internal"));
+        var late = new { title = "Late", text = "Too late." };
+        var action = ActionId(await CallAsync(t, client.Token, "draft_news", late));
+        var expires = (await JsonAsync(await t["admin"].Client.GetAsync($"/api/v1/me/ai-actions/{action}"))).GetProperty("expiresAt").GetDateTimeOffset();
+        var created = (await JsonAsync(await t["admin"].Client.GetAsync($"/api/v1/me/ai-actions/{action}"))).GetProperty("createdAt").GetDateTimeOffset();
+        Assert.Equal(TimeSpan.FromMinutes(15), expires - created);
+        await world.Database.OwnerExecAsync(
+            "select set_config('app.tenant_id', @t::text, false); update agents.external_action set expires_at = now() - interval '1 minute' where id = @id",
+            ("t", t.Id), ("id", action));
+        var card = await JsonAsync(await t["admin"].Client.GetAsync($"/api/v1/me/ai-actions/{action}"));
+        Assert.Equal("expired", card.GetProperty("status").GetString());
+        Assert.Equal(HttpStatusCode.Conflict, (await DecideAsync(t, "admin", action, true, card.GetProperty("hash").GetString())).StatusCode);
+        Assert.Equal("tool.confirmation_expired", Error(await CallAsync(t, client.Token, "draft_news", late)));
+        Assert.Equal(0, await DraftsAsync(t, "Late"));
+
+        // The kill switch between the call and the confirmation stops the action.
+        var held = new { title = "Held", text = "Wait." };
+        var next = ActionId(await CallAsync(t, client.Token, "draft_news", held));
+        var hash = (await JsonAsync(await t["admin"].Client.GetAsync($"/api/v1/me/ai-actions/{next}"))).GetProperty("hash").GetString();
+        await JsonAsync(await t["aip"].Client.PutAsJsonAsync("/api/v1/agents/kill-switch", new { active = true, confirmation = $"{t.Key} holding", reason = "Leak" }));
+        var failed = await JsonAsync(await DecideAsync(t, "admin", next, true, hash));
+        Assert.Equal("failed", failed.GetProperty("status").GetString());
+        Assert.Equal("external.kill_switch", failed.GetProperty("reason").GetString());
+        Assert.Equal(0, await DraftsAsync(t, "Held"));
+    }
+
+    [Fact]
+    public async Task A_confirmed_service_request_is_submitted_in_the_employees_name()
+    {
+        var t = await FreshAsync();
+        var admin = t["admin"].Client;
+        var created = await JsonAsync(await admin.PostAsJsonAsync("/api/v1/services/admin", new
+        {
+            kind = "form", names = new Dictionary<string, string> { ["en"] = "Business cards", ["ar"] = "بطاقات" },
+        }), HttpStatusCode.Created);
+        var service = created.GetProperty("service").GetProperty("id").GetGuid();
+        await JsonAsync(await admin.PutAsJsonAsync($"/api/v1/services/admin/{service}/draft", new
+        {
+            form = new { fields = new object[] { new { key = "boxes", type = "number", labels = new Dictionary<string, string> { ["en"] = "Boxes", ["ar"] = "العلب" }, required = true } } },
+        }));
+        await JsonAsync(await admin.PostAsJsonAsync($"/api/v1/services/admin/{service}/publish", new { }));
+        var client = await ClientAsync(t, "gia", ["services:read", "requests:submit"]);
+        await ExternalPolicyAsync(t, "aip", true, (client.ClientId, "internal"));
+
+        var args = new { serviceId = service, fields = new[] { new { key = "boxes", value = "3" } } };
+        var action = ActionId(await CallAsync(t, client.Token, "submit_service_request", args));
+        Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from services.request where requester_user_id = @u", ("u", t["gia"].Id)));
+        var hash = (await JsonAsync(await t["gia"].Client.GetAsync($"/api/v1/me/ai-actions/{action}"))).GetProperty("hash").GetString();
+        var done = await JsonAsync(await DecideAsync(t, "gia", action, true, hash));
+        Assert.Equal("confirmed", done.GetProperty("status").GetString());
+        Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from services.request where requester_user_id = @u and service_id = @s and requester_app_id is null", ("u", t["gia"].Id), ("s", service)));
+
+        // A form that does not validate is not submitted: the action fails and the client is told once.
+        var bad = ActionId(await CallAsync(t, client.Token, "submit_service_request", new { serviceId = service }));
+        var badHash = (await JsonAsync(await t["gia"].Client.GetAsync($"/api/v1/me/ai-actions/{bad}"))).GetProperty("hash").GetString();
+        Assert.Equal("failed", (await JsonAsync(await DecideAsync(t, "gia", bad, true, badHash))).GetProperty("status").GetString());
+        Assert.Equal("tool.invalid_arguments", Error(await CallAsync(t, client.Token, "submit_service_request", new { serviceId = service })));
+        Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id, "select count(*) from services.request where requester_user_id = @u", ("u", t["gia"].Id)));
+    }
+
     [Fact]
     public async Task The_employees_own_rights_bound_what_the_client_reads()
     {

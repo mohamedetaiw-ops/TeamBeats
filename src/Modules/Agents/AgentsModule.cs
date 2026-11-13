@@ -29,6 +29,8 @@ public static class AgentsModule
         services.AddScoped<Contracts.IAgentTool, AskTeamBeatsTool>();
         services.AddScoped<ExternalToolGateway>();
         services.AddScoped<Contracts.IExternalToolGateway>(sp => sp.GetRequiredService<ExternalToolGateway>());
+        services.AddScoped<ExternalActions>();
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource, ExternalActionTasks>();
         services.AddScoped<ToolRegistry>();
         services.AddScoped<AgentPolicyService>();
         services.AddScoped<AgentRegistry>();
@@ -140,6 +142,17 @@ public static class AgentsModule
         root.MapPut("/settings", async (AssistantSettingsRequest request, AssistantHistory history, IDbSession session, CancellationToken ct) =>
         {
             var view = await history.ChangeSettingsAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // Actions an external AI client asked for and the employee confirms or rejects inside TeamBeats (spec 035 FR-022).
+        var actions = app.MapGroup("/api/v1/me/ai-actions").RequireTenantUser().WithTags("Agents");
+        actions.MapGet("/", async (ExternalActions external, CancellationToken ct) => Results.Ok(new { items = await external.PendingAsync(ct) }));
+        actions.MapGet("/{id:guid}", async (Guid id, ExternalActions external, CancellationToken ct) => Results.Ok(await external.GetAsync(id, ct)));
+        actions.MapPost("/{id:guid}/decision", async (Guid id, ExternalActionDecision decision, ExternalActions external, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await external.DecideAsync(id, decision, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

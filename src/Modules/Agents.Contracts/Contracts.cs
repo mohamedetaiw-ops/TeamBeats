@@ -293,7 +293,7 @@ public static class AgentRiskClasses
 /// An external AI client calling TeamBeats tools through the MCP server of spec 035 (spec 027 FR-025): the MCP client
 /// app, its client ID, and the employee it acts for, whose authorization every tool call runs under.
 /// </summary>
-public sealed record ExternalCaller(Guid AppId, string ClientId, Guid UserId);
+public sealed record ExternalCaller(Guid AppId, string ClientId, Guid UserId, string AppName = "");
 
 /// <summary>A tool as an external AI client sees it: its name, version, what it changes, what it does and its parameter schema.</summary>
 public sealed record ExternalTool(string Name, int Version, string SideEffect, string Description, System.Text.Json.JsonElement Parameters);
@@ -335,6 +335,12 @@ public static class ExternalRefusals
     public const string ClassificationBlocked = "tool.classification_blocked";
     public const string Timeout = "tool.timeout";
     public const string RateLimited = "tool.rate_limited";
+
+    /// <summary>The employee rejected the action inside TeamBeats (spec 035 US3 scenario 5).</summary>
+    public const string Rejected = "tool.rejected";
+
+    /// <summary>The employee did not confirm the action within 15 minutes (spec 035 US3 scenario 6).</summary>
+    public const string ConfirmationExpired = "tool.confirmation_expired";
 }
 
 /// <summary>Small helpers for module tools: parameter schemas, reading arguments the gateway already checked, and the JSON of results.</summary>
