@@ -4493,7 +4493,23 @@
       "saved": "Policy saved.",
       "failed": "Something went wrong. Try again.",
       "saving": "Saving…",
-      "save": "Save policy"
+      "save": "Save policy",
+      "external": {
+        "heading": "External AI clients",
+        "intro": "AI apps such as desktop assistants reach TeamBeats through its MCP server, acting for an employee with that employee's rights. Only the clients listed here can sign in, and nothing above a client's classification limit is sent to it.",
+        "enabled": "Allow external AI clients",
+        "writeTools": "Allow actions that employees confirm in TeamBeats (submit requests, draft news)",
+        "clients": "Allowed clients",
+        "clientId": "Client ID",
+        "cap": "Highest classification sent",
+        "actions": "Actions",
+        "capFor": "Highest classification sent to {client}",
+        "remove": "Remove {client}",
+        "none": "No external AI client is allowed yet.",
+        "newClient": "Client ID to allow",
+        "newClientHint": "Copy the client ID from the MCP client app under API access.",
+        "add": "Add client"
+      }
     },
     "killSwitch": {
       "title": "Kill switch",

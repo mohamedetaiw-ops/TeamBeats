@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using ModelContextProtocol;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using TeamBeats.Entitlements.Contracts;
@@ -39,7 +40,10 @@ public static class McpEndpoint
             })
             .WithHttpTransport(o => o.Stateless = true)
             .WithListToolsHandler((request, ct) => ListAsync(Http(request.Services), ct))
-            .WithCallToolHandler((request, ct) => CallAsync(Http(request.Services), request.Params, ct));
+            .WithCallToolHandler((request, ct) => CallAsync(Http(request.Services), request.Params, ct))
+            .WithListResourceTemplatesHandler((request, ct) => TemplatesAsync(Http(request.Services), ct))
+            .WithListResourcesHandler((request, ct) => ResourcesAsync(Http(request.Services), ct))
+            .WithReadResourceHandler((request, ct) => ReadAsync(Http(request.Services), request.Params?.Uri, ct));
         return services;
     }
 
@@ -82,10 +86,18 @@ public static class McpEndpoint
     /// <summary>The employee and MCP client of the call, and the tools the token's scopes cover under the tenant's package.</summary>
     private static async Task<(ExternalCaller Caller, IReadOnlySet<string> Scoped)> CallerAsync(HttpContext http, CancellationToken ct)
     {
+        var (caller, tools, _) = await ScopedAsync(http, ct);
+        return (caller, tools);
+    }
+
+    /// <summary>As <see cref="CallerAsync"/>, with the resource kinds the scopes cover as well.</summary>
+    private static async Task<(ExternalCaller Caller, IReadOnlySet<string> Tools, IReadOnlySet<string> Resources)> ScopedAsync(HttpContext http, CancellationToken ct)
+    {
         var caller = http.Features.Get<PublicCaller>() ?? throw new InvalidOperationException("The MCP server runs behind the bearer pipeline.");
         var app = http.Features.Get<AppRecord>()!;
         var entitlements = http.RequestServices.GetRequiredService<IEntitlementService>();
-        var scoped = new HashSet<string>(StringComparer.Ordinal);
+        var tools = new HashSet<string>(StringComparer.Ordinal);
+        var resources = new HashSet<string>(StringComparer.Ordinal);
         foreach (var scope in caller.Scopes.Select(ScopeCatalogue.Find).Where(s => s is not null))
         {
             var enabled = true;
@@ -95,10 +107,84 @@ public static class McpEndpoint
             }
             if (enabled)
             {
-                scoped.UnionWith(scope.Tools ?? []);
+                tools.UnionWith(scope.Tools ?? []);
+                resources.UnionWith(scope.Resources ?? []);
             }
         }
-        return (new ExternalCaller(app.Id, app.ClientId, caller.UserId!.Value, app.Name), scoped);
+        return (new ExternalCaller(app.Id, app.ClientId, caller.UserId!.Value, app.Name), tools, resources);
+    }
+
+    /// <summary>The resource kinds the caller may read now: covered by a scope and with their reader offered by the gateway.</summary>
+    private static async Task<(ExternalCaller Caller, IReadOnlySet<string> Readers, IReadOnlyList<string> Kinds)> ReadableAsync(HttpContext http, CancellationToken ct)
+    {
+        var (caller, _, resources) = await ScopedAsync(http, ct);
+        var readers = resources.Select(k => McpResources.Readers[k]).ToHashSet(StringComparer.Ordinal);
+        var offered = (await http.RequestServices.GetRequiredService<IExternalToolGateway>().ToolsAsync(caller, readers, ct)).Select(t => t.Name).ToHashSet(StringComparer.Ordinal);
+        return (caller, readers, resources.Where(k => offered.Contains(McpResources.Readers[k])).Order(StringComparer.Ordinal).ToList());
+    }
+
+    private static readonly IReadOnlyDictionary<string, string> Descriptions = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        [McpResources.Pages] = "One TeamBeats page, news item or announcement the employee may read, by its ID, as data with its source and classification.",
+        [McpResources.Documents] = "One TeamBeats document the employee may read, by its ID, with its current version and metadata.",
+        [McpResources.Policies] = "One TeamBeats policy the employee may read, by its ID, with its current published text.",
+        [McpResources.People] = "One person's TeamBeats directory profile, by their ID, with only the fields shown to the employee.",
+    };
+
+    internal static async ValueTask<ListResourceTemplatesResult> TemplatesAsync(HttpContext http, CancellationToken ct)
+    {
+        var (_, _, kinds) = await ReadableAsync(http, ct);
+        return new ListResourceTemplatesResult
+        {
+            ResourceTemplates = kinds.Select(k => new ResourceTemplate
+            {
+                UriTemplate = $"{McpResources.Scheme}://{k}/{{id}}", Name = k, MimeType = "application/json",
+                Description = Descriptions[k],
+            }).ToList(),
+        };
+    }
+
+    /// <summary>
+    /// The resources listed for the client: the employee's news feed as pages, within the same filters as the tools.
+    /// Documents, policies and people are read by URI from the templates, as they are found through search.
+    /// </summary>
+    internal static async ValueTask<ListResourcesResult> ResourcesAsync(HttpContext http, CancellationToken ct)
+    {
+        var (caller, scoped) = await CallerAsync(http, ct);
+        var (_, _, kinds) = await ReadableAsync(http, ct);
+        if (!kinds.Contains(McpResources.Pages) || !scoped.Contains("list_news"))
+        {
+            return new ListResourcesResult { Resources = [] };
+        }
+        var outcome = await http.RequestServices.GetRequiredService<IExternalToolGateway>().CallAsync(caller, scoped, "list_news",
+            JsonSerializer.SerializeToElement(new { limit = 50 }), ct);
+        await http.RequestServices.GetRequiredService<IDbSession>().CommitAsync(ct);
+        return new ListResourcesResult
+        {
+            Resources = outcome.Ok
+                ? outcome.Sources.Select(s => new Resource { Uri = McpResources.Uri(McpResources.Pages, s.ItemId), Name = s.Title, MimeType = "application/json" }).ToList()
+                : [],
+        };
+    }
+
+    /// <summary>Reads one resource through its reader tool; what the employee may not read, or the cap blocks, is not found.</summary>
+    internal static async ValueTask<ReadResourceResult> ReadAsync(HttpContext http, string? uri, CancellationToken ct)
+    {
+        var (caller, readers, _) = await ReadableAsync(http, ct);
+        if (McpResources.Parse(uri) is not { } parsed)
+        {
+            throw new McpProtocolException("The resource is not known.", McpErrorCode.ResourceNotFound);
+        }
+        var tool = McpResources.Readers[parsed.Kind];
+        var outcome = await http.RequestServices.GetRequiredService<IExternalToolGateway>().CallAsync(caller, readers, tool,
+            JsonSerializer.SerializeToElement(new { id = parsed.Id }), ct);
+        await http.RequestServices.GetRequiredService<IDbSession>().CommitAsync(ct);
+        if (!outcome.Ok)
+        {
+            throw new McpProtocolException($"The resource is not available: {outcome.ErrorKey}.", McpErrorCode.ResourceNotFound);
+        }
+        var text = JsonSerializer.Serialize(Data(http, outcome), ToolArgs.Options);
+        return new ReadResourceResult { Contents = [new TextResourceContents { Uri = uri!, MimeType = "application/json", Text = text }] };
     }
 
     internal static async ValueTask<ListToolsResult> ListAsync(HttpContext http, CancellationToken ct)
@@ -123,8 +209,20 @@ public static class McpEndpoint
         var outcome = await gateway.CallAsync(caller, scoped, request?.Name ?? string.Empty, arguments, ct);
         // The execution record and anything the tool wrote are kept, whatever the client does with the answer.
         await http.RequestServices.GetRequiredService<IDbSession>().CommitAsync(ct);
+        var structured = JsonSerializer.SerializeToElement(Data(http, outcome), ToolArgs.Options);
+        return new CallToolResult
+        {
+            IsError = !outcome.Ok,
+            StructuredContent = structured,
+            Content = [new TextContentBlock { Text = structured.GetRawText() }],
+        };
+    }
+
+    /// <summary>What goes back to the client: the outcome, the content as data and each source with its absolute link and classification.</summary>
+    private static object Data(HttpContext http, ExternalToolOutcome outcome)
+    {
         var origin = OAuthServer.Origin(http.Request);
-        var data = new
+        return new
         {
             ok = outcome.Ok,
             error = outcome.ErrorKey,
@@ -134,16 +232,16 @@ public static class McpEndpoint
             sources = outcome.Sources.Select(s => new
             {
                 source = s.Source, id = s.ItemId, title = s.Title, link = s.Link.StartsWith('/') ? origin + s.Link : s.Link, classification = s.Classification,
+                uri = Kind(s.Source) is { } kind ? McpResources.Uri(kind, s.ItemId) : null,
             }),
         };
-        var structured = JsonSerializer.SerializeToElement(data, ToolArgs.Options);
-        return new CallToolResult
-        {
-            IsError = !outcome.Ok,
-            StructuredContent = structured,
-            Content = [new TextContentBlock { Text = structured.GetRawText() }],
-        };
     }
+
+    /// <summary>The resource kind of a tool source, when there is one.</summary>
+    private static string? Kind(string source) => source switch
+    {
+        "content" => McpResources.Pages, "documents" => McpResources.Documents, "policies" => McpResources.Policies, "people" => McpResources.People, _ => null,
+    };
 
     private static JsonElement? Parse(string content)
     {

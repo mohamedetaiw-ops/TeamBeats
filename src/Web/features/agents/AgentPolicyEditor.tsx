@@ -5,7 +5,16 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { problemMessages } from "@/lib/notifications/types";
-import { AUTONOMY_BUILT, CLASSIFICATIONS, type AgentPolicy, type AgentPolicyView, type ToolView, tenantToolTitle } from "@/lib/agents/types";
+import {
+  AUTONOMY_BUILT,
+  CLASSIFICATIONS,
+  EXTERNAL_CLASSIFICATIONS,
+  type AgentPolicy,
+  type AgentPolicyView,
+  type ExternalAiPolicy,
+  type ToolView,
+  tenantToolTitle,
+} from "@/lib/agents/types";
 
 type Result = { ok: boolean; messages: string[] } | null;
 
@@ -29,6 +38,10 @@ export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView
   const set = (patch: Partial<AgentPolicy>) => setPolicy({ ...policy, ...patch });
   const toolLabel = (name: string) => (ts.has(`toolNames.${name}`) ? ts(`toolNames.${name}`) : (tenantToolTitle(tools, name, locale) ?? name));
   const allowed = policy.allowedTools;
+  const external: ExternalAiPolicy = policy.external ?? { enabled: true, clients: [], allowedTools: null, writeTools: false };
+  const clients = external.clients ?? [];
+  const setExternal = (patch: Partial<ExternalAiPolicy>) => set({ external: { ...external, ...patch } });
+  const [newClient, setNewClient] = useState("");
 
   async function save() {
     setBusy(true);
@@ -161,6 +174,81 @@ export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView
             })}
           </tbody>
         </table>
+      </div>
+      <fieldset className="agents-checks" data-testid="external-ai-policy">
+        <legend>{t("external.heading")}</legend>
+        <p className="field-hint">{t("external.intro")}</p>
+        <label>
+          <input type="checkbox" checked={external.enabled} onChange={(e) => setExternal({ enabled: e.target.checked })} />
+          {t("external.enabled")}
+        </label>
+        <label>
+          <input type="checkbox" checked={external.writeTools} onChange={(e) => setExternal({ writeTools: e.target.checked })} />
+          {t("external.writeTools")}
+        </label>
+      </fieldset>
+      <div className="agents-table">
+        <table data-testid="external-ai-clients">
+          <caption>{t("external.clients")}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{t("external.clientId")}</th>
+              <th scope="col">{t("external.cap")}</th>
+              <th scope="col">{t("external.actions")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {clients.length === 0 ? (
+              <tr>
+                <td colSpan={3}>{t("external.none")}</td>
+              </tr>
+            ) : (
+              clients.map((c) => (
+                <tr key={c.clientId}>
+                  <th scope="row">
+                    <bdi>{c.clientId}</bdi>
+                  </th>
+                  <td>
+                    <select
+                      aria-label={t("external.capFor", { client: c.clientId })}
+                      value={c.maxClassification}
+                      onChange={(e) =>
+                        setExternal({ clients: clients.map((x) => (x.clientId === c.clientId ? { ...x, maxClassification: e.target.value } : x)) })
+                      }
+                    >
+                      {EXTERNAL_CLASSIFICATIONS.map((v) => (
+                        <option key={v} value={v}>
+                          {ts(`classifications.${v}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td>
+                    <Button onClick={() => setExternal({ clients: clients.filter((x) => x.clientId !== c.clientId) })}>
+                      {t("external.remove", { client: c.clientId })}
+                    </Button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div className="agents-row">
+        <div className="field">
+          <label htmlFor={`${ids}-client`}>{t("external.newClient")}</label>
+          <input id={`${ids}-client`} value={newClient} maxLength={200} onChange={(e) => setNewClient(e.target.value)} />
+          <p className="field-hint">{t("external.newClientHint")}</p>
+        </div>
+        <Button
+          disabled={newClient.trim() === "" || clients.some((c) => c.clientId === newClient.trim())}
+          onClick={() => {
+            setExternal({ clients: [...clients, { clientId: newClient.trim(), maxClassification: "internal" }] });
+            setNewClient("");
+          }}
+        >
+          {t("external.add")}
+        </Button>
       </div>
       {result ? (
         <div role={result.ok ? "status" : "alert"} className={result.ok ? "notice" : "notice notice-error"}>

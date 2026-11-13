@@ -41,7 +41,7 @@ export const config = {
   matcher: [
     {
       // API and development routes are answered by the API; static files carry no script of their own.
-      source: "/((?!api|dev|oauth|_next/static|_next/image|favicon.ico).*)",
+      source: "/((?!api|dev|oauth|mcp|_next/static|_next/image|favicon.ico).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

@@ -135,7 +135,19 @@ export type AgentPolicy = {
   maxSteps: number;
   maxRunSeconds: number;
   maxDailyRunsPerAgent: number;
+  external?: ExternalAiPolicy | null;
 };
+
+/** Which external AI clients may reach TeamBeats through MCP, each with the highest classification it may receive (spec 035 FR-020). */
+export type ExternalAiPolicy = {
+  enabled: boolean;
+  clients: { clientId: string; maxClassification: string }[] | null;
+  allowedTools: string[] | null;
+  writeTools: boolean;
+};
+
+/** The classifications an external AI client may be capped at; Restricted never leaves TeamBeats. */
+export const EXTERNAL_CLASSIFICATIONS = ["public", "internal", "confidential"] as const;
 
 export type AgentPolicyView = { version: number; policy: AgentPolicy; updatedAt: string | null };
 
