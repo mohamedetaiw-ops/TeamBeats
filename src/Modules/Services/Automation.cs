@@ -1,3 +1,4 @@
+using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Services.Contracts;
@@ -24,9 +25,28 @@ public sealed record IncidentResolveRequest(string? Resolution, string? Reason);
 /// the service's owning unit) retries, skips with a reason, or cancels.
 /// </summary>
 public sealed class Automation(IDbSession session, ITenantContext context, IAuthorizationService authz, IProcessEngine engine,
-    Requests requests, RouteEnds routeEnds)
-    : IMessageHandler<ProcessInstanceCompleted>, IMessageHandler<ServiceTaskCompleted>, IMessageHandler<ProcessIncidentRaised>
+    Requests requests, RouteEnds routeEnds, IAuditWriter audit)
+    : IMessageHandler<ProcessInstanceCompleted>, IMessageHandler<ServiceTaskCompleted>, IMessageHandler<ProcessIncidentRaised>,
+      IMessageHandler<ProcessActionRequested>
 {
+    /// <summary>
+    /// An approval step whose auto-approve rule matched (FR-015, US5 scenario 4): the system completed it, which Tracking
+    /// shows as "auto-approved by rule" under the step, and the audit records with the rule's step.
+    /// </summary>
+    public async Task HandleAsync(ProcessActionRequested message, CancellationToken ct)
+    {
+        if (message.Action != "auto_approve" || await RequestOfAsync(message.InstanceId, message.DefinitionKey, message.BusinessKey, false, ct) is not { } row)
+        {
+            return;
+        }
+        var stepId = RouteGraph.StepIdOf(message.ElementId);
+        var route = (await Versions.GetAsync(session, row.ServiceId, row.ServiceVersion, ct))?.Route;
+        var step = route?.Graph?.Step(stepId);
+        await requests.EventAsync(row.Id, "auto_approved", step?.Names is { Count: > 0 } names ? ServiceAdmin.Preferred(names) ?? stepId : stepId, null, null, null, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.RequestAutoApproved, "request", row.Id.ToString(), TargetOrgUnitId: row.OrgUnitId,
+            Changes: new { row.Number, step = stepId, rule = step?.AutoApprove }), ct);
+    }
+
     /// <summary>Resolves an open incident of the request (an owner only), and records it on Tracking with the reason.</summary>
     public async Task<RequestDetail> ResolveAsync(Guid requestId, Guid incidentId, IncidentResolveRequest request, CancellationToken ct)
     {

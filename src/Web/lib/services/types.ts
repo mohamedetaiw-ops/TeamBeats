@@ -159,7 +159,11 @@ export type RequestDetail = {
   attachments: AttachmentView[];
   tracking: TrackingEntry[];
   automation: RequestAutomation | null;
+  serviceLevel?: ServiceLevel | null;
 };
+
+/** Where a request stands against its service level target (spec 016 FR-015). */
+export type ServiceLevel = { dueAt: string; state: "on_track" | "at_risk" | "breached" | "met" };
 
 /** States of a connector step of a request (spec 016 US8, spec 017 T009). */
 export const AUTOMATION_STATES = ["running", "succeeded", "business_error", "incident", "skipped", "cancelled"] as const;

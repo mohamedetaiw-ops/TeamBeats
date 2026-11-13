@@ -19,7 +19,7 @@ const decisions = new Set(["approved", "rejected", "returned"]);
 // Tracking events that have a message; any other shows as the API sent it.
 const tracked = new Set(["submitted", "resubmitted", "cancelled", "approved", "rejected", "returned", "completed",
   "automation_done", "automation_failed", "automation_retried", "automation_skipped", "automation_cancelled", "task_done", "task_rejected", "skipped",
-  "triggered", "service_started", "chain_stopped", "requester_left"]);
+  "triggered", "service_started", "chain_stopped", "requester_left", "auto_approved", "sla_at_risk", "sla_breached"]);
 
 /**
  * Details and Tracking of one request (spec 016 FR-005): status, current step and assignees, the submitted values on
@@ -120,6 +120,15 @@ export function RequestDetailView({ detail, meId, units, taskId }: { detail: Req
           ) : null}
           <dt>{t("submitted")}</dt>
           <dd>{r.submittedAt ? when(r.submittedAt) : t("empty")}</dd>
+          {detail.serviceLevel ? (
+            <>
+              <dt>{t("serviceLevel.due")}</dt>
+              <dd data-testid="request-service-level">
+                {when(detail.serviceLevel.dueAt)}{" "}
+                <span className="services-status">{t(`serviceLevel.${detail.serviceLevel.state}`)}</span>
+              </dd>
+            </>
+          ) : null}
         </dl>
         <div className="services-actions">
           {isFiler && r.status === "returned" ? <Link href={`/requests/${r.id}/edit`}>{t("change")}</Link> : null}

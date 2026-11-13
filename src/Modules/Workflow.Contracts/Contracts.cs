@@ -280,7 +280,7 @@ public sealed record UserTaskEscalated(Guid TaskId, Guid InstanceId, string Defi
     : IIntegrationEvent;
 
 /// <summary>
-/// A service task of a process asks for a product action (spec 016 R2: <c>notify</c> or <c>start_service</c>) that the
+/// A service task of a process asks for a product action (spec 016 R2: <c>notify</c>, <c>start_service</c> or <c>auto_approve</c>) that the
 /// module owning the process carries out. The engine moves on at once; <paramref name="ActionId"/> is unique per step
 /// run, so a handler that sees it twice acts once.
 /// </summary>

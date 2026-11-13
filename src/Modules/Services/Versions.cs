@@ -73,11 +73,16 @@ public sealed record ServiceTrigger(string Kind, string? Event = null, Guid? Ser
 
 /// <summary>
 /// A service's route: either the R1 shape (none or one approval step, then the connector steps in order) or a step
-/// graph built in the designer (spec 016 R2, US5 and US8), which runs on the process engine as a compiled model.
+/// graph built in the designer (spec 016 R2, US5 and US8), which runs on the process engine as a compiled model. It also
+/// holds the start triggers (FR-014), whether requests continue after the requester leaves, and the service level target
+/// (FR-015), so each version keeps its own.
 /// </summary>
 public sealed record ServiceRoute(ApprovalStep? Approval = null, IReadOnlyList<ActionStep>? Actions = null, RouteGraph? Graph = null,
-    IReadOnlyList<ServiceTrigger>? Triggers = null, bool ContinueAfterExit = false)
+    IReadOnlyList<ServiceTrigger>? Triggers = null, bool ContinueAfterExit = false, int? ServiceLevelDays = null)
 {
+    /// <summary>The longest service level target, in working days on the requester unit's calendar (FR-015).</summary>
+    public const int MaxServiceLevelDays = 90;
+
     public static readonly ServiceRoute None = new();
 
     public const int MaxActions = 5;

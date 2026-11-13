@@ -93,7 +93,10 @@ public static class ProductActions
     public const string Set = "set";
     public const string StartService = "start_service";
 
-    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Notify, Set, StartService };
+    /// <summary>A step an auto-approve rule completed (spec 016 FR-015): the owning module records it.</summary>
+    public const string AutoApprove = "auto_approve";
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Notify, Set, StartService, AutoApprove };
 }
 
 /// <summary>Multi-instance: one body per item of <see cref="Collection"/>, one after another or all at once.</summary>

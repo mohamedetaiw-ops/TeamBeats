@@ -50,7 +50,9 @@ public static class ServicesModule
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, ServiceTriggers>("services.trigger_membership_changed");
         services.AddMessageHandler<RequestCompleted, ServiceTriggers>("services.trigger_request_completed");
         services.AddMessageHandler<Workflow.Contracts.ProcessActionRequested, ServiceTriggers>("services.start_service");
+        services.AddScoped<ServiceLevels>();
         services.AddScoped<Automation>();
+        services.AddMessageHandler<Workflow.Contracts.ProcessActionRequested, Automation>("services.auto_approved");
         services.AddScoped<RouteActions>();
         services.AddMessageHandler<Workflow.Contracts.ProcessInstanceCompleted, Automation>("services.route_completed");
         services.AddMessageHandler<Workflow.Contracts.ServiceTaskCompleted, Automation>("services.automation_done");

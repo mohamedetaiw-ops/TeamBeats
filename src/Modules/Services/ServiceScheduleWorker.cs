@@ -9,14 +9,14 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Services;
 
 /// <summary>
-/// Every 15 minutes, for every active tenant, in its own scope and transaction: starts the scheduled service requests
-/// that are due (spec 016 FR-014). Runs as the system actor; a request starts once per schedule and period whatever
-/// the number of hosts. Hosted by the worker, and by the development host when <c>Services:Schedules:InProcess</c> is true.
+/// Every 5 minutes, for every active tenant, in its own scope and transaction: starts the scheduled service requests
+/// that are due (spec 016 FR-014) and marks requests at risk of or past their service level target (FR-015). Runs as
+/// the system actor; a request starts once per schedule and period, and each alert goes once, whatever the number of hosts. Hosted by the worker, and by the development host when <c>Services:Schedules:InProcess</c> is true.
 /// </summary>
 public sealed class ServiceScheduleWorker(IServiceScopeFactory scopes, ILogger<ServiceScheduleWorker> logger) : BackgroundService
 {
     public const string InProcessKey = "Services:Schedules:InProcess";
-    public static readonly TimeSpan Tick = TimeSpan.FromMinutes(15);
+    public static readonly TimeSpan Tick = TimeSpan.FromMinutes(5);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -49,6 +49,7 @@ public sealed class ServiceScheduleWorker(IServiceScopeFactory scopes, ILogger<S
                 context.SetTenant(tenant.Id);
                 context.SetActor(ActorType.System, null);
                 await scope.ServiceProvider.GetRequiredService<ServiceTriggers>().RunSchedulesAsync(ct);
+                await scope.ServiceProvider.GetRequiredService<ServiceLevels>().CheckAsync(ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

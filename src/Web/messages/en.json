@@ -2861,6 +2861,13 @@
         "infected": "Blocked: malware found",
         "failed": "Could not be checked"
       },
+      "serviceLevel": {
+        "due": "Due by",
+        "on_track": "On track",
+        "at_risk": "At risk",
+        "breached": "Overdue",
+        "met": "Met"
+      },
       "event": {
         "submitted": "Submitted",
         "resubmitted": "Submitted again",
@@ -2880,7 +2887,10 @@
         "triggered": "Started automatically by a trigger",
         "service_started": "Started another service request",
         "chain_stopped": "Stopped: too many requests started one after another",
-        "requester_left": "Cancelled: the requester left"
+        "requester_left": "Cancelled: the requester left",
+        "auto_approved": "Auto-approved by rule",
+        "sla_at_risk": "At risk of missing its service level",
+        "sla_breached": "Missed its service level"
       },
       "automation": {
         "title": "Automatic steps",

@@ -1559,3 +1559,18 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Schedules run on the system requester's working calendar and start on or after their day in each period. A period whose day came before the version was published is not caught up, so publishing never starts a request for the past.
 - The system requester is an active person of the tenant named on the trigger: required on a schedule, optional on an event trigger, where the person the event is about files it when none is named. A request filed for someone else whose filer leaves keeps running; it is cancelled when the person it is for leaves. A service owner alert for a stopped chain waits for owner notifications (spec 015); the alert is on the request's Tracking and in the audit log.
 - Approved requests whose connector steps still run are not cancelled when the requester leaves; only requests that could still be cancelled by the requester are.
+
+## Service catalogue and workflows (spec 016 R2, slice 3: T022 service levels and auto-approve)
+
+### Built
+- Auto-approve rules (FR-015, US5 scenario 4): an approval step of a step graph route may carry `autoApprove`, all of up to 10 comparisons of form fields with constants. The compiler enters the step through a check: when the rule holds, a product action `auto_approve` completes the step as the system and the route goes on past it; otherwise the step waits for its assignee. Both ways out meet in a merge, so a join after the step counts one path. Services records `auto_approved` under the step on Tracking and audits `request.auto_approved` with the rule. Rules need `workflow.automation`.
+- On a Confidential or Restricted service, saving or publishing a route with an auto-approve rule needs `tenant.settings_manage` tenant-wide (the tenant administrator's sign-off of section 15).
+- Service level targets: `route.serviceLevelDays` (1 to 90 working days) on the version. A request submitted or started by a trigger gets `due_at` (that many working days later on its unit's calendar, at the same time of day) and `at_risk_at` (75% of the way). `ServiceLevels` runs with the schedules every 5 minutes: an open request (submitted, in approval, returned) past `at_risk_at` records `sla_at_risk`, past `due_at` records `sla_breached`, each once. Both alert the people its open steps wait for and the owners (`approval_escalation` category); a breach is also counted for spec 021 as `request.sla_breached` (unkeyed, per service) and audited.
+- The request shows its service level: due time and on track, at risk, breached, or met when it closed in time.
+- Tests: `ServiceLevelTests` (4).
+
+### Smallest safe defaults
+- The target sits on the route of the version (versioned with it) rather than a separate version column, so it travels with the route the designer saves.
+- The clock runs while a request is returned to the requester; pausing it waits for a spec rule.
+- Owners alerted are the people holding `service.manage` tenant-wide who hold it at the owning unit; owners scoped to a unit only see it on the request and in analytics until the authorization service can list holders at a unit.
+- Test runs of a draft show an auto-approve step as not carried out; the designer's test mode (T024) shows the path the rule picks.
