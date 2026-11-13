@@ -65,7 +65,7 @@ public static class ScheduleFrequencies
 /// A start trigger of a service (spec 016 FR-014, US8 scenario 2). A schedule starts one request each period on
 /// <paramref name="Day"/> (weekly: 1 Monday to 7 Sunday; monthly and quarterly: day 1 to 28 of the month, the quarter's
 /// first month) for <paramref name="RequesterId"/>, the service's system requester. An event starts one request for the
-/// person the event is about: <c>membership_changed</c> may name the unit (<paramref name="OrgUnitId"/>), and
+/// person the event is about, filed by <paramref name="RequesterId"/> when set (else the person files it): <c>membership_changed</c> may name the unit (<paramref name="OrgUnitId"/>), and
 /// <c>request_completed</c> names the other service (<paramref name="ServiceId"/>) and may name the end status.
 /// </summary>
 public sealed record ServiceTrigger(string Kind, string? Event = null, Guid? ServiceId = null, string? Status = null, Guid? OrgUnitId = null,

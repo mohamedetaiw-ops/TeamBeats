@@ -50,9 +50,10 @@ public sealed class ServiceTriggers(IDbSession session, Requests requests, IWork
         }
         foreach (var listener in await ListenersAsync(ct))
         {
-            if (listener.Route.Triggers!.Any(t => t.Kind == TriggerKinds.Event && t.Event == @event && matches(t)))
+            // The trigger's system requester files it for the person; without one, the person is the requester.
+            if (listener.Route.Triggers!.FirstOrDefault(t => t.Kind == TriggerKinds.Event && t.Event == @event && matches(t)) is { } trigger)
             {
-                await requests.StartByTriggerAsync(listener.ServiceId, subject, eventKey, depth, @event, ct);
+                await requests.StartByTriggerAsync(listener.ServiceId, trigger.RequesterId ?? subject, subject, eventKey, depth, @event, ct);
             }
         }
     }
@@ -78,7 +79,7 @@ public sealed class ServiceTriggers(IDbSession session, Requests requests, IWork
 
     public async Task HandleAsync(RequestCompleted message, CancellationToken ct)
     {
-        var (subject, depth) = await requests.ChainOfAsync(message.RequestId, ct);
+        var (_, subject, depth) = await requests.ChainOfAsync(message.RequestId, ct);
         if (subject == Guid.Empty)
         {
             return;
@@ -107,7 +108,7 @@ public sealed class ServiceTriggers(IDbSession session, Requests requests, IWork
         {
             return;
         }
-        var (subject, depth) = await requests.ChainOfAsync(source, ct);
+        var (filer, subject, depth) = await requests.ChainOfAsync(source, ct);
         if (subject == Guid.Empty)
         {
             return;
@@ -117,7 +118,7 @@ public sealed class ServiceTriggers(IDbSession session, Requests requests, IWork
             await StopChainAsync(source, message.ElementId, ct);
             return;
         }
-        var started = await requests.StartByTriggerAsync(target, subject, $"action:{message.ActionId:N}", depth + 1, StepTypes.StartService, ct);
+        var started = await requests.StartByTriggerAsync(target, filer, subject, $"action:{message.ActionId:N}", depth + 1, StepTypes.StartService, ct);
         if (started is { } id)
         {
             var number = await session.ScalarAsync<string>("select number from services.request where id = @id", new { id }, ct);
@@ -160,7 +161,7 @@ public sealed class ServiceTriggers(IDbSession session, Requests requests, IWork
                     continue;
                 }
                 var key = $"schedule:{t.Frequency}:{t.Day}:{period.Key}";
-                if (await requests.StartByTriggerAsync(listener.ServiceId, requester, key, 0, TriggerKinds.Schedule, ct) is not null)
+                if (await requests.StartByTriggerAsync(listener.ServiceId, requester, requester, key, 0, TriggerKinds.Schedule, ct) is not null)
                 {
                     started++;
                 }

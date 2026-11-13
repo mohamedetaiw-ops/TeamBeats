@@ -388,7 +388,8 @@ public sealed partial class ServiceAdmin(
             }
             else if (ok)
             {
-                ok = t!.Event is { } e && TriggerEvents.All.Contains(e) && t.Frequency is null && t.Day is null && t.RequesterId is null
+                ok = t!.Event is { } e && TriggerEvents.All.Contains(e) && t.Frequency is null && t.Day is null
+                    && (t.RequesterId is null || t.RequesterId != Guid.Empty && await users.GetAsync(t.RequesterId.Value, ct) is { Status: "active" })
                     && (e == TriggerEvents.RequestCompleted
                         ? t.ServiceId is { } other && other != Guid.Empty && (t.Status is null || RequestStatuses.Closed.Contains(t.Status))
                         : t.ServiceId is null && t.Status is null)

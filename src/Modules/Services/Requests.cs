@@ -785,12 +785,13 @@ public sealed class Requests(
 
     /// <summary>
     /// Starts a request of a published form service from a trigger or a start service step, for <paramref name="subject"/>,
-    /// who becomes its requester as if they had filed it, so it shows in their and their manager's lists. It carries no
+    /// filed by <paramref name="filer"/> (the service's system requester, or the person themselves when the trigger names
+    /// none), so it shows in their and their manager's lists. It carries no
     /// form values: its steps read the request and the requester. One event starts at most one request of a service
     /// (<paramref name="eventKey"/>); returns null when it already started one, or when the service, the plan or the
     /// person cannot take it. Runs as the system actor.
     /// </summary>
-    internal async Task<Guid?> StartByTriggerAsync(Guid serviceId, Guid subject, string eventKey, int depth, string trigger, CancellationToken ct)
+    internal async Task<Guid?> StartByTriggerAsync(Guid serviceId, Guid filer, Guid subject, string eventKey, int depth, string trigger, CancellationToken ct)
     {
         var service = await session.QuerySingleOrDefaultAsync(
             "select kind, status, current_version, classification, owner_org_unit_id from services.service where id = @serviceId",
@@ -798,7 +799,8 @@ public sealed class Requests(
                 Owner: r.Get<Guid?>("owner_org_unit_id")), ct);
         if (service.Kind != ServiceKinds.Form || service.Status != "published" || service.Version is not { } version || depth > MaxChainDepth
             || !await entitlements.IsEnabledAsync(Capabilities.WorkflowAutomation, ct)
-            || await users.GetAsync(subject, ct) is not { Status: "active" })
+            || await users.GetAsync(subject, ct) is not { Status: "active" }
+            || filer != subject && await users.GetAsync(filer, ct) is not { Status: "active" })
         {
             return null;
         }
@@ -809,14 +811,14 @@ public sealed class Requests(
         var unit = await PrimaryUnitAsync(subject, ct);
         var inserted = await session.ScalarAsync<Guid?>(
             """
-            insert into services.request (tenant_id, id, number, service_id, service_version, requester_user_id, requester_org_unit_id,
+            insert into services.request (tenant_id, id, number, service_id, service_version, requester_user_id, on_behalf_of_user_id, requester_org_unit_id,
               status, data, classification, created_at, submitted_at, trigger_event, chain_depth)
-            values (platform.current_tenant_id(), @id, @number, @serviceId, @version, @subject, @unit, @status, '{}'::jsonb, @classification, @now, @now, @eventKey, @depth)
+            values (platform.current_tenant_id(), @id, @number, @serviceId, @version, @filer, @onBehalf, @unit, @status, '{}'::jsonb, @classification, @now, @now, @eventKey, @depth)
             on conflict (tenant_id, service_id, trigger_event) where trigger_event is not null do nothing
             returning id
             """, new
             {
-                id, number, serviceId, version, subject, unit, classification = service.Classification, now, eventKey, depth,
+                id, number, serviceId, version, filer, onBehalf = filer == subject ? (Guid?)null : subject, unit, classification = service.Classification, now, eventKey, depth,
                 status = published.Route.Approval is null && published.Route.Graph is null ? RequestStatuses.Submitted : RequestStatuses.InApproval,
             }, ct);
         if (inserted is null)
@@ -826,21 +828,23 @@ public sealed class Requests(
         await EventAsync(id, "triggered", null, null, null, null, ct);
         if (published.Route.HasSteps)
         {
-            await StartRouteAsync(id, serviceId, unit, subject, subject, 1, ct);
+            await StartRouteAsync(id, serviceId, unit, filer, subject, 1, ct);
         }
         await audit.WriteAsync(new AuditEntry(AuditActions.RequestStartedByTrigger, "request", id.ToString(), TargetOrgUnitId: unit,
-            Changes: new { service = serviceId, version, number, trigger, @event = eventKey, depth, forUser = subject }), ct);
+            Changes: new { service = serviceId, version, number, trigger, @event = eventKey, depth, filer, forUser = subject }), ct);
         await outbox.EnqueueAsync(new RequestSubmitted(id, serviceId, number), ct);
         return id;
     }
 
-    /// <summary>The person a request is for, and how deep it sits in a chain of started requests.</summary>
-    internal Task<(Guid Subject, int Depth)> ChainOfAsync(Guid id, CancellationToken ct) =>
-        session.QuerySingleOrDefaultAsync("select coalesce(on_behalf_of_user_id, requester_user_id), chain_depth from services.request where id = @id",
-            new { id }, r => (r.GetGuid(0), r.GetInt32(1)), ct);
+    /// <summary>Who filed a request, the person it is for, and how deep it sits in a chain of started requests.</summary>
+    internal Task<(Guid Filer, Guid Subject, int Depth)> ChainOfAsync(Guid id, CancellationToken ct) =>
+        session.QuerySingleOrDefaultAsync(
+            "select requester_user_id, coalesce(on_behalf_of_user_id, requester_user_id), chain_depth from services.request where id = @id",
+            new { id }, r => (r.GetGuid(0), r.GetGuid(1), r.GetInt32(2)), ct);
 
     /// <summary>
-    /// The requester left (disabled by directory sync): their open requests are cancelled with reason "requester left",
+    /// The requester left (disabled by directory sync): open requests for them, filed by them or for them by someone
+    /// else, are cancelled with reason "requester left",
     /// except those of services marked "continue after exit" on the version they run on, and those the leaving itself started.
     /// </summary>
     internal async Task<int> CancelForLeaverAsync(Guid user, CancellationToken ct)
@@ -849,7 +853,7 @@ public sealed class Requests(
             """
             select r.id from services.request r
             join services.service_version v on v.service_id = r.service_id and v.version = r.service_version
-            where r.requester_user_id = @user and r.status = any(@statuses)
+            where coalesce(r.on_behalf_of_user_id, r.requester_user_id) = @user and r.status = any(@statuses)
               and coalesce((v.route->>'continueAfterExit')::boolean, false) = false
               and r.trigger_event is distinct from @leaving
             order by r.created_at

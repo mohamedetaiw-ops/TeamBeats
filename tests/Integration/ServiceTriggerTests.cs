@@ -14,7 +14,7 @@ namespace TeamBeats.Integration.Tests;
 
 /// <summary>
 /// Spec 016 R2 T021: start triggers (FR-014, US8 scenario 2). A product event starts one request per event for the
-/// person it is about, in their and their manager's lists; a start service step starts the other service's request;
+/// person it is about, filed by the service's system requester, in their and their manager's lists; a start service step starts the other service's request;
 /// a loop of services stops past chain depth 5 with an alert, and a service cannot start itself; a schedule starts one
 /// request per period for its system requester; a requester who leaves has open requests cancelled unless the service
 /// continues after exit; triggers need workflow.automation, and a requester from another tenant is refused.
@@ -112,7 +112,7 @@ public sealed class ServiceTriggerTests(TenantWorld world)
         var service = await ServiceAsync(t, new
         {
             graph = new { steps = ManagerSteps, links = ManagerLinks },
-            triggers = new[] { new { kind = "event", @event = "user_provisioned" } },
+            triggers = new[] { new { kind = "event", @event = "user_provisioned", requesterId = t["lina"].Id } },
         });
 
         // Delivered twice through the outbox and once more by hand: one request, for Sara, waiting on her manager.
@@ -128,6 +128,7 @@ public sealed class ServiceTriggerTests(TenantWorld world)
         Assert.Equal(1L, await CountAsync(t, service));
         var request = IdOf(Assert.Single(await ListAsync(t["sara"].Client), r => r.GetProperty("serviceId").GetGuid() == service));
         Assert.Contains(await ListAsync(t["mona"].Client, "/api/v1/requests/team"), r => IdOf(r) == request);
+        Assert.Contains(await ListAsync(t["lina"].Client), r => IdOf(r) == request); // Filed by the system requester.
         Assert.Equal("in_approval", await StatusAsync(t["sara"].Client, request));
         Assert.Equal(["triggered"], (await TrackingAsync(t["sara"].Client, request)).Take(1));
         Assert.Equal(1L, await world.Database.TenantScalarAsync<long>(t.Id,
