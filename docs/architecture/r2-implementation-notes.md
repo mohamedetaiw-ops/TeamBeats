@@ -1463,3 +1463,18 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Projects and evidence are kept 7 years (section 7): they are archived, never deleted. An archived project is read-only. A task with evidence cannot be removed.
 - Sharing needs ownership of an active space; there is no step-up, but every change is audited. Evidence downloads are not audited separately.
 - Overdue means a due date before today in UTC. An export file over 200 MB is refused as evidence.
+
+## Security and compliance (spec 026 R2, slice 6: T030 hosting region and break-glass)
+
+### Built
+- Hosting region (FR-008): an installation serves the regions in `Platform:Regions` (`Offered`, and `Default`). Tenant creation takes an optional `region`; none means the default. A region the installation does not host is refused, and a region other than the default needs the new capability `deployment.region_choice` (off on Workplace, on for the rest), checked after the package is assigned so a refusal rolls the whole creation back. The region is stored in `tenancy.tenant_settings.region`, read through `ITenantSettingsReader.GetRegionAsync`, listed for operators at `GET /api/v1/platform/regions`, and shown on the security posture page.
+- Break-glass (FR-020, spec 001): platform operators open a session on one tenant at `POST /api/v1/platform/tenants/{id}/break-glass` with a reason (10 to 500 characters) and a length (15 to 240 minutes, default 60), list sessions, end one, and while it is open reset the tenant's network allow lists (`network-rules:reset`), the recovery the spec names for a lockout. Sessions live in `security.break_glass_session` under the tenant's row-level security, written with the subject tenant in context.
+- Opening, each action and the end are written to the tenant's own audit stream, so they show on the tenant's audit page and go to its SIEM, and to the platform stream with the tenant as subject. Audit actions: `platform.break_glass_opened`, `platform.break_glass_network_reset`, `platform.break_glass_ended`.
+- Opening raises a `platform_access` security alert, so security officers are notified at once. The posture page gains the check "No platform operator access open", which fails while a session is open and links to the audit page filtered to the openings (`/admin/audit?action=...`).
+
+### Smallest safe defaults
+- Default installation: one region, `primary`. Each region is a separate deployment with its own database, object storage, backups and search index; a tenant is only created in an installation that hosts its region, so its data never leaves it. Moving a tenant between regions is not offered.
+- Tenants created before regions read as the default region.
+- Break-glass gives one action for now, the network rule reset; reading tenant content is not offered. The reset clears the allow lists for all pages and for administration pages and keeps the block list; the audit entry holds the values before, so the tenant can restore them.
+- One open session per operator per tenant. A session ends when the operator ends it or when it expires; expiry needs no job, since every action checks the expiry. A closed tenant cannot be opened.
+- The reason the operator types is shown to the tenant in the alert and the audit entry, so operators are told not to put customer data in it.

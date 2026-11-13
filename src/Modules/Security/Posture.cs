@@ -10,13 +10,14 @@ namespace TeamBeats.Modules.Security;
 public sealed record PostureCheck(string Key, string State, string? Link);
 
 /// <summary>Passed checks out of the checks that apply; the spec gives no score formula (plan, Posture).</summary>
-public sealed record PostureView(int Passed, int Total, IReadOnlyList<PostureCheck> Checks);
+public sealed record PostureView(int Passed, int Total, IReadOnlyList<PostureCheck> Checks, string Region = "");
 
 /// <summary>
 /// The security posture page (spec 026 FR-017): the settings that are weaker than the recommended baseline, each with a
 /// link to the page that fixes it. Readable by tenant administrators and security officers.
 /// </summary>
-public sealed class PostureService(IAuthorizationService authz, IEntitlementService entitlements, PolicyStore store, ISignInMethods signIns)
+public sealed class PostureService(IAuthorizationService authz, IEntitlementService entitlements, PolicyStore store, ISignInMethods signIns,
+    BreakGlassService breakGlass, TeamBeats.Modules.Tenancy.Contracts.ITenantSettingsReader settings)
 {
     public const string Passed = "passed";
     public const string Failed = "failed";
@@ -29,6 +30,7 @@ public sealed class PostureService(IAuthorizationService authz, IEntitlementServ
 
     private const string PolicyLink = "/admin/security";
     private const string IdentityLink = "/admin/identity";
+    private const string AuditLink = "/admin/audit?action=" + TeamBeats.Audit.Contracts.AuditActions.BreakGlassOpened;
 
     public async Task<PostureView> GetAsync(CancellationToken ct)
     {
@@ -40,10 +42,13 @@ public sealed class PostureService(IAuthorizationService authz, IEntitlementServ
         var policy = await store.ReadAsync(ct) ?? SecurityPolicySnapshot.Default;
         var scoped = await entitlements.IsEnabledAsync(Capabilities.SecurityIpRulesScoped, ct);
         var methods = await signIns.CurrentAsync(ct);
-        var checks = Evaluate(policy, scoped, methods);
+        var checks = Evaluate(policy, scoped, methods).Append(PlatformAccess(await breakGlass.AnyOpenAsync(ct))).ToList();
         var applicable = checks.Where(c => c.State != Unavailable).ToList();
-        return new PostureView(applicable.Count(c => c.State == Passed), applicable.Count, checks);
+        return new PostureView(applicable.Count(c => c.State == Passed), applicable.Count, checks, await settings.GetRegionAsync(ct));
     }
+
+    /// <summary>Spec 026 FR-020: fails while a platform operator has a break-glass session open on the tenant; links to the audit entries.</summary>
+    public static PostureCheck PlatformAccess(bool open) => new("no_platform_access", open ? Failed : Passed, AuditLink);
 
     public static IReadOnlyList<PostureCheck> Evaluate(SecurityPolicySnapshot policy, bool scopedRules, SignInMethods methods)
     {

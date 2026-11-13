@@ -2248,5 +2248,14 @@
   "conflict.compliance.changed": "غيّر شخص آخر هذا في الأثناء. أعد التحميل لترى التغيير.",
   "conflict.compliance.archived": "هذا المشروع مؤرشف. استعده لإجراء تغييرات.",
   "conflict.compliance.task_has_evidence": "لهذه المهمة أدلة محفوظة مع المشروع، فلا يمكن حذفها.",
-  "authz.denied.compliance_review": "لا يمكن إلا لمسؤول الامتثال وضع علامة المراجعة على الضابط أو إعادة فتح ضابط تمت مراجعته."
+  "authz.denied.compliance_review": "لا يمكن إلا لمسؤول الامتثال وضع علامة المراجعة على الضابط أو إعادة فتح ضابط تمت مراجعته.",
+  "validation.tenant.region_unknown": "هذا التثبيت لا يستضيف تلك المنطقة. اختر إحدى المناطق المتاحة.",
+  "validation.tenant.region_not_in_package": "اختيار منطقة غير المنطقة الافتراضية ليس ضمن هذه الباقة.",
+  "validation.break_glass.reason": "اذكر سببا من 10 إلى 500 حرف. يراه المستأجر.",
+  "validation.break_glass.minutes": "اختر مدة من 15 إلى 240 دقيقة.",
+  "conflict.break_glass.open": "لديك وصول طوارئ مفتوح على هذا المستأجر. أنهه أولا.",
+  "conflict.break_glass.not_open": "جلسة وصول الطوارئ هذه ليست مفتوحة. افتح جلسة جديدة للعمل على المستأجر.",
+  "conflict.break_glass.tenant_closed": "المستأجر مغلق، لذا لا يمكن وصول الطوارئ.",
+  "notifications.template.security.alert.platform_access.title": "فتح مشغل المنصة وصولا إلى مؤسستك",
+  "notifications.template.security.alert.platform_access.body": "فتح مشغل المنصة وصول الطوارئ. السبب وكل إجراء مسجلة في سجل التدقيق. راجع التنبيه في صفحة الأمان."
 }

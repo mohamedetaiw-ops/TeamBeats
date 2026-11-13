@@ -285,6 +285,11 @@ public static class AuditActions
     public const string ComplianceControlChanged = "compliance.control_changed";
     public const string ComplianceControlStatusChanged = "compliance.control_status_changed";
     public const string ComplianceEvidenceAttached = "compliance.evidence_attached";
+
+    // 026 FR-020 and 001: platform operator access through break-glass, written to the tenant stream and the platform stream.
+    public const string BreakGlassOpened = "platform.break_glass_opened";
+    public const string BreakGlassEnded = "platform.break_glass_ended";
+    public const string BreakGlassNetworkReset = "platform.break_glass_network_reset";
     public const string WorkflowDefinitionPublished = "workflow.definition_published";
     public const string WorkflowTaskCompleted = "workflow.task_completed";
     public const string WorkflowInstanceWithdrawn = "workflow.instance_withdrawn";

@@ -68,6 +68,10 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         builder.UseSetting("Tenancy:Hosts:BaseDomain", BaseDomain);
         builder.UseSetting("Storage:Root", StorageRoot);
         builder.UseSetting("Messaging:Transport", "InMemory");
+        // Spec 026 FR-008: the test installation hosts two regions, so region choice and refusal can be tested.
+        builder.UseSetting("Platform:Regions:Offered:0", "uae");
+        builder.UseSetting("Platform:Regions:Offered:1", "ksa");
+        builder.UseSetting("Platform:Regions:Default", "uae");
         builder.UseSetting("Http:TrustForwardedHeaders", "true");
         builder.UseSetting("Integrations:Microsoft365:ClientId", FakeMicrosoftGraph.ClientId);
         builder.UseSetting("Integrations:Microsoft365:ClientSecret", FakeMicrosoftGraph.ClientSecret);

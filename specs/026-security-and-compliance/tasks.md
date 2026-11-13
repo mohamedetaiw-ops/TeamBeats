@@ -54,7 +54,7 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T029 [US7] `Compliance` module, control library, projects, controls, evidence tasks, readiness view, sharing to guest spaces; pages
 
 ## R2 Phase 11: residency and platform access
-- [ ] T030 Region at tenant creation and on the posture page (FR-008); break-glass entries in the tenant's audit view (FR-020)
+- [x] T030 Region at tenant creation and on the posture page (FR-008); break-glass entries in the tenant's audit view (FR-020)
 
 ## R2 final phase
 - [ ] T031 OpenAPI; e2e in English and Arabic with axe; R2 implementation notes; spec evidence

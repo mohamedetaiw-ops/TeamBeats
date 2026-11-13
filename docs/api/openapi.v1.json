@@ -6,6 +6,18 @@
   },
   "servers": [],
   "paths": {
+    "/api/v1/platform/regions": {
+      "get": {
+        "tags": [
+          "Platform: tenants"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/auth/signout": {
       "post": {
         "tags": [
@@ -21564,6 +21576,124 @@
         }
       }
     },
+    "/api/v1/platform/tenants/{tenantId}/break-glass": {
+      "get": {
+        "tags": [
+          "Platform: break-glass"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Platform: break-glass"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreakGlassRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/platform/tenants/{tenantId}/break-glass/{id}:end": {
+      "post": {
+        "tags": [
+          "Platform: break-glass"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/platform/tenants/{tenantId}/break-glass/{id}/network-rules:reset": {
+      "post": {
+        "tags": [
+          "Platform: break-glass"
+        ],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/access-reviews": {
       "get": {
         "tags": [
@@ -24874,6 +25004,30 @@
           }
         }
       },
+      "BreakGlassRequest": {
+        "required": [
+          "reason",
+          "minutes"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "minutes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "BreakRequest": {
         "type": "object",
         "properties": {
@@ -26455,6 +26609,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "region": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -35271,6 +35431,9 @@
   },
   "tags": [
     {
+      "name": "Platform: tenants"
+    },
+    {
       "name": "Auth"
     },
     {
@@ -35311,9 +35474,6 @@
     },
     {
       "name": "Policies"
-    },
-    {
-      "name": "Platform: tenants"
     },
     {
       "name": "Tenant: settings"
@@ -35470,6 +35630,9 @@
     },
     {
       "name": "Security"
+    },
+    {
+      "name": "Platform: break-glass"
     },
     {
       "name": "Access reviews"

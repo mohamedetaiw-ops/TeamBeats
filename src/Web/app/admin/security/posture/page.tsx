@@ -7,7 +7,7 @@ import { SecurityTabs } from "@/features/security/SecurityTabs";
 import { securitySection } from "@/features/security/guard";
 import "@/features/security/security.css";
 
-const CHECKS = ["sso_configured", "mfa_required", "ip_rules", "admin_area_rule", "step_up_window", "idle_timeout", "absolute_timeout", "dev_sign_in_absent"];
+const CHECKS = ["sso_configured", "mfa_required", "ip_rules", "admin_area_rule", "step_up_window", "idle_timeout", "absolute_timeout", "dev_sign_in_absent", "no_platform_access"];
 
 /** Security posture (spec 026 FR-017, T016): settings weaker than the recommended baseline, each with a way to fix it. */
 export default async function SecurityPosturePage() {
@@ -21,6 +21,11 @@ export default async function SecurityPosturePage() {
       <h1>{t("title")}</h1>
       <SecurityTabs current="posture" openAlerts={section.badge} />
       <p className="notice">{t("summary", { passed: posture.data.passed, total: posture.data.total })}</p>
+      {posture.data.region ? (
+        <p>
+          {t("region", { region: t.has(`regions.${posture.data.region}`) ? t(`regions.${posture.data.region}`) : posture.data.region })}
+        </p>
+      ) : null}
       <ul className="security-list">
         {checks.map((check) => (
           <li key={check.key} className="security-item">
@@ -31,7 +36,7 @@ export default async function SecurityPosturePage() {
               </span>
             </div>
             <p>{t(`checks.${check.key}.why`)}</p>
-            {check.state === "failed" && check.link ? <Link href={check.link}>{t("fix")}</Link> : null}
+            {check.state === "failed" && check.link ? <Link href={check.link}>{t(check.key === "no_platform_access" ? "review" : "fix")}</Link> : null}
           </li>
         ))}
       </ul>

@@ -18,11 +18,14 @@ public sealed record CreateTenantRequest(
     string DefaultLocale,
     IReadOnlyList<string>? EnabledLocales,
     string? TimeZone,
-    IReadOnlyList<string> Admins);
+    IReadOnlyList<string> Admins,
+    string? Region = null);
 
 public sealed record TenantView(Guid Id, string Key, string DisplayName, string Status, DateTimeOffset CreatedAt, DateTimeOffset? DeletionDueAt);
 
 public sealed record StatusChangeRequest(string? Reason);
+
+public sealed record PlatformRegionsView(IReadOnlyList<string> Offered, string Default);
 
 /// <summary>Platform operator use cases for the tenant lifecycle (spec 001 US1, US3).</summary>
 public sealed class PlatformTenants(
@@ -33,7 +36,9 @@ public sealed class PlatformTenants(
     ISessionRevocation sessions,
     IAuditWriter audit,
     IOutbox outbox,
-    IClock clock)
+    IClock clock,
+    IEntitlementService entitlements,
+    IPlatformRegions regions)
 {
     public async Task<TenantView> CreateAsync(CreateTenantRequest request, CancellationToken ct)
     {
@@ -41,6 +46,7 @@ public sealed class PlatformTenants(
         var enabled = request.EnabledLocales is { Count: > 0 } ? request.EnabledLocales : [request.DefaultLocale];
         var timeZone = string.IsNullOrWhiteSpace(request.TimeZone) ? "UTC" : request.TimeZone;
         var admins = (request.Admins ?? []).Select(TenantRules.NormalizeEmail).Distinct().ToList();
+        var region = string.IsNullOrWhiteSpace(request.Region) ? regions.Default : request.Region.Trim().ToLowerInvariant();
 
         var errors = new ValidationErrors();
         TenantRules.ValidateKey(key, errors);
@@ -57,6 +63,10 @@ public sealed class PlatformTenants(
         if (admins.Any(a => !TenantRules.LooksLikeEmail(a)))
         {
             errors.Add("admins", "validation.email");
+        }
+        if (!regions.Offered.Contains(region))
+        {
+            errors.Add("region", "validation.tenant.region_unknown");
         }
         errors.ThrowIfAny();
 
@@ -76,9 +86,9 @@ public sealed class PlatformTenants(
         context.SetTenant(id);
         await session.ExecAsync(
             """
-            insert into tenancy.tenant_settings (tenant_id, default_locale, enabled_locales, time_zone)
-            values (@id, @locale, @enabled, @tz)
-            """, new { id, locale = request.DefaultLocale, enabled = enabled.ToArray(), tz = timeZone }, ct);
+            insert into tenancy.tenant_settings (tenant_id, default_locale, enabled_locales, time_zone, region)
+            values (@id, @locale, @enabled, @tz, @region)
+            """, new { id, locale = request.DefaultLocale, enabled = enabled.ToArray(), tz = timeZone, region }, ct);
         await session.ExecAsync("insert into tenancy.hierarchy_version (tenant_id, version) values (@id, 1)", new { id }, ct);
         foreach (var type in MembershipTypes.All)
         {
@@ -89,6 +99,13 @@ public sealed class PlatformTenants(
 
         await authz.SeedTenantRolesAsync(ct);
         await subscriptions.AssignInitialPackageAsync(request.PackageKey, ct);
+
+        // Spec 026 section 9: a region other than the platform default needs the package capability. Throwing here rolls
+        // the whole creation back, since nothing is committed yet.
+        if (region != regions.Default && !await entitlements.IsEnabledAsync(Capabilities.DeploymentRegionChoice, ct))
+        {
+            throw AppException.Validation("region", "validation.tenant.region_not_in_package");
+        }
 
         foreach (var email in admins)
         {
@@ -102,7 +119,7 @@ public sealed class PlatformTenants(
                 Changes: new { status = "pending" }), ct);
         }
 
-        var created = new { key, package = request.PackageKey, defaultLocale = request.DefaultLocale, admins = admins.Count };
+        var created = new { key, package = request.PackageKey, defaultLocale = request.DefaultLocale, admins = admins.Count, region };
         await audit.WriteAsync(new AuditEntry(AuditActions.TenantCreated, "tenant", id.ToString(), Changes: created), ct);
         await audit.WritePlatformAsync(new AuditEntry(AuditActions.TenantCreated, "tenant", id.ToString(), Changes: created), id, ct);
         await outbox.EnqueueAsync(new TenantCreated(id, key, request.PackageKey), ct);

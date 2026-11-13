@@ -814,7 +814,8 @@
         "api_max_apps": "Apps",
         "api_monthly_calls": "API calls each month",
         "security_data_detection": "Sensitive data detection",
-        "compliance_projects": "Compliance projects"
+        "compliance_projects": "Compliance projects",
+        "deployment_region_choice": "Choice of hosting region"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -2411,7 +2412,8 @@
         "siem_failing": "SIEM destination failing",
         "guest_confidential_access": "Guest opened a Confidential item",
         "api_denied_burst": "Many refused calls from an app",
-        "api_volume_spike": "Unusual call volume from an app"
+        "api_volume_spike": "Unusual call volume from an app",
+        "platform_access": "Platform operator opened access"
       },
       "facts": {
         "downloads": "{files, plural, one {# file} other {# files}}, {size} MB, from {libraries, plural, one {# library} other {# libraries}} within one hour.",
@@ -2421,7 +2423,8 @@
         "siemFailing": "Destination: {name}. Events wait and go out once it works again.",
         "guestConfidential": "A guest opened an item classified Confidential. The audit trail shows the item and the space.",
         "apiDenied": "App: {app}. {count, plural, one {# call} other {# calls}} refused within 10 minutes.",
-        "apiVolume": "App: {app}. {calls, plural, one {# call} other {# calls}} in one hour, against an hourly average of {average}."
+        "apiVolume": "App: {app}. {calls, plural, one {# call} other {# calls}} in one hour, against an hourly average of {average}.",
+        "platformAccess": "A platform operator opened break-glass access for {minutes} minutes. Reason given: {reason}"
       },
       "raised": "Raised {at}.",
       "subject": "Person:",
@@ -2506,7 +2509,19 @@
         "dev_sign_in_absent": {
           "title": "No development sign-in",
           "why": "Test sign-in is turned off on this installation. Your provider sets this, not your administrators."
+        },
+        "no_platform_access": {
+          "title": "No platform operator access open",
+          "why": "Platform operators reach your data only through break-glass. Every session, its reason and its actions are in your audit log."
         }
+      },
+      "region": "Hosting region: {region}. Your data at rest, backups and search indexes stay in this region.",
+      "review": "Review platform access",
+      "regions": {
+        "primary": "Primary region",
+        "uae": "United Arab Emirates",
+        "ksa": "Saudi Arabia",
+        "eu": "European Union"
       }
     },
     "siem": {

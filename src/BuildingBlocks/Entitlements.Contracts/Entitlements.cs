@@ -133,6 +133,9 @@ public static class Capabilities
     /// <summary>Compliance projects, the control library and evidence (spec 026 US7).</summary>
     public const string ComplianceProjects = "compliance.projects";
 
+    /// <summary>Choosing a hosting region other than the platform default at tenant creation (spec 026 FR-008).</summary>
+    public const string DeploymentRegionChoice = "deployment.region_choice";
+
     public const string ContentCore = "content.core";
     public const string ContentCriticalAck = "content.critical_ack";
     public const string ContentMultistepApproval = "content.multistep_approval";

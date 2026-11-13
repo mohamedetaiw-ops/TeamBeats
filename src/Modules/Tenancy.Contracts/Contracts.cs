@@ -122,6 +122,17 @@ public interface ITenantSettingsReader
 
     /// <summary>Spec 001 logo and primary color, read once to seed the default brand (spec 033 section 6).</summary>
     Task<TenantBranding> GetBrandingAsync(CancellationToken ct = default);
+
+    /// <summary>The tenant's hosting region (spec 026 FR-008); a tenant created before regions has the platform default.</summary>
+    Task<string> GetRegionAsync(CancellationToken ct = default);
+}
+
+/// <summary>The hosting regions this installation serves (spec 026 FR-008) and the default one.</summary>
+public interface IPlatformRegions
+{
+    IReadOnlyList<string> Offered { get; }
+
+    string Default { get; }
 }
 
 // Events (spec 001 section 12, spec 002 section 12)

@@ -2248,5 +2248,14 @@
   "conflict.compliance.changed": "Someone else changed this in the meantime. Reload to see their change.",
   "conflict.compliance.archived": "This project is archived. Restore it to make changes.",
   "conflict.compliance.task_has_evidence": "This task has evidence, which is kept with the project. It cannot be removed.",
-  "authz.denied.compliance_review": "Only a compliance officer can mark a control reviewed or reopen a reviewed one."
+  "authz.denied.compliance_review": "Only a compliance officer can mark a control reviewed or reopen a reviewed one.",
+  "validation.tenant.region_unknown": "This installation does not host that region. Choose one of the offered regions.",
+  "validation.tenant.region_not_in_package": "Choosing a region other than the default is not part of this package.",
+  "validation.break_glass.reason": "Give a reason of 10 to 500 characters. The tenant sees it.",
+  "validation.break_glass.minutes": "Choose a length from 15 to 240 minutes.",
+  "conflict.break_glass.open": "You already have break-glass access open on this tenant. End it first.",
+  "conflict.break_glass.not_open": "This break-glass session is not open. Open a new one to act on the tenant.",
+  "conflict.break_glass.tenant_closed": "The tenant is closed, so break-glass access is not possible.",
+  "notifications.template.security.alert.platform_access.title": "A platform operator opened access to your organization",
+  "notifications.template.security.alert.platform_access.body": "A platform operator opened break-glass access. The reason and every action are in your audit log. Review the alert on the security page."
 }

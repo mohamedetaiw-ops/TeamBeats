@@ -18,6 +18,7 @@ const KINDS = [
   "guest_confidential_access",
   "api_denied_burst",
   "api_volume_spike",
+  "platform_access",
 ];
 
 /** The facts of an alert, as counts and references only (spec 026 FR-013). */
@@ -59,6 +60,8 @@ function Facts({ alert }: { alert: SecurityAlert }) {
           })}
         </p>
       );
+    case "platform_access":
+      return <p>{t("facts.platformAccess", { minutes: num(f.minutes), reason: typeof f.reason === "string" ? f.reason : "" })}</p>;
     case "siem_failing":
       return <p>{t("facts.siemFailing", { name: typeof f.name === "string" ? f.name : "" })}</p>;
     default:
