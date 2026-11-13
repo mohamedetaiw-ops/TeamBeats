@@ -1537,8 +1537,25 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A group with no members still counts as an assignee, as a permission does: the task waits until someone joins the queue, and does not raise `no_assignee`.
 - A notify step sends the product's own "update on request" message with the request number and link; owner-written message text waits for per-locale notification texts in spec 015.
 - A wait step waits a number of working days on the request unit's calendar; waiting until a date in a form field or for a named event comes with the triggers slice.
-- A start service step is accepted and handed to Services, which starts the other service's request with the triggers slice (T021), where the system requester and the chain depth limit live; until then it records the hand-off and moves on.
+- A start service step hands the start to Services and moves on; slice 2 (T021) starts the other service's request.
 - A business error from a connector or webhook step of a step graph route stops the request at that step ("automation failed") for an owner to retry, skip or cancel; mapping business errors to paths waits for the designer (T024).
 - A set field step writes a route variable that later conditions and inputs cannot yet read, since conditions use form fields only; it is there for connector inputs and analytics once the designer offers variables.
 - R1 routes (one approval and connector steps) keep running in their own shape; the designer (T024) opens one as a graph and saves it as a graph, which is how they convert.
 - Parallel tasks: when one is rejected the route ends as rejected and the other open tasks close.
+
+## Service catalogue and workflows (spec 016 R2, slice 2: T021 triggers)
+
+### Built
+- Start triggers (FR-014) live on the route of a service version as `route.triggers` (at most 10): a schedule (`weekly` on day 1 Monday to 7 Sunday, `monthly` or `quarterly` on day 1 to 28 of the month or the quarter's first month) with its system requester, or a product event: `user_provisioned`, `user_deprovisioned`, `membership_changed` (optionally only for one unit) and `request_completed` of another service (optionally only for one end status). Triggers need `workflow.automation` on save, publish and every run.
+- A trigger starts a request of the current published version for the person the event is about (for a schedule, the system requester); that person is its requester as if they had filed it, so it shows in their list and their manager's team list (US8 scenario 2). Tracking starts with `triggered`, and the audit records `request.started_by_trigger` with the trigger and event.
+- Idempotent per event: each request keeps its event key (`user_provisioned:{user}`, `membership_changed:{user}:{unit}:{change}`, `request_completed:{request}`, `action:{step run}`, `schedule:{frequency}:{day}:{period}`), unique per service, so a repeated event starts nothing more.
+- Start service steps start the other service's request for the same person and record `service_started` with its number on the source request. Requests started by requests (steps or `request_completed` triggers) carry their chain depth; past depth 5 nothing starts, the request that would have gone deeper records `chain_stopped`, and the audit records `request.chain_stopped`. A service never starts itself, by a step or by a trigger on its own completion (`validation.services.route_cycle`); longer loops stop at run time.
+- Requester leaves: on `UserDeprovisioned` the person's open requests (submitted, in approval, returned) are cancelled with `requester_left` on Tracking and their route withdrawn, except on versions marked `continueAfterExit` and the requests that leaving itself started.
+- `ServiceScheduleWorker` runs the schedules every 15 minutes (workers host, or the development host with `Services:Schedules:InProcess`).
+- Tests: `ServiceTriggerTests` (6).
+
+### Smallest safe defaults
+- A triggered request carries no form values: its steps read the request and the requester. Prefilling from the profile and HR runs as the person signed in and is not done for the system actor.
+- Schedules run on the system requester's working calendar and start on or after their day in each period. A period whose day came before the version was published is not caught up, so publishing never starts a request for the past.
+- The "system requester" of an event trigger is the person the event is about; a schedule names an active person of the tenant. A service owner alert for a stopped chain waits for owner notifications (spec 015); the alert is on the request's Tracking and in the audit log.
+- Approved requests whose connector steps still run are not cancelled when the requester leaves; only requests that could still be cancelled by the requester are.

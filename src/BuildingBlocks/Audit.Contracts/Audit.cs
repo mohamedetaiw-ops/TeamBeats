@@ -324,6 +324,10 @@ public static class AuditActions
     public const string DelegationChanged = "delegation.changed";
     public const string DelegationEnded = "delegation.ended";
 
+    // Spec 016 (R2): requests started by triggers and start service steps, and chains stopped past depth 5 (section 13).
+    public const string RequestStartedByTrigger = "request.started_by_trigger";
+    public const string RequestChainStopped = "request.chain_stopped";
+
     // Spec 009 (R1): content lifecycle, sites and settings (section 13). Every lifecycle transition is audited (FR-002).
     public const string ContentCreated = "content.created";
     public const string ContentPublished = "content.published";

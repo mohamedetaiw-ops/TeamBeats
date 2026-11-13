@@ -2876,7 +2876,11 @@
         "automation_cancelled": "Cancelled at an automatic step",
         "task_done": "Task done",
         "task_rejected": "Task rejected",
-        "skipped": "Skipped, its condition did not apply"
+        "skipped": "Skipped, its condition did not apply",
+        "triggered": "Started automatically by a trigger",
+        "service_started": "Started another service request",
+        "chain_stopped": "Stopped: too many requests started one after another",
+        "requester_left": "Cancelled: the requester left"
       },
       "automation": {
         "title": "Automatic steps",

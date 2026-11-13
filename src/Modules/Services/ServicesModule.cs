@@ -44,6 +44,12 @@ public static class ServicesModule
         services.AddMessageHandler<Workflow.Contracts.UserTaskDue, RequestNotifier>("services.remind_task");
         services.AddMessageHandler<Workflow.Contracts.UserTaskEscalated, RequestNotifier>("services.escalate_task");
         services.AddMessageHandler<Workflow.Contracts.ProcessActionRequested, RequestNotifier>("services.notify_step");
+        services.AddScoped<ServiceTriggers>();
+        services.AddMessageHandler<Identity.Contracts.UserProvisioned, ServiceTriggers>("services.trigger_user_provisioned");
+        services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, ServiceTriggers>("services.trigger_user_deprovisioned");
+        services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, ServiceTriggers>("services.trigger_membership_changed");
+        services.AddMessageHandler<RequestCompleted, ServiceTriggers>("services.trigger_request_completed");
+        services.AddMessageHandler<Workflow.Contracts.ProcessActionRequested, ServiceTriggers>("services.start_service");
         services.AddScoped<Automation>();
         services.AddScoped<RouteActions>();
         services.AddMessageHandler<Workflow.Contracts.ProcessInstanceCompleted, Automation>("services.route_completed");
