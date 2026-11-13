@@ -210,7 +210,7 @@ public sealed class Catalogue(
     /// What a card says before the service is opened (FR-019): for each published form service, who approves and the
     /// working days its approval step allows; and the viewer's latest request of each service. One read each.
     /// </summary>
-    private async Task<IReadOnlyList<ServiceCard>> WithDetailsAsync(Guid user, IReadOnlyList<ServiceCard> cards, CancellationToken ct)
+    private async Task<IReadOnlyList<ServiceCard>> WithDetailsAsync(Guid? person, IReadOnlyList<ServiceCard> cards, CancellationToken ct)
     {
         var ids = cards.Select(c => c.Id).ToArray();
         if (ids.Length == 0)
@@ -223,13 +223,16 @@ public sealed class Catalogue(
             join services.service_version v on v.service_id = s.id and v.version = s.current_version
             where s.id = any(@ids) and s.kind = 'form'
             """, new { ids }, r => (Id: r.GetGuid(0), Route: Json<ServiceRoute>(r.GetString(1))), ct)).ToDictionary(x => x.Id, x => x.Route);
-        var latest = (await session.QueryAsync(
-            """
-            select distinct on (service_id) service_id, id, number, status from services.request
-            where service_id = any(@ids) and status <> 'draft' and (requester_user_id = @user or on_behalf_of_user_id = @user)
-            order by service_id, created_at desc, id desc
-            """, new { ids, user }, r => (ServiceId: r.GetGuid(0), Request: new LatestRequest(r.GetGuid(1), r.GetString(2), r.GetString(3))), ct))
-            .ToDictionary(x => x.ServiceId, x => x.Request);
+        // An app calling without a person (spec 035) has no requests of its own.
+        var latest = person is { } user
+            ? (await session.QueryAsync(
+                """
+                select distinct on (service_id) service_id, id, number, status from services.request
+                where service_id = any(@ids) and status <> 'draft' and (requester_user_id = @user or on_behalf_of_user_id = @user)
+                order by service_id, created_at desc, id desc
+                """, new { ids, user }, r => (ServiceId: r.GetGuid(0), Request: new LatestRequest(r.GetGuid(1), r.GetString(2), r.GetString(3))), ct))
+                .ToDictionary(x => x.ServiceId, x => x.Request)
+            : [];
         return cards.Select(c => routes.TryGetValue(c.Id, out var route)
                 ? c with { Approver = ServiceApprovers.Of(route), DueWorkingDays = route.Approval?.DueWorkingDays, Latest = latest.GetValueOrDefault(c.Id) }
                 : c with { Latest = latest.GetValueOrDefault(c.Id) })
@@ -273,7 +276,7 @@ public sealed class Catalogue(
             .Where(s => terms.Count == 0 || Search.Matches(terms, s))
             .OrderBy(s => s.Names.Values.FirstOrDefault(), StringComparer.CurrentCulture)
             .Select(s => Card(s, favourites.Contains(s.Id))).ToList();
-        shown = (await WithDetailsAsync(user, shown, ct)).ToList();
+        shown = (await WithDetailsAsync(person, shown, ct)).ToList();
         var ids = visible.Select(s => s.Id).ToHashSet();
         IReadOnlyList<Guid> recent = person is { } me
             ? (await session.QueryAsync("select service_id from services.recent_use where user_id = @me order by used_at desc limit 50", new { me },
