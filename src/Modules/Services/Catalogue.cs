@@ -69,10 +69,45 @@ public sealed class Catalogue(
     IAuthorizationProvisioning groups,
     IEntitlementService entitlements,
     IEnumerable<IModuleServiceSource> moduleSources,
-    IClock clock)
+    IClock clock,
+    IAuthorizationService authz)
 {
     public const int RecentCount = 8;
     private AudienceFacts? viewer;
+    private AppReach? appReach;
+
+    /// <summary>
+    /// What an application app calling the public API sees of the catalogue (spec 035 section 7): nothing without a request
+    /// role, and with one the services offered to someone in the units the role covers. Groups and membership types say
+    /// who may use a service, so they are checked for the person a request is filed for, never for the app.
+    /// </summary>
+    private sealed record AppReach(OrgCoverage Coverage, IReadOnlySet<Guid> UnitsAndAncestors)
+    {
+        public bool Offers(ServiceAudience a) =>
+            Coverage.Any && (Coverage.WholeTenant || a.OrgUnits is not { Count: > 0 } || a.OrgUnits.Any(UnitsAndAncestors.Contains));
+    }
+
+    private async Task<AppReach> AppReachAsync(CancellationToken ct)
+    {
+        if (appReach is not null)
+        {
+            return appReach;
+        }
+        var coverage = await authz.CoverageAsync(Permissions.ServiceRequestRead, ct);
+        var units = new HashSet<Guid>();
+        if (!coverage.WholeTenant)
+        {
+            foreach (var unit in coverage.Units)
+            {
+                units.UnionWith(await hierarchy.GetAncestorsAndSelfAsync(unit, ct));
+            }
+        }
+        return appReach = new AppReach(coverage, units);
+    }
+
+    /// <summary>Whether the caller, a person or an application app, is offered a service with this audience.</summary>
+    private async Task<bool> OffersAsync(ServiceAudience audience, CancellationToken ct) =>
+        context.ActorType == ActorType.App ? (await AppReachAsync(ct)).Offers(audience) : (await ViewerAsync(ct)).Matches(audience);
 
     internal const string Columns =
         """
@@ -155,13 +190,20 @@ public sealed class Catalogue(
     public async Task<CatalogueView> ListAsync(string? query, Guid? categoryId, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.WorkflowCatalogue, ct);
-        var user = context.RequireUser();
+        var person = context.ActorType == ActorType.App ? (Guid?)null : context.RequireUser();
         await SyncModuleServicesAsync(ct);
-        var facts = await ViewerAsync(ct);
-        var favourites = (await session.QueryAsync("select service_id from services.favourite where user_id = @user", new { user }, r => r.GetGuid(0), ct)).ToHashSet();
+        var favourites = person is { } user
+            ? (await session.QueryAsync("select service_id from services.favourite where user_id = @user", new { user }, r => r.GetGuid(0), ct)).ToHashSet()
+            : [];
         var unavailable = await UnavailableModuleKeysAsync(ct);
-        var visible = (await session.QueryAsync($"select {Columns} from services.service where status = 'published'", null, Read, ct))
-            .Where(s => facts.Matches(s.Audience) && (s.ModuleKey is null || !unavailable.Contains(s.ModuleKey))).ToList();
+        var visible = new List<ServiceRow>();
+        foreach (var s in await session.QueryAsync($"select {Columns} from services.service where status = 'published'", null, Read, ct))
+        {
+            if ((s.ModuleKey is null || !unavailable.Contains(s.ModuleKey)) && await OffersAsync(s.Audience, ct))
+            {
+                visible.Add(s);
+            }
+        }
         var terms = Search.Terms(query);
         var shown = visible
             .Where(s => categoryId is null || s.CategoryId == categoryId)
@@ -169,8 +211,10 @@ public sealed class Catalogue(
             .OrderBy(s => s.Names.Values.FirstOrDefault(), StringComparer.CurrentCulture)
             .Select(s => Card(s, favourites.Contains(s.Id))).ToList();
         var ids = visible.Select(s => s.Id).ToHashSet();
-        var recent = (await session.QueryAsync("select service_id from services.recent_use where user_id = @user order by used_at desc limit 50", new { user },
-            r => r.GetGuid(0), ct)).Where(ids.Contains).Take(RecentCount).ToList();
+        IReadOnlyList<Guid> recent = person is { } me
+            ? (await session.QueryAsync("select service_id from services.recent_use where user_id = @me order by used_at desc limit 50", new { me },
+                r => r.GetGuid(0), ct)).Where(ids.Contains).Take(RecentCount).ToList()
+            : [];
         return new CatalogueView(await CategoriesAsync(ct), shown, recent);
     }
 
@@ -181,7 +225,8 @@ public sealed class Catalogue(
     public async Task<(ServiceRow Row, ServiceCard Card)> VisibleAsync(Guid id, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.WorkflowCatalogue, ct);
-        var user = context.RequireUser();
+        var app = context.ActorType == ActorType.App;
+        var user = app ? Guid.Empty : context.RequireUser();
         await SyncModuleServicesAsync(ct);
         var row = await session.QuerySingleOrDefaultAsync($"select {Columns} from services.service where id = @id and status = 'published'", new { id }, Read, ct)
             ?? throw AppException.NotFound();
@@ -189,11 +234,12 @@ public sealed class Catalogue(
         {
             throw AppException.NotFound();
         }
-        if (!(await ViewerAsync(ct)).Matches(row.Audience))
+        if (!await OffersAsync(row.Audience, ct))
         {
-            throw AppException.Denied("services.not_available");
+            // An app is told nothing about a service outside its reach (spec 035: scopes never grant access on their own).
+            throw app ? AppException.NotFound() : AppException.Denied("services.not_available");
         }
-        var favourite = await session.ScalarAsync<bool>("select exists (select 1 from services.favourite where user_id = @user and service_id = @id)", new { user, id }, ct);
+        var favourite = !app && await session.ScalarAsync<bool>("select exists (select 1 from services.favourite where user_id = @user and service_id = @id)", new { user, id }, ct);
         return (row, Card(row, favourite));
     }
 

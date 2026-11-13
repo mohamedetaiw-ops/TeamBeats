@@ -368,7 +368,7 @@ public static class DocumentsModule
     }
 
     /// <summary>The service enforces the library's limit while streaming; the server-wide cap is lifted to the largest allowed.</summary>
-    private static void LiftBodyLimit(HttpRequest http)
+    internal static void LiftBodyLimit(HttpRequest http)
     {
         if (http.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } size)
         {
@@ -376,7 +376,7 @@ public static class DocumentsModule
         }
     }
 
-    private static IReadOnlyDictionary<string, JsonElement>? ParseMetadata(string? json)
+    internal static IReadOnlyDictionary<string, JsonElement>? ParseMetadata(string? json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {

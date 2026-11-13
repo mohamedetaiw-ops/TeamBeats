@@ -23,16 +23,20 @@ internal static class PublicApiTokens
         return text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone();
     }
 
-    /// <summary>An application app with the scopes and the App reader role at the given scope, and its access token.</summary>
-    public static async Task<string> AppAsync(TenantWorld world, TestTenant t, string[] scopes, string scopeType, Guid? scopeId)
+    /// <summary>An application app with the scopes and a role (by default App reader, none when null) at the given scope, and its access token.</summary>
+    public static async Task<string> AppAsync(TenantWorld world, TestTenant t, string[] scopes, string scopeType, Guid? scopeId,
+        string? role = BuiltInRoles.AppReader)
     {
         var app = await JsonAsync(await t["admin"].Client.PostAsJsonAsync("/api/v1/api-access/apps",
             new { name = "Reader " + Guid.NewGuid().ToString("N")[..4], kind = "application", scopes }), HttpStatusCode.Created);
         var id = app.GetProperty("id").GetString()!;
         var secret = (await JsonAsync(await t["admin"].Client.PostAsJsonAsync($"/api/v1/api-access/apps/{id}/credentials", new { }), HttpStatusCode.Created))
             .GetProperty("secret").GetString()!;
-        await JsonAsync(await t["admin"].Client.PostAsJsonAsync("/api/v1/authz/assignments",
-            new { subjectType = "app", subjectId = Guid.Parse(id), roleKey = BuiltInRoles.AppReader, scopeType, scopeId }), HttpStatusCode.Created);
+        if (role is not null)
+        {
+            await JsonAsync(await t["admin"].Client.PostAsJsonAsync("/api/v1/authz/assignments",
+                new { subjectType = "app", subjectId = Guid.Parse(id), roleKey = role, scopeType, scopeId }), HttpStatusCode.Created);
+        }
         var tokens = await JsonAsync(await world.Factory.TenantClient(t.Key).PostAsync("/oauth/token", new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["grant_type"] = "client_credentials", ["client_id"] = app.GetProperty("clientId").GetString()!, ["client_secret"] = secret, ["scope"] = string.Join(' ', scopes),

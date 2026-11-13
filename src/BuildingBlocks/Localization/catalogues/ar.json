@@ -147,6 +147,7 @@
   "conflict.workflow.incident_resolved": "تمت معالجة هذه الخطوة المتعثرة بالفعل.",
   "conflict.assistant.unavailable": "المساعد ليس ضمن باقة هذه المؤسسة، لذلك لا يمكن تقييمه.",
   "content.site.default_name": "الإنترانت",
+  "documents.app_upload": "يرفع التطبيق المستندات عبر الواجهة البرمجية فقط عندما يعمل نيابة عن شخص سجّل دخوله.",
   "documents.controlled_footer": "{number} | الإصدار {version} | ساري من {date} | غير مضبوط عند الطباعة",
   "experience.component.content_announcement_banner.description": "أشرطة الإعلانات المهمة للشخص الذي يعرض الصفحة",
   "experience.component.content_announcement_banner.name": "شريط الإعلانات",

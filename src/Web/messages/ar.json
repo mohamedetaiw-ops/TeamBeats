@@ -531,7 +531,9 @@
         "facilities_analyst": "محلل المرافق",
         "device_administrator": "مسؤول الأجهزة",
         "kiosk_user": "مستخدم الكشك",
-        "app_reader": "قارئ للتطبيقات"
+        "app_reader": "قارئ للتطبيقات",
+        "app_request_reader": "قارئ الطلبات للتطبيقات",
+        "app_request_filer": "مقدم الطلبات للتطبيقات"
       },
       "tabs": "أقسام الأدوار والوصول",
       "unknownUnit": "وحدة خارج نطاق عرضك",

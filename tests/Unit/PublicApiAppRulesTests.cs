@@ -73,7 +73,7 @@ public sealed class PublicApiAppRulesTests
         Assert.False(Permissions.ExcludedFromApps(Permissions.ContentView));
         Assert.False(Permissions.ExcludedFromApps(Permissions.AuditView));
         var forApps = BuiltInRoleDefinitions.All.Where(r => r.AssignableToApps).ToList();
-        Assert.Equal([BuiltInRoles.AppReader], forApps.Select(r => r.Key));
+        Assert.Equal([BuiltInRoles.AppReader, BuiltInRoles.AppRequestReader, BuiltInRoles.AppRequestFiler], forApps.Select(r => r.Key));
         Assert.All(forApps, r => Assert.DoesNotContain(r.Permissions, Permissions.ExcludedFromApps));
         Assert.All(forApps, r => Assert.DoesNotContain(r.Permissions, Permissions.ResourceOnly.Contains));
     }

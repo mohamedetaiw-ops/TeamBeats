@@ -86,6 +86,9 @@ public static class Permissions
     public const string ServiceManage = "service.manage";
     public const string ServiceRequestOnBehalf = "service.request_on_behalf";
 
+    /// <summary>Spec 035 US1 scenario 4 (R2): read the requests of people in the units held, for apps given a request role.</summary>
+    public const string ServiceRequestRead = "service.request_read";
+
     // Spec 009 (R1): authors write drafts at site scope; critical announcements and content settings need their own keys.
     public const string ContentAuthor = "content.author";
     public const string ContentPublishCritical = "content.publish_critical";
@@ -209,7 +212,7 @@ public static class Permissions
         HrCalendarManage, HrIntegrationManage, HrManage, FinanceProcess,
         PeopleView, PeopleHrView, PeopleManage,
         SecurityManage, SecurityView, SecurityRespond,
-        ServiceManage, ServiceRequestOnBehalf,
+        ServiceManage, ServiceRequestOnBehalf, ServiceRequestRead,
         ContentAuthor, ContentPublishCritical, ContentAdmin,
         DocView, DocContribute, DocManage, KbEdit,
         PolicyAuthor, PolicyManage,
@@ -250,6 +253,12 @@ public static class BuiltInRoles
 
     /// <summary>Spec 035 FR-011: the read-only role an API administrator can give an application app.</summary>
     public const string AppReader = "app_reader";
+
+    /// <summary>Spec 035 US1 scenario 4: an app that reads the service requests of people in its units.</summary>
+    public const string AppRequestReader = "app_request_reader";
+
+    /// <summary>Spec 035 section 6 <c>requests:submit</c>: an app that also files requests for people in its units.</summary>
+    public const string AppRequestFiler = "app_request_filer";
     public const string EngagementAdministrator = "engagement_administrator";
     public const string LearningAdministrator = "learning_administrator";
     public const string SpacesAdministrator = "spaces_administrator";

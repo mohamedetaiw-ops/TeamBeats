@@ -147,6 +147,7 @@
   "conflict.workflow.incident_resolved": "This failed step has already been handled.",
   "conflict.assistant.unavailable": "The assistant is not part of this organization's package, so it cannot be evaluated.",
   "content.site.default_name": "Intranet",
+  "documents.app_upload": "Documents are uploaded through the API by an app acting for a signed-in person.",
   "documents.controlled_footer": "{number} | Version {version} | Effective {date} | Uncontrolled when printed",
   "experience.component.content_announcement_banner.description": "Critical announcement banners for the person viewing the page",
   "experience.component.content_announcement_banner.name": "Announcement banner",
