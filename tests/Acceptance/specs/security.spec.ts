@@ -203,7 +203,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/content/items/${item.id}`);
       await page.getByRole("button", { name: msg(locale, "content.items.publish") }).click();
       await expect(page.getByText(msg(locale, "security.sensitive.foundTitle"))).toBeVisible();
-      await expect(page.getByText(msg(locale, "security.sensitive.types.iban"), { exact: false })).toBeVisible();
+      await expect(page.getByRole("listitem").filter({ hasText: msg(locale, "security.sensitive.types.iban") })).toBeVisible();
       await page.getByLabel(msg(locale, "security.sensitive.reason"), { exact: true }).fill(locale === "ar" ? "بيانات منشورة للمورد" : "The supplier's published details.");
       await page.getByRole("button", { name: msg(locale, "security.sensitive.confirm") }).click();
       await expect(page.getByTestId("item-status")).toContainText(msg(locale, "content.items.status.published"));
