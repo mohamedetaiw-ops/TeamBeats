@@ -459,6 +459,7 @@
   place-items: center;
   padding-block-end: var(--tb-space-xl);
   color: var(--tb-color-text-inverse);
+  background: var(--tb-color-accent-base);
 }
 
 .content-lead-type[data-tone="highlight"] {
