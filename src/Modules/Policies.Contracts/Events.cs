@@ -35,3 +35,17 @@ public interface IPolicyObligations
     /// <summary>Cancels the open obligations of the source (the journey was cancelled).</summary>
     Task CancelAsync(string sourceKey, CancellationToken ct = default);
 }
+
+/// <summary>A policy another module links to: its code and its names by locale.</summary>
+public sealed record PolicyReference(Guid PolicyId, string Code, IReadOnlyDictionary<string, string> Names);
+
+/// <summary>
+/// Policies other modules link to (spec 026 US7: the policies of a compliance control). The caller keeps the policy ID;
+/// readers open the policy through the Policies routes, which check access again. Every call is in the current tenant,
+/// as the current user.
+/// </summary>
+public interface IPolicyReferences
+{
+    /// <summary>The policy when the caller may see it, otherwise null.</summary>
+    Task<PolicyReference?> VisibleAsync(Guid policyId, CancellationToken ct = default);
+}

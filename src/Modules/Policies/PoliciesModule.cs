@@ -28,6 +28,7 @@ public static class PoliciesModule
         services.AddScoped<Content.Contracts.IOfflineSource, PolicyOfflineSource>();
         services.AddScoped<PolicyCompliance>();
         services.AddScoped<Contracts.IPolicyObligations, PolicyObligations>();
+        services.AddScoped<Contracts.IPolicyReferences, PolicyReferences>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource>(sp => sp.GetRequiredService<PolicyCampaigns>());
         services.AddMessageHandler<AttestationNoticeBatch, PolicyCampaigns>("policies.attestation_notice");
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, PolicyCampaigns>("policies.campaign_membership");

@@ -1,0 +1,109 @@
+/* Spec 026 US7 compliance pages. Colors and spacing come from tokens; logical properties keep them right to left in Arabic. */
+.compliance {
+  display: grid;
+  gap: var(--tb-space-lg);
+  min-inline-size: 0;
+}
+
+.compliance-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  min-inline-size: 0;
+}
+
+.compliance-section h2,
+.compliance-section h3 {
+  margin: 0;
+}
+
+.compliance-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  min-inline-size: 0;
+}
+
+.compliance-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compliance-card {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  min-inline-size: 0;
+}
+
+.compliance-card h2,
+.compliance-card h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.compliance-meta {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.compliance-hash {
+  overflow-wrap: anywhere;
+  font-size: var(--tb-font-size-sm);
+}
+
+.compliance-list {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compliance-task {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.compliance-table {
+  overflow-x: auto;
+}
+
+.compliance-table table {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.compliance-table caption {
+  text-align: start;
+  font-weight: var(--tb-font-weight-semibold);
+  padding-block-end: var(--tb-space-xs);
+}
+
+.compliance-table th,
+.compliance-table td {
+  padding: var(--tb-space-xs) var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: middle;
+}
+
+.compliance-table td[data-number] {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

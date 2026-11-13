@@ -1,0 +1,276 @@
+{
+ "key": "soc2",
+ "version": "2017",
+ "names": {
+  "en": "SOC 2 trust services criteria",
+  "ar": "معايير خدمات الثقة SOC 2"
+ },
+ "controls": [
+  {
+   "code": "CC1.1",
+   "titles": {
+    "en": "Commitment to integrity and ethical values",
+    "ar": "الالتزام بالنزاهة والقيم الأخلاقية"
+   }
+  },
+  {
+   "code": "CC1.2",
+   "titles": {
+    "en": "Board independence and oversight",
+    "ar": "استقلالية مجلس الإدارة وإشرافه"
+   }
+  },
+  {
+   "code": "CC1.3",
+   "titles": {
+    "en": "Structures, reporting lines and authorities",
+    "ar": "الهياكل وخطوط التبعية والصلاحيات"
+   }
+  },
+  {
+   "code": "CC1.4",
+   "titles": {
+    "en": "Commitment to competence",
+    "ar": "الالتزام بالكفاءة"
+   }
+  },
+  {
+   "code": "CC1.5",
+   "titles": {
+    "en": "Accountability for internal control",
+    "ar": "المساءلة عن الرقابة الداخلية"
+   }
+  },
+  {
+   "code": "CC2.1",
+   "titles": {
+    "en": "Quality information for internal control",
+    "ar": "معلومات موثوقة للرقابة الداخلية"
+   }
+  },
+  {
+   "code": "CC2.2",
+   "titles": {
+    "en": "Internal communication",
+    "ar": "التواصل الداخلي"
+   }
+  },
+  {
+   "code": "CC2.3",
+   "titles": {
+    "en": "External communication",
+    "ar": "التواصل الخارجي"
+   }
+  },
+  {
+   "code": "CC3.1",
+   "titles": {
+    "en": "Objectives specified clearly",
+    "ar": "تحديد الأهداف بوضوح"
+   }
+  },
+  {
+   "code": "CC3.2",
+   "titles": {
+    "en": "Risk identification and analysis",
+    "ar": "تحديد المخاطر وتحليلها"
+   }
+  },
+  {
+   "code": "CC3.3",
+   "titles": {
+    "en": "Fraud risk assessment",
+    "ar": "تقييم مخاطر الاحتيال"
+   }
+  },
+  {
+   "code": "CC3.4",
+   "titles": {
+    "en": "Assessment of significant changes",
+    "ar": "تقييم التغييرات الجوهرية"
+   }
+  },
+  {
+   "code": "CC4.1",
+   "titles": {
+    "en": "Ongoing and separate evaluations",
+    "ar": "التقييمات المستمرة والمنفصلة"
+   }
+  },
+  {
+   "code": "CC4.2",
+   "titles": {
+    "en": "Communication of control deficiencies",
+    "ar": "الإبلاغ عن أوجه القصور في الضوابط"
+   }
+  },
+  {
+   "code": "CC5.1",
+   "titles": {
+    "en": "Selection and development of control activities",
+    "ar": "اختيار أنشطة الرقابة وتطويرها"
+   }
+  },
+  {
+   "code": "CC5.2",
+   "titles": {
+    "en": "General controls over technology",
+    "ar": "الضوابط العامة على التقنية"
+   }
+  },
+  {
+   "code": "CC5.3",
+   "titles": {
+    "en": "Deployment through policies and procedures",
+    "ar": "التطبيق من خلال السياسات والإجراءات"
+   }
+  },
+  {
+   "code": "CC6.1",
+   "titles": {
+    "en": "Logical access security",
+    "ar": "أمن الوصول المنطقي"
+   }
+  },
+  {
+   "code": "CC6.2",
+   "titles": {
+    "en": "User registration and authorization",
+    "ar": "تسجيل المستخدمين وتفويضهم"
+   }
+  },
+  {
+   "code": "CC6.3",
+   "titles": {
+    "en": "Role-based access changes",
+    "ar": "تغييرات الوصول حسب الدور"
+   }
+  },
+  {
+   "code": "CC6.4",
+   "titles": {
+    "en": "Physical access restriction",
+    "ar": "تقييد الوصول المادي"
+   }
+  },
+  {
+   "code": "CC6.5",
+   "titles": {
+    "en": "Disposal of assets and data",
+    "ar": "التخلص من الأصول والبيانات"
+   }
+  },
+  {
+   "code": "CC6.6",
+   "titles": {
+    "en": "Protection against external threats",
+    "ar": "الحماية من التهديدات الخارجية"
+   }
+  },
+  {
+   "code": "CC6.7",
+   "titles": {
+    "en": "Restriction of data transmission and movement",
+    "ar": "تقييد نقل البيانات وحركتها"
+   }
+  },
+  {
+   "code": "CC6.8",
+   "titles": {
+    "en": "Prevention of unauthorized software",
+    "ar": "منع البرمجيات غير المصرح بها"
+   }
+  },
+  {
+   "code": "CC7.1",
+   "titles": {
+    "en": "Detection of configuration changes and vulnerabilities",
+    "ar": "اكتشاف تغييرات الإعدادات والثغرات"
+   }
+  },
+  {
+   "code": "CC7.2",
+   "titles": {
+    "en": "Monitoring for anomalies",
+    "ar": "مراقبة الأنشطة غير المعتادة"
+   }
+  },
+  {
+   "code": "CC7.3",
+   "titles": {
+    "en": "Evaluation of security events",
+    "ar": "تقييم الأحداث الأمنية"
+   }
+  },
+  {
+   "code": "CC7.4",
+   "titles": {
+    "en": "Incident response",
+    "ar": "الاستجابة للحوادث"
+   }
+  },
+  {
+   "code": "CC7.5",
+   "titles": {
+    "en": "Recovery from incidents",
+    "ar": "التعافي من الحوادث"
+   }
+  },
+  {
+   "code": "CC8.1",
+   "titles": {
+    "en": "Change management",
+    "ar": "إدارة التغيير"
+   }
+  },
+  {
+   "code": "CC9.1",
+   "titles": {
+    "en": "Business disruption risk mitigation",
+    "ar": "الحد من مخاطر تعطل الأعمال"
+   }
+  },
+  {
+   "code": "CC9.2",
+   "titles": {
+    "en": "Vendor and business partner risk",
+    "ar": "مخاطر الموردين وشركاء الأعمال"
+   }
+  },
+  {
+   "code": "A1.1",
+   "titles": {
+    "en": "Capacity planning",
+    "ar": "تخطيط السعة"
+   }
+  },
+  {
+   "code": "A1.2",
+   "titles": {
+    "en": "Environmental protections, backup and recovery",
+    "ar": "الحماية البيئية والنسخ الاحتياطي والاستعادة"
+   }
+  },
+  {
+   "code": "A1.3",
+   "titles": {
+    "en": "Recovery plan testing",
+    "ar": "اختبار خطة الاستعادة"
+   }
+  },
+  {
+   "code": "C1.1",
+   "titles": {
+    "en": "Identification and protection of confidential information",
+    "ar": "تحديد المعلومات السرية وحمايتها"
+   }
+  },
+  {
+   "code": "C1.2",
+   "titles": {
+    "en": "Disposal of confidential information",
+    "ar": "التخلص من المعلومات السرية"
+   }
+  }
+ ]
+}

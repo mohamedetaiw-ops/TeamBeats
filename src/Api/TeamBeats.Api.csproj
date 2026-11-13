@@ -31,6 +31,7 @@
     <ProjectReference Include="../Modules/Engagement/TeamBeats.Modules.Engagement.csproj" />
     <ProjectReference Include="../Modules/Learning/TeamBeats.Modules.Learning.csproj" />
     <ProjectReference Include="../Modules/Spaces/TeamBeats.Modules.Spaces.csproj" />
+    <ProjectReference Include="../Modules/Compliance/TeamBeats.Modules.Compliance.csproj" />
     <ProjectReference Include="../Modules/Booking/TeamBeats.Modules.Booking.csproj" />
     <ProjectReference Include="../Modules/PublicApi/TeamBeats.Modules.PublicApi.csproj" />
     <ProjectReference Include="../Modules/AiGateway/TeamBeats.Modules.AiGateway.csproj" />

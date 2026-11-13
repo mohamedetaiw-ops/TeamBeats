@@ -1,0 +1,213 @@
+{
+ "key": "nca_ecc",
+ "version": "ECC-1:2018",
+ "names": {
+  "en": "NCA Essential Cybersecurity Controls",
+  "ar": "الضوابط الأساسية للأمن السيبراني من الهيئة الوطنية للأمن السيبراني"
+ },
+ "controls": [
+  {
+   "code": "1-1",
+   "titles": {
+    "en": "Cybersecurity strategy",
+    "ar": "استراتيجية الأمن السيبراني"
+   }
+  },
+  {
+   "code": "1-2",
+   "titles": {
+    "en": "Cybersecurity management",
+    "ar": "إدارة الأمن السيبراني"
+   }
+  },
+  {
+   "code": "1-3",
+   "titles": {
+    "en": "Cybersecurity policies and procedures",
+    "ar": "سياسات وإجراءات الأمن السيبراني"
+   }
+  },
+  {
+   "code": "1-4",
+   "titles": {
+    "en": "Cybersecurity roles and responsibilities",
+    "ar": "أدوار ومسؤوليات الأمن السيبراني"
+   }
+  },
+  {
+   "code": "1-5",
+   "titles": {
+    "en": "Cybersecurity risk management",
+    "ar": "إدارة مخاطر الأمن السيبراني"
+   }
+  },
+  {
+   "code": "1-6",
+   "titles": {
+    "en": "Cybersecurity in information technology projects",
+    "ar": "الأمن السيبراني ضمن مشاريع تقنية المعلومات"
+   }
+  },
+  {
+   "code": "1-7",
+   "titles": {
+    "en": "Compliance with cybersecurity standards, laws and regulations",
+    "ar": "الالتزام بتشريعات وتنظيمات ومعايير الأمن السيبراني"
+   }
+  },
+  {
+   "code": "1-8",
+   "titles": {
+    "en": "Periodical cybersecurity review and audit",
+    "ar": "المراجعة والتدقيق الدوري للأمن السيبراني"
+   }
+  },
+  {
+   "code": "1-9",
+   "titles": {
+    "en": "Cybersecurity in human resources",
+    "ar": "الأمن السيبراني المتعلق بالموارد البشرية"
+   }
+  },
+  {
+   "code": "1-10",
+   "titles": {
+    "en": "Cybersecurity awareness and training program",
+    "ar": "برنامج التوعية والتدريب بالأمن السيبراني"
+   }
+  },
+  {
+   "code": "2-1",
+   "titles": {
+    "en": "Asset management",
+    "ar": "إدارة الأصول"
+   }
+  },
+  {
+   "code": "2-2",
+   "titles": {
+    "en": "Identity and access management",
+    "ar": "إدارة هويات الدخول والصلاحيات"
+   }
+  },
+  {
+   "code": "2-3",
+   "titles": {
+    "en": "Information system and processing facilities protection",
+    "ar": "حماية الأنظمة وأجهزة معالجة المعلومات"
+   }
+  },
+  {
+   "code": "2-4",
+   "titles": {
+    "en": "Email protection",
+    "ar": "حماية البريد الإلكتروني"
+   }
+  },
+  {
+   "code": "2-5",
+   "titles": {
+    "en": "Networks security management",
+    "ar": "إدارة أمن الشبكات"
+   }
+  },
+  {
+   "code": "2-6",
+   "titles": {
+    "en": "Mobile devices security",
+    "ar": "أمن الأجهزة المحمولة"
+   }
+  },
+  {
+   "code": "2-7",
+   "titles": {
+    "en": "Data and information protection",
+    "ar": "حماية البيانات والمعلومات"
+   }
+  },
+  {
+   "code": "2-8",
+   "titles": {
+    "en": "Cryptography",
+    "ar": "التشفير"
+   }
+  },
+  {
+   "code": "2-9",
+   "titles": {
+    "en": "Backup and recovery management",
+    "ar": "إدارة النسخ الاحتياطية"
+   }
+  },
+  {
+   "code": "2-10",
+   "titles": {
+    "en": "Vulnerabilities management",
+    "ar": "إدارة الثغرات"
+   }
+  },
+  {
+   "code": "2-11",
+   "titles": {
+    "en": "Penetration testing",
+    "ar": "اختبار الاختراق"
+   }
+  },
+  {
+   "code": "2-12",
+   "titles": {
+    "en": "Cybersecurity event logs and monitoring management",
+    "ar": "إدارة سجلات الأحداث ومراقبة الأمن السيبراني"
+   }
+  },
+  {
+   "code": "2-13",
+   "titles": {
+    "en": "Cybersecurity incident and threat management",
+    "ar": "إدارة حوادث وتهديدات الأمن السيبراني"
+   }
+  },
+  {
+   "code": "2-14",
+   "titles": {
+    "en": "Physical security",
+    "ar": "الأمن المادي"
+   }
+  },
+  {
+   "code": "2-15",
+   "titles": {
+    "en": "Web application security",
+    "ar": "حماية تطبيقات الويب"
+   }
+  },
+  {
+   "code": "3-1",
+   "titles": {
+    "en": "Cybersecurity resilience aspects of business continuity management",
+    "ar": "جوانب صمود الأمن السيبراني في إدارة استمرارية الأعمال"
+   }
+  },
+  {
+   "code": "4-1",
+   "titles": {
+    "en": "Third-party cybersecurity",
+    "ar": "الأمن السيبراني المتعلق بالأطراف الخارجية"
+   }
+  },
+  {
+   "code": "4-2",
+   "titles": {
+    "en": "Cloud computing and hosting cybersecurity",
+    "ar": "الأمن السيبراني المتعلق بالحوسبة السحابية والاستضافة"
+   }
+  },
+  {
+   "code": "5-1",
+   "titles": {
+    "en": "Industrial control systems protection",
+    "ar": "حماية أجهزة وأنظمة التحكم الصناعي"
+   }
+  }
+ ]
+}

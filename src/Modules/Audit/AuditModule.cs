@@ -26,6 +26,7 @@ public static class AuditModule
         services.AddScoped<IAuditWriter, AuditWriter>();
         services.AddScoped<AuditQueries>();
         services.AddScoped<IAuditStream, AuditStream>();
+        services.AddScoped<IAuditExports, AuditExports>();
         services.AddScoped<AuditMaintenance>();
         services.AddMessageHandler<AuditExportRequested, AuditExportHandler>("audit.export");
         return services;

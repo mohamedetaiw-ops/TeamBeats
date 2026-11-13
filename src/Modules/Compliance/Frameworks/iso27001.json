@@ -1,0 +1,661 @@
+{
+ "key": "iso27001",
+ "version": "2022",
+ "names": {
+  "en": "ISO/IEC 27001:2022 Annex A",
+  "ar": "الملحق A من ISO/IEC 27001:2022"
+ },
+ "controls": [
+  {
+   "code": "5.1",
+   "titles": {
+    "en": "Policies for information security",
+    "ar": "سياسات أمن المعلومات"
+   }
+  },
+  {
+   "code": "5.2",
+   "titles": {
+    "en": "Information security roles and responsibilities",
+    "ar": "أدوار ومسؤوليات أمن المعلومات"
+   }
+  },
+  {
+   "code": "5.3",
+   "titles": {
+    "en": "Segregation of duties",
+    "ar": "الفصل بين المهام"
+   }
+  },
+  {
+   "code": "5.4",
+   "titles": {
+    "en": "Management responsibilities",
+    "ar": "مسؤوليات الإدارة"
+   }
+  },
+  {
+   "code": "5.5",
+   "titles": {
+    "en": "Contact with authorities",
+    "ar": "التواصل مع الجهات المختصة"
+   }
+  },
+  {
+   "code": "5.6",
+   "titles": {
+    "en": "Contact with special interest groups",
+    "ar": "التواصل مع مجموعات الاهتمام الخاصة"
+   }
+  },
+  {
+   "code": "5.7",
+   "titles": {
+    "en": "Threat intelligence",
+    "ar": "استخبارات التهديدات"
+   }
+  },
+  {
+   "code": "5.8",
+   "titles": {
+    "en": "Information security in project management",
+    "ar": "أمن المعلومات في إدارة المشاريع"
+   }
+  },
+  {
+   "code": "5.9",
+   "titles": {
+    "en": "Inventory of information and other associated assets",
+    "ar": "جرد المعلومات والأصول المرتبطة بها"
+   }
+  },
+  {
+   "code": "5.10",
+   "titles": {
+    "en": "Acceptable use of information and other associated assets",
+    "ar": "الاستخدام المقبول للمعلومات والأصول المرتبطة بها"
+   }
+  },
+  {
+   "code": "5.11",
+   "titles": {
+    "en": "Return of assets",
+    "ar": "إعادة الأصول"
+   }
+  },
+  {
+   "code": "5.12",
+   "titles": {
+    "en": "Classification of information",
+    "ar": "تصنيف المعلومات"
+   }
+  },
+  {
+   "code": "5.13",
+   "titles": {
+    "en": "Labelling of information",
+    "ar": "وسم المعلومات"
+   }
+  },
+  {
+   "code": "5.14",
+   "titles": {
+    "en": "Information transfer",
+    "ar": "نقل المعلومات"
+   }
+  },
+  {
+   "code": "5.15",
+   "titles": {
+    "en": "Access control",
+    "ar": "التحكم في الوصول"
+   }
+  },
+  {
+   "code": "5.16",
+   "titles": {
+    "en": "Identity management",
+    "ar": "إدارة الهويات"
+   }
+  },
+  {
+   "code": "5.17",
+   "titles": {
+    "en": "Authentication information",
+    "ar": "معلومات المصادقة"
+   }
+  },
+  {
+   "code": "5.18",
+   "titles": {
+    "en": "Access rights",
+    "ar": "صلاحيات الوصول"
+   }
+  },
+  {
+   "code": "5.19",
+   "titles": {
+    "en": "Information security in supplier relationships",
+    "ar": "أمن المعلومات في العلاقات مع الموردين"
+   }
+  },
+  {
+   "code": "5.20",
+   "titles": {
+    "en": "Addressing information security within supplier agreements",
+    "ar": "معالجة أمن المعلومات في اتفاقيات الموردين"
+   }
+  },
+  {
+   "code": "5.21",
+   "titles": {
+    "en": "Managing information security in the ICT supply chain",
+    "ar": "إدارة أمن المعلومات في سلسلة توريد تقنية المعلومات والاتصالات"
+   }
+  },
+  {
+   "code": "5.22",
+   "titles": {
+    "en": "Monitoring, review and change management of supplier services",
+    "ar": "مراقبة خدمات الموردين ومراجعتها وإدارة التغيير فيها"
+   }
+  },
+  {
+   "code": "5.23",
+   "titles": {
+    "en": "Information security for use of cloud services",
+    "ar": "أمن المعلومات عند استخدام الخدمات السحابية"
+   }
+  },
+  {
+   "code": "5.24",
+   "titles": {
+    "en": "Information security incident management planning and preparation",
+    "ar": "التخطيط والاستعداد لإدارة حوادث أمن المعلومات"
+   }
+  },
+  {
+   "code": "5.25",
+   "titles": {
+    "en": "Assessment and decision on information security events",
+    "ar": "تقييم أحداث أمن المعلومات واتخاذ القرار بشأنها"
+   }
+  },
+  {
+   "code": "5.26",
+   "titles": {
+    "en": "Response to information security incidents",
+    "ar": "الاستجابة لحوادث أمن المعلومات"
+   }
+  },
+  {
+   "code": "5.27",
+   "titles": {
+    "en": "Learning from information security incidents",
+    "ar": "التعلم من حوادث أمن المعلومات"
+   }
+  },
+  {
+   "code": "5.28",
+   "titles": {
+    "en": "Collection of evidence",
+    "ar": "جمع الأدلة"
+   }
+  },
+  {
+   "code": "5.29",
+   "titles": {
+    "en": "Information security during disruption",
+    "ar": "أمن المعلومات أثناء التعطل"
+   }
+  },
+  {
+   "code": "5.30",
+   "titles": {
+    "en": "ICT readiness for business continuity",
+    "ar": "جاهزية تقنية المعلومات والاتصالات لاستمرارية الأعمال"
+   }
+  },
+  {
+   "code": "5.31",
+   "titles": {
+    "en": "Legal, statutory, regulatory and contractual requirements",
+    "ar": "المتطلبات القانونية والنظامية والتنظيمية والتعاقدية"
+   }
+  },
+  {
+   "code": "5.32",
+   "titles": {
+    "en": "Intellectual property rights",
+    "ar": "حقوق الملكية الفكرية"
+   }
+  },
+  {
+   "code": "5.33",
+   "titles": {
+    "en": "Protection of records",
+    "ar": "حماية السجلات"
+   }
+  },
+  {
+   "code": "5.34",
+   "titles": {
+    "en": "Privacy and protection of PII",
+    "ar": "الخصوصية وحماية البيانات الشخصية"
+   }
+  },
+  {
+   "code": "5.35",
+   "titles": {
+    "en": "Independent review of information security",
+    "ar": "المراجعة المستقلة لأمن المعلومات"
+   }
+  },
+  {
+   "code": "5.36",
+   "titles": {
+    "en": "Compliance with policies, rules and standards for information security",
+    "ar": "الالتزام بسياسات أمن المعلومات وقواعده ومعاييره"
+   }
+  },
+  {
+   "code": "5.37",
+   "titles": {
+    "en": "Documented operating procedures",
+    "ar": "إجراءات التشغيل الموثقة"
+   }
+  },
+  {
+   "code": "6.1",
+   "titles": {
+    "en": "Screening",
+    "ar": "التحقق من الخلفية"
+   }
+  },
+  {
+   "code": "6.2",
+   "titles": {
+    "en": "Terms and conditions of employment",
+    "ar": "شروط التوظيف وأحكامه"
+   }
+  },
+  {
+   "code": "6.3",
+   "titles": {
+    "en": "Information security awareness, education and training",
+    "ar": "التوعية والتثقيف والتدريب في أمن المعلومات"
+   }
+  },
+  {
+   "code": "6.4",
+   "titles": {
+    "en": "Disciplinary process",
+    "ar": "الإجراءات التأديبية"
+   }
+  },
+  {
+   "code": "6.5",
+   "titles": {
+    "en": "Responsibilities after termination or change of employment",
+    "ar": "المسؤوليات بعد انتهاء التوظيف أو تغييره"
+   }
+  },
+  {
+   "code": "6.6",
+   "titles": {
+    "en": "Confidentiality or non-disclosure agreements",
+    "ar": "اتفاقيات السرية أو عدم الإفصاح"
+   }
+  },
+  {
+   "code": "6.7",
+   "titles": {
+    "en": "Remote working",
+    "ar": "العمل عن بعد"
+   }
+  },
+  {
+   "code": "6.8",
+   "titles": {
+    "en": "Information security event reporting",
+    "ar": "الإبلاغ عن أحداث أمن المعلومات"
+   }
+  },
+  {
+   "code": "7.1",
+   "titles": {
+    "en": "Physical security perimeters",
+    "ar": "محيطات الأمن المادي"
+   }
+  },
+  {
+   "code": "7.2",
+   "titles": {
+    "en": "Physical entry",
+    "ar": "الدخول المادي"
+   }
+  },
+  {
+   "code": "7.3",
+   "titles": {
+    "en": "Securing offices, rooms and facilities",
+    "ar": "تأمين المكاتب والغرف والمرافق"
+   }
+  },
+  {
+   "code": "7.4",
+   "titles": {
+    "en": "Physical security monitoring",
+    "ar": "مراقبة الأمن المادي"
+   }
+  },
+  {
+   "code": "7.5",
+   "titles": {
+    "en": "Protecting against physical and environmental threats",
+    "ar": "الحماية من التهديدات المادية والبيئية"
+   }
+  },
+  {
+   "code": "7.6",
+   "titles": {
+    "en": "Working in secure areas",
+    "ar": "العمل في المناطق الآمنة"
+   }
+  },
+  {
+   "code": "7.7",
+   "titles": {
+    "en": "Clear desk and clear screen",
+    "ar": "المكتب النظيف والشاشة النظيفة"
+   }
+  },
+  {
+   "code": "7.8",
+   "titles": {
+    "en": "Equipment siting and protection",
+    "ar": "موقع المعدات وحمايتها"
+   }
+  },
+  {
+   "code": "7.9",
+   "titles": {
+    "en": "Security of assets off-premises",
+    "ar": "أمن الأصول خارج المقر"
+   }
+  },
+  {
+   "code": "7.10",
+   "titles": {
+    "en": "Storage media",
+    "ar": "وسائط التخزين"
+   }
+  },
+  {
+   "code": "7.11",
+   "titles": {
+    "en": "Supporting utilities",
+    "ar": "المرافق الداعمة"
+   }
+  },
+  {
+   "code": "7.12",
+   "titles": {
+    "en": "Cabling security",
+    "ar": "أمن التمديدات"
+   }
+  },
+  {
+   "code": "7.13",
+   "titles": {
+    "en": "Equipment maintenance",
+    "ar": "صيانة المعدات"
+   }
+  },
+  {
+   "code": "7.14",
+   "titles": {
+    "en": "Secure disposal or re-use of equipment",
+    "ar": "التخلص الآمن من المعدات أو إعادة استخدامها"
+   }
+  },
+  {
+   "code": "8.1",
+   "titles": {
+    "en": "User endpoint devices",
+    "ar": "أجهزة المستخدمين الطرفية"
+   }
+  },
+  {
+   "code": "8.2",
+   "titles": {
+    "en": "Privileged access rights",
+    "ar": "صلاحيات الوصول المميزة"
+   }
+  },
+  {
+   "code": "8.3",
+   "titles": {
+    "en": "Information access restriction",
+    "ar": "تقييد الوصول إلى المعلومات"
+   }
+  },
+  {
+   "code": "8.4",
+   "titles": {
+    "en": "Access to source code",
+    "ar": "الوصول إلى الشفرة المصدرية"
+   }
+  },
+  {
+   "code": "8.5",
+   "titles": {
+    "en": "Secure authentication",
+    "ar": "المصادقة الآمنة"
+   }
+  },
+  {
+   "code": "8.6",
+   "titles": {
+    "en": "Capacity management",
+    "ar": "إدارة السعة"
+   }
+  },
+  {
+   "code": "8.7",
+   "titles": {
+    "en": "Protection against malware",
+    "ar": "الحماية من البرمجيات الضارة"
+   }
+  },
+  {
+   "code": "8.8",
+   "titles": {
+    "en": "Management of technical vulnerabilities",
+    "ar": "إدارة الثغرات التقنية"
+   }
+  },
+  {
+   "code": "8.9",
+   "titles": {
+    "en": "Configuration management",
+    "ar": "إدارة الإعدادات"
+   }
+  },
+  {
+   "code": "8.10",
+   "titles": {
+    "en": "Information deletion",
+    "ar": "حذف المعلومات"
+   }
+  },
+  {
+   "code": "8.11",
+   "titles": {
+    "en": "Data masking",
+    "ar": "إخفاء البيانات"
+   }
+  },
+  {
+   "code": "8.12",
+   "titles": {
+    "en": "Data leakage prevention",
+    "ar": "منع تسرب البيانات"
+   }
+  },
+  {
+   "code": "8.13",
+   "titles": {
+    "en": "Information backup",
+    "ar": "النسخ الاحتياطي للمعلومات"
+   }
+  },
+  {
+   "code": "8.14",
+   "titles": {
+    "en": "Redundancy of information processing facilities",
+    "ar": "التكرار في مرافق معالجة المعلومات"
+   }
+  },
+  {
+   "code": "8.15",
+   "titles": {
+    "en": "Logging",
+    "ar": "التسجيل"
+   }
+  },
+  {
+   "code": "8.16",
+   "titles": {
+    "en": "Monitoring activities",
+    "ar": "أنشطة المراقبة"
+   }
+  },
+  {
+   "code": "8.17",
+   "titles": {
+    "en": "Clock synchronization",
+    "ar": "مزامنة الساعات"
+   }
+  },
+  {
+   "code": "8.18",
+   "titles": {
+    "en": "Use of privileged utility programs",
+    "ar": "استخدام البرامج المساعدة ذات الصلاحيات"
+   }
+  },
+  {
+   "code": "8.19",
+   "titles": {
+    "en": "Installation of software on operational systems",
+    "ar": "تثبيت البرمجيات على الأنظمة التشغيلية"
+   }
+  },
+  {
+   "code": "8.20",
+   "titles": {
+    "en": "Networks security",
+    "ar": "أمن الشبكات"
+   }
+  },
+  {
+   "code": "8.21",
+   "titles": {
+    "en": "Security of network services",
+    "ar": "أمن خدمات الشبكة"
+   }
+  },
+  {
+   "code": "8.22",
+   "titles": {
+    "en": "Segregation of networks",
+    "ar": "فصل الشبكات"
+   }
+  },
+  {
+   "code": "8.23",
+   "titles": {
+    "en": "Web filtering",
+    "ar": "تصفية الويب"
+   }
+  },
+  {
+   "code": "8.24",
+   "titles": {
+    "en": "Use of cryptography",
+    "ar": "استخدام التشفير"
+   }
+  },
+  {
+   "code": "8.25",
+   "titles": {
+    "en": "Secure development life cycle",
+    "ar": "دورة حياة التطوير الآمن"
+   }
+  },
+  {
+   "code": "8.26",
+   "titles": {
+    "en": "Application security requirements",
+    "ar": "متطلبات أمن التطبيقات"
+   }
+  },
+  {
+   "code": "8.27",
+   "titles": {
+    "en": "Secure system architecture and engineering principles",
+    "ar": "مبادئ هندسة الأنظمة ومعماريتها الآمنة"
+   }
+  },
+  {
+   "code": "8.28",
+   "titles": {
+    "en": "Secure coding",
+    "ar": "البرمجة الآمنة"
+   }
+  },
+  {
+   "code": "8.29",
+   "titles": {
+    "en": "Security testing in development and acceptance",
+    "ar": "الاختبار الأمني أثناء التطوير والقبول"
+   }
+  },
+  {
+   "code": "8.30",
+   "titles": {
+    "en": "Outsourced development",
+    "ar": "التطوير المسند إلى جهات خارجية"
+   }
+  },
+  {
+   "code": "8.31",
+   "titles": {
+    "en": "Separation of development, test and production environments",
+    "ar": "فصل بيئات التطوير والاختبار والإنتاج"
+   }
+  },
+  {
+   "code": "8.32",
+   "titles": {
+    "en": "Change management",
+    "ar": "إدارة التغيير"
+   }
+  },
+  {
+   "code": "8.33",
+   "titles": {
+    "en": "Test information",
+    "ar": "معلومات الاختبار"
+   }
+  },
+  {
+   "code": "8.34",
+   "titles": {
+    "en": "Protection of information systems during audit testing",
+    "ar": "حماية أنظمة المعلومات أثناء اختبارات التدقيق"
+   }
+  }
+ ]
+}

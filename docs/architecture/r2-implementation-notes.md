@@ -1441,3 +1441,25 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A passport number counts only near the word passport, since the bare form matches many product codes.
 - AI classification suggestions (section 11) are not built in R2; detection is pattern matching only, as the plan says.
 - The public API check-in takes no reason; a warning there comes back as a conflict with the findings, and the author confirms in the app.
+
+## Security and compliance (spec 026 R2, slice 5: T028 and T029 compliance projects)
+
+### Built
+- A new `Compliance` module (schema `compliance`), added to the module map. It owns tenant frameworks, projects, project controls, evidence tasks and evidence. Capability `compliance.projects` (Enterprise and Government only); permissions `compliance.manage` and `compliance.view`, held by the compliance officer role and by tenant administrators.
+- Control library: ISO/IEC 27001:2022 Annex A (93 controls), SOC 2 trust services criteria 2017 (CC1.1 to CC9.2, A1.1 to A1.3, C1.1 to C1.2, 38 in all) and NCA ECC-1:2018 (29 subdomains), as versioned JSON in the module with short titles in English and Arabic. Tenants add up to 20 frameworks of their own (key `tenant.<slug>`, up to 500 controls), changed with `compliance.manage` for the whole tenant.
+- A project picks a framework and a scope (the whole tenant or one unit with its subtree) and copies the controls, so a later library change never changes a running project. Each control has an owner, a status (not started, in progress, evidence ready, reviewed), a due date, a note, up to 20 linked policies and 20 linked documents, and up to 30 evidence tasks.
+- Evidence (FR-023): an audit export is attached to a task. The file is copied into the tenant's storage under `compliance/evidence/`, and the evidence keeps the export ID, format, row count, size and SHA-256. The download sends the hash in `X-Content-SHA256`. The task is then done.
+- Readiness: controls by status, controls past their due date, overdue evidence tasks, and the counts by owner and by the owner's primary unit.
+- Sharing (FR-024): a manager shares a project to a space they own. Every reader of that space, guests included, reads the project, its controls, tasks, readiness and evidence files, and changes nothing. Unsharing ends that access at once.
+- New contracts: `IAuditExports` (Audit.Contracts) lists and opens completed exports and needs `audit.export`; `IPolicyReferences` (Policies.Contracts) and `ISpaceAccess` (Spaces.Contracts) answer as the current user.
+- Audit actions: `compliance.project_created`, `compliance.control_status_changed`, `compliance.evidence_attached` (spec), plus `compliance.framework_changed`, `compliance.project_changed`, `compliance.project_shared` and `compliance.control_changed`.
+- Pages: Compliance projects (`/compliance`) with the project list and the start form, the control library, a project page with readiness, controls and settings, and a control page with its links and evidence tasks. A space page lists the projects shared to it.
+
+### Smallest safe defaults
+- Who changes what: managers (`compliance.manage` over the project's scope) change everything. A control's owner moves its status up to evidence ready, writes the note and adds tasks. A task's owner marks it done and attaches evidence. Only managers mark a control reviewed or reopen a reviewed one.
+- Attaching an audit export needs `audit.export`, the same right as downloading it, so no one gets an export through a project they could not have downloaded. Compliance officers do not get `audit.export` by default; a security officer or administrator attaches the export, or the tenant gives the officer that right.
+- Owners must be active employees or contractors; guests only ever read.
+- Linked policies and documents are checked as the editor when added, and shown as each viewer may see them: one the viewer cannot open shows as unavailable, without its name.
+- Projects and evidence are kept 7 years (section 7): they are archived, never deleted. An archived project is read-only. A task with evidence cannot be removed.
+- Sharing needs ownership of an active space; there is no step-up, but every change is audited. Evidence downloads are not audited separately.
+- Overdue means a due date before today in UTC. An export file over 200 MB is refused as evidence.
