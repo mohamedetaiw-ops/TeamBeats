@@ -6,6 +6,7 @@ using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
 using TeamBeats.Modules.Workflow.Graph;
+using TeamBeats.Localization;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -18,7 +19,10 @@ public sealed record ProcessModelSummary(string Key, Guid? OwnerOrgUnitId, IRead
 
 public sealed record ProcessVersionView(int Version, DateTimeOffset PublishedAt, Guid? PublishedBy, long ActiveInstances);
 
-public sealed record ProcessModelView(string Key, Guid? OwnerOrgUnitId, IReadOnlyDictionary<string, string> Names, string BpmnXml, IReadOnlyList<ModelProblem> Problems,
+/// <summary>A problem of a draft on its element, with its text in the caller's language.</summary>
+public sealed record ProblemView(string ElementId, string Key, string Message);
+
+public sealed record ProcessModelView(string Key, Guid? OwnerOrgUnitId, IReadOnlyDictionary<string, string> Names, string BpmnXml, IReadOnlyList<ProblemView> Problems,
     DateTimeOffset UpdatedAt, IReadOnlyList<ProcessVersionView> Versions);
 
 public sealed record StartProcessRequest(string? BusinessKey, Guid? OrgUnitId, JsonElement? Variables);
@@ -29,7 +33,7 @@ public sealed record StartProcessRequest(string? BusinessKey, Guid? OrgUnitId, J
 /// unit (or the tenant when it has none); everything here needs the <c>workflow.bpmn</c> capability.
 /// </summary>
 public sealed class ProcessModels(IDbSession session, ITenantContext context, IAuthorizationService authz, IEntitlementService entitlements, IAuditWriter audit,
-    IClock clock, ProcessEngine engine, IConnectorActions actions)
+    IClock clock, ProcessEngine engine, IConnectorActions actions, ILocalizer localizer, RequestLocale locale)
 {
     /// <summary>Model keys stay short enough to be an analytics key (spec 021) once published.</summary>
     public const int MaxKeyLength = 64;
@@ -67,7 +71,8 @@ public sealed class ProcessModels(IDbSession session, ITenantContext context, IA
             var key = owner ?? Guid.Empty;
             if (!allowed.TryGetValue(key, out var may))
             {
-                may = await MayDesignAsync(owner, ct) || (await authz.CheckAsync(Permissions.ProcessOperate, Target(owner), ct)).Allowed;
+                may = await MayDesignAsync(owner, ct) || (await authz.CheckAsync(Permissions.ProcessOperate, Target(owner), ct)).Allowed
+                    || (await authz.CheckAsync(Permissions.ProcessAnalyze, Target(owner), ct)).Allowed;
                 allowed[key] = may;
             }
             if (may)
@@ -83,7 +88,8 @@ public sealed class ProcessModels(IDbSession session, ITenantContext context, IA
         context.RequireUser();
         await entitlements.DemandAsync(Capabilities.WorkflowBpmn, ct);
         var row = await RowAsync(key, false, ct) ?? throw AppException.NotFound();
-        if (!await MayDesignAsync(row.Owner, ct) && !(await authz.CheckAsync(Permissions.ProcessOperate, Target(row.Owner), ct)).Allowed)
+        if (!await MayDesignAsync(row.Owner, ct) && !(await authz.CheckAsync(Permissions.ProcessOperate, Target(row.Owner), ct)).Allowed
+            && !(await authz.CheckAsync(Permissions.ProcessAnalyze, Target(row.Owner), ct)).Allowed)
         {
             throw AppException.NotFound();
         }
@@ -99,7 +105,8 @@ public sealed class ProcessModels(IDbSession session, ITenantContext context, IA
             from workflow.process_definition d where d.key = @key order by d.version desc
             """, new { key = ProcessEngine.ModelPrefix + row.Key },
             r => new ProcessVersionView(r.GetInt32(0), r.GetFieldValue<DateTimeOffset>(1), r.Get<Guid?>("published_by"), r.GetInt64(3)), ct);
-        return new ProcessModelView(row.Key, row.Owner, Names(row.Names), row.Xml, Problems(row.Problems), row.UpdatedAt, versions);
+        return new ProcessModelView(row.Key, row.Owner, Names(row.Names), row.Xml, Problems(row.Problems).Select(p => new ProblemView(p.ElementId, p.Key, localizer.Get(p.Key, locale.Locale))).ToList(),
+            row.UpdatedAt, versions);
     }
 
     /// <summary>Saves the draft, valid or not, and returns it with the problems the validator found (FR-002).</summary>

@@ -640,8 +640,26 @@ public sealed class ProcessModelTests(TenantWorld world)
         Assert.Equal(3, await world.Database.CountInTenantAsync(t.Id,
             "select count(*) from analytics.event where name = 'process.instance_ended' and user_key is null and fields->>'process' = 'assign'"));
 
+        // Analysts open the model read only (the Processes page); they cannot save it, and others do not see it.
+        Assert.Equal("assign", (await OkAsync(t["analyst"].Client.GetAsync($"{Api}/assign"))).GetProperty("key").GetString());
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["analyst"].Client.PutAsJsonAsync($"{Api}/assign", new { bpmnXml = "<x/>" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await t["employee"].Client.GetAsync($"{Api}/assign")).StatusCode);
+
+        // The admin sections are listed for operators and analysts only, and only with the BPMN capability.
+        async Task<bool> SectionAsync(TestTenant tenant, string user, string key) =>
+            (await OkAsync(tenant[user].Client.GetAsync("/api/v1/admin/navigation"))).EnumerateArray().Any(x => x.GetProperty("key").GetString() == key);
+        Task<bool> ListedAsync(TestTenant tenant, string user) => SectionAsync(tenant, user, "process_operations");
+        Assert.True(await ListedAsync(t, "operator"));
+        Assert.True(await ListedAsync(t, "analyst"));
+        Assert.False(await ListedAsync(t, "employee"));
+        Assert.True(await SectionAsync(t, "analyst", "processes"));
+        Assert.False(await SectionAsync(t, "employee", "processes"));
+
         // A package without BPMN refuses the operator view.
         var basic = await world.CreateTenantAsync("pmo-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        await world.SeedUserAsync(basic, "operator", MembershipTypes.Employee);
+        await world.AssignAsync(basic, "operator", BuiltInRoles.ProcessOperator, "tenant", null);
+        Assert.False(await ListedAsync(basic, "operator"));
         Assert.Contains("entitlement.not_in_package", await (await basic["admin"].Client.GetAsync($"{Ops}/instances")).Content.ReadAsStringAsync());
     }
 }

@@ -31,4 +31,4 @@ Depends on 004 (authorization), 006 (audit), 022 (working-day contract), ADR-000
 - [ ] T016 Modeler (React Flow, bpmn-moddle), decision table editor, test run, Processes, Decisions, Operations and Monitoring pages in English and Arabic; e2e with axe
 
 ## R2 final phase
-- [ ] T017 Correlation performance and worker kill test; OpenAPI; R2 implementation notes; spec evidence
+- [x] T017 Correlation performance and worker kill test; OpenAPI; R2 implementation notes; spec evidence
