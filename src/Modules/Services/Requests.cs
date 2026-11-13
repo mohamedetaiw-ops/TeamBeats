@@ -74,7 +74,7 @@ public sealed record RequestDetail(RequestSummary Request, int ServiceVersion, F
 /// <summary>A row of <c>services.request</c>.</summary>
 internal sealed record RequestRow(
     Guid Id, string Number, Guid ServiceId, int ServiceVersion, Guid RequesterId, Guid? OnBehalfOfId, Guid? OrgUnitId, string Status,
-    string Data, string Classification, Guid? InstanceId, DateTimeOffset CreatedAt, DateTimeOffset? SubmittedAt, DateTimeOffset? ClosedAt)
+    string Data, string Classification, Guid? InstanceId, DateTimeOffset CreatedAt, DateTimeOffset? SubmittedAt, DateTimeOffset? ClosedAt, Guid? RequesterAppId = null)
 {
     public Guid SubjectId => OnBehalfOfId ?? RequesterId;
 }
@@ -111,13 +111,13 @@ public sealed class Requests(
     private const string Columns =
         """
         r.id, r.number, r.service_id, r.service_version, r.requester_user_id, r.on_behalf_of_user_id, r.requester_org_unit_id, r.status, r.data::text,
-        r.classification, r.process_instance_id, r.created_at, r.submitted_at, r.closed_at
+        r.classification, r.process_instance_id, r.created_at, r.submitted_at, r.closed_at, r.requester_app_id
         """;
 
     private static RequestRow Read(NpgsqlDataReader r) => new(
         r.GetGuid(0), r.GetString(1), r.GetGuid(2), r.GetInt32(3), r.GetGuid(4), r.Get<Guid?>("on_behalf_of_user_id"), r.Get<Guid?>("requester_org_unit_id"),
         r.GetString(7), r.GetString(8), r.GetString(9), r.Get<Guid?>("process_instance_id"), r.GetFieldValue<DateTimeOffset>(11),
-        r.Get<DateTimeOffset?>("submitted_at"), r.Get<DateTimeOffset?>("closed_at"));
+        r.Get<DateTimeOffset?>("submitted_at"), r.Get<DateTimeOffset?>("closed_at"), r.Get<Guid?>("requester_app_id"));
 
     // ---- Prefill (FR-004) ----
 
@@ -163,7 +163,7 @@ public sealed class Requests(
         }
         var account = await users.GetAsync(subject, ct);
         // The requester sees the subject's profile as they may see it, never more.
-        var profile = (await profiles.ViewAsync(context.RequireUser(), [subject], ct)).FirstOrDefault();
+        var profile = (await profiles.ViewAsync(context.RequirePrincipal(), [subject], ct)).FirstOrDefault();
         Guid? unit = null;
         IReadOnlyList<Guid>? chain = null;
         foreach (var field in fields)
@@ -208,7 +208,7 @@ public sealed class Requests(
     private async Task HrValuesAsync(List<FormField> fields, Guid subject, string classification, Dictionary<string, JsonElement> values,
         HashSet<string> unconfirmed, CancellationToken ct)
     {
-        if (subject != context.RequireUser() || !await entitlements.IsEnabledAsync(Capabilities.HrFormPrefill, ct))
+        if (context.ActorType != ActorType.User || subject != context.ActorId || !await entitlements.IsEnabledAsync(Capabilities.HrFormPrefill, ct))
         {
             return;
         }
@@ -275,7 +275,12 @@ public sealed class Requests(
     /// </summary>
     private async Task<Guid> SubjectAsync(Guid? forUser, bool allowOnBehalf, CancellationToken ct)
     {
-        var user = context.RequireUser();
+        var user = context.RequirePrincipal();
+        if (context.ActorType == ActorType.App && forUser is null)
+        {
+            // An application app is nobody: it always files for a named person (spec 035 requests:submit).
+            throw AppException.Validation("onBehalfOf", "validation.services.person");
+        }
         if (forUser is not { } other || other == user)
         {
             return user;
@@ -304,10 +309,21 @@ public sealed class Requests(
     }
 
     /// <summary>Submits a request; a second submit with the same idempotency key returns the first request.</summary>
+    /// <remarks>
+    /// An application app (spec 035 requests:submit) files for one named person, with <c>service.request_on_behalf</c> at
+    /// that person's unit from its own role. The person becomes the requester, as if they had filed it, so it is theirs to
+    /// follow and cancel; the request keeps the app that filed it, and the audit names the app as the actor.
+    /// </remarks>
     public async Task<(RequestDetail Request, bool Created)> SubmitAsync(RequestSubmit request, CancellationToken ct)
     {
-        var user = context.RequireUser();
+        var app = context.ActorType == ActorType.App ? context.ActorId : null;
+        var user = app is null ? context.RequireUser() : Guid.Empty;
         var key = string.IsNullOrWhiteSpace(request.IdempotencyKey) ? null : request.IdempotencyKey.Trim();
+        if (app is not null)
+        {
+            // The public API replays a repeated Idempotency-Key itself; the key here belongs to the person's own submits.
+            key = null;
+        }
         if (key is { Length: > MaxIdempotencyKeyLength })
         {
             throw AppException.Validation("idempotencyKey", "validation.services.idempotency_key");
@@ -329,6 +345,10 @@ public sealed class Requests(
         {
             throw AppException.Validation("onBehalfOf", "validation.services.not_in_audience");
         }
+        if (app is not null)
+        {
+            user = subject;
+        }
 
         var now = clock.UtcNow;
         var (data, references) = await PrepareAsync(published, subject, row.Classification, request.Data, null, ct);
@@ -339,15 +359,15 @@ public sealed class Requests(
         var inserted = await session.ScalarAsync<Guid?>(
             """
             insert into services.request (tenant_id, id, number, service_id, service_version, requester_user_id, on_behalf_of_user_id, requester_org_unit_id,
-              status, data, classification, idempotency_key, created_at, submitted_at)
-            values (platform.current_tenant_id(), @id, @number, @service, @version, @user, @onBehalf, @unit, @status, @data, @classification, @key, @now, @now)
+              status, data, classification, idempotency_key, created_at, submitted_at, requester_app_id)
+            values (platform.current_tenant_id(), @id, @number, @service, @version, @user, @onBehalf, @unit, @status, @data, @classification, @key, @now, @now, @app)
             on conflict (tenant_id, requester_user_id, idempotency_key) where idempotency_key is not null do nothing
             returning id
             """, new
             {
                 id, number, service = row.Id, version, user, onBehalf = subject == user ? (Guid?)null : subject, unit,
                 status = published.Route.Approval is null ? RequestStatuses.Submitted : RequestStatuses.InApproval,
-                data = Jsonb.From(data), classification = row.Classification, key, now,
+                data = Jsonb.From(data), classification = row.Classification, key, now, app,
             }, ct);
         if (inserted is null)
         {
@@ -356,15 +376,18 @@ public sealed class Requests(
             return (await DetailAsync(winner, ct), false);
         }
         await attachments.LinkAsync(id, references.Attachments, ct);
-        await EventAsync(id, "submitted", null, user, subject == user ? null : subject, null, ct);
+        await EventAsync(id, "submitted", null, app is null ? user : null, subject == user ? null : subject, null, ct);
         if (published.Route.HasSteps)
         {
             await StartRouteAsync(id, row.Id, unit, user, subject, 1, ct);
         }
         await audit.WriteAsync(new AuditEntry(AuditActions.RequestSubmitted, "request", id.ToString(), TargetOrgUnitId: unit,
-            Changes: new { service = row.Id, version, number, onBehalf = subject != user }), ct);
+            Changes: new { service = row.Id, version, number, onBehalf = subject != user || app is not null, forUser = app is null ? (Guid?)null : subject }), ct);
         await outbox.EnqueueAsync(new RequestSubmitted(id, row.Id, number), ct);
-        await catalogue.MarkUsedAsync(row.Id, ct);
+        if (app is null)
+        {
+            await catalogue.MarkUsedAsync(row.Id, ct);
+        }
         return (await DetailAsync(id, ct), true);
     }
 
@@ -535,6 +558,11 @@ public sealed class Requests(
     /// </summary>
     internal async Task<RequestRow> VisibleRowAsync(Guid id, CancellationToken ct)
     {
+        if (context.ActorType == ActorType.App)
+        {
+            var filed = await RowAsync(id, false, ct) ?? throw AppException.NotFound();
+            return filed.RequesterAppId == context.ActorId || Reaches(await AppReachAsync(ct), filed.OrgUnitId) ? filed : throw AppException.NotFound();
+        }
         var user = context.RequireUser();
         var row = await RowAsync(id, false, ct) ?? throw AppException.NotFound();
         if (row.RequesterId == user || row.OnBehalfOfId == user)
@@ -614,6 +642,54 @@ public sealed class Requests(
             where coalesce(r.on_behalf_of_user_id, r.requester_user_id) = any(@reports) and (@status::text is null or r.status = @status)
             order by r.created_at desc, r.id limit @limit
             """, new { reports, status, limit = Math.Clamp(limit, 1, 200) }, Read, ct);
+        var list = new List<RequestSummary>();
+        foreach (var row in rows)
+        {
+            list.Add(await SummaryAsync(row, ct));
+        }
+        return list;
+    }
+
+    private OrgCoverage? appReach;
+
+    /// <summary>
+    /// For an application app (spec 035 US1 scenario 4): the units its own <c>service.request_read</c> covers. It reads the
+    /// requests of people in those units, by the unit the request was filed under, and the requests it filed itself.
+    /// </summary>
+    private async Task<OrgCoverage> AppReachAsync(CancellationToken ct) => appReach ??= await authz.CoverageAsync(Permissions.ServiceRequestRead, ct);
+
+    private static bool Reaches(OrgCoverage reach, Guid? unit) => reach.WholeTenant || unit is { } u && reach.Units.Contains(u);
+
+    /// <summary>
+    /// One page of requests for the public API (spec 035 <c>requests:read</c>), newest first, after the last one of the
+    /// previous page. A person reads their own, as in My requests; an application app reads those its request role reaches.
+    /// </summary>
+    public async Task<IReadOnlyList<RequestSummary>> PageAsync(string? status, DateTimeOffset? beforeAt, Guid? beforeId, int limit, CancellationToken ct)
+    {
+        Guid? user = null;
+        Guid? app = null;
+        Guid[]? units = null;
+        var everywhere = false;
+        if (context.ActorType == ActorType.App)
+        {
+            app = context.ActorId;
+            var reach = await AppReachAsync(ct);
+            everywhere = reach.WholeTenant;
+            units = reach.Units.ToArray();
+        }
+        else
+        {
+            user = context.RequireUser();
+        }
+        var rows = await session.QueryAsync(
+            $"""
+            select {Columns} from services.request r
+            where (@status::text is null or r.status = @status)
+              and (@beforeAt::timestamptz is null or (r.created_at, r.id) < (@beforeAt::timestamptz, @beforeId::uuid))
+              and (@user::uuid is not null and (r.requester_user_id = @user or r.on_behalf_of_user_id = @user)
+                or @app::uuid is not null and (@everywhere or r.requester_org_unit_id = any(@units) or r.requester_app_id = @app))
+            order by r.created_at desc, r.id desc limit @limit
+            """, new { status, beforeAt, beforeId = beforeId ?? Guid.Empty, user, app, everywhere, units = units ?? [], limit = Math.Clamp(limit, 1, 200) }, Read, ct);
         var list = new List<RequestSummary>();
         foreach (var row in rows)
         {

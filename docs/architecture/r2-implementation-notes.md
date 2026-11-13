@@ -1210,3 +1210,20 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A draft from the API has one language, the caller's unless `locale` says otherwise. Announcements are not drafted from the API, because the catalogue names news and pages.
 - The 20 an hour limit for `ask_teambeats` (section 6) belongs to the MCP tool and comes with slice 4. The REST answer is held by the per app and per user minute limits and by the tenant AI budget.
 - Services, requests and document uploads, for people and for apps, are the next slice. They need a rule for what an app reads in the catalogue and in whose name an app submits.
+
+## Public API and MCP server (spec 035, slice 3e: T011 services and requests)
+
+### Built
+- `services:read` (spec 016), in `Services`: `GET /api/public/v1/services` with `q` and `categoryId`, and `GET /api/public/v1/services/{id}` with the form of the published version, names in the caller's language.
+- `requests:read`: `GET /api/public/v1/requests` with `status`, newest first with a cursor, and `GET /api/public/v1/requests/{id}` with the data filed and the tracking. Attachments are listed by name only.
+- `requests:submit`: `POST /api/public/v1/requests` with the service, the data and, for someone else, `onBehalfOf`. It is idempotent through `Idempotency-Key`.
+- A new permission `service.request_read` and two built-in roles assignable to apps: Request reader for apps (`app_request_reader`: `service.request_read`) and Request filer for apps (`app_request_filer`: `service.request_read` and `service.request_on_behalf`). Migration `authz/0033` adds them to existing tenants; `services/0003` adds `requester_app_id` to requests.
+
+### Smallest safe defaults
+- A person sees the catalogue and their own requests as in TeamBeats, and files for themselves or, where the service and spec 016 allow, for others.
+- An application app sees no service and no request without a request role (US1 scenario 3). With one it reads the requests filed under the units the role covers, by the unit stored on the request (the person's primary unit when filed), and the requests it filed itself (US1 scenario 4).
+- An app's catalogue is the published services offered to someone in its units: no unit in the audience, or a unit the app covers or one above it. Groups and membership types say who may use a service, so they are checked for the person the request is for.
+- An app is nobody, so it always files for one named person, with `service.request_on_behalf` at that person's unit from its own role, on a service that allows filing for others. The person becomes the requester, as if they had filed it, so it is theirs to follow and cancel; the request keeps the app in `requester_app_id`, the submitted event has no person as actor, and the audit names the app.
+- HR values are never prefilled for an app, as for anyone filing for someone else. Attachments cannot be uploaded through the API in R2, so a form that requires one cannot be filed by an app.
+- Search still finds no services for an app.
+- Document uploads (`documents:write`) for people and apps are the next slice.

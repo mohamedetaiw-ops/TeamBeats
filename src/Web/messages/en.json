@@ -531,7 +531,9 @@
         "facilities_analyst": "Facilities analyst",
         "device_administrator": "Device administrator",
         "kiosk_user": "Kiosk user",
-        "app_reader": "App reader"
+        "app_reader": "App reader",
+        "app_request_reader": "Request reader for apps",
+        "app_request_filer": "Request filer for apps"
       },
       "tabs": "Roles and access sections",
       "unknownUnit": "a unit outside your view",

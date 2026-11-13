@@ -239,7 +239,7 @@ public sealed class PublicApiAppPrincipalTests(TenantWorld world)
         var t = await FreshAsync();
         var roles = await JsonAsync(await t["admin"].Client.GetAsync("/api/v1/authz/roles"));
         var forApps = roles.EnumerateArray().Where(r => r.GetProperty("assignableToApps").GetBoolean()).ToList();
-        Assert.Equal([BuiltInRoles.AppReader], forApps.Select(r => r.GetProperty("key").GetString()));
+        Assert.Equal([BuiltInRoles.AppReader, BuiltInRoles.AppRequestFiler, BuiltInRoles.AppRequestReader], forApps.Select(r => r.GetProperty("key").GetString()).Order());
 
         var refused = await t["admin"].Client.PostAsJsonAsync("/api/v1/authz/roles", new
         {

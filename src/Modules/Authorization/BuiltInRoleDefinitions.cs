@@ -49,6 +49,9 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.KioskUser, Delegable: true, DelegatedAdmin: false, [P.KioskSignIn]),
         // Spec 035 FR-011: what an integration usually needs to read, and nothing an app may not hold.
         new(BuiltInRoles.AppReader, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.ContentView, P.DocView, P.PeopleView], AssignableToApps: true),
+        // Spec 035 US1 scenario 4 and requests:submit: the request roles an app can hold, never any approval or management.
+        new(BuiltInRoles.AppRequestReader, Delegable: true, DelegatedAdmin: false, [P.ServiceRequestRead], AssignableToApps: true),
+        new(BuiltInRoles.AppRequestFiler, Delegable: true, DelegatedAdmin: false, [P.ServiceRequestRead, P.ServiceRequestOnBehalf], AssignableToApps: true),
         // Spec 029 FR-002: the space roles. Only Spaces assigns them, on one space (see ModuleAssignedRoles).
         new(BuiltInRoles.SpaceOwner, Delegable: false, DelegatedAdmin: false, [P.SpacesView, P.SpacesContribute, P.SpacesOwn, P.DocView, P.DocContribute, P.DocManage]),
         new(BuiltInRoles.SpaceMember, Delegable: false, DelegatedAdmin: false, [P.SpacesView, P.SpacesContribute, P.DocView, P.DocContribute]),

@@ -67,7 +67,7 @@ public sealed class Attachments(IDbSession session, ITenantContext context, Tena
     /// <summary>Why the caller cannot attach these uploads, or null: each must be their own, unattached and clean.</summary>
     internal async Task<string?> ProblemAsync(IReadOnlySet<Guid> ids, CancellationToken ct)
     {
-        var user = context.RequireUser();
+        var user = context.RequirePrincipal();
         var rows = await session.QueryAsync("select id, scan_state from services.attachment where id = any(@ids) and uploaded_by = @user and request_id is null",
             new { ids = ids.ToArray(), user }, r => r.GetString(1), ct);
         if (rows.Count != ids.Count)
