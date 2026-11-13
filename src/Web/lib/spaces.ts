@@ -53,6 +53,9 @@ export type SpaceView = {
   communityId: string | null;
 };
 
+/** A space the viewer is a guest of (spec 026 section 10), as GET /api/v1/spaces/as-guest answers. */
+export type GuestSpace = { spaceId: string; name: string; role: string; sponsorName: string; expiresAt: string | null };
+
 export type SpaceSummary = {
   id: string;
   kind: SpaceKind;

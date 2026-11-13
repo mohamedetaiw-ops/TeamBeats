@@ -90,7 +90,7 @@ R2 slices, in order:
 - **Audit:** `security.siem_configured` (create, change, delete, enable, disable, with before and after values and no secret), `security.siem_delivery_failed`.
 
 ### Guests
-- **Domain rules:** the tenant guest policy (in `security_policy.guest jsonb`: allowed domains, blocked domains) is checked by Spaces through `ISecurityPolicy` before an invitation is sent.
+- **Domain rules:** the tenant guest policy (`security.policy` columns `guest_allow_domains` and `guest_block_domains`) is checked by Spaces through `ISecurityPolicy` before an invitation is sent.
 - **Limit:** `security.max_guest_spaces` counts the spaces that have guests or open invitations.
 - **Reduced guest shell (section 10):** a guest's session gets an experience with only their spaces, each space's sponsor and end date, and the shared items. The navigation, home, search box and assistant are hidden, and every page outside the spaces refuses them as today.
 - **Watermark (US3 scenario 3):** guest downloads of PDF files are stamped with the guest's address and the time through the Gotenberg route already used for letters. Other files download unchanged unless the space turns download off for guests.

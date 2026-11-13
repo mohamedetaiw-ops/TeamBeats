@@ -29,6 +29,7 @@ public static class SpacesModule
         services.AddScoped<SpaceCalendar>();
         services.AddScoped<SpaceGuests>();
         services.AddScoped<IGuestInvitationSource>(sp => sp.GetRequiredService<SpaceGuests>());
+        services.AddScoped<Contracts.ISpaceGuestReview>(sp => sp.GetRequiredService<SpaceGuests>());
         services.AddScoped<IResourceDescriptorProvider, SpaceDescriptorProvider>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpacesSearchSource>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpaceTaskSearchSource>();
@@ -117,6 +118,7 @@ public static class SpacesModule
         });
 
         // Guests (US4, FR-007, FR-008). Inviting and renewing a guest are sensitive actions that need a fresh sign-in (spec 026).
+        root.MapGet("/as-guest", async (SpaceGuests guests, CancellationToken ct) => Results.Ok(await guests.MineAsync(ct)));
         root.MapGet("/{id:guid}/guests", async (Guid id, SpaceGuests guests, CancellationToken ct) => Results.Ok(await guests.ListAsync(id, ct)));
         root.MapPost("/{id:guid}/guests", async (Guid id, GuestInviteRequest request, SpaceGuests guests, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await guests.InviteAsync(id, request, ct), ct)).RequireStepUp();

@@ -16873,6 +16873,18 @@
         }
       }
     },
+    "/api/v1/spaces/as-guest": {
+      "get": {
+        "tags": [
+          "Spaces"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/spaces/{id}/guests": {
       "get": {
         "tags": [
@@ -21192,6 +21204,28 @@
         }
       }
     },
+    "/api/v1/security/access-reviews": {
+      "get": {
+        "tags": [
+          "Security"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Security"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/security/siem": {
       "get": {
         "tags": [
@@ -21328,6 +21362,64 @@
       "post": {
         "tags": [
           "Security"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/access-reviews": {
+      "get": {
+        "tags": [
+          "Access reviews"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/access-reviews/items/{id}:confirm": {
+      "post": {
+        "tags": [
+          "Access reviews"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/access-reviews/items/{id}:remove": {
+      "post": {
+        "tags": [
+          "Access reviews"
         ],
         "parameters": [
           {
@@ -31768,6 +31860,24 @@
               "string"
             ],
             "format": "int32"
+          },
+          "guestAllowDomains": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "guestBlockDomains": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
@@ -34290,6 +34400,9 @@
     },
     {
       "name": "Security"
+    },
+    {
+      "name": "Access reviews"
     },
     {
       "name": "Calendar"

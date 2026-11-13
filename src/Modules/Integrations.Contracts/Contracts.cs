@@ -1142,3 +1142,12 @@ public interface ISiemDelivery
     /// <summary>Sends the events in order as one batch. A batch key that already succeeded is not sent again.</summary>
     Task<ConnectorCallResult> SendAsync(Guid id, IReadOnlyList<System.Text.Json.JsonElement> events, string batchKey, CancellationToken ct = default);
 }
+
+/// <summary>
+/// Stamps a PDF with a line of text on every page (spec 019 FR-011 payslips; spec 026 US3 guest downloads). The page
+/// content is kept; a PDF that cannot be opened or changed gets null and must not be handed out.
+/// </summary>
+public interface IPdfStamp
+{
+    byte[]? Apply(byte[] pdf, string text);
+}

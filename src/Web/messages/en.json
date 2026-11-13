@@ -744,6 +744,7 @@
         "security_alerts": "Security alerts",
         "security_alerts_advanced": "Advanced security alerts",
         "security_siem": "SIEM streaming",
+        "security_max_guest_spaces": "Spaces with guests",
         "content_core": "News and pages",
         "content_critical_ack": "Critical announcements with acknowledgement",
         "content_multistep_approval": "Multi-step content approval",
@@ -1441,7 +1442,8 @@
     "footer": {
       "label": "Footer",
       "classification": "Classification: {value}"
-    }
+    },
+    "guest": "Guest"
   },
   "shell_settings": {
     "title": "Shell and footer",
@@ -2322,7 +2324,8 @@
       "policy": "Policy",
       "alerts": "Alerts",
       "posture": "Posture",
-      "siem": "SIEM"
+      "siem": "SIEM",
+      "reviews": "Access reviews"
     },
     "openAlerts": "{count, plural, one {# open alert} other {# open alerts}}",
     "policy": {
@@ -2375,7 +2378,15 @@
       "save": "Save policy",
       "saving": "Saving",
       "saved": "The security policy is saved.",
-      "failed": "Something went wrong. Try again."
+      "failed": "Something went wrong. Try again.",
+      "guests": {
+        "title": "Guests",
+        "intro": "Guests are people outside your organization invited to a space. These rules apply to every invitation.",
+        "allow": "Allowed guest email domains",
+        "allowHint": "One domain per line, such as partner.example. Leave empty to allow every domain that is not blocked. A domain covers its subdomains.",
+        "block": "Blocked guest email domains",
+        "blockHint": "One domain per line. Recommended: personal email providers. Blocked domains are refused even when they are allowed."
+      }
     },
     "alerts": {
       "title": "Security alerts",
@@ -2532,6 +2543,26 @@
         "not_in_package": "SIEM streaming is not part of your plan",
         "connection_disabled": "the destination is off"
       }
+    },
+    "reviews": {
+      "title": "Access reviews",
+      "intro": "Every 90 days, sponsors review their guests and managers review the administrator roles of the people they manage. Anything not confirmed within 14 days is removed.",
+      "failed": "The access reviews could not be loaded. Try again.",
+      "next": "The next review opens on {date}.",
+      "noneScheduled": "The first review is scheduled within the hour.",
+      "start": "Start a review now",
+      "started": "The review started. Reviewers were told.",
+      "working": "Working…",
+      "listTitle": "Reviews",
+      "none": "No reviews yet",
+      "noneHint": "Start a review, or wait for the first one.",
+      "opened": "Opened",
+      "dueAt": "Decide by",
+      "closed": "Closed {date}",
+      "open": "Waiting",
+      "confirmed": "Confirmed",
+      "removed": "Removed",
+      "kept": "Kept (last administrator)"
     }
   },
   "services": {
@@ -10156,6 +10187,23 @@
       "confidentialOff": "Your organization keeps Confidential files closed to guests.",
       "saved": "Saved",
       "emailLabel": "Email address"
+    },
+    "guestHome": {
+      "title": "Your spaces",
+      "intro": "You are a guest of this organization. These are the spaces you were invited to.",
+      "listLabel": "Spaces you are a guest of",
+      "guest": "Guest",
+      "roles": {
+        "member": "Can add and comment",
+        "viewer": "Read only"
+      },
+      "sponsor": "Invited by",
+      "until": "Access until {date}",
+      "noEnd": "No end date",
+      "noneTitle": "No spaces yet",
+      "none": "You have no spaces right now. Your access may have ended; ask the person who invited you.",
+      "failedTitle": "Your spaces could not be loaded",
+      "failed": "Try again in a moment."
     }
   },
   "booking": {
@@ -10889,6 +10937,36 @@
     "tools": {
       "submit_service_request": "Submit a service request",
       "draft_news": "Draft a news item"
+    }
+  },
+  "accessReviews": {
+    "title": "Access reviews",
+    "intro": "Confirm the access that is still needed and remove the rest. Anything you do not confirm is removed when the review closes.",
+    "failedTitle": "Your reviews could not be loaded",
+    "failed": "Try again in a moment.",
+    "noneTitle": "Nothing to review",
+    "none": "You have no access to review right now.",
+    "due": "Decide by {date}.",
+    "listTitle": "Access to review",
+    "who": "Person",
+    "access": "Access",
+    "guestIn": "Guest in",
+    "role": "Administrator role",
+    "decision": "Decision",
+    "waiting": "Waiting for you",
+    "actions": "Actions",
+    "confirm": "Confirm",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "working": "Working…",
+    "removeQuestion": "Remove this access for {name}? It ends at once.",
+    "confirmed": "Access for {name} is confirmed.",
+    "removed": "Access for {name} was removed.",
+    "decisions": {
+      "confirmed": "Confirmed",
+      "removed": "Removed",
+      "expired": "Removed, not confirmed",
+      "kept": "Kept"
     }
   }
 }

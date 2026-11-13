@@ -137,6 +137,23 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
             where a.scope_type = 'tenant' and a.revoked_at is null and (a.subject_type = 'user' or m.user_id is not null)
             """, new { p = permission }, r => r.GetGuid(0), ct);
 
+    public async Task<IReadOnlyList<AdminAssignment>> AdminAssignmentsAsync(CancellationToken ct = default)
+    {
+        var rows = await session.QueryAsync(
+            """
+            select a.id, a.subject_id, r.key, a.scope_type, a.scope_id, array_agg(p.permission_key)
+            from authz.role_assignment a
+            join authz.role r on r.id = a.role_id
+            join authz.role_permission p on p.role_id = a.role_id
+            where a.subject_type = 'user' and a.revoked_at is null and a.scope_type in ('tenant', 'org_unit', 'org_subtree')
+            group by a.id, a.subject_id, r.key, a.scope_type, a.scope_id
+            order by a.subject_id, r.key, a.id
+            """, null,
+            r => (Row: new AdminAssignment(r.GetGuid(0), r.GetGuid(1), r.GetString(2), Sql.ParseEnum<ScopeType>(r.GetString(3)), r.Get<Guid?>("scope_id")),
+                Permissions: r.GetFieldValue<string[]>(5)), ct);
+        return rows.Where(r => r.Permissions.Any(Permissions.Administers)).Select(r => r.Row).ToList();
+    }
+
     public async Task<IReadOnlyList<Guid>> ResourceHoldersAsync(string permission, string resourceType, Guid resourceId, CancellationToken ct = default) =>
         await session.QueryAsync(
             """

@@ -55,6 +55,8 @@ export type Shell = {
   administration: boolean;
   /** Bottom navigation on phones (spec 030 FR-005): at most five global menu entries this viewer may open. */
   mobileNav?: NavLink[] | null;
+  /** True for a guest of the tenant: the API sends the reduced guest shell and the home lists their spaces (spec 026 section 10). */
+  guest?: boolean;
 };
 
 export type Crumb = { label: string; href: string };

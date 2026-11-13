@@ -267,6 +267,10 @@ public static class AuditActions
 
     // Spec 026 (R2): SIEM streaming.
     public const string SecuritySiemConfigured = "security.siem_configured";
+    public const string GuestReviewed = "guest.reviewed";
+    public const string SecurityAccessReviewStarted = "security.access_review_started";
+    public const string SecurityAccessReviewDecided = "security.access_review_decided";
+    public const string SecurityAccessReviewCompleted = "security.access_review_completed";
     public const string SecuritySiemDeliveryFailed = "security.siem_delivery_failed";
     public const string WorkflowDefinitionPublished = "workflow.definition_published";
     public const string WorkflowTaskCompleted = "workflow.task_completed";
@@ -462,6 +466,7 @@ public static class AuditActions
     public const string SpacesEventChanged = "spaces.event_changed";
     public const string SpacesGuestInvited = "spaces.guest_invited";
     public const string SpacesGuestExpired = "spaces.guest_expired";
+    public const string SpacesGuestRemoved = "spaces.guest_removed";
 
     // 031
     public const string BookingResourceCreated = "booking.resource_created";

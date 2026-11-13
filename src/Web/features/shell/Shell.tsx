@@ -16,6 +16,7 @@ import { KioskSession } from "@/features/kiosk/KioskSession";
 import { QuickNav } from "./QuickNav";
 import { SettingsPanel } from "./SettingsPanel";
 import { Icon } from "@/components/ui/Icon";
+import { Badge } from "@/components/ui/Badge";
 import "./shell.css";
 
 /** The layout used when the shell API is unavailable, so the page always keeps identity, navigation and settings. */
@@ -88,6 +89,8 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
       <div className="shell-bar">
         <div className="shell-slot" data-slot="start">
           {layout.start.map(render)}
+          {/* A guest is labelled as one on every page (spec 029 US4, spec 026 section 10). */}
+          {shell.ok && shell.data.guest ? <Badge tone="info">{t("guest")}</Badge> : null}
         </div>
         <div className="shell-slot" data-slot="center">
           {layout.center.map(render)}

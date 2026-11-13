@@ -125,6 +125,7 @@ public static class Capabilities
     public const string SecurityAlerts = "security.alerts";
     public const string SecurityAlertsAdvanced = "security.alerts_advanced";
     public const string SecuritySiem = "security.siem";
+    public const string SecurityMaxGuestSpaces = "security.max_guest_spaces";
     public const string ContentCore = "content.core";
     public const string ContentCriticalAck = "content.critical_ack";
     public const string ContentMultistepApproval = "content.multistep_approval";
