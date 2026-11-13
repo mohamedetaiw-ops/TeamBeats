@@ -32,6 +32,12 @@ public static class BearerTokens
     public const string InsufficientScope = ProblemCodes.ApiInsufficientScope;
     public const string PublicPrefix = "/api/public";
 
+    /// <summary>The MCP server of the tenant (FR-019), behind the same pipeline with its own resource and delegated tokens only.</summary>
+    public const string McpPath = "/mcp";
+
+    /// <summary>Whether a call is to the MCP server rather than the REST API.</summary>
+    internal static bool IsMcp(HttpRequest request) => request.Path.StartsWithSegments(McpPath);
+
     private static readonly JsonWebTokenHandler Handler = new() { MapInboundClaims = false };
 
     /// <summary>The largest request body of a public call (section 6); document uploads set their own limit.</summary>
@@ -45,7 +51,7 @@ public static class BearerTokens
     public static IApplicationBuilder UsePublicApiTokens(this IApplicationBuilder app) =>
         app.Use(async (http, next) =>
         {
-            if (!http.Request.Path.StartsWithSegments(PublicPrefix))
+            if (!http.Request.Path.StartsWithSegments(PublicPrefix) && !IsMcp(http.Request))
             {
                 await next(http);
                 return;
@@ -290,7 +296,8 @@ public static class BearerTokens
     {
         var services = http.RequestServices;
         var ct = http.RequestAborted;
-        if (!await OAuthServer.OpenAsync(services, ct))
+        var mcp = IsMcp(http.Request);
+        if (!await OAuthServer.OpenAsync(services, ct) || (mcp && !await services.GetRequiredService<IEntitlementService>().IsEnabledAsync(Capabilities.ApiMcp, ct)))
         {
             return "api_closed";
         }
@@ -306,7 +313,7 @@ public static class BearerTokens
         var result = await Handler.ValidateTokenAsync(token, new TokenValidationParameters
         {
             ValidIssuer = issuer,
-            ValidAudience = ApiRules.ApiResource(origin),
+            ValidAudience = mcp ? ApiRules.McpResource(origin) : ApiRules.ApiResource(origin),
             IssuerSigningKeys = keys.ValidationKeys(tenant),
             ValidTypes = ["at+jwt"],
             ClockSkew = TimeSpan.FromSeconds(30),
@@ -336,6 +343,11 @@ public static class BearerTokens
             return "revoked";
         }
         var scopes = (Text(claims, "scope") ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
+        if (mcp && (kind != OAuthServer.Delegated || app.Kind != AppKinds.McpClient))
+        {
+            // Only an MCP client acting for an employee reaches the MCP server; application tokens never do in R2 (FR-019).
+            return "invalid";
+        }
         Guid? user = null;
         if (kind == OAuthServer.Delegated)
         {
@@ -409,7 +421,17 @@ public static class BearerTokens
         http.Response.StatusCode = closed ? StatusCodes.Status403Forbidden : StatusCodes.Status401Unauthorized;
         if (!closed)
         {
-            http.Response.Headers.WWWAuthenticate = reason == "missing" ? "Bearer" : "Bearer error=\"invalid_token\"";
+            // The MCP server names its protected resource metadata, so a client finds the authorization server (RFC 9728).
+            var parameters = new List<string>();
+            if (reason != "missing")
+            {
+                parameters.Add("error=\"invalid_token\"");
+            }
+            if (IsMcp(http.Request))
+            {
+                parameters.Add($"resource_metadata=\"{OAuthServer.Origin(http.Request)}{McpEndpoint.MetadataPath}\"");
+            }
+            http.Response.Headers.WWWAuthenticate = parameters.Count == 0 ? "Bearer" : "Bearer " + string.Join(", ", parameters);
         }
         await WriteProblemAsync(http, http.Response.StatusCode, code, null);
     }

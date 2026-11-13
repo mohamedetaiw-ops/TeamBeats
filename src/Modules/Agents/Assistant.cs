@@ -18,7 +18,12 @@ namespace TeamBeats.Modules.Agents;
 /// <paramref name="Scope"/> on the first turn keeps the conversation to one item (spec 025 FR-011); later turns keep the
 /// conversation's scope and never route.
 /// </summary>
-public sealed record TurnRequest(Guid? ConversationId, string? Question, Guid? AgentId = null, bool? Knowledge = null, AssistantScope? Scope = null);
+/// <remarks>
+/// <paramref name="MaxClassification"/> caps what the answer may draw on, for an external AI client (spec 035 US3
+/// scenario 4): passages above it are left out as withheld, and a conversation that already holds more is refused.
+/// </remarks>
+public sealed record TurnRequest(Guid? ConversationId, string? Question, Guid? AgentId = null, bool? Knowledge = null, AssistantScope? Scope = null,
+    string? MaxClassification = null);
 
 /// <summary>
 /// The item a conversation is kept to: <paramref name="Source"/> is its search source and <paramref name="ItemId"/> the
@@ -103,6 +108,10 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
             scope = found[0].Scope;
             position = found[0].Turns + 1;
             floor = AssistantPrompt.Highest([found[0].Classification], DataClassification.Public);
+            if (request.MaxClassification is { } limit && Classifications.Rank(found[0].Classification) > Classifications.Rank(limit))
+            {
+                throw AppException.Denied();
+            }
             var earlier = await session.QueryAsync(
                 """
                 select question, answer from agents.turn
@@ -132,6 +141,11 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
                 floor, null, null, route);
         }
         var evidence = await retrieval.RetrieveAsync(new RetrievalRequest(question, AiUseCases.Assistant, Source: scope?.Source, ItemId: scope?.ItemId), ct);
+        if (request.MaxClassification is { } cap)
+        {
+            var kept = evidence.Passages.Where(p => Classifications.Rank(p.Classification) is var rank && rank >= 0 && rank <= Classifications.Rank(cap)).ToList();
+            evidence = evidence with { Passages = kept, Withheld = evidence.Withheld + evidence.Passages.Count - kept.Count };
+        }
         var turnId = Ids.New();
         // Instruction-like text in a passage is recorded with its item (027 US5 scenario 1); the passage still goes only as marked data.
         foreach (var p in evidence.Passages)

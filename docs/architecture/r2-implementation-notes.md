@@ -1236,3 +1236,20 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A person uploads with their own rights at the folder, and size, type and storage limits follow the library and the plan as in TeamBeats. The body limit of 1 MB for public calls is lifted to the library's limit for these two operations (section 6).
 - An application app acting as itself never uploads (`documents.app_upload`, 403). A document has an owner and each version an author, and both are people; an app owner would leave nobody to check in an incomplete upload or receive a quarantine notice. The scope stays held by both kinds, so a later decision can open it without a breaking change.
 - Uploads are not replayed by `Idempotency-Key`, because a replay keeps at most 64 KB and the body is read only once. Sending the same file to the library again is refused as a duplicate (409). A new version sent twice adds two versions.
+
+## Public API and MCP server (spec 035, slice 4a: T013 and the read part of T014)
+
+### Built
+- The external AI caller type in `Agents` (spec 027 FR-025): tool definitions carry an `Exposable` flag, and the agent policy carries an `external` part with `enabled`, the list of allowed MCP clients each with a classification cap (`public`, `internal` or `confidential`, Internal by default, never Restricted), an optional list of tools offered to external clients, and `writeTools`.
+- The external tool gateway (`IExternalToolGateway`): the kill switch, external access, the client on the list, the exposable flag, the token's scopes, the tenant policy and its rules (never `block`), the external tools list, entitlement, the call limits and the parameter schema, in that order. The tool then runs as the employee through the owning module, and the result and each source are checked against the client's cap. Every call, refused or executed, leaves a row in `agents.external_call`.
+- Read tools, each in its owning module: `whoami`, `get_page`, `list_news`, `get_document`, `find_person`, `get_policy`, `search`, `ask_teambeats`, `list_services`, `list_my_requests` and `list_my_tasks`, mapped to scopes as in section 6.
+- The MCP server at `/mcp` over Streamable HTTP with the official C# SDK (ADR-0018), stateless, behind the bearer pipeline: it needs `api.mcp`, a delegated token bound to the MCP resource and an app of kind `mcp_client`. A 401 names the protected resource metadata at `/.well-known/oauth-protected-resource/mcp` (RFC 9728). Tool results go back as structured content with `ok`, `error`, `classification`, `content` and `sources` with absolute links.
+- An MCP client that the policy does not allow is refused at the authorization endpoint with `access_denied`, and the refusal is audited (`agent.external_call_refused`).
+
+### Smallest safe defaults
+- No MCP client is allowed until an AI policy administrator lists it. External access is on by default, so listing a client is the one step needed; turning it off refuses every client.
+- Execution records live in `agents.external_call` and are purged with agent run records. Parameters are masked when what went back was Confidential; the content itself is never stored.
+- The call limits are counted on the execution records: 60 calls a minute per employee and client, and 20 `ask_teambeats` calls an hour.
+- A page, document or policy the employee may not read, or that does not exist, is refused as `tool.denied`; the client learns nothing more.
+- `ask_teambeats` draws only on passages within the client's cap, and a conversation already above the cap is refused.
+- Write tools (`submit_service_request`, `draft_news`) are neither listed nor called until the confirmation step inside TeamBeats is built in slice 4b. Resources (`teambeats://` URIs) also come in slice 4b.

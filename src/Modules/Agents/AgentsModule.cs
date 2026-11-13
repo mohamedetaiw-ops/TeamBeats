@@ -26,6 +26,9 @@ public static class AgentsModule
         services.AddScoped<AssistantHistory>();
         services.AddScoped<AssistantTextActions>();
         services.AddScoped<Contracts.IAgentTool, KnowledgeSearchTool>();
+        services.AddScoped<Contracts.IAgentTool, AskTeamBeatsTool>();
+        services.AddScoped<ExternalToolGateway>();
+        services.AddScoped<Contracts.IExternalToolGateway>(sp => sp.GetRequiredService<ExternalToolGateway>());
         services.AddScoped<ToolRegistry>();
         services.AddScoped<AgentPolicyService>();
         services.AddScoped<AgentRegistry>();

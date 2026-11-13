@@ -86,7 +86,8 @@ public sealed record ToolDefinition(
     int TimeoutSeconds,
     string Description,
     string? RequiredCapability = null,
-    IReadOnlyDictionary<string, string>? Title = null);
+    IReadOnlyDictionary<string, string>? Title = null,
+    bool Exposable = false);
 
 /// <summary>
 /// Who a tool call runs for: the person, through an agent, in a run. Authorization is the person's at the time of the
@@ -286,4 +287,90 @@ public static class AgentRiskClasses
     public const string Low = "low";
     public const string Medium = "medium";
     public const string High = "high";
+}
+
+/// <summary>
+/// An external AI client calling TeamBeats tools through the MCP server of spec 035 (spec 027 FR-025): the MCP client
+/// app, its client ID, and the employee it acts for, whose authorization every tool call runs under.
+/// </summary>
+public sealed record ExternalCaller(Guid AppId, string ClientId, Guid UserId);
+
+/// <summary>A tool as an external AI client sees it: its name, version, what it changes, what it does and its parameter schema.</summary>
+public sealed record ExternalTool(string Name, int Version, string SideEffect, string Description, System.Text.Json.JsonElement Parameters);
+
+/// <summary>
+/// What an external tool call gave back. <paramref name="Content"/> is data, never instructions; each source carries its
+/// reference and classification (spec 035 FR-024). <paramref name="ErrorKey"/> is a short, safe reason when refused.
+/// </summary>
+public sealed record ExternalToolOutcome(bool Ok, string Content, string Classification, IReadOnlyList<ToolSource> Sources, string? ErrorKey = null)
+{
+    public static ExternalToolOutcome Refused(string errorKey) => new(false, string.Empty, "public", [], errorKey);
+}
+
+/// <summary>
+/// The tool gateway for external AI clients (spec 027 FR-025, spec 035 FR-020): the tenant kill switch, the external
+/// AI client policy, the registry's exposable entries, the tenant agent policy, entitlements and the parameter schema,
+/// then the tool under the employee's own authorization, the classification cap of the client, and an execution record.
+/// <paramref name="scoped"/> are the tools the token's scopes cover, as the MCP server works them out from the scope catalogue.
+/// </summary>
+public interface IExternalToolGateway
+{
+    /// <summary>Why the client may not reach the tools at all (external access off, kill switch, client not allowed), or null.</summary>
+    Task<string?> RefusalAsync(string clientId, CancellationToken ct);
+
+    Task<IReadOnlyList<ExternalTool>> ToolsAsync(ExternalCaller caller, IReadOnlySet<string> scoped, CancellationToken ct);
+
+    Task<ExternalToolOutcome> CallAsync(ExternalCaller caller, IReadOnlySet<string> scoped, string tool, System.Text.Json.JsonElement arguments, CancellationToken ct);
+}
+
+/// <summary>Why an external tool call or the whole MCP surface is refused (spec 035 US3), as short safe keys.</summary>
+public static class ExternalRefusals
+{
+    public const string AccessOff = "external.access_off";
+    public const string KillSwitch = "external.kill_switch";
+    public const string ClientNotAllowed = "external.client_not_allowed";
+    public const string UnknownTool = "tool.unknown";
+    public const string InvalidArguments = "tool.invalid_arguments";
+    public const string Denied = "tool.denied";
+    public const string ClassificationBlocked = "tool.classification_blocked";
+    public const string Timeout = "tool.timeout";
+    public const string RateLimited = "tool.rate_limited";
+}
+
+/// <summary>Small helpers for module tools: parameter schemas, reading arguments the gateway already checked, and the JSON of results.</summary>
+public static class ToolArgs
+{
+    public static readonly System.Text.Json.JsonSerializerOptions Options = new(System.Text.Json.JsonSerializerDefaults.Web);
+
+    public static System.Text.Json.JsonElement Schema(string json)
+    {
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        return doc.RootElement.Clone();
+    }
+
+    public static string? String(System.Text.Json.JsonElement args, string name) =>
+        args.ValueKind == System.Text.Json.JsonValueKind.Object && args.TryGetProperty(name, out var v) && v.ValueKind == System.Text.Json.JsonValueKind.String
+            ? v.GetString() : null;
+
+    public static Guid? Id(System.Text.Json.JsonElement args, string name) => Guid.TryParse(String(args, name), out var id) ? id : null;
+
+    public static int Int(System.Text.Json.JsonElement args, string name, int fallback) =>
+        args.ValueKind == System.Text.Json.JsonValueKind.Object && args.TryGetProperty(name, out var v) && v.TryGetInt32(out var n) ? n : fallback;
+
+    public static string Json(object value) => System.Text.Json.JsonSerializer.Serialize(value, Options);
+
+    /// <summary>Whether a classification is at or below the cap of the call (spec 027 FR-017); an unknown one never is.</summary>
+    public static bool Within(string? classification, string cap)
+    {
+        string[] order = ["public", "internal", "confidential", "restricted"];
+        var rank = Array.IndexOf(order, classification);
+        return rank >= 0 && rank <= Array.IndexOf(order, cap);
+    }
+
+    /// <summary>The highest of the classifications, or public for none.</summary>
+    public static string Highest(IEnumerable<string> classifications)
+    {
+        string[] order = ["public", "internal", "confidential", "restricted"];
+        return order[classifications.Select(c => Math.Max(0, Array.IndexOf(order, c))).DefaultIfEmpty(0).Max()];
+    }
 }

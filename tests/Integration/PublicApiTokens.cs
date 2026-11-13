@@ -45,11 +45,19 @@ internal static class PublicApiTokens
     }
 
     /// <summary>A delegated app the person consented to, and the person's access token. Write scopes need an administrator's consent first.</summary>
-    public static async Task<string> PersonAsync(TenantWorld world, TestTenant t, string user, string[] scopes)
+    public static async Task<string> PersonAsync(TenantWorld world, TestTenant t, string user, string[] scopes) =>
+        (await DelegatedAsync(world, t, user, scopes, "delegated_public", null)).Token;
+
+    /// <summary>
+    /// A delegated app of the kind, registered and consented to by the person, and the person's access token. <paramref name="registered"/>
+    /// runs with the client ID before the authorization request, as an MCP client must be on the external AI client policy by then.
+    /// </summary>
+    public static async Task<(string Token, Guid AppId, string ClientId)> DelegatedAsync(TenantWorld world, TestTenant t, string user, string[] scopes,
+        string kind, Func<string, Task>? registered)
     {
         var app = await JsonAsync(await t["admin"].Client.PostAsJsonAsync("/api/v1/api-access/apps", new
         {
-            name = "Notes " + Guid.NewGuid().ToString("N")[..4], kind = "delegated_public", scopes, redirectUris = new[] { Redirect }, publisher = "Acme IT",
+            name = "Notes " + Guid.NewGuid().ToString("N")[..4], kind, scopes, redirectUris = new[] { Redirect }, publisher = "Acme IT",
         }), HttpStatusCode.Created);
         var clientId = app.GetProperty("clientId").GetString()!;
         var adminScopes = scopes.Where(s => s is "content:draft" or "documents:write" or "requests:submit").ToArray();
@@ -57,21 +65,41 @@ internal static class PublicApiTokens
         {
             await JsonAsync(await t["admin"].Client.PutAsJsonAsync($"/api/v1/api-access/apps/{app.GetProperty("id").GetString()}/admin-consent", new { scopes = adminScopes }));
         }
+        if (registered is not null)
+        {
+            await registered(clientId);
+        }
         await JsonAsync(await t[user].Client.PostAsJsonAsync("/api/v1/me/app-consent", new { clientId, redirectUri = Redirect, scopes }));
         var verifier = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-        var challenge = Convert.ToBase64String(SHA256.HashData(Encoding.ASCII.GetBytes(verifier))).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-        var authorize = await t[user].Client.GetAsync(QueryHelpers.AddQueryString("/oauth/authorize", new Dictionary<string, string?>
-        {
-            ["client_id"] = clientId, ["response_type"] = "code", ["redirect_uri"] = Redirect, ["scope"] = string.Join(' ', scopes), ["state"] = "s",
-            ["code_challenge"] = challenge, ["code_challenge_method"] = "S256",
-        }));
+        var authorize = await AuthorizeAsync(t, user, clientId, scopes, verifier);
         Assert.True(authorize.StatusCode == HttpStatusCode.Redirect, $"{(int)authorize.StatusCode}: {await authorize.Content.ReadAsStringAsync()}");
         var code = QueryHelpers.ParseQuery(authorize.Headers.Location!.Query)["code"].ToString();
+        Assert.False(string.IsNullOrEmpty(code), authorize.Headers.Location!.ToString());
         var tokens = await JsonAsync(await world.Factory.TenantClient(t.Key).PostAsync("/oauth/token", new FormUrlEncodedContent(new Dictionary<string, string>
         {
             ["grant_type"] = "authorization_code", ["client_id"] = clientId, ["code"] = code, ["redirect_uri"] = Redirect, ["code_verifier"] = verifier,
         })));
-        return tokens.GetProperty("access_token").GetString()!;
+        return (tokens.GetProperty("access_token").GetString()!, app.GetProperty("id").GetGuid(), clientId);
+    }
+
+    /// <summary>The authorization request of the code flow with PKCE, as the person's browser sends it.</summary>
+    public static Task<HttpResponseMessage> AuthorizeAsync(TestTenant t, string user, string clientId, string[] scopes, string verifier)
+    {
+        var challenge = Convert.ToBase64String(SHA256.HashData(Encoding.ASCII.GetBytes(verifier))).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        return t[user].Client.GetAsync(QueryHelpers.AddQueryString("/oauth/authorize", new Dictionary<string, string?>
+        {
+            ["client_id"] = clientId, ["response_type"] = "code", ["redirect_uri"] = Redirect, ["scope"] = string.Join(' ', scopes), ["state"] = "s",
+            ["code_challenge"] = challenge, ["code_challenge_method"] = "S256",
+        }));
+    }
+
+    /// <summary>Lists the MCP clients on the external AI client policy, each with its classification cap, as an AI policy administrator.</summary>
+    public static async Task AllowExternalAsync(TestTenant t, string by, params (string ClientId, string Cap)[] clients)
+    {
+        var current = await JsonAsync(await t[by].Client.GetAsync("/api/v1/agents/policy"));
+        var body = JsonSerializer.Deserialize<Dictionary<string, object?>>(current.GetProperty("policy").GetRawText())!;
+        body["external"] = new { enabled = true, clients = clients.Select(c => new { clientId = c.ClientId, maxClassification = c.Cap }).ToArray() };
+        await JsonAsync(await t[by].Client.PutAsJsonAsync("/api/v1/agents/policy", new { version = current.GetProperty("version").GetInt32(), policy = body }));
     }
 
     public static Task<HttpResponseMessage> SendAsync(TenantWorld world, TestTenant t, string token, HttpMethod method, string path, object? body = null,

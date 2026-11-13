@@ -22,6 +22,7 @@ public static class DocumentsModule
         services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, DocumentSearchSource>();
         services.AddScoped<Libraries>();
         services.AddScoped<DocumentFiles>();
+        services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, GetDocumentTool>();
         services.AddScoped<DocumentAccess>();
         services.AddScoped<DocumentVersions>();
         services.AddScoped<DocumentPreviews>();

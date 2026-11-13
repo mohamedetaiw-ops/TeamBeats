@@ -2,6 +2,7 @@
   <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
   <PropertyGroup><RootNamespace>TeamBeats.Modules.Content</RootNamespace><AssemblyName>TeamBeats.Modules.Content</AssemblyName></PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../Agents.Contracts/TeamBeats.Modules.Agents.Contracts.csproj" />
     <ProjectReference Include="../../BuildingBlocks/Persistence/TeamBeats.Persistence.csproj" />
     <ProjectReference Include="../../BuildingBlocks/Messaging/TeamBeats.Messaging.csproj" />
     <ProjectReference Include="../../BuildingBlocks/Authorization.Contracts/TeamBeats.Authorization.Contracts.csproj" />

@@ -10,7 +10,7 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Search;
 
 public sealed record SearchResult(Guid ItemId, string Source, string Kind, string Title, string Snippet, string Link, string Locale, DateTimeOffset? UpdatedAt,
-    bool Recommended = false);
+    bool Recommended = false, string Classification = "internal");
 
 /// <summary>
 /// One page of results (spec 012 US1). <see cref="Total"/> and <see cref="Facets"/> count only items the person may read;
@@ -256,7 +256,7 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
         var tsquery = terms.Count == 0 ? string.Empty : SearchText.TsQuery([.. terms.Select(t => (IReadOnlyList<string>)[t])], all: false);
         var rows = await session.QueryAsync(
             """
-            select distinct on (source, item_id) source, item_id, kind, title, body, link, locale, updated_at
+            select distinct on (source, item_id) source, item_id, kind, title, body, link, locale, updated_at, classification
             from search.unit
             where item_id = any(@ids)
             order by source, item_id,
@@ -264,7 +264,7 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
               position, unit_key
             """, new { ids = items.Select(i => i.ItemId).Distinct().ToArray(), tsquery },
             r => new SearchResult(r.GetGuid(1), r.GetString(0), r.GetString(2), r.GetString(3), SearchText.Snippet(r.GetString(4), terms), r.GetString(5),
-                r.GetString(6), r.Get<DateTimeOffset?>("updated_at")), ct);
+                r.GetString(6), r.Get<DateTimeOffset?>("updated_at"), Classification: r.GetString(8)), ct);
         var byKey = rows.ToDictionary(r => (r.Source, r.ItemId));
         return [.. items.Where(i => byKey.ContainsKey((i.Source, i.ItemId))).Select(i => byKey[(i.Source, i.ItemId)])];
     }

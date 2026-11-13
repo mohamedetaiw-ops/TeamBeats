@@ -22276,6 +22276,16 @@
             ],
             "format": "int32",
             "default": 1000
+          },
+          "external": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ExternalAiPolicy"
+              }
+            ]
           }
         }
       },
@@ -26192,6 +26202,52 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "ExternalAiClient": {
+        "required": [
+          "clientId"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string"
+          },
+          "maxClassification": {
+            "type": "string",
+            "default": "internal"
+          }
+        }
+      },
+      "ExternalAiPolicy": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": true
+          },
+          "clients": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ExternalAiClient"
+            }
+          },
+          "allowedTools": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "writeTools": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -32969,6 +33025,12 @@
               {
                 "$ref": "#/components/schemas/AssistantScope"
               }
+            ]
+          },
+          "maxClassification": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }

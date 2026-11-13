@@ -20,7 +20,8 @@ public sealed record FeedItem(
     bool Pinned,
     bool Featured,
     int ReadMinutes = 1,
-    int Reactions = 0);
+    int Reactions = 0,
+    string Classification = "internal");
 
 public sealed record FeedPage(IReadOnlyList<FeedItem> Items, string? Next);
 
@@ -96,7 +97,7 @@ public sealed class ContentFeed(
                 var version = (await items.VersionAsync(row.Id, number, ct))!;
                 var (locale, variant) = Items.Pick(version.Variants, requestLocale.Locale, locales.DefaultLocale, row.PrimaryLocale);
                 result.Add(new FeedItem(row.Id, row.SiteId, row.Type, locale, locale != requestLocale.Locale, variant.Title, variant.Summary,
-                    row.PublishedAt!.Value, row.Pinned, row.Featured, ReadMinutes(variant)));
+                    row.PublishedAt!.Value, row.Pinned, row.Featured, ReadMinutes(variant), Classification: row.Classification));
                 if (result.Count == limit)
                 {
                     break;

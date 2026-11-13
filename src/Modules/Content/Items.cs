@@ -81,7 +81,8 @@ public sealed record ReaderView(
     bool Pinned,
     bool Featured,
     bool UnderReview = false,
-    IReadOnlyList<string>? Anchors = null);
+    IReadOnlyList<string>? Anchors = null,
+    string Classification = "internal");
 
 public sealed record VersionSummary(int Number, ContentPerson Author, ContentPerson? Approver, string? ChangeNote, bool Material, IReadOnlyList<string> Locales,
     DateTimeOffset CreatedAt, DateTimeOffset? PublishedAt, bool Current, bool Draft, int? RestoredFrom = null);
@@ -860,7 +861,7 @@ public sealed class Items(
             variant.Title, variant.Summary, variant.Body, number, item.PublishedAt ?? version.PublishedAt ?? version.CreatedAt,
             version.PublishedAt ?? version.CreatedAt, item.Status == ContentStatuses.Expired, item.Pinned, item.Featured,
             (await sites.TypeAsync(item.Type, ct))!.UnderReviewLabel && item.ReviewDueAt is { } due && due <= clock.UtcNow,
-            BodyValidator.Sections(variant.Body).Select(s => s.Anchor).ToList());
+            BodyValidator.Sections(variant.Body).Select(s => s.Anchor).ToList(), item.Classification);
     }
 
     /// <summary>The reader's locale, else the tenant default, else the item's primary locale.</summary>

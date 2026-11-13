@@ -1003,6 +1003,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             """, new { now, cutoff = now - ConfirmationTimeout - TimeSpan.FromMinutes(5) }, ct);
         await session.ExecAsync("delete from agents.run_checkpoint c using agents.run r where r.id = c.run_id and r.status <> 'waiting'", null, ct);
         await session.ExecAsync("delete from agents.route_decision where created_at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
+        await session.ExecAsync("delete from agents.external_call where at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
         return await session.ExecAsync("delete from agents.run where created_at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
     }
 }
