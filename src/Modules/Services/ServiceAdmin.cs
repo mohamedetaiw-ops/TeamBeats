@@ -301,8 +301,19 @@ public sealed partial class ServiceAdmin(
         return await GetAsync(id, ct);
     }
 
-    private static void ValidateRoute(ServiceRoute route, ValidationErrors errors)
+    private static void ValidateRoute(ServiceRoute route, FormDefinition form, ValidationErrors errors)
     {
+        if (route.Graph is { } graph)
+        {
+            // A step graph replaces the R1 shape; the two are never mixed.
+            if (route.Approval is not null || route.Actions is { Count: > 0 })
+            {
+                errors.Add("route", "validation.services.route_graph");
+                return;
+            }
+            RouteGraphCheck.Validate(graph, form, errors);
+            return;
+        }
         var actions = route.Actions ?? [];
         if (actions.Count > ServiceRoute.MaxActions)
         {
@@ -364,10 +375,18 @@ public sealed partial class ServiceAdmin(
         var route = request.Route ?? ServiceRoute.None;
         var errors = new ValidationErrors();
         FormValidator.ValidateDefinition(form, errors);
-        ValidateRoute(route, errors);
+        ValidateRoute(route, form, errors);
         if (route.Actions is { Count: > 0 })
         {
             await entitlements.DemandAsync(Capabilities.WorkflowAutomation, ct); // Automatic steps (section 9).
+        }
+        if (route.Graph is { } designed && !errors.Any)
+        {
+            // Each step type needs its package capability (section 9); approval and task steps in sequence need none more.
+            foreach (var capability in designed.Capabilities())
+            {
+                await entitlements.DemandAsync(capability, ct);
+            }
         }
         if (request.MaxAttachments is < 0 or > MaxAttachmentsLimit
             || (form.Fields?.Any(f => f?.Type == FieldTypes.Attachment) == true && request.MaxAttachments == 0))
@@ -435,7 +454,23 @@ public sealed partial class ServiceAdmin(
         {
             await entitlements.DemandAsync(Capabilities.WorkflowAutomation, ct);
         }
-        if (latest.Route.HasSteps)
+        if (latest.Route.Graph is { } graph)
+        {
+            foreach (var capability in graph.Capabilities())
+            {
+                await entitlements.DemandAsync(capability, ct);
+            }
+            // The engine checks the compiled model (reachable steps, matched joins, assignees and what steps refer to) and
+            // publishes it as the next version; open requests finish on theirs (FR-009, FR-013, US5 scenario 3).
+            var compiled = RouteGraphCompiler.Compile(Preferred(row.Names) ?? id.ToString("N"), graph);
+            var result = await engine.PublishModelAsync(ProcessKey(id), RouteSources.ServiceRoute, compiled, row.OwnerOrgUnitId, ct);
+            if (result.Problems.Count > 0)
+            {
+                throw AppException.Validation(result.Problems.GroupBy(p => RouteStepField(graph, p.ElementId))
+                    .ToDictionary(g => g.Key, g => g.Select(p => p.Key).Distinct().ToArray()));
+            }
+        }
+        else if (latest.Route.HasSteps)
         {
             var steps = new List<RouteStep>();
             if (latest.Route.Approval is { } step)
@@ -470,6 +505,14 @@ public sealed partial class ServiceAdmin(
             Changes: new { version = latest.Version, row.Kind }), ct);
         await outbox.EnqueueAsync(new ServicePublished(id, latest.Version, row.Kind), ct);
         return await GetAsync(id, ct);
+    }
+
+    /// <summary>The field a problem of the compiled route is shown on: the step it came from, or the whole route.</summary>
+    private static string RouteStepField(RouteGraph graph, string elementId)
+    {
+        var step = RouteGraph.StepIdOf(elementId);
+        var index = graph.Steps.ToList().FindIndex(s => s.Id == step);
+        return index < 0 ? "route.graph" : $"route.graph.steps[{index}]";
     }
 
     /// <summary>The engine keeps one name per element, for history and monitoring: English when there is one.</summary>

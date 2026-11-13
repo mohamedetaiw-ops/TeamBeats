@@ -318,7 +318,7 @@ public sealed class Catalogue(
             return new ServiceDetail(card, null, FormDefinition.Empty, false, 0, false, row.Classification);
         }
         var v = await Versions.GetAsync(session, id, version, ct) ?? throw AppException.NotFound();
-        return new ServiceDetail(card, version, v.Form, v.AllowOnBehalf, v.MaxAttachments, v.Route.Approval is not null, row.Classification);
+        return new ServiceDetail(card, version, v.Form, v.AllowOnBehalf, v.MaxAttachments, v.Route.Approval is not null || v.Route.Graph is not null, row.Classification);
     }
 
     public async Task SetFavouriteAsync(Guid id, bool favourite, CancellationToken ct)

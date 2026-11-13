@@ -13,10 +13,11 @@ public sealed record ModelProblem(string ElementId, string Key);
 /// Reads a BPMN 2.0 model with TeamBeats extension elements (spec 024 FR-001) into the executable graph, keeping only the
 /// R2 subset of section 12, and validates it (FR-002). XML is parsed with DTDs prohibited and a size limit (ADR-0017).
 /// Extension elements, in the <c>teambeats</c> namespace inside <c>bpmn:extensionElements</c>:
-/// <c>tb:name xml:lang</c>; <c>tb:assignment users permission lineManager managerLevel assignee fallbackUsers</c>;
-/// <c>tb:due workingDays</c>; <c>tb:connector connection action retries</c> or <c>tb:webhook id retries</c> with
-/// <c>tb:input name source</c> and <c>tb:output variable source</c>; <c>tb:decision key resultVariable</c>;
-/// <c>tb:correlation key</c>; <c>tb:loop collection elementVariable</c>; <c>tb:timer workingDays</c>.
+/// <c>tb:name xml:lang</c>; <c>tb:assignment users groups permission lineManager managerLevel assignee fallbackUsers</c>;
+/// <c>tb:due workingDays</c>; <c>tb:escalation afterWorkingDays users groups</c>; <c>tb:connector connection action
+/// retries</c>, <c>tb:webhook id retries</c> or <c>tb:product action</c> with <c>tb:input name source</c> and
+/// <c>tb:output variable source</c>; <c>tb:decision key resultVariable</c>; <c>tb:correlation key</c>; <c>tb:loop
+/// collection elementVariable</c>; <c>tb:timer workingDays</c>; <c>tb:result value</c> on end events.
 /// </summary>
 public static partial class BpmnReader
 {
@@ -242,7 +243,11 @@ public static partial class BpmnReader
                 {
                     Assignment = new Assignment(Guids(Attr(a, "users"), id, problems), Attr(a, "permission"), Attr(a, "lineManager") == "true",
                         level is null ? null : int.TryParse(level, NumberStyles.None, CultureInfo.InvariantCulture, out var l) ? l : -1,
-                        Attr(a, "assignee"), Guids(Attr(a, "fallbackUsers"), id, problems)),
+                        Attr(a, "assignee"), Guids(Attr(a, "fallbackUsers"), id, problems), Guids(Attr(a, "groups"), id, problems)),
+                    Escalation = Extension(x, "escalation") is { } esc
+                        ? new TaskEscalation(int.TryParse(Attr(esc, "afterWorkingDays"), NumberStyles.None, CultureInfo.InvariantCulture, out var ed) ? ed : -1,
+                            Guids(Attr(esc, "users"), id, problems) ?? [], Guids(Attr(esc, "groups"), id, problems) ?? [])
+                        : null,
                     DueWorkingDays = Attr(Extension(x, "due"), "workingDays") is { } due ? int.TryParse(due, NumberStyles.None, CultureInfo.InvariantCulture, out var dd) ? dd : -1 : null,
                     Outputs = Mappings(x, "output", "variable"),
                 };
@@ -252,14 +257,16 @@ public static partial class BpmnReader
             {
                 var connector = Extension(x, "connector");
                 var webhook = Extension(x, "webhook");
+                var product = Extension(x, "product");
                 var retries = Attr(connector ?? webhook, "retries");
                 Guid? connection = Attr(connector, "connection") is { } c ? Guid.TryParse(c, out var g) ? g : Guid.Empty : null;
                 Guid? hook = Attr(webhook, "id") is { } w ? Guid.TryParse(w, out var h) ? h : Guid.Empty : null;
                 element = element with
                 {
-                    Call = connector is null && webhook is null ? null : new ServiceCall(connection, Attr(connector, "action"), hook,
+                    Call = connector is null && webhook is null && product is null ? null : new ServiceCall(connection, Attr(connector, "action"), hook,
                         Mappings(x, "input", "name"), Mappings(x, "output", "variable"),
-                        retries is null ? 3 : int.TryParse(retries, NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : -1),
+                        retries is null ? 3 : int.TryParse(retries, NumberStyles.None, CultureInfo.InvariantCulture, out var n) ? n : -1,
+                        product is null ? null : Attr(product, "action") ?? ""),
                 };
                 break;
             }
@@ -269,6 +276,9 @@ public static partial class BpmnReader
                 element = element with { DecisionKey = Attr(decision, "key"), ResultVariable = Attr(decision, "resultVariable") };
                 break;
             }
+            case ElementTypes.EndEvent:
+                element = element with { Result = Attr(Extension(x, "result"), "value") };
+                break;
             case ElementTypes.CallActivity:
                 element = element with { CalledKey = Attr(x, "calledElement"), Outputs = Mappings(x, "output", "variable") };
                 break;

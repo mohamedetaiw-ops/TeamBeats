@@ -29,14 +29,17 @@ public sealed record ApprovalStep(IReadOnlyDictionary<string, string>? Names, Ap
 public sealed record ActionStep(IReadOnlyDictionary<string, string>? Names, Guid ConnectionId, string Action, IReadOnlyDictionary<string, string>? Inputs,
     IReadOnlyDictionary<string, string>? OnBusinessError = null);
 
-/// <summary>A service's route: none or one approval step, then the connector steps in order (US8, R2 part).</summary>
-public sealed record ServiceRoute(ApprovalStep? Approval = null, IReadOnlyList<ActionStep>? Actions = null)
+/// <summary>
+/// A service's route: either the R1 shape (none or one approval step, then the connector steps in order) or a step
+/// graph built in the designer (spec 016 R2, US5 and US8), which runs on the process engine as a compiled model.
+/// </summary>
+public sealed record ServiceRoute(ApprovalStep? Approval = null, IReadOnlyList<ActionStep>? Actions = null, RouteGraph? Graph = null)
 {
     public static readonly ServiceRoute None = new();
 
     public const int MaxActions = 5;
 
-    public bool HasSteps => Approval is not null || Actions is { Count: > 0 };
+    public bool HasSteps => Approval is not null || Actions is { Count: > 0 } || Graph is not null;
 }
 
 public sealed record VersionRow(

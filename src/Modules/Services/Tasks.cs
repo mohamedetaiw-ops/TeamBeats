@@ -51,9 +51,8 @@ public sealed class Tasks(
     IReportingLine reportingLine,
     IProcessEngine engine,
     IAuditWriter audit,
-    IOutbox outbox,
-    IClock clock,
     Requests requests,
+    RouteEnds routeEnds,
     IEnumerable<ITaskSource> sources,
     IEnumerable<IPersonalTaskSource> personal)
 {
@@ -90,6 +89,26 @@ public sealed class Tasks(
         return allowed;
     }
 
+    private readonly Dictionary<(Guid, int), bool> graphRoutes = [];
+
+    /// <summary>
+    /// Whether the request runs on a step graph route. Its steps name who acts (a queue, a manager level, named people),
+    /// so the engine's candidate check decides alone; R1 routes also need <c>workflow.approve</c> or the line manager.
+    /// </summary>
+    private async Task<bool> GraphRouteAsync(RequestRow? request, CancellationToken ct)
+    {
+        if (request is null)
+        {
+            return false;
+        }
+        if (!graphRoutes.TryGetValue((request.ServiceId, request.ServiceVersion), out var graph))
+        {
+            graph = (await Versions.GetAsync(session, request.ServiceId, request.ServiceVersion, ct))?.Route.Graph is not null;
+            graphRoutes[(request.ServiceId, request.ServiceVersion)] = graph;
+        }
+        return graph;
+    }
+
     private readonly Dictionary<Guid, PersonRef> people = [];
 
     private async Task<PersonRef> PersonAsync(Guid id, CancellationToken ct)
@@ -121,7 +140,7 @@ public sealed class Tasks(
                 continue;
             }
             var request = RequestIdOf(task) is { } requestId ? await requests.RowAsync(requestId, false, ct) : null;
-            if (await MayApproveAsync(task.OnBehalfOf ?? user, request, await UnitOfAsync(task, request, ct), ct))
+            if (await GraphRouteAsync(request, ct) || await MayApproveAsync(task.OnBehalfOf ?? user, request, await UnitOfAsync(task, request, ct), ct))
             {
                 list.Add((task, request, null));
             }
@@ -144,7 +163,9 @@ public sealed class Tasks(
                 names = Catalogue.Json<Dictionary<string, string>>(await session.ScalarAsync<string>("select names::text from services.service where id = @id",
                     new { id = request.ServiceId }, ct) ?? "{}");
                 var version = await Versions.GetAsync(session, request.ServiceId, request.ServiceVersion, ct);
-                step = version?.Route.Approval?.Names is { Count: > 0 } stepNames ? stepNames : names;
+                step = version?.Route.Graph is { } graph
+                    ? graph.Step(RouteGraph.StepIdOf(task.ElementId))?.Names is { Count: > 0 } nodeNames ? nodeNames : names
+                    : version?.Route.Approval?.Names is { Count: > 0 } stepNames ? stepNames : names;
             }
             var requester = request?.RequesterId ?? subject?.RequesterId;
             items.Add(new InboxItem(task.Id, subject?.Source ?? (request is null ? task.DefinitionKey : "service_request"), task.Name, step, request?.Id, request?.Number,
@@ -217,7 +238,7 @@ public sealed class Tasks(
                 throw AppException.Denied();
             }
         }
-        else if (!await MayApproveAsync(onBehalfOf ?? user, request, await UnitOfAsync(task, request, ct), ct))
+        else if (!await GraphRouteAsync(request, ct) && !await MayApproveAsync(onBehalfOf ?? user, request, await UnitOfAsync(task, request, ct), ct))
         {
             throw AppException.Denied();
         }
@@ -249,6 +270,11 @@ public sealed class Tasks(
     private async Task MoveRequestAsync(RequestRow request, UserTaskInfo task, UserTaskInfo done, CancellationToken ct)
     {
         var version = await Versions.GetAsync(session, request.ServiceId, request.ServiceVersion, ct);
+        if (version?.Route.Graph is { } graph)
+        {
+            await MoveGraphRequestAsync(request, graph, task, done, ct);
+            return;
+        }
         var step = version?.Route.Approval?.Names is { Count: > 0 } names ? ServiceAdmin.Preferred(names) ?? task.Name : task.Name;
         var eventName = done.Outcome switch
         {
@@ -274,16 +300,29 @@ public sealed class Tasks(
             InstanceOutcomes.Rejected => RequestStatuses.Rejected,
             _ => RequestStatuses.Returned,
         };
-        var now = clock.UtcNow;
-        await session.ExecAsync("update services.request set status = @status, closed_at = @closed where id = @id",
-            new { id = request.Id, status, closed = status == RequestStatuses.Returned ? (DateTimeOffset?)null : now }, ct);
-        if (status != RequestStatuses.Returned)
+        await routeEnds.CloseAsync(request, status, ct);
+    }
+
+    /// <summary>
+    /// A decision on a step of a step graph route: Tracking records it under the step's name (a task step as done or
+    /// rejected), and when the route ended with it, the request closes with the result of the end it reached.
+    /// </summary>
+    private async Task MoveGraphRequestAsync(RequestRow request, RouteGraph graph, UserTaskInfo task, UserTaskInfo done, CancellationToken ct)
+    {
+        var node = graph.Step(RouteGraph.StepIdOf(task.ElementId));
+        var name = node?.Names is { Count: > 0 } names ? ServiceAdmin.Preferred(names) ?? task.Name : task.Name;
+        var eventName = (node?.Type, done.Outcome) switch
         {
-            await outbox.EnqueueAsync(new RequestCompleted(request.Id, request.ServiceId, status), ct);
-        }
-        else
+            (StepTypes.Task, TaskOutcomes.Reject) => "task_rejected",
+            (StepTypes.Task, _) => "task_done",
+            (_, TaskOutcomes.Approve) => "approved",
+            (_, TaskOutcomes.Reject) => "rejected",
+            _ => "returned",
+        };
+        await requests.EventAsync(request.Id, eventName, name, done.CompletedBy, done.OnBehalfOf, done.Comment, ct);
+        if (await engine.GetInstanceAsync(task.InstanceId, ct) is { Status: "completed", Result: { } result } && RouteEnds.StatusFor(result) is { } status)
         {
-            await outbox.EnqueueAsync(new RequestReturned(request.Id, request.ServiceId), ct);
+            await routeEnds.CloseAsync(request, status, ct);
         }
     }
 }

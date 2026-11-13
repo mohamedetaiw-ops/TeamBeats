@@ -126,6 +126,14 @@ public sealed class ProcessSandbox(ProcessEngine engine, IReportingLine reportin
                         break;
                     case CallService s:
                         var call = graph.Element(s.ElementId).Call;
+                        if (call?.Product is { } product)
+                        {
+                            // A product action runs at once; notify and start service are not carried out in a test run.
+                            steps.Add(new TestStep(s.ElementId, Name(graph, s.ElementId, locale), product == ProductActions.Set ? "completed" : "action_not_run",
+                                new JsonObject { ["kind"] = product, ["inputs"] = s.Inputs.DeepClone() }));
+                            executor.Complete(s.Token, product == ProductActions.Set ? (JsonObject)s.Inputs.DeepClone() : []);
+                            break;
+                        }
                         steps.Add(new TestStep(s.ElementId, Name(graph, s.ElementId, locale), "mocked",
                             new JsonObject { ["kind"] = call?.WebhookId is null ? "connector" : "webhook", ["inputs"] = s.Inputs.DeepClone() }));
                         Track(s.Token, Work.Service, s.ElementId);
@@ -144,7 +152,7 @@ public sealed class ProcessSandbox(ProcessEngine engine, IReportingLine reportin
                         steps.Add(new TestStep(i.ElementId, Name(graph, i.ElementId, locale), "incident", new JsonObject { ["class"] = i.ErrorClass, ["code"] = i.Code }));
                         break;
                     case Finished f:
-                        outcome = f.Code is null ? f.Outcome : $"{f.Outcome}:{f.Code}";
+                        outcome = (f.Code ?? f.Result) is { } code ? $"{f.Outcome}:{code}" : f.Outcome;
                         break;
                 }
             }
@@ -265,13 +273,18 @@ public sealed class ProcessSandbox(ProcessEngine engine, IReportingLine reportin
                 detail = new JsonObject { ["expressionError"] = ex.Code };
             }
         }
-        if (ids.Count == 0 && assignment.Permission is null && !lineManager)
+        var groups = assignment.Groups ?? [];
+        if (groups.Count > 0)
+        {
+            (detail ??= [])["groups"] = new JsonArray(groups.Select(g => (JsonNode)g.ToString()).ToArray());
+        }
+        if (ids.Count == 0 && groups.Count == 0 && assignment.Permission is null && !lineManager)
         {
             ids.AddRange(assignment.FallbackUsers ?? []);
         }
         var found = await users.GetManyAsync(ids.Distinct().ToList(), ct);
         var people = ids.Distinct().Where(found.ContainsKey).Select(id => new TestPerson(id, found[id].DisplayName)).ToList();
-        var nobody = people.Count == 0 && assignment.Permission is null && !lineManager;
+        var nobody = people.Count == 0 && groups.Count == 0 && assignment.Permission is null && !lineManager;
         return (new TestStep(element.Id, element.Name(locale), "assigned", detail, people, assignment.Permission, lineManager), nobody);
     }
 }

@@ -150,6 +150,9 @@ public interface IAuthorizationProvisioning
     /// <summary>The groups the user is a member of, product and directory groups alike (audiences such as spec 016).</summary>
     Task<IReadOnlySet<Guid>> GroupIdsOfAsync(Guid userId, CancellationToken ct = default);
 
+    /// <summary>The members of the given groups of the current tenant, each once (a workflow queue or escalation target, spec 016).</summary>
+    Task<IReadOnlyList<Guid>> GroupMembersAsync(IReadOnlyCollection<Guid> groupIds, CancellationToken ct = default);
+
     /// <summary>Which of the given group IDs exist in the current tenant.</summary>
     Task<IReadOnlySet<Guid>> ExistingGroupsAsync(IReadOnlyCollection<Guid> groupIds, CancellationToken ct = default);
 

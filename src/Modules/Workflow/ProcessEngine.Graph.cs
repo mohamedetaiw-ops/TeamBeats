@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using TeamBeats.Audit.Contracts;
+using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Integrations.Contracts;
@@ -97,8 +98,8 @@ public sealed partial class ProcessEngine
             $"""
             select {InstanceColumns}, state::text, variables::text, parent_instance_id, parent_token_id, depth, coalesce(requested_for, started_by) as subject, excluded_user_ids
             from workflow.process_instance where id = @instanceId for update
-            """, new { instanceId }, r => (Info: ReadInstance(r), State: r.Get<string?>("state"), Variables: r.GetString(11), Parent: r.Get<Guid?>("parent_instance_id"),
-                Token: r.Get<Guid?>("parent_token_id"), Depth: r.GetInt32(14), Subject: r.Get<Guid?>("subject"), Excluded: r.GetFieldValue<Guid[]>(16)), ct);
+            """, new { instanceId }, r => (Info: ReadInstance(r), State: r.Get<string?>("state"), Variables: r.Get<string>("variables")!, Parent: r.Get<Guid?>("parent_instance_id"),
+                Token: r.Get<Guid?>("parent_token_id"), Depth: r.Get<int>("depth"), Subject: r.Get<Guid?>("subject"), Excluded: r.Get<Guid[]>("excluded_user_ids")!), ct);
         if (row.Info is null || row.Info.Status != "active" || row.State is null)
         {
             return null;
@@ -116,7 +117,7 @@ public sealed partial class ProcessEngine
     // ---- Publishing ----
 
     /// <summary>Stores the graph as the next immutable version of <paramref name="key"/>, unless it equals the latest one.</summary>
-    internal async Task<ProcessDefinitionInfo> PublishGraphAsync(string key, ProcessGraph graph, string bpmn, Guid? owner, CancellationToken ct)
+    internal async Task<ProcessDefinitionInfo> PublishGraphAsync(string key, ProcessGraph graph, string bpmn, Guid? owner, CancellationToken ct, string source = "process_model")
     {
         context.RequireTenant();
         await session.ExecAsync("select pg_advisory_xact_lock(hashtextextended(platform.current_tenant_id()::text || ':workflow:' || @key, 0))", new { key }, ct);
@@ -132,12 +133,84 @@ public sealed partial class ProcessEngine
         await session.ExecAsync(
             """
             insert into workflow.process_definition (tenant_id, key, version, name, source, kind, bpmn_xml, compiled, names, owner_org_unit_id, published_at, published_by)
-            values (platform.current_tenant_id(), @key, @version, @name, 'process_model', 'graph', @bpmn, @compiled, @names, @owner, @publishedAt, @by)
-            """, new { key, version, name, bpmn, compiled = new Jsonb(compiled), names = Jsonb.From(graph.Names), owner, publishedAt, by = Actor() }, ct);
+            values (platform.current_tenant_id(), @key, @version, @name, @source, 'graph', @bpmn, @compiled, @names, @owner, @publishedAt, @by)
+            """, new { key, version, name, source, bpmn, compiled = new Jsonb(compiled), names = Jsonb.From(graph.Names), owner, publishedAt, by = Actor() }, ct);
         await RegisterStartsAsync(key, graph, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.WorkflowDefinitionPublished, "process_definition", $"{key}:{version}", TargetOrgUnitId: owner,
-            Changes: new { key, version, source = "process_model", elements = graph.Elements.Count }), ct);
-        return new ProcessDefinitionInfo(key, version, name, "process_model", publishedAt);
+            Changes: new { key, version, source, elements = graph.Elements.Count }), ct);
+        return new ProcessDefinitionInfo(key, version, name, source, publishedAt);
+    }
+
+    /// <summary>
+    /// Checks what a model refers to before it is published: groups that exist, called processes that are published,
+    /// permissions that exist and connector actions that are there with the inputs they declare. Product actions are
+    /// allowed only where the owning module carries them out (spec 016 R2 service routes).
+    /// </summary>
+    internal async Task<List<ModelProblem>> ReferenceProblemsAsync(ProcessGraph graph, bool productActions, CancellationToken ct)
+    {
+        var problems = new List<ModelProblem>();
+        var groups = graph.Elements.SelectMany(e => (e.Assignment?.Groups ?? []).Concat(e.Escalation?.Groups ?? [])).Distinct().ToList();
+        var existing = groups.Count == 0 ? new HashSet<Guid>() : await grants.ExistingGroupsAsync(groups, ct);
+        foreach (var element in graph.Elements)
+        {
+            if ((element.Assignment?.Groups ?? []).Concat(element.Escalation?.Groups ?? []).Any(g => !existing.Contains(g)))
+            {
+                problems.Add(new ModelProblem(element.Id, "validation.process.assignment_group"));
+            }
+            // Product actions belong to service routes, whose module carries them out (spec 016 R2).
+            if (element.Call?.Product is not null && !productActions)
+            {
+                problems.Add(new ModelProblem(element.Id, "validation.process.product_action"));
+            }
+            if (element.CalledKey is { } called && called != graph.Key && await GetDefinitionAsync(ModelPrefix + called, null, ct) is null)
+            {
+                problems.Add(new ModelProblem(element.Id, "validation.process.called_missing"));
+            }
+            if (element.Assignment?.Permission is { } permission && !Permissions.All.Contains(permission))
+            {
+                problems.Add(new ModelProblem(element.Id, "validation.process.assignment_permission"));
+            }
+            if (element.Call is { ConnectionId: { } connection, Action: { } action } call)
+            {
+                var found = await actions.FindAsync(connection, action, ct);
+                if (found is null || (found.Inputs is { } inputs && call.Inputs.Keys.Any(k => !inputs.Any(d => d.Name == k))))
+                {
+                    problems.Add(new ModelProblem(element.Id, "validation.process.service_binding"));
+                }
+            }
+        }
+        return problems;
+    }
+
+    public async Task<IReadOnlyList<ModelProblemInfo>> ValidateModelAsync(string key, string bpmnXml, CancellationToken ct = default) =>
+        (await CheckModelAsync(key, bpmnXml, ct)).Problems;
+
+    public async Task<ModelPublishResult> PublishModelAsync(string key, string source, string bpmnXml, Guid? ownerOrgUnitId, CancellationToken ct = default)
+    {
+        var (graph, problems) = await CheckModelAsync(key, bpmnXml, ct);
+        return problems.Count > 0
+            ? new ModelPublishResult(null, problems)
+            : new ModelPublishResult(await PublishGraphAsync(key, graph!, bpmnXml, ownerOrgUnitId, ct, source), []);
+    }
+
+    private async Task<(ProcessGraph? Graph, IReadOnlyList<ModelProblemInfo> Problems)> CheckModelAsync(string key, string bpmnXml, CancellationToken ct)
+    {
+        context.RequireTenant();
+        if (!BpmnReader.IsValidKey(key) || key.StartsWith(ModelPrefix, StringComparison.Ordinal))
+        {
+            throw AppException.Validation("key", "validation.process.key");
+        }
+        if (bpmnXml.Length > BpmnReader.MaxBytes)
+        {
+            throw AppException.Validation("bpmnXml", "validation.process.too_large");
+        }
+        var (graph, read) = BpmnReader.Read(key, bpmnXml);
+        var problems = read.ToList();
+        if (graph is not null && problems.Count == 0)
+        {
+            problems.AddRange(await ReferenceProblemsAsync(graph, true, ct));
+        }
+        return (graph, problems.Select(p => new ModelProblemInfo(p.ElementId, p.Key)).ToList());
     }
 
     internal async Task<bool> HasNoneStartAsync(ProcessDefinitionInfo definition, CancellationToken ct) =>
@@ -162,8 +235,14 @@ public sealed partial class ProcessEngine
         IReadOnlyCollection<Guid>? alsoExcluded, Guid? requestedFor, JsonObject variables, (Guid Instance, Guid Token, int Depth)? parent, string? startElement,
         JsonObject? payload, CancellationToken ct)
     {
-        await entitlements.DemandAsync(Capabilities.WorkflowBpmn, ct);
-        if (await entitlements.GetLimitAsync(Capabilities.WorkflowMaxActiveInstances, ct) is { } limit)
+        // Process models need the BPMN capability and count against the active instance quota; models other modules compiled
+        // (spec 016 service routes) are gated by that module's own capabilities when published and started.
+        var modelled = definition.Key.StartsWith(ModelPrefix, StringComparison.Ordinal);
+        if (modelled)
+        {
+            await entitlements.DemandAsync(Capabilities.WorkflowBpmn, ct);
+        }
+        if (modelled && await entitlements.GetLimitAsync(Capabilities.WorkflowMaxActiveInstances, ct) is { } limit)
         {
             var active = await session.ScalarAsync<long>(
                 "select count(*) from workflow.process_instance where status = 'active' and state is not null", null, ct);
@@ -266,7 +345,7 @@ public sealed partial class ProcessEngine
 
     private static string StateJson(InstanceState state)
     {
-        var copy = new InstanceState { Tokens = state.Tokens, Scopes = state.Scopes, Visits = state.Visits };
+        var copy = new InstanceState { Tokens = state.Tokens, Scopes = state.Scopes, Visits = state.Visits, Result = state.Result };
         return JsonSerializer.Serialize(copy, ProcessGraph.Json);
     }
 
@@ -309,13 +388,13 @@ public sealed partial class ProcessEngine
         var cancelled = finished.Outcome == "cancelled";
         await session.ExecAsync(
             """
-            update workflow.process_instance set status = @status, outcome = @outcome, ended_at = @now, state = null, variables = @variables where id = @id
-            """, new { id = instance.Info.Id, status = cancelled ? "cancelled" : "completed", outcome = finished.Outcome, now,
+            update workflow.process_instance set status = @status, outcome = @outcome, result = @result, ended_at = @now, state = null, variables = @variables where id = @id
+            """, new { id = instance.Info.Id, status = cancelled ? "cancelled" : "completed", outcome = finished.Outcome, result = finished.Result, now,
                 variables = new Jsonb(instance.State.Variables.ToJsonString()) }, ct);
         await CloseGraphWaitsAsync(instance.Info.Id, null, ct);
         await HistoryAsync(instance.Info.Id, "end_" + finished.Outcome, "completed", null, null, ct);
         await EndedAnalyticsAsync(instance.Info, cancelled ? "cancelled" : "completed", now, ct);
-        await outbox.EnqueueAsync(new ProcessInstanceCompleted(instance.Info.Id, instance.Info.DefinitionKey, instance.Info.BusinessKey, finished.Outcome), ct);
+        await outbox.EnqueueAsync(new ProcessInstanceCompleted(instance.Info.Id, instance.Info.DefinitionKey, instance.Info.BusinessKey, finished.Outcome, finished.Result), ct);
         if (instance.ParentInstanceId is not { } parent || instance.ParentTokenId is not { } token)
         {
             return;
@@ -383,17 +462,18 @@ public sealed partial class ProcessEngine
             }
         }
         users = users.Where(u => !instance.Excluded.Contains(u)).Distinct().ToList();
-        if (users.Count == 0 && assignment.Permission is null && !lineManager)
+        var groups = (assignment.Groups ?? []).Distinct().ToList();
+        if (users.Count == 0 && groups.Count == 0 && assignment.Permission is null && !lineManager)
         {
             users = (assignment.FallbackUsers ?? []).Where(u => !instance.Excluded.Contains(u)).Distinct().ToList();
         }
-        if (users.Count == 0 && assignment.Permission is null && !lineManager)
+        if (users.Count == 0 && groups.Count == 0 && assignment.Permission is null && !lineManager)
         {
             MarkIncident(instance, effect.Token);
             await RaiseGraphIncidentAsync(instance, effect.Token, element.Id, "no_assignee", null, null, ct);
             return;
         }
-        var candidates = new CandidateSet(element.Name("en"), users, assignment.Permission, lineManager, false, element.Names);
+        var candidates = new CandidateSet(element.Name("en"), users, assignment.Permission, lineManager, false, element.Names, groups.Count == 0 ? null : groups);
         var id = Ids.New();
         var now = clock.UtcNow;
         DateTimeOffset? dueAt = element.DueWorkingDays is { } days ? await jobs.DueAtAsync(instance.Info.OrgUnitId, now, days, ct) : null;
@@ -405,6 +485,11 @@ public sealed partial class ProcessEngine
         if (dueAt is { } due)
         {
             await jobs.ScheduleTaskDueAsync(instance.Info.Id, id, due, ct);
+            // The due time reminds the candidates; the escalation time after it also hands the task to the target (spec 016 US5 scenario 2).
+            if (element.Escalation is { } escalation)
+            {
+                await jobs.ScheduleTaskEscalationAsync(instance.Info.Id, id, await jobs.DueAtAsync(instance.Info.OrgUnitId, due, escalation.AfterWorkingDays, ct), ct);
+            }
         }
         await HistoryAsync(instance.Info.Id, element.Id, "task_created", null, null, ct);
         await outbox.EnqueueAsync(new UserTaskCreated(id, instance.Info.Id, instance.Info.DefinitionKey, instance.Info.BusinessKey, element.Id, dueAt), ct);
@@ -509,6 +594,32 @@ public sealed partial class ProcessEngine
             return (now.AddMonths(every.Months).Add(every.Time), detail);
         }
         return null;
+    }
+
+    /// <summary>
+    /// An overdue task reached its escalation time (spec 016 US5 scenario 2): it stays with its candidates and also goes
+    /// to the escalation target, so members of a target group can act on it from now on. People the instance excludes
+    /// (the requester) stay out. Does nothing for a task that closed or an escalation already applied.
+    /// </summary>
+    internal async Task OnTaskEscalationAsync(Guid taskId, CancellationToken ct)
+    {
+        var task = await session.QuerySingleOrDefaultAsync(
+            $"select {TaskColumns} from workflow.user_task t join workflow.process_instance i on i.id = t.instance_id where t.id = @taskId and t.status = 'open' for update of t",
+            new { taskId }, ReadTask, ct);
+        if (task is null || task.Candidates.Escalated || await LoadAsync(task.Info.InstanceId, ct) is not { } instance
+            || !instance.Graph.Has(task.Info.ElementId) || instance.Graph.Element(task.Info.ElementId).Escalation is not { } escalation)
+        {
+            return;
+        }
+        var users = task.Candidates.Users.Concat(escalation.Users.Where(u => !task.Excluded.Contains(u))).Distinct().ToList();
+        var groups = (task.Candidates.Groups ?? []).Concat(escalation.Groups).Distinct().ToList();
+        var candidates = task.Candidates with { Users = users, Groups = groups.Count == 0 ? null : groups, Escalated = true };
+        await session.ExecAsync("update workflow.user_task set candidates = @candidates where id = @taskId", new { taskId, candidates = Jsonb.From(candidates) }, ct);
+        await HistoryAsync(task.Info.InstanceId, task.Info.ElementId, "task_escalated", null, null, ct);
+        var before = task.Candidates.Users.ToHashSet();
+        var added = escalation.Users.Concat(await grants.GroupMembersAsync(escalation.Groups.ToList(), ct))
+            .Where(u => !before.Contains(u) && !task.Excluded.Contains(u)).Distinct().ToList();
+        await outbox.EnqueueAsync(new UserTaskEscalated(taskId, task.Info.InstanceId, task.Info.DefinitionKey, task.Info.BusinessKey, task.Info.ElementId, added), ct);
     }
 
     /// <summary>A timer job of a graph instance is due (spec 024 FR-008). A missed cycle fires once and the next one is scheduled from now.</summary>
@@ -670,6 +781,21 @@ public sealed partial class ProcessEngine
         var element = instance.Graph.Element(effect.ElementId);
         var call = element.Call!;
         var id = Ids.New();
+        if (call.Product is { } product)
+        {
+            // A product action runs inside the product (spec 016 R2): set writes its inputs to variables; notify and start
+            // service go to the module that owns the process, and the step moves on at once.
+            await HistoryAsync(instance.Info.Id, element.Id, "product_action:" + product, null, null, ct);
+            if (product != ProductActions.Set)
+            {
+                await outbox.EnqueueAsync(new ProcessActionRequested(id, instance.Info.Id, instance.Info.DefinitionKey, instance.Info.BusinessKey, element.Id, product,
+                    (JsonObject)effect.Inputs.DeepClone()), ct);
+            }
+            // Set completes with its inputs, so they become variables (directly, or through its outputs); the others with nothing.
+            var (owner, token, inputs) = (instance.Info.Id, effect.Token, product == ProductActions.Set ? (JsonObject)effect.Inputs.DeepClone() : []);
+            deferred.Enqueue(() => SignalAsync(owner, ex => ex.State.Tokens.Any(t => t.Id == token) ? ex.Complete(token, inputs) : [], ct));
+            return;
+        }
         var key = $"{GraphCorrelationPrefix}{instance.Info.Id:N}:{id:N}";
         await session.ExecAsync(
             """

@@ -2318,5 +2318,21 @@
   "validation.process.period": "اختر بداية قبل النهاية، والفرق بينهما سنة على الأكثر.",
   "conflict.process.instance_not_active": "انتهت هذه النسخة بالفعل.",
   "conflict.process.no_open_incident": "لا يمكن تغيير المتغيرات إلا أثناء وجود حادثة مفتوحة في النسخة.",
-  "validation.process.test_requester": "اختر مقدم طلب تجريبيا من أعضاء هذه المؤسسة."
+  "validation.process.test_requester": "اختر مقدم طلب تجريبيا من أعضاء هذه المؤسسة.",
+  "validation.process.escalation": "يحتاج التصعيد إلى مدة استحقاق على الخطوة، ومهلة من 1 إلى 90 يوم عمل بعدها، وشخص أو مجموعة واحدة على الأقل يذهب إليها.",
+  "validation.process.result": "النتيجة رمز قصير من حروف إنجليزية وأرقام ونقاط وشرطات وشرطات سفلية يبدأ بحرف، ويوضع على حدث نهاية عادي أو حدث إنهاء.",
+  "validation.process.product_action": "خطوات المنتج (الإشعار، وتعيين حقل، وبدء خدمة أخرى) متاحة في مسارات الخدمات فقط.",
+  "validation.process.assignment_group": "اختر مجموعات موجودة في مؤسستك.",
+  "notifications.template.services.task.reminder.title": "الطلب {number} متأخر",
+  "notifications.template.services.task.reminder.body": "انتظر الطلب {number} في صندوق مهامك بعد موعد استحقاقه.",
+  "notifications.template.services.task.escalated.title": "تم تصعيد الطلب {number} إليك",
+  "notifications.template.services.task.escalated.body": "انتظر الطلب {number} طويلا وأصبح ينتظرك أنت أيضا.",
+  "notifications.template.services.request.update.title": "مستجدات على الطلب {number}",
+  "notifications.template.services.request.update.body": "هناك مستجدات على الطلب {number}. افتحه لترى أين وصل.",
+  "validation.services.route_graph": "ابن المسار من 60 خطوة على الأكثر، إما في المصمم أو كموافقة واحدة مع خطوات تلقائية، وليس الاثنين معا.",
+  "validation.services.route_step": "أعط هذه الخطوة معرفا قصيرا من حروف إنجليزية صغيرة وأرقام وشرطات سفلية مفردة، ونوع خطوة، والإعدادات التي يحتاجها هذا النوع.",
+  "validation.services.route_link": "صل بين خطوتين مختلفتين من هذا المسار مرة واحدة.",
+  "validation.services.route_condition": "توضع الشروط على المسارات الخارجة من خطوة شرط أو تفرع، وكل شرط يقارن حقلا في النموذج بقيمة.",
+  "validation.services.route_start": "يحتاج المسار إلى خطوة أولى واحدة بالضبط، ولا يمكن أن تكون نهاية.",
+  "validation.services.route_paths": "خطوات النهاية لا تؤدي إلى شيء، وخطوات الشرط والتفرع تؤدي إلى خطوتين أو أكثر مع مسار واحد على الأكثر دون شرط، وكل خطوة أخرى تؤدي إلى خطوة واحدة بالضبط."
 }

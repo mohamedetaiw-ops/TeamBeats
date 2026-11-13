@@ -822,7 +822,8 @@
         "compliance_projects": "مشاريع الامتثال",
         "deployment_region_choice": "اختيار منطقة الاستضافة",
         "workflow_bpmn": "نماذج العمليات والقرارات",
-        "workflow_max_active_instances": "مثيلات العمليات النشطة"
+        "workflow_max_active_instances": "مثيلات العمليات النشطة",
+        "workflow_connector_fulfilment": "خطوات الموصلات وخطافات الويب في الخدمات"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",
@@ -2872,7 +2873,10 @@
         "automation_failed": "تعثرت الأتمتة",
         "automation_retried": "أعيدت محاولة خطوة تلقائية",
         "automation_skipped": "تم تخطي خطوة تلقائية",
-        "automation_cancelled": "ألغي عند خطوة تلقائية"
+        "automation_cancelled": "ألغي عند خطوة تلقائية",
+        "task_done": "اكتملت المهمة",
+        "task_rejected": "رُفضت المهمة",
+        "skipped": "تم تخطيها، لم ينطبق شرطها"
       },
       "automation": {
         "title": "الخطوات التلقائية",
@@ -11749,8 +11753,10 @@
         "loop_started": "بدأ التكرار",
         "escalated": "صُعّد",
         "interrupted": "قوطع",
-        "triggered": "انطلق"
-      }
+        "triggered": "انطلق",
+        "action_not_run": "لا يُنفذ في التشغيل التجريبي"
+      },
+      "testGroups": "أعضاء مجموعات الخطوة ({count})"
     }
   }
 }

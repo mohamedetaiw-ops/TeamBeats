@@ -18,7 +18,7 @@ const cancellable = new Set(["submitted", "in_approval", "returned"]);
 const decisions = new Set(["approved", "rejected", "returned"]);
 // Tracking events that have a message; any other shows as the API sent it.
 const tracked = new Set(["submitted", "resubmitted", "cancelled", "approved", "rejected", "returned", "completed",
-  "automation_done", "automation_failed", "automation_retried", "automation_skipped", "automation_cancelled"]);
+  "automation_done", "automation_failed", "automation_retried", "automation_skipped", "automation_cancelled", "task_done", "task_rejected", "skipped"]);
 
 /**
  * Details and Tracking of one request (spec 016 FR-005): status, current step and assignees, the submitted values on
