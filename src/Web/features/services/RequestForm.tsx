@@ -10,6 +10,8 @@ import { isHrSource, isShown, pick, type AttachmentView, type FieldValue, type F
 import { PersonPicker } from "./PersonPicker";
 import "./services.css";
 import { announceMeaningfulAction } from "@/lib/push";
+import { dayInWords } from "@/lib/format";
+import { DayReadout } from "@/components/ui/FormField";
 
 type Target = { kind: "new"; serviceId: string; preparedId?: string } | { kind: "resubmit"; requestId: string } | { kind: "preview" };
 
@@ -85,6 +87,14 @@ export function RequestForm({
 
   const set = (key: string, value: FieldValue) => setData((d) => ({ ...d, [key]: value }));
   const label = (f: FormField) => pick(f.labels, locale, f.key);
+  /** A required field left empty says what to do with it: "Choose leave type", never only "required" (DLS-083). */
+  const requiredMessage = (f: FormField) => {
+    const name = label(f);
+    // In English a label reads as a phrase in the sentence; a label that starts with an acronym keeps its capitals.
+    const phrase = locale.startsWith("en") && /^[A-Z][a-z]/.test(name) ? name.charAt(0).toLowerCase() + name.slice(1) : name;
+    const verb = f.type === "attachment" ? "requiredAttach" : ["text", "number", "money"].includes(f.type) ? "requiredEnter" : "requiredChoose";
+    return t(verb, { label: phrase });
+  };
 
   async function upload(field: FormField, files: FileList | null) {
     if (!files) return;
@@ -157,10 +167,14 @@ export function RequestForm({
       for (const [path, list] of Object.entries(problem.errors ?? {})) {
         const key = path.startsWith("data.") ? path.slice(5) : null;
         const message = list.map((e) => e.message).join(" ");
-        if (key && form.fields.some((f) => f.key === key)) byField[key] = message;
+        const field = key ? form.fields.find((f) => f.key === key) : undefined;
+        if (field) byField[field.key] = list.some((e) => e.key === "validation.services.field_required") ? requiredMessage(field) : message;
         else rest.push(message);
       }
       setErrors(byField);
+      // Focus goes to the first field in error, in form order; the summary above the fields lists them all (DLS-083).
+      const first = form.fields.find((f) => byField[f.key]);
+      if (first) window.setTimeout(() => document.getElementById(`${formId}-${first.key}`)?.focus(), 0);
       setGeneral(rest.length > 0 || Object.keys(byField).length > 0 ? rest : await problemMessages(response));
     } catch {
       setGeneral([t("failed")]);
@@ -216,8 +230,15 @@ export function RequestForm({
           </div>
         );
       }
-      case "date":
-        return <input {...common} type="date" readOnly={isLocked} value={typeof value === "string" ? value : ""} onChange={(e) => set(f.key, e.target.value || null)} />;
+      case "date": {
+        const day = typeof value === "string" ? dayInWords(value, locale) : null;
+        return (
+          <>
+            <input {...common} type="date" readOnly={isLocked} value={typeof value === "string" ? value : ""} onChange={(e) => set(f.key, e.target.value || null)} />
+            {day ? <DayReadout text={day} /> : null}
+          </>
+        );
+      }
       case "date_range": {
         const range = value && typeof value === "object" && "from" in value ? value : { from: "", to: "" };
         return (
@@ -225,10 +246,12 @@ export function RequestForm({
             <label className="services-select">
               {t("from")}
               <input {...common} type="date" value={range.from} onChange={(e) => set(f.key, { ...range, from: e.target.value })} />
+              {dayInWords(range.from, locale) ? <DayReadout text={dayInWords(range.from, locale)!} /> : null}
             </label>
             <label className="services-select">
               {t("to")}
               <input type="date" value={range.to} onChange={(e) => set(f.key, { ...range, to: e.target.value })} />
+              {dayInWords(range.to, locale) ? <DayReadout text={dayInWords(range.to, locale)!} /> : null}
             </label>
           </div>
         );
@@ -377,6 +400,20 @@ export function RequestForm({
         <div>
           <PersonPicker label={t("onBehalf")} value={forWhom} onChange={(id) => void fileFor(id)} />
           <p className="field-hint">{t("onBehalfHint")}</p>
+        </div>
+      ) : null}
+      {Object.keys(errors).length > 0 ? (
+        <div className="notice notice-error services-error-summary" role="alert">
+          <p>{t("errorSummary", { count: Object.keys(errors).length })}</p>
+          <ul>
+            {form.fields
+              .filter((f) => errors[f.key])
+              .map((f) => (
+                <li key={f.key}>
+                  <a href={`#${formId}-${f.key}`}>{errors[f.key]}</a>
+                </li>
+              ))}
+          </ul>
         </div>
       ) : null}
       {form.fields.map(field)}

@@ -21,6 +21,18 @@ export function dateLong(value: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(date);
 }
 
+/**
+ * A `YYYY-MM-DD` day from a date field in words with the weekday ("Friday, 13 November 2026"), or null when it is not
+ * a whole day. The browser's own date control follows the browser's language, so a date field writes this under it
+ * (DLS-082).
+ */
+export function dayInWords(value: string | null | undefined, locale: string): string | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(locale, { dateStyle: "full", timeZone: "UTC" }).format(date);
+}
+
 /** The full date and time, for a tooltip or the `title` of a relative time. */
 export function dateTimeFull(value: string, locale: string): string {
   const date = new Date(value);

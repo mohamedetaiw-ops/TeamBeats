@@ -77,7 +77,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `leave-${locale}`);
 
       const form = page.locator("form.leave-form");
+      // An empty first day names itself and takes the focus (DLS-083).
+      await form.getByLabel(m("leave.form.start")).fill("");
+      await form.getByRole("button", { name: m("leave.form.submit") }).click();
+      await expect(form.getByText(m("leave.form.missing.start"))).toBeVisible();
+      await expect(form.getByLabel(m("leave.form.start"))).toBeFocused();
       await form.getByLabel(m("leave.form.start")).fill(week.monday);
+      // The chosen day is written in words under the field, never as digits only (DLS-082).
+      const day = form.locator(".field:has([name=start]) .field-day");
+      await expect(day).toBeVisible();
+      await expect(day).not.toHaveText(/^\s*[\d٠-٩]+[/.-][\d٠-٩]+/);
       await form.getByLabel(m("leave.form.end")).fill(week.friday);
       const preview = page.getByRole("region", { name: m("leave.form.previewLabel") });
       await expect(preview.locator(".leave-overlap li")).toHaveCount(1);

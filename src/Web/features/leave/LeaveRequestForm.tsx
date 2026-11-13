@@ -36,6 +36,7 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
   const [attached, setAttached] = useState<Upload | null>(null);
   const [preview, setPreview] = useState<LeavePreview | null>(null);
   const [messages, setMessages] = useState<string[]>([]);
+  const [missing, setMissing] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [key, setKey] = useState(() => crypto.randomUUID());
   const type = types.find((x) => x.key === typeKey) ?? null;
@@ -95,6 +96,16 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
   }
 
   async function submit() {
+    // A field left empty names itself and what to enter, and takes the focus (DLS-083).
+    const empty: Record<string, string> = {};
+    if (!start) empty.start = t("missing.start");
+    if (byHour ? !hours : !end) empty[byHour ? "hours" : "end"] = t(byHour ? "missing.hours" : "missing.end");
+    setMissing(empty);
+    const first = Object.keys(empty)[0];
+    if (first) {
+      document.querySelector<HTMLInputElement>(`.leave-form [name="${first}"]`)?.focus();
+      return;
+    }
     setBusy(true);
     setMessages([]);
     try {
@@ -128,6 +139,7 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
   return (
     <form
       className="leave-form"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         void submit();
@@ -141,11 +153,11 @@ export function LeaveRequestForm({ types, onSubmitted }: { types: LeaveType[]; o
         options={types.map((x) => ({ value: x.key, label: pick(x.names, locale, x.key) }))}
       />
       <div className="leave-row">
-        <FormField label={t("start")} name="start" type="date" value={start} onChange={(e) => setStart(e.target.value)} required />
+        <FormField label={t("start")} name="start" type="date" value={start} onChange={(e) => setStart(e.target.value)} required error={missing.start} />
         {byHour ? (
-          <FormField label={t("hours")} name="hours" type="number" min={0.25} max={24} step={0.25} value={hours} onChange={(e) => setHours(e.target.value)} required />
+          <FormField label={t("hours")} name="hours" type="number" min={0.25} max={24} step={0.25} value={hours} onChange={(e) => setHours(e.target.value)} required error={missing.hours} />
         ) : (
-          <FormField label={t("end")} name="end" type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} required />
+          <FormField label={t("end")} name="end" type="date" value={end} min={start} onChange={(e) => setEnd(e.target.value)} required error={missing.end} />
         )}
       </div>
       {type?.halfDays && !byHour ? (

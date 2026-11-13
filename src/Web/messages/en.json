@@ -2524,7 +2524,11 @@
       "onBehalfHint": "Leave empty to file for yourself. Their profile fills the form, and you need permission to file for people in their unit.",
       "fromHr": "From your HR record. Ask HR to change it.",
       "prefilledFromHr": "Filled from your HR record.",
-      "hrUnconfirmed": "This value could not be confirmed with the HR system right now. Try again later."
+      "hrUnconfirmed": "This value could not be confirmed with the HR system right now. Try again later.",
+      "requiredEnter": "Enter {label}",
+      "requiredChoose": "Choose {label}",
+      "requiredAttach": "Attach {label}",
+      "errorSummary": "{count, plural, one {Fix 1 thing before you send} other {Fix # things before you send}}"
     },
     "status": {
       "draft": "Draft",
@@ -7301,7 +7305,12 @@
       "previewFailed": "The days could not be counted. Try again.",
       "uploadFailed": "The document was not uploaded. Try again.",
       "hours": "Hours",
-      "fromHr": "Balance from HR, read {at}."
+      "fromHr": "Balance from HR, read {at}.",
+      "missing": {
+        "start": "Choose the first day",
+        "end": "Choose the last day",
+        "hours": "Enter the hours"
+      }
     },
     "mine": {
       "title": "My requests",
