@@ -1147,3 +1147,20 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 ### Smallest safe defaults
 - The admin consent is changed on the app page, not from the consents list, so the scopes stay next to the app they belong to.
 - Viewers (security officers) see the same pages; the API refuses their changes and the page shows its message, with no role checks in the frontend.
+
+## Public API and MCP server (spec 035, slice 3a: T008, T009)
+
+### Built
+- The request pipeline of `/api/public`, in this order: the tenant's network rules (now ahead of the authorization server too, so they cover `/oauth` as FR-027 asks), the bearer token with its database checks, the tenant switch and `api.public`, the app's own address ranges, the limits, the monthly quota, then the call. Request bodies are at most 1 MB.
+- Limits per minute (section 6): per tenant for all apps, per application app, and per delegated app and person; token requests per app at `/oauth/token`. Over-limit calls get 429 with `Retry-After` and `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset`; the tighter limit answers and the problem says which (`app` or `tenant`). A tenant may lower an app's limit (`callsPerMinute`, 0 returns to the default) and its own (`tenantCallsPerMinute`), never raise them; the installation sets `PublicApi:Limits:TenantCallsPerMinute`.
+- Monthly quota through `api.monthly_calls`: only processed calls count; once used up the API answers 429 `entitlement.quota_exhausted` with `Retry-After` until the next month, and the web app keeps working. Holders of `api.manage` are told once a month at 80% and at 100% (templates `publicapi.quota_80`, `publicapi.quota_100`, linking to the usage tab).
+- Per-app address ranges (`ipRanges`, CIDR, at most 20): tokens and calls only from them; refused calls are audited as `api.token_refused` with reason `app_network`, at most once a minute per app and address.
+- Call log `publicapi.call_log` (operation as method and route pattern, status, error class, latency, app, person, correlation ID; no bodies or query strings), kept 90 days by the hourly maintenance. Usage page: the Usage tab of `/admin/api` from `GET /api/v1/api-access/usage?days=` (1 to 90, `api.view`).
+
+### Smallest safe defaults
+- Counters live in each instance with windows that start on the minute, and each instance counts its share of every limit: the limit divided by `PublicApi:Limits:Instances` (default 1), as the plan says. A shared counter can replace it later without changing the API.
+- No revocation cache: every call checks the app, the family or credential and the membership in the database, which is stricter than the 60 seconds FR-007 allows.
+- The monthly period is the calendar month in UTC, as the AI request quota counts it.
+- Over-limit token requests get 429 with the OAuth error `temporarily_unavailable`, as RFC 6749 has no error for it at the token endpoint.
+- Error classes in the call log: `rate_limited`, `quota`, `denied` (403), `not_found`, `client` (other 4xx) and `server`.
+

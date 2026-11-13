@@ -18,9 +18,13 @@ public static class PublicApiModule
 {
     public static readonly MigrationSource Migrations = new("publicapi", typeof(PublicApiModule).Assembly);
 
-    public static IServiceCollection AddPublicApiModule(this IServiceCollection services)
+    public static IServiceCollection AddPublicApiModule(this IServiceCollection services, PublicApiLimits? limits = null)
     {
         services.AddSingleton<TenantKeys>();
+        services.AddSingleton(limits ?? new PublicApiLimits());
+        services.AddSingleton<PublicRateLimits>();
+        services.AddScoped<CallLog>();
+        services.AddScoped<ApiUsage>();
         services.AddScoped<TokenFamilies>();
         services.AddScoped<Apps>();
         services.AddScoped<ApiSettings>();
@@ -83,6 +87,7 @@ public static class PublicApiModule
             await session.CommitAsync(ct);
             return Results.NoContent();
         });
+        admin.MapGet("/usage", async (int? days, ApiUsage usage, CancellationToken ct) => Results.Ok(await usage.GetAsync(days ?? ApiRules.CallLogDays, ct)));
         admin.MapGet("/settings", async (ApiSettings settings, CancellationToken ct) => Results.Ok(await settings.GetAsync(ct)));
         admin.MapPut("/settings", async (ApiSettingsRequest body, ApiSettings settings, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await settings.UpdateAsync(body, ct), ct));

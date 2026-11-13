@@ -12,13 +12,16 @@ export function Tabs({
   label,
   tabs,
   orientation = "horizontal",
+  initialKey,
 }: {
   label: string;
   tabs: { key: string; label: string; icon?: IconName; content: ReactNode }[];
   orientation?: "horizontal" | "vertical";
+  /** The tab to open first, such as one named in a link; the first tab when it is missing or unknown. */
+  initialKey?: string;
 }) {
   const id = useId();
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(() => Math.max(0, tabs.findIndex((tab) => tab.key === initialKey)));
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
   function onKey(event: KeyboardEvent<HTMLDivElement>) {

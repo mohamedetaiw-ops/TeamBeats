@@ -497,6 +497,9 @@ public sealed class Bookings(
         var status = restricted ? BookingStatuses.Tentative : BookingStatuses.Confirmed;
         DateTimeOffset? holdUntil = restricted ? Min(now.AddHours(settings.ApprovalHoldHours), first.StartsAt) : null;
         var ids = new List<Guid>();
+        // Bookings of one resource are taken one at a time. Without this, two parallel inserts that overlap each wait for
+        // the other's exclusion check and PostgreSQL ends one of them as a deadlock instead of a clean conflict.
+        await session.ExecAsync("select pg_advisory_xact_lock(hashtextextended('booking.resource:' || @resource::text, 0))", new { resource = resource.Id }, ct);
         try
         {
             foreach (var span in spans)

@@ -58,6 +58,30 @@ public sealed class TenantWorld : IAsyncLifetime
         return (id, token);
     }
 
+    /// <summary>
+    /// Moves the tenant to a new version of its package where one capability has the given value. New tenants take the
+    /// latest published version, so the package's capabilities are published again right after.
+    /// </summary>
+    public async Task SetCapabilityAsync(TestTenant tenant, string capability, object value)
+    {
+        var entitlements = await tenant["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/tenant/entitlements");
+        var package = entitlements.GetProperty("packageKey").GetString()!;
+        var current = entitlements.GetProperty("capabilities");
+        var changed = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(current.GetRawText())!.ToDictionary(p => p.Key, p => (object)p.Value);
+        changed[capability] = value;
+        async Task<int> PublishAsync(object capabilities)
+        {
+            var draft = await Platform.PostAsJsonAsync($"/api/v1/platform/packages/{package}/versions", new { capabilities });
+            draft.EnsureSuccessStatusCode();
+            var version = (await draft.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("version").GetInt32();
+            (await Platform.PostAsync($"/api/v1/platform/packages/{package}/versions/{version}:publish", null)).EnsureSuccessStatusCode();
+            return version;
+        }
+        var capped = await PublishAsync(changed);
+        (await Platform.PutAsJsonAsync($"/api/v1/platform/tenants/{tenant.Id}/subscription", new { packageKey = package, version = capped })).EnsureSuccessStatusCode();
+        await PublishAsync(current);
+    }
+
     public async Task<TestTenant> CreateTenantAsync(string key, string package, string defaultLocale = "en", string[]? locales = null)
     {
         var response = await Platform.PostAsJsonAsync("/api/v1/platform/tenants", new

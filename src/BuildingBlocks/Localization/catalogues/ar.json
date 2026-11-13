@@ -2128,5 +2128,14 @@
   "validation.api.credential_kind": "اختر سرًا للعميل أو مفتاحًا عامًا.",
   "conflict.api.public_key_registered": "هذا المفتاح العام مسجّل بالفعل لهذا التطبيق.",
   "notifications.template.publicapi.credential_expiring.title": "تنتهي صلاحية بيانات اعتماد {app} قريبًا",
-  "notifications.template.publicapi.credential_expiring.body": "تنتهي صلاحية بيانات اعتماد للتطبيق {app} خلال {days} يومًا. أضف بيانات اعتماد جديدة وانقل التطبيق إليها قبل ذلك."
+  "notifications.template.publicapi.credential_expiring.body": "تنتهي صلاحية بيانات اعتماد للتطبيق {app} خلال {days} يومًا. أضف بيانات اعتماد جديدة وانقل التطبيق إليها قبل ذلك.",
+  "validation.api.calls_per_minute": "اختر حدًا من 1 حتى الحد الافتراضي للمنصة لهذا النوع من التطبيقات.",
+  "validation.api.tenant_calls_per_minute": "اختر حدًا من 1 حتى حد هذا التثبيت.",
+  "validation.api.ip_ranges": "استخدم حتى 20 عنوانًا أو نطاقًا بصيغة CIDR، مثل 203.0.113.0/24.",
+  "validation.api.usage_days": "اختر فترة من 1 إلى 90 يومًا.",
+  "problem.api.rate_limited": "عدد كبير جدًا من الطلبات في هذه الدقيقة. حاول مرة أخرى بعد المدة المذكورة في Retry-After.",
+  "notifications.template.publicapi.quota_80.title": "استخدمت الواجهة البرمجية 80% من طلبات هذا الشهر",
+  "notifications.template.publicapi.quota_80.body": "أجرت التطبيقات 80% من الطلبات المسموح بها هذا الشهر وعددها {limit}. عند استخدامها كلها تتوقف طلبات الواجهة البرمجية حتى الشهر القادم أو حتى إضافة طلبات أخرى.",
+  "notifications.template.publicapi.quota_100.title": "استخدمت الواجهة البرمجية كل طلبات هذا الشهر",
+  "notifications.template.publicapi.quota_100.body": "أجرت التطبيقات كل الطلبات المسموح بها هذا الشهر وعددها {limit}. تُرفض طلبات الواجهة البرمجية حتى الشهر القادم أو حتى إضافة طلبات أخرى. يستمر TeamBeats نفسه في العمل."
 }

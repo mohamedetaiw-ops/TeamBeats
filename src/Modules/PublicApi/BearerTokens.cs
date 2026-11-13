@@ -1,7 +1,12 @@
 using TeamBeats.Authorization.Contracts;
+using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Caching.Memory;
+using TeamBeats.Entitlements.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -50,6 +55,14 @@ public static class BearerTokens
 
     private static readonly JsonWebTokenHandler Handler = new() { MapInboundClaims = false };
 
+    /// <summary>The largest request body of a public call (section 6); document uploads set their own limit.</summary>
+    public const long MaxBodyBytes = 1024 * 1024;
+
+    /// <summary>
+    /// The request pipeline of the public API (FR-017, FR-027, T009), after the tenant's network rules: the token, the
+    /// tenant switch and package, the app's own address ranges, the limits per tenant and per app or app and person,
+    /// the monthly quota, and then the call itself, logged with its outcome and latency.
+    /// </summary>
     public static IApplicationBuilder UsePublicApiTokens(this IApplicationBuilder app) =>
         app.Use(async (http, next) =>
         {
@@ -67,14 +80,116 @@ public static class BearerTokens
                 return;
             }
             context.SetTenant(tenant.Id);
+            if (http.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } size)
+            {
+                size.MaxRequestBodySize = MaxBodyBytes;
+            }
             var refusal = await AuthenticateAsync(http, context, tenant.Id);
             if (refusal is not null)
             {
                 await WriteRefusalAsync(http, refusal);
                 return;
             }
-            await next(http);
+            await RunCallAsync(http, next, tenant.Id);
         });
+
+    private static async Task RunCallAsync(HttpContext http, RequestDelegate next, Guid tenant)
+    {
+        var services = http.RequestServices;
+        var ct = http.RequestAborted;
+        var caller = http.Features.Get<PublicCaller>()!;
+        var app = http.Features.Get<AppRecord>()!;
+        var started = System.Diagnostics.Stopwatch.GetTimestamp();
+        var operation = http.Request.Method + " " + ((http.GetEndpoint() as RouteEndpoint)?.RoutePattern.RawText ?? "unmatched");
+        var monthlyLimit = await services.GetRequiredService<IEntitlementService>().GetLimitAsync(Capabilities.ApiMonthlyCalls, ct);
+
+        async Task LogAsync(int status, string? errorClass)
+        {
+            var latency = (int)Math.Min(int.MaxValue, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+            // A scope of its own: the call's own transaction may have failed, and the log must still be written.
+            await using var scope = services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
+            var own = scope.ServiceProvider.GetRequiredService<TenantContextAccessor>();
+            own.SetTenant(tenant);
+            own.SetActor(ActorType.System, null);
+            await scope.ServiceProvider.GetRequiredService<CallLog>().RecordAsync(
+                new CallRecord(caller.AppId, caller.UserId, operation, status, errorClass, latency, Correlation.Id), monthlyLimit, CancellationToken.None);
+            await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(CancellationToken.None);
+        }
+
+        // The app's own address ranges (FR-027), on top of the tenant's network rules.
+        if (!ApiRules.AddressAllowed(app.IpRanges, http.Connection.RemoteIpAddress))
+        {
+            // Audited at most once a minute per app and address, so a blocked client cannot flood the audit log.
+            var cache = services.GetRequiredService<IMemoryCache>();
+            var key = $"publicapi.network:{tenant:N}:{app.Id:N}:{http.Connection.RemoteIpAddress}";
+            if (!cache.TryGetValue(key, out _))
+            {
+                cache.Set(key, true, TimeSpan.FromMinutes(1));
+                await AuditRefusalAsync(services, app.Id, "app_network", ct);
+            }
+            await LogAsync(StatusCodes.Status403Forbidden, "denied");
+            await WriteProblemAsync(http, StatusCodes.Status403Forbidden, ProblemCodes.NetworkNotAllowed, new Dictionary<string, object?> { ["area"] = "app" });
+            return;
+        }
+
+        // Limits per tenant and per app, or per app and person for a delegated app (FR-017); the tighter one answers.
+        var limiter = services.GetRequiredService<PublicRateLimits>();
+        var settings = await services.GetRequiredService<ApiSettings>().CurrentAsync(ct);
+        var installation = services.GetRequiredService<PublicApiLimits>();
+        var forTenant = installation.ForTenant(settings.TenantCallsPerMinute);
+        var tenantLimit = limiter.Take(PublicRateLimits.Tenant(tenant), forTenant, installation.Share(forTenant));
+        var ownLimit = limiter.Take(caller.UserId is { } person ? PublicRateLimits.AppUser(tenant, app.Id, person) : PublicRateLimits.App(tenant, app.Id),
+            app.Limit, installation.Share(app.Limit));
+        var shown = !tenantLimit.Allowed || (ownLimit.Allowed && tenantLimit.Remaining < ownLimit.Remaining) ? tenantLimit : ownLimit;
+        // Set as the answer starts, so an error answer written by the exception handler carries them too.
+        http.Response.OnStarting(() =>
+        {
+            http.Response.Headers["RateLimit-Limit"] = shown.Limit.ToString(CultureInfo.InvariantCulture);
+            http.Response.Headers["RateLimit-Remaining"] = shown.Remaining.ToString(CultureInfo.InvariantCulture);
+            http.Response.Headers["RateLimit-Reset"] = shown.ResetSeconds.ToString(CultureInfo.InvariantCulture);
+            return Task.CompletedTask;
+        });
+        if (!tenantLimit.Allowed || !ownLimit.Allowed)
+        {
+            await LogAsync(StatusCodes.Status429TooManyRequests, CallLog.RateLimited);
+            http.Response.Headers.RetryAfter = shown.ResetSeconds.ToString(CultureInfo.InvariantCulture);
+            await WriteProblemAsync(http, StatusCodes.Status429TooManyRequests, RateLimited,
+                new Dictionary<string, object?> { ["limit"] = tenantLimit.Allowed ? "app" : "tenant" });
+            return;
+        }
+
+        // The monthly quota of the package (US5 scenario 2): the web app keeps working, only the API answers 429.
+        if (monthlyLimit is { } quota && await services.GetRequiredService<CallLog>().MonthCallsAsync(ct) >= quota)
+        {
+            await LogAsync(StatusCodes.Status429TooManyRequests, CallLog.Quota);
+            var now = services.GetRequiredService<IClock>().UtcNow;
+            var reset = new DateTimeOffset(CallLog.MonthOf(now).AddMonths(1).ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+            http.Response.Headers.RetryAfter = ((long)Math.Ceiling((reset - now).TotalSeconds)).ToString(CultureInfo.InvariantCulture);
+            await WriteProblemAsync(http, StatusCodes.Status429TooManyRequests, ProblemCodes.EntitlementQuotaExhausted,
+                new Dictionary<string, object?> { ["capability"] = Capabilities.ApiMonthlyCalls, ["limit"] = quota });
+            return;
+        }
+
+        try
+        {
+            await next(http);
+        }
+        catch (Exception ex)
+        {
+            var status = ex switch
+            {
+                AppException a => a.Status,
+                BadHttpRequestException b => b.StatusCode,
+                OperationCanceledException when ct.IsCancellationRequested => 499,
+                _ => StatusCodes.Status500InternalServerError,
+            };
+            await LogAsync(status, status == 499 ? "client" : CallLog.ClassOf(status));
+            throw;
+        }
+        await LogAsync(http.Response.StatusCode, CallLog.ClassOf(http.Response.StatusCode));
+    }
+
+    public const string RateLimited = ProblemCodes.ApiRateLimited;
 
     private static async Task<string?> AuthenticateAsync(HttpContext http, TenantContextAccessor context, Guid tenant)
     {
@@ -153,6 +268,7 @@ public static class BearerTokens
             context.SetActor(ActorType.App, appId);
         }
         http.Features.Set(new PublicCaller(appId, kind, user, scopes, family));
+        http.Features.Set(app);
         return null;
     }
 
@@ -200,16 +316,28 @@ public static class BearerTokens
         {
             http.Response.Headers.WWWAuthenticate = reason == "missing" ? "Bearer" : "Bearer error=\"invalid_token\"";
         }
+        await WriteProblemAsync(http, http.Response.StatusCode, code, null);
+    }
+
+    /// <summary>A problem details answer written here, before the endpoint, so the headers set for it are kept.</summary>
+    internal static async Task WriteProblemAsync(HttpContext http, int status, string code, IReadOnlyDictionary<string, object?>? extensions)
+    {
+        http.Response.StatusCode = status;
         http.Response.Headers.CacheControl = "no-store";
         var localizer = http.RequestServices.GetRequiredService<ILocalizer>();
         var locale = http.RequestServices.GetService<RequestLocale>()?.Locale ?? Locales.Fallback;
         http.Response.Headers.ContentLanguage = locale;
-        await http.Response.WriteAsJsonAsync(new Dictionary<string, object?>
+        var body = new Dictionary<string, object?>
         {
             ["type"] = ProblemCodes.TypeUri(code),
             ["title"] = localizer.Get("problem." + code, locale),
-            ["status"] = http.Response.StatusCode,
+            ["status"] = status,
             ["code"] = code,
-        }, (JsonSerializerOptions?)null, "application/problem+json");
+        };
+        foreach (var (key, value) in extensions ?? new Dictionary<string, object?>())
+        {
+            body[key] = value;
+        }
+        await http.Response.WriteAsJsonAsync(body, (JsonSerializerOptions?)null, "application/problem+json");
     }
 }

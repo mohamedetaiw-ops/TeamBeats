@@ -266,6 +266,12 @@ internal sealed class TokenRequestCheck(Apps apps, IServiceProvider services) : 
             context.Reject(Errors.InvalidClient, "The client is not known.");
             return;
         }
+        // An app limited to address ranges gets tokens only from them (FR-027).
+        if (!ApiRules.AddressAllowed(app.IpRanges, http.Connection.RemoteIpAddress))
+        {
+            context.Reject(Errors.UnauthorizedClient, "The client may not be used from this network.");
+            return;
+        }
         var assertion = context.Request.ClientAssertion;
         var hasAssertion = !string.IsNullOrEmpty(assertion) || !string.IsNullOrEmpty(context.Request.ClientAssertionType);
         if (AppKinds.IsConfidential(app.Kind))

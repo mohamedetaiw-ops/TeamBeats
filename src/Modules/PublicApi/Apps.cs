@@ -11,11 +11,16 @@ namespace TeamBeats.Modules.PublicApi;
 
 /// <summary>An app registration as the authorization server reads it.</summary>
 public sealed record AppRecord(Guid Id, string ClientId, string Kind, string Name, string? Description, string? Publisher, string[] Scopes,
-    string[] RedirectUris, bool AllowGuests, string Status, DateTimeOffset? TokensRevokedAt, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt, int Version)
+    string[] RedirectUris, bool AllowGuests, string Status, DateTimeOffset? TokensRevokedAt, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt, int Version,
+    string[] IpRanges, int? CallsPerMinute)
 {
     public bool Active => Status == "active";
 
-    public AppView View => new(Id, ClientId, Kind, Name, Description, Publisher, Scopes, RedirectUris, AllowGuests, Status, CreatedAt, LastUsedAt, Version);
+    /// <summary>The app's call limit: its own when the tenant lowered it, else the platform default for its kind.</summary>
+    public int Limit => CallsPerMinute ?? ApiRules.DefaultCallsPerMinute(Kind);
+
+    public AppView View => new(Id, ClientId, Kind, Name, Description, Publisher, Scopes, RedirectUris, AllowGuests, Status, CreatedAt, LastUsedAt, Version,
+        IpRanges, Limit, CallsPerMinute is not null);
 }
 
 /// <summary>
@@ -33,12 +38,12 @@ public sealed class Apps(
     TokenFamilies families)
 {
     internal const string Columns =
-        "id, client_id, kind, name, description, publisher, scopes, redirect_uris, allow_guests, status, tokens_revoked_at, created_at, last_used_at, version";
+        "id, client_id, kind, name, description, publisher, scopes, redirect_uris, allow_guests, status, tokens_revoked_at, created_at, last_used_at, version, ip_ranges, calls_per_minute";
 
     internal static AppRecord Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3),
         r.IsDBNull(4) ? null : r.GetString(4), r.IsDBNull(5) ? null : r.GetString(5), r.GetFieldValue<string[]>(6), r.GetFieldValue<string[]>(7),
         r.GetBoolean(8), r.GetString(9), r.IsDBNull(10) ? null : r.GetFieldValue<DateTimeOffset>(10), r.GetFieldValue<DateTimeOffset>(11),
-        r.IsDBNull(12) ? null : r.GetFieldValue<DateTimeOffset>(12), r.GetInt32(13));
+        r.IsDBNull(12) ? null : r.GetFieldValue<DateTimeOffset>(12), r.GetInt32(13), r.GetFieldValue<string[]>(14), r.IsDBNull(15) ? null : r.GetInt32(15));
 
     private static CredentialView ReadCredential(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.IsDBNull(2) ? null : r.GetString(2),
         r.GetFieldValue<DateTimeOffset>(3), r.GetFieldValue<DateTimeOffset>(4), r.IsDBNull(5) ? null : r.GetFieldValue<DateTimeOffset>(5),
@@ -66,7 +71,9 @@ public sealed class Apps(
         {
             ApiRules.CheckScopes(request.Scopes, kind, errors);
             ApiRules.CheckRedirectUris(request.RedirectUris, kind, errors);
+            ApiRules.CheckCallsPerMinute(request.CallsPerMinute, kind, errors);
         }
+        ApiRules.CheckIpRanges(request.IpRanges, errors);
         await CheckPackageAsync(request.Scopes, errors, ct);
         errors.ThrowIfAny();
 
@@ -82,18 +89,20 @@ public sealed class Apps(
         var id = Ids.New();
         await session.ExecAsync(
             """
-            insert into publicapi.app (tenant_id, id, client_id, kind, name, description, publisher, scopes, redirect_uris, allow_guests, created_by)
-            values (platform.current_tenant_id(), @id, @client, @kind, @name, @description, @publisher, @scopes, @redirects, @guests, @by)
+            insert into publicapi.app (tenant_id, id, client_id, kind, name, description, publisher, scopes, redirect_uris, allow_guests, ip_ranges,
+              calls_per_minute, created_by)
+            values (platform.current_tenant_id(), @id, @client, @kind, @name, @description, @publisher, @scopes, @redirects, @guests, @ranges, @limit, @by)
             """,
             new
             {
                 id, client = ApiRules.NewClientId(), kind = request.Kind, name = request.Name!.Trim(), description = Blank(request.Description),
                 publisher = Blank(request.Publisher), scopes = request.Scopes!.Distinct().ToArray(), redirects = (request.RedirectUris ?? []).Distinct().ToArray(),
-                guests = request.AllowGuests ?? false, by = context.RequireUser(),
+                guests = request.AllowGuests ?? false, ranges = ApiRules.NormalizeRanges(request.IpRanges ?? []),
+                limit = request.CallsPerMinute is null or 0 ? (int?)null : request.CallsPerMinute, by = context.RequireUser(),
             }, ct);
         var app = (await FindAsync(id, ct))!;
         await audit.WriteAsync(new AuditEntry(AuditActions.ApiAppRegistered, "api_app", id.ToString(),
-            Changes: new { app.Name, app.Kind, app.Scopes, app.RedirectUris, app.AllowGuests }), ct);
+            Changes: new { app.Name, app.Kind, app.Scopes, app.RedirectUris, app.AllowGuests, app.IpRanges, app.CallsPerMinute }), ct);
         await outbox.EnqueueAsync(new AppRegistered(id, app.Kind), ct);
         return app.View;
     }
@@ -120,6 +129,8 @@ public sealed class Apps(
         {
             ApiRules.CheckRedirectUris(request.RedirectUris, app.Kind, errors);
         }
+        ApiRules.CheckIpRanges(request.IpRanges, errors);
+        ApiRules.CheckCallsPerMinute(request.CallsPerMinute, app.Kind, errors);
         errors.ThrowIfAny();
         var next = app with
         {
@@ -129,13 +140,15 @@ public sealed class Apps(
             Scopes = request.Scopes?.Distinct().ToArray() ?? app.Scopes,
             RedirectUris = request.RedirectUris?.Distinct().ToArray() ?? app.RedirectUris,
             AllowGuests = request.AllowGuests ?? app.AllowGuests,
+            IpRanges = request.IpRanges is null ? app.IpRanges : ApiRules.NormalizeRanges(request.IpRanges),
+            CallsPerMinute = request.CallsPerMinute switch { null => app.CallsPerMinute, 0 => null, var v => v },
         };
         await session.ExecAsync(
             """
             update publicapi.app set name = @Name, description = @Description, publisher = @Publisher, scopes = @Scopes, redirect_uris = @RedirectUris,
-              allow_guests = @AllowGuests, version = version + 1, updated_at = now()
+              allow_guests = @AllowGuests, ip_ranges = @IpRanges, calls_per_minute = @CallsPerMinute, version = version + 1, updated_at = now()
             where id = @Id
-            """, new { next.Id, next.Name, next.Description, next.Publisher, next.Scopes, next.RedirectUris, next.AllowGuests }, ct);
+            """, new { next.Id, next.Name, next.Description, next.Publisher, next.Scopes, next.RedirectUris, next.AllowGuests, next.IpRanges, next.CallsPerMinute }, ct);
         // Scopes the app no longer holds leave every consent and token family at once (scopes only narrow, FR-009).
         var removed = app.Scopes.Except(next.Scopes, StringComparer.Ordinal).ToArray();
         if (removed.Length > 0)
@@ -147,8 +160,8 @@ public sealed class Apps(
         await audit.WriteAsync(new AuditEntry(AuditActions.ApiAppChanged, "api_app", id.ToString(),
             Changes: new
             {
-                before = new { app.Name, app.Scopes, app.RedirectUris, app.AllowGuests },
-                after = new { next.Name, next.Scopes, next.RedirectUris, next.AllowGuests },
+                before = new { app.Name, app.Scopes, app.RedirectUris, app.AllowGuests, app.IpRanges, app.CallsPerMinute },
+                after = new { next.Name, next.Scopes, next.RedirectUris, next.AllowGuests, next.IpRanges, next.CallsPerMinute },
             }), ct);
         return (await FindAsync(id, ct))!.View;
     }
