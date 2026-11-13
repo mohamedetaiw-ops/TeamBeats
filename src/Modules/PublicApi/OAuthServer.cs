@@ -219,13 +219,14 @@ internal sealed class AuthorizationRequestCheck(Apps apps, IServiceProvider serv
             context.Reject(Errors.AccessDenied, "The API is not available for this organization.");
             return;
         }
-        var app = string.IsNullOrEmpty(context.ClientId) ? null : await apps.FindByClientIdAsync(context.ClientId, http.RequestAborted);
+        // A client on the platform's verified list is known before the tenant has registered it (FR-023).
+        var app = string.IsNullOrEmpty(context.ClientId) ? null : await apps.ResolveAsync(context.ClientId, http.RequestAborted);
         if (app is not { Active: true } || !AppKinds.IsDelegated(app.Kind))
         {
             context.Reject(Errors.InvalidClient, "The client is not known.");
             return;
         }
-        if (context.RedirectUri is not { } redirect || !app.RedirectUris.Contains(redirect, StringComparer.Ordinal))
+        if (context.RedirectUri is not { } redirect || !ApiRules.RedirectRegistered(app.RedirectUris, redirect, app.Kind))
         {
             context.Reject(Errors.InvalidRequest, "The redirect_uri is not registered for this client.");
             return;

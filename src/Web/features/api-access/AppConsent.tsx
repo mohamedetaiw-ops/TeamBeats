@@ -17,6 +17,7 @@ export type ConsentPrompt = {
   scopes: ConsentScope[];
   needsAdmin: boolean;
   guestRefused: boolean;
+  verified?: boolean;
 };
 
 /**
@@ -57,7 +58,10 @@ export function AppConsent({ prompt, query }: { prompt: ConsentPrompt; query: st
   return (
     <section className="app-consent" aria-labelledby="app-consent-title">
       <h1 id="app-consent-title">{t("title", { app: prompt.name })}</h1>
-      <p className="field-hint">{prompt.publisher ? t("publisher", { publisher: prompt.publisher }) : t("noPublisher")}</p>
+      <p className="field-hint">
+        {prompt.publisher ? t("publisher", { publisher: prompt.publisher }) : t("noPublisher")}{" "}
+        {prompt.verified ? <Badge tone="success">{t("verified")}</Badge> : <Badge>{t("registered")}</Badge>}
+      </p>
       {prompt.description ? <p>{prompt.description}</p> : null}
       <h2>{t("asks")}</h2>
       <ul className="app-consent-scopes">

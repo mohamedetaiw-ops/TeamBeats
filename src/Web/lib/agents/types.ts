@@ -147,6 +147,9 @@ export type ExternalAiPolicy = {
 };
 
 /** The classifications an external AI client may be capped at; Restricted never leaves TeamBeats. */
+/** A client on the platform's verified MCP client list that the tenant may allow (spec 035 FR-023). */
+export type VerifiedAiClient = { clientId: string; name: string; publisher: string; scopes: string[] };
+
 export const EXTERNAL_CLASSIFICATIONS = ["public", "internal", "confidential"] as const;
 
 export type AgentPolicyView = { version: number; policy: AgentPolicy; updatedAt: string | null };

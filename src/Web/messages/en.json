@@ -4508,7 +4508,15 @@
         "none": "No external AI client is allowed yet.",
         "newClient": "Client ID to allow",
         "newClientHint": "Copy the client ID from the MCP client app under API access.",
-        "add": "Add client"
+        "add": "Add client",
+        "app": "App",
+        "appName": "{name} from {publisher}",
+        "unlisted": "Registered in API access",
+        "verifiedClient": "Verified AI app to allow",
+        "chooseVerified": "Choose an app",
+        "verifiedHint": "Apps on this list were reviewed by TeamBeats. Employees can connect one as soon as you allow it.",
+        "noVerified": "No verified AI app is available yet.",
+        "addVerified": "Add verified app"
       }
     },
     "killSwitch": {
@@ -10487,6 +10495,8 @@
       "title": "Allow {app} to use your TeamBeats account?",
       "publisher": "From {publisher}",
       "noPublisher": "The publisher is not given",
+      "verified": "Verified by TeamBeats",
+      "registered": "Registered by your organization",
       "asks": "This app asks to",
       "needsAdmin": "Needs administrator approval",
       "adminTitle": "Your administrator must approve this app",
@@ -10531,6 +10541,7 @@
       "noAppsHint": "Register an app to let it use the API.",
       "name": "Name",
       "kind": "Kind",
+      "verified": "Verified",
       "status": "Status",
       "lastUsed": "Last used",
       "app": "App",

@@ -1282,3 +1282,21 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A resource the employee may not read, that is above the client's cap, that is outside the scopes or that does not exist answers the same "resource not found" error (-32002), so a client cannot tell which.
 - Documents, policies and people are not listed by `resources/list`: they are found through `search` and read by URI. Listing every document an employee may read would be large and add nothing the search does not give.
 - The administrator types the client ID of the MCP client app from API access. Picking from the registered MCP client apps waits for the verified client list (slice 4d).
+
+## Public API and MCP server (spec 035, slice 4d: FR-023 verified MCP clients)
+
+### Built
+- The platform's verified MCP client list (`publicapi.verified_mcp_client`, platform data). Each entry is the HTTPS URL of a client ID metadata document with the name, publisher, redirect URIs and scopes the platform operator recorded at the review. The platform operator keeps it at `GET`/`PUT /api/v1/platform/api/verified-mcp-clients`; each change is in the platform audit (`api.verified_client_changed`).
+- The AI policy screen offers the active verified clients to add, next to the typed client ID for the tenant's own MCP client registrations, and shows each allowed client's name and publisher.
+- An allowed verified client needs no registration by the API administrator. The first employee who connects it registers it for the tenant (`api.app_registered`, marked verified), after the external AI client policy allowed it; until then nothing is stored. A client the policy does not allow is refused before anything is registered.
+- A verified registration always takes its name, publisher, scopes and redirect URIs from the list, so the API administrator cannot change them (`validation.api.verified_app_fixed`); IP ranges, call limits and disabling stay with the tenant. Blocking an entry on the platform disables every tenant's registration at once, tokens included.
+- The consent screen says whether a client is verified by TeamBeats or registered by the organization, and the apps list marks verified clients.
+- T015: the permission isolation, unsafe actions and data classification suites (now version 2) each gain an English and an Arabic case tagged `external_caller`: a request relayed from an AI app outside TeamBeats must still be refused, and an action must never run without the employee's confirmation. The gateway rules themselves (client list, scopes, cap, confirmation) are deterministic and tested in `PublicMcpTests`.
+- Redirect URIs of native apps and MCP clients on a loopback IP literal match on any port, as RFC 8252 section 7.3 asks; scheme, host, path and query must still match. Every other redirect URI matches exactly.
+
+### Smallest safe defaults
+- The platform operator records the reviewed metadata; TeamBeats does not fetch the metadata document at sign-in. A document that changes later changes nothing until it is reviewed again, and no tenant request makes TeamBeats call out to a client's server. The plan's fetch through the spec 017 safe HTTP client is not needed for this and stays unbuilt.
+- The verified list starts empty. The spec's first list (Claude, ChatGPT, Microsoft Copilot Studio, Visual Studio Code) is added by the platform operator after each security review, not seeded in code.
+- Removing a client from the list is blocking it (`status = blocked`); entries are kept so the platform audit and tenant registrations still name them.
+- A verified registration counts against the package's app limit. When the limit is reached the employee's sign-in is refused with `access_denied`.
+- Verified client IDs are at most 200 characters, the length the external AI client policy accepts; token requests are counted per client ID up to that length.

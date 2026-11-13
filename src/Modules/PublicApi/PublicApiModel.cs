@@ -15,7 +15,7 @@ public sealed record AppRequest(string? Name, string? Kind, string? Description,
 /// <param name="CallsPerMinute">The limit that applies: per app for an application app, per app and person for a delegated one.</param>
 public sealed record AppView(Guid Id, string ClientId, string Kind, string Name, string? Description, string? Publisher, IReadOnlyList<string> Scopes,
     IReadOnlyList<string> RedirectUris, bool AllowGuests, string Status, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt, int Version,
-    IReadOnlyList<string> IpRanges, int CallsPerMinute, bool CallsPerMinuteLowered);
+    IReadOnlyList<string> IpRanges, int CallsPerMinute, bool CallsPerMinuteLowered, bool Verified = false);
 
 public sealed record CredentialView(Guid Id, string Kind, string? Hint, DateTimeOffset ExpiresAt, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt,
     DateTimeOffset? RevokedAt);
@@ -51,8 +51,9 @@ public sealed record OperationUsageView(string Operation, long Calls);
 public sealed record ConsentScopeView(string Key, string DescriptionKey, bool UserConsent, bool Granted);
 
 /// <summary>What the consent page shows before the person decides (FR-013). App names are text, never markup.</summary>
+/// <remarks><paramref name="Verified"/> says the platform reviewed the client and its publisher (FR-023, US2 scenario 1).</remarks>
 public sealed record ConsentPrompt(string ClientId, string Name, string? Publisher, string? Description, string Kind, IReadOnlyList<ConsentScopeView> Scopes,
-    bool NeedsAdmin, bool GuestRefused);
+    bool NeedsAdmin, bool GuestRefused, bool Verified = false);
 
 public sealed record ConsentGrantRequest(string? ClientId, string? RedirectUri, IReadOnlyList<string>? Scopes);
 
@@ -228,6 +229,27 @@ public static class ApiRules
             }
         }
     }
+
+    /// <summary>
+    /// Whether a redirect URI is registered: an exact match, or for a native app or MCP client a loopback IP literal on
+    /// any port when the same URI is registered with another port, as RFC 8252 section 7.3 asks of authorization servers.
+    /// </summary>
+    public static bool RedirectRegistered(IReadOnlyList<string> registered, string uri, string kind)
+    {
+        if (registered.Contains(uri, StringComparer.Ordinal))
+        {
+            return true;
+        }
+        if (kind == AppKinds.DelegatedWeb || !LoopbackLiteral(uri, out var asked))
+        {
+            return false;
+        }
+        return registered.Any(r => LoopbackLiteral(r, out var known) && known.Host == asked.Host && known.PathAndQuery == asked.PathAndQuery);
+    }
+
+    private static bool LoopbackLiteral(string value, out Uri uri) =>
+        Uri.TryCreate(value, UriKind.Absolute, out uri!) && uri.Scheme == Uri.UriSchemeHttp && string.IsNullOrEmpty(uri.UserInfo)
+        && string.IsNullOrEmpty(uri.Fragment) && IPAddress.TryParse(uri.Host.Trim('[', ']'), out var ip) && IPAddress.IsLoopback(ip);
 
     private static bool ValidRedirect(string value, string kind)
     {

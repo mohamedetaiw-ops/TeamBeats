@@ -27,6 +27,7 @@ public static class PublicApiModule
         services.AddScoped<ApiUsage>();
         services.AddScoped<PublicIdempotency>();
         services.AddScoped<TokenFamilies>();
+        services.AddScoped<VerifiedMcpClients>();
         services.AddScoped<Apps>();
         services.AddScoped<ApiSettings>();
         services.AddScoped<Consents>();
@@ -58,6 +59,9 @@ public static class PublicApiModule
             s.Key, s.DescriptionKey, s.UserConsent, holder = s.Holder.ToString().ToLowerInvariant(), s.Capabilities,
         })));
         admin.MapGet("/apps", async (Apps apps, CancellationToken ct) => Results.Ok(await apps.ListAsync(ct)));
+        // The platform's verified MCP clients a tenant may allow in its external AI client policy (FR-023). Platform data only.
+        admin.MapGet("/verified-mcp-clients", async (VerifiedMcpClients verified, CancellationToken ct) =>
+            Results.Ok(new { items = await verified.ActiveAsync(ct) }));
         admin.MapPost("/apps", async (AppRequest body, Apps apps, IDbSession session, CancellationToken ct) =>
         {
             var view = await apps.CreateAsync(body, ct);
@@ -95,6 +99,13 @@ public static class PublicApiModule
         admin.MapGet("/settings", async (ApiSettings settings, CancellationToken ct) => Results.Ok(await settings.GetAsync(ct)));
         admin.MapPut("/settings", async (ApiSettingsRequest body, ApiSettings settings, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await settings.UpdateAsync(body, ct), ct));
+
+        // The platform operator keeps the verified MCP client list after reviewing each client ID metadata document (FR-023).
+        var platform = app.MapGroup("/api/v1/platform/api").RequirePlatformOperator().WithTags("Platform: API and MCP");
+        platform.MapGet("/verified-mcp-clients", async (VerifiedMcpClients verified, CancellationToken ct) =>
+            Results.Ok(new { items = await verified.ListAsync(ct) }));
+        platform.MapPut("/verified-mcp-clients", async (VerifiedMcpClientRequest body, VerifiedMcpClients verified, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await verified.PutAsync(body, ct), ct));
 
         // Employees (US2): the consent screen and connected apps (FR-013, FR-029).
         var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me: connected apps");

@@ -12,15 +12,18 @@ namespace TeamBeats.Modules.PublicApi;
 /// <summary>An app registration as the authorization server reads it.</summary>
 public sealed record AppRecord(Guid Id, string ClientId, string Kind, string Name, string? Description, string? Publisher, string[] Scopes,
     string[] RedirectUris, bool AllowGuests, string Status, DateTimeOffset? TokensRevokedAt, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt, int Version,
-    string[] IpRanges, int? CallsPerMinute)
+    string[] IpRanges, int? CallsPerMinute, bool Verified = false)
 {
     public bool Active => Status == "active";
+
+    /// <summary>False for a client on the verified list that this tenant has no registration of yet (FR-023).</summary>
+    public bool Provisioned => Id != Guid.Empty;
 
     /// <summary>The app's call limit: its own when the tenant lowered it, else the platform default for its kind.</summary>
     public int Limit => CallsPerMinute ?? ApiRules.DefaultCallsPerMinute(Kind);
 
     public AppView View => new(Id, ClientId, Kind, Name, Description, Publisher, Scopes, RedirectUris, AllowGuests, Status, CreatedAt, LastUsedAt, Version,
-        IpRanges, Limit, CallsPerMinute is not null);
+        IpRanges, Limit, CallsPerMinute is not null, Verified);
 }
 
 /// <summary>
@@ -35,15 +38,26 @@ public sealed class Apps(
     IAuditWriter audit,
     IOutbox outbox,
     IClock clock,
-    TokenFamilies families)
+    TokenFamilies families,
+    VerifiedMcpClients verified)
 {
-    internal const string Columns =
-        "id, client_id, kind, name, description, publisher, scopes, redirect_uris, allow_guests, status, tokens_revoked_at, created_at, last_used_at, version, ip_ranges, calls_per_minute";
+    // A verified MCP client's registration takes its name, publisher, scopes and redirect URIs from the platform's
+    // verified list, and is disabled while the platform has blocked or removed it (FR-023).
+    private const string Columns =
+        """
+        a.id, a.client_id, a.kind, case when a.verified then coalesce(v.name, a.name) else a.name end, a.description,
+        case when a.verified then coalesce(v.publisher, a.publisher) else a.publisher end, case when a.verified then coalesce(v.scopes, '{}') else a.scopes end,
+        case when a.verified then coalesce(v.redirect_uris, '{}') else a.redirect_uris end, a.allow_guests,
+        case when a.verified and v.status is distinct from 'active' then 'disabled' else a.status end, a.tokens_revoked_at, a.created_at, a.last_used_at,
+        a.version, a.ip_ranges, a.calls_per_minute, a.verified
+        """;
+
+    private const string From = "publicapi.app a left join publicapi.verified_mcp_client v on a.verified and v.client_id = a.client_id";
 
     internal static AppRecord Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3),
         r.IsDBNull(4) ? null : r.GetString(4), r.IsDBNull(5) ? null : r.GetString(5), r.GetFieldValue<string[]>(6), r.GetFieldValue<string[]>(7),
         r.GetBoolean(8), r.GetString(9), r.IsDBNull(10) ? null : r.GetFieldValue<DateTimeOffset>(10), r.GetFieldValue<DateTimeOffset>(11),
-        r.IsDBNull(12) ? null : r.GetFieldValue<DateTimeOffset>(12), r.GetInt32(13), r.GetFieldValue<string[]>(14), r.IsDBNull(15) ? null : r.GetInt32(15));
+        r.IsDBNull(12) ? null : r.GetFieldValue<DateTimeOffset>(12), r.GetInt32(13), r.GetFieldValue<string[]>(14), r.IsDBNull(15) ? null : r.GetInt32(15), r.GetBoolean(16));
 
     private static CredentialView ReadCredential(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.IsDBNull(2) ? null : r.GetString(2),
         r.GetFieldValue<DateTimeOffset>(3), r.GetFieldValue<DateTimeOffset>(4), r.IsDBNull(5) ? null : r.GetFieldValue<DateTimeOffset>(5),
@@ -52,7 +66,7 @@ public sealed class Apps(
     public async Task<IReadOnlyList<AppView>> ListAsync(CancellationToken ct)
     {
         await DemandAsync(Permissions.ApiView, ct);
-        var rows = await session.QueryAsync($"select {Columns} from publicapi.app order by status, name, id", null, Read, ct);
+        var rows = await session.QueryAsync($"select {Columns} from {From} order by 10, 4, 1", null, Read, ct);
         return rows.Select(r => r.View).ToList();
     }
 
@@ -120,6 +134,15 @@ public sealed class Apps(
             throw AppException.Validation("kind", "validation.api.kind_fixed");
         }
         var errors = ApiRules.Check(request, create: false);
+        if (app.Verified)
+        {
+            // The platform's verified list owns what the client is (FR-023); the tenant keeps its switches and limits.
+            VerifiedFixed(errors, "name", request.Name is { } name && name.Trim() != app.Name);
+            VerifiedFixed(errors, "publisher", request.Publisher is { } publisher && Blank(publisher) != app.Publisher);
+            VerifiedFixed(errors, "scopes", request.Scopes is { } scopes && !scopes.ToHashSet(StringComparer.Ordinal).SetEquals(app.Scopes));
+            VerifiedFixed(errors, "redirectUris", request.RedirectUris is { } uris && !uris.ToHashSet(StringComparer.Ordinal).SetEquals(app.RedirectUris));
+            errors.ThrowIfAny();
+        }
         if (request.Scopes is not null)
         {
             ApiRules.CheckScopes(request.Scopes, app.Kind, errors);
@@ -280,13 +303,69 @@ public sealed class Apps(
         return view;
     }
 
+    private static void VerifiedFixed(ValidationErrors errors, string field, bool changed)
+    {
+        if (changed)
+        {
+            errors.Add(field, "validation.api.verified_app_fixed");
+        }
+    }
+
     // Lookups for the authorization server and token checks: no permission needed, the tenant comes from the host.
 
+    /// <summary>
+    /// The app an authorization request names: the tenant's registration, or a client on the platform's verified list
+    /// that the tenant has not registered yet (FR-023), returned unprovisioned. An unlisted URL is not a client.
+    /// </summary>
+    public async Task<AppRecord?> ResolveAsync(string clientId, CancellationToken ct)
+    {
+        if (await FindByClientIdAsync(clientId, ct) is { } app)
+        {
+            return app;
+        }
+        return await verified.FindAsync(clientId, ct) is { Active: true } listed
+            ? new AppRecord(Guid.Empty, listed.ClientId, AppKinds.McpClient, listed.Name, null, listed.Publisher, listed.Scopes, listed.RedirectUris, false,
+                "active", null, clock.UtcNow, null, 0, [], null, Verified: true)
+            : null;
+    }
+
+    /// <summary>
+    /// Registers a verified MCP client for the tenant when the first employee connects it, after the AI policy allowed it
+    /// (spec 035 US3 scenario 1). It counts against the package's app limit; null when the limit is reached.
+    /// </summary>
+    public async Task<AppRecord?> ProvisionVerifiedAsync(AppRecord pending, Guid user, CancellationToken ct)
+    {
+        await session.ExecAsync("select pg_advisory_xact_lock(hashtextextended(platform.current_tenant_id()::text || ':publicapi.apps', 0))", null, ct);
+        if (await FindByClientIdAsync(pending.ClientId, ct) is { } existing)
+        {
+            return existing;
+        }
+        var count = await session.ScalarAsync<long>("select count(*) from publicapi.app", null, ct);
+        if (await entitlements.GetLimitAsync(Capabilities.ApiMaxApps, ct) is { } max && count >= max)
+        {
+            return null;
+        }
+        var id = Ids.New();
+        // The values are kept as a record of what was connected; the verified list stays the authority.
+        await session.ExecAsync(
+            """
+            insert into publicapi.app (tenant_id, id, client_id, kind, name, publisher, scopes, redirect_uris, verified, created_by)
+            values (platform.current_tenant_id(), @id, @client, 'mcp_client', @name, @publisher, @scopes, @redirects, true, @user)
+            """,
+            new { id, client = pending.ClientId, name = pending.Name, publisher = pending.Publisher, scopes = pending.Scopes, redirects = pending.RedirectUris, user }, ct);
+        var app = (await FindAsync(id, ct))!;
+        await audit.WriteAsync(new AuditEntry(AuditActions.ApiAppRegistered, "api_app", id.ToString(),
+            Changes: new { app.Name, app.Kind, app.ClientId, app.Scopes, app.RedirectUris, verified = true }), ct);
+        await outbox.EnqueueAsync(new AppRegistered(id, app.Kind), ct);
+        return app;
+    }
+
+
     public Task<AppRecord?> FindByClientIdAsync(string clientId, CancellationToken ct) =>
-        session.QuerySingleOrDefaultAsync($"select {Columns} from publicapi.app where client_id = @clientId", new { clientId }, Read, ct);
+        session.QuerySingleOrDefaultAsync($"select {Columns} from {From} where a.client_id = @clientId", new { clientId }, Read, ct);
 
     public Task<AppRecord?> FindAsync(Guid id, CancellationToken ct) =>
-        session.QuerySingleOrDefaultAsync($"select {Columns} from publicapi.app where id = @id", new { id }, Read, ct);
+        session.QuerySingleOrDefaultAsync($"select {Columns} from {From} where a.id = @id", new { id }, Read, ct);
 
     /// <summary>The live credential the secret belongs to, if any; its last use is recorded.</summary>
     public async Task<Guid?> VerifySecretAsync(Guid appId, string? secret, CancellationToken ct)

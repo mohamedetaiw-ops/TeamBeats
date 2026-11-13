@@ -13,6 +13,7 @@ import {
   type AgentPolicyView,
   type ExternalAiPolicy,
   type ToolView,
+  type VerifiedAiClient,
   tenantToolTitle,
 } from "@/lib/agents/types";
 
@@ -25,7 +26,7 @@ const RULES = ["execute", "draft_only", "confirm", "approval", "block"] as const
  * agents may hold and stricter approval rules per tool, and the per-run limits. Saving suspends published agents that
  * break the new policy; the API checks every value and the person's permission.
  */
-export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView; tools: ToolView[] }) {
+export function AgentPolicyEditor({ initial, tools, verified = [] }: { initial: AgentPolicyView; tools: ToolView[]; verified?: VerifiedAiClient[] }) {
   const t = useTranslations("agents.policy");
   const ts = useTranslations("agents");
   const locale = useLocale();
@@ -42,6 +43,9 @@ export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView
   const clients = external.clients ?? [];
   const setExternal = (patch: Partial<ExternalAiPolicy>) => set({ external: { ...external, ...patch } });
   const [newClient, setNewClient] = useState("");
+  const addable = verified.filter((v) => !clients.some((c) => c.clientId === v.clientId));
+  const [pick, setPick] = useState("");
+  const addClient = (clientId: string) => setExternal({ clients: [...clients, { clientId, maxClassification: "internal" }] });
 
   async function save() {
     setBusy(true);
@@ -193,6 +197,7 @@ export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView
           <thead>
             <tr>
               <th scope="col">{t("external.clientId")}</th>
+              <th scope="col">{t("external.app")}</th>
               <th scope="col">{t("external.cap")}</th>
               <th scope="col">{t("external.actions")}</th>
             </tr>
@@ -200,7 +205,7 @@ export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView
           <tbody>
             {clients.length === 0 ? (
               <tr>
-                <td colSpan={3}>{t("external.none")}</td>
+                <td colSpan={4}>{t("external.none")}</td>
               </tr>
             ) : (
               clients.map((c) => (
@@ -208,6 +213,12 @@ export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView
                   <th scope="row">
                     <bdi>{c.clientId}</bdi>
                   </th>
+                  <td>
+                    {(() => {
+                      const listed = verified.find((v) => v.clientId === c.clientId);
+                      return listed ? <bdi>{t("external.appName", { name: listed.name, publisher: listed.publisher })}</bdi> : t("external.unlisted");
+                    })()}
+                  </td>
                   <td>
                     <select
                       aria-label={t("external.capFor", { client: c.clientId })}
@@ -236,6 +247,29 @@ export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView
       </div>
       <div className="agents-row">
         <div className="field">
+          <label htmlFor={`${ids}-verified`}>{t("external.verifiedClient")}</label>
+          <select id={`${ids}-verified`} value={pick} disabled={addable.length === 0} onChange={(e) => setPick(e.target.value)}>
+            <option value="">{addable.length === 0 ? t("external.noVerified") : t("external.chooseVerified")}</option>
+            {addable.map((v) => (
+              <option key={v.clientId} value={v.clientId}>
+                {t("external.appName", { name: v.name, publisher: v.publisher })}
+              </option>
+            ))}
+          </select>
+          <p className="field-hint">{t("external.verifiedHint")}</p>
+        </div>
+        <Button
+          disabled={pick === "" || clients.some((c) => c.clientId === pick)}
+          onClick={() => {
+            addClient(pick);
+            setPick("");
+          }}
+        >
+          {t("external.addVerified")}
+        </Button>
+      </div>
+      <div className="agents-row">
+        <div className="field">
           <label htmlFor={`${ids}-client`}>{t("external.newClient")}</label>
           <input id={`${ids}-client`} value={newClient} maxLength={200} onChange={(e) => setNewClient(e.target.value)} />
           <p className="field-hint">{t("external.newClientHint")}</p>
@@ -243,7 +277,7 @@ export function AgentPolicyEditor({ initial, tools }: { initial: AgentPolicyView
         <Button
           disabled={newClient.trim() === "" || clients.some((c) => c.clientId === newClient.trim())}
           onClick={() => {
-            setExternal({ clients: [...clients, { clientId: newClient.trim(), maxClassification: "internal" }] });
+            addClient(newClient.trim());
             setNewClient("");
           }}
         >

@@ -76,7 +76,7 @@ public static class OAuthEndpoints
         {
             clientId = (await http.Request.ReadFormAsync(http.RequestAborted))["client_id"].ToString();
         }
-        if (string.IsNullOrEmpty(clientId) || clientId.Length > 64)
+        if (string.IsNullOrEmpty(clientId) || clientId.Length > VerifiedMcpClients.MaxClientIdLength)
         {
             return false;
         }
@@ -112,7 +112,7 @@ public static class OAuthEndpoints
         {
             return Results.NotFound();
         }
-        var app = (await apps.FindByClientIdAsync(request.ClientId!, ct))!;
+        var app = (await apps.ResolveAsync(request.ClientId!, ct))!;
         if (context.ActorType != ActorType.User || context.ActorId is not { } user)
         {
             // The tenant's own sign-in, then back to this same request (FR-003): the authorization server holds no passwords.
@@ -135,9 +135,23 @@ public static class OAuthEndpoints
             await session.CommitAsync(ct);
             return Refuse(Errors.AccessDenied, "The organization's external AI client policy does not allow this client.");
         }
+        // The first employee to connect an allowed verified client registers it for the tenant (US3 scenario 1).
+        var registered = !app.Provisioned;
+        if (registered)
+        {
+            if (await apps.ProvisionVerifiedAsync(app, user, ct) is not { } provisioned)
+            {
+                return Refuse(Errors.AccessDenied, "The organization has reached its app limit.");
+            }
+            app = provisioned;
+        }
         var scopes = Consents.Requested(app, request.Scope);
         if ((await consents.MissingAsync(app.Id, user, scopes, ct)).Count > 0)
         {
+            if (registered)
+            {
+                await session.CommitAsync(ct);
+            }
             return Results.Redirect(ConsentPage + http.Request.QueryString);
         }
 

@@ -116,7 +116,15 @@ function AppsPanel({ apps, scopes, action, onCreated }: { apps: ApiApp[]; scopes
               cell: (a) => <Link href={`/admin/api/apps/${a.id}`}>{a.name}</Link>,
               sortValue: (a) => a.name,
             },
-            { key: "kind", header: t("kind"), cell: (a) => t(`kinds.${a.kind}`) },
+            {
+              key: "kind",
+              header: t("kind"),
+              cell: (a) => (
+                <>
+                  {t(`kinds.${a.kind}`)} {a.verified ? <Badge tone="success">{t("verified")}</Badge> : null}
+                </>
+              ),
+            },
             {
               key: "status",
               header: t("status"),
