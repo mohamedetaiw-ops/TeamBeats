@@ -19,7 +19,10 @@ public static class AlertKinds
     public const string PrivilegeGrantOutOfHours = "privilege_grant_out_of_hours";
     public const string NetworkBlocked = "network_blocked";
 
-    public static readonly IReadOnlyList<string> All = [DownloadVolume, PrivilegeGrantOutOfHours, NetworkBlocked];
+    /// <summary>A refresh token of an app came back a second time (spec 035 US6 scenario 2); its whole family was revoked.</summary>
+    public const string ApiTokenReuse = "api_token_reuse";
+
+    public static readonly IReadOnlyList<string> All = [DownloadVolume, PrivilegeGrantOutOfHours, NetworkBlocked, ApiTokenReuse];
 }
 
 /// <summary>Tenant alert thresholds (spec 026 section 6 defaults), stored in <c>security.policy.alert_settings</c>.</summary>
@@ -232,5 +235,23 @@ public sealed class OutOfHoursGrantRule(IEntitlementService entitlements, IAutho
         await alerts.RaiseAsync(AlertKinds.PrivilegeGrantOutOfHours, message.SubjectId,
             new { assignmentId = message.AssignmentId, role = message.RoleKey, permissions = privileged, at = now },
             $"{AlertKinds.PrivilegeGrantOutOfHours}:{message.AssignmentId}", ct);
+    }
+}
+
+/// <summary>
+/// App token reuse (spec 035 US6 scenario 2, spec 026 US5): a refresh token or code used twice means it may have been
+/// stolen. PublicApi already revoked the token family; security officers get one alert per family, with the app and the
+/// person, never the token.
+/// </summary>
+public sealed class ApiTokenReuseRule(IEntitlementService entitlements, AlertService alerts) : IMessageHandler<TeamBeats.Modules.PublicApi.Contracts.TokenFamilyRevoked>
+{
+    public async Task HandleAsync(TeamBeats.Modules.PublicApi.Contracts.TokenFamilyRevoked message, CancellationToken ct)
+    {
+        if (message.Reason != TeamBeats.Modules.PublicApi.Contracts.TokenFamilyReasons.ReuseDetected || !await entitlements.IsEnabledAsync(Capabilities.SecurityAlerts, ct))
+        {
+            return;
+        }
+        await alerts.RaiseAsync(AlertKinds.ApiTokenReuse, message.UserId, new { appId = message.AppId, familyId = message.FamilyId },
+            $"{AlertKinds.ApiTokenReuse}:{message.FamilyId}", ct);
     }
 }

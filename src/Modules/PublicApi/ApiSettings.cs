@@ -58,6 +58,11 @@ public sealed class ApiSettings(IDbSession session, TenantContextAccessor contex
         {
             errors.Add("tenantCallsPerMinute", "validation.api.tenant_calls_per_minute");
         }
+        var reason = string.IsNullOrWhiteSpace(request.Reason) ? null : request.Reason.Trim();
+        if (reason is { Length: > 500 } || (request.ApiEnabled == false && current.ApiEnabled && reason is null))
+        {
+            errors.Add("reason", "validation.api.switch_reason");
+        }
         errors.ThrowIfAny();
         var next = new ApiSettingsView(request.AccessTokenMinutes ?? current.AccessTokenMinutes, request.RefreshTokenDays ?? current.RefreshTokenDays,
             request.UserConsentScopes?.Distinct().ToList() ?? current.UserConsentScopes, request.ApiEnabled ?? current.ApiEnabled, current.Version + 1,
@@ -83,6 +88,7 @@ public sealed class ApiSettings(IDbSession session, TenantContextAccessor contex
             {
                 before = new { current.AccessTokenMinutes, current.RefreshTokenDays, current.UserConsentScopes, current.ApiEnabled, current.TenantCallsPerMinute, current.DynamicRegistration },
                 after = new { next.AccessTokenMinutes, next.RefreshTokenDays, next.UserConsentScopes, next.ApiEnabled, next.TenantCallsPerMinute, next.DynamicRegistration },
+                reason,
             }), ct);
         return next;
     }

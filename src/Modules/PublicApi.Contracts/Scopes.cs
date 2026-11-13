@@ -144,3 +144,10 @@ public sealed record AppConsentRevoked(Guid AppId, Guid? UserId) : IIntegrationE
 
 /// <summary>A token family was revoked, for example after a refresh token was used twice.</summary>
 public sealed record TokenFamilyRevoked(Guid FamilyId, Guid AppId, Guid UserId, string Reason) : IIntegrationEvent;
+
+/// <summary>Why a token family ended, as <see cref="TokenFamilyRevoked"/> carries it.</summary>
+public static class TokenFamilyReasons
+{
+    /// <summary>A refresh token or code came back a second time (US6 scenario 2).</summary>
+    public const string ReuseDetected = "reuse_detected";
+}

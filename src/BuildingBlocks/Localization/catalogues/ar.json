@@ -2156,5 +2156,14 @@
   "conflict.agent.external_action_closed": "لم يعد هذا الإجراء بانتظارك، فقد تقرر من قبل أو انتهت مدته.",
   "conflict.agent.external_action_changed": "تغير هذا الإجراء منذ فتحته. افتحه مرة أخرى وراجعه قبل التأكيد.",
   "notifications.template.agents.external_action.title": "تطبيق ذكاء اصطناعي يطلب منك تأكيد إجراء",
-  "notifications.template.agents.external_action.body": "طلب {app} تنفيذ إجراء نيابة عنك في TeamBeats. لن يحدث شيء حتى تراجعه وتؤكده. تنتهي مدته خلال 15 دقيقة."
+  "notifications.template.agents.external_action.body": "طلب {app} تنفيذ إجراء نيابة عنك في TeamBeats. لن يحدث شيء حتى تراجعه وتؤكده. تنتهي مدته خلال 15 دقيقة.",
+  "notifications.template.security.alert.api_token_reuse.body": "استُخدم رمز تسجيل دخول أحد التطبيقات مرتين، لذا ربما نُسخ. أنهى TeamBeats ذلك التسجيل. راجع التنبيه في صفحة الأمان.",
+  "notifications.template.security.alert.api_token_reuse.title": "استخدام رمز تسجيل دخول تطبيق مرتين",
+  "notifications.template.api.token_reuse.user.title": "سُجّل خروج تطبيق حفاظًا على أمانك",
+  "notifications.template.api.token_reuse.user.body": "استُخدم تسجيل دخول أحد التطبيقات المرتبطة مرتين، فأنهاه TeamBeats. سجّل دخول التطبيق مرة أخرى إن كنت ما زلت تستخدمه، وأبلغ فريق تقنية المعلومات إن لم تتوقع ذلك.",
+  "notifications.template.api.token_reuse.admin.title": "استُخدم رمز تطبيق مرتين",
+  "notifications.template.api.token_reuse.admin.body": "أنهى TeamBeats تسجيل دخول لهذا التطبيق لأن رمزه عاد مرتين. تحقق من التطبيق وبيانات اعتماده.",
+  "validation.api.block_client_id": "أدخل معرف العميل المراد حظره، بحد أقصى 200 حرف.",
+  "validation.api.block_reason": "اذكر سبب حظر العميل، بحد أقصى 500 حرف.",
+  "validation.api.switch_reason": "اذكر سبب إيقاف الواجهة البرمجية العامة، بحد أقصى 500 حرف."
 }

@@ -1313,3 +1313,17 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Without a `scope`, a client gets the read scopes employees may allow alone that the MCP server serves and the package includes. Write scopes can be asked for, and as for any app they need an API administrator's consent.
 - At most 5 registrations a minute per tenant and 20 pending at a time. Pending registrations count against the package's app limit.
 - API administrators are not notified of each registration; pending clients show in the apps list with a "Waiting for approval" status.
+
+## Public API and MCP server (spec 035, slice 5a: T018 emergency controls)
+
+### Built
+- "Revoke all tokens" on the app page (`POST /api/v1/api-access/apps/{id}:revoke-tokens`, `api.manage`): every token family ends at once and access tokens issued before now are refused at their next use, while the app stays enabled for new sign-ins (`api.tokens_revoked`). Disabling an app does the same and also refuses new tokens.
+- The platform block (`publicapi.platform_block`, platform data) at `/api/v1/platform/api/blocked-clients`: a blocked client ID, of any kind, stops working in every tenant on its next request, tokens included. The tenant's app shows "Blocked by TeamBeats" and cannot be enabled until the block is lifted. Block and unblock are in the platform audit with the reason.
+- Turning the public API off needs a reason, kept in the `api.tenant_switch_changed` audit entry. External AI access has its own switch in the agent policy, as before.
+- A refresh token or code used twice (the family is revoked, as before) now also tells the person and the API administrators, and raises the security alert `api_token_reuse` (spec 026 US5) for security officers.
+- Revoking an employee's consents is the existing consents tab.
+
+### Smallest safe defaults
+- Tenant administrators see a platform block on the app page and in the apps list. They are not sent a notification: the platform holds no list of which tenants registered a client ID, and finding them would mean reading every tenant's registrations. Verified clients blocked on the verified list behave the same way.
+- Lifting a block restores the app as it was. Tokens issued before the block work again unless they were revoked or have expired; the platform operator asks tenants to revoke tokens when a secret may have leaked.
+- Access tokens are refused at their next use after a revocation or block: every call reads the app registration, so there is no cache to wait for, well within the 60 seconds of US6.

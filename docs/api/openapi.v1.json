@@ -21736,6 +21736,29 @@
         }
       }
     },
+    "/api/v1/api-access/apps/{id}:revoke-tokens": {
+      "post": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/api-access/apps/{id}:enable": {
       "post": {
         "tags": [
@@ -21991,6 +22014,58 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/platform/api/blocked-clients": {
+      "get": {
+        "tags": [
+          "Platform: API and MCP"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Platform: API and MCP"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlatformBlockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Platform: API and MCP"
+        ],
+        "parameters": [
+          {
+            "name": "clientId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -22738,6 +22813,12 @@
             "type": [
               "null",
               "boolean"
+            ]
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
             ]
           }
         }
@@ -29388,6 +29469,27 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "PlatformBlockRequest": {
+        "required": [
+          "clientId",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
