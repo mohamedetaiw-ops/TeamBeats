@@ -143,8 +143,9 @@ public sealed class EvaluationRunTests(TenantWorld world)
         var started = await OkAsync(t["sara"].Client.PostAsJsonAsync($"{Eval}/runs", new { agentId = agent }), HttpStatusCode.Created);
         var run = started.GetProperty("run").GetProperty("id").GetGuid();
         Assert.Equal("queued", started.GetProperty("run").GetProperty("status").GetString());
-        // Five mandatory suites and the HR template suite with two cases in each language, and the agent's three.
-        Assert.Equal(27, started.GetProperty("run").GetProperty("total").GetInt32());
+        // Five mandatory suites and the HR template suite with two cases in each language, three of the safety suites with
+        // one more in each for external AI callers (spec 035 T015), and the agent's three.
+        Assert.Equal(33, started.GetProperty("run").GetProperty("total").GetInt32());
         Assert.True(started.GetProperty("canCancel").GetBoolean());
         // One request for this run and one for the gate run that submitting the version started.
         Assert.Equal(2, await world.Database.OutboxCountAsync("EvaluationRunRequested", t.Id));
@@ -159,7 +160,7 @@ public sealed class EvaluationRunTests(TenantWorld world)
 
         var done = await FinishAsync(t, run);
         Assert.Equal("completed", done.GetProperty("run").GetProperty("status").GetString());
-        Assert.Equal(27, done.GetProperty("run").GetProperty("done").GetInt32());
+        Assert.Equal(33, done.GetProperty("run").GetProperty("done").GetInt32());
         Assert.Equal(0, done.GetProperty("run").GetProperty("errors").GetInt32());
         Assert.False(done.GetProperty("canCancel").GetBoolean());
         // The template suite's blocking metrics have far fewer than 20 cases per locale, so the run cannot pass (US4 scenario 5).
@@ -172,7 +173,7 @@ public sealed class EvaluationRunTests(TenantWorld world)
         Assert.Equal(1, await world.Database.OutboxCountAsync("EvaluationRunCompleted", t.Id));
 
         var cases = await OkAsync(t["sara"].Client.GetAsync($"{Eval}/runs/{run}/cases"));
-        Assert.Equal(27, cases.GetArrayLength());
+        Assert.Equal(33, cases.GetArrayLength());
 
         // The write tool went to its sandbox double: the trajectory shows it, and the real tool never ran.
         var note = AgentCase(cases, 1);
@@ -193,7 +194,7 @@ public sealed class EvaluationRunTests(TenantWorld world)
         var persona = await world.Database.TenantScalarAsync<Guid>(t.Id, "select user_id from evaluation.persona where is_default and org_unit_id = @unit", ("unit", t.Unit("Hr")));
         Assert.Equal(persona, await world.Database.TenantScalarAsync<Guid>(t.Id, "select user_id from agents.run where id = @id", ("id", agentRun)));
         Assert.True(await world.Database.TenantScalarAsync<bool>(t.Id, "select test_identity from identity.user_account where id = @id", ("id", persona)));
-        Assert.Equal(27, await world.Database.TenantScalarAsync<long>(t.Id,
+        Assert.Equal(33, await world.Database.TenantScalarAsync<long>(t.Id,
             "select count(*) from agents.run r join evaluation.case_result c on c.agent_run_id = r.id where c.run_id = @run and r.user_id = @persona",
             ("run", run), ("persona", persona)));
 
@@ -294,7 +295,7 @@ public sealed class EvaluationRunTests(TenantWorld world)
         var view = await OkAsync(t["sara"].Client.GetAsync($"{Eval}/runs/{run}"));
         Assert.Equal(EvaluationRunner.BatchSize, view.GetProperty("run").GetProperty("done").GetInt32());
         Assert.Equal(JsonValueKind.Null, view.GetProperty("result").ValueKind);
-        Assert.Equal(24 - EvaluationRunner.BatchSize, await world.Database.TenantScalarAsync<long>(t.Id,
+        Assert.Equal(30 - EvaluationRunner.BatchSize, await world.Database.TenantScalarAsync<long>(t.Id,
             "select count(*) from evaluation.case_result where run_id = @run and status = 'skipped'", ("run", run)));
 
         // Viewers with eval.view see runs; people outside the agent's scope and other tenants do not.

@@ -21,6 +21,8 @@ export type ApiApp = {
   ipRanges: string[];
   callsPerMinute: number;
   callsPerMinuteLowered: boolean;
+  /** On the platform's verified MCP client list: its name, publisher, scopes and redirect URIs come from the list (spec 035 FR-023). */
+  verified?: boolean;
 };
 
 export type ApiCredential = {

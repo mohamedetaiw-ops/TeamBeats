@@ -21647,6 +21647,18 @@
         }
       }
     },
+    "/api/v1/api-access/verified-mcp-clients": {
+      "get": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/api-access/apps/{id}": {
       "get": {
         "tags": [
@@ -21942,6 +21954,38 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ApiSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/platform/api/verified-mcp-clients": {
+      "get": {
+        "tags": [
+          "Platform: API and MCP"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Platform: API and MCP"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifiedMcpClientRequest"
               }
             }
           },
@@ -33412,6 +33456,61 @@
           }
         }
       },
+      "VerifiedMcpClientRequest": {
+        "required": [
+          "clientId",
+          "name",
+          "publisher",
+          "redirectUris",
+          "scopes",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "publisher": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "redirectUris": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "scopes": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "VoteRequest": {
         "required": [
           "optionIds"
@@ -33688,6 +33787,9 @@
     },
     {
       "name": "Tenant: API and MCP access"
+    },
+    {
+      "name": "Platform: API and MCP"
     },
     {
       "name": "Me: connected apps"
