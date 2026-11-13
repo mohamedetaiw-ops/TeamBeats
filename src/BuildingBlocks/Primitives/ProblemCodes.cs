@@ -26,5 +26,9 @@ public static class ProblemCodes
     public const string NetworkNotAllowed = "security.network_not_allowed";
     public const string StepUpRequired = "security.step_up_required";
 
+    // Spec 035: public API calls with a missing, invalid or revoked token, or a token without the operation's scope.
+    public const string ApiTokenInvalid = "api.token_invalid";
+    public const string ApiInsufficientScope = "api.insufficient_scope";
+
     public static string TypeUri(string code) => $"urn:teambeats:problem:{code}";
 }

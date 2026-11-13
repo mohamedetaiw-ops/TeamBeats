@@ -11,7 +11,7 @@ const config: NextConfig = {
   // The release in frontend error reports (spec 021 US9): the deployed commit, or "dev" locally.
   env: { NEXT_PUBLIC_TEAMBEATS_RELEASE: process.env.TEAMBEATS_RELEASE ?? "dev" },
   // One origin per tenant host (r0-solution-structure section 5). In deployed environments the ingress routes
-  // /api and /dev to the API directly; these rewrites serve local development.
+  // /api, /dev and /oauth to the API directly; these rewrites serve local development.
   // The service worker (spec 030 FR-002) is fetched fresh every time, so a new release is found at once.
   async headers() {
     return [
@@ -28,6 +28,9 @@ const config: NextConfig = {
     return [
       { source: "/api/:path*", destination: `${apiOrigin}/api/:path*` },
       { source: "/dev/:path*", destination: `${apiOrigin}/dev/:path*` },
+      // The tenant's authorization server for apps and AI clients (spec 035 FR-001) is served by the API.
+      { source: "/oauth/:path*", destination: `${apiOrigin}/oauth/:path*` },
+      { source: "/.well-known/oauth-authorization-server/:path*", destination: `${apiOrigin}/.well-known/oauth-authorization-server/:path*` },
     ];
   },
 };

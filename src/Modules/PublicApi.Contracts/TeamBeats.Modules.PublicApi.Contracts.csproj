@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><RootNamespace>TeamBeats.Modules.PublicApi.Contracts</RootNamespace><AssemblyName>TeamBeats.Modules.PublicApi.Contracts</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../BuildingBlocks/Primitives/TeamBeats.Primitives.csproj" />
+    <ProjectReference Include="../../BuildingBlocks/Entitlements.Contracts/TeamBeats.Entitlements.Contracts.csproj" />
+  </ItemGroup>
+</Project>

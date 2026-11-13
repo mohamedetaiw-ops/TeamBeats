@@ -61,6 +61,26 @@ public sealed partial class ArchitectureTests
     }
 
     [Fact]
+    public void Only_the_public_api_module_references_the_authorization_server_and_mcp_libraries()
+    {
+        // ADR-0018: OpenIddict and the MCP SDK stay inside PublicApi, so no other module can issue or accept tokens.
+        var violations = SourceFiles("src", "*.csproj").Concat(SourceFiles("tests", "*.csproj"))
+            .Where(csproj => !Rel(csproj).StartsWith("src/Modules/PublicApi/", StringComparison.Ordinal))
+            .Where(csproj => XDocument.Load(csproj).Descendants("PackageReference").Any(e =>
+                e.Attribute("Include")?.Value is { } package
+                && (package.StartsWith("OpenIddict", StringComparison.Ordinal) || package.StartsWith("ModelContextProtocol", StringComparison.Ordinal))))
+            .Select(Rel)
+            .ToList();
+        Assert.True(violations.Count == 0, "Projects other than PublicApi that reference OpenIddict or the MCP SDK: " + string.Join(", ", violations));
+        var code = SourceFiles("src")
+            .Where(f => !Rel(f).StartsWith("src/Modules/PublicApi/", StringComparison.Ordinal))
+            .Where(f => File.ReadAllText(f).Contains("using OpenIddict", StringComparison.Ordinal))
+            .Select(Rel)
+            .ToList();
+        Assert.True(code.Count == 0, "Code outside PublicApi that uses OpenIddict: " + string.Join(", ", code));
+    }
+
+    [Fact]
     public void Model_providers_are_reached_only_through_their_adapter()
     {
         // Spec 013 FR-001 and constitution VIII: provider URLs and SDKs stay inside the adapter projects; every other

@@ -307,7 +307,7 @@ public static class ReturnPaths
 {
     public static string Sanitize(string? value)
     {
-        if (string.IsNullOrEmpty(value) || value.Length > 512 || value[0] != '/' || value.StartsWith("//", StringComparison.Ordinal)
+        if (string.IsNullOrEmpty(value) || value.Length > 2048 || value[0] != '/' || value.StartsWith("//", StringComparison.Ordinal)
             || value.StartsWith("/\\", StringComparison.Ordinal) || value.Any(c => char.IsControl(c) || c == '\\')
             || value.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
         {

@@ -17,7 +17,7 @@ export type DevSignInMode = "open" | "testaccount";
  */
 export const TEST_EMPLOYEE_LINK = "/dev/fake/signin/employee";
 
-export function DevSignInForm({ mode, testAccount = "admin" }: { mode: DevSignInMode; testAccount?: string }) {
+export function DevSignInForm({ mode, testAccount = "admin", returnTo = null }: { mode: DevSignInMode; testAccount?: string; returnTo?: string | null }) {
   const t = useTranslations("signin");
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -37,9 +37,11 @@ export function DevSignInForm({ mode, testAccount = "admin" }: { mode: DevSignIn
     setBusy(false);
     if (response.ok) {
       // A test account may name a page on this site to open next (staging connects the fake Outlook this way).
+      // Otherwise the page the sign-in was asked for, such as an app's authorization request (spec 035).
       const { next } = ((await response.json().catch(() => null)) ?? {}) as { next?: string | null };
-      if (typeof next === "string" && /^\/(?![/\\])/.test(next)) {
-        window.location.assign(next);
+      const target = typeof next === "string" && next ? next : returnTo;
+      if (typeof target === "string" && /^\/(?![/\\])/.test(target)) {
+        window.location.assign(target);
         return;
       }
       router.push("/");

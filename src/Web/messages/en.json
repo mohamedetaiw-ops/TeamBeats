@@ -647,7 +647,8 @@
       "learning": "Learning",
       "spaces": "Spaces",
       "booking": "Space booking",
-      "mobile": "Mobile app"
+      "mobile": "Mobile app",
+      "api": "API and MCP access"
     },
     "plan": {
       "description": "The package this workspace uses and everything it includes.",
@@ -798,7 +799,14 @@
         "mobile_push": "Push notifications",
         "mobile_offline": "Offline reading",
         "mobile_kiosk": "Kiosk and shared devices",
-        "mobile_native_shell": "Store apps for iOS and Android"
+        "mobile_native_shell": "Store apps for iOS and Android",
+        "api_public": "Public API and app sign-in",
+        "api_write_scopes": "Write access for apps",
+        "api_event_subscriptions": "Event notifications for apps",
+        "api_mcp": "MCP server for AI assistants",
+        "api_mcp_write_tools": "Confirmed actions from AI assistants",
+        "api_max_apps": "Apps",
+        "api_monthly_calls": "API calls each month"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -10369,6 +10377,43 @@
       "qrAlt": "QR code for the badge",
       "printHint": "Print this now. The code is not shown again.",
       "print": "Print"
+    }
+  },
+  "apiAccess": {
+    "consent": {
+      "title": "Allow {app} to use your TeamBeats account?",
+      "publisher": "From {publisher}",
+      "noPublisher": "The publisher is not given",
+      "asks": "This app asks to",
+      "needsAdmin": "Needs administrator approval",
+      "adminTitle": "Your administrator must approve this app",
+      "admin": "Some of what this app asks needs an API administrator's approval. Ask your administrator, then try again.",
+      "guestTitle": "Guests cannot connect this app",
+      "guest": "This app is not open to guest accounts.",
+      "revokeLater": "You can remove the app at any time in your settings, under connected apps.",
+      "allow": "Allow",
+      "cancel": "Cancel",
+      "failedTitle": "Your choice was not saved",
+      "failed": "Try again. If it keeps failing, the app may no longer be available.",
+      "unknownTitle": "This app cannot connect",
+      "unknown": "The app is not registered for your organization, or the link it opened is not valid."
+    },
+    "scope": {
+      "profile_read": "See your name, email and membership",
+      "content_read": "Read news, announcements and pages you can see",
+      "content_draft": "Create drafts of news and pages, never publish them",
+      "documents_read": "Read documents you can open",
+      "documents_write": "Upload documents and new versions where you can edit",
+      "people_read": "See people's directory profiles you can see",
+      "org_read": "See the organization's units and structure",
+      "policies_read": "Read published policies and your attestation status",
+      "search_query": "Search content you can see",
+      "assistant_ask": "Ask the TeamBeats assistant for answers with sources",
+      "services_read": "See the service catalogue",
+      "requests_read": "See requests you can see",
+      "requests_submit": "Submit service requests for you",
+      "tasks_read": "See the tasks in your inbox",
+      "events_subscribe": "Receive notifications of changes"
     }
   }
 }

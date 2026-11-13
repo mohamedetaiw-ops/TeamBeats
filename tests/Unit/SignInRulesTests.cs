@@ -28,7 +28,17 @@ public sealed class SignInRulesTests
 
     [Fact]
     public void Overlong_return_path_falls_back_to_home() =>
-        Assert.Equal("/", ReturnPaths.Sanitize("/" + new string('a', 600)));
+        Assert.Equal("/", ReturnPaths.Sanitize("/" + new string('a', 2048)));
+
+    [Fact]
+    public void An_app_authorization_request_survives_the_sign_in()
+    {
+        // Spec 035 FR-003: the authorization endpoint sends the browser to sign in and back with its whole query.
+        var request = "/oauth/authorize?client_id=tb_x&response_type=code&redirect_uri=https%3A%2F%2Fapp.example%2Fcb&scope=profile%3Aread&code_challenge="
+            + new string('c', 43) + "&code_challenge_method=S256&state=" + new string('s', 400) + "&resource=https%3A%2F%2Facme.example%2Fmcp";
+        Assert.True(request.Length > 512);
+        Assert.Equal(request, ReturnPaths.Sanitize(request));
+    }
 
     [Fact]
     public void Secret_reference_belongs_to_one_tenant()

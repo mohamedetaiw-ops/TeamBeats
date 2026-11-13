@@ -22,6 +22,7 @@ using TeamBeats.Modules.Calendar;
 using TeamBeats.Modules.Policies;
 using TeamBeats.Modules.Engagement;
 using TeamBeats.Modules.Booking;
+using TeamBeats.Modules.PublicApi;
 using TeamBeats.Modules.Learning;
 using TeamBeats.Modules.Spaces;
 using TeamBeats.Modules.Search;
@@ -75,6 +76,7 @@ public static class TeamBeatsModules
         EvaluationModule.Migrations,
         AnalyticsModule.Migrations,
         CalendarModule.Migrations,
+        PublicApiModule.Migrations,
     ];
 
     public static IServiceCollection AddTeamBeatsCore(this IServiceCollection services, IConfiguration configuration)
@@ -144,6 +146,7 @@ public static class TeamBeatsModules
         services.AddAgentsModule();
         services.AddEvaluationModule();
         services.AddAnalyticsModule();
+        services.AddPublicApiModule();
         return services;
     }
 }
@@ -206,6 +209,9 @@ public static class ApiComposition
             await next(http);
         });
         app.UseTeamBeatsSessions();
+        // The authorization server and bearer tokens of the public API (spec 035) after the host's tenant is known.
+        app.UseOAuthServer();
+        app.UsePublicApiTokens();
         app.UseSharedDeviceRules();
         app.UseNetworkRules();
         app.UseStepUp();
@@ -240,6 +246,7 @@ public static class ApiComposition
         app.MapPeopleEndpoints();
         app.MapSecurityEndpoints();
         app.MapCalendarEndpoints();
+        app.MapPublicApiEndpoints();
         extraEndpoints?.Invoke(app);
         return app;
     }

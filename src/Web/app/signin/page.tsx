@@ -22,7 +22,20 @@ function devSignInMode(): DevSignInMode | null {
   return null;
 }
 
-export default async function SignInPage() {
+/**
+ * A page on this site to open after signing in, such as the authorization request of an app (spec 035 FR-003).
+ * Anything else, another site or an API path, is dropped; the API applies the same rule to the single sign-on return.
+ */
+function safeReturn(value: string | string[] | undefined): string | null {
+  const path = Array.isArray(value) ? value[0] : value;
+  if (!path || path.length > 2048 || !path.startsWith("/") || path.startsWith("//") || path.startsWith("/\\") || path.startsWith("/api/")) {
+    return null;
+  }
+  return path;
+}
+
+export default async function SignInPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const returnTo = safeReturn((await searchParams).returnTo);
   // An enrolled kiosk signs people in with badges only (spec 030 US4): every way to the sign-in page leads to its start screen.
   const kiosk = await apiGet<KioskDeviceInfo>("/api/v1/kiosk/device");
   if (kiosk.ok && kiosk.data.enrolled) {
@@ -37,11 +50,11 @@ export default async function SignInPage() {
       <h1>{t("title")}</h1>
       <OfflineWipe />
       {sso ? (
-        <a className="button" href="/api/v1/auth/signin/sso">
+        <a className="button" href={returnTo ? `/api/v1/auth/signin/sso?returnTo=${encodeURIComponent(returnTo)}` : "/api/v1/auth/signin/sso"}>
           {t("ssoMicrosoft")}
         </a>
       ) : null}
-      {mode ? <DevSignInForm mode={mode} testAccount={process.env.TEAMBEATS_TEST_ACCOUNT || "admin"} /> : null}
+      {mode ? <DevSignInForm mode={mode} testAccount={process.env.TEAMBEATS_TEST_ACCOUNT || "admin"} returnTo={returnTo} /> : null}
       {!sso && !mode ? <p>{t("ssoPending")}</p> : null}
     </main>
   );
