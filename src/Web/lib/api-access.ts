@@ -14,7 +14,7 @@ export type ApiApp = {
   scopes: string[];
   redirectUris: string[];
   allowGuests: boolean;
-  status: "active" | "disabled";
+  status: "active" | "disabled" | "pending";
   createdAt: string;
   lastUsedAt: string | null;
   version: number;
@@ -23,6 +23,8 @@ export type ApiApp = {
   callsPerMinuteLowered: boolean;
   /** On the platform's verified MCP client list: its name, publisher, scopes and redirect URIs come from the list (spec 035 FR-023). */
   verified?: boolean;
+  /** Registered itself through dynamic client registration; waits as pending until approved (spec 035 FR-023). */
+  selfRegistered?: boolean;
 };
 
 export type ApiCredential = {
@@ -48,6 +50,7 @@ export type ApiSettings = {
   apiEnabled: boolean;
   version: number;
   tenantCallsPerMinute: number | null;
+  dynamicRegistration?: boolean;
 };
 
 export type AppUsage = {

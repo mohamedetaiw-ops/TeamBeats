@@ -15,7 +15,7 @@ public sealed record AppRequest(string? Name, string? Kind, string? Description,
 /// <param name="CallsPerMinute">The limit that applies: per app for an application app, per app and person for a delegated one.</param>
 public sealed record AppView(Guid Id, string ClientId, string Kind, string Name, string? Description, string? Publisher, IReadOnlyList<string> Scopes,
     IReadOnlyList<string> RedirectUris, bool AllowGuests, string Status, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt, int Version,
-    IReadOnlyList<string> IpRanges, int CallsPerMinute, bool CallsPerMinuteLowered, bool Verified = false);
+    IReadOnlyList<string> IpRanges, int CallsPerMinute, bool CallsPerMinuteLowered, bool Verified = false, bool SelfRegistered = false);
 
 public sealed record CredentialView(Guid Id, string Kind, string? Hint, DateTimeOffset ExpiresAt, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt,
     DateTimeOffset? RevokedAt);
@@ -32,12 +32,13 @@ public sealed record IssuedCredential(CredentialView Credential, string? Secret)
 public sealed record AdminConsentRequest(IReadOnlyList<string>? Scopes);
 
 /// <param name="TenantCallsPerMinute">The limit for all apps of the tenant together, null for the installation's limit.</param>
+/// <param name="DynamicRegistration">MCP clients may register themselves, each held for approval (FR-023); off by default.</param>
 public sealed record ApiSettingsView(int AccessTokenMinutes, int RefreshTokenDays, IReadOnlyList<string> UserConsentScopes, bool ApiEnabled, int Version,
-    int? TenantCallsPerMinute = null);
+    int? TenantCallsPerMinute = null, bool DynamicRegistration = false);
 
 /// <param name="TenantCallsPerMinute">Lowers the limit for all apps together; 0 returns to the installation's limit.</param>
 public sealed record ApiSettingsRequest(int? AccessTokenMinutes, int? RefreshTokenDays, IReadOnlyList<string>? UserConsentScopes, bool? ApiEnabled, int? Version,
-    int? TenantCallsPerMinute = null);
+    int? TenantCallsPerMinute = null, bool? DynamicRegistration = null);
 
 /// <summary>A tenant's API usage over a period (US5 scenario 3): per app, from the call log, without bodies.</summary>
 public sealed record ApiUsageView(int Days, long MonthCalls, long? MonthlyLimit, IReadOnlyList<AppUsageView> Apps);

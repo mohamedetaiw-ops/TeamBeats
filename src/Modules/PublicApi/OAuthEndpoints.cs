@@ -102,6 +102,7 @@ public static class OAuthEndpoints
         oauth.MapGet("/authorize", AuthorizeAsync);
         oauth.MapPost("/token", TokenAsync);
         oauth.MapPost("/revoke", RevokeAsync);
+        oauth.MapPost("/register", RegisterAsync);
         return app;
     }
 
@@ -310,6 +311,52 @@ public static class OAuthEndpoints
         // inside the encrypted refresh token.
         principal.SetDestinations(claim => claim.Type == OAuthServer.GenerationClaim ? [] : [Destinations.AccessToken]);
         return principal;
+    }
+
+    /// <summary>
+    /// RFC 7591 registration for MCP clients where the tenant turned it on (FR-023); elsewhere the endpoint does not exist.
+    /// The client is held for an API administrator's approval, and registrations are limited per tenant.
+    /// </summary>
+    private static async Task<IResult> RegisterAsync(HttpContext http, TenantContextAccessor tenant, ApiSettings settings, ClientRegistrations registrations,
+        PublicRateLimits limits, IDbSession session, CancellationToken ct)
+    {
+        if (tenant.Host.Tenant is not { } host)
+        {
+            return Results.NotFound();
+        }
+        tenant.SetTenant(host.Id);
+        if (!await OAuthServer.OpenAsync(http.RequestServices, ct) || !(await settings.CurrentAsync(ct)).DynamicRegistration)
+        {
+            return Results.NotFound();
+        }
+        http.Response.Headers.CacheControl = "no-store";
+        var limit = limits.Take("register:" + host.Id, ClientRegistrations.PerMinute);
+        if (!limit.Allowed)
+        {
+            http.Response.Headers.RetryAfter = limit.ResetSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            return Results.Json(new ClientRegistrationError("temporarily_unavailable", "Too many registrations. Try again later."),
+                statusCode: StatusCodes.Status429TooManyRequests);
+        }
+        ClientRegistrationRequest? request;
+        try
+        {
+            request = await http.Request.ReadFromJsonAsync<ClientRegistrationRequest>(ct);
+        }
+        catch (Exception e) when (e is System.Text.Json.JsonException or InvalidOperationException)
+        {
+            request = null;
+        }
+        if (request is null)
+        {
+            return Results.Json(new ClientRegistrationError("invalid_client_metadata", "The body must be a JSON client metadata document."), statusCode: 400);
+        }
+        var (registered, refused) = await registrations.RegisterAsync(request, ct);
+        if (registered is null)
+        {
+            return Results.Json(refused, statusCode: 400);
+        }
+        await session.CommitAsync(ct);
+        return Results.Json(registered, statusCode: StatusCodes.Status201Created);
     }
 
     private static IResult Refuse(string error, string description) =>

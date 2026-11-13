@@ -70,10 +70,15 @@ export function AppDetailAdmin({
           </p>
         </Alert>
       ) : null}
+      {app.status === "pending" ? (
+        <Alert tone="warning" title={t("pendingTitle")}>
+          <p>{t("pendingBody")}</p>
+        </Alert>
+      ) : null}
       <section className="admin-panel" aria-labelledby="api-app-summary">
         <div className="admin-panel-head">
           <h2 id="api-app-summary">{t("summaryTitle")}</h2>
-          <Badge tone={app.status === "active" ? "success" : "neutral"}>{t(`statuses.${app.status}`)}</Badge>
+          <Badge tone={app.status === "active" ? "success" : app.status === "pending" ? "warning" : "neutral"}>{t(`statuses.${app.status}`)}</Badge>
         </div>
         <dl className="api-access-facts">
           <dt>{t("kind")}</dt>
@@ -84,18 +89,19 @@ export function AppDetailAdmin({
           </dd>
         </dl>
         <div className="admin-actions">
-          {app.status === "active" ? (
+          {app.status !== "disabled" ? (
             <ConfirmAction
-              label={t("disable")}
-              question={t("disableQuestion", { name: app.name })}
-              confirmLabel={t("disable")}
+              label={app.status === "pending" ? t("refuse") : t("disable")}
+              question={app.status === "pending" ? t("refuseQuestion", { name: app.name }) : t("disableQuestion", { name: app.name })}
+              confirmLabel={app.status === "pending" ? t("refuse") : t("disable")}
               cancelLabel={t("cancel")}
               onConfirm={async () => {
                 const outcome = await action.run("disable", "POST", `/api/v1/api-access/apps/${app.id}:disable`, undefined, t("disabled"));
                 if (outcome.ok) await reload();
               }}
             />
-          ) : (
+          ) : null}
+          {app.status !== "active" ? (
             <Button
               size="sm"
               variant="secondary"
@@ -106,9 +112,9 @@ export function AppDetailAdmin({
                 if (outcome.ok) await reload();
               }}
             >
-              {t("enable")}
+              {app.status === "pending" ? t("approve") : t("enable")}
             </Button>
-          )}
+          ) : null}
         </div>
       </section>
       <EditApp detail={detail} scopes={scopes} action={action} onSaved={reload} />
