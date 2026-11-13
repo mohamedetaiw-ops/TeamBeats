@@ -528,13 +528,10 @@
  * drawn only when the shell says the tenant has the assistant, and it stays clear of the page's own actions.
  */
 .shell-ask {
-  position: fixed;
-  inset-block-end: var(--tb-space-lg);
-  inset-inline-end: var(--tb-space-lg);
-  z-index: 5;
   display: inline-flex;
+  flex: none;
   align-items: center;
-  gap: var(--tb-space-sm);
+  gap: var(--tb-space-xs);
   min-block-size: 2.5rem;
   padding-inline: var(--tb-space-md);
   border-radius: var(--tb-radius-full);
@@ -542,7 +539,6 @@
   color: var(--tb-color-text-on-night);
   font-size: var(--tb-font-size-sm);
   font-weight: var(--tb-font-weight-medium);
-  box-shadow: var(--tb-shadow-md);
   text-decoration: none;
 }
 
@@ -558,10 +554,9 @@
   outline-offset: var(--tb-space-xs);
 }
 
-@media (width <= 40rem) {
+/* Below 900px the launcher keeps only its mark; the name stays for assistive technology and the tooltip-free link. */
+@media (width <= 56rem) {
   .shell-ask {
-    inset-block-end: var(--tb-space-md);
-    inset-inline-end: var(--tb-space-md);
     inline-size: 2.75rem;
     min-block-size: 2.75rem;
     justify-content: center;
@@ -575,29 +570,6 @@
     overflow: hidden;
     clip-path: inset(50%);
     white-space: nowrap;
-  }
-}
-
-/*
- * The launcher floats over the page, so the end of every page leaves room for it: scrolled to the bottom, it sits in
- * that room and never covers the last action of a form or the footer's classification (spec 036 DLS-050, DLS-066).
- */
-body:has(.shell-ask) .shell-footer,
-body:has(.shell-ask):not(:has(.shell-footer)) .admin-content {
-  padding-block-end: calc(2.5rem + 2 * var(--tb-space-lg));
-}
-
-@media (width <= 40rem) {
-  body:has(.shell-ask) .shell-footer,
-  body:has(.shell-ask):not(:has(.shell-footer)) .admin-content {
-    padding-block-end: calc(2.75rem + 2 * var(--tb-space-md));
-  }
-}
-
-/* On wide screens admin pages keep a gutter at the inline end for the launcher, so it floats beside the forms. */
-@media (width > 64rem) {
-  body:has(.shell-ask) .admin-content {
-    padding-inline-end: calc(11rem + var(--tb-space-lg));
   }
 }
 
@@ -856,11 +828,6 @@ body:has(.shell-ask):not(:has(.shell-footer)) .admin-content {
 }
 
 
-/* The assistant launcher hides while a shell panel is open, so it never covers one (DLS-065). */
-.shell:has(.shell-popover:not([hidden])) .shell-ask {
-  display: none;
-}
-
 @media (width <= 40rem) {
   .shell-popover {
     position: fixed;
@@ -956,6 +923,12 @@ body:has(.shell-ask):not(:has(.shell-footer)) .admin-content {
     text-decoration: none;
   }
 
+  .mobile-nav-more-children {
+    margin: 0;
+    padding-inline-start: var(--tb-space-lg);
+    list-style: none;
+  }
+
   .mobile-nav-more a[aria-current="page"] {
     color: var(--tb-color-accent-base);
   }
@@ -967,16 +940,105 @@ body:has(.shell-ask):not(:has(.shell-footer)) .admin-content {
     outline-offset: calc(-1 * var(--tb-border-width-thick));
   }
 
-  /* The page, the footer and the launcher keep clear of the bar. */
+  /* The page, the footer and the push offer keep clear of the bar. */
   body:has(.mobile-nav) {
     padding-block-end: calc(3.5rem + env(safe-area-inset-bottom));
   }
 
-  body:has(.mobile-nav) .shell-ask {
-    inset-block-end: calc(3.5rem + var(--tb-space-md) + env(safe-area-inset-bottom));
-  }
-
   body:has(.mobile-nav) .app-update {
     inset-block-end: calc(3.5rem + var(--tb-space-md) + env(safe-area-inset-bottom));
+  }
+}
+
+/*
+ * The phone shell bar (spec 008 FR-063, TB-05): one row of at most 64px with the mark, the search, Ask, the page
+ * actions, settings and the account. Search is a 44px button that opens across the bar while it has focus; the global
+ * menu lives under More in the bottom navigation, so the separate Menu row is not drawn; a one level breadcrumb that
+ * repeats the page title is left out.
+ */
+@media (width <= 40rem) {
+  .shell-bar {
+    position: relative;
+    flex-wrap: nowrap;
+    gap: var(--tb-space-xs);
+    min-block-size: 3.5rem;
+    max-block-size: 4rem;
+    padding-block: var(--tb-space-xs);
+    padding-inline: var(--tb-space-md);
+  }
+
+  .shell-slot {
+    flex-wrap: nowrap;
+    gap: var(--tb-space-xs);
+  }
+
+  .shell-slot[data-slot="center"] {
+    flex: 1 1 auto;
+    justify-content: flex-end;
+  }
+
+  .shell-search {
+    inline-size: 2.75rem;
+  }
+
+  .shell-search input {
+    inline-size: 2.75rem;
+    padding-inline: 2.75rem 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .shell-search input::placeholder {
+    color: transparent;
+  }
+
+  .shell-search-icon {
+    inset-inline-start: 0;
+    justify-content: center;
+    inline-size: 2.75rem;
+    color: currentcolor;
+  }
+
+  .shell-search:focus-within {
+    position: absolute;
+    z-index: 12;
+    inset-block: var(--tb-space-xs);
+    inset-inline: var(--tb-space-md);
+    inline-size: auto;
+  }
+
+  .shell-search:focus-within input {
+    inline-size: 100%;
+    padding-inline: 2.75rem var(--tb-space-md);
+    background: var(--tb-color-surface-base);
+    cursor: text;
+  }
+
+  .shell-search:focus-within input::placeholder {
+    color: var(--tb-color-text-secondary);
+  }
+
+  .shell-search:focus-within .shell-search-icon {
+    color: var(--tb-color-text-secondary);
+  }
+
+  body:has(.mobile-nav) .shell-rail {
+    display: none;
+  }
+
+  .shell-breadcrumbs:not(:has(li + li)) {
+    display: none;
+  }
+}
+
+/* At 380px and below the seven 44px controls fill the bar edge to edge, so the gaps close and the edge padding shrinks. */
+@media (width <= 23.75rem) {
+  .shell-bar,
+  .shell-slot {
+    gap: 0;
+  }
+
+  .shell-bar {
+    padding-inline: var(--tb-space-xs);
   }
 }

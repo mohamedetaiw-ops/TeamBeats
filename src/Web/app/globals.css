@@ -144,9 +144,7 @@ main tbody tr:where(:hover) > * {
   inline-size: 100%;
   max-inline-size: 90rem;
   margin-inline: auto;
-
-  /* The end of the page keeps room for the assistant launcher, so it never covers the last card (DLS-050). */
-  padding-block: var(--tb-space-lg) calc(var(--tb-space-xxl) + 3rem);
+  padding-block: var(--tb-space-lg) var(--tb-space-xxl);
   padding-inline: var(--tb-space-lg);
   overflow-wrap: anywhere; /* long addresses and names wrap instead of widening a phone screen */
 }
@@ -154,6 +152,78 @@ main tbody tr:where(:hover) > * {
 @media (width <= 40rem) {
   .page {
     padding-inline: var(--tb-space-md);
+  }
+}
+
+/*
+ * Tables never break a word to fit (DLS-079): "anywhere" would let a column shrink to one letter, so cells wrap only
+ * between words and at the end of long values, and a wide table scrolls inside its own container. On a phone a table
+ * marked data-stack becomes cards; any other table keeps the page from scrolling sideways by wrapping anywhere.
+ */
+@media (width > 40rem) {
+  :where(.page, .admin-content) :where(table) {
+    overflow-wrap: normal;
+  }
+
+  :where(.page, .admin-content) :where(td, th) {
+    overflow-wrap: break-word;
+  }
+}
+
+:where(.page, .admin-content) :where(table[data-stack]) {
+  overflow-wrap: normal;
+}
+
+/*
+ * Responsive tables (DLS-079), for DataTable and any table marked data-stack: low priority columns leave below 1024px,
+ * and below 640px each row becomes a stacked card that labels each value with its column header (data-label).
+ */
+@media (width <= 64rem) {
+  table :is(th, td)[data-priority="low"] {
+    display: none;
+  }
+}
+
+@media (width <= 40rem) {
+  table[data-stack],
+  table[data-stack] :is(tbody, tr, td, tbody th) {
+    display: block;
+  }
+
+  table[data-stack] thead {
+    position: absolute;
+    inline-size: 0.0625rem;
+    block-size: 0.0625rem;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  table[data-stack] tbody tr {
+    display: grid;
+    gap: var(--tb-space-xs);
+    margin-block-end: var(--tb-space-sm);
+    padding: var(--tb-space-sm) var(--tb-space-md);
+    border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+    border-radius: var(--tb-radius-md);
+    background: var(--tb-color-surface-raised);
+  }
+
+  table[data-stack] tbody :is(td, th) {
+    padding: 0;
+    border: 0;
+    text-align: start;
+  }
+
+  table[data-stack] tbody th {
+    font-weight: var(--tb-font-weight-semibold);
+  }
+
+  table[data-stack] td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--tb-color-text-secondary);
+    font-size: var(--tb-font-size-xs);
   }
 }
 

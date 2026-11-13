@@ -22,6 +22,8 @@ export type Column<Row> = {
   rowHeader?: boolean;
   /** A column the person can hide from the columns menu. Columns that name the row cannot be hidden. */
   hideable?: boolean;
+  /** Low priority columns are left out below 1024px, so the key fields fit (DLS-079). */
+  priority?: "low";
 };
 
 type Props<Row> = {
@@ -48,6 +50,8 @@ type Props<Row> = {
   emptyTitle?: string;
   emptyMessage?: string;
   density?: "comfortable" | "compact";
+  /** Below 640px each row is a stacked card of label and value pairs (DLS-079). Off for grids that must keep columns. */
+  stack?: boolean;
 };
 
 function compare(a: string | number, b: string | number) {
@@ -80,6 +84,7 @@ export function DataTable<Row>({
   emptyTitle,
   emptyMessage,
   density = "comfortable",
+  stack = true,
 }: Props<Row>) {
   const t = useTranslations("ui.data");
   const id = useId();
@@ -153,7 +158,7 @@ export function DataTable<Row>({
       ) : null}
       {selection}
       <div className="ui-table-scroll" role="region" aria-labelledby={`${id}-caption`} tabIndex={0}>
-        <table>
+        <table data-stack={stack || undefined}>
           <caption id={`${id}-caption`}>{caption}</caption>
           <thead>
             <tr>
@@ -171,7 +176,7 @@ export function DataTable<Row>({
               {shown.map((c) => {
                 const direction = sort?.key === c.key ? sort.direction : undefined;
                 return (
-                  <th key={c.key} scope="col" data-align={c.align === "end" ? "end" : undefined} aria-sort={c.sortValue ? (direction ?? "none") : undefined}>
+                  <th key={c.key} scope="col" data-align={c.align === "end" ? "end" : undefined} data-priority={c.priority} aria-sort={c.sortValue ? (direction ?? "none") : undefined}>
                     {c.sortValue ? (
                       <button type="button" className="ui-table-sort" data-direction={direction} onClick={() => sortBy(c.key)}>
                         <span>{c.header}</span>
@@ -205,11 +210,11 @@ export function DataTable<Row>({
                     ) : null}
                     {shown.map((c) =>
                       c.rowHeader ? (
-                        <th key={c.key} scope="row" data-align={c.align === "end" ? "end" : undefined}>
+                        <th key={c.key} scope="row" data-align={c.align === "end" ? "end" : undefined} data-priority={c.priority}>
                           {c.cell(row)}
                         </th>
                       ) : (
-                        <td key={c.key} data-align={c.align === "end" ? "end" : undefined}>
+                        <td key={c.key} data-align={c.align === "end" ? "end" : undefined} data-priority={c.priority} data-label={c.header}>
                           {c.cell(row)}
                         </td>
                       ),

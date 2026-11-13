@@ -1,4 +1,18 @@
-/* The "new version" prompt (spec 030 FR-002) floats at the bottom until the person reloads or picks Later. */
+/* The "new version" offer (spec 030 FR-002) is a strip in the page flow above the shell: it pushes the page down and
+   never covers content or a control (spec 036 DLS-078). */
+.app-update-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-md);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+/* The push offer (spec 030 FR-006) is a floating card at the bottom. */
 .app-update {
   position: fixed;
   z-index: 25;
@@ -40,7 +54,7 @@
   margin: 0;
 }
 
-/* On a phone the floating cards sit above the bottom navigation, so neither covers the other. */
+/* On a phone the floating card sits above the bottom navigation, so neither covers the other. */
 @media (width <= 40rem) {
   .app-update {
     inset-block-end: calc(4.5rem + env(safe-area-inset-bottom));

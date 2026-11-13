@@ -77,15 +77,15 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
           <StateView kind="empty" title={t("empty")} message="" />
         ) : (
           <div className="policies-table">
-            <table data-testid="policy-register">
+            <table data-testid="policy-register" data-stack>
               <caption className="visually-hidden">{t("title")}</caption>
               <thead>
                 <tr>
-                  <th scope="col">{t("code")}</th>
+                  <th scope="col" data-priority="low">{t("code")}</th>
                   <th scope="col">{t("name")}</th>
                   <th scope="col">{t("status")}</th>
-                  <th scope="col">{t("version")}</th>
-                  <th scope="col">{t("effective")}</th>
+                  <th scope="col" data-priority="low">{t("version")}</th>
+                  <th scope="col" data-priority="low">{t("effective")}</th>
                   <th scope="col">{t("review")}</th>
                   <th scope="col">{t("owner")}</th>
                 </tr>
@@ -93,22 +93,22 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
               <tbody>
                 {list.data.map((p) => (
                   <tr key={p.id}>
-                    <td>
+                    <td data-priority="low" data-label={t("code")}>
                       <bdi dir="ltr">{p.code}</bdi>
                     </td>
-                    <td>
+                    <th scope="row">
                       <Link href={policyHref(p.id)}>
                         <bdi>{nameIn(p.names, locale)}</bdi>
                       </Link>
-                    </td>
-                    <td>
+                    </th>
+                    <td data-label={t("status")}>
                       <Badge tone={statusTone[p.status] ?? "neutral"}>{ts(p.status)}</Badge>
                       {p.workingState ? <span className="policies-meta"> · {t("working", { state: ts(p.workingState) })}</span> : null}
                     </td>
-                    <td>{p.currentVersion ?? t("none")}</td>
-                    <td>{date(p.effectiveFrom)}</td>
-                    <td>{date(p.nextReviewAt)}</td>
-                    <td>
+                    <td data-priority="low" data-label={t("version")}>{p.currentVersion ?? t("none")}</td>
+                    <td data-priority="low" data-label={t("effective")}>{date(p.effectiveFrom)}</td>
+                    <td data-label={t("review")}>{date(p.nextReviewAt)}</td>
+                    <td data-label={t("owner")}>
                       <bdi>{p.owner.displayName}</bdi>
                     </td>
                   </tr>
