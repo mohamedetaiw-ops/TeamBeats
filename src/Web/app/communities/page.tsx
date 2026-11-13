@@ -32,7 +32,7 @@ export default async function CommunitiesPage() {
                 </ButtonLink>
               ) : null}
               {rights.ok && rights.data.recognition ? (
-                <ButtonLink variant="secondary" icon="spark" href={awardsHref}>
+                <ButtonLink variant="secondary" icon="star" href={awardsHref}>
                   {t("awards.link")}
                 </ButtonLink>
               ) : null}

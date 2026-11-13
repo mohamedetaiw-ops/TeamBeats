@@ -94,6 +94,9 @@ main tbody tr:where(:hover) > * {
 
 .skip-link {
   position: absolute;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
   inset-inline-start: var(--tb-space-md);
   inset-block-start: -3rem;
 }
@@ -568,4 +571,22 @@ html[data-motion="reduced"] *::after {
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
+}
+
+/*
+ * Touch targets (DLS-085): on a coarse pointer or a phone width every control has a 44px hit area. Small buttons
+ * (controls.css) and section tabs (ui.css) grow to 44px; a small standalone text link keeps its look and gains an invisible area around it, centred on the
+ * link, so the layout does not move.
+ */
+@media (pointer: coarse), (width <= 40rem) {
+  :where(.cal-card-view, .cal-card-all, .home-card-head a, .content-cta-link, .shell-footer-links a, .shell-brand) {
+    position: relative;
+  }
+
+  :where(.cal-card-view, .cal-card-all, .home-card-head a, .content-cta-link, .shell-footer-links a, .shell-brand)::after {
+    content: "";
+    position: absolute;
+    inset-block: min(0rem, calc(50% - 1.375rem));
+    inset-inline: min(0rem, calc(50% - 1.375rem));
+  }
 }

@@ -62,7 +62,7 @@ export function Celebrations({ initial }: { initial: Loaded }) {
       {failed ? <Alert tone="danger" title={t("failed")} live /> : null}
       <div aria-busy={busy || undefined}>
         {empty ? (
-          <StateView kind="empty" title={t("emptyTitle")} message={t("empty")} icon="spark" />
+          <StateView kind="empty" title={t("emptyTitle")} message={t("empty")} icon="star" />
         ) : (
           <>
             <Group id="celebrations-today" title={t("todayTitle")} entries={list.today} />
@@ -124,7 +124,7 @@ function Entry({ entry }: { entry: CelebrationEntry }) {
           {state === "sent" ? (
             <Alert tone="success" title={t("sent")} live />
           ) : (
-            <Button size="sm" variant="secondary" icon="spark" busy={state === "busy"} busyLabel={t("working")} onClick={() => void greet()}>
+            <Button size="sm" variant="secondary" icon="star" busy={state === "busy"} busyLabel={t("working")} onClick={() => void greet()}>
               {t(`greet.${entry.kind}`)}
             </Button>
           )}

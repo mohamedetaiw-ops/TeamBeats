@@ -319,13 +319,8 @@
   color: var(--tb-color-text-primary);
 }
 
-:root[data-design="studio"] .home-briefing-mark,
 :root[data-design="studio"] .home-briefing-date .icon {
   color: var(--tb-color-accent-base);
-}
-
-:root[data-design="studio"] .home-briefing-mark {
-  opacity: 0.16;
 }
 
 :root[data-design="studio"] .home-briefing-date,

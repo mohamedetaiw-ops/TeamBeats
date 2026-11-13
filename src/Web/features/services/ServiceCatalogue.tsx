@@ -163,7 +163,26 @@ export function ServiceCatalogue({ initial, initialQuery = "", initialCategory =
 
       <div data-testid="services-results" className="services">
         {groups.length === 0 ? (
-          <StateView kind="empty" title={t("none")} message="" />
+          <StateView
+            kind="empty"
+            icon="search"
+            title={t("none")}
+            message={query || category ? t("noneHint") : ""}
+            action={
+              query || category ? (
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setQuery("");
+                    setCategory("");
+                    void load("", "");
+                  }}
+                >
+                  {t("clear")}
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           groups.map((g) => (
             <section key={g.id} className="services-block" aria-labelledby={`services-category-${g.id}`}>

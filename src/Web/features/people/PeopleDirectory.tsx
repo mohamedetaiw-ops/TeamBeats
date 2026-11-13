@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { StateView } from "@/components/ui/StateView";
 import { FormField } from "@/components/ui/FormField";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { locationName, type Location, type PersonCard, type SearchPage } from "@/lib/people/types";
@@ -102,6 +103,14 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // An empty result offers one next step: start again with no search and no filters (DLS-087).
+  function clear() {
+    setQuery({ q: "", unitId: "", location: "" });
+    setItems(null);
+    setNext(null);
+    router.replace(pathname, { scroll: false });
+  }
+
   // Filters apply at once; the text query waits for the search button or Enter.
   function filter(change: Partial<Query>) {
     const next = { ...query, ...change };
@@ -161,7 +170,19 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
         </form>
         <div aria-live="polite">
           {error ? <p className="notice notice-error">{t("failed")}</p> : null}
-          {items && items.length === 0 && !error ? <p>{t("search.none")}</p> : null}
+          {items && items.length === 0 && !error ? (
+            <StateView
+              kind="empty"
+              icon="search"
+              title={t("search.none")}
+              message={t("search.noneHint")}
+              action={
+                <Button variant="secondary" onClick={clear}>
+                  {t("search.clear")}
+                </Button>
+              }
+            />
+          ) : null}
         </div>
         {items && items.length > 0 ? (
           <>

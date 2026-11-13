@@ -2170,7 +2170,9 @@
       "any": "All",
       "none": "No one matches your search.",
       "more": "Show more",
-      "results": "Results"
+      "results": "Results",
+      "noneHint": "Check the spelling, or search by first name, title or department.",
+      "clear": "Clear search"
     },
     "newcomers": {
       "title": "New joiners",
@@ -2488,7 +2490,9 @@
       "favourite": "Add {name} to favourites",
       "unfavourite": "Remove {name} from favourites",
       "notAvailable": "Not available to you",
-      "notAvailableHint": "This service is offered to other people. Ask its owner if you need it."
+      "notAvailableHint": "This service is offered to other people. Ask its owner if you need it.",
+      "noneHint": "Check the spelling, or look in all categories.",
+      "clear": "Clear search"
     },
     "form": {
       "submit": "Submit request",
