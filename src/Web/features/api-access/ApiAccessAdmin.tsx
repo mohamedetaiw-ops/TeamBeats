@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
@@ -22,6 +22,7 @@ import {
   type ApiApp,
   type ApiScope,
   type ApiSettings,
+  type ApiUsage,
   type AppKind,
 } from "@/lib/api-access";
 import "./api-access.css";
@@ -29,8 +30,8 @@ import "./api-access.css";
 const returnTo = "/admin/api";
 
 /**
- * API and MCP access for API administrators (spec 035 US1, US6, FR-013, FR-028, FR-029): the registered apps, every
- * consent in the tenant, and the tenant's token and consent settings. Viewers see the same pages; every change is
+ * API and MCP access for API administrators (spec 035 US1, US5, US6, FR-013, FR-028, FR-029): the registered apps, every
+ * consent in the tenant, the usage of each app, and the tenant's token, consent and limit settings. Viewers see the same pages; every change is
  * checked again by the API.
  */
 export function ApiAccessAdmin({
@@ -38,11 +39,15 @@ export function ApiAccessAdmin({
   scopes,
   consents: initialConsents,
   settings: initialSettings,
+  usage,
+  initialTab,
 }: {
   apps: ApiApp[];
   scopes: ApiScope[];
   consents: AdminConsent[];
   settings: ApiSettings;
+  usage: ApiUsage | null;
+  initialTab?: string;
 }) {
   const t = useTranslations("apiAccess.admin");
   const [apps, setApps] = useState(initialApps);
@@ -55,6 +60,7 @@ export function ApiAccessAdmin({
       <ResultAlert result={action.result} />
       <Tabs
         label={t("tabs")}
+        initialKey={initialTab}
         tabs={[
           {
             key: "apps",
@@ -67,6 +73,11 @@ export function ApiAccessAdmin({
             content: (
               <ConsentsPanel consents={consents} action={action} onRevoked={(id) => setConsents((list) => list.filter((c) => c.consentId !== id))} />
             ),
+          },
+          {
+            key: "usage",
+            label: t("usageTab"),
+            content: <UsagePanel usage={usage} />,
           },
           {
             key: "settings",
@@ -275,6 +286,7 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
   const [minutes, setMinutes] = useState<number | null>(settings.accessTokenMinutes);
   const [days, setDays] = useState<number | null>(settings.refreshTokenDays);
   const [userScopes, setUserScopes] = useState(settings.userConsentScopes);
+  const [tenantLimit, setTenantLimit] = useState<number | null>(settings.tenantCallsPerMinute);
   const delegated = scopes.filter((s) => s.holder !== "application");
 
   async function save() {
@@ -282,7 +294,7 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
       "settings",
       "PUT",
       "/api/v1/api-access/settings",
-      { apiEnabled: enabled, accessTokenMinutes: minutes, refreshTokenDays: days, userConsentScopes: userScopes, version: settings.version },
+      { apiEnabled: enabled, accessTokenMinutes: minutes, refreshTokenDays: days, userConsentScopes: userScopes, tenantCallsPerMinute: tenantLimit ?? 0, version: settings.version },
       t("settingsSaved"),
     );
     if (outcome.ok) onSaved(outcome.data);
@@ -302,6 +314,14 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
         <div className="admin-fields">
           <NumberField label={t("accessTokenMinutes")} hint={t("accessTokenMinutesHint")} name="accessTokenMinutes" min={5} max={60} value={minutes} onValueChange={setMinutes} />
           <NumberField label={t("refreshTokenDays")} hint={t("refreshTokenDaysHint")} name="refreshTokenDays" min={1} max={30} value={days} onValueChange={setDays} />
+          <NumberField
+            label={t("tenantCallsPerMinute")}
+            hint={t("tenantCallsPerMinuteHint")}
+            name="tenantCallsPerMinute"
+            min={1}
+            value={tenantLimit}
+            onValueChange={setTenantLimit}
+          />
         </div>
         <fieldset className="admin-fieldset">
           <legend>{t("userConsent")}</legend>
@@ -325,6 +345,60 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
           </Button>
         </div>
       </form>
+    </section>
+  );
+}
+
+function UsagePanel({ usage }: { usage: ApiUsage | null }) {
+  const t = useTranslations("apiAccess.admin");
+  const when = useWhen();
+  const format = useFormatter();
+  if (!usage) {
+    return <p className="admin-meta">{t("usageUnavailable")}</p>;
+  }
+  const errorCount = (errors: Record<string, number>) =>
+    Object.entries(errors)
+      .filter(([kind]) => kind !== "rate_limited" && kind !== "quota")
+      .reduce((sum, [, n]) => sum + n, 0);
+  return (
+    <section className="admin-panel" aria-labelledby="api-usage-title">
+      <h2 id="api-usage-title">{t("usageTitle")}</h2>
+      <p className="admin-meta">{t("usageIntro", { days: usage.days })}</p>
+      <p>
+        {usage.monthlyLimit === null
+          ? t("monthCallsUnlimited", { calls: format.number(usage.monthCalls) })
+          : t("monthCalls", { calls: format.number(usage.monthCalls), limit: format.number(usage.monthlyLimit) })}
+      </p>
+      <DataTable
+        caption={t("usageTitle")}
+        rows={usage.apps}
+        rowKey={(a) => a.appId}
+        emptyTitle={t("noApps")}
+        columns={[
+          { key: "app", header: t("app"), rowHeader: true, cell: (a) => <Link href={`/admin/api/apps/${a.appId}`}>{a.name}</Link>, sortValue: (a) => a.name },
+          { key: "calls", header: t("calls"), align: "end", cell: (a) => format.number(a.calls), sortValue: (a) => a.calls },
+          { key: "errors", header: t("errors"), align: "end", cell: (a) => format.number(errorCount(a.errors)), sortValue: (a) => errorCount(a.errors) },
+          { key: "denied", header: t("denied"), align: "end", cell: (a) => format.number(a.denied), sortValue: (a) => a.denied },
+          { key: "limited", header: t("rateLimited"), align: "end", cell: (a) => format.number(a.rateLimited), sortValue: (a) => a.rateLimited },
+          {
+            key: "top",
+            header: t("topOperations"),
+            cell: (a) =>
+              a.topOperations.length === 0 ? (
+                t("none")
+              ) : (
+                <ul className="api-access-operations" dir="ltr">
+                  {a.topOperations.map((o) => (
+                    <li key={o.operation}>
+                      <code>{o.operation}</code> {format.number(o.calls)}
+                    </li>
+                  ))}
+                </ul>
+              ),
+          },
+          { key: "last", header: t("lastCall"), cell: (a) => when(a.lastCallAt, "short"), sortValue: (a) => a.lastCallAt ?? "" },
+        ]}
+      />
     </section>
   );
 }

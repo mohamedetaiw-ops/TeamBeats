@@ -146,7 +146,9 @@ public static class TeamBeatsModules
         services.AddAgentsModule();
         services.AddEvaluationModule();
         services.AddAnalyticsModule();
-        services.AddPublicApiModule();
+        services.AddPublicApiModule(new TeamBeats.Modules.PublicApi.PublicApiLimits(
+            configuration.GetValue(TeamBeats.Modules.PublicApi.PublicApiLimits.Section + ":TenantCallsPerMinute", TeamBeats.Modules.PublicApi.ApiRules.TenantCallsPerMinute),
+            configuration.GetValue(TeamBeats.Modules.PublicApi.PublicApiLimits.Section + ":Instances", 1)));
         return services;
     }
 }
@@ -209,11 +211,12 @@ public static class ApiComposition
             await next(http);
         });
         app.UseTeamBeatsSessions();
+        // The tenant's network rules cover the authorization server, the public API and the MCP server too (spec 035 FR-027).
+        app.UseNetworkRules();
         // The authorization server and bearer tokens of the public API (spec 035) after the host's tenant is known.
         app.UseOAuthServer();
         app.UsePublicApiTokens();
         app.UseSharedDeviceRules();
-        app.UseNetworkRules();
         app.UseStepUp();
         app.UseRateLimiter();
 

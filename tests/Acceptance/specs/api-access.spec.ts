@@ -5,8 +5,8 @@ import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
 
 /**
- * Spec 035 slice 2 (T007, US1, US6, FR-029): an API administrator registers an app that acts as itself, gives it a
- * secret shown once and the App reader role, and sees every consent; an employee sees the apps they connected and
+ * Spec 035 slices 2 and 3 (T007, T009, US1, US5, US6, FR-029): an API administrator registers an app that acts as
+ * itself, gives it a secret shown once and the App reader role, and sees every consent and the usage of each app; an employee sees the apps they connected and
  * removes one. The rules behind each change are covered by PublicApiAuthorizationServerTests and PublicApiAppPrincipalTests.
  */
 const redirect = "http://127.0.0.1:7777/callback";
@@ -69,6 +69,13 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${origin}/admin/api`);
       await page.getByRole("tab", { name: m("apiAccess.admin.consentsTab") }).click();
       await expect(page.getByRole("rowheader", { name: "Field notes" })).toBeVisible();
+
+      // The usage of each app (US5), opened straight from the link in a quota alert.
+      await page.goto(`${origin}/admin/api?tab=usage`);
+      await expect(page.getByRole("tab", { name: m("apiAccess.admin.usageTab") })).toHaveAttribute("aria-selected", "true");
+      await expect(page.getByRole("heading", { level: 2, name: m("apiAccess.admin.usageTitle") })).toBeVisible();
+      await expect(page.getByRole("rowheader", { name: "Nightly sync" })).toBeVisible();
+      await expectAccessible(page, testInfo, `api-usage-${locale}`);
     });
 
     test("an employee sees the apps they connected and removes one", async ({ page }, testInfo) => {

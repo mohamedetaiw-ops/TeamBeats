@@ -2128,5 +2128,14 @@
   "validation.api.credential_kind": "Choose a client secret or a public key.",
   "conflict.api.public_key_registered": "This public key is already registered for the app.",
   "notifications.template.publicapi.credential_expiring.title": "A credential of {app} expires soon",
-  "notifications.template.publicapi.credential_expiring.body": "A credential of {app} expires in {days} days. Add a new credential and move the app to it before then."
+  "notifications.template.publicapi.credential_expiring.body": "A credential of {app} expires in {days} days. Add a new credential and move the app to it before then.",
+  "validation.api.calls_per_minute": "Choose a limit from 1 up to the platform default for this kind of app.",
+  "validation.api.tenant_calls_per_minute": "Choose a limit from 1 up to the limit of this installation.",
+  "validation.api.ip_ranges": "Use up to 20 addresses or ranges in CIDR form, such as 203.0.113.0/24.",
+  "validation.api.usage_days": "Choose a period from 1 to 90 days.",
+  "problem.api.rate_limited": "Too many calls in this minute. Try again after the time in Retry-After.",
+  "notifications.template.publicapi.quota_80.title": "The API has used 80% of this month's calls",
+  "notifications.template.publicapi.quota_80.body": "Apps have made 80% of the {limit} calls this month allows. When all are used, API calls stop until next month or until more calls are added.",
+  "notifications.template.publicapi.quota_100.title": "The API has used all of this month's calls",
+  "notifications.template.publicapi.quota_100.body": "Apps have made all {limit} calls this month allows. API calls are refused until next month or until more calls are added. TeamBeats itself keeps working."
 }

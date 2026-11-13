@@ -38,8 +38,61 @@ public static class OAuthEndpoints
             {
                 http.Request.Path = "/oauth/.well-known/oauth-authorization-server";
             }
+            if (HttpMethods.IsPost(http.Request.Method) && http.Request.Path.Equals("/oauth/token", StringComparison.Ordinal)
+                && await TokenRequestsOverLimitAsync(http))
+            {
+                return;
+            }
             await next(http);
         }).UseAuthentication();
+
+    /// <summary>
+    /// Token requests per app (section 6): 60 a minute. The client is named by <c>client_id</c> in the form or in Basic
+    /// authentication; an over-limit request is answered 429 with Retry-After before any credential is checked.
+    /// </summary>
+    private static async Task<bool> TokenRequestsOverLimitAsync(HttpContext http)
+    {
+        if (http.RequestServices.GetRequiredService<ITenantContext>().Host.Tenant is not { } tenant)
+        {
+            return false;
+        }
+        string? clientId = null;
+        var header = http.Request.Headers.Authorization.ToString();
+        if (header.StartsWith("Basic ", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                var pair = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(header[6..].Trim()));
+                clientId = Uri.UnescapeDataString(pair.Split(':', 2)[0]);
+            }
+            catch (FormatException)
+            {
+                clientId = null;
+            }
+        }
+        if (clientId is null && http.Request.HasFormContentType)
+        {
+            clientId = (await http.Request.ReadFormAsync(http.RequestAborted))["client_id"].ToString();
+        }
+        if (string.IsNullOrEmpty(clientId) || clientId.Length > 64)
+        {
+            return false;
+        }
+        var share = http.RequestServices.GetRequiredService<PublicApiLimits>().Share(ApiRules.TokenRequestsPerMinute);
+        var result = http.RequestServices.GetRequiredService<PublicRateLimits>().Take(PublicRateLimits.Token(tenant.Id, clientId), ApiRules.TokenRequestsPerMinute, share);
+        if (result.Allowed)
+        {
+            return false;
+        }
+        http.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        http.Response.Headers.RetryAfter = result.ResetSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        http.Response.Headers.CacheControl = "no-store";
+        await http.Response.WriteAsJsonAsync(new Dictionary<string, string>
+        {
+            ["error"] = "temporarily_unavailable", ["error_description"] = "Too many token requests. Try again later.",
+        }, http.RequestAborted);
+        return true;
+    }
 
     public static IEndpointRouteBuilder MapOAuthEndpoints(this IEndpointRouteBuilder app)
     {

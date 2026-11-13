@@ -14,8 +14,8 @@ Depends on 003, 004, 005, 006, 014, 015, 016, 017 (outbound webhook runtime), 02
 - [x] T007 [US2] Delegated flows, consent records, connected apps page, admin consent list
 
 ## Phase 3: User Story 5 and the public API pipeline (P1)
-- [ ] T008 [P] [US5] Tests: rate limit partitions and 429 headers; monthly quota at 80% and 100%; tenant may only lower limits; tenant switch off within 60 seconds; IP ranges
-- [ ] T009 [US5] Request pipeline (network rules, token validation, revocation cache, entitlements, rate limits, call log); usage page
+- [x] T008 [P] [US5] Tests: rate limit partitions and 429 headers; monthly quota at 80% and 100%; tenant may only lower limits; tenant switch off within 60 seconds; IP ranges
+- [x] T009 [US5] Request pipeline (network rules, token validation, revocation cache, entitlements, rate limits, call log); usage page
 - [ ] T010 `PublicEndpoint` convention, architecture test for scope declarations, separate OpenAPI document and diff check in CI; idempotency store; problem details, cursors, ETags
 - [ ] T011 Public endpoints for the R2 scope catalogue in their owning modules (009, 010, 002, 011, 012, 014, 016, 025), each with cross-tenant, org boundary and not-found tests
 

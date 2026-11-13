@@ -21828,6 +21828,32 @@
         }
       }
     },
+    "/api/v1/api-access/usage": {
+      "get": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "schema": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/api-access/settings": {
       "get": {
         "tags": [
@@ -22588,6 +22614,15 @@
               "string"
             ],
             "format": "int32"
+          },
+          "tenantCallsPerMinute": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -22664,6 +22699,24 @@
             ]
           },
           "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "ipRanges": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "callsPerMinute": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",

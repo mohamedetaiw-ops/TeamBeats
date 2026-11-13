@@ -14,15 +14,16 @@ namespace TeamBeats.Modules.PublicApi;
 /// <summary>
 /// The public API clock (spec 035 US1 scenario 6): API administrators are told once when a live credential of an
 /// active app has 14 days or less left, so a second credential can be added and the app moved to it before the first
-/// one stops working. Used client assertion IDs are cleared once they could no longer be replayed anyway.
+/// one stops working. Used client assertion IDs are cleared once they could no longer be replayed anyway, and calls older
+/// than 90 days leave the call log.
 /// </summary>
-public sealed class PublicApiMaintenance(IDbSession session, IAuthorizationProvisioning authorization, INotificationSender notifications)
+public sealed class PublicApiMaintenance(IDbSession session, IAuthorizationProvisioning authorization, INotificationSender notifications, CallLog calls)
 {
     public const string ExpiringTemplate = "publicapi.credential_expiring";
     public static readonly TimeSpan AlertBefore = TimeSpan.FromDays(14);
     public const int Batch = 200;
 
-    public sealed record Run(int Alerted, int AssertionsCleared);
+    public sealed record Run(int Alerted, int AssertionsCleared, int CallsPruned = 0);
 
     public async Task<Run> RunDueAsync(DateTimeOffset now, CancellationToken ct)
     {
@@ -49,7 +50,9 @@ public sealed class PublicApiMaintenance(IDbSession session, IAuthorizationProvi
             }
         }
         var cleared = await session.ExecAsync("delete from publicapi.client_assertion where expires_at < @now", new { now }, ct);
-        return new Run(due.Count, cleared);
+        // The call log keeps 90 days (section 6).
+        var pruned = await calls.PruneAsync(now, ct);
+        return new Run(due.Count, cleared, pruned);
     }
 }
 

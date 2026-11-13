@@ -30,5 +30,8 @@ public static class ProblemCodes
     public const string ApiTokenInvalid = "api.token_invalid";
     public const string ApiInsufficientScope = "api.insufficient_scope";
 
+    /// <summary>A public API call over a per-minute limit (spec 035 FR-017), answered 429 with Retry-After.</summary>
+    public const string ApiRateLimited = "api.rate_limited";
+
     public static string TypeUri(string code) => $"urn:teambeats:problem:{code}";
 }

@@ -96,3 +96,16 @@
   margin: 0;
   padding-inline-start: var(--tb-space-lg);
 }
+
+.api-access-operations {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--tb-space-xs);
+  font-size: var(--tb-font-size-sm);
+}
+
+.api-access-operations code {
+  overflow-wrap: anywhere;
+}
