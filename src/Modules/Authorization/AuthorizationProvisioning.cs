@@ -174,6 +174,10 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
     public async Task<IReadOnlySet<Guid>> GroupIdsOfAsync(Guid userId, CancellationToken ct = default) =>
         (await session.QueryAsync("select group_id from authz.group_member where user_id = @userId", new { userId }, r => r.GetGuid(0), ct)).ToHashSet();
 
+    public async Task<IReadOnlyList<Guid>> GroupMembersAsync(IReadOnlyCollection<Guid> groupIds, CancellationToken ct = default) =>
+        groupIds.Count == 0 ? [] : await session.QueryAsync(
+            "select distinct user_id from authz.group_member where group_id = any(@groupIds) order by user_id", new { groupIds = groupIds.ToArray() }, r => r.GetGuid(0), ct);
+
     public async Task<IReadOnlySet<Guid>> ExistingGroupsAsync(IReadOnlyCollection<Guid> groupIds, CancellationToken ct = default) =>
         groupIds.Count == 0 ? new HashSet<Guid>()
             : (await session.QueryAsync("select id from authz.user_group where id = any(@ids)", new { ids = groupIds.ToArray() }, r => r.GetGuid(0), ct)).ToHashSet();

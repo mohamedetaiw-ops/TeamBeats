@@ -366,7 +366,7 @@ public sealed class Requests(
             """, new
             {
                 id, number, service = row.Id, version, user, onBehalf = subject == user ? (Guid?)null : subject, unit,
-                status = published.Route.Approval is null ? RequestStatuses.Submitted : RequestStatuses.InApproval,
+                status = published.Route.Approval is null && published.Route.Graph is null ? RequestStatuses.Submitted : RequestStatuses.InApproval,
                 data = Jsonb.From(data), classification = row.Classification, key, now, app,
             }, ct);
         if (inserted is null)
@@ -433,7 +433,8 @@ public sealed class Requests(
     private async Task StartRouteAsync(Guid id, Guid serviceId, Guid? unit, Guid filer, Guid subject, int round, CancellationToken ct)
     {
         var businessKey = round == 1 ? id.ToString("N") : $"{id:N}.{round}";
-        var instance = await engine.StartAsync(ServiceAdmin.ProcessKey(serviceId), businessKey, unit, filer, subject == filer ? null : [subject], subject,
+        // Nobody approves their own request (US4 scenario 2): the filer and the person it is for are kept off its steps.
+        var instance = await engine.StartAsync(ServiceAdmin.ProcessKey(serviceId), businessKey, unit, filer, subject == filer ? [filer] : [filer, subject], subject,
             await VariablesAsync(id, subject, ct), ct);
         await session.ExecAsync("update services.request set process_instance_id = @instance where id = @id", new { id, instance = instance.Id }, ct);
     }
@@ -465,6 +466,14 @@ public sealed class Requests(
                 variables["requester.email"] = JsonSerializer.SerializeToElement(email);
             }
         }
+        // Step graph routes read the same values as objects (form.{field}, request.number, requester.name), so FEEL paths reach them.
+        variables["form"] = JsonDocument.Parse(row.Data ?? "{}").RootElement.Clone();
+        variables["request"] = JsonSerializer.SerializeToElement(new { number = row.Number });
+        variables["requester"] = JsonSerializer.SerializeToElement(new Dictionary<string, string?>
+        {
+            ["name"] = variables.TryGetValue("requester.name", out var n) ? n.GetString() : null,
+            ["email"] = variables.TryGetValue("requester.email", out var e) ? e.GetString() : null,
+        });
         return variables;
     }
 
@@ -603,9 +612,23 @@ public sealed class Requests(
         IReadOnlyDictionary<string, string>? step = null;
         var assignees = new List<PersonRef>();
         if (row.InstanceId is { } instance && row.Status == RequestStatuses.InApproval
-            && (await engine.InstanceTasksAsync(instance, ct)).Any(t => t.Status == "open"))
+            && (await engine.InstanceTasksAsync(instance, ct)).FirstOrDefault(t => t.Status == "open") is { } open)
         {
             var version = await Versions.GetAsync(session, row.ServiceId, row.ServiceVersion, ct);
+            if (version?.Route.Graph is { } graph)
+            {
+                // A step graph route: the step open now (the first, when parallel steps are open) and the people it names.
+                var node = graph.Step(RouteGraph.StepIdOf(open.ElementId));
+                step = node?.Names is { Count: > 0 } nodeNames ? nodeNames : Catalogue.Json<Dictionary<string, string>>(names!);
+                IReadOnlyList<Guid> people = node?.Assignee is { Kind: AssigneeKinds.Users, Users: { } listed } ? listed
+                    : node?.Assignee is { Kind: AssigneeKinds.LineManager } && await reportingLine.ManagerOfAsync(row.SubjectId, ct) is { } boss ? [boss] : [];
+                foreach (var person in people.Where(p => p != row.RequesterId && p != row.OnBehalfOfId))
+                {
+                    assignees.Add(await PersonAsync(person, ct));
+                }
+                return new RequestSummary(row.Id, row.Number, row.ServiceId, Catalogue.Json<Dictionary<string, string>>(names!), row.Status, await PersonAsync(row.RequesterId, ct),
+                    row.OnBehalfOfId is { } someone ? await PersonAsync(someone, ct) : null, step, assignees, row.CreatedAt, row.SubmittedAt, row.ClosedAt);
+            }
             step = version?.Route.Approval?.Names is { Count: > 0 } stepNames ? stepNames : Catalogue.Json<Dictionary<string, string>>(names!);
             if (version?.Route.Approval?.Approvers is { Kind: ApproverKinds.Users, Users: { } named })
             {

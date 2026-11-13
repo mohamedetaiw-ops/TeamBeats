@@ -23,8 +23,8 @@ public sealed record IncidentResolveRequest(string? Resolution, string? Reason);
 /// "automation failed" and waits for an owner, and the end of the route closes the request. An owner (service.manage at
 /// the service's owning unit) retries, skips with a reason, or cancels.
 /// </summary>
-public sealed class Automation(IDbSession session, ITenantContext context, IAuthorizationService authz, IProcessEngine engine, IOutbox outbox, IClock clock,
-    Requests requests)
+public sealed class Automation(IDbSession session, ITenantContext context, IAuthorizationService authz, IProcessEngine engine,
+    Requests requests, RouteEnds routeEnds)
     : IMessageHandler<ProcessInstanceCompleted>, IMessageHandler<ServiceTaskCompleted>, IMessageHandler<ProcessIncidentRaised>
 {
     /// <summary>Resolves an open incident of the request (an owner only), and records it on Tracking with the reason.</summary>
@@ -78,20 +78,22 @@ public sealed class Automation(IDbSession session, ITenantContext context, IAuth
         {
             return;
         }
-        var status = message.Outcome switch
+        // A step graph route ends with the result of the end step it reached; an R1 route with its outcome.
+        var status = message.Result is { } result ? RouteEnds.StatusFor(result) : message.Outcome switch
         {
             InstanceOutcomes.Approved => RequestStatuses.Completed,
             InstanceOutcomes.Rejected => RequestStatuses.Rejected,
-            InstanceOutcomes.Cancelled => RequestStatuses.Cancelled,
             _ => null,
         };
+        if (message.Outcome == InstanceOutcomes.Cancelled)
+        {
+            status = RequestStatuses.Cancelled;
+        }
         if (status is null)
         {
             return;
         }
-        await session.ExecAsync("update services.request set status = @status, closed_at = @now where id = @id", new { id = row.Id, status, now = clock.UtcNow }, ct);
-        await requests.EventAsync(row.Id, status, null, null, null, null, ct);
-        await outbox.EnqueueAsync(new RequestCompleted(row.Id, row.ServiceId, status), ct);
+        await routeEnds.CloseAsync(row, status, ct, record: true);
     }
 
     /// <summary>Still running: before or during approval, or approved with automatic steps left.</summary>

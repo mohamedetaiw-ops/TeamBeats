@@ -28,6 +28,7 @@ public static class Capabilities
     public const string IdentityDirectorySync = "identity.directory_sync";
     public const string WorkflowAdvanced = "workflow.advanced";
     public const string WorkflowAutomation = "workflow.automation";
+    public const string WorkflowConnectorFulfilment = "workflow.connector_fulfilment";
     public const string WorkflowCatalogue = "workflow.catalogue";
     public const string WorkflowMaxServices = "workflow.max_services";
     public const string WorkflowBpmn = "workflow.bpmn";

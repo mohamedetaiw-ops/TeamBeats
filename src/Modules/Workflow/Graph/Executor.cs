@@ -47,6 +47,9 @@ public sealed class InstanceState
     public List<ScopeState> Scopes { get; set; } = [];
     public Dictionary<string, int> Visits { get; set; } = new(StringComparer.Ordinal);
     public JsonObject Variables { get; set; } = [];
+
+    /// <summary>The result named by the last end event of the process reached (<c>tb:result</c>), for the instance outcome.</summary>
+    public string? Result { get; set; }
 }
 
 /// <summary>What the executor asks the engine to do in the database after a run, in order.</summary>
@@ -71,7 +74,7 @@ public sealed record Record(string ElementId, string Event, JsonObject? Detail =
 public sealed record RaiseIncident(Guid Token, string ElementId, string ErrorClass, string? Code = null) : Effect;
 
 /// <summary>The instance ended: <c>completed</c>, <c>terminated</c>, or <c>error</c> with a code no one caught inside it.</summary>
-public sealed record Finished(string Outcome, string? Code = null) : Effect;
+public sealed record Finished(string Outcome, string? Code = null, string? Result = null) : Effect;
 
 /// <summary>An escalation left the instance uncaught; a parent call activity may catch it.</summary>
 public sealed record Escalated(string Code) : Effect;
@@ -711,6 +714,10 @@ public sealed class Executor(ProcessGraph graph, InstanceState state, IExecution
     private void End(TokenState token, GraphElement end)
     {
         Record(end.Id, "ended");
+        if (end.Result is { } result && token.Scope == Guid.Empty)
+        {
+            state.Result = result;
+        }
         switch (end.EventKind)
         {
             case EventKinds.Terminate:
@@ -763,7 +770,7 @@ public sealed class Executor(ProcessGraph graph, InstanceState state, IExecution
             return;
         }
         finished = true;
-        effects.Add(new Finished(outcome, code));
+        effects.Add(new Finished(outcome, code, outcome is "completed" or "terminated" ? state.Result : null));
     }
 
     /// <summary>A scope with no tokens left (listeners aside) is done: its owner moves on, or the instance completes.</summary>

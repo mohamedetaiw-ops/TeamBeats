@@ -416,6 +416,7 @@ export function Modeler({ processKey, initial, units }: { processKey: string | n
           ...(step.assignees ?? []).map((a) => a.name),
           ...(step.lineManager && !(step.assignees ?? []).length ? [t("testLineManager")] : []),
           ...(step.permission ? [t("testPermission", { permission: step.permission })] : []),
+          ...(Array.isArray(step.detail?.groups) && step.detail.groups.length > 0 ? [t("testGroups", { count: String(step.detail.groups.length) })] : []),
         ];
         return who.length > 0 ? t("testEvents.assigned", { who: format.list(who, { type: "disjunction" }) }) : t("testEvents.assignedNobody");
       }

@@ -60,3 +60,45 @@ US2 scenario 4 asks for malware scanning; the platform has no scanner. Default f
 - Entitlement: `workflow.max_services` quota error shape; R2 route features refused.
 - Idempotent submit; attachment not downloadable before a clean scan.
 - Acceptance (e2e): find a service, submit a prefilled request, approve from the inbox with the badge, set a delegate, in English and Arabic with axe.
+
+## R2 plan
+
+R2 completes User Stories 5, 6, 7 (full) and 8, FR-006, FR-011 and FR-013 to FR-016, the starter templates of section 12 and the R2 AI items of section 11. It builds on the spec 024 R2 engine (graph instances, the executor, the sandbox and the React Flow canvas) instead of a second engine.
+
+### Route model
+- A service version's route becomes a **step graph** (`route.graph`): steps of the US8 types (approval, task, set field, notify, connector action, webhook, wait, condition, parallel split and join, start another service, end) and the flows between them, with names per locale. The R1 shape (one approval and connector actions) stays readable and is converted to a graph when a draft is next saved.
+- `Services` compiles the graph to BPMN 2.0 with the `teambeats` extension namespace and hands it to `Workflow` through `IProcessEngine` (new `PublishGraphAsync(key, bpmn)`, `ValidateGraphAsync`, `TestGraphAsync`), under the definition key `service:<serviceId>`. `Services` never reads engine tables (CLAUDE.md rule 5). Each published service version publishes the next engine version; open requests finish on theirs (FR-009, US5 scenario 3).
+- Step types map to the spec 024 subset: approval and task are user tasks (an approval is followed by an outcome gateway; reject and return end the route with that result); connector and webhook are service tasks; wait is a timer or message catch; condition, split and join are exclusive, inclusive and parallel gateways; start another service, notify and set field are service tasks bound to built-in product actions (below); end events carry the request result (`completed`, `approved`, `rejected`).
+- Conditions use the fixed rule set of the forms (a form field compared with a constant), compiled to FEEL by `Services`; owners never write expressions (no custom code, US8 scenario 1).
+
+### Engine additions (spec 024, Workflow module)
+- **Candidates by group or queue** (`tb:assignment group`), besides users, permission at a unit, line manager and manager level (FR-006).
+- **Product actions** for service tasks (`tb:product action="notify|set|start_service"`): run inside the product with no connector, idempotent per token. Notify goes through `INotificationSender` (in-app, email, Teams per spec 015); set writes a variable; start service publishes `ServiceStartRequested`, which `Services` handles.
+- **End results**: `tb:result` on end events becomes the instance outcome, so `ProcessInstanceCompleted` tells `Services` how the request ended.
+- **Escalation**: a user task's `tb:due` gains `remindAfter` and `escalateAfter` (working days) and an escalation target; the due job reminds the candidates and, after the escalation time, adds the target to the candidates (US5 scenario 2).
+
+### Triggers (FR-014)
+- `service_trigger`: manual (default), schedule (cron subset: monthly or quarterly on a day, weekly on weekdays) and product events `UserProvisioned`, `UserDeprovisioned`, `OrganizationMembershipChanged` and `RequestCompleted` of a named service. Event triggers start one request per event ID (`unique (service_id, trigger_event_id)`), for the event's user, filed by the service's system requester; schedule triggers run from the engine's timer start jobs.
+- Requester leaves (edge case): on `UserDeprovisioned`, open requests of that requester are cancelled with "requester left", except on services marked `continueAfterExit`.
+
+### Service levels and auto-approve (FR-015)
+- `service_version.service_level_days` (working days on the unit calendar) and per-step due times. A request is at risk at 75% of its target and breached after it; both are request events, alert the queue and the service owners through spec 015, and the breach is counted for spec 021 (`request.sla_breached`, unkeyed).
+- Auto-approve rules on an approval step: all of a list of field comparisons; a match completes the step as the system with "auto-approved by rule" on Tracking and the audit `request.auto_approved`.
+
+### Fulfilment (US6)
+- The fulfilment queue is a task for the queue group: any member picks it (claims it), completes it or rejects it with a reason. A connector step shows its external reference on the request (built in R1 slice of spec 017); a failure alerts the queue and owners and waits for retry, skip or cancel.
+
+### Designer and test mode (US7, US8 scenarios 1, 6 and 7)
+- The route designer reuses the React Flow canvas of the process modeler with the service step palette, a properties panel per step, the keyboard actions and the text outline. Publishing is blocked while the compiled model has problems, shown on the steps.
+- Test mode runs the compiled draft in the spec 024 sandbox as a sample employee and shows each step's resolved assignee and the branches taken.
+
+### Templates and AI
+- The 13 starter templates of section 12 ship as a seed pack the tenant switches on per template; switching one on creates an unpublished draft service the owner edits. Templates that need a module capability (expenses, journeys) say so and are offered only without it, as the spec says.
+- Request summary for approvers goes through the AI gateway (spec 013) with the request's own fields only; agent-requested tasks carry `requestedByAgent` and show "requested by an AI agent on behalf of" in the inbox (spec 027 US4).
+
+### R2 entitlements
+As section 9 sets: `workflow.advanced` for parallel steps, conditions and escalation; `workflow.connector_fulfilment` for connector and webhook steps; `workflow.automation` for event and schedule triggers, product actions and auto-approve rules. Workplace keeps manual submit with approval and task steps in sequence, so the designer and the templates work there with those step types only.
+
+### R2 tests
+- Integration per scenario: US5 1 to 3, US6 1 to 3, US7 2 and 3 on graphs, US8 1 to 7; triggers idempotent per event; requester leaves; cross-tenant and org scope for triggers, queues and services; entitlement refusals.
+- e2e: build a multi-step service in the designer, test it, publish, submit, approve, fulfil from the queue, in English and Arabic with axe.

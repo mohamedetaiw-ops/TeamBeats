@@ -33,7 +33,7 @@ public sealed record StartProcessRequest(string? BusinessKey, Guid? OrgUnitId, J
 /// unit (or the tenant when it has none); everything here needs the <c>workflow.bpmn</c> capability.
 /// </summary>
 public sealed class ProcessModels(IDbSession session, ITenantContext context, IAuthorizationService authz, IEntitlementService entitlements, IAuditWriter audit,
-    IClock clock, ProcessEngine engine, IConnectorActions actions, ILocalizer localizer, RequestLocale locale, ProcessSandbox sandbox)
+    IClock clock, ProcessEngine engine, ILocalizer localizer, RequestLocale locale, ProcessSandbox sandbox)
 {
     /// <summary>Model keys stay short enough to be an analytics key (spec 021) once published.</summary>
     public const int MaxKeyLength = 64;
@@ -209,30 +209,7 @@ public sealed class ProcessModels(IDbSession session, ITenantContext context, IA
         return await ViewAsync((await RowAsync(key, false, ct))!, ct);
     }
 
-    private async Task<List<ModelProblem>> PublishProblemsAsync(ProcessGraph graph, CancellationToken ct)
-    {
-        var problems = new List<ModelProblem>();
-        foreach (var element in graph.Elements)
-        {
-            if (element.CalledKey is { } called && called != graph.Key && await engine.GetDefinitionAsync(ProcessEngine.ModelPrefix + called, null, ct) is null)
-            {
-                problems.Add(new ModelProblem(element.Id, "validation.process.called_missing"));
-            }
-            if (element.Assignment?.Permission is { } permission && !Permissions.All.Contains(permission))
-            {
-                problems.Add(new ModelProblem(element.Id, "validation.process.assignment_permission"));
-            }
-            if (element.Call is { ConnectionId: { } connection, Action: { } action } call)
-            {
-                var found = await actions.FindAsync(connection, action, ct);
-                if (found is null || (found.Inputs is { } inputs && call.Inputs.Keys.Any(k => !inputs.Any(d => d.Name == k))))
-                {
-                    problems.Add(new ModelProblem(element.Id, "validation.process.service_binding"));
-                }
-            }
-        }
-        return problems;
-    }
+    private Task<List<ModelProblem>> PublishProblemsAsync(ProcessGraph graph, CancellationToken ct) => engine.ReferenceProblemsAsync(graph, false, ct);
 
     public async Task<string> BpmnAsync(string key, int version, CancellationToken ct = default)
     {

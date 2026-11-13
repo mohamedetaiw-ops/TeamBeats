@@ -2318,5 +2318,21 @@
   "validation.process.period": "Choose a start before the end, at most one year apart.",
   "conflict.process.instance_not_active": "This instance has already ended.",
   "conflict.process.no_open_incident": "Variables can be changed only while the instance has an open incident.",
-  "validation.process.test_requester": "Choose a sample requester who is a member of this organization."
+  "validation.process.test_requester": "Choose a sample requester who is a member of this organization.",
+  "validation.process.escalation": "An escalation needs a due time on the step, a wait of 1 to 90 working days after it, and at least one person or group to go to.",
+  "validation.process.result": "A result is a short code of letters, digits, dots, dashes and underscores, starting with a letter, set on a plain or terminate end event.",
+  "validation.process.product_action": "Product steps (notify, set field, start another service) are only available in service routes.",
+  "validation.process.assignment_group": "Choose groups that exist in your organization.",
+  "notifications.template.services.task.reminder.title": "Request {number} is overdue",
+  "notifications.template.services.task.reminder.body": "Request {number} has waited in your task inbox past its due time.",
+  "notifications.template.services.task.escalated.title": "Request {number} was escalated to you",
+  "notifications.template.services.task.escalated.body": "Request {number} waited too long and now also waits for you.",
+  "notifications.template.services.request.update.title": "Update on request {number}",
+  "notifications.template.services.request.update.body": "There is news on request {number}. Open it to see where it stands.",
+  "validation.services.route_graph": "Build the route from at most 60 steps, either in the designer or as one approval with automatic steps, not both.",
+  "validation.services.route_step": "Give this step a short ID of lowercase letters, digits and single underscores, a step type, and the settings that type needs.",
+  "validation.services.route_link": "Connect two different steps of this route, once.",
+  "validation.services.route_condition": "Conditions go on paths out of a condition or split step, each comparing a form field with a value.",
+  "validation.services.route_start": "The route needs exactly one first step, and it cannot be an end.",
+  "validation.services.route_paths": "End steps lead nowhere, condition and split steps lead to two or more steps with at most one path without a condition, and every other step leads to exactly one step."
 }

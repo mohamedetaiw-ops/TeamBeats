@@ -32,3 +32,29 @@ Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot)
 ## Final phase
 - [x] T016 Line manager rule and Team requests once the reporting line exists (planned spec 010)
 - [x] T017 OpenAPI; R1 implementation notes (reporting line, scanner); spec evidence
+
+## R2
+
+### Slice 1: step graph routes on the process engine
+- [x] T018 Engine additions (spec 024): group and queue candidates, product actions (notify, set, start service), end results, reminders and escalation on user tasks; unit and integration tests
+- [x] T019 [US5] [US8] Step graph route model, conversion of R1 routes, compiler to BPMN, validation through `IProcessEngine`, publish per service version; requests run on graph routes and close on the end result
+- [x] T020 [P] Tests: sequential and parallel steps with conditions, skipped steps on Tracking, open requests finish on their version, auto reject and return paths, cross-tenant and scope
+
+### Slice 2: triggers
+- [ ] T021 [US8] Schedule and product event triggers, system requester, idempotent per event; start service steps start the other service's request (chain depth at most 5); requester leaves cancels open requests unless "continue after exit"; tests
+
+### Slice 3: service levels and auto-approve
+- [ ] T022 [US5] [US8] Service level targets, at-risk and breach alerts and analytics, auto-approve rules; tests
+
+### Slice 4: fulfilment
+- [ ] T023 [US6] Queue tasks (pick, complete, reject with reason), hand-off failure alert to the queue and owners; tests
+
+### Slice 5: designer and test mode
+- [ ] T024 [US7] [US8] Route designer on the React Flow canvas, test mode as a sample employee, problems on steps, triggers, service level and auto-approve settings, in English and Arabic; e2e with axe
+
+### Slice 6: templates and AI
+- [ ] T025 Starter template pack (section 12), switched on per template as drafts
+- [ ] T026 Request summary for approvers through the AI gateway; agent-requested tasks marked in the inbox (spec 027 US4)
+
+### R2 final
+- [ ] T027 OpenAPI; R2 implementation notes; spec evidence

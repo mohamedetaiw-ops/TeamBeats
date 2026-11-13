@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
+using TeamBeats.Modules.Workflow.Graph;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 
@@ -12,6 +13,9 @@ namespace TeamBeats.Modules.Workflow;
 public static class EngineJobKinds
 {
     public const string TaskDue = "task_due";
+
+    /// <summary>An overdue graph task also goes to its escalation target (spec 016 US5 scenario 2).</summary>
+    public const string TaskEscalate = "task_escalate";
 
     /// <summary>A timer a token of a graph instance waits for (spec 024 FR-008).</summary>
     public const string Timer = "timer";
@@ -60,6 +64,13 @@ public sealed class EngineJobs(IDbSession session, IWorkingCalendar calendars, I
             insert into workflow.engine_job (tenant_id, id, kind, instance_id, task_id, due_at)
             values (platform.current_tenant_id(), @id, @kind, @instanceId, @taskId, @dueAt)
             """, new { id = Ids.New(), kind = EngineJobKinds.TaskDue, instanceId, taskId, dueAt }, ct);
+
+    internal Task ScheduleTaskEscalationAsync(Guid instanceId, Guid taskId, DateTimeOffset at, CancellationToken ct) =>
+        session.ExecAsync(
+            """
+            insert into workflow.engine_job (tenant_id, id, kind, instance_id, task_id, due_at)
+            values (platform.current_tenant_id(), @id, @kind, @instanceId, @taskId, @at)
+            """, new { id = Ids.New(), kind = EngineJobKinds.TaskEscalate, instanceId, taskId, at }, ct);
 
     /// <summary>Closes the pending jobs of a task that is no longer open.</summary>
     internal Task CloseTaskJobsAsync(Guid taskId, CancellationToken ct) =>
@@ -114,6 +125,11 @@ public sealed class EngineJobs(IDbSession session, IWorkingCalendar calendars, I
             await services.GetRequiredService<ProcessEngine>().OnTimerStartAsync(jobId, key, start, job.DueAt, job.Detail is null ? null : JsonNode.Parse(job.Detail) as JsonObject, ct);
             return true;
         }
+        if (job.Kind == EngineJobKinds.TaskEscalate && job.TaskId is { } escalated)
+        {
+            await services.GetRequiredService<ProcessEngine>().OnTaskEscalationAsync(escalated, ct);
+            return true;
+        }
         if (job.Kind == EngineJobKinds.TaskDue && job.TaskId is { } taskId)
         {
             var task = await session.QuerySingleOrDefaultAsync(
@@ -143,7 +159,7 @@ public sealed class EngineJobs(IDbSession session, IWorkingCalendar calendars, I
     {
         var open = await session.QueryAsync(
             """
-            select t.id, t.created_at, t.due_at, i.org_unit_id, i.definition_key, i.definition_version, t.step_index, j.id as job_id
+            select t.id, t.created_at, t.due_at, i.org_unit_id, i.definition_key, i.definition_version, t.step_index, j.id as job_id, t.element_id
             from workflow.user_task t
             join workflow.process_instance i on i.id = t.instance_id
             join workflow.engine_job j on j.task_id = t.id and j.kind = @kind and j.done_at is null
@@ -151,29 +167,39 @@ public sealed class EngineJobs(IDbSession session, IWorkingCalendar calendars, I
             for update of t, j
             """, new { kind = EngineJobKinds.TaskDue }, r => (
                 TaskId: r.GetGuid(0), CreatedAt: r.GetFieldValue<DateTimeOffset>(1), DueAt: r.GetFieldValue<DateTimeOffset>(2), OrgUnitId: r.Get<Guid?>("org_unit_id"),
-                Key: r.GetString(4), Version: r.GetInt32(5), Step: r.GetInt32(6), JobId: r.GetGuid(7)), ct);
-        var routes = new Dictionary<(string, int), CompiledRoute>();
+                Key: r.GetString(4), Version: r.GetInt32(5), Step: r.GetInt32(6), JobId: r.GetGuid(7), Element: r.GetString(8)), ct);
+        var definitions = new Dictionary<(string, int), (CompiledRoute? Route, ProcessGraph? Graph)>();
         var moved = 0;
         foreach (var task in open)
         {
-            if (!routes.TryGetValue((task.Key, task.Version), out var route))
+            if (!definitions.TryGetValue((task.Key, task.Version), out var definition))
             {
-                var json = await session.ScalarAsync<string>(
-                    "select compiled::text from workflow.process_definition where key = @key and version = @version", new { key = task.Key, version = task.Version }, ct);
-                route = CompiledRoute.FromJson(json!);
-                routes[(task.Key, task.Version)] = route;
+                var row = await session.QuerySingleOrDefaultAsync(
+                    "select compiled::text, kind from workflow.process_definition where key = @key and version = @version", new { key = task.Key, version = task.Version },
+                    r => (Json: r.GetString(0), Kind: r.GetString(1)), ct);
+                definition = row.Kind == "graph" ? (null, ProcessGraph.FromJson(row.Json)) : (CompiledRoute.FromJson(row.Json), null);
+                definitions[(task.Key, task.Version)] = definition;
             }
-            if (route.Steps[task.Step].DueWorkingDays is not { } days)
+            // A graph task takes its due time from its element; a route task from its step.
+            var element = definition.Graph is { } graph && graph.Has(task.Element) ? graph.Element(task.Element) : null;
+            var days = definition.Route is { } route ? route.Steps[task.Step].DueWorkingDays : element?.DueWorkingDays;
+            if (days is not { } workingDays)
             {
                 continue;
             }
-            var dueAt = await DueAtAsync(task.OrgUnitId, task.CreatedAt, days, ct);
+            var dueAt = await DueAtAsync(task.OrgUnitId, task.CreatedAt, workingDays, ct);
             if (dueAt == task.DueAt)
             {
                 continue;
             }
             await session.ExecAsync("update workflow.user_task set due_at = @dueAt where id = @id", new { id = task.TaskId, dueAt }, ct);
             await session.ExecAsync("update workflow.engine_job set due_at = @dueAt, locked_until = null where id = @id", new { id = task.JobId, dueAt }, ct);
+            if (element?.Escalation is { } escalation)
+            {
+                var escalateAt = await DueAtAsync(task.OrgUnitId, dueAt, escalation.AfterWorkingDays, ct);
+                await session.ExecAsync("update workflow.engine_job set due_at = @escalateAt, locked_until = null where task_id = @id and kind = @kind and done_at is null",
+                    new { id = task.TaskId, escalateAt, kind = EngineJobKinds.TaskEscalate }, ct);
+            }
             moved++;
         }
         return moved;

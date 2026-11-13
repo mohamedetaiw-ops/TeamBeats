@@ -132,6 +132,10 @@ public static class ProcessValidator
                     {
                         Add(e.Id, "code");
                     }
+                    if (e.Result is not null && (e.EventKind is not (EventKinds.None or EventKinds.Terminate) || !BpmnReader.IsCode(e.Result)))
+                    {
+                        Add(e.Id, "result");
+                    }
                     break;
                 case ElementTypes.IntermediateCatchEvent:
                     CheckCatch(e, Add, Feel);
@@ -183,7 +187,8 @@ public static class ProcessValidator
                     }
                     break;
                 case ElementTypes.UserTask:
-                    if (e.Assignment is null || e.Assignment.IsEmpty || e.Assignment.ManagerLevel is < 1 or > 5 || e.Assignment.Users?.Count > 50)
+                    if (e.Assignment is null || e.Assignment.IsEmpty || e.Assignment.ManagerLevel is < 1 or > 5 || e.Assignment.Users?.Count > 50
+                        || e.Assignment.Groups?.Count > 20)
                     {
                         Add(e.Id, "assignment");
                     }
@@ -192,11 +197,20 @@ public static class ProcessValidator
                     {
                         Add(e.Id, "due");
                     }
+                    // An escalation follows the due time, so it needs one, and someone to go to.
+                    if (e.Escalation is { } escalation && (e.DueWorkingDays is null || escalation.AfterWorkingDays is < 1 or > 90
+                        || escalation.Users.Count + escalation.Groups.Count == 0 || escalation.Users.Count > 50 || escalation.Groups.Count > 20))
+                    {
+                        Add(e.Id, "escalation");
+                    }
                     CheckMappings(e.Id, e.Outputs, Add, Feel);
                     break;
                 case ElementTypes.ServiceTask:
-                    if (e.Call is null || (e.Call.ConnectionId is null) == (e.Call.WebhookId is null) || e.Call.ConnectionId == Guid.Empty || e.Call.WebhookId == Guid.Empty
-                        || (e.Call.ConnectionId is not null && string.IsNullOrEmpty(e.Call.Action)) || e.Call.Retries is < 0 or > 10)
+                    if (e.Call is null || e.Call.Retries is < 0 or > 10
+                        || (e.Call.Product is { } product
+                            ? !ProductActions.All.Contains(product) || e.Call.ConnectionId is not null || e.Call.WebhookId is not null
+                            : (e.Call.ConnectionId is null) == (e.Call.WebhookId is null) || e.Call.ConnectionId == Guid.Empty || e.Call.WebhookId == Guid.Empty
+                                || (e.Call.ConnectionId is not null && string.IsNullOrEmpty(e.Call.Action))))
                     {
                         Add(e.Id, "service_binding");
                         break;

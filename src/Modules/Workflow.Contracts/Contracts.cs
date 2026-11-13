@@ -115,6 +115,11 @@ public sealed record ServiceTaskInfo(Guid InstanceId, string ElementId, string S
 /// </summary>
 public sealed record RouteSpec(string Name, IReadOnlyList<RouteStep> Steps, bool ExcludeStarter = true);
 
+/// <summary>A problem in a compiled model: the element it is about and a resource key under <c>validation.process</c>.</summary>
+public sealed record ModelProblemInfo(string ElementId, string Key);
+
+public sealed record ModelPublishResult(ProcessDefinitionInfo? Definition, IReadOnlyList<ModelProblemInfo> Problems);
+
 public sealed record ProcessDefinitionInfo(string Key, int Version, string Name, string Source, DateTimeOffset PublishedAt);
 
 public sealed record ProcessInstanceInfo(
@@ -127,7 +132,8 @@ public sealed record ProcessInstanceInfo(
     string Status,
     string? Outcome,
     DateTimeOffset StartedAt,
-    DateTimeOffset? EndedAt);
+    DateTimeOffset? EndedAt,
+    string? Result = null);
 
 public sealed record UserTaskInfo(
     Guid Id,
@@ -157,6 +163,20 @@ public interface IProcessEngine
 {
     /// <summary>Compiles the route to BPMN 2.0 and the executable graph and stores it as the next immutable version.</summary>
     Task<ProcessDefinitionInfo> PublishRouteAsync(string key, string source, RouteSpec route, CancellationToken ct = default);
+
+    /// <summary>
+    /// Checks a BPMN 2.0 model a module compiled (spec 016 R2 service routes) without publishing it: the validator's
+    /// problems and what the model refers to (groups, permissions, connector actions, called processes). Product actions
+    /// are allowed, as the owning module carries them out. Empty when the model can be published.
+    /// </summary>
+    Task<IReadOnlyList<ModelProblemInfo>> ValidateModelAsync(string key, string bpmnXml, CancellationToken ct = default);
+
+    /// <summary>
+    /// Publishes a model a module compiled as the next immutable version of <paramref name="key"/> (the same model again
+    /// returns the current version). With problems nothing is published and they are returned. Keys of process models
+    /// (<c>process:</c>) are refused; <paramref name="source"/> is one of the route sources, such as <c>service_route</c>.
+    /// </summary>
+    Task<ModelPublishResult> PublishModelAsync(string key, string source, string bpmnXml, Guid? ownerOrgUnitId, CancellationToken ct = default);
 
     Task<ProcessDefinitionInfo?> GetDefinitionAsync(string key, int? version = null, CancellationToken ct = default);
 
@@ -235,7 +255,8 @@ public sealed record UserTaskCreated(Guid TaskId, Guid InstanceId, string Defini
 
 public sealed record UserTaskCompleted(Guid TaskId, Guid InstanceId, string DefinitionKey, string BusinessKey, string ElementId, string Outcome, Guid CompletedBy) : IIntegrationEvent;
 
-public sealed record ProcessInstanceCompleted(Guid InstanceId, string DefinitionKey, string BusinessKey, string Outcome) : IIntegrationEvent;
+/// <summary>An instance ended. <paramref name="Result"/> is what its last end event named (<c>tb:result</c>), such as approved or rejected.</summary>
+public sealed record ProcessInstanceCompleted(Guid InstanceId, string DefinitionKey, string BusinessKey, string Outcome, string? Result = null) : IIntegrationEvent;
 
 public sealed record ProcessInstanceWithdrawn(Guid InstanceId, string DefinitionKey, string BusinessKey) : IIntegrationEvent;
 
@@ -250,6 +271,21 @@ public sealed record ProcessIncidentResolved(Guid IncidentId, Guid InstanceId, s
 
 /// <summary>A user task reached its due time (spec 015 reminders).</summary>
 public sealed record UserTaskDue(Guid TaskId, Guid InstanceId, string DefinitionKey, string BusinessKey, DateTimeOffset DueAt) : IIntegrationEvent;
+
+/// <summary>
+/// An overdue user task also went to its escalation target (spec 016 US5 scenario 2). <paramref name="AddedUsers"/> are
+/// the people it now reaches who could not act on it before (named users and members of named groups).
+/// </summary>
+public sealed record UserTaskEscalated(Guid TaskId, Guid InstanceId, string DefinitionKey, string BusinessKey, string ElementId, IReadOnlyList<Guid> AddedUsers)
+    : IIntegrationEvent;
+
+/// <summary>
+/// A service task of a process asks for a product action (spec 016 R2: <c>notify</c> or <c>start_service</c>) that the
+/// module owning the process carries out. The engine moves on at once; <paramref name="ActionId"/> is unique per step
+/// run, so a handler that sees it twice acts once.
+/// </summary>
+public sealed record ProcessActionRequested(Guid ActionId, Guid InstanceId, string DefinitionKey, string BusinessKey, string ElementId, string Action,
+    System.Text.Json.Nodes.JsonObject Inputs) : IIntegrationEvent;
 
 /// <summary>What the task inbox shows for a task of another module: a title per locale, a link and the unit it is for.</summary>
 public sealed record TaskSubject(string Source, IReadOnlyDictionary<string, string> Title, string Link, Guid? OrgUnitId, Guid? RequesterId);

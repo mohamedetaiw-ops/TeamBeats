@@ -151,11 +151,11 @@ public sealed partial class ProcessEngine(IDbSession session, ITenantContext con
 
     // ---- Instances ----
 
-    private const string InstanceColumns = "id, definition_key, definition_version, business_key, org_unit_id, started_by, status, outcome, started_at, ended_at";
+    private const string InstanceColumns = "id, definition_key, definition_version, business_key, org_unit_id, started_by, status, outcome, started_at, ended_at, result";
 
     private static ProcessInstanceInfo ReadInstance(NpgsqlDataReader r) => new(
         r.GetGuid(0), r.GetString(1), r.GetInt32(2), r.GetString(3), r.Get<Guid?>("org_unit_id"), r.Get<Guid?>("started_by"), r.GetString(6),
-        r.Get<string?>("outcome"), r.GetFieldValue<DateTimeOffset>(8), r.Get<DateTimeOffset?>("ended_at"));
+        r.Get<string?>("outcome"), r.GetFieldValue<DateTimeOffset>(8), r.Get<DateTimeOffset?>("ended_at"), r.Get<string?>("result"));
 
     public async Task<ProcessInstanceInfo> StartAsync(string key, string businessKey, Guid? orgUnitId, Guid? startedBy, IReadOnlyCollection<Guid>? alsoExcluded = null,
         Guid? requestedFor = null, IReadOnlyDictionary<string, JsonElement>? variables = null, CancellationToken ct = default)
@@ -261,9 +261,12 @@ public sealed partial class ProcessEngine(IDbSession session, ITenantContext con
 
     private sealed record TaskRow(UserTaskInfo Info, CandidateSet Candidates, Guid[] Excluded, Guid? OrgUnitId, int DefinitionVersion, Guid? Subject, Guid? TokenId);
 
-    /// <summary>Who may complete a task. <see cref="Names"/> are the step's names per locale for a process model task.</summary>
+    /// <summary>
+    /// Who may complete a task. <see cref="Names"/> are the step's names per locale for a process model task; <see cref="Groups"/>
+    /// are groups or queues whose members may (spec 016 FR-006), read at check time so a membership change applies at once.
+    /// </summary>
     private sealed record CandidateSet(string Name, IReadOnlyList<Guid> Users, string? Permission, bool LineManager = false, bool Subject = false,
-        IReadOnlyDictionary<string, string>? Names = null);
+        IReadOnlyDictionary<string, string>? Names = null, IReadOnlyList<Guid>? Groups = null, bool Escalated = false);
 
     private static TaskRow ReadTask(NpgsqlDataReader r)
     {
@@ -323,6 +326,7 @@ public sealed partial class ProcessEngine(IDbSession session, ITenantContext con
     {
         private readonly Dictionary<(Guid, string, Guid?), bool> holds = [];
         private readonly Dictionary<Guid, Guid?> managers = [];
+        private readonly Dictionary<Guid, IReadOnlySet<Guid>> memberships = [];
         private IReadOnlyList<Guid>? delegators;
 
         /// <summary>
@@ -354,6 +358,18 @@ public sealed partial class ProcessEngine(IDbSession session, ITenantContext con
             if (task.Candidates.Users.Contains(person) || (task.Candidates.Subject && task.Subject == person))
             {
                 return true;
+            }
+            if (task.Candidates.Groups is { Count: > 0 } groups)
+            {
+                if (!memberships.TryGetValue(person, out var of))
+                {
+                    of = await grants.GroupIdsOfAsync(person, ct);
+                    memberships[person] = of;
+                }
+                if (groups.Any(of.Contains))
+                {
+                    return true;
+                }
             }
             if (task.Candidates.LineManager && await LineManagerAsync(task, ct) is { } manager)
             {

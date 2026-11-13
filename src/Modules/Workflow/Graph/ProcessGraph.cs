@@ -60,10 +60,17 @@ public sealed record Assignment(
     bool LineManager = false,
     int? ManagerLevel = null,
     string? AssigneeExpression = null,
-    IReadOnlyList<Guid>? FallbackUsers = null)
+    IReadOnlyList<Guid>? FallbackUsers = null,
+    IReadOnlyList<Guid>? Groups = null)
 {
-    public bool IsEmpty => Users is not { Count: > 0 } && Permission is null && !LineManager && ManagerLevel is null && AssigneeExpression is null;
+    public bool IsEmpty => Users is not { Count: > 0 } && Groups is not { Count: > 0 } && Permission is null && !LineManager && ManagerLevel is null && AssigneeExpression is null;
 }
+
+/// <summary>
+/// Escalation of an overdue user task (spec 016 US5 scenario 2): <see cref="AfterWorkingDays"/> after the due time, the
+/// task also goes to these users and the members of these groups. The due time itself reminds the candidates.
+/// </summary>
+public sealed record TaskEscalation(int AfterWorkingDays, IReadOnlyList<Guid> Users, IReadOnlyList<Guid> Groups);
 
 /// <summary>A connector action or a registered outbound webhook, with FEEL input mappings and output mappings to variables.</summary>
 public sealed record ServiceCall(
@@ -72,7 +79,22 @@ public sealed record ServiceCall(
     Guid? WebhookId,
     IReadOnlyDictionary<string, string> Inputs,
     IReadOnlyDictionary<string, string> Outputs,
-    int Retries = 3);
+    int Retries = 3,
+    string? Product = null);
+
+/// <summary>
+/// Built-in product actions a service task can run instead of a connector (spec 016 R2): <c>set</c> writes its inputs
+/// to variables (directly, or through its outputs as <c>result</c>), <c>notify</c> and <c>start_service</c> are handed
+/// to the module that owns the process.
+/// </summary>
+public static class ProductActions
+{
+    public const string Notify = "notify";
+    public const string Set = "set";
+    public const string StartService = "start_service";
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Notify, Set, StartService };
+}
 
 /// <summary>Multi-instance: one body per item of <see cref="Collection"/>, one after another or all at once.</summary>
 public sealed record MultiInstance(bool Sequential, string Collection, string ElementVariable, string? CompletionCondition);
@@ -101,7 +123,9 @@ public sealed record GraphElement(
     string? CalledKey = null,
     MultiInstance? Loop = null,
     bool TriggeredByEvent = false,
-    IReadOnlyDictionary<string, string>? Outputs = null)
+    IReadOnlyDictionary<string, string>? Outputs = null,
+    TaskEscalation? Escalation = null,
+    string? Result = null)
 {
     public string Name(string locale) => Names.TryGetValue(locale, out var n) ? n : Names.Values.FirstOrDefault() ?? Id;
 }

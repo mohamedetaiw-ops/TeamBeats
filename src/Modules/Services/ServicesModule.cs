@@ -25,6 +25,7 @@ public static class ServicesModule
         services.AddScoped<Attachments>();
         services.AddScoped<IRequestFacts, RequestFactsReader>();
         services.AddScoped<Tasks>();
+        services.AddScoped<RouteEnds>();
         services.AddScoped<Delegations>();
         services.AddScoped<Agents.Contracts.IAgentTool, RequestStatusTool>();
         services.AddScoped<Agents.Contracts.IAgentTool, TaskInboxTool>();
@@ -40,6 +41,9 @@ public static class ServicesModule
         services.AddMessageHandler<RequestReturned, RequestNotifier>("services.notify_returned");
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, RequestNotifier>("services.notify_task");
         services.AddMessageHandler<Workflow.Contracts.UserTaskCompleted, RequestNotifier>("services.resolve_task_notifications");
+        services.AddMessageHandler<Workflow.Contracts.UserTaskDue, RequestNotifier>("services.remind_task");
+        services.AddMessageHandler<Workflow.Contracts.UserTaskEscalated, RequestNotifier>("services.escalate_task");
+        services.AddMessageHandler<Workflow.Contracts.ProcessActionRequested, RequestNotifier>("services.notify_step");
         services.AddScoped<Automation>();
         services.AddScoped<RouteActions>();
         services.AddMessageHandler<Workflow.Contracts.ProcessInstanceCompleted, Automation>("services.route_completed");

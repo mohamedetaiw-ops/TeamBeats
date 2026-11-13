@@ -397,4 +397,102 @@ public sealed class ProcessGraphTests
         var executor = new Executor(graph, run.State, new Context());
         Assert.Equal("completed", executor.Skip(incident.Token).OfType<Finished>().Single().Outcome);
     }
+
+    private const string Group = "6f9619ff-8b86-d011-b42d-00c04fc964ff";
+
+    [Fact]
+    public void Group_candidates_escalation_product_actions_and_end_results_read_from_the_extensions()
+    {
+        var graph = Read(Model($"""
+            <bpmn:startEvent id="s"/>
+            <bpmn:userTask id="queue" name="Fulfil"><bpmn:extensionElements><tb:assignment groups="{Group}"/><tb:due workingDays="3"/>
+              <tb:escalation afterWorkingDays="2" users="{User}" groups="{Group}"/></bpmn:extensionElements></bpmn:userTask>
+            <bpmn:serviceTask id="set"><bpmn:extensionElements><tb:product action="set"/><tb:input name="value" source="1"/><tb:output variable="state" source="result.value"/></bpmn:extensionElements></bpmn:serviceTask>
+            <bpmn:endEvent id="e"><bpmn:extensionElements><tb:result value="approved"/></bpmn:extensionElements></bpmn:endEvent>
+            {Flow("f1", "s", "queue")}{Flow("f2", "queue", "set")}{Flow("f3", "set", "e")}
+            """));
+        var queue = graph.Element("queue");
+        Assert.Equal([Guid.Parse(Group)], queue.Assignment!.Groups);
+        var escalation = Assert.IsType<TaskEscalation>(queue.Escalation);
+        Assert.Equal((2, Guid.Parse(User), Guid.Parse(Group)), (escalation.AfterWorkingDays, Assert.Single(escalation.Users), Assert.Single(escalation.Groups)));
+        Assert.Equal(ProductActions.Set, graph.Element("set").Call!.Product);
+        Assert.Equal("approved", graph.Element("e").Result);
+    }
+
+    [Theory]
+    [InlineData("""<tb:assignment users="U"/><tb:escalation afterWorkingDays="2" users="U"/>""", "escalation")] // no due time
+    [InlineData("""<tb:assignment users="U"/><tb:due workingDays="3"/><tb:escalation afterWorkingDays="0" users="U"/>""", "escalation")]
+    [InlineData("""<tb:assignment users="U"/><tb:due workingDays="3"/><tb:escalation afterWorkingDays="2"/>""", "escalation")] // nobody to go to
+    [InlineData("""<tb:assignment groups="not-a-guid"/>""", "assignment")]
+    public void An_escalation_needs_a_due_time_a_wait_and_a_target(string extensions, string problem)
+    {
+        var problems = Problems(Model($"""
+            <bpmn:startEvent id="s"/>
+            <bpmn:userTask id="t"><bpmn:extensionElements>{extensions.Replace("\"U\"", $"\"{User}\"")}</bpmn:extensionElements></bpmn:userTask>
+            <bpmn:endEvent id="e"/>
+            {Flow("f1", "s", "t")}{Flow("f2", "t", "e")}
+            """));
+        Assert.Contains(problems, p => p.ElementId == "t" && p.Key == "validation.process." + problem);
+    }
+
+    [Theory]
+    [InlineData("""<tb:product action="launch"/>""")]
+    [InlineData("""<tb:product action="notify"/><tb:connector connection="0f8fad5b-d9cb-469f-a165-70867728950e" action="x"/>""")]
+    public void A_product_action_must_be_known_and_alone(string extensions)
+    {
+        var problems = Problems(Model($"""
+            <bpmn:startEvent id="s"/>
+            <bpmn:serviceTask id="a"><bpmn:extensionElements>{extensions}</bpmn:extensionElements></bpmn:serviceTask>
+            <bpmn:endEvent id="e"/>
+            {Flow("f1", "s", "a")}{Flow("f2", "a", "e")}
+            """));
+        Assert.Contains(problems, p => p.ElementId == "a" && p.Key == "validation.process.service_binding");
+    }
+
+    [Fact]
+    public void A_result_goes_only_on_a_plain_or_terminate_end_and_is_a_code()
+    {
+        var problems = Problems(Model($"""
+            <bpmn:startEvent id="s"/><bpmn:parallelGateway id="g"/>
+            <bpmn:endEvent id="bad"><bpmn:extensionElements><tb:result value="not ok"/></bpmn:extensionElements></bpmn:endEvent>
+            <bpmn:endEvent id="err"><bpmn:extensionElements><tb:result value="rejected"/></bpmn:extensionElements><bpmn:errorEventDefinition errorRef="x"/></bpmn:endEvent>
+            {Flow("f1", "s", "g")}{Flow("f2", "g", "bad")}{Flow("f3", "g", "err")}
+            """, """<bpmn:error id="x" errorCode="failed"/>"""));
+        Assert.Contains(problems, p => p.ElementId == "bad" && p.Key == "validation.process.result");
+        Assert.Contains(problems, p => p.ElementId == "err" && p.Key == "validation.process.result");
+    }
+
+    [Fact]
+    public void The_instance_finishes_with_the_result_of_the_end_event_it_reached()
+    {
+        var graph = Read(Model($"""
+            <bpmn:startEvent id="s"/>
+            {Task("review")}
+            <bpmn:exclusiveGateway id="x" default="f4"/>
+            <bpmn:endEvent id="approved"><bpmn:extensionElements><tb:result value="approved"/></bpmn:extensionElements></bpmn:endEvent>
+            <bpmn:endEvent id="rejected"><bpmn:extensionElements><tb:result value="rejected"/></bpmn:extensionElements></bpmn:endEvent>
+            {Flow("f1", "s", "review")}{Flow("f2", "review", "x")}{Flow("f3", "x", "rejected", "outcome = \"reject\"")}{Flow("f4", "x", "approved")}
+            """));
+        var run = new Run(graph).Start().Complete("review", """{"outcome":"reject"}""");
+        var finished = run.All.OfType<Finished>().Single();
+        Assert.Equal(("completed", "rejected"), (finished.Outcome, finished.Result));
+        Assert.Equal("approved", new Run(graph).Start().Complete("review", """{"outcome":"approve"}""").All.OfType<Finished>().Single().Result);
+    }
+
+    [Fact]
+    public void A_set_action_maps_its_inputs_to_variables_when_the_engine_completes_it()
+    {
+        var graph = Read(Model($"""
+            <bpmn:startEvent id="s"/>
+            <bpmn:serviceTask id="set"><bpmn:extensionElements><tb:product action="set"/><tb:input name="value" source="amount * 2"/><tb:output variable="doubled" source="result.value"/></bpmn:extensionElements></bpmn:serviceTask>
+            <bpmn:endEvent id="e"/>
+            {Flow("f1", "s", "set")}{Flow("f2", "set", "e")}
+            """));
+        var run = new Run(graph).Start("""{"amount":21}""");
+        var call = run.All.OfType<CallService>().Single();
+        Assert.Equal(42, call.Inputs["value"]!.GetValue<decimal>());
+        run.Complete("set", call.Inputs.ToJsonString());
+        Assert.Equal("completed", run.Outcome);
+        Assert.Equal(42, run.State.Variables["doubled"]!.GetValue<decimal>());
+    }
 }

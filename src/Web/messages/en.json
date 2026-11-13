@@ -822,7 +822,8 @@
         "compliance_projects": "Compliance projects",
         "deployment_region_choice": "Choice of hosting region",
         "workflow_bpmn": "Process models and decisions",
-        "workflow_max_active_instances": "Active process instances"
+        "workflow_max_active_instances": "Active process instances",
+        "workflow_connector_fulfilment": "Connector and webhook steps in services"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -2872,7 +2873,10 @@
         "automation_failed": "Automation failed",
         "automation_retried": "Automatic step retried",
         "automation_skipped": "Automatic step skipped",
-        "automation_cancelled": "Cancelled at an automatic step"
+        "automation_cancelled": "Cancelled at an automatic step",
+        "task_done": "Task done",
+        "task_rejected": "Task rejected",
+        "skipped": "Skipped, its condition did not apply"
       },
       "automation": {
         "title": "Automatic steps",
@@ -11749,8 +11753,10 @@
         "loop_started": "repeat started",
         "escalated": "escalated",
         "interrupted": "interrupted",
-        "triggered": "triggered"
-      }
+        "triggered": "triggered",
+        "action_not_run": "not carried out in a test run"
+      },
+      "testGroups": "members of the step's groups ({count})"
     }
   }
 }
