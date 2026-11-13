@@ -82,6 +82,11 @@ public static class Permissions
     public const string SecurityView = "security.view";
     public const string SecurityRespond = "security.respond";
 
+    // Spec 026 US7 (R2): compliance officers manage the control library and compliance projects in their org scope;
+    // viewers read projects, controls and evidence.
+    public const string ComplianceManage = "compliance.manage";
+    public const string ComplianceView = "compliance.view";
+
     // Spec 016 (R1): service catalogue and requests.
     public const string ServiceManage = "service.manage";
     public const string ServiceRequestOnBehalf = "service.request_on_behalf";
@@ -218,6 +223,7 @@ public static class Permissions
         HrCalendarManage, HrIntegrationManage, HrManage, FinanceProcess,
         PeopleView, PeopleHrView, PeopleManage,
         SecurityManage, SecurityView, SecurityRespond,
+        ComplianceManage, ComplianceView,
         ServiceManage, ServiceRequestOnBehalf, ServiceRequestRead,
         ContentAuthor, ContentPublishCritical, ContentAdmin,
         DocView, DocContribute, DocManage, KbEdit,

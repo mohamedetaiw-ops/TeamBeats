@@ -30,6 +30,7 @@ public static class SpacesModule
         services.AddScoped<SpaceGuests>();
         services.AddScoped<IGuestInvitationSource>(sp => sp.GetRequiredService<SpaceGuests>());
         services.AddScoped<Contracts.ISpaceGuestReview>(sp => sp.GetRequiredService<SpaceGuests>());
+        services.AddScoped<Contracts.ISpaceAccess, SpaceAccessReader>();
         services.AddScoped<IResourceDescriptorProvider, SpaceDescriptorProvider>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpacesSearchSource>();
         services.AddScoped<Modules.Search.Contracts.ISearchSource, SpaceTaskSearchSource>();

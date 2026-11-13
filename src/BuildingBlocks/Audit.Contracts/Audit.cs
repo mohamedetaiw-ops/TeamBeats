@@ -276,6 +276,15 @@ public static class AuditActions
     public const string SecurityDetectionChanged = "security.detection_changed";
     public const string SecurityDetectionPatternChanged = "security.detection_pattern_changed";
     public const string SecuritySensitiveDataConfirmed = "security.sensitive_data_confirmed";
+
+    // 026 R2 compliance projects (US7)
+    public const string ComplianceFrameworkChanged = "compliance.framework_changed";
+    public const string ComplianceProjectCreated = "compliance.project_created";
+    public const string ComplianceProjectChanged = "compliance.project_changed";
+    public const string ComplianceProjectShared = "compliance.project_shared";
+    public const string ComplianceControlChanged = "compliance.control_changed";
+    public const string ComplianceControlStatusChanged = "compliance.control_status_changed";
+    public const string ComplianceEvidenceAttached = "compliance.evidence_attached";
     public const string WorkflowDefinitionPublished = "workflow.definition_published";
     public const string WorkflowTaskCompleted = "workflow.task_completed";
     public const string WorkflowInstanceWithdrawn = "workflow.instance_withdrawn";
@@ -577,4 +586,20 @@ public interface IAuditStream
 
     /// <summary>The position just before the first sealed event at or after <paramref name="since"/>: reading after it starts there.</summary>
     Task<long> PositionBeforeAsync(DateTimeOffset since, CancellationToken ct = default);
+}
+
+/// <summary>A completed audit export (spec 006) that can still be downloaded.</summary>
+public sealed record AuditExportSummary(Guid Id, string Format, long? RowCount, DateTimeOffset CompletedAt, DateTimeOffset ExpiresAt);
+
+/// <summary>
+/// Completed audit exports for other modules that keep them as evidence (spec 026 FR-023). Every call is in the current
+/// tenant and needs <c>audit.export</c>, as the download route does: whoever attaches an export could download it.
+/// </summary>
+public interface IAuditExports
+{
+    /// <summary>The newest exports that are completed and not yet expired, newest first.</summary>
+    Task<IReadOnlyList<AuditExportSummary>> ListAvailableAsync(int limit, CancellationToken ct = default);
+
+    /// <summary>The export and its file, or null when it is unknown, not completed or expired. The caller disposes the stream.</summary>
+    Task<(AuditExportSummary Export, Stream Content)?> OpenAsync(Guid exportId, CancellationToken ct = default);
 }

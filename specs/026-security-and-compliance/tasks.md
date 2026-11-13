@@ -50,8 +50,8 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T027 [US6] `ISensitiveDataScanner`, patterns, settings; hooks in Content and Documents; warning UI
 
 ## R2 Phase 10: User Story 7, compliance projects (P2)
-- [ ] T028 [P] [US7] Tests: project from a framework; evidence with export hash; readiness; guest auditor read-only; org scope; package
-- [ ] T029 [US7] `Compliance` module, control library, projects, controls, evidence tasks, readiness view, sharing to guest spaces; pages
+- [x] T028 [P] [US7] Tests: project from a framework; evidence with export hash; readiness; guest auditor read-only; org scope; package
+- [x] T029 [US7] `Compliance` module, control library, projects, controls, evidence tasks, readiness view, sharing to guest spaces; pages
 
 ## R2 Phase 11: residency and platform access
 - [ ] T030 Region at tenant creation and on the posture page (FR-008); break-glass entries in the tenant's audit view (FR-020)
