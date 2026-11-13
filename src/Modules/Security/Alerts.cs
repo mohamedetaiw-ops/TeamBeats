@@ -25,11 +25,38 @@ public static class AlertKinds
     /// <summary>A SIEM destination has failed for 24 hours (spec 026 US4); events wait at its place in the stream.</summary>
     public const string SiemFailing = "siem_failing";
 
-    public static readonly IReadOnlyList<string> All = [DownloadVolume, PrivilegeGrantOutOfHours, NetworkBlocked, ApiTokenReuse, SiemFailing];
+    /// <summary>A guest opened a Confidential item (spec 026 US5 scenario 3).</summary>
+    public const string GuestConfidentialAccess = "guest_confidential_access";
+
+    /// <summary>An app's calls were refused by authorization more often than the tenant threshold in 10 minutes (US5 scenario 5).</summary>
+    public const string ApiDeniedBurst = "api_denied_burst";
+
+    /// <summary>An app's calls in one hour were over the tenant factor times its 30 day hourly average (US5 scenario 5).</summary>
+    public const string ApiVolumeSpike = "api_volume_spike";
+
+    /// <summary>The kinds about an app, which API administrators are told about too.</summary>
+    public static readonly IReadOnlyList<string> AboutApps = [ApiTokenReuse, ApiDeniedBurst, ApiVolumeSpike];
+
+    public static readonly IReadOnlyList<string> All =
+        [DownloadVolume, PrivilegeGrantOutOfHours, NetworkBlocked, ApiTokenReuse, SiemFailing, GuestConfidentialAccess, ApiDeniedBurst, ApiVolumeSpike];
 }
 
-/// <summary>Tenant alert thresholds (spec 026 section 6 defaults), stored in <c>security.policy.alert_settings</c>.</summary>
-public sealed record AlertSettings(int DownloadFiles = 200, long DownloadBytes = 2L * 1024 * 1024 * 1024, string WorkStart = "08:00", string WorkEnd = "18:00")
+/// <summary>Who is told when a guest opens a Confidential item (spec 026 US5 scenario 3).</summary>
+public static class GuestNotifyTargets
+{
+    public const string Security = "security";
+    public const string Sponsor = "sponsor";
+    public const string Both = "both";
+
+    public static readonly IReadOnlyList<string> All = [Security, Sponsor, Both];
+}
+
+/// <summary>
+/// Tenant alert thresholds (spec 026 section 6 and US5 defaults), stored in <c>security.policy.alert_settings</c>.
+/// Changing them needs <c>security.alerts_advanced</c>; without it the defaults apply.
+/// </summary>
+public sealed record AlertSettings(int DownloadFiles = 200, long DownloadBytes = 2L * 1024 * 1024 * 1024, string WorkStart = "08:00", string WorkEnd = "18:00",
+    int ApiDeniedCount = 50, double ApiVolumeFactor = 5, string GuestConfidentialNotify = GuestNotifyTargets.Security)
 {
     public static AlertSettings From(string? json)
     {
@@ -44,8 +71,22 @@ public sealed record AlertSettings(int DownloadFiles = 200, long DownloadBytes =
             root.TryGetProperty("downloadFiles", out var f) && f.TryGetInt32(out var files) ? files : d.DownloadFiles,
             root.TryGetProperty("downloadBytes", out var b) && b.TryGetInt64(out var bytes) ? bytes : d.DownloadBytes,
             root.TryGetProperty("workStart", out var s) && s.ValueKind == JsonValueKind.String ? s.GetString()! : d.WorkStart,
-            root.TryGetProperty("workEnd", out var e) && e.ValueKind == JsonValueKind.String ? e.GetString()! : d.WorkEnd);
+            root.TryGetProperty("workEnd", out var e) && e.ValueKind == JsonValueKind.String ? e.GetString()! : d.WorkEnd,
+            root.TryGetProperty("apiDeniedCount", out var c) && c.TryGetInt32(out var count) ? count : d.ApiDeniedCount,
+            root.TryGetProperty("apiVolumeFactor", out var v) && v.TryGetDouble(out var factor) ? factor : d.ApiVolumeFactor,
+            root.TryGetProperty("guestConfidentialNotify", out var g) && g.ValueKind == JsonValueKind.String && GuestNotifyTargets.All.Contains(g.GetString())
+                ? g.GetString()! : d.GuestConfidentialNotify);
     }
+
+    public object ToJson() => new
+    {
+        downloadFiles = DownloadFiles, downloadBytes = DownloadBytes, workStart = WorkStart, workEnd = WorkEnd,
+        apiDeniedCount = ApiDeniedCount, apiVolumeFactor = ApiVolumeFactor, guestConfidentialNotify = GuestConfidentialNotify,
+    };
+
+    public bool NotifiesSecurity => GuestConfidentialNotify != GuestNotifyTargets.Sponsor;
+
+    public bool NotifiesSponsor => GuestConfidentialNotify != GuestNotifyTargets.Security;
 
     /// <summary>Whether a moment falls outside the working week and hours of the calendar, in its time zone.</summary>
     public bool OutOfHours(WorkingCalendarSnapshot calendar, DateTimeOffset at)
@@ -177,7 +218,7 @@ public sealed class AlertService(IDbSession session, ITenantContext context, IAu
 /// Download volume (spec 026 US5 scenario 1): downloads are counted per user per hour; above the tenant threshold (default
 /// 200 files or 2 GB) security officers get one alert for that user and hour, with the volume and the libraries.
 /// </summary>
-public sealed class DownloadVolumeRule(IDbSession session, IEntitlementService entitlements, PolicyStore policies, AlertService alerts, IClock clock)
+public sealed class DownloadVolumeRule(IDbSession session, IEntitlementService entitlements, AlertSettingsService settingsService, AlertService alerts, IClock clock)
     : IMessageHandler<DocumentDownloaded>
 {
     public async Task HandleAsync(DocumentDownloaded message, CancellationToken ct)
@@ -201,7 +242,7 @@ public sealed class DownloadVolumeRule(IDbSession session, IEntitlementService e
             r => (Files: r.GetInt32(0), Bytes: r.GetInt64(1), Libraries: r.GetFieldValue<Guid[]>(2)), ct);
         await session.ExecAsync("delete from security.download_count where hour_start < @cutoff", new { cutoff = hour.AddDays(-1) }, ct);
 
-        var settings = AlertSettings.From(await policies.AlertSettingsJsonAsync(ct));
+        var settings = await settingsService.EffectiveAsync(ct);
         if (totals.Files > settings.DownloadFiles || totals.Bytes > settings.DownloadBytes)
         {
             await alerts.RaiseAsync(AlertKinds.DownloadVolume, message.UserId,
@@ -216,7 +257,7 @@ public sealed class DownloadVolumeRule(IDbSession session, IEntitlementService e
 /// administrative permission granted outside the tenant working week (spec 022 tenant default) and hours raises an alert.
 /// </summary>
 public sealed class OutOfHoursGrantRule(IEntitlementService entitlements, IAuthorizationProvisioning roles, IWorkingCalendar calendars,
-    PolicyStore policies, AlertService alerts, IClock clock) : IMessageHandler<RoleAssignmentChanged>
+    AlertSettingsService settingsService, AlertService alerts, IClock clock) : IMessageHandler<RoleAssignmentChanged>
 {
     public async Task HandleAsync(RoleAssignmentChanged message, CancellationToken ct)
     {
@@ -230,7 +271,7 @@ public sealed class OutOfHoursGrantRule(IEntitlementService entitlements, IAutho
             return;
         }
         var now = clock.UtcNow;
-        var settings = AlertSettings.From(await policies.AlertSettingsJsonAsync(ct));
+        var settings = await settingsService.EffectiveAsync(ct);
         if (!settings.OutOfHours(await calendars.TenantDefaultAsync(ct), now))
         {
             return;
@@ -256,5 +297,76 @@ public sealed class ApiTokenReuseRule(IEntitlementService entitlements, AlertSer
         }
         await alerts.RaiseAsync(AlertKinds.ApiTokenReuse, message.UserId, new { appId = message.AppId, familyId = message.FamilyId },
             $"{AlertKinds.ApiTokenReuse}:{message.FamilyId}", ct);
+    }
+}
+
+/// <summary>
+/// Guest access to Confidential items (spec 026 US5 scenario 3, <c>security.alerts_advanced</c>): one alert per guest,
+/// item and day. The tenant setting chooses who is told: the security officers (through <see cref="AlertNotifier"/>), the
+/// guest's sponsor in that space, or both. The alert is kept on the alerts page either way.
+/// </summary>
+public sealed class GuestConfidentialRule(IEntitlementService entitlements, AlertSettingsService settingsService, AlertService alerts,
+    TeamBeats.Modules.Spaces.Contracts.ISpaceGuestReview guests, TeamBeats.Modules.Notifications.Contracts.INotificationSender notifications, IClock clock)
+    : IMessageHandler<GuestOpenedClassified>
+{
+    public const string SponsorTemplate = "security.guest_confidential.sponsor";
+
+    public async Task HandleAsync(GuestOpenedClassified message, CancellationToken ct)
+    {
+        if (!await entitlements.IsEnabledAsync(Capabilities.SecurityAlertsAdvanced, ct))
+        {
+            return;
+        }
+        var day = clock.UtcNow.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+        var id = await alerts.RaiseAsync(AlertKinds.GuestConfidentialAccess, message.UserId,
+            new { documentId = message.DocumentId, libraryId = message.LibraryId, spaceId = message.SpaceId, classification = message.Classification },
+            $"{AlertKinds.GuestConfidentialAccess}:{message.UserId}:{message.DocumentId}:{day}", ct);
+        if (id is null || message.SpaceId is not { } space || !(await settingsService.EffectiveAsync(ct)).NotifiesSponsor)
+        {
+            return;
+        }
+        if (await guests.SponsorOfAsync(space, message.UserId, ct) is { } sponsor)
+        {
+            await notifications.SendAsync(new TeamBeats.Modules.Notifications.Contracts.NotificationRequest([sponsor],
+                TeamBeats.Modules.Notifications.Contracts.NotificationCategories.SecurityNotice, SponsorTemplate, $"/spaces/{space}",
+                DedupeKey: "security_alert:sponsor:" + id), ct);
+        }
+    }
+}
+
+/// <summary>
+/// Refused app calls (spec 026 US5 scenario 5): PublicApi tells Security when an app's authorization denials in 10
+/// minutes reach the tenant threshold (50 by default). One alert per app and 10 minutes, with the app and the person.
+/// </summary>
+public sealed class ApiDeniedBurstRule(IEntitlementService entitlements, AlertService alerts) : IMessageHandler<TeamBeats.Modules.PublicApi.Contracts.ApiCallsDenied>
+{
+    public async Task HandleAsync(TeamBeats.Modules.PublicApi.Contracts.ApiCallsDenied message, CancellationToken ct)
+    {
+        if (!await entitlements.IsEnabledAsync(Capabilities.SecurityAlerts, ct))
+        {
+            return;
+        }
+        var slot = message.WindowStart.ToUnixTimeSeconds() / 600;
+        await alerts.RaiseAsync(AlertKinds.ApiDeniedBurst, message.UserId,
+            new { appId = message.AppId, appName = message.AppName, count = message.Count, windowStart = message.WindowStart },
+            $"{AlertKinds.ApiDeniedBurst}:{message.AppId}:{slot}", ct);
+    }
+}
+
+/// <summary>
+/// App call volume (spec 026 US5 scenario 5): an hour over the tenant factor (5 by default) times the app's 30 day hourly
+/// average raises one alert per app and hour, with the calls, the average and the person who made most of them.
+/// </summary>
+public sealed class ApiVolumeSpikeRule(IEntitlementService entitlements, AlertService alerts) : IMessageHandler<TeamBeats.Modules.PublicApi.Contracts.ApiVolumeSpike>
+{
+    public async Task HandleAsync(TeamBeats.Modules.PublicApi.Contracts.ApiVolumeSpike message, CancellationToken ct)
+    {
+        if (!await entitlements.IsEnabledAsync(Capabilities.SecurityAlerts, ct))
+        {
+            return;
+        }
+        await alerts.RaiseAsync(AlertKinds.ApiVolumeSpike, message.UserId,
+            new { appId = message.AppId, appName = message.AppName, calls = message.Calls, hourlyAverage = message.HourlyAverage, hourStart = message.HourStart },
+            $"{AlertKinds.ApiVolumeSpike}:{message.AppId}:{message.HourStart:yyyyMMddHH}", ct);
     }
 }

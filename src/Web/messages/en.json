@@ -2404,14 +2404,20 @@
         "privilege_grant_out_of_hours": "Privileged role granted out of hours",
         "network_blocked": "Requests blocked by network rules",
         "api_token_reuse": "App token used twice",
-        "siem_failing": "SIEM destination failing"
+        "siem_failing": "SIEM destination failing",
+        "guest_confidential_access": "Guest opened a Confidential item",
+        "api_denied_burst": "Many refused calls from an app",
+        "api_volume_spike": "Unusual call volume from an app"
       },
       "facts": {
         "downloads": "{files, plural, one {# file} other {# files}}, {size} MB, from {libraries, plural, one {# library} other {# libraries}} within one hour.",
         "grant": "Role granted: {role}.",
         "blockedTenant": "Refused address:",
         "blockedAdmin": "Refused address for administration pages:",
-        "siemFailing": "Destination: {name}. Events wait and go out once it works again."
+        "siemFailing": "Destination: {name}. Events wait and go out once it works again.",
+        "guestConfidential": "A guest opened an item classified Confidential. The audit trail shows the item and the space.",
+        "apiDenied": "App: {app}. {count, plural, one {# call} other {# calls}} refused within 10 minutes.",
+        "apiVolume": "App: {app}. {calls, plural, one {# call} other {# calls}} in one hour, against an hourly average of {average}."
       },
       "raised": "Raised {at}.",
       "subject": "Person:",
@@ -2426,7 +2432,34 @@
       "by": "By",
       "unavailable": "Security alerts are not part of your plan, or you cannot see them.",
       "failed": "Alerts could not be loaded. Try again.",
-      "done": "The alert is closed."
+      "done": "The alert is closed.",
+      "settings": {
+        "title": "Alert thresholds",
+        "intro": "Set when alerts are raised. Changes need a fresh sign-in and are recorded in the audit trail.",
+        "locked": "These are the thresholds in use. Changing them needs the security manager role and a plan with advanced alerts.",
+        "downloadFiles": "Files downloaded by one person in an hour",
+        "downloadFilesHint": "Recommended: 200. From 10 to 100,000.",
+        "downloadMb": "Data downloaded by one person in an hour",
+        "downloadMbHint": "Recommended: 2,000 MB.",
+        "mb": "MB",
+        "workStart": "Working hours start",
+        "workEnd": "Working hours end",
+        "workHint": "Administrator roles granted outside these hours or the working week raise an alert.",
+        "apiDenied": "Refused calls from one app in 10 minutes",
+        "apiDeniedHint": "Recommended: 50. From 5 to 10,000.",
+        "apiFactor": "App calls in an hour, times its usual hourly volume",
+        "apiFactorHint": "Recommended: 5. From 2 to 100. Hours under 100 calls never count.",
+        "guestNotify": "When a guest opens a Confidential item, tell",
+        "guestNotifyHint": "The alert is always kept on this page.",
+        "notify": {
+          "security": "Security officers",
+          "sponsor": "The person who invited the guest",
+          "both": "Both"
+        },
+        "save": "Save thresholds",
+        "working": "Saving",
+        "saved": "The thresholds are saved."
+      }
     },
     "posture": {
       "title": "Security posture",

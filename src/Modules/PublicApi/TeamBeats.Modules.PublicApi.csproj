@@ -20,6 +20,7 @@
     <ProjectReference Include="../Policies.Contracts/TeamBeats.Modules.Policies.Contracts.csproj" />
     <ProjectReference Include="../Services.Contracts/TeamBeats.Modules.Services.Contracts.csproj" />
     <ProjectReference Include="../People.Contracts/TeamBeats.Modules.People.Contracts.csproj" />
+    <ProjectReference Include="../Security.Contracts/TeamBeats.Modules.Security.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="OpenIddict.Server.AspNetCore" />

@@ -14,4 +14,7 @@ public interface ISpaceGuestReview
 
     /// <summary>Removes the guest from the space; false when they were no longer in it.</summary>
     Task<bool> RemoveGuestAsync(Guid spaceId, Guid userId, string reason, CancellationToken ct = default);
+
+    /// <summary>The person who invited the guest into the space (spec 026 US5 scenario 3), or null when unknown.</summary>
+    Task<Guid?> SponsorOfAsync(Guid spaceId, Guid userId, CancellationToken ct = default);
 }

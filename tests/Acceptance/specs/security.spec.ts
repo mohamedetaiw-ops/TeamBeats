@@ -116,3 +116,36 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     });
   });
 }
+
+/**
+ * Spec 026 T025: alert thresholds. In a package with advanced alerts, the administrator lowers the refused app call
+ * threshold and sends guest Confidential alerts to the sponsor too; the values stay after a reload. English and Arabic.
+ */
+for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
+  test.describe(`alert thresholds in ${locale}`, () => {
+    test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
+    let tenant: TestTenant;
+
+    test.beforeAll(async () => {
+      tenant = await createTenant(`thr-${locale}`, locale, "workplace_plus");
+    });
+
+    test("an administrator changes alert thresholds and they are kept", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/security/alerts`);
+      await expect(page.getByRole("heading", { level: 2, name: msg(locale, "security.alerts.settings.title") })).toBeVisible();
+      const denied = page.getByLabel(msg(locale, "security.alerts.settings.apiDenied"), { exact: true });
+      await expect(denied).toHaveValue("50");
+
+      await denied.fill("20");
+      await page.getByLabel(msg(locale, "security.alerts.settings.guestNotify"), { exact: true }).selectOption("both");
+      await page.getByRole("button", { name: msg(locale, "security.alerts.settings.save") }).click();
+      await expect(page.getByRole("status").or(page.getByRole("alert")).filter({ hasText: msg(locale, "security.alerts.settings.saved") })).toBeVisible();
+      await expectAccessible(page, testInfo, `security-thresholds-${locale}`);
+
+      await page.reload();
+      await expect(page.getByLabel(msg(locale, "security.alerts.settings.apiDenied"), { exact: true })).toHaveValue("20");
+      await expect(page.getByLabel(msg(locale, "security.alerts.settings.guestNotify"), { exact: true })).toHaveValue("both");
+    });
+  });
+}

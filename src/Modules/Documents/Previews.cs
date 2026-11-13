@@ -99,6 +99,8 @@ public sealed class DocumentPreviews(
                 return new PreviewView(PreviewKinds.Unavailable, null, null, null, PreviewKinds.ReasonFailed);
             }
         }
+        var classification = await session.ScalarAsync<string>("select classification from documents.document where id = @documentId", new { documentId }, ct);
+        await files.NoteGuestOpenAsync(documentId, row.Library, classification ?? "", ct);
         var (token, expires) = await files.IssueTokenAsync(documentId, target, TokenPurposes.Preview, ct);
         return new PreviewView(kind, $"/api/v1/documents/previews/{token}", convert ? "application/pdf" : row.ContentType, expires, null);
     }

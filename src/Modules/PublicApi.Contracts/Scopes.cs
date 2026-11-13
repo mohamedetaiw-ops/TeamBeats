@@ -151,3 +151,16 @@ public static class TokenFamilyReasons
     /// <summary>A refresh token or code came back a second time (US6 scenario 2).</summary>
     public const string ReuseDetected = "reuse_detected";
 }
+
+/// <summary>
+/// An app passed the tenant's threshold of refused calls (authorization denials) within 10 minutes (spec 026 US5
+/// scenario 5). Published once when the count reaches the threshold; WindowStart is the start of the 10 minutes.
+/// UserId is the person whose calls were refused most often in the window, null for an application acting as itself.
+/// </summary>
+public sealed record ApiCallsDenied(Guid AppId, string AppName, Guid? UserId, int Count, DateTimeOffset WindowStart) : IIntegrationEvent;
+
+/// <summary>
+/// An app's calls in one hour were more than the tenant's factor times its hourly average over the last 30 days.
+/// UserId is the person who made most of the hour's calls, null for an application acting as itself.
+/// </summary>
+public sealed record ApiVolumeSpike(Guid AppId, string AppName, Guid? UserId, long Calls, double HourlyAverage, DateTimeOffset HourStart) : IIntegrationEvent;

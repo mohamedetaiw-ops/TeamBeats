@@ -2193,5 +2193,22 @@
   "conflict.security.review_decided": "تم البت في هذا العنصر بالفعل.",
   "conflict.security.review_last_admin": "هذا آخر مسؤول في المؤسسة، لذا لا يمكن إزالة الدور. عيّن مسؤولا آخر أولا.",
   "notifications.template.security.access_review.requested.title": "راجع من لديه صلاحية الوصول",
-  "notifications.template.security.access_review.requested.body": "أكّد أو أزل الضيوف وأدوار المسؤولين الذين تتولى مسؤوليتهم قبل {due}. يُزال كل ما لم يُؤكَّد بحلول ذلك الموعد."
+  "notifications.template.security.access_review.requested.body": "أكّد أو أزل الضيوف وأدوار المسؤولين الذين تتولى مسؤوليتهم قبل {due}. يُزال كل ما لم يُؤكَّد بحلول ذلك الموعد.",
+  "validation.security.alert_threshold": "أدخل قيمة ضمن النطاق المسموح به المبين بجانب الحقل.",
+  "validation.security.work_hours": "أدخل ساعات العمل بصيغة HH:mm، على أن تسبق البداية النهاية.",
+  "validation.security.guest_notify": "اختر من يتم إبلاغه: مسؤولو الأمان، أو الراعي، أو كلاهما.",
+  "notifications.template.security.alert.guest_confidential_access.title": "فتح ضيف عنصرا سريا",
+  "notifications.template.security.alert.guest_confidential_access.body": "فتح ضيف في إحدى مساحاتكم عنصرا مصنفا سريا. راجع التنبيه في صفحة الأمان.",
+  "notifications.template.security.alert.api_denied_burst.title": "طلبات كثيرة مرفوضة من تطبيق",
+  "notifications.template.security.alert.api_denied_burst.body": "أرسل تطبيق طلبات كثيرة غير مسموح له بها خلال وقت قصير. راجع التنبيه في صفحة الأمان.",
+  "notifications.template.security.alert.api_volume_spike.title": "حجم طلبات غير معتاد من تطبيق",
+  "notifications.template.security.alert.api_volume_spike.body": "أرسل تطبيق في ساعة واحدة طلبات أكثر بكثير من المعتاد. راجع التنبيه في صفحة الأمان.",
+  "notifications.template.security.alert_app.api_token_reuse.title": "استُخدم رمز دخول تطبيق مرتين",
+  "notifications.template.security.alert_app.api_token_reuse.body": "استُخدم رمز دخول أحد تطبيقاتكم مرتين، وقد يكون منسوخا. أنهى TeamBeats جلسة الدخول تلك. تحقق من التطبيق في صفحة التطبيقات.",
+  "notifications.template.security.alert_app.api_denied_burst.title": "طلبات كثيرة مرفوضة من تطبيق",
+  "notifications.template.security.alert_app.api_denied_burst.body": "أرسل أحد تطبيقاتكم طلبات كثيرة غير مسموح له بها خلال وقت قصير. تحقق من التطبيق وصلاحياته في صفحة التطبيقات.",
+  "notifications.template.security.alert_app.api_volume_spike.title": "حجم طلبات غير معتاد من تطبيق",
+  "notifications.template.security.alert_app.api_volume_spike.body": "أرسل أحد تطبيقاتكم في ساعة واحدة طلبات أكثر بكثير من المعتاد. تحقق من التطبيق في صفحة التطبيقات.",
+  "notifications.template.security.guest_confidential.sponsor.title": "فتح ضيفك عنصرا سريا",
+  "notifications.template.security.guest_confidential.sponsor.body": "فتح ضيف دعوته عنصرا مصنفا سريا في مساحتك. تأكد من أنه يجب أن يصل إليه."
 }

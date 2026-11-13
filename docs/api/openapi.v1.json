@@ -21204,6 +21204,38 @@
         }
       }
     },
+    "/api/v1/security/alert-settings": {
+      "get": {
+        "tags": [
+          "Security"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Security"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertSettingsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/security/access-reviews": {
       "get": {
         "tags": [
@@ -22921,6 +22953,74 @@
           },
           "requiresApproval": {
             "type": "boolean"
+          }
+        }
+      },
+      "AlertSettingsRequest": {
+        "required": [
+          "downloadFiles",
+          "downloadBytes",
+          "workStart",
+          "workEnd",
+          "apiDeniedCount",
+          "apiVolumeFactor",
+          "guestConfidentialNotify"
+        ],
+        "type": "object",
+        "properties": {
+          "downloadFiles": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "downloadBytes": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int64"
+          },
+          "workStart": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "workEnd": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "apiDeniedCount": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "apiVolumeFactor": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d\u002B)?(?:[eE][\u002B-]?\\d\u002B)?$",
+            "type": [
+              "null",
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "guestConfidentialNotify": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

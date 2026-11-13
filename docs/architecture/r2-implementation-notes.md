@@ -1407,3 +1407,18 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - The first review of a tenant opens 90 days after the schedule first runs for it; security administrators can open one earlier. One review is open at a time.
 - An item not decided in 14 days is removed, except the tenant's last tenant administrator assignment, which is kept and recorded as `kept`.
 - Removing a guest works like the end of access: the owners are told and a guest left in no space is disabled and signed out.
+
+## Security and compliance (spec 026 R2, slice 3: T024 and T025 alerts in full)
+
+### Built
+- Guest access to Confidential items (US5 scenario 3, `security.alerts_advanced`): Documents publishes `GuestOpenedClassified` when a guest downloads or previews a Confidential item, with the space that holds it. Security raises `guest_confidential_access` once per guest, item and day. The tenant setting `guestConfidentialNotify` (security, sponsor or both) decides who is told; the sponsor is found through `ISpaceGuestReview.SponsorOfAsync` and gets `security.guest_confidential.sponsor` with a link to the space. The alert is kept on the alerts page whatever the setting.
+- App alerts (US5 scenario 5, `security.alerts`): the PublicApi call log counts refused calls (`error_class = denied`) per app over the last 10 minutes on each refused call only, and publishes `ApiCallsDenied` when the count reaches the tenant threshold. The hourly maintenance run compares the last full hour with the app's 30 day hourly average and publishes `ApiVolumeSpike`. Both carry the app name and the person with the most calls. Security raises `api_denied_burst` (one per app and 10 minutes) and `api_volume_spike` (one per app and hour).
+- API administrators (`api.manage`) are told about the three app alert kinds with their own text and a link to the apps page; security responders get the security text. Someone who holds both gets only the security one.
+- Thresholds: `GET` and `PUT /api/v1/security/alert-settings`. Reading needs `security.view` or `security.manage` with `security.alerts`; changing needs `security.manage`, `security.alerts_advanced` and step-up, and is audited as `security.alert_settings_changed` with before and after values. PublicApi reads the app thresholds through the `ISecurityAlertThresholds` contract. The form sits under the alert list and is read only when the person or plan cannot change it.
+
+### Smallest safe defaults
+- Ranges: download files 10 to 100,000; download data 10 MB to 1 TB; working hours HH:mm with the start before the end; refused calls 5 to 10,000; volume factor 2 to 100, kept to one decimal.
+- An hour with fewer than 100 calls, or an app with no calls in the 30 days before, never counts as a volume spike, so quiet and new apps do not raise alerts.
+- Stored thresholds keep applying after a move to a smaller package, so a downgrade never makes alerts noisier; they can be changed again only on a package with advanced alerts.
+- "Confidential" means the Confidential classification only. Guests never open Restricted items (FR-011), so there is nothing to alert on there.
+- A preview counts as opening the item, the same as a download.

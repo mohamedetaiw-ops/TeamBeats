@@ -54,6 +54,8 @@ public sealed class PublicApiMaintenance(IDbSession session, IAuthorizationProvi
         // The call log keeps 90 days (section 6).
         var pruned = await calls.PruneAsync(now, ct);
         await idempotency.PruneAsync(now, ct);
+        // Volume spikes are judged on the last full hour (spec 026 US5 scenario 5).
+        await calls.WatchVolumeAsync(new DateTimeOffset(now.UtcDateTime.Year, now.UtcDateTime.Month, now.UtcDateTime.Day, now.UtcDateTime.Hour, 0, 0, TimeSpan.Zero), ct);
         return new Run(due.Count, cleared, pruned);
     }
 }
