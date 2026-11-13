@@ -453,6 +453,18 @@
   object-fit: cover;
 }
 
+/* No picture of its own: a typographic panel in the story type's tone, never a generic illustration (DLS-088). */
+.content-lead-type {
+  display: grid;
+  place-items: center;
+  padding-block-end: var(--tb-space-xl);
+  color: var(--tb-color-text-inverse);
+}
+
+.content-lead-type[data-tone="highlight"] {
+  background: var(--tb-color-highlight-base);
+}
+
 .content-lead-body {
   display: grid;
   gap: var(--tb-space-sm);

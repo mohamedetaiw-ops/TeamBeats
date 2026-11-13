@@ -8,7 +8,6 @@ import { readHref, type FeedItem, type FeedPage } from "@/lib/content/types";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
-import { Media } from "@/components/ui/Media";
 import { StateView } from "@/components/ui/StateView";
 import "@/features/content/content.css";
 
@@ -96,9 +95,6 @@ export default function NewsFeed({ props }: PlacementProps) {
  * Featured news (docs/design-system/components.md, Featured news): the lead story (featured first, then pinned, then
  * newest) as a large card with its type, reading time and reactions, and the next stories as compact rows beside it.
  */
-/** Stories carry no photo yet (spec 009), so the lead shows one of the design system's illustrations, steady per story. */
-const leadPictures = ["/design-system/team.svg", "/design-system/event.svg", "/design-system/office.svg"] as const;
-const pictureOf = (id: string) => [...id].reduce((sum, c) => sum + c.charCodeAt(0), 0) % leadPictures.length;
 
 function Featured({ items, title }: { items: FeedItem[]; title: string }) {
   const t = useTranslations("content.component.feed");
@@ -109,8 +105,9 @@ function Featured({ items, title }: { items: FeedItem[]; title: string }) {
     <section className="content-featured" aria-label={title}>
       <h2 className="visually-hidden">{title}</h2>
       <article className="content-lead" lang={lead.locale}>
-        <div className="content-lead-media">
-          <Media src={leadPictures[pictureOf(lead.id)]!} ratio="16:9" decorative />
+        {/* Stories carry no photo yet (spec 009), so the lead is a typographic card in its type's tone (DLS-088). */}
+        <div className="content-lead-media content-lead-type" data-tone={lead.type === "announcement" ? "highlight" : "accent"} aria-hidden="true">
+          <Icon name={lead.type === "announcement" ? "megaphone" : "news"} size={40} />
         </div>
         <div className="content-lead-body">
           <p className="content-lead-eyebrow">

@@ -94,6 +94,9 @@ main tbody tr:where(:hover) > * {
 
 .skip-link {
   position: absolute;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
   inset-inline-start: var(--tb-space-md);
   inset-block-start: -3rem;
 }
@@ -269,6 +272,22 @@ main tbody tr:where(:hover) > * {
   padding-inline: var(--tb-space-md);
   color: inherit;
   text-decoration: none;
+}
+
+/* Group headings of the admin navigation (spec 006 FR-017). */
+.admin-nav-group + .admin-nav-group {
+  margin-block-start: var(--tb-space-md);
+}
+
+.admin-nav-heading {
+  margin: 0;
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-md);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .admin-nav-badge {
@@ -486,6 +505,13 @@ legend {
   font-weight: var(--tb-font-weight-bold);
 }
 
+/* The solid danger button is kept for the confirmation dialog of a destructive action (DLS-084). */
+.button.button-danger {
+  border-color: var(--tb-color-state-danger);
+  background: var(--tb-color-state-danger);
+  color: var(--tb-color-text-inverse);
+}
+
 .button[aria-busy="true"],
 .button[aria-disabled="true"],
 .button:disabled {
@@ -545,4 +571,22 @@ html[data-motion="reduced"] *::after {
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
+}
+
+/*
+ * Touch targets (DLS-085): on a coarse pointer or a phone width every control has a 44px hit area. Small buttons
+ * (controls.css) and section tabs (ui.css) grow to 44px; a small standalone text link keeps its look and gains an invisible area around it, centred on the
+ * link, so the layout does not move.
+ */
+@media (pointer: coarse), (width <= 40rem) {
+  :where(.cal-card-view, .cal-card-all, .home-card-head a, .content-cta-link, .shell-footer-links a, .shell-brand) {
+    position: relative;
+  }
+
+  :where(.cal-card-view, .cal-card-all, .home-card-head a, .content-cta-link, .shell-footer-links a, .shell-brand)::after {
+    content: "";
+    position: absolute;
+    inset-block: min(0rem, calc(50% - 1.375rem));
+    inset-inline: min(0rem, calc(50% - 1.375rem));
+  }
 }

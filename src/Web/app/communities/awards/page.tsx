@@ -25,7 +25,7 @@ export default async function AwardsPage() {
         ]}
       />
       <main id="main" className="page">
-        <PageHeader title={t("awards.pageTitle")} description={t("awards.pageIntro")} icon="spark" />
+        <PageHeader title={t("awards.pageTitle")} description={t("awards.pageIntro")} icon="star" />
         {list.ok ? (
           <Awards initial={list.data} />
         ) : (

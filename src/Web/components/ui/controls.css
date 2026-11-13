@@ -37,6 +37,15 @@
   font-size: var(--tb-font-size-sm);
 }
 
+/* A small button is 44px on a touch screen or a phone (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  .button[data-size="sm"],
+  .button[data-size="xs"] {
+    min-block-size: 2.75rem;
+    min-inline-size: 2.75rem;
+  }
+}
+
 .button.ui-icon-button {
   flex: none;
   padding: 0;

@@ -660,6 +660,12 @@
   text-decoration: none;
 }
 
+@media (pointer: coarse), (width <= 40rem) {
+  .ui-section-nav a {
+    min-block-size: 2.75rem;
+  }
+}
+
 .ui-section-nav a:where(:hover) {
   background: var(--tb-color-surface-sunken);
   text-decoration: none;

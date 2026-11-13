@@ -42,7 +42,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       test.setTimeout(300_000);
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
-      await page.getByRole("link", { name: m("admin.nav.evaluation"), exact: true }).click();
+      await page.getByRole("navigation", { name: m("admin.navLabel") }).getByRole("link", { name: m("admin.nav.evaluation"), exact: true }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("evaluation.title"));
       const overview = page.getByTestId("eval-agents");
       await expect(overview.getByRole("link", { name: agentName })).toBeVisible();

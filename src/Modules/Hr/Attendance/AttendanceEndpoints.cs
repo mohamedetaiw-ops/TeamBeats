@@ -92,6 +92,6 @@ public sealed class AttendanceModuleServices : TeamBeats.Modules.Services.Contra
     [
         new(Key, new Dictionary<string, string> { ["en"] = "Attendance", ["ar"] = "الحضور" },
             new Dictionary<string, string> { ["en"] = "Sign in and out and see your month", ["ar"] = "سجّل حضورك وانصرافك واطلع على شهرك" },
-            "/attendance", null, Capabilities.HrAttendance),
+            "/attendance", null, Capabilities.HrAttendance, Icon: "clock"),
     ];
 }

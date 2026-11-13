@@ -1,3 +1,5 @@
+import { useLocale } from "next-intl";
+import { dayInWords } from "@/lib/format";
 import { useId, type InputHTMLAttributes, type ReactNode, type Ref, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
 
 type Props = InputHTMLAttributes<HTMLInputElement> & {
@@ -19,9 +21,13 @@ type Props = InputHTMLAttributes<HTMLInputElement> & {
  */
 export function FormField({ label, error, hint, leading, trailing, ...input }: Props) {
   const id = useId();
+  const locale = useLocale();
   const errorId = `${id}-error`;
   const hintId = `${id}-hint`;
-  const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined;
+  const dayId = `${id}-day`;
+  // A date field writes the chosen day in words under the control (DLS-082).
+  const day = input.type === "date" && typeof input.value === "string" ? dayInWords(input.value, locale) : null;
+  const describedBy = [day ? dayId : null, hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined;
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
@@ -32,6 +38,7 @@ export function FormField({ label, error, hint, leading, trailing, ...input }: P
       ) : (
         <input id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...input} />
       )}
+      {day ? <DayReadout id={dayId} text={day} /> : null}
       {hint ? (
         <p id={hintId} className="field-hint">
           {hint}
@@ -43,6 +50,15 @@ export function FormField({ label, error, hint, leading, trailing, ...input }: P
         </p>
       ) : null}
     </div>
+  );
+}
+
+/** The chosen day of a date field in words, under the control (DLS-082). */
+export function DayReadout({ id, text }: { id?: string; text: string }) {
+  return (
+    <p id={id} className="field-hint field-day">
+      {text}
+    </p>
   );
 }
 

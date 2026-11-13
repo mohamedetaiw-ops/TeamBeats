@@ -33,7 +33,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("edits tokens with a live preview, blocks low contrast, uploads a logo and publishes the theme", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
-      await page.getByRole("link", { name: msg(locale, "admin.nav.branding"), exact: true }).click();
+      await page.getByRole("navigation", { name: msg(locale, "admin.navLabel") }).getByRole("link", { name: msg(locale, "admin.nav.branding"), exact: true }).click();
       await page.waitForURL(`${hostOrigin(tenant.key)}/admin/branding`);
       await expect(page.getByRole("heading", { level: 1, name: msg(locale, "brand.title") })).toBeVisible();
       await expect(page.locator("html")).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");

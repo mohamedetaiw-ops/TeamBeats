@@ -31402,6 +31402,12 @@
           "sso": {
             "type": "boolean",
             "default": false
+          },
+          "icon": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

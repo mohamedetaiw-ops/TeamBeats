@@ -29,7 +29,7 @@ export default async function CelebrationsPage() {
         ]}
       />
       <main id="main" className="page">
-        <PageHeader title={t("celebrations.pageTitle")} description={t("celebrations.pageIntro")} icon="spark" />
+        <PageHeader title={t("celebrations.pageTitle")} description={t("celebrations.pageIntro")} icon="star" />
         {list.ok && preference.ok ? (
           <Celebrations initial={{ list: list.data, preference: preference.data, settings: settings.ok ? settings.data : null }} />
         ) : (

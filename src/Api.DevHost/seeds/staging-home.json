@@ -3,7 +3,7 @@
   "template": "H01",
   "slug": "home",
   "variant": "balanced",
-  "revision": 8,
+  "revision": 10,
   "navigation": [
     {
       "slug": "nav-home",
@@ -40,10 +40,14 @@
     {
       "slug": "nav-files",
       "labels": {
+        "en": "Documents",
+        "ar": "المستندات"
+      },
+      "url": "/documents",
+      "formerLabels": {
         "en": "Files",
         "ar": "الملفات"
-      },
-      "url": "/documents"
+      }
     },
     {
       "slug": "nav-knowledge",
@@ -175,7 +179,7 @@
       "key": "town-hall",
       "variants": {
         "en": {
-          "title": "October town hall in 12 minutes",
+          "title": "October town hall: the 12 minute recap",
           "summary": "Missed the town hall? The replay covers results, the hub move and your questions.",
           "body": {
             "blocks": [
@@ -191,7 +195,7 @@
           }
         },
         "ar": {
-          "title": "اجتماع أكتوبر العام في 12 دقيقة",
+          "title": "اجتماع أكتوبر العام: ملخص في 12 دقيقة",
           "summary": "فاتك الاجتماع العام؟ يغطي التسجيل النتائج ونقل المركز وأسئلتكم.",
           "body": {
             "blocks": [
@@ -206,7 +210,10 @@
             ]
           }
         }
-      }
+      },
+      "formerTitles": [
+        "October town hall in 12 minutes"
+      ]
     },
     {
       "key": "shuttle",
@@ -287,7 +294,8 @@
             "required": true
           }
         ]
-      }
+      },
+      "icon": "files"
     },
     {
       "names": {
@@ -322,7 +330,8 @@
             "required": true
           }
         ]
-      }
+      },
+      "icon": "chat"
     },
     {
       "names": {
@@ -364,7 +373,8 @@
             "required": true
           }
         ]
-      }
+      },
+      "icon": "lock"
     },
     {
       "names": {
@@ -395,7 +405,8 @@
             "required": true
           }
         ]
-      }
+      },
+      "icon": "pin"
     },
     {
       "names": {
@@ -426,7 +437,8 @@
             "required": true
           }
         ]
-      }
+      },
+      "icon": "image"
     }
   ],
   "regions": {

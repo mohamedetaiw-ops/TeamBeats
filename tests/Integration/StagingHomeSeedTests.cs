@@ -54,7 +54,7 @@ public sealed class StagingHomeSeedTests(TenantWorld world)
         }
 
         var shell = await OkAsync(emp.GetAsync("/api/v1/experience/shell"));
-        Assert.Equal(["Home", "Services", "Tasks", "People", "Files", "Knowledge", "Policies"],
+        Assert.Equal(["Home", "Services", "Tasks", "People", "Documents", "Knowledge", "Policies"],
             shell.GetProperty("globalMenu").EnumerateArray().Select(l => l.GetProperty("label").GetString()!).ToArray());
         Assert.Equal("home", shell.GetProperty("home").GetString());
 

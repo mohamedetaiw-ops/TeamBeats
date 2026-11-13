@@ -259,6 +259,10 @@
   gap: var(--tb-space-sm);
   color: var(--tb-color-text-secondary);
   font-size: var(--tb-font-size-sm);
+
+  /* A label wraps only between words (DLS-086). */
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
 .ui-stat-icon {
@@ -289,9 +293,9 @@
   font-size: var(--tb-font-size-sm);
 }
 
-/* Dense: three or four cards side by side in a narrow column. */
+/* Dense: cards side by side in a narrow column. A card is never under 140px: it moves whole to the next row (DLS-086). */
 .ui-stats-dense {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.75rem), 1fr));
   gap: var(--tb-space-sm);
 }
 

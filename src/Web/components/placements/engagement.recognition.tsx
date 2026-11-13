@@ -37,7 +37,7 @@ export default function RecognitionCard({ props }: PlacementProps) {
   if (answer === "loading") return shell(<StateView kind="loading" minBlockSize="8rem" />, true);
   if (answer === "failed") return shell(<StateView kind="error" title={t("failed")} message="" action={<Button onClick={retry}>{t("retry")}</Button>} />);
   const items = answer === "off" ? [] : answer.items.slice(0, top);
-  if (items.length === 0) return shell(<StateView kind="empty" title={t("recognitionEmpty")} message="" icon="spark" />);
+  if (items.length === 0) return shell(<StateView kind="empty" title={t("recognitionEmpty")} message="" icon="star" />);
   return shell(
     <ul className="home-list" aria-label={title}>
       {items.map((r) => {

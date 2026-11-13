@@ -2,7 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
-import { pick, type Prefill, type PreparedRequest, type ServiceDetail } from "@/lib/services/types";
+import { pick, type CatalogueView, type Prefill, type PreparedRequest, type ServiceDetail } from "@/lib/services/types";
+import { serviceLook } from "@/lib/services/look";
 import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StateView } from "@/components/ui/StateView";
@@ -42,11 +43,14 @@ export default async function NewRequestPage({
   if (!detail.ok || detail.data.service.kind !== "form" || detail.data.version === null) {
     notFound();
   }
-  const [prefill, units, prepared] = await Promise.all([
+  const [prefill, units, prepared, catalogue] = await Promise.all([
     apiGet<Prefill>(`/api/v1/services/${encodeURIComponent(id)}/prefill`),
     listUnits(),
     preparedId ? apiGet<PreparedRequest>(`/api/v1/requests/prepared/${encodeURIComponent(preparedId)}`) : Promise.resolve(null),
+    apiGet<CatalogueView>("/api/v1/services"),
   ]);
+  // The header shows the icon of the service's card (spec 036 DLS-081).
+  const { icon } = serviceLook(detail.data.service, catalogue.ok ? catalogue.data.categories : []);
   // A request an agent prepared (spec 020 US8) fills the form, except values that come read-only from the directory.
   const draft = prepared?.ok && prepared.data.serviceId === id && prepared.data.status === "prepared" ? prepared.data : null;
   const readOnly = prefill.ok ? prefill.data.readOnly : [];
@@ -66,7 +70,7 @@ export default async function NewRequestPage({
         ]}
       />
       <main id="main" className="page">
-        <PageHeader title={name} description={pick(detail.data.service.descriptions, locale) || undefined} icon="services" nav={<ServicesNav current={null} />} />
+        <PageHeader title={name} description={pick(detail.data.service.descriptions, locale) || undefined} icon={icon} nav={<ServicesNav current={null} />} />
         <div className="ui-form-column">
         {draft ? <p className="notice">{t("form.prepared")}</p> : null}
         {detail.data.hasApproval ? <p className="notice">{t("form.needsApproval")}</p> : null}

@@ -376,3 +376,32 @@
   inset-block-start: var(--tb-space-sm);
   inset-inline-end: var(--tb-space-sm);
 }
+
+/* The error summary above a request form: each error links to its field (DLS-083). */
+.services-error-summary ul {
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.services-error-summary a {
+  color: inherit;
+}
+
+/* A card's facts: who approves and the usual time, then the viewer's latest request as a link above the tile link. */
+.services-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+}
+
+.services-latest a {
+  position: relative;
+  z-index: 1;
+}
+
+/* The icon choice shows the chosen icon beside the list. */
+.services-icon-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}

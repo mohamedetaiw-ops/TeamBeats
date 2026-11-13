@@ -140,7 +140,7 @@ export function ChartCard({
         </div>
         <div className="ui-chart-actions">
           {actions}
-          <Button size="sm" variant="quiet" icon={asTable ? "spark" : "menu"} aria-pressed={asTable} onClick={() => setAsTable((v) => !v)}>
+          <Button size="sm" variant="quiet" icon="menu" aria-pressed={asTable} onClick={() => setAsTable((v) => !v)}>
             {t("showTable")}
           </Button>
         </div>

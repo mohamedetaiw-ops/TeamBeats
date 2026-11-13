@@ -9,7 +9,6 @@ import {
 } from "@/lib/documents/types";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
-import { DocumentsNav } from "@/features/documents/DocumentsNav";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TileCard } from "@/components/ui/TileCard";
 import { Badge } from "@/components/ui/Badge";
@@ -35,7 +34,6 @@ export default async function KnowledgeBasePage() {
           title={t("title")}
           description={t("intro")}
           icon="book"
-          nav={<DocumentsNav current="kb" />}
           actions={
             <Link className="button" href="/kb/new">
               {t("new")}

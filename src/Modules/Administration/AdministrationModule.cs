@@ -14,7 +14,7 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Administration;
 
 /// <summary>An admin shell section. <see cref="Badge"/> is a count that needs attention, such as open security alerts.</summary>
-public sealed record NavigationSection(string Key, string LabelKey, string Path, bool WholeTenant, int? Badge = null);
+public sealed record NavigationSection(string Key, string LabelKey, string Path, bool WholeTenant, int? Badge = null, string Group = "workspace");
 
 public sealed record UserSummary(Guid Id, string DisplayName, string Email, string Status, string? MembershipStatus, DateTimeOffset? LastSignInAt);
 
@@ -58,6 +58,23 @@ public static class AdministrationModule
         ("kiosks", Permissions.DeviceManage, "/admin/kiosks"),
         ("api", Permissions.ApiView, "/admin/api"),
     ];
+
+    /// <summary>
+    /// The heading each section is listed under in the admin navigation (spec 006 FR-017), in the order the groups show:
+    /// workspace, people (people and access), hr, content (content and experience), security (security and compliance),
+    /// ai (AI and integrations). The web app only draws the groups; which sections a person sees is still decided above.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> Groups = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["tenant_settings"] = "workspace", ["plan"] = "workspace", ["notifications"] = "workspace", ["kiosks"] = "workspace",
+        ["organization"] = "people", ["users"] = "people", ["roles"] = "people", ["identity"] = "people", ["people"] = "people",
+        ["hr_integration"] = "hr", ["calendars"] = "hr", ["leave"] = "hr", ["journeys"] = "hr", ["attendance"] = "hr",
+        ["letters"] = "hr", ["data_changes"] = "hr", ["expenses"] = "hr",
+        ["pages"] = "content", ["templates"] = "content", ["branding"] = "content", ["shell"] = "content", ["services"] = "content",
+        ["search"] = "content", ["analytics"] = "content",
+        ["audit"] = "security", ["security"] = "security",
+        ["ai"] = "ai", ["agents"] = "ai", ["evaluation"] = "ai", ["connections"] = "ai", ["api"] = "ai",
+    };
 
     /// <summary>A second permission that also opens a section: security officers read the AI pages with <c>ai.policy_view</c> (spec 013).</summary>
     public static readonly IReadOnlyDictionary<string, string> AlsoOpenedBy = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -187,9 +204,16 @@ public static class AdministrationModule
 /// The sections the caller may open (spec 006 FR-008), and the shell's question whether there is any (spec 008 FR-062).
 /// Both use the same checks, so the shell offers Administration exactly when the admin shell would have a section to show.
 /// </summary>
-public sealed class AdministrationNavigation(IAuthorizationService authz, TeamBeats.Modules.Security.Contracts.ISecurityAlertSummary alerts)
+public sealed class AdministrationNavigation(IAuthorizationService authz, TeamBeats.Modules.Security.Contracts.ISecurityAlertSummary alerts,
+    TeamBeats.Entitlements.Contracts.IEntitlementService entitlements)
     : TeamBeats.Modules.Experience.Contracts.IAdministrationEntry
 {
+    /// <summary>Sections whose whole page is a capability of the plan: without it the section is not listed, checked through the entitlement service.</summary>
+    private static readonly IReadOnlyDictionary<string, string> Capability = new Dictionary<string, string>
+    {
+        ["kiosks"] = TeamBeats.Entitlements.Contracts.Capabilities.MobileKiosk,
+    };
+
     public async Task<IReadOnlyList<NavigationSection>> SectionsAsync(CancellationToken ct)
     {
         var result = new List<NavigationSection>();
@@ -199,7 +223,8 @@ public sealed class AdministrationNavigation(IAuthorizationService authz, TeamBe
             {
                 // The security section shows how many alerts are open (spec 026 US5); the section's own check already passed.
                 var badge = key == "security" ? await alerts.OpenCountAsync(ct) : (int?)null;
-                result.Add(new NavigationSection(key, $"admin.nav.{key}", path, wholeTenant, badge is > 0 ? badge : null));
+                result.Add(new NavigationSection(key, $"admin.nav.{key}", path, wholeTenant, badge is > 0 ? badge : null,
+                    AdministrationModule.Groups.GetValueOrDefault(key, "workspace")));
             }
         }
         return result;
@@ -220,6 +245,10 @@ public sealed class AdministrationNavigation(IAuthorizationService authz, TeamBe
     /// <summary>Null when the caller may not open the section; otherwise whether they hold it for the whole tenant.</summary>
     private async Task<bool?> OpensAsync(string key, CancellationToken ct)
     {
+        if (Capability.TryGetValue(key, out var capability) && !await entitlements.IsEnabledAsync(capability, ct))
+        {
+            return null;
+        }
         var permission = AdministrationModule.Sections.First(s => s.Key == key).Permission;
         var coverage = await authz.CoverageAsync(permission, ct);
         if (!coverage.WholeTenant && AdministrationModule.AlsoOpenedBy.TryGetValue(key, out var other) && await authz.CoverageAsync(other, ct) is { WholeTenant: true } wide)

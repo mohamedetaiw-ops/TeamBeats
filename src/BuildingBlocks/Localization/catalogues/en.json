@@ -994,6 +994,7 @@
   "validation.services.unit": "Choose an existing organization unit.",
   "validation.services.url": "Enter a full http or https address.",
   "validation.services.url_not_linked": "Only linked apps have an address.",
+  "validation.services.icon": "Choose an icon from the icon set.",
   "validation.services.actions": "A route can have up to 5 automatic steps.",
   "validation.services.action_step": "Each automatic step needs a connection, an action and its field mapping, with names up to 200 characters.",
   "validation.services.field_prefill_hr_only": "Only fields filled from HR can be read-only or need a current value.",

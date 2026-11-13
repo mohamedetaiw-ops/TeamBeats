@@ -98,7 +98,6 @@
   "admin": {
     "title": "Administration",
     "navLabel": "Administration sections",
-    "overview": "Choose a section to manage your workspace.",
     "wholeTenant": "Whole organization",
     "scoped": "Limited to your units",
     "nav": {
@@ -992,6 +991,32 @@
           "failed": "Failed"
         }
       }
+    },
+    "navGroups": {
+      "workspace": "Workspace",
+      "people": "People and access",
+      "hr": "HR",
+      "content": "Content and experience",
+      "security": "Security and compliance",
+      "ai": "AI and integrations"
+    },
+    "landing": {
+      "intro": "Set up your workspace and keep it running. You see the sections you may manage.",
+      "setup": "Setup status",
+      "setupIntro": "The steps that make the workspace ready for everyone.",
+      "done": "Done",
+      "todo": "To do",
+      "steps": {
+        "identity": "Connect the sign-in provider",
+        "organization": "Add your organization units",
+        "users": "Invite people",
+        "connections": "Connect your systems"
+      },
+      "recent": "Recent changes",
+      "recentIntro": "The latest audited changes in this workspace.",
+      "noRecent": "No changes recorded yet.",
+      "viewAudit": "View the audit log",
+      "sections": "Sections"
     }
   },
   "header": {
@@ -2145,7 +2170,9 @@
       "any": "All",
       "none": "No one matches your search.",
       "more": "Show more",
-      "results": "Results"
+      "results": "Results",
+      "noneHint": "Check the spelling, or search by first name, title or department.",
+      "clear": "Clear search"
     },
     "newcomers": {
       "title": "New joiners",
@@ -2285,7 +2312,8 @@
       "none": "No one to show.",
       "failed": "People could not be loaded.",
       "retry": "Try again"
-    }
+    },
+    "noTitle": "Title not set"
   },
   "security": {
     "tabsLabel": "Security pages",
@@ -2434,7 +2462,6 @@
       "label": "Services pages",
       "catalogue": "Services",
       "requests": "My requests",
-      "tasks": "Tasks",
       "team": "Team requests"
     },
     "badge": {
@@ -2463,7 +2490,17 @@
       "favourite": "Add {name} to favourites",
       "unfavourite": "Remove {name} from favourites",
       "notAvailable": "Not available to you",
-      "notAvailableHint": "This service is offered to other people. Ask its owner if you need it."
+      "notAvailableHint": "This service is offered to other people. Ask its owner if you need it.",
+      "noneHint": "Check the spelling, or look in all categories.",
+      "clear": "Clear search",
+      "approver": {
+        "none": "No approval needed",
+        "line_manager": "Approved by your line manager",
+        "role": "Approved by an approver in your unit",
+        "named": "Approved by named people"
+      },
+      "usualDays": "{count, plural, one {Usually 1 working day} other {Usually # working days}}",
+      "latest": "Your last request {number}: {status}"
     },
     "form": {
       "submit": "Submit request",
@@ -2495,7 +2532,11 @@
       "onBehalfHint": "Leave empty to file for yourself. Their profile fills the form, and you need permission to file for people in their unit.",
       "fromHr": "From your HR record. Ask HR to change it.",
       "prefilledFromHr": "Filled from your HR record.",
-      "hrUnconfirmed": "This value could not be confirmed with the HR system right now. Try again later."
+      "hrUnconfirmed": "This value could not be confirmed with the HR system right now. Try again later.",
+      "requiredEnter": "Enter {label}",
+      "requiredChoose": "Choose {label}",
+      "requiredAttach": "Attach {label}",
+      "errorSummary": "{count, plural, one {Fix 1 thing before you send} other {Fix # things before you send}}"
     },
     "status": {
       "draft": "Draft",
@@ -2853,7 +2894,35 @@
       },
       "hrPrefillHint": "Grade and cost centre are Confidential. They fill this field only when the service is classified Confidential or Restricted.",
       "hrReadOnly": "Keep the HR value. People cannot change it.",
-      "hrMustBeCurrent": "Must be current. Check with HR when the copy is older than 7 days."
+      "hrMustBeCurrent": "Must be current. Check with HR when the copy is older than 7 days.",
+      "icon": "Icon",
+      "iconDefault": "The category icon",
+      "icons": {
+        "services": "Service",
+        "leave": "Leave",
+        "clock": "Time",
+        "calendar": "Calendar",
+        "user": "Person",
+        "people": "People",
+        "building": "Building",
+        "pin": "Place",
+        "files": "Document",
+        "folder": "Folder",
+        "book": "Book",
+        "policy": "Policy",
+        "news": "News",
+        "megaphone": "Announcement",
+        "chat": "Conversation",
+        "inbox": "Inbox",
+        "attach": "Attachment or receipt",
+        "link": "Link",
+        "globe": "Web",
+        "lock": "Access",
+        "settings": "Settings",
+        "star": "Recognition",
+        "image": "Picture",
+        "trend-up": "Growth"
+      }
     },
     "team": {
       "title": "Team requests",
@@ -3206,11 +3275,6 @@
     }
   },
   "documents": {
-    "nav": {
-      "label": "Documents and knowledge",
-      "libraries": "Libraries",
-      "kb": "Knowledge base"
-    },
     "libraries": {
       "title": "Documents",
       "intro": "Libraries you can open, for your organization, your units and your sites.",
@@ -3346,7 +3410,7 @@
       "restore": "Restore {version}"
     },
     "kb": {
-      "title": "Knowledge base",
+      "title": "Knowledge",
       "intro": "Procedures, walkthroughs, answers and fixes, kept current by their owners.",
       "new": "New article",
       "none": "There are no articles you can read yet.",
@@ -4092,9 +4156,13 @@
       "empty": "No conversations yet.",
       "delete": "Delete conversation",
       "deleteAll": "Delete all conversations",
-      "confirmOne": "Delete this conversation? This cannot be undone.",
-      "confirmAll": "Delete all your conversations? This cannot be undone.",
-      "retention": "Only you can see your conversations. They are deleted after the period your organization sets."
+      "retention": "Only you can see your conversations. They are deleted after the period your organization sets.",
+      "more": "Conversation actions",
+      "confirmOneTitle": "Delete this conversation?",
+      "confirmAllTitle": "Delete {count, plural, one {# conversation} other {# conversations}}?",
+      "cannotUndo": "This cannot be undone.",
+      "confirmDelete": "Delete",
+      "cancel": "Cancel"
     },
     "admin": {
       "title": "Assistant",
@@ -4989,7 +5057,10 @@
         "pages": "Pages",
         "published": "Published"
       },
-      "errorsLink": "Frontend errors"
+      "errorsLink": "Frontend errors",
+      "weeksSummary": "Weekly active people over the last {weeks} weeks; {last} this week.",
+      "unitsSummary": "Active people in {count} units this week.",
+      "otherNote": "Units with fewer than {size} active people are counted together as Other."
     },
     "errors": {
       "title": "Frontend errors",
@@ -7270,7 +7341,12 @@
       "previewFailed": "The days could not be counted. Try again.",
       "uploadFailed": "The document was not uploaded. Try again.",
       "hours": "Hours",
-      "fromHr": "Balance from HR, read {at}."
+      "fromHr": "Balance from HR, read {at}.",
+      "missing": {
+        "start": "Choose the first day",
+        "end": "Choose the last day",
+        "hours": "Enter the hours"
+      }
     },
     "mine": {
       "title": "My requests",
