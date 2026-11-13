@@ -120,6 +120,26 @@ public sealed record ModelProblemInfo(string ElementId, string Key);
 
 public sealed record ModelPublishResult(ProcessDefinitionInfo? Definition, IReadOnlyList<ModelProblemInfo> Problems);
 
+/// <summary>
+/// A test run of a compiled model in the spec 024 sandbox for its owning module (spec 016 R2 test mode): the variables a
+/// real start would have, the person it runs as, and the outcome per user task (approve when not named).
+/// </summary>
+public sealed record ModelTestRequest(System.Text.Json.JsonElement? Variables, Guid? RequesterId, IReadOnlyDictionary<string, string>? Outcomes);
+
+public sealed record ModelTestPerson(Guid Id, string Name);
+
+/// <summary>One step the test run took and, for a user task, who it would go to.</summary>
+public sealed record ModelTestStep(string ElementId, string Event, IReadOnlyList<ModelTestPerson>? Assignees, string? Permission, bool LineManager);
+
+/// <summary>How the run ended, the steps in order, and the model's problems when it could not run.</summary>
+public sealed record ModelTestResult(string Outcome, IReadOnlyList<ModelTestStep> Steps, IReadOnlyList<ModelProblemInfo> Problems);
+
+/// <summary>Runs a compiled model in the sandbox: nothing is created, sent or audited. Callers authorize first.</summary>
+public interface IModelTester
+{
+    Task<ModelTestResult> TestAsync(string key, string bpmnXml, ModelTestRequest request, string locale, CancellationToken ct = default);
+}
+
 public sealed record ProcessDefinitionInfo(string Key, int Version, string Name, string Source, DateTimeOffset PublishedAt);
 
 public sealed record ProcessInstanceInfo(

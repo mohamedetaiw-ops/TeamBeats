@@ -193,7 +193,7 @@ public sealed partial class ProcessEngine
             : new ModelPublishResult(await PublishGraphAsync(key, graph!, bpmnXml, ownerOrgUnitId, ct, source), []);
     }
 
-    private async Task<(ProcessGraph? Graph, IReadOnlyList<ModelProblemInfo> Problems)> CheckModelAsync(string key, string bpmnXml, CancellationToken ct)
+    internal async Task<(ProcessGraph? Graph, IReadOnlyList<ModelProblemInfo> Problems)> CheckModelAsync(string key, string bpmnXml, CancellationToken ct)
     {
         context.RequireTenant();
         if (!BpmnReader.IsValidKey(key) || key.StartsWith(ModelPrefix, StringComparison.Ordinal))

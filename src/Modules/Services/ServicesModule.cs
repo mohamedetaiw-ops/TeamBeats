@@ -21,6 +21,7 @@ public static class ServicesModule
         services.AddScoped<Catalogue>();
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ServicesComponents>();
         services.AddScoped<ServiceAdmin>();
+        services.AddScoped<RouteTests>();
         services.AddScoped<Requests>();
         services.AddScoped<Attachments>();
         services.AddScoped<IRequestFacts, RequestFactsReader>();
@@ -263,6 +264,10 @@ public static class ServicesModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        // Test mode of the route designer: runs the latest draft in the sandbox and writes nothing.
+        admin.MapPost("/{id:guid}/test", async (Guid id, RouteTestRequest request, RouteTests tests, CancellationToken ct) =>
+            Results.Ok(await tests.RunAsync(id, request, ct)));
 
         admin.MapPost("/{id:guid}/publish", async (Guid id, ServiceAdmin services, IDbSession session, CancellationToken ct) =>
         {
