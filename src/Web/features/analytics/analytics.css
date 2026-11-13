@@ -71,3 +71,15 @@
   margin-inline-end: var(--tb-space-xs);
   font-size: var(--tb-font-size-sm);
 }
+
+/* Adoption charts side by side on wide screens (spec 021 FR-025). */
+.analytics-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  gap: var(--tb-space-md);
+  margin-block-end: var(--tb-space-lg);
+}
+
+.analytics-figure {
+  font-size: var(--tb-font-size-xl);
+}

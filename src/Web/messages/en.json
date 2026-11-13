@@ -5013,7 +5013,10 @@
         "pages": "Pages",
         "published": "Published"
       },
-      "errorsLink": "Frontend errors"
+      "errorsLink": "Frontend errors",
+      "weeksSummary": "Weekly active people over the last {weeks} weeks; {last} this week.",
+      "unitsSummary": "Active people in {count} units this week.",
+      "otherNote": "Units with fewer than {size} active people are counted together as Other."
     },
     "errors": {
       "title": "Frontend errors",
