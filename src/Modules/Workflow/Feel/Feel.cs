@@ -74,7 +74,7 @@ public static class FeelEngine
         JsonArray a => a.Select(FromJson).ToList(),
         JsonValue v when v.GetValueKind() == JsonValueKind.True => true,
         JsonValue v when v.GetValueKind() == JsonValueKind.False => false,
-        JsonValue v when v.GetValueKind() == JsonValueKind.Number => v.GetValue<decimal>(),
+        JsonValue v when v.GetValueKind() == JsonValueKind.Number => v.TryGetValue<decimal>(out var d) ? d : decimal.Parse(v.ToJsonString(), NumberStyles.Float, CultureInfo.InvariantCulture),
         JsonValue v when v.GetValueKind() == JsonValueKind.String => v.GetValue<string>(),
         _ => null,
     };
