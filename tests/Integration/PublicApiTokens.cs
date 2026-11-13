@@ -94,11 +94,14 @@ internal static class PublicApiTokens
     }
 
     /// <summary>Lists the MCP clients on the external AI client policy, each with its classification cap, as an AI policy administrator.</summary>
-    public static async Task AllowExternalAsync(TestTenant t, string by, params (string ClientId, string Cap)[] clients)
+    public static Task AllowExternalAsync(TestTenant t, string by, params (string ClientId, string Cap)[] clients) => ExternalPolicyAsync(t, by, false, clients);
+
+    /// <summary>As <see cref="AllowExternalAsync"/>, and turns write tools on or off for external AI clients.</summary>
+    public static async Task ExternalPolicyAsync(TestTenant t, string by, bool writeTools, params (string ClientId, string Cap)[] clients)
     {
         var current = await JsonAsync(await t[by].Client.GetAsync("/api/v1/agents/policy"));
         var body = JsonSerializer.Deserialize<Dictionary<string, object?>>(current.GetProperty("policy").GetRawText())!;
-        body["external"] = new { enabled = true, clients = clients.Select(c => new { clientId = c.ClientId, maxClassification = c.Cap }).ToArray() };
+        body["external"] = new { enabled = true, clients = clients.Select(c => new { clientId = c.ClientId, maxClassification = c.Cap }).ToArray(), writeTools };
         await JsonAsync(await t[by].Client.PutAsJsonAsync("/api/v1/agents/policy", new { version = current.GetProperty("version").GetInt32(), policy = body }));
     }
 

@@ -2676,7 +2676,8 @@
       "approvalsTab": "Approvals and requests",
       "myTasksTab": "My tasks",
       "myTasksFailed": "Your tasks could not be loaded.",
-      "bookingRequest": "Booking request"
+      "bookingRequest": "Booking request",
+      "aiAction": "AI app action"
     },
     "delegation": {
       "title": "While you are away",
@@ -10667,6 +10668,32 @@
       "cancel": "Cancel",
       "failedTitle": "The app was not removed",
       "failed": "Try again in a moment."
+    }
+  },
+  "aiActions": {
+    "title": "Confirm an AI app action",
+    "description": "An AI app you connected asked to do something for you in TeamBeats. Nothing happens until you confirm it.",
+    "external": "From an external AI app",
+    "intro": "{app} asked to do this in your name. Check every value: they came from the AI app and may come from content it read.",
+    "app": "AI app",
+    "check": "Only what you see here is done, and only once you confirm.",
+    "expires": "Waiting for you until {time}.",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "working": "Working",
+    "failedTitle": "That did not work",
+    "failed": "Your decision could not be saved. Try again.",
+    "decidedAt": "Decided {time}.",
+    "status": {
+      "confirmed": "Confirmed and done",
+      "rejected": "You rejected this action",
+      "expired": "This action expired before it was confirmed",
+      "failed": "Confirmed, but TeamBeats could not do it",
+      "pending": "Waiting for you"
+    },
+    "tools": {
+      "submit_service_request": "Submit a service request",
+      "draft_news": "Draft a news item"
     }
   }
 }

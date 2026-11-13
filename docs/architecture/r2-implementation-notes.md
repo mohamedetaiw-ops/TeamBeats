@@ -1253,3 +1253,18 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A page, document or policy the employee may not read, or that does not exist, is refused as `tool.denied`; the client learns nothing more.
 - `ask_teambeats` draws only on passages within the client's cap, and a conversation already above the cap is refused.
 - Write tools (`submit_service_request`, `draft_news`) are neither listed nor called until the confirmation step inside TeamBeats is built in slice 4b. Resources (`teambeats://` URIs) also come in slice 4b.
+
+## Public API and MCP server (spec 035, slice 4b: T014 confirmed write tools)
+
+### Built
+- Write tools for external AI clients: `submit_service_request` in `Services` (a form service request in the employee's own name) and `draft_news` in `Content` (a news draft, never published). They are offered only when the external AI client policy has `writeTools` on and the package has `api.mcp_write_tools`, and never when the tool's rule is `block` or needs an approver.
+- A write tool call never acts. It becomes a pending action in `agents.external_action` with the exact parameters and their hash, and the employee gets a notification (approval waiting) and a task in the inbox, both opening `/ai-actions/{id}`. The card names the AI client, says the request came from an external AI client, and shows every parameter as sent.
+- `GET /api/v1/me/ai-actions`, `GET /api/v1/me/ai-actions/{id}` and `POST /api/v1/me/ai-actions/{id}/decision` with `confirm` and the card's `hash`. Only the employee the client acted for sees or decides an action; to anyone else it is not found. Confirming runs the gateway checks again (kill switch, client, external access, write tools, scopes held at the call, schema, the hash) and then the tool with exactly the stored parameters; the decision resolves the notification.
+
+### Smallest safe defaults
+- The client learns the outcome by calling the tool again with the same arguments: still waiting, the confirmed result (for a day, so a retry never acts twice), or rejected, expired or failed. A closed outcome other than confirmed is told once; the next identical call asks the employee again.
+- A pending action expires 15 minutes after the call. The clean-up marks it expired; the card and the client treat it as expired from that moment either way.
+- A confirmed service request uses the action, not the parameter hash, as its idempotency key, so the same values confirmed again later make a new request.
+- A form that the owning module refuses when the action runs leaves the action failed with `tool.invalid_arguments`; nothing is submitted.
+- Results are kept with the action for a day for the client to fetch, then cleared; the action record stays as long as agent run records.
+- Confirmation inside the AI client (MCP elicitation) stays in R3, as the spec says.

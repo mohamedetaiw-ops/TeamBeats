@@ -65,6 +65,8 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
         return t("expenseClaim");
       case "booking":
         return t("bookingRequest");
+      case "external_action":
+        return t("aiAction");
       default:
         return i.name;
     }

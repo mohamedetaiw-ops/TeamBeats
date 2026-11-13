@@ -18928,6 +18928,74 @@
         }
       }
     },
+    "/api/v1/me/ai-actions": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/ai-actions/{id}": {
+      "get": {
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/me/ai-actions/{id}/decision": {
+      "post": {
+        "tags": [
+          "Agents"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalActionDecision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/agents/templates": {
       "get": {
         "tags": [
@@ -26202,6 +26270,27 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "ExternalActionDecision": {
+        "required": [
+          "confirm",
+          "hash"
+        ],
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "hash": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

@@ -1004,6 +1004,11 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         await session.ExecAsync("delete from agents.run_checkpoint c using agents.run r where r.id = c.run_id and r.status <> 'waiting'", null, ct);
         await session.ExecAsync("delete from agents.route_decision where created_at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
         await session.ExecAsync("delete from agents.external_call where at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
+        // Pending external actions past their time expire; a result is kept a day for the client to fetch, then only the record stays.
+        await session.ExecAsync("update agents.external_action set status = 'expired', decided_at = expires_at where status = 'pending' and expires_at < @now", new { now }, ct);
+        await session.ExecAsync("update agents.external_action set result = null, sources = null where result is not null and decided_at < @cutoff",
+            new { cutoff = now.AddDays(-1) }, ct);
+        await session.ExecAsync("delete from agents.external_action where created_at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
         return await session.ExecAsync("delete from agents.run where created_at < @cutoff", new { cutoff = now.AddDays(-RecordRetentionDays) }, ct);
     }
 }

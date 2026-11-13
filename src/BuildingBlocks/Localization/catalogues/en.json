@@ -2149,5 +2149,9 @@
   "problem.api.idempotency_key_invalid": "The Idempotency-Key header must be 1 to 255 visible characters",
   "problem.api.idempotency_key_reused": "This Idempotency-Key was already used for a different request",
   "problem.api.idempotency_in_progress": "A request with this Idempotency-Key is still being processed",
-  "authz.denied.api_application_only": "This operation is only for apps that act as themselves."
+  "authz.denied.api_application_only": "This operation is only for apps that act as themselves.",
+  "conflict.agent.external_action_closed": "This action is no longer waiting for you. It was decided already or it expired.",
+  "conflict.agent.external_action_changed": "This action changed since you opened it. Open it again and check it before you confirm.",
+  "notifications.template.agents.external_action.title": "An AI app asks you to confirm an action",
+  "notifications.template.agents.external_action.body": "{app} asked to do something for you in TeamBeats. Nothing happens until you check it and confirm. It expires in 15 minutes."
 }
