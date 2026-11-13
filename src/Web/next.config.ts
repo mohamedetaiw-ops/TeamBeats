@@ -33,6 +33,8 @@ const config: NextConfig = {
       { source: "/.well-known/oauth-authorization-server/:path*", destination: `${apiOrigin}/.well-known/oauth-authorization-server/:path*` },
       // The tenant's MCP server for external AI clients and its protected resource metadata (spec 035 FR-019).
       { source: "/mcp", destination: `${apiOrigin}/mcp` },
+      // The public API's own OpenAPI document (spec 035 FR-014), linked from the developer page. The internal one is not served here.
+      { source: "/openapi/public-v1.json", destination: `${apiOrigin}/openapi/public-v1.json` },
       { source: "/.well-known/oauth-protected-resource/:path*", destination: `${apiOrigin}/.well-known/oauth-protected-resource/:path*` },
     ];
   },

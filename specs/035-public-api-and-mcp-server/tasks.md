@@ -29,7 +29,7 @@ Depends on 003, 004, 005, 006, 014, 015, 016, 017 (outbound webhook runtime), 02
 - [x] T016 [P] [US4] Tests: thin payloads; filtered notifications for hidden resources; signature; pause after 3 days; catalogue only
 - [x] T017 [US4] Public event schemas, subscription management, delivery through `IWebhookDelivery`
 - [x] T018 [US6] Emergency controls: disable app, revoke tokens, tenant switches, platform block; security alerts in spec 026 US5
-- [ ] T019 [US7] Developer page with OpenAPI, catalogues, MCP tool list and metadata URLs; deprecation headers
+- [x] T019 [US7] Developer page with OpenAPI, catalogues, MCP tool list and metadata URLs; deprecation headers
 
 ## Final phase
-- [ ] T020 Admin and employee pages in Arabic and English with axe; e2e journeys; performance tests for section 15; SIEM stream fields; R2 implementation notes; spec evidence
+- [x] T020 Admin and employee pages in Arabic and English with axe; e2e journeys; performance tests for section 15; SIEM stream fields; R2 implementation notes; spec evidence

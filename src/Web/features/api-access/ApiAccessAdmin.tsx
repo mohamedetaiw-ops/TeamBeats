@@ -24,6 +24,7 @@ import {
   type ApiSettings,
   type ApiUsage,
   type AppKind,
+  type DeveloperPage,
 } from "@/lib/api-access";
 import "./api-access.css";
 
@@ -40,6 +41,7 @@ export function ApiAccessAdmin({
   consents: initialConsents,
   settings: initialSettings,
   usage,
+  developer = null,
   initialTab,
 }: {
   apps: ApiApp[];
@@ -47,6 +49,7 @@ export function ApiAccessAdmin({
   consents: AdminConsent[];
   settings: ApiSettings;
   usage: ApiUsage | null;
+  developer?: DeveloperPage | null;
   initialTab?: string;
 }) {
   const t = useTranslations("apiAccess.admin");
@@ -78,6 +81,11 @@ export function ApiAccessAdmin({
             key: "usage",
             label: t("usageTab"),
             content: <UsagePanel usage={usage} />,
+          },
+          {
+            key: "developer",
+            label: t("developerTab"),
+            content: <DeveloperPanel page={developer} />,
           },
           {
             key: "settings",
@@ -420,5 +428,126 @@ function UsagePanel({ usage }: { usage: ApiUsage | null }) {
         ]}
       />
     </section>
+  );
+}
+
+/**
+ * The developer page (spec 035 US7, FR-014): where the public OpenAPI document, the authorization server metadata and
+ * the MCP server are, and the operations, scopes, events, MCP tools and resources the package includes. Operations,
+ * paths and catalogue names stay in English; descriptions are in the reader's language.
+ */
+/** An operation as developers write it: method and path. */
+const operationName = (o: { method: string; path: string }) => [o.method, o.path].join(" ");
+
+function DeveloperPanel({ page }: { page: DeveloperPage | null }) {
+  const t = useTranslations("apiAccess.admin");
+  const describe = useTranslations("apiAccess");
+  const format = useFormatter();
+  if (!page) {
+    return <p className="admin-meta">{t("developerUnavailable")}</p>;
+  }
+  const day = (value: string) => format.dateTime(new Date(value + "T00:00:00Z"), { dateStyle: "long", timeZone: "UTC" });
+  const tool = (name: string, fallback: string | null) => (describe.has(`tool.${name}` as never) ? describe(`tool.${name}` as never) : (fallback ?? ""));
+  return (
+    <div className="admin-screen">
+      <section className="admin-panel" aria-labelledby="api-developer-title">
+        <h2 id="api-developer-title">{t("developerTitle")}</h2>
+        <p className="admin-meta">{t("developerIntro")}</p>
+        <dl className="api-access-addresses">
+          {(
+            [
+              ["openApiUrl", page.openApiUrl],
+              ["metadataUrl", page.authorizationServerMetadataUrl],
+              ["mcpUrl", page.mcpUrl],
+              ["resourceMetadataUrl", page.protectedResourceMetadataUrl],
+            ] as const
+          ).map(([key, url]) => (
+            <div key={key}>
+              <dt>{t(key)}</dt>
+              <dd dir="ltr">
+                <code>{url}</code>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+      <section className="admin-panel" aria-labelledby="api-developer-deprecations">
+        <h2 id="api-developer-deprecations">{t("deprecationsTitle")}</h2>
+        <DataTable
+          caption={t("deprecationsTitle")}
+          rows={page.deprecations}
+          rowKey={(o) => `${o.method} ${o.path}`}
+          emptyTitle={t("noDeprecations")}
+          emptyMessage={t("noDeprecationsHint")}
+          columns={[
+            { key: "operation", header: t("operation"), rowHeader: true, cell: (o) => <code dir="ltr">{operationName(o)}</code> },
+            { key: "replacement", header: t("replacement"), cell: (o) => (o.deprecation?.replacement ? <code dir="ltr">{o.deprecation.replacement}</code> : t("none")) },
+            { key: "sunset", header: t("sunset"), cell: (o) => (o.deprecation ? day(o.deprecation.sunset) : "") },
+          ]}
+        />
+      </section>
+      <section className="admin-panel" aria-labelledby="api-developer-operations">
+        <h2 id="api-developer-operations">{t("operationsTitle")}</h2>
+        <DataTable
+          caption={t("operationsTitle")}
+          rows={page.operations}
+          rowKey={(o) => `${o.method} ${o.path}`}
+          emptyTitle={t("noOperations")}
+          columns={[
+            { key: "operation", header: t("operation"), rowHeader: true, cell: (o) => <code dir="ltr">{operationName(o)}</code> },
+            { key: "scope", header: t("scope"), cell: (o) => <code dir="ltr">{o.scope}</code> },
+            {
+              key: "state",
+              header: t("status"),
+              cell: (o) => (o.deprecation ? <Badge tone="warning">{t("deprecated")}</Badge> : <Badge tone="success">{t("current")}</Badge>),
+            },
+          ]}
+        />
+      </section>
+      <section className="admin-panel" aria-labelledby="api-developer-scopes">
+        <h2 id="api-developer-scopes">{t("scopesTitle")}</h2>
+        <DataTable
+          caption={t("scopesTitle")}
+          rows={page.scopes}
+          rowKey={(s) => s.key}
+          emptyTitle={t("noOperations")}
+          columns={[
+            { key: "scope", header: t("scope"), rowHeader: true, cell: (s) => <code dir="ltr">{s.key}</code> },
+            { key: "description", header: t("description"), cell: (s) => describe(s.descriptionKey.replace(/^apiAccess\./, "") as never) },
+            { key: "holder", header: t("holder"), cell: (s) => t(`holders.${s.holder}`) },
+          ]}
+        />
+      </section>
+      <section className="admin-panel" aria-labelledby="api-developer-events">
+        <h2 id="api-developer-events">{t("eventsTitle")}</h2>
+        <p className="admin-meta">{t("eventsIntro")}</p>
+        <DataTable
+          caption={t("eventsTitle")}
+          rows={page.events}
+          rowKey={(e) => e.type}
+          emptyTitle={t("noEvents")}
+          columns={[
+            { key: "event", header: t("eventType"), rowHeader: true, cell: (e) => <code dir="ltr">{e.type}</code> },
+            { key: "version", header: t("version"), align: "end", cell: (e) => format.number(e.version) },
+            { key: "scope", header: t("scope"), cell: (e) => <code dir="ltr">{e.readScope}</code> },
+          ]}
+        />
+      </section>
+      <section className="admin-panel" aria-labelledby="api-developer-mcp">
+        <h2 id="api-developer-mcp">{t("mcpTitle")}</h2>
+        <DataTable
+          caption={t("mcpTitle")}
+          rows={page.mcp}
+          rowKey={(m) => `${m.kind} ${m.name}`}
+          emptyTitle={t("noMcp")}
+          columns={[
+            { key: "name", header: t("name"), rowHeader: true, cell: (m) => <code dir="ltr">{m.name}</code> },
+            { key: "kind", header: t("kind"), cell: (m) => t(`mcpKinds.${m.kind}`) },
+            { key: "description", header: t("description"), cell: (m) => (m.kind === "resource" ? "" : tool(m.name, m.description)) },
+            { key: "scope", header: t("scope"), cell: (m) => <code dir="ltr">{m.scope}</code> },
+          ]}
+        />
+      </section>
+    </div>
   );
 }

@@ -63,6 +63,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await roles.getByRole("button", { name: m("apiAccess.admin.giveRole") }).click();
       await expect(page.getByText(m("apiAccess.admin.roleGiven"))).toBeVisible();
       await expect(roles.getByRole("cell", { name: m("apiAccess.admin.wholeOrganization") })).toBeVisible();
+
+      // Event subscriptions (US4): none yet, and the app needs the events:subscribe scope before it can have one.
+      const subscriptions = page.locator("section", { has: page.getByRole("heading", { level: 2, name: m("apiAccess.admin.subscriptionsTitle") }) });
+      await expect(subscriptions.getByText(m("apiAccess.admin.noSubscriptions"))).toBeVisible();
+      await expect(subscriptions.getByText(m("apiAccess.admin.subscribeNeedsScope"))).toBeVisible();
       await expectAccessible(page, testInfo, `api-app-${locale}`);
 
       // Every consent in the organization.
@@ -76,6 +81,14 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 2, name: m("apiAccess.admin.usageTitle") })).toBeVisible();
       await expect(page.getByRole("rowheader", { name: "Nightly sync" })).toBeVisible();
       await expectAccessible(page, testInfo, `api-usage-${locale}`);
+
+      // The developer page (US7): the addresses on the organization's own host, and what its plan includes.
+      await page.goto(`${origin}/admin/api?tab=developer`);
+      await expect(page.getByRole("tab", { name: m("apiAccess.admin.developerTab") })).toHaveAttribute("aria-selected", "true");
+      await expect(page.getByRole("heading", { level: 2, name: m("apiAccess.admin.developerTitle") })).toBeVisible();
+      await expect(page.locator(".api-access-addresses code").first()).toHaveText(`${origin}/openapi/public-v1.json`);
+      await expect(page.getByRole("heading", { level: 2, name: m("apiAccess.admin.scopesTitle") })).toBeVisible();
+      await expectAccessible(page, testInfo, `api-developer-${locale}`);
     });
 
     test("an employee sees the apps they connected and removes one", async ({ page }, testInfo) => {

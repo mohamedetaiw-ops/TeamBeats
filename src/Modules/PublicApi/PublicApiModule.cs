@@ -39,6 +39,7 @@ public static class PublicApiModule
         services.AddMessageHandler<TenantMembershipDisabled, PublicApiLeavers>("publicapi.leaver");
         services.AddMessageHandler<TokenFamilyRevoked, TokenReuseNotices>("publicapi.token_reuse_notices");
         services.AddScoped<EventSubscriptions>();
+        services.AddScoped<DeveloperPage>();
         services.AddScoped<PublicEventFanout>();
         services.AddMessageHandler<Content.Contracts.ContentPublished, PublicEventHandlers>("publicapi.events.content_published");
         services.AddMessageHandler<Documents.Contracts.DocumentVersionPublished, PublicEventHandlers>("publicapi.events.document_version_published");
@@ -114,6 +115,10 @@ public static class PublicApiModule
         admin.MapGet("/settings", async (ApiSettings settings, CancellationToken ct) => Results.Ok(await settings.GetAsync(ct)));
         admin.MapPut("/settings", async (ApiSettingsRequest body, ApiSettings settings, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await settings.UpdateAsync(body, ct), ct));
+
+        // The developer page (US7): addresses, operations, catalogues and deprecations, as far as the package includes them.
+        admin.MapGet("/developer", async (HttpContext http, DeveloperPage page, CancellationToken ct) =>
+            Results.Ok(await page.GetAsync($"{http.Request.Scheme}://{http.Request.Host}", ct)));
 
         // Event subscriptions (US4): the catalogue, each app's subscriptions and their delivery log.
         admin.MapGet("/event-catalogue", async (EventSubscriptions subscriptions, CancellationToken ct) => Results.Ok(await subscriptions.CatalogueAsync(ct)));

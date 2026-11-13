@@ -43,37 +43,41 @@ public sealed class CallLog(IDbSession session, IClock clock, IAuthorizationProv
     public async Task RecordAsync(CallRecord call, long? monthlyLimit, CancellationToken ct)
     {
         var now = clock.UtcNow;
-        await session.ExecAsync(
+        // One round trip: the call, when the app (and the person's consent) was last used, and the month's count.
+        // Refused calls (rate limit, quota) are logged but not counted against the month.
+        var counted = call.ErrorClass is not (RateLimited or Quota);
+        var month = MonthOf(now);
+        var calls = await session.ScalarAsync<long>(
             """
-            insert into publicapi.call_log (tenant_id, id, at, app_id, user_id, operation, status, error_class, latency_ms, correlation_id)
-            values (platform.current_tenant_id(), @id, @now, @app, @user, @operation, @status, @error, @latency, @correlation)
+            with logged as (
+              insert into publicapi.call_log (tenant_id, id, at, app_id, user_id, operation, status, error_class, latency_ms, correlation_id)
+              values (platform.current_tenant_id(), @id, @now, @app, @user::uuid, @operation, @status, @error, @latency, @correlation)
+              returning 1),
+            app_used as (
+              update publicapi.app set last_used_at = @now
+              where id = @app and (last_used_at is null or last_used_at < @now - interval '1 minute')
+              returning 1),
+            consent_used as (
+              update publicapi.consent set last_used_at = @now
+              where @user::uuid is not null and app_id = @app and user_id = @user::uuid and revoked_at is null
+                and (last_used_at is null or last_used_at < @now - interval '1 minute')
+              returning 1),
+            counted_month as (
+              insert into publicapi.usage_month (tenant_id, month, calls)
+              select platform.current_tenant_id(), @month, 1 where @counted
+              on conflict (tenant_id, month) do update set calls = publicapi.usage_month.calls + 1
+              returning calls)
+            select coalesce((select calls from counted_month), 0)
             """,
             new
             {
                 id = Ids.New(), now, app = call.AppId, user = call.UserId, operation = call.Operation[..Math.Min(call.Operation.Length, 200)], status = call.Status,
-                error = call.ErrorClass, latency = call.LatencyMs, correlation = call.CorrelationId is { Length: <= 100 } c ? c : null,
+                error = call.ErrorClass, latency = call.LatencyMs, correlation = call.CorrelationId is { Length: <= 100 } c ? c : null, month, counted,
             }, ct);
-        await session.ExecAsync("update publicapi.app set last_used_at = @now where id = @app and (last_used_at is null or last_used_at < @now - interval '1 minute')",
-            new { now, app = call.AppId }, ct);
-        if (call.UserId is { } user)
-        {
-            await session.ExecAsync(
-                """
-                update publicapi.consent set last_used_at = @now
-                where app_id = @app and user_id = @user and revoked_at is null and (last_used_at is null or last_used_at < @now - interval '1 minute')
-                """, new { now, app = call.AppId, user }, ct);
-        }
-        if (call.ErrorClass is RateLimited or Quota)
+        if (!counted)
         {
             return;
         }
-        var month = MonthOf(now);
-        var calls = await session.ScalarAsync<long>(
-            """
-            insert into publicapi.usage_month (tenant_id, month, calls) values (platform.current_tenant_id(), @month, 1)
-            on conflict (tenant_id, month) do update set calls = publicapi.usage_month.calls + 1
-            returning calls
-            """, new { month }, ct);
         if (monthlyLimit is not { } limit || limit <= 0)
         {
             return;

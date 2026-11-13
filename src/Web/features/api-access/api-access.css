@@ -109,3 +109,19 @@
 .api-access-operations code {
   overflow-wrap: anywhere;
 }
+
+/* Developer page addresses (spec 035 US7): label above a long, unbroken URL that wraps inside the panel. */
+.api-access-addresses {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+}
+
+.api-access-addresses dt {
+  font-weight: 600;
+}
+
+.api-access-addresses dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}

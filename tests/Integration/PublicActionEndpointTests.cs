@@ -125,6 +125,13 @@ public sealed class PublicActionEndpointTests(TenantWorld world)
             new { question = "And the horn?", conversationId = conversation }));
         Assert.Equal(conversation, next.GetProperty("conversationId").GetGuid());
         Assert.Equal(HttpStatusCode.BadRequest, (await SendAsync(world, t, person, HttpMethod.Post, $"{Public}/assistant/answers", new { question = "" })).StatusCode);
+
+        // FR-030: when the model provider fails, the answer says so plainly instead of failing the call.
+        var down = await JsonAsync(await SendAsync(world, t, person, HttpMethod.Post, $"{Public}/assistant/answers",
+            new { question = "What do I check on a forklift before a shift? [fake:500]" }));
+        Assert.Equal("unavailable", down.GetProperty("outcome").GetString());
+        Assert.Equal(JsonValueKind.Null, down.GetProperty("answer").ValueKind);
+        Assert.Empty(down.GetProperty("citations").EnumerateArray());
     }
 
     [Fact]

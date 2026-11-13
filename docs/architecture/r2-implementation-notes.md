@@ -1344,3 +1344,25 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - At most 20 subscriptions per app, and one per app, event type and URL.
 - The `api_events` pack needs only `api.event_subscriptions` in the package, not the connector framework, since the tenant configures a subscription and not a connection.
 - A paused subscription keeps its delivery log. Removing a subscription removes its endpoint and that log.
+
+## Public API and MCP server (spec 035, slice 5c: T019 developer page and deprecation headers)
+
+### Built
+- The "Developer page" tab of API and MCP access (`GET /api/v1/api-access/developer`, `api.view`). It shows, on the tenant's own host, the public OpenAPI document (`/openapi/public-v1.json`, now served through the web host as well), the authorization server metadata, the MCP server and its protected resource metadata. It lists the public operations with their scopes, the scopes, the event catalogue, and the MCP tools and resources, each only as far as the package includes them. It also lists deprecated operations with their replacement and the date they stop working.
+- `.Deprecated(announced, sunset, replacement)` in `PublicApi.Contracts` for public operations. Every answer, errors included, carries `Deprecation` (RFC 9745, `@` and Unix seconds), `Sunset` (RFC 8594) and a `Link` to the replacement with `rel="successor-version"`. The OpenAPI document marks the operation deprecated. A sunset less than 12 months after the announcement, or a replacement outside `/api/public`, fails at startup.
+
+### Smallest safe defaults
+- No public operation is deprecated in R2, so the list is empty and no response carries the headers yet.
+- The OpenAPI document is the whole public v1 contract, the same for every tenant (platform data). The developer page narrows it to the package by listing only the operations whose scope the package includes.
+- Operation paths, scope keys, event types and tool names stay in English. Scope and tool descriptions are in the reader's language.
+- The page is in the admin area for API viewers and administrators. A developer outside the organization gets the addresses from them; the OpenAPI document and the metadata are public on the tenant host.
+
+## Public API and MCP server (spec 035, T020: final checks)
+
+### Built
+- `PublicApiPerformanceTests` measures the section 15 targets. Each one stops before the operation runs, so only the overhead is timed. Token validation and authorization use a token without the operation's scope, which covers validation, the app and tenant checks, the limits, the call log and the scope check, then answers 403. The median time of the same request without a token is subtracted, so the in-process transport is not counted. The MCP gateway uses `tools/list`, which covers validation, the external AI client policy and the tool catalogue. The token endpoint uses the client credentials grant, so no identity provider round trip is involved. The MCP and token times include the in-process HTTP pipeline, which makes them an upper bound. The call counts stay under each app's limit for one minute.
+- Each public call now reads the API settings once instead of twice, and writes its call log entry, the app and consent last use and the month's count in one statement instead of up to four. This brought the overhead under the target.
+- The API access e2e journey, in Arabic and English with axe, now also covers the app's event subscriptions section and the developer page.
+
+### Dependencies
+- SIEM stream fields: public API audit entries carry the actor type `app` and the app ID. Call log rows carry the app, the person, the operation, the status, the error class, the latency and the correlation ID. Spec 026 US4 (SIEM streaming, R2) is not built yet. It will stream these entries as they are, so spec 035 needs no new fields, and the stream itself is tracked under spec 026 US4.

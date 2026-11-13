@@ -133,3 +133,24 @@ export type EventSubscription = {
   pausedAt: string | null;
   createdAt: string;
 };
+
+/** A public operation on the developer page, with its deprecation when it is on its way out (spec 035 US7). */
+export type DeveloperOperation = {
+  method: string;
+  path: string;
+  scope: string;
+  deprecation: { announced: string; sunset: string; replacement: string | null } | null;
+};
+
+/** The tenant's developer page (spec 035 US7, FR-014): addresses and what the package includes. */
+export type DeveloperPage = {
+  openApiUrl: string;
+  authorizationServerMetadataUrl: string;
+  mcpUrl: string;
+  protectedResourceMetadataUrl: string;
+  operations: DeveloperOperation[];
+  scopes: { key: string; descriptionKey: string; holder: "delegated" | "application" | "both"; userConsent: boolean }[];
+  events: { type: string; version: number; resourceType: string; readScope: string }[];
+  mcp: { name: string; scope: string; kind: "tool" | "write_tool" | "resource"; description: string | null }[];
+  deprecations: DeveloperOperation[];
+};
