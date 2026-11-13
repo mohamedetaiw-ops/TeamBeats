@@ -4,13 +4,14 @@ import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import { noUnitGroup, otherGroup, type AdoptionView } from "@/lib/analytics/types";
 import { StateView } from "@/components/ui/StateView";
+import { AdoptionCharts } from "@/features/analytics/AdoptionCharts";
 import "@/features/analytics/analytics.css";
 
 const pick = (names: Record<string, string>, locale: string) => names[locale] ?? names.en ?? Object.values(names)[0] ?? "";
 
 /**
  * Adoption basics for tenant administrators (spec 021 T007): weekly active people, active people by unit, personal
- * layout use and pages per template version, as tables. The API applies the minimum group size; the page exists only
+ * layout use and pages per template version. Weekly active people and units are charts with table alternatives (spec 021 FR-025). The API applies the minimum group size; the page exists only
  * when the API lists the section.
  */
 export default async function AdoptionPage() {
@@ -35,59 +36,18 @@ export default async function AdoptionPage() {
         <Link href="/admin/analytics/errors">{t("errorsLink")}</Link>
       </p>
 
-      <section aria-labelledby="adoption-weeks" className="analytics-card">
-        <h2 id="adoption-weeks">{t("weeks")}</h2>
-        {a.weeks.length === 0 ? (
+      {a.weeks.length === 0 && a.units.length === 0 ? (
+        <section className="analytics-card">
           <StateView kind="empty" title={t("noData")} message="" />
-        ) : (
-          <div className="analytics-table">
-            <table data-testid="adoption-weeks">
-              <thead>
-                <tr>
-                  <th scope="col">{t("column.week")}</th>
-                  <th scope="col">{t("column.active")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {a.weeks.map((w) => (
-                  <tr key={w.week}>
-                    <th scope="row">{week(w.week)}</th>
-                    <td data-number>{format.number(w.activeUsers)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-
-      <section aria-labelledby="adoption-units" className="analytics-card">
-        <h2 id="adoption-units">{a.unitsWeek ? t("unitsOf", { week: week(a.unitsWeek) }) : t("units")}</h2>
-        {a.units.length === 0 ? (
-          <p className="analytics-meta">{t("noData")}</p>
-        ) : (
-          <div className="analytics-table">
-            <table data-testid="adoption-units">
-              <thead>
-                <tr>
-                  <th scope="col">{t("column.unit")}</th>
-                  <th scope="col">{t("column.active")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {a.units.map((u) => (
-                  <tr key={u.group} data-group={u.group}>
-                    <th scope="row">
-                      <bdi>{unit(u.group, u.names)}</bdi>
-                    </th>
-                    <td data-number>{format.number(u.activeUsers)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+        </section>
+      ) : (
+        <AdoptionCharts
+          weeks={a.weeks.map((w) => ({ label: week(w.week), value: w.activeUsers }))}
+          units={a.units.map((u) => ({ key: u.group, label: unit(u.group, u.names), value: u.activeUsers }))}
+          unitsTitle={a.unitsWeek ? t("unitsOf", { week: week(a.unitsWeek) }) : t("units")}
+          minGroupSize={a.minGroupSize}
+        />
+      )}
 
       <section aria-labelledby="adoption-layouts" className="analytics-card">
         <h2 id="adoption-layouts">{t("personalization")}</h2>

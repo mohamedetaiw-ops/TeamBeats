@@ -42,7 +42,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
-      await page.getByRole("link", { name: msg(locale, "admin.nav.connections") }).click();
+      await page.getByRole("navigation", { name: msg(locale, "admin.navLabel") }).getByRole("link", { name: msg(locale, "admin.nav.connections") }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "connections.title"));
       await expect(page.getByText(msg(locale, "connections.list.empty"))).toBeVisible();
       await expectAccessible(page, testInfo, `connections-${locale}`);

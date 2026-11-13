@@ -3,7 +3,6 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import type { KbTemplate } from "@/lib/documents/types";
 import { Header } from "@/components/shell/Header";
-import { DocumentsNav } from "@/features/documents/DocumentsNav";
 import { NewArticleForm } from "@/features/documents/NewArticleForm";
 import { PageHeader } from "@/components/ui/PageHeader";
 
@@ -28,7 +27,7 @@ export default async function NewArticlePage() {
         ]}
       />
       <main id="main" className="page">
-        <PageHeader title={t("new")} icon="book" nav={<DocumentsNav current="kb" />} />
+        <PageHeader title={t("new")} icon="book" />
         <NewArticleForm
           templates={templates.data}
           locales={me.data.tenant.enabledLocales}

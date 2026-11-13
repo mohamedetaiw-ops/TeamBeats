@@ -100,12 +100,20 @@ export function shortId(id: string): string {
   return id.slice(0, 8);
 }
 
-/** Date and time in the viewer's language and the tenant's numbering, or the word for never. */
+/**
+ * Date and time in the viewer's language and the tenant's numbering, or the word for never. The month is always a
+ * word (DLS-082): "short" is the dense table form ("13 Nov 2026, 09:30"), never all digits such as 11/13/26.
+ */
 export function useWhen() {
   const format = useFormatter();
   const t = useTranslations("admin.common");
   return (at: string | null | undefined, style: "short" | "medium" = "medium") =>
-    at ? format.dateTime(new Date(at), { dateStyle: style, timeStyle: "short" }) : t("never");
+    at
+      ? format.dateTime(
+          new Date(at),
+          style === "short" ? { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" } : { dateStyle: "medium", timeStyle: "short" },
+        )
+      : t("never");
 }
 
 /** A label from the catalogue when there is one, else the key itself as code. */

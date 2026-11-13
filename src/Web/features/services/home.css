@@ -143,18 +143,6 @@
   color: var(--tb-color-text-on-night);
 }
 
-.home-briefing-mark {
-  position: absolute;
-  inset-block-start: var(--tb-space-lg);
-  inset-inline-end: var(--tb-space-xl);
-  color: var(--tb-color-highlight-bright);
-  opacity: 0.8;
-}
-
-.home-briefing-mark path {
-  fill: currentcolor;
-}
-
 .home-briefing-date {
   display: flex;
   align-items: center;
@@ -273,10 +261,6 @@
 
   .home-briefing-title {
     font-size: var(--tb-font-size-xl);
-  }
-
-  .home-briefing-mark {
-    display: none;
   }
 }
 

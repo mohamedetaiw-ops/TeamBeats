@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { Icon, type IconName } from "@/components/ui/Icon";
+import { serviceIcons } from "@/lib/services/look";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
 import { FormField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
@@ -94,6 +96,7 @@ export function ServiceEditor({
   const [classification, setClassification] = useState(s.classification);
   const [url, setUrl] = useState(s.url ?? "");
   const [sso, setSso] = useState(s.sso);
+  const [icon, setIcon] = useState(s.icon ?? "");
   const [settingsResult, setSettingsResult] = useState<Result>(null);
 
   const latest = view.latest;
@@ -127,6 +130,7 @@ export function ServiceEditor({
         classification,
         url: s.kind === "linked" ? url : null,
         sso,
+        icon: icon || null,
       });
       if (response.ok) {
         setView((await response.json()) as ServiceAdminView);
@@ -428,6 +432,20 @@ export function ServiceEditor({
                 </option>
               ))}
             </select>
+          </label>
+          <label className="services-select">
+            {t("icon")}
+            <span className="services-icon-choice">
+              <Icon name={icon ? (icon as IconName) : "services"} size={20} />
+              <select value={icon} onChange={(e) => setIcon(e.target.value)}>
+                <option value="">{t("iconDefault")}</option>
+                {serviceIcons.map((name) => (
+                  <option key={name} value={name}>
+                    {t(`icons.${name}`)}
+                  </option>
+                ))}
+              </select>
+            </span>
           </label>
           <label className="services-select">
             {t("classification")}

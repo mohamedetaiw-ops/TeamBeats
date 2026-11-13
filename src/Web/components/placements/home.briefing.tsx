@@ -66,9 +66,6 @@ export default function Briefing({ props }: PlacementProps) {
 
   const shell = (body: ReactNode, busy = false) => (
     <section className="home-briefing" aria-labelledby="home-briefing-title" aria-busy={busy || undefined} data-testid="home-briefing">
-      <span className="home-briefing-mark" aria-hidden="true">
-        <Icon name="spark" size={96} />
-      </span>
       {body}
     </section>
   );
@@ -148,7 +145,7 @@ export default function Briefing({ props }: PlacementProps) {
   return shell(
     <>
       <p className="home-briefing-date">
-        <Icon name="spark" size={14} />
+        <Icon name="calendar" size={14} />
         <span>
           {today}
           {weather ? <>{" · "}<bdi>{weather.place.name}</bdi>{" · "}{format.number(weather.temperatureC, { style: "unit", unit: "celsius", maximumFractionDigits: 0 })}</> : null}

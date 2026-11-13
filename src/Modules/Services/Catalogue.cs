@@ -12,7 +12,12 @@ namespace TeamBeats.Modules.Services;
 
 public sealed record CategoryView(Guid Id, IReadOnlyDictionary<string, string> Names, int Position);
 
-/// <summary>A catalogue card. Linked apps carry their URL and whether sign-in is single sign-on (FR-002).</summary>
+/// <summary>
+/// A catalogue card. Linked apps carry their URL and whether sign-in is single sign-on (FR-002). <paramref name="Icon"/>
+/// is the service's own icon, null for its category's (FR-018). For a form service the card also says who approves
+/// (<see cref="ServiceApprovers"/>), the working days the approval step allows, and the viewer's latest request of it
+/// (FR-019); these are null on the detail page and for linked and module services.
+/// </summary>
 public sealed record ServiceCard(
     Guid Id,
     string Kind,
@@ -22,7 +27,31 @@ public sealed record ServiceCard(
     string? Url,
     bool Sso,
     string? LaunchRoute,
-    bool Favourite);
+    bool Favourite,
+    string? Icon = null,
+    string? Approver = null,
+    int? DueWorkingDays = null,
+    LatestRequest? Latest = null);
+
+/// <summary>The viewer's most recent request of a service, filed by them or for them.</summary>
+public sealed record LatestRequest(Guid Id, string Number, string Status);
+
+/// <summary>Who approves a form service, as the card names it (FR-019).</summary>
+public static class ServiceApprovers
+{
+    public const string None = "none";
+    public const string LineManager = "line_manager";
+    public const string Role = "role";
+    public const string Named = "named";
+
+    public static string Of(ServiceRoute route) => route.Approval?.Approvers.Kind switch
+    {
+        null => None,
+        ApproverKinds.LineManager => LineManager,
+        ApproverKinds.PermissionAtRequesterUnit => Role,
+        _ => Named,
+    };
+}
 
 public sealed record CatalogueView(IReadOnlyList<CategoryView> Categories, IReadOnlyList<ServiceCard> Services, IReadOnlyList<Guid> Recent);
 
@@ -46,7 +75,8 @@ public sealed record ServiceRow(
     string? LaunchRoute,
     string Status,
     int? CurrentVersion,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    string? Icon = null);
 
 /// <summary>The facts an audience is checked against (FR-001): units with their parents, groups and membership type.</summary>
 public sealed record AudienceFacts(IReadOnlySet<Guid> Units, IReadOnlySet<Guid> Groups, string? MembershipType)
@@ -112,7 +142,7 @@ public sealed class Catalogue(
     internal const string Columns =
         """
         id, kind, module_key, names::text, descriptions::text, synonyms::text, category_id, audience::text, owner_org_unit_id, classification,
-        url, sso, launch_route, status, current_version, updated_at
+        url, sso, launch_route, status, current_version, updated_at, icon
         """;
 
     internal static ServiceRow Read(NpgsqlDataReader r) => new(
@@ -120,7 +150,7 @@ public sealed class Catalogue(
         Json<Dictionary<string, string>>(r.GetString(3)), Json<Dictionary<string, string>>(r.GetString(4)),
         Json<Dictionary<string, IReadOnlyList<string>>>(r.GetString(5)), r.Get<Guid?>("category_id"), Json<ServiceAudience>(r.GetString(7)),
         r.Get<Guid?>("owner_org_unit_id"), r.GetString(9), r.Get<string?>("url"), r.GetBoolean(11), r.Get<string?>("launch_route"),
-        r.GetString(13), r.Get<int?>("current_version"), r.GetFieldValue<DateTimeOffset>(15));
+        r.GetString(13), r.Get<int?>("current_version"), r.GetFieldValue<DateTimeOffset>(15), r.Get<string?>("icon"));
 
     internal static T Json<T>(string json) => JsonSerializer.Deserialize<T>(json, JsonDefaults.Options)!;
 
@@ -151,16 +181,19 @@ public sealed class Catalogue(
         {
             await session.ExecAsync(
                 """
-                insert into services.service (tenant_id, id, kind, module_key, names, descriptions, launch_route, status, created_at, updated_at)
-                values (platform.current_tenant_id(), @id, 'module', @key, @names, @descriptions, @route, 'published', @now, @now)
+                insert into services.service (tenant_id, id, kind, module_key, names, descriptions, launch_route, icon, status, created_at, updated_at)
+                values (platform.current_tenant_id(), @id, 'module', @key, @names, @descriptions, @route, @icon, 'published', @now, @now)
                 on conflict (tenant_id, module_key) where module_key is not null do update
-                  set names = excluded.names, descriptions = excluded.descriptions, launch_route = excluded.launch_route
+                  set names = excluded.names, descriptions = excluded.descriptions, launch_route = excluded.launch_route,
+                      icon = coalesce(services.service.icon, excluded.icon)
                   where services.service.names <> excluded.names or services.service.descriptions <> excluded.descriptions
                      or services.service.launch_route is distinct from excluded.launch_route
+                     or (services.service.icon is null and excluded.icon is not null)
                 """, new
                 {
                     id = Ids.New(), key = registration.Key, names = Jsonb.From(registration.Names),
-                    descriptions = Jsonb.From(registration.Descriptions ?? new Dictionary<string, string>()), route = registration.LaunchRoute, now = clock.UtcNow,
+                    descriptions = Jsonb.From(registration.Descriptions ?? new Dictionary<string, string>()), route = registration.LaunchRoute,
+                    icon = registration.Icon, now = clock.UtcNow,
                 }, ct);
         }
     }
@@ -171,7 +204,40 @@ public sealed class Catalogue(
 
     private static ServiceCard Card(ServiceRow s, bool favourite) =>
         new(s.Id, s.Kind, s.Names, s.Descriptions, s.CategoryId, s.Kind == ServiceKinds.Linked ? s.Url : null, s.Kind == ServiceKinds.Linked && s.Sso,
-            s.Kind == ServiceKinds.Module ? s.LaunchRoute : null, favourite);
+            s.Kind == ServiceKinds.Module ? s.LaunchRoute : null, favourite, s.Icon);
+
+    /// <summary>
+    /// What a card says before the service is opened (FR-019): for each published form service, who approves and the
+    /// working days its approval step allows; and the viewer's latest request of each service. One read each.
+    /// </summary>
+    private async Task<IReadOnlyList<ServiceCard>> WithDetailsAsync(Guid? person, IReadOnlyList<ServiceCard> cards, CancellationToken ct)
+    {
+        var ids = cards.Select(c => c.Id).ToArray();
+        if (ids.Length == 0)
+        {
+            return cards;
+        }
+        var routes = (await session.QueryAsync(
+            """
+            select s.id, v.route::text from services.service s
+            join services.service_version v on v.service_id = s.id and v.version = s.current_version
+            where s.id = any(@ids) and s.kind = 'form'
+            """, new { ids }, r => (Id: r.GetGuid(0), Route: Json<ServiceRoute>(r.GetString(1))), ct)).ToDictionary(x => x.Id, x => x.Route);
+        // An app calling without a person (spec 035) has no requests of its own.
+        var latest = person is { } user
+            ? (await session.QueryAsync(
+                """
+                select distinct on (service_id) service_id, id, number, status from services.request
+                where service_id = any(@ids) and status <> 'draft' and (requester_user_id = @user or on_behalf_of_user_id = @user)
+                order by service_id, created_at desc, id desc
+                """, new { ids, user }, r => (ServiceId: r.GetGuid(0), Request: new LatestRequest(r.GetGuid(1), r.GetString(2), r.GetString(3))), ct))
+                .ToDictionary(x => x.ServiceId, x => x.Request)
+            : [];
+        return cards.Select(c => routes.TryGetValue(c.Id, out var route)
+                ? c with { Approver = ServiceApprovers.Of(route), DueWorkingDays = route.Approval?.DueWorkingDays, Latest = latest.GetValueOrDefault(c.Id) }
+                : c with { Latest = latest.GetValueOrDefault(c.Id) })
+            .ToList();
+    }
 
     /// <summary>Module services whose capability the tenant's plan does not have.</summary>
     private async Task<IReadOnlySet<string>> UnavailableModuleKeysAsync(CancellationToken ct)
@@ -210,6 +276,7 @@ public sealed class Catalogue(
             .Where(s => terms.Count == 0 || Search.Matches(terms, s))
             .OrderBy(s => s.Names.Values.FirstOrDefault(), StringComparer.CurrentCulture)
             .Select(s => Card(s, favourites.Contains(s.Id))).ToList();
+        shown = (await WithDetailsAsync(person, shown, ct)).ToList();
         var ids = visible.Select(s => s.Id).ToHashSet();
         IReadOnlyList<Guid> recent = person is { } me
             ? (await session.QueryAsync("select service_id from services.recent_use where user_id = @me order by used_at desc limit 50", new { me },

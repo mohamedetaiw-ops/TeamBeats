@@ -95,6 +95,6 @@ public sealed class ExpenseModuleServices : TeamBeats.Modules.Services.Contracts
     [
         new(Key, new Dictionary<string, string> { ["en"] = "Expense claims", ["ar"] = "مطالبات المصروفات" },
             new Dictionary<string, string> { ["en"] = "Claim back what you spent for work", ["ar"] = "استرد ما أنفقته على العمل" },
-            "/expenses", null, Capabilities.HrExpenses),
+            "/expenses", null, Capabilities.HrExpenses, Icon: "attach"),
     ];
 }

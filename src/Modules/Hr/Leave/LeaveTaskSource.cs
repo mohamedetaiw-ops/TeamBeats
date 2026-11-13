@@ -82,6 +82,6 @@ public sealed class LeaveModuleServices : IModuleServiceSource
     [
         new(Key, new Dictionary<string, string> { ["en"] = "Leave", ["ar"] = "الإجازات" },
             new Dictionary<string, string> { ["en"] = "See your balance and request time off", ["ar"] = "اطلع على رصيدك واطلب إجازة" },
-            "/leave", LeaveRequests.ProcessKey, Capabilities.HrLeave),
+            "/leave", LeaveRequests.ProcessKey, Capabilities.HrLeave, Icon: "leave"),
     ];
 }

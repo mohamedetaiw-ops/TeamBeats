@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useId, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { dateTimeFull, relativeTime } from "@/lib/format";
 import { problemMessages } from "@/lib/notifications/types";
@@ -38,19 +39,26 @@ export function LibraryBrowser({
   const t = useTranslations("documents.browser");
   const locale = useLocale();
   const ids = useId();
-  const [folder, setFolder] = useState<string | null>(null);
-  const [type, setType] = useState<string>("");
-  const [text, setText] = useState("");
-  const [filters, setFilters] = useState<Record<string, string>>({});
-  const [sort, setSort] = useState("modified");
-  const [descending, setDescending] = useState(true);
-  const [view, setView] = useState<string>("");
+  // The folder, search, filters, sort and view live in the address, so a reload or a shared link opens the same list
+  // (spec 008 FR-065).
+  const router = useRouter();
+  const pathname = usePathname();
+  const address = useSearchParams();
+  const [folder, setFolder] = useState<string | null>(() => address.get("folder"));
+  const [type, setType] = useState<string>(() => address.get("type") ?? "");
+  const [text, setText] = useState(() => address.get("q") ?? "");
+  const [filters, setFilters] = useState<Record<string, string>>(() =>
+    Object.fromEntries([...address.entries()].filter(([k]) => k.startsWith("f.")).map(([k, v]) => [k.slice(2), v])),
+  );
+  const [sort, setSort] = useState(() => address.get("sort") ?? "modified");
+  const [descending, setDescending] = useState(() => address.get("desc") !== "false");
+  const [view, setView] = useState<string>(() => address.get("view") ?? "");
   const [views, setViews] = useState(initialViews);
   const [viewName, setViewName] = useState("");
   const [answer, setAnswer] = useState<Answer>("loading");
   const [attempt, setAttempt] = useState(0);
   const [messages, setMessages] = useState<string[]>([]);
-  const [applied, setApplied] = useState("");
+  const [applied, setApplied] = useState(() => address.get("q") ?? "");
   const [now, setNow] = useState(0);
 
   const selectedType = library.types.find((x) => x.id === type) ?? null;
@@ -71,6 +79,15 @@ export function LibraryBrowser({
     for (const [k, v] of Object.entries(filters)) if (v) q.set(`f.${k}`, v);
     return q.toString();
   }, [view, folder, type, applied, filters, sort, descending]);
+
+  useEffect(() => {
+    const shown = new URLSearchParams(query);
+    shown.delete("limit");
+    if (shown.get("sort") === "modified") shown.delete("sort");
+    if (shown.get("desc") === "true") shown.delete("desc");
+    const next = shown.toString();
+    if (next !== window.location.search.replace(/^\?/, "")) router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [query, pathname, router]);
 
   useEffect(() => {
     let live = true;

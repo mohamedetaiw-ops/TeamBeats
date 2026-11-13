@@ -5,7 +5,6 @@ import type { Delegation, InboxItem } from "@/lib/services/types";
 import { myTasksHref, spacesApi, type MyTask, type SpacesRights } from "@/lib/spaces";
 import { Header } from "@/components/shell/Header";
 import { DelegationPanel } from "@/features/services/DelegationPanel";
-import { ServicesNav } from "@/features/services/ServicesNav";
 import { TaskInbox } from "@/features/services/TaskInbox";
 import { MyTasks } from "@/features/spaces/MyTasks";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -43,8 +42,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       <>
         <Header me={me.data} breadcrumbs={[{ label: t("inbox.pageTitle"), href: "/tasks" }]} />
         <main id="main" className="page">
-          <PageHeader title={t("inbox.pageTitle")} icon="tasks" nav={<ServicesNav current="tasks" />} />
-          {tabs}
+          <PageHeader title={t("inbox.pageTitle")} icon="tasks" nav={tabs ?? undefined} />
           {tasks.ok ? <MyTasks initial={tasks.data} /> : <StateView kind="error" title={t("inbox.myTasksFailed")} />}
         </main>
       </>
@@ -59,8 +57,7 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("inbox.pageTitle"), href: "/tasks" }]} />
       <main id="main" className="page">
-        <PageHeader title={t("inbox.pageTitle")} icon="tasks" nav={<ServicesNav current="tasks" />} />
-        {tabs}
+        <PageHeader title={t("inbox.pageTitle")} icon="tasks" nav={tabs ?? undefined} />
         <div className="ui-split">
           <TaskInbox items={inbox.data} />
           <aside aria-label={t("delegation.title")}>

@@ -21,7 +21,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("an administrator changes the session rules and the posture page shows the weaker setting", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
-      await page.getByRole("link", { name: msg(locale, "admin.nav.security") }).click();
+      await page.getByRole("navigation", { name: msg(locale, "admin.navLabel") }).getByRole("link", { name: msg(locale, "admin.nav.security") }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "security.policy.title"));
       await expectAccessible(page, testInfo, `security-policy-${locale}`);
 

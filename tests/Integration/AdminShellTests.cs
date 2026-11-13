@@ -42,6 +42,38 @@ public sealed class AdminShellTests(TenantWorld world)
         Assert.Empty(await Sections(world.A["employee_gulf"]));
     }
 
+    /// <summary>Spec 006 FR-017: every section names its navigation group, one of six, and the groups follow the sections a person may open.</summary>
+    [Fact]
+    public async Task Every_section_names_one_of_the_six_navigation_groups()
+    {
+        var groups = new[] { "workspace", "people", "hr", "content", "security", "ai" };
+        var nav = await world.A["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/admin/navigation");
+        var byKey = nav.EnumerateArray().ToDictionary(s => s.GetProperty("key").GetString()!, s => s.GetProperty("group").GetString()!);
+        Assert.All(byKey.Values, g => Assert.Contains(g, groups));
+        Assert.Equal("people", byKey["users"]);
+        Assert.Equal("security", byKey["audit"]);
+        Assert.Equal("ai", byKey["agents"]);
+        Assert.All(TeamBeats.Modules.Administration.AdministrationModule.Sections, s => Assert.True(TeamBeats.Modules.Administration.AdministrationModule.Groups.ContainsKey(s.Key), s.Key));
+
+        // The security officer sees only the groups of the sections they hold.
+        var security = await world.A["security"].Client.GetFromJsonAsync<JsonElement>("/api/v1/admin/navigation");
+        Assert.DoesNotContain(security.EnumerateArray(), s => s.GetProperty("group").GetString() == "hr");
+    }
+
+    /// <summary>A section whose page is a plan capability is listed only when the plan has it, so no menu entry opens a missing page.</summary>
+    [Fact]
+    public async Task Kiosks_are_listed_only_on_a_plan_with_shared_devices()
+    {
+        async Task<string[]> KeysAsync(string package)
+        {
+            var t = await world.CreateTenantAsync("nav-" + Guid.NewGuid().ToString("N")[..8], package);
+            var nav = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/admin/navigation");
+            return nav.EnumerateArray().Select(s => s.GetProperty("key").GetString()!).ToArray();
+        }
+        Assert.DoesNotContain("kiosks", await KeysAsync("workplace"));
+        Assert.Contains("kiosks", await KeysAsync("workplace_plus"));
+    }
+
     /// <summary>
     /// Spec 008 FR-062: the shell offers Administration exactly when the admin shell has a section for the caller, including
     /// admins whose rights cover only their own units, and never for employees or contractors.

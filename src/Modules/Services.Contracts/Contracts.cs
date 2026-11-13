@@ -29,6 +29,7 @@ public sealed record ServiceAudience(IReadOnlyList<Guid>? OrgUnits = null, IRead
 /// everyone until an administrator changes its audience or category. <see cref="LaunchRoute"/> is a path in TeamBeats;
 /// <see cref="TaskSource"/> names where its tasks come from when they are not engine tasks. With
 /// <see cref="Capability"/>, the service is left out of the catalogue of a tenant whose plan does not have it.
+/// <see cref="Icon"/> names its icon in the web app's icon set (spec 016 FR-018) until the tenant chooses another.
 /// </summary>
 public sealed record ModuleServiceRegistration(
     string Key,
@@ -36,7 +37,8 @@ public sealed record ModuleServiceRegistration(
     IReadOnlyDictionary<string, string>? Descriptions,
     string LaunchRoute,
     string? TaskSource = null,
-    string? Capability = null);
+    string? Capability = null,
+    string? Icon = null);
 
 /// <summary>Implemented by modules that register services in the catalogue.</summary>
 public interface IModuleServiceSource

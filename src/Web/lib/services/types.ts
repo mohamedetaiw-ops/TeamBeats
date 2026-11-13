@@ -15,6 +15,14 @@ export type ServiceCard = {
   sso: boolean;
   launchRoute: string | null;
   favourite: boolean;
+  /** The service's own icon (spec 016 FR-018); null takes its category's. */
+  icon?: string | null;
+  /** For a form service, who approves (FR-019): "none", "line_manager", "role" or "named". */
+  approver?: "none" | "line_manager" | "role" | "named" | null;
+  /** The working days the approval step allows. */
+  dueWorkingDays?: number | null;
+  /** The viewer's latest request of this service. */
+  latest?: { id: string; number: string; status: string } | null;
 };
 
 export type CatalogueView = { categories: Category[]; services: ServiceCard[]; recent: string[] };
@@ -211,6 +219,7 @@ export type ServiceRow = {
   status: "draft" | "published" | "retired";
   currentVersion: number | null;
   updatedAt: string;
+  icon?: string | null;
 };
 
 export type ApproverRule = { kind: "users" | "permission_at_unit" | "line_manager"; users?: string[] | null; permission?: string | null };

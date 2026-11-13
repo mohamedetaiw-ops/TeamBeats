@@ -44,7 +44,7 @@ export function Awards({ initial }: { initial: AwardList }) {
       <section className="engagement-section" aria-labelledby="awards-list">
         <h2 id="awards-list">{t("listTitle")}</h2>
         {periods.length === 0 ? (
-          <StateView kind="empty" title={t("emptyTitle")} message={t("empty")} icon="spark" />
+          <StateView kind="empty" title={t("emptyTitle")} message={t("empty")} icon="star" />
         ) : (
           <ul className="engagement-feed" aria-label={t("listLabel")}>
             {periods.map((period) => (
@@ -120,7 +120,7 @@ function OpenForm({ onOpened }: { onOpened: (view: AwardPeriodView) => void }) {
           </Alert>
         ) : null}
         <div className="engagement-row">
-          <Button type="submit" variant="primary" icon="spark" busy={busy} busyLabel={t("working")}>
+          <Button type="submit" variant="primary" icon="star" busy={busy} busyLabel={t("working")}>
             {t("open")}
           </Button>
         </div>

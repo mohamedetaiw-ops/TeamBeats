@@ -65,6 +65,31 @@ async function overflow(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 }
 
+/**
+ * Controls whose hit area is under 44 by 44px (DLS-085). A small text link may keep its look and take its area from an
+ * absolutely placed ::after; a link inside running text is exempt, as in WCAG 2.5.8.
+ */
+async function smallTargets(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const out: string[] = [];
+    for (const el of document.querySelectorAll<HTMLElement>("button, a[href], select, input:not([type=hidden]), textarea, summary, [role=tab]")) {
+      const box = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      if (box.width === 0 || box.height === 0 || style.visibility === "hidden") continue;
+      if (style.display === "inline" && el.closest("p")) continue;
+      const after = getComputedStyle(el, "::after");
+      const extra = after.content !== "none" && after.position === "absolute";
+      const width = Math.max(box.width, extra ? parseFloat(after.width) || 0 : 0);
+      const height = Math.max(box.height, extra ? parseFloat(after.height) || 0 : 0);
+      if (width < 43.5 || height < 43.5) {
+        const name = (el.getAttribute("aria-label") ?? el.textContent ?? "").trim().slice(0, 40);
+        out.push(`${el.tagName.toLowerCase()}${el.className ? "." + String(el.className).split(" ").join(".") : ""} "${name}" ${Math.round(width)}x${Math.round(height)}`);
+      }
+    }
+    return out;
+  });
+}
+
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`mobile app in ${locale}`, () => {
     test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
@@ -111,6 +136,19 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await nav.getByRole("link", { name: entries[1]![locale], exact: true }).click();
       await expect(page).toHaveURL(/\/people$/);
       await expect(nav.getByRole("link", { name: entries[1]![locale], exact: true })).toHaveAttribute("aria-current", "page");
+    });
+
+    test("every control on Home, Services, Tasks and People has a 44 px hit area at 390 px", async ({ page }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      const small: string[] = [];
+      for (const route of ["/", "/services", "/tasks", "/people"]) {
+        await page.goto(`${hostOrigin(tenant.key)}${route}`);
+        await expect(page.locator("main").first()).toBeVisible();
+        await page.waitForLoadState("networkidle");
+        small.push(...(await smallTargets(page)).map((s) => `${route}: ${s}`));
+      }
+      expect(small, "controls under 44px").toEqual([]);
     });
 
     groups.forEach((group, i) => {

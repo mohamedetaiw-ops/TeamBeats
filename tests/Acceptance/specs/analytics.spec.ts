@@ -32,7 +32,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("adoption basics and the frontend error list", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
-      await page.getByRole("link", { name: msg(locale, "admin.nav.analytics") }).click();
+      await page.getByRole("navigation", { name: msg(locale, "admin.navLabel") }).getByRole("link", { name: msg(locale, "admin.nav.analytics") }).click();
       await page.waitForURL(/\/admin\/analytics$/);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "analytics.adoption.title"));
       await expect(page.getByRole("heading", { level: 2, name: msg(locale, "analytics.adoption.templates") })).toBeVisible();
