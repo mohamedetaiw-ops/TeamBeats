@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using TeamBeats.Audit.Contracts;
+using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
@@ -76,7 +77,7 @@ public sealed partial class ProcessEngine
     }
 
     /// <summary>The graph of a published version, or null for a route.</summary>
-    private async Task<ProcessGraph?> GraphAsync(string key, int version, CancellationToken ct)
+    internal async Task<ProcessGraph?> GraphAsync(string key, int version, CancellationToken ct)
     {
         if (graphs.TryGetValue((key, version), out var cached))
         {
@@ -313,6 +314,7 @@ public sealed partial class ProcessEngine
                 variables = new Jsonb(instance.State.Variables.ToJsonString()) }, ct);
         await CloseGraphWaitsAsync(instance.Info.Id, null, ct);
         await HistoryAsync(instance.Info.Id, "end_" + finished.Outcome, "completed", null, null, ct);
+        await EndedAnalyticsAsync(instance.Info, cancelled ? "cancelled" : "completed", now, ct);
         await outbox.EnqueueAsync(new ProcessInstanceCompleted(instance.Info.Id, instance.Info.DefinitionKey, instance.Info.BusinessKey, finished.Outcome), ct);
         if (instance.ParentInstanceId is not { } parent || instance.ParentTokenId is not { } token)
         {
@@ -836,6 +838,68 @@ public sealed partial class ProcessEngine
     }
 
     /// <summary>Cancels a graph instance and its children (an operator cancel, a withdrawal, or a parent that moved on).</summary>
+    /// <summary>Counts an ended process model instance for spec 021 (FR-014): process, version, how it ended and how long it ran, with no person.</summary>
+    private Task EndedAnalyticsAsync(ProcessInstanceInfo info, string state, DateTimeOffset now, CancellationToken ct) =>
+        info.DefinitionKey.StartsWith(ModelPrefix, StringComparison.Ordinal) && info.DefinitionKey.Length - ModelPrefix.Length <= ProcessModels.MaxKeyLength
+            ? analytics.EmitAsync(AnalyticsEvents.ProcessInstanceEnded, new Dictionary<string, object?>
+            {
+                ["process"] = info.DefinitionKey[ModelPrefix.Length..],
+                ["version"] = info.DefinitionVersion,
+                ["state"] = state,
+                ["seconds"] = Math.Round(Math.Max(0, (now - info.StartedAt).TotalSeconds)),
+            }, ct)
+            : Task.CompletedTask;
+
+    /// <summary>An operator cancels an active process model instance with a reason (spec 024 FR-013); its children end too.</summary>
+    public async Task<ProcessInstanceInfo> CancelByOperatorAsync(Guid instanceId, string reason, CancellationToken ct = default)
+    {
+        var instance = await LoadAsync(instanceId, ct) ?? throw AppException.Conflict("conflict.process.instance_not_active");
+        await CancelGraphInstanceAsync(instanceId, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.ProcessInstanceCancelled, "process_instance", instanceId.ToString(), TargetOrgUnitId: instance.Info.OrgUnitId,
+            Changes: new { reason }), ct);
+        await DrainAsync(ct);
+        return (await GetInstanceAsync(instanceId, ct))!;
+    }
+
+    /// <summary>
+    /// An operator changes variables of an instance that has an open incident, so a retry can succeed (spec 024 FR-013,
+    /// US5 scenario 2). A null value removes the variable. The history and audit name the variables, never their values.
+    /// </summary>
+    public async Task ChangeVariablesAsync(Guid instanceId, JsonObject changes, string reason, CancellationToken ct = default)
+    {
+        var instance = await LoadAsync(instanceId, ct) ?? throw AppException.Conflict("conflict.process.instance_not_active");
+        var open = await session.QuerySingleOrDefaultAsync("select count(*) from workflow.incident where instance_id = @instanceId and status = 'open'",
+            new { instanceId }, r => r.GetInt64(0), ct);
+        if (open == 0)
+        {
+            throw AppException.Conflict("conflict.process.no_open_incident");
+        }
+        var names = new List<string>();
+        foreach (var (name, value) in changes)
+        {
+            names.Add(name);
+            if (value is null)
+            {
+                instance.State.Variables.Remove(name);
+            }
+            else
+            {
+                instance.State.Variables[name] = value.DeepClone();
+            }
+        }
+        var json = instance.State.Variables.ToJsonString();
+        if (json.Length > Executor.MaxInstanceBytes || instance.State.Variables.Any(p => (p.Value?.ToJsonString().Length ?? 0) > Executor.MaxVariableBytes))
+        {
+            throw AppException.Validation("variables", "validation.workflow.variables_too_large");
+        }
+        await session.ExecAsync("update workflow.process_instance set variables = @variables where id = @instanceId",
+            new { instanceId, variables = new Jsonb(json) }, ct);
+        var detail = new JsonObject { ["names"] = new JsonArray(names.Select(n => (JsonNode?)JsonValue.Create(n)).ToArray()) };
+        await HistoryAsync(instanceId, "", "variables_changed", Actor(), null, ct, detail);
+        await audit.WriteAsync(new AuditEntry(AuditActions.ProcessVariablesChanged, "process_instance", instanceId.ToString(), TargetOrgUnitId: instance.Info.OrgUnitId,
+            Changes: new { variables = names, reason }), ct);
+    }
+
     private async Task CancelGraphInstanceAsync(Guid instanceId, CancellationToken ct)
     {
         var instance = await LoadAsync(instanceId, ct);
@@ -854,6 +918,7 @@ public sealed partial class ProcessEngine
             new { instanceId, outcome = InstanceOutcomes.Cancelled, now }, ct);
         await CloseGraphWaitsAsync(instanceId, null, ct);
         await HistoryAsync(instanceId, "end_cancelled", "cancelled", Actor(), null, ct);
+        await EndedAnalyticsAsync(instance.Info, "cancelled", now, ct);
         await outbox.EnqueueAsync(new ProcessInstanceCompleted(instanceId, instance.Info.DefinitionKey, instance.Info.BusinessKey, InstanceOutcomes.Cancelled), ct);
     }
 

@@ -1,0 +1,306 @@
+/* Spec 024 process pages: operations, monitoring, decisions and the modeler. Colors and spacing come from tokens. */
+.processes {
+  display: grid;
+  gap: var(--tb-space-lg);
+}
+
+.processes-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  min-inline-size: 0;
+}
+
+.processes-section h2,
+.processes-section h3 {
+  margin: 0;
+}
+
+.processes-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+}
+
+.processes-drawer {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.processes-drawer h3 {
+  margin: var(--tb-space-sm) 0 0;
+}
+
+.processes-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding-inline-start: var(--tb-space-md);
+}
+
+.processes-incident {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.processes-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+}
+
+.processes-code {
+  font-family: var(--tb-font-family-latin);
+  font-size: var(--tb-font-size-sm);
+}
+
+.processes-table-scroll {
+  overflow-x: auto;
+  max-inline-size: 100%;
+}
+
+.processes-table {
+  border-collapse: collapse;
+  min-inline-size: 100%;
+}
+
+.processes-table th,
+.processes-table td {
+  padding: var(--tb-space-xs);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  text-align: start;
+  vertical-align: top;
+}
+
+.processes-table thead th {
+  background: var(--tb-color-surface-sunken);
+}
+
+.processes-input-head,
+.processes-output-head {
+  min-inline-size: 12rem;
+}
+
+.processes-cell {
+  inline-size: 100%;
+  min-inline-size: 8rem;
+}
+
+.processes-rule-problem {
+  display: block;
+  max-inline-size: 12rem;
+}
+
+.processes-table tr[aria-invalid] th {
+  background: var(--tb-color-surface-raised);
+  border-inline-start: var(--tb-border-width-thick) solid var(--tb-color-state-danger);
+}
+
+/* The modeler: palette, canvas and properties side by side on wide screens, stacked on narrow ones. */
+.processes-modeler {
+  display: grid;
+  gap: var(--tb-space-md);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (width >= 64rem) {
+  .processes-modeler {
+    grid-template-columns: 13rem minmax(0, 1fr) 20rem;
+    align-items: start;
+  }
+}
+
+.processes-palette-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.processes-palette-list .button {
+  inline-size: 100%;
+  justify-content: start;
+}
+
+.processes-canvas {
+  block-size: 32rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+}
+
+.processes-properties {
+  max-block-size: 48rem;
+  overflow-y: auto;
+}
+
+.processes-mapping {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  min-inline-size: 0;
+}
+
+.processes-node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+  color: var(--tb-color-text-primary);
+}
+
+.processes-node::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+  background: var(--tb-color-surface-raised);
+}
+
+.processes-node[data-shape="task"]::before {
+  border-radius: var(--tb-radius-md);
+}
+
+.processes-node[data-shape="event"]::before {
+  border-radius: var(--tb-radius-full);
+}
+
+.processes-node[data-kind="endEvent"]::before {
+  border-width: var(--tb-border-width-thick);
+}
+
+.processes-node[data-kind="intermediateCatchEvent"]::before,
+.processes-node[data-kind="intermediateThrowEvent"]::before,
+.processes-node[data-kind="boundaryEvent"]::before {
+  outline: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+  outline-offset: calc(-1 * var(--tb-space-xs));
+}
+
+.processes-node[data-shape="gateway"]::before {
+  inset: 15%;
+  transform: rotate(45deg);
+}
+
+.processes-node[data-selected]::before {
+  border-color: var(--tb-color-accent-base);
+  box-shadow: 0 0 0 var(--tb-border-width-thick) var(--tb-color-accent-subtle);
+}
+
+.processes-node[data-invalid]::before {
+  border-color: var(--tb-color-state-danger);
+}
+
+.processes-node-mark {
+  position: relative;
+  display: inline-flex;
+}
+
+.processes-node[data-shape="task"] .processes-node-mark {
+  position: absolute;
+  inset-block-start: var(--tb-space-xs);
+  inset-inline-start: var(--tb-space-xs);
+}
+
+.processes-node-label {
+  position: relative;
+  padding-inline: var(--tb-space-xs);
+  font-size: var(--tb-font-size-sm);
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.processes-node[data-shape="event"] .processes-node-label,
+.processes-node[data-shape="gateway"] .processes-node-label {
+  position: absolute;
+  inset-block-start: calc(100% + var(--tb-space-xs));
+  inline-size: 8rem;
+}
+
+.processes-node-problem {
+  position: absolute;
+  inset-block-start: calc(-1 * var(--tb-space-xs));
+  inset-inline-end: calc(-1 * var(--tb-space-xs));
+  display: inline-flex;
+  color: var(--tb-color-state-danger);
+}
+
+.processes-canvas .react-flow__handle {
+  inline-size: var(--tb-space-sm);
+  block-size: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-surface-raised);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-border-strong);
+}
+
+.processes-canvas .react-flow__node:focus-visible,
+.processes-canvas .react-flow__edge:focus-visible {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+}
+
+.processes-canvas .react-flow__edge-path {
+  stroke: var(--tb-color-text-secondary);
+  stroke-width: 1.5;
+}
+
+.processes-canvas .processes-edge-invalid .react-flow__edge-path {
+  stroke: var(--tb-color-state-danger);
+}
+
+.processes-canvas .react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--tb-color-accent-base);
+  stroke-width: 2.5;
+}
+
+.processes-canvas .react-flow__edge-textbg {
+  fill: var(--tb-color-surface-raised);
+}
+
+.processes-canvas .react-flow__edge-text {
+  fill: var(--tb-color-text-primary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.processes-canvas .react-flow__arrowhead polyline {
+  stroke: var(--tb-color-text-secondary);
+  fill: var(--tb-color-text-secondary);
+}
+
+.processes-canvas .react-flow__controls {
+  display: grid;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-raised);
+}
+
+.processes-canvas .react-flow__controls-button {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+  block-size: 2rem;
+  padding: var(--tb-space-xs);
+  border: 0;
+  background: transparent;
+  color: var(--tb-color-text-primary);
+  cursor: pointer;
+}
+
+.processes-canvas .react-flow__controls-button svg {
+  inline-size: 100%;
+  block-size: 100%;
+  fill: currentcolor;
+}
+
+.processes-canvas .react-flow__controls-button:focus-visible {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+}

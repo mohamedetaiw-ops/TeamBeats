@@ -5,6 +5,7 @@ using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Modules.Workflow.Feel;
 using TeamBeats.Modules.Workflow.Graph;
+using TeamBeats.Localization;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -17,7 +18,7 @@ public sealed record DecisionSummary(string Key, Guid? OwnerOrgUnitId, IReadOnly
 
 public sealed record DecisionVersionView(int Version, DateTimeOffset PublishedAt, Guid? PublishedBy);
 
-public sealed record DecisionModelView(string Key, Guid? OwnerOrgUnitId, IReadOnlyDictionary<string, string> Names, string DmnXml, IReadOnlyList<ModelProblem> Problems,
+public sealed record DecisionModelView(string Key, Guid? OwnerOrgUnitId, IReadOnlyDictionary<string, string> Names, string DmnXml, IReadOnlyList<ProblemView> Problems,
     DateTimeOffset UpdatedAt, IReadOnlyList<DecisionVersionView> Versions);
 
 public sealed record DecisionTestRequest(IReadOnlyList<JsonElement>? Rows);
@@ -31,7 +32,7 @@ public sealed record DecisionTestResult(JsonNode? Result, IReadOnlyList<int> Rul
 /// current version when they are reached. Needs the <c>workflow.bpmn</c> capability.
 /// </summary>
 public sealed class DecisionModels(IDbSession session, ITenantContext context, IAuthorizationService authz, IEntitlementService entitlements, IAuditWriter audit,
-    IClock clock)
+    IClock clock, ILocalizer localizer, RequestLocale locale)
 {
     public const int MaxTestRows = 100;
 
@@ -88,7 +89,8 @@ public sealed class DecisionModels(IDbSession session, ITenantContext context, I
             "select version, published_at, published_by from workflow.decision_definition where key = @key order by version desc",
             new { key = row.Key }, r => new DecisionVersionView(r.GetInt32(0), r.GetFieldValue<DateTimeOffset>(1), r.Get<Guid?>("published_by")), ct);
         return new DecisionModelView(row.Key, row.Owner, Names(row.Names), row.Xml,
-            JsonSerializer.Deserialize<List<ModelProblem>>(row.Problems, ProcessGraph.Json) ?? [], row.UpdatedAt, versions);
+            (JsonSerializer.Deserialize<List<ModelProblem>>(row.Problems, ProcessGraph.Json) ?? []).Select(p => new ProblemView(p.ElementId, p.Key, localizer.Get(p.Key, locale.Locale))).ToList(),
+            row.UpdatedAt, versions);
     }
 
     public async Task<DecisionModelView> SaveAsync(string key, DecisionModelRequest request, CancellationToken ct = default)

@@ -25,10 +25,10 @@ Depends on 004 (authorization), 006 (audit), 022 (working-day contract), ADR-000
 
 ## Phase 4: Automatic steps and operations (R2)
 - [x] T014 Service tasks in models (connector actions and allowlisted webhooks with mappings), error boundary mapping, incidents (FR-010, FR-011)
-- [ ] T015 Operator view (search, variables, retry, skip, cancel, change variables, audit) and monitoring (counts, heatmap, durations, spec 021 dataset) (FR-013, FR-014)
+- [x] T015 Operator view (search, variables, retry, skip, cancel, change variables, audit) and monitoring (counts, heatmap, durations, spec 021 dataset) (FR-013, FR-014)
 
 ## Phase 5: Experience (R2)
 - [ ] T016 Modeler (React Flow, bpmn-moddle), decision table editor, test run, Processes, Decisions, Operations and Monitoring pages in English and Arabic; e2e with axe
 
 ## R2 final phase
-- [ ] T017 Correlation performance and worker kill test; OpenAPI; R2 implementation notes; spec evidence
+- [x] T017 Correlation performance and worker kill test; OpenAPI; R2 implementation notes; spec evidence

@@ -48,6 +48,9 @@ public static class AdministrationModule
         ("expenses", Permissions.FinanceProcess, "/admin/expenses"),
         ("people", Permissions.PeopleManage, "/admin/people"),
         ("services", Permissions.ServiceManage, "/admin/services"),
+        ("processes", Permissions.WorkflowDesign, "/admin/processes"),
+        ("decisions", Permissions.DecisionDesign, "/admin/decisions"),
+        ("process_operations", Permissions.ProcessOperate, "/admin/process-operations"),
         ("audit", Permissions.AuditView, "/admin/audit"),
         ("security", Permissions.SecurityView, "/admin/security"),
         ("ai", Permissions.AiPolicyManage, "/admin/ai"),
@@ -71,6 +74,7 @@ public static class AdministrationModule
         ["hr_integration"] = "hr", ["calendars"] = "hr", ["leave"] = "hr", ["journeys"] = "hr", ["attendance"] = "hr",
         ["letters"] = "hr", ["data_changes"] = "hr", ["expenses"] = "hr",
         ["pages"] = "content", ["templates"] = "content", ["branding"] = "content", ["shell"] = "content", ["services"] = "content",
+        ["processes"] = "content", ["decisions"] = "content", ["process_operations"] = "content",
         ["search"] = "content", ["analytics"] = "content",
         ["audit"] = "security", ["security"] = "security",
         ["ai"] = "ai", ["agents"] = "ai", ["evaluation"] = "ai", ["connections"] = "ai", ["api"] = "ai",
@@ -89,6 +93,9 @@ public static class AdministrationModule
     public static readonly IReadOnlyDictionary<string, string[]> AlsoOpenedInScopeBy = new Dictionary<string, string[]>(StringComparer.Ordinal)
     {
         ["evaluation"] = [Permissions.EvalDesign, Permissions.EvalReview, Permissions.EvalPolicyManage],
+        ["processes"] = [Permissions.ProcessOperate, Permissions.ProcessAnalyze],
+        ["decisions"] = [Permissions.WorkflowDesign],
+        ["process_operations"] = [Permissions.ProcessAnalyze],
     };
 
     /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) the people directory policy (spec 010 US1), the shell with its footer and home views (spec 008), search tuning (spec 012 US4), adoption basics (spec 021) and the HR integration page (spec 019) are for the whole tenant.</summary>
@@ -212,6 +219,9 @@ public sealed class AdministrationNavigation(IAuthorizationService authz, TeamBe
     private static readonly IReadOnlyDictionary<string, string> Capability = new Dictionary<string, string>
     {
         ["kiosks"] = TeamBeats.Entitlements.Contracts.Capabilities.MobileKiosk,
+        ["processes"] = TeamBeats.Entitlements.Contracts.Capabilities.WorkflowBpmn,
+        ["decisions"] = TeamBeats.Entitlements.Contracts.Capabilities.WorkflowBpmn,
+        ["process_operations"] = TeamBeats.Entitlements.Contracts.Capabilities.WorkflowBpmn,
     };
 
     public async Task<IReadOnlyList<NavigationSection>> SectionsAsync(CancellationToken ct)

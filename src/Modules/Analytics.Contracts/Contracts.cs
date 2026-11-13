@@ -50,6 +50,7 @@ public static class AnalyticsEvents
     public const string BookingActivity = "booking.activity";
     public const string MobileInstall = "mobile.install";
     public const string MobilePushOptIn = "mobile.push_optin";
+    public const string ProcessInstanceEnded = "process.instance_ended";
 
     /// <summary>The sources whose items are viewed: content items, policies and documents.</summary>
     public static readonly IReadOnlySet<string> ItemSources = new HashSet<string>(StringComparer.Ordinal) { "content", "policies", "documents" };
@@ -88,12 +89,15 @@ public static class AnalyticsEvents
         "android", "ios", "windows", "macos", "linux", "other",
     };
 
+    /// <summary>How a process model instance ended (spec 024 FR-014), counted per process and version with its duration.</summary>
+    public static readonly IReadOnlySet<string> ProcessEndStates = new HashSet<string>(StringComparer.Ordinal) { "completed", "cancelled" };
+
     public static readonly IReadOnlySet<string> BookingKinds = new HashSet<string>(StringComparer.Ordinal) { "room", "desk", "parking", "equipment" };
 
     /// <summary>Events only modules emit; the web collection endpoint drops them, so nobody can add to these counts by hand.</summary>
     public static readonly IReadOnlySet<string> ServerOnly = new HashSet<string>(StringComparer.Ordinal)
     {
-        EngagementAction, EngagementAnonymousAction, LearningProgress, BookingActivity, MobilePushOptIn,
+        EngagementAction, EngagementAnonymousAction, LearningProgress, BookingActivity, MobilePushOptIn, ProcessInstanceEnded,
     };
 
     public static readonly IReadOnlySet<string> ErrorKinds = new HashSet<string>(StringComparer.Ordinal) { "render", "boundary", "network", "chunk" };
@@ -155,6 +159,13 @@ public static class AnalyticsEvents
         [MobilePushOptIn] = new(MobilePushOptIn, false, new Dictionary<string, AnalyticsField>
         {
             ["platform"] = new(AnalyticsFieldType.Key, true, MobilePlatforms),
+        }, Unkeyed: true),
+        [ProcessInstanceEnded] = new(ProcessInstanceEnded, false, new Dictionary<string, AnalyticsField>
+        {
+            ["process"] = new(AnalyticsFieldType.Key, true),
+            ["version"] = new(AnalyticsFieldType.Count, true),
+            ["state"] = new(AnalyticsFieldType.Key, true, ProcessEndStates),
+            ["seconds"] = new(AnalyticsFieldType.Number, true),
         }, Unkeyed: true),
         [UiError] = new(UiError, true, new Dictionary<string, AnalyticsField>
         {
