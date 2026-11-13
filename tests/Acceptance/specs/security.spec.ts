@@ -149,3 +149,64 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     });
   });
 }
+
+/**
+ * Spec 026 T027: sensitive data detection. The administrator turns detection on and adds a tested pattern; an item
+ * whose body holds a made-up IBAN then warns on publish, and goes out once the author gives a reason. English and Arabic.
+ */
+for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
+  test.describe(`sensitive data detection in ${locale}`, () => {
+    test.describe.configure({ mode: "serial" });
+    test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
+    let tenant: TestTenant;
+
+    test.beforeAll(async () => {
+      tenant = await createTenant(`sdd-${locale}`, locale, "workplace_plus");
+    });
+
+    test("an administrator turns detection on and adds a pattern tested on sample text", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/security`);
+      await page.getByRole("link", { name: msg(locale, "security.tabs.detection"), exact: true }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "security.detection.title"));
+      await expectAccessible(page, testInfo, `security-detection-${locale}`);
+
+      await page.getByLabel(msg(locale, "security.detection.enabled"), { exact: true }).check();
+      await page.getByRole("button", { name: msg(locale, "security.detection.save") }).click();
+      await expect(page.getByRole("status").filter({ hasText: msg(locale, "security.detection.saved") })).toBeVisible();
+
+      await page.getByLabel(msg(locale, "security.detection.name"), { exact: true }).fill(locale === "ar" ? "رقم الموظف" : "Employee number");
+      await page.getByLabel(msg(locale, "security.detection.pattern"), { exact: true }).fill("\\bEMP-\\d{6}\\b");
+      await page.getByLabel(msg(locale, "security.detection.sample"), { exact: true }).fill("EMP-004211");
+      await page.getByRole("button", { name: msg(locale, "security.detection.test") }).click();
+      await expect(page.getByRole("status").filter({ hasText: locale === "ar" ? "تطابقا واحدا" : "1 match" })).toBeVisible();
+      await page.getByRole("button", { name: msg(locale, "security.detection.add") }).click();
+      await expect(page.getByRole("row").filter({ hasText: "EMP-" })).toBeVisible();
+      await expectAccessible(page, testInfo, `security-detection-pattern-${locale}`);
+    });
+
+    test("an author is warned about an IBAN on publish and confirms with a reason", async ({ page }) => {
+      const api = await tenantApi(tenant);
+      const me = await (await api.get("/api/v1/me")).json();
+      const created = await api.post("/api/v1/content/items", {
+        data: {
+          type: "page",
+          ownerId: me.id,
+          variants: { [locale]: { title: locale === "ar" ? "بيانات المورد" : "Supplier details", body: { blocks: [{ type: "paragraph", children: [{ text: "IBAN GB82WEST12345698765432" }] }] } } },
+        },
+      });
+      expect(created.status()).toBe(201);
+      const item = await created.json();
+      await api.dispose();
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/content/items/${item.id}`);
+      await page.getByRole("button", { name: msg(locale, "content.items.publish") }).click();
+      await expect(page.getByText(msg(locale, "security.sensitive.foundTitle"))).toBeVisible();
+      await expect(page.getByRole("listitem").filter({ hasText: msg(locale, "security.sensitive.types.iban") })).toBeVisible();
+      await page.getByLabel(msg(locale, "security.sensitive.reason"), { exact: true }).fill(locale === "ar" ? "بيانات منشورة للمورد" : "The supplier's published details.");
+      await page.getByRole("button", { name: msg(locale, "security.sensitive.confirm") }).click();
+      await expect(page.getByTestId("item-status")).toContainText(msg(locale, "content.items.status.published"));
+    });
+  });
+}

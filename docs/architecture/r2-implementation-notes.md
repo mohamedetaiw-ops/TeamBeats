@@ -1422,3 +1422,22 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Stored thresholds keep applying after a move to a smaller package, so a downgrade never makes alerts noisier; they can be changed again only on a package with advanced alerts.
 - "Confidential" means the Confidential classification only. Guests never open Restricted items (FR-011), so there is nothing to alert on there.
 - A preview counts as opening the item, the same as a download.
+
+## Security and compliance (spec 026 R2, slice 4: T026 and T027 sensitive data detection)
+
+### Built
+- `ISensitiveDataScanner.GuardAsync` in Security.Contracts. Content calls it on publish and on submit for approval, with each language's title, summary and body. Documents calls it on upload, working copy and check-in, with the text of the stored file. The result names the type, the tenant pattern name for custom ones, the location (`title.en`, `body.ar`, `file`) and the count, never the matched value.
+- Built-in patterns, each checked beyond its shape: Saudi ID and Iqama (10 digits starting 1 or 2, Luhn), Emirates ID (784 and 15 digits, Luhn), Egyptian ID (century, a real birth date, governorate code), Qatar ID (11 digits starting 2 or 3), IBAN (mod 97), payment card (13 to 19 digits starting 2 to 6, Luhn), passport (letter and digit forms next to the word passport or جواز, warn only). Overlapping stretches count once, for the most specific type.
+- Tenant patterns: regular expressions with a 100 ms match limit, at most 50, names unique. A pattern is turned on only when its sample text matched; changing the expression needs a new test. Samples are never stored or logged.
+- Settings on the security policy row: `detection_enabled` and a mode per location type (`guest_space`, `everyone`, `other`). Changes need `security.manage`, `security.data_detection` and step-up. Patterns are managed with `security.respond` or `security.manage`. Every change is audited with before and after values (`security.detection_changed`, `security.detection_pattern_changed`).
+- Location types: a document library in a space with guests or open guest invitations is `guest_space`; a library open to the whole tenant, and content with the audience "everyone", is `everyone`; everything else is `other`.
+- Answering a warning: remove the data, raise the classification to Confidential or Restricted, or confirm with a reason (audited as `security.sensitive_data_confirmed` with types, locations and counts). A block is only cleared by removing the data. The editor and the upload dialog show the findings and ask for the reason; the admin page is Security, Sensitive data.
+- Documents now keep the text of plain text, Office Open XML and OpenDocument files in `text_extract`, so search finds words inside those files too.
+
+### Smallest safe defaults
+- Detection is off until the tenant turns it on, and every location type starts at warn. Block is a choice the tenant makes.
+- Raising the classification answers a warning but never lifts a block.
+- PDF, images and old binary Office formats give no text, so they are not checked. Text is read up to 1,000,000 characters and 50 MB of XML per file.
+- A passport number counts only near the word passport, since the bare form matches many product codes.
+- AI classification suggestions (section 11) are not built in R2; detection is pattern matching only, as the plan says.
+- The public API check-in takes no reason; a warning there comes back as a conflict with the findings, and the author confirms in the app.

@@ -132,3 +132,16 @@ export type AlertSettings = {
   guestConfidentialNotify: "security" | "sponsor" | "both";
   editable: boolean;
 };
+
+/** A tenant detection pattern (spec 026 US6 scenario 3). Samples are never kept. */
+export type DetectionPattern = { id: string; name: string; pattern: string; enabled: boolean; testedAt: string | null; updatedAt: string };
+
+/** Sensitive data detection settings (spec 026 US6, FR-015). The API says who may change what. */
+export type DetectionSettings = {
+  enabled: boolean;
+  modes: Record<"guest_space" | "everyone" | "other", "off" | "warn" | "block">;
+  builtIn: string[];
+  patterns: DetectionPattern[];
+  canManage: boolean;
+  canEditPatterns: boolean;
+};

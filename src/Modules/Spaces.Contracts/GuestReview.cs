@@ -17,4 +17,7 @@ public interface ISpaceGuestReview
 
     /// <summary>The person who invited the guest into the space (spec 026 US5 scenario 3), or null when unknown.</summary>
     Task<Guid?> SponsorOfAsync(Guid spaceId, Guid userId, CancellationToken ct = default);
+
+    /// <summary>Whether the space has a guest or an open guest invitation (spec 026 US6 scenario 2: a guest space).</summary>
+    Task<bool> HasGuestsAsync(Guid spaceId, CancellationToken ct = default);
 }

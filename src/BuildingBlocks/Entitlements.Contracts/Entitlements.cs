@@ -126,6 +126,10 @@ public static class Capabilities
     public const string SecurityAlertsAdvanced = "security.alerts_advanced";
     public const string SecuritySiem = "security.siem";
     public const string SecurityMaxGuestSpaces = "security.max_guest_spaces";
+
+    /// <summary>Sensitive data detection on publish and upload (spec 026 US6).</summary>
+    public const string SecurityDataDetection = "security.data_detection";
+
     public const string ContentCore = "content.core";
     public const string ContentCriticalAck = "content.critical_ack";
     public const string ContentMultistepApproval = "content.multistep_approval";

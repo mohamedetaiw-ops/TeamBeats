@@ -18,6 +18,8 @@
     <ProjectReference Include="../Experience.Contracts/TeamBeats.Modules.Experience.Contracts.csproj" />
     <ProjectReference Include="../Search.Contracts/TeamBeats.Modules.Search.Contracts.csproj" />
     <ProjectReference Include="../PublicApi.Contracts/TeamBeats.Modules.PublicApi.Contracts.csproj" />
+    <ProjectReference Include="../Security.Contracts/TeamBeats.Modules.Security.Contracts.csproj" />
+    <ProjectReference Include="../Spaces.Contracts/TeamBeats.Modules.Spaces.Contracts.csproj" />
     <ProjectReference Include="../Identity.Contracts/TeamBeats.Modules.Identity.Contracts.csproj" />
     <ProjectReference Include="../Integrations.Contracts/TeamBeats.Modules.Integrations.Contracts.csproj" />
   </ItemGroup>

@@ -18,6 +18,8 @@ import {
   type SiteView,
 } from "@/lib/content/types";
 import { PersonPicker } from "@/features/services/PersonPicker";
+import { SensitiveWarning } from "@/features/security/SensitiveWarning";
+import { readSensitive, type SensitiveProblem } from "@/lib/security/sensitive";
 import { BlockEditor } from "./editor/BlockEditor";
 import { BodyView } from "./BodyView";
 import "./content.css";
@@ -100,6 +102,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
   const [device, setDevice] = useState<"desktop" | "phone">("desktop");
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<Result>(null);
+  const [sensitive, setSensitive] = useState<(SensitiveProblem & { action: "publish" | "submit" }) | null>(null);
 
   const locked = item.inReview || item.status === "archived";
   const draft = drafts[tab]!;
@@ -147,6 +150,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
   async function call(action: string, url: string, method: string, body?: unknown, done?: string) {
     setBusy(action);
     setResult(null);
+    setSensitive(null);
     try {
       const response = await fetch(url, {
         method,
@@ -154,7 +158,10 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
         body: body === undefined ? undefined : JSON.stringify(body),
       });
       if (!response.ok) {
-        setResult({ ok: false, messages: await problemMessages(response) });
+        // Sensitive data detection (spec 026 US6) shows what it found and, for a warning, asks for a reason.
+        const found = await readSensitive(response.clone());
+        if (found && (action === "publish" || action === "submit")) setSensitive({ ...found, action: action as "publish" | "submit" });
+        else setResult({ ok: false, messages: await problemMessages(response) });
         return false;
       }
       if (response.status !== 204) setItem((await response.json()) as ItemView);
@@ -171,9 +178,10 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
 
   const base = `/api/v1/content/items/${encodeURIComponent(item.id)}`;
   const save = () => call("save", base, "PUT", request(), t("saved"));
-  const go = async (action: "publish" | "submit") => {
+  const go = async (action: "publish" | "submit", sensitiveReason?: string) => {
     if (!locked && !(await call("save", base, "PUT", request()))) return;
-    await call(action, `${base}/${action}`, "POST", { publishAt: publishAt || null, expiresAt: expiresAt || null, material }, t(action === "publish" ? "published" : "submitted"));
+    await call(action, `${base}/${action}`, "POST", { publishAt: publishAt || null, expiresAt: expiresAt || null, material, sensitiveReason: sensitiveReason ?? null },
+      t(action === "publish" ? "published" : "submitted"));
   };
 
   const toggle = (list: string[], value: string, on: boolean) => (on ? [...new Set([...list, value])] : list.filter((v) => v !== value));
@@ -349,6 +357,9 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
           <input type="checkbox" checked={material} onChange={(e) => setMaterial(e.target.checked)} />
           {t("material")}
         </label>
+        {sensitive ? (
+          <SensitiveWarning problem={sensitive} busy={busy === sensitive.action} onConfirm={(reason) => void go(sensitive.action, reason)} />
+        ) : null}
         <div className="content-actions">
           <Button disabled={locked} busy={busy === "save"} busyLabel={t("saving")} onClick={() => void save()}>
             {t("save")}

@@ -273,6 +273,9 @@ public static class AuditActions
     public const string SecurityAccessReviewCompleted = "security.access_review_completed";
     public const string SecuritySiemDeliveryFailed = "security.siem_delivery_failed";
     public const string SecurityAlertSettingsChanged = "security.alert_settings_changed";
+    public const string SecurityDetectionChanged = "security.detection_changed";
+    public const string SecurityDetectionPatternChanged = "security.detection_pattern_changed";
+    public const string SecuritySensitiveDataConfirmed = "security.sensitive_data_confirmed";
     public const string WorkflowDefinitionPublished = "workflow.definition_published";
     public const string WorkflowTaskCompleted = "workflow.task_completed";
     public const string WorkflowInstanceWithdrawn = "workflow.instance_withdrawn";

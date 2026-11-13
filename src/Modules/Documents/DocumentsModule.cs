@@ -113,11 +113,12 @@ public static class DocumentsModule
         });
 
         // The file is the request body; what it is comes in the query, metadata as a JSON object.
+        // sensitiveReason confirms a sensitive data warning (spec 026 US6).
         libraries.MapPost("/{id:guid}/files", async (Guid id, HttpRequest http, string? name, Guid? folder, Guid? type, string? metadata, string? classification, bool? publish,
-            DocumentFiles files, IDbSession session, CancellationToken ct) =>
+            string? sensitiveReason, DocumentFiles files, IDbSession session, CancellationToken ct) =>
         {
             LiftBodyLimit(http);
-            var request = new UploadRequest(name, folder, type, ParseMetadata(metadata), classification, publish ?? false);
+            var request = new UploadRequest(name, folder, type, ParseMetadata(metadata), classification, publish ?? false, sensitiveReason);
             var view = await files.UploadAsync(id, request, http.Body, http.ContentLength, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/documents/{view.Id}", view);
@@ -182,20 +183,21 @@ public static class DocumentsModule
         });
 
         // The working copy is the request body, named in the query.
-        root.MapPut("/{id:guid}/working", async (Guid id, HttpRequest http, string? name, DocumentVersions versions, IDbSession session, CancellationToken ct) =>
+        root.MapPut("/{id:guid}/working", async (Guid id, HttpRequest http, string? name, string? sensitiveReason, DocumentVersions versions, IDbSession session,
+            CancellationToken ct) =>
         {
             LiftBodyLimit(http);
-            var view = await versions.SaveWorkingCopyAsync(id, name, http.Body, http.ContentLength, ct);
+            var view = await versions.SaveWorkingCopyAsync(id, name, http.Body, http.ContentLength, ct, sensitiveReason);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         }).DisableAntiforgery();
 
         // With a name the body is the new file; without one the saved working copy is checked in.
-        root.MapPost("/{id:guid}/checkin", async (Guid id, HttpRequest http, string? name, string? note, bool? publish, DocumentVersions versions, IDbSession session,
-            CancellationToken ct) =>
+        root.MapPost("/{id:guid}/checkin", async (Guid id, HttpRequest http, string? name, string? note, bool? publish, string? sensitiveReason, DocumentVersions versions,
+            IDbSession session, CancellationToken ct) =>
         {
             LiftBodyLimit(http);
-            var request = new CheckInRequest(note, publish ?? false);
+            var request = new CheckInRequest(note, publish ?? false, sensitiveReason);
             var view = string.IsNullOrEmpty(name)
                 ? await versions.CheckInAsync(id, request, null, null, null, ct)
                 : await versions.CheckInAsync(id, request, name, http.Body, http.ContentLength, ct);

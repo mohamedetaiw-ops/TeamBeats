@@ -46,8 +46,8 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T025 [US5] The rules, `ApiCallsDenied` and `ApiVolumeSpike` from PublicApi, threshold settings
 
 ## R2 Phase 9: User Story 6, sensitive data detection (P2)
-- [ ] T026 [P] [US6] Tests: built-in patterns; warn and confirm; block by location type; tenant pattern test; nothing matched is logged
-- [ ] T027 [US6] `ISensitiveDataScanner`, patterns, settings; hooks in Content and Documents; warning UI
+- [x] T026 [P] [US6] Tests: built-in patterns; warn and confirm; block by location type; tenant pattern test; nothing matched is logged
+- [x] T027 [US6] `ISensitiveDataScanner`, patterns, settings; hooks in Content and Documents; warning UI
 
 ## R2 Phase 10: User Story 7, compliance projects (P2)
 - [ ] T028 [P] [US7] Tests: project from a framework; evidence with export hash; readiness; guest auditor read-only; org scope; package
