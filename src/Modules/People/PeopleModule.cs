@@ -144,6 +144,7 @@ public static class PeopleModule
             return Results.Ok(profile);
         });
 
+        app.MapPeoplePublicEndpoints();
         return app;
     }
 }

@@ -846,7 +846,7 @@ public sealed class Items(
     public async Task<ReaderView> ReadAsync(Guid id, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.ContentCore, ct);
-        context.RequireUser();
+        context.RequirePrincipal();
         var item = await RowAsync(id, false, ct) ?? throw AppException.NotFound();
         var site = (await sites.RowAsync(item.SiteId, false, ct))!;
         if (!ContentStatuses.Readable(item.Status) || item.PublishedVersion is not { } number || !await MayReadAsync(item, site, ct))

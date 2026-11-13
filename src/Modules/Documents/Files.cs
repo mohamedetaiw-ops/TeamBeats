@@ -377,7 +377,7 @@ public sealed class DocumentFiles(
     internal async Task<(LibraryRow Library, DocRow Doc, DocRights Rights)> VisibleAsync(Guid id, CancellationToken ct, bool forUpdate = false)
     {
         await entitlements.DemandAsync(Capabilities.DocsCore, ct);
-        var user = context.RequireUser();
+        var user = context.RequirePrincipal();
         var doc = await session.QuerySingleOrDefaultAsync($"select {DocRow.Columns} from documents.document where id = @id and deleted_at is null" + (forUpdate ? " for update" : ""),
             new { id }, DocRow.Read, ct) ?? throw AppException.NotFound();
         var library = await Access.LibraryAsync(doc.LibraryId, ct) ?? throw AppException.NotFound();
@@ -518,7 +518,7 @@ public sealed class DocumentFiles(
 
     public async Task<ItemPage> ItemsAsync(Guid libraryId, ItemQuery query, Guid? viewId, int limit, int offset, CancellationToken ct)
     {
-        var user = context.RequireUser();
+        var user = context.RequirePrincipal();
         var (library, _) = await libraries.VisibleAsync(libraryId, ct);
         if (viewId is { } v)
         {
@@ -667,7 +667,7 @@ public sealed class DocumentFiles(
     /// </summary>
     internal async Task<Guid> OpenableAsync(Guid documentId, Guid? versionId, CancellationToken ct)
     {
-        var user = context.RequireUser();
+        var user = context.RequirePrincipal();
         var (_, doc, rights) = await VisibleAsync(documentId, ct);
         var target = versionId ?? (rights.Contribute ? doc.Current : doc.Effective) ?? doc.Pending;
         var allowed = target is { } t && (t == doc.Effective || (rights.Contribute && doc.CheckedIn) || (t == doc.Pending && doc.CheckedOutBy == user));
@@ -727,15 +727,44 @@ public sealed class DocumentFiles(
         {
             throw AppException.NotFound();
         }
-        // The key is built by this module, so it is relative to the tenant's prefix; strip nothing, add nothing.
-        var content = await storage.OpenReadAsync(row.Key, ct) ?? throw AppException.NotFound();
-        if (row.Classification is "confidential" or "restricted")
+        return await ServeAsync(row.Doc, row.Version, row.Key, row.Type, row.Name, row.Size, row.Classification, row.Library, user, ct);
+    }
+
+    /// <summary>
+    /// The file of a version the caller may open, for the public API (spec 035 <c>documents:read</c>): the same checks as
+    /// a download link, made on the call itself, so no link outlives the token that asked for it.
+    /// </summary>
+    public async Task<(Stream Content, string ContentType, string FileName)> ReadFileAsync(Guid documentId, Guid? versionId, CancellationToken ct)
+    {
+        var principal = context.RequirePrincipal();
+        var target = await OpenableAsync(documentId, versionId, ct);
+        var row = await session.QuerySingleOrDefaultAsync(
+            """
+            select v.object_key, v.content_type, v.file_name, v.size_bytes, d.classification, d.library_id
+            from documents.document_version v join documents.document d on d.id = v.document_id
+            where v.id = @target and v.document_id = @documentId and d.deleted_at is null
+            """, new { target, documentId },
+            r => (Key: r.GetString(0), Type: r.GetString(1), Name: r.GetString(2), Size: r.GetInt64(3), Classification: r.GetString(4), Library: r.GetGuid(5)), ct);
+        if (row.Key is null)
         {
-            await audit.WriteAsync(new AuditEntry(AuditActions.DocDownloaded, Securables.Document, row.Doc.ToString(),
-                Changes: new { version = row.Version, library = row.Library, size = row.Size }), ct);
+            throw AppException.NotFound();
         }
-        await outbox.EnqueueAsync(new DocumentDownloaded(row.Doc, row.Library, user, row.Size), ct);
-        return (content, row.Type, row.Name);
+        return await ServeAsync(documentId, target, row.Key, row.Type, row.Name, row.Size, row.Classification, row.Library, principal, ct);
+    }
+
+    private async Task<(Stream Content, string ContentType, string FileName)> ServeAsync(Guid doc, Guid version, string key, string type, string name, long size,
+        string classification, Guid library, Guid principal, CancellationToken ct)
+    {
+        // The key is built by this module, so it is relative to the tenant's prefix; strip nothing, add nothing.
+        var content = await storage.OpenReadAsync(key, ct) ?? throw AppException.NotFound();
+        if (classification is "confidential" or "restricted")
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.DocDownloaded, Securables.Document, doc.ToString(),
+                Changes: new { version, library, size }), ct);
+        }
+        // Download volume counts the app itself when an app reads as itself (spec 026 US5 with spec 035).
+        await outbox.EnqueueAsync(new DocumentDownloaded(doc, library, principal, size), ct);
+        return (content, type, name);
     }
 
     private static string Base64Url(byte[] bytes) => Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');

@@ -190,6 +190,7 @@ public static class PoliciesModule
         app.MapGet("/api/v1/me/policies", async (PolicyCampaigns campaigns, CancellationToken ct) => Results.Ok(await campaigns.MyPoliciesAsync(ct)))
             .RequireTenantUser().WithTags("Policies");
 
+        app.MapPolicyPublicEndpoints();
         return app;
     }
 }

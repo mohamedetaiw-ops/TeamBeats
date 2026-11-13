@@ -198,7 +198,7 @@ public sealed class Libraries(
     public async Task<IReadOnlyList<LibrarySummary>> ListAsync(CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.DocsCore, ct);
-        context.RequireUser();
+        context.RequirePrincipal();
         var libraries = await session.QueryAsync($"select {LibraryRow.Columns} from documents.library where status = 'active' order by created_at, id", null, LibraryRow.Read, ct);
         var list = new List<LibrarySummary>();
         foreach (var library in libraries)

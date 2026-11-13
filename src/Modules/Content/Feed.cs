@@ -44,10 +44,14 @@ public sealed class ContentFeed(
     private const int Batch = 100;
     private const int MaxScanned = 1000;
 
-    public async Task<FeedPage> PageAsync(Guid? siteId, string? type, string? cursor, int limit, CancellationToken ct)
+    /// <summary>
+    /// A page of the feed. An application app calling the public API (spec 035) has no audience facts, so targeting does
+    /// not pick for it: it gets every live item its own roles let it read.
+    /// </summary>
+    public async Task<FeedPage> PageAsync(Guid? siteId, string? type, string? cursor, int limit, CancellationToken ct, int maxLimit = MaxLimit)
     {
         await entitlements.DemandAsync(Capabilities.ContentCore, ct);
-        var user = context.RequireUser();
+        var principal = context.RequirePrincipal();
         if (type is not null && !ContentTypes.Defaults.ContainsKey(type))
         {
             throw AppException.Validation("type", "validation.content.type");
@@ -57,8 +61,8 @@ public sealed class ContentFeed(
         {
             position = Decode(cursor) ?? throw AppException.Validation("cursor", "validation.content.cursor");
         }
-        limit = Math.Clamp(limit, 1, MaxLimit);
-        var me = await facts.ForAsync(user, ct);
+        limit = Math.Clamp(limit, 1, maxLimit);
+        var me = context.ActorType == ActorType.App ? null : await facts.ForAsync(principal, ct);
         var locales = await tenantSettings.GetLocaleSettingsAsync(ct);
         var siteRows = new Dictionary<Guid, SiteRow>();
         var result = new List<FeedItem>();
@@ -85,7 +89,7 @@ public sealed class ContentFeed(
                 {
                     siteRows[row.SiteId] = site = (await sites.RowAsync(row.SiteId, false, ct))!;
                 }
-                if (!AudienceRules.Matches(row.Audience, me) || !await items.MayReadAsync(row, site, ct) || row.PublishedVersion is not { } number)
+                if ((me is not null && !AudienceRules.Matches(row.Audience, me)) || !await items.MayReadAsync(row, site, ct) || row.PublishedVersion is not { } number)
                 {
                     continue;
                 }

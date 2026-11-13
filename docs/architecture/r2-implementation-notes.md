@@ -1180,3 +1180,19 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Org units are paged in memory after the authorization filter: a tenant has at most some thousands of units, and the order (level, code, ID) is stable.
 - The public document has no security scheme section yet; the developer page (T019) adds it with the OAuth metadata.
 
+
+## Public API and MCP server (spec 035, slice 3c: T011 read scopes of content, documents, people and policies)
+
+### Built
+- `content:read` (spec 009), in `Content`: `GET /api/public/v1/content` (the news feed, with `siteId` and `type`) and `GET /api/public/v1/content/{id}` (the live version with its structured body, in the caller's language or the fallback, and a link to the reading page).
+- `documents:read` (spec 011), in `Documents`: `GET /libraries`, `GET /libraries/{id}/documents` (with `folderId` and `recursive`, newest first), `GET /documents/{id}`, `GET /documents/{id}/versions` and `GET /documents/{id}/content`. The file is served on the call itself after the same checks as a download link, so no link outlives the token; confidential and restricted files are audited and every file counts towards download volume alerts (spec 026), for the app when an app reads as itself.
+- `people:read` (spec 010), in `People`: `GET /people` (search with `q` and `unitId`), `GET /people/{id}` and `GET /people/{id}/org-chart`, with the fields the field policy shows the caller.
+- `policies:read` (spec 025), in `Policies`: `GET /policies` (policies in force) and `GET /policies/{id}` (the version in force with its clauses, and for a person their own attestation status).
+- `ITenantContext.RequirePrincipal()` returns the person or the application app, for reads both may make; the module still decides what the caller sees through the central authorization service.
+
+### Smallest safe defaults
+- An application app is not a member of the tenant, so what every member may view (content and libraries at tenant visibility) is not open to it: the evaluator gives the `tenant_visibility` reason to people only, and an app reads only what its own roles cover, at their org scope (spec 035 section 7). An app with App reader at the whole organization still reads everything.
+- The feed is targeted for a person as in TeamBeats. An app has no audience facts, so it gets every live item its roles let it read.
+- An app's directory is the people placed in the units its own `people.view` covers. It sees only the fields every employee sees, since it is in no unit and manages no one, and it is never told who is on leave.
+- Policies apply to people through their audience. An app is in no audience, so it reads the published policies whose unit its own `content.view` covers (the whole tenant for a tenant-wide policy), never drafts, and it owes no attestation. No new permission was added for this.
+- Lists the owning module pages by offset (documents, people, policies) carry the offset inside the opaque cursor. The people search keeps its own page cap of 50, so a page can be shorter than `limit` with a `nextCursor`.

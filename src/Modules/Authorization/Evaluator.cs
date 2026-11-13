@@ -59,7 +59,7 @@ public static class Evaluator
 
         if (descriptor is { } res)
         {
-            if (IsViewPermission(permission) && res.Visibility == ResourceVisibility.Tenant)
+            if (!g.App && IsViewPermission(permission) && res.Visibility == ResourceVisibility.Tenant)
             {
                 reasons.Add(new DecisionReason("tenant_visibility"));
             }
