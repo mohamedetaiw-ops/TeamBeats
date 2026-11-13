@@ -10719,7 +10719,44 @@
       "subscriptionRemoved": "أُزيل الاشتراك.",
       "subscribe": "اشتراك",
       "subscribed": "اشترك التطبيق.",
-      "subscribeNeedsScope": "امنح التطبيق نطاق events:subscribe لتشترك به في الأحداث."
+      "subscribeNeedsScope": "امنح التطبيق نطاق events:subscribe لتشترك به في الأحداث.",
+      "developerTab": "صفحة المطورين",
+      "developerUnavailable": "تعذر تحميل صفحة المطورين.",
+      "developerTitle": "صفحة المطورين",
+      "developerIntro": "ما يحتاجه المطور للبناء على الواجهة البرمجية العامة وخادم MCP لهذه المؤسسة. لا يظهر إلا ما تتضمنه خطة المؤسسة.",
+      "openApiUrl": "مستند OpenAPI العام",
+      "metadataUrl": "بيانات خادم التفويض",
+      "mcpUrl": "خادم MCP",
+      "resourceMetadataUrl": "بيانات المورد المحمي لخادم MCP",
+      "deprecationsTitle": "العمليات المهملة",
+      "noDeprecations": "لا توجد عمليات مهملة",
+      "noDeprecationsHint": "يُعلن هنا عن العمليات قبل 12 شهرًا على الأقل من توقفها.",
+      "operation": "العملية",
+      "replacement": "البديل",
+      "sunset": "تتوقف في",
+      "operationsTitle": "العمليات",
+      "noOperations": "لا يوجد ما يُعرض",
+      "scope": "النطاق",
+      "deprecated": "مهملة",
+      "current": "حالية",
+      "scopesTitle": "النطاقات",
+      "holder": "يستخدمه",
+      "holders": {
+        "delegated": "تطبيقات تعمل نيابة عن شخص",
+        "application": "تطبيقات تعمل باسمها",
+        "both": "النوعان"
+      },
+      "eventsTitle": "الأحداث",
+      "eventsIntro": "يحمل كل حدث معرّفات ورابطًا فقط، ويقرأ التطبيق العنصر عبر الواجهة البرمجية بصلاحياته.",
+      "noEvents": "الأحداث ليست ضمن هذه الخطة",
+      "version": "الإصدار",
+      "mcpTitle": "أدوات وموارد MCP",
+      "noMcp": "خادم MCP ليس ضمن هذه الخطة",
+      "mcpKinds": {
+        "tool": "أداة قراءة",
+        "write_tool": "أداة كتابة تُؤكَّد في TeamBeats",
+        "resource": "مورد"
+      }
     },
     "connected": {
       "title": "التطبيقات المتصلة",
@@ -10735,6 +10772,21 @@
       "cancel": "إلغاء الأمر",
       "failedTitle": "لم تُزل التطبيق",
       "failed": "حاول مجددًا بعد قليل."
+    },
+    "tool": {
+      "whoami": "هوية الشخص الذي سجل الدخول",
+      "get_page": "قراءة صفحة أو خبر أو إعلان",
+      "list_news": "عرض أحدث الأخبار والإعلانات",
+      "draft_news": "كتابة مسودة خبر أو صفحة دون نشرها",
+      "get_document": "قراءة مستند",
+      "find_person": "البحث عن زملاء في الدليل",
+      "get_policy": "قراءة سياسة",
+      "search": "البحث فيما يمكن للشخص رؤيته",
+      "ask_teambeats": "سؤال مساعد TeamBeats",
+      "list_services": "عرض كتالوج الخدمات",
+      "list_my_requests": "عرض طلبات الشخص",
+      "submit_service_request": "تقديم طلب خدمة يُؤكَّد في TeamBeats",
+      "list_my_tasks": "عرض مهام الشخص"
     }
   },
   "aiActions": {

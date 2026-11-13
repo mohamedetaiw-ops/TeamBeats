@@ -1344,3 +1344,15 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - At most 20 subscriptions per app, and one per app, event type and URL.
 - The `api_events` pack needs only `api.event_subscriptions` in the package, not the connector framework, since the tenant configures a subscription and not a connection.
 - A paused subscription keeps its delivery log. Removing a subscription removes its endpoint and that log.
+
+## Public API and MCP server (spec 035, slice 5c: T019 developer page and deprecation headers)
+
+### Built
+- The "Developer page" tab of API and MCP access (`GET /api/v1/api-access/developer`, `api.view`). It shows, on the tenant's own host, the public OpenAPI document (`/openapi/public-v1.json`, now served through the web host as well), the authorization server metadata, the MCP server and its protected resource metadata. It lists the public operations with their scopes, the scopes, the event catalogue, and the MCP tools and resources, each only as far as the package includes them. It also lists deprecated operations with their replacement and the date they stop working.
+- `.Deprecated(announced, sunset, replacement)` in `PublicApi.Contracts` for public operations. Every answer, errors included, carries `Deprecation` (RFC 9745, `@` and Unix seconds), `Sunset` (RFC 8594) and a `Link` to the replacement with `rel="successor-version"`. The OpenAPI document marks the operation deprecated. A sunset less than 12 months after the announcement, or a replacement outside `/api/public`, fails at startup.
+
+### Smallest safe defaults
+- No public operation is deprecated in R2, so the list is empty and no response carries the headers yet.
+- The OpenAPI document is the whole public v1 contract, the same for every tenant (platform data). The developer page narrows it to the package by listing only the operations whose scope the package includes.
+- Operation paths, scope keys, event types and tool names stay in English. Scope and tool descriptions are in the reader's language.
+- The page is in the admin area for API viewers and administrators. A developer outside the organization gets the addresses from them; the OpenAPI document and the metadata are public on the tenant host.

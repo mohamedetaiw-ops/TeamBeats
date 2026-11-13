@@ -21989,6 +21989,18 @@
         }
       }
     },
+    "/api/v1/api-access/developer": {
+      "get": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/api-access/event-catalogue": {
       "get": {
         "tags": [

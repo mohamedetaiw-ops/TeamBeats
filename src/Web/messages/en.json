@@ -10719,7 +10719,44 @@
       "subscriptionRemoved": "The subscription was removed.",
       "subscribe": "Subscribe",
       "subscribed": "The app is subscribed.",
-      "subscribeNeedsScope": "Give the app the events:subscribe scope to subscribe it to events."
+      "subscribeNeedsScope": "Give the app the events:subscribe scope to subscribe it to events.",
+      "developerTab": "Developer page",
+      "developerUnavailable": "The developer page could not be loaded.",
+      "developerTitle": "Developer page",
+      "developerIntro": "What a developer needs to build against this organization's public API and MCP server. Only what the organization's plan includes is listed.",
+      "openApiUrl": "Public OpenAPI document",
+      "metadataUrl": "Authorization server metadata",
+      "mcpUrl": "MCP server",
+      "resourceMetadataUrl": "MCP protected resource metadata",
+      "deprecationsTitle": "Deprecated operations",
+      "noDeprecations": "No deprecated operations",
+      "noDeprecationsHint": "Operations are announced here at least 12 months before they stop working.",
+      "operation": "Operation",
+      "replacement": "Replacement",
+      "sunset": "Stops working on",
+      "operationsTitle": "Operations",
+      "noOperations": "Nothing to list",
+      "scope": "Scope",
+      "deprecated": "Deprecated",
+      "current": "Current",
+      "scopesTitle": "Scopes",
+      "holder": "Used by",
+      "holders": {
+        "delegated": "Apps acting for a person",
+        "application": "Apps acting as themselves",
+        "both": "Both kinds of app"
+      },
+      "eventsTitle": "Events",
+      "eventsIntro": "Each event carries identifiers and a link only; the app reads the item through the API with its own access.",
+      "noEvents": "Events are not part of this plan",
+      "version": "Version",
+      "mcpTitle": "MCP tools and resources",
+      "noMcp": "The MCP server is not part of this plan",
+      "mcpKinds": {
+        "tool": "Read tool",
+        "write_tool": "Write tool, confirmed in TeamBeats",
+        "resource": "Resource"
+      }
     },
     "connected": {
       "title": "Connected apps",
@@ -10735,6 +10772,21 @@
       "cancel": "Cancel",
       "failedTitle": "The app was not removed",
       "failed": "Try again in a moment."
+    },
+    "tool": {
+      "whoami": "Who the signed-in person is",
+      "get_page": "Read one page, news item or announcement",
+      "list_news": "List recent news and announcements",
+      "draft_news": "Draft a news item or page, never publish it",
+      "get_document": "Read one document",
+      "find_person": "Find colleagues in the directory",
+      "get_policy": "Read one policy",
+      "search": "Search what the person can see",
+      "ask_teambeats": "Ask the TeamBeats assistant",
+      "list_services": "List the service catalogue",
+      "list_my_requests": "List the person's requests",
+      "submit_service_request": "File a service request, confirmed in TeamBeats",
+      "list_my_tasks": "List the person's tasks"
     }
   },
   "aiActions": {
