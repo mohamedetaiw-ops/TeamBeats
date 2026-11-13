@@ -37,9 +37,9 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T020 [US4] SIEM endpoints and admin page; `docs/security/siem-schema.md`
 
 ## R2 Phase 7: User Story 3, guests (P1)
-- [ ] T021 [P] [US3] Tests: guest domain rules; `security.max_guest_spaces`; reduced shell; watermark; access reviews for guests and admin role holders
-- [ ] T022 [US3] Guest policy and limit checked by Spaces; reduced guest shell; watermarked PDF downloads
-- [ ] T023 [US3] Access reviews (FR-012) with automatic removal after 14 days
+- [x] T021 [P] [US3] Tests: guest domain rules; `security.max_guest_spaces`; reduced shell; watermark; access reviews for guests and admin role holders
+- [x] T022 [US3] Guest policy and limit checked by Spaces; reduced guest shell; watermarked PDF downloads
+- [x] T023 [US3] Access reviews (FR-012) with automatic removal after 14 days
 
 ## R2 Phase 8: User Story 5 in full (P1)
 - [ ] T024 [P] [US5] Tests: guest opens a Confidential item; app denial burst; app volume spike; thresholds

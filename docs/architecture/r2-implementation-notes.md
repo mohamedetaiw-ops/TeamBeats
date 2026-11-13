@@ -1386,3 +1386,24 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - The stream is the audit stream. Spec 035 call log rows (one per API call, reads included) are usage telemetry and are not streamed. The API's refusals and writes are audited, so they are in the stream.
 - Delivery is at least once. A batch whose answer was lost is sent again under a new batch ID only if more events joined it, and receivers drop repeats by event ID.
 - The development host does not run the audit sealer, so nothing streams there unless the workers host runs too.
+
+## Security and compliance (spec 026 R2, slice 2: T021 to T023 guests and access reviews)
+
+### Built
+- Guest domain rules on the security policy page (`guestAllowDomains`, `guestBlockDomains`). Spaces checks them through `ISecurityPolicy.GuestDomainRefusal` before an invitation goes out. Changes are audited with the policy like every other setting.
+- `security.max_guest_spaces` (Workplace 0, Workplace Plus 5, Enterprise and Government no limit) counts active spaces with guests or open invitations. A space's first invitation is checked, under a per tenant lock.
+- Guest PDF downloads carry the guest's address and the time on every page, through `IPdfStamp` in `Integrations.Contracts` (the payslip stamp of spec 019, now shared). Every guest download is audited as `doc.downloaded`.
+- The reduced guest shell: for a guest, `/api/v1/experience/shell` sends only the tenant's name, notifications, settings and breadcrumbs, with `guest: true`. The home then lists the guest's spaces from `/api/v1/spaces/as-guest`, each with its sponsor (the person who invited them) and end date. The shell labels the person as a guest.
+- Access reviews (`AccessReviews`, `AccessReviewWorker` hourly in the workers host, or in the development host with `Security:AccessReviews:InProcess`). Guests come from Spaces through `ISpaceGuestReview`; administrator assignments from Authorization through `AdminAssignmentsAsync`; managers from `IReportingLine`.
+- Reviewers decide on `/access-reviews` (`/api/v1/access-reviews`); security administrators see the reviews and open one on the new Access reviews tab (`/api/v1/security/access-reviews`, step-up to open). Reviewers are told by a security notice.
+- Audit: `guest.reviewed`, `security.access_review_started`, `security.access_review_decided`, `security.access_review_completed`, and `spaces.guest_removed` from Spaces.
+- Tests: `SecurityGuestTests` (4), `SecurityAccessReviewTests` (2), e2e `guests.spec.ts` in English and Arabic with axe.
+
+### Smallest safe defaults
+- A domain entry covers its subdomains. Blocked wins over allowed; an empty allowed list allows every domain that is not blocked.
+- Guests download PDFs up to 50 MB; a larger PDF, or one that cannot carry the stamp (for example one with a password), is refused to guests. Other file types download unchanged. A per space switch that turns guest downloads off is not built.
+- An administrator role is a role holding any permission apps may never hold (`Permissions.Administers`: access, identity, security, the API, audit export and AI policy). Only direct user assignments at tenant or organization scope are reviewed; group assignments come from the directory and are reviewed there.
+- The reviewer is the guest's sponsor or the administrator's manager. When that person is gone, is a guest, or is the person reviewed, the first active holder of `security.manage` other than the person reviewed reviews instead. An item with no possible reviewer is left out of the review.
+- The first review of a tenant opens 90 days after the schedule first runs for it; security administrators can open one earlier. One review is open at a time.
+- An item not decided in 14 days is removed, except the tenant's last tenant administrator assignment, which is kept and recorded as `kept`.
+- Removing a guest works like the end of access: the owners are told and a guest left in no space is disabled and signed out.
