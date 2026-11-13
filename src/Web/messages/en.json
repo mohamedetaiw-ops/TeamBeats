@@ -532,7 +532,9 @@
         "kiosk_user": "Kiosk user",
         "app_reader": "App reader",
         "app_request_reader": "Request reader for apps",
-        "app_request_filer": "Request filer for apps"
+        "app_request_filer": "Request filer for apps",
+        "process_operator": "Process operator",
+        "process_analyst": "Process analyst"
       },
       "tabs": "Roles and access sections",
       "unknownUnit": "a unit outside your view",
@@ -815,7 +817,9 @@
         "api_monthly_calls": "API calls each month",
         "security_data_detection": "Sensitive data detection",
         "compliance_projects": "Compliance projects",
-        "deployment_region_choice": "Choice of hosting region"
+        "deployment_region_choice": "Choice of hosting region",
+        "workflow_bpmn": "Process models and decisions",
+        "workflow_max_active_instances": "Active process instances"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",

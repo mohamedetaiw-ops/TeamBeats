@@ -1,6 +1,8 @@
 using System.Text.Json;
 using Npgsql;
+using System.Text.Json.Nodes;
 using TeamBeats.Audit.Contracts;
+using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Integrations.Contracts;
@@ -18,8 +20,9 @@ namespace TeamBeats.Modules.Workflow;
 /// incidents an operator resolves (FR-013), and history. Moves happen in the caller's transaction, with the task row
 /// locked, so a second completion of the same task is refused and never creates a second next step (FR-012).
 /// </summary>
-public sealed class ProcessEngine(IDbSession session, ITenantContext context, IAuthorizationService authz, IAuthorizationProvisioning grants, IDelegations delegations,
-    IReportingLine reportingLine, IAuditWriter audit, IOutbox outbox, IClock clock, EngineJobs jobs, IConnectorRuntime connectors, IConnectorActions actions)
+public sealed partial class ProcessEngine(IDbSession session, ITenantContext context, IAuthorizationService authz, IAuthorizationProvisioning grants, IDelegations delegations,
+    IReportingLine reportingLine, IAuditWriter audit, IOutbox outbox, IClock clock, EngineJobs jobs, IConnectorRuntime connectors, IConnectorActions actions,
+    IEntitlementService entitlements)
     : IProcessEngine
 {
     public const int CommentMax = 2000;
@@ -168,6 +171,10 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             throw AppException.Validation("variables", "validation.workflow.variables_too_large");
         }
         var definition = await GetDefinitionAsync(key, null, ct) ?? throw AppException.NotFound();
+        if (await GraphAsync(definition.Key, definition.Version, ct) is { } graph)
+        {
+            return await StartGraphAsync(definition, graph, businessKey, orgUnitId, startedBy, alsoExcluded, requestedFor, ToObject(variables), null, null, null, ct);
+        }
         var route = await RouteAsync(definition.Key, definition.Version, ct);
         var id = Ids.New();
         var now = clock.UtcNow;
@@ -213,6 +220,18 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             throw AppException.Conflict("conflict.workflow.instance_closed");
         }
         var now = clock.UtcNow;
+        if (await GraphAsync(instance.DefinitionKey, instance.DefinitionVersion, ct) is not null)
+        {
+            // Child instances of call activities end with it; the tokens are dropped.
+            var children = await session.QueryAsync("select id from workflow.process_instance where parent_instance_id = @instanceId and status = 'active'",
+                new { instanceId }, r => r.GetGuid(0), ct);
+            foreach (var child in children)
+            {
+                await CancelGraphInstanceAsync(child, ct);
+            }
+            await CloseGraphWaitsAsync(instanceId, null, ct);
+            await session.ExecAsync("update workflow.process_instance set state = null where id = @instanceId", new { instanceId }, ct);
+        }
         await session.ExecAsync("update workflow.user_task set status = 'cancelled', completed_at = @now where instance_id = @instanceId and status = 'open'", new { instanceId, now }, ct);
         // A connector step still running or waiting on an incident stops here; a late answer finds it closed and does nothing.
         await session.ExecAsync("update workflow.service_task set status = 'cancelled', ended_at = @now where instance_id = @instanceId and status in ('running', 'incident')",
@@ -236,12 +255,14 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         """
         t.id, t.instance_id, i.definition_key, i.business_key, t.element_id, t.step_index, t.status, t.outcome, t.comment, t.completed_by,
         t.on_behalf_of, t.due_at, t.created_at, t.completed_at, t.candidates::text, t.excluded_user_ids, i.org_unit_id, i.definition_version,
-        coalesce(i.requested_for, i.started_by) as subject_id
+        coalesce(i.requested_for, i.started_by) as subject_id, t.token_id
         """;
 
-    private sealed record TaskRow(UserTaskInfo Info, CandidateSet Candidates, Guid[] Excluded, Guid? OrgUnitId, int DefinitionVersion, Guid? Subject);
+    private sealed record TaskRow(UserTaskInfo Info, CandidateSet Candidates, Guid[] Excluded, Guid? OrgUnitId, int DefinitionVersion, Guid? Subject, Guid? TokenId);
 
-    private sealed record CandidateSet(string Name, IReadOnlyList<Guid> Users, string? Permission, bool LineManager = false, bool Subject = false);
+    /// <summary>Who may complete a task. <see cref="Names"/> are the step's names per locale for a process model task.</summary>
+    private sealed record CandidateSet(string Name, IReadOnlyList<Guid> Users, string? Permission, bool LineManager = false, bool Subject = false,
+        IReadOnlyDictionary<string, string>? Names = null);
 
     private static TaskRow ReadTask(NpgsqlDataReader r)
     {
@@ -249,7 +270,7 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         var info = new UserTaskInfo(r.GetGuid(0), r.GetGuid(1), r.GetString(2), r.GetString(3), r.GetString(4), candidates.Name, r.GetInt32(5), r.GetString(6),
             r.Get<string?>("outcome"), r.Get<string?>("comment"), r.Get<Guid?>("completed_by"), r.Get<Guid?>("on_behalf_of"), r.Get<DateTimeOffset?>("due_at"),
             r.GetFieldValue<DateTimeOffset>(12), r.Get<DateTimeOffset?>("completed_at"));
-        return new TaskRow(info, candidates, r.GetFieldValue<Guid[]>(15), r.Get<Guid?>("org_unit_id"), r.GetInt32(17), r.Get<Guid?>("subject_id"));
+        return new TaskRow(info, candidates, r.GetFieldValue<Guid[]>(15), r.Get<Guid?>("org_unit_id"), r.GetInt32(17), r.Get<Guid?>("subject_id"), r.Get<Guid?>("token_id"));
     }
 
     private async Task CreateTaskAsync(ProcessInstanceInfo instance, CompiledRoute route, int stepIndex, CancellationToken ct)
@@ -458,6 +479,11 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         await outbox.EnqueueAsync(new UserTaskCompleted(taskId, task.Info.InstanceId, task.Info.DefinitionKey, task.Info.BusinessKey, task.Info.ElementId, outcome, user), ct);
 
         var instance = (await GetInstanceAsync(task.Info.InstanceId, ct))!;
+        if (task.TokenId is not null)
+        {
+            await CompleteGraphTaskAsync(task, outcome, comment, user, ct);
+            return task.Info with { Status = "completed", Outcome = outcome, Comment = comment, CompletedBy = user, OnBehalfOf = onBehalfOf, CompletedAt = now };
+        }
         var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
         if (outcome == TaskOutcomes.Approve)
         {
@@ -555,6 +581,16 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
     /// </summary>
     public async Task OnConnectorCompletedAsync(ConnectorActionCompleted done, CancellationToken ct = default)
     {
+        if (done.CorrelationId is { } graphCorrelation && graphCorrelation.StartsWith(GraphCorrelationPrefix, StringComparison.Ordinal))
+        {
+            var ids = graphCorrelation[GraphCorrelationPrefix.Length..].Split(':', 2);
+            if (ids.Length == 2 && Guid.TryParse(ids[0], out var graphInstance) && Guid.TryParse(ids[1], out var serviceTask))
+            {
+                await OnGraphServiceOutcomeAsync(graphInstance, serviceTask, done.Outcome, done.ExternalReference, done.ErrorClass, done.ErrorCode, null, ct);
+                await DrainAsync(ct);
+            }
+            return;
+        }
         if (done.CorrelationId is not { } correlation || !correlation.StartsWith(CorrelationPrefix, StringComparison.Ordinal))
         {
             return;
@@ -662,12 +698,15 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         errors.ThrowIfAny();
         var row = await session.QuerySingleOrDefaultAsync(
             """
-            select n.id, n.status, s.id, s.instance_id, s.element_id, s.step_index, s.idempotency_key, s.status
-            from workflow.incident n join workflow.service_task s on s.id = n.service_task_id join workflow.process_instance i on i.id = n.instance_id
-            where n.id = @incidentId for update of n, s, i
+            select n.id, n.status, s.id as service_task_id, n.instance_id, n.element_id, s.step_index, s.idempotency_key, s.status as task_status, n.token_id
+            from workflow.incident n left join workflow.service_task s on s.id = n.service_task_id join workflow.process_instance i on i.id = n.instance_id
+            where n.id = @incidentId for update of n, i
             """, new { incidentId },
-            r => (Status: r.GetString(1), Task: new ServiceTaskRow(r.GetGuid(2), r.GetGuid(3), r.GetString(4), r.GetInt32(5), r.GetString(6), r.GetString(7))), ct);
-        if (row.Task is null)
+            r => (Status: r.GetString(1), Token: r.Get<Guid?>("token_id"), ServiceTaskId: r.Get<Guid?>("service_task_id"), InstanceId: r.GetGuid(3), ElementId: r.GetString(4),
+                Task: r.Get<Guid?>("service_task_id") is { } sid
+                    ? new ServiceTaskRow(sid, r.GetGuid(3), r.GetString(4), r.GetInt32(5), r.GetString(6), r.GetString(7))
+                    : null), ct);
+        if (row.Status is null)
         {
             throw AppException.NotFound();
         }
@@ -676,13 +715,13 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             // Two operators on one incident: the second is refused (spec 024 US4 scenario 5).
             throw AppException.Conflict("conflict.workflow.incident_resolved");
         }
-        var instance = (await GetInstanceAsync(row.Task.InstanceId, ct))!;
+        var instance = (await GetInstanceAsync(row.InstanceId, ct))!;
         var now = clock.UtcNow;
         var by = Actor();
         await session.ExecAsync(
             "update workflow.incident set status = 'resolved', resolution = @resolution, reason = @reason, resolved_by = @by, resolved_at = @now where id = @incidentId",
             new { incidentId, resolution, reason, by, now }, ct);
-        await HistoryAsync(instance.Id, row.Task.ElementId, "incident_" + resolution, by, null, ct);
+        await HistoryAsync(instance.Id, row.ElementId, "incident_" + resolution, by, null, ct);
         var action = resolution switch
         {
             IncidentResolutions.Retried => AuditActions.ProcessIncidentRetried,
@@ -690,22 +729,29 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
             _ => AuditActions.ProcessIncidentCancelled,
         };
         await audit.WriteAsync(new AuditEntry(action, "process_instance", instance.Id.ToString(), TargetOrgUnitId: instance.OrgUnitId,
-            Changes: new { incident = incidentId, element = row.Task.ElementId, reason }), ct);
-        await outbox.EnqueueAsync(new ProcessIncidentResolved(incidentId, instance.Id, instance.DefinitionKey, instance.BusinessKey, row.Task.ElementId, resolution), ct);
+            Changes: new { incident = incidentId, element = row.ElementId, reason }), ct);
+        await outbox.EnqueueAsync(new ProcessIncidentResolved(incidentId, instance.Id, instance.DefinitionKey, instance.BusinessKey, row.ElementId, resolution), ct);
+
+        if (row.Token is { } token)
+        {
+            await ResolveGraphIncidentAsync(instance.Id, token, row.ServiceTaskId, resolution, ct);
+            return (await IncidentsAsync(instance.Id, ct)).First(i => i.Id == incidentId);
+        }
+        var task = row.Task!;
 
         var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
         switch (resolution)
         {
             case IncidentResolutions.Retried:
-                await session.ExecAsync("update workflow.service_task set status = 'running', error_class = null, error_code = null where id = @id", new { id = row.Task.Id }, ct);
-                await CallAsync(row.Task with { Status = "running" }, route.Steps[row.Task.StepIndex], ct);
+                await session.ExecAsync("update workflow.service_task set status = 'running', error_class = null, error_code = null where id = @id", new { id = task.Id }, ct);
+                await CallAsync(task with { Status = "running" }, route.Steps[task.StepIndex], ct);
                 break;
             case IncidentResolutions.Skipped:
-                await session.ExecAsync("update workflow.service_task set status = 'skipped', ended_at = @now where id = @id", new { id = row.Task.Id, now }, ct);
-                await EnterStepAsync(instance, route, row.Task.StepIndex + 1, ct);
+                await session.ExecAsync("update workflow.service_task set status = 'skipped', ended_at = @now where id = @id", new { id = task.Id, now }, ct);
+                await EnterStepAsync(instance, route, task.StepIndex + 1, ct);
                 break;
             default:
-                await session.ExecAsync("update workflow.service_task set status = 'cancelled', ended_at = @now where id = @id", new { id = row.Task.Id, now }, ct);
+                await session.ExecAsync("update workflow.service_task set status = 'cancelled', ended_at = @now where id = @id", new { id = task.Id, now }, ct);
                 await session.ExecAsync("update workflow.user_task set status = 'cancelled', completed_at = @now where instance_id = @id and status = 'open'",
                     new { id = instance.Id, now }, ct);
                 await jobs.CloseInstanceJobsAsync(instance.Id, ct);
@@ -722,13 +768,13 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         {
             return [];
         }
-        var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
+        var name = await StepNamesAsync(instance, ct);
         return await session.QueryAsync(
             """
             select instance_id, element_id, step_index, status, external_reference, error_class, error_code, started_at, ended_at
             from workflow.service_task where instance_id = @instanceId order by started_at, id
             """, new { instanceId },
-            r => new ServiceTaskInfo(r.GetGuid(0), r.GetString(1), route.Steps[r.GetInt32(2)].Name, r.GetString(3), r.Get<string?>("external_reference"),
+            r => new ServiceTaskInfo(r.GetGuid(0), r.GetString(1), name(r.GetString(1), r.GetInt32(2)), r.GetString(3), r.Get<string?>("external_reference"),
                 r.Get<string?>("error_class"), r.Get<string?>("error_code"), r.GetFieldValue<DateTimeOffset>(7), r.Get<DateTimeOffset?>("ended_at")), ct);
     }
 
@@ -739,25 +785,36 @@ public sealed class ProcessEngine(IDbSession session, ITenantContext context, IA
         {
             return [];
         }
-        var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
+        var name = await StepNamesAsync(instance, ct);
         return await session.QueryAsync(
             """
             select id, element_id, error_class, error_code, status, resolution, reason, resolved_by, raised_at, resolved_at
             from workflow.incident where instance_id = @instanceId order by raised_at desc, id
             """, new { instanceId },
             r => new IncidentInfo(r.GetGuid(0), instanceId, instance.DefinitionKey, instance.BusinessKey, r.GetString(1),
-                route.Steps.FirstOrDefault(x => x.Id == r.GetString(1))?.Name ?? r.GetString(1), r.GetString(2), r.Get<string?>("error_code"), r.GetString(4),
+                name(r.GetString(1), null), r.GetString(2), r.Get<string?>("error_code"), r.GetString(4),
                 r.Get<string?>("resolution"), r.Get<string?>("reason"), r.Get<Guid?>("resolved_by"), r.GetFieldValue<DateTimeOffset>(8), r.Get<DateTimeOffset?>("resolved_at")), ct);
+    }
+
+    /// <summary>The name of a step by element ID (and step index for a route), for lists of steps and incidents.</summary>
+    private async Task<Func<string, int?, string>> StepNamesAsync(ProcessInstanceInfo instance, CancellationToken ct)
+    {
+        if (await GraphAsync(instance.DefinitionKey, instance.DefinitionVersion, ct) is { } graph)
+        {
+            return (element, _) => graph.Has(element) ? graph.Element(element).Name("en") : element;
+        }
+        var route = await RouteAsync(instance.DefinitionKey, instance.DefinitionVersion, ct);
+        return (element, index) => index is { } i && i < route.Steps.Count ? route.Steps[i].Name : route.Steps.FirstOrDefault(x => x.Id == element)?.Name ?? element;
     }
 
     // ---- History ----
 
-    private Task HistoryAsync(Guid instanceId, string elementId, string @event, Guid? actor, Guid? onBehalfOf, CancellationToken ct) =>
+    private Task HistoryAsync(Guid instanceId, string elementId, string @event, Guid? actor, Guid? onBehalfOf, CancellationToken ct, JsonObject? detail = null) =>
         session.ExecAsync(
             """
-            insert into workflow.instance_history (tenant_id, instance_id, element_id, event, actor_id, on_behalf_of, at)
-            values (platform.current_tenant_id(), @instanceId, @elementId, @event, @actor, @onBehalfOf, @at)
-            """, new { instanceId, elementId, @event, actor, onBehalfOf, at = clock.UtcNow }, ct);
+            insert into workflow.instance_history (tenant_id, instance_id, element_id, event, actor_id, on_behalf_of, detail, at)
+            values (platform.current_tenant_id(), @instanceId, @elementId, @event, @actor, @onBehalfOf, @detail, @at)
+            """, new { instanceId, elementId, @event, actor, onBehalfOf, detail = new Jsonb((detail ?? []).ToJsonString()), at = clock.UtcNow }, ct);
 
     public async Task<IReadOnlyList<HistoryEntry>> HistoryAsync(Guid instanceId, CancellationToken ct = default) =>
         await session.QueryAsync(

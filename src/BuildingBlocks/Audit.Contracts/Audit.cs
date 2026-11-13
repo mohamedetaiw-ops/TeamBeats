@@ -300,6 +300,13 @@ public static class AuditActions
     public const string ProcessIncidentSkipped = "process.incident_skipped";
     public const string ProcessIncidentCancelled = "process.incident_cancelled";
 
+    // 024 (R2): process models and instances started or cancelled by an operator.
+    public const string ProcessModelSaved = "process.model_saved";
+    public const string ProcessInstanceStarted = "process.instance_started";
+    public const string ProcessInstanceCancelled = "process.instance_cancelled";
+    public const string DecisionModelSaved = "decision.model_saved";
+    public const string DecisionPublished = "decision.published";
+
     // Spec 016 (R1): services, requests, tasks and delegation.
     public const string ServiceCreated = "service.created";
     public const string ServiceChanged = "service.changed";

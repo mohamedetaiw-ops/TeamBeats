@@ -67,13 +67,13 @@ Decision tables only. Inputs are FEEL expressions, cells are unary tests, output
 Business errors from connector actions map to BPMN error codes and follow a matching error boundary event; technical failures retry with backoff and then raise an incident, as service tasks already do for routes. Escalation events throw and catch within scopes. Operators (`process.operate`) search instances in their scope, read variables (Restricted ones masked), and retry, skip, cancel or change variables on an incident with a reason; each is audited, and a second operator acting on a resolved incident is refused.
 
 ### Monitoring (FR-014)
-Per process version: active, completed, cancelled and incident counts, per-element active tokens and incidents, and average and 90th percentile durations from history for a chosen period, with the slowest elements listed. Analysts (`process.monitor`) see numbers only; variables and names need `process.operate`. Counts go to spec 021 as a dataset.
+Per process version: active, completed, cancelled and incident counts, per-element active tokens and incidents, and average and 90th percentile durations from history for a chosen period, with the slowest elements listed. Analysts (`process.analyze`) see numbers only; variables and names need `process.operate`. Counts go to spec 021 as a dataset.
 
 ### Modeler and pages (ADR-0017)
 `@xyflow/react`, `bpmn-moddle` and `dmn-moddle`, `@dagrejs/dagre`. The palette lists only the subset; properties panels in Arabic and English; every action from the keyboard; a text outline lists elements and flows in order. The decision table editor is a design system table. Test run calls the server sandbox (no tasks, no outbound calls, timers fast-forwarded). Pages: Processes (list, modeler, versions, test), Decisions, Operations (instances, incidents) and Monitoring.
 
 ### Permissions and package
-`process.design` (exists) for models and decisions at the owner's unit, `process.operate` and `process.monitor` (new). Capability `workflow.bpmn` (Workplace Plus and above) for models, DMN, messages, timers, incidents and monitoring; `workflow.max_active_instances` as a quota. Assignment targets are checked against the owner's scope at publish and at run time.
+`process.design` (exists) for models and decisions at the owner's unit, `process.operate`, `process.analyze` and `decision.design` (new). Capability `workflow.bpmn` (Workplace Plus and above) for models, DMN, messages, timers, incidents and monitoring; `workflow.max_active_instances` as a quota. Assignment targets are checked against the owner's scope at publish and at run time.
 
 ### Tests (R2)
 - Unit: BPMN read and write round trip, validator cases, FEEL grammar and limits, every DMN hit policy, token moves for each element group.

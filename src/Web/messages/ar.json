@@ -532,7 +532,9 @@
         "kiosk_user": "مستخدم الكشك",
         "app_reader": "قارئ للتطبيقات",
         "app_request_reader": "قارئ الطلبات للتطبيقات",
-        "app_request_filer": "مقدم الطلبات للتطبيقات"
+        "app_request_filer": "مقدم الطلبات للتطبيقات",
+        "process_operator": "مشغل العمليات",
+        "process_analyst": "محلل العمليات"
       },
       "tabs": "أقسام الأدوار والوصول",
       "unknownUnit": "وحدة خارج نطاق عرضك",
@@ -815,7 +817,9 @@
         "api_monthly_calls": "طلبات واجهة البرمجة شهريًا",
         "security_data_detection": "كشف البيانات الحساسة",
         "compliance_projects": "مشاريع الامتثال",
-        "deployment_region_choice": "اختيار منطقة الاستضافة"
+        "deployment_region_choice": "اختيار منطقة الاستضافة",
+        "workflow_bpmn": "نماذج العمليات والقرارات",
+        "workflow_max_active_instances": "مثيلات العمليات النشطة"
       },
       "searchLabel": "البحث في الإمكانات",
       "searchPlaceholder": "ابحث بالاسم",

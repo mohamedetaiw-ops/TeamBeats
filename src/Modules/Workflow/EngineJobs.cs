@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Messaging;
 using TeamBeats.Modules.Hr.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
@@ -10,6 +12,12 @@ namespace TeamBeats.Modules.Workflow;
 public static class EngineJobKinds
 {
     public const string TaskDue = "task_due";
+
+    /// <summary>A timer a token of a graph instance waits for (spec 024 FR-008).</summary>
+    public const string Timer = "timer";
+
+    /// <summary>A timer start event of a published process model: starts an instance of the latest version.</summary>
+    public const string TimerStart = "timer_start";
 }
 
 /// <summary>
@@ -36,7 +44,7 @@ public static class DueTimes
 /// Engine jobs (FR-012): timers stored in <c>workflow.engine_job</c>, claimed with row locks so two workers never run the
 /// same job, and handled idempotently so a duplicate run has no second effect. Runs in the current tenant only.
 /// </summary>
-public sealed class EngineJobs(IDbSession session, IWorkingCalendar calendars, IOutbox outbox, IClock clock)
+public sealed class EngineJobs(IDbSession session, IWorkingCalendar calendars, IOutbox outbox, IClock clock, IServiceProvider services)
 {
     public static readonly TimeSpan Retention = TimeSpan.FromDays(30);
 
@@ -88,11 +96,23 @@ public sealed class EngineJobs(IDbSession session, IWorkingCalendar calendars, I
             """
             update workflow.engine_job set done_at = @now, attempts = attempts + 1
             where id = @jobId and done_at is null
-            returning kind, instance_id, task_id, due_at
-            """, new { jobId, now }, r => (Kind: r.GetString(0), InstanceId: r.GetGuid(1), TaskId: r.Get<Guid?>("task_id"), DueAt: r.GetFieldValue<DateTimeOffset>(3)), ct);
+            returning kind, instance_id, task_id, due_at, token_id, element_id, detail::text, definition_key
+            """, new { jobId, now }, r => (Kind: r.GetString(0), InstanceId: r.Get<Guid?>("instance_id") ?? Guid.Empty, TaskId: r.Get<Guid?>("task_id"),
+                DueAt: r.GetFieldValue<DateTimeOffset>(3), Token: r.Get<Guid?>("token_id"), Element: r.Get<string?>("element_id"), Detail: r.Get<string?>("detail"),
+                DefinitionKey: r.Get<string?>("definition_key")), ct);
         if (job.Kind is null)
         {
             return false;
+        }
+        if (job.Kind == EngineJobKinds.Timer && job.Token is { } token && job.Element is { } element)
+        {
+            await services.GetRequiredService<ProcessEngine>().OnTimerAsync(job.InstanceId, token, element, job.Detail is null ? null : JsonNode.Parse(job.Detail) as JsonObject, ct);
+            return true;
+        }
+        if (job.Kind == EngineJobKinds.TimerStart && job.DefinitionKey is { } key && job.Element is { } start)
+        {
+            await services.GetRequiredService<ProcessEngine>().OnTimerStartAsync(jobId, key, start, job.DueAt, job.Detail is null ? null : JsonNode.Parse(job.Detail) as JsonObject, ct);
+            return true;
         }
         if (job.Kind == EngineJobKinds.TaskDue && job.TaskId is { } taskId)
         {

@@ -469,6 +469,12 @@ public interface IConnectorActions
 }
 
 /// <summary>How a connector call ended (spec 017 US2 and US3).</summary>
+/// <summary>The action of a webhook connection (spec 017 US5): posts <c>{ type, occurredAt, data }</c>, signed, to its URL.</summary>
+public static class WebhookActions
+{
+    public const string Deliver = "deliver";
+}
+
 public static class ConnectorOutcomes
 {
     /// <summary>The external system did what was asked.</summary>
