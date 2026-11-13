@@ -2140,6 +2140,7 @@
   "notifications.template.publicapi.quota_100.body": "أجرت التطبيقات كل الطلبات المسموح بها هذا الشهر وعددها {limit}. تُرفض طلبات الواجهة البرمجية حتى الشهر القادم أو حتى إضافة طلبات أخرى. يستمر TeamBeats نفسه في العمل.",
   "validation.api.page_size": "اختر حجم صفحة من 1 إلى 200.",
   "validation.api.cursor": "المؤشر غير صالح. ابدأ من الصفحة الأولى من جديد.",
+  "validation.api.draft_type": "المسودة من تطبيق تكون خبرًا أو صفحة.",
   "problem.api.idempotency_key_invalid": "يجب أن يتكون عنوان Idempotency-Key من 1 إلى 255 حرفًا ظاهرًا",
   "problem.api.idempotency_key_reused": "استُخدم مفتاح Idempotency-Key هذا من قبل لطلب مختلف",
   "problem.api.idempotency_in_progress": "ما زال طلب بمفتاح Idempotency-Key هذا قيد المعالجة",

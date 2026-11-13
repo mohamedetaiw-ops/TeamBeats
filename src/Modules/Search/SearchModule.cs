@@ -142,6 +142,7 @@ public static class SearchModule
             return Results.NoContent();
         });
 
+        app.MapSearchPublicEndpoints();
         return app;
     }
 }

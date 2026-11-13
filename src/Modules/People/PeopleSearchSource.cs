@@ -10,7 +10,8 @@ namespace TeamBeats.Modules.People;
 /// locale and, when everyone may see them, their job title, department and office. Nothing a viewer could not see on the
 /// card is indexed; a change to those fields' visibility re-reads every card. Finding people needs <c>people.view</c>.
 /// </summary>
-public sealed class PeopleSearchSource(IDbSession session, IAuthorizationService authz, IEntitlementService entitlements, ProfileStore store) : ISearchSource
+public sealed class PeopleSearchSource(IDbSession session, IAuthorizationService authz, IEntitlementService entitlements, ProfileStore store,
+    TeamBeats.TenantContext.ITenantContext context) : ISearchSource
 {
     public const string SourceName = "people";
 
@@ -59,7 +60,10 @@ public sealed class PeopleSearchSource(IDbSession session, IAuthorizationService
         {
             return new HashSet<Guid>();
         }
-        return (await session.QueryAsync("select user_id from people.profile where user_id = any(@ids) and active and membership_type <> 'guest'",
-            new { ids = itemIds.ToArray() }, r => r.GetGuid(0), ct)).ToHashSet();
+        // An application app finds the people placed in the units its own people.view covers (spec 035 section 7).
+        var reach = context.ActorType == TeamBeats.TenantContext.ActorType.App ? await authz.CoverageAsync(Permissions.PeopleView, ct) : null;
+        return (await session.QueryAsync(
+            "select user_id from people.profile where user_id = any(@ids) and active and membership_type <> 'guest' and (@reach::uuid[] is null or unit_ids && @reach)",
+            new { ids = itemIds.ToArray(), reach = reach is { WholeTenant: false } r ? r.Units.ToArray() : null }, r => r.GetGuid(0), ct)).ToHashSet();
     }
 }

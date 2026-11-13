@@ -17,6 +17,7 @@
     <ProjectReference Include="../Services.Contracts/TeamBeats.Modules.Services.Contracts.csproj" />
     <ProjectReference Include="../AiGateway.Contracts/TeamBeats.Modules.AiGateway.Contracts.csproj" />
     <ProjectReference Include="../Search.Contracts/TeamBeats.Modules.Search.Contracts.csproj" />
+    <ProjectReference Include="../PublicApi.Contracts/TeamBeats.Modules.PublicApi.Contracts.csproj" />
     <ProjectReference Include="../Analytics.Contracts/TeamBeats.Modules.Analytics.Contracts.csproj" />
     <ProjectReference Include="../Evaluation.Contracts/TeamBeats.Modules.Evaluation.Contracts.csproj" />
   </ItemGroup>

@@ -267,6 +267,7 @@ public static class ServicesModule
             return Results.NoContent();
         });
 
+        app.MapTaskPublicEndpoints();
         return app;
     }
 }

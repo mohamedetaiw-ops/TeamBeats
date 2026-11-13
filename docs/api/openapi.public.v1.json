@@ -84,6 +84,35 @@
         }
       }
     },
+    "/api/public/v1/tasks": {
+      "get": {
+        "tags": [
+          "Public: tasks"
+        ],
+        "parameters": [
+          {
+            "name": "serviceId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPageOfPublicTask"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/public/v1/content": {
       "get": {
         "tags": [
@@ -162,6 +191,35 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PublicContentItem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/content/drafts": {
+      "post": {
+        "tags": [
+          "Public: content"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicDraft"
                 }
               }
             }
@@ -413,6 +471,93 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PublicPolicy"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/search": {
+      "get": {
+        "tags": [
+          "Public: search"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicSearchPage"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/assistant/answers": {
+      "post": {
+        "tags": [
+          "Public: assistant"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicQuestion"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicAnswer"
                 }
               }
             }
@@ -684,6 +829,60 @@
           }
         }
       },
+      "PublicAnswer": {
+        "required": [
+          "id",
+          "conversationId",
+          "answer",
+          "outcome",
+          "reason",
+          "language",
+          "citations",
+          "generated",
+          "retrievalDegraded"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conversationId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "answer": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "language": {
+            "type": "string"
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicCitation"
+            }
+          },
+          "generated": {
+            "type": "boolean"
+          },
+          "retrievalDegraded": {
+            "type": "boolean"
+          }
+        }
+      },
       "PublicAttestation": {
         "required": [
           "dueVersion",
@@ -728,6 +927,57 @@
               "string"
             ],
             "format": "date-time"
+          }
+        }
+      },
+      "PublicCitation": {
+        "required": [
+          "n",
+          "source",
+          "itemId",
+          "kind",
+          "title",
+          "anchor",
+          "locale",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "n": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "source": {
+            "type": "string"
+          },
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "anchor": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -1011,6 +1261,97 @@
           }
         }
       },
+      "PublicDraft": {
+        "required": [
+          "id",
+          "siteId",
+          "type",
+          "status",
+          "locale",
+          "title",
+          "webUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "siteId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "webUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "PublicDraftRequest": {
+        "required": [
+          "siteId",
+          "type",
+          "locale",
+          "title",
+          "summary",
+          "body"
+        ],
+        "type": "object",
+        "properties": {
+          "siteId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "locale": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "summary": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "body": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BodyDocument"
+              }
+            ]
+          }
+        }
+      },
       "PublicLibrary": {
         "required": [
           "id",
@@ -1271,6 +1612,27 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PublicPolicySummary"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PublicPageOfPublicTask": {
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicTask"
             }
           },
           "nextCursor": {
@@ -1614,12 +1976,216 @@
             ]
           }
         }
+      },
+      "PublicQuestion": {
+        "required": [
+          "question",
+          "conversationId"
+        ],
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "conversationId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "PublicSearchPage": {
+        "required": [
+          "query",
+          "total",
+          "more",
+          "facets",
+          "degraded",
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          },
+          "total": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "more": {
+            "type": "boolean"
+          },
+          "facets": {
+            "type": "object",
+            "additionalProperties": {
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
+              "format": "int32"
+            }
+          },
+          "degraded": {
+            "type": "boolean"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicSearchResult"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PublicSearchResult": {
+        "required": [
+          "itemId",
+          "source",
+          "kind",
+          "title",
+          "snippet",
+          "webUrl",
+          "locale",
+          "updatedAt",
+          "recommended"
+        ],
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "snippet": {
+            "type": "string"
+          },
+          "webUrl": {
+            "type": "string"
+          },
+          "locale": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "recommended": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PublicTask": {
+        "required": [
+          "taskId",
+          "source",
+          "title",
+          "requestId",
+          "requestNumber",
+          "serviceId",
+          "requesterName",
+          "onBehalfOfName",
+          "createdAt",
+          "dueAt",
+          "webUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "source": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "requestNumber": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "serviceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "requesterName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "onBehalfOfName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "dueAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "webUrl": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
       }
     }
   },
   "tags": [
     {
       "name": "Public: organization"
+    },
+    {
+      "name": "Public: tasks"
     },
     {
       "name": "Public: content"
@@ -1629,6 +2195,12 @@
     },
     {
       "name": "Public: policies"
+    },
+    {
+      "name": "Public: search"
+    },
+    {
+      "name": "Public: assistant"
     },
     {
       "name": "Public: people"

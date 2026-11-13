@@ -17,7 +17,7 @@ Depends on 003, 004, 005, 006, 014, 015, 016, 017 (outbound webhook runtime), 02
 - [x] T008 [P] [US5] Tests: rate limit partitions and 429 headers; monthly quota at 80% and 100%; tenant may only lower limits; tenant switch off within 60 seconds; IP ranges
 - [x] T009 [US5] Request pipeline (network rules, token validation, revocation cache, entitlements, rate limits, call log); usage page
 - [x] T010 `PublicEndpoint` convention, architecture test for scope declarations, separate OpenAPI document and diff check in CI; idempotency store; problem details, cursors, ETags
-- [ ] T011 Public endpoints for the R2 scope catalogue in their owning modules (009, 010, 002, 011, 012, 014, 016, 025), each with cross-tenant, org boundary and not-found tests (done: 002, 009, 010, 011, 025; open: 012, 014, 016)
+- [ ] T011 Public endpoints for the R2 scope catalogue in their owning modules (009, 010, 002, 011, 012, 014, 016, 025), each with cross-tenant, org boundary and not-found tests (done: 002, 009, 010, 011, 012, 014, 025 and the task inbox of 016; open: services, requests and document uploads)
 
 ## Phase 4: User Story 3, MCP server (P1)
 - [ ] T012 [P] [US3] Tests: client allowlist and verified metadata; tools list per policy, entitlement and scope; classification cap fixtures; pending confirmation then act; expiry after 15 minutes; execution records; kill switch within 10 seconds; no application tokens on MCP
