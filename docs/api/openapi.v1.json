@@ -21975,18 +21975,6 @@
           }
         }
       }
-    },
-    "/api/public/v1/me": {
-      "get": {
-        "tags": [
-          "Public API v1"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
     }
   },
   "components": {
@@ -33546,9 +33534,6 @@
     },
     {
       "name": "Me: connected apps"
-    },
-    {
-      "name": "Public API v1"
     }
   ]
 }

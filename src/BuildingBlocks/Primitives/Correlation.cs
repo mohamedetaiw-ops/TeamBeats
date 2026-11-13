@@ -4,6 +4,9 @@ namespace TeamBeats.Primitives;
 public static class Correlation
 {
     public const string HeaderName = "X-Correlation-Id";
+
+    /// <summary>The request ID of the public API, echoed in every public answer and the same as the correlation ID.</summary>
+    public const string RequestIdHeader = "X-Request-Id";
     private static readonly AsyncLocal<string?> Current = new();
 
     public static string? Id

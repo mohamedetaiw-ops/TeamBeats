@@ -17,7 +17,8 @@ namespace TeamBeats.Modules.PublicApi;
 /// one stops working. Used client assertion IDs are cleared once they could no longer be replayed anyway, and calls older
 /// than 90 days leave the call log.
 /// </summary>
-public sealed class PublicApiMaintenance(IDbSession session, IAuthorizationProvisioning authorization, INotificationSender notifications, CallLog calls)
+public sealed class PublicApiMaintenance(IDbSession session, IAuthorizationProvisioning authorization, INotificationSender notifications, CallLog calls,
+    PublicIdempotency idempotency)
 {
     public const string ExpiringTemplate = "publicapi.credential_expiring";
     public static readonly TimeSpan AlertBefore = TimeSpan.FromDays(14);
@@ -52,6 +53,7 @@ public sealed class PublicApiMaintenance(IDbSession session, IAuthorizationProvi
         var cleared = await session.ExecAsync("delete from publicapi.client_assertion where expires_at < @now", new { now }, ct);
         // The call log keeps 90 days (section 6).
         var pruned = await calls.PruneAsync(now, ct);
+        await idempotency.PruneAsync(now, ct);
         return new Run(due.Count, cleared, pruned);
     }
 }

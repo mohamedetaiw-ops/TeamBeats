@@ -1164,3 +1164,19 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Over-limit token requests get 429 with the OAuth error `temporarily_unavailable`, as RFC 6749 has no error for it at the token endpoint.
 - Error classes in the call log: `rate_limited`, `quota`, `denied` (403), `not_found`, `client` (other 4xx) and `server`.
 
+## Public API and MCP server (spec 035, slice 3b: T010 and the first T011 operations)
+
+### Built
+- The `PublicEndpoint` convention in `PublicApi.Contracts`: a module maps its public operations in its own project with `app.MapPublicApi(tag)` (under `/api/public/v1`, in the public OpenAPI document only) and declares one catalogue scope with `.RequireScope(scope)`. The filter checks the token holds the scope, that the caller's kind may hold it, and the scope's capability keys; the handler still asks the central authorization service. `PublicCaller` moved to the contracts so modules read the caller with `http.Caller()`.
+- A test fails when a `/api/public` operation has no scope or one outside the catalogue, or when it lives outside `v1`.
+- A separate OpenAPI document `/openapi/public-v1.json`, kept as `docs/api/openapi.public.v1.json` next to the internal one (the plan named `docs/architecture/`; `docs/api` is where the contracts already live). The internal document no longer lists public operations. The governance CI job runs `tools/openapi-breaking.py` against the document on the base branch and fails on a removed operation, parameter, property, enum value or success response, or on a new required input; `tools/openapi-breaking-test.py` checks the checker.
+- Conventions of FR-015: cursor pages (`limit` 1 to 200, default 50, opaque `cursor`, `nextCursor` null on the last page), weak ETags with `If-None-Match` answering 304 on readable resources, `X-Request-Id` echoed on every public answer (the correlation ID, which a caller may set with `X-Request-Id`), and `Idempotency-Key` on operations marked `.Idempotent()`: the first answer is kept 24 hours in `publicapi.idempotency` and replayed with `Idempotency-Replayed: true`; the same key with another request is 422 `api.idempotency_key_reused`, and while the first call runs 409 `api.idempotency_in_progress`.
+- Display text follows `Accept-Language` within the tenant's locales, else the tenant default, with `Content-Language` on the answer (FR-016).
+- `org:read` (spec 002): `GET /api/public/v1/org-units` (optionally `parentId`) and `GET /api/public/v1/org-units/{id}`, owned by `Tenancy`. `GET /api/public/v1/me` now uses the convention too.
+
+### Smallest safe defaults
+- Idempotency is applied in the pipeline around the endpoint, so modules need no code for it. A hold whose call never finished is released after 5 minutes; answers over 64 KB and server errors are not kept, so such a call runs again on retry.
+- The idempotency hash covers the method, the path and the body bytes, not the query string.
+- Org units are paged in memory after the authorization filter: a tenant has at most some thousands of units, and the order (level, code, ID) is stable.
+- The public document has no security scheme section yet; the developer page (T019) adds it with the OAuth metadata.
+

@@ -2137,5 +2137,11 @@
   "notifications.template.publicapi.quota_80.title": "استخدمت الواجهة البرمجية 80% من طلبات هذا الشهر",
   "notifications.template.publicapi.quota_80.body": "أجرت التطبيقات 80% من الطلبات المسموح بها هذا الشهر وعددها {limit}. عند استخدامها كلها تتوقف طلبات الواجهة البرمجية حتى الشهر القادم أو حتى إضافة طلبات أخرى.",
   "notifications.template.publicapi.quota_100.title": "استخدمت الواجهة البرمجية كل طلبات هذا الشهر",
-  "notifications.template.publicapi.quota_100.body": "أجرت التطبيقات كل الطلبات المسموح بها هذا الشهر وعددها {limit}. تُرفض طلبات الواجهة البرمجية حتى الشهر القادم أو حتى إضافة طلبات أخرى. يستمر TeamBeats نفسه في العمل."
+  "notifications.template.publicapi.quota_100.body": "أجرت التطبيقات كل الطلبات المسموح بها هذا الشهر وعددها {limit}. تُرفض طلبات الواجهة البرمجية حتى الشهر القادم أو حتى إضافة طلبات أخرى. يستمر TeamBeats نفسه في العمل.",
+  "validation.api.page_size": "اختر حجم صفحة من 1 إلى 200.",
+  "validation.api.cursor": "المؤشر غير صالح. ابدأ من الصفحة الأولى من جديد.",
+  "problem.api.idempotency_key_invalid": "يجب أن يتكون عنوان Idempotency-Key من 1 إلى 255 حرفًا ظاهرًا",
+  "problem.api.idempotency_key_reused": "استُخدم مفتاح Idempotency-Key هذا من قبل لطلب مختلف",
+  "problem.api.idempotency_in_progress": "ما زال طلب بمفتاح Idempotency-Key هذا قيد المعالجة",
+  "authz.denied.api_application_only": "هذه العملية متاحة فقط للتطبيقات التي تعمل باسمها."
 }

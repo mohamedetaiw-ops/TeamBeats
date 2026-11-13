@@ -43,6 +43,7 @@ public static class TenancyModule
         MapPlatform(app);
         MapTenant(app);
         MapOrganization(app);
+        app.MapOrgPublicEndpoints();
         return app;
     }
 

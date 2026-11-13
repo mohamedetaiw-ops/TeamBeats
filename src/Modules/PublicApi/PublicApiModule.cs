@@ -25,6 +25,7 @@ public static class PublicApiModule
         services.AddSingleton<PublicRateLimits>();
         services.AddScoped<CallLog>();
         services.AddScoped<ApiUsage>();
+        services.AddScoped<PublicIdempotency>();
         services.AddScoped<TokenFamilies>();
         services.AddScoped<Apps>();
         services.AddScoped<ApiSettings>();
@@ -106,23 +107,20 @@ public static class PublicApiModule
             return Results.NoContent();
         });
 
-        // The public REST API (FR-014): bearer tokens only, checked by UsePublicApiTokens.
-        var v1 = app.MapGroup(BearerTokens.PublicPrefix + "/v1").WithTags("Public API v1");
-        v1.MapGet("/me", async (HttpContext http, IUserDirectory users, ITenantMemberships memberships, CancellationToken ct) =>
+        // The public REST API (FR-014): bearer tokens only, checked by UsePublicApiTokens; each module maps its own.
+        app.MapPublicApi("Public: profile").MapGet("/me", async (HttpContext http, IUserDirectory users, ITenantMemberships memberships, CancellationToken ct) =>
         {
-            var caller = http.Features.Get<PublicCaller>() ?? throw AppException.Unauthenticated();
-            caller.Demand(ScopeCatalogue.ProfileRead);
-            if (caller.UserId is not { } id)
-            {
-                throw AppException.Denied("authz.denied.api_delegated_only");
-            }
+            var id = http.Caller().UserId ?? throw AppException.Denied("authz.denied.api_delegated_only");
             var user = await users.GetAsync(id, ct) ?? throw AppException.NotFound();
             var membership = await memberships.GetAsync(id, ct) ?? throw AppException.NotFound();
-            return Results.Ok(new { id, displayName = user.DisplayName, email = user.Email, membershipType = membership.MembershipType, locale = user.PreferredLocale });
-        });
+            return PublicEndpoints.Resource(http, new PublicProfile(id, user.DisplayName, user.Email, membership.MembershipType, user.PreferredLocale));
+        }).RequireScope(ScopeCatalogue.ProfileRead).Produces<PublicProfile>();
         return app;
     }
 }
+
+/// <summary>The signed-in person of a delegated token (<c>profile:read</c>).</summary>
+public sealed record PublicProfile(Guid Id, string DisplayName, string Email, string MembershipType, string? Locale);
 
 /// <summary>Application apps hold roles in Authorization (FR-011); delegated apps act with the person's own access.</summary>
 internal sealed class AppPrincipalDirectory(Apps apps) : IAppPrincipalDirectory

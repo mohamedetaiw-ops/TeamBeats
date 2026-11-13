@@ -269,6 +269,17 @@ jobs:
         run: syft scan dir:. -o spdx-json=teambeats-sbom.spdx.json
       - name: Deployment manifest lint (constitution V, ADR-0004)
         run: tools/deploy-lint.sh
+      - name: Public API breaking change check (spec 035 FR-014)
+        # Within v1 the public API only grows: compares the public OpenAPI document with the one on the base branch.
+        run: |
+          python3 tools/openapi-breaking-test.py
+          base="origin/${GITHUB_BASE_REF:-main}"
+          if git cat-file -e "$base:docs/api/openapi.public.v1.json" 2>/dev/null; then
+            git show "$base:docs/api/openapi.public.v1.json" > "$RUNNER_TEMP/openapi.public.base.json"
+            python3 tools/openapi-breaking.py "$RUNNER_TEMP/openapi.public.base.json" docs/api/openapi.public.v1.json
+          else
+            echo "No public API document on $base yet."
+          fi
       - name: spec-lint
         if: github.event_name == 'pull_request'
         env:
