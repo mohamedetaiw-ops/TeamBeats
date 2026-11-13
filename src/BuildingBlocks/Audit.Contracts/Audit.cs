@@ -249,6 +249,7 @@ public static class AuditActions
     public const string ApiTokenFamilyRevoked = "api.token_family_revoked";
     public const string ApiTokenRefused = "api.token_refused";
     public const string ApiSettingsChanged = "api.tenant_switch_changed";
+    public const string ApiRoleAssignedToApp = "api.role_assigned_to_app";
     public const string SecurityRequestBlockedNetwork = "security.request_blocked_network";
     public const string SecurityMfaMissing = "security.mfa_missing";
     public const string SecurityStepUpCompleted = "security.step_up_completed";
@@ -492,7 +493,7 @@ public static class AuditActions
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
         ApiAppRegistered, ApiAppChanged, ApiAppDisabled, ApiCredentialAdded, ApiCredentialRevoked, ApiConsentGranted, ApiConsentRevoked,
-        ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged,
+        ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged, ApiRoleAssignedToApp,
         DeviceBadgeIssued, DeviceBadgePinReset, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
         ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,

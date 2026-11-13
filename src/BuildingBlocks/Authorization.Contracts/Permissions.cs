@@ -184,6 +184,15 @@ public static class Permissions
     /// </summary>
     public static readonly IReadOnlySet<string> ResourceOnly = new HashSet<string>(StringComparer.Ordinal) { SpacesView, SpacesContribute, SpacesOwn };
 
+    /// <summary>
+    /// Permissions no role assignable to apps may hold (spec 035 FR-011, spec 004 FR-017): administration of access,
+    /// identity, security and the API itself, audit export and AI policy stay with people.
+    /// </summary>
+    public static bool ExcludedFromApps(string permission) =>
+        permission.StartsWith("authz.", StringComparison.Ordinal) || permission.StartsWith("identity.", StringComparison.Ordinal)
+        || permission.StartsWith("security.", StringComparison.Ordinal) || permission.StartsWith("api.", StringComparison.Ordinal)
+        || permission is AuditExport or AiPolicyManage;
+
     public static readonly IReadOnlyList<string> All =
     [
         TenantSettingsView, TenantSettingsManage, TenantAdminsManage,
@@ -238,6 +247,9 @@ public static class BuiltInRoles
     public const string ComplianceOfficer = "compliance_officer";
     public const string AgentDesigner = "agent_designer";
     public const string EvaluationReviewer = "evaluation_reviewer";
+
+    /// <summary>Spec 035 FR-011: the read-only role an API administrator can give an application app.</summary>
+    public const string AppReader = "app_reader";
     public const string EngagementAdministrator = "engagement_administrator";
     public const string LearningAdministrator = "learning_administrator";
     public const string SpacesAdministrator = "spaces_administrator";

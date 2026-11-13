@@ -85,6 +85,50 @@ public sealed class EffectiveGrantsLoader(
         return loaded;
     }
 
+    /// <summary>
+    /// The grants of an application app (spec 035 FR-011): only the roles given to the app itself, never the default
+    /// Employee role, groups, org memberships or inheritance rules, and never a permission an app may not hold, even if
+    /// a role was changed behind the rules. Cached like a user's, so a removed role is gone within 60 seconds.
+    /// </summary>
+    public async Task<EffectiveGrants> LoadAppAsync(Guid appId, CancellationToken ct)
+    {
+        var tenantId = context.RequireTenant();
+        var grantsVersion = await session.ScalarAsync<long?>("select version from authz.grants_version", null, ct) ?? 0;
+        var hierarchyVersion = await hierarchy.GetVersionAsync(ct);
+        var key = (tenantId, "app", appId, grantsVersion, hierarchyVersion);
+        if (!_changedInScope && cache.TryGetValue(key, out EffectiveGrants? cached) && cached is not null)
+        {
+            return cached;
+        }
+        var rows = await session.QueryAsync(
+            """
+            select a.id, r.key, a.scope_type, a.scope_id, a.scope_resource_type,
+                   array(select permission_key from authz.role_permission p where p.role_id = r.id) as permissions
+            from authz.role_assignment a join authz.role r on r.id = a.role_id
+            where a.revoked_at is null and a.subject_type = 'app' and a.subject_id = @appId and r.assignable_to_apps
+            """, new { appId },
+            r => (Id: r.GetGuid(0), Role: r.GetString(1), Scope: Sql.ParseEnum<ScopeType>(r.GetString(2)), ScopeId: r.Get<Guid?>("scope_id"),
+                ScopeResourceType: r.Get<string>("scope_resource_type"), Permissions: r.GetFieldValue<string[]>(5)), ct);
+        var grants = new List<Grant>();
+        foreach (var x in rows)
+        {
+            IReadOnlySet<Guid> units = x.Scope switch
+            {
+                ScopeType.OrgUnit => new HashSet<Guid> { x.ScopeId!.Value },
+                ScopeType.OrgSubtree => await hierarchy.GetSubtreesAsync([x.ScopeId!.Value], ct),
+                _ => new HashSet<Guid>(),
+            };
+            grants.Add(new Grant(x.Id, x.Role, x.Scope, x.ScopeId, x.ScopeResourceType,
+                x.Permissions.Where(p => !Permissions.ExcludedFromApps(p)).ToHashSet(StringComparer.Ordinal), units, "app"));
+        }
+        var loaded = new EffectiveGrants(appId, true, grants, new HashSet<Guid>(), new HashSet<Guid>(), new HashSet<Guid>(), []);
+        if (!_changedInScope)
+        {
+            cache.Set(key, loaded, MaxStaleness);
+        }
+        return loaded;
+    }
+
     private async Task<EffectiveGrants> LoadUncachedAsync(Guid userId, CancellationToken ct)
     {
         // FR-002: every decision first verifies active tenant membership.

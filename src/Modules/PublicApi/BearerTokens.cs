@@ -1,3 +1,4 @@
+using TeamBeats.Authorization.Contracts;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -18,6 +19,12 @@ namespace TeamBeats.Modules.PublicApi;
 public sealed record PublicCaller(Guid AppId, string Kind, Guid? UserId, IReadOnlySet<string> Scopes, Guid FamilyId)
 {
     public bool IsDelegated => Kind == OAuthServer.Delegated;
+
+    /// <summary>
+    /// The effective decision of a public operation (FR-009): the token must hold the operation's scope and the central
+    /// authorization service must allow it for the principal. A scope never allows what the decision does not.
+    /// </summary>
+    public bool May(string scope, Decision decision) => Scopes.Contains(scope) && decision.Allowed;
 
     /// <summary>Scopes only narrow (FR-009): the operation still asks the authorization service afterwards.</summary>
     public void Demand(string scope)
@@ -139,6 +146,11 @@ public static class BearerTokens
         {
             await AuditRefusalAsync(services, appId, "revoked", ct);
             return "revoked";
+        }
+        else
+        {
+            // The app acts as itself: the authorization service sees only the roles given to the app (FR-011).
+            context.SetActor(ActorType.App, appId);
         }
         http.Features.Set(new PublicCaller(appId, kind, user, scopes, family));
         return null;

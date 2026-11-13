@@ -1406,6 +1406,14 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "appId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -24974,7 +24982,14 @@
               "string"
             ],
             "format": "int32"
-          }
+          },
+          "kind": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "publicKey": {}
         }
       },
       "CriticalInput": {
@@ -25252,6 +25267,10 @@
           },
           "delegable": {
             "type": "boolean"
+          },
+          "assignableToApps": {
+            "type": "boolean",
+            "default": false
           }
         }
       },

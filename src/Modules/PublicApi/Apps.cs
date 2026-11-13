@@ -183,8 +183,11 @@ public sealed class Apps(
         return (await FindAsync(id, ct))!.View;
     }
 
-    /// <summary>A new client secret (FR-005): 6 months by default, at most 12, and at most two active at a time.</summary>
-    public async Task<IssuedCredential> AddSecretAsync(Guid id, CredentialRequest request, CancellationToken ct)
+    /// <summary>
+    /// A new credential (FR-005): a client secret, or a public key for private key JWT. It lasts 6 months by default and
+    /// at most 12, and an app has at most two active at a time, so a second one can be added before the first is revoked.
+    /// </summary>
+    public async Task<IssuedCredential> AddCredentialAsync(Guid id, CredentialRequest request, CancellationToken ct)
     {
         await DemandAsync(Permissions.ApiManage, ct);
         var app = await FindAsync(id, ct) ?? throw AppException.NotFound();
@@ -197,22 +200,48 @@ public sealed class Apps(
         {
             throw AppException.Validation("expiresInMonths", "validation.api.credential_expiry");
         }
+        var kind = request.Kind ?? "secret";
+        (string Json, string Thumbprint)? key = null;
+        if (kind == "public_key")
+        {
+            key = ClientKeys.Parse(request.PublicKey, out var keyError);
+            if (key is null)
+            {
+                throw AppException.Validation("publicKey", keyError!);
+            }
+        }
+        else if (kind != "secret")
+        {
+            throw AppException.Validation("kind", "validation.api.credential_kind");
+        }
+        // Counted under the app's row lock, so two credentials added at once cannot both pass the limit.
+        await session.ExecAsync("select 1 from publicapi.app where id = @id for update", new { id }, ct);
         var active = await session.ScalarAsync<long>("select count(*) from publicapi.app_credential where app_id = @id and revoked_at is null and expires_at > @now",
             new { id, now = clock.UtcNow }, ct);
         if (active >= ApiRules.MaxActiveCredentials)
         {
             throw AppException.Conflict("conflict.api.credential_limit");
         }
-        var secret = ApiRules.NewSecret();
+        if (key is { } k && await session.ScalarAsync<bool>(
+                "select exists (select 1 from publicapi.app_credential where app_id = @id and kind = 'public_key' and hint = @hint and revoked_at is null)",
+                new { id, hint = k.Thumbprint }, ct))
+        {
+            throw AppException.Conflict("conflict.api.public_key_registered");
+        }
+        var secret = kind == "secret" ? ApiRules.NewSecret() : null;
         var credentialId = Ids.New();
         var expires = clock.UtcNow.AddMonths(months);
         await session.ExecAsync(
             """
-            insert into publicapi.app_credential (tenant_id, id, app_id, kind, secret_hash, hint, expires_at, created_by)
-            values (platform.current_tenant_id(), @credentialId, @id, 'secret', @hash, @hint, @expires, @by)
-            """, new { credentialId, id, hash = ApiRules.HashSecret(secret), hint = secret[^4..], expires, by = context.RequireUser() }, ct);
+            insert into publicapi.app_credential (tenant_id, id, app_id, kind, secret_hash, public_jwk, hint, expires_at, created_by)
+            values (platform.current_tenant_id(), @credentialId, @id, @kind, @hash, @jwk, @hint, @expires, @by)
+            """, new
+            {
+                credentialId, id, kind, hash = secret is null ? null : ApiRules.HashSecret(secret), jwk = key?.Json,
+                hint = secret is null ? key!.Value.Thumbprint : secret[^4..], expires, by = context.RequireUser(),
+            }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ApiCredentialAdded, "api_app", id.ToString(),
-            Changes: new { credential = credentialId, kind = "secret", expiresAt = expires }), ct);
+            Changes: new { credential = credentialId, kind, thumbprint = key?.Thumbprint, expiresAt = expires }), ct);
         var view = await session.QuerySingleOrDefaultAsync(
             "select id, kind, hint, expires_at, created_at, last_used_at, revoked_at from publicapi.app_credential where id = @credentialId",
             new { credentialId }, ReadCredential, ct);
@@ -265,6 +294,38 @@ public sealed class Apps(
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// The live public key credential a client assertion was signed with (RFC 7523), if any. Each assertion is good
+    /// once: its JWT ID is kept until it would have expired, and a second use is refused.
+    /// </summary>
+    public async Task<Guid?> VerifyAssertionAsync(AppRecord app, string? assertion, string issuer, CancellationToken ct)
+    {
+        if (string.IsNullOrEmpty(assertion))
+        {
+            return null;
+        }
+        var now = clock.UtcNow;
+        var keys = await session.QueryAsync(
+            "select id, public_jwk from publicapi.app_credential where app_id = @appId and kind = 'public_key' and revoked_at is null and expires_at > @now",
+            new { appId = app.Id, now }, r => (r.GetGuid(0), r.GetString(1)), ct);
+        if (await ClientKeys.ValidateAsync(assertion, app.ClientId, issuer, keys, now) is not { } valid)
+        {
+            return null;
+        }
+        await session.ExecAsync("delete from publicapi.client_assertion where app_id = @appId and expires_at < @now", new { appId = app.Id, now }, ct);
+        var fresh = await session.ExecAsync(
+            """
+            insert into publicapi.client_assertion (tenant_id, app_id, jti, expires_at) values (platform.current_tenant_id(), @appId, @jti, @expires)
+            on conflict do nothing
+            """, new { appId = app.Id, jti = valid.Jti, expires = valid.Expires }, ct);
+        if (fresh == 0)
+        {
+            return null;
+        }
+        await session.ExecAsync("update publicapi.app_credential set last_used_at = now() where id = @id", new { id = valid.Credential }, ct);
+        return valid.Credential;
     }
 
     public Task<bool> CredentialLiveAsync(Guid appId, Guid credentialId, CancellationToken ct) =>
