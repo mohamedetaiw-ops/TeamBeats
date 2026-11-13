@@ -125,21 +125,25 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const steps = await tabUntilMain(page);
       expect(steps.length).toBeGreaterThan(2);
       expect(steps.filter((s) => !s.inView), JSON.stringify(steps)).toEqual([]);
-      expect(steps.map((s) => s.name)).toContain(msg(locale, "shell.menu"));
       expect(steps.map((s) => s.name)).toContain(msg(locale, "shell.settings.open"));
 
-      // The phone menu opens by keyboard and its links are reachable by Tab.
-      const nav = page.getByRole("navigation", { name: msg(locale, "shell.globalNav") });
-      const menu = nav.getByRole("button", { name: msg(locale, "shell.menu") });
-      await menu.focus();
+      // On a phone the global menu opens from More in the bottom navigation, with the pages under each item (spec 008
+      // FR-063); it opens by keyboard and its links take the focus.
+      const bottom = page.getByRole("navigation", { name: msg(locale, "app.nav.label"), exact: true });
+      const more = bottom.getByRole("button", { name: msg(locale, "app.nav.more"), exact: true });
+      await more.focus();
       await page.keyboard.press("Enter");
-      await expect(menu).toHaveAttribute("aria-expanded", "true");
-      await page.keyboard.press("Tab");
-      await expect(nav.getByRole("link", { name: about })).toBeFocused();
-      await expect(nav.getByRole("link", { name: about })).toBeInViewport();
+      await expect(more).toHaveAttribute("aria-expanded", "true");
+      const panel = bottom.locator(".mobile-nav-more");
+      await expect(panel.getByRole("link").first()).toBeFocused();
+      await expect(panel.getByRole("link", { name: team, exact: true })).toBeInViewport();
+      for (let i = 0; i < 10 && !(await panel.getByRole("link", { name: team, exact: true }).evaluate((el) => el === document.activeElement)); i++) {
+        await page.keyboard.press("Tab");
+      }
+      await expect(panel.getByRole("link", { name: team, exact: true })).toBeFocused();
       await page.keyboard.press("Escape");
-      await expect(menu).toBeFocused();
-      await expect(menu).toHaveAttribute("aria-expanded", "false");
+      await expect(more).toBeFocused();
+      await expect(more).toHaveAttribute("aria-expanded", "false");
 
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       expect(overflow).toBeLessThanOrEqual(0);

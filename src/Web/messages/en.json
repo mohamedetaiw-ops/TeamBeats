@@ -3218,7 +3218,8 @@
       "scope": {
         "tenant": "Whole organization",
         "org_unit": "Organization unit",
-        "site": "Site"
+        "site": "Site",
+        "space": "Project space"
       }
     },
     "browser": {

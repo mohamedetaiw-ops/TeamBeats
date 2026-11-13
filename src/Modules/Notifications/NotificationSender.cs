@@ -117,6 +117,30 @@ public sealed class NotificationSender(
         return new SendResult(created, grouped, duplicates, skipped);
     }
 
+    public async Task<int> ResolveAsync(string category, string linkPrefix, CancellationToken ct = default)
+    {
+        context.RequireTenant();
+        if (string.IsNullOrWhiteSpace(category) || !linkPrefix.StartsWith('/') || linkPrefix.StartsWith("//", StringComparison.Ordinal))
+        {
+            throw new ArgumentException("A category and a link path inside the tenant host are required.");
+        }
+        // Row level security keeps this to the current tenant; the prefix is compared literally, never as a pattern.
+        var ids = await session.QueryAsync(
+            """
+            update notifications.notification set read_at = @now, updated_at = @now
+            where category = @category and read_at is null and left(link, length(@linkPrefix)) = @linkPrefix
+            returning id
+            """,
+            new { category, linkPrefix, now = clock.UtcNow }, r => r.GetGuid(0), ct);
+        if (ids.Count > 0)
+        {
+            await session.ExecAsync(
+                "update notifications.delivery set status = 'dropped' where notification_id = any(@ids) and status in ('pending', 'digest')",
+                new { ids = ids.ToArray() }, ct);
+        }
+        return ids.Count;
+    }
+
     private async Task QueueEmailAsync(IReadOnlyList<(Guid Id, Guid UserId)> rows, IReadOnlyDictionary<Guid, UserInfo> accounts, NotificationRequest request,
         bool mandatory, DateTimeOffset now, CancellationToken ct)
     {

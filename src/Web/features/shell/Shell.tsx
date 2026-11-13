@@ -93,6 +93,13 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
           {layout.center.map(render)}
         </div>
         <div className="shell-slot" data-slot="end">
+          {/* Ask TeamBeats sits in the bar, so it never floats over a card, a field or the footer (spec 008 FR-066, DLS-078). */}
+          {shell.ok && shell.data.assistant ? (
+            <Link className="shell-ask" href="/assistant">
+              <Icon name="spark" size={18} />
+              <span>{t("ask")}</span>
+            </Link>
+          ) : null}
           {layout.end.map(render)}
           {regions.includes("identity") ? <AccountMenu name={me.displayName} administration={shell.ok && shell.data.administration} /> : null}
         </div>
@@ -107,12 +114,6 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
       ))}
       <div className="shell-below">{layout.below.map(render)}</div>
       <CriticalNotices />
-      {shell.ok && shell.data.assistant ? (
-        <Link className="shell-ask" href="/assistant">
-          <Icon name="spark" size={18} />
-          <span>{t("ask")}</span>
-        </Link>
-      ) : null}
       {shell.ok && regions.includes("global_navigation") && shell.data.mobileNav?.length ? <MobileNav items={shell.data.mobileNav} all={shell.data.globalMenu} /> : null}
       {me.sharedDevice ? (
         // A shared kiosk keeps nothing on the device: no push offer, no offline copy, and a timer that signs out (spec 030 US4).

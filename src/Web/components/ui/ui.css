@@ -528,6 +528,7 @@
  */
 .ui-page-header {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* the tabs scroll inside the header instead of widening the page (DLS-080) */
   gap: var(--tb-space-lg);
   margin-block-end: var(--tb-space-lg);
 }
@@ -607,6 +608,33 @@
 .ui-section-nav {
   max-inline-size: 100%;
   overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-inline: contain;
+}
+
+/* A fade at each edge that hides more tabs (DLS-080); the mask uses only alpha, so it follows every theme. */
+.ui-section-nav[data-more-end] {
+  mask-image: linear-gradient(to right, var(--tb-color-text-primary) calc(100% - 2.5rem), transparent);
+}
+
+.ui-section-nav[data-more-start] {
+  mask-image: linear-gradient(to right, transparent, var(--tb-color-text-primary) 2.5rem);
+}
+
+.ui-section-nav[data-more-start][data-more-end] {
+  mask-image: linear-gradient(to right, transparent, var(--tb-color-text-primary) 2.5rem, var(--tb-color-text-primary) calc(100% - 2.5rem), transparent);
+}
+
+[dir="rtl"] .ui-section-nav[data-more-end] {
+  mask-image: linear-gradient(to left, var(--tb-color-text-primary) calc(100% - 2.5rem), transparent);
+}
+
+[dir="rtl"] .ui-section-nav[data-more-start] {
+  mask-image: linear-gradient(to left, transparent, var(--tb-color-text-primary) 2.5rem);
+}
+
+[dir="rtl"] .ui-section-nav[data-more-start][data-more-end] {
+  mask-image: linear-gradient(to left, transparent, var(--tb-color-text-primary) 2.5rem, var(--tb-color-text-primary) calc(100% - 2.5rem), transparent);
 }
 
 .ui-section-nav ul {

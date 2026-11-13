@@ -95,7 +95,7 @@ export function UsersAdmin({ initial }: { initial: UserSummary[] }) {
             sortValue: (u) => userState(u),
             cell: (u) => <Badge tone={userState(u) === "active" ? "success" : "danger"}>{t(`states.${userState(u)}`)}</Badge>,
           },
-          { key: "last", header: t("lastSignIn"), sortValue: (u) => u.lastSignInAt ?? "", cell: (u) => when(u.lastSignInAt, "short"), hideable: true },
+          { key: "last", header: t("lastSignIn"), sortValue: (u) => u.lastSignInAt ?? "", cell: (u) => when(u.lastSignInAt, "short"), hideable: true, priority: "low" },
         ]}
       />
     </div>
