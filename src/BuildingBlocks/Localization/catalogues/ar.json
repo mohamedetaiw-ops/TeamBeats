@@ -2173,5 +2173,14 @@
   "conflict.api.subscription_limit": "لدى هذا التطبيق 20 اشتراكًا في الأحداث. احذف واحدًا قبل إضافة آخر.",
   "conflict.api.subscription_exists": "يتلقى هذا التطبيق هذا الحدث على هذا العنوان بالفعل.",
   "notifications.template.api.subscription_paused.admin.title": "أُوقف اشتراك أحداث مؤقتًا: {app}",
-  "notifications.template.api.subscription_paused.admin.body": "فشل إرسال {event} إلى {host} لمدة 3 أيام، لذا أوقفه TeamBeats مؤقتًا. أصلح جهة الاستقبال ثم استأنف الاشتراك من صفحة التطبيق."
+  "notifications.template.api.subscription_paused.admin.body": "فشل إرسال {event} إلى {host} لمدة 3 أيام، لذا أوقفه TeamBeats مؤقتًا. أصلح جهة الاستقبال ثم استأنف الاشتراك من صفحة التطبيق.",
+  "validation.siem.name": "أدخل اسمًا لا يزيد على 120 حرفًا.",
+  "validation.siem.transport": "اختر HTTPS أو syslog عبر TLS.",
+  "validation.siem.transport_fixed": "لا يمكن تغيير طريقة استلام الوجهة للأحداث. أضف وجهة جديدة بدلًا من ذلك.",
+  "validation.siem.history_days": "اختر من 0 إلى 7 أيام من الأحداث السابقة.",
+  "validation.siem.host": "أدخل اسم مضيف، وليس عنوان IP.",
+  "validation.siem.port": "أدخل منفذًا من 1 إلى 65535.",
+  "conflict.siem.limit": "لدى هذه المؤسسة وجهتان لنظام SIEM بالفعل. احذف إحداهما أولًا.",
+  "notifications.template.security.alert.siem_failing.title": "أحداث الأمان لا تصل إلى نظام SIEM لديكم",
+  "notifications.template.security.alert.siem_failing.body": "تعذّر الإرسال إلى وجهة SIEM لمدة يوم. يحتفظ TeamBeats بالأحداث ويرسلها حين تعمل الوجهة مجددًا. تحقق من الوجهة في صفحة الأمان."
 }

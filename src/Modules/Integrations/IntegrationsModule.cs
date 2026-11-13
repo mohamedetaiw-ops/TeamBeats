@@ -115,6 +115,10 @@ public static class IntegrationsModule
         services.AddScoped<Webhooks.ApiEventPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.ApiEventPack>());
         services.AddScoped<IWebhookDelivery, Webhooks.WebhookDelivery>();
+        services.AddSingleton<Siem.ISyslogSender, Siem.TlsSyslogSender>();
+        services.AddScoped<Siem.SiemPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Siem.SiemPack>());
+        services.AddScoped<ISiemDelivery, Siem.SiemDelivery>();
         services.AddScoped<Webhooks.InboundWebhooks>();
         services.AddScoped<SyncAgents.OnPremDirectoryPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<SyncAgents.OnPremDirectoryPack>());

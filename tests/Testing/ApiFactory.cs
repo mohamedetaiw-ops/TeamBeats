@@ -57,6 +57,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public FakeSftp Sftp { get; } = new();
 
+    public FakeSyslog Syslog { get; } = new();
+
     public FakePushService Push { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -84,6 +86,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddScoped<IUserAttributeProvider, TestUserAttributeProvider>();
             services.AddSingleton<ISecretStore>(Secrets);
             services.AddSingleton<TeamBeats.Modules.Integrations.ClockData.IClockFileSource>(Sftp);
+            services.AddSingleton<TeamBeats.Modules.Integrations.Siem.ISyslogSender>(Syslog);
             services.AddSingleton<TeamBeats.Persistence.IMalwareScanner, TeamBeats.Persistence.TestSignatureScanner>();
             services.AddScoped<TeamBeats.Modules.Notifications.IEmailSender>(_ => Email);
             services.AddSingleton(AgentTools);

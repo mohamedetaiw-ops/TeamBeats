@@ -76,6 +76,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Booking.BookingMaintenanceWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Security.SiemStreamWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Security.SiemStreamWorker>();
+        }
         if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.PublicApi.PublicApiMaintenanceWorker.InProcessKey))
         {
             builder.Services.AddHostedService<TeamBeats.Modules.PublicApi.PublicApiMaintenanceWorker>();

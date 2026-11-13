@@ -37,8 +37,11 @@ public sealed class ApiEventPack(WebhookPack webhooks) : IConnectorPack
 /// <summary>The connection kinds the Connections page and connector catalogues leave out.</summary>
 internal static class HiddenKinds
 {
-    /// <summary>Microsoft 365 has its own page (spec 006); API event endpoints belong to the public API (spec 035).</summary>
-    public static readonly string[] All = [ConnectionKinds.Microsoft365, ApiEventPack.KindName];
+    /// <summary>
+    /// Microsoft 365 has its own page (spec 006); API event endpoints belong to the public API (spec 035); SIEM
+    /// destinations belong to the security pages (spec 026).
+    /// </summary>
+    public static readonly string[] All = [ConnectionKinds.Microsoft365, ApiEventPack.KindName, Siem.SiemPack.KindName];
 }
 
 /// <summary>
