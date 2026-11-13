@@ -14,6 +14,12 @@
     <ProjectReference Include="../Identity.Contracts/TeamBeats.Modules.Identity.Contracts.csproj" />
     <ProjectReference Include="../PublicApi.Contracts/TeamBeats.Modules.PublicApi.Contracts.csproj" />
     <ProjectReference Include="../Notifications.Contracts/TeamBeats.Modules.Notifications.Contracts.csproj" />
+    <ProjectReference Include="../Integrations.Contracts/TeamBeats.Modules.Integrations.Contracts.csproj" />
+    <ProjectReference Include="../Content.Contracts/TeamBeats.Modules.Content.Contracts.csproj" />
+    <ProjectReference Include="../Documents.Contracts/TeamBeats.Modules.Documents.Contracts.csproj" />
+    <ProjectReference Include="../Policies.Contracts/TeamBeats.Modules.Policies.Contracts.csproj" />
+    <ProjectReference Include="../Services.Contracts/TeamBeats.Modules.Services.Contracts.csproj" />
+    <ProjectReference Include="../People.Contracts/TeamBeats.Modules.People.Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="OpenIddict.Server.AspNetCore" />

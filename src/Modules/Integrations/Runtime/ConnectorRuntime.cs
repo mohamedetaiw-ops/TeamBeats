@@ -457,7 +457,7 @@ public sealed class ConnectorRuntime(
         {
             return (null, ConnectorErrorClasses.UnknownAction, c);
         }
-        if (!await entitlements.IsEnabledAsync(Capabilities.IntegrationConnectors, ct) || !await entitlements.IsEnabledAsync(pack.CapabilityKey, ct))
+        if ((pack.Listed && !await entitlements.IsEnabledAsync(Capabilities.IntegrationConnectors, ct)) || !await entitlements.IsEnabledAsync(pack.CapabilityKey, ct))
         {
             return (null, ConnectorErrorClasses.NotInPackage, c);
         }

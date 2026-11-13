@@ -19,6 +19,7 @@ public static class DocumentsModule
 
     public static IServiceCollection AddDocumentsModule(this IServiceCollection services)
     {
+        services.AddScoped<TeamBeats.Modules.PublicApi.Contracts.IPublicResourceVisibility, DocumentVisibility>();
         services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, DocumentSearchSource>();
         services.AddScoped<Libraries>();
         services.AddScoped<DocumentFiles>();

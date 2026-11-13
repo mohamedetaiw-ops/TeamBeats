@@ -69,3 +69,11 @@ public static class ContentPublicEndpoints
 
     private static string WebUrl(string origin, Guid id) => $"{origin}/content/read/{id}";
 }
+
+/// <summary>Whether the principal in context may read a content item through the public API (spec 035 FR-018), by the endpoint's own read.</summary>
+public sealed class ContentVisibility(Items items) : PublicReadVisibility
+{
+    public override string ResourceType => PublicResourceTypes.Content;
+
+    protected override Task ReadAsync(Guid resourceId, CancellationToken ct) => items.ReadAsync(resourceId, ct);
+}

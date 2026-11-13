@@ -15,6 +15,7 @@ public static class ContentModule
 
     public static IServiceCollection AddContentModule(this IServiceCollection services)
     {
+        services.AddScoped<TeamBeats.Modules.PublicApi.Contracts.IPublicResourceVisibility, ContentVisibility>();
         services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, ContentSearchSource>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsItemSource, ContentAnalyticsSource>();
         services.AddScoped<Sites>();

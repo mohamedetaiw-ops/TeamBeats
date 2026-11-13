@@ -10696,7 +10696,30 @@
       "blockedTitle": "حظر TeamBeats هذا التطبيق",
       "blockedBody": "توقف التطبيق عن العمل لدى كل المؤسسات، مثلًا بعد مشكلة أمنية. لا يمكن تفعيله حتى يرفع TeamBeats الحظر.",
       "switchReason": "سبب إيقاف الواجهة البرمجية",
-      "switchReasonHint": "يُحفظ في سجل التدقيق. مطلوب عند إيقاف الواجهة البرمجية."
+      "switchReasonHint": "يُحفظ في سجل التدقيق. مطلوب عند إيقاف الواجهة البرمجية.",
+      "subscriptionsTitle": "اشتراكات الأحداث",
+      "subscriptionsIntro": "يُعلم TeamBeats التطبيق عند حدوث أمر ما، برابط فقط. ثم يقرؤه التطبيق عبر الواجهة البرمجية بصلاحياته، فلا يعلم إلا بما يحق له قراءته.",
+      "subscriptionPausedTitle": "أحد الاشتراكات متوقف مؤقتًا",
+      "subscriptionPausedBody": "استمر فشل الإرسال 3 أيام، فأوقفه TeamBeats. أصلح جهة الاستقبال ثم استأنف الاشتراك.",
+      "noSubscriptions": "لا توجد اشتراكات أحداث",
+      "noSubscriptionsHint": "اشترك بالتطبيق في حدث كي لا يضطر إلى السؤال باستمرار.",
+      "eventType": "الحدث",
+      "receiverUrl": "عنوان الاستقبال",
+      "receiverUrlHint": "عنوان HTTPS يكون مضيفه في قائمة السماح في صفحة الاتصالات.",
+      "secretRef": "مرجع سر التوقيع",
+      "secretRefHint": "مرجع السر في مدير الأسرار الذي يوقّع كل إرسال، مثل secret://tenants/…/name.",
+      "subscriptionStatuses": {
+        "active": "نشط",
+        "paused": "متوقف مؤقتًا"
+      },
+      "resume": "استئناف",
+      "subscriptionResumed": "عاد الاشتراك إلى إرسال الأحداث.",
+      "removeSubscription": "إزالة",
+      "removeSubscriptionQuestion": "هل تريد إيقاف إرسال {event} إلى هذا التطبيق؟",
+      "subscriptionRemoved": "أُزيل الاشتراك.",
+      "subscribe": "اشتراك",
+      "subscribed": "اشترك التطبيق.",
+      "subscribeNeedsScope": "امنح التطبيق نطاق events:subscribe لتشترك به في الأحداث."
     },
     "connected": {
       "title": "التطبيقات المتصلة",

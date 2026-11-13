@@ -21989,6 +21989,142 @@
         }
       }
     },
+    "/api/v1/api-access/event-catalogue": {
+      "get": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/api-access/subscriptions": {
+      "get": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/api-access/apps/{id}/subscriptions": {
+      "post": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventSubscriptionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/api-access/subscriptions/{id}:resume": {
+      "post": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/api-access/subscriptions/{id}": {
+      "delete": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/api-access/subscriptions/{id}/deliveries": {
+      "get": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/platform/api/verified-mcp-clients": {
       "get": {
         "tags": [
@@ -25941,6 +26077,34 @@
           },
           "rsvp": {
             "type": "boolean"
+          }
+        }
+      },
+      "EventSubscriptionRequest": {
+        "required": [
+          "eventType",
+          "url",
+          "secretRef"
+        ],
+        "type": "object",
+        "properties": {
+          "eventType": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "url": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "secretRef": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },

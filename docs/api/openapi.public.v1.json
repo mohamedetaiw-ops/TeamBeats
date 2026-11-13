@@ -1009,6 +1009,67 @@
           }
         }
       }
+    },
+    "/api/public/v1/events": {
+      "get": {
+        "tags": [
+          "Public: events"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPageOfEventCatalogueEntry"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/event-subscriptions": {
+      "get": {
+        "tags": [
+          "Public: events"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicPageOfPublicEventSubscription"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/public/v1/event-subscriptions/{id}": {
+      "delete": {
+        "tags": [
+          "Public: events"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1111,6 +1172,38 @@
             "items": {
               "$ref": "#/components/schemas/Block"
             }
+          }
+        }
+      },
+      "EventCatalogueEntry": {
+        "required": [
+          "type",
+          "version",
+          "resourceType",
+          "readScope",
+          "available"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "resourceType": {
+            "type": "string"
+          },
+          "readScope": {
+            "type": "string"
+          },
+          "available": {
+            "type": "boolean"
           }
         }
       },
@@ -1837,6 +1930,35 @@
           }
         }
       },
+      "PublicEventSubscription": {
+        "required": [
+          "id",
+          "eventType",
+          "url",
+          "status",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "PublicLibrary": {
         "required": [
           "id",
@@ -1960,6 +2082,27 @@
           }
         }
       },
+      "PublicPageOfEventCatalogueEntry": {
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EventCatalogueEntry"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "PublicPageOfPublicContentSummary": {
         "required": [
           "items",
@@ -2013,6 +2156,27 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PublicDocumentVersion"
+            }
+          },
+          "nextCursor": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "PublicPageOfPublicEventSubscription": {
+        "required": [
+          "items",
+          "nextCursor"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicEventSubscription"
             }
           },
           "nextCursor": {
@@ -3035,6 +3199,9 @@
     },
     {
       "name": "Public: profile"
+    },
+    {
+      "name": "Public: events"
     }
   ]
 }

@@ -78,6 +78,12 @@ public interface IConnectorPack
 
     string CapabilityKey { get; }
 
+    /// <summary>
+    /// False for a pack whose connections another module creates and manages through a contract (the endpoints of
+    /// <see cref="IWebhookDelivery"/>): the Connections page neither offers nor lists it, and it needs only its own capability.
+    /// </summary>
+    bool Listed => true;
+
     IReadOnlyList<ConnectorActionDefinition> Actions { get; }
 
     Task<PackCallResult> CallAsync(PackCall call, CancellationToken ct);

@@ -2165,5 +2165,13 @@
   "notifications.template.api.token_reuse.admin.body": "أنهى TeamBeats تسجيل دخول لهذا التطبيق لأن رمزه عاد مرتين. تحقق من التطبيق وبيانات اعتماده.",
   "validation.api.block_client_id": "أدخل معرف العميل المراد حظره، بحد أقصى 200 حرف.",
   "validation.api.block_reason": "اذكر سبب حظر العميل، بحد أقصى 500 حرف.",
-  "validation.api.switch_reason": "اذكر سبب إيقاف الواجهة البرمجية العامة، بحد أقصى 500 حرف."
+  "validation.api.switch_reason": "اذكر سبب إيقاف الواجهة البرمجية العامة، بحد أقصى 500 حرف.",
+  "validation.api.events_application_only": "تطبيقات الوصول المباشر وحدها يمكنها تلقي الأحداث.",
+  "validation.api.events_scope": "امنح التطبيق نطاق events:subscribe أولًا.",
+  "validation.api.event_unknown": "اختر حدثًا من كتالوج الأحداث العامة.",
+  "validation.api.event_read_scope": "يحتاج التطبيق إلى نطاق القراءة لمورد هذا الحدث.",
+  "conflict.api.subscription_limit": "لدى هذا التطبيق 20 اشتراكًا في الأحداث. احذف واحدًا قبل إضافة آخر.",
+  "conflict.api.subscription_exists": "يتلقى هذا التطبيق هذا الحدث على هذا العنوان بالفعل.",
+  "notifications.template.api.subscription_paused.admin.title": "أُوقف اشتراك أحداث مؤقتًا: {app}",
+  "notifications.template.api.subscription_paused.admin.body": "فشل إرسال {event} إلى {host} لمدة 3 أيام، لذا أوقفه TeamBeats مؤقتًا. أصلح جهة الاستقبال ثم استأنف الاشتراك من صفحة التطبيق."
 }

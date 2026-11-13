@@ -254,6 +254,10 @@ public static class AuditActions
     public const string ApiClientBlocked = "api.client_blocked";
     public const string ApiClientUnblocked = "api.client_unblocked";
     public const string ApiTokensRevoked = "api.tokens_revoked";
+    public const string ApiSubscriptionCreated = "api.subscription_created";
+    public const string ApiSubscriptionPaused = "api.subscription_paused";
+    public const string ApiSubscriptionResumed = "api.subscription_resumed";
+    public const string ApiSubscriptionDeleted = "api.subscription_deleted";
     public const string SecurityRequestBlockedNetwork = "security.request_blocked_network";
     public const string SecurityMfaMissing = "security.mfa_missing";
     public const string SecurityStepUpCompleted = "security.step_up_completed";

@@ -60,3 +60,11 @@ public static class OrgPublicEndpoints
     private static PublicOrgUnit View(OrgUnitView unit, string locale, string fallback) => new(unit.Id, unit.ParentId, unit.TypeKey, unit.Code,
         unit.Names.TryGetValue(locale, out var name) ? name : unit.Names.TryGetValue(fallback, out var other) ? other : unit.Code, unit.Level, unit.Status);
 }
+
+/// <summary>Whether the principal in context may read an organization unit through the public API (spec 035 FR-018), by the endpoint's own read.</summary>
+public sealed class OrgUnitVisibility(OrgHierarchyService units) : PublicReadVisibility
+{
+    public override string ResourceType => PublicResourceTypes.OrgUnit;
+
+    protected override Task ReadAsync(Guid resourceId, CancellationToken ct) => units.GetAsync(resourceId, ct);
+}

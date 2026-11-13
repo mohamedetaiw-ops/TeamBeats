@@ -22,6 +22,8 @@ import {
   type ApiAppDetail,
   type ApiScope,
   type AppRoleAssignment,
+  type EventCatalogueEntry,
+  type EventSubscription,
   type IssuedCredential,
   type RoleSummary,
 } from "@/lib/api-access";
@@ -39,6 +41,8 @@ export function AppDetailAdmin({
   roles,
   roleNames,
   units,
+  subscriptions = [],
+  catalogue = [],
 }: {
   initial: ApiAppDetail;
   scopes: ApiScope[];
@@ -46,6 +50,8 @@ export function AppDetailAdmin({
   roles: RoleSummary[];
   roleNames: Record<string, string>;
   units: OrgUnit[];
+  subscriptions?: EventSubscription[];
+  catalogue?: EventCatalogueEntry[];
 }) {
   const t = useTranslations("apiAccess.admin");
   const [detail, setDetail] = useState(initial);
@@ -157,6 +163,9 @@ export function AppDetailAdmin({
           action={action}
           onChanged={setAssignments}
         />
+      ) : null}
+      {app.kind === "application" && catalogue.some((e) => e.available) ? (
+        <Subscriptions appId={app.id} appScopes={app.scopes} initial={subscriptions} catalogue={catalogue} action={action} />
       ) : null}
     </div>
   );
@@ -531,6 +540,133 @@ function AppRoles({
           <p className="admin-meta">{t("stepUpHint")}</p>
         </form>
       ) : null}
+    </section>
+  );
+}
+
+/**
+ * The app's event subscriptions (spec 035 US4, FR-018): each sends one event of the public catalogue to an HTTPS URL on
+ * the tenant's allowlist, signed with a secret from the tenant's secret manager. A subscription whose deliveries kept
+ * failing for 3 days is paused until it is resumed here.
+ */
+function Subscriptions({
+  appId,
+  appScopes,
+  initial,
+  catalogue,
+  action,
+}: {
+  appId: string;
+  appScopes: string[];
+  initial: EventSubscription[];
+  catalogue: EventCatalogueEntry[];
+  action: Action;
+}) {
+  const t = useTranslations("apiAccess.admin");
+  const [list, setList] = useState(initial);
+  const offered = catalogue.filter((e) => e.available);
+  const [eventType, setEventType] = useState(offered[0]?.type ?? "");
+  const [url, setUrl] = useState("");
+  const [secretRef, setSecretRef] = useState("");
+  const canSubscribe = appScopes.includes("events:subscribe");
+  const paused = list.filter((s) => s.status === "paused");
+
+  async function reload() {
+    const response = await fetch(`/api/v1/api-access/subscriptions?appId=${appId}`, { cache: "no-store" }).catch(() => null);
+    if (response?.ok) setList((await response.json()) as EventSubscription[]);
+  }
+
+  return (
+    <section className="admin-panel" aria-labelledby="api-app-subscriptions">
+      <h2 id="api-app-subscriptions">{t("subscriptionsTitle")}</h2>
+      <p className="admin-meta">{t("subscriptionsIntro")}</p>
+      {paused.length > 0 ? (
+        <Alert tone="warning" title={t("subscriptionPausedTitle")}>
+          <p>{t("subscriptionPausedBody")}</p>
+        </Alert>
+      ) : null}
+      <DataTable
+        caption={t("subscriptionsTitle")}
+        rows={list}
+        rowKey={(s) => s.id}
+        emptyTitle={t("noSubscriptions")}
+        emptyMessage={t("noSubscriptionsHint")}
+        columns={[
+          { key: "event", header: t("eventType"), rowHeader: true, cell: (s) => <code dir="ltr">{s.eventType}</code> },
+          { key: "url", header: t("receiverUrl"), cell: (s) => <span dir="ltr">{s.url}</span> },
+          {
+            key: "status",
+            header: t("status"),
+            cell: (s) => <Badge tone={s.status === "active" ? "success" : "warning"}>{t(`subscriptionStatuses.${s.status}`)}</Badge>,
+          },
+          {
+            key: "actions",
+            header: t("actions"),
+            align: "end",
+            cell: (s) => (
+              <div className="admin-row">
+                {s.status === "paused" ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    busy={action.busy === "resume-" + s.id}
+                    busyLabel={t("saving")}
+                    onClick={async () => {
+                      const outcome = await action.run("resume-" + s.id, "POST", `/api/v1/api-access/subscriptions/${s.id}:resume`, undefined, t("subscriptionResumed"));
+                      if (outcome.ok) await reload();
+                    }}
+                  >
+                    {t("resume")}
+                  </Button>
+                ) : null}
+                <ConfirmAction
+                  label={t("removeSubscription")}
+                  question={t("removeSubscriptionQuestion", { event: s.eventType })}
+                  confirmLabel={t("removeSubscription")}
+                  cancelLabel={t("cancel")}
+                  onConfirm={async () => {
+                    const outcome = await action.run("unsubscribe-" + s.id, "DELETE", `/api/v1/api-access/subscriptions/${s.id}`, undefined, t("subscriptionRemoved"));
+                    if (outcome.ok) await reload();
+                  }}
+                />
+              </div>
+            ),
+          },
+        ]}
+      />
+      {canSubscribe ? (
+        <form
+          className="admin-form"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const outcome = await action.run("subscribe", "POST", `/api/v1/api-access/apps/${appId}/subscriptions`, { eventType, url, secretRef }, t("subscribed"));
+            if (outcome.ok) {
+              setUrl("");
+              await reload();
+            }
+          }}
+        >
+          <h3>{t("subscribe")}</h3>
+          <div className="admin-fields">
+            <SelectField
+              label={t("eventType")}
+              name="eventType"
+              value={eventType}
+              onChange={(e) => setEventType(e.target.value)}
+              options={offered.map((e) => ({ value: e.type, label: e.type }))}
+            />
+            <FormField label={t("receiverUrl")} hint={t("receiverUrlHint")} name="url" type="url" dir="ltr" required maxLength={2000} value={url} onChange={(e) => setUrl(e.target.value)} />
+            <FormField label={t("secretRef")} hint={t("secretRefHint")} name="secretRef" dir="ltr" required maxLength={200} value={secretRef} onChange={(e) => setSecretRef(e.target.value)} />
+          </div>
+          <div className="admin-row">
+            <Button type="submit" variant="primary" busy={action.busy === "subscribe"} busyLabel={t("saving")}>
+              {t("subscribe")}
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <p className="admin-meta">{t("subscribeNeedsScope")}</p>
+      )}
     </section>
   );
 }

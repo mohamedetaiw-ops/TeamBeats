@@ -25,8 +25,8 @@ public sealed class ConnectionAlerts(IDbSession session, IAuthorizationProvision
         {
             return;
         }
-        var name = await session.QuerySingleOrDefaultAsync("select display_name from integrations.connection where id = @id",
-            new { id = message.ConnectionId }, r => r.GetString(0), ct);
+        var name = await session.QuerySingleOrDefaultAsync("select display_name from integrations.connection where id = @id and kind <> @hidden",
+            new { id = message.ConnectionId, hidden = Webhooks.ApiEventPack.KindName }, r => r.GetString(0), ct);
         if (name is null)
         {
             return;

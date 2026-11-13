@@ -70,7 +70,7 @@ public sealed class PackConnections(
     {
         var connectors = await entitlements.IsEnabledAsync(Capabilities.IntegrationConnectors, ct);
         var list = new List<PackView>();
-        foreach (var p in packs.OrderBy(p => p.Kind, StringComparer.Ordinal))
+        foreach (var p in packs.Where(p => p.Listed).OrderBy(p => p.Kind, StringComparer.Ordinal))
         {
             list.Add(new PackView(p.Kind, p.Version, connectors && await entitlements.IsEnabledAsync(p.CapabilityKey, ct), p.Actions.Select(View).ToList()));
         }
@@ -79,8 +79,8 @@ public sealed class PackConnections(
 
     public async Task<IReadOnlyList<PackConnectionView>> ListAsync(CancellationToken ct)
     {
-        var ids = await session.QueryAsync("select id from integrations.connection where kind <> @m order by created_at, id",
-            new { m = ConnectionKinds.Microsoft365 }, r => r.GetGuid(0), ct);
+        var ids = await session.QueryAsync("select id from integrations.connection where kind <> all(@hidden) order by created_at, id",
+            new { hidden = Webhooks.HiddenKinds.All }, r => r.GetGuid(0), ct);
         var result = new List<PackConnectionView>();
         foreach (var id in ids)
         {
@@ -98,8 +98,8 @@ public sealed class PackConnections(
             """
             select id, kind, display_name, status, enabled, owner_user_id, last_success_at, last_checked_at, credential_expires_at,
               circuit_opened_at is not null, rate_limit_per_minute, settings::text, last_test::text
-            from integrations.connection where id = @id and kind <> @m
-            """, new { id, m = ConnectionKinds.Microsoft365 },
+            from integrations.connection where id = @id and kind <> all(@hidden)
+            """, new { id, hidden = Webhooks.HiddenKinds.All },
             r => new
             {
                 Id = r.GetGuid(0), Kind = r.GetString(1), Name = r.GetString(2), Status = r.GetString(3), Enabled = r.GetBoolean(4),
@@ -121,7 +121,7 @@ public sealed class PackConnections(
 
     public async Task<PackConnectionView> CreateAsync(CreatePackConnectionRequest request, CancellationToken ct)
     {
-        var pack = packs.FirstOrDefault(p => p.Kind == request.Kind) ?? throw AppException.Validation("kind", "validation.integrations.kind_unsupported");
+        var pack = packs.FirstOrDefault(p => p.Listed && p.Kind == request.Kind) ?? throw AppException.Validation("kind", "validation.integrations.kind_unsupported");
         if (!await entitlements.IsEnabledAsync(Capabilities.IntegrationConnectors, ct))
         {
             throw AppException.NotInPackage(Capabilities.IntegrationConnectors);
@@ -133,7 +133,7 @@ public sealed class PackConnections(
         var name = ValidName(request.DisplayName);
         var rate = ValidRate(request.RateLimitPerMinute ?? 600);
         var limit = await entitlements.GetLimitAsync(Capabilities.IntegrationMaxConnections, ct);
-        var count = await session.ScalarAsync<long>("select count(*) from integrations.connection where kind <> @m", new { m = ConnectionKinds.Microsoft365 }, ct);
+        var count = await session.ScalarAsync<long>("select count(*) from integrations.connection where kind <> all(@hidden)", new { hidden = Webhooks.HiddenKinds.All }, ct);
         if (limit is { } max && count >= max)
         {
             throw AppException.Conflict("conflict.integrations.connection_limit");

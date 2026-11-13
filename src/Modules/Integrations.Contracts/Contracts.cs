@@ -1076,3 +1076,34 @@ public interface IWebPush
     /// <summary>Encrypts <paramref name="payload"/> for the subscription and posts it. <paramref name="urgent"/> asks the push service to wake the device.</summary>
     Task<WebPushOutcome> SendAsync(WebPushTarget target, string payload, TimeSpan timeToLive, bool urgent, CancellationToken ct = default);
 }
+
+/// <summary>A signed endpoint another module owns: where to send, and the tenant secret manager reference that signs.</summary>
+public sealed record WebhookEndpointRequest(string Name, string? Url, string? SecretRef);
+
+/// <summary>One delivery to an endpoint as the delivery log keeps it: the event type, how it ended and how many attempts it took.</summary>
+public sealed record WebhookDeliveryRecord(Guid RunId, string? EventType, string Status, int Attempts, string? ErrorClass, DateTimeOffset CreatedAt,
+    DateTimeOffset? FinishedAt);
+
+/// <summary>
+/// The outbound webhook delivery contract (spec 017 US5) for event notifications of other modules, such as the event
+/// subscriptions of the public API (spec 035 FR-018). An endpoint is a connection of the runtime that only its owning
+/// module manages and that the Connections page does not list. Deliveries are signed with HMAC SHA-256 over the
+/// timestamp and body, sent only to hosts on the tenant allowlist, retried as durable jobs and kept in the delivery log;
+/// each ends with <see cref="ConnectorActionCompleted"/> for the endpoint. Tenant comes from context.
+/// </summary>
+public interface IWebhookDelivery
+{
+    /// <summary>Checks the URL (HTTPS, on the allowlist) and the secret reference, and creates the endpoint, enabled. Throws a validation error naming <c>url</c> or <c>secretRef</c>.</summary>
+    Task<Guid> CreateEndpointAsync(WebhookEndpointRequest request, CancellationToken ct = default);
+
+    Task SetEndpointEnabledAsync(Guid endpointId, bool enabled, CancellationToken ct = default);
+
+    /// <summary>Removes the endpoint and its delivery log.</summary>
+    Task DeleteEndpointAsync(Guid endpointId, CancellationToken ct = default);
+
+    /// <summary>Queues one delivery of <paramref name="data"/> as event <paramref name="eventType"/>; the delivery ID is new each time.</summary>
+    Task<ConnectorCallResult> DeliverAsync(Guid endpointId, string eventType, DateTimeOffset occurredAt, System.Text.Json.JsonElement data, CancellationToken ct = default);
+
+    /// <summary>The latest deliveries to the endpoint, newest first.</summary>
+    Task<IReadOnlyList<WebhookDeliveryRecord>> DeliveriesAsync(Guid endpointId, int limit, CancellationToken ct = default);
+}

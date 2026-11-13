@@ -112,6 +112,9 @@ public static class IntegrationsModule
         services.AddScoped<IMeetingCalendars, Google.MeetingCalendars>();
         services.AddScoped<Webhooks.WebhookPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.WebhookPack>());
+        services.AddScoped<Webhooks.ApiEventPack>();
+        services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Webhooks.ApiEventPack>());
+        services.AddScoped<IWebhookDelivery, Webhooks.WebhookDelivery>();
         services.AddScoped<Webhooks.InboundWebhooks>();
         services.AddScoped<SyncAgents.OnPremDirectoryPack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<SyncAgents.OnPremDirectoryPack>());
