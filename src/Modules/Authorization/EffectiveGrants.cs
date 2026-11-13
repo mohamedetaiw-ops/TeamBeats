@@ -38,6 +38,12 @@ public sealed record EffectiveGrants(
     /// <summary>Request attributes for conditions (spec 026), set per request on the current user's grants only, never cached.</summary>
     public IReadOnlyDictionary<string, string> RequestAttributes { get; init; } = new Dictionary<string, string>();
 
+    /// <summary>
+    /// The grants of an application app (spec 035 FR-011). An app is not a member of the tenant, so what every member may
+    /// view is not open to it: it sees only what its own roles cover, at their org scope (section 7 sibling cases).
+    /// </summary>
+    public bool App { get; init; }
+
     public static EffectiveGrants None(Guid userId) =>
         new(userId, false, [], new HashSet<Guid>(), new HashSet<Guid>(), new HashSet<Guid>(), []);
 }
@@ -121,7 +127,7 @@ public sealed class EffectiveGrantsLoader(
             grants.Add(new Grant(x.Id, x.Role, x.Scope, x.ScopeId, x.ScopeResourceType,
                 x.Permissions.Where(p => !Permissions.ExcludedFromApps(p)).ToHashSet(StringComparer.Ordinal), units, "app"));
         }
-        var loaded = new EffectiveGrants(appId, true, grants, new HashSet<Guid>(), new HashSet<Guid>(), new HashSet<Guid>(), []);
+        var loaded = new EffectiveGrants(appId, true, grants, new HashSet<Guid>(), new HashSet<Guid>(), new HashSet<Guid>(), []) { App = true };
         if (!_changedInScope)
         {
             cache.Set(key, loaded, MaxStaleness);

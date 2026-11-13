@@ -34,6 +34,15 @@ public interface ITenantContext
     Guid RequireTenant();
 
     Guid RequireUser();
+
+    /// <summary>
+    /// The person, or the application app calling the public API as itself (spec 035 FR-011), for reads that both may
+    /// make. What the app may see is still decided by the central authorization service from the app's own roles.
+    /// </summary>
+    Guid RequirePrincipal() =>
+        ActorType is (ActorType.User or ActorType.App) && ActorId is { } id
+            ? id
+            : throw new InvalidOperationException("No authenticated tenant user or app in context.");
 }
 
 /// <summary>Mutable, scoped implementation. Only infrastructure code sets values.</summary>

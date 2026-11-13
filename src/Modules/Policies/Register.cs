@@ -132,13 +132,24 @@ public sealed class PolicyRegister(
     /// <summary>The owner drafts while they hold <c>policy.author</c> at the policy's unit; compliance officers may too.</summary>
     internal async Task<bool> EditsAsync(PolicyRow policy, CancellationToken ct) =>
         await ManagesAsync(policy, ct)
-        || (policy.Owner == context.RequireUser() && (await authz.CheckAsync(Permissions.PolicyAuthor, policy.Target, ct)).Allowed);
+        || (policy.Owner == context.ActorId && (await authz.CheckAsync(Permissions.PolicyAuthor, policy.Target, ct)).Allowed);
 
     /// <summary>Whether the policy applies to the current user, which is what lets them read its versions in force.</summary>
-    internal Task<bool> AppliesToMeAsync(PolicyRow policy, CancellationToken ct) => audiences.IncludesAsync(policy.AppliesTo, context.RequireUser(), ct);
+    internal async Task<bool> AppliesToMeAsync(PolicyRow policy, CancellationToken ct) =>
+        context.ActorType == ActorType.App ? await AppReadsAsync(policy, ct) : await audiences.IncludesAsync(policy.AppliesTo, context.RequireUser(), ct);
+
+    private OrgCoverage? _appReach;
+
+    /// <summary>
+    /// An application app calling the public API (spec 035 <c>policies:read</c>) is in no audience, so a policy applies to
+    /// it only as published content: its own <c>content.view</c> must cover the policy's unit, or the whole tenant for a
+    /// tenant-wide policy. It never sees drafts, and it owes no attestation.
+    /// </summary>
+    private async Task<bool> AppReadsAsync(PolicyRow policy, CancellationToken ct) =>
+        (_appReach ??= await authz.CoverageAsync(Permissions.ContentView, ct)).Covers(policy.OrgUnitId);
 
     internal async Task<bool> ReadsPublishedAsync(PolicyRow policy, CancellationToken ct) =>
-        policy.Owner == context.RequireUser() || await ManagesAsync(policy, ct) || await AppliesToMeAsync(policy, ct);
+        policy.Owner == context.ActorId || await ManagesAsync(policy, ct) || await AppliesToMeAsync(policy, ct);
 
     internal async Task<PolicyRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync($"select {PolicyRow.Columns} from policies.policy where id = @id{(forUpdate ? " for update" : string.Empty)}",
@@ -170,7 +181,7 @@ public sealed class PolicyRegister(
         {
             return policy;
         }
-        if (policy.Owner == context.RequireUser() || await ManagesAsync(policy, ct) || await ReviewsAsync(policy, ct))
+        if (policy.Owner == context.ActorId || await ManagesAsync(policy, ct) || await ReviewsAsync(policy, ct))
         {
             return policy;
         }
@@ -188,6 +199,10 @@ public sealed class PolicyRegister(
         if (reviews.TryGetValue(policy.Id, out var known))
         {
             return known;
+        }
+        if (context.ActorType == ActorType.App)
+        {
+            return reviews[policy.Id] = false;
         }
         var user = context.RequireUser();
         var result = false;
@@ -551,7 +566,7 @@ public sealed class PolicyRegister(
     public async Task<IReadOnlyList<PolicyListItem>> ListAsync(Guid? category, string? status, string? q, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.PolicyCore, ct);
-        var user = context.RequireUser();
+        var user = context.RequirePrincipal();
         var coverage = await authz.CoverageAsync(Permissions.PolicyManage, ct);
         var rows = await session.QueryAsync(
             $"""

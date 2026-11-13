@@ -295,6 +295,7 @@ public static class ContentModule
         reports.MapGet("/{id:guid}/file", async (Guid id, CriticalAnnouncements service, TenantObjectStorage storage, CancellationToken ct) =>
             Results.File(await service.ReportFileAsync(id, storage, ct), "text/csv", $"acknowledgements-{id}.csv"));
 
+        app.MapContentPublicEndpoints();
         return app;
     }
 }

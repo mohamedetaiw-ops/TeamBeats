@@ -363,6 +363,7 @@ public static class DocumentsModule
 
         kb.MapGet("/articles/{id:guid}/units", async (Guid id, KnowledgeBase service, CancellationToken ct) => Results.Ok(await service.ReaderUnitsAsync(id, ct)));
 
+        app.MapDocumentPublicEndpoints();
         return app;
     }
 

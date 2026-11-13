@@ -90,8 +90,21 @@ public sealed class PeopleService(
             throw AppException.Denied();
         }
         await store.EnsureFreshAsync(ct);
-        return (await visibility.ViewerAsync(context.RequireUser(), ct), await store.PoliciesAsync(ct));
+        if (context.ActorType == ActorType.App)
+        {
+            _reach = await authz.CoverageAsync(Permissions.PeopleView, ct);
+        }
+        return (await visibility.ViewerAsync(context.RequirePrincipal(), ct), await store.PoliciesAsync(ct));
     }
+
+    /// <summary>
+    /// For an application app calling the public API (spec 035 section 7): the units its own <c>people.view</c> covers.
+    /// The app sees people placed in those units only, and of their fields only those every employee sees, since it is
+    /// in no unit and manages no one. Null for a person, whose directory is the whole tenant (spec 010).
+    /// </summary>
+    private OrgCoverage? _reach;
+
+    private bool Reaches(ProfileRow row) => _reach is null || _reach.WholeTenant || row.UnitIds.Any(_reach.Units.Contains);
 
     // Search (US1, FR-006, FR-017)
 
@@ -131,6 +144,7 @@ public sealed class PeopleService(
             and (@units::uuid[] is null or unit_ids && @units)
             and (@location::text is null or location_key = @location)
             and (@ids::uuid[] is null or user_id = any(@ids))
+            and (@reach::uuid[] is null or unit_ids && @reach)
             and not exists (
               select 1 from unnest(@contains::text[], @skeletons::text[], @digits::text[]) as t(c, s, d)
               where not (
@@ -149,6 +163,7 @@ public sealed class PeopleService(
             {
                 units,
                 ids,
+                reach = _reach is { WholeTenant: false } r ? r.Units.ToArray() : null,
                 location = SearchText.LocationKey(location),
                 contains = tokens.Select(Like).ToArray(),
                 skeletons = tokens.Select(t => t.Length >= 3 && SearchText.Skeleton(t) is { Length: >= 2 } s ? "% " + s + "%" : string.Empty).ToArray(),
@@ -172,7 +187,7 @@ public sealed class PeopleService(
     public async Task<PersonView> GetAsync(Guid userId, CancellationToken ct)
     {
         var (viewer, policies) = await BeginAsync(ct);
-        var row = await store.GetAsync(userId, ct) ?? throw AppException.NotFound();
+        var row = await store.GetAsync(userId, ct) is { } found && Reaches(found) ? found : throw AppException.NotFound();
         if (!row.Active)
         {
             throw new AppException(ProblemCodes.Gone, 410, "people.no_longer_available");
@@ -185,16 +200,17 @@ public sealed class PeopleService(
         var fields = await FieldsAsync(viewer, policies, row, ct);
         var managerId = await lines.ManagerOfAsync(row.UserId, ct);
         PersonCard? manager = null;
-        if (managerId is { } m && await store.GetAsync(m, ct) is { Active: true } managerRow)
+        if (managerId is { } m && await store.GetAsync(m, ct) is { Active: true } managerRow && Reaches(managerRow))
         {
             manager = (await CardsAsync(viewer, policies, [managerRow], ct))[0];
         }
-        var reports = (await store.GetManyAsync(await lines.DirectReportsAsync(row.UserId, ct), ct)).Count(r => r.Active);
+        var reports = (await store.GetManyAsync(await lines.DirectReportsAsync(row.UserId, ct), ct)).Count(r => r.Active && Reaches(r));
         var unitRefs = await UnitsAsync(row.UnitIds, ct);
         var canSetManager = (await authz.CheckAsync(Permissions.PeopleManage, AuthzTarget.Tenant, ct)).Allowed;
         return new PersonView(row.UserId, row.DisplayName, row.Names, row.PrimaryUnitId is { } p ? unitRefs.FirstOrDefault(u => u.Id == p) : null, unitRefs,
+            // An app reading as itself is not told who is on leave (spec 022 shows it to employees only).
             await LocationAsync(row.LocationKey, ct), fields, manager, reports, row.UserId == viewer.Id, canSetManager,
-            CanCorrect(viewer, row), leave.FirstOrDefault() is { } l ? await l.AwayAsync(row.UserId, ct) : null);
+            CanCorrect(viewer, row), context.ActorType != ActorType.App && leave.FirstOrDefault() is { } l ? await l.AwayAsync(row.UserId, ct) : null);
     }
 
     private static bool CanCorrect(Viewer viewer, ProfileRow row) => viewer.Manage.Covers(row.PrimaryUnitId) || viewer.Hr.Covers(row.PrimaryUnitId);
@@ -256,23 +272,23 @@ public sealed class PeopleService(
     public async Task<OrgChart> OrgChartAsync(Guid userId, CancellationToken ct)
     {
         var (viewer, policies) = await BeginAsync(ct);
-        var row = await store.GetAsync(userId, ct) ?? throw AppException.NotFound();
+        var row = await store.GetAsync(userId, ct) is { } found && Reaches(found) ? found : throw AppException.NotFound();
         if (!row.Active)
         {
             throw new AppException(ProblemCodes.Gone, 410, "people.no_longer_available");
         }
         var chainIds = await lines.ChainAsync(userId, MaxChain, ct);
-        var chainRows = (await store.GetManyAsync(chainIds, ct)).Where(r => r.Active).ToDictionary(r => r.UserId);
+        var chainRows = (await store.GetManyAsync(chainIds, ct)).Where(r => r.Active && Reaches(r)).ToDictionary(r => r.UserId);
         var chain = await CardsAsync(viewer, policies, chainIds.Where(chainRows.ContainsKey).Select(id => chainRows[id]), ct);
 
         IReadOnlyList<ProfileRow> peers = [];
         if (chainIds.Count > 0)
         {
             peers = (await store.GetManyAsync(await lines.DirectReportsAsync(chainIds[0], ct), ct))
-                .Where(r => r.Active && r.UserId != userId).OrderBy(r => r.DisplayName, StringComparer.CurrentCulture).ToList();
+                .Where(r => r.Active && r.UserId != userId && Reaches(r)).OrderBy(r => r.DisplayName, StringComparer.CurrentCulture).ToList();
         }
         var reports = (await store.GetManyAsync(await lines.DirectReportsAsync(userId, ct), ct))
-            .Where(r => r.Active).OrderBy(r => r.DisplayName, StringComparer.CurrentCulture).ToList();
+            .Where(r => r.Active && Reaches(r)).OrderBy(r => r.DisplayName, StringComparer.CurrentCulture).ToList();
         return new OrgChart((await CardsAsync(viewer, policies, [row], ct))[0], chain,
             await CardsAsync(viewer, policies, peers.Take(MaxPageSize), ct), peers.Count,
             await CardsAsync(viewer, policies, reports.Take(MaxPageSize), ct), reports.Count);
