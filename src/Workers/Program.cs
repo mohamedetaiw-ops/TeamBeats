@@ -41,6 +41,7 @@ public sealed class WorkerProgram
             builder.Services.AddHostedService<TeamBeats.Modules.Notifications.NotificationDeliveryWorker>();
         }
         builder.Services.AddHostedService<TeamBeats.Modules.Workflow.EngineJobWorker>();
+        builder.Services.AddHostedService<TeamBeats.Modules.Services.ServiceScheduleWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Integrations.Runtime.ConnectorJobWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Content.ContentScheduleWorker>();
         builder.Services.AddHostedService<TeamBeats.Modules.Documents.DocumentMaintenanceWorker>();

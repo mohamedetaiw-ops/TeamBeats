@@ -34135,6 +34135,19 @@
               }
             ]
           },
+          "triggers": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ServiceTrigger"
+            }
+          },
+          "continueAfterExit": {
+            "type": "boolean",
+            "default": false
+          },
           "hasSteps": {
             "type": "boolean"
           }
@@ -34235,6 +34248,65 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "ServiceTrigger": {
+        "required": [
+          "kind"
+        ],
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string"
+          },
+          "event": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "serviceId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "status": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "orgUnitId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "frequency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "day": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "requesterId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },

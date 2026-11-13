@@ -41,7 +41,7 @@ Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot)
 - [x] T020 [P] Tests: sequential and parallel steps with conditions, skipped steps on Tracking, open requests finish on their version, auto reject and return paths, cross-tenant and scope
 
 ### Slice 2: triggers
-- [ ] T021 [US8] Schedule and product event triggers, system requester, idempotent per event; start service steps start the other service's request (chain depth at most 5); requester leaves cancels open requests unless "continue after exit"; tests
+- [x] T021 [US8] Schedule and product event triggers, system requester, idempotent per event; start service steps start the other service's request (chain depth at most 5); requester leaves cancels open requests unless "continue after exit"; tests
 
 ### Slice 3: service levels and auto-approve
 - [ ] T022 [US5] [US8] Service level targets, at-risk and breach alerts and analytics, auto-approve rules; tests

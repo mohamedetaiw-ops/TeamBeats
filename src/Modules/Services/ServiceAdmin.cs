@@ -49,7 +49,8 @@ public sealed partial class ServiceAdmin(
     IAuditWriter audit,
     IOutbox outbox,
     IClock clock,
-    Catalogue catalogue)
+    Catalogue catalogue,
+    Identity.Contracts.IUserDirectory users)
 {
     public const int MaxNameLength = 200;
     public const int MaxDescriptionLength = 2000;
@@ -359,6 +360,76 @@ public sealed partial class ServiceAdmin(
         }
     }
 
+    /// <summary>
+    /// Start triggers (FR-014) and the services a route starts. A service never starts itself, by a trigger on its own
+    /// completion or by a start service step (the designer blocks direct cycles); longer loops stop at run time.
+    /// </summary>
+    private async Task ValidateTriggersAsync(Guid id, ServiceRoute route, ValidationErrors errors, CancellationToken ct)
+    {
+        var triggers = route.Triggers ?? [];
+        if (triggers.Count > ServiceRoute.MaxTriggers)
+        {
+            errors.Add("route.triggers", "validation.services.triggers");
+            return;
+        }
+        var others = new List<(string Field, Guid Service)>();
+        for (var i = 0; i < triggers.Count; i++)
+        {
+            var field = $"route.triggers[{i}]";
+            var t = triggers[i];
+            var ok = t is not null && TriggerKinds.All.Contains(t.Kind ?? string.Empty);
+            if (ok && t!.Kind == TriggerKinds.Schedule)
+            {
+                ok = t.Event is null && t.ServiceId is null && t.Status is null && t.OrgUnitId is null
+                    && t.Frequency is { } f && ScheduleFrequencies.All.Contains(f)
+                    && t.Day is { } day && day >= 1 && day <= (f == ScheduleFrequencies.Weekly ? 7 : 28)
+                    && t.RequesterId is { } requester && requester != Guid.Empty
+                    && await users.GetAsync(requester, ct) is { Status: "active" };
+            }
+            else if (ok)
+            {
+                ok = t!.Event is { } e && TriggerEvents.All.Contains(e) && t.Frequency is null && t.Day is null
+                    && (t.RequesterId is null || t.RequesterId != Guid.Empty && await users.GetAsync(t.RequesterId.Value, ct) is { Status: "active" })
+                    && (e == TriggerEvents.RequestCompleted
+                        ? t.ServiceId is { } other && other != Guid.Empty && (t.Status is null || RequestStatuses.Closed.Contains(t.Status))
+                        : t.ServiceId is null && t.Status is null)
+                    && (t.OrgUnitId is null || e == TriggerEvents.MembershipChanged);
+                if (ok && t.OrgUnitId is { } unit && !await hierarchy.UnitExistsAsync(unit, ct))
+                {
+                    ok = false;
+                }
+                if (ok && t.ServiceId is { } other2)
+                {
+                    others.Add((field, other2));
+                }
+            }
+            if (!ok)
+            {
+                errors.Add(field, "validation.services.trigger");
+            }
+        }
+        var steps = route.Graph?.Steps ?? [];
+        for (var i = 0; i < steps.Count; i++)
+        {
+            if (steps[i]?.Type == StepTypes.StartService && steps[i].ServiceId is { } target && target != Guid.Empty)
+            {
+                others.Add(($"route.graph.steps[{i}]", target));
+            }
+        }
+        foreach (var (field, other) in others)
+        {
+            var kind = await session.ScalarAsync<string?>("select kind from services.service where id = @other", new { other }, ct);
+            if (other == id)
+            {
+                errors.Add(field, "validation.services.route_cycle");
+            }
+            else if (kind != ServiceKinds.Form)
+            {
+                errors.Add(field, "validation.services.route_service");
+            }
+        }
+    }
+
     /// <summary>Saves the draft form and route. Editing a published service starts the next version (US7 scenario 2).</summary>
     public async Task<ServiceAdminView> SaveDraftAsync(Guid id, ServiceDraftRequest request, CancellationToken ct)
     {
@@ -376,9 +447,10 @@ public sealed partial class ServiceAdmin(
         var errors = new ValidationErrors();
         FormValidator.ValidateDefinition(form, errors);
         ValidateRoute(route, form, errors);
-        if (route.Actions is { Count: > 0 })
+        await ValidateTriggersAsync(id, route, errors, ct);
+        if (route.Actions is { Count: > 0 } || route.Triggers is { Count: > 0 })
         {
-            await entitlements.DemandAsync(Capabilities.WorkflowAutomation, ct); // Automatic steps (section 9).
+            await entitlements.DemandAsync(Capabilities.WorkflowAutomation, ct); // Automatic steps and triggers (section 9).
         }
         if (route.Graph is { } designed && !errors.Any)
         {
@@ -450,7 +522,7 @@ public sealed partial class ServiceAdmin(
         {
             throw AppException.Validation("form", "validation.services.form_empty");
         }
-        if (latest.Route.Actions is { Count: > 0 })
+        if (latest.Route.Actions is { Count: > 0 } || latest.Route.Triggers is { Count: > 0 })
         {
             await entitlements.DemandAsync(Capabilities.WorkflowAutomation, ct);
         }

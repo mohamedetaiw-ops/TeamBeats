@@ -29,15 +29,59 @@ public sealed record ApprovalStep(IReadOnlyDictionary<string, string>? Names, Ap
 public sealed record ActionStep(IReadOnlyDictionary<string, string>? Names, Guid ConnectionId, string Action, IReadOnlyDictionary<string, string>? Inputs,
     IReadOnlyDictionary<string, string>? OnBusinessError = null);
 
+/// <summary>What starts a request besides a person's submit (spec 016 FR-014).</summary>
+public static class TriggerKinds
+{
+    public const string Schedule = "schedule";
+    public const string Event = "event";
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Schedule, Event };
+}
+
+/// <summary>The product events a trigger listens to (FR-014).</summary>
+public static class TriggerEvents
+{
+    public const string UserProvisioned = "user_provisioned";
+    public const string UserDeprovisioned = "user_deprovisioned";
+    public const string MembershipChanged = "membership_changed";
+    public const string RequestCompleted = "request_completed";
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal)
+    {
+        UserProvisioned, UserDeprovisioned, MembershipChanged, RequestCompleted,
+    };
+}
+
+public static class ScheduleFrequencies
+{
+    public const string Weekly = "weekly";
+    public const string Monthly = "monthly";
+    public const string Quarterly = "quarterly";
+
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Weekly, Monthly, Quarterly };
+}
+
+/// <summary>
+/// A start trigger of a service (spec 016 FR-014, US8 scenario 2). A schedule starts one request each period on
+/// <paramref name="Day"/> (weekly: 1 Monday to 7 Sunday; monthly and quarterly: day 1 to 28 of the month, the quarter's
+/// first month) for <paramref name="RequesterId"/>, the service's system requester. An event starts one request for the
+/// person the event is about, filed by <paramref name="RequesterId"/> when set (else the person files it): <c>membership_changed</c> may name the unit (<paramref name="OrgUnitId"/>), and
+/// <c>request_completed</c> names the other service (<paramref name="ServiceId"/>) and may name the end status.
+/// </summary>
+public sealed record ServiceTrigger(string Kind, string? Event = null, Guid? ServiceId = null, string? Status = null, Guid? OrgUnitId = null,
+    string? Frequency = null, int? Day = null, Guid? RequesterId = null);
+
 /// <summary>
 /// A service's route: either the R1 shape (none or one approval step, then the connector steps in order) or a step
 /// graph built in the designer (spec 016 R2, US5 and US8), which runs on the process engine as a compiled model.
 /// </summary>
-public sealed record ServiceRoute(ApprovalStep? Approval = null, IReadOnlyList<ActionStep>? Actions = null, RouteGraph? Graph = null)
+public sealed record ServiceRoute(ApprovalStep? Approval = null, IReadOnlyList<ActionStep>? Actions = null, RouteGraph? Graph = null,
+    IReadOnlyList<ServiceTrigger>? Triggers = null, bool ContinueAfterExit = false)
 {
     public static readonly ServiceRoute None = new();
 
     public const int MaxActions = 5;
+    public const int MaxTriggers = 10;
 
     public bool HasSteps => Approval is not null || Actions is { Count: > 0 } || Graph is not null;
 }
