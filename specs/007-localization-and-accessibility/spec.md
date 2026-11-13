@@ -123,6 +123,7 @@ Employee (chooses language), tenant admin (enables locales, sets default), conte
 - **FR-027**: The page builder MUST surface accessibility errors at page, region and placement level with remediation guidance (spec 032 FR-046). *(CX-ACC-012)*
 - **FR-028**: Every change of density, theme mode or region order MUST keep the page AA-eligible; the test matrix MUST include personalized variants. *(CX-ACC-013)*
 - **FR-029**: Authentication, validation, timeout and permission errors MUST give accessible, non-technical recovery guidance. *(CX-ACC-014)*
+- **FR-030**: No screen MUST ever show a raw resource key. Every value the API returns that the web app turns into a key (a scope, a status, a category, a kind) MUST have its full list of values registered with `npm run check:messages`, which fails the build when a value has no message in a launch language, and the web app shows a generic fallback label at run time for a value it does not know. Acceptance: the check fails when a library scope has no message; the documents library card shows a label for every scope.
 
 ## 6. Business and validation rules
 - A locale is "launch-complete" when every UI key has a reviewed translation and native-speaker sign-off (SC-003). FR-004 fails CI on missing keys only for launch-complete locales.
