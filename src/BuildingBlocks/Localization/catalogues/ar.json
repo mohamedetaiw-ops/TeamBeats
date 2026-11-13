@@ -2118,5 +2118,15 @@
   "validation.api.scopes_required": "اختر نطاقًا واحدًا على الأقل.",
   "validation.api.user_consent_scope": "يمكن للموظفين الموافقة على نطاقات القراءة فقط.",
   "problem.api.token_invalid": "رمز الوصول مفقود أو غير صالح أو لم يعد مقبولًا",
-  "problem.api.insufficient_scope": "لا يتضمن رمز الوصول النطاق الذي تحتاجه هذه العملية"
+  "problem.api.insufficient_scope": "لا يتضمن رمز الوصول النطاق الذي تحتاجه هذه العملية",
+  "validation.role.app_excluded_permission": "لا يمكن أن يتضمن دور مخصص للتطبيقات صلاحيات إدارة الوصول أو الهوية أو الأمان أو واجهة البرمجة، ولا تصدير التدقيق ولا سياسة الذكاء الاصطناعي.",
+  "validation.role.not_assignable_to_apps": "لا يمكن منح هذا الدور لتطبيق.",
+  "validation.role.app_condition": "لا يمكن أن يكون للدور الممنوح لتطبيق شرط.",
+  "validation.role.app_not_found": "لم يُعثر على التطبيق، أو أنه لا يستدعي واجهة البرمجة بصفته.",
+  "validation.api.public_key_invalid": "أدخل مفتاحًا عامًا بصيغة JWK: مفتاح EC من نوع P-256، أو مفتاح RSA بطول 2048 بت على الأقل.",
+  "validation.api.public_key_private": "يتضمن هذا المفتاح جزأه الخاص. سجّل المفتاح العام فقط.",
+  "validation.api.credential_kind": "اختر سرًا للعميل أو مفتاحًا عامًا.",
+  "conflict.api.public_key_registered": "هذا المفتاح العام مسجّل بالفعل لهذا التطبيق.",
+  "notifications.template.publicapi.credential_expiring.title": "تنتهي صلاحية بيانات اعتماد {app} قريبًا",
+  "notifications.template.publicapi.credential_expiring.body": "تنتهي صلاحية بيانات اعتماد للتطبيق {app} خلال {days} يومًا. أضف بيانات اعتماد جديدة وانقل التطبيق إليها قبل ذلك."
 }

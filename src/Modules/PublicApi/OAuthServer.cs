@@ -65,7 +65,6 @@ public static class OAuthServer
             {
                 options.CodeChallengeMethods.Remove(CodeChallengeMethods.Plain);
                 options.Scopes.Remove(Scopes.OpenId);
-                options.ClientAuthenticationMethods.Remove(ClientAuthenticationMethods.PrivateKeyJwt);
                 options.ResponseModes.Remove(ResponseModes.Fragment);
             });
             o.UseAspNetCore().EnableAuthorizationEndpointPassthrough().EnableTokenEndpointPassthrough();
@@ -82,6 +81,9 @@ public static class OAuthServer
                 .SetOrder(OpenIddictServerHandlers.Protection.AttachSecurityCredentials.Descriptor.Order + 1));
             o.AddEventHandler<ValidateTokenContext>(b => b.UseInlineHandler(TenantValidationKeys)
                 .SetOrder(OpenIddictServerHandlers.Protection.ResolveTokenValidationParameters.Descriptor.Order + 1));
+            // Client assertions are checked by TokenRequestCheck against the app's registered keys, not by OpenIddict.
+            o.AddEventHandler<ProcessAuthenticationContext>(b => b.UseInlineHandler(OwnClientAssertions)
+                .SetOrder(OpenIddictServerHandlers.EvaluateValidatedTokens.Descriptor.Order + 1));
             o.AddEventHandler<HandleJsonWebKeySetRequestContext>(b => b.UseInlineHandler(TenantJwks).SetOrder(int.MaxValue));
             o.AddEventHandler<ProcessSignInContext>(b => b.UseInlineHandler(RefreshTokensForDelegatedApps)
                 .SetOrder(OpenIddictServerHandlers.EvaluateGeneratedTokens.Descriptor.Order + 1));
@@ -152,6 +154,14 @@ public static class OAuthServer
         var tenant = HostTenant(context);
         context.TokenValidationParameters.IssuerSigningKeys = keys.ValidationKeys(tenant);
         context.TokenValidationParameters.TokenDecryptionKeys = keys.DecryptionKeys(tenant);
+        return default;
+    }
+
+    private static ValueTask OwnClientAssertions(ProcessAuthenticationContext context)
+    {
+        context.ExtractClientAssertion = false;
+        context.RequireClientAssertion = false;
+        context.ValidateClientAssertion = false;
         return default;
     }
 
@@ -235,8 +245,9 @@ internal sealed class AuthorizationRequestCheck(Apps apps, IServiceProvider serv
 }
 
 /// <summary>
-/// Authenticates the client at the token endpoint (FR-004, FR-005): confidential apps with a live secret, public ones
-/// with none; client credentials only for application apps, codes and refresh tokens only for delegated ones.
+/// Authenticates the client at the token endpoint (FR-004, FR-005): confidential apps with a live secret or a client
+/// assertion signed with a registered public key (private key JWT, never both), public ones with neither; client
+/// credentials only for application apps, codes and refresh tokens only for delegated ones.
 /// </summary>
 internal sealed class TokenRequestCheck(Apps apps, IServiceProvider services) : IOpenIddictServerHandler<ValidateTokenRequestContext>
 {
@@ -255,18 +266,30 @@ internal sealed class TokenRequestCheck(Apps apps, IServiceProvider services) : 
             context.Reject(Errors.InvalidClient, "The client is not known.");
             return;
         }
+        var assertion = context.Request.ClientAssertion;
+        var hasAssertion = !string.IsNullOrEmpty(assertion) || !string.IsNullOrEmpty(context.Request.ClientAssertionType);
         if (AppKinds.IsConfidential(app.Kind))
         {
-            if (await apps.VerifySecretAsync(app.Id, context.ClientSecret, ct) is not { } credential)
+            Guid? credential;
+            if (hasAssertion)
+            {
+                credential = !string.IsNullOrEmpty(context.ClientSecret) || context.Request.ClientAssertionType != ClientKeys.AssertionType ? null
+                    : await apps.VerifyAssertionAsync(app, assertion, OAuthServer.Origin(http.Request) + "/oauth", ct);
+            }
+            else
+            {
+                credential = await apps.VerifySecretAsync(app.Id, context.ClientSecret, ct);
+            }
+            if (credential is not { } live)
             {
                 context.Reject(Errors.InvalidClient, "The client credentials are not valid.");
                 return;
             }
-            context.Transaction.Properties[OAuthServer.CredentialProperty] = credential;
+            context.Transaction.Properties[OAuthServer.CredentialProperty] = live;
         }
-        else if (!string.IsNullOrEmpty(context.ClientSecret))
+        else if (!string.IsNullOrEmpty(context.ClientSecret) || hasAssertion)
         {
-            context.Reject(Errors.InvalidClient, "A public client has no secret.");
+            context.Reject(Errors.InvalidClient, "A public client has no credential.");
             return;
         }
 

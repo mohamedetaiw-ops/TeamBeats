@@ -25,6 +25,11 @@ public sealed class AuthorizationService(
 
     private async Task<EffectiveGrants> CurrentAsync(CancellationToken ct)
     {
+        if (context.ActorType == ActorType.App && context.ActorId is { } app && context.TenantId is not null)
+        {
+            // An application app calling the public API (spec 035): its own roles only; request conditions still apply.
+            return _current ??= await WithRequestAsync(await loader.LoadAppAsync(app, ct), ct);
+        }
         if (context.ActorType != ActorType.User || context.ActorId is null || context.TenantId is null)
         {
             // Platform operators and anonymous callers hold no tenant permissions (spec 001 FR-010).

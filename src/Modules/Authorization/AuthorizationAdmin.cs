@@ -13,9 +13,12 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.Authorization;
 
 /// <summary>A role as administrators see it. <c>Names</c> holds a custom role's display names by locale; built-in roles take theirs from the web resources.</summary>
-public sealed record RoleView(Guid Id, string Key, bool IsBuiltIn, bool IsDelegable, IReadOnlyList<string> Permissions, IReadOnlyDictionary<string, string>? Names = null);
+public sealed record RoleView(Guid Id, string Key, bool IsBuiltIn, bool IsDelegable, IReadOnlyList<string> Permissions, IReadOnlyDictionary<string, string>? Names = null,
+    bool AssignableToApps = false);
 
-public sealed record DefineRoleRequest(string Key, IReadOnlyDictionary<string, string>? Names, IReadOnlyList<string> Permissions, bool Delegable);
+/// <param name="AssignableToApps">Whether application apps may hold the role (spec 035 FR-011); such a role holds no administration permission.</param>
+public sealed record DefineRoleRequest(string Key, IReadOnlyDictionary<string, string>? Names, IReadOnlyList<string> Permissions, bool Delegable,
+    bool AssignableToApps = false);
 
 /// <param name="Condition">Optional attribute condition that narrows the grant (spec 004 US7, FR-014 to FR-016).</param>
 public sealed record AssignRoleRequest(string SubjectType, Guid SubjectId, string RoleKey, string ScopeType, Guid? ScopeId, string? ScopeResourceType,
@@ -48,7 +51,8 @@ public sealed class AuthorizationAdmin(
     IAuditWriter audit,
     IOutbox outbox,
     AssignmentStore store,
-    IUserDirectory users)
+    IUserDirectory users,
+    IAppPrincipalDirectory appDirectory)
 {
     public async Task<IReadOnlyList<RoleView>> ListRolesAsync(CancellationToken ct)
     {
@@ -60,10 +64,10 @@ public sealed class AuthorizationAdmin(
             """
             select r.id, r.key, r.is_builtin, r.is_delegable,
                    array(select permission_key from authz.role_permission p where p.role_id = r.id order by 1),
-                   r.names::text
+                   r.names::text, r.assignable_to_apps
             from authz.role r order by r.is_builtin desc, r.key
             """, null, r => new RoleView(r.GetGuid(0), r.GetString(1), r.GetBoolean(2), r.GetBoolean(3), r.GetFieldValue<string[]>(4),
-                r.IsDBNull(5) ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(5))), ct);
+                r.IsDBNull(5) ? null : JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(5)), r.GetBoolean(6)), ct);
     }
 
     public async Task<RoleView> DefineRoleAsync(DefineRoleRequest request, CancellationToken ct)
@@ -85,6 +89,11 @@ public sealed class AuthorizationAdmin(
             // Space permissions come only with the space roles (spec 029 FR-002), never from a custom role.
             errors.Add("permissions", "validation.role.unknown_permission");
         }
+        else if (request.AssignableToApps && request.Permissions.Any(Permissions.ExcludedFromApps))
+        {
+            // Spec 035 FR-011: administration stays with people.
+            errors.Add("permissions", "validation.role.app_excluded_permission");
+        }
         errors.ThrowIfAny();
 
         // A custom role can only bundle permissions the definer holds (no escalation by role design).
@@ -98,8 +107,8 @@ public sealed class AuthorizationAdmin(
         try
         {
             await session.ExecAsync(
-                "insert into authz.role (tenant_id, id, key, is_builtin, is_delegable, names) values (@t, @id, @k, false, @d, @n)",
-                new { t = context.RequireTenant(), id, k = request.Key, d = request.Delegable, n = request.Names is null ? null : Jsonb.From(request.Names) }, ct);
+                "insert into authz.role (tenant_id, id, key, is_builtin, is_delegable, names, assignable_to_apps) values (@t, @id, @k, false, @d, @n, @apps)",
+                new { t = context.RequireTenant(), id, k = request.Key, d = request.Delegable, n = request.Names is null ? null : Jsonb.From(request.Names), apps = request.AssignableToApps }, ct);
         }
         catch (PostgresException ex) when (ex.IsUniqueViolation())
         {
@@ -112,11 +121,11 @@ public sealed class AuthorizationAdmin(
         }
         await BumpAsync(ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.RoleDefined, "role", id.ToString(),
-            Changes: new { key = request.Key, permissions = request.Permissions, delegable = request.Delegable }), ct);
-        return new RoleView(id, request.Key!, false, request.Delegable, request.Permissions!, request.Names);
+            Changes: new { key = request.Key, permissions = request.Permissions, delegable = request.Delegable, assignableToApps = request.AssignableToApps }), ct);
+        return new RoleView(id, request.Key!, false, request.Delegable, request.Permissions!, request.Names, request.AssignableToApps);
     }
 
-    public async Task<IReadOnlyList<AssignmentView>> ListAssignmentsAsync(Guid? userId, CancellationToken ct)
+    public async Task<IReadOnlyList<AssignmentView>> ListAssignmentsAsync(Guid? userId, CancellationToken ct, Guid? appId = null)
     {
         var coverage = await authz.CoverageAsync(Permissions.RolesView, ct);
         if (!coverage.Any)
@@ -128,8 +137,9 @@ public sealed class AuthorizationAdmin(
             select a.id, a.subject_type, a.subject_id, r.key, a.scope_type, a.scope_id, a.created_at, a.condition::text as condition
             from authz.role_assignment a join authz.role r on r.id = a.role_id
             where a.revoked_at is null and (@u::uuid is null or (a.subject_type = 'user' and a.subject_id = @u))
+              and (@app::uuid is null or (a.subject_type = 'app' and a.subject_id = @app))
             order by a.created_at
-            """, new { u = userId },
+            """, new { u = userId, app = appId },
             r => new AssignmentView(r.GetGuid(0), r.GetString(1), r.GetGuid(2), r.GetString(3), r.GetString(4), r.Get<Guid?>("scope_id"),
                 r.GetFieldValue<DateTimeOffset>(6), ConditionJson(r.Get<string>("condition"))), ct);
         return coverage.WholeTenant ? rows : rows.Where(a => a.ScopeId is { } s && coverage.Units.Contains(s)).ToList();
@@ -147,7 +157,7 @@ public sealed class AuthorizationAdmin(
         {
             throw AppException.Validation("scopeType", "validation.role.scope_type");
         }
-        if (request.SubjectType is not ("user" or "group"))
+        if (request.SubjectType is not ("user" or "group" or "app"))
         {
             throw AppException.Validation("subjectType", "validation.role.subject_type");
         }
@@ -163,13 +173,27 @@ public sealed class AuthorizationAdmin(
         var role = await session.QuerySingleOrDefaultAsync(
             """
             select r.id, r.key, r.is_delegable, r.is_delegated_admin,
-                   array(select permission_key from authz.role_permission p where p.role_id = r.id)
+                   array(select permission_key from authz.role_permission p where p.role_id = r.id), r.assignable_to_apps
             from authz.role r where r.key = @k
             """, new { k = request.RoleKey },
-            r => (Id: r.GetGuid(0), Key: r.GetString(1), Delegable: r.GetBoolean(2), DelegatedAdmin: r.GetBoolean(3), Permissions: r.GetFieldValue<string[]>(4)), ct);
+            r => (Id: r.GetGuid(0), Key: r.GetString(1), Delegable: r.GetBoolean(2), DelegatedAdmin: r.GetBoolean(3), Permissions: r.GetFieldValue<string[]>(4),
+                ForApps: r.GetBoolean(5)), ct);
         if (role == default)
         {
             throw AppException.Validation("roleKey", "validation.role.unknown");
+        }
+        if (request.SubjectType == "app")
+        {
+            // Spec 035 FR-011: an application app holds only roles marked assignable to apps, and never a condition,
+            // which reads attributes of people.
+            if (!role.ForApps || role.Permissions.Any(Permissions.ExcludedFromApps))
+            {
+                throw AppException.Validation("roleKey", "validation.role.not_assignable_to_apps");
+            }
+            if (condition is not null)
+            {
+                throw AppException.Validation("condition", "validation.role.app_condition");
+            }
         }
         if (BuiltInRoleDefinitions.ModuleAssignedRoles.Contains(role.Key))
         {
@@ -245,6 +269,13 @@ public sealed class AuthorizationAdmin(
                 throw AppException.Validation("subjectId", "validation.membership.no_tenant_membership");
             }
         }
+        else if (request.SubjectType == "app")
+        {
+            if (!await appDirectory.IsApplicationAppAsync(request.SubjectId, ct))
+            {
+                throw AppException.Validation("subjectId", "validation.role.app_not_found");
+            }
+        }
         else if (!await session.ScalarAsync<bool>("select exists (select 1 from authz.user_group where id = @g)", new { g = request.SubjectId }, ct))
         {
             throw AppException.Validation("subjectId", "validation.role.group_not_found");
@@ -261,8 +292,8 @@ public sealed class AuthorizationAdmin(
             throw AppException.Conflict("conflict.role.already_assigned");
         }
 
-        await AuditAssignmentAsync(AuditActions.RoleAssigned, id, request.SubjectType, request.SubjectId, role.Key, scopeType, request.ScopeId, ct,
-            condition: condition);
+        await AuditAssignmentAsync(request.SubjectType == "app" ? AuditActions.ApiRoleAssignedToApp : AuditActions.RoleAssigned, id, request.SubjectType,
+            request.SubjectId, role.Key, scopeType, request.ScopeId, ct, condition: condition);
         await outbox.EnqueueAsync(new RoleAssignmentChanged(id, request.SubjectId, role.Key, "assigned"), ct);
         return new AssignmentView(id, request.SubjectType, request.SubjectId, role.Key, Sql.ToSnake(scopeType.ToString()), request.ScopeId, DateTimeOffset.UtcNow,
             ConditionJson(condition?.ToCanonicalJson()));

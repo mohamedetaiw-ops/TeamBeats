@@ -6,6 +6,9 @@ public enum ActorType
     User,
     PlatformOperator,
     System,
+
+    /// <summary>An application app calling the public API as itself (spec 035 FR-011); its ID is the app's ID.</summary>
+    App,
 }
 
 /// <summary>

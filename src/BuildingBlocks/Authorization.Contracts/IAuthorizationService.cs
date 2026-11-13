@@ -198,3 +198,13 @@ public interface IResourceDescriptorProvider
 
     Task<ResourceDescriptor?> DescribeAsync(Guid resourceId, CancellationToken ct);
 }
+
+/// <summary>
+/// The application apps that can hold roles (spec 035 FR-011), as the module that registers them knows them. Role
+/// administration asks it before giving a role to an app, so an app of another tenant or a delegated app is refused.
+/// </summary>
+public interface IAppPrincipalDirectory
+{
+    /// <summary>Whether the ID is an application app of the current tenant.</summary>
+    Task<bool> IsApplicationAppAsync(Guid appId, CancellationToken ct = default);
+}

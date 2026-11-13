@@ -1119,5 +1119,19 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Revocation is checked in the database on every public call rather than through a cache of at most 60 seconds; a cache can come with the request pipeline (T009) if the overhead budget needs it.
 - Redirect URIs: HTTPS, or HTTP on a loopback address for native apps and MCP clients (RFC 8252); web apps never get plain HTTP. At most 10 per app.
 - `prompt=consent` is not handled in R2: an employee who consented once is not asked again until they revoke. Cancel on the consent page returns `access_denied` to the app.
-- Private key JWT credentials and the app principal type with app-assignable roles come with T006; until then application tokens are accepted and scopes checked, but no public operation serves them yet.
 - The admin and employee pages for apps and connected apps come with T007 and T020; this slice has the consent page only.
+
+## Public API and MCP server (spec 035, slice 2a: T005 and T006)
+
+### Built
+- Application principals (FR-011, spec 004 FR-017): `Authorization` gains the subject type `app` for role assignments and the role flag `assignable_to_apps`. An application app holds roles under its own app ID; a public API call with its token runs as the actor type `App`, and the authorization service then reads only the roles given to the app, never the default Employee role, groups, org memberships or inheritance rules. Grants are cached like a person's, so a removed role is gone within 60 seconds (in practice at once, because the grants version changes).
+- `Permissions.ExcludedFromApps` names what no role for apps may hold: `authz.*`, `identity.*`, `security.*`, `api.*`, `audit.export` and `ai.policy_manage`. Defining such a role, assigning a role not marked for apps, or giving an app a role with a condition is refused, and a database trigger refuses the same through any other path. The loader also drops excluded permissions from an app's grants, so a role changed behind the rules still cannot widen an app.
+- Built-in role App reader (`app_reader`, assignable to apps): `org.view`, `page.view`, `content.view`, `doc.view`, `people.view`. Custom roles can be marked assignable to apps with the custom roles capability. Roles go to an app through `POST /api/v1/authz/assignments` with `subjectType: app`, with the usual step-up and delegation rules, audited as `api.role_assigned_to_app`; `GET /api/v1/authz/assignments?appId=` lists them.
+- Private key JWT (FR-005, RFC 7523): a credential is a client secret or a public JWK (`kind: public_key`), EC P-256 for ES256 or RSA of at least 2048 bits for RS256 or PS256. Only the public parameters are kept, with the RFC 7638 thumbprint as the hint; a key with private parameters is refused, and the same key cannot be registered twice. The token endpoint accepts `client_assertion` with `client_id`: signed by a live key of the app, issuer and subject the client ID, audience the tenant's issuer or token endpoint, expiry within 10 minutes, and a JWT ID that is used once (kept until the assertion would have expired). Metadata lists `private_key_jwt`.
+- Expiry alerts (US1 scenario 6): `PublicApiMaintenanceWorker` runs every hour per tenant; each live credential of an active app with 14 days or less left notifies every holder of `api.manage` once (category `integration_alert`, template `publicapi.credential_expiring`, link `/admin/api/apps/{id}`). Used assertion IDs past their expiry are cleared on the same run.
+
+### Smallest safe defaults
+- An app's principal ID is its app ID; no separate `app_principal` table (the plan's link table) is needed while one app is one principal.
+- Only App reader is marked for apps among the built-in roles; every other built-in role either holds an excluded permission or acts on things an integration should get only by a deliberate custom role.
+- A client assertion must also send `client_id`. Sending a secret and an assertion together is a malformed request (`invalid_request`); any failed assertion check answers `invalid_client`.
+- Assertions live at most 10 minutes; the spec is silent, and RFC 7523 leaves it to the server.

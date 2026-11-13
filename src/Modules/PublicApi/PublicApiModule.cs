@@ -1,3 +1,4 @@
+using TeamBeats.Authorization.Contracts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -24,6 +25,8 @@ public static class PublicApiModule
         services.AddScoped<Apps>();
         services.AddScoped<ApiSettings>();
         services.AddScoped<Consents>();
+        services.AddScoped<IAppPrincipalDirectory, AppPrincipalDirectory>();
+        services.AddScoped<PublicApiMaintenance>();
         services.AddScoped<PublicApiLeavers>();
         services.AddMessageHandler<TenantMembershipDisabled, PublicApiLeavers>("publicapi.leaver");
         services.AddOAuthServer();
@@ -64,7 +67,7 @@ public static class PublicApiModule
         admin.MapPost("/apps/{id:guid}/credentials", async (Guid id, CredentialRequest? body, HttpResponse response, Apps apps, IDbSession session,
             CancellationToken ct) =>
         {
-            var issued = await apps.AddSecretAsync(id, body ?? new CredentialRequest(null), ct);
+            var issued = await apps.AddCredentialAsync(id, body ?? new CredentialRequest(null), ct);
             await session.CommitAsync(ct);
             response.Headers.CacheControl = "no-store";
             return Results.Created($"/api/v1/api-access/apps/{id}", issued);
@@ -107,6 +110,13 @@ public static class PublicApiModule
         });
         return app;
     }
+}
+
+/// <summary>Application apps hold roles in Authorization (FR-011); delegated apps act with the person's own access.</summary>
+internal sealed class AppPrincipalDirectory(Apps apps) : IAppPrincipalDirectory
+{
+    public async Task<bool> IsApplicationAppAsync(Guid appId, CancellationToken ct = default) =>
+        await apps.FindAsync(appId, ct) is { Kind: AppKinds.Application };
 }
 
 /// <summary>A membership that ends takes the person's app tokens with it at once (FR-007).</summary>

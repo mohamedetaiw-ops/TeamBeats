@@ -2118,5 +2118,15 @@
   "validation.api.scopes_required": "Choose at least one scope.",
   "validation.api.user_consent_scope": "Employees can approve read scopes only.",
   "problem.api.token_invalid": "The access token is missing, not valid or no longer accepted",
-  "problem.api.insufficient_scope": "The access token does not include the scope this operation needs"
+  "problem.api.insufficient_scope": "The access token does not include the scope this operation needs",
+  "validation.role.app_excluded_permission": "A role apps can hold cannot include access, identity, security or API administration, audit export or AI policy permissions.",
+  "validation.role.not_assignable_to_apps": "This role cannot be given to an app.",
+  "validation.role.app_condition": "A role given to an app cannot have a condition.",
+  "validation.role.app_not_found": "The app was not found, or it does not call the API as itself.",
+  "validation.api.public_key_invalid": "Enter a public key as a JWK: an EC P-256 key, or an RSA key of at least 2048 bits.",
+  "validation.api.public_key_private": "This key includes its private part. Register only the public key.",
+  "validation.api.credential_kind": "Choose a client secret or a public key.",
+  "conflict.api.public_key_registered": "This public key is already registered for the app.",
+  "notifications.template.publicapi.credential_expiring.title": "A credential of {app} expires soon",
+  "notifications.template.publicapi.credential_expiring.body": "A credential of {app} expires in {days} days. Add a new credential and move the app to it before then."
 }

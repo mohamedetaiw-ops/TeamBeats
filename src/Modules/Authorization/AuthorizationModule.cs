@@ -38,8 +38,8 @@ public static class AuthorizationModule
             return Results.Created($"/api/v1/authz/roles/{role.Id}", role);
         });
 
-        g.MapGet("/assignments", async (Guid? userId, AuthorizationAdmin admin, CancellationToken ct) =>
-            Results.Ok(await admin.ListAssignmentsAsync(userId, ct)));
+        g.MapGet("/assignments", async (Guid? userId, Guid? appId, AuthorizationAdmin admin, CancellationToken ct) =>
+            Results.Ok(await admin.ListAssignmentsAsync(userId, ct, appId)));
 
         g.MapPost("/assignments", async (AssignRoleRequest request, AuthorizationAdmin admin, IDbSession session, CancellationToken ct) =>
         {

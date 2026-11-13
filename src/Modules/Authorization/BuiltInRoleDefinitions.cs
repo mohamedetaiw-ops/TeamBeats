@@ -3,7 +3,8 @@ using P = TeamBeats.Authorization.Contracts.Permissions;
 
 namespace TeamBeats.Modules.Authorization;
 
-public sealed record RoleDefinition(string Key, bool Delegable, bool DelegatedAdmin, IReadOnlyList<string> Permissions);
+/// <summary>A built-in role. Only roles marked <see cref="AssignableToApps"/> can be given to an application app (spec 035 FR-011).</summary>
+public sealed record RoleDefinition(string Key, bool Delegable, bool DelegatedAdmin, IReadOnlyList<string> Permissions, bool AssignableToApps = false);
 
 /// <summary>Built-in roles seeded into every tenant (spec 004 FR-011). Platform Operator is not a tenant role.</summary>
 public static class BuiltInRoleDefinitions
@@ -46,6 +47,8 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.FacilitiesAnalyst, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.BookingReport]),
         new(BuiltInRoles.DeviceAdministrator, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.DeviceManage]),
         new(BuiltInRoles.KioskUser, Delegable: true, DelegatedAdmin: false, [P.KioskSignIn]),
+        // Spec 035 FR-011: what an integration usually needs to read, and nothing an app may not hold.
+        new(BuiltInRoles.AppReader, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.ContentView, P.DocView, P.PeopleView], AssignableToApps: true),
         // Spec 029 FR-002: the space roles. Only Spaces assigns them, on one space (see ModuleAssignedRoles).
         new(BuiltInRoles.SpaceOwner, Delegable: false, DelegatedAdmin: false, [P.SpacesView, P.SpacesContribute, P.SpacesOwn, P.DocView, P.DocContribute, P.DocManage]),
         new(BuiltInRoles.SpaceMember, Delegable: false, DelegatedAdmin: false, [P.SpacesView, P.SpacesContribute, P.DocView, P.DocContribute]),

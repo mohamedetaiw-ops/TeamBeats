@@ -19,8 +19,8 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
         {
             var id = Ids.New();
             await session.ExecAsync(
-                "insert into authz.role (tenant_id, id, key, is_builtin, is_delegable, is_delegated_admin) values (@t, @id, @k, true, @d, @da)",
-                new { t = tenantId, id, k = role.Key, d = role.Delegable, da = role.DelegatedAdmin }, ct);
+                "insert into authz.role (tenant_id, id, key, is_builtin, is_delegable, is_delegated_admin, assignable_to_apps) values (@t, @id, @k, true, @d, @da, @apps)",
+                new { t = tenantId, id, k = role.Key, d = role.Delegable, da = role.DelegatedAdmin, apps = role.AssignableToApps }, ct);
             foreach (var permission in role.Permissions)
             {
                 await session.ExecAsync("insert into authz.role_permission (tenant_id, role_id, permission_key) values (@t, @r, @p)",

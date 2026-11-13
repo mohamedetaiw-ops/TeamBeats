@@ -18,10 +18,12 @@ public sealed record CredentialView(Guid Id, string Kind, string? Hint, DateTime
 
 public sealed record AppDetail(AppView App, IReadOnlyList<CredentialView> Credentials, IReadOnlyList<string> AdminConsentScopes);
 
-public sealed record CredentialRequest(int? ExpiresInMonths);
+/// <param name="Kind"><c>secret</c> (the default) or <c>public_key</c> for private key JWT, the preferred kind (FR-005).</param>
+/// <param name="PublicKey">For a public key: the public JWK, EC P-256 or RSA of at least 2048 bits.</param>
+public sealed record CredentialRequest(int? ExpiresInMonths, string? Kind = null, System.Text.Json.JsonElement? PublicKey = null);
 
-/// <summary>A new client secret. It is shown in this answer only; TeamBeats keeps a salted hash.</summary>
-public sealed record IssuedCredential(CredentialView Credential, string Secret);
+/// <summary>A new credential. A secret is shown in this answer only, and TeamBeats keeps a salted hash; a public key has no secret.</summary>
+public sealed record IssuedCredential(CredentialView Credential, string? Secret);
 
 public sealed record AdminConsentRequest(IReadOnlyList<string>? Scopes);
 
