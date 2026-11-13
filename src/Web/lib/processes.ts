@@ -126,3 +126,18 @@ export function durationParts(seconds: number): { unit: "seconds" | "minutes" | 
   if (seconds < 172800) return { unit: "hours", value: Math.round(seconds / 3600) };
   return { unit: "days", value: Math.round(seconds / 86400) };
 }
+
+export const TASK_OUTCOMES = ["approve", "reject", "return"] as const;
+
+export type TestStep = {
+  elementId: string;
+  name: string;
+  event: string;
+  detail: Record<string, unknown> | null;
+  assignees: { id: string; name: string }[] | null;
+  permission: string | null;
+  lineManager: boolean;
+};
+
+/** A sandbox run of a draft: nothing is created or sent. Outcome is completed, terminated, error:<code>, incident, waiting, stopped or invalid. */
+export type ProcessTestResult = { outcome: string; steps: TestStep[]; variables: Record<string, unknown>; problems: ModelProblem[] };

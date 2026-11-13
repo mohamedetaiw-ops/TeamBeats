@@ -22298,6 +22298,38 @@
         }
       }
     },
+    "/api/v1/workflow/processes/{key}:test": {
+      "post": {
+        "tags": [
+          "Workflow"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProcessTestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/workflow/processes/{key}/versions/{version}/bpmn": {
       "get": {
         "tags": [
@@ -32031,6 +32063,59 @@
               "string"
             ],
             "format": "uuid"
+          }
+        }
+      },
+      "ProcessTestRequest": {
+        "required": [
+          "variables",
+          "requesterId",
+          "outcomes",
+          "events",
+          "results"
+        ],
+        "type": "object",
+        "properties": {
+          "variables": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/JsonElement"
+              }
+            ]
+          },
+          "requesterId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "outcomes": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "events": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "results": {
+            "type": [
+              "null",
+              "object"
+            ]
           }
         }
       },

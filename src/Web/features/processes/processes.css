@@ -126,6 +126,7 @@
 .processes-palette-list .button {
   inline-size: 100%;
   justify-content: start;
+  text-align: start;
 }
 
 .processes-canvas {
@@ -303,4 +304,8 @@
 
 .processes-canvas .react-flow__controls-button:focus-visible {
   outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+}
+
+.processes-node[data-visited]::before {
+  background: var(--tb-color-accent-subtle);
 }

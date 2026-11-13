@@ -11694,7 +11694,63 @@
         "handle": "Connection point"
       },
       "problemOn": "{name}: {problem}",
-      "kindAndName": "{kind}: {name}"
+      "kindAndName": "{kind}: {name}",
+      "testTitle": "Test run",
+      "testIntro": "Walk the saved draft with sample values. No task is created and nothing is sent: tasks end with the outcome you pick, timers are skipped ahead, and service steps, webhooks and called processes are pretended.",
+      "testVariables": "Sample variables",
+      "testVariablesHint": "A JSON object, such as \"amount\": 5000 inside curly brackets.",
+      "testResults": "Results of pretended steps",
+      "testResultsHint": "A JSON object with one entry per step ID whose value is that step's result. Leave it empty for empty results.",
+      "testJsonInvalid": "Sample variables and results must each be a JSON object.",
+      "testRequester": "Sample requester",
+      "testOutcome": "Outcome of {name}",
+      "testOutcomes": {
+        "approve": "Approve",
+        "reject": "Reject",
+        "return": "Return"
+      },
+      "testEventsTitle": "Events that happen when reached",
+      "runTest": "Run the test",
+      "testOutcomeTitles": {
+        "completed": "The run reached the end.",
+        "terminated": "The run was ended by a terminate event.",
+        "error": "The run ended with an error.",
+        "cancelled": "The run was cancelled.",
+        "incident": "The run stopped at an incident.",
+        "waiting": "The run is waiting for something it cannot pretend.",
+        "stopped": "The run stopped after 200 actions; check for a loop.",
+        "invalid": "Fix these problems and save before testing."
+      },
+      "testSteps": "Steps of the test run",
+      "testStepSeparator": ": ",
+      "testVariablesAtEnd": "Variables at the end",
+      "testLineManager": "the requester's line manager",
+      "testPermission": "people with {permission}",
+      "testEvents": {
+        "took": "took the path to {to}",
+        "event": "went on with {name}",
+        "error": "error {code}",
+        "assigned": "would go to {who}",
+        "assignedNobody": "would go to nobody",
+        "decided": "decided with rule {rules}",
+        "incident": "stopped with an incident ({reason})",
+        "message_not_sent": "message {name} not sent",
+        "completed": "done",
+        "fired": "happened",
+        "fast_forwarded": "timer skipped ahead",
+        "mocked": "pretended",
+        "ended": "ended",
+        "started": "started",
+        "joined": "paths joined",
+        "called": "called",
+        "waiting": "waiting",
+        "skipped": "skipped",
+        "sent": "sent",
+        "loop_started": "repeat started",
+        "escalated": "escalated",
+        "interrupted": "interrupted",
+        "triggered": "triggered"
+      }
     }
   }
 }

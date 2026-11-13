@@ -562,6 +562,68 @@ public sealed class ProcessModelTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task A_test_run_walks_the_draft_shows_who_would_get_each_task_and_creates_or_sends_nothing()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        await world.SeedUserAsync(t, "requester", MembershipTypes.Employee);
+        Assert.True((await t["admin"].Client.PutAsJsonAsync($"/api/v1/people/{t["requester"].Id}/manager", new { managerId = t["approver"].Id })).IsSuccessStatusCode);
+        await SaveAsync(t, "owner", "trial", Model($"""
+            <bpmn:startEvent id="s"/>
+            {UserTask("review", $"users=\"{t["amal"].Id}\"")}
+            <bpmn:boundaryEvent id="late" attachedToRef="review"><bpmn:timerEventDefinition><bpmn:timeDuration>PT2H</bpmn:timeDuration></bpmn:timerEventDefinition></bpmn:boundaryEvent>
+            {UserTask("head", "lineManager=\"true\"", "Line manager")}
+            <bpmn:exclusiveGateway id="x" default="f4"/>
+            {UserTask("approve", "permission=\"workflow.approve\"", "Approve")}
+            <bpmn:intermediateCatchEvent id="cool"><bpmn:timerEventDefinition><bpmn:timeDuration>PT1H</bpmn:timeDuration></bpmn:timerEventDefinition></bpmn:intermediateCatchEvent>
+            <bpmn:endEvent id="done"/><bpmn:endEvent id="rejected"/><bpmn:endEvent id="escalated"/>
+            {Flow("f1", "s", "review")}{Flow("f2", "review", "x")}{Flow("f3", "x", "approve", "outcome = \"approve\"")}{Flow("f4", "x", "rejected")}
+            {Flow("f5", "approve", "cool")}{Flow("f6", "cool", "done")}{Flow("f7", "late", "head")}{Flow("f8", "head", "escalated")}
+            """, name: "Trial"));
+        static string[] Events(JsonElement run) => run.GetProperty("steps").EnumerateArray().Select(s => $"{s.GetProperty("elementId").GetString()}:{s.GetProperty("event").GetString()}").ToArray();
+        Task<JsonElement> RunAsync(string user, object body) => OkAsync(t[user].Client.PostAsJsonAsync($"{Api}/trial:test", body));
+
+        // Approved by default: the review goes to Amal, the approval to holders of the permission, the timer is fast-forwarded.
+        var run = await RunAsync("owner", new { variables = new { amount = 10 } });
+        Assert.Equal("completed", run.GetProperty("outcome").GetString());
+        var review = run.GetProperty("steps").EnumerateArray().First(s => s.GetProperty("event").GetString() == "assigned");
+        Assert.Equal(("review", t["amal"].Id), (review.GetProperty("elementId").GetString(), review.GetProperty("assignees")[0].GetProperty("id").GetGuid()));
+        Assert.Contains("x:took:f3", Events(run));
+        Assert.Contains("cool:fast_forwarded", Events(run));
+        Assert.Contains("done:ended", Events(run));
+        Assert.Equal("workflow.approve", run.GetProperty("steps").EnumerateArray().Single(s => s.GetProperty("elementId").GetString() == "approve"
+            && s.GetProperty("event").GetString() == "assigned").GetProperty("permission").GetString());
+        Assert.Equal(10, run.GetProperty("variables").GetProperty("amount").GetInt32());
+
+        // A named outcome takes the other path; a named boundary fires and the line manager of the sample requester gets the task.
+        Assert.Contains("x:took:f4", Events(await RunAsync("owner", new { outcomes = new Dictionary<string, string> { ["review"] = "reject" } })));
+        var late = await RunAsync("owner", new { requesterId = t["requester"].Id, events = new[] { "late" } });
+        Assert.Contains("escalated:ended", Events(late));
+        var head = late.GetProperty("steps").EnumerateArray().Single(s => s.GetProperty("elementId").GetString() == "head" && s.GetProperty("event").GetString() == "assigned");
+        Assert.Equal((t["approver"].Id, true), (head.GetProperty("assignees")[0].GetProperty("id").GetGuid(), head.GetProperty("lineManager").GetBoolean()));
+        Assert.Equal("validation.process.test_requester",
+            await ProblemKeyAsync(t["owner"].Client.PostAsJsonAsync($"{Api}/trial:test", new { requesterId = Guid.NewGuid() }), HttpStatusCode.BadRequest));
+
+        // Nothing was created: no instance, task, timer job or history.
+        foreach (var table in new[] { "process_instance", "user_task", "engine_job", "message_subscription" })
+        {
+            Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, $"select count(*) from workflow.{table}"));
+        }
+
+        // A draft with problems answers with them; operators, other tenants and packages without BPMN get nothing.
+        await SaveAsync(t, "owner", "broken", Model($"""<bpmn:startEvent id="s"/>{UserTask("review", "")}<bpmn:endEvent id="e"/>{Flow("f1", "s", "review")}{Flow("f2", "review", "e")}"""));
+        var invalid = await RunAsync("owner", new { });
+        Assert.Equal("completed", invalid.GetProperty("outcome").GetString());
+        var broken = await OkAsync(t["owner"].Client.PostAsJsonAsync($"{Api}/broken:test", new { }));
+        Assert.Equal(("invalid", "review"), (broken.GetProperty("outcome").GetString(), broken.GetProperty("problems")[0].GetProperty("elementId").GetString()));
+        Assert.Equal(HttpStatusCode.NotFound, (await t["operator"].Client.PostAsJsonAsync($"{Api}/trial:test", new { })).StatusCode);
+        var other = await FreshAsync();
+        Assert.Equal(HttpStatusCode.NotFound, (await other.T["owner"].Client.PostAsJsonAsync($"{Api}/trial:test", new { })).StatusCode);
+        var basic = await FreshAsync("workplace");
+        Assert.Contains("entitlement.not_in_package", await (await basic.T["owner"].Client.PostAsJsonAsync($"{Api}/trial:test", new { })).Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Operators_search_their_instances_fix_variables_on_an_incident_retry_and_cancel_and_analysts_read_monitoring_numbers()
     {
         var o = await FreshAsync();
