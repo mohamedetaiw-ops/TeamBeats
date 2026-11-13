@@ -59,9 +59,7 @@ public static class DocumentPublicEndpoints
         docs.MapGet("/documents/{id:guid}", async (Guid id, HttpContext http, DocumentFiles files, CancellationToken ct) =>
         {
             var view = await files.GetAsync(id, ct);
-            var version = view.Rights.Contribute ? view.Current ?? view.Effective : view.Effective;
-            return PublicEndpoints.Resource(http, new PublicDocument(view.Id, view.LibraryId, view.FolderId, view.Name, view.Number, view.Metadata,
-                view.Classification, version is null ? null : Version(version), $"{http.Request.Scheme}://{http.Request.Host}{PublicEndpoints.Version1}/documents/{view.Id}/content"));
+            return PublicEndpoints.Resource(http, Document(http, view));
         }).RequireScope(ScopeCatalogue.DocumentsRead).Produces<PublicDocument>();
 
         docs.MapGet("/documents/{id:guid}/versions", async (Guid id, DocumentVersions versions, CancellationToken ct) =>
@@ -78,6 +76,58 @@ public static class DocumentPublicEndpoints
             response.Headers.CacheControl = "private, no-store";
             return Results.File(content, type, fileName);
         }).RequireScope(ScopeCatalogue.DocumentsRead).Produces(StatusCodes.Status200OK, contentType: "application/octet-stream");
+
+        // documents:write (spec 011 US1): the file is the request body and what it is comes in the query, as in TeamBeats.
+        // The person's own rights at the folder decide; size and type follow the library. Uploads are not replayed by
+        // Idempotency-Key, since the body can be larger than a replay keeps: sending the same file again is refused as a
+        // duplicate in the library.
+        docs.MapPost("/libraries/{id:guid}/documents", async (Guid id, HttpContext http, string? name, Guid? folderId, Guid? typeId, string? metadata,
+            string? classification, bool? publish, DocumentFiles files, TeamBeats.Persistence.IDbSession session, CancellationToken ct) =>
+        {
+            Uploader(http);
+            var view = await files.UploadAsync(id, new UploadRequest(name, folderId, typeId, DocumentsModule.ParseMetadata(metadata), classification, publish ?? false),
+                http.Request.Body, http.Request.ContentLength, ct);
+            var body = Document(http, view);
+            await session.CommitAsync(ct);
+            return Results.Created($"{PublicEndpoints.Version1}/documents/{view.Id}", body);
+        }).RequireScope(ScopeCatalogue.DocumentsWrite).Accepts<Stream>("application/octet-stream").Produces<PublicDocument>(StatusCodes.Status201Created)
+            .DisableAntiforgery();
+
+        // A new version: checked in at once when nobody else holds the document, as a minor version unless published.
+        docs.MapPost("/documents/{id:guid}/versions", async (Guid id, HttpContext http, string? name, string? note, bool? publish, DocumentVersions versions,
+            TeamBeats.Persistence.IDbSession session, CancellationToken ct) =>
+        {
+            Uploader(http);
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw TeamBeats.Primitives.AppException.Validation("name", "validation.documents.file_name");
+            }
+            var view = await versions.CheckInAsync(id, new CheckInRequest(note, publish ?? false), name, http.Request.Body, http.Request.ContentLength, ct);
+            var body = Document(http, view);
+            await session.CommitAsync(ct);
+            return Results.Created($"{PublicEndpoints.Version1}/documents/{view.Id}", body);
+        }).RequireScope(ScopeCatalogue.DocumentsWrite).Accepts<Stream>("application/octet-stream").Produces<PublicDocument>(StatusCodes.Status201Created)
+            .DisableAntiforgery();
+    }
+
+    /// <summary>
+    /// Uploads come from a person (spec 035 section 6 documents:write): a document has an owner and an author who must be
+    /// people, so an application app acting as itself is refused. The body may be as large as the library allows.
+    /// </summary>
+    private static void Uploader(HttpContext http)
+    {
+        if (!http.Caller().IsDelegated)
+        {
+            throw TeamBeats.Primitives.AppException.Denied("documents.app_upload");
+        }
+        DocumentsModule.LiftBodyLimit(http.Request);
+    }
+
+    private static PublicDocument Document(HttpContext http, DocumentView view)
+    {
+        var version = view.Rights.Contribute ? view.Current ?? view.Effective : view.Effective;
+        return new PublicDocument(view.Id, view.LibraryId, view.FolderId, view.Name, view.Number, view.Metadata, view.Classification,
+            version is null ? null : Version(version), $"{http.Request.Scheme}://{http.Request.Host}{PublicEndpoints.Version1}/documents/{view.Id}/content");
     }
 
     private static PublicDocumentVersion Version(VersionView v) => new(v.Id, v.Label, v.State, v.Size, v.ContentType, v.FileName, v.Note, v.CreatedAt);

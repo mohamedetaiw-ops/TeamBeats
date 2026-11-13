@@ -1226,4 +1226,13 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - An app is nobody, so it always files for one named person, with `service.request_on_behalf` at that person's unit from its own role, on a service that allows filing for others. The person becomes the requester, as if they had filed it, so it is theirs to follow and cancel; the request keeps the app in `requester_app_id`, the submitted event has no person as actor, and the audit names the app.
 - HR values are never prefilled for an app, as for anyone filing for someone else. Attachments cannot be uploaded through the API in R2, so a form that requires one cannot be filed by an app.
 - Search still finds no services for an app.
-- Document uploads (`documents:write`) for people and apps are the next slice.
+
+## Public API and MCP server (spec 035, slice 3f: T011 document uploads)
+
+### Built
+- `documents:write` (spec 011), in `Documents`: `POST /api/public/v1/libraries/{id}/documents` with `name`, `folderId`, `typeId`, `metadata` (a JSON object), `classification` and `publish` in the query and the file as the body, and `POST /api/public/v1/documents/{id}/versions` with `name`, `note` and `publish`. Both answer 201 with the document.
+
+### Smallest safe defaults
+- A person uploads with their own rights at the folder, and size, type and storage limits follow the library and the plan as in TeamBeats. The body limit of 1 MB for public calls is lifted to the library's limit for these two operations (section 6).
+- An application app acting as itself never uploads (`documents.app_upload`, 403). A document has an owner and each version an author, and both are people; an app owner would leave nobody to check in an incomplete upload or receive a quarantine notice. The scope stays held by both kinds, so a later decision can open it without a breaking change.
+- Uploads are not replayed by `Idempotency-Key`, because a replay keeps at most 64 KB and the body is read only once. Sending the same file to the library again is refused as a duplicate (409). A new version sent twice adds two versions.
