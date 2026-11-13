@@ -57,4 +57,4 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T030 Region at tenant creation and on the posture page (FR-008); break-glass entries in the tenant's audit view (FR-020)
 
 ## R2 final phase
-- [ ] T031 OpenAPI; e2e in English and Arabic with axe; R2 implementation notes; spec evidence
+- [x] T031 OpenAPI; e2e in English and Arabic with axe; R2 implementation notes; spec evidence
