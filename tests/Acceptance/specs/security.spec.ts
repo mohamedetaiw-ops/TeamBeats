@@ -96,7 +96,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("an administrator adds a syslog destination and a failed test event says why", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin/security`);
-      await page.getByRole("link", { name: msg(locale, "security.tabs.siem") }).click();
+      await page.getByRole("link", { name: msg(locale, "security.tabs.siem"), exact: true }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "security.siem.title"));
       await expect(page.getByText(msg(locale, "security.siem.none"))).toBeVisible();
       await expectAccessible(page, testInfo, `security-siem-empty-${locale}`);
