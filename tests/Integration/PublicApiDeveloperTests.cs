@@ -71,5 +71,10 @@ public sealed class PublicApiDeveloperTests(TenantWorld world)
         var json = await JsonAsync(document);
         Assert.True(json.GetProperty("paths").TryGetProperty("/api/public/v1/org-units/{id}", out _));
         Assert.DoesNotContain(json.GetProperty("paths").EnumerateObject(), p => !p.Name.StartsWith("/api/public/v1/", StringComparison.Ordinal));
+
+        // FR-012: nothing in the public contract changes roles, permissions, identity, security, entitlements or apps.
+        string[] administration = ["authz", "role", "permission", "identity", "security", "entitlement", "capabilit", "api-access", "apps", "settings", "admin"];
+        Assert.DoesNotContain(json.GetProperty("paths").EnumerateObject(),
+            p => p.Name.Split('/').Any(segment => administration.Any(a => segment.Contains(a, StringComparison.OrdinalIgnoreCase))));
     }
 }

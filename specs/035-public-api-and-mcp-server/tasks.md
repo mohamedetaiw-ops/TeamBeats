@@ -32,4 +32,4 @@ Depends on 003, 004, 005, 006, 014, 015, 016, 017 (outbound webhook runtime), 02
 - [x] T019 [US7] Developer page with OpenAPI, catalogues, MCP tool list and metadata URLs; deprecation headers
 
 ## Final phase
-- [ ] T020 Admin and employee pages in Arabic and English with axe; e2e journeys; performance tests for section 15; SIEM stream fields; R2 implementation notes; spec evidence
+- [x] T020 Admin and employee pages in Arabic and English with axe; e2e journeys; performance tests for section 15; SIEM stream fields; R2 implementation notes; spec evidence

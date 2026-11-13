@@ -15,8 +15,15 @@ namespace TeamBeats.Modules.PublicApi;
 public sealed class ApiSettings(IDbSession session, TenantContextAccessor context, IAuthorizationService authz, IEntitlementService entitlements, IAuditWriter audit,
     PublicApiLimits limits)
 {
-    /// <summary>The settings as the authorization server reads them; no permission needed.</summary>
-    public async Task<ApiSettingsView> CurrentAsync(CancellationToken ct) =>
+    private ApiSettingsView? read;
+
+    /// <summary>
+    /// The settings as the authorization server reads them; no permission needed. Read once per request, as every
+    /// public call checks them twice (the API switch, then the tenant limit).
+    /// </summary>
+    public async Task<ApiSettingsView> CurrentAsync(CancellationToken ct) => read ??= await ReadAsync(ct);
+
+    private async Task<ApiSettingsView> ReadAsync(CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync(
             "select access_token_minutes, refresh_token_days, user_consent_scopes, api_enabled, version, tenant_calls_per_minute, dynamic_registration from publicapi.setting", null,
             r => new ApiSettingsView(r.GetInt32(0), r.GetInt32(1), r.IsDBNull(2) ? ApiRules.DefaultUserConsentScopes : r.GetFieldValue<string[]>(2),
@@ -90,6 +97,7 @@ public sealed class ApiSettings(IDbSession session, TenantContextAccessor contex
                 after = new { next.AccessTokenMinutes, next.RefreshTokenDays, next.UserConsentScopes, next.ApiEnabled, next.TenantCallsPerMinute, next.DynamicRegistration },
                 reason,
             }), ct);
+        read = next;
         return next;
     }
 }
