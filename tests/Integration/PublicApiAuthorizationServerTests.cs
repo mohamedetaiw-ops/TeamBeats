@@ -328,6 +328,9 @@ public sealed class PublicApiAuthorizationServerTests(TenantWorld world)
         var t = await FreshAsync();
         var mcp = await CreateAppAsync(t, "mcp_client", ["profile:read", "search:query"]);
         var clientId = mcp.GetProperty("clientId").GetString()!;
+        // An MCP client signs in only once the organization's external AI client policy lists it.
+        await world.AssignAsync(t, "admin", TeamBeats.Authorization.Contracts.BuiltInRoles.AiPolicyAdministrator, "tenant", null);
+        await PublicApiTokens.AllowExternalAsync(t, "admin", (clientId, "internal"));
         await ConsentAsync(t, "admin", clientId, ["profile:read", "search:query"]);
         var (verifier, challenge) = Pkce();
         // An MCP client asks for the MCP server; it cannot name the REST API.

@@ -21,7 +21,7 @@ Depends on 003, 004, 005, 006, 014, 015, 016, 017 (outbound webhook runtime), 02
 
 ## Phase 4: User Story 3, MCP server (P1)
 - [ ] T012 [P] [US3] Tests: client allowlist and verified metadata; tools list per policy, entitlement and scope; classification cap fixtures; pending confirmation then act; expiry after 15 minutes; execution records; kill switch within 10 seconds; no application tokens on MCP
-- [ ] T013 [US3] External AI caller type, exposable flag and external AI client policy in `Agents` (spec 027)
+- [x] T013 [US3] External AI caller type, exposable flag and external AI client policy in `Agents` (spec 027)
 - [ ] T014 [US3] MCP server with Streamable HTTP, protected resource metadata, read tools, resources, `ask_teambeats` and confirmed write tools; confirmation card in the task inbox and notification centre
 - [ ] T015 [US3] Spec 034 suite cases for the external AI caller type (permission isolation, classification, unsafe actions)
 

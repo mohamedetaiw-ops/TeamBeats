@@ -378,6 +378,9 @@ public static class AuditActions
     public const string AgentOwnerChanged = "agent.owner_changed";
     public const string AgentPolicyChanged = "agent.policy_changed";
     public const string AgentToolCalled = "agent.tool_called";
+
+    /// <summary>Spec 035 US3 scenarios 2 and 8: an external AI client was refused by policy, the kill switch or external access off.</summary>
+    public const string AgentExternalCallRefused = "agent.external_call_refused";
     public const string AgentToolDenied = "agent.tool_denied";
     public const string AgentInjectionDetected = "agent.injection_detected";
     public const string AgentActionConfirmed = "agent.action_confirmed";
@@ -512,7 +515,7 @@ public static class AuditActions
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
         SearchRetrievalChangeCancelled,
         AssistantHistoryDeleted, AssistantRetentionChanged,
-        AgentInstalledFromTemplate, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected,
+        AgentInstalledFromTemplate, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,
         AgentRetired, AgentKillSwitch,
         EvalSuiteCreated, EvalSuiteChanged, EvalDatasetVersionCreated, EvalDatasetImported, EvalPolicyChanged, EvalPersonaCreated, EvalGateDecided, EvalGateOverridden,

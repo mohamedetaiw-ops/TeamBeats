@@ -1,7 +1,9 @@
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Modules.AiGateway.Contracts;
 using TeamBeats.Modules.Search.Contracts;
+using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Agents;
@@ -144,5 +146,43 @@ public sealed class KnowledgeSearchTool(ISearchRetrieval retrieval) : IAgentTool
         var classification = AssistantPrompt.Name(AssistantPrompt.Highest(passages.Select(p => p.Classification), DataClassification.Public));
         var sources = passages.Select(p => new ToolSource(p.Source, p.ItemId, p.Title, p.Anchor, p.Classification)).ToList();
         return new ToolResult(true, passages.Count == 0 ? string.Empty : AssistantPrompt.Passages(passages, context.PassagesSoFar), classification, sources);
+    }
+}
+
+/// <summary>
+/// <c>ask_teambeats</c> (spec 035 section 6, scope <c>assistant:ask</c>), for external AI clients only: a cited answer
+/// from the assistant of spec 014 through the AI Gateway, over content the employee may read, counted against the tenant
+/// AI budget, drawing on nothing above the client's classification cap. The knowledge agent answers; the turn is never
+/// routed to an agent with tools. When the AI provider is down the answer says it is unavailable (FR-030).
+/// </summary>
+/// <remarks>The assistant runs agent turns over the tool registry, so it is resolved when the tool runs, not when the registry is built.</remarks>
+public sealed class AskTeamBeatsTool(IServiceProvider services, IDbSession session) : IAgentTool
+{
+    public const string Name = "ask_teambeats";
+
+    public ToolDefinition Definition { get; } = new(
+        Name, "agents", 1, ToolSideEffects.Read, ToolApprovalRules.Execute,
+        ToolJson.Schema(
+            """
+            {"type":"object","additionalProperties":false,"required":["question"],
+             "properties":{"question":{"type":"string","minLength":1,"maxLength":2000},"conversationId":{"type":"string","format":"uuid"}}}
+            """),
+        "confidential", Idempotent: false, TimeoutSeconds: 60,
+        "Ask the TeamBeats assistant a question about the organization's policies, documents and pages. Returns an answer with numbered citations the employee may open.",
+        RequiredCapability: TeamBeats.Entitlements.Contracts.Capabilities.AiAssistant, Exposable: true);
+
+    public async Task<ToolResult> ExecuteAsync(JsonElement arguments, ToolCallContext context, CancellationToken ct)
+    {
+        var question = ToolJson.String(arguments, "question")?.Trim();
+        Guid? conversation = Guid.TryParse(ToolJson.String(arguments, "conversationId"), out var id) ? id : null;
+        var turn = await services.GetRequiredService<AssistantService>().AskAsync(new TurnRequest(conversation, question, Knowledge: true, MaxClassification: context.MaxClassification), ct);
+        var classification = await session.ScalarAsync<string>("select classification from agents.turn where id = @id", new { id = turn.Id }, ct) ?? "internal";
+        var content = JsonSerializer.Serialize(new
+        {
+            answer = turn.Answer, outcome = turn.Outcome, reason = turn.Reason, conversationId = turn.ConversationId, language = turn.Language,
+            generated = turn.Generated, citations = turn.Citations.Select(c => new { n = c.N, source = c.Source, itemId = c.ItemId, title = c.Title, link = c.Anchor }),
+        }, AssistantService.Json);
+        return new ToolResult(true, content, classification,
+            turn.Citations.Select(c => new ToolSource(c.Source, c.ItemId, c.Title, c.Anchor, classification)).ToList());
     }
 }

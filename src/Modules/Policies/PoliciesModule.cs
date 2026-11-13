@@ -18,6 +18,7 @@ public static class PoliciesModule
         services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, PolicySearchSource>();
         services.AddScoped<TeamBeats.Modules.Analytics.Contracts.IAnalyticsItemSource, PolicyAnalyticsSource>();
         services.AddScoped<PolicyRegister>();
+        services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, GetPolicyTool>();
         services.AddScoped<PolicyApprovals>();
         services.AddScoped<PolicyTaskSource>();
         services.AddScoped<Workflow.Contracts.ITaskSource>(sp => sp.GetRequiredService<PolicyTaskSource>());

@@ -3,6 +3,8 @@
     <PackageVersion Include="Npgsql" Version="10.0.3" />
     <PackageVersion Include="QRCoder" Version="1.7.0" />
     <PackageVersion Include="OpenIddict.Server.AspNetCore" Version="7.8.0" />
+    <!-- The MCP server of spec 035 (ADR-0018): Streamable HTTP in ASP.NET Core. Apache 2.0. -->
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.3.1" />
     <!-- The on-premises sync agent (spec 017 US6): LDAPS from .NET, and running as a Windows or systemd service. -->
     <PackageVersion Include="System.DirectoryServices.Protocols" Version="10.0.14" />
     <PackageVersion Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.14" />

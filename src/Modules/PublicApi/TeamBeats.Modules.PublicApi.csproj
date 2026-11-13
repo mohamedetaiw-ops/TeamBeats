@@ -2,6 +2,7 @@
   <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
   <PropertyGroup><RootNamespace>TeamBeats.Modules.PublicApi</RootNamespace><AssemblyName>TeamBeats.Modules.PublicApi</AssemblyName></PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../Agents.Contracts/TeamBeats.Modules.Agents.Contracts.csproj" />
     <ProjectReference Include="../../BuildingBlocks/Persistence/TeamBeats.Persistence.csproj" />
     <ProjectReference Include="../../BuildingBlocks/Messaging/TeamBeats.Messaging.csproj" />
     <ProjectReference Include="../../BuildingBlocks/Authorization.Contracts/TeamBeats.Authorization.Contracts.csproj" />
@@ -16,6 +17,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="OpenIddict.Server.AspNetCore" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="TeamBeats.Unit.Tests" />

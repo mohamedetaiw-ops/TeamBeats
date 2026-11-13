@@ -24,6 +24,7 @@ public static class SearchModule
     {
         services.AddScoped<SearchIndexer>();
         services.AddScoped<SearchService>();
+        services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, SearchTool>();
         services.AddScoped<SearchRebuilds>();
         services.AddScoped<SearchTuning>();
         services.AddScoped<SearchRetrieval>();

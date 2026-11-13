@@ -16,7 +16,8 @@ public enum ScopeHolder
 /// operation still asks the central authorization service. <paramref name="UserConsent"/> is the catalogue default for
 /// whether an employee may consent alone; the tenant may change it.
 /// </summary>
-public sealed record ScopeDefinition(string Key, IReadOnlyList<string> Capabilities, bool UserConsent, ScopeHolder Holder)
+/// <remarks><paramref name="Tools"/> are the MCP tools the scope covers (section 6, MCP surface).</remarks>
+public sealed record ScopeDefinition(string Key, IReadOnlyList<string> Capabilities, bool UserConsent, ScopeHolder Holder, IReadOnlyList<string>? Tools = null)
 {
     public bool AllowsDelegated => Holder is ScopeHolder.Delegated or ScopeHolder.Both;
 
@@ -47,20 +48,20 @@ public static class ScopeCatalogue
 
     public static readonly IReadOnlyList<ScopeDefinition> All =
     [
-        new(ProfileRead, [Capabilities.ApiPublic], true, ScopeHolder.Delegated),
-        new(ContentRead, [Capabilities.ApiPublic], true, ScopeHolder.Both),
-        new(ContentDraft, [Capabilities.ApiWriteScopes], false, ScopeHolder.Delegated),
-        new(DocumentsRead, [Capabilities.ApiPublic], true, ScopeHolder.Both),
+        new(ProfileRead, [Capabilities.ApiPublic], true, ScopeHolder.Delegated, ["whoami"]),
+        new(ContentRead, [Capabilities.ApiPublic], true, ScopeHolder.Both, ["get_page", "list_news"]),
+        new(ContentDraft, [Capabilities.ApiWriteScopes], false, ScopeHolder.Delegated, ["draft_news"]),
+        new(DocumentsRead, [Capabilities.ApiPublic], true, ScopeHolder.Both, ["get_document"]),
         new(DocumentsWrite, [Capabilities.ApiWriteScopes], false, ScopeHolder.Both),
-        new(PeopleRead, [Capabilities.ApiPublic], true, ScopeHolder.Both),
+        new(PeopleRead, [Capabilities.ApiPublic], true, ScopeHolder.Both, ["find_person"]),
         new(OrgRead, [Capabilities.ApiPublic], true, ScopeHolder.Both),
-        new(PoliciesRead, [Capabilities.ApiPublic], true, ScopeHolder.Both),
-        new(SearchQuery, [Capabilities.ApiPublic], true, ScopeHolder.Both),
-        new(AssistantAsk, [Capabilities.ApiPublic, Capabilities.AiAssistant], true, ScopeHolder.Delegated),
-        new(ServicesRead, [Capabilities.ApiPublic], true, ScopeHolder.Both),
-        new(RequestsRead, [Capabilities.ApiPublic], true, ScopeHolder.Both),
-        new(RequestsSubmit, [Capabilities.ApiWriteScopes], false, ScopeHolder.Both),
-        new(TasksRead, [Capabilities.ApiPublic], true, ScopeHolder.Delegated),
+        new(PoliciesRead, [Capabilities.ApiPublic], true, ScopeHolder.Both, ["get_policy"]),
+        new(SearchQuery, [Capabilities.ApiPublic], true, ScopeHolder.Both, ["search"]),
+        new(AssistantAsk, [Capabilities.ApiPublic, Capabilities.AiAssistant], true, ScopeHolder.Delegated, ["ask_teambeats"]),
+        new(ServicesRead, [Capabilities.ApiPublic], true, ScopeHolder.Both, ["list_services"]),
+        new(RequestsRead, [Capabilities.ApiPublic], true, ScopeHolder.Both, ["list_my_requests"]),
+        new(RequestsSubmit, [Capabilities.ApiWriteScopes], false, ScopeHolder.Both, ["submit_service_request"]),
+        new(TasksRead, [Capabilities.ApiPublic], true, ScopeHolder.Delegated, ["list_my_tasks"]),
         new(EventsSubscribe, [Capabilities.ApiEventSubscriptions], false, ScopeHolder.Application),
     ];
 
@@ -69,6 +70,10 @@ public static class ScopeCatalogue
     public static ScopeDefinition? Find(string key) => ByKey.GetValueOrDefault(key);
 
     public static IReadOnlyList<string> Keys { get; } = All.Select(s => s.Key).ToList();
+
+    /// <summary>The MCP tools a set of granted scopes covers; a tool no scope names is never offered.</summary>
+    public static IReadOnlySet<string> ToolsFor(IEnumerable<string> scopes) =>
+        scopes.Select(Find).Where(s => s is not null).SelectMany(s => s!.Tools ?? []).ToHashSet(StringComparer.Ordinal);
 }
 
 /// <summary>The kinds of app registration (FR-004).</summary>

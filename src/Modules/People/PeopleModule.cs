@@ -29,6 +29,7 @@ public static class PeopleModule
         services.AddScoped<Profiles>();
         services.AddScoped<IProfiles>(sp => sp.GetRequiredService<Profiles>());
         services.AddScoped<PeopleService>();
+        services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, FindPersonTool>();
         services.AddScoped<IEmployeeNumbers, EmployeeNumbers>();
         services.AddScoped<ICelebrationDates, CelebrationDates>();
         services.AddScoped<DirectoryProfiles>();

@@ -35,6 +35,8 @@ public static class PublicApiModule
         services.AddScoped<PublicApiLeavers>();
         services.AddMessageHandler<TenantMembershipDisabled, PublicApiLeavers>("publicapi.leaver");
         services.AddOAuthServer();
+        services.AddMcpEndpoint();
+        services.AddScoped<Agents.Contracts.IAgentTool, WhoAmITool>();
         return services;
     }
 
@@ -47,6 +49,7 @@ public static class PublicApiModule
     public static IEndpointRouteBuilder MapPublicApiEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapOAuthEndpoints();
+        app.MapMcpEndpoint();
 
         // API administrators (US1): apps, credentials, admin consent and settings.
         var admin = app.MapGroup("/api/v1/api-access").RequireTenantUser().InAdminArea().WithTags("Tenant: API and MCP access");

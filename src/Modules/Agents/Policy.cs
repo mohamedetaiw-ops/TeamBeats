@@ -14,7 +14,7 @@ namespace TeamBeats.Modules.Agents;
 /// (null means every registered tool), stricter approval rules per tool, the highest classification agents may use,
 /// scheduled agents and persistent memory (both off until R2 builds them) and run limits (tool calls, steps, duration of
 /// one run and runs per agent per day, FR-015). Who may design and publish is
-/// set with roles (spec 004); the external AI client settings come with spec 035.
+/// set with roles (spec 004). <paramref name="External"/> holds the external AI client settings of spec 035 (FR-021).
 /// </summary>
 public sealed record AgentPolicy(
     string MaxAutonomy,
@@ -26,8 +26,13 @@ public sealed record AgentPolicy(
     int MaxToolCalls,
     int MaxSteps,
     int MaxRunSeconds = AgentPolicy.DefaultRunSeconds,
-    int MaxDailyRunsPerAgent = AgentPolicy.DefaultDailyRuns)
+    int MaxDailyRunsPerAgent = AgentPolicy.DefaultDailyRuns,
+    ExternalAiPolicy? External = null)
 {
+    /// <summary>The external AI client settings in force: the saved ones, or the default that allows no client.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public ExternalAiPolicy ExternalPolicy => External ?? ExternalAiPolicy.Default;
+
     /// <summary>The platform default, used until the tenant saves a policy.</summary>
     public static readonly AgentPolicy Default = new(AgentAutonomy.HighestBuilt, "internal", null, [], false, false, 20, 40);
 
@@ -50,6 +55,31 @@ public sealed record AgentPolicy(
         ToolRules?.GetValueOrDefault(tool.Name) is { } rule && ToolApprovalRules.Strictness(rule) > ToolApprovalRules.Strictness(tool.ApprovalRule)
             ? rule
             : tool.ApprovalRule;
+}
+
+/// <summary>
+/// An MCP client the AI Policy Administrator allows (spec 035 FR-021), by client ID, with the highest classification
+/// it may get back: Internal by default, Confidential only by this explicit choice, Restricted never.
+/// </summary>
+public sealed record ExternalAiClient(string ClientId, string MaxClassification = "internal");
+
+/// <summary>
+/// The external AI client policy (spec 035 FR-021, spec 027 US8 scenario 1): whether external AI access is on (turning
+/// it off is an emergency control of spec 027 FR-020), the allowed MCP clients, the allowed tools (null means every
+/// exposable tool) and whether write tools are allowed, off by default. No client is allowed until one is added.
+/// </summary>
+public sealed record ExternalAiPolicy(bool Enabled = true, List<ExternalAiClient>? Clients = null, List<string>? AllowedTools = null, bool WriteTools = false)
+{
+    public static readonly ExternalAiPolicy Default = new();
+
+    public const int MaxClients = 100;
+
+    /// <summary>The classifications a client may be given; Restricted is never returned to external AI clients.</summary>
+    public static readonly IReadOnlyList<string> ClientClassifications = ["public", "internal", "confidential"];
+
+    public ExternalAiClient? Client(string clientId) => Clients?.FirstOrDefault(c => string.Equals(c.ClientId, clientId, StringComparison.Ordinal));
+
+    public bool Allows(string tool) => AllowedTools is null || AllowedTools.Contains(tool);
 }
 
 public sealed record AgentPolicyView(int Version, AgentPolicy Policy, DateTimeOffset? UpdatedAt);
@@ -162,11 +192,34 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
         {
             errors.Add("maxDailyRunsPerAgent", "validation.agent_policy.max_daily_runs");
         }
+        var external = p.External;
+        if (external is not null)
+        {
+            var clients = external.Clients ?? [];
+            if (clients.Count > ExternalAiPolicy.MaxClients || clients.Any(c => string.IsNullOrWhiteSpace(c.ClientId) || c.ClientId.Length > 200)
+                || clients.Select(c => c.ClientId).Distinct(StringComparer.Ordinal).Count() != clients.Count)
+            {
+                errors.Add("external.clients", "validation.agent_policy.external_clients");
+            }
+            if (clients.Any(c => !ExternalAiPolicy.ClientClassifications.Contains(c.MaxClassification)))
+            {
+                errors.Add("external.clients", "validation.agent_policy.external_classification");
+            }
+            if (external.AllowedTools is { } exposed && (exposed.Count > 200 || exposed.Any(t => tools.Find(t) is not { Definition.Exposable: true })))
+            {
+                errors.Add("external.allowedTools", "validation.agent_policy.external_tools");
+            }
+        }
         errors.ThrowIfAny();
         return p with
         {
             AllowedTools = p.AllowedTools?.Distinct().Order(StringComparer.Ordinal).ToList(),
             ToolRules = p.ToolRules is null ? [] : new Dictionary<string, string>(p.ToolRules.OrderBy(k => k.Key, StringComparer.Ordinal)),
+            External = external is null ? null : external with
+            {
+                Clients = (external.Clients ?? []).OrderBy(c => c.ClientId, StringComparer.Ordinal).ToList(),
+                AllowedTools = external.AllowedTools?.Distinct().Order(StringComparer.Ordinal).ToList(),
+            },
         };
     }
 }

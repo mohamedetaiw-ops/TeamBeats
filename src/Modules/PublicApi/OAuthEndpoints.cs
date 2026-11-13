@@ -9,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
+using TeamBeats.Audit.Contracts;
+using TeamBeats.Modules.Agents.Contracts;
 using TeamBeats.Modules.PublicApi.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Persistence;
@@ -123,6 +125,15 @@ public static class OAuthEndpoints
         if (!app.AllowGuests && await consents.IsGuestAsync(user, ct))
         {
             return Refuse(Errors.AccessDenied, "Guests cannot authorize this app.");
+        }
+        // An MCP client must be allowed by the tenant's external AI client policy (spec 035 US3 scenario 2); the refusal is audited.
+        if (app.Kind == AppKinds.McpClient
+            && await http.RequestServices.GetRequiredService<IExternalToolGateway>().RefusalAsync(app.ClientId, ct) is { } refusal)
+        {
+            await http.RequestServices.GetRequiredService<IAuditWriter>().WriteAsync(new AuditEntry(AuditActions.AgentExternalCallRefused, "api_app",
+                app.Id.ToString(), AuditOutcome.Denied, Changes: new { stage = "authorize", reason = refusal }), ct);
+            await session.CommitAsync(ct);
+            return Refuse(Errors.AccessDenied, "The organization's external AI client policy does not allow this client.");
         }
         var scopes = Consents.Requested(app, request.Scope);
         if ((await consents.MissingAsync(app.Id, user, scopes, ct)).Count > 0)
