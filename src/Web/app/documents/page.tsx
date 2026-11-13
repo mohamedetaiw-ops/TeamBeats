@@ -8,7 +8,6 @@ import {
 } from "@/lib/documents/types";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
-import { DocumentsNav } from "@/features/documents/DocumentsNav";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { TileCard, type TileTone } from "@/components/ui/TileCard";
 
@@ -35,7 +34,7 @@ export default async function LibrariesPage() {
         breadcrumbs={[{ label: t("title"), href: "/documents" }]}
       />
       <main id="main" className="page">
-        <PageHeader title={t("title")} description={t("intro")} icon="files" nav={<DocumentsNav current="libraries" />} />
+        <PageHeader title={t("title")} description={t("intro")} icon="files" />
         {libraries.data.length === 0 ? (
           <StateView kind="empty" title={t("none")} message="" />
         ) : (

@@ -11,7 +11,6 @@ import {
   type VersionView,
 } from "@/lib/documents/types";
 import { Header } from "@/components/shell/Header";
-import { DocumentsNav } from "@/features/documents/DocumentsNav";
 import { DocumentPanel } from "@/features/documents/DocumentPanel";
 
 /**
@@ -58,7 +57,6 @@ export default async function DocumentPage({
         ]}
       />
       <main id="main" className="page">
-        <DocumentsNav current="libraries" />
         <AskAgentLink source="documents" itemId={id} />
         <DocumentPanel
           initial={doc.data}

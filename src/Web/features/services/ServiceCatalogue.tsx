@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
@@ -17,12 +18,13 @@ import "./services.css";
  * favourites and recent use. Linked apps open in a new tab with an external cue and say whether sign-in is single
  * sign-on. Search runs on the API so it folds Arabic letter forms the same way everywhere.
  */
-export function ServiceCatalogue({ initial }: { initial: CatalogueView }) {
+export function ServiceCatalogue({ initial, initialQuery = "", initialCategory = "" }: { initial: CatalogueView; initialQuery?: string; initialCategory?: string }) {
   const t = useTranslations("services.catalogue");
   const locale = useLocale();
   const [view, setView] = useState(initial);
-  const [query, setQuery] = useState("");
-  const [category, setCategory] = useState("");
+  const router = useRouter();
+  const [query, setQuery] = useState(initialQuery);
+  const [category, setCategory] = useState(initialCategory);
   const [state, setState] = useState<"ready" | "loading" | "failed">("ready");
 
   async function load(q: string, c: string) {
@@ -31,6 +33,7 @@ export function ServiceCatalogue({ initial }: { initial: CatalogueView }) {
       const params = new URLSearchParams();
       if (q.trim()) params.set("q", q.trim());
       if (c) params.set("category", c);
+      router.replace(params.size ? `/services?${params.toString()}` : "/services", { scroll: false });
       const response = await fetch(`/api/v1/services?${params.toString()}`, { cache: "no-store" });
       if (!response.ok) {
         setState("failed");

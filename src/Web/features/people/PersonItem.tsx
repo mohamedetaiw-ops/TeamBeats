@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { joinMeta } from "@/lib/format";
 import { initials, localName, locationName, personName, type PersonCard } from "@/lib/people/types";
 
@@ -17,6 +18,7 @@ function avatarTone(id: string) {
  * anything the viewer may not see, so this shows what it is given.
  */
 export function PersonItem({ person, locale, extra }: { person: PersonCard; locale: string; extra?: string }) {
+  const t = useTranslations("people");
   const name = personName(person, locale);
   const meta = joinMeta([person.unit ? localName(person.unit.names, locale) : null, person.location ? locationName(person.location, locale) : null, extra]);
   return (
@@ -32,7 +34,9 @@ export function PersonItem({ person, locale, extra }: { person: PersonCard; loca
           <span>
             <bdi>{person.jobTitle}</bdi>
           </span>
-        ) : null}
+        ) : (
+          <span className="people-meta">{t("noTitle")}</span>
+        )}
         {meta ? (
           <span className="people-meta">
             <bdi>{meta}</bdi>

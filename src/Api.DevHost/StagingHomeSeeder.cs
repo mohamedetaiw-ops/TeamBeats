@@ -43,15 +43,23 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
         public string? Comment { get; init; }
     }
 
-    /// <summary>A news item to publish once, found again by its English title. <c>Key</c> names it in placement links as <c>seed:news:key</c>.</summary>
-    public sealed record SeedNews(string Key, IReadOnlyDictionary<string, VariantInput> Variants, bool Pinned = false, bool Featured = false);
+    /// <summary>
+    /// A news item to publish once, found again by its English title. <c>Key</c> names it in placement links as
+    /// <c>seed:news:key</c>. An item still carrying one of <c>FormerTitles</c> gets the new text, so a corrected title
+    /// reaches tenants seeded earlier instead of adding a second item.
+    /// </summary>
+    public sealed record SeedNews(string Key, IReadOnlyDictionary<string, VariantInput> Variants, bool Pinned = false, bool Featured = false,
+        IReadOnlyList<string>? FormerTitles = null);
 
     /// <summary>A form service to publish once, found again by its English name.</summary>
     public sealed record SeedService(IReadOnlyDictionary<string, string> Names, IReadOnlyDictionary<string, string>? Descriptions,
         IReadOnlyDictionary<string, IReadOnlyList<string>>? Synonyms, FormDefinition Form);
 
-    /// <summary>A global menu entry: an IA entry with this slug pointing at a product address. The menu is set only while the tenant has none.</summary>
-    public sealed record SeedLink(string Slug, IReadOnlyDictionary<string, string> Labels, string Url);
+    /// <summary>
+    /// A global menu entry: an IA entry with this slug pointing at a product address. The menu is set only while the
+    /// tenant has none; an entry whose labels are still exactly <c>FormerLabels</c> (nobody renamed it) gets the new labels.
+    /// </summary>
+    public sealed record SeedLink(string Slug, IReadOnlyDictionary<string, string> Labels, string Url, IReadOnlyDictionary<string, string>? FormerLabels = null);
 
     /// <summary>One more home view: a page from the same template with its own placements, shown as a tab next to the home.</summary>
     public sealed record SeedView(string Id, IReadOnlyDictionary<string, string> Labels, string Slug, IReadOnlyDictionary<string, IReadOnlyList<HomePlacement>> Regions);
@@ -240,6 +248,13 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
             {
                 var title = seed.Variants.TryGetValue("en", out var en) ? en.Title : seed.Variants.Values.First().Title;
                 var found = existing.FirstOrDefault(i => i.Variants.Values.Any(v => v.Title == title));
+                if (found is null && seed.FormerTitles is { Count: > 0 } former
+                    && existing.FirstOrDefault(i => i.Variants.TryGetValue("en", out var v) && former.Contains(v.Title)) is { } renamed)
+                {
+                    found = await items.UpdateAsync(renamed.Id, new ItemRequest(null, null, null, null, null, null, null, null, null, seed.Variants, null, null), ct);
+                    found = await items.PublishAsync(found.Id, new TeamBeats.Modules.Content.PublishRequest(null, null, false), ct);
+                    logger.LogInformation("Home seed: news {Key} retitled", seed.Key);
+                }
                 if (found is null)
                 {
                     found = await items.CreateAsync(new ItemRequest(null, "news", null, null, null, null, "internal", seed.Pinned, seed.Featured,
@@ -273,11 +288,25 @@ public sealed class StagingHomeSeeder(IServiceScopeFactory scopes, IConfiguratio
     /// <summary>Gives the tenant a global menu from the file's links when it has none, so the side rail is not empty.</summary>
     private async Task SeedNavigationAsync(ShellService shells, HomeFile file, CancellationToken ct)
     {
-        if (file.Navigation is not { Count: > 0 } navigation || (await shells.ListMenusAsync(ct)).Any(m => m.Kind == "global"))
+        if (file.Navigation is not { Count: > 0 } navigation)
         {
             return;
         }
         var nodes = await shells.ListNodesAsync(ct);
+        if ((await shells.ListMenusAsync(ct)).Any(m => m.Kind == "global"))
+        {
+            // The tenant has a menu: only entries nobody renamed take a corrected name (spec 008 FR-064, one name per area).
+            foreach (var link in navigation.Where(l => l.FormerLabels is { Count: > 0 }))
+            {
+                if (nodes.FirstOrDefault(n => n.Slug == link.Slug) is { } node && node.Labels.Count == link.FormerLabels!.Count
+                    && node.Labels.All(l => link.FormerLabels.TryGetValue(l.Key, out var old) && old == l.Value))
+                {
+                    await shells.SaveNodeAsync(node.Id, new NodeRequest(node.ParentId, link.Labels, node.Slug, node.PageId, node.Url, node.OwnerOrgUnitId, node.Position), ct);
+                    logger.LogInformation("Home seed: menu entry {Slug} renamed", link.Slug);
+                }
+            }
+            return;
+        }
         var items = new List<MenuItemInput>();
         for (var i = 0; i < navigation.Count; i++)
         {

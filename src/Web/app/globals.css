@@ -271,6 +271,22 @@ main tbody tr:where(:hover) > * {
   text-decoration: none;
 }
 
+/* Group headings of the admin navigation (spec 006 FR-017). */
+.admin-nav-group + .admin-nav-group {
+  margin-block-start: var(--tb-space-md);
+}
+
+.admin-nav-heading {
+  margin: 0;
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-md);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 .admin-nav-badge {
   margin-inline: auto var(--tb-space-xs);
   padding-inline: var(--tb-space-sm);
@@ -484,6 +500,13 @@ legend {
   background: var(--tb-color-surface-base);
   color: var(--tb-color-state-danger);
   font-weight: var(--tb-font-weight-bold);
+}
+
+/* The solid danger button is kept for the confirmation dialog of a destructive action (DLS-084). */
+.button.button-danger {
+  border-color: var(--tb-color-state-danger);
+  background: var(--tb-color-state-danger);
+  color: var(--tb-color-text-inverse);
 }
 
 .button[aria-busy="true"],

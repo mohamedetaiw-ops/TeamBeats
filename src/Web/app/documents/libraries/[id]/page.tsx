@@ -9,7 +9,6 @@ import {
   type SavedView,
 } from "@/lib/documents/types";
 import { Header } from "@/components/shell/Header";
-import { DocumentsNav } from "@/features/documents/DocumentsNav";
 import { LibraryBrowser } from "@/features/documents/LibraryBrowser";
 
 /** One library (spec 011 US1): folders, filters on the type's fields, sorting, saved views and upload. */
@@ -48,7 +47,6 @@ export default async function LibraryPage({
         <h1>
           <bdi>{name}</bdi>
         </h1>
-        <DocumentsNav current="libraries" />
         <LibraryBrowser
           library={library.data}
           folders={folders.data}

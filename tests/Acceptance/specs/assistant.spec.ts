@@ -79,6 +79,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
 
       // Deleting the conversation leaves no history.
       await page.getByRole("button", { name: msg(locale, "assistant.history.delete"), exact: true }).click();
+      // The dialog asks first (spec 014 FR-023); the delete all action lives in a menu, not beside the list.
+      const ask = page.getByRole("dialog", { name: msg(locale, "assistant.history.confirmOneTitle") });
+      await expect(ask).toBeVisible();
+      await expect(page.getByRole("button", { name: msg(locale, "assistant.history.deleteAll"), exact: true })).toHaveCount(0);
+      await ask.getByRole("button", { name: msg(locale, "assistant.history.confirmDelete"), exact: true }).click();
       await page.waitForURL(/\/assistant$/);
       await expect(page.getByText(msg(locale, "assistant.history.empty"))).toBeVisible();
     });

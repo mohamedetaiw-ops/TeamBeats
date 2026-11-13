@@ -8,12 +8,17 @@ import { ServicesNav } from "@/features/services/ServicesNav";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 /** The service catalogue (spec 016 US1): every service this person may use, from forms, linked apps and modules. */
-export default async function ServicesPage() {
+export default async function ServicesPage({ searchParams }: { searchParams: Promise<{ q?: string; category?: string }> }) {
+  const { q = "", category = "" } = await searchParams;
   const me = await apiGet<Me>("/api/v1/me");
   if (!me.ok) {
     redirect("/signin");
   }
-  const view = await apiGet<CatalogueView>("/api/v1/services");
+  // The search and category come from the address, so a reload or a shared link shows the same list (spec 008 FR-065).
+  const params = new URLSearchParams();
+  if (q.trim()) params.set("q", q.trim());
+  if (category) params.set("category", category);
+  const view = await apiGet<CatalogueView>(`/api/v1/services${params.size ? `?${params.toString()}` : ""}`);
   if (!view.ok) {
     notFound();
   }
@@ -23,7 +28,7 @@ export default async function ServicesPage() {
       <Header me={me.data} breadcrumbs={[{ label: t("catalogue.title"), href: "/services" }]} />
       <main id="main" className="page">
         <PageHeader title={t("catalogue.title")} description={t("catalogue.intro")} icon="services" nav={<ServicesNav current="catalogue" />} />
-        <ServiceCatalogue initial={view.data} />
+        <ServiceCatalogue initial={view.data} initialQuery={q} initialCategory={category} />
       </main>
     </>
   );

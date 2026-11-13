@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { Dialog } from "@/components/ui/Dialog";
+import { Menu } from "@/components/ui/Menu";
 import { problemMessages } from "@/lib/notifications/types";
 import {
   answerParts,
@@ -229,8 +231,10 @@ export function AssistantChat({
     }
   }
 
+  // Deleting asks first in a dialog that says how much goes (spec 014 FR-023, DLS-084).
+  const [confirming, setConfirming] = useState<"one" | "all" | null>(null);
+
   async function remove(all: boolean) {
-    if (!window.confirm(all ? t("history.confirmAll") : t("history.confirmOne"))) return;
     const url = all ? "/api/v1/assistant/conversations" : `/api/v1/assistant/conversations/${encodeURIComponent(conversationId ?? "")}`;
     const response = await fetch(url, { method: "DELETE" }).catch(() => null);
     if (!response?.ok) {
@@ -263,18 +267,49 @@ export function AssistantChat({
           </ul>
         )}
         {conversations.length > 0 ? (
-          <Button variant="destructive" onClick={() => void remove(true)}>
-            {t("history.deleteAll")}
-          </Button>
+          <Menu
+            label={t("history.more")}
+            icon="more"
+            variant="quiet"
+            size="sm"
+            items={[{ key: "delete-all", label: t("history.deleteAll"), icon: "trash", danger: true, onSelect: () => setConfirming("all") }]}
+          />
         ) : null}
         <p className="assistant-retention">{t("history.retention")}</p>
       </aside>
+
+      <Dialog
+        open={confirming !== null}
+        onClose={() => setConfirming(null)}
+        size="sm"
+        title={confirming === "all" ? t("history.confirmAllTitle", { count: conversations.length }) : t("history.confirmOneTitle")}
+        description={t("history.cannotUndo")}
+        closeLabel={t("history.cancel")}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirming(null)}>
+              {t("history.cancel")}
+            </Button>
+            <Button
+              variant="primary"
+              className="button-danger"
+              onClick={() => {
+                const all = confirming === "all";
+                setConfirming(null);
+                void remove(all);
+              }}
+            >
+              {t("history.confirmDelete")}
+            </Button>
+          </>
+        }
+      />
 
       <section className="assistant-main" aria-labelledby="assistant-conversation-title">
         <div className="assistant-main-head">
           <h2 id="assistant-conversation-title">{initial ? <bdi>{initial.title}</bdi> : t("newConversation")}</h2>
           {initial ? (
-            <Button variant="destructive" onClick={() => void remove(false)}>
+            <Button variant="quiet" icon="trash" onClick={() => setConfirming("one")}>
               {t("history.delete")}
             </Button>
           ) : null}

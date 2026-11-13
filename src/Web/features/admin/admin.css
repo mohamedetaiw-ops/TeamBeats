@@ -265,3 +265,49 @@
     max-block-size: none;
   }
 }
+
+/* The admin overview (spec 006 FR-018): setup status and recent changes side by side, then the sections by group. */
+.admin-overview,
+.admin-overview-groups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  gap: var(--tb-space-md);
+  margin-block-end: var(--tb-space-lg);
+}
+
+.admin-overview-card {
+  display: grid;
+  align-content: start;
+  gap: var(--tb-space-sm);
+}
+
+.admin-overview-card :is(h2, h3) {
+  margin: 0;
+}
+
+.admin-overview-list,
+.admin-overview-links {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admin-overview-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  min-block-size: 2.75rem;
+}
+
+.admin-overview-row > :is(a, code) {
+  flex: 1 1 10rem;
+}
+
+.admin-overview-links a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 2.75rem;
+}

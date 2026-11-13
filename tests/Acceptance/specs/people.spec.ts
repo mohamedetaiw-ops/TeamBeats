@@ -58,8 +58,14 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const results = page.getByTestId("people-results");
       await expect(results.getByRole("link", { name: layla })).toBeVisible();
       await expectAccessible(page, testInfo, `people-search-${locale}`);
+      // Results stand alone, and the search is in the address, so a reload shows the same results (spec 010 FR-024, spec 008 FR-065).
+      await expect(page.getByRole("heading", { name: msg(locale, "people.newcomers.title") })).toHaveCount(0);
+      await expect(page).toHaveURL(/[?&]q=/);
+      await page.reload();
+      await expect(page.getByTestId("people-results").getByRole("link", { name: layla })).toBeVisible();
+      await expect(page.getByRole("search").getByLabel(msg(locale, "people.search.label"))).toHaveValue(layla.split(" ")[0]!);
 
-      await results.getByRole("link", { name: layla }).click();
+      await page.getByTestId("people-results").getByRole("link", { name: layla }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(layla);
       const chart = page.getByTestId("org-chart");
       await expect(chart.getByRole("list", { name: msg(locale, "people.org.reports") }).getByRole("link", { name: omar })).toBeVisible();
