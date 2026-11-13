@@ -24,6 +24,7 @@ public static class WorkflowModule
         services.AddScoped<ProcessEngine>();
         services.AddScoped<IProcessEngine>(sp => sp.GetRequiredService<ProcessEngine>());
         services.AddScoped<ProcessModels>();
+        services.AddScoped<ProcessSandbox>();
         services.AddScoped<ProcessOperations>();
         services.AddScoped<Decisions.DecisionModels>();
         services.AddScoped<ProcessModelTasks>();
@@ -55,6 +56,9 @@ public static class WorkflowModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        group.MapPost("/processes/{key}:test", async (string key, ProcessTestRequest request, ProcessModels models, CancellationToken ct) =>
+            Results.Ok(await models.TestRunAsync(key, request, ct)));
 
         group.MapGet("/processes/{key}/versions/{version:int}/bpmn", async (string key, int version, ProcessModels models, CancellationToken ct) =>
             Results.Text(await models.BpmnAsync(key, version, ct), "application/xml"));

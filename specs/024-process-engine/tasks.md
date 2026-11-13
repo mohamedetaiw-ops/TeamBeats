@@ -28,7 +28,7 @@ Depends on 004 (authorization), 006 (audit), 022 (working-day contract), ADR-000
 - [x] T015 Operator view (search, variables, retry, skip, cancel, change variables, audit) and monitoring (counts, heatmap, durations, spec 021 dataset) (FR-013, FR-014)
 
 ## Phase 5: Experience (R2)
-- [ ] T016 Modeler (React Flow, bpmn-moddle), decision table editor, test run, Processes, Decisions, Operations and Monitoring pages in English and Arabic; e2e with axe
+- [x] T016 Modeler (React Flow, bpmn-moddle), decision table editor, test run, Processes, Decisions, Operations and Monitoring pages in English and Arabic; e2e with axe
 
 ## R2 final phase
 - [x] T017 Correlation performance and worker kill test; OpenAPI; R2 implementation notes; spec evidence

@@ -136,6 +136,13 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: md("publish"), exact: true }).click();
       await expect(page.getByRole("main").getByRole("status")).toHaveText(md("published", { version: "1" }));
 
+      await page.getByLabel(md("testVariables")).fill('{"amount": 5000}');
+      await page.getByRole("button", { name: md("runTest") }).click();
+      await expect(page.getByRole("heading", { level: 3, name: md("testOutcomeTitles.completed") })).toBeVisible();
+      const steps = page.getByRole("list", { name: md("testSteps") });
+      await expect(steps.getByText(md("testEvents.assigned", { who: md("testLineManager") }))).toBeVisible();
+      await expectAccessible(page, testInfo, "process test run");
+
       await page.getByRole("button", { name: md("showXml") }).click();
       await expect(page.getByLabel(md("xml"))).toHaveValue(/tb:assignment lineManager="true"/);
       await page.getByRole("button", { name: md("showDiagram") }).click();

@@ -2317,5 +2317,6 @@
   "validation.process.limit": "Ask for 1 to 100 instances.",
   "validation.process.period": "Choose a start before the end, at most one year apart.",
   "conflict.process.instance_not_active": "This instance has already ended.",
-  "conflict.process.no_open_incident": "Variables can be changed only while the instance has an open incident."
+  "conflict.process.no_open_incident": "Variables can be changed only while the instance has an open incident.",
+  "validation.process.test_requester": "Choose a sample requester who is a member of this organization."
 }

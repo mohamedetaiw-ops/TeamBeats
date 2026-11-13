@@ -18,14 +18,14 @@ R1 covers the engine core that approval routes need (plan, ADR-0010 rollout). Th
 
 ## R2
 
-R2 adds the modeler, the BPMN subset of section 12, DMN, messages, timers, service and webhook steps, incidents, the operator view and monitoring. The spec stays Approved, not Implemented: the test run of a draft (US1 scenario 4) is the next slice of R2, and compensation, instance migration, import from other tools and the external engine adapter are R3. The spec 024 section of `docs/architecture/r2-implementation-notes.md` holds the defaults and deviations. Integration tests are in `tests/Integration/ProcessModelTests.cs` unless named otherwise; unit tests in `tests/Unit`; the e2e suite `process-operations.spec.ts` runs in English and Arabic with axe.
+R2 adds the modeler, the BPMN subset of section 12, DMN, messages, timers, service and webhook steps, incidents, the operator view and monitoring. The spec stays Approved, not Implemented: compensation, instance migration, import from other tools and the external engine adapter are R3. The spec 024 section of `docs/architecture/r2-implementation-notes.md` holds the defaults and deviations. Integration tests are in `tests/Integration/ProcessModelTests.cs` unless named otherwise; unit tests in `tests/Unit`; the e2e suite `process-operations.spec.ts` runs in English and Arabic with axe.
 
 | Requirement | Status | Evidence |
 |---|---|---|
 | US1.1 and FR-002 palette offers only the subset, properties panel per element in Arabic and English | Met | `Modeler.tsx` palette from `PALETTE`; `process-operations.spec.ts` (designer draws, saves and publishes) |
 | US1.2 and FR-002 problems block publishing and are marked on the diagram | Met | `A_draft_keeps_its_problems_publishing_makes_immutable_versions_and_owners_act_in_their_scope`, `ProcessGraphTests.Validation_marks_each_problem_on_its_element`, `Validation_refuses_bad_expressions_cycles_under_an_hour_self_calls_and_unsafe_xml`; problems are marked on shapes, in the panel and in the outline |
 | US1.3 and FR-003 immutable versions, running instances keep theirs | Met | `A_draft_keeps_its_problems_publishing_makes_immutable_versions_and_owners_act_in_their_scope` |
-| US1.4 test run in a sandbox | Open | Next R2 slice (T016) |
+| US1.4 test run in a sandbox | Met | `A_test_run_walks_the_draft_shows_who_would_get_each_task_and_creates_or_sends_nothing`, `process-operations.spec.ts` (test run after publishing) |
 | US1.5 owner scope for starting and assignment | Met | `A_draft_keeps_its_problems_publishing_makes_immutable_versions_and_owners_act_in_their_scope`, `An_instance_moves_through_user_tasks_and_an_exclusive_gateway_with_candidates_at_its_unit` |
 | FR-004 subset elements | Met | `ProcessConformanceTests.Every_supported_element_type_has_a_reference_model` (SC-002), `ProcessGraphTests` |
 | FR-005 FEEL subset in a sandbox with limits | Met | `FeelTests`, `A_failing_expression_or_decision_raises_an_incident_and_retry_runs_the_element_again` |

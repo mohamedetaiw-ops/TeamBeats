@@ -41,10 +41,11 @@ import {
   type ModelElement,
   type ProcessDraft,
 } from "@/lib/bpmn";
-import type { ModelProblem, ProcessModelView } from "@/lib/processes";
+import { TASK_OUTCOMES, type ModelProblem, type ProcessModelView, type ProcessTestResult, type TestStep } from "@/lib/processes";
+import { PersonPicker } from "@/features/services/PersonPicker";
 import "./processes.css";
 
-type ShapeData = { label: string; kind: ElementKind; event: EventDefinition; icon: IconName | null; invalid: boolean };
+type ShapeData = { label: string; kind: ElementKind; event: EventDefinition; icon: IconName | null; invalid: boolean; visited: boolean };
 type ShapeNode = Node<ShapeData, "bpmn">;
 
 const KIND_ICONS: Partial<Record<ElementKind, IconName>> = {
@@ -59,6 +60,11 @@ const KIND_ICONS: Partial<Record<ElementKind, IconName>> = {
   parallelGateway: "plus",
   inclusiveGateway: "filter",
   eventBasedGateway: "bell",
+  startEvent: "chevron-forward",
+  endEvent: "stop",
+  intermediateCatchEvent: "clock",
+  intermediateThrowEvent: "megaphone",
+  boundaryEvent: "alert",
 };
 const EVENT_ICONS: Partial<Record<EventDefinition, IconName>> = { timer: "clock", message: "inbox", error: "alert", escalation: "arrow-up", terminate: "stop" };
 
@@ -72,7 +78,14 @@ const hasOutputs = (kind: ElementKind) => kind === "serviceTask" || kind === "ca
 function Shape({ data, selected }: NodeProps<ShapeNode>) {
   const shape = isEvent(data.kind) ? "event" : isGateway(data.kind) ? "gateway" : "task";
   return (
-    <div className="processes-node" data-shape={shape} data-kind={data.kind} data-invalid={data.invalid || undefined} data-selected={selected || undefined}>
+    <div
+      className="processes-node"
+      data-shape={shape}
+      data-kind={data.kind}
+      data-invalid={data.invalid || undefined}
+      data-visited={data.visited || undefined}
+      data-selected={selected || undefined}
+    >
       <Handle type="target" position={Position.Left} />
       <span className="processes-node-mark" aria-hidden="true">
         {data.icon ? <Icon name={data.icon} size={shape === "task" ? 14 : 16} mirrorInRtl={false} /> : null}
@@ -159,6 +172,13 @@ export function Modeler({ processKey, initial, units }: { processKey: string | n
   const [selected, setSelected] = useState<string | null>(null);
   const [connectTo, setConnectTo] = useState("");
   const [measured, setMeasured] = useState<Map<string, { width: number; height: number }>>(() => new Map());
+  const [testVariables, setTestVariables] = useState("");
+  const [testResults, setTestResults] = useState("");
+  const [testRequester, setTestRequester] = useState<string | null>(null);
+  const [testOutcomes, setTestOutcomes] = useState<Record<string, string>>({});
+  const [testEvents, setTestEvents] = useState<string[]>([]);
+  const [testRun, setTestRun] = useState<ProcessTestResult | null>(null);
+  const visited = useMemo(() => new Set((testRun?.steps ?? []).map((s) => s.elementId)), [testRun]);
 
   const kindName = (kind: ElementKind) => t(`kinds.${kind}`);
   const byId = useMemo(() => new Map(draft.elements.map((e) => [e.id, e])), [draft.elements]);
@@ -187,8 +207,11 @@ export function Modeler({ processKey, initial, units }: { processKey: string | n
         ? { ...blankElement(kind, anchor.x + size(anchor.type).width - 18, anchor.y + size(anchor.type).height - 18), attachedTo: anchor.id }
         : blankElement(kind, anchor ? anchor.x + 180 : right + 180, anchor ? anchor.y : 120);
     change((d) => {
-      const flows = anchor && kind !== "boundaryEvent" && anchor.type !== "endEvent" ? [...d.flows, { id: newElementId("flow"), source: anchor.id, target: element.id, condition: "" }] : d.flows;
-      return { ...d, elements: [...d.elements, element], flows };
+      const after = anchor && kind !== "boundaryEvent";
+      const flows = after && anchor.type !== "endEvent" ? [...d.flows, { id: newElementId("flow"), source: anchor.id, target: element.id, condition: "" }] : d.flows;
+      // Inserting after an element makes room: shapes to its right move one column on.
+      const moved = after ? d.elements.map((e) => (e.x > anchor.x && e.attachedTo !== anchor.id ? { ...e, x: e.x + 180 } : e)) : d.elements;
+      return { ...d, elements: [...moved, element], flows };
     });
     setSelected(element.id);
     setNotice(t("added", { kind: kindName(kind) }));
@@ -230,12 +253,13 @@ export function Modeler({ processKey, initial, units }: { processKey: string | n
             label,
             kind: e.type,
             event: e.event,
-            icon: (isEvent(e.type) ? EVENT_ICONS[e.event] : KIND_ICONS[e.type]) ?? null,
+            icon: (isEvent(e.type) ? (EVENT_ICONS[e.event] ?? null) : (KIND_ICONS[e.type] ?? null)),
             invalid: problems.some((p) => p.elementId === e.id),
+            visited: visited.has(e.id),
           },
         };
       }),
-    [draft.elements, measured, selected, problems, locale, t],
+    [draft.elements, measured, selected, problems, visited, locale, t],
   );
 
   const edges: Edge[] = useMemo(
@@ -348,6 +372,68 @@ export function Modeler({ processKey, initial, units }: { processKey: string | n
     setXmlMode(false);
     setMessages([]);
   }
+
+  async function runTest() {
+    const parse = (text: string): Record<string, unknown> | null | undefined => {
+      if (!text.trim()) return undefined;
+      try {
+        const value = JSON.parse(text) as unknown;
+        return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+      } catch {
+        return null;
+      }
+    };
+    const variables = parse(testVariables);
+    const results = parse(testResults);
+    if (variables === null || results === null) {
+      setMessages([t("testJsonInvalid")]);
+      return;
+    }
+    const response = await call("test", `/api/v1/workflow/processes/${encodeURIComponent(view!.key)}:test`, {
+      method: "POST",
+      body: JSON.stringify({ variables, results, requesterId: testRequester, outcomes: testOutcomes, events: testEvents }),
+    });
+    if (!response) return;
+    setTestRun((await response.json()) as ProcessTestResult);
+  }
+
+  const flowTarget = (flowId: string) => {
+    const f = draft.flows.find((x) => x.id === flowId);
+    return f ? nameOf(f.target) : flowId;
+  };
+
+  function stepText(step: TestStep): string {
+    const [kind, arg = ""] = step.event.split(/:(.*)/s);
+    switch (kind) {
+      case "took":
+        return t("testEvents.took", { to: flowTarget(arg) });
+      case "event":
+        return t("testEvents.event", { name: nameOf(arg) });
+      case "error":
+        return t("testEvents.error", { code: arg });
+      case "assigned": {
+        const who = [
+          ...(step.assignees ?? []).map((a) => a.name),
+          ...(step.lineManager && !(step.assignees ?? []).length ? [t("testLineManager")] : []),
+          ...(step.permission ? [t("testPermission", { permission: step.permission })] : []),
+        ];
+        return who.length > 0 ? t("testEvents.assigned", { who: format.list(who, { type: "disjunction" }) }) : t("testEvents.assignedNobody");
+      }
+      case "decided": {
+        const rules = Array.isArray(step.detail?.rules) ? (step.detail.rules as number[]) : [];
+        return t("testEvents.decided", { rules: rules.length > 0 ? format.list(rules.map(String), { type: "conjunction" }) : t("none") });
+      }
+      case "incident":
+        return t("testEvents.incident", { reason: String(step.detail?.class ?? "") });
+      case "message_not_sent":
+        return t("testEvents.message_not_sent", { name: step.name });
+      default:
+        return t.has(`testEvents.${kind}`) ? t(`testEvents.${kind}`) : step.event;
+    }
+  }
+
+  const userTasks = draft.elements.filter((e) => e.type === "userTask");
+  const fireable = draft.elements.filter((e) => e.type === "boundaryEvent" || draft.flows.some((f) => f.target === e.id && byId.get(f.source)?.type === "eventBasedGateway"));
 
   const outline = useMemo(() => {
     const order: string[] = [];
@@ -776,6 +862,98 @@ export function Modeler({ processKey, initial, units }: { processKey: string | n
               );
             })}
           </ol>
+        </section>
+      ) : null}
+
+      {view && !xmlMode ? (
+        <section className="processes-section" aria-labelledby="modeler-test">
+          <h2 id="modeler-test">{t("testTitle")}</h2>
+          <p className="field-hint">{t("testIntro")}</p>
+          <div className="processes-filters">
+            <TextAreaField
+              label={t("testVariables")}
+              hint={t("testVariablesHint")}
+              name="testVariables"
+              dir="ltr"
+              rows={4}
+              value={testVariables}
+              onChange={(e) => setTestVariables(e.target.value)}
+              spellCheck={false}
+            />
+            <TextAreaField
+              label={t("testResults")}
+              hint={t("testResultsHint")}
+              name="testResults"
+              dir="ltr"
+              rows={4}
+              value={testResults}
+              onChange={(e) => setTestResults(e.target.value)}
+              spellCheck={false}
+            />
+          </div>
+          <PersonPicker label={t("testRequester")} value={testRequester} onChange={setTestRequester} />
+          {userTasks.length > 0 ? (
+            <div className="processes-filters">
+              {userTasks.map((e) => (
+                <SelectField
+                  key={e.id}
+                  label={t("testOutcome", { name: nameOf(e.id) })}
+                  name={`test-outcome-${e.id}`}
+                  value={testOutcomes[e.id] ?? "approve"}
+                  onChange={(ev) => setTestOutcomes((o) => ({ ...o, [e.id]: ev.target.value }))}
+                  options={TASK_OUTCOMES.map((x) => ({ value: x, label: t(`testOutcomes.${x}`) }))}
+                />
+              ))}
+            </div>
+          ) : null}
+          {fireable.length > 0 ? (
+            <fieldset className="processes-mapping">
+              <legend>{t("testEventsTitle")}</legend>
+              {fireable.map((e) => (
+                <Checkbox
+                  key={e.id}
+                  label={nameOf(e.id)}
+                  checked={testEvents.includes(e.id)}
+                  onChange={(ev) => setTestEvents((list) => (ev.target.checked ? [...list, e.id] : list.filter((x) => x !== e.id)))}
+                />
+              ))}
+            </fieldset>
+          ) : null}
+          <div className="processes-actions">
+            <Button variant="secondary" onClick={runTest} disabled={busy !== null}>
+              {t("runTest")}
+            </Button>
+          </div>
+          {testRun ? (
+            <div className="processes-drawer">
+              <h3>{t(`testOutcomeTitles.${testRun.outcome.split(":")[0]}`)}</h3>
+              {testRun.problems.length > 0 ? (
+                <ul className="processes-list field-error">
+                  {testRun.problems.map((p, i) => (
+                    <li key={i}>{t("problemOn", { name: nameOf(p.elementId), problem: problemText(p) })}</li>
+                  ))}
+                </ul>
+              ) : (
+                <ol className="processes-list" aria-label={t("testSteps")}>
+                  {testRun.steps.map((step, i) => (
+                    <li key={i}>
+                      <bdi>{step.elementId ? nameOf(step.elementId) : step.name}</bdi>
+                      {t("testStepSeparator")}
+                      {stepText(step)}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {testRun.steps.length > 0 ? (
+                <details>
+                  <summary>{t("testVariablesAtEnd")}</summary>
+                  <pre className="processes-code" dir="ltr">
+                    {JSON.stringify(testRun.variables, null, 2)}
+                  </pre>
+                </details>
+              ) : null}
+            </div>
+          ) : null}
         </section>
       ) : null}
 

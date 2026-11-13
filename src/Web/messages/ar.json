@@ -11694,7 +11694,63 @@
         "handle": "نقطة توصيل"
       },
       "problemOn": "{name}: {problem}",
-      "kindAndName": "{kind}: {name}"
+      "kindAndName": "{kind}: {name}",
+      "testTitle": "تشغيل تجريبي",
+      "testIntro": "شغّل المسودة المحفوظة بقيم تجريبية. لا تُنشأ أي مهمة ولا يُرسل شيء: تنتهي المهام بالنتيجة التي تختارها، وتُقدَّم المؤقتات، وتُحاكى خطوات الخدمة وخطافات الويب والعمليات المستدعاة.",
+      "testVariables": "متغيرات تجريبية",
+      "testVariablesHint": "كائن JSON، مثل \"amount\": 5000 بين أقواس معقوصة.",
+      "testResults": "نتائج الخطوات المحاكاة",
+      "testResultsHint": "كائن JSON فيه مدخل لكل معرف خطوة وقيمته نتيجة تلك الخطوة. اتركه فارغا لنتائج فارغة.",
+      "testJsonInvalid": "يجب أن تكون المتغيرات والنتائج التجريبية كائن JSON لكل منهما.",
+      "testRequester": "مقدم طلب تجريبي",
+      "testOutcome": "نتيجة {name}",
+      "testOutcomes": {
+        "approve": "موافقة",
+        "reject": "رفض",
+        "return": "إعادة"
+      },
+      "testEventsTitle": "أحداث تقع عند الوصول إليها",
+      "runTest": "تشغيل الاختبار",
+      "testOutcomeTitles": {
+        "completed": "وصل التشغيل إلى النهاية.",
+        "terminated": "أنهى حدث إنهاء التشغيل.",
+        "error": "انتهى التشغيل بخطأ.",
+        "cancelled": "أُلغي التشغيل.",
+        "incident": "توقف التشغيل عند حادثة.",
+        "waiting": "ينتظر التشغيل شيئا لا يمكن محاكاته.",
+        "stopped": "توقف التشغيل بعد 200 إجراء؛ تحقق من وجود حلقة.",
+        "invalid": "أصلح هذه المشكلات واحفظ قبل الاختبار."
+      },
+      "testSteps": "خطوات التشغيل التجريبي",
+      "testStepSeparator": ": ",
+      "testVariablesAtEnd": "المتغيرات في النهاية",
+      "testLineManager": "المدير المباشر لمقدم الطلب",
+      "testPermission": "من لديهم {permission}",
+      "testEvents": {
+        "took": "سلك المسار إلى {to}",
+        "event": "تابع مع {name}",
+        "error": "خطأ {code}",
+        "assigned": "تذهب إلى {who}",
+        "assignedNobody": "لا تذهب إلى أحد",
+        "decided": "قرر بالقاعدة {rules}",
+        "incident": "توقف بحادثة ({reason})",
+        "message_not_sent": "لم تُرسل الرسالة {name}",
+        "completed": "تم",
+        "fired": "وقع",
+        "fast_forwarded": "قُدّم المؤقت",
+        "mocked": "محاكاة",
+        "ended": "انتهى",
+        "started": "بدأ",
+        "joined": "اجتمعت المسارات",
+        "called": "استُدعي",
+        "waiting": "في الانتظار",
+        "skipped": "تم تخطيه",
+        "sent": "أُرسل",
+        "loop_started": "بدأ التكرار",
+        "escalated": "صُعّد",
+        "interrupted": "قوطع",
+        "triggered": "انطلق"
+      }
     }
   }
 }

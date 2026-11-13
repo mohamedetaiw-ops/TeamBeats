@@ -2317,5 +2317,6 @@
   "validation.process.limit": "اطلب من 1 إلى 100 نسخة.",
   "validation.process.period": "اختر بداية قبل النهاية، والفرق بينهما سنة على الأكثر.",
   "conflict.process.instance_not_active": "انتهت هذه النسخة بالفعل.",
-  "conflict.process.no_open_incident": "لا يمكن تغيير المتغيرات إلا أثناء وجود حادثة مفتوحة في النسخة."
+  "conflict.process.no_open_incident": "لا يمكن تغيير المتغيرات إلا أثناء وجود حادثة مفتوحة في النسخة.",
+  "validation.process.test_requester": "اختر مقدم طلب تجريبيا من أعضاء هذه المؤسسة."
 }

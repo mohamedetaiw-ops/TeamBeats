@@ -33,7 +33,7 @@ public sealed record StartProcessRequest(string? BusinessKey, Guid? OrgUnitId, J
 /// unit (or the tenant when it has none); everything here needs the <c>workflow.bpmn</c> capability.
 /// </summary>
 public sealed class ProcessModels(IDbSession session, ITenantContext context, IAuthorizationService authz, IEntitlementService entitlements, IAuditWriter audit,
-    IClock clock, ProcessEngine engine, IConnectorActions actions, ILocalizer localizer, RequestLocale locale)
+    IClock clock, ProcessEngine engine, IConnectorActions actions, ILocalizer localizer, RequestLocale locale, ProcessSandbox sandbox)
 {
     /// <summary>Model keys stay short enough to be an analytics key (spec 021) once published.</summary>
     public const int MaxKeyLength = 64;
@@ -94,6 +94,28 @@ public sealed class ProcessModels(IDbSession session, ITenantContext context, IA
             throw AppException.NotFound();
         }
         return await ViewAsync(row, ct);
+    }
+
+    /// <summary>
+    /// Runs the saved draft in the sandbox (US1 scenario 4) as its owner: nothing is created or sent. A draft the reader
+    /// cannot run is answered with its problems and no steps.
+    /// </summary>
+    public async Task<ProcessTestResult> TestRunAsync(string key, ProcessTestRequest request, CancellationToken ct = default)
+    {
+        context.RequireUser();
+        await entitlements.DemandAsync(Capabilities.WorkflowBpmn, ct);
+        var row = await RowAsync(key, false, ct) ?? throw AppException.NotFound();
+        if (!await MayDesignAsync(row.Owner, ct))
+        {
+            throw AppException.NotFound();
+        }
+        var (graph, problems) = BpmnReader.Read(key, row.Xml);
+        if (graph is null || problems.Count > 0)
+        {
+            return new ProcessTestResult("invalid", [], [],
+                problems.Select(p => new ProblemView(p.ElementId, p.Key, localizer.Get(p.Key, locale.Locale))).ToList());
+        }
+        return await sandbox.RunAsync(graph, request, locale.Locale, ct);
     }
 
     private async Task<ProcessModelView> ViewAsync(ModelRow row, CancellationToken ct)
