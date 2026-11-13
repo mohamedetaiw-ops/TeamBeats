@@ -41,6 +41,10 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const idle = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: msg(locale, "security.posture.checks.idle_timeout.title") }) });
       await expect(idle.getByText(msg(locale, "security.posture.states.failed"))).toBeVisible();
       await expect(idle.getByRole("link", { name: msg(locale, "security.posture.fix") })).toHaveAttribute("href", "/admin/security");
+      // Spec 026 T030: the hosting region, and no platform operator access open.
+      await expect(page.getByText(msg(locale, "security.posture.region", { region: msg(locale, "security.posture.regions.primary") }))).toBeVisible();
+      const platform = page.getByRole("listitem").filter({ has: page.getByRole("heading", { name: msg(locale, "security.posture.checks.no_platform_access.title") }) });
+      await expect(platform.getByText(msg(locale, "security.posture.states.passed"))).toBeVisible();
       await expectAccessible(page, testInfo, `security-posture-${locale}`);
     });
 

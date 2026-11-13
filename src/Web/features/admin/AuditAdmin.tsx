@@ -36,13 +36,21 @@ function query(filters: Filters, cursor?: string | null): string {
  * entry's recorded changes, a check that the sealed chain is intact (ADR-0008), the retention period, and an export
  * that runs in the background and is itself audited. Exporting asks for a fresh sign-in.
  */
-export function AuditAdmin({ initial, retention: initialRetention }: { initial: AuditPage; retention: AuditRetention | null }) {
+export function AuditAdmin({
+  initial,
+  retention: initialRetention,
+  initialAction = "",
+}: {
+  initial: AuditPage;
+  retention: AuditRetention | null;
+  initialAction?: string;
+}) {
   const t = useTranslations("admin.audit");
   const when = useWhen();
   const { busy, result, run } = useAdminAction(RETURN);
   const [page, setPage] = useState(initial);
-  const [filters, setFilters] = useState<Filters>(EMPTY);
-  const [applied, setApplied] = useState<Filters>(EMPTY);
+  const [filters, setFilters] = useState<Filters>({ ...EMPTY, action: initialAction });
+  const [applied, setApplied] = useState<Filters>({ ...EMPTY, action: initialAction });
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
   const [open, setOpen] = useState<AuditEvent | null>(null);

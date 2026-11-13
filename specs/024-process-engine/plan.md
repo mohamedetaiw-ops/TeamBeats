@@ -37,3 +37,47 @@ The engine asks the spec 016 delegation contract for active delegates when it li
 - Integration: start, complete approve and reject, withdraw, idempotent duplicate job delivery, self-approval exclusion, due time on a Sunday to Thursday calendar and recalculation after a holiday change, candidate role at the unit and denial for a sibling unit's role holder.
 - Cross-tenant: start, complete and query across tenants fail; a task ID from another tenant is not found.
 - Architecture: `Workflow` tables are reached only from the module.
+
+## R2 plan (2026-11-13)
+
+R2 adds the modeler, the BPMN subset of section 12 (R2 rows), DMN decision tables, messages, timers, error and escalation events, incidents for every automatic step, the operator view and monitoring. Compensation, migration, import from other tools and the external engine adapter stay in R3.
+
+### Model and versions
+- A process model is BPMN 2.0 XML with TeamBeats extension elements (`teambeats:` namespace for assignment, due times, connector bindings, mappings and names per locale). The server parses it with external entities off and a 2 MB limit, keeps only the subset, and compiles it to an executable graph (`compiled jsonb`) of elements and flows. Route specs of R1 keep their own compiler and executor, so every R1 route runs unchanged.
+- New tables: `process_model` (draft per key, owner unit, names per locale), `process_definition` gains `kind` (`route` or `graph`) and `source = 'process_model'`; `decision_definition` (DMN XML, compiled table, version); `token` (instance, element, scope, state, loop count); `message_subscription` and `message_buffer`; `timer` rows reuse `engine_job` with kind `timer`. Instance variables stay in `process_instance.variables` with the limits of the edge cases (256 KB per variable, 2 MB per instance).
+- Validation (FR-002) runs on save and blocks publish: reachability from a start event, every parallel split matched by a join, user tasks with an assignment, timers and FEEL that parse, service tasks with a connector action or an allowlisted webhook, call activity targets that exist, no call to itself without a condition. Problems name the element ID so the diagram marks them.
+
+### FEEL subset (FR-005)
+A hand-written parser and interpreter in the module, no reflection and no host functions beyond the listed set: literals, names and paths into variables, comparisons, `and`, `or`, `not()`, arithmetic, ranges and lists, `in`, `if then else`, string functions (`contains`, `starts with`, `ends with`, `upper case`, `lower case`, `string length`, `substring`), `date()`, `date and time()`, `duration()`, `today()`, `now()`, and unary tests for DMN cells. Each evaluation has a step budget and a 50 ms limit, and results over 256 KB fail.
+
+### Execution
+- Token semantics: tokens move through the graph inside one transaction until each one waits (user task, receive task, message or timer catch, event-based gateway, service task job) or ends. Parallel joins wait for a token on every incoming flow; inclusive joins wait for the flows that were activated by the matching split (tracked per token scope). Embedded sub-processes and multi-instance bodies open a scope; event sub-processes start inside their scope on a timer or message; call activities start a child instance on the current version of the called key and wait for it, with depth at most 10.
+- Automatic steps (service tasks, async continuations, timers) run as `engine_job` rows on the worker through the outbox (ADR-0006), at least once, with idempotent completion.
+- A token passing the same element more than 1,000 times raises an incident.
+- User tasks use the R1 candidate rules plus assignee and candidate group expressions, manager chain level (spec 010) and a fallback assignee; they appear in the spec 016 inbox through `ITaskSource` as today.
+
+### DMN (FR-007)
+Decision tables only. Inputs are FEEL expressions, cells are unary tests, outputs are FEEL. Hit policies unique, first, any, priority, collect (with sum, min, max, count), rule order and output order. Validation reports overlaps under unique. A test endpoint evaluates input rows before publish. A business rule task evaluates the current version when it is reached, writes the result to the named variable and records the matched rules in history.
+
+### Messages and timers (FR-008, FR-009)
+- Messages correlate by name and key within the tenant, are idempotent per message ID, and wait in `message_buffer` for their time-to-live (default 1 hour) when nothing is waiting. They come only from product events (spec 016 triggers), connectors (spec 017) and a signed webhook endpoint per tenant (`POST /api/v1/workflow/messages`, HMAC with a tenant key and a 5 minute replay window).
+- Timers take ISO 8601 dates, durations and cycles (cycles at least 1 hour apart), and working-day durations through `IWorkingCalendar`. A missed cycle fires once. Jobs of a suspended tenant wait and run after reactivation.
+
+### Errors, escalation and incidents (FR-010, FR-011, FR-013)
+Business errors from connector actions map to BPMN error codes and follow a matching error boundary event; technical failures retry with backoff and then raise an incident, as service tasks already do for routes. Escalation events throw and catch within scopes. Operators (`process.operate`) search instances in their scope, read variables (Restricted ones masked), and retry, skip, cancel or change variables on an incident with a reason; each is audited, and a second operator acting on a resolved incident is refused.
+
+### Monitoring (FR-014)
+Per process version: active, completed, cancelled and incident counts, per-element active tokens and incidents, and average and 90th percentile durations from history for a chosen period, with the slowest elements listed. Analysts (`process.monitor`) see numbers only; variables and names need `process.operate`. Counts go to spec 021 as a dataset.
+
+### Modeler and pages (ADR-0017)
+`@xyflow/react`, `bpmn-moddle` and `dmn-moddle`, `@dagrejs/dagre`. The palette lists only the subset; properties panels in Arabic and English; every action from the keyboard; a text outline lists elements and flows in order. The decision table editor is a design system table. Test run calls the server sandbox (no tasks, no outbound calls, timers fast-forwarded). Pages: Processes (list, modeler, versions, test), Decisions, Operations (instances, incidents) and Monitoring.
+
+### Permissions and package
+`process.design` (exists) for models and decisions at the owner's unit, `process.operate` and `process.monitor` (new). Capability `workflow.bpmn` (Workplace Plus and above) for models, DMN, messages, timers, incidents and monitoring; `workflow.max_active_instances` as a quota. Assignment targets are checked against the owner's scope at publish and at run time.
+
+### Tests (R2)
+- Unit: BPMN read and write round trip, validator cases, FEEL grammar and limits, every DMN hit policy, token moves for each element group.
+- Conformance suite (SC-002): one reference model per supported element, run on every build.
+- Integration: publish and versions, starts within the owner's scope, parallel and inclusive joins, sub-processes, call activity, multi-instance with completion condition, loop limit, variable limits, messages (correlation, buffer, message start once, cross-tenant key), timers (boundary interrupting and non-interrupting, event-based gateway, cycle once after an outage), error boundary and incidents, operator actions and their audit, monitoring numbers and analyst masking, package refusal, cross-tenant denial.
+- Performance: 200 rule table under 20 ms p95; correlation under 1 second p95; worker kill test loses no job.
+- e2e: model, test and publish a process with a decision; resolve an incident; read monitoring; English and Arabic with axe.

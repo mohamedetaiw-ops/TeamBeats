@@ -40,7 +40,7 @@ export type SecurityAlert = {
 };
 
 export type PostureCheck = { key: string; state: "passed" | "failed" | "unavailable"; link: string | null };
-export type Posture = { passed: number; total: number; checks: PostureCheck[] };
+export type Posture = { passed: number; total: number; checks: PostureCheck[]; region: string };
 
 /** The answer a sensitive action gets when the sign-in is too old (spec 026 section 6). */
 export type StepUpProblem = { code: "security.step_up_required"; stepUpUrl: string; stepUpMinutes: number };

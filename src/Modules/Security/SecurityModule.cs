@@ -37,9 +37,39 @@ public static class SecurityModule
         services.AddScoped<SiemService>();
         services.AddScoped<SiemStreamer>();
         services.AddScoped<AccessReviews>();
+        services.AddScoped<BreakGlassService>();
         services.AddScoped<IAuthenticationAssurance, AuthenticationAssurance>();
         services.AddScoped<TeamBeats.Authorization.Contracts.IRequestAttributeProvider, NetworkZoneAttributes>();
         return services;
+    }
+
+    /// <summary>Break-glass on the platform host (spec 001, spec 026 FR-020): the operator's only way into a tenant's data.</summary>
+    private static void MapBreakGlass(IEndpointRouteBuilder app)
+    {
+        var glass = app.MapGroup("/api/v1/platform/tenants/{tenantId:guid}/break-glass").RequirePlatformOperator().WithTags("Platform: break-glass");
+
+        glass.MapGet("/", async (Guid tenantId, BreakGlassService service, CancellationToken ct) => Results.Ok(await service.ListAsync(tenantId, ct)));
+
+        glass.MapPost("/", async (Guid tenantId, BreakGlassRequest request, BreakGlassService service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.OpenAsync(tenantId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/platform/tenants/{tenantId}/break-glass/{view.Id}", view);
+        });
+
+        glass.MapPost("/{id:guid}:end", async (Guid tenantId, Guid id, BreakGlassService service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.EndAsync(tenantId, id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        glass.MapPost("/{id:guid}/network-rules:reset", async (Guid tenantId, Guid id, BreakGlassService service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.ResetNetworkRulesAsync(tenantId, id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
     }
 
     private static string? IfMatch(HttpRequest http) => http.Headers.IfMatch.ToString() is { Length: > 0 } tag ? tag : null;
@@ -65,6 +95,8 @@ public static class SecurityModule
 
         security.MapGet("/policy/preview", async (string? ipAllow, string? ipBlock, PolicyService policies, CancellationToken ct) =>
             Results.Ok(await policies.PreviewAsync(ipAllow, ipBlock, ct)));
+
+        MapBreakGlass(app);
 
         security.MapGet("/posture", async (PostureService posture, CancellationToken ct) => Results.Ok(await posture.GetAsync(ct)));
 

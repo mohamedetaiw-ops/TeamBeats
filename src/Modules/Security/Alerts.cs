@@ -34,11 +34,14 @@ public static class AlertKinds
     /// <summary>An app's calls in one hour were over the tenant factor times its 30 day hourly average (US5 scenario 5).</summary>
     public const string ApiVolumeSpike = "api_volume_spike";
 
+    /// <summary>A platform operator opened a break-glass session on the tenant (spec 026 FR-020).</summary>
+    public const string PlatformAccess = "platform_access";
+
     /// <summary>The kinds about an app, which API administrators are told about too.</summary>
     public static readonly IReadOnlyList<string> AboutApps = [ApiTokenReuse, ApiDeniedBurst, ApiVolumeSpike];
 
     public static readonly IReadOnlyList<string> All =
-        [DownloadVolume, PrivilegeGrantOutOfHours, NetworkBlocked, ApiTokenReuse, SiemFailing, GuestConfidentialAccess, ApiDeniedBurst, ApiVolumeSpike];
+        [DownloadVolume, PrivilegeGrantOutOfHours, NetworkBlocked, ApiTokenReuse, SiemFailing, GuestConfidentialAccess, ApiDeniedBurst, ApiVolumeSpike, PlatformAccess];
 }
 
 /// <summary>Who is told when a guest opens a Confidential item (spec 026 US5 scenario 3).</summary>

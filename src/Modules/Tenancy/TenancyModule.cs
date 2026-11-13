@@ -19,6 +19,7 @@ public static class TenancyModule
     public static IServiceCollection AddTenancyModule(this IServiceCollection services)
     {
         services.AddScoped<TeamBeats.Modules.PublicApi.Contracts.IPublicResourceVisibility, OrgUnitVisibility>();
+        services.AddSingleton<IPlatformRegions>(sp => PlatformRegions.From(sp.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()));
         services.AddScoped<TenantRegistry>();
         services.AddScoped<ITenantRegistry>(sp => sp.GetRequiredService<TenantRegistry>());
         services.AddScoped<ITenantLister>(sp => sp.GetRequiredService<TenantRegistry>());
@@ -71,6 +72,10 @@ public static class TenancyModule
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/platform/tenants/{created.Id}", created);
         });
+
+        // Spec 026 FR-008: the regions a new tenant can be created in, and the default one.
+        app.MapGet("/api/v1/platform/regions", (IPlatformRegions regions) => Results.Ok(new PlatformRegionsView(regions.Offered, regions.Default)))
+            .RequirePlatformOperator().WithTags("Platform: tenants");
 
         platform.MapGet("/", async (string? status, string? q, PlatformTenants tenants, CancellationToken ct) =>
             Results.Ok(await tenants.ListAsync(status, q, ct)));

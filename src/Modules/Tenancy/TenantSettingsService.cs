@@ -39,7 +39,8 @@ public sealed class TenantSettingsService(
     IUserDirectory users,
     TenantObjectStorage storage,
     IAuditWriter audit,
-    IOutbox outbox) : ITenantSettingsReader
+    IOutbox outbox,
+    IPlatformRegions regions) : ITenantSettingsReader
 {
     public async Task<TenantSettingsView> GetAsync(CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync(
@@ -57,6 +58,9 @@ public sealed class TenantSettingsService(
         var s = await GetAsync(ct);
         return new TenantLocaleSettings(s.DefaultLocale, s.EnabledLocales, s.TimeZone, s.NumberingSystem);
     }
+
+    public async Task<string> GetRegionAsync(CancellationToken ct = default) =>
+        await session.ScalarAsync<string?>("select region from tenancy.tenant_settings", null, ct) ?? regions.Default;
 
     public async Task<TenantBranding> GetBrandingAsync(CancellationToken ct = default)
     {
