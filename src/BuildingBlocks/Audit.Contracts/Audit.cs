@@ -264,6 +264,10 @@ public static class AuditActions
     public const string SecurityStepUpFailed = "security.step_up_failed";
     public const string SecurityAlertRaised = "security.alert_raised";
     public const string SecurityAlertHandled = "security.alert_handled";
+
+    // Spec 026 (R2): SIEM streaming.
+    public const string SecuritySiemConfigured = "security.siem_configured";
+    public const string SecuritySiemDeliveryFailed = "security.siem_delivery_failed";
     public const string WorkflowDefinitionPublished = "workflow.definition_published";
     public const string WorkflowTaskCompleted = "workflow.task_completed";
     public const string WorkflowInstanceWithdrawn = "workflow.instance_withdrawn";
@@ -543,4 +547,25 @@ public static class AuditActions
     [
         RoleChanged, AddonChanged, OverrideChanged, QuotaExhausted, AuditIntegrityFailed,
     ];
+}
+
+/// <summary>One sealed event of a tenant's audit stream, in chain order (spec 026 US4).</summary>
+public sealed record AuditStreamEvent(
+    long Position, Guid Id, DateTimeOffset OccurredAt, string ActorType, Guid? ActorId, string Action, string Outcome, string TargetType,
+    string? TargetId, Guid? TargetOrgUnitId, string? SourceIp, string? CorrelationId, System.Text.Json.JsonElement? Changes);
+
+/// <summary>
+/// The current tenant's audit stream for readers outside the Audit module (the SIEM stream of spec 026 FR-014). Only
+/// sealed events are read: their chain position is gapless and never changes, so a reader keeps its place with it.
+/// </summary>
+public interface IAuditStream
+{
+    /// <summary>Up to <paramref name="limit"/> sealed events after <paramref name="afterPosition"/>, in order.</summary>
+    Task<IReadOnlyList<AuditStreamEvent>> ReadAsync(long afterPosition, int limit, CancellationToken ct = default);
+
+    /// <summary>The position of the last sealed event, 0 when none.</summary>
+    Task<long> EndAsync(CancellationToken ct = default);
+
+    /// <summary>The position just before the first sealed event at or after <paramref name="since"/>: reading after it starts there.</summary>
+    Task<long> PositionBeforeAsync(DateTimeOffset since, CancellationToken ct = default);
 }

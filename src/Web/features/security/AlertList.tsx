@@ -9,7 +9,7 @@ import type { SecurityAlert } from "@/lib/security/types";
 type Result = { ok: boolean; messages: string[] } | null;
 type Filter = "open" | "handled" | "dismissed" | "all";
 
-const KINDS = ["download_volume", "privilege_grant_out_of_hours", "network_blocked"];
+const KINDS = ["download_volume", "privilege_grant_out_of_hours", "network_blocked", "api_token_reuse", "siem_failing"];
 
 /** The facts of an alert, as counts and references only (spec 026 FR-013). */
 function Facts({ alert }: { alert: SecurityAlert }) {
@@ -36,6 +36,8 @@ function Facts({ alert }: { alert: SecurityAlert }) {
           {t(f.area === "admin" ? "facts.blockedAdmin" : "facts.blockedTenant")} <bdi dir="ltr">{typeof f.address === "string" ? f.address : ""}</bdi>
         </p>
       );
+    case "siem_failing":
+      return <p>{t("facts.siemFailing", { name: typeof f.name === "string" ? f.name : "" })}</p>;
     default:
       return null;
   }

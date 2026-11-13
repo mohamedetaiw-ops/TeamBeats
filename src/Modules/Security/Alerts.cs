@@ -22,7 +22,10 @@ public static class AlertKinds
     /// <summary>A refresh token of an app came back a second time (spec 035 US6 scenario 2); its whole family was revoked.</summary>
     public const string ApiTokenReuse = "api_token_reuse";
 
-    public static readonly IReadOnlyList<string> All = [DownloadVolume, PrivilegeGrantOutOfHours, NetworkBlocked, ApiTokenReuse];
+    /// <summary>A SIEM destination has failed for 24 hours (spec 026 US4); events wait at its place in the stream.</summary>
+    public const string SiemFailing = "siem_failing";
+
+    public static readonly IReadOnlyList<string> All = [DownloadVolume, PrivilegeGrantOutOfHours, NetworkBlocked, ApiTokenReuse, SiemFailing];
 }
 
 /// <summary>Tenant alert thresholds (spec 026 section 6 defaults), stored in <c>security.policy.alert_settings</c>.</summary>

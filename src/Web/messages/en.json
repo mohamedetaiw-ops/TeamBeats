@@ -743,6 +743,7 @@
         "security_session_policy": "Session policy",
         "security_alerts": "Security alerts",
         "security_alerts_advanced": "Advanced security alerts",
+        "security_siem": "SIEM streaming",
         "content_core": "News and pages",
         "content_critical_ack": "Critical announcements with acknowledgement",
         "content_multistep_approval": "Multi-step content approval",
@@ -2320,7 +2321,8 @@
     "tabs": {
       "policy": "Policy",
       "alerts": "Alerts",
-      "posture": "Posture"
+      "posture": "Posture",
+      "siem": "SIEM"
     },
     "openAlerts": "{count, plural, one {# open alert} other {# open alerts}}",
     "policy": {
@@ -2390,13 +2392,15 @@
         "download_volume": "Unusual download volume",
         "privilege_grant_out_of_hours": "Privileged role granted out of hours",
         "network_blocked": "Requests blocked by network rules",
-        "api_token_reuse": "App token used twice"
+        "api_token_reuse": "App token used twice",
+        "siem_failing": "SIEM destination failing"
       },
       "facts": {
         "downloads": "{files, plural, one {# file} other {# files}}, {size} MB, from {libraries, plural, one {# library} other {# libraries}} within one hour.",
         "grant": "Role granted: {role}.",
         "blockedTenant": "Refused address:",
-        "blockedAdmin": "Refused address for administration pages:"
+        "blockedAdmin": "Refused address for administration pages:",
+        "siemFailing": "Destination: {name}. Events wait and go out once it works again."
       },
       "raised": "Raised {at}.",
       "subject": "Person:",
@@ -2455,6 +2459,78 @@
           "title": "No development sign-in",
           "why": "Test sign-in is turned off on this installation. Your provider sets this, not your administrators."
         }
+      }
+    },
+    "siem": {
+      "title": "SIEM streaming",
+      "intro": "Send audit and security events to your security information and event management (SIEM) system as they happen. Each destination keeps its place, so events held back during an outage go out in order once it ends.",
+      "unavailable": "SIEM streaming is not part of your plan, or you cannot see it.",
+      "failed": "The SIEM destinations could not be loaded. Try again.",
+      "listTitle": "Destinations",
+      "none": "No SIEM destinations",
+      "noneHint": "Add a destination to start sending events.",
+      "name": "Name",
+      "target": "Address",
+      "transport": "Sent as",
+      "transports": {
+        "https": "HTTPS JSON, signed",
+        "syslog": "Syslog over TLS"
+      },
+      "state": "State",
+      "states": {
+        "off": "Off",
+        "failing": "Failing",
+        "behind": "Catching up",
+        "current": "Up to date"
+      },
+      "failingSince": "Failing since {at}: {error}",
+      "waiting": "{count, plural, one {# event waiting} other {# events waiting}}",
+      "lastSuccess": "Last sent",
+      "actions": "Actions",
+      "test": "Send test event",
+      "testDelivered": "The test event arrived.",
+      "testFailed": "The test event did not arrive: {error}",
+      "testHint": "Check the address, the allowlist and the receiver, then send the test again.",
+      "enable": "Turn on",
+      "disable": "Turn off",
+      "enabled": "The destination is on and catches up from where it stopped.",
+      "disabled": "The destination is off. Events wait at its place in the stream.",
+      "remove": "Remove",
+      "removeQuestion": "Stop sending events to {name} and remove it?",
+      "removed": "The destination was removed.",
+      "cancel": "Cancel",
+      "working": "Working…",
+      "failingTitle": "Events are not reaching a destination",
+      "failingBody": "TeamBeats keeps the events and tries again. They go out in order once the destination works.",
+      "addTitle": "Add a destination",
+      "addIntro": "At most 2 destinations. The host must be on the allowlist on the Connections page.",
+      "add": "Add destination",
+      "added": "The destination was added.",
+      "url": "Receiver address",
+      "urlHint": "An https address. Each request is signed with the secret, like webhooks.",
+      "secretRef": "Signing secret reference",
+      "secretRefHint": "The name of the secret in your secret manager. TeamBeats never shows the secret itself.",
+      "host": "Syslog host",
+      "hostHint": "A host name. The server's certificate must be trusted.",
+      "port": "Port",
+      "history": "Start from",
+      "historyHint": "Events from before the destination was added can be sent too, up to 7 days back.",
+      "historyOptions": {
+        "d0": "Now",
+        "d1": "1 day ago",
+        "d7": "7 days ago"
+      },
+      "errors": {
+        "server_error": "the receiver answered with an error",
+        "not_responding": "the receiver did not answer",
+        "credential_refused": "the receiver refused the signature or certificate",
+        "credential_missing": "the secret was not found in the secret manager",
+        "host_not_allowed": "the host is not on the allowlist",
+        "blocked_address": "the host points to a private address",
+        "throttled": "the receiver asked to slow down",
+        "request_refused": "the receiver refused the request",
+        "not_in_package": "SIEM streaming is not part of your plan",
+        "connection_disabled": "the destination is off"
       }
     }
   },

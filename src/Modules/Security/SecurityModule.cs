@@ -27,6 +27,8 @@ public static class SecurityModule
         services.AddMessageHandler<TeamBeats.Modules.Documents.Contracts.DocumentDownloaded, DownloadVolumeRule>("security.download_volume");
         services.AddMessageHandler<TeamBeats.Authorization.Contracts.RoleAssignmentChanged, OutOfHoursGrantRule>("security.privilege_grant_out_of_hours");
         services.AddMessageHandler<TeamBeats.Modules.PublicApi.Contracts.TokenFamilyRevoked, ApiTokenReuseRule>("security.api_token_reuse");
+        services.AddScoped<SiemService>();
+        services.AddScoped<SiemStreamer>();
         services.AddScoped<IAuthenticationAssurance, AuthenticationAssurance>();
         services.AddScoped<TeamBeats.Authorization.Contracts.IRequestAttributeProvider, NetworkZoneAttributes>();
         return services;
@@ -65,6 +67,45 @@ public static class SecurityModule
             var view = await alerts.HandleAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
+        });
+
+        // SIEM streaming (US4): destinations, a test event, enable and disable. Changes need step-up (section 6).
+        security.MapGet("/siem", async (SiemService siem, CancellationToken ct) => Results.Ok(await siem.ListAsync(ct)));
+        security.MapPost("/siem", async (SiemDestinationBody body, SiemService siem, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await siem.CreateAsync(body, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/security/siem/{view.Id}", view);
+        }).RequireStepUp();
+        security.MapPut("/siem/{id:guid}", async (Guid id, SiemDestinationBody body, SiemService siem, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await siem.UpdateAsync(id, body, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).RequireStepUp();
+        security.MapDelete("/siem/{id:guid}", async (Guid id, SiemService siem, IDbSession session, CancellationToken ct) =>
+        {
+            await siem.DeleteAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        }).RequireStepUp();
+        security.MapPost("/siem/{id:guid}:enable", async (Guid id, SiemService siem, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await siem.SetEnabledAsync(id, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        security.MapPost("/siem/{id:guid}:disable", async (Guid id, SiemService siem, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await siem.SetEnabledAsync(id, false, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).RequireStepUp();
+        security.MapPost("/siem/{id:guid}:test", async (Guid id, SiemService siem, IDbSession session, CancellationToken ct) =>
+        {
+            var result = await siem.TestAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(result);
         });
 
         return app;

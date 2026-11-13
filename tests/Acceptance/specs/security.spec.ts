@@ -73,3 +73,46 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     });
   });
 }
+
+/**
+ * Spec 026 T020: SIEM streaming. In a package with the capability, the administrator adds a syslog destination for an
+ * allowed host, sends a test event that cannot arrive (the host does not resolve), and sees why, in English and Arabic.
+ */
+for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
+  test.describe(`SIEM streaming in ${locale}`, () => {
+    test.describe.configure({ mode: "serial" });
+    test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
+    let tenant: TestTenant;
+    const host = "siem.example.test";
+
+    test.beforeAll(async () => {
+      tenant = await createTenant(`siem-${locale}`, locale, "workplace_plus");
+      const api = await tenantApi(tenant);
+      const allowed = await api.post("/api/v1/integrations/allowlist", { data: { host } });
+      expect(allowed.ok()).toBe(true);
+      await api.dispose();
+    });
+
+    test("an administrator adds a syslog destination and a failed test event says why", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/security`);
+      await page.getByRole("link", { name: msg(locale, "security.tabs.siem") }).click();
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "security.siem.title"));
+      await expect(page.getByText(msg(locale, "security.siem.none"))).toBeVisible();
+      await expectAccessible(page, testInfo, `security-siem-empty-${locale}`);
+
+      await page.getByRole("radio", { name: msg(locale, "security.siem.transports.syslog") }).check();
+      await page.getByLabel(msg(locale, "security.siem.name"), { exact: true }).fill(locale === "ar" ? "مركز الأمن" : "Security centre");
+      await page.getByLabel(msg(locale, "security.siem.host"), { exact: true }).fill(host);
+      await page.getByRole("button", { name: msg(locale, "security.siem.add") }).click();
+      await expect(page.getByRole("status").filter({ hasText: msg(locale, "security.siem.added") })).toBeVisible();
+      const row = page.getByRole("row").filter({ hasText: host });
+      await expect(row).toBeVisible();
+
+      await row.getByRole("button", { name: msg(locale, "security.siem.test") }).click();
+      const prefix = msg(locale, "security.siem.testFailed").split("{error}")[0].trim();
+      await expect(page.getByRole("status").or(page.getByRole("alert")).filter({ hasText: prefix })).toBeVisible();
+      await expectAccessible(page, testInfo, `security-siem-${locale}`);
+    });
+  });
+}

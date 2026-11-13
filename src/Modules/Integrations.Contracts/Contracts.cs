@@ -1107,3 +1107,38 @@ public interface IWebhookDelivery
     /// <summary>The latest deliveries to the endpoint, newest first.</summary>
     Task<IReadOnlyList<WebhookDeliveryRecord>> DeliveriesAsync(Guid endpointId, int limit, CancellationToken ct = default);
 }
+
+/// <summary>SIEM transports of spec 026 US4: HTTPS JSON signed with a secret, or syslog over TLS.</summary>
+public static class SiemTransports
+{
+    public const string Https = "https";
+    public const string Syslog = "syslog";
+
+    public static readonly IReadOnlyList<string> All = [Https, Syslog];
+}
+
+/// <summary>
+/// A SIEM destination: <paramref name="Url"/> and <paramref name="SecretRef"/> (a secret manager reference) for HTTPS,
+/// <paramref name="Host"/> and <paramref name="Port"/> for syslog over TLS.
+/// </summary>
+public sealed record SiemDestinationRequest(string Name, string Transport, string? Url, string? SecretRef, string? Host, int? Port);
+
+/// <summary>
+/// SIEM delivery (spec 026 FR-014) through the connector runtime: a destination is a hidden connection, so the host
+/// allowlist, the address guard and the run history apply. Batches are sent inside the caller's request (three attempts
+/// within ten seconds); the caller keeps its place in the stream and sends the batch again when it fails.
+/// </summary>
+public interface ISiemDelivery
+{
+    /// <summary>Checks the settings and creates the destination, enabled. Validation errors name <c>url</c>, <c>secretRef</c>, <c>host</c> or <c>port</c>.</summary>
+    Task<Guid> CreateAsync(SiemDestinationRequest request, CancellationToken ct = default);
+
+    Task UpdateAsync(Guid id, SiemDestinationRequest request, CancellationToken ct = default);
+
+    Task SetEnabledAsync(Guid id, bool enabled, CancellationToken ct = default);
+
+    Task DeleteAsync(Guid id, CancellationToken ct = default);
+
+    /// <summary>Sends the events in order as one batch. A batch key that already succeeded is not sent again.</summary>
+    Task<ConnectorCallResult> SendAsync(Guid id, IReadOnlyList<System.Text.Json.JsonElement> events, string batchKey, CancellationToken ct = default);
+}

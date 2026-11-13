@@ -1366,3 +1366,23 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 
 ### Dependencies
 - SIEM stream fields: public API audit entries carry the actor type `app` and the app ID. Call log rows carry the app, the person, the operation, the status, the error class, the latency and the correlation ID. Spec 026 US4 (SIEM streaming, R2) is not built yet. It will stream these entries as they are, so spec 035 needs no new fields, and the stream itself is tracked under spec 026 US4.
+
+## Security and compliance (spec 026 R2, slice 1: T018 to T020 SIEM streaming)
+
+### Built
+- `IAuditStream` in `Audit.Contracts` reads the tenant's sealed audit events in chain order. The audit sealer gives each event a gapless position within 5 seconds, so a reader keeps its place with a number and never reads audit tables.
+- SIEM destinations (`/api/v1/security/siem`; list for `security.view` or `security.manage`; changes need `security.manage`, with step-up to create, change, delete or turn off; capability `security.siem`, Workplace Plus and above). At most 2 per tenant.
+- Two transports. HTTPS JSON posts `{"batch", "events"}`, signed like webhooks with a secret from the tenant's secret manager. Syslog over TLS (RFC 5425 octet counting, RFC 5424 messages, facility log audit) uses TLS 1.2 or later, validates the server certificate and applies the same private address guard as connector HTTP calls.
+- Both go through Integrations as an unlisted `siem` pack (`ISiemDelivery`), like the event endpoints of spec 035. So the host allowlist, run history and circuit breaker apply, and the destination is hidden from the Connections page.
+- `SiemStreamer` runs every 10 seconds (`SiemStreamWorker` in the workers host, or in the development host with `Security:Siem:InProcess`). It sends up to 20 batches of 500 events per destination per run.
+- A failed batch keeps the destination's place and waits with backoff (10 seconds doubling to 5 minutes). The failure is audited as `security.siem_delivery_failed` at most once an hour. After 24 hours the alert `siem_failing` goes to the security officers.
+- Nothing is copied into a buffer: the audit stream keeps at least 365 days, which covers the 7 day buffering of US4 scenario 2.
+- Test event (`:test`) outside the stream. Configuration changes are audited as `security.siem_configured` with before and after values and the secret reference, never the secret.
+- The SIEM tab on the security pages. The schema is in `docs/security/siem-schema.md`.
+- Tests: `SecuritySiemTests` (6) and unit `TlsSyslogSenderTests` (3).
+
+### Smallest safe defaults
+- A new destination starts at the end of what is sealed when it is made. Events from the last few seconds before that are therefore sent too. Up to 7 days of history can be asked for.
+- The stream is the audit stream. Spec 035 call log rows (one per API call, reads included) are usage telemetry and are not streamed. The API's refusals and writes are audited, so they are in the stream.
+- Delivery is at least once. A batch whose answer was lost is sent again under a new batch ID only if more events joined it, and receivers drop repeats by event ID.
+- The development host does not run the audit sealer, so nothing streams there unless the workers host runs too.

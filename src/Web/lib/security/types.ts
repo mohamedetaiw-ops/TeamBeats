@@ -67,3 +67,25 @@ export function ranges(text: string): string[] {
     .map((r) => r.trim())
     .filter(Boolean);
 }
+
+/** A SIEM destination (spec 026 US4). `target` is the URL or host and port; `secretRef` is a secret manager reference. */
+export type SiemDestination = {
+  id: string;
+  name: string;
+  transport: "https" | "syslog";
+  target: string;
+  secretRef: string | null;
+  enabled: boolean;
+  position: number;
+  streamEnd: number;
+  lastSuccessAt: string | null;
+  failingSince: string | null;
+  lastError: string | null;
+  version: number;
+  createdAt: string;
+};
+
+export type SiemTestResult = { delivered: boolean; errorClass: string | null };
+
+/** The SIEM page: the destinations, and whether this person may change them (the API checks every change again). */
+export type SiemPage = { destinations: SiemDestination[]; canManage: boolean };

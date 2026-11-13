@@ -1,6 +1,6 @@
 # Tasks: Security Controls, Compliance and Certifications
 
-Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, explainer), 005 (entitlements), 006 (audit, admin shell), 022 (tenant working week for out-of-hours alerts). R1 covers User Stories 1, 2 and 5 (basic), FR-017 and FR-025; the rest is R2 and R3.
+Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, explainer), 005 (entitlements), 006 (audit, admin shell), 022 (tenant working week for out-of-hours alerts). R1 covers User Stories 1, 2 and 5 (basic), FR-017 and FR-025. R2 covers User Stories 3 (with spec 029), 4, 5 (full), 6 and 7, FR-008 and FR-020. R3 covers User Story 8 and FR-016.
 
 ## Phase 1: Foundations
 - [x] T001 `Security` and `Security.Contracts` projects; migration for `security_policy`, `mfa_claim_mapping`, `security_alert` (forced RLS); `user_session.last_seen_at` and `authenticated_at` in `Identity`
@@ -30,3 +30,31 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 
 ## Final phase
 - [x] T017 OpenAPI; R1 implementation notes; spec evidence
+
+## R2 Phase 6: User Story 4, SIEM streaming (P2)
+- [x] T018 [P] [US4] Tests: HTTPS JSON signed and in order; syslog over TLS; resend from the cursor after an outage with no gaps; test event; secret rotation with step-up; cross-tenant; package; configuration audit
+- [x] T019 [US4] `IAuditStream` in `Audit.Contracts`; `security.siem_destination`; the unlisted `siem` pack with HTTPS and syslog delivery through Integrations; the delivery worker
+- [x] T020 [US4] SIEM endpoints and admin page; `docs/security/siem-schema.md`
+
+## R2 Phase 7: User Story 3, guests (P1)
+- [ ] T021 [P] [US3] Tests: guest domain rules; `security.max_guest_spaces`; reduced shell; watermark; access reviews for guests and admin role holders
+- [ ] T022 [US3] Guest policy and limit checked by Spaces; reduced guest shell; watermarked PDF downloads
+- [ ] T023 [US3] Access reviews (FR-012) with automatic removal after 14 days
+
+## R2 Phase 8: User Story 5 in full (P1)
+- [ ] T024 [P] [US5] Tests: guest opens a Confidential item; app denial burst; app volume spike; thresholds
+- [ ] T025 [US5] The rules, `ApiCallsDenied` and `ApiVolumeSpike` from PublicApi, threshold settings
+
+## R2 Phase 9: User Story 6, sensitive data detection (P2)
+- [ ] T026 [P] [US6] Tests: built-in patterns; warn and confirm; block by location type; tenant pattern test; nothing matched is logged
+- [ ] T027 [US6] `ISensitiveDataScanner`, patterns, settings; hooks in Content and Documents; warning UI
+
+## R2 Phase 10: User Story 7, compliance projects (P2)
+- [ ] T028 [P] [US7] Tests: project from a framework; evidence with export hash; readiness; guest auditor read-only; org scope; package
+- [ ] T029 [US7] `Compliance` module, control library, projects, controls, evidence tasks, readiness view, sharing to guest spaces; pages
+
+## R2 Phase 11: residency and platform access
+- [ ] T030 Region at tenant creation and on the posture page (FR-008); break-glass entries in the tenant's audit view (FR-020)
+
+## R2 final phase
+- [ ] T031 OpenAPI; e2e in English and Arabic with axe; R2 implementation notes; spec evidence
