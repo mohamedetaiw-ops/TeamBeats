@@ -2389,7 +2389,8 @@
       "kinds": {
         "download_volume": "Unusual download volume",
         "privilege_grant_out_of_hours": "Privileged role granted out of hours",
-        "network_blocked": "Requests blocked by network rules"
+        "network_blocked": "Requests blocked by network rules",
+        "api_token_reuse": "App token used twice"
       },
       "facts": {
         "downloads": "{files, plural, one {# file} other {# files}}, {size} MB, from {libraries, plural, one {# library} other {# libraries}} within one hour.",
@@ -10563,7 +10564,8 @@
       "statuses": {
         "active": "Active",
         "disabled": "Disabled",
-        "pending": "Waiting for approval"
+        "pending": "Waiting for approval",
+        "blocked": "Blocked by TeamBeats"
       },
       "registerTitle": "Register an app",
       "register": "Register app",
@@ -10687,7 +10689,14 @@
       "pendingTitle": "This AI client registered itself",
       "pendingBody": "Check its name and redirect addresses before you approve it. Once approved, the AI policy must still allow it before employees can connect it.",
       "dynamicRegistration": "AI clients may register themselves",
-      "dynamicRegistrationHint": "Each new client waits for your approval here, and the AI policy must still allow it. Off by default."
+      "dynamicRegistrationHint": "Each new client waits for your approval here, and the AI policy must still allow it. Off by default.",
+      "revokeTokens": "Revoke all tokens",
+      "revokeTokensQuestion": "Revoke every token of {name}? Everyone signed in through it must sign in again. The app stays enabled.",
+      "tokensRevoked": "Every token of the app is revoked.",
+      "blockedTitle": "TeamBeats blocked this app",
+      "blockedBody": "The app stopped working for every organization, for example after a security problem. It cannot be enabled until TeamBeats lifts the block.",
+      "switchReason": "Why you turn the API off",
+      "switchReasonHint": "Kept in the audit log. Needed when you turn the API off."
     },
     "connected": {
       "title": "Connected apps",

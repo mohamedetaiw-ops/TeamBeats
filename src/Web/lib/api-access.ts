@@ -14,7 +14,7 @@ export type ApiApp = {
   scopes: string[];
   redirectUris: string[];
   allowGuests: boolean;
-  status: "active" | "disabled" | "pending";
+  status: "active" | "disabled" | "pending" | "blocked";
   createdAt: string;
   lastUsedAt: string | null;
   version: number;

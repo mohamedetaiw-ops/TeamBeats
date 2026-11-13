@@ -200,7 +200,7 @@ public sealed class PublicApiPipelineTests(TenantWorld world)
         var app = await AppAsync(t);
         var token = await TokenAsync(t, app);
         Assert.Equal(HttpStatusCode.Forbidden, (await CallAsync(t, token)).StatusCode);
-        await JsonAsync(await t["admin"].Client.PutAsJsonAsync("/api/v1/api-access/settings", new { apiEnabled = false }));
+        await JsonAsync(await t["admin"].Client.PutAsJsonAsync("/api/v1/api-access/settings", new { apiEnabled = false, reason = "Leaked secret under review" }));
         var closed = await CallAsync(t, token);
         Assert.Equal("entitlement.not_in_package", (await JsonAsync(closed, HttpStatusCode.Forbidden)).GetProperty("code").GetString());
         Assert.NotEqual(HttpStatusCode.OK, (await TokenResponseAsync(t, app)).StatusCode);

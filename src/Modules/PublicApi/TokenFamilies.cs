@@ -122,7 +122,7 @@ public sealed class TokenFamilies(IDbSession session, IAuditWriter audit, IOutbo
             return Redemption.Revoked;
         }
         // A live family whose code or generation does not match: a token was used twice.
-        await RevokeAsync(familyId, "reuse_detected", ct);
+        await RevokeAsync(familyId, TokenFamilyReasons.ReuseDetected, ct);
         return Redemption.Reused;
     }
 

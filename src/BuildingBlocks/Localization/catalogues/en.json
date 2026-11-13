@@ -2156,5 +2156,14 @@
   "conflict.agent.external_action_closed": "This action is no longer waiting for you. It was decided already or it expired.",
   "conflict.agent.external_action_changed": "This action changed since you opened it. Open it again and check it before you confirm.",
   "notifications.template.agents.external_action.title": "An AI app asks you to confirm an action",
-  "notifications.template.agents.external_action.body": "{app} asked to do something for you in TeamBeats. Nothing happens until you check it and confirm. It expires in 15 minutes."
+  "notifications.template.agents.external_action.body": "{app} asked to do something for you in TeamBeats. Nothing happens until you check it and confirm. It expires in 15 minutes.",
+  "notifications.template.security.alert.api_token_reuse.body": "An app's sign-in token was used twice, so it may have been copied. TeamBeats ended that sign-in. Review the alert on the security page.",
+  "notifications.template.security.alert.api_token_reuse.title": "App sign-in token used twice",
+  "notifications.template.api.token_reuse.user.title": "An app was signed out for your safety",
+  "notifications.template.api.token_reuse.user.body": "A connected app's sign-in was used twice, so TeamBeats ended it. Sign the app in again if you still use it, and tell IT if you did not expect this.",
+  "notifications.template.api.token_reuse.admin.title": "An app's token was used twice",
+  "notifications.template.api.token_reuse.admin.body": "TeamBeats ended one sign-in of this app because its token came back twice. Check the app and its credentials.",
+  "validation.api.block_client_id": "Enter the client ID to block, up to 200 characters.",
+  "validation.api.block_reason": "Say why the client is blocked, up to 500 characters.",
+  "validation.api.switch_reason": "Say why you turn the public API off, up to 500 characters."
 }

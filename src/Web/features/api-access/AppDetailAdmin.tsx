@@ -70,6 +70,11 @@ export function AppDetailAdmin({
           </p>
         </Alert>
       ) : null}
+      {app.status === "blocked" ? (
+        <Alert tone="danger" title={t("blockedTitle")}>
+          <p>{t("blockedBody")}</p>
+        </Alert>
+      ) : null}
       {app.status === "pending" ? (
         <Alert tone="warning" title={t("pendingTitle")}>
           <p>{t("pendingBody")}</p>
@@ -78,7 +83,7 @@ export function AppDetailAdmin({
       <section className="admin-panel" aria-labelledby="api-app-summary">
         <div className="admin-panel-head">
           <h2 id="api-app-summary">{t("summaryTitle")}</h2>
-          <Badge tone={app.status === "active" ? "success" : app.status === "pending" ? "warning" : "neutral"}>{t(`statuses.${app.status}`)}</Badge>
+          <Badge tone={app.status === "active" ? "success" : app.status === "pending" ? "warning" : app.status === "blocked" ? "danger" : "neutral"}>{t(`statuses.${app.status}`)}</Badge>
         </div>
         <dl className="api-access-facts">
           <dt>{t("kind")}</dt>
@@ -89,7 +94,7 @@ export function AppDetailAdmin({
           </dd>
         </dl>
         <div className="admin-actions">
-          {app.status !== "disabled" ? (
+          {app.status === "active" || app.status === "pending" ? (
             <ConfirmAction
               label={app.status === "pending" ? t("refuse") : t("disable")}
               question={app.status === "pending" ? t("refuseQuestion", { name: app.name }) : t("disableQuestion", { name: app.name })}
@@ -101,7 +106,19 @@ export function AppDetailAdmin({
               }}
             />
           ) : null}
-          {app.status !== "active" ? (
+          {app.status === "active" ? (
+            <ConfirmAction
+              label={t("revokeTokens")}
+              question={t("revokeTokensQuestion", { name: app.name })}
+              confirmLabel={t("revokeTokens")}
+              cancelLabel={t("cancel")}
+              onConfirm={async () => {
+                const outcome = await action.run("revoke", "POST", `/api/v1/api-access/apps/${app.id}:revoke-tokens`, undefined, t("tokensRevoked"));
+                if (outcome.ok) await reload();
+              }}
+            />
+          ) : null}
+          {app.status !== "active" && app.status !== "blocked" ? (
             <Button
               size="sm"
               variant="secondary"

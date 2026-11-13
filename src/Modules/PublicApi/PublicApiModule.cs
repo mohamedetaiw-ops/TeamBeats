@@ -29,6 +29,7 @@ public static class PublicApiModule
         services.AddScoped<TokenFamilies>();
         services.AddScoped<VerifiedMcpClients>();
         services.AddScoped<ClientRegistrations>();
+        services.AddScoped<PlatformBlocks>();
         services.AddScoped<Apps>();
         services.AddScoped<ApiSettings>();
         services.AddScoped<Consents>();
@@ -36,6 +37,7 @@ public static class PublicApiModule
         services.AddScoped<PublicApiMaintenance>();
         services.AddScoped<PublicApiLeavers>();
         services.AddMessageHandler<TenantMembershipDisabled, PublicApiLeavers>("publicapi.leaver");
+        services.AddMessageHandler<TokenFamilyRevoked, TokenReuseNotices>("publicapi.token_reuse_notices");
         services.AddOAuthServer();
         services.AddMcpEndpoint();
         services.AddScoped<Agents.Contracts.IAgentTool, WhoAmITool>();
@@ -74,6 +76,8 @@ public static class PublicApiModule
             await CommitAsync(session, await apps.UpdateAsync(id, body, ct), ct));
         admin.MapPost("/apps/{id:guid}:disable", async (Guid id, Apps apps, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await apps.DisableAsync(id, ct), ct));
+        admin.MapPost("/apps/{id:guid}:revoke-tokens", async (Guid id, Apps apps, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await apps.RevokeTokensAsync(id, ct), ct));
         admin.MapPost("/apps/{id:guid}:enable", async (Guid id, Apps apps, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await apps.EnableAsync(id, ct), ct));
         // A new secret is a sensitive action (FR-005): it needs a recent sign-in, and the answer is never cached.
@@ -107,6 +111,15 @@ public static class PublicApiModule
             Results.Ok(new { items = await verified.ListAsync(ct) }));
         platform.MapPut("/verified-mcp-clients", async (VerifiedMcpClientRequest body, VerifiedMcpClients verified, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await verified.PutAsync(body, ct), ct));
+        platform.MapGet("/blocked-clients", async (PlatformBlocks blocks, CancellationToken ct) => Results.Ok(new { items = await blocks.ListAsync(ct) }));
+        platform.MapPost("/blocked-clients", async (PlatformBlockRequest body, PlatformBlocks blocks, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await blocks.BlockAsync(body, ct), ct));
+        platform.MapDelete("/blocked-clients", async (string clientId, PlatformBlocks blocks, IDbSession session, CancellationToken ct) =>
+        {
+            await blocks.UnblockAsync(clientId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
 
         // Employees (US2): the consent screen and connected apps (FR-013, FR-029).
         var me = app.MapGroup("/api/v1/me").RequireTenantUser().WithTags("Me: connected apps");
@@ -149,4 +162,32 @@ public sealed class PublicApiLeavers(TokenFamilies families) : IMessageHandler<T
 {
     public Task HandleAsync(TenantMembershipDisabled message, CancellationToken ct) =>
         families.RevokeForUserAsync(message.UserId, "membership_ended", ct);
+}
+
+/// <summary>
+/// A token used twice (US6 scenario 2): the person and the API administrators are told, so the person can sign the app
+/// in again and the administrators can check the app. The security alert is raised by the Security module.
+/// </summary>
+public sealed class TokenReuseNotices(IAuthorizationProvisioning roles, Modules.Notifications.Contracts.INotificationSender notifications) : IMessageHandler<TokenFamilyRevoked>
+{
+    public const string UserTemplate = "api.token_reuse.user";
+    public const string AdminTemplate = "api.token_reuse.admin";
+
+    public async Task HandleAsync(TokenFamilyRevoked message, CancellationToken ct)
+    {
+        if (message.Reason != TokenFamilyReasons.ReuseDetected)
+        {
+            return;
+        }
+        await notifications.SendAsync(new Modules.Notifications.Contracts.NotificationRequest([message.UserId],
+            Modules.Notifications.Contracts.NotificationCategories.SecurityNotice, UserTemplate, "/settings/connected-apps",
+            DedupeKey: "api_token_reuse:" + message.FamilyId), ct);
+        var admins = await roles.TenantHoldersAsync(Permissions.ApiManage, ct);
+        if (admins.Count > 0)
+        {
+            await notifications.SendAsync(new Modules.Notifications.Contracts.NotificationRequest(admins,
+                Modules.Notifications.Contracts.NotificationCategories.SecurityNotice, AdminTemplate, $"/admin/api/apps/{message.AppId}",
+                DedupeKey: "api_token_reuse_admin:" + message.FamilyId, GroupKey: "api_token_reuse:" + message.AppId), ct);
+        }
+    }
 }

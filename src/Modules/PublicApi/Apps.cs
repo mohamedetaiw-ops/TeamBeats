@@ -39,20 +39,23 @@ public sealed class Apps(
     IOutbox outbox,
     IClock clock,
     TokenFamilies families,
-    VerifiedMcpClients verified)
+    VerifiedMcpClients verified,
+    PlatformBlocks blocks)
 {
     // A verified MCP client's registration takes its name, publisher, scopes and redirect URIs from the platform's
-    // verified list, and is disabled while the platform has blocked or removed it (FR-023).
+    // verified list (FR-023). An app whose client ID the platform blocked, or a verified client the list blocked, shows as
+    // blocked and works nowhere (FR-028).
     private const string Columns =
         """
         a.id, a.client_id, a.kind, case when a.verified then coalesce(v.name, a.name) else a.name end, a.description,
         case when a.verified then coalesce(v.publisher, a.publisher) else a.publisher end, case when a.verified then coalesce(v.scopes, '{}') else a.scopes end,
         case when a.verified then coalesce(v.redirect_uris, '{}') else a.redirect_uris end, a.allow_guests,
-        case when a.verified and v.status is distinct from 'active' then 'disabled' else a.status end, a.tokens_revoked_at, a.created_at, a.last_used_at,
+        case when b.client_id is not null or (a.verified and v.status is distinct from 'active') then 'blocked' else a.status end, a.tokens_revoked_at, a.created_at, a.last_used_at,
         a.version, a.ip_ranges, a.calls_per_minute, a.verified, a.self_registered
         """;
 
-    private const string From = "publicapi.app a left join publicapi.verified_mcp_client v on a.verified and v.client_id = a.client_id";
+    private const string From =
+        "publicapi.app a left join publicapi.verified_mcp_client v on a.verified and v.client_id = a.client_id left join publicapi.platform_block b on b.client_id = a.client_id";
 
     internal static AppRecord Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3),
         r.IsDBNull(4) ? null : r.GetString(4), r.IsDBNull(5) ? null : r.GetString(5), r.GetFieldValue<string[]>(6), r.GetFieldValue<string[]>(7),
@@ -207,6 +210,21 @@ public sealed class Apps(
         return (await FindAsync(id, ct))!.View;
     }
 
+    /// <summary>
+    /// Revokes every token of the app now (US6 scenario 1), for a leaked secret: refresh tokens and codes end at once and
+    /// access tokens issued before now are refused at their next use. The app stays enabled for new sign-ins.
+    /// </summary>
+    public async Task<AppView> RevokeTokensAsync(Guid id, CancellationToken ct)
+    {
+        await DemandAsync(Permissions.ApiManage, ct);
+        var app = await FindAsync(id, ct) ?? throw AppException.NotFound();
+        await session.ExecAsync("update publicapi.app set tokens_revoked_at = @now, version = version + 1, updated_at = now() where id = @id",
+            new { id, now = clock.UtcNow }, ct);
+        var ended = await families.RevokeForAppAsync(id, null, "admin", ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.ApiTokensRevoked, "api_app", id.ToString(), Changes: new { app.Name, families = ended }), ct);
+        return (await FindAsync(id, ct))!.View;
+    }
+
     public async Task<AppView> EnableAsync(Guid id, CancellationToken ct)
     {
         await DemandAsync(Permissions.ApiManage, ct);
@@ -325,7 +343,7 @@ public sealed class Apps(
         {
             return app;
         }
-        return await verified.FindAsync(clientId, ct) is { Active: true } listed
+        return await verified.FindAsync(clientId, ct) is { Active: true } listed && !await blocks.IsBlockedAsync(clientId, ct)
             ? new AppRecord(Guid.Empty, listed.ClientId, AppKinds.McpClient, listed.Name, null, listed.Publisher, listed.Scopes, listed.RedirectUris, false,
                 "active", null, clock.UtcNow, null, 0, [], null, Verified: true)
             : null;

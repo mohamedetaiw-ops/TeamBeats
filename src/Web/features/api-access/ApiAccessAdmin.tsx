@@ -128,7 +128,7 @@ function AppsPanel({ apps, scopes, action, onCreated }: { apps: ApiApp[]; scopes
             {
               key: "status",
               header: t("status"),
-              cell: (a) => <Badge tone={a.status === "active" ? "success" : a.status === "pending" ? "warning" : "neutral"}>{t(`statuses.${a.status}`)}</Badge>,
+              cell: (a) => <Badge tone={a.status === "active" ? "success" : a.status === "pending" ? "warning" : a.status === "blocked" ? "danger" : "neutral"}>{t(`statuses.${a.status}`)}</Badge>,
             },
             { key: "lastUsed", header: t("lastUsed"), cell: (a) => when(a.lastUsedAt) },
           ]}
@@ -296,6 +296,7 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
   const [userScopes, setUserScopes] = useState(settings.userConsentScopes);
   const [tenantLimit, setTenantLimit] = useState<number | null>(settings.tenantCallsPerMinute);
   const [dynamic, setDynamic] = useState(settings.dynamicRegistration ?? false);
+  const [reason, setReason] = useState("");
   const delegated = scopes.filter((s) => s.holder !== "application");
 
   async function save() {
@@ -303,7 +304,7 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
       "settings",
       "PUT",
       "/api/v1/api-access/settings",
-      { apiEnabled: enabled, accessTokenMinutes: minutes, refreshTokenDays: days, userConsentScopes: userScopes, tenantCallsPerMinute: tenantLimit ?? 0, dynamicRegistration: dynamic, version: settings.version },
+      { apiEnabled: enabled, accessTokenMinutes: minutes, refreshTokenDays: days, userConsentScopes: userScopes, tenantCallsPerMinute: tenantLimit ?? 0, dynamicRegistration: dynamic, reason, version: settings.version },
       t("settingsSaved"),
     );
     if (outcome.ok) onSaved(outcome.data);
@@ -320,6 +321,9 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
         }}
       >
         <Switch name="apiEnabled" label={t("apiEnabled")} hint={t("apiEnabledHint")} checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+        {settings.apiEnabled && !enabled ? (
+          <TextAreaField label={t("switchReason")} hint={t("switchReasonHint")} name="reason" rows={2} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
+        ) : null}
         <Switch
           name="dynamicRegistration"
           label={t("dynamicRegistration")}

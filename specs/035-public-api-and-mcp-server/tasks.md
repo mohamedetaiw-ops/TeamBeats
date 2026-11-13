@@ -28,7 +28,7 @@ Depends on 003, 004, 005, 006, 014, 015, 016, 017 (outbound webhook runtime), 02
 ## Phase 5: User Stories 4, 6 and 7 (P1, P2)
 - [ ] T016 [P] [US4] Tests: thin payloads; filtered notifications for hidden resources; signature; pause after 3 days; catalogue only
 - [ ] T017 [US4] Public event schemas, subscription management, delivery through `IWebhookDelivery`
-- [ ] T018 [US6] Emergency controls: disable app, revoke tokens, tenant switches, platform block; security alerts in spec 026 US5
+- [x] T018 [US6] Emergency controls: disable app, revoke tokens, tenant switches, platform block; security alerts in spec 026 US5
 - [ ] T019 [US7] Developer page with OpenAPI, catalogues, MCP tool list and metadata URLs; deprecation headers
 
 ## Final phase

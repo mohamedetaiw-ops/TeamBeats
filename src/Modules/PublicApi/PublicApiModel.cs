@@ -37,8 +37,9 @@ public sealed record ApiSettingsView(int AccessTokenMinutes, int RefreshTokenDay
     int? TenantCallsPerMinute = null, bool DynamicRegistration = false);
 
 /// <param name="TenantCallsPerMinute">Lowers the limit for all apps together; 0 returns to the installation's limit.</param>
+/// <param name="Reason">Why the public API is turned off; required then, and kept in the audit (US6 scenario 3).</param>
 public sealed record ApiSettingsRequest(int? AccessTokenMinutes, int? RefreshTokenDays, IReadOnlyList<string>? UserConsentScopes, bool? ApiEnabled, int? Version,
-    int? TenantCallsPerMinute = null, bool? DynamicRegistration = null);
+    int? TenantCallsPerMinute = null, bool? DynamicRegistration = null, string? Reason = null);
 
 /// <summary>A tenant's API usage over a period (US5 scenario 3): per app, from the call log, without bodies.</summary>
 public sealed record ApiUsageView(int Days, long MonthCalls, long? MonthlyLimit, IReadOnlyList<AppUsageView> Apps);

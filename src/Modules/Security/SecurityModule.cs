@@ -26,6 +26,7 @@ public static class SecurityModule
         services.AddMessageHandler<SecurityAlertRaised, AlertNotifier>("security.alert_notifier");
         services.AddMessageHandler<TeamBeats.Modules.Documents.Contracts.DocumentDownloaded, DownloadVolumeRule>("security.download_volume");
         services.AddMessageHandler<TeamBeats.Authorization.Contracts.RoleAssignmentChanged, OutOfHoursGrantRule>("security.privilege_grant_out_of_hours");
+        services.AddMessageHandler<TeamBeats.Modules.PublicApi.Contracts.TokenFamilyRevoked, ApiTokenReuseRule>("security.api_token_reuse");
         services.AddScoped<IAuthenticationAssurance, AuthenticationAssurance>();
         services.AddScoped<TeamBeats.Authorization.Contracts.IRequestAttributeProvider, NetworkZoneAttributes>();
         return services;
