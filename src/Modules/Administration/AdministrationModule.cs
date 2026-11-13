@@ -204,9 +204,16 @@ public static class AdministrationModule
 /// The sections the caller may open (spec 006 FR-008), and the shell's question whether there is any (spec 008 FR-062).
 /// Both use the same checks, so the shell offers Administration exactly when the admin shell would have a section to show.
 /// </summary>
-public sealed class AdministrationNavigation(IAuthorizationService authz, TeamBeats.Modules.Security.Contracts.ISecurityAlertSummary alerts)
+public sealed class AdministrationNavigation(IAuthorizationService authz, TeamBeats.Modules.Security.Contracts.ISecurityAlertSummary alerts,
+    TeamBeats.Entitlements.Contracts.IEntitlementService entitlements)
     : TeamBeats.Modules.Experience.Contracts.IAdministrationEntry
 {
+    /// <summary>Sections whose whole page is a capability of the plan: without it the section is not listed, checked through the entitlement service.</summary>
+    private static readonly IReadOnlyDictionary<string, string> Capability = new Dictionary<string, string>
+    {
+        ["kiosks"] = TeamBeats.Entitlements.Contracts.Capabilities.MobileKiosk,
+    };
+
     public async Task<IReadOnlyList<NavigationSection>> SectionsAsync(CancellationToken ct)
     {
         var result = new List<NavigationSection>();
@@ -238,6 +245,10 @@ public sealed class AdministrationNavigation(IAuthorizationService authz, TeamBe
     /// <summary>Null when the caller may not open the section; otherwise whether they hold it for the whole tenant.</summary>
     private async Task<bool?> OpensAsync(string key, CancellationToken ct)
     {
+        if (Capability.TryGetValue(key, out var capability) && !await entitlements.IsEnabledAsync(capability, ct))
+        {
+            return null;
+        }
         var permission = AdministrationModule.Sections.First(s => s.Key == key).Permission;
         var coverage = await authz.CoverageAsync(permission, ct);
         if (!coverage.WholeTenant && AdministrationModule.AlsoOpenedBy.TryGetValue(key, out var other) && await authz.CoverageAsync(other, ct) is { WholeTenant: true } wide)

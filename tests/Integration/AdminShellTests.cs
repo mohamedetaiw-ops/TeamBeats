@@ -60,6 +60,20 @@ public sealed class AdminShellTests(TenantWorld world)
         Assert.DoesNotContain(security.EnumerateArray(), s => s.GetProperty("group").GetString() == "hr");
     }
 
+    /// <summary>A section whose page is a plan capability is listed only when the plan has it, so no menu entry opens a missing page.</summary>
+    [Fact]
+    public async Task Kiosks_are_listed_only_on_a_plan_with_shared_devices()
+    {
+        async Task<string[]> KeysAsync(string package)
+        {
+            var t = await world.CreateTenantAsync("nav-" + Guid.NewGuid().ToString("N")[..8], package);
+            var nav = await t["admin"].Client.GetFromJsonAsync<JsonElement>("/api/v1/admin/navigation");
+            return nav.EnumerateArray().Select(s => s.GetProperty("key").GetString()!).ToArray();
+        }
+        Assert.DoesNotContain("kiosks", await KeysAsync("workplace"));
+        Assert.Contains("kiosks", await KeysAsync("workplace_plus"));
+    }
+
     /// <summary>
     /// Spec 008 FR-062: the shell offers Administration exactly when the admin shell has a section for the caller, including
     /// admins whose rights cover only their own units, and never for employees or contractors.

@@ -53,7 +53,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("design, review, use and switch off an agent", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
-      await page.getByRole("link", { name: m("admin.nav.agents"), exact: true }).click();
+      await page.getByRole("navigation", { name: m("admin.navLabel") }).getByRole("link", { name: m("admin.nav.agents"), exact: true }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("agents.registry.title"));
       await expect(page.getByText(m("agents.registry.empty"))).toBeVisible();
       await expectAccessible(page, testInfo, `agents-registry-${locale}`);

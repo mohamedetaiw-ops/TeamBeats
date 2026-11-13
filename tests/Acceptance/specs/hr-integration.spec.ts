@@ -23,7 +23,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("an administrator sets how HR records match people and finds the HR connection forms", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
-      await page.getByRole("link", { name: msg(locale, "admin.nav.hr_integration") }).click();
+      await page.getByRole("navigation", { name: msg(locale, "admin.navLabel") }).getByRole("link", { name: msg(locale, "admin.nav.hr_integration") }).click();
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "hr_integration.title"));
       await expect(page.getByText(msg(locale, "hr_integration.status.noConnection"))).toBeVisible();
       await expect(page.getByText(msg(locale, "hr_integration.records.empty"))).toBeVisible();
