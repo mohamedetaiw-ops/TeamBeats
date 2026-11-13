@@ -92,6 +92,6 @@ public sealed class DataChangeModuleServices : TeamBeats.Modules.Services.Contra
     [
         new(Key, new Dictionary<string, string> { ["en"] = "My HR details", ["ar"] = "بياناتي لدى الموارد البشرية" },
             new Dictionary<string, string> { ["en"] = "Change your address, bank details and more", ["ar"] = "غيّر عنوانك وبياناتك المصرفية وغيرها" },
-            "/my-details", null, Capabilities.HrDataChange),
+            "/my-details", null, Capabilities.HrDataChange, Icon: "user"),
     ];
 }

@@ -386,3 +386,22 @@
 .services-error-summary a {
   color: inherit;
 }
+
+/* A card's facts: who approves and the usual time, then the viewer's latest request as a link above the tile link. */
+.services-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+}
+
+.services-latest a {
+  position: relative;
+  z-index: 1;
+}
+
+/* The icon choice shows the chosen icon beside the list. */
+.services-icon-choice {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}

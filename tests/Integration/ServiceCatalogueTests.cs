@@ -357,4 +357,34 @@ public sealed class ServiceCatalogueTests(TenantWorld world)
             new { kind = "form", names = Names("X", "س"), audience = new { orgUnits = new[] { a.Gulf } } })));
         Assert.DoesNotContain(id, ServiceIds(await CatalogueAsync(b.T["sara"].Client)));
     }
+
+    [Fact]
+    public async Task A_card_shows_its_own_icon_who_approves_the_usual_days_and_only_the_viewers_latest_request()
+    {
+        var o = await FreshAsync();
+        var admin = o.T["admin"].Client;
+        var route = new { approval = new { approvers = new { kind = "line_manager" }, dueWorkingDays = 3 } };
+        var withApproval = await PublishFormAsync(admin, new { kind = "form", names = Names("Cards", "بطاقات"), icon = "news" }, route);
+        var direct = await PublishFormAsync(admin, new { kind = "form", names = Names("Badges", "شارات") });
+        Assert.Contains("validation.services.icon", await ErrorKeysAsync(await admin.PostAsJsonAsync(Admin, new { kind = "form", names = Names("X", "س"), icon = "<svg>" })));
+
+        var filed = await o.T["sara"].Client.PostAsJsonAsync("/api/v1/requests", new { serviceId = withApproval, data = new { boxes = 2 }, idempotencyKey = Guid.NewGuid().ToString() });
+        Assert.True(filed.IsSuccessStatusCode, await filed.Content.ReadAsStringAsync());
+        var number = (await filed.ReadAsync<JsonElement>()).GetProperty("request").GetProperty("number").GetString();
+
+        JsonElement CardOf(JsonElement view, Guid id) => view.GetProperty("services").EnumerateArray().Single(s => s.GetProperty("id").GetGuid() == id);
+        var sara = await CatalogueAsync(o.T["sara"].Client);
+        var card = CardOf(sara, withApproval);
+        Assert.Equal("news", card.GetProperty("icon").GetString());
+        Assert.Equal("line_manager", card.GetProperty("approver").GetString());
+        Assert.Equal(3, card.GetProperty("dueWorkingDays").GetInt32());
+        Assert.Equal(number, card.GetProperty("latest").GetProperty("number").GetString());
+        Assert.NotEqual("draft", card.GetProperty("latest").GetProperty("status").GetString());
+        var plain = CardOf(sara, direct);
+        Assert.Equal("none", plain.GetProperty("approver").GetString());
+        Assert.Equal(JsonValueKind.Null, plain.GetProperty("latest").ValueKind);
+
+        // Another person sees the service but never Sara's request.
+        Assert.Equal(JsonValueKind.Null, CardOf(await CatalogueAsync(o.T["owner_gulf"].Client), withApproval).GetProperty("latest").ValueKind);
+    }
 }

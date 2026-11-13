@@ -110,6 +110,6 @@ public sealed class LetterModuleServices : TeamBeats.Modules.Services.Contracts.
     [
         new(Key, new Dictionary<string, string> { ["en"] = "HR letters", ["ar"] = "الخطابات والشهادات" },
             new Dictionary<string, string> { ["en"] = "Salary certificates, experience letters and more", ["ar"] = "شهادات الراتب وخطابات الخبرة وغيرها" },
-            "/letters", null, Capabilities.HrLetters),
+            "/letters", null, Capabilities.HrLetters, Icon: "files"),
     ];
 }

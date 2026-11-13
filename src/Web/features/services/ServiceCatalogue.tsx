@@ -20,6 +20,7 @@ import "./services.css";
  */
 export function ServiceCatalogue({ initial, initialQuery = "", initialCategory = "" }: { initial: CatalogueView; initialQuery?: string; initialCategory?: string }) {
   const t = useTranslations("services.catalogue");
+  const status = useTranslations("services.status");
   const locale = useLocale();
   const [view, setView] = useState(initial);
   const router = useRouter();
@@ -107,6 +108,18 @@ export function ServiceCatalogue({ initial, initialQuery = "", initialCategory =
             </button>
           </div>
           {description ? <p>{description}</p> : null}
+          {/* What helps the choice before opening (spec 016 FR-019): who approves, the usual time, the last request. */}
+          {s.approver ? (
+            <p className="ui-tile-meta services-facts">
+              <span>{t(`approver.${s.approver}`)}</span>
+              {s.dueWorkingDays ? <span>{t("usualDays", { count: s.dueWorkingDays })}</span> : null}
+            </p>
+          ) : null}
+          {s.latest ? (
+            <p className="ui-tile-meta services-latest">
+              <Link href={`/requests/${s.latest.id}`}>{t("latest", { number: s.latest.number, status: status(s.latest.status) })}</Link>
+            </p>
+          ) : null}
         </article>
       </li>
     );

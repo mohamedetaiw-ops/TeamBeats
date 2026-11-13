@@ -2492,7 +2492,15 @@
       "notAvailable": "Not available to you",
       "notAvailableHint": "This service is offered to other people. Ask its owner if you need it.",
       "noneHint": "Check the spelling, or look in all categories.",
-      "clear": "Clear search"
+      "clear": "Clear search",
+      "approver": {
+        "none": "No approval needed",
+        "line_manager": "Approved by your line manager",
+        "role": "Approved by an approver in your unit",
+        "named": "Approved by named people"
+      },
+      "usualDays": "{count, plural, one {Usually 1 working day} other {Usually # working days}}",
+      "latest": "Your last request {number}: {status}"
     },
     "form": {
       "submit": "Submit request",
@@ -2886,7 +2894,35 @@
       },
       "hrPrefillHint": "Grade and cost centre are Confidential. They fill this field only when the service is classified Confidential or Restricted.",
       "hrReadOnly": "Keep the HR value. People cannot change it.",
-      "hrMustBeCurrent": "Must be current. Check with HR when the copy is older than 7 days."
+      "hrMustBeCurrent": "Must be current. Check with HR when the copy is older than 7 days.",
+      "icon": "Icon",
+      "iconDefault": "The category icon",
+      "icons": {
+        "services": "Service",
+        "leave": "Leave",
+        "clock": "Time",
+        "calendar": "Calendar",
+        "user": "Person",
+        "people": "People",
+        "building": "Building",
+        "pin": "Place",
+        "files": "Document",
+        "folder": "Folder",
+        "book": "Book",
+        "policy": "Policy",
+        "news": "News",
+        "megaphone": "Announcement",
+        "chat": "Conversation",
+        "inbox": "Inbox",
+        "attach": "Attachment or receipt",
+        "link": "Link",
+        "globe": "Web",
+        "lock": "Access",
+        "settings": "Settings",
+        "star": "Recognition",
+        "image": "Picture",
+        "trend-up": "Growth"
+      }
     },
     "team": {
       "title": "Team requests",

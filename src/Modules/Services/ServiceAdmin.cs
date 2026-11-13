@@ -22,7 +22,8 @@ public sealed record ServiceSettingsRequest(
     Guid? OwnerOrgUnitId,
     string? Classification,
     string? Url,
-    bool Sso = false);
+    bool Sso = false,
+    string? Icon = null);
 
 public sealed record ServiceDraftRequest(FormDefinition? Form, ServiceRoute? Route, Guid? FulfilmentQueueGroupId, bool AllowOnBehalf = false, int MaxAttachments = 0);
 
@@ -169,6 +170,12 @@ public sealed partial class ServiceAdmin(
         {
             errors.Add("url", "validation.services.url_not_linked");
         }
+        // An icon is a name from the web app's icon set (spec 016 FR-018); the web app falls back to the category's icon
+        // for a name it does not know, so the API only checks the form.
+        if (request.Icon is { } icon && !System.Text.RegularExpressions.Regex.IsMatch(icon, "^[a-z][a-z0-9-]{1,31}$"))
+        {
+            errors.Add("icon", "validation.services.icon");
+        }
         await ValidateAudienceAsync(request.Audience ?? ServiceAudience.Everyone, request.OwnerOrgUnitId, errors, ct);
     }
 
@@ -241,14 +248,14 @@ public sealed partial class ServiceAdmin(
         await session.ExecAsync(
             """
             insert into services.service (tenant_id, id, kind, names, descriptions, synonyms, category_id, audience, owner_org_unit_id, classification,
-              url, sso, status, created_at, created_by, updated_at)
+              url, sso, icon, status, created_at, created_by, updated_at)
             values (platform.current_tenant_id(), @id, @kind, @names, @descriptions, @synonyms, @category, @audience, @owner, @classification,
-              @url, @sso, 'draft', @now, @user, @now)
+              @url, @sso, @icon, 'draft', @now, @user, @now)
             """, new
             {
                 id, kind, names = Jsonb.From(Clean(request.Names)), descriptions = Jsonb.From(Clean(request.Descriptions)), synonyms = Jsonb.From(CleanSynonyms(request.Synonyms)),
                 category = request.CategoryId, audience = Jsonb.From(request.Audience ?? ServiceAudience.Everyone), owner = request.OwnerOrgUnitId,
-                classification = request.Classification ?? "internal", url = request.Url, sso = request.Sso, now, user,
+                classification = request.Classification ?? "internal", url = request.Url, sso = request.Sso, icon = request.Icon, now, user,
             }, ct);
         await session.ExecAsync(
             """
@@ -281,13 +288,13 @@ public sealed partial class ServiceAdmin(
         await session.ExecAsync(
             """
             update services.service set names = @names, descriptions = @descriptions, synonyms = @synonyms, category_id = @category, audience = @audience,
-              owner_org_unit_id = @owner, classification = @classification, url = @url, sso = @sso, updated_at = @now
+              owner_org_unit_id = @owner, classification = @classification, url = @url, sso = @sso, icon = coalesce(@icon, icon), updated_at = @now
             where id = @id
             """, new
             {
                 id, names = Jsonb.From(Clean(settings.Names)), descriptions = Jsonb.From(Clean(settings.Descriptions)), synonyms = Jsonb.From(CleanSynonyms(settings.Synonyms)),
                 category = settings.CategoryId, audience = Jsonb.From(settings.Audience ?? ServiceAudience.Everyone), owner = settings.OwnerOrgUnitId,
-                classification = settings.Classification ?? row.Classification, url = settings.Url, sso = settings.Sso, now = clock.UtcNow,
+                classification = settings.Classification ?? row.Classification, url = settings.Url, sso = settings.Sso, icon = settings.Icon, now = clock.UtcNow,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ServiceChanged, "service", id.ToString(), TargetOrgUnitId: settings.OwnerOrgUnitId,
             Changes: new { part = "settings", before = new { row.CategoryId, row.Audience, row.OwnerOrgUnitId, row.Classification }, after = new { settings.CategoryId, settings.Audience, settings.OwnerOrgUnitId, settings.Classification } }), ct);

@@ -3,7 +3,7 @@
   "template": "H01",
   "slug": "home",
   "variant": "balanced",
-  "revision": 9,
+  "revision": 10,
   "navigation": [
     {
       "slug": "nav-home",
@@ -294,7 +294,8 @@
             "required": true
           }
         ]
-      }
+      },
+      "icon": "files"
     },
     {
       "names": {
@@ -329,7 +330,8 @@
             "required": true
           }
         ]
-      }
+      },
+      "icon": "chat"
     },
     {
       "names": {
@@ -371,7 +373,8 @@
             "required": true
           }
         ]
-      }
+      },
+      "icon": "lock"
     },
     {
       "names": {
@@ -402,7 +405,8 @@
             "required": true
           }
         ]
-      }
+      },
+      "icon": "pin"
     },
     {
       "names": {
@@ -433,7 +437,8 @@
             "required": true
           }
         ]
-      }
+      },
+      "icon": "image"
     }
   ],
   "regions": {

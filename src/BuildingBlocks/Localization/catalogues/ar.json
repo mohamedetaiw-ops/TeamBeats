@@ -994,6 +994,7 @@
   "validation.services.unit": "اختر وحدة تنظيمية موجودة.",
   "validation.services.url": "أدخل عنواناً كاملاً يبدأ بـ http أو https.",
   "validation.services.url_not_linked": "التطبيقات المرتبطة فقط لها عنوان.",
+  "validation.services.icon": "اختر أيقونة من مجموعة الأيقونات.",
   "validation.services.actions": "يمكن أن يحتوي المسار على 5 خطوات تلقائية كحد أقصى.",
   "validation.services.action_step": "تحتاج كل خطوة تلقائية إلى اتصال وإجراء وربط للحقول، بأسماء لا تتجاوز 200 حرف.",
   "validation.services.field_prefill_hr_only": "الحقول المعبأة من الموارد البشرية فقط يمكن جعلها للقراءة فقط أو اشتراط قيمة حديثة لها.",
