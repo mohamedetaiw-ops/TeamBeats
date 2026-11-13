@@ -1,0 +1,36 @@
+/* App consent (spec 035 FR-013). Tokens only; logical properties so the layout mirrors in Arabic. */
+.app-consent {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 36rem;
+  margin-inline: auto;
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+}
+
+.app-consent-scopes {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.app-consent-scopes li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.app-consent-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  justify-content: flex-end;
+}
+
+.app-consent-actions button {
+  min-block-size: 2.75rem;
+}

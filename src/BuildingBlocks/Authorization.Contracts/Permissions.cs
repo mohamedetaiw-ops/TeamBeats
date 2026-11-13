@@ -162,6 +162,11 @@ public static class Permissions
     public const string KioskSignIn = "kiosk.signin";
     public const string DeviceManage = "device.manage";
 
+    // Spec 035 (R2): API administrators register apps, issue credentials and give admin consent; API viewers see apps,
+    // consents, usage and call logs.
+    public const string ApiManage = "api.manage";
+    public const string ApiView = "api.view";
+
     /// <summary>
     /// Permissions that make a role an administrative one (spec 026 US5 scenario 2): they change who can do what, how
     /// people sign in, or tenant-wide configuration. Granting a role that holds any of them is a privilege grant.
@@ -169,7 +174,7 @@ public static class Permissions
     public static readonly IReadOnlySet<string> Privileged = new HashSet<string>(StringComparer.Ordinal)
     {
         TenantSettingsManage, TenantAdminsManage, OrgUnitManage, RolesManage, RolesAssign, InheritanceRulesManage, UsersManage,
-        IdentityConfigManage, AuditRetentionManage, IntegrationManage, AiPolicyManage, SecurityManage,
+        IdentityConfigManage, AuditRetentionManage, IntegrationManage, AiPolicyManage, SecurityManage, ApiManage,
     };
 
     /// <summary>
@@ -208,6 +213,7 @@ public static class Permissions
         SpacesCreate, SpacesManage, SpacesView, SpacesContribute, SpacesOwn,
         BookingBook, BookingManage, BookingReport,
         KioskSignIn, DeviceManage,
+        ApiManage, ApiView,
     ];
 }
 

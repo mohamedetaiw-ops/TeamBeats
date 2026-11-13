@@ -3,10 +3,10 @@
 Depends on 003, 004, 005, 006, 014, 015, 016, 017 (outbound webhook runtime), 026, 027. R2.
 
 ## Phase 1: Module and authorization server
-- [ ] T001 `PublicApi` and `PublicApi.Contracts` projects; module map entry; migration for the section 8 tables with forced RLS; platform tables listed in `rls-exceptions.md`
-- [ ] T002 Permissions `api.manage`, `api.view`; capability keys of section 9 in the spec 005 seed; audit actions of section 13
-- [ ] T003 [P] Tests: per-tenant issuer and keys; host to issuer check; resource-bound audience; PKCE required; no implicit or password grant; refresh rotation and reuse detection; cross-tenant token and app ID refusal
-- [ ] T004 OpenIddict server on Npgsql stores; sign-in through the spec 003 flow; consent page; token, revocation and metadata endpoints; per-tenant signing keys from the secret manager
+- [x] T001 `PublicApi` and `PublicApi.Contracts` projects; module map entry; migration for the section 8 tables with forced RLS; platform tables listed in `rls-exceptions.md`
+- [x] T002 Permissions `api.manage`, `api.view`; capability keys of section 9 in the spec 005 seed; audit actions of section 13
+- [x] T003 [P] Tests: per-tenant issuer and keys; host to issuer check; resource-bound audience; PKCE required; no implicit or password grant; refresh rotation and reuse detection; cross-tenant token and app ID refusal
+- [x] T004 OpenIddict server on Npgsql stores; sign-in through the spec 003 flow; consent page; token, revocation and metadata endpoints; per-tenant signing keys from the secret manager
 
 ## Phase 2: User Stories 1 and 2, apps, principals and consent (P1)
 - [ ] T005 [P] [US1] [US2] Tests: scope narrowing property test; app-assignable role rule; org boundary for an application principal; user versus admin consent; guest refusal; revocation within 60 seconds; membership disable at once

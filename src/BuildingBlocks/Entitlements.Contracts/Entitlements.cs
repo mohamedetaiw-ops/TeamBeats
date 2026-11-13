@@ -87,6 +87,16 @@ public static class Capabilities
     public const string MobileOffline = "mobile.offline";
     public const string MobileKiosk = "mobile.kiosk";
     public const string MobileNativeShell = "mobile.native_shell";
+
+    // Spec 035 section 9: the API and MCP read access everywhere; write scopes, event subscriptions and MCP write tools
+    // Workplace Plus and above; limits on apps and monthly calls.
+    public const string ApiPublic = "api.public";
+    public const string ApiWriteScopes = "api.write_scopes";
+    public const string ApiEventSubscriptions = "api.event_subscriptions";
+    public const string ApiMcp = "api.mcp";
+    public const string ApiMcpWriteTools = "api.mcp_write_tools";
+    public const string ApiMaxApps = "api.max_apps";
+    public const string ApiMonthlyCalls = "api.monthly_calls";
     public const string AnalyticsCore = "analytics.core";
     public const string AnalyticsAdvanced = "analytics.advanced";
     public const string AnalyticsExport = "analytics.export";

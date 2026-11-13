@@ -238,6 +238,17 @@ public static class AuditActions
     public const string DeviceKioskLockout = "device.kiosk_lockout";
     public const string DeviceBadgeIssued = "device.badge_issued";
     public const string DeviceBadgePinReset = "device.badge_pin_reset";
+    // Spec 035 (R2): apps, credentials, consents and tokens of the public API and MCP server.
+    public const string ApiAppRegistered = "api.app_registered";
+    public const string ApiAppChanged = "api.app_changed";
+    public const string ApiAppDisabled = "api.app_disabled";
+    public const string ApiCredentialAdded = "api.credential_added";
+    public const string ApiCredentialRevoked = "api.credential_revoked";
+    public const string ApiConsentGranted = "api.consent_granted";
+    public const string ApiConsentRevoked = "api.consent_revoked";
+    public const string ApiTokenFamilyRevoked = "api.token_family_revoked";
+    public const string ApiTokenRefused = "api.token_refused";
+    public const string ApiSettingsChanged = "api.tenant_switch_changed";
     public const string SecurityRequestBlockedNetwork = "security.request_blocked_network";
     public const string SecurityMfaMissing = "security.mfa_missing";
     public const string SecurityStepUpCompleted = "security.step_up_completed";
@@ -480,6 +491,8 @@ public static class AuditActions
         CalendarEventCreated, CalendarEventChanged, CalendarEventCancelled, CalendarEventDeleted, CalendarSettingsChanged, CalendarTeamViewed,
         PeopleVisibilityChanged, PeopleFieldSourceChanged, PeopleManagerSetManually, PeopleProfileUpdated, PeopleReportingCycleDetected, PeopleSettingsChanged,
         SecurityPolicyChanged, MobileOfflinePolicyChanged, DeviceKioskEnrolled, DeviceKioskChanged, DeviceKioskRevoked, DeviceKioskSignIn, DeviceKioskLockout,
+        ApiAppRegistered, ApiAppChanged, ApiAppDisabled, ApiCredentialAdded, ApiCredentialRevoked, ApiConsentGranted, ApiConsentRevoked,
+        ApiTokenFamilyRevoked, ApiTokenRefused, ApiSettingsChanged,
         DeviceBadgeIssued, DeviceBadgePinReset, SecurityRequestBlockedNetwork, SecurityMfaMissing, SecurityStepUpCompleted, SecurityStepUpFailed, SecurityAlertRaised, SecurityAlertHandled,
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
         ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,
