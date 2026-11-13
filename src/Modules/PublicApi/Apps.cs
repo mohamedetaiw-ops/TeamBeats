@@ -12,7 +12,7 @@ namespace TeamBeats.Modules.PublicApi;
 /// <summary>An app registration as the authorization server reads it.</summary>
 public sealed record AppRecord(Guid Id, string ClientId, string Kind, string Name, string? Description, string? Publisher, string[] Scopes,
     string[] RedirectUris, bool AllowGuests, string Status, DateTimeOffset? TokensRevokedAt, DateTimeOffset CreatedAt, DateTimeOffset? LastUsedAt, int Version,
-    string[] IpRanges, int? CallsPerMinute, bool Verified = false)
+    string[] IpRanges, int? CallsPerMinute, bool Verified = false, bool SelfRegistered = false)
 {
     public bool Active => Status == "active";
 
@@ -23,7 +23,7 @@ public sealed record AppRecord(Guid Id, string ClientId, string Kind, string Nam
     public int Limit => CallsPerMinute ?? ApiRules.DefaultCallsPerMinute(Kind);
 
     public AppView View => new(Id, ClientId, Kind, Name, Description, Publisher, Scopes, RedirectUris, AllowGuests, Status, CreatedAt, LastUsedAt, Version,
-        IpRanges, Limit, CallsPerMinute is not null, Verified);
+        IpRanges, Limit, CallsPerMinute is not null, Verified, SelfRegistered);
 }
 
 /// <summary>
@@ -49,7 +49,7 @@ public sealed class Apps(
         case when a.verified then coalesce(v.publisher, a.publisher) else a.publisher end, case when a.verified then coalesce(v.scopes, '{}') else a.scopes end,
         case when a.verified then coalesce(v.redirect_uris, '{}') else a.redirect_uris end, a.allow_guests,
         case when a.verified and v.status is distinct from 'active' then 'disabled' else a.status end, a.tokens_revoked_at, a.created_at, a.last_used_at,
-        a.version, a.ip_ranges, a.calls_per_minute, a.verified
+        a.version, a.ip_ranges, a.calls_per_minute, a.verified, a.self_registered
         """;
 
     private const string From = "publicapi.app a left join publicapi.verified_mcp_client v on a.verified and v.client_id = a.client_id";
@@ -57,7 +57,7 @@ public sealed class Apps(
     internal static AppRecord Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3),
         r.IsDBNull(4) ? null : r.GetString(4), r.IsDBNull(5) ? null : r.GetString(5), r.GetFieldValue<string[]>(6), r.GetFieldValue<string[]>(7),
         r.GetBoolean(8), r.GetString(9), r.IsDBNull(10) ? null : r.GetFieldValue<DateTimeOffset>(10), r.GetFieldValue<DateTimeOffset>(11),
-        r.IsDBNull(12) ? null : r.GetFieldValue<DateTimeOffset>(12), r.GetInt32(13), r.GetFieldValue<string[]>(14), r.IsDBNull(15) ? null : r.GetInt32(15), r.GetBoolean(16));
+        r.IsDBNull(12) ? null : r.GetFieldValue<DateTimeOffset>(12), r.GetInt32(13), r.GetFieldValue<string[]>(14), r.IsDBNull(15) ? null : r.GetInt32(15), r.GetBoolean(16), r.GetBoolean(17));
 
     private static CredentialView ReadCredential(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetString(1), r.IsDBNull(2) ? null : r.GetString(2),
         r.GetFieldValue<DateTimeOffset>(3), r.GetFieldValue<DateTimeOffset>(4), r.IsDBNull(5) ? null : r.GetFieldValue<DateTimeOffset>(5),
@@ -194,7 +194,8 @@ public sealed class Apps(
     {
         await DemandAsync(Permissions.ApiManage, ct);
         var app = await FindAsync(id, ct) ?? throw AppException.NotFound();
-        if (!app.Active)
+        // A client waiting for approval is refused by disabling it.
+        if (app.Status == "disabled")
         {
             return app.View;
         }
@@ -215,7 +216,8 @@ public sealed class Apps(
             return app.View;
         }
         await session.ExecAsync("update publicapi.app set status = 'active', version = version + 1, updated_at = now() where id = @id", new { id }, ct);
-        await audit.WriteAsync(new AuditEntry(AuditActions.ApiAppChanged, "api_app", id.ToString(), Changes: new { status = "active" }), ct);
+        // Enabling a client that registered itself is the API administrator's approval of it (FR-023).
+        await audit.WriteAsync(new AuditEntry(AuditActions.ApiAppChanged, "api_app", id.ToString(), Changes: new { status = "active", before = app.Status }), ct);
         return (await FindAsync(id, ct))!.View;
     }
 

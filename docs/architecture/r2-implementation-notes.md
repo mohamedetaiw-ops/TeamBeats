@@ -1300,3 +1300,16 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Removing a client from the list is blocking it (`status = blocked`); entries are kept so the platform audit and tenant registrations still name them.
 - A verified registration counts against the package's app limit. When the limit is reached the employee's sign-in is refused with `access_denied`.
 - Verified client IDs are at most 200 characters, the length the external AI client policy accepts; token requests are counted per client ID up to that length.
+
+## Public API and MCP server (spec 035, slice 4e: FR-023 dynamic client registration)
+
+### Built
+- `POST /oauth/register` (RFC 7591) on the tenant host, only where an API administrator turned on "AI clients may register themselves" in the API settings (off by default, audited with the other settings). Elsewhere the endpoint answers 404 and the authorization server metadata has no `registration_endpoint`.
+- A client that registers itself becomes a pending public MCP client app with no creator (`self_registered`). While pending it is unknown to the authorization server and the consent screen. Enabling it on the app page is the approval; disabling it is the refusal. After approval, the external AI client policy must still allow it, as for any MCP client.
+- Errors use the RFC 7591 codes: `invalid_redirect_uri` and `invalid_client_metadata`, plus `temporarily_unavailable` with Retry-After when over the limit.
+
+### Smallest safe defaults
+- Public clients only: `token_endpoint_auth_method` must be `none` (PKCE, no secret), with the authorization code and refresh token grants and the `code` response type. TeamBeats issues no client secret or registration access token, so a registration cannot be read or changed through the protocol afterwards; the API administrator manages it on the app page.
+- Without a `scope`, a client gets the read scopes employees may allow alone that the MCP server serves and the package includes. Write scopes can be asked for, and as for any app they need an API administrator's consent.
+- At most 5 registrations a minute per tenant and 20 pending at a time. Pending registrations count against the package's app limit.
+- API administrators are not notified of each registration; pending clients show in the apps list with a "Waiting for approval" status.

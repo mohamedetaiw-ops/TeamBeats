@@ -85,6 +85,7 @@ public static class OAuthServer
             o.AddEventHandler<ProcessAuthenticationContext>(b => b.UseInlineHandler(OwnClientAssertions)
                 .SetOrder(OpenIddictServerHandlers.EvaluateValidatedTokens.Descriptor.Order + 1));
             o.AddEventHandler<HandleJsonWebKeySetRequestContext>(b => b.UseInlineHandler(TenantJwks).SetOrder(int.MaxValue));
+            o.AddEventHandler<HandleConfigurationRequestContext>(b => b.UseInlineHandler(RegistrationEndpoint).SetOrder(int.MaxValue));
             o.AddEventHandler<ProcessSignInContext>(b => b.UseInlineHandler(RefreshTokensForDelegatedApps)
                 .SetOrder(OpenIddictServerHandlers.EvaluateGeneratedTokens.Descriptor.Order + 1));
         });
@@ -108,6 +109,16 @@ public static class OAuthServer
         }
         context.BaseUri = new Uri(context.BaseUri, "oauth");
         return default;
+    }
+
+    /// <summary>The metadata names the registration endpoint only where the tenant turned dynamic registration on (FR-023).</summary>
+    private static async ValueTask RegistrationEndpoint(HandleConfigurationRequestContext context)
+    {
+        var http = Http(context);
+        if ((await http.RequestServices.GetRequiredService<ApiSettings>().CurrentAsync(http.RequestAborted)).DynamicRegistration)
+        {
+            context.Metadata["registration_endpoint"] = Origin(http.Request) + "/oauth/register";
+        }
     }
 
     /// <summary>An OAuth request reads apps and families under the tenant of the host, signed in or not.</summary>

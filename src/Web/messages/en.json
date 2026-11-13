@@ -10562,7 +10562,8 @@
       },
       "statuses": {
         "active": "Active",
-        "disabled": "Disabled"
+        "disabled": "Disabled",
+        "pending": "Waiting for approval"
       },
       "registerTitle": "Register an app",
       "register": "Register app",
@@ -10679,7 +10680,14 @@
       "callsPerMinuteDelegated": "Calls per minute for each person",
       "callsPerMinuteHint": "Leave empty for the platform default of {max}. You can only set a lower limit.",
       "tenantCallsPerMinute": "Calls per minute for all apps",
-      "tenantCallsPerMinuteHint": "Leave empty for the limit of this installation. You can only set a lower limit."
+      "tenantCallsPerMinuteHint": "Leave empty for the limit of this installation. You can only set a lower limit.",
+      "approve": "Approve",
+      "refuse": "Refuse",
+      "refuseQuestion": "Refuse {name}? It stays unknown to TeamBeats and cannot sign anyone in.",
+      "pendingTitle": "This AI client registered itself",
+      "pendingBody": "Check its name and redirect addresses before you approve it. Once approved, the AI policy must still allow it before employees can connect it.",
+      "dynamicRegistration": "AI clients may register themselves",
+      "dynamicRegistrationHint": "Each new client waits for your approval here, and the AI policy must still allow it. Off by default."
     },
     "connected": {
       "title": "Connected apps",

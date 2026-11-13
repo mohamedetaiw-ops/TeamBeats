@@ -128,7 +128,7 @@ function AppsPanel({ apps, scopes, action, onCreated }: { apps: ApiApp[]; scopes
             {
               key: "status",
               header: t("status"),
-              cell: (a) => <Badge tone={a.status === "active" ? "success" : "neutral"}>{t(`statuses.${a.status}`)}</Badge>,
+              cell: (a) => <Badge tone={a.status === "active" ? "success" : a.status === "pending" ? "warning" : "neutral"}>{t(`statuses.${a.status}`)}</Badge>,
             },
             { key: "lastUsed", header: t("lastUsed"), cell: (a) => when(a.lastUsedAt) },
           ]}
@@ -295,6 +295,7 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
   const [days, setDays] = useState<number | null>(settings.refreshTokenDays);
   const [userScopes, setUserScopes] = useState(settings.userConsentScopes);
   const [tenantLimit, setTenantLimit] = useState<number | null>(settings.tenantCallsPerMinute);
+  const [dynamic, setDynamic] = useState(settings.dynamicRegistration ?? false);
   const delegated = scopes.filter((s) => s.holder !== "application");
 
   async function save() {
@@ -302,7 +303,7 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
       "settings",
       "PUT",
       "/api/v1/api-access/settings",
-      { apiEnabled: enabled, accessTokenMinutes: minutes, refreshTokenDays: days, userConsentScopes: userScopes, tenantCallsPerMinute: tenantLimit ?? 0, version: settings.version },
+      { apiEnabled: enabled, accessTokenMinutes: minutes, refreshTokenDays: days, userConsentScopes: userScopes, tenantCallsPerMinute: tenantLimit ?? 0, dynamicRegistration: dynamic, version: settings.version },
       t("settingsSaved"),
     );
     if (outcome.ok) onSaved(outcome.data);
@@ -319,6 +320,13 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
         }}
       >
         <Switch name="apiEnabled" label={t("apiEnabled")} hint={t("apiEnabledHint")} checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+        <Switch
+          name="dynamicRegistration"
+          label={t("dynamicRegistration")}
+          hint={t("dynamicRegistrationHint")}
+          checked={dynamic}
+          onChange={(e) => setDynamic(e.target.checked)}
+        />
         <div className="admin-fields">
           <NumberField label={t("accessTokenMinutes")} hint={t("accessTokenMinutesHint")} name="accessTokenMinutes" min={5} max={60} value={minutes} onValueChange={setMinutes} />
           <NumberField label={t("refreshTokenDays")} hint={t("refreshTokenDaysHint")} name="refreshTokenDays" min={1} max={30} value={days} onValueChange={setDays} />

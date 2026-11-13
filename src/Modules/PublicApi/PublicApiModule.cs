@@ -28,6 +28,7 @@ public static class PublicApiModule
         services.AddScoped<PublicIdempotency>();
         services.AddScoped<TokenFamilies>();
         services.AddScoped<VerifiedMcpClients>();
+        services.AddScoped<ClientRegistrations>();
         services.AddScoped<Apps>();
         services.AddScoped<ApiSettings>();
         services.AddScoped<Consents>();

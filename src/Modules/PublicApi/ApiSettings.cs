@@ -18,9 +18,9 @@ public sealed class ApiSettings(IDbSession session, TenantContextAccessor contex
     /// <summary>The settings as the authorization server reads them; no permission needed.</summary>
     public async Task<ApiSettingsView> CurrentAsync(CancellationToken ct) =>
         await session.QuerySingleOrDefaultAsync(
-            "select access_token_minutes, refresh_token_days, user_consent_scopes, api_enabled, version, tenant_calls_per_minute from publicapi.setting", null,
+            "select access_token_minutes, refresh_token_days, user_consent_scopes, api_enabled, version, tenant_calls_per_minute, dynamic_registration from publicapi.setting", null,
             r => new ApiSettingsView(r.GetInt32(0), r.GetInt32(1), r.IsDBNull(2) ? ApiRules.DefaultUserConsentScopes : r.GetFieldValue<string[]>(2),
-                r.GetBoolean(3), r.GetInt32(4), r.IsDBNull(5) ? null : r.GetInt32(5)), ct)
+                r.GetBoolean(3), r.GetInt32(4), r.IsDBNull(5) ? null : r.GetInt32(5), r.GetBoolean(6)), ct)
         ?? new ApiSettingsView(ApiRules.DefaultAccessTokenMinutes, ApiRules.DefaultRefreshTokenDays, ApiRules.DefaultUserConsentScopes, true, 0);
 
     public async Task<ApiSettingsView> GetAsync(CancellationToken ct)
@@ -61,27 +61,28 @@ public sealed class ApiSettings(IDbSession session, TenantContextAccessor contex
         errors.ThrowIfAny();
         var next = new ApiSettingsView(request.AccessTokenMinutes ?? current.AccessTokenMinutes, request.RefreshTokenDays ?? current.RefreshTokenDays,
             request.UserConsentScopes?.Distinct().ToList() ?? current.UserConsentScopes, request.ApiEnabled ?? current.ApiEnabled, current.Version + 1,
-            request.TenantCallsPerMinute switch { null => current.TenantCallsPerMinute, 0 => null, var v => v });
+            request.TenantCallsPerMinute switch { null => current.TenantCallsPerMinute, 0 => null, var v => v },
+            request.DynamicRegistration ?? current.DynamicRegistration);
         await session.ExecAsync(
             """
             insert into publicapi.setting (tenant_id, access_token_minutes, refresh_token_days, user_consent_scopes, api_enabled, version, tenant_calls_per_minute,
-              updated_by, updated_at)
-            values (platform.current_tenant_id(), @access, @refresh, @scopes, @enabled, @version, @tenantLimit, @by, now())
+              dynamic_registration, updated_by, updated_at)
+            values (platform.current_tenant_id(), @access, @refresh, @scopes, @enabled, @version, @tenantLimit, @dynamic, @by, now())
             on conflict (tenant_id) do update set access_token_minutes = excluded.access_token_minutes, refresh_token_days = excluded.refresh_token_days,
               user_consent_scopes = excluded.user_consent_scopes, api_enabled = excluded.api_enabled, version = excluded.version,
-              tenant_calls_per_minute = excluded.tenant_calls_per_minute,
+              tenant_calls_per_minute = excluded.tenant_calls_per_minute, dynamic_registration = excluded.dynamic_registration,
               updated_by = excluded.updated_by, updated_at = excluded.updated_at
             """,
             new
             {
                 access = next.AccessTokenMinutes, refresh = next.RefreshTokenDays, scopes = next.UserConsentScopes.ToArray(), enabled = next.ApiEnabled,
-                version = next.Version, tenantLimit = next.TenantCallsPerMinute, by = context.RequireUser(),
+                version = next.Version, tenantLimit = next.TenantCallsPerMinute, dynamic = next.DynamicRegistration, by = context.RequireUser(),
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ApiSettingsChanged, "api_settings", null,
             Changes: new
             {
-                before = new { current.AccessTokenMinutes, current.RefreshTokenDays, current.UserConsentScopes, current.ApiEnabled, current.TenantCallsPerMinute },
-                after = new { next.AccessTokenMinutes, next.RefreshTokenDays, next.UserConsentScopes, next.ApiEnabled, next.TenantCallsPerMinute },
+                before = new { current.AccessTokenMinutes, current.RefreshTokenDays, current.UserConsentScopes, current.ApiEnabled, current.TenantCallsPerMinute, current.DynamicRegistration },
+                after = new { next.AccessTokenMinutes, next.RefreshTokenDays, next.UserConsentScopes, next.ApiEnabled, next.TenantCallsPerMinute, next.DynamicRegistration },
             }), ct);
         return next;
     }
