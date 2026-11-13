@@ -20,27 +20,6 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.PublicApi;
 
-/// <summary>The app and principal behind a public API call, with the scopes its token holds.</summary>
-public sealed record PublicCaller(Guid AppId, string Kind, Guid? UserId, IReadOnlySet<string> Scopes, Guid FamilyId)
-{
-    public bool IsDelegated => Kind == OAuthServer.Delegated;
-
-    /// <summary>
-    /// The effective decision of a public operation (FR-009): the token must hold the operation's scope and the central
-    /// authorization service must allow it for the principal. A scope never allows what the decision does not.
-    /// </summary>
-    public bool May(string scope, Decision decision) => Scopes.Contains(scope) && decision.Allowed;
-
-    /// <summary>Scopes only narrow (FR-009): the operation still asks the authorization service afterwards.</summary>
-    public void Demand(string scope)
-    {
-        if (!Scopes.Contains(scope))
-        {
-            throw new AppException(BearerTokens.InsufficientScope, 403, null, null, new Dictionary<string, object?> { ["scope"] = scope });
-        }
-    }
-}
-
 /// <summary>
 /// Access token checks for the public API (spec 035 FR-002, FR-006, FR-007). The tenant comes from the host; the token
 /// must be signed with that tenant's key, issued by that tenant's issuer and bound to this resource. Then the app, the
@@ -80,6 +59,13 @@ public static class BearerTokens
                 return;
             }
             context.SetTenant(tenant.Id);
+            // The request ID is echoed in every answer, errors too, and is the correlation ID of the call log (FR-015).
+            var requestId = Correlation.Id;
+            http.Response.OnStarting(() =>
+            {
+                http.Response.Headers[Correlation.RequestIdHeader] = requestId;
+                return Task.CompletedTask;
+            });
             if (http.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } size)
             {
                 size.MaxRequestBodySize = MaxBodyBytes;
@@ -90,8 +76,28 @@ public static class BearerTokens
                 await WriteRefusalAsync(http, refusal);
                 return;
             }
+            await ResolveLocaleAsync(http);
             await RunCallAsync(http, next, tenant.Id);
         });
+
+    /// <summary>
+    /// Display text follows <c>Accept-Language</c> within the tenant's locales, else the tenant's default (FR-016).
+    /// Identifiers, codes and enum values are never localized.
+    /// </summary>
+    private static async Task ResolveLocaleAsync(HttpContext http)
+    {
+        var settings = await http.RequestServices.GetRequiredService<ITenantSettingsReader>().GetLocaleSettingsAsync(http.RequestAborted);
+        var asked = http.Request.Headers.AcceptLanguage.ToString().Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => x.Split(';')[0].Split('-')[0].ToLowerInvariant())
+            .FirstOrDefault(l => settings.EnabledLocales.Contains(l, StringComparer.Ordinal));
+        var locale = asked ?? settings.DefaultLocale;
+        http.RequestServices.GetRequiredService<RequestLocale>().Locale = locale;
+        http.Response.OnStarting(() =>
+        {
+            http.Response.Headers.ContentLanguage = locale;
+            return Task.CompletedTask;
+        });
+    }
 
     private static async Task RunCallAsync(HttpContext http, RequestDelegate next, Guid tenant)
     {
@@ -107,13 +113,12 @@ public static class BearerTokens
         {
             var latency = (int)Math.Min(int.MaxValue, System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
             // A scope of its own: the call's own transaction may have failed, and the log must still be written.
-            await using var scope = services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
-            var own = scope.ServiceProvider.GetRequiredService<TenantContextAccessor>();
-            own.SetTenant(tenant);
-            own.SetActor(ActorType.System, null);
-            await scope.ServiceProvider.GetRequiredService<CallLog>().RecordAsync(
-                new CallRecord(caller.AppId, caller.UserId, operation, status, errorClass, latency, Correlation.Id), monthlyLimit, CancellationToken.None);
-            await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(CancellationToken.None);
+            await InOwnScopeAsync(services, tenant, async sp =>
+            {
+                await sp.GetRequiredService<CallLog>().RecordAsync(
+                    new CallRecord(caller.AppId, caller.UserId, operation, status, errorClass, latency, Correlation.Id), monthlyLimit, CancellationToken.None);
+                return 0;
+            });
         }
 
         // The app's own address ranges (FR-027), on top of the tenant's network rules.
@@ -170,23 +175,113 @@ public static class BearerTokens
             return;
         }
 
+        // Idempotency-Key on create and action operations (FR-015): the first answer is replayed for 24 hours.
+        var idempotencyKey = http.GetEndpoint()?.Metadata.GetMetadata<PublicIdempotentMetadata>() is not null
+            ? http.Request.Headers[PublicIdempotency.Header].ToString() : "";
+        if (idempotencyKey.Length > 0)
+        {
+            await RunIdempotentAsync(http, next, tenant, caller.AppId, idempotencyKey, LogAsync);
+            return;
+        }
+        await RunAndLogAsync(http, next, LogAsync, ct);
+    }
+
+    private static async Task RunAndLogAsync(HttpContext http, RequestDelegate next, Func<int, string?, Task> log, CancellationToken ct)
+    {
         try
         {
             await next(http);
         }
         catch (Exception ex)
         {
-            var status = ex switch
-            {
-                AppException a => a.Status,
-                BadHttpRequestException b => b.StatusCode,
-                OperationCanceledException when ct.IsCancellationRequested => 499,
-                _ => StatusCodes.Status500InternalServerError,
-            };
-            await LogAsync(status, status == 499 ? "client" : CallLog.ClassOf(status));
+            var status = StatusOf(ex, ct);
+            await log(status, status == 499 ? "client" : CallLog.ClassOf(status));
             throw;
         }
-        await LogAsync(http.Response.StatusCode, CallLog.ClassOf(http.Response.StatusCode));
+        await log(http.Response.StatusCode, CallLog.ClassOf(http.Response.StatusCode));
+    }
+
+    private static int StatusOf(Exception ex, CancellationToken ct) => ex switch
+    {
+        AppException a => a.Status,
+        BadHttpRequestException b => b.StatusCode,
+        OperationCanceledException when ct.IsCancellationRequested => 499,
+        _ => StatusCodes.Status500InternalServerError,
+    };
+
+    /// <summary>Runs work in a scope of its own for the tenant, as the system, and commits it at once.</summary>
+    private static async Task<T> InOwnScopeAsync<T>(IServiceProvider services, Guid tenant, Func<IServiceProvider, Task<T>> work)
+    {
+        await using var scope = services.GetRequiredService<IServiceScopeFactory>().CreateAsyncScope();
+        var own = scope.ServiceProvider.GetRequiredService<TenantContextAccessor>();
+        own.SetTenant(tenant);
+        own.SetActor(ActorType.System, null);
+        var result = await work(scope.ServiceProvider);
+        await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(CancellationToken.None);
+        return result;
+    }
+
+    private static async Task RunIdempotentAsync(HttpContext http, RequestDelegate next, Guid tenant, Guid appId, string key, Func<int, string?, Task> log)
+    {
+        var ct = http.RequestAborted;
+        var services = http.RequestServices;
+        if (!PublicIdempotency.ValidKey(key))
+        {
+            await log(StatusCodes.Status400BadRequest, "client");
+            await WriteProblemAsync(http, StatusCodes.Status400BadRequest, ProblemCodes.ApiIdempotencyKeyInvalid, null);
+            return;
+        }
+        // The request is read once to hash it, then given to the endpoint from the start again.
+        http.Request.EnableBuffering(MaxBodyBytes);
+        using var buffer = new MemoryStream();
+        await http.Request.Body.CopyToAsync(buffer, ct);
+        http.Request.Body.Position = 0;
+        var hash = PublicIdempotency.Hash(http.Request.Method, http.Request.Path.Value ?? "", buffer.GetBuffer().AsSpan(0, (int)buffer.Length));
+        var start = await InOwnScopeAsync(services, tenant, sp => sp.GetRequiredService<PublicIdempotency>().BeginAsync(appId, key, hash, CancellationToken.None));
+        switch (start)
+        {
+            case IdempotencyStart.Replay replay:
+                await log(replay.Status, CallLog.ClassOf(replay.Status));
+                http.Response.StatusCode = replay.Status;
+                http.Response.Headers["Idempotency-Replayed"] = "true";
+                http.Response.ContentType = replay.ContentType;
+                await http.Response.WriteAsync(replay.Body, ct);
+                return;
+            case IdempotencyStart.Refused refused:
+                var reused = refused.Reason == "reused";
+                var status = reused ? StatusCodes.Status422UnprocessableEntity : StatusCodes.Status409Conflict;
+                await log(status, "client");
+                await WriteProblemAsync(http, status, reused ? ProblemCodes.ApiIdempotencyKeyReused : ProblemCodes.ApiIdempotencyInProgress, null);
+                return;
+        }
+
+        // The first call: its answer is kept as it is written, then passed on.
+        var original = http.Response.Body;
+        using var captured = new MemoryStream();
+        http.Response.Body = captured;
+        try
+        {
+            await next(http);
+        }
+        catch (Exception ex)
+        {
+            http.Response.Body = original;
+            await InOwnScopeAsync(services, tenant, async sp => { await sp.GetRequiredService<PublicIdempotency>().AbandonAsync(appId, key, CancellationToken.None); return 0; });
+            var failed = StatusOf(ex, ct);
+            await log(failed, failed == 499 ? "client" : CallLog.ClassOf(failed));
+            throw;
+        }
+        http.Response.Body = original;
+        var body = captured.Length <= PublicIdempotency.MaxBody ? System.Text.Encoding.UTF8.GetString(captured.GetBuffer(), 0, (int)captured.Length) : null;
+        var answered = http.Response.StatusCode;
+        await InOwnScopeAsync(services, tenant, async sp =>
+        {
+            await sp.GetRequiredService<PublicIdempotency>().CompleteAsync(appId, key, answered, http.Response.ContentType, body, CancellationToken.None);
+            return 0;
+        });
+        await log(answered, CallLog.ClassOf(answered));
+        captured.Position = 0;
+        await captured.CopyToAsync(original, ct);
     }
 
     public const string RateLimited = ProblemCodes.ApiRateLimited;

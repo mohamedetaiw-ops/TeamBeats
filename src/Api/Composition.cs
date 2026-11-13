@@ -162,6 +162,16 @@ public static class ApiComposition
         services.AddTeamBeatsCore(builder.Configuration);
         services.AddTeamBeatsTelemetry(builder.Configuration, "teambeats-api");
         services.AddOpenApi("v1");
+        // The public API has its own document (spec 035 FR-014): only operations mapped through MapPublicApi are in it.
+        services.AddOpenApi(TeamBeats.Modules.PublicApi.Contracts.PublicEndpoints.DocumentName, o =>
+        {
+            o.ShouldInclude = d => d.GroupName == TeamBeats.Modules.PublicApi.Contracts.PublicEndpoints.DocumentName;
+            o.AddDocumentTransformer((document, _, _) =>
+            {
+                document.Info = new() { Title = "TeamBeats public API", Version = "v1" };
+                return Task.CompletedTask;
+            });
+        });
         services.Configure<JsonOptions>(o => o.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase);
         services.AddHealthChecks();
         services.Configure<ForwardedHeadersOptions>(o =>

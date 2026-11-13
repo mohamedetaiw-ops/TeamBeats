@@ -33,5 +33,10 @@ public static class ProblemCodes
     /// <summary>A public API call over a per-minute limit (spec 035 FR-017), answered 429 with Retry-After.</summary>
     public const string ApiRateLimited = "api.rate_limited";
 
+    // Spec 035 FR-015: Idempotency-Key on public create and action operations.
+    public const string ApiIdempotencyKeyInvalid = "api.idempotency_key_invalid";
+    public const string ApiIdempotencyKeyReused = "api.idempotency_key_reused";
+    public const string ApiIdempotencyInProgress = "api.idempotency_in_progress";
+
     public static string TypeUri(string code) => $"urn:teambeats:problem:{code}";
 }

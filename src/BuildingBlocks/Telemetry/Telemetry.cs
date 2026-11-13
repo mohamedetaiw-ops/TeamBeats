@@ -48,7 +48,12 @@ public static class TelemetryExtensions
     public static IApplicationBuilder UseCorrelationId(this IApplicationBuilder app) =>
         app.Use(async (context, next) =>
         {
+            // A caller of the public API may name its request with X-Request-Id instead (spec 035 FR-015).
             var inbound = context.Request.Headers[Correlation.HeaderName].ToString();
+            if (inbound.Length == 0)
+            {
+                inbound = context.Request.Headers[Correlation.RequestIdHeader].ToString();
+            }
             var id = IsValid(inbound) ? inbound : Correlation.NewId();
             Correlation.Id = id;
             Activity.Current?.SetTag("correlation_id", id);
