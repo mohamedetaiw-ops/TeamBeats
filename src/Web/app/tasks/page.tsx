@@ -58,7 +58,6 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       <Header me={me.data} breadcrumbs={[{ label: t("inbox.pageTitle"), href: "/tasks" }]} />
       <main id="main" className="page">
         <PageHeader title={t("inbox.pageTitle")} icon="tasks" nav={tabs ?? undefined} />
-        {tabs}
         <div className="ui-split">
           <TaskInbox items={inbox.data} />
           <aside aria-label={t("delegation.title")}>
