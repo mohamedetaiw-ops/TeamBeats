@@ -164,6 +164,7 @@ Ahmed asks the assistant "Can I accept a gift from a supplier?". The assistant a
 - **FR-016 / POL-016**: Evidence packs MUST be generated in the background in PDF and CSV, audited, and shareable to guest auditors with expiry.
 - **FR-017 / POL-017**: New joiners MUST get attestation tasks for policies flagged "onboarding required" through the onboarding journey of spec 022.
 - **FR-018 / POL-018**: Policy pages MUST be indexed for search with clause anchors, and superseded versions MUST be excluded from default search results.
+- **FR-019**: The policy register MUST follow DLS-079: below 640px each policy is a stacked card with its name, status, owner and next review date, and no text breaks inside a word. Acceptance: at 390px the register shows every policy as a readable card with no horizontal page scroll.
 
 ## 6. Business and validation rules
 - One current version per policy at a time. An approved version with a future effective date is "approved, not yet effective".
