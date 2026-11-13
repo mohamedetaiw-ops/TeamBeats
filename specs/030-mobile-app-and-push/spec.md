@@ -104,7 +104,7 @@ Omar drives between sites with weak coverage.
 ## 5. Functional requirements
 
 - **MOB-001 / FR-001**: TeamBeats MUST be an installable PWA with a manifest per tenant and brand from 033. *(EXP-009)*
-- **MOB-002 / FR-002**: Updates MUST be versioned and applied on user action, never during unsaved input.
+- **MOB-002 / FR-002**: Updates MUST be versioned and applied on user action, never during unsaved input. The app offers a new version only when the release the server runs differs from the release of the open page (checked when the page becomes visible and every 10 minutes); a page that was just loaded, including the first page after sign-in, is already the current release and shows no offer, and a newer service worker found at load is activated silently because nothing is open yet. The offer docks in the page flow under the shell bar (spec 036 DLS-078), never over content, and Later hides it for that release for the rest of the browser session. Acceptance: signing in and opening any page right after a deploy shows no update offer; a page left open across a deploy shows the offer once within 10 minutes; after Later, navigating by address does not show it again for that release.
 - **MOB-003 / FR-003**: Every R1 and R2 page MUST work at 360 px width in ar and en with no horizontal page scroll.
 - **MOB-004 / FR-004**: Touch targets MUST be at least 44 by 44 points.
 - **MOB-005 / FR-005**: Bottom navigation MUST show at most 5 configured items with labels.

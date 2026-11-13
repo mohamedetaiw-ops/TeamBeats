@@ -155,6 +155,8 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 - **PPL-020 / FR-020**: *(R2)* Out of office status MUST come from approved leave (spec 022) and show only what the leave type's privacy rule allows.
 - **PPL-021 / FR-021**: *(R2)* HR-owned fields MUST come from spec 019 with a tenant source of truth setting per field shared by the directory and HR.
 - **PPL-022 / FR-022**: Profiles MUST keep their last synced values when the directory is unavailable, with the sync time shown to administrators.
+- **FR-023**: The unit filter MUST make every unit distinguishable: units are listed as a tree with indentation, or with the parent's name when two units share a name ("Operations, Demo Services"). Acceptance: no two entries of the unit filter read the same.
+- **FR-024**: While a search or filter is active, the People page MUST show only the results; the New joiners section shows only without a search. A person card with no title or unit shows "Title not set" in the secondary text style instead of an empty line. Acceptance: searching People hides New joiners; a person with no title shows the fallback.
 
 ## 6. Business and validation rules
 - Default visibility: name, photo, title, unit, email, work phone, office location and preferred language to everyone in the tenant; mobile phone and hire date to managers and HR; employee number to HR and administrators.

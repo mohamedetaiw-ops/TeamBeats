@@ -38,3 +38,20 @@ Words are the interface. TeamBeats content is conversational, professional and c
 2. UX writers draft real copy in both languages before high fidelity design. Designs never use lorem ipsum; the gallery and the staging seed use realistic text.
 3. Content is reviewed with the design (see [testing](../testing.md), content tests) and with a native Arabic reviewer.
 4. All interface strings live in `src/Web/messages/{en,ar}.json` and the API catalogues; the build fails on literal strings and on missing keys in either language.
+
+## Naming glossary
+
+One name per area (spec 008 FR-064). The navigation item, the page heading and any tab that opens the area use the same words in each language. Tenants may rename an area in the global menu, but the seeded menu and the page headings follow this list.
+
+| Area | English | Arabic | Route | Not called |
+|---|---|---|---|---|
+| Home | Home | الرئيسية | `/` | Dashboard |
+| Services | Services | الخدمات | `/services` | Catalogue, Requests |
+| Tasks | Tasks | المهام | `/tasks` | Inbox, Approvals (as an area name) |
+| People | People | الأشخاص | `/people` | Directory |
+| Documents | Documents | المستندات | `/documents` | Files, Libraries (a library is one item inside Documents) |
+| Knowledge | Knowledge | المعرفة | `/kb` | Knowledge base (as a tab of Documents) |
+| Policies | Policies | السياسات | `/policies` | Policy register (as an area name; the register is the list on the page) |
+| Assistant | Assistant | المساعد | `/assistant` | Chat, Copilot |
+
+A destination appears once in the navigation. Tasks is not a tab of Services, and Knowledge is not a tab of Documents.

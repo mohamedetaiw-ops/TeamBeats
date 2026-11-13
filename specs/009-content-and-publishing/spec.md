@@ -203,6 +203,7 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 - **FR-019 / PUB-019**: All published items MUST be indexed for search (spec 012) with their audience, permissions, locale, version and classification, and removed from the index within the KNO-006 objective (5 minutes by default, owned by spec 012) when unpublished or restricted.
 - **FR-020 / PUB-020**: Retention MUST be configurable per content type: keep versions for a period, then delete old versions or the whole item, with legal hold (spec 011) taking precedence. *(ADM-003)*
 - **FR-021**: Each feed item MUST carry its reading time (body words at 200 a minute, at least one minute) and its reaction count, computed by the content module with one query per page of results. The news feed component MUST offer a list layout and a featured layout (lead story large, the rest as rows).
+- **FR-022**: News that refers to a time (an event starting soon, a live session) MUST say it from the event's own start time, rendered against the viewer's clock, never as fixed text in a title; a title is a headline that stays true after the event. Seeded and demo news follow the same rule. Acceptance: no news title on staging contains a relative time such as "in 12 minutes".
 
 ## 6. Business and validation rules
 - An item has one primary site. It can be shared into other sites as a link, never as a copy, so there is one version and one owner.

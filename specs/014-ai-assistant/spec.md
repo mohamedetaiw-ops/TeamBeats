@@ -140,6 +140,7 @@ Ahmed asks "Can I carry over unused leave?". The assistant answers in Arabic fro
 - **AST-020 / FR-020**: Payslips (019) and anonymous engagement content (023) MUST never enter the assistant's context.
 - **AST-021 / FR-021**: Each answer MUST record the model, prompt version and retrieval configuration in the execution record for evaluation (034).
 - **AST-022 / FR-022**: Guests (026) MUST NOT use the assistant unless the tenant enables it for guests, and then only over spaces they were invited to.
+- **FR-023**: Deleting all conversations MUST be offered from a menu on the conversation list (or the assistant settings), styled as a destructive menu item, and confirmed in a dialog that states the number of conversations to delete (DLS-084). Acceptance: the assistant page shows no delete all button in the main view; the dialog says "Delete 12 conversations?" when there are 12.
 
 ## 6. Business and validation rules
 - Maximum question length 2,000 characters.

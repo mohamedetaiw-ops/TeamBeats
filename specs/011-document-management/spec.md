@@ -235,6 +235,7 @@ Acme already keeps its finance and project files in SharePoint Online. The integ
 - **FR-031 / DOC-031**: When the connection is degraded or unavailable, connected libraries MUST follow constitution XVII: degraded banner with last sync age, last synced listing, refused preview and download with a message, alert to the integration administrator, and no effect on TeamBeats libraries.
 - **FR-032 / DOC-032**: Tenants MUST be able to map Microsoft Purview sensitivity labels to the four TeamBeats classifications (FR-019). Unlabelled items take the connected library's default classification (Internal unless set); labels without a mapping MUST be treated as Confidential.
 - **FR-033 / DOC-033**: Library managers MUST be able to import a SharePoint library or folder into a TeamBeats library through bulk import (FR-022), with column to field mapping, latest or all versions, author matching, and a report of permission differences. The source MUST NOT be changed.
+- **FR-034**: A library card MUST name its scope for every scope the API returns (whole organization, organization unit, site, space), and any scope without a name shows a generic "Limited access" label, never a raw key (spec 007 FR-030). Acceptance: the Finance system rollout library on staging shows "Project space".
 
 ## 6. Business and validation rules
 - Minor versions are kept up to 50 per major version by default; older minor versions are pruned when a major version is approved, unless the library keeps all.

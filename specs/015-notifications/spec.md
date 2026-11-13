@@ -148,6 +148,7 @@ Acme works in Microsoft Teams all day.
 - **NOT-022 / FR-022**: Delivery reports MUST show counts by channel and status, and names only where the owning spec requires acknowledgement tracking.
 - **NOT-023 / FR-023**: Sends MUST be accepted only for recipients in the sender's tenant; the tenant comes from the sending context, never from parameters.
 - **NOT-024 / FR-024**: The in-app centre MUST work with keyboard and screen readers and announce new notifications politely.
+- **FR-025**: A notification that asks the person to act on something (an approval waiting, a task assigned) MUST be resolved when the thing is done or no longer theirs: when the task is completed by anyone, reassigned, or its request is withdrawn or ends, the owning module tells this module and the notification is marked read and leaves the unread count; pending emails for it are dropped. The bell's approvals and the task badge then agree, because both reflect open tasks. Acceptance: approving a task as one approver resolves the "approval waiting" notification of every other named approver; withdrawing a request resolves its waiting notifications; a test checks that a resolve call in one tenant never touches another tenant's notifications.
 
 ## 6. Business and validation rules
 - Platform mandatory categories: security notices, critical announcements, attestation due, approval escalations, site emergencies. Tenants may add more, not remove these.
