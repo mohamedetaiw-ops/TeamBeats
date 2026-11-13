@@ -126,6 +126,40 @@ public sealed class Consents(
         await outbox.EnqueueAsync(new AppConsentRevoked(app, user), ct);
     }
 
+    /// <summary>Every live consent in the tenant (FR-029), people's own and the admin consents, for API administrators and viewers.</summary>
+    public async Task<IReadOnlyList<ConsentAdminView>> ListAllAsync(Guid? appId, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ApiPublic, ct);
+        await authz.DemandAsync(Permissions.ApiView, AuthzTarget.Tenant, ct);
+        return await session.QueryAsync(
+            """
+            select c.id, a.id, a.name, c.user_id, c.scopes, c.granted_by, c.granted_at, c.last_used_at
+            from publicapi.consent c join publicapi.app a on a.id = c.app_id
+            where c.revoked_at is null and (@appId::uuid is null or c.app_id = @appId)
+            order by a.name, c.user_id nulls first, c.granted_at
+            limit 2000
+            """, new { appId }, r => new ConsentAdminView(r.GetGuid(0), r.GetGuid(1), r.GetString(2), r.IsDBNull(3) ? null : r.GetGuid(3),
+                r.GetFieldValue<string[]>(4), r.GetGuid(5), r.GetFieldValue<DateTimeOffset>(6), r.IsDBNull(7) ? null : r.GetFieldValue<DateTimeOffset>(7)), ct);
+    }
+
+    /// <summary>An API administrator ends a person's consent (US6): the app's tokens for them are refused at once.</summary>
+    public async Task RevokeAsAdminAsync(Guid consentId, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ApiPublic, ct);
+        await authz.DemandAsync(Permissions.ApiManage, AuthzTarget.Tenant, ct);
+        var by = context.RequireUser();
+        var row = await session.QuerySingleOrDefaultAsync(
+            "update publicapi.consent set revoked_at = now(), revoked_by = @by where id = @consentId and user_id is not null and revoked_at is null returning app_id, user_id",
+            new { consentId, by }, r => (App: r.GetGuid(0), User: r.GetGuid(1)), ct);
+        if (row == default)
+        {
+            throw AppException.NotFound();
+        }
+        await families.RevokeForAppAsync(row.App, row.User, "consent_revoked", ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.ApiConsentRevoked, "api_app", row.App.ToString(), Changes: new { consent = "user", user = row.User, by = "admin" }), ct);
+        await outbox.EnqueueAsync(new AppConsentRevoked(row.App, row.User), ct);
+    }
+
     /// <summary>An API administrator consents for the whole tenant (FR-013); the scopes replace the earlier admin consent.</summary>
     public async Task<AppDetail> GrantAdminAsync(Guid appId, AdminConsentRequest request, CancellationToken ct)
     {

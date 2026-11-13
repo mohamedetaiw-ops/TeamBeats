@@ -1135,3 +1135,15 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Only App reader is marked for apps among the built-in roles; every other built-in role either holds an excluded permission or acts on things an integration should get only by a deliberate custom role.
 - A client assertion must also send `client_id`. Sending a secret and an assertion together is a malformed request (`invalid_request`); any failed assertion check answers `invalid_client`.
 - Assertions live at most 10 minutes; the spec is silent, and RFC 7523 leaves it to the server.
+
+## Public API and MCP server (spec 035, slice 2b: T007)
+
+### Built
+- Administration section `api` (API and MCP access) at `/admin/api`, opened by `api.view`, whole tenant only. Tabs for apps (list and registration), consents and settings (the tenant switch, token lifetimes and the scopes people may allow on their own).
+- App page `/admin/api/apps/{id}`: registration (name, publisher, description, scopes, exact redirect addresses, guests), disable and enable, credentials (public key preferred, or a secret shown once with a copy prompt; step-up as the API asks), the scopes allowed for everyone (admin consent) for delegated apps, and the roles of an app that acts as itself (only roles marked for apps, at one unit, a unit and below, or the whole organization).
+- Consents for administrators (FR-029): `GET /api/v1/api-access/consents` (optionally `?appId=`) lists every live consent, people's own and the admin consent, for `api.view`; `POST /api/v1/api-access/consents/{id}:revoke` ends a person's consent for `api.manage`, with the same effect as the person removing it (their token families end at once, audited as `api.consent_revoked`).
+- Employees: `/settings/connected-apps` lists the apps the person allowed, with what each may do, when and last use, and removes one at once. The settings page links to it only where the package has the public API.
+
+### Smallest safe defaults
+- The admin consent is changed on the app page, not from the consents list, so the scopes stay next to the app they belong to.
+- Viewers (security officers) see the same pages; the API refuses their changes and the page shows its message, with no role checks in the frontend.

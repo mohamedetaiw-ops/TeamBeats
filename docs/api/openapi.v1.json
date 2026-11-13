@@ -21783,6 +21783,51 @@
         }
       }
     },
+    "/api/v1/api-access/consents": {
+      "get": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "parameters": [
+          {
+            "name": "appId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/api-access/consents/{id}:revoke": {
+      "post": {
+        "tags": [
+          "Tenant: API and MCP access"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/api-access/settings": {
       "get": {
         "tags": [

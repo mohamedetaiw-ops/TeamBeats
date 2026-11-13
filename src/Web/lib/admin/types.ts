@@ -72,7 +72,7 @@ export type UserDetail = {
   roleAssignments: { assignmentId: string; roleKey: string; scopeType: string | number; scopeId: string | null }[];
 };
 
-export type RoleView = { id: string; key: string; isBuiltIn: boolean; isDelegable: boolean; permissions: string[]; names?: Record<string, string> | null };
+export type RoleView = { id: string; key: string; isBuiltIn: boolean; isDelegable: boolean; permissions: string[]; names?: Record<string, string> | null; assignableToApps?: boolean };
 
 /** A custom role's name in the viewer's language, then English, then any name it has; null when it has none. */
 export function customRoleName(role: Pick<RoleView, "names">, locale: string): string | null {

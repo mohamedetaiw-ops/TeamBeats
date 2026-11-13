@@ -76,6 +76,13 @@ public static class PublicApiModule
             CancellationToken ct) => await CommitAsync(session, await apps.RevokeCredentialAsync(id, credentialId, ct), ct));
         admin.MapPut("/apps/{id:guid}/admin-consent", async (Guid id, AdminConsentRequest body, Consents consents, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await consents.GrantAdminAsync(id, body, ct), ct));
+        admin.MapGet("/consents", async (Guid? appId, Consents consents, CancellationToken ct) => Results.Ok(await consents.ListAllAsync(appId, ct)));
+        admin.MapPost("/consents/{id:guid}:revoke", async (Guid id, Consents consents, IDbSession session, CancellationToken ct) =>
+        {
+            await consents.RevokeAsAdminAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
         admin.MapGet("/settings", async (ApiSettings settings, CancellationToken ct) => Results.Ok(await settings.GetAsync(ct)));
         admin.MapPut("/settings", async (ApiSettingsRequest body, ApiSettings settings, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await settings.UpdateAsync(body, ct), ct));
