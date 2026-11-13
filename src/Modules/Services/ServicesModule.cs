@@ -16,6 +16,7 @@ public static class ServicesModule
 
     public static IServiceCollection AddServicesModule(this IServiceCollection services)
     {
+        services.AddScoped<TeamBeats.Modules.PublicApi.Contracts.IPublicResourceVisibility, RequestVisibility>();
         services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, ServiceSearchSource>();
         services.AddScoped<Catalogue>();
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ServicesComponents>();

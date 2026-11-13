@@ -2165,5 +2165,13 @@
   "notifications.template.api.token_reuse.admin.body": "TeamBeats ended one sign-in of this app because its token came back twice. Check the app and its credentials.",
   "validation.api.block_client_id": "Enter the client ID to block, up to 200 characters.",
   "validation.api.block_reason": "Say why the client is blocked, up to 500 characters.",
-  "validation.api.switch_reason": "Say why you turn the public API off, up to 500 characters."
+  "validation.api.switch_reason": "Say why you turn the public API off, up to 500 characters.",
+  "validation.api.events_application_only": "Only application apps can receive events.",
+  "validation.api.events_scope": "Give the app the events:subscribe scope first.",
+  "validation.api.event_unknown": "Choose an event from the public event catalogue.",
+  "validation.api.event_read_scope": "The app needs the read scope of this event's resource.",
+  "conflict.api.subscription_limit": "This app already has 20 event subscriptions. Remove one before you add another.",
+  "conflict.api.subscription_exists": "This app already receives this event at this URL.",
+  "notifications.template.api.subscription_paused.admin.title": "Event subscription paused: {app}",
+  "notifications.template.api.subscription_paused.admin.body": "Deliveries of {event} to {host} failed for 3 days, so TeamBeats paused them. Fix the receiver, then resume the subscription on the app page."
 }

@@ -127,8 +127,8 @@ public sealed partial class ConnectorTools(IDbSession session, ITenantContext co
 
     internal Task<ConnectionRow?> ConnectionAsync(Guid id, CancellationToken ct) =>
         session.QuerySingleOrDefaultAsync(
-            "select id, kind, pack_version, external_tenant_id, settings::text from integrations.connection where id = @id and kind <> @m",
-            new { id, m = ConnectionKinds.Microsoft365 },
+            "select id, kind, pack_version, external_tenant_id, settings::text from integrations.connection where id = @id and kind <> all(@hidden)",
+            new { id, hidden = Webhooks.HiddenKinds.All },
             r => new ConnectionRow(r.GetGuid(0), r.GetString(1), r.GetInt32(2), r.Get<string>("external_tenant_id"), r.GetString(4)), ct);
 
     internal async Task<IReadOnlyList<ConnectorActionDefinition>> ActionsAsync(ConnectionRow c, CancellationToken ct) =>
@@ -269,8 +269,8 @@ public sealed class ConnectorActionCatalogue(IDbSession session, ConnectorTools 
     public async Task<IReadOnlyList<ConnectorActionInfo>> ListAsync(CancellationToken ct = default)
     {
         var connections = await session.QueryAsync(
-            "select id, display_name, enabled from integrations.connection where kind <> @m order by display_name, id",
-            new { m = ConnectionKinds.Microsoft365 }, r => (Id: r.GetGuid(0), Name: r.GetString(1), Enabled: r.GetBoolean(2)), ct);
+            "select id, display_name, enabled from integrations.connection where kind <> all(@hidden) order by display_name, id",
+            new { hidden = Webhooks.HiddenKinds.All }, r => (Id: r.GetGuid(0), Name: r.GetString(1), Enabled: r.GetBoolean(2)), ct);
         var list = new List<ConnectorActionInfo>();
         foreach (var c in connections)
         {
@@ -289,8 +289,8 @@ public sealed class ConnectorActionCatalogue(IDbSession session, ConnectorTools 
     public async Task<ConnectorActionInfo?> FindAsync(Guid connectionId, string action, CancellationToken ct = default)
     {
         var c = await session.QuerySingleOrDefaultAsync(
-            "select display_name, enabled from integrations.connection where id = @connectionId and kind <> @m",
-            new { connectionId, m = ConnectionKinds.Microsoft365 }, r => (Name: r.GetString(0), Enabled: r.GetBoolean(1)), ct);
+            "select display_name, enabled from integrations.connection where id = @connectionId and kind <> all(@hidden)",
+            new { connectionId, hidden = Webhooks.HiddenKinds.All }, r => (Name: r.GetString(0), Enabled: r.GetBoolean(1)), ct);
         if (c.Name is null || await tools.ConnectionAsync(connectionId, ct) is not { } row)
         {
             return null;

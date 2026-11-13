@@ -38,6 +38,16 @@ public static class PublicApiModule
         services.AddScoped<PublicApiLeavers>();
         services.AddMessageHandler<TenantMembershipDisabled, PublicApiLeavers>("publicapi.leaver");
         services.AddMessageHandler<TokenFamilyRevoked, TokenReuseNotices>("publicapi.token_reuse_notices");
+        services.AddScoped<EventSubscriptions>();
+        services.AddScoped<PublicEventFanout>();
+        services.AddMessageHandler<Content.Contracts.ContentPublished, PublicEventHandlers>("publicapi.events.content_published");
+        services.AddMessageHandler<Documents.Contracts.DocumentVersionPublished, PublicEventHandlers>("publicapi.events.document_version_published");
+        services.AddMessageHandler<Policies.Contracts.PolicyPublished, PublicEventHandlers>("publicapi.events.policy_published");
+        services.AddMessageHandler<Services.Contracts.RequestSubmitted, PublicEventHandlers>("publicapi.events.request_submitted");
+        services.AddMessageHandler<Services.Contracts.RequestCompleted, PublicEventHandlers>("publicapi.events.request_completed");
+        services.AddMessageHandler<People.Contracts.ProfileUpdated, PublicEventHandlers>("publicapi.events.profile_updated");
+        services.AddMessageHandler<OrganizationUnitMoved, PublicEventHandlers>("publicapi.events.org_unit_moved");
+        services.AddMessageHandler<Integrations.Contracts.ConnectorActionCompleted, SubscriptionHealth>("publicapi.subscription_health");
         services.AddOAuthServer();
         services.AddMcpEndpoint();
         services.AddScoped<Agents.Contracts.IAgentTool, WhoAmITool>();
@@ -105,6 +115,28 @@ public static class PublicApiModule
         admin.MapPut("/settings", async (ApiSettingsRequest body, ApiSettings settings, IDbSession session, CancellationToken ct) =>
             await CommitAsync(session, await settings.UpdateAsync(body, ct), ct));
 
+        // Event subscriptions (US4): the catalogue, each app's subscriptions and their delivery log.
+        admin.MapGet("/event-catalogue", async (EventSubscriptions subscriptions, CancellationToken ct) => Results.Ok(await subscriptions.CatalogueAsync(ct)));
+        admin.MapGet("/subscriptions", async (Guid? appId, EventSubscriptions subscriptions, CancellationToken ct) =>
+            Results.Ok(await subscriptions.ListAsync(appId, ct)));
+        admin.MapPost("/apps/{id:guid}/subscriptions", async (Guid id, EventSubscriptionRequest body, EventSubscriptions subscriptions, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var created = await subscriptions.CreateAsync(id, body, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/api-access/subscriptions/{created.Id}", created);
+        });
+        admin.MapPost("/subscriptions/{id:guid}:resume", async (Guid id, EventSubscriptions subscriptions, IDbSession session, CancellationToken ct) =>
+            await CommitAsync(session, await subscriptions.ResumeAsync(id, ct), ct));
+        admin.MapDelete("/subscriptions/{id:guid}", async (Guid id, EventSubscriptions subscriptions, IDbSession session, CancellationToken ct) =>
+        {
+            await subscriptions.DeleteAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        admin.MapGet("/subscriptions/{id:guid}/deliveries", async (Guid id, EventSubscriptions subscriptions, CancellationToken ct) =>
+            Results.Ok(await subscriptions.DeliveriesAsync(id, ct)));
+
         // The platform operator keeps the verified MCP client list after reviewing each client ID metadata document (FR-023).
         var platform = app.MapGroup("/api/v1/platform/api").RequirePlatformOperator().WithTags("Platform: API and MCP");
         platform.MapGet("/verified-mcp-clients", async (VerifiedMcpClients verified, CancellationToken ct) =>
@@ -143,6 +175,22 @@ public static class PublicApiModule
             var membership = await memberships.GetAsync(id, ct) ?? throw AppException.NotFound();
             return PublicEndpoints.Resource(http, new PublicProfile(id, user.DisplayName, user.Email, membership.MembershipType, user.PreferredLocale));
         }).RequireScope(ScopeCatalogue.ProfileRead).Produces<PublicProfile>();
+
+        // events:subscribe (application apps): the event catalogue and the app's own subscriptions (FR-018).
+        var events = app.MapPublicApi("Public: events");
+        events.MapGet("/events", async (EventSubscriptions subscriptions, CancellationToken ct) =>
+            Results.Ok(new PublicPage<EventCatalogueEntry>((await subscriptions.AvailableAsync(ct)).Where(e => e.Available).ToList(), null)))
+            .RequireScope(ScopeCatalogue.EventsSubscribe).Produces<PublicPage<EventCatalogueEntry>>();
+        events.MapGet("/event-subscriptions", async (HttpContext http, EventSubscriptions subscriptions, CancellationToken ct) =>
+            Results.Ok(new PublicPage<PublicEventSubscription>(await subscriptions.OwnAsync(http.Caller().AppId, ct), null)))
+            .RequireScope(ScopeCatalogue.EventsSubscribe).Produces<PublicPage<PublicEventSubscription>>();
+        events.MapDelete("/event-subscriptions/{id:guid}", async (Guid id, HttpContext http, EventSubscriptions subscriptions, IDbSession session,
+            CancellationToken ct) =>
+        {
+            await subscriptions.DeleteOwnAsync(http.Caller().AppId, id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        }).RequireScope(ScopeCatalogue.EventsSubscribe).Produces(StatusCodes.Status204NoContent);
         return app;
     }
 }

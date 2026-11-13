@@ -93,3 +93,11 @@ public static class PeoplePublicEndpoints
     private static PublicPlace? Location(LocationRef? location, Names names) =>
         location is null ? null : new PublicPlace(location.Key, names.Pick(location.Names, location.Label));
 }
+
+/// <summary>Whether the principal in context may read a person through the public API (spec 035 FR-018), by the endpoint's own read.</summary>
+public sealed class PersonVisibility(PeopleService people) : PublicReadVisibility
+{
+    public override string ResourceType => PublicResourceTypes.Person;
+
+    protected override Task ReadAsync(Guid resourceId, CancellationToken ct) => people.GetAsync(resourceId, ct);
+}

@@ -10696,7 +10696,30 @@
       "blockedTitle": "TeamBeats blocked this app",
       "blockedBody": "The app stopped working for every organization, for example after a security problem. It cannot be enabled until TeamBeats lifts the block.",
       "switchReason": "Why you turn the API off",
-      "switchReasonHint": "Kept in the audit log. Needed when you turn the API off."
+      "switchReasonHint": "Kept in the audit log. Needed when you turn the API off.",
+      "subscriptionsTitle": "Event subscriptions",
+      "subscriptionsIntro": "TeamBeats tells the app when something happens, with a link only. The app then reads it through the API with its own access, so it hears only about what it may read.",
+      "subscriptionPausedTitle": "A subscription is paused",
+      "subscriptionPausedBody": "Deliveries kept failing for 3 days, so TeamBeats stopped sending them. Fix the receiver, then resume the subscription.",
+      "noSubscriptions": "No event subscriptions",
+      "noSubscriptionsHint": "Subscribe the app to an event so it does not have to keep asking.",
+      "eventType": "Event",
+      "receiverUrl": "Receiver URL",
+      "receiverUrlHint": "An HTTPS address whose host is on the allowlist of the Connections page.",
+      "secretRef": "Signing secret reference",
+      "secretRefHint": "The secret manager reference of the secret that signs each delivery, for example secret://tenants/…/name.",
+      "subscriptionStatuses": {
+        "active": "Active",
+        "paused": "Paused"
+      },
+      "resume": "Resume",
+      "subscriptionResumed": "The subscription sends events again.",
+      "removeSubscription": "Remove",
+      "removeSubscriptionQuestion": "Stop sending {event} to this app?",
+      "subscriptionRemoved": "The subscription was removed.",
+      "subscribe": "Subscribe",
+      "subscribed": "The app is subscribed.",
+      "subscribeNeedsScope": "Give the app the events:subscribe scope to subscribe it to events."
     },
     "connected": {
       "title": "Connected apps",

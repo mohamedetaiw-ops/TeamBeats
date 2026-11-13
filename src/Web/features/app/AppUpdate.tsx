@@ -56,6 +56,11 @@ export function AppUpdate({ release }: { release: string }) {
     const watch = (worker: ServiceWorker | null) => {
       if (!worker) return;
       const check = () => {
+        // A newer registration replaced this worker before it was used: there is nothing left to offer for it.
+        if (worker.state === "redundant") {
+          setWaiting((current) => (current === worker ? null : current));
+          return;
+        }
         if (worker.state !== "installed" || !navigator.serviceWorker.controller) return;
         const version = versionOf(worker);
         if (version === release) {
@@ -164,7 +169,7 @@ export function AppUpdate({ release }: { release: string }) {
           busy={busy}
           onClick={() => {
             setBusy(true);
-            if (waiting) {
+            if (waiting && waiting.state === "installed") {
               reloading.current = true;
               waiting.postMessage({ type: "SKIP_WAITING" });
             } else {

@@ -73,3 +73,11 @@ public static class PolicyPublicEndpoints
     private static string Pick(IReadOnlyDictionary<string, string> values, string locale, string? binding, string otherwise) =>
         values.TryGetValue(locale, out var value) ? value : binding is not null && values.TryGetValue(binding, out var other) ? other : values.Values.FirstOrDefault() ?? otherwise;
 }
+
+/// <summary>Whether the principal in context may read a policy through the public API (spec 035 FR-018), by the endpoint's own read.</summary>
+public sealed class PolicyVisibility(PolicyRegister register) : PublicReadVisibility
+{
+    public override string ResourceType => PublicResourceTypes.Policy;
+
+    protected override Task ReadAsync(Guid resourceId, CancellationToken ct) => register.CurrentAsync(resourceId, ct);
+}

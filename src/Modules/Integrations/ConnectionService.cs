@@ -506,6 +506,6 @@ public sealed class ConnectedSystems(IDbSession session) : IConnectedSystems
 {
     public async Task<IReadOnlyList<ConnectedSystem>> ListAsync(CancellationToken ct = default) =>
         await session.QueryAsync(
-            "select id, kind, display_name from integrations.connection where enabled and status <> 'disabled' order by lower(display_name), id limit 100",
-            null, r => new ConnectedSystem(r.GetGuid(0), r.GetString(1), r.GetString(2)), ct);
+            "select id, kind, display_name from integrations.connection where enabled and status <> 'disabled' and kind <> @hidden order by lower(display_name), id limit 100",
+            new { hidden = Webhooks.ApiEventPack.KindName }, r => new ConnectedSystem(r.GetGuid(0), r.GetString(1), r.GetString(2)), ct);
 }

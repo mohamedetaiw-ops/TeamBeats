@@ -18,6 +18,7 @@ public static class TenancyModule
 
     public static IServiceCollection AddTenancyModule(this IServiceCollection services)
     {
+        services.AddScoped<TeamBeats.Modules.PublicApi.Contracts.IPublicResourceVisibility, OrgUnitVisibility>();
         services.AddScoped<TenantRegistry>();
         services.AddScoped<ITenantRegistry>(sp => sp.GetRequiredService<TenantRegistry>());
         services.AddScoped<ITenantLister>(sp => sp.GetRequiredService<TenantRegistry>());

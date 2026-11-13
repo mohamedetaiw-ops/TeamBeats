@@ -114,3 +114,11 @@ public static class ServicePublicEndpoints
     private static string? Pick(IReadOnlyDictionary<string, string>? values, string locale, string fallback) =>
         values is null || values.Count == 0 ? null : values.TryGetValue(locale, out var v) ? v : values.TryGetValue(fallback, out var f) ? f : values.Values.First();
 }
+
+/// <summary>Whether the principal in context may read a request through the public API (spec 035 FR-018), by the endpoint's own read.</summary>
+public sealed class RequestVisibility(Requests requests) : PublicReadVisibility
+{
+    public override string ResourceType => PublicResourceTypes.Request;
+
+    protected override Task ReadAsync(Guid resourceId, CancellationToken ct) => requests.DetailAsync(resourceId, ct);
+}

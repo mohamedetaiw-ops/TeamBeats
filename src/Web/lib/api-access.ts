@@ -116,3 +116,20 @@ export function scopeLabelKey(scope: string): string {
 export function defaultCallsPerMinute(kind: AppKind): number {
   return kind === "application" ? 600 : 120;
 }
+
+/** An event of the public catalogue (spec 035 section 12), with whether the package includes what it needs. */
+export type EventCatalogueEntry = { type: string; version: number; resourceType: string; readScope: string; available: boolean };
+
+/** An app's event subscription (spec 035 US4). The signing secret is shown by its secret manager reference only. */
+export type EventSubscription = {
+  id: string;
+  appId: string;
+  appName: string;
+  eventType: string;
+  url: string;
+  secretRef: string;
+  status: "active" | "paused";
+  failingSince: string | null;
+  pausedAt: string | null;
+  createdAt: string;
+};

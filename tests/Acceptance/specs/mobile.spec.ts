@@ -219,7 +219,12 @@ test.describe("installed app", () => {
     await expect(prompt).toHaveCount(0);
     // A freshly loaded page is the current release: it takes over silently and offers nothing (TB-02).
     await page.goto(`${hostOrigin(tenant.key)}/people`);
-    await page.waitForFunction(async () => !(await navigator.serviceWorker.getRegistration())?.waiting);
+    // While no page is open the waiting worker may take over on its own, so wait until this page's own release ("dev")
+    // controls it and nothing is installing; otherwise its registration could replace the next one mid-test.
+    await page.waitForFunction(async () => {
+      const r = await navigator.serviceWorker.getRegistration();
+      return !!r && !r.waiting && !r.installing && !!navigator.serviceWorker.controller?.scriptURL.includes("v=dev");
+    });
     await expect(prompt).toHaveCount(0);
     // The release after that is offered again, and Reload applies it and reloads the page.
     await page.evaluate(() => navigator.serviceWorker.register("/sw.js?v=e2e-third", { scope: "/" }));

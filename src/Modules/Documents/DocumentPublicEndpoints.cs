@@ -135,3 +135,11 @@ public static class DocumentPublicEndpoints
     private static string Name(IReadOnlyDictionary<string, string> names, string locale, string fallback) =>
         names.TryGetValue(locale, out var name) ? name : names.TryGetValue(fallback, out var other) ? other : names.Values.FirstOrDefault() ?? string.Empty;
 }
+
+/// <summary>Whether the principal in context may read a document through the public API (spec 035 FR-018), by the endpoint's own read.</summary>
+public sealed class DocumentVisibility(DocumentFiles files) : PublicReadVisibility
+{
+    public override string ResourceType => PublicResourceTypes.Document;
+
+    protected override Task ReadAsync(Guid resourceId, CancellationToken ct) => files.GetAsync(resourceId, ct);
+}
