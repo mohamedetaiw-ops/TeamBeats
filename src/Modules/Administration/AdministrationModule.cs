@@ -56,6 +56,7 @@ public static class AdministrationModule
         ("evaluation", Permissions.EvalView, "/admin/evaluation"),
         ("analytics", Permissions.AnalyticsView, "/admin/analytics"),
         ("kiosks", Permissions.DeviceManage, "/admin/kiosks"),
+        ("api", Permissions.ApiView, "/admin/api"),
     ];
 
     /// <summary>A second permission that also opens a section: security officers read the AI pages with <c>ai.policy_view</c> (spec 013).</summary>
@@ -74,7 +75,7 @@ public static class AdministrationModule
     };
 
     /// <summary>Sections whose screens work for the whole tenant only in R1: template designers (spec 032 US5) hold their right tenant-wide, and notification settings (spec 015 US4) the people directory policy (spec 010 US1), the shell with its footer and home views (spec 008), search tuning (spec 012 US4), adoption basics (spec 021) and the HR integration page (spec 019) are for the whole tenant.</summary>
-    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications", "people", "security", "search", "analytics", "shell", "hr_integration" };
+    public static readonly IReadOnlySet<string> TenantOnly = new HashSet<string>(StringComparer.Ordinal) { "templates", "notifications", "people", "security", "search", "analytics", "shell", "hr_integration", "api" };
 
     public static IServiceCollection AddAdministrationModule(this IServiceCollection services)
     {

@@ -556,4 +556,53 @@ public sealed class PublicApiAuthorizationServerTests(TenantWorld world)
         var call = await world.Factory.TenantClient(closed.Key).GetAsync("/api/public/v1/me");
         Assert.Equal(HttpStatusCode.Forbidden, call.StatusCode);
     }
+    [Fact]
+    public async Task Api_administrators_see_every_consent_and_can_end_a_persons_and_viewers_only_read()
+    {
+        var t = await FreshAsync();
+        await world.SeedUserAsync(t, "dana", MembershipTypes.Employee);
+        await world.SeedUserAsync(t, "sec", MembershipTypes.Employee);
+        await world.AssignAsync(t, "sec", "security_officer", "tenant", null);
+        var app = await CreateAppAsync(t, "delegated_public", ["profile:read", "content:read"]);
+        var id = app.GetProperty("id").GetString()!;
+        var clientId = app.GetProperty("clientId").GetString()!;
+        await ConsentAsync(t, "dana", clientId, ["profile:read"]);
+        await JsonAsync(await t["admin"].Client.PutAsJsonAsync($"/api/v1/api-access/apps/{id}/admin-consent", new { scopes = new[] { "content:read" } }));
+        var (verifier, challenge) = Pkce();
+        var code = await CodeAsync(t["dana"].Client, clientId, challenge, "profile:read");
+        var access = (await JsonAsync(await TokenAsync(world.Factory.TenantClient(t.Key), new()
+        {
+            ["grant_type"] = "authorization_code", ["client_id"] = clientId, ["code"] = code, ["redirect_uri"] = Redirect, ["code_verifier"] = verifier,
+        }))).GetProperty("access_token").GetString()!;
+        await JsonAsync(await CallAsync(t, access));
+
+        // The admin area lists the section for API administrators and viewers, not for employees.
+        static async Task<bool> HasSection(HttpClient client) =>
+            (await client.GetFromJsonAsync<JsonElement>("/api/v1/admin/navigation")).EnumerateArray().Any(s => s.GetProperty("key").GetString() == "api");
+        Assert.True(await HasSection(t["admin"].Client));
+        Assert.True(await HasSection(t["sec"].Client));
+        Assert.False(await HasSection(t["dana"].Client));
+
+        // Every consent in the tenant (FR-029): the person's own and the one for everyone.
+        var consents = await JsonAsync(await t["sec"].Client.GetAsync("/api/v1/api-access/consents"));
+        Assert.Equal(2, consents.GetArrayLength());
+        var danas = consents.EnumerateArray().Single(c => c.GetProperty("userId").ValueKind == JsonValueKind.String);
+        Assert.Equal(t["dana"].Id.ToString(), danas.GetProperty("userId").GetString());
+        Assert.Equal(["profile:read"], danas.GetProperty("scopes").EnumerateArray().Select(s => s.GetString()));
+        Assert.Contains(consents.EnumerateArray(), c => c.GetProperty("userId").ValueKind == JsonValueKind.Null);
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["dana"].Client.GetAsync("/api/v1/api-access/consents")).StatusCode);
+        var consentId = danas.GetProperty("consentId").GetString()!;
+        // A viewer cannot end it, another tenant's administrator cannot find it.
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["sec"].Client.PostAsync($"/api/v1/api-access/consents/{consentId}:revoke", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await world.B["admin"].Client.PostAsync($"/api/v1/api-access/consents/{consentId}:revoke", null)).StatusCode);
+        Assert.DoesNotContain((await JsonAsync(await world.B["admin"].Client.GetAsync("/api/v1/api-access/consents"))).EnumerateArray(),
+            c => c.GetProperty("consentId").GetString() == consentId);
+
+        // An administrator ends Dana's consent: the app's token for her stops at once.
+        Assert.Equal(HttpStatusCode.NoContent, (await t["admin"].Client.PostAsync($"/api/v1/api-access/consents/{consentId}:revoke", null)).StatusCode);
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.ApiConsentRevoked, id);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await CallAsync(t, access)).StatusCode);
+        Assert.Equal(0, (await JsonAsync(await t["dana"].Client.GetAsync("/api/v1/me/connected-apps"))).GetArrayLength());
+        Assert.Single((await JsonAsync(await t["admin"].Client.GetAsync($"/api/v1/api-access/consents?appId={id}"))).EnumerateArray());
+    }
 }

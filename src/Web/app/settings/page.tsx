@@ -43,7 +43,13 @@ export default async function PreferencesPage() {
     redirect("/signin");
   }
   // The kiosk badge section shows only to someone who has a badge, in a package with kiosks.
-  const [values, t, badge] = await Promise.all([getPreferences(), getTranslations("preferences"), apiGet<Badge>("/api/v1/me/kiosk-badge")]);
+  // Connected API apps show only where the package has the public API (spec 035 FR-029).
+  const [values, t, badge, connected] = await Promise.all([
+    getPreferences(),
+    getTranslations("preferences"),
+    apiGet<Badge>("/api/v1/me/kiosk-badge"),
+    apiGet<unknown[]>("/api/v1/me/connected-apps"),
+  ]);
   const locales = me.data.tenant.enabledLocales.filter((l) => l === "ar" || l === "en");
   return (
     <>
@@ -66,6 +72,13 @@ export default async function PreferencesPage() {
         <Section id="pref-apps" icon="link" title={t("apps.title")} hint={t("apps.hint")}>
           <OutlookSettings unavailable={<p className="preferences-none">{t("apps.none")}</p>} />
         </Section>
+        {connected.ok ? (
+          <Section id="pref-connected" icon="link" title={t("connected.title")} hint={t("connected.hint", { count: connected.data.length })}>
+            <Link className="button button-secondary" href="/settings/connected-apps">
+              {t("connected.link")}
+            </Link>
+          </Section>
+        ) : null}
         {badge.ok && badge.data.issued ? (
           <Section id="pref-kiosk" icon="lock" title={t("kiosk.title")} hint={t("kiosk.hint")}>
             <KioskBadgeSettings initial={badge.data} />

@@ -29,7 +29,7 @@ const routes = [
   "/admin/analytics", "/admin/analytics/errors", "/admin/ai", "/admin/ai/assistant", "/admin/ai/routing", "/admin/ai/usage", "/admin/agents",
   "/admin/agents/policy", "/admin/agents/runs", "/admin/evaluation", "/admin/evaluation/settings", "/admin/leave", "/admin/attendance",
   "/admin/letters", "/admin/expenses", "/admin/journeys", "/admin/data-changes", "/admin/hr-integration", "/learning/certificates/verify",
-  "/letters/verify", "/offline", "/app-consent",
+  "/letters/verify", "/offline", "/app-consent", "/admin/api", "/settings/connected-apps",
 ];
 
 /** Groups of pages, one test each, so the suite spreads over the shards. */

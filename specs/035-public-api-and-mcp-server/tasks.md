@@ -11,7 +11,7 @@ Depends on 003, 004, 005, 006, 014, 015, 016, 017 (outbound webhook runtime), 02
 ## Phase 2: User Stories 1 and 2, apps, principals and consent (P1)
 - [x] T005 [P] [US1] [US2] Tests: scope narrowing property test; app-assignable role rule; org boundary for an application principal; user versus admin consent; guest refusal; revocation within 60 seconds; membership disable at once
 - [x] T006 [US1] App registration, credentials with step-up, expiry alerts and rotation; `app` principal type and `assignable_to_apps` flag in `Authorization`
-- [ ] T007 [US2] Delegated flows, consent records, connected apps page, admin consent list
+- [x] T007 [US2] Delegated flows, consent records, connected apps page, admin consent list
 
 ## Phase 3: User Story 5 and the public API pipeline (P1)
 - [ ] T008 [P] [US5] Tests: rate limit partitions and 429 headers; monthly quota at 80% and 100%; tenant may only lower limits; tenant switch off within 60 seconds; IP ranges

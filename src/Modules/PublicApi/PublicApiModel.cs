@@ -40,6 +40,10 @@ public sealed record ConsentPrompt(string ClientId, string Name, string? Publish
 
 public sealed record ConsentGrantRequest(string? ClientId, string? RedirectUri, IReadOnlyList<string>? Scopes);
 
+/// <summary>A consent as API administrators see it (FR-029): a person's own, or the tenant's admin consent when <c>UserId</c> is null.</summary>
+public sealed record ConsentAdminView(Guid ConsentId, Guid AppId, string AppName, Guid? UserId, IReadOnlyList<string> Scopes, Guid GrantedBy, DateTimeOffset GrantedAt,
+    DateTimeOffset? LastUsedAt);
+
 public sealed record ConnectedAppView(Guid ConsentId, Guid AppId, string Name, string? Publisher, IReadOnlyList<string> Scopes, DateTimeOffset GrantedAt,
     DateTimeOffset? LastUsedAt);
 

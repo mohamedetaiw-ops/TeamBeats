@@ -254,13 +254,14 @@ public sealed class ConnectionsTests(TenantWorld world)
     }
 
     [Fact]
-    public async Task Integration_administrator_sees_only_connections_in_admin_navigation()
+    public async Task Integration_administrator_sees_only_connections_and_api_access_in_admin_navigation()
     {
         var t = await TenantAsync();
         var integrator = await world.SeedUserAsync(t, "integrator", MembershipTypes.Employee);
         await world.AssignAsync(t, "integrator", "integration_administrator", "tenant", null);
         var nav = await integrator.Client.GetFromJsonAsync<JsonElement>("/api/v1/admin/navigation");
-        Assert.Equal(["connections"], nav.EnumerateArray().Select(s => s.GetProperty("key").GetString()!).ToArray());
+        // Spec 035: the role also holds api.manage and api.view, which open the API and MCP access section.
+        Assert.Equal(["connections", "api"], nav.EnumerateArray().Select(s => s.GetProperty("key").GetString()!).ToArray());
         Assert.Equal(HttpStatusCode.OK, (await integrator.Client.GetAsync("/api/v1/integrations/connections")).StatusCode);
     }
 

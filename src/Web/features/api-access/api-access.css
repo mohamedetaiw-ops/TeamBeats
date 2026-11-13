@@ -34,3 +34,65 @@
 .app-consent-actions button {
   min-block-size: 2.75rem;
 }
+
+/* API and MCP access administration and connected apps (spec 035 US1, US6, FR-029). */
+.api-access-scopes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--tb-space-sm);
+}
+
+.api-access-facts {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  margin: 0;
+}
+
+.api-access-facts dt {
+  color: var(--tb-color-text-secondary);
+}
+
+.api-access-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.api-access-codes,
+.api-access-secret code {
+  overflow-wrap: anywhere;
+}
+
+.api-access-secret {
+  padding: var(--tb-space-sm);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-sunken);
+}
+
+.connected-apps-list {
+  display: grid;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.connected-app {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-lg);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+}
+
+.connected-app h2 {
+  margin: 0;
+}
+
+.connected-app-scopes {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
