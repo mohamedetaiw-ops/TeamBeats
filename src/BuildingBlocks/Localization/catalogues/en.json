@@ -2188,5 +2188,10 @@
   "validation.spaces.guest_domain_not_allowed": "Your organization allows guests only from listed email domains, and this one is not on the list.",
   "validation.spaces.guest_space_limit": "Your package's limit on spaces with guests is reached. Remove the guests of another space or ask about a larger package.",
   "conflict.documents.guest_pdf_too_large": "This PDF is too large to download as a guest. Ask the space owner for a smaller copy.",
-  "conflict.documents.guest_pdf_unmarkable": "This PDF cannot carry the guest watermark, so it cannot be downloaded as a guest. Ask the space owner for another copy."
+  "conflict.documents.guest_pdf_unmarkable": "This PDF cannot carry the guest watermark, so it cannot be downloaded as a guest. Ask the space owner for another copy.",
+  "conflict.security.review_open": "An access review is already open. Wait until it closes before starting another.",
+  "conflict.security.review_decided": "This item was already decided.",
+  "conflict.security.review_last_admin": "This is the organization's last administrator, so the role cannot be removed. Appoint another administrator first.",
+  "notifications.template.security.access_review.requested.title": "Review who has access",
+  "notifications.template.security.access_review.requested.body": "Confirm or remove the guests and administrator roles you are responsible for by {due}. Anything not confirmed by then is removed."
 }

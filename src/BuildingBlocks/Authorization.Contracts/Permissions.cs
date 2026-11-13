@@ -196,6 +196,12 @@ public static class Permissions
         || permission.StartsWith("security.", StringComparison.Ordinal) || permission.StartsWith("api.", StringComparison.Ordinal)
         || permission is AuditExport or AiPolicyManage;
 
+    /// <summary>
+    /// Administration permissions for access reviews (spec 026 FR-012): the same set apps may never hold, so a role with
+    /// any of them is an administrator role.
+    /// </summary>
+    public static bool Administers(string permission) => ExcludedFromApps(permission);
+
     public static readonly IReadOnlyList<string> All =
     [
         TenantSettingsView, TenantSettingsManage, TenantAdminsManage,

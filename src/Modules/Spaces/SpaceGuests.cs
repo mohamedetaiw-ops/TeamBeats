@@ -68,7 +68,7 @@ public sealed class SpaceGuests(
     ISecurityPolicy securityPolicy,
     IAuditWriter audit,
     IOutbox outbox,
-    IClock clock) : IGuestInvitationSource
+    IClock clock) : IGuestInvitationSource, ISpaceGuestReview
 {
     public const int MaxGuests = 50;
     public const int NoticeDays = 7;
@@ -412,15 +412,27 @@ public sealed class SpaceGuests(
         var names = await users.GetManyAsync(rows.Select(r => r.User).Distinct().ToList(), ct);
         foreach (var row in rows)
         {
-            await session.ExecAsync("delete from spaces.space_member where space_id = @space and user_id = @user", new { space = row.Space, user = row.User }, ct);
-            await grants.SetResourceRoleAsync(row.User, SpacesService.ResourceType, row.Space, null, null, ct);
-            await outbox.EnqueueAsync(new SpaceMembershipChanged(row.Space, row.User, null), ct);
+            await LeaveAsync(row.Space, row.User, ct);
             await audit.WriteAsync(new AuditEntry(AuditActions.SpacesGuestExpired, SpacesService.ResourceType, row.Space.ToString(),
                 Changes: new { guest = row.User, role = row.Role }), ct);
             await TellOwnersAsync(row.Space, row.Name, ExpiredTemplate, names.TryGetValue(row.User, out var u) ? u.DisplayName : "", null,
                 $"spaces:{row.Space:N}:guest:{row.User:N}:expired", ct);
         }
-        foreach (var user in rows.Select(r => r.User).Distinct())
+        await DisableUnplacedAsync(rows.Select(r => r.User).Distinct(), "guest_expired", ct);
+        return rows.Count;
+    }
+
+    private async Task LeaveAsync(Guid space, Guid user, CancellationToken ct)
+    {
+        await session.ExecAsync("delete from spaces.space_member where space_id = @space and user_id = @user", new { space, user }, ct);
+        await grants.SetResourceRoleAsync(user, SpacesService.ResourceType, space, null, null, ct);
+        await outbox.EnqueueAsync(new SpaceMembershipChanged(space, user, null), ct);
+    }
+
+    /// <summary>A guest left in no space is disabled and signed out.</summary>
+    private async Task DisableUnplacedAsync(IEnumerable<Guid> guests, string reason, CancellationToken ct)
+    {
+        foreach (var user in guests)
         {
             if (await session.ScalarAsync<bool>("select exists (select 1 from spaces.space_member where user_id = @user)", new { user }, ct)
                 || await memberships.GetAsync(user, ct) is not { MembershipType: MembershipTypes.Guest, Status: MembershipStatus.Active })
@@ -428,10 +440,36 @@ public sealed class SpaceGuests(
                 continue;
             }
             await memberships.SetStatusAsync(user, MembershipStatus.Disabled, ct);
-            await sessions.RevokeUserSessionsAsync(user, "guest_expired", ct);
+            await sessions.RevokeUserSessionsAsync(user, reason, ct);
             await outbox.EnqueueAsync(new TenantMembershipDisabled(user), ct);
         }
-        return rows.Count;
+    }
+
+    public async Task<IReadOnlyList<GuestMembership>> ActiveGuestsAsync(CancellationToken ct = default) =>
+        await session.QueryAsync(
+            """
+            select s.id, s.name, m.user_id, m.added_by, m.expires_at from spaces.space_member m join spaces.space s on s.id = m.space_id
+            where m.guest and s.status = 'active' and (m.expires_at is null or m.expires_at > @now) order by s.id, m.user_id
+            """, new { now = clock.UtcNow },
+            r => new GuestMembership(r.GetGuid(0), r.GetString(1), r.GetGuid(2), r.Get<Guid?>("added_by"), r.Get<DateTimeOffset?>("expires_at")), ct);
+
+    /// <summary>Spec 026 FR-012: a guest the sponsor did not confirm, or chose to remove, leaves the space.</summary>
+    public async Task<bool> RemoveGuestAsync(Guid spaceId, Guid userId, string reason, CancellationToken ct = default)
+    {
+        var row = await session.QuerySingleOrDefaultAsync(
+            "select m.role, s.name from spaces.space_member m join spaces.space s on s.id = m.space_id where m.space_id = @spaceId and m.user_id = @userId and m.guest",
+            new { spaceId, userId }, r => (Role: r.GetString(0), Name: r.GetString(1)), ct);
+        if (row.Role is null)
+        {
+            return false;
+        }
+        await LeaveAsync(spaceId, userId, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.SpacesGuestRemoved, SpacesService.ResourceType, spaceId.ToString(),
+            Changes: new { guest = userId, role = row.Role, reason }), ct);
+        var name = (await users.GetAsync(userId, ct))?.DisplayName ?? "";
+        await TellOwnersAsync(spaceId, row.Name, ExpiredTemplate, name, null, $"spaces:{spaceId:N}:guest:{userId:N}:removed:{clock.UtcNow:yyyyMMdd}", ct);
+        await DisableUnplacedAsync([userId], "guest_removed", ct);
+        return true;
     }
 
     /// <summary>Tries again the invitation emails the relay could not take, up to five times.</summary>

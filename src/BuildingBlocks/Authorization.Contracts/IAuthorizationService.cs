@@ -176,7 +176,16 @@ public interface IAuthorizationProvisioning
 
     /// <summary>Removes every ACL entry of a resource (inheritance restored, or the resource is gone).</summary>
     Task ClearAclAsync(string resourceType, Guid resourceId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Live role assignments given directly to users at tenant or organization scope whose role holds an administration
+    /// permission (<see cref="Permissions.Administers"/>), for access reviews (spec 026 FR-012). Group assignments are
+    /// left out: their members come from the directory.
+    /// </summary>
+    Task<IReadOnlyList<AdminAssignment>> AdminAssignmentsAsync(CancellationToken ct = default);
 }
+
+public sealed record AdminAssignment(Guid AssignmentId, Guid UserId, string RoleKey, ScopeType ScopeType, Guid? ScopeId);
 
 public sealed record RoleAssignmentSummary(Guid AssignmentId, string RoleKey, ScopeType ScopeType, Guid? ScopeId);
 

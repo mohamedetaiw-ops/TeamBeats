@@ -2188,5 +2188,10 @@
   "validation.spaces.guest_domain_not_allowed": "تسمح مؤسستك بالضيوف من نطاقات البريد المدرجة فقط، وهذا النطاق ليس منها.",
   "validation.spaces.guest_space_limit": "بلغت باقتك الحد الأقصى للمساحات التي تضم ضيوفا. أزل ضيوف مساحة أخرى أو اسأل عن باقة أكبر.",
   "conflict.documents.guest_pdf_too_large": "ملف PDF هذا أكبر من أن ينزله ضيف. اطلب من مالك المساحة نسخة أصغر.",
-  "conflict.documents.guest_pdf_unmarkable": "لا يمكن وضع علامة الضيف المائية على ملف PDF هذا، لذا لا يمكن للضيف تنزيله. اطلب من مالك المساحة نسخة أخرى."
+  "conflict.documents.guest_pdf_unmarkable": "لا يمكن وضع علامة الضيف المائية على ملف PDF هذا، لذا لا يمكن للضيف تنزيله. اطلب من مالك المساحة نسخة أخرى.",
+  "conflict.security.review_open": "توجد مراجعة وصول مفتوحة بالفعل. انتظر حتى تُغلق قبل بدء أخرى.",
+  "conflict.security.review_decided": "تم البت في هذا العنصر بالفعل.",
+  "conflict.security.review_last_admin": "هذا آخر مسؤول في المؤسسة، لذا لا يمكن إزالة الدور. عيّن مسؤولا آخر أولا.",
+  "notifications.template.security.access_review.requested.title": "راجع من لديه صلاحية الوصول",
+  "notifications.template.security.access_review.requested.body": "أكّد أو أزل الضيوف وأدوار المسؤولين الذين تتولى مسؤوليتهم قبل {due}. يُزال كل ما لم يُؤكَّد بحلول ذلك الموعد."
 }

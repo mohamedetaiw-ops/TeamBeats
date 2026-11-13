@@ -91,3 +91,32 @@ export type SiemTestResult = { delivered: boolean; errorClass: string | null };
 
 /** The SIEM page: the destinations, and whether this person may change them (the API checks every change again). */
 export type SiemPage = { destinations: SiemDestination[]; canManage: boolean };
+
+/** One item a reviewer decides (spec 026 FR-012): a guest in a space, or an administrator's role. */
+export type AccessReviewItem = {
+  id: string;
+  kind: "guest" | "admin_role";
+  subjectId: string;
+  subjectName: string;
+  spaceId: string | null;
+  spaceName: string | null;
+  roleKey: string | null;
+  scopeType: string | null;
+  scopeId: string | null;
+  decision: "confirmed" | "removed" | "expired" | "kept" | null;
+  dueAt: string;
+};
+
+export type AccessReviewSummary = {
+  id: string;
+  openedAt: string;
+  dueAt: string;
+  closedAt: string | null;
+  open: number;
+  confirmed: number;
+  removed: number;
+  expired: number;
+  kept: number;
+};
+
+export type AccessReviewsPage = { reviews: AccessReviewSummary[]; nextAt: string | null; canStart: boolean };

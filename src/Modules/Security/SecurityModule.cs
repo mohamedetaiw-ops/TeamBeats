@@ -29,6 +29,7 @@ public static class SecurityModule
         services.AddMessageHandler<TeamBeats.Modules.PublicApi.Contracts.TokenFamilyRevoked, ApiTokenReuseRule>("security.api_token_reuse");
         services.AddScoped<SiemService>();
         services.AddScoped<SiemStreamer>();
+        services.AddScoped<AccessReviews>();
         services.AddScoped<IAuthenticationAssurance, AuthenticationAssurance>();
         services.AddScoped<TeamBeats.Authorization.Contracts.IRequestAttributeProvider, NetworkZoneAttributes>();
         return services;
@@ -70,6 +71,29 @@ public static class SecurityModule
         });
 
         // SIEM streaming (US4): destinations, a test event, enable and disable. Changes need step-up (section 6).
+        // Access reviews (FR-012): security administrators see the reviews and can open one; reviewers decide their items.
+        security.MapGet("/access-reviews", async (AccessReviews reviews, CancellationToken ct) => Results.Ok(await reviews.ListAsync(ct)));
+        security.MapPost("/access-reviews", async (AccessReviews reviews, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await reviews.StartAsync(ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/security/access-reviews/{view.Id}", view);
+        }).RequireStepUp();
+        var reviewer = app.MapGroup("/api/v1/access-reviews").RequireTenantUser().WithTags("Access reviews");
+        reviewer.MapGet("", async (AccessReviews reviews, CancellationToken ct) => Results.Ok(await reviews.MineAsync(ct)));
+        reviewer.MapPost("/items/{id:guid}:confirm", async (Guid id, AccessReviews reviews, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await reviews.DecideAsync(id, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        reviewer.MapPost("/items/{id:guid}:remove", async (Guid id, AccessReviews reviews, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await reviews.DecideAsync(id, false, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
         security.MapGet("/siem", async (SiemService siem, CancellationToken ct) => Results.Ok(await siem.ListAsync(ct)));
         security.MapPost("/siem", async (SiemDestinationBody body, SiemService siem, IDbSession session, CancellationToken ct) =>
         {

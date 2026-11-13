@@ -2324,7 +2324,8 @@
       "policy": "Policy",
       "alerts": "Alerts",
       "posture": "Posture",
-      "siem": "SIEM"
+      "siem": "SIEM",
+      "reviews": "Access reviews"
     },
     "openAlerts": "{count, plural, one {# open alert} other {# open alerts}}",
     "policy": {
@@ -2542,6 +2543,26 @@
         "not_in_package": "SIEM streaming is not part of your plan",
         "connection_disabled": "the destination is off"
       }
+    },
+    "reviews": {
+      "title": "Access reviews",
+      "intro": "Every 90 days, sponsors review their guests and managers review the administrator roles of the people they manage. Anything not confirmed within 14 days is removed.",
+      "failed": "The access reviews could not be loaded. Try again.",
+      "next": "The next review opens on {date}.",
+      "noneScheduled": "The first review is scheduled within the hour.",
+      "start": "Start a review now",
+      "started": "The review started. Reviewers were told.",
+      "working": "Working…",
+      "listTitle": "Reviews",
+      "none": "No reviews yet",
+      "noneHint": "Start a review, or wait for the first one.",
+      "opened": "Opened",
+      "dueAt": "Decide by",
+      "closed": "Closed {date}",
+      "open": "Waiting",
+      "confirmed": "Confirmed",
+      "removed": "Removed",
+      "kept": "Kept (last administrator)"
     }
   },
   "services": {
@@ -10916,6 +10937,36 @@
     "tools": {
       "submit_service_request": "Submit a service request",
       "draft_news": "Draft a news item"
+    }
+  },
+  "accessReviews": {
+    "title": "Access reviews",
+    "intro": "Confirm the access that is still needed and remove the rest. Anything you do not confirm is removed when the review closes.",
+    "failedTitle": "Your reviews could not be loaded",
+    "failed": "Try again in a moment.",
+    "noneTitle": "Nothing to review",
+    "none": "You have no access to review right now.",
+    "due": "Decide by {date}.",
+    "listTitle": "Access to review",
+    "who": "Person",
+    "access": "Access",
+    "guestIn": "Guest in",
+    "role": "Administrator role",
+    "decision": "Decision",
+    "waiting": "Waiting for you",
+    "actions": "Actions",
+    "confirm": "Confirm",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "working": "Working…",
+    "removeQuestion": "Remove this access for {name}? It ends at once.",
+    "confirmed": "Access for {name} is confirmed.",
+    "removed": "Access for {name} was removed.",
+    "decisions": {
+      "confirmed": "Confirmed",
+      "removed": "Removed",
+      "expired": "Removed, not confirmed",
+      "kept": "Kept"
     }
   }
 }
