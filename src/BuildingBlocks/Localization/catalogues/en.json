@@ -2193,5 +2193,22 @@
   "conflict.security.review_decided": "This item was already decided.",
   "conflict.security.review_last_admin": "This is the organization's last administrator, so the role cannot be removed. Appoint another administrator first.",
   "notifications.template.security.access_review.requested.title": "Review who has access",
-  "notifications.template.security.access_review.requested.body": "Confirm or remove the guests and administrator roles you are responsible for by {due}. Anything not confirmed by then is removed."
+  "notifications.template.security.access_review.requested.body": "Confirm or remove the guests and administrator roles you are responsible for by {due}. Anything not confirmed by then is removed.",
+  "validation.security.alert_threshold": "Enter a value inside the allowed range shown next to the field.",
+  "validation.security.work_hours": "Enter working hours as HH:mm, with the start before the end.",
+  "validation.security.guest_notify": "Choose who is told: security officers, the sponsor, or both.",
+  "notifications.template.security.alert.guest_confidential_access.title": "A guest opened a Confidential item",
+  "notifications.template.security.alert.guest_confidential_access.body": "A guest in one of your spaces opened an item classified Confidential. Review the alert on the security page.",
+  "notifications.template.security.alert.api_denied_burst.title": "Many refused calls from an app",
+  "notifications.template.security.alert.api_denied_burst.body": "An app made many calls that it was not allowed to make in a short time. Review the alert on the security page.",
+  "notifications.template.security.alert.api_volume_spike.title": "Unusual call volume from an app",
+  "notifications.template.security.alert.api_volume_spike.body": "An app made far more calls in one hour than it usually does. Review the alert on the security page.",
+  "notifications.template.security.alert_app.api_token_reuse.title": "App sign-in token used twice",
+  "notifications.template.security.alert_app.api_token_reuse.body": "A sign-in token of one of your apps was used twice, so it may have been copied. TeamBeats ended that sign-in. Check the app on the apps page.",
+  "notifications.template.security.alert_app.api_denied_burst.title": "Many refused calls from an app",
+  "notifications.template.security.alert_app.api_denied_burst.body": "One of your apps made many calls that it was not allowed to make in a short time. Check the app and its permissions on the apps page.",
+  "notifications.template.security.alert_app.api_volume_spike.title": "Unusual call volume from an app",
+  "notifications.template.security.alert_app.api_volume_spike.body": "One of your apps made far more calls in one hour than it usually does. Check the app on the apps page.",
+  "notifications.template.security.guest_confidential.sponsor.title": "Your guest opened a Confidential item",
+  "notifications.template.security.guest_confidential.sponsor.body": "A guest you invited opened an item classified Confidential in your space. Check that they should have it."
 }

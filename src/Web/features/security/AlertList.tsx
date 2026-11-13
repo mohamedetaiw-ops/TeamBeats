@@ -9,7 +9,16 @@ import type { SecurityAlert } from "@/lib/security/types";
 type Result = { ok: boolean; messages: string[] } | null;
 type Filter = "open" | "handled" | "dismissed" | "all";
 
-const KINDS = ["download_volume", "privilege_grant_out_of_hours", "network_blocked", "api_token_reuse", "siem_failing"];
+const KINDS = [
+  "download_volume",
+  "privilege_grant_out_of_hours",
+  "network_blocked",
+  "api_token_reuse",
+  "siem_failing",
+  "guest_confidential_access",
+  "api_denied_burst",
+  "api_volume_spike",
+];
 
 /** The facts of an alert, as counts and references only (spec 026 FR-013). */
 function Facts({ alert }: { alert: SecurityAlert }) {
@@ -34,6 +43,20 @@ function Facts({ alert }: { alert: SecurityAlert }) {
       return (
         <p>
           {t(f.area === "admin" ? "facts.blockedAdmin" : "facts.blockedTenant")} <bdi dir="ltr">{typeof f.address === "string" ? f.address : ""}</bdi>
+        </p>
+      );
+    case "guest_confidential_access":
+      return <p>{t("facts.guestConfidential")}</p>;
+    case "api_denied_burst":
+      return <p>{t("facts.apiDenied", { app: typeof f.appName === "string" ? f.appName : "", count: num(f.count) })}</p>;
+    case "api_volume_spike":
+      return (
+        <p>
+          {t("facts.apiVolume", {
+            app: typeof f.appName === "string" ? f.appName : "",
+            calls: num(f.calls),
+            average: format.number(num(f.hourlyAverage), { maximumFractionDigits: 1 }),
+          })}
         </p>
       );
     case "siem_failing":

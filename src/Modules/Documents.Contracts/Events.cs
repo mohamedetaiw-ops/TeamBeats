@@ -81,3 +81,9 @@ public interface ISpaceLibraries
     /// </summary>
     Task SetGuestConfidentialAsync(Guid libraryId, bool allowed, CancellationToken ct = default);
 }
+
+/// <summary>
+/// A guest opened a Confidential item (spec 026 US5 scenario 3): a download or a preview. SpaceId is the space whose
+/// library holds it. References only, never names or content.
+/// </summary>
+public sealed record GuestOpenedClassified(Guid DocumentId, Guid LibraryId, Guid? SpaceId, Guid UserId, string Classification) : IIntegrationEvent;

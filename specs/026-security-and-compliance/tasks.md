@@ -42,8 +42,8 @@ Depends on 001 (break-glass), 003 (sessions, Entra sign-in), 004 (conditions, ex
 - [x] T023 [US3] Access reviews (FR-012) with automatic removal after 14 days
 
 ## R2 Phase 8: User Story 5 in full (P1)
-- [ ] T024 [P] [US5] Tests: guest opens a Confidential item; app denial burst; app volume spike; thresholds
-- [ ] T025 [US5] The rules, `ApiCallsDenied` and `ApiVolumeSpike` from PublicApi, threshold settings
+- [x] T024 [P] [US5] Tests: guest opens a Confidential item; app denial burst; app volume spike; thresholds
+- [x] T025 [US5] The rules, `ApiCallsDenied` and `ApiVolumeSpike` from PublicApi, threshold settings
 
 ## R2 Phase 9: User Story 6, sensitive data detection (P2)
 - [ ] T026 [P] [US6] Tests: built-in patterns; warn and confirm; block by location type; tenant pattern test; nothing matched is logged

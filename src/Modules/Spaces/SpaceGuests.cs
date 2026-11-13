@@ -453,6 +453,9 @@ public sealed class SpaceGuests(
             """, new { now = clock.UtcNow },
             r => new GuestMembership(r.GetGuid(0), r.GetString(1), r.GetGuid(2), r.Get<Guid?>("added_by"), r.Get<DateTimeOffset?>("expires_at")), ct);
 
+    public Task<Guid?> SponsorOfAsync(Guid spaceId, Guid userId, CancellationToken ct = default) =>
+        session.ScalarAsync<Guid?>("select added_by from spaces.space_member where space_id = @spaceId and user_id = @userId and guest", new { spaceId, userId }, ct);
+
     /// <summary>Spec 026 FR-012: a guest the sponsor did not confirm, or chose to remove, leaves the space.</summary>
     public async Task<bool> RemoveGuestAsync(Guid spaceId, Guid userId, string reason, CancellationToken ct = default)
     {

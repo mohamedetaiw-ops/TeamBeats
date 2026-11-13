@@ -79,3 +79,11 @@ public sealed record SecurityAlertRaised(Guid AlertId, string Kind) : IIntegrati
 
 /// <summary>Setting names only, never values.</summary>
 public sealed record SecurityPolicyChanged(int Version, IReadOnlyList<string> Settings) : IIntegrationEvent;
+
+/// <summary>The tenant's thresholds for app alerts (spec 026 US5 scenario 5), for the modules that watch for them.</summary>
+public sealed record AlertThresholds(int ApiDeniedCount, double ApiVolumeFactor);
+
+public interface ISecurityAlertThresholds
+{
+    Task<AlertThresholds> GetAsync(CancellationToken ct = default);
+}

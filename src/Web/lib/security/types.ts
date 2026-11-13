@@ -120,3 +120,15 @@ export type AccessReviewSummary = {
 };
 
 export type AccessReviewsPage = { reviews: AccessReviewSummary[]; nextAt: string | null; canStart: boolean };
+
+/** Tenant alert thresholds (spec 026 FR-013); editable says whether this person may change them on this plan. */
+export type AlertSettings = {
+  downloadFiles: number;
+  downloadBytes: number;
+  workStart: string;
+  workEnd: string;
+  apiDeniedCount: number;
+  apiVolumeFactor: number;
+  guestConfidentialNotify: "security" | "sponsor" | "both";
+  editable: boolean;
+};

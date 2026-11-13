@@ -1,6 +1,9 @@
 using System.Globalization;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Messaging;
+using TeamBeats.Modules.PublicApi.Contracts;
+using TeamBeats.Modules.Security.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -15,8 +18,14 @@ public sealed record CallRecord(Guid AppId, Guid? UserId, string Operation, int 
 /// refused ones too; only calls that were processed count against <c>api.monthly_calls</c>. API administrators are told
 /// once a month when the tenant reaches 80% and 100% of the quota.
 /// </summary>
-public sealed class CallLog(IDbSession session, IClock clock, IAuthorizationProvisioning authorization, INotificationSender notifications)
+public sealed class CallLog(IDbSession session, IClock clock, IAuthorizationProvisioning authorization, INotificationSender notifications, IOutbox outbox,
+    ISecurityAlertThresholds thresholds)
 {
+    public static readonly TimeSpan DeniedWindow = TimeSpan.FromMinutes(10);
+
+    /// <summary>The fewest calls in an hour that can count as a volume spike, so a quiet app's few calls never do.</summary>
+    public const long MinSpikeCalls = 100;
+
     public const string Quota80Template = "publicapi.quota_80";
     public const string Quota100Template = "publicapi.quota_100";
 
@@ -74,6 +83,10 @@ public sealed class CallLog(IDbSession session, IClock clock, IAuthorizationProv
                 id = Ids.New(), now, app = call.AppId, user = call.UserId, operation = call.Operation[..Math.Min(call.Operation.Length, 200)], status = call.Status,
                 error = call.ErrorClass, latency = call.LatencyMs, correlation = call.CorrelationId is { Length: <= 100 } c ? c : null, month, counted,
             }, ct);
+        if (call.ErrorClass == "denied")
+        {
+            await WatchDenialsAsync(call.AppId, now, ct);
+        }
         if (!counted)
         {
             return;
@@ -90,6 +103,65 @@ public sealed class CallLog(IDbSession session, IClock clock, IAuthorizationProv
         {
             await AlertAsync(month, "alerted_80", Quota80Template, limit, ct);
         }
+    }
+
+    /// <summary>
+    /// Spec 026 US5 scenario 5: when an app's refused calls in the last 10 minutes reach the tenant's threshold, the
+    /// Security module is told once. Only refused calls pay for the count, so the normal path stays as fast as before.
+    /// </summary>
+    private async Task WatchDenialsAsync(Guid app, DateTimeOffset now, CancellationToken ct)
+    {
+        var since = now - DeniedWindow;
+        var count = await session.ScalarAsync<long>(
+            "select count(*) from publicapi.call_log where app_id = @app and at > @since and error_class = 'denied'", new { app, since }, ct);
+        if (count == (await thresholds.GetAsync(ct)).ApiDeniedCount)
+        {
+            var (name, user) = await AppAndPrincipalAsync(app, since, now, true, ct);
+            await outbox.EnqueueAsync(new ApiCallsDenied(app, name, user, (int)count, since), ct);
+        }
+    }
+
+    /// <summary>
+    /// Apps whose calls in the hour before <paramref name="hourEnd"/> were over the tenant's factor times their hourly
+    /// average for the 30 days before it (spec 026 US5 scenario 5). Apps with no history, or fewer than 100 calls in the
+    /// hour, are left out. Each spike is published for the Security module.
+    /// </summary>
+    public async Task<int> WatchVolumeAsync(DateTimeOffset hourEnd, CancellationToken ct)
+    {
+        var factor = (await thresholds.GetAsync(ct)).ApiVolumeFactor;
+        var hourStart = hourEnd.AddHours(-1);
+        var rows = await session.QueryAsync(
+            """
+            select app_id, count(*) filter (where at >= @hourStart), count(*) filter (where at < @hourStart)
+            from publicapi.call_log where at >= @from and at < @hourEnd
+            group by app_id
+            """, new { hourStart, hourEnd, from = hourStart.AddDays(-30) },
+            r => (App: r.GetGuid(0), Hour: r.GetInt64(1), Before: r.GetInt64(2)), ct);
+        var spikes = 0;
+        foreach (var row in rows)
+        {
+            var average = row.Before / (30.0 * 24);
+            if (row.Hour >= MinSpikeCalls && row.Before > 0 && row.Hour > factor * average)
+            {
+                var (name, user) = await AppAndPrincipalAsync(row.App, hourStart, hourEnd, false, ct);
+                await outbox.EnqueueAsync(new ApiVolumeSpike(row.App, name, user, row.Hour, Math.Round(average, 2), hourStart), ct);
+                spikes++;
+            }
+        }
+        return spikes;
+    }
+
+    /// <summary>The app's name and the person with the most calls (refused ones only when asked) between two moments.</summary>
+    private async Task<(string Name, Guid? User)> AppAndPrincipalAsync(Guid app, DateTimeOffset from, DateTimeOffset to, bool denied, CancellationToken ct)
+    {
+        var name = await session.ScalarAsync<string?>("select name from publicapi.app where id = @app", new { app }, ct) ?? "";
+        var user = await session.ScalarAsync<Guid?>(
+            """
+            select user_id from publicapi.call_log where app_id = @app and at >= @from and at <= @to and user_id is not null
+              and (not @denied or error_class = 'denied')
+            group by user_id order by count(*) desc, user_id limit 1
+            """, new { app, from, to, denied }, ct);
+        return (name, user);
     }
 
     private async Task AlertAsync(DateOnly month, string column, string template, long limit, CancellationToken ct)

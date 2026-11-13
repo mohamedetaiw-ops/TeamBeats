@@ -27,6 +27,11 @@ public static class SecurityModule
         services.AddMessageHandler<TeamBeats.Modules.Documents.Contracts.DocumentDownloaded, DownloadVolumeRule>("security.download_volume");
         services.AddMessageHandler<TeamBeats.Authorization.Contracts.RoleAssignmentChanged, OutOfHoursGrantRule>("security.privilege_grant_out_of_hours");
         services.AddMessageHandler<TeamBeats.Modules.PublicApi.Contracts.TokenFamilyRevoked, ApiTokenReuseRule>("security.api_token_reuse");
+        services.AddMessageHandler<TeamBeats.Modules.PublicApi.Contracts.ApiCallsDenied, ApiDeniedBurstRule>("security.api_denied_burst");
+        services.AddMessageHandler<TeamBeats.Modules.PublicApi.Contracts.ApiVolumeSpike, ApiVolumeSpikeRule>("security.api_volume_spike");
+        services.AddMessageHandler<TeamBeats.Modules.Documents.Contracts.GuestOpenedClassified, GuestConfidentialRule>("security.guest_confidential_access");
+        services.AddScoped<AlertSettingsService>();
+        services.AddScoped<ISecurityAlertThresholds>(sp => sp.GetRequiredService<AlertSettingsService>());
         services.AddScoped<SiemService>();
         services.AddScoped<SiemStreamer>();
         services.AddScoped<AccessReviews>();
@@ -69,6 +74,15 @@ public static class SecurityModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        // Alert thresholds (FR-013): read with the alerts, changed with security.alerts_advanced and step-up.
+        security.MapGet("/alert-settings", async (AlertSettingsService settings, CancellationToken ct) => Results.Ok(await settings.GetAsync(ct)));
+        security.MapPut("/alert-settings", async (AlertSettingsRequest request, AlertSettingsService settings, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await settings.UpdateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).RequireStepUp();
 
         // SIEM streaming (US4): destinations, a test event, enable and disable. Changes need step-up (section 6).
         // Access reviews (FR-012): security administrators see the reviews and can open one; reviewers decide their items.

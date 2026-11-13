@@ -769,6 +769,10 @@ public sealed class DocumentFiles(
         {
             content = await StampAsync(content, size, principal, ct);
         }
+        if (guest)
+        {
+            await NoteGuestOpenAsync(doc, library, classification, ct);
+        }
         if (guest || classification is "confidential" or "restricted")
         {
             await audit.WriteAsync(new AuditEntry(AuditActions.DocDownloaded, Securables.Document, doc.ToString(),
@@ -777,6 +781,17 @@ public sealed class DocumentFiles(
         // Download volume counts the app itself when an app reads as itself (spec 026 US5 with spec 035).
         await outbox.EnqueueAsync(new DocumentDownloaded(doc, library, principal, size), ct);
         return (content, type, name);
+    }
+
+    /// <summary>Tells the Security module when a guest opens a Confidential item (spec 026 US5 scenario 3).</summary>
+    internal async Task NoteGuestOpenAsync(Guid doc, Guid library, string classification, CancellationToken ct)
+    {
+        if (classification != "confidential" || !await Access.IsGuestAsync(ct))
+        {
+            return;
+        }
+        var row = await Access.LibraryAsync(library, ct);
+        await outbox.EnqueueAsync(new GuestOpenedClassified(doc, library, row is { InSpace: true } ? row.ScopeId : null, context.RequireUser(), classification), ct);
     }
 
     /// <summary>

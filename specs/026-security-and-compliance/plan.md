@@ -97,7 +97,7 @@ R2 slices, in order:
 - **Access reviews (FR-012):** every 90 days, a review opens for each sponsor (their guests) and for each admin role holder's manager (their admin role assignments). An item not confirmed within 14 days is removed: the guest leaves the space, or the role assignment is revoked. Audit actions `guest.reviewed` and `security.access_review_completed`.
 
 ### Alerts in full
-- Guest access to Confidential items (US5 scenario 3): `DocumentOpened` with the guest flag and the classification; the tenant setting chooses whether the sponsor, the security officers or both are told.
+- Guest access to Confidential items (US5 scenario 3): Documents publishes `GuestOpenedClassified` when a guest downloads or previews a Confidential item; the tenant setting chooses whether the sponsor, the security officers or both are told.
 - App and AI client alerts (US5 scenario 5): the PublicApi module publishes `ApiCallsDenied` when an app passes 50 authorization denials in 10 minutes, and `ApiVolumeSpike` when an app's hour is over 5 times its 30 day hourly average. Security raises `api_denied_burst` and `api_volume_spike` for the security officers and API administrators.
 - Tenant thresholds (`security.alerts_advanced`): download files and bytes, denial count, volume factor.
 
