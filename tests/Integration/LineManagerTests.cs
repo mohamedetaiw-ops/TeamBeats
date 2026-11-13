@@ -4,6 +4,9 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Messaging;
+using TeamBeats.Modules.Notifications.Contracts;
+using TeamBeats.Modules.Services;
+using TeamBeats.Persistence;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Testing;
 using Xunit;
@@ -244,5 +247,44 @@ public sealed class LineManagerTests(TenantWorld world)
         Assert.Contains(told, n => n.GetProperty("title").GetString() == $"Request {number} approved");
         Assert.Equal(2, told.Length);
         Assert.Empty(await NotificationsAsync(world.B["admin"].Client, request));
+    }
+    private static bool Unread(JsonElement n) => n.GetProperty("readAt").ValueKind == JsonValueKind.Null;
+
+    [Fact]
+    public async Task Closing_a_task_resolves_its_waiting_notification_for_every_approver_and_only_in_this_tenant()
+    {
+        var t = await FreshAsync();
+        var service = await ServiceAsync(t, Route(new { kind = "users", users = new[] { t["omar"].Id, t["layla"].Id } }));
+        var approved = await SubmitAsync(t["sara"].Client, service);
+        var withdrawn = await SubmitAsync(t["sara"].Client, service);
+        await DispatchAsync();
+        Assert.True(Unread(Assert.Single(await NotificationsAsync(t["omar"].Client, approved))));
+        Assert.True(Unread(Assert.Single(await NotificationsAsync(t["layla"].Client, approved))));
+        await world.Factory.InScopeAsync(world.B.Id, async sp =>
+        {
+            // The same link in another tenant stays untouched (spec 015 FR-025).
+            var sent = await sp.GetRequiredService<INotificationSender>().SendAsync(new NotificationRequest([world.B["admin"].Id],
+                NotificationCategories.ApprovalWaiting, RequestNotifier.Waiting, RequestNotifier.Link(approved) + "?task=" + Guid.NewGuid(),
+                new Dictionary<string, string> { ["number"] = "X" }));
+            await sp.GetRequiredService<IDbSession>().CommitAsync();
+            return sent;
+        });
+
+        // Omar approves: Layla is no longer asked, and her bell agrees with her empty inbox.
+        var link = Assert.Single(await NotificationsAsync(t["omar"].Client, approved)).GetProperty("link").GetString()!;
+        var task = Guid.Parse(link[(link.IndexOf("?task=", StringComparison.Ordinal) + 6)..]);
+        Assert.Equal(HttpStatusCode.OK, (await DecideAsync(t["omar"].Client, task, "approve")).StatusCode);
+        await DispatchAsync();
+        Assert.False(Unread(Assert.Single(await NotificationsAsync(t["layla"].Client, approved))));
+        Assert.False(Unread(Assert.Single(await NotificationsAsync(t["omar"].Client, approved))));
+        Assert.DoesNotContain(await InboxAsync(t["layla"].Client), x => x.GetProperty("taskId").GetGuid() == task);
+
+        // Withdrawing a request resolves its waiting notifications too.
+        Assert.True(Unread(Assert.Single(await NotificationsAsync(t["layla"].Client, withdrawn))));
+        Assert.Equal(HttpStatusCode.OK, (await t["sara"].Client.PostAsJsonAsync($"/api/v1/requests/{withdrawn}/cancel", new { })).StatusCode);
+        await DispatchAsync();
+        Assert.False(Unread(Assert.Single(await NotificationsAsync(t["layla"].Client, withdrawn))));
+
+        Assert.True(Unread(Assert.Single(await NotificationsAsync(world.B["admin"].Client, approved))));
     }
 }

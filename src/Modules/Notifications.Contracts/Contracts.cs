@@ -28,6 +28,14 @@ public sealed record SendResult(int Created, int Grouped, int Duplicates, int Sk
 public interface INotificationSender
 {
     Task<SendResult> SendAsync(NotificationRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Resolves notifications that asked people to act on something that is now done or no longer theirs (spec 015
+    /// FR-025): every unread notification of <paramref name="category"/> in the current tenant whose link starts with
+    /// <paramref name="linkPrefix"/> is marked read, and its emails that have not gone out are dropped. Returns how many
+    /// notifications were resolved. Joins the caller's transaction.
+    /// </summary>
+    Task<int> ResolveAsync(string category, string linkPrefix, CancellationToken ct = default);
 }
 
 /// <summary>

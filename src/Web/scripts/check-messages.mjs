@@ -67,6 +67,24 @@ for (const key of capabilityKeys) {
   if (!en.has(`admin.areas.${area}`)) errors.push(`missing admin.areas.${area}`);
 }
 
+// Values the API returns that a screen turns into a message key (spec 007 FR-030): every constant of the backend class
+// needs a message, so a new value fails here instead of showing a raw key such as documents.libraries.scope.space.
+const valueLists = [
+  { file: "Documents/Model.cs", type: "LibraryScopes", prefix: "documents.libraries.scope", skip: ["SpaceResource"] },
+];
+for (const list of valueLists) {
+  const source = readFileSync(join(root, "..", "Modules", list.file), "utf8");
+  const body = new RegExp(`static class ${list.type}\\s*\\{([\\s\\S]*?)\\n\\}`).exec(source)?.[1];
+  if (!body) {
+    errors.push(`value list ${list.type} not found in ${list.file}`);
+    continue;
+  }
+  for (const match of body.matchAll(/const string (\w+) = "([a-z0-9_]+)";/g)) {
+    if (list.skip.includes(match[1])) continue;
+    if (!en.has(`${list.prefix}.${match[2]}`)) errors.push(`missing ${list.prefix}.${match[2]} (${list.type}.${match[1]})`);
+  }
+}
+
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exit(1);

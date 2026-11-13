@@ -158,7 +158,7 @@ test.describe("installed app", () => {
     await expect(bar.getByRole("button", { name: msg("en", "app.nav.more"), exact: true })).toBeVisible();
   });
 
-  test("a new version waits for Reload and never shows while a field has focus", async ({ page }) => {
+  test("a new version waits for Reload, never shows while a field has focus or on a fresh page", async ({ page }) => {
     await signInWithDevForm(page, tenant.key, tenant.adminEmail, "en");
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready;
@@ -178,6 +178,10 @@ test.describe("installed app", () => {
     await search.blur();
     await expect(prompt).toBeVisible();
     await prompt.getByRole("button", { name: msg("en", "app.update.later"), exact: true }).click();
+    await expect(prompt).toHaveCount(0);
+    // A freshly loaded page is the current release: it takes over silently and offers nothing (TB-02).
+    await page.goto(`${hostOrigin(tenant.key)}/people`);
+    await page.waitForFunction(async () => !(await navigator.serviceWorker.getRegistration())?.waiting);
     await expect(prompt).toHaveCount(0);
     // The release after that is offered again, and Reload applies it and reloads the page.
     await page.evaluate(() => navigator.serviceWorker.register("/sw.js?v=e2e-third", { scope: "/" }));

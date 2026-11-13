@@ -34,6 +34,7 @@ public static class ServicesModule
         services.AddMessageHandler<RequestCompleted, RequestNotifier>("services.notify_completed");
         services.AddMessageHandler<RequestReturned, RequestNotifier>("services.notify_returned");
         services.AddMessageHandler<Workflow.Contracts.UserTaskCreated, RequestNotifier>("services.notify_task");
+        services.AddMessageHandler<Workflow.Contracts.UserTaskCompleted, RequestNotifier>("services.resolve_task_notifications");
         services.AddScoped<Automation>();
         services.AddScoped<RouteActions>();
         services.AddMessageHandler<Workflow.Contracts.ProcessInstanceCompleted, Automation>("services.route_completed");

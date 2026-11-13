@@ -3,6 +3,7 @@ import { cookies, headers } from "next/headers";
 import { apiGet, type Me } from "@/lib/api";
 import { fallbackLocale, isLocale, launchLocales, type Locale } from "./locales";
 import en from "@/messages/en.json";
+import { messageFallback, onIntlError } from "./fallback";
 
 /**
  * Locale resolution mirrors the API (spec 007 FR-002): signed-in users get the locale the API resolved from their
@@ -27,5 +28,5 @@ export default getRequestConfig(async () => {
   const messages = launchLocales.includes(locale)
     ? (await import(`@/messages/${locale}.json`)).default
     : en;
-  return { locale, messages };
+  return { locale, messages, getMessageFallback: messageFallback, onError: onIntlError };
 });

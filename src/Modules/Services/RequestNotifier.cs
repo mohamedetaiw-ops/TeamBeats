@@ -14,7 +14,7 @@ namespace TeamBeats.Modules.Services;
 /// check. Steps for holders of a permission at a unit reach their approvers through the inbox badge.
 /// </summary>
 public sealed class RequestNotifier(IDbSession session, Requests requests, IReportingLine reportingLine, INotificationSender notifications)
-    : IMessageHandler<RequestCompleted>, IMessageHandler<RequestReturned>, IMessageHandler<UserTaskCreated>
+    : IMessageHandler<RequestCompleted>, IMessageHandler<RequestReturned>, IMessageHandler<UserTaskCreated>, IMessageHandler<UserTaskCompleted>
 {
     public const string Approved = "services.request.approved";
     public const string Rejected = "services.request.rejected";
@@ -23,14 +23,34 @@ public sealed class RequestNotifier(IDbSession session, Requests requests, IRepo
 
     public static string Link(Guid requestId) => $"/requests/{requestId}";
 
-    public Task HandleAsync(RequestCompleted message, CancellationToken ct) => message.Status switch
+    public async Task HandleAsync(RequestCompleted message, CancellationToken ct)
     {
-        RequestStatuses.Approved or RequestStatuses.Completed => TellRequesterAsync(message.RequestId, Approved, "completed", ct),
-        RequestStatuses.Rejected => TellRequesterAsync(message.RequestId, Rejected, "completed", ct),
-        _ => Task.CompletedTask, // The filer cancelled it themselves.
-    };
+        // However it ended (approved, rejected or cancelled by the filer), nobody is still asked to approve it (spec 015 FR-025).
+        await ResolveWaitingAsync(message.RequestId, ct);
+        await (message.Status switch
+        {
+            RequestStatuses.Approved or RequestStatuses.Completed => TellRequesterAsync(message.RequestId, Approved, "completed", ct),
+            RequestStatuses.Rejected => TellRequesterAsync(message.RequestId, Rejected, "completed", ct),
+            _ => Task.CompletedTask, // The filer cancelled it themselves.
+        });
+    }
 
-    public Task HandleAsync(RequestReturned message, CancellationToken ct) => TellRequesterAsync(message.RequestId, Returned, "returned", ct);
+    public async Task HandleAsync(RequestReturned message, CancellationToken ct)
+    {
+        await ResolveWaitingAsync(message.RequestId, ct);
+        await TellRequesterAsync(message.RequestId, Returned, "returned", ct);
+    }
+
+    /// <summary>A task of a request closed, whoever completed it: its "waiting for you" notification is resolved for every approver (spec 015 FR-025).</summary>
+    public Task HandleAsync(UserTaskCompleted message, CancellationToken ct) =>
+        Tasks.RequestIdOf(message.DefinitionKey, message.BusinessKey) is { } requestId
+            ? notifications.ResolveAsync(NotificationCategories.ApprovalWaiting, TaskLink(requestId, message.TaskId), ct)
+            : Task.CompletedTask;
+
+    private Task ResolveWaitingAsync(Guid requestId, CancellationToken ct) =>
+        notifications.ResolveAsync(NotificationCategories.ApprovalWaiting, Link(requestId) + "?task=", ct);
+
+    public static string TaskLink(Guid requestId, Guid taskId) => $"{Link(requestId)}?task={taskId}";
 
     private async Task TellRequesterAsync(Guid requestId, string template, string stage, CancellationToken ct)
     {
@@ -69,7 +89,7 @@ public sealed class RequestNotifier(IDbSession session, Requests requests, IRepo
         {
             return;
         }
-        await notifications.SendAsync(new NotificationRequest(list, NotificationCategories.ApprovalWaiting, Waiting, Link(row.Id) + "?task=" + message.TaskId,
+        await notifications.SendAsync(new NotificationRequest(list, NotificationCategories.ApprovalWaiting, Waiting, TaskLink(row.Id, message.TaskId),
             new Dictionary<string, string> { ["number"] = row.Number },
             DedupeKey: "task:" + message.TaskId.ToString("N")), ct);
     }

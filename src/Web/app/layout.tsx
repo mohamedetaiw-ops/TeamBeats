@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getLocale, getMessages, getTimeZone, getTranslations } from "next-intl/server";
+import { IntlProvider } from "./IntlProvider";
 import { direction, isLocale } from "@/i18n/locales";
 import { getTheme } from "@/lib/experience/client";
 import { ThemeLinks } from "@/components/shell/ThemeLinks";
@@ -54,7 +54,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const dir = isLocale(locale) ? direction(locale) : "ltr";
   // The tenant theme is awaited here, before the page renders, so a page that links the theme of its own scope
   // always comes later in the head and wins. Signed-out pages get no theme and keep the platform tokens.
-  const [theme, prefs] = await Promise.all([getTheme("tenant"), getPreferences()]);
+  const [theme, prefs, messages, timeZone] = await Promise.all([getTheme("tenant"), getPreferences(), getMessages(), getTimeZone()]);
   const density = prefs.density === "compact" ? "compact" : "comfortable";
   const mode = prefs.mode === "light" || prefs.mode === "dark" ? prefs.mode : "system";
   // Text size scales the root font, so every rem-based size follows (spec 008 preferences, WCAG 1.4.4).
@@ -71,10 +71,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <a className="skip-link" href="#main">
           {t("skipToContent")}
         </a>
-        <NextIntlClientProvider>
-          <MessagesProvider>{children}</MessagesProvider>
+        <IntlProvider locale={locale} messages={messages} timeZone={timeZone}>
+          {/* The update offer docks in the page flow above the shell, so it never covers content (spec 036 DLS-078). */}
           <AppUpdate release={process.env.NEXT_PUBLIC_TEAMBEATS_RELEASE ?? "dev"} />
-        </NextIntlClientProvider>
+          <MessagesProvider>{children}</MessagesProvider>
+        </IntlProvider>
         <ShellFooter />
       </body>
     </html>
