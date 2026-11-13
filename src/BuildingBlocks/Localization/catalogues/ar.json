@@ -2331,6 +2331,8 @@
   "notifications.template.services.request.at_risk.body": "استهلك الطلب {number} معظم وقت مستوى الخدمة. يرجى التعامل معه قريبًا.",
   "notifications.template.services.request.breached.title": "تجاوز الطلب {number} مستوى الخدمة",
   "notifications.template.services.request.breached.body": "تجاوز الطلب {number} هدف مستوى الخدمة وما زال مفتوحًا.",
+  "notifications.template.services.request.fulfilment_failed.title": "فشل تنفيذ الطلب {number}",
+  "notifications.template.services.request.fulfilment_failed.body": "فشلت خطوة تلقائية في الطلب {number}. أعد المحاولة أو تخطها أو ألغ الطلب.",
   "validation.services.service_level": "هدف مستوى الخدمة من 1 إلى 90 يوم عمل.",
   "notifications.template.services.request.update.title": "مستجدات على الطلب {number}",
   "notifications.template.services.request.update.body": "هناك مستجدات على الطلب {number}. افتحه لترى أين وصل.",

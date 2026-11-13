@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { useNow } from "@/lib/clock";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
+import { Button } from "@/components/ui/Button";
 import { pick, type InboxItem } from "@/lib/services/types";
 import { isolate } from "@/lib/bidi";
 import "./services.css";
@@ -20,6 +22,27 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
   const format = useFormatter();
   const now = useNow();
   const [type, setType] = useState("");
+  const router = useRouter();
+  const [busy, setBusy] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  // Pick a queue task, or put it back for the rest of the queue (spec 016 US6 scenario 1).
+  async function pickTask(taskId: string, pick: boolean) {
+    setBusy(taskId);
+    setFailed(false);
+    try {
+      const response = await fetch(`/api/v1/tasks/${taskId}/pick`, { method: pick ? "POST" : "DELETE" });
+      if (response.ok) {
+        router.refresh();
+      } else {
+        setFailed(true);
+      }
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(null);
+    }
+  }
 
   const types = useMemo(() => {
     const seen = new Map<string, string>();
@@ -91,6 +114,11 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
         </label>
       ) : null}
       </div>
+      {failed ? (
+        <div className="notice notice-error" role="alert">
+          <p>{t("pickFailed")}</p>
+        </div>
+      ) : null}
       {shown.length === 0 ? (
         <StateView kind="empty" title={t("empty")} message="" />
       ) : (
@@ -134,6 +162,20 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
                 )}
                 </div>
                 {i.onBehalfOf ? <span className="services-status">{t("onBehalfOf", { name: isolate(i.onBehalfOf.displayName) })}</span> : null}
+                {i.pickable ? (
+                  i.pickedBy ? (
+                    <>
+                      <span className="services-status">{t("pickedBy", { name: isolate(i.pickedBy.displayName) })}</span>
+                      <Button variant="secondary" disabled={busy === i.taskId} onClick={() => pickTask(i.taskId, false)}>
+                        {t("putBack")}
+                      </Button>
+                    </>
+                  ) : (
+                    <Button variant="secondary" disabled={busy === i.taskId} onClick={() => pickTask(i.taskId, true)}>
+                      {t("pick")}
+                    </Button>
+                  )
+                ) : null}
               </li>
             );
           })}

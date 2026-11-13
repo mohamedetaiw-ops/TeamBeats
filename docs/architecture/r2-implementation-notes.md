@@ -1574,3 +1574,15 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - The clock runs while a request is returned to the requester; pausing it waits for a spec rule.
 - Owners alerted are the people holding `service.manage` tenant-wide who hold it at the owning unit; owners scoped to a unit only see it on the request and in analytics until the authorization service can list holders at a unit.
 - Test runs of a draft show an auto-approve step as not carried out; the designer's test mode (T024) shows the path the rule picks.
+
+## Service catalogue and workflows (spec 016 R2, slice 4: T023 fulfilment queue)
+
+### Built
+- Picking queue tasks (US6 scenario 1): the engine keeps `claimed_by` on a user task (`ClaimTaskAsync`, `ReleaseTaskAsync`, history `task_claimed` and `task_released`). While the picker is still a candidate, the task is theirs alone (or their delegate's, acting for them): the rest of the queue no longer sees it, cannot pick it and cannot decide it. A pick lapses when the picker stops being a candidate, for example when they leave the queue group.
+- `POST` and `DELETE /api/v1/tasks/{id}/pick`. The inbox marks queue steps (a step assigned to groups) as `pickable` with `pickedBy`, and offers Pick and Put back. Tracking records `picked` and `put_back` under the step. Rejecting still needs a reason.
+- A failed automatic step (an incident on a connector or webhook step) records `automation_failed` and alerts the service's fulfilment queue (`fulfilmentQueueGroupId`) and its owners, once per incident (US6 scenario 3, US8 scenario 5). Retry, skip and cancel stay with the owners (spec 017 T009).
+- Tests: `ServiceQueueTests` (3).
+
+### Smallest safe defaults
+- Picking is offered on steps assigned to groups. Any other step can be picked through the API by a candidate, which only matters when several people may act on it.
+- An R1 route with a fulfilment queue still ends after its approval and connector steps; the designer (T024) opens it as a step graph where the queue becomes a task step.

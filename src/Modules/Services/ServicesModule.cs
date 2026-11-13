@@ -162,6 +162,20 @@ public static class ServicesModule
 
         tasks.MapGet("/count", async (Tasks inbox, CancellationToken ct) => Results.Ok(await inbox.CountAsync(ct)));
 
+        tasks.MapPost("/{id:guid}/pick", async (Guid id, Tasks inbox, IDbSession session, CancellationToken ct) =>
+        {
+            var task = await inbox.PickAsync(id, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(task);
+        });
+
+        tasks.MapDelete("/{id:guid}/pick", async (Guid id, Tasks inbox, IDbSession session, CancellationToken ct) =>
+        {
+            var task = await inbox.PickAsync(id, false, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(task);
+        });
+
         tasks.MapPost("/{id:guid}/decision", async (Guid id, TaskDecision decision, Tasks inbox, IDbSession session, CancellationToken ct) =>
         {
             var task = await inbox.DecideAsync(id, decision, ct);

@@ -25,7 +25,7 @@ public sealed record IncidentResolveRequest(string? Resolution, string? Reason);
 /// the service's owning unit) retries, skips with a reason, or cancels.
 /// </summary>
 public sealed class Automation(IDbSession session, ITenantContext context, IAuthorizationService authz, IProcessEngine engine,
-    Requests requests, RouteEnds routeEnds, IAuditWriter audit)
+    Requests requests, RouteEnds routeEnds, IAuditWriter audit, RequestNotifier notifier)
     : IMessageHandler<ProcessInstanceCompleted>, IMessageHandler<ServiceTaskCompleted>, IMessageHandler<ProcessIncidentRaised>,
       IMessageHandler<ProcessActionRequested>
 {
@@ -81,10 +81,11 @@ public sealed class Automation(IDbSession session, ITenantContext context, IAuth
 
     public async Task HandleAsync(ProcessIncidentRaised message, CancellationToken ct)
     {
-        // The owner alert of US8 scenario 5 is a follow-up: owners see the failed step on the request and in the Connections run history.
+        // The request shows "automation failed", and the fulfilment queue and the owners are alerted (US6 scenario 3, US8 scenario 5).
         if (await RequestOfAsync(message.InstanceId, message.DefinitionKey, message.BusinessKey, false, ct) is { } row)
         {
             await requests.EventAsync(row.Id, "automation_failed", await StepNameAsync(message.InstanceId, message.ElementId, ct), null, null, null, ct);
+            await notifier.AlertFulfilmentFailedAsync(row, message.IncidentId, ct);
         }
     }
 

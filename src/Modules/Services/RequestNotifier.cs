@@ -23,6 +23,7 @@ public sealed class RequestNotifier(IDbSession session, Requests requests, IRepo
     public const string Update = "services.request.update";
     public const string AtRisk = "services.request.at_risk";
     public const string Breached = "services.request.breached";
+    public const string FulfilmentFailed = "services.request.fulfilment_failed";
 
     public const string Approved = "services.request.approved";
     public const string Rejected = "services.request.rejected";
@@ -236,20 +237,48 @@ public sealed class RequestNotifier(IDbSession session, Requests requests, IRepo
                 }
             }
         }
-        var owner = await session.ScalarAsync<Guid?>("select owner_org_unit_id from services.service where id = @id", new { id = row.ServiceId }, ct);
+        recipients.AddRange(await OwnersAsync(row.ServiceId, ct));
+        await AlertAsync(row, recipients, template, $"request:{row.Id:N}:{template}", ct);
+    }
+
+    /// <summary>
+    /// An automatic step of a request failed and waits for retry, skip or cancel (US6 scenario 3): the service's
+    /// fulfilment queue and its owners are told, once per failure.
+    /// </summary>
+    internal async Task AlertFulfilmentFailedAsync(RequestRow row, Guid incidentId, CancellationToken ct)
+    {
+        var recipients = new List<Guid>();
+        if ((await Versions.GetAsync(session, row.ServiceId, row.ServiceVersion, ct))?.FulfilmentQueueGroupId is { } queue)
+        {
+            recipients.AddRange(await grants.GroupMembersAsync([queue], ct));
+        }
+        recipients.AddRange(await OwnersAsync(row.ServiceId, ct));
+        await AlertAsync(row, recipients, FulfilmentFailed, $"request:{row.Id:N}:incident:{incidentId:N}", ct);
+    }
+
+    /// <summary>The service's owners: tenant-wide holders of <c>service.manage</c> who hold it at the owning unit.</summary>
+    private async Task<List<Guid>> OwnersAsync(Guid serviceId, CancellationToken ct)
+    {
+        var owners = new List<Guid>();
+        var owner = await session.ScalarAsync<Guid?>("select owner_org_unit_id from services.service where id = @id", new { id = serviceId }, ct);
         var target = owner is { } unit ? TeamBeats.Authorization.Contracts.AuthzTarget.OrgUnit(unit) : TeamBeats.Authorization.Contracts.AuthzTarget.Tenant;
         foreach (var holder in await grants.TenantHoldersAsync(TeamBeats.Authorization.Contracts.Permissions.ServiceManage, ct))
         {
             if (await grants.UserHoldsAsync(holder, TeamBeats.Authorization.Contracts.Permissions.ServiceManage, target, ct))
             {
-                recipients.Add(holder);
+                owners.Add(holder);
             }
         }
+        return owners;
+    }
+
+    private async Task AlertAsync(RequestRow row, List<Guid> recipients, string template, string dedupe, CancellationToken ct)
+    {
         var list = recipients.Where(p => p != row.RequesterId && p != row.OnBehalfOfId).Distinct().ToArray();
         if (list.Length > 0)
         {
             await notifications.SendAsync(new NotificationRequest(list, NotificationCategories.ApprovalEscalation, template, Link(row.Id),
-                new Dictionary<string, string> { ["number"] = row.Number }, DedupeKey: $"request:{row.Id:N}:{template}"), ct);
+                new Dictionary<string, string> { ["number"] = row.Number }, DedupeKey: dedupe), ct);
         }
     }
 }

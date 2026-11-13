@@ -2331,6 +2331,8 @@
   "notifications.template.services.request.at_risk.body": "Request {number} has used most of its service level time. Please act on it soon.",
   "notifications.template.services.request.breached.title": "Request {number} missed its service level",
   "notifications.template.services.request.breached.body": "Request {number} is past its service level target and still open.",
+  "notifications.template.services.request.fulfilment_failed.title": "Fulfilment of request {number} failed",
+  "notifications.template.services.request.fulfilment_failed.body": "An automatic step of request {number} failed. Retry it, skip it or cancel the request.",
   "validation.services.service_level": "The service level target is 1 to 90 working days.",
   "notifications.template.services.request.update.title": "Update on request {number}",
   "notifications.template.services.request.update.body": "There is news on request {number}. Open it to see where it stands.",

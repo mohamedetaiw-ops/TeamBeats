@@ -30,7 +30,9 @@ public sealed record InboxItem(
     DateTimeOffset CreatedAt,
     DateTimeOffset? DueAt,
     IReadOnlyDictionary<string, string>? Title = null,
-    string? Link = null);
+    string? Link = null,
+    bool Pickable = false,
+    PersonRef? PickedBy = null);
 
 public sealed record InboxCount(int Open);
 
@@ -158,6 +160,7 @@ public sealed class Tasks(
                 continue;
             }
             IReadOnlyDictionary<string, string>? step = null, names = null;
+            var pickable = false;
             if (request is not null)
             {
                 names = Catalogue.Json<Dictionary<string, string>>(await session.ScalarAsync<string>("select names::text from services.service where id = @id",
@@ -166,13 +169,16 @@ public sealed class Tasks(
                 step = version?.Route.Graph is { } graph
                     ? graph.Step(RouteGraph.StepIdOf(task.ElementId))?.Names is { Count: > 0 } nodeNames ? nodeNames : names
                     : version?.Route.Approval?.Names is { Count: > 0 } stepNames ? stepNames : names;
+                // A queue step (a group of people) is picked by one member, who may put it back (US6 scenario 1).
+                pickable = version?.Route.Graph?.Step(RouteGraph.StepIdOf(task.ElementId))?.Assignee?.Groups is { Count: > 0 };
             }
             var requester = request?.RequesterId ?? subject?.RequesterId;
             items.Add(new InboxItem(task.Id, subject?.Source ?? (request is null ? task.DefinitionKey : "service_request"), task.Name, step, request?.Id, request?.Number,
                 request?.ServiceId, names, requester is { } r ? await PersonAsync(r, ct) : null,
                 request?.OnBehalfOfId is { } forWhom ? await PersonAsync(forWhom, ct) : null,
                 task.OnBehalfOf is { } delegator ? await PersonAsync(delegator, ct) : null, task.CreatedAt, task.DueAt, subject?.Title,
-                subject?.Link ?? (request is not null ? RequestNotifier.Link(request.Id) : null)));
+                subject?.Link ?? (request is not null ? RequestNotifier.Link(request.Id) : null), pickable,
+                task.ClaimedBy is { } picker ? await PersonAsync(picker, ct) : null));
         }
         if (serviceId is null)
         {
@@ -197,6 +203,28 @@ public sealed class Tasks(
     public async Task<InboxCount> CountAsync(CancellationToken ct) => new((await ActionableAsync(ct)).Count + (await PersonalAsync(ct)).Count);
 
     /// <summary>Approves, rejects (a reason is required) or returns a task, and moves its request on.</summary>
+    /// <summary>
+    /// Picks a queue task of a request, or puts it back (US6 scenario 1): while picked, the rest of the queue no longer
+    /// sees it. Tracking records who picked it and when it was put back.
+    /// </summary>
+    public async Task<UserTaskInfo> PickAsync(Guid taskId, bool pick, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.WorkflowCatalogue, ct);
+        var user = context.RequireUser();
+        var task = await engine.MyTaskAsync(taskId, ct) ?? throw (await engine.GetTaskAsync(taskId, ct) is null ? AppException.NotFound() : AppException.Denied());
+        var request = RequestIdOf(task) is { } requestId ? await requests.RowAsync(requestId, true, ct) : null;
+        var before = task.ClaimedBy;
+        var after = pick ? await engine.ClaimTaskAsync(taskId, ct) : await engine.ReleaseTaskAsync(taskId, ct);
+        if (request is not null && after.ClaimedBy != before)
+        {
+            var version = await Versions.GetAsync(session, request.ServiceId, request.ServiceVersion, ct);
+            var node = version?.Route.Graph?.Step(RouteGraph.StepIdOf(task.ElementId));
+            var stepName = node?.Names is { Count: > 0 } n ? ServiceAdmin.Preferred(n) ?? node.Id : task.Name;
+            await requests.EventAsync(request.Id, pick ? "picked" : "put_back", stepName, user, task.OnBehalfOf, null, ct);
+        }
+        return after;
+    }
+
     public async Task<UserTaskInfo> DecideAsync(Guid taskId, TaskDecision decision, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.WorkflowCatalogue, ct);

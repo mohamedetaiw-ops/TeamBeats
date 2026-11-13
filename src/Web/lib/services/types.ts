@@ -201,6 +201,9 @@ export type InboxItem = {
   /** Set for tasks of other modules, such as content reviews (spec 009). */
   title?: Names | null;
   link?: string | null;
+  /** A queue step: one member picks it, and may put it back (spec 016 US6). */
+  pickable?: boolean;
+  pickedBy?: PersonRef | null;
 };
 
 export type Delegation = { delegate: PersonRef; startsOn: string; endsOn: string; active: boolean };
