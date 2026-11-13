@@ -2210,5 +2210,15 @@
   "notifications.template.security.alert_app.api_volume_spike.title": "Unusual call volume from an app",
   "notifications.template.security.alert_app.api_volume_spike.body": "One of your apps made far more calls in one hour than it usually does. Check the app on the apps page.",
   "notifications.template.security.guest_confidential.sponsor.title": "Your guest opened a Confidential item",
-  "notifications.template.security.guest_confidential.sponsor.body": "A guest you invited opened an item classified Confidential in your space. Check that they should have it."
+  "notifications.template.security.guest_confidential.sponsor.body": "A guest you invited opened an item classified Confidential in your space. Check that they should have it.",
+  "validation.security.detection_mode": "Choose off, warn or block for each kind of location.",
+  "validation.security.pattern_name": "Give the pattern a name of up to 80 characters.",
+  "validation.security.pattern_name_taken": "Another pattern already has this name.",
+  "validation.security.pattern": "Enter a valid regular expression of up to 500 characters.",
+  "validation.security.pattern_no_match": "The pattern found nothing in the sample text. Check the pattern or the sample.",
+  "validation.security.pattern_untested": "Test the pattern on sample text that it finds before you turn it on.",
+  "validation.security.sensitive_reason": "Keep the reason under 500 characters.",
+  "conflict.security.sensitive_data_found": "This contains data that looks sensitive. Remove it, raise the classification, or confirm with a reason.",
+  "conflict.security.sensitive_data_blocked": "This contains sensitive data that your organization does not allow here. Remove it before you continue.",
+  "conflict.security.too_many_patterns": "Your organization has the most patterns allowed. Delete one before you add another."
 }

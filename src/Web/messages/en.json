@@ -811,7 +811,8 @@
         "api_mcp": "MCP server for AI assistants",
         "api_mcp_write_tools": "Confirmed actions from AI assistants",
         "api_max_apps": "Apps",
-        "api_monthly_calls": "API calls each month"
+        "api_monthly_calls": "API calls each month",
+        "security_data_detection": "Sensitive data detection"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -2325,7 +2326,8 @@
       "alerts": "Alerts",
       "posture": "Posture",
       "siem": "SIEM",
-      "reviews": "Access reviews"
+      "reviews": "Access reviews",
+      "detection": "Sensitive data"
     },
     "openAlerts": "{count, plural, one {# open alert} other {# open alerts}}",
     "policy": {
@@ -2596,6 +2598,99 @@
       "confirmed": "Confirmed",
       "removed": "Removed",
       "kept": "Kept (last administrator)"
+    },
+    "sensitive": {
+      "foundTitle": "This looks like sensitive data",
+      "foundText": "Remove it, raise the classification to Confidential, or confirm with a reason. The reason is recorded.",
+      "blockedTitle": "Sensitive data is not allowed here",
+      "blockedText": "Your organization blocks this data where this is going. Remove it, then try again.",
+      "finding": "{what} in {where} ({count, plural, one {# time} other {# times}})",
+      "inLanguage": "{where}, {language}",
+      "places": {
+        "title": "the title",
+        "summary": "the summary",
+        "body": "the body",
+        "file": "the file"
+      },
+      "types": {
+        "saudi_id": "Saudi national ID or Iqama",
+        "emirates_id": "Emirates ID",
+        "egypt_id": "Egyptian national ID",
+        "qatar_id": "Qatar ID",
+        "iban": "IBAN",
+        "payment_card": "Payment card number",
+        "passport": "Passport number"
+      },
+      "reason": "Why this is needed",
+      "reasonHint": "Up to 500 characters. Do not repeat the data itself.",
+      "confirm": "Confirm and continue",
+      "working": "Sending"
+    },
+    "detection": {
+      "title": "Sensitive data detection",
+      "intro": "Warn people, or stop them, when what they publish or upload contains identity numbers, bank or card details. Only the type of data and where it is are shown or recorded, never the data.",
+      "unavailable": "Sensitive data detection is not part of your plan, or you cannot see it.",
+      "failed": "The settings could not be loaded. Try again.",
+      "settingsTitle": "Settings",
+      "enabled": "Check content and files for sensitive data",
+      "enabledHint": "Content is checked when it is published or sent for approval, files when they are uploaded.",
+      "targets": {
+        "guest_space": "Spaces with guests",
+        "everyone": "Content for everyone",
+        "other": "Everywhere else"
+      },
+      "targetHints": {
+        "guest_space": "Libraries in spaces that have guests or open invitations.",
+        "everyone": "Content for the whole organization and libraries open to everyone.",
+        "other": "Content for some people, and other libraries."
+      },
+      "modes": {
+        "off": "Off",
+        "warn": "Warn",
+        "block": "Block"
+      },
+      "save": "Save settings",
+      "saved": "The settings are saved.",
+      "working": "Saving",
+      "readOnly": "Only security managers can change these settings.",
+      "builtInTitle": "Built-in types",
+      "builtInIntro": "Each type is checked with its own rules, such as check digits, so ordinary numbers are not reported. Passport numbers only ever warn.",
+      "types": {
+        "saudi_id": "Saudi national ID or Iqama",
+        "emirates_id": "Emirates ID",
+        "egypt_id": "Egyptian national ID",
+        "qatar_id": "Qatar ID",
+        "iban": "IBAN",
+        "payment_card": "Payment card number",
+        "passport": "Passport number"
+      },
+      "patternsTitle": "Your patterns",
+      "none": "No patterns yet",
+      "noneHint": "Add a pattern for data only your organization uses, such as employee numbers.",
+      "name": "Name",
+      "pattern": "Pattern",
+      "patternHint": "A regular expression, such as \\bEMP-\\d{6}\\b.",
+      "state": "State",
+      "actions": "Actions",
+      "on": "On",
+      "off": "Off",
+      "turnOn": "Turn on",
+      "turnOff": "Turn off",
+      "turnedOn": "The pattern is on.",
+      "turnedOff": "The pattern is off.",
+      "delete": "Delete",
+      "cancel": "Cancel",
+      "deleteQuestion": "Delete the pattern {name}? Content is no longer checked for it.",
+      "deleted": "The pattern is deleted.",
+      "addTitle": "Add a pattern",
+      "sample": "Sample text",
+      "sampleHint": "Text the pattern should find. It is used for the test only and is not saved.",
+      "turnOnNow": "Turn on once the sample matches",
+      "test": "Test on the sample",
+      "testResult": "{count, plural, =0 {The pattern found nothing in the sample.} one {The pattern found # match in the sample.} other {The pattern found # matches in the sample.}}",
+      "testInvalid": "This is not a valid regular expression.",
+      "add": "Add pattern",
+      "added": "The pattern is added."
     }
   },
   "services": {

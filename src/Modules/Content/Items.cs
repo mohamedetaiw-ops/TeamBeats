@@ -32,7 +32,8 @@ public sealed record ItemRequest(
     CriticalInput? Critical = null);
 
 /// <summary>When to go live and when to expire, as local times in the site's time zone (US1 scenario 3).</summary>
-public sealed record PublishRequest(DateTime? PublishAt, DateTime? ExpiresAt, bool? Material);
+/// <summary>SensitiveReason confirms a sensitive data warning (spec 026 US6 scenario 1).</summary>
+public sealed record PublishRequest(DateTime? PublishAt, DateTime? ExpiresAt, bool? Material, string? SensitiveReason = null);
 
 public sealed record ItemView(
     Guid Id,
@@ -135,7 +136,8 @@ public sealed class Items(
     IProcessEngine engine,
     Sites sites,
     ContentReviews reviews,
-    IOrganizationHierarchy hierarchy)
+    IOrganizationHierarchy hierarchy,
+    TeamBeats.Modules.Security.Contracts.ISensitiveDataScanner sensitiveData)
 {
     public static readonly IReadOnlySet<string> Classifications = new HashSet<string>(StringComparer.Ordinal) { "public", "internal", "confidential", "restricted" };
 
@@ -554,10 +556,31 @@ public sealed class Items(
             throw AppException.Conflict("conflict.content.approval_required");
         }
         await DemandCriticalAsync(item, site, ct);
+        await GuardSensitiveAsync(item, version, request.SensitiveReason, ct);
         await session.ExecAsync("update content.content_version set material = @material, approver_user_id = @user where item_id = @id and number = @version",
             new { id, version, material = request.Material ?? true, user }, ct);
         await ReleaseAsync(item, site, version, publishAt, expiresAt, ct);
         return await ViewAsync((await RowAsync(id, false, ct))!, ct);
+    }
+
+    /// <summary>
+    /// Spec 026 US6: the version about to go out is scanned for sensitive data, each language's title, summary and body
+    /// on its own. An item for everyone is judged under the tenant's "everyone" mode, anything else under "other".
+    /// </summary>
+    private async Task GuardSensitiveAsync(ItemRow item, int version, string? reason, CancellationToken ct)
+    {
+        if (await VersionAsync(item.Id, version, ct) is not { } row)
+        {
+            return;
+        }
+        var parts = row.Variants.OrderBy(v => v.Key, StringComparer.Ordinal).SelectMany(v => new[]
+        {
+            new TeamBeats.Modules.Security.Contracts.SensitiveText($"title.{v.Key}", v.Value.Title),
+            new TeamBeats.Modules.Security.Contracts.SensitiveText($"summary.{v.Key}", v.Value.Summary ?? ""),
+            new TeamBeats.Modules.Security.Contracts.SensitiveText($"body.{v.Key}", BodyValidator.PlainText(v.Value.Body)),
+        }).ToList();
+        var target = item.Audience.IsEveryone ? TeamBeats.Modules.Security.Contracts.SensitiveTargets.Everyone : TeamBeats.Modules.Security.Contracts.SensitiveTargets.Other;
+        await sensitiveData.GuardAsync(target, parts, item.Classification, reason, "content_item", item.Id.ToString(), ct);
     }
 
     /// <summary>
@@ -644,6 +667,7 @@ public sealed class Items(
         }
         var (version, publishAt, expiresAt) = await ReadyAsync(item, site, request.PublishAt, request.ExpiresAt, ct);
         await DemandCriticalAsync(item, site, ct);
+        await GuardSensitiveAsync(item, version, request.SensitiveReason, ct);
         var author = (await VersionAsync(id, version, ct))!.Author;
         var writers = new[] { user, author, item.CreatedBy }.Distinct().ToArray();
         var key = await reviews.RouteKeyAsync(site, item.Type, route, writers, ct);

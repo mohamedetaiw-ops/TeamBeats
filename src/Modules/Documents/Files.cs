@@ -22,7 +22,8 @@ public sealed record UploadRequest(
     Guid? TypeId,
     IReadOnlyDictionary<string, JsonElement>? Metadata,
     string? Classification,
-    bool Publish);
+    bool Publish,
+    string? SensitiveReason = null);
 
 public sealed record VersionView(
     Guid Id,
@@ -113,6 +114,8 @@ public sealed class DocumentFiles(
     IOutbox outbox,
     IUserDirectory users,
     IPdfStamp stamp,
+    TeamBeats.Modules.Security.Contracts.ISensitiveDataScanner sensitiveData,
+    TeamBeats.Modules.Spaces.Contracts.ISpaceGuestReview spaceGuests,
     IClock clock)
 {
     public const int MaxNameLength = 200;
@@ -211,6 +214,16 @@ public sealed class DocumentFiles(
         }
 
         var scan = await ScanStoredAsync(key, ct);
+        string? text;
+        try
+        {
+            text = await GuardSensitiveAsync(library, key, name, classification, request.SensitiveReason, documentId, ct);
+        }
+        catch
+        {
+            await storage.DeleteAsync(key, CancellationToken.None);
+            throw;
+        }
 
         var checkIn = complete && scan == ScanStates.Clean;
         var (major, minor, state) = !checkIn ? (0, 0, VersionStates.Pending) : request.Publish ? (1, 0, VersionStates.Effective) : (0, 1, VersionStates.Draft);
@@ -231,13 +244,13 @@ public sealed class DocumentFiles(
         await session.ExecAsync(
             """
             insert into documents.document_version (tenant_id, id, document_id, library_id, major, minor, object_key, content_hash, size_bytes, content_type, file_name,
-              author_user_id, effective_from, state, scan_state, created_at)
-            values (platform.current_tenant_id(), @versionId, @documentId, @lib, @major, @minor, @key, @hash, @size, @contentType, @name, @user, @effective, @state, @scan, @now)
+              author_user_id, effective_from, state, scan_state, created_at, text_extract)
+            values (platform.current_tenant_id(), @versionId, @documentId, @lib, @major, @minor, @key, @hash, @size, @contentType, @name, @user, @effective, @state, @scan, @now, @text)
             """,
             new
             {
                 versionId, documentId, lib = library.Id, major, minor, key, hash, size, contentType, name, user,
-                effective = state == VersionStates.Effective ? now : (DateTimeOffset?)null, state, scan, now,
+                effective = state == VersionStates.Effective ? now : (DateTimeOffset?)null, state, scan, now, text,
             }, ct);
         await session.ExecAsync(
             """
@@ -261,6 +274,37 @@ public sealed class DocumentFiles(
     }
 
     /// <summary>Scans a stored file; anything but a clean verdict leaves it unusable.</summary>
+    /// <summary>
+    /// Spec 026 US6: the stored file's text is checked for sensitive data before the upload is kept. A library in a
+    /// space with guests is judged under the tenant's guest space mode, a library open to the whole tenant under
+    /// "everyone", any other under "other". Returns the text for search, or null when the format gives none.
+    /// </summary>
+    internal async Task<string?> GuardSensitiveAsync(LibraryRow library, string key, string fileName, string classification, string? reason, Guid documentId,
+        CancellationToken ct)
+    {
+        var extension = FileTypes.ExtensionOf(fileName);
+        if (!TextExtraction.Supports(extension))
+        {
+            return null;
+        }
+        string? text;
+        await using (var stored = await storage.OpenReadAsync(key, ct) ?? throw new InvalidOperationException("Stored file is missing."))
+        {
+            text = await TextExtraction.ReadAsync(stored, extension, ct);
+        }
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return null;
+        }
+        var target = library.InSpace && library.ScopeId is { } space && await spaceGuests.HasGuestsAsync(space, ct)
+            ? TeamBeats.Modules.Security.Contracts.SensitiveTargets.GuestSpace
+            : !library.InSpace && library.OrgUnitId is null ? TeamBeats.Modules.Security.Contracts.SensitiveTargets.Everyone
+            : TeamBeats.Modules.Security.Contracts.SensitiveTargets.Other;
+        await sensitiveData.GuardAsync(target, [new TeamBeats.Modules.Security.Contracts.SensitiveText("file", text)], classification, reason,
+            Securables.Document, documentId.ToString(), ct);
+        return text;
+    }
+
     internal async Task<string> ScanStoredAsync(string key, CancellationToken ct)
     {
         await using var stored = await storage.OpenReadAsync(key, ct) ?? throw new InvalidOperationException("Stored file is missing.");

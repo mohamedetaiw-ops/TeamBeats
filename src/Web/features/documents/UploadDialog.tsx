@@ -9,11 +9,14 @@ import {
   type LibraryView,
 } from "@/lib/documents/types";
 import { Button } from "@/components/ui/Button";
+import { SensitiveWarning } from "@/features/security/SensitiveWarning";
+import { readSensitive, type SensitiveProblem } from "@/lib/security/sensitive";
 import "./documents.css";
 
 /**
  * The upload dialog (spec 011 US1 scenarios 1 to 3): a file, its type and whether to publish it now. The API checks the
- * file type, size, duplicates, storage and malware, and keeps it a draft while required fields are missing.
+ * file type, size, duplicates, storage and malware, and keeps it a draft while required fields are missing. Sensitive
+ * data detection (spec 026 US6) may ask for a reason, or refuse the file until the data is removed.
  */
 export function UploadDialog({
   library,
@@ -34,23 +37,26 @@ export function UploadDialog({
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
   const [done, setDone] = useState<string | null>(null);
+  const [sensitive, setSensitive] = useState<SensitiveProblem | null>(null);
 
   const selected = library.types.find((x) => x.id === type);
   const controlled = Boolean(selected?.controlled);
 
-  async function upload(e: React.FormEvent) {
-    e.preventDefault();
+  async function upload(e: React.FormEvent | null, sensitiveReason?: string) {
+    e?.preventDefault();
     if (!file) {
       setMessages([t("noFile")]);
       return;
     }
     setBusy(true);
     setMessages([]);
+    setSensitive(null);
     try {
       const q = new URLSearchParams({
         name: file.name,
         publish: String(publish && !controlled),
       });
+      if (sensitiveReason) q.set("sensitiveReason", sensitiveReason);
       if (type) q.set("type", type);
       if (folderId) q.set("folder", folderId);
       const response = await fetch(
@@ -62,7 +68,9 @@ export function UploadDialog({
         },
       );
       if (!response.ok) {
-        setMessages(await problemMessages(response));
+        const found = await readSensitive(response.clone());
+        if (found) setSensitive(found);
+        else setMessages(await problemMessages(response));
         return;
       }
       const doc = (await response.json()) as DocumentView;
@@ -117,7 +125,10 @@ export function UploadDialog({
               id={`${ids}-file`}
               type="file"
               aria-describedby={`${ids}-hint`}
-              onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              onChange={(e) => {
+                setFile(e.target.files?.[0] ?? null);
+                setSensitive(null);
+              }}
             />
           </div>
           <div className="field">
@@ -149,6 +160,7 @@ export function UploadDialog({
               {t("publish")}
             </label>
           )}
+          {sensitive ? <SensitiveWarning problem={sensitive} busy={busy} onConfirm={(reason) => void upload(null, reason)} /> : null}
           <div className="documents-actions">
             <Button
               type="submit"

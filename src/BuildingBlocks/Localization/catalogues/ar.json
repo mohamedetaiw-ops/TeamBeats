@@ -2210,5 +2210,15 @@
   "notifications.template.security.alert_app.api_volume_spike.title": "حجم طلبات غير معتاد من تطبيق",
   "notifications.template.security.alert_app.api_volume_spike.body": "أرسل أحد تطبيقاتكم في ساعة واحدة طلبات أكثر بكثير من المعتاد. تحقق من التطبيق في صفحة التطبيقات.",
   "notifications.template.security.guest_confidential.sponsor.title": "فتح ضيفك عنصرا سريا",
-  "notifications.template.security.guest_confidential.sponsor.body": "فتح ضيف دعوته عنصرا مصنفا سريا في مساحتك. تأكد من أنه يجب أن يصل إليه."
+  "notifications.template.security.guest_confidential.sponsor.body": "فتح ضيف دعوته عنصرا مصنفا سريا في مساحتك. تأكد من أنه يجب أن يصل إليه.",
+  "validation.security.detection_mode": "اختر إيقاف أو تحذير أو منع لكل نوع من المواقع.",
+  "validation.security.pattern_name": "أعط النمط اسما لا يتجاوز 80 حرفا.",
+  "validation.security.pattern_name_taken": "يوجد نمط آخر بهذا الاسم.",
+  "validation.security.pattern": "أدخل تعبيرا نمطيا صحيحا لا يتجاوز 500 حرف.",
+  "validation.security.pattern_no_match": "لم يجد النمط شيئا في النص التجريبي. تحقق من النمط أو من النص.",
+  "validation.security.pattern_untested": "اختبر النمط على نص تجريبي يجد فيه تطابقا قبل تفعيله.",
+  "validation.security.sensitive_reason": "اجعل السبب أقل من 500 حرف.",
+  "conflict.security.sensitive_data_found": "يحتوي هذا على بيانات تبدو حساسة. أزلها، أو ارفع التصنيف، أو أكد مع ذكر السبب.",
+  "conflict.security.sensitive_data_blocked": "يحتوي هذا على بيانات حساسة لا تسمح بها مؤسستك هنا. أزلها قبل المتابعة.",
+  "conflict.security.too_many_patterns": "بلغت مؤسستك الحد الأقصى للأنماط. احذف نمطا قبل إضافة آخر."
 }

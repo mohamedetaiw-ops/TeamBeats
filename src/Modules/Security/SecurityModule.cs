@@ -31,6 +31,8 @@ public static class SecurityModule
         services.AddMessageHandler<TeamBeats.Modules.PublicApi.Contracts.ApiVolumeSpike, ApiVolumeSpikeRule>("security.api_volume_spike");
         services.AddMessageHandler<TeamBeats.Modules.Documents.Contracts.GuestOpenedClassified, GuestConfidentialRule>("security.guest_confidential_access");
         services.AddScoped<AlertSettingsService>();
+        services.AddScoped<DetectionService>();
+        services.AddScoped<ISensitiveDataScanner>(sp => sp.GetRequiredService<DetectionService>());
         services.AddScoped<ISecurityAlertThresholds>(sp => sp.GetRequiredService<AlertSettingsService>());
         services.AddScoped<SiemService>();
         services.AddScoped<SiemStreamer>();
@@ -83,6 +85,35 @@ public static class SecurityModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         }).RequireStepUp();
+
+        // Sensitive data detection (US6): settings with step-up; tenant patterns are tested on sample text before they are enabled.
+        security.MapGet("/detection", async (DetectionService detection, CancellationToken ct) => Results.Ok(await detection.GetAsync(ct)));
+        security.MapPut("/detection", async (DetectionSettingsRequest request, DetectionService detection, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await detection.UpdateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).RequireStepUp();
+        security.MapPost("/detection/patterns:test", async (PatternTestRequest request, DetectionService detection, CancellationToken ct) =>
+            Results.Ok(await detection.TestAsync(request, ct)));
+        security.MapPost("/detection/patterns", async (DetectionPatternRequest request, DetectionService detection, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await detection.CreatePatternAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/security/detection/patterns/{view.Id}", view);
+        });
+        security.MapPut("/detection/patterns/{id:guid}", async (Guid id, DetectionPatternRequest request, DetectionService detection, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await detection.UpdatePatternAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        security.MapDelete("/detection/patterns/{id:guid}", async (Guid id, DetectionService detection, IDbSession session, CancellationToken ct) =>
+        {
+            await detection.DeletePatternAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
 
         // SIEM streaming (US4): destinations, a test event, enable and disable. Changes need step-up (section 6).
         // Access reviews (FR-012): security administrators see the reviews and can open one; reviewers decide their items.

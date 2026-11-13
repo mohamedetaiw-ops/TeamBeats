@@ -10,7 +10,7 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Documents;
 
-public sealed record CheckInRequest(string? Note, bool Publish);
+public sealed record CheckInRequest(string? Note, bool Publish, string? SensitiveReason = null);
 
 public sealed record ForceCheckInRequest(string? Reason);
 
@@ -99,8 +99,8 @@ public sealed class DocumentVersions(
     }
 
     /// <summary>A file arriving for a version or working copy: stored under a new key, scanned, refused unless clean.</summary>
-    private async Task<(Guid VersionId, string Key, string Hash, long Size, string ContentType, string Name)> ReceiveAsync(LibraryRow library, DocumentFiles.DocRow doc,
-        string? fileName, Stream body, long? declared, CancellationToken ct)
+    private async Task<(Guid VersionId, string Key, string Hash, long Size, string ContentType, string Name, string? Text)> ReceiveAsync(LibraryRow library,
+        DocumentFiles.DocRow doc, string? fileName, Stream body, long? declared, string? sensitiveReason, CancellationToken ct)
     {
         var name = DocumentFiles.CleanName(fileName);
         var rules = await libraries.TenantRulesAsync(ct);
@@ -118,6 +118,7 @@ public sealed class DocumentVersions(
         var versionId = Ids.New();
         var key = DocumentFiles.ObjectKey(library.Id, doc.Id, versionId);
         var (hash, size) = await files.StoreAsync(key, body, contentType, maxBytes, ct);
+        string? text;
         try
         {
             await files.QuotaAsync(size, ct);
@@ -135,17 +136,18 @@ public sealed class DocumentVersions(
             {
                 throw AppException.Validation("file", "validation.documents.scan_failed");
             }
+            text = await files.GuardSensitiveAsync(library, key, name, doc.Classification, sensitiveReason, doc.Id, ct);
         }
         catch
         {
             await storage.DeleteAsync(key, CancellationToken.None);
             throw;
         }
-        return (versionId, key, hash, size, contentType, name);
+        return (versionId, key, hash, size, contentType, name, text);
     }
 
     /// <summary>Saves what the holder is working on without checking in. It replaces any earlier working copy.</summary>
-    public async Task<DocumentView> SaveWorkingCopyAsync(Guid id, string? fileName, Stream body, long? declared, CancellationToken ct)
+    public async Task<DocumentView> SaveWorkingCopyAsync(Guid id, string? fileName, Stream body, long? declared, CancellationToken ct, string? sensitiveReason = null)
     {
         var user = context.RequireUser();
         var (library, doc) = await EditableAsync(id, ct);
@@ -153,10 +155,10 @@ public sealed class DocumentVersions(
         {
             throw AppException.Conflict("conflict.documents.check_out_first");
         }
-        var received = await ReceiveAsync(library, doc, fileName, body, declared, ct);
+        var received = await ReceiveAsync(library, doc, fileName, body, declared, sensitiveReason, ct);
         await DropWorkingCopyAsync(doc, ct);
         await InsertVersionAsync(library, doc.Id, received.VersionId, 0, 0, received.Key, received.Hash, received.Size, received.ContentType, received.Name, null,
-            VersionStates.Pending, ct);
+            VersionStates.Pending, ct, received.Text);
         await session.ExecAsync("update documents.document set pending_version_id = @v where id = @id", new { id, v = received.VersionId }, ct);
         return await files.GetAsync(id, ct);
     }
@@ -177,10 +179,11 @@ public sealed class DocumentVersions(
         Guid versionId;
         if (body is not null)
         {
-            var received = await ReceiveAsync(library, doc, fileName, body, declared, ct);
+            var received = await ReceiveAsync(library, doc, fileName, body, declared, request.SensitiveReason, ct);
             await DropWorkingCopyAsync(doc, ct);
             versionId = received.VersionId;
-            await InsertVersionAsync(library, doc.Id, versionId, 0, 0, received.Key, received.Hash, received.Size, received.ContentType, received.Name, note, VersionStates.Pending, ct);
+            await InsertVersionAsync(library, doc.Id, versionId, 0, 0, received.Key, received.Hash, received.Size, received.ContentType, received.Name, note, VersionStates.Pending, ct,
+                received.Text);
         }
         else if (doc.Pending is { } working)
         {
@@ -226,14 +229,14 @@ public sealed class DocumentVersions(
     }
 
     private Task InsertVersionAsync(LibraryRow library, Guid documentId, Guid versionId, int major, int minor, string key, string hash, long size, string contentType,
-        string fileName, string? note, string state, CancellationToken ct) =>
+        string fileName, string? note, string state, CancellationToken ct, string? text = null) =>
         session.ExecAsync(
             """
             insert into documents.document_version (tenant_id, id, document_id, library_id, major, minor, object_key, content_hash, size_bytes, content_type, file_name,
-              note, author_user_id, state, scan_state, created_at)
-            values (platform.current_tenant_id(), @versionId, @documentId, @lib, @major, @minor, @key, @hash, @size, @contentType, @fileName, @note, @user, @state, 'clean', @now)
+              note, author_user_id, state, scan_state, created_at, text_extract)
+            values (platform.current_tenant_id(), @versionId, @documentId, @lib, @major, @minor, @key, @hash, @size, @contentType, @fileName, @note, @user, @state, 'clean', @now, @text)
             """,
-            new { versionId, documentId, lib = library.Id, major, minor, key, hash, size, contentType, fileName, note, user = context.RequireUser(), state, now = clock.UtcNow }, ct);
+            new { versionId, documentId, lib = library.Id, major, minor, key, hash, size, contentType, fileName, note, user = context.RequireUser(), state, now = clock.UtcNow, text }, ct);
 
     /// <summary>Removes a working copy that was never checked in; it is not a version, so nothing is lost from history.</summary>
     private async Task DropWorkingCopyAsync(DocumentFiles.DocRow doc, CancellationToken ct)
