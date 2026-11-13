@@ -329,6 +329,57 @@ public sealed class PublicMcpTests(TenantWorld world)
         Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id, "select count(*) from services.request where requester_user_id = @u", ("u", t["gia"].Id)));
     }
 
+    /// <summary>The JSON-RPC error of an MCP request that is refused.</summary>
+    private async Task<JsonElement> RpcErrorAsync(TestTenant t, string token, string method, object? parameters)
+    {
+        var response = await PostMcpAsync(t, token, method, parameters);
+        var text = await response.Content.ReadAsStringAsync();
+        var json = response.Content.Headers.ContentType?.MediaType == "text/event-stream"
+            ? string.Join('\n', text.Split('\n').Where(l => l.StartsWith("data:", StringComparison.Ordinal)).Select(l => l[5..].Trim()))
+            : text;
+        return JsonDocument.Parse(json).RootElement.Clone().GetProperty("error");
+    }
+
+    [Fact]
+    public async Task Resources_are_listed_and_read_within_the_same_filters_as_the_tools()
+    {
+        var t = await FreshAsync();
+        var open = await NewsAsync(t, "Town hall");
+        var secret = await NewsAsync(t, "Pay review", "confidential");
+        var client = await ClientAsync(t, "admin", ["content:read", "people:read"]);
+
+        var templates = (await RpcAsync(t, client.Token, "resources/templates/list")).GetProperty("resourceTemplates").EnumerateArray()
+            .Select(x => x.GetProperty("uriTemplate").GetString()).ToList();
+        Assert.Equal(["teambeats://pages/{id}", "teambeats://people/{id}"], templates);
+        var listed = (await RpcAsync(t, client.Token, "resources/list")).GetProperty("resources").EnumerateArray()
+            .Select(x => x.GetProperty("uri").GetString()).ToList();
+        Assert.Contains($"teambeats://pages/{open}", listed);
+        Assert.DoesNotContain($"teambeats://pages/{secret}", listed);
+
+        var read = await RpcAsync(t, client.Token, "resources/read", new { uri = $"teambeats://pages/{open}" });
+        var contents = read.GetProperty("contents").EnumerateArray().Single();
+        Assert.Equal("application/json", contents.GetProperty("mimeType").GetString());
+        var data = JsonDocument.Parse(contents.GetProperty("text").GetString()!).RootElement;
+        Assert.Equal("Town hall", data.GetProperty("content").GetProperty("title").GetString());
+        Assert.Equal($"teambeats://pages/{open}", data.GetProperty("sources")[0].GetProperty("uri").GetString());
+        var person = await RpcAsync(t, client.Token, "resources/read", new { uri = $"teambeats://people/{t["gia"].Id}" });
+        Assert.Contains(t["gia"].Id.ToString(), person.GetProperty("contents")[0].GetProperty("text").GetString(), StringComparison.Ordinal);
+
+        // Above the cap, out of scope, unknown or malformed: not found, and the reader tool is never a tool of its own.
+        Assert.Equal(-32002, (await RpcErrorAsync(t, client.Token, "resources/read", new { uri = $"teambeats://pages/{secret}" })).GetProperty("code").GetInt32());
+        Assert.Equal(-32002, (await RpcErrorAsync(t, client.Token, "resources/read", new { uri = $"teambeats://documents/{Guid.NewGuid()}" })).GetProperty("code").GetInt32());
+        Assert.Equal(-32002, (await RpcErrorAsync(t, client.Token, "resources/read", new { uri = "https://example.com/x" })).GetProperty("code").GetInt32());
+        Assert.DoesNotContain("get_person", await ToolNamesAsync(t, client.Token));
+        Assert.Equal("tool.unknown", Error(await CallAsync(t, client.Token, "get_person", new { id = t["gia"].Id })));
+        Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from agents.external_call where app_id = @a and tool = 'get_page' and reason = 'tool.classification_blocked'", ("a", client.AppId)));
+
+        // The kill switch empties the resources too.
+        await JsonAsync(await t["aip"].Client.PutAsJsonAsync("/api/v1/agents/kill-switch", new { active = true, confirmation = $"{t.Key} holding", reason = "Leak" }));
+        Assert.Empty((await RpcAsync(t, client.Token, "resources/templates/list")).GetProperty("resourceTemplates").EnumerateArray());
+        Assert.Equal(-32002, (await RpcErrorAsync(t, client.Token, "resources/read", new { uri = $"teambeats://pages/{open}" })).GetProperty("code").GetInt32());
+    }
+
     [Fact]
     public async Task The_employees_own_rights_bound_what_the_client_reads()
     {

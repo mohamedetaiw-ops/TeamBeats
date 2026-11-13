@@ -1268,3 +1268,17 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A form that the owning module refuses when the action runs leaves the action failed with `tool.invalid_arguments`; nothing is submitted.
 - Results are kept with the action for a day for the client to fetch, then cleared; the action record stays as long as agent run records.
 - Confirmation inside the AI client (MCP elicitation) stays in R3, as the spec says.
+
+## Public API and MCP server (spec 035, slice 4c: T014 resources and the external AI client settings)
+
+### Built
+- MCP resources `teambeats://pages/{id}`, `teambeats://documents/{id}`, `teambeats://policies/{id}` and `teambeats://people/{id}`, offered as resource templates for the kinds the token's scopes cover (`content:read`, `documents:read`, `policies:read`, `people:read`). Each kind is read through a tool of the owning module (`get_page`, `get_document`, `get_policy`, and `get_person` in `People`) over the same gateway, so the kill switch, the client list, the classification cap, the call limits and the execution record all apply.
+- `resources/list` lists the employee's news feed as pages, within the same filters. Tool results name each source's resource URI next to its link.
+- The agent policy screen has an "External AI clients" part: external access on or off, write tools on or off, and the allowed client IDs, each with the highest classification sent to it.
+- The web host forwards `/mcp` and `/.well-known/oauth-protected-resource/...` to the API, as it already did for `/oauth`, so an AI client reaches the MCP server at `https://<tenant host>/mcp`.
+
+### Smallest safe defaults
+- `get_person` reads a profile for the people resource only. It is not one of the section 6 tools, so it is never listed by `tools/list` and a `tools/call` for it is refused as unknown.
+- A resource the employee may not read, that is above the client's cap, that is outside the scopes or that does not exist answers the same "resource not found" error (-32002), so a client cannot tell which.
+- Documents, policies and people are not listed by `resources/list`: they are found through `search` and read by URI. Listing every document an employee may read would be large and add nothing the search does not give.
+- The administrator types the client ID of the MCP client app from API access. Picking from the registered MCP client apps waits for the verified client list (slice 4d).
