@@ -262,6 +262,7 @@ public static class ApiComposition
         app.MapPeopleEndpoints();
         app.MapSecurityEndpoints();
         app.MapComplianceEndpoints();
+        app.MapWorkflowEndpoints();
         app.MapCalendarEndpoints();
         app.MapPublicApiEndpoints();
         extraEndpoints?.Invoke(app);

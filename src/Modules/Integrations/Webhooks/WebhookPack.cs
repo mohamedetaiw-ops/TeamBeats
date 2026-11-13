@@ -100,7 +100,7 @@ public sealed partial class WebhookPack(
     IClock clock) : IConnectorPack
 {
     public const string KindName = "webhook";
-    public const string DeliverAction = "deliver";
+    public const string DeliverAction = WebhookActions.Deliver;
     public const string SignatureType = "hmac_sha256";
     public const int MaxOverlapHours = 24;
     public const int DefaultWindowSeconds = 300;

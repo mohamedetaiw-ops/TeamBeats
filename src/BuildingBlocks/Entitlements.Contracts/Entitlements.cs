@@ -30,6 +30,8 @@ public static class Capabilities
     public const string WorkflowAutomation = "workflow.automation";
     public const string WorkflowCatalogue = "workflow.catalogue";
     public const string WorkflowMaxServices = "workflow.max_services";
+    public const string WorkflowBpmn = "workflow.bpmn";
+    public const string WorkflowMaxActiveInstances = "workflow.max_active_instances";
     public const string IntegrationMicrosoft365 = "integration.microsoft365";
     public const string IntegrationOracleFusion = "integration.oracle_fusion";
     public const string IntegrationSap = "integration.sap";

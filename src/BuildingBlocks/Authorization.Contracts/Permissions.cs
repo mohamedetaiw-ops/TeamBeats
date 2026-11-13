@@ -35,6 +35,9 @@ public static class Permissions
     public const string ContentPublish = "content.publish";
     public const string WorkflowDesign = "process.design";
     public const string WorkflowApprove = "workflow.approve";
+    public const string ProcessOperate = "process.operate";
+    public const string ProcessAnalyze = "process.analyze";
+    public const string DecisionDesign = "decision.design";
     public const string IntegrationManage = "integration.manage";
 
     /// <summary>Spec 017 (R2): run history, health, replay of failed runs and pausing a sync, without changing connections.</summary>
@@ -215,7 +218,7 @@ public static class Permissions
         UsersView, UsersManage, IdentityConfigManage,
         EntitlementsView,
         AuditView, AuditExport, AuditRetentionManage,
-        ContentView, ContentEdit, ContentPublish, WorkflowDesign, WorkflowApprove, IntegrationManage, IntegrationOperate, AiPolicyManage, AiPolicyView,
+        ContentView, ContentEdit, ContentPublish, WorkflowDesign, WorkflowApprove, ProcessOperate, ProcessAnalyze, DecisionDesign, IntegrationManage, IntegrationOperate, AiPolicyManage, AiPolicyView,
         PageView, PageEdit, PagePublish, TemplateEdit, TemplateDistribute, ComponentEnable, ConfigHistoryView,
         ThemeEdit, ThemePublish, ConfigLockManage,
         ShellEdit, NavigationEdit, HelpEdit, PersonalizationPolicy, PersonalLayoutEdit,
@@ -260,6 +263,8 @@ public static class BuiltInRoles
     public const string HrOfficer = "hr_officer";
     public const string FinanceOfficer = "finance_officer";
     public const string ComplianceOfficer = "compliance_officer";
+    public const string ProcessOperator = "process_operator";
+    public const string ProcessAnalyst = "process_analyst";
     public const string AgentDesigner = "agent_designer";
     public const string EvaluationReviewer = "evaluation_reviewer";
 

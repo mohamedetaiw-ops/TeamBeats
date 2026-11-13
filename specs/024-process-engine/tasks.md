@@ -15,16 +15,16 @@ Depends on 004 (authorization), 006 (audit), 022 (working-day contract), ADR-000
 ## R2
 
 ## Phase 2: Model, expressions and execution (R2)
-- [ ] T009 Process models: BPMN 2.0 read and write with the `teambeats` namespace, subset compiler to the executable graph, validator (FR-001, FR-002), drafts and immutable versions (FR-003); permission `process.operate` and `process.monitor`; capability `workflow.bpmn`; unit tests
-- [ ] T010 FEEL subset parser and sandboxed interpreter with limits (FR-005); unit tests
-- [ ] T011 Token executor for user, manual and send tasks, exclusive, parallel and inclusive gateways, none, terminate, error and escalation ends, embedded and event sub-processes, call activity, multi-instance, loop and variable limits (FR-004, FR-006); conformance suite (SC-002); integration tests
+- [x] T009 Process models: BPMN 2.0 read and write with the `teambeats` namespace, subset compiler to the executable graph, validator (FR-001, FR-002), drafts and immutable versions (FR-003); permissions `process.operate`, `process.analyze` and `decision.design`; capability `workflow.bpmn`; unit tests
+- [x] T010 FEEL subset parser and sandboxed interpreter with limits (FR-005); unit tests
+- [x] T011 Token executor for user, manual and send tasks, exclusive, parallel and inclusive gateways, none, terminate, error and escalation ends, embedded and event sub-processes, call activity, multi-instance, loop and variable limits (FR-004, FR-006); conformance suite (SC-002); integration tests
 
 ## Phase 3: Decisions, messages and timers (R2)
-- [ ] T012 DMN decision tables: storage, versions, validation, hit policies, test rows, business rule task (FR-007); 200 rule performance test
-- [ ] T013 Timers (ISO 8601 and working days, start, catch, boundary, event-based gateway) and messages (correlation, buffer, message start, signed webhook, product events) (FR-008, FR-009)
+- [x] T012 DMN decision tables: storage, versions, validation, hit policies, test rows, business rule task (FR-007); 200 rule performance test
+- [x] T013 Timers (ISO 8601 and working days, start, catch, boundary, event-based gateway) and messages (correlation, buffer, message start, signed webhook, product events) (FR-008, FR-009)
 
 ## Phase 4: Automatic steps and operations (R2)
-- [ ] T014 Service tasks in models (connector actions and allowlisted webhooks with mappings), error boundary mapping, incidents (FR-010, FR-011)
+- [x] T014 Service tasks in models (connector actions and allowlisted webhooks with mappings), error boundary mapping, incidents (FR-010, FR-011)
 - [ ] T015 Operator view (search, variables, retry, skip, cancel, change variables, audit) and monitoring (counts, heatmap, durations, spec 021 dataset) (FR-013, FR-014)
 
 ## Phase 5: Experience (R2)
