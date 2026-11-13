@@ -560,4 +560,88 @@ public sealed class ProcessModelTests(TenantWorld world)
         Assert.Equal(0, await world.Database.CountInTenantAsync(basic.Id, "select count(*) from workflow.message_buffer"));
         Assert.Contains("\"boxes\":\"4\"", await VariablesAsync(t, instance));
     }
+
+    [Fact]
+    public async Task Operators_search_their_instances_fix_variables_on_an_incident_retry_and_cancel_and_analysts_read_monitoring_numbers()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        const string Ops = "/api/v1/workflow";
+        foreach (var name in new[] { "africa_operator", "analyst" })
+        {
+            await world.SeedUserAsync(t, name, MembershipTypes.Employee);
+        }
+        await world.AssignAsync(t, "africa_operator", BuiltInRoles.ProcessOperator, "org_unit", o.Africa);
+        await world.AssignAsync(t, "analyst", BuiltInRoles.ProcessAnalyst, "tenant", null);
+        await SaveAsync(t, "owner", "assign", Model($"""
+            <bpmn:startEvent id="s"/>{UserTask("head", "assignee=\"headOfUnit\"", "Head review")}<bpmn:endEvent id="e"/>
+            {Flow("f1", "s", "head")}{Flow("f2", "head", "e")}
+            """, name: "Assign"));
+        await PublishAsync(t, "owner", "assign");
+        var ok = await StartAsync(t, "assign", new { headOfUnit = t["approver"].Id.ToString() }, o.Gulf, "A-1");
+        var stuck = await StartAsync(t, "assign", new { headOfUnit = (string?)null }, o.Gulf, "A-2");
+        var africa = await StartAsync(t, "assign", new { headOfUnit = (string?)null }, o.Africa, "A-3");
+
+        // Each operator sees the instances at the units they operate (US5 scenario 1).
+        Assert.Equal(3, (await OkAsync(t["operator"].Client.GetAsync($"{Ops}/instances?process=assign"))).GetArrayLength());
+        Assert.Equal(2, (await OkAsync(t["operator"].Client.GetAsync($"{Ops}/instances?process=assign&withIncident=true"))).GetArrayLength());
+        Assert.Equal("A-2", (await OkAsync(t["operator"].Client.GetAsync($"{Ops}/instances?businessKey=A-2")))[0].GetProperty("businessKey").GetString());
+        var mine = await OkAsync(t["africa_operator"].Client.GetAsync($"{Ops}/instances?process=assign"));
+        Assert.Equal(africa, Assert.Single(mine.EnumerateArray()).GetProperty("id").GetGuid());
+        Assert.Equal("validation.process.instance_state", await ProblemKeyAsync(t["operator"].Client.GetAsync($"{Ops}/instances?state=lost"), HttpStatusCode.BadRequest));
+        Assert.Empty((await OkAsync(t["employee"].Client.GetAsync($"{Ops}/instances"))).EnumerateArray());
+        Assert.Equal(HttpStatusCode.NotFound, (await t["africa_operator"].Client.GetAsync($"{Ops}/instances/{stuck}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await (await FreshAsync()).T["operator"].Client.GetAsync($"{Ops}/instances/{stuck}")).StatusCode);
+
+        var detail = await OkAsync(t["operator"].Client.GetAsync($"{Ops}/instances/{stuck}"));
+        var incident = Assert.Single(detail.GetProperty("incidents").EnumerateArray());
+        Assert.Equal("no_assignee", incident.GetProperty("errorClass").GetString());
+        Assert.Equal(("head", "incident"), (detail.GetProperty("active")[0].GetProperty("elementId").GetString(), detail.GetProperty("active")[0].GetProperty("status").GetString()));
+
+        // Variables change only on an incident and with a reason; then a retry runs the step again (US5 scenario 2).
+        var fix = new { variables = new { headOfUnit = t["approver"].Id.ToString() }, reason = "Head of unit was missing" };
+        Assert.Equal("conflict.process.no_open_incident", await ProblemKeyAsync(t["operator"].Client.PutAsJsonAsync($"{Ops}/instances/{ok}/variables", fix), HttpStatusCode.Conflict));
+        Assert.Equal("validation.workflow.reason", await ProblemKeyAsync(t["operator"].Client.PutAsJsonAsync($"{Ops}/instances/{stuck}/variables",
+            new { fix.variables, reason = " " }), HttpStatusCode.BadRequest));
+        await OkAsync(t["operator"].Client.PutAsJsonAsync($"{Ops}/instances/{stuck}/variables", fix));
+        Assert.Equal(1, await world.Database.AuditCountAsync(t.Id, AuditActions.ProcessVariablesChanged, stuck.ToString()));
+        var incidentId = incident.GetProperty("id").GetGuid();
+        var retried = await OkAsync(t["operator"].Client.PostAsJsonAsync($"{Ops}/incidents/{incidentId}:resolve", new { resolution = IncidentResolutions.Retried, reason = "Fixed" }));
+        Assert.Equal("resolved", retried.GetProperty("status").GetString());
+        Assert.Equal(2, (await TasksAsync(t, "approver")).Count);
+        // A second operator on the same incident is refused (US5 scenario 5).
+        Assert.Equal("conflict.workflow.incident_resolved", await ProblemKeyAsync(
+            t["operator"].Client.PostAsJsonAsync($"{Ops}/incidents/{incidentId}:resolve", new { resolution = IncidentResolutions.Skipped, reason = "Again" }), HttpStatusCode.Conflict));
+
+        // The Africa operator cancels their instance with a reason; an ended instance cannot be cancelled again.
+        var cancelled = await OkAsync(t["africa_operator"].Client.PostAsJsonAsync($"{Ops}/instances/{africa}:cancel", new { reason = "Raised by mistake" }));
+        Assert.Equal("cancelled", cancelled.GetProperty("instance").GetProperty("status").GetString());
+        Assert.Equal("conflict.process.instance_not_active", await ProblemKeyAsync(
+            t["africa_operator"].Client.PostAsJsonAsync($"{Ops}/instances/{africa}:cancel", new { reason = "Again" }), HttpStatusCode.Conflict));
+        Assert.Equal(HttpStatusCode.NotFound, (await t["africa_operator"].Client.PostAsJsonAsync($"{Ops}/instances/{ok}:cancel", new { reason = "Not mine" })).StatusCode);
+        Assert.Equal(1, await world.Database.AuditCountAsync(t.Id, AuditActions.ProcessInstanceCancelled, africa.ToString()));
+        foreach (var task in await TasksAsync(t, "approver"))
+        {
+            await CompleteAsync(t, "approver", task.Id);
+        }
+
+        // Analysts read numbers per version with no variables or people (US5 scenarios 3 and 4); others do not see them.
+        var numbers = await OkAsync(t["analyst"].Client.GetAsync($"{Api}/assign/monitoring"));
+        Assert.Equal((0, 2, 1, 0), (numbers.GetProperty("active").GetInt32(), numbers.GetProperty("completed").GetInt32(), numbers.GetProperty("cancelled").GetInt32(),
+            numbers.GetProperty("withIncidents").GetInt32()));
+        var head = Assert.Single(numbers.GetProperty("elements").EnumerateArray());
+        Assert.Equal(("head", "Head review", 2), (head.GetProperty("elementId").GetString(), head.GetProperty("name").GetString(), head.GetProperty("finished").GetInt32()));
+        Assert.Equal(JsonValueKind.Number, head.GetProperty("p90Seconds").ValueKind);
+        Assert.Equal(["head"], numbers.GetProperty("slowest").EnumerateArray().Select(e => e.GetString()));
+        Assert.DoesNotContain("headOfUnit", numbers.GetRawText());
+        Assert.Equal(HttpStatusCode.OK, (await t["operator"].Client.GetAsync($"{Api}/assign/monitoring")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await t["employee"].Client.GetAsync($"{Api}/assign/monitoring")).StatusCode);
+        Assert.Empty((await OkAsync(t["analyst"].Client.GetAsync($"{Ops}/instances"))).EnumerateArray());
+        Assert.Equal(3, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from analytics.event where name = 'process.instance_ended' and user_key is null and fields->>'process' = 'assign'"));
+
+        // A package without BPMN refuses the operator view.
+        var basic = await world.CreateTenantAsync("pmo-" + Guid.NewGuid().ToString("N")[..8], "workplace");
+        Assert.Contains("entitlement.not_in_package", await (await basic["admin"].Client.GetAsync($"{Ops}/instances")).Content.ReadAsStringAsync());
+    }
 }

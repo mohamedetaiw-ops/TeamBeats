@@ -2,6 +2,7 @@ using System.Text.Json;
 using Npgsql;
 using System.Text.Json.Nodes;
 using TeamBeats.Audit.Contracts;
+using TeamBeats.Modules.Analytics.Contracts;
 using TeamBeats.Entitlements.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Messaging;
@@ -22,7 +23,7 @@ namespace TeamBeats.Modules.Workflow;
 /// </summary>
 public sealed partial class ProcessEngine(IDbSession session, ITenantContext context, IAuthorizationService authz, IAuthorizationProvisioning grants, IDelegations delegations,
     IReportingLine reportingLine, IAuditWriter audit, IOutbox outbox, IClock clock, EngineJobs jobs, IConnectorRuntime connectors, IConnectorActions actions,
-    IEntitlementService entitlements)
+    IEntitlementService entitlements, IAnalyticsEvents analytics)
     : IProcessEngine
 {
     public const int CommentMax = 2000;

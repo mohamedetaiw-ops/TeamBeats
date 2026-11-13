@@ -1479,7 +1479,7 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - One open session per operator per tenant. A session ends when the operator ends it or when it expires; expiry needs no job, since every action checks the expiry. A closed tenant cannot be opened.
 - The reason the operator types is shown to the tenant in the alert and the audit entry, so operators are told not to put customer data in it.
 
-## Process engine (spec 024 R2, slice 1: T009 to T013)
+## Process engine (spec 024 R2, slice 1: T009 to T015)
 
 ### Built
 - FEEL subset (FR-005) in `Workflow/Feel`: a hand-written lexer, parser and interpreter with no reflection and only the listed functions, unary tests for decision cells, and limits of 4,000 characters, 64 levels, 20,000 steps, 50 ms, 10,000 list items and 256 KB per result.
@@ -1494,6 +1494,8 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Signed webhooks as messages (FR-009): the inbound webhooks of spec 017 US5 already check the signature (with the previous secret during its overlap), the time window and the delivery ID, and map a delivery to a process message with a correlation path and declared fields. Workflow handles `InboundWebhookReceived` with target `message` by correlating it with the message ID `webhook:<connection>:<delivery>` and the declared fields as the payload, so a redelivery correlates once. No second webhook endpoint was added.
 - Webhook steps (FR-010): a service task with `tb:webhook id` calls the `deliver` action of that webhook connection with `{ type: "process.step", occurredAt, data: <inputs> }`, so it is signed, sent only to allowlisted hosts, retried and logged by the connector runtime like any other connector call, and moves on when the delivery succeeds.
 - Decision tables (FR-007): `workflow.decision_model` holds one DMN draft per key with its owner unit; `PUT`, `:publish` and `:test` under `/api/v1/workflow/decisions/{key}` need `decision.design` at the owner unit. Published versions in `workflow.decision_definition` keep the compiled table; the same table again keeps its version. Every hit policy is supported (UNIQUE, FIRST, PRIORITY, ANY, COLLECT with SUM, MIN, MAX and COUNT, RULE ORDER, OUTPUT ORDER). UNIQUE tables are checked for overlapping rules where every cell is a comparable literal, range or list; other overlaps fail at run time with `unique_violated`. Business rule tasks evaluate the current version when reached, write the result to the named variable and record the matched rules in the history.
+- Operator view (FR-013, US5): `GET /api/v1/workflow/instances` searches process model instances by process, version, state, business key, starter, unit, start date and open incident, newest first, keeping those at units where the caller holds `process.operate`. `GET .../instances/{id}` shows the variables, the elements waiting now, open tasks, incidents and history. `PUT .../instances/{id}/variables` (only while an incident is open), `POST .../instances/{id}:cancel` and `POST .../incidents/{id}:resolve` (retried, skipped or cancelled) each need a reason and write an audit event; a second resolve of the same incident is refused with 409.
+- Monitoring (FR-014): `GET /api/v1/workflow/processes/{key}/monitoring?version&from&to` (default the latest version and the last 30 days, at most a year) gives active, completed, cancelled and incident counts, the average and 90th percentile duration of finished instances, and per element the tokens waiting now, open incidents and the average and 90th percentile time of user and service tasks finished in the period, with the five slowest elements. It needs `process.analyze` or `process.operate` at the model's owner unit and holds no variables or people. Each ended instance is counted for spec 021 as the unkeyed analytics event `process.instance_ended` (process, version, completed or cancelled, seconds).
 - Permissions `process.operate`, `process.analyze` and `decision.design` with the built-in roles Process operator and Process analyst; Workflow designers also hold `decision.design`. Capabilities `workflow.bpmn` (off on Workplace) and `workflow.max_active_instances` (10,000 on Workplace Plus, no limit on Enterprise).
 
 ### Smallest safe defaults
@@ -1503,6 +1505,9 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A business error from a connector action that no error boundary or error event sub-process catches is an incident, not an end of the instance.
 - Graph user tasks take the inbox outcomes approve, reject and return; models branch on `outcome`.
 - Messages with no correlation key match subscriptions that have none.
+- The operator view covers process model instances only; approval routes of requests keep their incident actions on the request (spec 016).
+- Variable classification is not yet set per variable in models, so operators see every variable and analysts see none; masking Restricted variables comes with the modeler's variable settings.
+- Process model keys are at most 64 characters so that the key is a valid analytics key.
 - A webhook step has no outputs, since a delivery returns no body; models that need an answer use a connector action or wait for a message.
 - Product events as message and start triggers are built with spec 016 R2 triggers, which lists them; connectors send messages through the same `CorrelateAsync` with source `connector`.
 - A decision test runs up to 100 rows against the draft and reports each row's result, matched rules or error code.

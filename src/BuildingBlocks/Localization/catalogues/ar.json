@@ -2262,7 +2262,7 @@
   "validation.process.too_large": "حجم النموذج أكبر من 2 ميغابايت. قسّمه إلى عمليات أصغر باستخدام أنشطة الاستدعاء.",
   "validation.process.too_many_elements": "يحتوي النموذج على أكثر من 500 عنصر. قسّمه إلى عمليات أصغر باستخدام أنشطة الاستدعاء.",
   "validation.process.one_process": "يجب أن يحتوي النموذج على عملية واحدة فقط.",
-  "validation.process.key": "استخدم أحرفا إنجليزية صغيرة أو أرقاما أو نقاطا أو شرطات، تبدأ بحرف أو رقم، وبحد أقصى 100 حرف.",
+  "validation.process.key": "استخدم أحرفا إنجليزية صغيرة أو أرقاما أو نقاطا أو شرطات، تبدأ بحرف أو رقم، وبحد أقصى 64 حرفا.",
   "validation.process.name": "أدخل اسما للعملية بحد أقصى 200 حرف.",
   "validation.process.element_id": "يحتاج كل عنصر إلى معرّف فريد يبدأ بحرف ويتكون من أحرف أو أرقام أو نقاط أو شرطات.",
   "validation.process.unsupported_element": "هذا العنصر غير مدعوم. استبدله بعنصر مدعوم.",
@@ -2312,5 +2312,10 @@
   "validation.decision.rule_columns": "تحتاج هذه القاعدة إلى خلية لكل مدخل ولكل مخرج.",
   "validation.decision.too_many_rules": "يمكن أن يحتوي الجدول على 1000 قاعدة كحد أقصى.",
   "validation.decision.overlap": "في السياسة الفريدة يمكن أن تتطابق هذه القاعدة مع قاعدة سابقة. ضيّق الخلايا أو غيّر سياسة المطابقة.",
-  "validation.decision.test_rows": "أرسل من 1 إلى 100 صف اختبار، كل منها كائن JSON بقيم المدخلات."
+  "validation.decision.test_rows": "أرسل من 1 إلى 100 صف اختبار، كل منها كائن JSON بقيم المدخلات.",
+  "validation.process.instance_state": "اختر نشطة أو مكتملة أو ملغاة.",
+  "validation.process.limit": "اطلب من 1 إلى 100 نسخة.",
+  "validation.process.period": "اختر بداية قبل النهاية، والفرق بينهما سنة على الأكثر.",
+  "conflict.process.instance_not_active": "انتهت هذه النسخة بالفعل.",
+  "conflict.process.no_open_incident": "لا يمكن تغيير المتغيرات إلا أثناء وجود حادثة مفتوحة في النسخة."
 }

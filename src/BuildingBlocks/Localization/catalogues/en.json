@@ -2262,7 +2262,7 @@
   "validation.process.too_large": "The model is larger than 2 MB. Split it into smaller processes with call activities.",
   "validation.process.too_many_elements": "The model has more than 500 elements. Split it into smaller processes with call activities.",
   "validation.process.one_process": "The model must hold exactly one process.",
-  "validation.process.key": "Use lowercase letters, numbers, dots, dashes or underscores, starting with a letter or number, up to 100 characters.",
+  "validation.process.key": "Use lowercase letters, numbers, dots, dashes or underscores, starting with a letter or number, up to 64 characters.",
   "validation.process.name": "Give the process a name of up to 200 characters.",
   "validation.process.element_id": "Every element needs a unique ID that starts with a letter and uses letters, numbers, dots, dashes or underscores.",
   "validation.process.unsupported_element": "This element is not in the supported set. Replace it with a supported element.",
@@ -2312,5 +2312,10 @@
   "validation.decision.rule_columns": "This rule needs one cell for each input and each output.",
   "validation.decision.too_many_rules": "A table can have at most 1,000 rules.",
   "validation.decision.overlap": "Under the unique policy this rule can match together with an earlier rule. Narrow the cells or change the hit policy.",
-  "validation.decision.test_rows": "Send from 1 to 100 test rows, each a JSON object of input values."
+  "validation.decision.test_rows": "Send from 1 to 100 test rows, each a JSON object of input values.",
+  "validation.process.instance_state": "Choose active, completed or cancelled.",
+  "validation.process.limit": "Ask for 1 to 100 instances.",
+  "validation.process.period": "Choose a start before the end, at most one year apart.",
+  "conflict.process.instance_not_active": "This instance has already ended.",
+  "conflict.process.no_open_incident": "Variables can be changed only while the instance has an open incident."
 }

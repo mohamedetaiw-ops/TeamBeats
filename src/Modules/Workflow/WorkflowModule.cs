@@ -24,6 +24,7 @@ public static class WorkflowModule
         services.AddScoped<ProcessEngine>();
         services.AddScoped<IProcessEngine>(sp => sp.GetRequiredService<ProcessEngine>());
         services.AddScoped<ProcessModels>();
+        services.AddScoped<ProcessOperations>();
         services.AddScoped<Decisions.DecisionModels>();
         services.AddScoped<ProcessModelTasks>();
         services.AddScoped<ITaskSource>(sp => sp.GetRequiredService<ProcessModelTasks>());
@@ -64,6 +65,35 @@ public static class WorkflowModule
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/workflow/instances/{instance.Id}", instance);
         });
+
+        group.MapGet("/instances", async ([AsParameters] InstanceQuery q, ProcessOperations ops, CancellationToken ct) =>
+            Results.Ok(await ops.SearchAsync(new InstanceSearch(q.Process, q.Version, q.State, q.BusinessKey, q.StartedBy, q.OrgUnitId, q.From, q.To, q.WithIncident, q.Limit), ct)));
+
+        group.MapGet("/instances/{id:guid}", async (Guid id, ProcessOperations ops, CancellationToken ct) => Results.Ok(await ops.GetAsync(id, ct)));
+
+        group.MapPut("/instances/{id:guid}/variables", async (Guid id, VariablesChange request, ProcessOperations ops, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await ops.ChangeVariablesAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        group.MapPost("/instances/{id:guid}:cancel", async (Guid id, OperatorReason request, ProcessOperations ops, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await ops.CancelAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        group.MapPost("/incidents/{id:guid}:resolve", async (Guid id, IncidentResolution request, ProcessOperations ops, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await ops.ResolveIncidentAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        group.MapGet("/processes/{key}/monitoring", async (string key, int? version, DateTimeOffset? from, DateTimeOffset? to, ProcessOperations ops, CancellationToken ct) =>
+            Results.Ok(await ops.MonitoringAsync(key, version, from, to, ct)));
 
         group.MapGet("/decisions", async (Decisions.DecisionModels decisions, CancellationToken ct) => Results.Ok(await decisions.ListAsync(ct)));
 
@@ -117,3 +147,7 @@ public sealed class InboundMessageReceived(ProcessEngine engine, IEntitlementSer
         await engine.CorrelateAsync(message.Name, message.CorrelationKey, $"webhook:{message.ConnectionId:N}:{message.DeliveryId}", payload, "webhook", null, ct);
     }
 }
+
+/// <summary>The query string of the instance search.</summary>
+public sealed record InstanceQuery(string? Process, int? Version, string? State, string? BusinessKey, Guid? StartedBy, Guid? OrgUnitId, DateTimeOffset? From,
+    DateTimeOffset? To, bool? WithIncident, int? Limit);

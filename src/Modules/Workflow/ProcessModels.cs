@@ -31,6 +31,9 @@ public sealed record StartProcessRequest(string? BusinessKey, Guid? OrgUnitId, J
 public sealed class ProcessModels(IDbSession session, ITenantContext context, IAuthorizationService authz, IEntitlementService entitlements, IAuditWriter audit,
     IClock clock, ProcessEngine engine, IConnectorActions actions)
 {
+    /// <summary>Model keys stay short enough to be an analytics key (spec 021) once published.</summary>
+    public const int MaxKeyLength = 64;
+
     private static AuthzTarget Target(Guid? unit) => unit is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant;
 
     private async Task<bool> MayDesignAsync(Guid? unit, CancellationToken ct) => (await authz.CheckAsync(Permissions.WorkflowDesign, Target(unit), ct)).Allowed;
@@ -104,7 +107,7 @@ public sealed class ProcessModels(IDbSession session, ITenantContext context, IA
     {
         var user = context.RequireUser();
         await entitlements.DemandAsync(Capabilities.WorkflowBpmn, ct);
-        if (!BpmnReader.IsValidKey(key) || key.Contains(':'))
+        if (!BpmnReader.IsValidKey(key) || key.Contains(':') || key.Length > MaxKeyLength)
         {
             throw AppException.Validation("key", "validation.process.key");
         }
