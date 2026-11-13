@@ -169,10 +169,12 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByLabel(msg(locale, "shell.settings.text_scale.label")).selectOption("100");
       await expect(page.locator("html")).not.toHaveAttribute("style", /font-size/);
       await page.keyboard.press("Escape");
-      const nav = page.getByRole("navigation", { name: msg(locale, "shell.globalNav") });
-      await expect(nav.getByRole("link", { name: about() })).toBeHidden();
-      await nav.getByRole("button", { name: msg(locale, "shell.menu") }).click();
-      await expect(nav.getByRole("link", { name: about() })).toBeVisible();
+      // On a phone the global menu opens from More in the bottom navigation, pages under an item included (spec 008 FR-063).
+      const nav = page.getByRole("navigation", { name: msg(locale, "app.nav.label"), exact: true });
+      const panel = nav.locator(".mobile-nav-more");
+      await expect(panel.getByRole("link", { name: team(), exact: true })).toBeHidden();
+      await nav.getByRole("button", { name: msg(locale, "app.nav.more"), exact: true }).click();
+      await expect(panel.getByRole("link", { name: team(), exact: true })).toBeVisible();
       await noHorizontalScroll(page);
     });
   });

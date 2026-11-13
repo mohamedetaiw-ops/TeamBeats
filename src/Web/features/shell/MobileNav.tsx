@@ -25,11 +25,20 @@ export function MobileNav({ items, all }: { items: NavLink[]; all: NavLink[] }) 
 
   const chosen = new Set(items.map((i) => i.nodeId));
   const rest = all.filter((l) => !chosen.has(l.nodeId));
-  const shown = rest.length > 0 || items.length > slots ? items.slice(0, slots - 1) : items;
-  const more = [...items.slice(shown.length), ...rest];
+  // The tree of each chosen item, so pages under it stay reachable from More (spec 008 FR-063).
+  const tree = (l: NavLink) => all.find((a) => a.nodeId === l.nodeId) ?? l;
+  const parents = items.filter((i) => (tree(i).children?.length ?? 0) > 0);
+  const needMore = rest.length > 0 || parents.length > 0 || items.length > slots;
+  const shown = needMore ? items.slice(0, slots - 1) : items;
+  const leftOver = items.slice(shown.length).map(tree);
+  // More holds the whole global menu that the bar does not: items left out of the bar, the rest of the menu, and the
+  // pages under the items in the bar, so the phone needs no separate Menu row.
+  const more = [...leftOver, ...rest, ...parents.filter((p) => !leftOver.some((l) => l.nodeId === p.nodeId)).map(tree)];
 
   useEffect(() => {
     if (!open) return;
+    // The panel sits above the bar, before the button in the page order, so opening moves focus to its first link.
+    nav.current?.querySelector<HTMLAnchorElement>(".mobile-nav-more a")?.focus();
     const away = (e: PointerEvent) => {
       if (nav.current && !nav.current.contains(e.target as Node)) setOpen(false);
     };
@@ -53,12 +62,7 @@ export function MobileNav({ items, all }: { items: NavLink[]; all: NavLink[] }) 
       {more.length > 0 ? (
         <ul id={panel} className="mobile-nav-more" hidden={!open}>
           {more.map((l) => (
-            <li key={l.nodeId}>
-              <a href={l.href} aria-current={isCurrent(l.href, path) ? "page" : undefined}>
-                <Icon name={iconFor(l.href)} size={18} />
-                <bdi>{l.label}</bdi>
-              </a>
-            </li>
+            <MoreItem key={l.nodeId} link={l} path={path} />
           ))}
         </ul>
       ) : null}
@@ -81,5 +85,23 @@ export function MobileNav({ items, all }: { items: NavLink[]; all: NavLink[] }) 
         ) : null}
       </ul>
     </nav>
+  );
+}
+
+function MoreItem({ link, path }: { link: NavLink; path: string }) {
+  return (
+    <li>
+      <a href={link.href} aria-current={isCurrent(link.href, path) ? "page" : undefined}>
+        <Icon name={iconFor(link.href)} size={18} />
+        <bdi>{link.label}</bdi>
+      </a>
+      {link.children?.length ? (
+        <ul className="mobile-nav-more-children">
+          {link.children.map((c) => (
+            <MoreItem key={c.nodeId} link={c} path={path} />
+          ))}
+        </ul>
+      ) : null}
+    </li>
   );
 }

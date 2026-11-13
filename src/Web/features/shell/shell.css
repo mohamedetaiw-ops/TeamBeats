@@ -923,6 +923,12 @@
     text-decoration: none;
   }
 
+  .mobile-nav-more-children {
+    margin: 0;
+    padding-inline-start: var(--tb-space-lg);
+    list-style: none;
+  }
+
   .mobile-nav-more a[aria-current="page"] {
     color: var(--tb-color-accent-base);
   }
@@ -1022,5 +1028,17 @@
 
   .shell-breadcrumbs:not(:has(li + li)) {
     display: none;
+  }
+}
+
+/* At 380px and below the seven 44px controls fill the bar edge to edge, so the gaps close and the edge padding shrinks. */
+@media (width <= 23.75rem) {
+  .shell-bar,
+  .shell-slot {
+    gap: 0;
+  }
+
+  .shell-bar {
+    padding-inline: var(--tb-space-xs);
   }
 }

@@ -186,9 +186,14 @@ test.describe("installed app", () => {
     // The release after that is offered again, and Reload applies it and reloads the page.
     await page.evaluate(() => navigator.serviceWorker.register("/sw.js?v=e2e-third", { scope: "/" }));
     await expect(prompt).toBeVisible();
+    // The worker that takes control on Reload is noted before the page reloads; after it, this test page (release
+    // "dev") installs its own worker again, which a real newer page would not.
+    await page.evaluate(() =>
+      navigator.serviceWorker.addEventListener("controllerchange", () => sessionStorage.setItem("e2e.controller", navigator.serviceWorker.controller?.scriptURL ?? ""), { once: true }),
+    );
     await Promise.all([page.waitForEvent("load"), prompt.getByRole("button", { name: msg("en", "app.update.reload"), exact: true }).click()]);
-    const active = await page.evaluate(async () => (await navigator.serviceWorker.getRegistration())?.active?.scriptURL ?? "");
-    expect(active).toContain("v=e2e-third");
+    expect(await page.evaluate(() => sessionStorage.getItem("e2e.controller") ?? "")).toContain("v=e2e-third");
+    await expect(prompt).toHaveCount(0);
   });
 
   test("with no connection a page opens the offline page", async ({ page, context }) => {

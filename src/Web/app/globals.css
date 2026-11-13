@@ -157,14 +157,21 @@ main tbody tr:where(:hover) > * {
 
 /*
  * Tables never break a word to fit (DLS-079): "anywhere" would let a column shrink to one letter, so cells wrap only
- * between words and at the end of long values, and a wide table scrolls inside its own container.
+ * between words and at the end of long values, and a wide table scrolls inside its own container. On a phone a table
+ * marked data-stack becomes cards; any other table keeps the page from scrolling sideways by wrapping anywhere.
  */
-:where(.page, .admin-content) :where(table) {
-  overflow-wrap: normal;
+@media (width > 40rem) {
+  :where(.page, .admin-content) :where(table) {
+    overflow-wrap: normal;
+  }
+
+  :where(.page, .admin-content) :where(td, th) {
+    overflow-wrap: break-word;
+  }
 }
 
-:where(.page, .admin-content) :where(td, th) {
-  overflow-wrap: break-word;
+:where(.page, .admin-content) :where(table[data-stack]) {
+  overflow-wrap: normal;
 }
 
 /*
