@@ -13,7 +13,7 @@ import { hostOrigin } from "../support/stack";
 type Finding = { rule: string; detail: string };
 
 /** Runs in the page: what the layout rules see on the current admin page. */
-async function inspect(page: Page): Promise<{ h1: string[]; current: string[]; findings: Finding[]; overflow: boolean }> {
+async function inspect(page: Page): Promise<{ h1: string[]; h1Top: number; current: string[]; findings: Finding[]; overflow: boolean }> {
   return page.evaluate(() => {
     const visible = (el: Element) => {
       const r = el.getBoundingClientRect();
@@ -47,6 +47,12 @@ async function inspect(page: Page): Promise<{ h1: string[]; current: string[]; f
       if (size < 12 && visible(el)) findings.push({ rule: "text under 12px", detail: `${text.slice(0, 40)} (${size}px)` });
     }
 
+    // WCAG 2.5.8: a link or button in a table is at least 24 by 24 px.
+    for (const target of main.querySelectorAll("td a, td button, th a, th button")) {
+      const r = target.getBoundingClientRect();
+      if (visible(target) && (r.height < 23.5 || r.width < 23.5)) findings.push({ rule: "target under 24px", detail: (target.textContent ?? "").trim().slice(0, 40) });
+    }
+
     // DLS-095: a table cell is never blank.
     for (const td of main.querySelectorAll("td")) {
       if (visible(td) && !(td.textContent ?? "").trim() && !td.querySelector("input, select, textarea, button, a, svg, img, [role]")) {
@@ -62,7 +68,8 @@ async function inspect(page: Page): Promise<{ h1: string[]; current: string[]; f
       }
     }
 
-    return { h1, current, findings, overflow: document.documentElement.scrollWidth > window.innerWidth + 1 };
+    const h1Top = [...main.querySelectorAll("h1")].find(visible)?.getBoundingClientRect().top ?? 0;
+    return { h1, h1Top, current, findings, overflow: document.documentElement.scrollWidth > window.innerWidth + 1 };
   });
 }
 
@@ -98,6 +105,8 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
           // The section's own page (not a tab or record inside it) is titled with its menu name.
           if (new URL(page.url()).pathname === section.path && seen.h1[0] !== name) problems.push(`${where}: title "${seen.h1[0]}" differs from menu name "${name}"`);
           if (width === 390 && seen.overflow) problems.push(`${where}: the page scrolls sideways`);
+          // DLS-092: on a phone the admin menu folds away, so the page title is on the first screen.
+          if (width === 390 && seen.h1Top > 900) problems.push(`${where}: the title starts ${Math.round(seen.h1Top)}px down, below the first screen`);
           for (const f of seen.findings) problems.push(`${where}: ${f.rule}: ${f.detail}`);
         }
       }

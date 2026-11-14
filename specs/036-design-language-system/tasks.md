@@ -63,9 +63,9 @@ Root cause found on 14 November 2026: home widgets had no shared frame or row pa
 
 ## Phase 10: Admin pages review of 14 November 2026 (DLS-092 to DLS-099, spec 006 FR-020 to FR-022)
 A review of the 35 admin pages on staging found 23 issues: no current item in the admin menu, stored keys shown as text, 11px text, small targets, header counts missing on some pages, different headers, menu names unlike page titles, repeated headings, uneven form fields, cramped sections, a red Remove on every Roles row, wrapping dates, empty cells, clipped issuer URLs, a fractional head count axis, two tab styles, chips in many shapes and mixed fonts. Global parts (12px minimum, control fonts, one tab style, one tag shape, page header contract, empty state, filter bar) come from the design foundation thread (DLS-100 onward); these tasks are the admin side.
-- [ ] T038 Admin menu current item and selected state, menu names equal page titles, one page header and one h1 on every admin page, header counts stable (DLS-092, spec 006 FR-020)
-- [ ] T039 Readable names for audit actions, permissions, capabilities and tokens, `code.ui-key` for secondary keys, check:messages coverage (DLS-093, spec 006 FR-021)
-- [ ] T040 Admin forms on `ui-field-grid`, section rhythm on Attendance, Calendars, Brand, Process operations and HR integration (DLS-094, DLS-099)
-- [ ] T041 Admin tables: dash for empty cells, no-wrap dates and statuses, quiet row actions with confirmation on Roles, long values on Sign-in, Model policy columns, Audit filters (DLS-095 to DLS-097)
-- [ ] T042 Count chart ticks and single point stat (DLS-098); Plan page sentence and layout; Connections demo label and row actions
-- [ ] T043 `admin-layout.spec.ts` page check across every admin section, English and Arabic, desktop and phone
+- [x] T038 Admin menu current item and selected state, menu names equal page titles, one page header and one h1 on every admin page, header counts stable, phone menu folded behind one button (DLS-092, spec 006 FR-020)
+- [x] T039 Readable names for audit actions, permissions, capabilities and tokens, `code.ui-key` for secondary keys, check:messages coverage (DLS-093, spec 006 FR-021)
+- [x] T040 Admin forms on `ui-field-grid`, section rhythm on Attendance, Calendars, Brand, Process operations and HR integration (DLS-094, DLS-099)
+- [x] T041 Admin tables: dash for empty cells, no-wrap dates and statuses, quiet row actions with confirmation on Roles, long values on Sign-in, Model policy columns, Audit filters (DLS-095 to DLS-097)
+- [x] T042 Count chart ticks and single point stat (DLS-098); Plan page sentence and layout; Connections demo label and row actions
+- [x] T043 `admin-layout.spec.ts` page check across every admin section, English and Arabic, desktop and phone

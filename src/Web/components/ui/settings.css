@@ -158,3 +158,11 @@
 :is(td, th) :is(time, .ui-badge, .ui-nowrap) {
   white-space: nowrap;
 }
+
+/* A link in a table cell is a target of at least 24 by 24 px (WCAG 2.5.8), so short names stay easy to tap. */
+:is(td, th) a:not(.button) {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+  min-inline-size: 1.5rem;
+}

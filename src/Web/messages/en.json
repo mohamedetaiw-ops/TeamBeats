@@ -1038,7 +1038,24 @@
         "calendar_event": "Calendar event",
         "document": "Document",
         "policy": "Policy",
-        "theme": "Brand"
+        "theme": "Brand",
+        "doc_document": "Document",
+        "doc_folder": "Folder",
+        "doc_library": "Library",
+        "calendar_team": "Team calendar",
+        "person": "Person",
+        "tenant_settings": "Workspace settings",
+        "idp_config": "Sign-in settings",
+        "shell": "Shell and footer",
+        "brand": "Brand",
+        "working_calendar": "Working calendar",
+        "hr_record": "HR record",
+        "hr_run": "HR sync run",
+        "booking": "Booking",
+        "post": "Post",
+        "survey": "Survey",
+        "assistant_conversation": "Assistant conversation",
+        "user_task": "Task"
       }
     },
     "navGroups": {
@@ -1361,7 +1378,8 @@
         "manage": "Manage API access",
         "view": "View API access"
       }
-    }
+    },
+    "menu": "Admin menu"
   },
   "header": {
     "language": "Language",

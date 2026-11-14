@@ -1038,7 +1038,24 @@
         "calendar_event": "حدث تقويم",
         "document": "مستند",
         "policy": "سياسة",
-        "theme": "العلامة"
+        "theme": "العلامة",
+        "doc_document": "مستند",
+        "doc_folder": "مجلد",
+        "doc_library": "مكتبة",
+        "calendar_team": "تقويم الفريق",
+        "person": "شخص",
+        "tenant_settings": "إعدادات مساحة العمل",
+        "idp_config": "إعدادات تسجيل الدخول",
+        "shell": "الإطار والتذييل",
+        "brand": "الهوية",
+        "working_calendar": "تقويم العمل",
+        "hr_record": "سجل الموارد البشرية",
+        "hr_run": "دورة مزامنة الموارد البشرية",
+        "booking": "حجز",
+        "post": "منشور",
+        "survey": "استطلاع",
+        "assistant_conversation": "محادثة المساعد",
+        "user_task": "مهمة"
       }
     },
     "navGroups": {
@@ -1361,7 +1378,8 @@
         "manage": "إدارة الوصول عبر الواجهة البرمجية",
         "view": "عرض الوصول عبر الواجهة البرمجية"
       }
-    }
+    },
+    "menu": "قائمة الإدارة"
   },
   "header": {
     "language": "اللغة",

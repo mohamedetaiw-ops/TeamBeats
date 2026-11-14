@@ -258,6 +258,11 @@ main tbody tr:where(:hover) > * {
   padding-block: var(--tb-space-md);
 }
 
+/* The phone menu button (DLS-092): hidden where the full menu fits beside the page. */
+.admin-nav-toggle {
+  display: none;
+}
+
 .admin-nav ul {
   list-style: none;
   margin: 0;
@@ -549,8 +554,40 @@ legend {
   }
 
   .admin-nav {
+    padding-block: var(--tb-space-xs);
     border-inline-end: none;
     border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  }
+
+  .admin-nav-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--tb-space-sm);
+    inline-size: 100%;
+    min-block-size: 2.75rem;
+    padding-inline: var(--tb-space-md);
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .admin-nav-toggle-label {
+    color: var(--tb-color-text-secondary);
+  }
+
+  .admin-nav-toggle strong {
+    flex: 1;
+  }
+
+  .admin-nav-toggle[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+  }
+
+  .admin-nav-list:not([data-open]) {
+    display: none;
   }
 }
 
