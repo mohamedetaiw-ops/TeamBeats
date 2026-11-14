@@ -29,11 +29,11 @@ function Tagged({ text }: { text: string }) {
  * Inline runs with their marks; links open only http, https and mailto, which the API already enforces. A mention
  * opens the person's profile, which the directory shows only to those allowed to see it.
  */
-function Runs({ runs }: { runs: Inline[] | null | undefined }) {
+function Runs({ runs, topics }: { runs: Inline[] | null | undefined; topics?: boolean }) {
   return (
     <>
       {(runs ?? []).map((r, i) => {
-        let node: React.ReactNode = r.mention || r.link ? r.text : <Tagged text={r.text} />;
+        let node: React.ReactNode = r.mention || r.link || !topics ? r.text : <Tagged text={r.text} />;
         if (r.mention) node = <a href={`/people/${encodeURIComponent(r.mention)}`} className="content-mention">{node}</a>;
         if (r.marks?.includes("bold")) node = <strong>{node}</strong>;
         if (r.marks?.includes("italic")) node = <em>{node}</em>;
@@ -44,27 +44,27 @@ function Runs({ runs }: { runs: Inline[] | null | undefined }) {
   );
 }
 
-function BlockView({ block, embedTitle, anchor }: { block: Block; embedTitle: string; anchor?: string }) {
+function BlockView({ block, embedTitle, anchor, topics }: { block: Block; embedTitle: string; anchor?: string; topics?: boolean }) {
   switch (block.type) {
     case "heading": {
       const level = Math.min(Math.max(block.level ?? 2, 2), 4);
       const Tag = `h${level}` as "h2" | "h3" | "h4";
       return (
         <Tag id={anchor}>
-          <Runs runs={block.children} />
+          <Runs topics={topics} runs={block.children} />
         </Tag>
       );
     }
     case "quote":
       return (
         <blockquote>
-          <Runs runs={block.children} />
+          <Runs topics={topics} runs={block.children} />
         </blockquote>
       );
     case "list": {
       const items = (block.items ?? []).map((item, i) => (
         <li key={i}>
-          <Runs runs={item} />
+          <Runs topics={topics} runs={item} />
         </li>
       ));
       return block.ordered ? <ol>{items}</ol> : <ul>{items}</ul>;
@@ -78,7 +78,7 @@ function BlockView({ block, embedTitle, anchor }: { block: Block; embedTitle: st
                 <tr key={i}>
                   {row.map((cell, j) => (
                     <td key={j}>
-                      <Runs runs={cell} />
+                      <Runs topics={topics} runs={cell} />
                     </td>
                   ))}
                 </tr>
@@ -114,7 +114,7 @@ function BlockView({ block, embedTitle, anchor }: { block: Block; embedTitle: st
     default:
       return (
         <p>
-          <Runs runs={block.children} />
+          <Runs topics={topics} runs={block.children} />
         </p>
       );
   }
@@ -123,13 +123,14 @@ function BlockView({ block, embedTitle, anchor }: { block: Block; embedTitle: st
 /**
  * A content body (spec 009 plan, body format) rendered as plain elements; the layout follows the document direction.
  * Anchors, when the API gives them, go on the headings in order, so a citation link (spec 011 US4) lands on its section.
+ * With `topics`, hashtags link to their content topic pages; other bodies (community posts, policies) keep their own.
  */
-export function BodyView({ body, embedTitle, anchors }: { body: BodyDocument; embedTitle: string; anchors?: string[] | null }) {
+export function BodyView({ body, embedTitle, anchors, topics }: { body: BodyDocument; embedTitle: string; anchors?: string[] | null; topics?: boolean }) {
   const headingIndex = body.blocks.map((b, i) => body.blocks.slice(0, i).filter((x) => x.type === "heading").length);
   return (
     <div className="content-body">
       {body.blocks.map((b, i) => (
-        <BlockView key={i} block={b} embedTitle={embedTitle} anchor={b.type === "heading" ? (anchors?.[headingIndex[i] ?? -1] ?? undefined) : undefined} />
+        <BlockView key={i} block={b} embedTitle={embedTitle} topics={topics} anchor={b.type === "heading" ? (anchors?.[headingIndex[i] ?? -1] ?? undefined) : undefined} />
       ))}
     </div>
   );

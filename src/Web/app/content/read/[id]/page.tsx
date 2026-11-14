@@ -55,7 +55,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
               <bdi>{v.summary}</bdi>
             </p>
           ) : null}
-          <BodyView body={v.body} embedTitle={t("embed")} anchors={v.anchors} />
+          <BodyView body={v.body} embedTitle={t("embed")} anchors={v.anchors} topics />
           {v.tags && v.tags.length > 0 ? (
             <ul className="content-tags" aria-label={t("tags")}>
               {v.tags.map((tag) => (
