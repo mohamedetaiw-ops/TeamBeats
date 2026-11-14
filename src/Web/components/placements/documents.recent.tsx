@@ -12,6 +12,7 @@ import {
 } from "@/lib/documents/types";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/documents/documents.css";
 
 type Answer = "loading" | "failed" | "missing" | ItemSummary[];
@@ -54,14 +55,13 @@ export default function RecentDocuments({ props }: PlacementProps) {
   }, [library, url, attempt]);
 
   const shell = (body: React.ReactNode, busy = false) => (
-    <section
-      className="documents-card"
-      aria-label={title}
-      aria-busy={busy || undefined}
+    <Widget
+      title={title}
+      busy={busy}
+      action={library ? <Link href={libraryHref(library)}>{t("all")}</Link> : null}
     >
-      <h2>{title}</h2>
       {body}
-    </section>
+    </Widget>
   );
 
   if (!library || answer === "missing")
@@ -86,8 +86,7 @@ export default function RecentDocuments({ props }: PlacementProps) {
   if (answer.length === 0)
     return shell(<StateView kind="empty" title={t("none")} message="" />);
   return shell(
-    <>
-      <ul className="documents-list">
+    <ul className="documents-list">
         {answer.map((d) => (
           <li key={d.id}>
             <Link href={documentHref(d.id)}>
@@ -105,10 +104,6 @@ export default function RecentDocuments({ props }: PlacementProps) {
             </span>
           </li>
         ))}
-      </ul>
-      <p>
-        <Link href={libraryHref(library)}>{t("all")}</Link>
-      </p>
-    </>,
+    </ul>,
   );
 }

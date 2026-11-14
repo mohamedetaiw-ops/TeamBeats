@@ -609,7 +609,7 @@ public sealed partial class PageService(
         var canPersonalize = (await authz.CheckAsync(Permissions.PersonalLayoutEdit, Target(page.OrgUnitId), ct)).Allowed;
         var rights = await layouts.RightsAsync(page.Id, template, viewer, rules, canPersonalize, ct);
         var (_, operations) = await layouts.OperationsAsync(context.RequireUser(), page.Id, ct);
-        var defaults = await homeDefaults.ForAsync(template, rights, availability, ct);
+        var defaults = await homeDefaults.ForAsync(template, rights, availability, ct, targeted);
         var personal = Personalization.LayoutEngine.Apply(layout.Regions.Select(lr => targeted.FirstOrDefault(r => r.Id == lr.Id) ?? new PageRegion(lr.Id, [])).ToList(),
             operations, rights, defaults: defaults);
 

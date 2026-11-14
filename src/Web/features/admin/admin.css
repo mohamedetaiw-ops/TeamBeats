@@ -267,47 +267,26 @@
 }
 
 /* The admin overview (spec 006 FR-018): setup status and recent changes side by side, then the sections by group. */
-.admin-overview,
-.admin-overview-groups {
+
+/* The admin overview (spec 006 FR-018): two widgets side by side, then the shortcut tiles. */
+.admin-overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
   gap: var(--tb-space-md);
-  margin-block-end: var(--tb-space-lg);
+  margin-block-end: var(--tb-space-xl);
 }
 
-.admin-overview-card {
+.admin-overview-shortcuts {
   display: grid;
-  align-content: start;
-  gap: var(--tb-space-sm);
+  gap: var(--tb-space-md);
 }
 
-.admin-overview-card :is(h2, h3) {
-  margin: 0;
-}
-
-.admin-overview-list,
-.admin-overview-links {
+.admin-overview-shortcuts-head {
   display: grid;
   gap: var(--tb-space-xs);
+}
+
+.admin-overview-shortcuts-head h2 {
   margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.admin-overview-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--tb-space-sm);
-  min-block-size: 2.75rem;
-}
-
-.admin-overview-row > :is(a, code) {
-  flex: 1 1 10rem;
-}
-
-.admin-overview-links a {
-  display: inline-flex;
-  align-items: center;
-  min-block-size: 2.75rem;
+  font-size: var(--tb-font-size-lg);
 }

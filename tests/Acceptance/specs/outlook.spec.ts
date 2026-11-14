@@ -7,7 +7,8 @@ import { hostOrigin } from "../support/stack";
 
 /**
  * Spec 018 T016: My mail and My calendar on a published page, in English and Arabic with axe, and the Outlook section
- * of personal settings. The browser's calls to the employee's mail, calendar and Outlook endpoints are answered here
+ * of personal settings. From R2 My calendar renders the spec 037 calendar card (spec 018 FR-017, spec 032 FR-070), so
+ * its rows and states are the card's, covered by calendar.spec.ts; here it only has to be that card. The browser's calls to the employee's mail, calendar and Outlook endpoints are answered here
  * with the documented response shapes, one state per placement (selected by its top or days setting), because the
  * Microsoft sign-in redirect needs HTTPS on the tenant host. The server side of every state, with the fake Microsoft
  * Graph, is covered by tests/Integration/MailCalendarTests.cs.
@@ -42,7 +43,12 @@ function mail(top: number, view: string) {
         state: "ok", asOf: minutes(0), unreadCount: 7, composeLink: "https://outlook.office.com/mail/deeplink/compose",
         messages: view === "all"
           ? [message("other"), message("first", { isRead: false, importance: "high" })]
-          : [message("first", { isRead: false, importance: "high" }), message("second", { hasAttachments: true })],
+          : [
+            message("first", { isRead: false, importance: "high" }),
+            message("second", { hasAttachments: true }),
+            // Spec 036 DLS-091: a row in the other language starts at the same edge as its neighbours.
+            message("arabic", { sender: "فاطمة الزهراء", subject: "إقفال الشهر" }),
+          ],
       };
   }
 }
@@ -124,8 +130,6 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
           { id: "not-connected", componentRef: "outlook.my_mail@1", props: { top: 2 } },
           { id: "degraded", componentRef: "outlook.my_mail@1", props: { top: 3 } },
           { id: "managed", componentRef: "outlook.my_mail@1", props: { top: 4 } },
-          { id: "admin-setup", componentRef: "outlook.my_calendar@1", props: { days: 1 } },
-          { id: "failing", componentRef: "outlook.my_calendar@1", props: { days: 2 } },
         ],
       })));
       slug = page.slug;
@@ -139,13 +143,22 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/p/${slug}`);
 
       const mails = page.getByRole("region", { name: msg(locale, "outlook.mail.title") });
-      const calendars = page.getByRole("region", { name: msg(locale, "outlook.calendar.title") });
+      const calendars = page.getByRole("region", { name: msg(locale, "calendar.title") });
       await expect(mails).toHaveCount(5);
-      await expect(calendars).toHaveCount(3);
+      await expect(calendars).toHaveCount(1);
 
       // My mail: unread count, newest Focused messages with text markers, each opening Outlook in a new tab.
       const main = mails.first();
-      await expect(main.getByRole("listitem")).toHaveCount(2);
+      await expect(main.getByRole("listitem")).toHaveCount(3);
+      // Every subject, Arabic or English, starts at the row's start edge in the page's direction (DLS-091).
+      const starts = await main.locator(".outlook-subject").evaluateAll((nodes, rtl) => nodes.map((n) => {
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        const text = range.getBoundingClientRect();
+        const box = n.getBoundingClientRect();
+        return Math.round(rtl ? box.right - text.right : text.left - box.left);
+      }), locale === "ar");
+      expect(starts).toEqual([0, 0, 0]);
       await expect(main).toContainText(await page.evaluate((l) => new Intl.NumberFormat(l).format(7), locale));
       const first = main.getByRole("listitem").first();
       await expect(first).toContainText(msg(locale, "outlook.mail.markers.unread"));
@@ -174,29 +187,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(mails.nth(4).getByRole("status")).toContainText(msg(locale, "outlook.state.conditionalAccess"));
       await expect(mails.nth(4).getByRole("link", { name: msg(locale, "outlook.state.openOutlook") })).toHaveAttribute("target", "_blank");
 
-      // My calendar: today first with the all-day item on top, free and tentative in text, private subject hidden,
-      // Join primary within 10 minutes of the start, later meetings with a quiet Join.
+      // My calendar is the calendar card: the week strip and agenda rows, not the R1 list, and no call to the R1 endpoint.
       const cal = calendars.first();
-      const today = cal.locator(".outlook-day").first();
-      await expect(today.getByRole("heading")).toHaveText(msg(locale, "outlook.calendar.today"));
-      const todayItems = today.getByRole("listitem");
-      await expect(todayItems).toHaveCount(4);
-      await expect(todayItems.first()).toContainText(msg(locale, "outlook.calendar.allDay"));
-      await expect(todayItems.first()).toContainText(msg(locale, "outlook.calendar.markers.free"));
-      await expect(todayItems.nth(2)).toContainText(msg(locale, "outlook.calendar.markers.tentative"));
-      await expect(todayItems.nth(3)).toContainText(msg(locale, "outlook.calendar.private"));
-      const join = todayItems.nth(1).getByRole("link", { name: msg(locale, "outlook.calendar.joinLabel", { subject: "Standup" }) });
-      await expect(join).toHaveClass(/button-primary/);
-      await expect(join).toHaveAttribute("href", "https://teams.microsoft.com/l/meetup-join/fake");
-      await expect(cal.locator(".outlook-day")).toHaveCount(2);
-      await expect(cal.getByRole("link", { name: msg(locale, "outlook.calendar.joinLabel", { subject: "Review" }) })).toHaveClass(/button-quiet/);
-      expect(seen).toContain("/api/v1/me/calendar?days=7&hidePrivate=true");
-
-      // Admin setup, and a failure that recovers on retry.
-      await expect(calendars.nth(1).getByRole("status")).toContainText(msg(locale, "outlook.state.adminSetup"));
-      await expect(calendars.nth(2).getByRole("status")).toContainText(msg(locale, "outlook.state.unavailable.calendar"));
-      await calendars.nth(2).getByRole("button", { name: msg(locale, "outlook.state.retry") }).click();
-      await expect(calendars.nth(2).getByRole("status")).toContainText(msg(locale, "outlook.calendar.empty"));
+      await expect(cal.getByRole("list", { name: msg(locale, "calendar.weekLabel") }).getByRole("listitem")).toHaveCount(7);
+      await expect(cal.locator(".outlook-day")).toHaveCount(0);
+      expect(seen.some((s) => s.startsWith("/api/v1/me/calendar"))).toBe(false);
 
       await expect(page.locator("html")).toHaveAttribute("dir", locale === "ar" ? "rtl" : "ltr");
       await expectAccessible(page, testInfo, `outlook-${locale}`);

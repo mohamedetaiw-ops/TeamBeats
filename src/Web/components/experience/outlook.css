@@ -1,14 +1,4 @@
-/* My mail and My calendar (spec 018 section 10). Tokens only, logical properties only, so RTL and themes need nothing extra. */
-.outlook {
-  display: grid;
-  gap: var(--tb-space-sm);
-  padding: var(--tb-space-lg);
-  border-radius: var(--tb-radius-lg);
-  background: var(--tb-color-surface-raised);
-  box-shadow: var(--tb-shadow-sm);
-}
-
-.outlook-header,
+/* My mail rows (spec 018 section 10) inside the shared widget frame (spec 036 DLS-089). Tokens and logical properties only. */
 .outlook-actions,
 .outlook-line {
   display: flex;
@@ -16,21 +6,6 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--tb-space-sm);
-}
-
-.outlook-title {
-  margin: 0;
-  font-size: var(--tb-font-size-lg);
-}
-
-.outlook-day-title {
-  margin: 0;
-  font-size: var(--tb-font-size-md);
-}
-
-.outlook-day {
-  display: grid;
-  gap: var(--tb-space-xs);
 }
 
 .outlook-list {
@@ -90,10 +65,6 @@
 .outlook-item[data-unread] .outlook-sender,
 .outlook-item[data-unread] .outlook-subject {
   font-weight: var(--tb-font-weight-bold);
-}
-
-.outlook-join {
-  flex: none;
 }
 
 .outlook-stale {

@@ -6,6 +6,7 @@ import type { PlacementProps } from "@/lib/experience/contract";
 import "@/components/experience/toolbox.css";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 
 type Report = {
   place: { name: string; country: string | null };
@@ -61,10 +62,9 @@ export default function Weather({ props }: PlacementProps) {
   const answer = result?.key === key ? result.answer : "loading";
 
   const shell = (body: ReactNode, busy = false) => (
-    <section className="toolbox" aria-label={t("title")} aria-busy={busy || undefined}>
-      <h2 className="toolbox-title">{t("title")}</h2>
+    <Widget title={t("title")} busy={busy}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (zone === null && !configured) return shell(null, true);
