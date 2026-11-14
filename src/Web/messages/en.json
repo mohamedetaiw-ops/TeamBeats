@@ -3552,7 +3552,9 @@
       "embed": "Embedded content",
       "siteArchived": "From an archived site",
       "tags": "Topics",
-      "tag": "#{tag}"
+      "tag": "#{tag}",
+      "published": "Published {date}",
+      "readTime": "{minutes} min read"
     },
     "social": {
       "title": "Reactions and comments",
@@ -3582,13 +3584,11 @@
       "off": "Comments are turned off for this site.",
       "held": "Thanks. Your comment will appear once a moderator approves it.",
       "reportedThanks": "Thanks for reporting. A moderator will look at it.",
-      "mention": "Mention someone",
       "mentionResults": "People found",
-      "mentionChosen": "People you mention",
       "mentionAdd": "Mention {name}",
-      "mentionRemove": "Stop mentioning {name}",
       "mentioned": "Mentions:",
-      "mentionName": "@{name}"
+      "comments": "Comments",
+      "mentionHint": "Type @ to mention someone"
     },
     "component": {
       "feed": {

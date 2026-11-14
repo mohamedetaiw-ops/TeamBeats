@@ -218,16 +218,15 @@
 
 .assistant-item-actions {
   display: grid;
-  gap: var(--tb-space-md);
-  padding: var(--tb-space-md);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-md);
-  background: var(--tb-color-surface-raised);
+  gap: var(--tb-space-sm);
 }
 
-.assistant-item-actions h2 {
-  margin: 0;
-  font-size: var(--tb-font-size-lg);
+.assistant-item-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-accent-base);
 }
 
 .assistant-result {

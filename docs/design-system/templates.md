@@ -9,7 +9,7 @@ Templates are ready page patterns built only from the shared components. Adminis
 | Catalogue | Contained page | Page header, filter toolbar, tile cards grouped by category, favourites | Services, knowledge spaces, document libraries |
 | Directory | Contained page | Page header, section tabs, filter toolbar with cards or list, results first, discovery after | People, my team |
 | Detail | Split view | Page header with actions, main content, side column for related actions | A policy, a request, tasks with delegation |
-| Article | Article layout | Title, metadata, hero `Media`, readable column (45 to 80 characters), related links, acknowledgement when required | News, announcements, policies, knowledge articles |
+| Article | Article layout | Kind label, title, byline (author, date, reading time), the quiet AI row, hero `Media` at 16:9 when there is a picture, readable column (45 to 80 characters), related links, acknowledgement when required, then one compact reaction row and one comment composer with inline `@` mentions | News, announcements, policies, knowledge articles |
 | Listing | Listing layout | Title, search and filters, results as `Card` grid or table rows, paging, empty state | News archive, services catalogue, document libraries, people search |
 | Form | Single column | Title, short intro, grouped fields, one primary action, inline errors, success state | Service requests, leave, feedback, settings |
 | Dashboard | Grid of tiles | Key numbers with labels, trends with table alternatives, the tasks behind them | Analytics, compliance, admin overviews |

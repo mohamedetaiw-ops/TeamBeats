@@ -3552,7 +3552,9 @@
       "embed": "محتوى مضمّن",
       "siteArchived": "من موقع مؤرشف",
       "tags": "الموضوعات",
-      "tag": "#{tag}"
+      "tag": "#{tag}",
+      "published": "نُشر في {date}",
+      "readTime": "قراءة {minutes} د"
     },
     "social": {
       "title": "التفاعلات والتعليقات",
@@ -3582,13 +3584,11 @@
       "off": "التعليقات متوقفة في هذا الموقع.",
       "held": "شكرًا. سيظهر تعليقك بعد موافقة المشرف.",
       "reportedThanks": "شكرًا على الإبلاغ. سيراجعه أحد المشرفين.",
-      "mention": "الإشارة إلى شخص",
       "mentionResults": "الأشخاص الذين تم العثور عليهم",
-      "mentionChosen": "الأشخاص الذين تشير إليهم",
       "mentionAdd": "الإشارة إلى {name}",
-      "mentionRemove": "إلغاء الإشارة إلى {name}",
       "mentioned": "الإشارات:",
-      "mentionName": "@{name}"
+      "comments": "التعليقات",
+      "mentionHint": "اكتب @ للإشارة إلى شخص"
     },
     "component": {
       "feed": {
