@@ -26,6 +26,41 @@ public sealed class RetrievalGates(IDbSession session, IOutbox outbox, IAuditWri
     /// <summary>The change had no proposer to start the run on behalf of.</summary>
     public const string NotRun = "retrieval/not_run";
 
+    /// <summary>
+    /// How far a judged query set metric may fall below the index in force before the change is blocked (spec 012 US8).
+    /// The rankings are deterministic, so there is no noise to allow for; the spec gives no number, so this is the
+    /// recorded default.
+    /// </summary>
+    public const double RankingMargin = 0.05;
+
+    /// <summary>Each judged query set metric that fell more than <see cref="RankingMargin"/> below the index in force, named as "search_ranking/metric:locale".</summary>
+    internal static IReadOnlyList<string> Regressions(IEnumerable<RankingScore> scores) =>
+        [.. scores.Where(r => r.Live - r.Proposed > RankingMargin + 1e-9).Select(r => $"{RunService.SearchSuiteKey}/{r.Metric}:{r.Locale}")];
+
+    /// <summary>The judged query set means per metric and locale, with the change and with the index in force, from the cases that ran.</summary>
+    private async Task<List<RankingScore>> RankingScoresAsync(Guid runId, CancellationToken ct)
+    {
+        var rows = await session.QueryAsync(
+            "select locale, metrics::text from evaluation.case_result where run_id = @runId and suite_key = @suite and status = 'done' and metrics is not null",
+            new { runId, suite = RunService.SearchSuiteKey },
+            r => (Locale: r.GetString(0), Metrics: JsonSerializer.Deserialize<Dictionary<string, CaseMetric>>(r.GetString(1), EvalJson.Options)!), ct);
+        var scores = new List<RankingScore>();
+        foreach (var metric in RunService.SearchMetrics)
+        {
+            foreach (var locale in rows.GroupBy(r => r.Locale).OrderBy(g => g.Key, StringComparer.Ordinal))
+            {
+                var pairs = locale
+                    .Where(r => r.Metrics.GetValueOrDefault(metric)?.Value is not null && r.Metrics.GetValueOrDefault(CaseExecutor.LivePrefix + metric)?.Value is not null)
+                    .Select(r => (Proposed: r.Metrics[metric].Value!.Value, Live: r.Metrics[CaseExecutor.LivePrefix + metric].Value!.Value)).ToList();
+                if (pairs.Count > 0)
+                {
+                    scores.Add(new RankingScore(metric, locale.Key, Math.Round(pairs.Average(p => p.Live), 4), Math.Round(pairs.Average(p => p.Proposed), 4), pairs.Count));
+                }
+            }
+        }
+        return scores;
+    }
+
     internal async Task<bool> ExistsAsync(Guid changeId, CancellationToken ct) =>
         await session.ScalarAsync<long>("select count(*) from evaluation.retrieval_gate where change_id = @changeId", new { changeId }, ct) > 0;
 
@@ -81,6 +116,8 @@ public sealed class RetrievalGates(IDbSession session, IOutbox outbox, IAuditWri
                 incomplete.AddRange(result.Incomplete.Select(f => $"{RunService.RetrievalSuiteKey}/{f}"));
             }
         }
+        var scores = gate[0].Run is { } scoredRun ? await RankingScoresAsync(scoredRun, ct) : [];
+        blocking.AddRange(Regressions(scores));
         var verdict = critical.Count > 0 ? RouteGateResults.FailedCritical
             : blocking.Count > 0 ? RouteGateResults.Failed
             : incomplete.Count > 0 ? RouteGateResults.Incomplete
@@ -90,8 +127,8 @@ public sealed class RetrievalGates(IDbSession session, IOutbox outbox, IAuditWri
             "update evaluation.retrieval_gate set status = 'decided', result = @verdict, failures = @failures, decided_at = @now where change_id = @changeId",
             new { changeId, verdict, failures = Jsonb.From(failures), now = clock.UtcNow }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.EvalGateDecided, "search_retrieval_change", changeId.ToString(),
-            Changes: new { verdict, run = gate[0].Run, critical, blocking, incomplete }), ct);
-        await outbox.EnqueueAsync(new EvaluationRetrievalGateDecided(changeId, verdict, failures), ct);
+            Changes: new { verdict, run = gate[0].Run, critical, blocking, incomplete, scores }), ct);
+        await outbox.EnqueueAsync(new EvaluationRetrievalGateDecided(changeId, verdict, failures, scores), ct);
         logger.LogInformation("eval.retrieval_gate_decided tenant {Tenant} change {Change} verdict {Verdict}", context.TenantId, changeId, verdict);
     }
 }

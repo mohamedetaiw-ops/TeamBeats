@@ -8,7 +8,7 @@ import { pick, type RequestSummary } from "@/lib/services/types";
 
 /**
  * The shared work item row for requests (spec 036 DLS-061): the service name as the row's link, a status badge, one
- * meta line (number · current step · who it is for), the last change as a relative time, and a chevron because the row
+ * meta line (number · current step · who it waits for · who it is for), the last change as a relative time, and a chevron because the row
  * opens a page. Everything shown comes from the request summary the API returned.
  */
 export function WorkItemList({ items, now, person, testId }: { items: RequestSummary[]; now: number; person: "onBehalfOf" | "requester"; testId: string }) {
@@ -19,7 +19,9 @@ export function WorkItemList({ items, now, person, testId }: { items: RequestSum
       {items.map((r) => {
         const who = person === "requester" ? (r.onBehalfOf ?? r.requester) : r.onBehalfOf;
         const changed = r.closedAt ?? r.submittedAt ?? r.createdAt;
-        const rest = joinMeta([r.currentStep ? pick(r.currentStep, locale) : null, who ? t("team.for", { name: isolate(who.displayName) }) : null]);
+        // While a request is open the row names who it waits for (spec 016 FR-022).
+        const owner = r.closedAt === null && r.assignees.length > 0 ? t("requests.waitingFor", { name: isolate(r.assignees[0]!.displayName), others: r.assignees.length - 1 }) : null;
+        const rest = joinMeta([r.currentStep ? pick(r.currentStep, locale) : null, owner, who ? t("team.for", { name: isolate(who.displayName) }) : null]);
         return (
           <li key={r.id} className="work-item">
             <div className="work-item-main">

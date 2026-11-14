@@ -205,3 +205,72 @@
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-md);
 }
+
+/* Federated groups (US5): each source in its own group below the TeamBeats results. */
+.search-federated {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding-block-start: var(--tb-space-md);
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.search-federated h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+/* The AI summary (US6) above the results, set apart as AI generated. */
+.search-summary {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.search-summary h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}
+
+.search-summary-text,
+.search-summary-sources {
+  margin: 0;
+}
+
+.search-summary-sources {
+  padding-inline-start: var(--tb-space-lg);
+}
+
+/* Saving a search (US7) and the list of saved searches. */
+.search-save {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.search-saved {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+/* Judged query sets (US8): the results found for a query, each with its grade. */
+.search-judged {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.search-judged-results {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.search-judged-results label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  justify-content: space-between;
+}

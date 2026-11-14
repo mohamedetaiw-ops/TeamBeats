@@ -59,6 +59,12 @@ public static class FeatureCatalogue
             new("Sites.Selected", PermissionType.Application, "integrations.permission.sites_selected"),
             new("Files.Read.All", PermissionType.Delegated, "integrations.permission.files_read_all"),
         ]),
+        // Uploads into connected libraries (spec 011 FR-029): written as the person, so SharePoint decides; a separate
+        // feature so a tenant that only reads never grants write access.
+        new(Microsoft365Features.SharePointUpload, Capabilities.IntegrationMicrosoft365,
+        [
+            new("Files.ReadWrite.All", PermissionType.Delegated, "integrations.permission.files_read_write_all"),
+        ]),
     ];
 
     /// <summary>The permissions an employee's own token carries for a feature.</summary>

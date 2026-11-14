@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>
+  <PropertyGroup><RootNamespace>TeamBeats.Modules.AiGateway.OpenAiCompatible</RootNamespace><AssemblyName>TeamBeats.Modules.AiGateway.OpenAiCompatible</AssemblyName></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../AiGateway/TeamBeats.Modules.AiGateway.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="TeamBeats.Unit.Tests" />
+  </ItemGroup>
+</Project>

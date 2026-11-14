@@ -24,6 +24,8 @@ export type SearchPage = {
   facets: Partial<Record<SearchKind, number>>;
   degraded: boolean;
   alternatives: SearchResult[];
+  /** The first page in the query log, for reporting the first click (FR-013). */
+  queryId?: string | null;
 };
 
 export type Suggestion = { itemId: string; source: string; kind: SearchKind; title: string; link: string };
@@ -64,6 +66,64 @@ export type RetrievalChange = {
   appliedAt: string | null;
   canApply: boolean;
   canCancel: boolean;
+  /** Judged query set means per metric and locale, with the index in force and with the change (US8). */
+  scores: RankingScore[];
 };
 
+export type RankingScore = { metric: "precision_at_5" | "ndcg_at_10"; locale: string; live: number; proposed: number; queries: number };
+
 export type RetrievalConfig = { active: RetrievalSettings; open: RetrievalChange | null; history: RetrievalChange[] };
+
+/** Federated search (spec 012 US5): results asked of an external system live, as the person, never stored. */
+export type FederatedHit = {
+  title: string;
+  link: string;
+  summary: string | null;
+  location: string | null;
+  mediaType: string | null;
+  modifiedAt: string | null;
+};
+export type FederatedState =
+  | "ok"
+  | "not_connected"
+  | "reconnect"
+  | "unavailable"
+  | "timeout";
+export type FederatedGroup = {
+  source: string;
+  state: FederatedState;
+  results: FederatedHit[];
+};
+export type FederatedPage = { query: string; groups: FederatedGroup[] };
+export type FederatedSource = {
+  source: string;
+  enabled: boolean;
+  updatedAt: string | null;
+};
+
+/** The AI summary above results (spec 012 US6): off, or what the assistant made of the top permitted passages. */
+export type SummaryCitation = {
+  n: number;
+  title: string;
+  link: string;
+  kind: string;
+};
+export type SearchSummaryView = {
+  state: "off" | "answered" | "none" | "withheld" | "unavailable";
+  turnId: string | null;
+  text: string | null;
+  citations: SummaryCitation[];
+};
+export type AiSummarySetting = { enabled: boolean; updatedAt: string | null };
+
+/** A search the person saved (US7); alerts bring at most one notification a day about new items that match. */
+export type SavedSearchView = { id: string; query: string; alerts: boolean; createdAt: string; alertedAt: string | null };
+
+/** A judged query set (US8): queries with the results that should rank high, graded 1 to 3, run as a persona of its unit. */
+export type Judgment = { source: string; itemId: string; grade: number };
+export type JudgedQuery = { n: number; query: string; locale: string; judgments: Judgment[] };
+export type JudgedSetSummary = { id: string; names: Record<string, string>; orgUnitId: string; version: number; queries: number; locales: string[]; updatedAt: string };
+export type JudgedSetView = { id: string; names: Record<string, string>; orgUnitId: string; version: number; queries: JudgedQuery[]; updatedAt: string };
+
+/** Whether the query log keeps the words people search for (FR-013). */
+export type QueryTextSetting = { enabled: boolean; updatedAt: string | null };

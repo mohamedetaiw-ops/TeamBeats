@@ -127,6 +127,15 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test("the month draws ranges and opens the day panel, as a bottom sheet on a phone", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.setViewportSize({ width: 1280, height: 900 });
+      // An event of several days is listed once in the agenda, with its range (DLS-119).
+      await page.goto(`${hostOrigin(tenant.key)}/calendar?view=agenda&date=${monday}`);
+      await expect(page.locator(".ui-cal-row").filter({ hasText: fair })).toHaveCount(1);
+      // The week is one grid; a day's list opens in the day panel from the day's heading.
+      await page.goto(`${hostOrigin(tenant.key)}/calendar?view=week&date=${monday}`);
+      await expect(page.locator(".ui-cal-agenda")).toHaveCount(0);
+      await page.locator(".ui-week-open").first().click();
+      await expect(page.getByRole("complementary")).toBeVisible();
+
       await page.goto(`${hostOrigin(tenant.key)}/calendar?view=month&date=${monday}`);
       await expect(page.locator(".ui-cal-bar").filter({ hasText: fair }).first()).toBeVisible();
       await page.locator(".ui-cal-month-day").filter({ hasText: new RegExp(`^${Number(monday.slice(8))}`) }).first().click();

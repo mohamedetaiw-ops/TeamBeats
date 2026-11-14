@@ -269,6 +269,8 @@ public sealed class PersonalizationTests(TenantWorld world)
         Assert.Equal("compact", profile.GetProperty("values").GetProperty("density").GetString());
         Assert.Equal("dark", profile.GetProperty("values").GetProperty("mode").GetString());
         Assert.Equal("system", profile.GetProperty("values").GetProperty("motion").GetString());
+        // Only saved settings count as the person's choice, so a design default can fill the rest (spec 033 FR-032).
+        Assert.Equal(new[] { "mode", "density" }, profile.GetProperty("chosen").EnumerateArray().Select(c => c.GetString()!).ToArray());
     }
 
     [Fact]

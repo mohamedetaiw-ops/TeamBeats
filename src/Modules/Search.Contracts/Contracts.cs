@@ -66,6 +66,33 @@ public interface ISearchSource
 }
 
 /// <summary>
+/// A source searched live for each person instead of indexed (spec 012 US5, FR-016, FR-017), such as SharePoint
+/// connected libraries (011) or a connector implementing the 017 search contract. Its owner queries the external system
+/// with the person's delegated identity, so that system's permissions decide, and nothing found is stored.
+/// </summary>
+public interface IFederatedSource
+{
+    /// <summary>The stable key of the source, used in the tenant's settings (for example <c>sharepoint</c>).</summary>
+    string Key { get; }
+
+    /// <summary>
+    /// Up to <paramref name="limit"/> results for the signed-in person. <paramref name="deadline"/> bounds only the call to
+    /// the external system and is cancelled at the time limit; local reads use <paramref name="ct"/>. Throws
+    /// <see cref="OperationCanceledException"/> when the deadline passes.
+    /// </summary>
+    Task<FederatedAnswer> QueryAsync(string query, int limit, CancellationToken deadline, CancellationToken ct = default);
+}
+
+/// <summary>
+/// What a federated source found. <paramref name="State"/> is <c>ok</c>, <c>none</c> (nothing to search for this
+/// person), <c>not_connected</c> or <c>reconnect</c> (they must connect their account), or <c>unavailable</c>.
+/// </summary>
+public sealed record FederatedAnswer(string State, IReadOnlyList<FederatedHit> Hits);
+
+/// <summary>One result from a federated source: a link that opens it where it lives, never a copy.</summary>
+public sealed record FederatedHit(string Title, string Link, string? Summary, string? Location, string? MediaType, DateTimeOffset? ModifiedAt);
+
+/// <summary>
 /// Asks Search to read an item again from its owner (spec 012 section 12). Owners whose events do not name the item
 /// (or that have no event yet) publish this; Search also maps the owner events of section 12 to it.
 /// </summary>
@@ -145,4 +172,32 @@ public sealed record RetrievalConfigChangeProposed(Guid ChangeId, int Version, G
 public interface IRetrievalEvaluation
 {
     Task<RetrievalResult> RetrieveProposedAsync(Guid changeId, string query, string useCase, CancellationToken ct = default);
+
+    /// <summary>
+    /// The ranking a judged query set scores (spec 012 US8, FR-020): the distinct items the person in context may read,
+    /// best first, from the same keyword and semantic fusion as retrieval, with no AI classification ceiling because
+    /// search results are not sent to a model. With <paramref name="changeId"/> it ranks over the change's shadow index
+    /// (a conflict once the change no longer waits for its gate); without it, over the index in force.
+    /// </summary>
+    Task<IReadOnlyList<RankedItem>> RankAsync(Guid? changeId, string query, int limit, CancellationToken ct = default);
 }
+
+/// <summary>One item of a ranking, best first.</summary>
+public sealed record RankedItem(string Source, Guid ItemId);
+
+/// <summary>
+/// The search query feed for the search dashboard of spec 021 (spec 012 FR-013, US8 scenario 2): searches, searches
+/// with no results and with a click in the period, and the top, zero result and no click queries. A query is listed
+/// only when at least five people searched for it, never when it looks like personal data, and not at all when the
+/// tenant turned query text off (<see cref="SearchQueryReport.QueryTextHidden"/>). The caller checks who may see it.
+/// </summary>
+public interface ISearchAnalyticsFeed
+{
+    Task<SearchQueryReport> ReportAsync(DateTimeOffset from, DateTimeOffset to, string? locale, CancellationToken ct = default);
+}
+
+public sealed record SearchQueryRow(string Query, int Searches, int People, int ZeroResults, int Clicks);
+
+public sealed record SearchQueryReport(int Searches, int ZeroResults, int Clicked, double ClickThrough, bool QueryTextHidden, IReadOnlyList<SearchQueryRow> TopQueries,
+    IReadOnlyList<SearchQueryRow> ZeroResultQueries, IReadOnlyList<SearchQueryRow> NoClickQueries);
+

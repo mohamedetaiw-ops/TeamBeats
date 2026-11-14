@@ -148,12 +148,14 @@ export function MonthView({
 
 /** Puts overlapping events side by side: each gets a lane, and every event in a cluster knows how many lanes it has. */
 function lanes(list: readonly CalendarEvent[]) {
-  const out = new Map<string, { lane: number; lanes: number }>();
+  const out = new Map<string, { lane: number; lanes: number; cluster: number }>();
   let cluster: { id: string; lane: number }[] = [];
   let ends: number[] = [];
   let clusterEnd = -1;
+  let clusters = 0;
   const close = () => {
-    for (const c of cluster) out.set(c.id, { lane: c.lane, lanes: ends.length });
+    for (const c of cluster) out.set(c.id, { lane: c.lane, lanes: ends.length, cluster: clusters });
+    if (cluster.length > 0) clusters += 1;
     cluster = [];
     ends = [];
   };
@@ -172,9 +174,10 @@ function lanes(list: readonly CalendarEvent[]) {
 }
 
 /**
- * Week view (spec 036 DLS-039): days side by side with timed events placed by their start and end, all-day events on
- * top, and overlapping events sharing the width. Each day is a section with its own heading and an ordered list, so a
- * screen reader hears the day, then each event with its time.
+ * Week view (spec 036 DLS-039, DLS-119): days side by side with timed events placed by their start and end, all-day
+ * events on top, and overlapping events sharing the width at equal widths. Where more than three overlap, two are shown
+ * and the rest share one "N more" block that opens the day. Each day is a section with its own heading and an ordered
+ * list, so a screen reader hears the day, then each event with its time. With `onSelectDay` the day heading is a button.
  */
 export function WeekView({
   start,
@@ -183,6 +186,8 @@ export function WeekView({
   today,
   startHour = 8,
   endHour = 18,
+  now,
+  onSelectDay,
 }: {
   /** The first day to show, as an ISO date. */
   start: string;
@@ -191,6 +196,10 @@ export function WeekView({
   today?: string;
   startHour?: number;
   endHour?: number;
+  /** The viewer's local time as "HH:MM"; draws the current time line in today's column. */
+  now?: string;
+  /** Opens a day, from its heading or from a block of hidden overlapping events. */
+  onSelectDay?: (day: string) => void;
 }) {
   const locale = useLocale();
   const t = useTranslations("ui");
@@ -218,7 +227,13 @@ export function WeekView({
         return (
           <section key={day} className="ui-week-day" aria-labelledby={`${id}-${day}`} data-today={day === today || undefined}>
             <h4 id={`${id}-${day}`} aria-current={day === today ? "date" : undefined}>
-              {dayName.format(fromIso(day))}
+              {onSelectDay ? (
+                <button type="button" className="ui-week-open" onClick={() => onSelectDay(day)}>
+                  {dayName.format(fromIso(day))}
+                </button>
+              ) : (
+                dayName.format(fromIso(day))
+              )}
             </h4>
             <ul className="ui-week-all" aria-label={t("data.allDay")}>
               {all.map((e) => (
@@ -229,17 +244,40 @@ export function WeekView({
             </ul>
             <ol className="ui-week-events">
               {timed.map((e) => {
-                const at = placed.get(e.id) ?? { lane: 0, lanes: 1 };
+                const at = placed.get(e.id) ?? { lane: 0, lanes: 1, cluster: 0 };
+                const crowded = at.lanes > 3;
+                if (crowded && at.lane > 1) return null;
                 const label = t("data.timeRange", { start: time(day, e.start!), end: time(day, e.end ?? e.start!) });
                 return (
                   <li
                     key={e.id}
-                    style={{ gridRow: `${row(e.start!)} / ${Math.max(row(e.end ?? e.start!), row(e.start!) + 1)}`, "--xp-lane": at.lane, "--xp-lanes": at.lanes } as CSSProperties}
+                    style={{ gridRow: `${row(e.start!)} / ${Math.max(row(e.end ?? e.start!), row(e.start!) + 1)}`, "--xp-lane": at.lane, "--xp-lanes": crowded ? 3 : at.lanes } as CSSProperties}
                   >
                     <EventChip event={e} time={label} />
                   </li>
                 );
               })}
+              {[...new Set(timed.map((e) => placed.get(e.id)).filter((at) => at && at.lanes > 3).map((at) => at!.cluster))].map((cluster) => {
+                // The events of a crowded group beyond the first two share one block in the third lane.
+                const rest = timed.filter((e) => placed.get(e.id)?.cluster === cluster && placed.get(e.id)!.lane > 1);
+                const from = Math.min(...rest.map((e) => row(e.start!)));
+                const to = Math.max(...rest.map((e) => Math.max(row(e.end ?? e.start!), row(e.start!) + 1)));
+                const text = t("data.more", { count: rest.length });
+                return (
+                  <li key={`more-${cluster}`} style={{ gridRow: `${from} / ${to}`, "--xp-lane": 2, "--xp-lanes": 3 } as CSSProperties}>
+                    {onSelectDay ? (
+                      <button type="button" className="ui-event ui-week-more" onClick={() => onSelectDay(day)}>
+                        {text}
+                      </button>
+                    ) : (
+                      <span className="ui-event ui-week-more">{text}</span>
+                    )}
+                  </li>
+                );
+              })}
+              {now && day === today && minutes(now) >= startHour * 60 && minutes(now) <= endHour * 60 ? (
+                <li className="ui-week-now" aria-hidden="true" style={{ gridRow: row(now), "--xp-offset": ((minutes(now) - startHour * 60) % 30) / 30 } as CSSProperties} />
+              ) : null}
             </ol>
           </section>
         );

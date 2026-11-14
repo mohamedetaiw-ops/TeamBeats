@@ -137,7 +137,7 @@ internal static partial class AnalyticsSchemaCheck
 /// random salt, as hex. The same person gets a different key in every tenant, and a key cannot be turned back into a
 /// user ID without the salt, which no API returns.
 /// </summary>
-public sealed class Pseudonyms(IDbSession session, IClock clock)
+public sealed class Pseudonyms(IDbSession session, IClock clock) : IAnalyticsPseudonyms
 {
     private byte[]? _salt;
 

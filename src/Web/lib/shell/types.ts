@@ -77,6 +77,7 @@ export type PreferenceKey = "mode" | "density" | "motion" | "text_scale";
 
 export type PreferenceSetting = { key: PreferenceKey; values: string[]; default: string; scope: string };
 
-export type PreferenceProfile = { schemaVersion: number; values: Record<PreferenceKey, string>; schema: PreferenceSetting[] };
+/** `chosen` names the settings the person saved; the others are defaults a design may replace. */
+export type PreferenceProfile = { schemaVersion: number; values: Record<PreferenceKey, string>; schema: PreferenceSetting[]; chosen?: string[] };
 
 export const defaultPreferences: Record<PreferenceKey, string> = { mode: "light", density: "comfortable", motion: "system", text_scale: "100" };

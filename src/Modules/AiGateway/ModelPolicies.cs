@@ -23,7 +23,8 @@ public sealed record PolicyDocument(
     double? MinTemperature,
     double? MaxTemperature,
     List<string>? Regions,
-    string Logging = PolicyDocument.MetadataOnly)
+    string Logging = PolicyDocument.MetadataOnly,
+    List<string>? Sovereign = null)
 {
     public const string MetadataOnly = "metadata";
 
@@ -62,7 +63,8 @@ public sealed record ModelPolicyRequest(
     double? MinTemperature,
     double? MaxTemperature,
     List<string>? Regions,
-    string? Logging);
+    string? Logging,
+    List<string>? Sovereign = null);
 
 public sealed record RouteChangeView(
     Guid Id,
@@ -123,7 +125,9 @@ public sealed class ModelPolicies(
     ModelCatalogue catalogue,
     IAuditWriter audit,
     IOutbox outbox,
-    IClock clock)
+    IClock clock,
+    PrivateEndpoints endpoints,
+    IEnumerable<IModelProvider> providers)
 {
     public static readonly TimeSpan CacheFor = TimeSpan.FromSeconds(30);
     public const int MaxModels = 50;
@@ -156,7 +160,7 @@ public sealed class ModelPolicies(
     /// <summary>The stored tenant policy when the package allows model choice, else the platform default set (US1 scenario 4).</summary>
     private async Task<EffectivePolicy> LoadAsync(CancellationToken ct)
     {
-        var snapshot = await catalogue.SnapshotAsync(ct);
+        var snapshot = await catalogue.ForTenantAsync(ct);
         var stored = await StoredAsync(ct);
         if (stored is { } s && await entitlements.IsEnabledAsync(Capabilities.AiModelChoice, ct))
         {
@@ -184,7 +188,9 @@ public sealed class ModelPolicies(
     public async Task<IReadOnlyList<CatalogueEntry>> CatalogueAsync(CancellationToken ct)
     {
         await DemandViewAsync(ct);
-        return [.. (await catalogue.SnapshotAsync(ct)).Models.Values.Where(m => m.Active)];
+        // US6 scenario 3: a provider the installation cannot reach by design (egress blocked) is left off the page.
+        var unreachable = providers.Where(p => !p.Reachable).Select(p => p.Key).ToHashSet(StringComparer.Ordinal);
+        return [.. (await catalogue.ForTenantAsync(ct)).Models.Values.Where(m => m.Active && !unreachable.Contains(m.Provider))];
     }
 
     public async Task<ModelPolicyView> GetAsync(CancellationToken ct)
@@ -195,7 +201,7 @@ public sealed class ModelPolicies(
 
     private async Task<ModelPolicyView> ViewAsync(EffectivePolicy policy, CancellationToken ct)
     {
-        var snapshot = await catalogue.SnapshotAsync(ct);
+        var snapshot = await catalogue.ForTenantAsync(ct);
         var manage = (await authz.CheckAsync(Permissions.AiPolicyManage, AuthzTarget.Tenant, ct)).Allowed;
         var choice = await entitlements.IsEnabledAsync(Capabilities.AiModelChoice, ct);
         var reason = !manage ? "ai.policy.read_only_permission" : !choice ? "ai.policy.read_only_package" : null;
@@ -230,7 +236,7 @@ public sealed class ModelPolicies(
     {
         await authz.DemandAsync(Permissions.AiPolicyManage, AuthzTarget.Tenant, ct);
         await entitlements.DemandAsync(Capabilities.AiModelChoice, ct);
-        var snapshot = await catalogue.SnapshotAsync(ct);
+        var snapshot = await catalogue.ForTenantAsync(ct);
         var stored = await StoredAsync(ct, forUpdate: true);
         var current = stored is { } s ? new EffectivePolicy(s.Version, "tenant", s.Document) : new EffectivePolicy(0, "platform", PolicyDocument.Platform(snapshot));
         if (ifMatch is not null && ifMatch != ETag(current.Version))
@@ -238,6 +244,16 @@ public sealed class ModelPolicies(
             throw new AppException(ProblemCodes.Conflict, 409, "conflict.ai.policy_changed", null, new Dictionary<string, object?> { ["etag"] = ETag(current.Version) });
         }
         var next = Validate(request, current.Document, snapshot);
+        if (next.Sovereign is { Count: > 0 } kept && !(current.Document.Sovereign ?? []).ToHashSet().SetEquals(kept))
+        {
+            // Section 6: a classification is kept on private endpoints only when an enabled endpoint that may take it
+            // passed its test in the last 24 hours.
+            await entitlements.DemandAsync(Capabilities.AiModelsPrivateEndpoint, ct);
+            if (!await endpoints.CoversAsync(kept, ct))
+            {
+                throw AppException.Validation("sovereign", "validation.ai.sovereign_untested");
+            }
+        }
 
         var before = current.Document.EffectiveRoutes(snapshot);
         var after = next.EffectiveRoutes(snapshot);
@@ -293,7 +309,7 @@ public sealed class ModelPolicies(
         switch (result)
         {
             case RouteGateStatuses.Passed:
-                var snapshot = await catalogue.SnapshotAsync(ct);
+                var snapshot = await catalogue.ForTenantAsync(ct);
                 var stored = await StoredAsync(ct, forUpdate: true);
                 var current = stored is { } s ? new EffectivePolicy(s.Version, "tenant", s.Document) : new EffectivePolicy(0, "platform", PolicyDocument.Platform(snapshot));
                 if (current.Version != change.Base)
@@ -347,7 +363,7 @@ public sealed class ModelPolicies(
         {
             throw AppException.Conflict("conflict.ai.route_gate_running");
         }
-        var snapshot = await catalogue.SnapshotAsync(ct);
+        var snapshot = await catalogue.ForTenantAsync(ct);
         var stored = await StoredAsync(ct, forUpdate: true);
         var current = stored is { } s ? new EffectivePolicy(s.Version, "tenant", s.Document) : new EffectivePolicy(0, "platform", PolicyDocument.Platform(snapshot));
         if (current.Version != change.Base)
@@ -446,6 +462,11 @@ public sealed class ModelPolicies(
         {
             errors.Add("regions", "validation.ai.region");
         }
+        var sovereign = (request.Sovereign ?? current.Sovereign ?? []).Distinct(StringComparer.Ordinal).ToList();
+        if (sovereign.Any(level => level is not ("public" or "internal" or "confidential" or "restricted")))
+        {
+            errors.Add("sovereign", "validation.ai.classification");
+        }
         var logging = request.Logging ?? current.Logging;
         if (logging != PolicyDocument.MetadataOnly)
         {
@@ -453,7 +474,8 @@ public sealed class ModelPolicies(
             errors.Add("logging", "validation.ai.logging");
         }
         errors.ThrowIfAny();
-        return new PolicyDocument(allowlist, routes, confidential, maxTokens, minT, maxT, regions?.Distinct(StringComparer.Ordinal).ToList(), logging);
+        return new PolicyDocument(allowlist, routes, confidential, maxTokens, minT, maxT, regions?.Distinct(StringComparer.Ordinal).ToList(), logging,
+            sovereign.Count == 0 ? null : sovereign);
     }
 }
 

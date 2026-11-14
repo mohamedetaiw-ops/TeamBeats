@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Messaging;
 using TeamBeats.Modules.Integrations.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
@@ -24,7 +25,7 @@ internal sealed record SharePointConnection(Guid Id, string ExternalTenantId, IR
 /// customer has not granted to the application (Sites.Selected) is refused. Only allowed sites are ever read, even
 /// when Microsoft grants more.
 /// </summary>
-public sealed class SharePointSites(IDbSession session, ITenantContext context, IMicrosoftGraph graph, IAuditWriter audit, IClock clock)
+public sealed class SharePointSites(IDbSession session, ITenantContext context, IMicrosoftGraph graph, IAuditWriter audit, IOutbox outbox, IClock clock)
 {
     public const int MaxSites = 50;
 
@@ -92,6 +93,8 @@ public sealed class SharePointSites(IDbSession session, ITenantContext context, 
             throw AppException.NotFound();
         }
         await audit.WriteAsync(new AuditEntry(AuditActions.ConnectionSiteRemoved, "connection", connectionId.ToString(), Changes: new { site = siteId }), ct);
+        // Connected libraries of the site's document libraries are archived and their synced copy removed (spec 011 data model).
+        await outbox.EnqueueAsync(new DocumentContainersRemoved(connectionId), ct);
     }
 
     private async Task<string> ConnectionAsync(Guid connectionId, CancellationToken ct) =>
@@ -147,7 +150,10 @@ public sealed class SharePointLibraries(
     ITenantContext context) : IDocumentRepository
 {
     public const long MaxContentBytes = 250L * 1024 * 1024;
-    private const string ItemSelect = "id,name,folder,file,size,lastModifiedDateTime,eTag,webUrl,parentReference";
+    private const string ItemSelect = "id,name,folder,file,size,lastModifiedDateTime,eTag,webUrl,parentReference,sensitivityLabel";
+
+    /// <summary>The longest file or folder name SharePoint keeps; longer names are refused before Microsoft is called.</summary>
+    public const int MaxNameLength = 250;
     private static readonly TimeSpan DrivesFreshness = TimeSpan.FromMinutes(5);
 
     internal async Task<SharePointConnection?> LoadAsync(Guid connectionId, CancellationToken ct)
@@ -364,6 +370,311 @@ public sealed class SharePointLibraries(
         }
     }
 
+    public async Task<RepositoryWrite> UploadAsUserAsync(Guid connectionId, string containerId, string? folderId, string name, Stream content, long length,
+        string userEmail, CancellationToken ct = default)
+    {
+        if (!IsPart(containerId) || !FolderIn(containerId, folderId, out var folder) || !IsName(name))
+        {
+            return RepositoryWrite.Not("not_found");
+        }
+        if (length > MaxContentBytes)
+        {
+            return RepositoryWrite.Not("too_large");
+        }
+        // A file of the same name gets a new version, as uploading it in SharePoint would.
+        var path = $"drives/{containerId}/items/{folder ?? "root"}:/{Uri.EscapeDataString(name)}:/content?@microsoft.graph.conflictBehavior=replace";
+        return await WriteAsync(connectionId, containerId, token => graph.DelegatedUploadAsync(token, path, content, length, ct), ct);
+    }
+
+    public async Task<RepositoryWrite> RenameAsUserAsync(Guid connectionId, string itemId, string name, string userEmail, CancellationToken ct = default)
+    {
+        if (Split(itemId) is not (var drive, var item) || !IsName(name))
+        {
+            return RepositoryWrite.Not("not_found");
+        }
+        return await WriteAsync(connectionId, drive,
+            token => graph.DelegatedSendAsync(token, HttpMethod.Patch, $"drives/{drive}/items/{item}?@microsoft.graph.conflictBehavior=fail", new { name }, ct), ct);
+    }
+
+    public async Task<IReadOnlyList<RepositoryColumn>> ColumnsAsync(Guid connectionId, string containerId, CancellationToken ct = default)
+    {
+        var (_, token) = await RequireAsync(connectionId, containerId, ct);
+        var body = await AppGetAsync(token, $"drives/{containerId}/list/columns?$select=name,displayName,readOnly,hidden", ct, allowMissing: true);
+        return Items(body)
+            .Where(c => !(c.TryGetProperty("hidden", out var h) && h.ValueKind == JsonValueKind.True) && !(c.TryGetProperty("readOnly", out var r) && r.ValueKind == JsonValueKind.True))
+            .Select(c => (Name: SharePointSites.Text(c, "name"), Display: SharePointSites.Text(c, "displayName")))
+            .Where(c => c.Name is { } n && IsColumn(n) && !SystemColumns.Contains(n))
+            .Select(c => new RepositoryColumn(c.Name!, c.Display is { Length: > 0 and <= 200 } d ? d : c.Name!))
+            .OrderBy(c => c.DisplayName, StringComparer.Ordinal).ToList();
+    }
+
+    public async Task<RepositoryItemDetails?> DetailsAsync(Guid connectionId, string itemId, bool versions, CancellationToken ct = default)
+    {
+        if (await GetAsync(connectionId, itemId, ct) is not { } item || Split(itemId) is not (var drive, var id))
+        {
+            return null;
+        }
+        var connection = (await LoadAsync(connectionId, ct))!;
+        var token = await AppTokenAsync(connection, ct);
+        var listItem = await AppGetAsync(token, $"drives/{drive}/items/{id}/listItem?$select=createdDateTime,createdBy&$expand=fields", ct, allowMissing: true);
+        DateTimeOffset? created = DateTimeOffset.TryParse(SharePointSites.Text(listItem, "createdDateTime"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal,
+            out var c) ? c : null;
+        var columns = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (listItem.ValueKind == JsonValueKind.Object && listItem.TryGetProperty("fields", out var fields) && fields.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var field in fields.EnumerateObject().Where(f => IsColumn(f.Name) && !SystemColumns.Contains(f.Name)))
+            {
+                var text = field.Value.ValueKind switch
+                {
+                    JsonValueKind.String => field.Value.GetString(),
+                    JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False => field.Value.GetRawText(),
+                    _ => null,
+                };
+                if (text is { Length: <= 4000 })
+                {
+                    columns[field.Name] = text;
+                }
+            }
+        }
+        var history = new List<RepositoryVersion>();
+        if (versions && !item.Folder)
+        {
+            foreach (var v in Items(await AppGetAsync(token, $"drives/{drive}/items/{id}/versions?$top=200", ct, allowMissing: true)))
+            {
+                if (SharePointSites.Text(v, "id") is { } versionId && IsVersion(versionId))
+                {
+                    history.Add(new RepositoryVersion(versionId,
+                        DateTimeOffset.TryParse(SharePointSites.Text(v, "lastModifiedDateTime"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var m) ? m : null,
+                        Email(v, "lastModifiedBy"), v.TryGetProperty("size", out var s) && s.TryGetInt64(out var n) ? n : null));
+                }
+            }
+            // Microsoft lists the newest first; an import adds them oldest first.
+            history.Reverse();
+        }
+        return new RepositoryItemDetails(item, created, Email(listItem, "createdBy"), columns, history);
+    }
+
+    /// <summary>
+    /// Microsoft Search over drive items as the person (spec 012 FR-016), so SharePoint decides what they find. Only hits
+    /// in the given document libraries that the connection still allows are kept; nothing is stored.
+    /// </summary>
+    public async Task<RepositoryUserSearch> SearchAsUserAsync(Guid connectionId, IReadOnlyCollection<string> containerIds, string query, int limit,
+        CancellationToken deadline, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Length > 200 || containerIds.Count == 0 || !containerIds.All(IsPart))
+        {
+            return RepositoryUserSearch.Not("not_found");
+        }
+        HashSet<string> drives;
+        try
+        {
+            var connection = await LoadAsync(connectionId, ct);
+            if (connection is null)
+            {
+                return RepositoryUserSearch.Not("unavailable");
+            }
+            drives = (await DrivesAsync(connection, ct)).Keys.Where(containerIds.Contains).ToHashSet(StringComparer.Ordinal);
+        }
+        catch (RepositoryUnavailableException)
+        {
+            return RepositoryUserSearch.Not("unavailable");
+        }
+        if (drives.Count == 0)
+        {
+            return RepositoryUserSearch.Not("not_found");
+        }
+        var grant = await access.AcquireAsync(Microsoft365Features.SharePointDocuments, ct);
+        if (grant.State is M365States.NotConnected or M365States.Reconnect)
+        {
+            return RepositoryUserSearch.Not(grant.State);
+        }
+        if (grant.State != M365States.Ok)
+        {
+            return RepositoryUserSearch.Not("unavailable");
+        }
+        try
+        {
+            // Asks for more than shown, because hits outside the connected libraries are dropped.
+            var body = await graph.DelegatedSendAsync(grant.AccessToken!, HttpMethod.Post, "search/query", new
+            {
+                requests = new[]
+                {
+                    new { entityTypes = new[] { "driveItem" }, query = new { queryString = query.Trim() }, from = 0, size = Math.Clamp(limit * 4, 10, 50) },
+                },
+            }, deadline);
+            var hits = new List<RepositoryHit>();
+            foreach (var hit in SearchHits(body))
+            {
+                if (hit.TryGetProperty("resource", out var resource) && resource.TryGetProperty("parentReference", out var parent)
+                    && SharePointSites.Text(parent, "driveId") is { } drive && drives.Contains(drive) && Map(resource, drive) is { Folder: false } item)
+                {
+                    hits.Add(new RepositoryHit(item, PlainSummary(SharePointSites.Text(hit, "summary"))));
+                    if (hits.Count == limit)
+                    {
+                        break;
+                    }
+                }
+            }
+            return new RepositoryUserSearch("ok", hits);
+        }
+        catch (GraphCallException ex)
+        {
+            return RepositoryUserSearch.Not(ex.Kind == "unauthorized" ? M365States.Reconnect : "unavailable");
+        }
+    }
+
+    private static IEnumerable<JsonElement> SearchHits(JsonElement body)
+    {
+        if (body.ValueKind != JsonValueKind.Object || !body.TryGetProperty("value", out var value) || value.ValueKind != JsonValueKind.Array)
+        {
+            yield break;
+        }
+        foreach (var response in value.EnumerateArray())
+        {
+            if (!response.TryGetProperty("hitsContainers", out var containers) || containers.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+            foreach (var container in containers.EnumerateArray())
+            {
+                if (container.TryGetProperty("hits", out var hits) && hits.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var hit in hits.EnumerateArray())
+                    {
+                        yield return hit;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>Microsoft's summary marks matches with tags such as &lt;c0&gt; and ends cut text with &lt;ddd/&gt;; only the words are kept.</summary>
+    internal static string? PlainSummary(string? summary)
+    {
+        if (string.IsNullOrWhiteSpace(summary))
+        {
+            return null;
+        }
+        var plain = new System.Text.StringBuilder(summary.Length);
+        var inTag = false;
+        foreach (var c in summary.Replace("<ddd/>", "…", StringComparison.Ordinal))
+        {
+            if (c == '<')
+            {
+                inTag = true;
+            }
+            else if (c == '>' && inTag)
+            {
+                inTag = false;
+            }
+            else if (!inTag)
+            {
+                plain.Append(c);
+            }
+        }
+        var text = System.Net.WebUtility.HtmlDecode(plain.ToString()).Trim();
+        return text.Length == 0 ? null : text.Length > 300 ? text[..300] : text;
+    }
+
+    public async Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default)
+    {
+        if (Split(itemId) is not (var drive, var id) || (versionId is not null && !IsVersion(versionId)))
+        {
+            return null;
+        }
+        var (_, token) = await RequireAsync(connectionId, drive, ct);
+        var meta = await AppGetAsync(token, $"drives/{drive}/items/{id}?$select=name,file,size", ct, allowMissing: true);
+        if (meta.ValueKind != JsonValueKind.Object || !meta.TryGetProperty("file", out var file))
+        {
+            return null;
+        }
+        if (meta.TryGetProperty("size", out var size) && size.TryGetInt64(out var bytes) && bytes > MaxContentBytes)
+        {
+            throw new RepositoryUnavailableException("too_large");
+        }
+        Stream? stream;
+        try
+        {
+            stream = await graph.AppDownloadAsync(token, versionId is null ? $"drives/{drive}/items/{id}/content" : $"drives/{drive}/items/{id}/versions/{versionId}/content", ct);
+        }
+        catch (GraphConsentMissingException)
+        {
+            throw new RepositoryUnavailableException("consent_missing");
+        }
+        catch (GraphUnavailableException)
+        {
+            throw new RepositoryUnavailableException("unreachable");
+        }
+        return stream is null ? null
+            : new RepositoryContent(stream, SharePointSites.Text(file, "mimeType") ?? "application/octet-stream", SharePointSites.Text(meta, "name") ?? id, stream.Length, NoOwner.Instance);
+    }
+
+    /// <summary>Columns SharePoint keeps for every file, which an import takes from the item itself or does not need.</summary>
+    private static readonly HashSet<string> SystemColumns = new(StringComparer.Ordinal)
+    {
+        "ContentType", "FileLeafRef", "LinkFilename", "LinkFilenameNoMenu", "DocIcon", "FileSizeDisplay", "ItemChildCount", "FolderChildCount", "Edit",
+        "Created", "Modified", "Author", "Editor", "AppAuthor", "AppEditor", "ComplianceAssetId", "id", "ID",
+    };
+
+    private static bool IsColumn(string name) => name.Length is > 0 and <= 100 && name.All(c => char.IsAsciiLetterOrDigit(c) || c == '_') && !name.StartsWith('_');
+
+    private static bool IsVersion(string id) => id.Length is > 0 and <= 40 && id.All(c => char.IsAsciiLetterOrDigit(c) || c == '.');
+
+    private static string? Email(JsonElement e, string identity) =>
+        e.ValueKind == JsonValueKind.Object && e.TryGetProperty(identity, out var set) && set.TryGetProperty("user", out var user)
+            && SharePointSites.Text(user, "email") is { Length: > 3 and <= 320 } email && email.Contains('@', StringComparison.Ordinal) ? email.ToLowerInvariant() : null;
+
+    /// <summary>A write as the signed-in person with the SharePoint uploads feature, inside an allowed document library.</summary>
+    private async Task<RepositoryWrite> WriteAsync(Guid connectionId, string drive, Func<string, Task<JsonElement>> write, CancellationToken ct)
+    {
+        try
+        {
+            if (await LoadAsync(connectionId, ct) is not { } connection)
+            {
+                return RepositoryWrite.Not("unavailable");
+            }
+            if (!(await DrivesAsync(connection, ct)).ContainsKey(drive))
+            {
+                return RepositoryWrite.Not("not_found");
+            }
+        }
+        catch (RepositoryUnavailableException)
+        {
+            return RepositoryWrite.Not("unavailable");
+        }
+        var grant = await access.AcquireAsync(Microsoft365Features.SharePointUpload, ct);
+        if (grant.State is M365States.NotConnected or M365States.Reconnect)
+        {
+            return RepositoryWrite.Not(grant.State);
+        }
+        if (grant.State != M365States.Ok)
+        {
+            return RepositoryWrite.Not("unavailable");
+        }
+        try
+        {
+            var body = await write(grant.AccessToken!);
+            return Map(body, drive) is { } written ? new RepositoryWrite("ok", written) : RepositoryWrite.Not("unavailable");
+        }
+        catch (GraphCallException ex)
+        {
+            return RepositoryWrite.Not(ex.Kind switch
+            {
+                "unauthorized" => M365States.Reconnect,
+                "forbidden" => "forbidden",
+                "conflict" => "conflict",
+                "too_large" => "too_large",
+                "not_found" or "no_mailbox" => "not_found",
+                _ => "unavailable",
+            });
+        }
+    }
+
+    /// <summary>A name SharePoint accepts: no path separators or characters SharePoint refuses, not only dots or spaces.</summary>
+    internal static bool IsName(string name) =>
+        name.Length is > 0 and <= MaxNameLength && name.Trim().Trim('.').Length > 0 && name == name.Trim()
+        && !name.Any(c => char.IsControl(c) || c is '/' or '\\' or ':' or '*' or '?' or '"' or '<' or '>' or '|' or '#' or '%');
+
     private async Task<(SharePointConnection Connection, AppToken Token)> RequireAsync(Guid connectionId, string containerId, CancellationToken ct)
     {
         var connection = await LoadAsync(connectionId, ct) ?? throw new RepositoryUnavailableException("connection_unusable");
@@ -475,9 +786,13 @@ public sealed class SharePointLibraries(
         var parent = i.TryGetProperty("parentReference", out var p) ? SharePointSites.Text(p, "id") : null;
         var parentIsRoot = i.TryGetProperty("parentReference", out var pr) && SharePointSites.Text(pr, "path") is { } path && path.EndsWith("root:", StringComparison.Ordinal);
         var link = SharePointSites.Text(i, "webUrl");
+        // The Microsoft Purview label on the file (spec 011 FR-032), kept only when its ID is a GUID.
+        var label = i.TryGetProperty("sensitivityLabel", out var l) && SharePointSites.Text(l, "labelId") is { } labelId && Guid.TryParse(labelId, out var labelGuid)
+            ? new RepositoryLabel(labelGuid.ToString("D"), SharePointSites.Text(l, "displayName") is { Length: > 0 and <= 200 } labelName ? labelName : null)
+            : null;
         return new RepositoryItem($"{drive}~{id}", drive, parent is null || parentIsRoot || !IsPart(parent) ? null : $"{drive}~{parent}", name, folder,
             folder ? null : type ?? "application/octet-stream", folder ? null : size, modified, SharePointSites.Text(i, "eTag"),
-            link is not null && link.StartsWith("https://", StringComparison.Ordinal) ? link : null);
+            link is not null && link.StartsWith("https://", StringComparison.Ordinal) ? link : null, Label: folder ? null : label);
     }
 
     private static RepositoryPermission? MapPermission(JsonElement p)

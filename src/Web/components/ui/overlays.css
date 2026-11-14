@@ -108,6 +108,11 @@
   border-block-width: 0;
 }
 
+/* A wide panel for reviewing a record beside its list (DLS-108); it takes the whole window on a phone. */
+.ui-dialog:is([data-side="start"], [data-side="end"])[data-size="lg"] {
+  inline-size: min(40rem, 100vw);
+}
+
 .ui-dialog[data-side="start"] {
   margin-inline: 0 auto;
   border-inline-start-width: 0;

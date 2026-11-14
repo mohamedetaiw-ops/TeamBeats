@@ -415,6 +415,11 @@ public static class AuditActions
     public const string DocOfficeEditStarted = "doc.office_edit_started";
     public const string DocOfficeEditEnded = "doc.office_edit_ended";
     public const string DocConnectedOpened = "doc.connected_opened";
+    public const string DocConnectedUploaded = "doc.connected_uploaded";
+    public const string DocConnectedRenamed = "doc.connected_renamed";
+    public const string DocConnectedSettings = "doc.connected_settings";
+    public const string DocConnectedRemoved = "doc.connected_removed";
+    public const string DocLabelMapped = "doc.label_mapped";
     public const string AssetCollectionCreated = "assets.collection_created";
     public const string AssetCollectionChanged = "assets.collection_changed";
     public const string AssetUploaded = "assets.uploaded";
@@ -447,6 +452,13 @@ public static class AuditActions
     public const string AiCatalogueChanged = "ai.catalogue_changed";
     public const string AiLoggingWindowOpened = "ai.logging_window_opened";
     public const string AiLoggingWindowClosed = "ai.logging_window_closed";
+    public const string AiBudgetChanged = "ai.budget_changed";
+    public const string AiBudgetReached = "ai.budget_reached";
+    public const string AiOrgPolicyChanged = "ai.org_policy_changed";
+    public const string AiEndpointRegistered = "ai.endpoint_registered";
+    public const string AiEndpointTested = "ai.endpoint_tested";
+    public const string AiEndpointEnabled = "ai.endpoint_enabled";
+    public const string AiEndpointDisabled = "ai.endpoint_disabled";
 
     // 012
     public const string SearchBestBetChanged = "search.best_bet_changed";
@@ -455,6 +467,9 @@ public static class AuditActions
     public const string SearchRetrievalChangeDecided = "search.retrieval_change_decided";
     public const string SearchRetrievalChangeOverridden = "search.retrieval_change_overridden";
     public const string SearchRetrievalChangeCancelled = "search.retrieval_change_cancelled";
+    public const string SearchFederatedChanged = "search.federated_changed";
+    public const string SearchAiSummaryChanged = "search.ai_summary_changed";
+    public const string SearchQueryTextChanged = "search.query_text_changed";
 
     // 014
     public const string AssistantHistoryDeleted = "assistant.history_deleted";
@@ -604,12 +619,13 @@ public static class AuditActions
         RecordsLabelCreated, RecordsLabelChanged, RecordsLabelApplied, RecordsDispositionApproved, RecordsDispositionKept, RecordsArchived,
         RecordsHoldApplied, RecordsHoldReleased, RecordsDeletionBlocked, DocSharedWithGuest, DocGuestShareRevoked, DocGuestViewed,
         DocImportStarted, DocImportCompleted, DocOfficeEditStarted, DocOfficeEditEnded, DocConnectedOpened,
+        DocConnectedUploaded, DocConnectedRenamed, DocConnectedSettings, DocConnectedRemoved, DocLabelMapped,
         AssetCollectionCreated, AssetCollectionChanged, AssetUploaded, AssetChanged, AssetExpired, AssetAccessRequested, AssetAccessDecided,
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested, PolicyTrainingLinked,
         AiPolicyChanged, AiRouteChangeProposed, AiRouteChangeOverridden, AiRouteChangeApplied, AiRouteChangeRejected, AiCatalogueChanged, AiLoggingWindowOpened, AiLoggingWindowClosed,
         SearchBestBetChanged, SearchSynonymsChanged, SearchRetrievalChangeProposed, SearchRetrievalChangeDecided, SearchRetrievalChangeOverridden,
-        SearchRetrievalChangeCancelled,
+        SearchRetrievalChangeCancelled, SearchFederatedChanged, SearchAiSummaryChanged, SearchQueryTextChanged,
         AssistantHistoryDeleted, AssistantRetentionChanged,
         AgentInstalledFromTemplate, AgentTemplateUpdateApplied, AgentAudienceChanged, AgentOwnerChanged, AgentPolicyChanged, AgentToolCalled, AgentExternalCallRefused, AgentToolDenied, AgentInjectionDetected, AgentActionConfirmed, AgentActionRejected,
         AgentVersionSubmitted, AgentVersionApproved, AgentVersionRejected, AgentVersionPublished, AgentRolledBack, AgentSuspended, AgentResumed,

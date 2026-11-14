@@ -30,3 +30,32 @@ Depends on 004, 005, 006, 007; 034 for the release gate on route changes. R1 cov
 
 ## Final phase
 - [x] T017 SC-001 suite in CI; overhead performance test; OpenAPI; R1 implementation notes; staging allowed host and secret steps; spec evidence
+
+## R2
+
+Depends on 005 (quota tolerance), 015 (budget notifications), 017 (address checks), 034 (evaluator workers). R2 covers User Stories 5, 6 (adapter), 7, 4 (export and analytics) and FR-018.
+
+### Phase 6: User Story 5, budgets and quotas (P1)
+- [x] T018 [P] [US5] Tests: block, downgrade and alert actions; tenant, org unit, agent and user budgets; per-user daily limit with reset time; 80% and 100% notified once; scoped budgets need `ai.budgets.scoped`; concurrent calls within the spec 005 tolerance; cross-tenant
+- [x] T019 [US5] `ai.budget` and `ai.budget_alert`, pipeline step 2, threshold notifications, audit and `AiBudgetThresholdReached`, budget endpoints
+- [x] T020 [US5] Budgets page with table view, in English and Arabic, RTL; e2e with axe
+
+### Phase 7: User Story 7, org unit policies (P2)
+- [x] T021 [P] [US7] Tests: unit restricted to one model; loosening a parent rule refused with the rule named; acting unit resolved on the server; org administrators limited to their subtree
+- [x] T022 [US7] `ai.org_policy`, intersection in steps 3 to 6, endpoints, Unit policies page (a unit administrator cannot open the tenant Model policy page)
+
+### Phase 8: User Story 6, private endpoints (P1)
+- [x] T023 [P] [US6] Tests: test before enable and within 24 hours; sovereign classifications never fall back to a shared provider; Restricted only on a Restricted private endpoint; Confidential embeddings only on the private endpoint; unreachable provider hidden; secret never returned; cross-tenant
+- [x] T024 [US6] `AiGateway.OpenAiCompatible` adapter, shared address checks, `ai.private_endpoint`, sovereign rule, fake server in `DevFakes`
+- [x] T025 [US6] Private endpoints page, in English and Arabic, RTL; e2e with axe
+
+### Phase 9: User Story 4 R2, cost analytics and export
+- [ ] T026 [P] [US4] Tests: CSV export audited and scoped; forecast; display currency; 25 month aggregation
+- [ ] T027 [US4] Export, forecast, display currency, retention job, AI usage page additions
+
+### Phase 10: FR-018, evaluator facade
+- [ ] T028 [P] Tests: token for one tenant, run and use case; expired, tampered and other tenant tokens refused; full pipeline applied; off unless enabled
+- [ ] T029 Internal OpenAI-compatible facade and token minting for evaluator workers
+
+### Final phase R2
+- [ ] T030 OpenAPI; R2 implementation notes; spec evidence

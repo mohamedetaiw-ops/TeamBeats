@@ -412,7 +412,7 @@ export type FeatureTestResult = {
 
 export type Microsoft365TestResult = { status: string; features: FeatureTestResult[] };
 
-export const M365_FEATURES = ["directory_sync", "mail", "calendar", "free_busy", "office_editing", "sharepoint_documents"] as const;
+export const M365_FEATURES = ["directory_sync", "mail", "calendar", "free_busy", "office_editing", "sharepoint_documents", "sharepoint_upload"] as const;
 export const M365_TEST_RESULTS = ["ok", "ok_broader", "consent_missing", "unreachable", "application_mail_permissions", "site_missing"] as const;
 export const M365_PERMISSION_REASONS = [
   "user_read_all",
@@ -425,6 +425,7 @@ export const M365_PERMISSION_REASONS = [
   "files_read_write",
   "sites_selected",
   "files_read_all",
+  "files_read_write_all",
 ] as const;
 
 /** An allowed SharePoint site of the SharePoint documents feature (spec 011 FR-025). */

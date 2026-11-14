@@ -187,8 +187,14 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
     /// <summary>The metrics of a retrieval gate (spec 034 section 12, retrieval quality), with the platform and tenant rules.</summary>
     public static readonly IReadOnlyList<string> RetrievalMetrics = ["recall_at_5", "precision_at_5", "reciprocal_rank", "forbidden_source_rate"];
 
-    /// <summary>The key of the one suite of a retrieval gate run.</summary>
+    /// <summary>The key of the agents' retrieval suite of a retrieval gate run.</summary>
     public const string RetrievalSuiteKey = "retrieval";
+
+    /// <summary>The key of the judged query set suite of a retrieval gate run (spec 012 US8), scored with and without the change.</summary>
+    public const string SearchSuiteKey = "search_ranking";
+
+    /// <summary>The metrics of the judged query sets (spec 012 FR-020).</summary>
+    public static readonly IReadOnlyList<string> SearchMetrics = ["precision_at_5", "ndcg_at_10"];
 
     /// <summary>
     /// Fixes the cases of a retrieval gate run (US5 scenario 5) and queues it: every case of the published agents' own
@@ -231,16 +237,35 @@ public sealed class RunService(IDbSession session, ITenantContext context, EvalA
                 }
             }
         }
-        if (cases.Count == 0)
+        // The tenant's judged query sets, each as the default persona of its unit (spec 012 US8).
+        var searchUses = new List<DatasetUse>();
+        var searchCases = new List<PlannedCase>();
+        var sets = await session.QueryAsync("select id, current_version, org_unit_id from evaluation.dataset where kind = 'search' and current_version > 0 order by created_at, id",
+            null, r => (Id: r.GetGuid(0), Version: r.GetInt32(1), Unit: r.GetGuid(2)), ct);
+        foreach (var set in sets)
+        {
+            var persona = (await personas.DefaultAsync(set.Unit, ct)).Id;
+            var queries = await datasets.CasesAsync(set.Id, set.Version, ct);
+            searchUses.Add(new DatasetUse(set.Id, set.Version));
+            searchCases.AddRange(queries.Select(c => new PlannedCase(SearchSuiteKey, set.Id, set.Version, c.N, c.Locale, c.Input, c.Expect, persona, c.Severity, c.Classification)));
+        }
+        if (cases.Count + searchCases.Count == 0)
         {
             return null;
         }
-        if (cases.Count > MaxCases)
-        {
-            cases = cases.Take(MaxCases).ToList();
-        }
+        cases = cases.Concat(searchCases).Take(MaxCases).ToList();
         var id = Ids.New();
-        var suiteList = new List<RunSuite> { new(RetrievalSuiteKey, "platform", 1, metrics, rules, uses) };
+        var suiteList = new List<RunSuite>();
+        if (cases.Any(c => c.Suite == RetrievalSuiteKey))
+        {
+            suiteList.Add(new(RetrievalSuiteKey, "platform", 1, metrics, rules, uses));
+        }
+        if (cases.Any(c => c.Suite == SearchSuiteKey))
+        {
+            // No absolute threshold: the gate compares each metric with the index in force (RetrievalGates).
+            suiteList.Add(new(SearchSuiteKey, "platform", 1, SearchMetrics.Select(k => new SuiteMetric(k)).ToList(),
+                ThresholdRules.Effective(SearchMetrics, [(EvalLevels.Platform, ThresholdRules.PlatformRules), (EvalLevels.Tenant, tenant)]), searchUses));
+        }
         await session.ExecAsync(
             """
             insert into evaluation.run (tenant_id, id, capability, trigger, status, suites, total, requested_by, created_at, retrieval_change_id)
@@ -665,6 +690,28 @@ public sealed class CaseExecutor(IDbSession session, IAgentEvaluationRuntime run
             read, [], null);
     }
 
+    /// <summary>
+    /// A judged search query (spec 012 US8): the change's shadow index and the index in force each rank the query as the
+    /// persona, so the gate can compare the two. No model answers.
+    /// </summary>
+    private async Task<(EvalRunRecord Proposed, EvalRunRecord Live)> RankAsync(Guid change, CaseWork work, CancellationToken ct)
+    {
+        EvalRunRecord Record(IReadOnlyList<RankedItem> items, long started) =>
+            new(Guid.Empty, "completed", "ranked", null, null, work.Locale, null, 0, 0, (int)Stopwatch.GetElapsedTime(started).TotalMilliseconds, [],
+                items.Select((r, i) => new EvalRunSource(i + 1, r.Source, r.ItemId)).ToList(), [], null);
+        var started = Stopwatch.GetTimestamp();
+        var proposed = Record(await retrieval.RankAsync(change, work.Input, RankDepth, ct), started);
+        started = Stopwatch.GetTimestamp();
+        var live = Record(await retrieval.RankAsync(null, work.Input, RankDepth, ct), started);
+        return (proposed, live);
+    }
+
+    /// <summary>How deep a judged query's ranking is read: NDCG at 10 is the deepest metric.</summary>
+    public const int RankDepth = 10;
+
+    /// <summary>The prefix of a judged query's metrics over the index in force, kept beside the proposed ones.</summary>
+    public const string LivePrefix = "live:";
+
     internal async Task RunAsync(CaseWork work, CancellationToken ct)
     {
         using var span = EvalTelemetry.Start("eval.case", work.RunId);
@@ -674,12 +721,20 @@ public sealed class CaseExecutor(IDbSession session, IAgentEvaluationRuntime run
         span?.SetTag("gen_ai.operation.name", work.RetrievalChangeId is not null ? "retrieval" : work.AgentId is null ? "chat" : "invoke_agent");
         span?.SetTag("gen_ai.agent.id", work.AgentId?.ToString() ?? (work.RetrievalChangeId is null ? EvalCapabilities.Assistant : EvalCapabilities.Retrieval));
         EvalRunRecord record;
+        EvalRunRecord? live = null;
         try
         {
-            record = work.RetrievalChangeId is { } change ? await RetrieveAsync(change, work, ct)
-                : work.AgentId is { } agentId && work.AgentVersion is { } version
-                ? await runtime.RunCaseAsync(agentId, version, work.Input, work.Locale, work.RouteChangeId, ct)
-                : await assistant.RunCaseAsync(work.Input, work.Locale, work.Context ?? [], work.RouteChangeId, ct);
+            if (work.RetrievalChangeId is { } ranking && work.Suite == RunService.SearchSuiteKey)
+            {
+                (record, live) = await RankAsync(ranking, work, ct);
+            }
+            else
+            {
+                record = work.RetrievalChangeId is { } change ? await RetrieveAsync(change, work, ct)
+                    : work.AgentId is { } agentId && work.AgentVersion is { } version
+                    ? await runtime.RunCaseAsync(agentId, version, work.Input, work.Locale, work.RouteChangeId, ct)
+                    : await assistant.RunCaseAsync(work.Input, work.Locale, work.Context ?? [], work.RouteChangeId, ct);
+            }
         }
         catch (AppException e) when (e.Status is 400 or 404 or 409)
         {
@@ -693,6 +748,13 @@ public sealed class CaseExecutor(IDbSession session, IAgentEvaluationRuntime run
         var classification = Enum.Parse<DataClassification>(work.Classification, ignoreCase: true);
         var verdicts = await judge.JudgeAsync(work.Metrics, work.Locale, work.Input, work.Expect, record, classification, ct);
         var metrics = CaseEvaluators.Evaluate(work.Metrics, work.Expect, work.Locale, record, verdicts);
+        if (live is not null)
+        {
+            foreach (var (key, value) in CaseEvaluators.Evaluate(work.Metrics, work.Expect, work.Locale, live, verdicts))
+            {
+                metrics[LivePrefix + key] = value;
+            }
+        }
         span?.SetTag("eval.failed", GateService.Fails(metrics));
         await session.ExecAsync(
             """

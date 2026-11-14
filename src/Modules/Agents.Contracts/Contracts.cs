@@ -380,3 +380,26 @@ public static class ToolArgs
         return order[classifications.Select(c => Math.Max(0, Array.IndexOf(order, c))).DefaultIfEmpty(0).Max()];
     }
 }
+
+/// <summary>
+/// The AI summary above search results (spec 012 US6, spec 014 R2): a short answer to the query from the top passages the
+/// person may read and the AI policy allows, through the knowledge agent of 014 and the AI Gateway of 013, with citations.
+/// Search decides whether the tenant has it on; the caller is the person searching.
+/// </summary>
+public interface ISearchSummaries
+{
+    Task<SearchSummary> SummarizeAsync(string query, CancellationToken ct = default);
+}
+
+/// <summary>
+/// <paramref name="State"/> is <c>answered</c> with the text, <c>none</c> when no passage the person may read answers it,
+/// <c>withheld</c> when the passages that would are kept from AI by their classification (no summary is shown), or
+/// <c>unavailable</c>. <paramref name="TurnId"/> is the stored assistant turn that feedback is given on.
+/// </summary>
+public sealed record SearchSummary(string State, Guid? TurnId, string? Text, IReadOnlyList<SearchSummaryCitation> Citations)
+{
+    public static SearchSummary Not(string state) => new(state, null, null, []);
+}
+
+/// <summary>A cited passage of a search summary: <paramref name="N"/> is its marker in the text and <paramref name="Link"/> opens the item at the passage.</summary>
+public sealed record SearchSummaryCitation(int N, string Title, string Link, string Kind);

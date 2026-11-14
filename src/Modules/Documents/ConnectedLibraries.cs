@@ -29,7 +29,14 @@ public sealed record ConnectedItemView(string Id, string Name, bool Folder, stri
 /// A page of a connected library. <paramref name="State"/> is <c>ok</c>, or why nothing is listed: <c>not_connected</c>
 /// or <c>reconnect</c> (the person must connect their Microsoft 365 account), <c>not_found</c> or <c>unavailable</c>.
 /// </summary>
-public sealed record ConnectedPage(string State, IReadOnlyList<ConnectedItemView> Items, string? NextCursor);
+/// <remarks>
+/// <c>degraded</c> means SharePoint could not be reached and the items are the last synced copy, filtered by the
+/// mirrored readers, as of <paramref name="SyncedAt"/> (FR-031).
+/// </remarks>
+public sealed record ConnectedPage(string State, IReadOnlyList<ConnectedItemView> Items, string? NextCursor, DateTimeOffset? SyncedAt = null);
+
+/// <summary>Where a connected file opens in SharePoint, for a search result or citation the person may read.</summary>
+public sealed record ConnectedLinkView(string WebLink);
 
 /// <summary>
 /// Connected libraries (spec 011 US9, FR-026, FR-027, FR-030). A library manager connects a SharePoint document library,
@@ -159,7 +166,12 @@ public sealed partial class Libraries
         {
             return new ConnectedPage("not_found", [], null);
         }
-        var page = await repositories.ListAsUserAsync(source.ConnectionId, source.ContainerId, folder ?? source.FolderId, cursor, await EmailAsync(ct), ct);
+        var email = await EmailAsync(ct);
+        var page = await repositories.ListAsUserAsync(source.ConnectionId, source.ContainerId, folder ?? source.FolderId, cursor, email, ct);
+        if (page.State == "unavailable" && cursor is null)
+        {
+            return await LastSyncedAsync(id, folder ?? source.FolderId, email, ct);
+        }
         return new ConnectedPage(page.State,
             page.Items.Select(i => new ConnectedItemView(i.Id, i.Name, i.Folder, i.MediaType, i.Size, i.ModifiedAt, i.WebLink)).ToList(), page.NextCursor);
     }
@@ -187,6 +199,36 @@ public sealed partial class Libraries
                 Changes: new { item }), ct);
         }
         return content;
+    }
+
+    /// <summary>The last synced copy of a folder, with only the items the mirrored readers give the person (FR-031).</summary>
+    private async Task<ConnectedPage> LastSyncedAsync(Guid libraryId, string? folder, string email, CancellationToken ct)
+    {
+        var synced = await session.QuerySingleOrDefaultAsync("select last_success_at from documents.connected_sync where library_id = @libraryId",
+            new { libraryId }, r => r.Get<DateTimeOffset?>("last_success_at"), ct);
+        if (synced is null)
+        {
+            return new ConnectedPage("unavailable", [], null);
+        }
+        var items = await session.QueryAsync(
+            """
+            select remote_id, name, folder, media_type, size, modified_at, web_link from documents.connected_item
+            where library_id = @libraryId and parent_remote_id is not distinct from @folder::text and (anyone or @email = any(readers) or folder)
+            order by folder desc, name limit 500
+            """, new { libraryId, folder, email = email.ToLowerInvariant() },
+            r => new ConnectedItemView(r.GetString(0), r.GetString(1), r.GetBoolean(2), r.Get<string>("media_type"), r.Get<long?>("size"),
+                r.Get<DateTimeOffset?>("modified_at"), r.Get<string>("web_link")), ct);
+        return new ConnectedPage("degraded", items, null, synced);
+    }
+
+    /// <summary>Where a connected file opens in SharePoint, when the person is in the audience and a mirrored reader; SharePoint checks again.</summary>
+    public async Task<ConnectedLinkView> ConnectedLinkAsync(Guid id, Guid itemId, CancellationToken ct)
+    {
+        await ConnectedVisibleAsync(id, ct);
+        var link = await session.ScalarAsync<string>(
+            "select web_link from documents.connected_item where id = @itemId and library_id = @id and not folder and (anyone or @email = any(readers))",
+            new { itemId, id, email = (await EmailAsync(ct)).ToLowerInvariant() }, ct);
+        return link is { } l && l.StartsWith("https://", StringComparison.Ordinal) ? new ConnectedLinkView(l) : throw AppException.NotFound();
     }
 
     private async Task<string> EmailAsync(CancellationToken ct) => (await users.GetAsync(context.RequireUser(), ct))?.Email ?? string.Empty;

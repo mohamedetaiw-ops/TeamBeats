@@ -1,3 +1,4 @@
+using TeamBeats.Primitives;
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -327,4 +328,26 @@ public sealed class GoogleDrive(GoogleApi api, GoogleSignIn signIn, IHttpClientF
         }
         return new RepositoryPermission(new RepositoryPrincipal(type, GoogleApi.Text(p, "emailAddress")?.ToLowerInvariant(), GoogleApi.Text(p, "domain")?.ToLowerInvariant()), role);
     }
+
+    /// <summary>Google Drive libraries are read only in TeamBeats; writes happen in Drive itself.</summary>
+    public Task<RepositoryWrite> UploadAsUserAsync(Guid connectionId, string containerId, string? folderId, string name, Stream content, long length,
+        string userEmail, CancellationToken ct = default) => Task.FromResult(RepositoryWrite.Not("forbidden"));
+
+    public Task<RepositoryWrite> RenameAsUserAsync(Guid connectionId, string itemId, string name, string userEmail, CancellationToken ct = default) =>
+        Task.FromResult(RepositoryWrite.Not("forbidden"));
+
+    /// <summary>Import from Google Drive is not offered yet (spec 011 FR-033 names SharePoint).</summary>
+    public Task<IReadOnlyList<RepositoryColumn>> ColumnsAsync(Guid connectionId, string containerId, CancellationToken ct = default) =>
+        Task.FromResult<IReadOnlyList<RepositoryColumn>>([]);
+
+    public Task<RepositoryItemDetails?> DetailsAsync(Guid connectionId, string itemId, bool versions, CancellationToken ct = default) =>
+        Task.FromResult<RepositoryItemDetails?>(null);
+
+    public Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default) =>
+        Task.FromResult<RepositoryContent?>(null);
+
+    /// <summary>Federated search covers SharePoint (spec 012 US5); Google Drive files are not searched live yet.</summary>
+    public Task<RepositoryUserSearch> SearchAsUserAsync(Guid connectionId, IReadOnlyCollection<string> containerIds, string query, int limit,
+        CancellationToken deadline, CancellationToken ct = default) =>
+        Task.FromResult(RepositoryUserSearch.Not("not_found"));
 }

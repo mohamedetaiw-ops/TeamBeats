@@ -98,7 +98,7 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
         if (request.ConversationId is { } existing)
         {
             var found = await session.QueryAsync(
-                "select turns, classification, scope_source, scope_item_id from agents.conversation where id = @id and user_id = @user for update",
+                "select turns, classification, scope_source, scope_item_id from agents.conversation where id = @id and user_id = @user and kind = 'chat' for update",
                 new { id = existing, user }, r => (Turns: r.GetInt32(0), Classification: r.GetString(1),
                     Scope: r.Get<string?>("scope_source") is { } source ? new AssistantScope(source, r.GetGuid(3)) : null), ct);
             if (found.Count == 0)

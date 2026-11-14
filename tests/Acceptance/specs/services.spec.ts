@@ -93,7 +93,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `services-my-requests-${locale}`);
     });
 
-    test("the approver sees the badge, opens the task from the inbox and approves it", async ({ page }, testInfo) => {
+    test("the approver sees the badge, reviews the task beside the inbox and approves it", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await expect(page.getByTestId("task-badge")).toContainText("1");
       await page.getByTestId("task-badge").click();
@@ -103,14 +103,27 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(inbox.getByText(locale === "ar" ? "موافقة اللوجستيات" : "Logistics approval")).toBeVisible();
       await expectAccessible(page, testInfo, `services-inbox-${locale}`);
 
-      await inbox.getByRole("link").first().click();
-      await page.waitForURL(/\/requests\/[0-9a-f-]{36}\?task=/);
-      await page.getByRole("button", { name: m("services.decision.reject") }).click();
-      await expect(page.getByText(m("services.decision.reasonRequired"))).toBeVisible();
+      // Delegation is one line with a button; the change runs in a guided dialog that checks each field (FR-021).
+      await expect(page.getByTestId("delegation-current")).toHaveText(m("services.delegation.none"));
+      await page.getByRole("button", { name: m("services.delegation.manage") }).click();
+      const delegation = page.getByRole("dialog", { name: m("services.delegation.manage") });
+      await delegation.getByRole("button", { name: m("services.delegation.review") }).click();
+      await expect(delegation.getByText(m("services.delegation.delegateRequired"))).toBeVisible();
+      await expect(delegation.getByText(m("services.delegation.dayRequired")).first()).toBeVisible();
+      await delegation.getByRole("button", { name: m("services.delegation.cancel") }).click();
+      await expect(delegation).toBeHidden();
+
+      // Review opens the request beside the queue; the decision is only offered there, with the details (FR-020).
+      await expect(inbox.getByRole("button", { name: m("services.decision.approve") })).toHaveCount(0);
+      await inbox.getByRole("button", { name: m("services.inbox.review") }).first().click();
+      const panel = page.getByRole("dialog");
+      await expect(panel.getByTestId("request-status")).toHaveText(m("services.status.in_approval"));
+      await panel.getByRole("button", { name: m("services.decision.reject") }).click();
+      await expect(panel.getByText(m("services.decision.reasonRequired"))).toBeVisible();
       await expectAccessible(page, testInfo, `services-decision-${locale}`);
-      await page.getByLabel(m("services.decision.comment")).fill(locale === "ar" ? "تمت الموافقة" : "Approved for the event");
-      await page.getByRole("button", { name: m("services.decision.approve") }).click();
-      await page.waitForURL(`${hostOrigin(tenant.key)}/tasks`);
+      await panel.getByLabel(m("services.decision.comment")).fill(locale === "ar" ? "تمت الموافقة" : "Approved for the event");
+      await panel.getByRole("button", { name: m("services.decision.approve") }).click();
+      await expect(page.getByTestId("task-decided")).toHaveText(m("services.inbox.decided.approve"));
       await expect(page.getByText(m("services.inbox.empty"))).toBeVisible();
     });
 

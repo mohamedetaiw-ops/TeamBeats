@@ -98,7 +98,7 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | List rows | `.ui-rows`, `.ui-row` | Tasks and other actionable items: icon tile, title, meta, one action | Each row is a list item; the action names its item |
 | Plain table | `main table` | A short read-only table inside page text | Native table with header cells; rows highlight on hover |
 | Split view | `.ui-split` | A main column with a side column (Tasks and delegation) | The side column is an `aside` with a label; stacks below 64rem |
-| Person card | `people-cards` | People directory and team | Avatar with a steady tone, name link covers the card |
+| Person | `PersonItem` with `form` chip, row or card | People directory, team, any place a person is named | Chip: avatar and name. Row: adds title, unit and location. Card: the row in a frame with up to two quick actions (email, call) for channels the API gave. Avatar with a steady tone; the name link covers the card. The directory offers cards or a list |
 | Briefing hero | `home.briefing` | Top of the home: greeting, date, weather, next three things with actions | A section named by its heading; rows are an ordered list; where items came from is stated |
 | Your day | `home.your_day` | Tinted counts and today's agenda beside the briefing | A section named by its heading; the agenda is an ordered list; the connect line is a real link |
 | Arrange this page | `features/personalization/Personalization.tsx` | Edit icon in the shell bar next to settings that starts personalization; Done, Undo and Reset appear at the top of the page while arranging | A button named "Arrange this page" with `aria-pressed`; focus returns to it when arranging ends |
@@ -116,7 +116,7 @@ Shell parts (header, navigation, search, settings, account menu, notifications, 
 
 - **One component per pattern.** Before building something new, check this list and the gallery. A second way to show the same thing is a defect.
 - **One frame, one row.** A widget is a `Widget`; it never brings its own surface, padding, radius, shadow or header CSS. A kind of record has one row part (calendar items use `AgendaRow` everywhere, DLS-090), so a home widget and the inner page that opens from it look the same. `npm run check:design` fails a placement that draws its own card.
-- **Mixed directions.** Names, subjects and titles go in `bdi` and align to the row's start (`text-align: match-parent`, DLS-091), so Arabic and English rows line up.
+- **Mixed directions.** Names, subjects and titles go in `bdi` and align to the row's start (the row places them, DLS-091), so Arabic and English rows line up.
 - **Names, not keys.** Stored keys (audit actions, permissions, tokens, settings) show by their localized name; the key, when useful, follows as `code.ui-key` (DLS-093).
 - **Tables.** A dash for an empty cell, dates and statuses on one line, row actions quiet and confirmed (DLS-095, DLS-096).
 - **Tokens only.** No raw colours, sizes or fonts (stylelint, token gate, design gate).
