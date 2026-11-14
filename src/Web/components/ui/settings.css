@@ -1,0 +1,168 @@
+/*
+ * Settings and records parts (spec 036 DLS-093 to DLS-099): key names, the form field grid, table cells and long
+ * values. Used first by the admin pages; any settings page uses the same classes.
+ */
+
+/* DLS-093: a stored key by its name, the key as quiet secondary text. */
+.ui-key-name {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: var(--tb-space-sm);
+  min-inline-size: 0;
+}
+
+.ui-key {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  overflow-wrap: anywhere;
+}
+
+/* DLS-094: settings fields on one grid, labels above, equal widths per row; one column below 40rem. */
+.ui-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: var(--tb-space-md);
+  align-items: start;
+}
+
+.ui-field-grid > * {
+  min-inline-size: 0;
+  margin: 0;
+}
+
+.ui-field-grid :is(input:not([type="checkbox"], [type="radio"]), select, textarea) {
+  inline-size: 100%;
+}
+
+.ui-field-grid > .ui-field-wide {
+  grid-column: 1 / -1;
+}
+
+/*
+ * DLS-094, DLS-099: a row of fields and their action. Fields share the row evenly and line up by their labels, so a
+ * hint under one input never lifts its neighbour's label; a button or check lines up with the inputs, not the labels;
+ * the row wraps before anything touches.
+ */
+.ui-control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--tb-space-md);
+}
+
+.ui-control-row > .field {
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+  margin: 0;
+}
+
+.ui-control-row > .field :is(input:not([type="checkbox"], [type="radio"]), select, textarea) {
+  inline-size: 100%;
+}
+
+.ui-control-row > :is(button, a, .ui-choice, label) {
+  margin-block-start: calc(var(--tb-font-size-sm) * var(--tb-font-line-height-body) + var(--tb-space-xs));
+}
+
+.ui-control-row > .ui-choice {
+  align-self: flex-start;
+  min-block-size: 2.75rem;
+  align-items: center;
+}
+
+.ui-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin-block-start: var(--tb-space-md);
+}
+
+/* DLS-095: an empty cell reads as a dash; dates, statuses and short names stay on one line. */
+.ui-empty-cell {
+  color: var(--tb-color-text-secondary);
+}
+
+.ui-nowrap {
+  white-space: nowrap;
+}
+
+/* DLS-097: a long read-only value shown in full, wrapping anywhere, with its copy button beside it. */
+.ui-value-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.ui-value-block code {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+  overflow-wrap: anywhere;
+}
+
+/*
+ * DLS-099 on admin pages: a sub heading inside a section keeps space above it, and a field group without its own
+ * frame (person pickers, radio lists) reads as a labelled group, not a browser drawn box with a floating legend.
+ */
+.admin-content :where(section, form, div) > :is(h3, h4):not(:first-child) {
+  margin-block-start: var(--tb-space-md);
+}
+
+.admin-content :where(fieldset:not([class])) {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* A form's own action button keeps its size instead of stretching across a grid form. */
+.admin-content :where(form) > :is(button, .button) {
+  justify-self: start;
+}
+
+.admin-content :where(fieldset:not([class])) > legend {
+  margin-block-end: var(--tb-space-xs);
+  padding: 0;
+}
+
+/*
+ * DLS-096: a destructive action in a table row or list row is quiet danger text, not a button; it still asks before
+ * it acts (ConfirmAction), and the solid danger button appears only in that question.
+ */
+:is(td, th, .ui-widget-row, .ui-row-actions) .button-destructive {
+  min-block-size: 2rem;
+  padding-inline: var(--tb-space-sm);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--tb-color-state-danger);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+:is(td, th, .ui-widget-row, .ui-row-actions) .button-destructive:hover {
+  text-decoration: underline;
+}
+
+/* The question replaces the action in its cell; in a row it stays compact. */
+:is(td, th) .ui-confirm {
+  min-inline-size: 14rem;
+}
+
+/* DLS-095: in a table, dates, times and status badges stay on one line; the long text column takes the rest. */
+:is(td, th) :is(time, .ui-badge, .ui-nowrap) {
+  white-space: nowrap;
+}
+
+/* A link in a table cell is a target of at least 24 by 24 px (WCAG 2.5.8), so short names stay easy to tap. */
+:is(td, th) a:not(.button) {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+  min-inline-size: 1.5rem;
+}

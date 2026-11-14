@@ -34,7 +34,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
       await page.getByRole("navigation", { name: msg(locale, "admin.navLabel") }).getByRole("link", { name: msg(locale, "admin.nav.analytics") }).click();
       await page.waitForURL(/\/admin\/analytics$/);
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "analytics.adoption.title"));
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "admin.nav.analytics"));
       await expect(page.getByRole("heading", { level: 2, name: msg(locale, "analytics.adoption.templates") })).toBeVisible();
       await expectAccessible(page, testInfo, `analytics-adoption-${locale}`);
 

@@ -115,7 +115,7 @@ export function DecisionEditor({ decisionKey, initial, units }: { decisionKey: s
       ) : null}
 
       <section className="processes-section" aria-labelledby="decision-settings">
-        <h2 id="decision-settings">{t("settings")}</h2>
+        <h2 id="decision-settings">{decisionKey === null ? t("newTitle") : t("settings")}</h2>
         <div className="processes-filters">
           <FormField
             label={t("key")}

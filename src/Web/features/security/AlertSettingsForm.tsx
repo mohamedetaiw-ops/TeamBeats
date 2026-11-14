@@ -65,7 +65,7 @@ export function AlertSettingsForm({ initial }: { initial: AlertSettings }) {
           />
         </div>
         {locked ? null : (
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button type="submit" variant="primary" busy={action.busy === "save"} busyLabel={t("working")}>
               {t("save")}
             </Button>

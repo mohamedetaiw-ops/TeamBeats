@@ -293,7 +293,7 @@ public sealed class ScenarioEvent
 public sealed class ScenarioTenant
 {
     public string Directory { get; set; } = string.Empty;
-    public string ConnectionName { get; set; } = "Microsoft 365 (fake)";
+    public string ConnectionName { get; set; } = "Microsoft 365";
     public List<string> Features { get; set; } = ["directory_sync"];
     public bool ConfigureSso { get; set; } = true;
     public string? SsoDisplayName { get; set; }

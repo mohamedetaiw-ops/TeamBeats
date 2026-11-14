@@ -161,7 +161,7 @@ export function TenantSettingsAdmin({ initial, initialAdmins }: { initial: Tenan
           ]}
         />
         <ColorField label={t("language.color")} hint={t("language.colorHint")} name="primaryColor" value={color} onValueChange={setColor} />
-        <div className="admin-row">
+        <div className="ui-control-row">
           <Button variant="primary" disabled={!dirty || enabled.length === 0} busy={busy === "save"} busyLabel={t("saving")} onClick={() => void save()}>
             {t("save")}
           </Button>
@@ -184,6 +184,7 @@ export function TenantSettingsAdmin({ initial, initialAdmins }: { initial: Tenan
           <p className="admin-meta">{t("admins.intro")}</p>
           <DataTable
             caption={t("admins.title")}
+            captionHidden
             rows={admins}
             rowKey={(a) => a.id}
             emptyTitle={t("admins.empty")}
@@ -198,7 +199,7 @@ export function TenantSettingsAdmin({ initial, initialAdmins }: { initial: Tenan
             ]}
           />
           <form
-            className="admin-row"
+            className="ui-control-row"
             onSubmit={(e) => {
               e.preventDefault();
               void appoint();

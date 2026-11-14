@@ -66,7 +66,7 @@ export function AccessReviewList({ initial }: { initial: AccessReviewItem[] }) {
             align: "end",
             cell: (i) =>
               i.decision ? null : (
-                <div className="admin-row">
+                <div className="ui-control-row">
                   <Button size="sm" variant="secondary" busy={action.busy === "confirm" + i.id} busyLabel={t("working")} onClick={() => void decide(i, "confirm")}>
                     {t("confirm")}
                   </Button>

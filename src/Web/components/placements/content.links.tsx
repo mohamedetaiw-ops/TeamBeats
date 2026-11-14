@@ -3,6 +3,7 @@
 import { useLocale, useTranslations } from "next-intl";
 import { localized, type PlacementProps } from "@/lib/experience/contract";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/content/content.css";
 
 /** Only links a reader can safely open; the manifest already validates url properties, this keeps the client strict too. */
@@ -19,8 +20,7 @@ export default function QuickLinks({ props }: PlacementProps) {
     .map((href, i) => ({ href: typeof href === "string" ? href : "", label: localized(labels[i], locale) }))
     .filter((e) => e.href && safe(e.href));
   return (
-    <nav className="content-card" aria-label={title}>
-      <h2>{title}</h2>
+    <Widget as="nav" title={title}>
       {entries.length === 0 ? (
         <StateView kind="empty" title={t("none")} message="" />
       ) : (
@@ -34,6 +34,6 @@ export default function QuickLinks({ props }: PlacementProps) {
           ))}
         </ul>
       )}
-    </nav>
+    </Widget>
   );
 }

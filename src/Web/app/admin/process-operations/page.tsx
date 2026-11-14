@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { ProcessModelSummary } from "@/lib/processes";
 import { ProcessOperationsTabs } from "@/features/processes/ProcessOperationsTabs";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Process operations (spec 024 US5, FR-013, FR-014): the operator view of instances and incidents, and monitoring per
@@ -18,8 +19,7 @@ export default async function ProcessOperationsPage() {
   const t = await getTranslations("processes.operations");
   return (
     <>
-      <h1>{t("pageTitle")}</h1>
-      <p className="notice">{t("pageIntro")}</p>
+      <AdminHeader section="process_operations" description={t("pageIntro")} />
       <div className="processes">
         <ProcessOperationsTabs processes={processes.ok ? processes.data : []} />
       </div>

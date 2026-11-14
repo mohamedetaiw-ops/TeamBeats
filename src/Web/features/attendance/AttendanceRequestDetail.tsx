@@ -103,7 +103,7 @@ export function AttendanceRequestDetail({ initial, taskId }: { initial: Attendan
         <h3>{t("requests.reason")}</h3>
         <p className="attendance-reason">{request.reason}</p>
         {request.rights.withdraw ? (
-          <div className="attendance-row">
+          <div className="ui-control-row">
             <Button busy={busy} busyLabel={t("sign.saving")} onClick={() => void withdraw()}>
               {t("detail.withdraw")}
             </Button>

@@ -196,7 +196,7 @@ export function MyExpenses({ form }: { form: ExpenseForm }) {
           <>
             <p className="field-hint">{t("intro", { days: form.windowDays, currency: form.currency })}</p>
             <FormField label={t("title")} name="expense-title" value={title} maxLength={200} required onChange={(e) => setTitle(e.target.value)} />
-            <div className="expenses-row">
+            <div className="ui-control-row">
               {form.costCentres.length > 0 ? (
                 <SelectField
                   label={t("costCentre")}
@@ -216,7 +216,7 @@ export function MyExpenses({ form }: { form: ExpenseForm }) {
               return (
                 <fieldset className="expenses-line" key={l.key}>
                   <legend>{t("line", { n: i + 1 })}</legend>
-                  <div className="expenses-row">
+                  <div className="ui-control-row">
                     <SelectField
                       label={t("category")}
                       name={`line-${l.key}-category`}
@@ -246,7 +246,7 @@ export function MyExpenses({ form }: { form: ExpenseForm }) {
                     />
                   ) : (
                     <>
-                      <div className="expenses-row">
+                      <div className="ui-control-row">
                         <FormField label={t("amount")} name={`line-${l.key}-amount`} inputMode="decimal" dir="ltr" value={l.amount} onChange={(e) => change(l.key, { amount: e.target.value })} />
                         <FormField
                           label={t("currency")}
@@ -268,7 +268,7 @@ export function MyExpenses({ form }: { form: ExpenseForm }) {
                         </p>
                       </div>
                       {form.receiptReading && l.receipt && !l.reading ? (
-                        <div className="expenses-row">
+                        <div className="ui-control-row">
                           <Button busy={readingKey === l.key} busyLabel={t("reading")} onClick={() => void read(l.key, l.receipt!.id)}>
                             {t("readReceipt")}
                           </Button>
@@ -310,7 +310,7 @@ export function MyExpenses({ form }: { form: ExpenseForm }) {
                             ) : null}
                           </dl>
                           <p className="field-hint">{t("suggestedHint")}</p>
-                          <div className="expenses-row">
+                          <div className="ui-control-row">
                             <Button variant="primary" onClick={() => applyReading(l)}>
                               {t("useValues")}
                             </Button>
@@ -335,14 +335,14 @@ export function MyExpenses({ form }: { form: ExpenseForm }) {
                     onChange={(e) => change(l.key, { justification: e.target.value })}
                   />
                   {lines.length > 1 ? (
-                    <div className="expenses-row">
+                    <div className="ui-control-row">
                       <Button onClick={() => setLines((all) => all.filter((x) => x.key !== l.key))}>{t("removeLine", { n: i + 1 })}</Button>
                     </div>
                   ) : null}
                 </fieldset>
               );
             })}
-            <div className="expenses-row">
+            <div className="ui-control-row">
               <Button
                 disabled={lines.length >= 50}
                 onClick={() => {

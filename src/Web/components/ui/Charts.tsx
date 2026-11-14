@@ -39,16 +39,25 @@ function useRtl() {
   return direction(useLocale() as Locale) === "rtl";
 }
 
-/** Round axis steps: 1, 2 or 5 times a power of ten. */
-export function niceTicks(max: number, count = 4): number[] {
+/**
+ * Round axis steps: 1, 2 or 5 times a power of ten, from zero, at most five ticks. A chart of counts (every value a
+ * whole number) gets whole-number steps only, so a head count never shows 0.5 (DLS-098).
+ */
+export function niceTicks(max: number, count = 4, integer = false): number[] {
   if (max <= 0) return [0, 1];
   const raw = max / count;
   const power = 10 ** Math.floor(Math.log10(raw));
-  const step = [1, 2, 5, 10].map((m) => m * power).find((s) => s >= raw) ?? raw;
+  const nice = [1, 2, 5, 10].map((m) => m * power).find((s) => s >= raw) ?? raw;
+  const step = integer ? Math.max(1, Math.ceil(nice)) : nice;
   const ticks: number[] = [];
   for (let v = 0; v <= max + step / 2; v += step) ticks.push(Number(v.toPrecision(12)));
   if ((ticks.at(-1) ?? 0) < max) ticks.push(Number(((ticks.at(-1) ?? 0) + step).toPrecision(12)));
   return ticks;
+}
+
+/** True when every value is a whole number: a chart of counts. */
+function wholeNumbers(series: readonly { values: readonly number[] }[]) {
+  return series.every((s) => s.values.every((v) => Number.isInteger(v)));
 }
 
 /** A series marker, drawn in the series color: circle, square, triangle or diamond by position. */
@@ -254,7 +263,7 @@ export function LineChart({
   const f = mirrored(frame(width, height), rtl);
   const totals = categories.map((_, i) => series.reduce((sum, s) => sum + (s.values[i] ?? 0), 0));
   const top = stacked ? Math.max(...totals) : Math.max(...series.flatMap((s) => s.values));
-  const ticks = niceTicks(top);
+  const ticks = niceTicks(top, 4, wholeNumbers(series));
   const max = ticks.at(-1) ?? 1;
   const span = f.width - f.left - f.right;
   const x = (i: number) => {
@@ -277,6 +286,19 @@ export function LineChart({
         return curve === "step" ? `H${x(i)}V${y(v)}` : `L${point}`;
       })
       .join("");
+  if (categories.length === 1) {
+    // One point is a value, not a trend: show it as a stat with its date instead of a lone dot (DLS-098).
+    return (
+      <div ref={ref} className="ui-chart ui-chart-single" role="img" aria-label={label}>
+        {series.map((s) => (
+          <p key={s.key}>
+            <strong>{format(s.values[0] ?? 0)}</strong>
+            <span>{t("single", { series: s.label, category: categories[0] ?? "" })}</span>
+          </p>
+        ))}
+      </div>
+    );
+  }
   return (
     <div ref={ref} className="ui-chart">
       <svg width={width} height={height} role="img" aria-label={label}>
@@ -334,7 +356,7 @@ export function BarChart({
   const f = mirrored(frame(width, height), rtl);
   const totals = categories.map((_, i) => series.reduce((sum, s) => sum + (s.values[i] ?? 0), 0));
   const top = Math.max(stacked ? Math.max(...totals) : Math.max(...series.flatMap((s) => s.values)), ...(line?.values ?? [0]));
-  const ticks = niceTicks(top);
+  const ticks = niceTicks(top, 4, wholeNumbers(line ? [...series, line] : series));
   const max = ticks.at(-1) ?? 1;
   const span = f.width - f.left - f.right;
   const band = span / categories.length;

@@ -6,6 +6,7 @@ import { AlertSettingsForm } from "@/features/security/AlertSettingsForm";
 import { SecurityTabs } from "@/features/security/SecurityTabs";
 import { securitySection } from "@/features/security/guard";
 import "@/features/security/security.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /** Security alerts and their thresholds (spec 026 US5, T016, T025). Plans without alerts get the API's refusal as a notice. */
 export default async function SecurityAlertsPage() {
@@ -17,8 +18,7 @@ export default async function SecurityAlertsPage() {
   const t = await getTranslations("security");
   return (
     <>
-      <h1>{t("alerts.title")}</h1>
-      <SecurityTabs current="alerts" openAlerts={section.badge} />
+      <AdminHeader section="security" title={t("alerts.title")} nav={<SecurityTabs current="alerts" openAlerts={section.badge} />} />
       <p className="notice">{t("alerts.intro")}</p>
       {alerts.ok ? <AlertList initial={alerts.data} /> : <p className="notice notice-error">{t(alerts.status === 403 ? "alerts.unavailable" : "alerts.failed")}</p>}
       {settings.ok ? <AlertSettingsForm initial={settings.data} /> : null}

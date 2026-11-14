@@ -54,7 +54,7 @@ export function TeamAvailability() {
 
   return (
     <div className="leave">
-      <div className="leave-row">
+      <div className="ui-control-row">
         <FormField label={t("from")} name="from" type="date" value={from} onChange={(e) => e.target.value && setFrom(e.target.value)} />
         <Button onClick={() => setFrom(addDays(from, -span))}>
           {t("earlier")}

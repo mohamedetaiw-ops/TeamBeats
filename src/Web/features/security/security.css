@@ -51,12 +51,6 @@
   font-family: inherit;
 }
 
-.security-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--tb-space-sm);
-  align-items: center;
-}
 
 .security-list {
   display: grid;

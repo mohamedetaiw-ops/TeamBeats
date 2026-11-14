@@ -6,6 +6,7 @@ import { Checkbox } from "./Checkbox";
 import { Icon } from "./Icon";
 import { Menu } from "./Menu";
 import { StateView } from "./StateView";
+import { orDash } from "./EmptyCell";
 
 export type SortDirection = "ascending" | "descending";
 export type Sort = { key: string; direction: SortDirection };
@@ -24,10 +25,14 @@ export type Column<Row> = {
   hideable?: boolean;
   /** Low priority columns are left out below 1024px, so the key fields fit (DLS-079). */
   priority?: "low";
+  /** Dates, names and statuses that read on one line (DLS-095); the long text column takes the rest of the width. */
+  nowrap?: boolean;
 };
 
 type Props<Row> = {
   caption: string;
+  /** The caption stays for assistive technology but is not shown, when a heading right above already names the table. */
+  captionHidden?: boolean;
   columns: readonly Column<Row>[];
   rows: readonly Row[];
   rowKey: (row: Row) => string;
@@ -66,6 +71,7 @@ function compare(a: string | number, b: string | number) {
  */
 export function DataTable<Row>({
   caption,
+  captionHidden = false,
   columns,
   rows,
   rowKey,
@@ -159,7 +165,9 @@ export function DataTable<Row>({
       {selection}
       <div className="ui-table-scroll" role="region" aria-labelledby={`${id}-caption`} tabIndex={0}>
         <table data-stack={stack || undefined}>
-          <caption id={`${id}-caption`}>{caption}</caption>
+          <caption id={`${id}-caption`} className={captionHidden ? "visually-hidden" : undefined}>
+            {caption}
+          </caption>
           <thead>
             <tr>
               {selectable ? (
@@ -210,12 +218,12 @@ export function DataTable<Row>({
                     ) : null}
                     {shown.map((c) =>
                       c.rowHeader ? (
-                        <th key={c.key} scope="row" data-align={c.align === "end" ? "end" : undefined} data-priority={c.priority}>
+                        <th key={c.key} scope="row" className={c.nowrap ? "ui-nowrap" : undefined} data-align={c.align === "end" ? "end" : undefined} data-priority={c.priority}>
                           {c.cell(row)}
                         </th>
                       ) : (
-                        <td key={c.key} data-align={c.align === "end" ? "end" : undefined} data-priority={c.priority} data-label={c.header}>
-                          {c.cell(row)}
+                        <td key={c.key} className={c.nowrap ? "ui-nowrap" : undefined} data-align={c.align === "end" ? "end" : undefined} data-priority={c.priority} data-label={c.header}>
+                          {orDash(c.cell(row))}
                         </td>
                       ),
                     )}

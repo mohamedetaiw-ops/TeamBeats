@@ -7,6 +7,7 @@ import { FormField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import { localName, visibilities, type Location, type Policy, type PolicyField } from "@/lib/people/types";
 import "./people.css";
+import { EmptyCell } from "@/components/ui/EmptyCell";
 
 type Result = { ok: boolean; messages: string[] } | null;
 
@@ -95,13 +96,17 @@ export function PeoplePolicyAdmin({ initialPolicy, initialLocations }: { initial
           ))}
         </select>
       </td>
-      <td>
-        {f.custom ? (
-          <Button variant="destructive" onClick={() => setFields(fields.filter((x) => x.key !== f.key))}>
-            {t("admin.remove", { name: label(f) })}
-          </Button>
-        ) : null}
-      </td>
+      {custom.length > 0 ? (
+        <td>
+          {f.custom ? (
+            <Button variant="destructive" onClick={() => setFields(fields.filter((x) => x.key !== f.key))}>
+              {t("admin.remove", { name: label(f) })}
+            </Button>
+          ) : (
+            <EmptyCell />
+          )}
+        </td>
+      ) : null}
     </tr>
   );
 
@@ -128,7 +133,7 @@ export function PeoplePolicyAdmin({ initialPolicy, initialLocations }: { initial
                   <th scope="col">{t("admin.field")}</th>
                   <th scope="col">{t("admin.source")}</th>
                   <th scope="col">{t("admin.visibility")}</th>
-                  <td />
+                  {custom.length > 0 ? <th scope="col">{t("admin.actions")}</th> : null}
                 </tr>
               </thead>
               <tbody>

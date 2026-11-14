@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { AiTabs } from "@/features/ai/AiTabs";
 import { aiSection } from "@/features/ai/guard";
 import "@/features/ai/ai.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 type Filters = { from?: string; to?: string; groupBy?: string };
 
@@ -52,11 +53,10 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Prom
   const peak = view ? Math.max(1, ...view.rows.map((r) => r.requests)) : 1;
   return (
     <>
-      <h1>{t("usage.title")}</h1>
-      <AiTabs current="usage" />
+      <AdminHeader section="ai" title={t("usage.title")} nav={<AiTabs current="usage" />} />
       <form className="ai-section" method="get" aria-labelledby="ai-usage-filters">
         <h2 id="ai-usage-filters">{t("usage.filters")}</h2>
-        <div className="ai-row">
+        <div className="ui-control-row">
           <div className="field">
             <label htmlFor="ai-usage-from">{t("usage.from")}</label>
             <input id="ai-usage-from" name="from" type="date" defaultValue={view?.from ?? filters.from ?? ""} />

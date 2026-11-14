@@ -7,6 +7,7 @@ import { OutlookStateView, StaleNote, useHydrated, useOutlookData, useReturnPath
 import { StateView } from "@/components/ui/StateView";
 import { Badge } from "@/components/ui/Badge";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Widget } from "@/components/ui/Widget";
 
 type Message = {
   id: string;
@@ -24,6 +25,8 @@ type Summary = { state: OutlookState; asOf: string | null; unreadCount: number |
 /**
  * My mail (spec 018 US2): the Inbox unread count and the latest messages with text markers, each opening in Outlook on
  * the web. TeamBeats never renders a message body; the preview is plain text when the admin turned it on (FR-008).
+ * Built on the shared widget frame (spec 036 DLS-089); senders and subjects in either language start at the row's start
+ * edge (DLS-091).
  */
 export default function MyMail({ props }: PlacementProps) {
   const t = useTranslations("outlook.mail");
@@ -37,13 +40,9 @@ export default function MyMail({ props }: PlacementProps) {
 
   const unread = answer !== "loading" && answer !== "failed" && answer !== "denied" ? answer.unreadCount : null;
   const shell = (body: ReactNode, busy = false) => (
-    <section className="outlook" aria-label={t("title")} aria-busy={busy || undefined}>
-      <div className="outlook-header">
-        <h2 className="outlook-title">{t("title")}</h2>
-        {unread !== null && unread > 0 ? <Badge tone="accent">{t("unread", { count: unread })}</Badge> : null}
-      </div>
+    <Widget title={t("title")} busy={busy} count={unread !== null && unread > 0 ? <Badge tone="accent">{t("unread", { count: unread })}</Badge> : null}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (answer === "loading" || !hydrated) return shell(<StateView kind="loading" minBlockSize="10rem" />, true);

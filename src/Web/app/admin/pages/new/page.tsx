@@ -5,6 +5,7 @@ import { getCatalogue, listUnits } from "@/lib/experience/client";
 import { unitName } from "@/lib/experience/builder-types";
 import { TemplateChooser } from "@/features/builder/TemplateChooser";
 import "@/features/builder/builder.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * New page (spec 032 FR-017): choose a template from previews with text descriptions, name its address and scope.
@@ -26,8 +27,7 @@ export default async function NewPagePage() {
     : [];
   return (
     <>
-      <h1>{t("create.title")}</h1>
-      <p className="notice">{t("create.intro")}</p>
+      <AdminHeader section="pages" title={t("create.title")} description={t("create.intro")} />
       <TemplateChooser
         templates={catalogue.data.templates
           .filter((x) => x.state === "released")

@@ -11,6 +11,10 @@ import { connectHref } from "@/components/experience/outlook";
 import { Icon } from "@/components/ui/Icon";
 import { Badge } from "@/components/ui/Badge";
 import { StatCards } from "@/components/ui/Blocks";
+import { ButtonLink } from "@/components/ui/Button";
+import { AgendaRow } from "@/components/ui/CalendarParts";
+import { Widget } from "@/components/ui/Widget";
+import { LAYER_LOOK } from "@/lib/calendar";
 import "@/features/services/home.css";
 
 type Meeting = { id: string; subject: string | null; start: string; end: string; isAllDay: boolean; isPrivate: boolean; location: string | null; webLink: string; source: string };
@@ -32,11 +36,14 @@ async function read<T>(url: string): Promise<T | null> {
 /**
  * Your day (spec 008 FR-057, docs/design-system/components.md): three tinted stat cards (spec 036 DLS-039) (tasks to approve, overdue tasks
  * and meetings left today) and today's agenda from the viewer's own calendar (spec 018), each meeting with its time
- * and a "starts in" badge for the next hour. Both sources are read with the viewer's session; when the calendar is not
+ * and a "starts in" badge for the next hour, drawn with the calendar's own agenda row (spec 036 DLS-090) in the shared
+ * widget frame (DLS-089). Both sources are read with the viewer's session; when the calendar is not
  * connected the agenda becomes one line with the connect link, and the meetings tile is left out, never guessed.
  */
 export default function YourDay({ props }: PlacementProps) {
   const t = useTranslations("home.day");
+  const tc = useTranslations("calendar");
+  const [open, setOpen] = useState<string | null>(null);
   const locale = useLocale();
   const format = useFormatter();
   const now = useNow();
@@ -54,13 +61,9 @@ export default function YourDay({ props }: PlacementProps) {
   }, []);
 
   const shell = (body: ReactNode, busy = false) => (
-    <section className="home-card" aria-labelledby="home-day-title" aria-busy={busy || undefined} data-testid="home-your-day">
-      <div className="home-card-head">
-        <h2 id="home-day-title">{title}</h2>
-        <Link href="/tasks">{t("inbox")}</Link>
-      </div>
+    <Widget title={title} busy={busy} testId="home-your-day" action={<Link href="/tasks">{t("inbox")}</Link>}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (sources === "loading" || now === null) return shell(<StateView kind="loading" minBlockSize="10rem" />, true);
@@ -110,28 +113,40 @@ export default function YourDay({ props }: PlacementProps) {
       ) : meetings.length === 0 ? (
         <p className="home-meta">{t("noMeetings")}</p>
       ) : (
-        <ol className="home-agenda" aria-label={t("agenda")}>
+        <ul className="ui-cal-agenda" aria-label={t("agenda")}>
           {meetings.slice(0, AGENDA).map((m) => {
             const starts = Date.parse(m.start);
             const soon = starts > now && starts - now <= SOON;
+            const subject = m.isPrivate || !m.subject ? t("privateMeeting") : m.subject;
             return (
-              <li key={m.id} className="home-agenda-item">
-                <span className="home-agenda-time">{clock.format(new Date(m.start))}</span>
-                <span className="home-agenda-text">
-                  <a href={m.webLink} target="_blank" rel="noopener noreferrer">
-                    <bdi>{m.isPrivate || !m.subject ? t("privateMeeting") : m.subject}</bdi>
-                  </a>
-                  {m.location ? (
-                    <span className="home-meta">
-                      <bdi>{m.location}</bdi>
-                    </span>
-                  ) : null}
-                </span>
-                {soon ? <Badge tone="warning">{t("startsIn", { minutes: Math.max(1, Math.round((starts - now) / 60_000)) })}</Badge> : starts <= now ? <Badge tone="warning">{t("now")}</Badge> : null}
-              </li>
+              <AgendaRow
+                key={m.id}
+                swatch={LAYER_LOOK.meeting.swatch}
+                icon={LAYER_LOOK.meeting.icon}
+                layerLabel={tc("layers.meeting")}
+                time={tc("timeRange", { start: clock.format(new Date(m.start)), end: clock.format(new Date(m.end)) })}
+                title={subject}
+                meta={m.location}
+                primary={
+                  soon ? (
+                    <Badge tone="warning">{t("startsIn", { minutes: Math.max(1, Math.round((starts - now) / 60_000)) })}</Badge>
+                  ) : starts <= now ? (
+                    <Badge tone="warning">{t("now")}</Badge>
+                  ) : null
+                }
+                open={open === m.id}
+                onToggle={() => setOpen(open === m.id ? null : m.id)}
+                details={
+                  <div className="ui-actions">
+                    <ButtonLink href={m.webLink} size="sm" variant="quiet" iconEnd="external" target="_blank" rel="noopener noreferrer">
+                      {tc("actions.openOutlook")}
+                    </ButtonLink>
+                  </div>
+                }
+              />
             );
           })}
-        </ol>
+        </ul>
       )}
     </>,
   );

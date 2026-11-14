@@ -279,6 +279,11 @@ main tbody tr:where(:hover) > * {
   padding-block: var(--tb-space-md);
 }
 
+/* The phone menu button (DLS-092): hidden where the full menu fits beside the page. */
+.admin-nav-toggle {
+  display: none;
+}
+
 .admin-nav ul {
   list-style: none;
   margin: 0;
@@ -289,8 +294,12 @@ main tbody tr:where(:hover) > * {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-block: var(--tb-space-sm);
+  padding-block: var(--tb-space-xs);
   padding-inline: var(--tb-space-md);
+  min-block-size: 2.25rem;
+  margin-inline: var(--tb-space-xs);
+  border-inline-start: var(--tb-border-width-thick) solid transparent;
+  border-radius: var(--tb-radius-sm);
   color: inherit;
   text-decoration: none;
 }
@@ -323,6 +332,14 @@ main tbody tr:where(:hover) > * {
 
 .admin-nav a:hover {
   background: var(--tb-color-accent-subtle);
+}
+
+/* The section of the page shown, also on its sub pages (spec 036 DLS-092). */
+.admin-nav a[aria-current="page"] {
+  border-inline-start-color: var(--tb-color-accent-base);
+  background: var(--tb-color-accent-subtle);
+  color: var(--tb-color-link);
+  font-weight: var(--tb-font-weight-semibold);
 }
 
 .admin-content {
@@ -557,8 +574,40 @@ legend {
   }
 
   .admin-nav {
+    padding-block: var(--tb-space-xs);
     border-inline-end: none;
     border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  }
+
+  .admin-nav-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--tb-space-sm);
+    inline-size: 100%;
+    min-block-size: 2.75rem;
+    padding-inline: var(--tb-space-md);
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .admin-nav-toggle-label {
+    color: var(--tb-color-text-secondary);
+  }
+
+  .admin-nav-toggle strong {
+    flex: 1;
+  }
+
+  .admin-nav-toggle[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+  }
+
+  .admin-nav-list:not([data-open]) {
+    display: none;
   }
 }
 
@@ -599,11 +648,11 @@ html[data-motion="reduced"] *::after {
  * link, so the layout does not move.
  */
 @media (pointer: coarse), (width <= 40rem) {
-  :where(.cal-card-view, .cal-card-all, .home-card-head a, .content-cta-link, .shell-footer-links a, .shell-brand) {
+  :where(.cal-card-view, .ui-widget-action > a, .ui-widget-foot > a, .content-cta-link, .shell-footer-links a, .shell-brand) {
     position: relative;
   }
 
-  :where(.cal-card-view, .cal-card-all, .home-card-head a, .content-cta-link, .shell-footer-links a, .shell-brand)::after {
+  :where(.cal-card-view, .ui-widget-action > a, .ui-widget-foot > a, .content-cta-link, .shell-footer-links a, .shell-brand)::after {
     content: "";
     position: absolute;
     inset-block: min(0rem, calc(50% - 1.375rem));

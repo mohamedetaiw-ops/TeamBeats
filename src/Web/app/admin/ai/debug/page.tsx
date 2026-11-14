@@ -6,6 +6,7 @@ import { AiTabs } from "@/features/ai/AiTabs";
 import { DebugWindows } from "@/features/ai/DebugWindows";
 import { aiSection } from "@/features/ai/guard";
 import "@/features/ai/ai.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /** Debug windows (spec 013 US8, T016). */
 export default async function AiDebugPage() {
@@ -17,8 +18,7 @@ export default async function AiDebugPage() {
   const canManage = policy.ok && policy.data.readOnlyReason !== "ai.policy.read_only_permission";
   return (
     <>
-      <h1>{t("debug.title")}</h1>
-      <AiTabs current="debug" />
+      <AdminHeader section="ai" title={t("debug.title")} nav={<AiTabs current="debug" />} />
       <DebugWindows initial={windows.data} canManage={canManage} />
     </>
   );

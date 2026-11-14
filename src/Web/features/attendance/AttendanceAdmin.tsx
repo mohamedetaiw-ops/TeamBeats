@@ -179,7 +179,7 @@ export function AttendanceAdmin({
           ]}
         />
         {settings.canChange ? (
-          <div className="attendance-row">
+          <div className="ui-control-row">
             <Button size="sm" icon="plus" disabled={locked} onClick={() => setSites((list) => [...list, { name: "", latitude: "", longitude: "", radiusMeters: "200" }])}>
               {t("settings.addSite")}
             </Button>
@@ -195,6 +195,7 @@ export function AttendanceAdmin({
         <p className="field-hint">{t("rules.intro")}</p>
         <DataTable<WorkRule>
           caption={t("rules.caption")}
+          captionHidden
           rows={rules}
           rowKey={(r) => r.id}
           density="compact"
@@ -214,7 +215,7 @@ export function AttendanceAdmin({
             },
           ]}
         />
-        <div className="attendance-row">
+        <div className="ui-control-row">
           <SelectField
             label={t("rules.unit")}
             name="rule-unit"
@@ -235,7 +236,7 @@ export function AttendanceAdmin({
       <section className="attendance-section" aria-labelledby="attendance-export">
         <h2 id="attendance-export">{t("export.title")}</h2>
         <p className="field-hint">{t("export.intro")}</p>
-        <div className="attendance-row">
+        <div className="ui-control-row">
           <FormField label={t("export.month")} name="export-month" type="month" value={month} onChange={(e) => e.target.value && setMonth(e.target.value)} />
           <ButtonLink href={`/api/v1/hr/attendance/export?month=${month}`} icon="download" download>
             {t("export.download")}

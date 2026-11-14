@@ -7,6 +7,7 @@ import { AiTabs } from "@/features/ai/AiTabs";
 import { AssistantRetention } from "@/features/ai/AssistantRetention";
 import { aiSection } from "@/features/ai/guard";
 import "@/features/ai/ai.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /** Assistant settings (spec 014 section 3, FR-008): how long conversations are kept. */
 export default async function AiAssistantPage() {
@@ -18,8 +19,7 @@ export default async function AiAssistantPage() {
   const canManage = policy.ok && policy.data.readOnlyReason !== "ai.policy.read_only_permission";
   return (
     <>
-      <h1>{t("title")}</h1>
-      <AiTabs current="assistant" />
+      <AdminHeader section="ai" title={t("title")} nav={<AiTabs current="assistant" />} />
       <AssistantRetention initial={settings.data} canManage={canManage} />
     </>
   );

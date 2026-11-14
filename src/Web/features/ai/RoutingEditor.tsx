@@ -70,7 +70,7 @@ function RouteEditor({
         </ol>
       )}
       {editable && left.length > 0 ? (
-        <div className="ai-row">
+        <div className="ui-control-row">
           <div className="field">
             <label htmlFor={addId}>{t("add", { useCase: label })}</label>
             <select id={addId} value={adding} onChange={(e) => setAdding(e.target.value)}>
@@ -183,7 +183,7 @@ export function RoutingEditor({ catalogue, initial, canOverride }: { catalogue: 
                 </p>
                 <textarea id={reasonId} aria-describedby={`${reasonId}-hint`} value={reason} onChange={(e) => setReason(e.target.value)} />
               </div>
-              <div className="ai-row">
+              <div className="ui-control-row">
                 <Button
                   variant="primary"
                   busy={busy}
@@ -219,7 +219,7 @@ export function RoutingEditor({ catalogue, initial, canOverride }: { catalogue: 
       ) : null}
 
       {view.editable ? (
-        <div className="ai-row">
+        <div className="ui-control-row">
           <Button variant="primary" busy={busy} busyLabel={t("saving")} onClick={() => void send("/api/v1/ai/policy", "PUT", { routes }, (r) => t(r.applied ? "saved" : "held"))}>
             {t("save")}
           </Button>

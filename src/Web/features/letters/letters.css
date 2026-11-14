@@ -20,12 +20,6 @@
   margin: 0;
 }
 
-.letters-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: var(--tb-space-sm);
-}
 
 .letters-list {
   display: grid;

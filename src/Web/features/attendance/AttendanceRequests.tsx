@@ -98,12 +98,12 @@ export function AttendanceRequests({ onChanged }: { onChanged?: () => void }) {
         onChange={(e) => setKind(e.target.value as AttendanceRequestKind)}
         options={(["correction", "compensation"] as const).map((k) => ({ value: k, label: t(`requests.kinds.${k}`), hint: t(`requests.kindHints.${k}`) }))}
       />
-      <div className="attendance-row">
+      <div className="ui-control-row">
         <FormField label={t("requests.date")} name="request-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       </div>
       {kind === "correction"
         ? punches.map((p, i) => (
-            <div className="attendance-row" key={i} role="group" aria-label={t("requests.punch", { n: i + 1 })}>
+            <div className="ui-control-row" key={i} role="group" aria-label={t("requests.punch", { n: i + 1 })}>
               <FormField label={t("requests.time")} name={`punch-time-${i}`} type="time" value={p.time} onChange={(e) => setPunch(i, { time: e.target.value })} />
               <SelectField
                 label={t("requests.direction")}
@@ -124,14 +124,14 @@ export function AttendanceRequests({ onChanged }: { onChanged?: () => void }) {
           ))
         : null}
       {kind === "correction" && punches.length < 4 ? (
-        <div className="attendance-row">
+        <div className="ui-control-row">
           <Button size="sm" icon="plus" onClick={() => setPunches((all) => [...all, { time: "", direction: "in" }])}>
             {t("requests.addPunch")}
           </Button>
         </div>
       ) : null}
       <TextAreaField label={t("requests.reason")} name="request-reason" value={reason} maxLength={500} rows={3} onChange={(e) => setReason(e.target.value)} />
-      <div className="attendance-row">
+      <div className="ui-control-row">
         <Button variant="primary" busy={busy} busyLabel={t("sign.saving")} onClick={() => void send()}>
           {t("requests.send")}
         </Button>

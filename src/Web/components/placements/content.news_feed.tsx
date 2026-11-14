@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/content/content.css";
 
 type Answer = "loading" | "failed" | FeedItem[];
@@ -47,10 +48,9 @@ export default function NewsFeed({ props }: PlacementProps) {
   }, [url, attempt]);
 
   const shell = (body: React.ReactNode, busy = false) => (
-    <section className="content-card" aria-label={title} aria-busy={busy || undefined}>
-      <h2>{title}</h2>
+    <Widget title={title} busy={busy}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (answer === "loading") return shell(<StateView kind="loading" minBlockSize="8rem" />, true);

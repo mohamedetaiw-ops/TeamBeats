@@ -64,7 +64,7 @@ export function DebugWindows({ initial, canManage }: { initial: DebugWindow[]; c
           }}
         >
           <h2 id="ai-debug-open">{t("open")}</h2>
-          <div className="ai-row">
+          <div className="ui-control-row">
             <div className="field">
               <label htmlFor="ai-debug-use-case">{t("useCase")}</label>
               <select id="ai-debug-use-case" value={useCase} onChange={(e) => setUseCase(e.target.value)}>
@@ -117,7 +117,7 @@ export function DebugWindows({ initial, canManage }: { initial: DebugWindow[]; c
                     <td>{t(w.open ? "states.open" : "states.closed")}</td>
                     <td data-number="">{format.number(w.entries)}</td>
                     <td>
-                      <div className="ai-row">
+                      <div className="ui-control-row">
                         <Link href={`/admin/ai/debug/${w.id}`}>{t("view", { useCase: name(w.useCase) })}</Link>
                         {canManage && w.open ? (
                           <Button

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ButtonLink } from "@/components/ui/Button";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 import { apiGet } from "@/lib/api";
 import { NEW_CONNECTION, overviewRows, wizardHref } from "@/lib/integrations/catalogue";
 import type { AllowlistEntry, Microsoft365Connection, PackConnection } from "@/lib/integrations/types";
@@ -31,10 +31,9 @@ export default async function ConnectionsPage({ searchParams }: { searchParams: 
   const consented = connection ? m365.find((c) => c.id === connection) : undefined;
   return (
     <>
-      <PageHeader
-        title={t("title")}
+      <AdminHeader
+        section="connections"
         description={t("intro")}
-        icon="link"
         actions={
           <ButtonLink variant="primary" icon="plus" href={NEW_CONNECTION}>
             {t("overview.add")}

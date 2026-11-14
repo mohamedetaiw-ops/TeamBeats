@@ -103,7 +103,7 @@ function HandleForm({ alert, onHandled }: { alert: SecurityAlert; onHandled: (a:
         <label htmlFor={noteId}>{t("note")}</label>
         <textarea id={noteId} maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)} />
       </div>
-      <div className="security-row">
+      <div className="ui-control-row">
         <Button variant="primary" busy={busy === "handled"} busyLabel={t("working")} onClick={() => void handle("handled")}>
           {t("markHandled")}
         </Button>

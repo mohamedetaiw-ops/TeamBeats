@@ -37,6 +37,7 @@ import "@/components/ui/assistant.css";
 import "@/components/ui/charts.css";
 import "@/components/ui/patterns.css";
 import "@/components/ui/calendar.css";
+import "@/components/ui/settings.css";
 import "@/components/ui/designs.css";
 import { MessagesProvider } from "@/components/ui/Messages";
 import { designOf } from "@/lib/experience/design";

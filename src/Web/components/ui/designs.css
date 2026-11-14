@@ -122,6 +122,12 @@
   font-weight: var(--tb-font-weight-medium);
 }
 
+/* In a table row the destructive action stays quiet danger text in Studio too (DLS-096); the solid button is the confirmation. */
+:root[data-design="studio"] :is(td, th, .ui-widget-row, .ui-row-actions) .button-destructive {
+  background: transparent;
+  color: var(--tb-color-state-danger);
+}
+
 :root[data-design="studio"] main h1,
 :root[data-design="studio"] main h2 {
   letter-spacing: -0.01em;
@@ -144,7 +150,7 @@
  * the night surface; list rows sit between hairlines. Only structure and the design's own tokens, so a tenant accent
  * and dark mode follow.
  */
-:root[data-design="studio"] :is(.home-card, .outlook, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .home-tiles a),
+:root[data-design="studio"] :is(.ui-widget, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .home-tiles a),
 :root[data-design="studio"] :is(.services-section, .work-items, .preferences-section, .documents-card, .documents-table, .kb-article),
 :root[data-design="studio"] :is(.people-section, .people-cards .people-item, .people-identity, .content-article, .content-social),
 :root[data-design="studio"] :is(.ui-rows, .toolbox) {
@@ -152,7 +158,7 @@
   box-shadow: var(--tb-shadow-sm);
 }
 
-:root[data-design="studio"] :is(.home-card, .outlook, .content-card, .ui-card, .services-section, .work-items, .preferences-section),
+:root[data-design="studio"] :is(.ui-widget, .content-card, .ui-card, .services-section, .work-items, .preferences-section),
 :root[data-design="studio"] :is(.documents-card, .documents-table, .kb-article, .people-section, .people-identity, .content-article) {
   border-radius: var(--tb-radius-md);
 }
@@ -173,23 +179,14 @@
 }
 
 /* Card heads: a smaller, tighter title and a quiet link, as in a dashboard. */
-:root[data-design="studio"] :is(.home-card-head h2, .outlook-title, .cal-card h2) {
+:root[data-design="studio"] :is(.ui-widget-title, .ui-widget .ui-cal-title) {
   font-size: var(--tb-font-size-md);
   font-weight: var(--tb-font-weight-bold);
   letter-spacing: -0.01em;
 }
 
-:root[data-design="studio"] .home-card-head a {
+:root[data-design="studio"] :is(.ui-widget-action, .ui-widget-foot) > a {
   font-size: var(--tb-font-size-sm);
-}
-
-/* The home calendar gets the same card frame as its neighbours. */
-:root[data-design="studio"] .cal-card {
-  padding: var(--tb-space-lg);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-md);
-  background: var(--tb-color-surface-raised);
-  box-shadow: var(--tb-shadow-sm);
 }
 
 :root[data-design="studio"] .cal-card-views {
@@ -405,12 +402,6 @@
   margin: 0;
   border-radius: 0;
   border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-}
-
-/* Agenda and list rows: a hairline between rows, the time in tabular figures in the secondary color. */
-:root[data-design="studio"] .home-agenda-time {
-  color: var(--tb-color-text-secondary);
-  font-weight: var(--tb-font-weight-medium);
 }
 
 /* Page headers: the icon box and a hairline under the header, as in a product dashboard. */

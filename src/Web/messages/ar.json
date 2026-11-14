@@ -114,14 +114,14 @@
       "pages": "الصفحات",
       "templates": "القوالب",
       "notifications": "الإشعارات",
-      "calendars": "التقويمات",
-      "people": "دليل الأشخاص",
-      "security": "الأمان",
+      "calendars": "تقويمات العمل",
+      "people": "إعدادات الدليل",
+      "security": "سياسة الأمان",
       "services": "الخدمات",
       "ai": "حوكمة الذكاء الاصطناعي",
       "search": "البحث",
       "agents": "الوكلاء",
-      "evaluation": "التقييم",
+      "evaluation": "تقييم الذكاء الاصطناعي",
       "analytics": "التحليلات",
       "hr_integration": "تكامل الموارد البشرية",
       "leave": "الإجازات",
@@ -1005,6 +1005,57 @@
           "completed": "جاهز",
           "failed": "فشل"
         }
+      },
+      "targetTypes": {
+        "user": "شخص",
+        "connection": "اتصال",
+        "content_item": "محتوى",
+        "api_app": "تطبيق",
+        "agent": "وكيل",
+        "request": "طلب",
+        "community": "مجتمع",
+        "process_instance": "نسخة إجراء",
+        "org_unit": "وحدة",
+        "leave_request": "طلب إجازة",
+        "journey": "رحلة",
+        "tenant": "مساحة العمل",
+        "role_assignment": "إسناد دور",
+        "role": "دور",
+        "agent_run": "تشغيل وكيل",
+        "siem_destination": "وجهة SIEM",
+        "service": "خدمة",
+        "page": "صفحة",
+        "kiosk_device": "كشك",
+        "data_change_request": "تغيير بيانات",
+        "template": "قالب",
+        "security_policy": "سياسة الأمان",
+        "profile_field": "حقل الملف الشخصي",
+        "org_membership": "عضوية وحدة",
+        "letter": "خطاب",
+        "group": "مجموعة",
+        "expense_claim": "مطالبة مصروفات",
+        "course": "دورة",
+        "calendar_event": "حدث تقويم",
+        "document": "مستند",
+        "policy": "سياسة",
+        "theme": "العلامة",
+        "doc_document": "مستند",
+        "doc_folder": "مجلد",
+        "doc_library": "مكتبة",
+        "calendar_team": "تقويم الفريق",
+        "person": "شخص",
+        "tenant_settings": "إعدادات مساحة العمل",
+        "idp_config": "إعدادات تسجيل الدخول",
+        "shell": "الإطار والتذييل",
+        "brand": "الهوية",
+        "working_calendar": "تقويم العمل",
+        "hr_record": "سجل الموارد البشرية",
+        "hr_run": "دورة مزامنة الموارد البشرية",
+        "booking": "حجز",
+        "post": "منشور",
+        "survey": "استطلاع",
+        "assistant_conversation": "محادثة المساعد",
+        "user_task": "مهمة"
       }
     },
     "navGroups": {
@@ -1031,8 +1082,304 @@
       "recentIntro": "أحدث التغييرات المسجّلة في مساحة العمل.",
       "noRecent": "لا توجد تغييرات مسجّلة بعد.",
       "viewAudit": "عرض سجل التدقيق",
-      "sections": "الأقسام"
-    }
+      "shortcuts": "اختصارات",
+      "shortcutsIntro": "الأقسام التي تحتاجك أولاً، ثم قسم من كل مجال. كل الأقسام موجودة أيضاً في القائمة.",
+      "needsYou": "{count, plural, one {عنصر واحد يحتاجك} two {عنصران يحتاجانك} few {# عناصر تحتاجك} many {# عنصراً يحتاجك} other {# عنصر يحتاجك}}",
+      "change": "تغيير في {area}",
+      "failed": "فشل"
+    },
+    "auditAreas": {
+      "hr": "الموارد البشرية",
+      "content": "المحتوى",
+      "doc": "المستندات",
+      "integration": "الاتصالات",
+      "engagement": "التفاعل",
+      "agent": "الوكلاء",
+      "api": "الوصول عبر واجهة البرمجة",
+      "security": "الأمان",
+      "policy": "السياسات",
+      "spaces": "المساحات",
+      "org": "المؤسسة",
+      "eval": "التقييم",
+      "records": "السجلات",
+      "process": "العمليات",
+      "booking": "الحجوزات",
+      "ai": "الذكاء الاصطناعي",
+      "request": "الطلبات",
+      "learning": "التعلم",
+      "identity": "الهوية",
+      "device": "الأجهزة",
+      "compliance": "الامتثال",
+      "assets": "أصول العلامة",
+      "search": "البحث",
+      "people": "الأشخاص",
+      "calendar": "التقويم",
+      "authz": "الأدوار والصلاحيات",
+      "service": "الخدمات",
+      "ent": "الباقة",
+      "auth": "تسجيل الدخول",
+      "tenant": "مساحة العمل",
+      "site": "المواقع",
+      "page": "الصفحات",
+      "audit": "التدقيق",
+      "workflow": "مسارات العمل",
+      "template": "القوالب",
+      "task": "المهام",
+      "platform": "المنصة",
+      "notifications": "الإشعارات",
+      "delegation": "التفويض",
+      "component": "المكونات",
+      "brand": "العلامة",
+      "personalization": "الصفحة الرئيسية الشخصية",
+      "navigation": "التنقل",
+      "decision": "القرارات",
+      "assistant": "المساعد",
+      "theme": "المظهر",
+      "shell": "الإطار والتذييل",
+      "region": "المناطق",
+      "mobile": "الجوال",
+      "guest": "الضيوف",
+      "experience": "التجربة",
+      "analytics": "التحليلات",
+      "other": "مساحة العمل",
+      "finance": "المالية",
+      "kiosk": "الأكشاك"
+    },
+    "auditActions": {
+      "tenant_created": "تم إنشاء مساحة العمل",
+      "tenant_status_changed": "تغيرت حالة مساحة العمل",
+      "tenant_settings_changed": "تغيرت إعدادات مساحة العمل",
+      "tenant_admin_appointed": "تم تعيين مسؤول",
+      "org_unit_created": "تمت إضافة وحدة تنظيمية",
+      "org_unit_renamed": "تمت إعادة تسمية وحدة تنظيمية",
+      "org_unit_moved": "تم نقل وحدة تنظيمية",
+      "org_unit_deactivated": "تم إيقاف وحدة تنظيمية",
+      "org_directory_mapping_changed": "تغير ربط الدليل",
+      "org_directory_mapping_approved": "تمت الموافقة على ربط الدليل",
+      "org_directory_mapping_applied": "تم تطبيق ربط الدليل",
+      "org_membership_added": "تمت إضافة شخص إلى وحدة",
+      "org_membership_ended": "غادر شخص وحدة",
+      "auth_sign_in_succeeded": "تسجيل دخول ناجح",
+      "auth_sign_in_failed": "فشل تسجيل الدخول",
+      "auth_sign_in_refused": "تم رفض تسجيل الدخول",
+      "auth_session_revoked": "تم إنهاء جلسة",
+      "auth_idp_config_changed": "تغير مزود تسجيل الدخول",
+      "integration_connection_created": "تمت إضافة اتصال",
+      "integration_connection_deleted": "تمت إزالة اتصال",
+      "integration_feature_enabled": "تم تشغيل ميزة اتصال",
+      "integration_feature_disabled": "تم إيقاف ميزة اتصال",
+      "integration_outlook_connected": "تم ربط Outlook",
+      "integration_outlook_disconnected": "تم فصل Outlook",
+      "integration_status_changed": "تغيرت حالة اتصال",
+      "doc_uploaded": "تم رفع مستند",
+      "doc_deleted": "تم حذف مستند",
+      "doc_undeleted": "تمت استعادة مستند",
+      "doc_library_created": "تم إنشاء مكتبة",
+      "doc_permissions_changed": "تغيرت صلاحيات مستند",
+      "doc_version_created": "إصدار جديد من مستند",
+      "doc_shared_with_guest": "تمت مشاركة مستند مع ضيف"
+    },
+    "permissions": {
+      "tenant": {
+        "settings_view": "عرض إعدادات مساحة العمل",
+        "settings_manage": "تغيير إعدادات مساحة العمل",
+        "admins_manage": "إدارة مسؤولي مساحة العمل"
+      },
+      "org": {
+        "view": "عرض المؤسسة",
+        "manage": "تغيير المؤسسة",
+        "membership_manage": "إدارة أعضاء الوحدات"
+      },
+      "authz": {
+        "roles_view": "عرض الأدوار",
+        "roles_manage": "إنشاء الأدوار وتغييرها",
+        "roles_assign": "منح الأدوار وإزالتها",
+        "explain": "فحص صلاحيات شخص",
+        "rules_manage": "إدارة قواعد الوصول"
+      },
+      "identity": {
+        "users_view": "عرض الأشخاص",
+        "users_manage": "إدارة الأشخاص",
+        "config_manage": "تغيير إعدادات تسجيل الدخول"
+      },
+      "entitlements": {
+        "view": "عرض الخطة"
+      },
+      "audit": {
+        "read": "قراءة سجل التدقيق",
+        "export": "تصدير سجل التدقيق",
+        "retention_manage": "ضبط مدة حفظ سجل التدقيق"
+      },
+      "content": {
+        "view": "قراءة المحتوى",
+        "edit": "تحرير المحتوى",
+        "publish": "نشر المحتوى",
+        "author": "كتابة المحتوى",
+        "publish_critical": "نشر التنبيهات الحرجة",
+        "admin": "إدارة المحتوى"
+      },
+      "process": {
+        "design": "تصميم الإجراءات",
+        "operate": "تشغيل عمليات الإجراءات",
+        "analyze": "تحليل الإجراءات"
+      },
+      "workflow": {
+        "approve": "اعتماد الطلبات"
+      },
+      "decision": {
+        "design": "تصميم جداول القرارات"
+      },
+      "integration": {
+        "manage": "إدارة الاتصالات",
+        "operate": "تشغيل الاتصالات"
+      },
+      "ai": {
+        "policy_manage": "تغيير سياسة الذكاء الاصطناعي",
+        "policy_view": "عرض سياسة الذكاء الاصطناعي"
+      },
+      "page": {
+        "view": "عرض الصفحات",
+        "edit": "تحرير الصفحات",
+        "publish": "نشر الصفحات"
+      },
+      "template": {
+        "edit": "تحرير القوالب",
+        "distribute": "مشاركة القوالب"
+      },
+      "component": {
+        "enable": "تفعيل المكونات"
+      },
+      "config_history": {
+        "view": "عرض سجل التغييرات"
+      },
+      "theme": {
+        "edit": "تحرير العلامة",
+        "publish": "نشر العلامة"
+      },
+      "config_lock": {
+        "manage": "قفل الإعدادات"
+      },
+      "shell": {
+        "edit": "تحرير الإطار والتذييل"
+      },
+      "navigation": {
+        "edit": "تحرير التنقل"
+      },
+      "help": {
+        "edit": "تحرير المساعدة"
+      },
+      "personalization": {
+        "policy": "ضبط قواعد الصفحة الشخصية"
+      },
+      "personal_layout": {
+        "edit": "ترتيب الصفحة الشخصية"
+      },
+      "notifications": {
+        "manage": "إدارة الإشعارات"
+      },
+      "hr": {
+        "calendar_manage": "إدارة تقويمات العمل",
+        "integration_manage": "إدارة تكامل الموارد البشرية",
+        "manage": "إدارة الموارد البشرية"
+      },
+      "finance": {
+        "process": "معالجة المطالبات المالية"
+      },
+      "people": {
+        "view": "عرض الدليل",
+        "hr_view": "عرض بيانات الموارد البشرية",
+        "manage": "إدارة الدليل"
+      },
+      "security": {
+        "manage": "تغيير سياسة الأمان",
+        "view": "عرض الأمان",
+        "respond": "الاستجابة لتنبيهات الأمان"
+      },
+      "compliance": {
+        "manage": "إدارة الامتثال",
+        "view": "عرض الامتثال"
+      },
+      "service": {
+        "manage": "إدارة الخدمات",
+        "request_on_behalf": "الطلب نيابة عن الآخرين",
+        "request_read": "قراءة جميع الطلبات"
+      },
+      "doc": {
+        "view": "عرض المستندات",
+        "contribute": "إضافة المستندات",
+        "manage": "إدارة المستندات"
+      },
+      "kb": {
+        "edit": "تحرير المعرفة"
+      },
+      "records": {
+        "manage": "إدارة السجلات"
+      },
+      "assets": {
+        "manage": "إدارة أصول العلامة",
+        "view": "عرض أصول العلامة"
+      },
+      "policy": {
+        "author": "كتابة السياسات",
+        "manage": "إدارة السياسات"
+      },
+      "search": {
+        "manage": "إدارة البحث"
+      },
+      "agent": {
+        "design": "تصميم الوكلاء",
+        "publish": "نشر الوكلاء",
+        "view": "عرض الوكلاء",
+        "security_view": "عرض أمان الوكلاء",
+        "suspend": "إيقاف الوكلاء"
+      },
+      "eval": {
+        "design": "تصميم التقييمات",
+        "review": "مراجعة التقييمات",
+        "policy_manage": "ضبط سياسة التقييم",
+        "view": "عرض التقييمات"
+      },
+      "engagement": {
+        "participate": "المشاركة في المجتمعات",
+        "moderate": "إشراف المجتمعات",
+        "manage": "إدارة التفاعل",
+        "survey_publish": "نشر الاستبيانات",
+        "recognition_approve": "اعتماد التقدير"
+      },
+      "analytics": {
+        "view": "عرض التحليلات"
+      },
+      "learning": {
+        "take": "حضور الدورات",
+        "manage": "إدارة التعلم",
+        "team_view": "عرض تعلم الفريق",
+        "report": "تقارير التعلم",
+        "assign_linked": "إسناد الدورات المرتبطة"
+      },
+      "spaces": {
+        "create": "إنشاء المساحات",
+        "manage": "إدارة المساحات",
+        "view": "عرض المساحات",
+        "contribute": "المساهمة في المساحات",
+        "own": "امتلاك المساحات"
+      },
+      "booking": {
+        "book": "حجز المكاتب والقاعات",
+        "manage": "إدارة الحجز",
+        "report": "تقارير الحجز"
+      },
+      "kiosk": {
+        "signin": "تسجيل الدخول في الأكشاك"
+      },
+      "device": {
+        "manage": "إدارة الأجهزة"
+      },
+      "api": {
+        "manage": "إدارة الوصول عبر الواجهة البرمجية",
+        "view": "عرض الوصول عبر الواجهة البرمجية"
+      }
+    },
+    "menu": "قائمة الإدارة"
   },
   "header": {
     "language": "اللغة",
@@ -1203,6 +1550,156 @@
         "top": "التنقل: شريط علوي",
         "sidebar": "التنقل: شريط جانبي بعناوين"
       }
+    },
+    "tokenNames": {
+      "border": {
+        "width": {
+          "focus": "عرض إطار التركيز",
+          "thick": "عرض الحد السميك",
+          "thin": "عرض الحد الرفيع"
+        }
+      },
+      "color": {
+        "accent": {
+          "base": "اللون المميز",
+          "subtle": "اللون المميز الخفيف",
+          "text": "النص على اللون المميز"
+        },
+        "border": {
+          "default": "الحدود",
+          "strong": "الحدود الواضحة"
+        },
+        "chart": {
+          "1": "لون الرسم البياني 1",
+          "2": "لون الرسم البياني 2",
+          "3": "لون الرسم البياني 3",
+          "4": "لون الرسم البياني 4",
+          "5": "لون الرسم البياني 5",
+          "6": "لون الرسم البياني 6",
+          "7": "لون الرسم البياني 7",
+          "8": "لون الرسم البياني 8",
+          "track": "مسار الرسم البياني"
+        },
+        "focus": {
+          "ring": "حلقة التركيز",
+          "ring_inverse": "حلقة التركيز على الداكن"
+        },
+        "highlight": {
+          "base": "التمييز",
+          "bright": "التمييز الساطع"
+        },
+        "link": "الروابط",
+        "nav": {
+          "active": "القائمة، العنصر الحالي",
+          "background": "خلفية القائمة",
+          "text": "نص القائمة"
+        },
+        "shell": {
+          "background": "خلفية الشريط العلوي",
+          "text": "نص الشريط العلوي"
+        },
+        "state": {
+          "danger": "الخطر",
+          "info": "المعلومات",
+          "success": "النجاح",
+          "warning": "التحذير"
+        },
+        "surface": {
+          "base": "خلفية الصفحة",
+          "campaign": "شريط الحملة",
+          "night": "السطح الداكن",
+          "raised": "البطاقات واللوحات",
+          "sunken": "المناطق الغائرة"
+        },
+        "text": {
+          "inverse": "النص على الداكن",
+          "on_night": "النص على السطح الداكن",
+          "primary": "النص الرئيسي",
+          "secondary": "النص الثانوي"
+        },
+        "tint": {
+          "cool": "اللون البارد",
+          "cool_text": "النص على اللون البارد",
+          "fresh": "اللون المنعش",
+          "fresh_text": "النص على اللون المنعش",
+          "warm": "اللون الدافئ",
+          "warm_text": "النص على اللون الدافئ"
+        }
+      },
+      "design": {
+        "preset": "التصميم"
+      },
+      "font": {
+        "family": {
+          "arabic": "الخط العربي",
+          "devanagari": "خط الديفاناغاري",
+          "heading_arabic": "خط العناوين العربية",
+          "heading_latin": "خط العناوين اللاتينية",
+          "latin": "الخط اللاتيني",
+          "urdu": "خط الأردية"
+        },
+        "line_height": {
+          "body": "ارتفاع سطر النص",
+          "heading": "ارتفاع سطر العناوين"
+        },
+        "size": {
+          "lg": "حجم النص الكبير",
+          "md": "حجم النص الأساسي",
+          "sm": "حجم النص الصغير",
+          "xl": "حجم العناوين",
+          "xs": "أصغر حجم للنص",
+          "xxl": "حجم عنوان الصفحة"
+        },
+        "weight": {
+          "bold": "الوزن العريض",
+          "medium": "الوزن المتوسط",
+          "regular": "الوزن العادي",
+          "semibold": "الوزن شبه العريض"
+        }
+      },
+      "layout": {
+        "navigation": "تخطيط التنقل"
+      },
+      "motion": {
+        "duration": {
+          "fast": "الحركة السريعة",
+          "normal": "الحركة العادية",
+          "slow": "الحركة البطيئة"
+        },
+        "easing": {
+          "emphasized": "التسارع البارز",
+          "standard": "التسارع القياسي"
+        }
+      },
+      "radius": {
+        "full": "الزوايا الدائرية",
+        "lg": "الزوايا الكبيرة",
+        "md": "الزوايا المتوسطة",
+        "sm": "الزوايا الصغيرة"
+      },
+      "shadow": {
+        "md": "الظل المرتفع",
+        "sm": "الظل الخفيف"
+      },
+      "space": {
+        "lg": "المسافة الكبيرة",
+        "md": "المسافة المتوسطة",
+        "sm": "المسافة الصغيرة",
+        "xl": "المسافة الكبيرة جدا",
+        "xs": "المسافة الصغيرة جدا",
+        "xxl": "مسافة الأقسام"
+      },
+      "state": {
+        "disabled": {
+          "opacity": "شفافية العناصر المعطلة"
+        },
+        "hover": {
+          "opacity": "شفافية التمرير"
+        },
+        "pressed": {
+          "opacity": "شفافية الضغط"
+        }
+      }
     }
   },
   "ui": {
@@ -1284,7 +1781,9 @@
       "more": "{count} أخرى",
       "allDay": "طوال اليوم",
       "timeRange": "{start} إلى {end}",
-      "dayCount": "{date}، {count}"
+      "dayCount": "{date}، {count}",
+      "none": "لا يوجد",
+      "dash": "–"
     },
     "assistant": {
       "thinking": "جارٍ التفكير",
@@ -1319,7 +1818,8 @@
       "point": "{series}، {category}: {value}",
       "flow": "من {from} إلى {to}: {value}",
       "node": "{label} {value}",
-      "xy": "{name}: {x}، {y}"
+      "xy": "{name}: {x}، {y}",
+      "single": "{series}، {category}"
     },
     "patterns": {
       "newChat": "محادثة جديدة",
@@ -1434,11 +1934,11 @@
         "reduced": "مخفّفة"
       },
       "text_scale": {
-        "label": "حجم النص",
         "100": "100%",
         "125": "125%",
         "150": "150%",
-        "200": "200%"
+        "200": "200%",
+        "label": "حجم النص"
       },
       "resetLayouts": "إعادة ضبط كل صفحاتي",
       "resetLayoutsQuestion": "هل تريد إعادة كل صفحة خصصتها إلى تخطيط مؤسستك؟ تبقى لغتك وإعداداتك الأخرى.",
@@ -1643,29 +2143,6 @@
         "unread": "غير مقروءة",
         "important": "أهمية عالية",
         "attachment": "بها مرفق"
-      }
-    },
-    "calendar": {
-      "title": "تقويمي",
-      "today": "اليوم",
-      "tomorrow": "غدا",
-      "allDay": "طوال اليوم",
-      "range": "من {start} إلى {end}",
-      "private": "موعد خاص",
-      "online": "عبر الإنترنت",
-      "markers": {
-        "tentative": "مبدئي",
-        "free": "متاح"
-      },
-      "markerSeparator": "، ",
-      "opensOutlook": "(يفتح Outlook في علامة تبويب جديدة)",
-      "join": "انضمام",
-      "joinLabel": "الانضمام إلى {subject} (يفتح الاجتماع في علامة تبويب جديدة)",
-      "empty": "لا شيء في تقويمك",
-      "holiday": "عطلة رسمية",
-      "halfHoliday": "عطلة نصف يوم",
-      "sources": {
-        "holiday": "من تقويم العمل الخاص بك"
       }
     },
     "settings": {
@@ -2289,7 +2766,7 @@
       "hr": "نظام الموارد البشرية"
     },
     "admin": {
-      "title": "دليل الأشخاص",
+      "title": "إعدادات الدليل",
       "intro": "اختر مصدر كل حقل في الملف الشخصي ومن يمكنه رؤيته.",
       "fields": "الحقول",
       "field": "الحقل",
@@ -2321,7 +2798,8 @@
       "locationLabel": "من الدليل: {label}",
       "rename": "حفظ الأسماء",
       "renamed": "تم حفظ أسماء الموقع.",
-      "noLocations": "لا توجد مواقع بعد."
+      "noLocations": "لا توجد مواقع بعد.",
+      "actions": "الإجراءات"
     },
     "component": {
       "newcomers": "المنضمون الجدد",
@@ -8041,7 +8519,7 @@
     },
     "states": {
       "unmatched": "غير مطابق",
-      "stale": "غير مطابق منذ أكثر من 30 يومًا",
+      "stale": "أكثر من 30 يوما",
       "conflict": "تعارضات",
       "matched": "مطابق"
     },
@@ -11369,7 +11847,7 @@
     "admin": {
       "title": "الأكشاك",
       "intro": "أجهزة لوحية مشتركة يسجل فيها الأشخاص الدخول بشارة ورمز PIN، والميزات التي يقدمها كل منها.",
-      "listTitle": "الأكشاك",
+      "listTitle": "الأكشاك لديك",
       "empty": "لا توجد أكشاك بعد.",
       "codeTitle": "رمز {name}",
       "codeDone": "تم",

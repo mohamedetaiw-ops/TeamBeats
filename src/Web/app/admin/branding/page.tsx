@@ -5,6 +5,7 @@ import { apiGet, type NavigationSection } from "@/lib/api";
 import { checkBrand, getBrand, getTokenSchema, listBrands } from "@/lib/brand/client";
 import { BrandManager, type PreviewSample } from "@/features/brand/BrandManager";
 import "@/features/brand/brand.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 const sampleKeys = ["shell", "navHome", "navNews", "heading", "body", "secondary", "link", "primary", "secondaryAction", "success", "warning", "danger"] as const;
 
@@ -40,8 +41,7 @@ export default async function BrandingPage({ searchParams }: { searchParams: Pro
   const t = await getTranslations("brand");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="branding" description={t("intro")} />
       <BrandManager
         key={brand.data.id}
         schema={schema.data}

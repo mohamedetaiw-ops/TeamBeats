@@ -7,6 +7,7 @@ import { templateName } from "@/lib/experience/builder-types";
 import { StateView } from "@/components/ui/StateView";
 import { NewTemplateForm } from "@/features/templates/NewTemplateForm";
 import "@/features/builder/builder.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Templates (spec 032 US5): the organization's own templates, each a copy of a platform template with its own names,
@@ -23,7 +24,7 @@ export default async function TemplatesPage() {
   if (!templates.ok || !catalogue.ok) {
     return (
       <>
-        <h1>{t("title")}</h1>
+        <AdminHeader section="templates" />
         <StateView kind={templates.ok || templates.status !== 403 ? "error" : "denied"} title={t("unavailable")} message="" />
       </>
     );
@@ -33,8 +34,7 @@ export default async function TemplatesPage() {
 
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="templates" description={t("intro")} />
       {templates.data.length === 0 ? (
         <StateView kind="empty" title={t("empty")} message={t("emptyMessage")} />
       ) : (

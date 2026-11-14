@@ -24,12 +24,6 @@
   gap: var(--tb-space-sm);
 }
 
-.journeys-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: var(--tb-space-sm);
-}
 
 .journeys-step {
   display: grid;

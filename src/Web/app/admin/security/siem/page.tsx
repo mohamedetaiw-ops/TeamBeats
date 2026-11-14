@@ -5,6 +5,7 @@ import { SecurityTabs } from "@/features/security/SecurityTabs";
 import { SiemAdmin } from "@/features/security/SiemAdmin";
 import { securitySection } from "@/features/security/guard";
 import "@/features/security/security.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * SIEM streaming (spec 026 US4). Security officers see the destinations; the API says whether this person may change
@@ -16,8 +17,7 @@ export default async function SecuritySiemPage() {
   const t = await getTranslations("security");
   return (
     <>
-      <h1>{t("siem.title")}</h1>
-      <SecurityTabs current="siem" openAlerts={section.badge} />
+      <AdminHeader section="security" title={t("siem.title")} nav={<SecurityTabs current="siem" openAlerts={section.badge} />} />
       <p className="notice">{t("siem.intro")}</p>
       {siem.ok ? (
         <SiemAdmin initial={siem.data.destinations} canManage={siem.data.canManage} />

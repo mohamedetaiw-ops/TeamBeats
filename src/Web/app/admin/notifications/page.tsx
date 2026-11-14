@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { NotificationSettings as Settings } from "@/lib/notifications/types";
 import { NotificationSettings } from "@/features/notifications/NotificationSettings";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Tenant notification settings (spec 015 US4). The section appears only when the API lists it, and the settings API
@@ -20,8 +21,7 @@ export default async function NotificationSettingsPage() {
   const t = await getTranslations("notifications.settings");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="notifications" description={t("intro")} />
       <NotificationSettings initial={settings.data} />
     </>
   );

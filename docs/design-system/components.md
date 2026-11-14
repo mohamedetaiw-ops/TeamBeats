@@ -8,6 +8,7 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | Text box | `FormField.tsx` (`FormField`) | Single-line input with label, hint and error | Label bound to input, hint and error in `aria-describedby`, error announced |
 | Text area | `FormField.tsx` (`TextAreaField`) | Multi-line input with optional counter | Same as text box; counter is a polite live region |
 | Select | `FormField.tsx` (`SelectField`) | Five to fifteen known options | Native select, labelled |
+| Widget | `Widget.tsx` | The frame of every home widget and inner page list card (DLS-089): title, optional count badge, one header action, body, footer link. Lists inside are capped and end in a footer link (DLS-090) | A region named by its heading; the calendar card passes its own header and is named by `title` |
 | Card | `Card.tsx` | One topic: news, event, service, person, file. Optional media, eyebrow, footer actions | Heading names the card; when linked, the heading link covers the card so it is one target with one name |
 | Badge | `Badge.tsx` | Short status or category: Draft, Published, Overdue | Text carries the meaning; optional icon helps |
 | Avatar | `Avatar.tsx` | A person, as photo or initials | `role="img"` with the person's name |
@@ -114,6 +115,10 @@ Shell parts (header, navigation, search, settings, account menu, notifications, 
 ## Rules for components
 
 - **One component per pattern.** Before building something new, check this list and the gallery. A second way to show the same thing is a defect.
+- **One frame, one row.** A widget is a `Widget`; it never brings its own surface, padding, radius, shadow or header CSS. A kind of record has one row part (calendar items use `AgendaRow` everywhere, DLS-090), so a home widget and the inner page that opens from it look the same. `npm run check:design` fails a placement that draws its own card.
+- **Mixed directions.** Names, subjects and titles go in `bdi` and align to the row's start (`text-align: match-parent`, DLS-091), so Arabic and English rows line up.
+- **Names, not keys.** Stored keys (audit actions, permissions, tokens, settings) show by their localized name; the key, when useful, follows as `code.ui-key` (DLS-093).
+- **Tables.** A dash for an empty cell, dates and statuses on one line, row actions quiet and confirmed (DLS-095, DLS-096).
 - **Tokens only.** No raw colours, sizes or fonts (stylelint, token gate, design gate).
 - **States.** Every component designs and builds default, hover, focus, active, disabled or busy, error, loading and empty states, in light and dark, LTR and RTL.
 - **No business rules.** Components render and collect input. Authorization, entitlements and validation rules come from the API (constitution XXX).

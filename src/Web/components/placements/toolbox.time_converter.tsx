@@ -4,6 +4,7 @@ import { useId, useState, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import type { PlacementProps } from "@/lib/experience/contract";
 import "@/components/experience/toolbox.css";
+import { Widget } from "@/components/ui/Widget";
 
 const noSubscription = () => () => undefined;
 
@@ -50,8 +51,7 @@ export default function TimeConverter(_: PlacementProps) {
   const result =
     instant === null ? null : new Intl.DateTimeFormat(locale, { timeZone: to, dateStyle: "full", timeStyle: "short" }).format(instant);
   return (
-    <section className="toolbox" aria-label={t("title")}>
-      <h2 className="toolbox-title">{t("title")}</h2>
+    <Widget title={t("title")}>
       <div className="toolbox-form">
         <label htmlFor={`${id}-when`}>{t("when")}</label>
         <input id={`${id}-when`} type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
@@ -75,6 +75,6 @@ export default function TimeConverter(_: PlacementProps) {
       <p className="toolbox-result" role="status" aria-live="polite">
         {result ? t("result", { time: result }) : t("empty")}
       </p>
-    </section>
+    </Widget>
   );
 }

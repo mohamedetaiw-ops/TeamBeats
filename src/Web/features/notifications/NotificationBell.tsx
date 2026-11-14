@@ -43,9 +43,9 @@ function startOfToday(now: number): number {
  * scrolling body grouped into Requires action, Today and Earlier, and a fixed footer. Every item and count comes from
  * the API for the signed-in user; the tabs only choose which of those the panel shows.
  */
-export function NotificationBell() {
+export function NotificationBell({ initialUnread = null }: { initialUnread?: number | null } = {}) {
   const t = useTranslations("notifications");
-  const [unread, setUnread] = useState<number | null>(null);
+  const [unread, setUnread] = useState<number | null>(initialUnread);
   const root = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useShellPanel(root);
   const [items, setItems] = useState<NotificationItem[] | "loading" | "failed">(
