@@ -2,7 +2,7 @@
 
 export type Localized = Record<string, string>;
 
-export type AgentAudience = { scope: "tenant" | "org_units" | null; orgUnits: string[] | null };
+export type AgentAudience = { scope: "tenant" | "org_units" | null; orgUnits: string[] | null; outside?: string | null };
 
 export type AgentDefinition = {
   name: Localized | null;
@@ -230,7 +230,31 @@ export type RunRecord = {
   itemId: string | null;
 };
 
-export type AgentChoice = { id: string; name: Localized | null; description: Localized | null; icon: string | null; category: string | null };
+export type AgentChoice = { id: string; name: Localized | null; description: Localized | null; icon: string | null; category: string | null; favourite?: boolean };
+
+/** An agent in the marketplace as the signed-in person sees it (spec 020 US6). The API decides every flag. */
+export type MarketplaceAgent = {
+  id: string;
+  name: Localized | null;
+  description: Localized | null;
+  icon: string | null;
+  category: string | null;
+  departmentId: string;
+  department: Localized | null;
+  canUse: boolean;
+  request: "pending" | "granted" | "denied" | null;
+  favourite: boolean;
+  rating: number | null;
+  ratings: number;
+  myScore: number | null;
+};
+
+export type MarketplaceView = { paused: boolean; agents: MarketplaceAgent[] };
+
+export type AccessRequestView = { id: string; agentId: string; userId: string; status: "pending" | "granted" | "denied"; createdAt: string; userName: string | null };
+
+/** Who outside an agent's audience sees it in the marketplace (spec 020 FR-010). */
+export const AUDIENCE_OUTSIDE = ["hidden", "request_access"] as const;
 
 export const AUTONOMY_BUILT = ["L0", "L1", "L2"] as const;
 export const TONES = ["neutral", "friendly", "formal"] as const;

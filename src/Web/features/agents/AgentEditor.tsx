@@ -10,6 +10,7 @@ import { PersonPicker } from "@/features/services/PersonPicker";
 import { problemMessages } from "@/lib/notifications/types";
 import type { OrgUnit } from "@/lib/experience/builder-types";
 import {
+  AUDIENCE_OUTSIDE,
   AUTONOMY_BUILT,
   OUTPUT_FORMATS,
   pickText,
@@ -323,6 +324,7 @@ export function AgentEditor({
                   onChange={(e) =>
                     set({
                       audience: {
+                        ...definition.audience,
                         scope: "org_units",
                         orgUnits: e.target.checked ? [...audienceUnits, u.id] : audienceUnits.filter((x) => x !== u.id),
                       },
@@ -333,6 +335,24 @@ export function AgentEditor({
               </label>
             ))}
           </fieldset>
+        )}
+        {definition.audience?.scope === "tenant" ? null : (
+          <div className="field">
+            <label htmlFor={`${ids}-outside`}>{t("outside")}</label>
+            <select
+              id={`${ids}-outside`}
+              disabled={!editable}
+              value={definition.audience?.outside ?? "hidden"}
+              onChange={(e) => set({ audience: { scope: "org_units", orgUnits: audienceUnits, outside: e.target.value } })}
+            >
+              {AUDIENCE_OUTSIDE.map((o) => (
+                <option key={o} value={o}>
+                  {t(`outsideModes.${o}`)}
+                </option>
+              ))}
+            </select>
+            <p className="field-hint">{t("outsideHint")}</p>
+          </div>
         )}
       </section>
 

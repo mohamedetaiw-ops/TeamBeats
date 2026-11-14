@@ -2,6 +2,7 @@ using System.Text.Json;
 using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Entitlements.Contracts;
+using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Notifications.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Modules.Workflow.Contracts;
@@ -36,7 +37,7 @@ public sealed record RatingView(Guid UserId, int Score, string? Comment, DateTim
 
 public sealed record RatingsView(double? Average, int Count, IReadOnlyList<RatingView> Comments);
 
-public sealed record AccessRequestView(Guid Id, Guid AgentId, Guid UserId, string Status, DateTimeOffset CreatedAt, Guid? DecidedBy, DateTimeOffset? DecidedAt);
+public sealed record AccessRequestView(Guid Id, Guid AgentId, Guid UserId, string Status, DateTimeOffset CreatedAt, Guid? DecidedBy, DateTimeOffset? DecidedAt, string? UserName = null);
 
 public sealed record AccessDecision(bool? Grant);
 
@@ -55,7 +56,7 @@ public static class AccessRequestStatuses
 /// only by the owners, the AI Policy Administrator and their author.
 /// </summary>
 public sealed class AgentMarketplace(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
-    IOrganizationHierarchy org, IAuditWriter audit, INotificationSender notifications, IClock clock)
+    IOrganizationHierarchy org, IAuditWriter audit, INotificationSender notifications, IUserDirectory users, IClock clock)
 {
     public const int MaxResults = 200;
     public const int MaxCommentLength = 1000;
@@ -268,9 +269,12 @@ public sealed class AgentMarketplace(IDbSession session, ITenantContext context,
         {
             throw AppException.NotFound();
         }
-        return await session.QueryAsync(
+        var pending = await session.QueryAsync(
             "select id, agent_id, user_id, status, created_at, decided_by, decided_at from agents.agent_access_request where agent_id = @agentId and status = 'pending' order by created_at",
             new { agentId }, Read, ct);
+        // The owners decide by name; the directory reads the people of this tenant only.
+        var names = await users.GetManyAsync(pending.Select(p => p.UserId).ToList(), ct);
+        return pending.Select(p => p with { UserName = names.TryGetValue(p.UserId, out var u) ? u.DisplayName : null }).ToList();
     }
 
     /// <summary>An owner grants or denies a request; a grant lets the person use the agent, and the requester is told either way.</summary>

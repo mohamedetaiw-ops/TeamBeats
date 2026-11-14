@@ -3084,6 +3084,7 @@
       "myTasksFailed": "Your tasks could not be loaded.",
       "bookingRequest": "Booking request",
       "aiAction": "AI app action",
+      "agentAccess": "Agent access request",
       "assetAccess": "Brand asset access"
     },
     "delegation": {
@@ -5943,7 +5944,13 @@
         "copyTools": "Copy the tools",
         "action": "Clone"
       },
-      "json": "Definition as JSON (read only)"
+      "json": "Definition as JSON (read only)",
+      "outside": "Outside this audience",
+      "outsideHint": "Hidden agents never appear to other people. Offered agents show in the marketplace, and people can ask the owners for access.",
+      "outsideModes": {
+        "hidden": "Hidden",
+        "request_access": "Shown in the marketplace on request"
+      }
     },
     "review": {
       "title": "Review {name}",
@@ -6195,6 +6202,49 @@
       "requests": "Requests",
       "productivity": "Productivity",
       "other": "Other"
+    },
+    "marketplace": {
+      "title": "Agent marketplace",
+      "intro": "Find agents for your work, keep your favourites close and ask for the ones made for other teams.",
+      "mine": "My agents",
+      "paused": "Agents are paused in your organization for now. You can still browse and ask for access.",
+      "search": "Search agents",
+      "searchHint": "Search by name or description",
+      "apply": "Apply",
+      "category": "Category",
+      "anyCategory": "Any category",
+      "noMatch": "No agents match",
+      "noMatchHint": "Try other words or another category.",
+      "clear": "Clear filters",
+      "empty": "No agents to show yet",
+      "emptyHint": "Agents your organization publishes for you appear here.",
+      "noRatings": "No ratings yet",
+      "rating": "{rating} out of 5, {count, plural, one {# rating} other {# ratings}}",
+      "favourited": "Favourite",
+      "favourite": "Add {name} to favourites",
+      "unfavourite": "Remove {name} from favourites",
+      "requestAccess": "Ask for access",
+      "requested": "Access requested",
+      "denied": "Access not granted",
+      "rate": "Rate this agent",
+      "yourRating": "Your rating: {score} of 5",
+      "score": "Rating",
+      "chooseScore": "Choose a rating",
+      "scoreValue": "{score, plural, one {# star} other {# stars}}",
+      "comment": "Comment (optional)",
+      "commentHint": "Only the agent's owners and AI policy administrators read comments.",
+      "saveRating": "Save rating",
+      "failed": "Something went wrong. Try again.",
+      "browse": "Browse the marketplace"
+    },
+    "access": {
+      "title": "Access requests",
+      "intro": "People outside this agent's audience who asked to use it. A grant lets that person use the published agent; they are told either way.",
+      "none": "No requests are waiting.",
+      "unknown": "Unknown person",
+      "grant": "Grant",
+      "deny": "Deny",
+      "failed": "Something went wrong. Try again."
     }
   },
   "evaluation": {

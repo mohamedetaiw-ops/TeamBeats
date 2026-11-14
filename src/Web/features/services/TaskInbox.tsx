@@ -35,6 +35,7 @@ const sourceIcons: Record<string, IconName> = {
   expense: "files",
   booking: "building",
   asset_access: "image",
+  agent_access: "spark",
 };
 const dayMs = 86_400_000;
 
@@ -134,6 +135,8 @@ export function TaskInbox({ items, meId, units }: { items: InboxItem[]; meId: st
         return t("aiAction");
       case "asset_access":
         return t("assetAccess");
+      case "agent_access":
+        return t("agentAccess");
       default:
         return i.name;
     }

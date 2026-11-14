@@ -112,7 +112,8 @@ public sealed class AgentMarketplaceTests(TenantWorld world)
         // Only an owner decides; the requester then uses the agent and is told.
         var requestId = request.GetProperty("id").GetGuid();
         Assert.Equal(HttpStatusCode.NotFound, (await t["emp"].Client.PostAsJsonAsync($"{Agents}/access-requests/{requestId}/decision", new { grant = true })).StatusCode);
-        Assert.Single((await OkAsync(t["sara"].Client.GetAsync($"{Agents}/{offered}/access-requests"))).GetProperty("requests").EnumerateArray());
+        var waiting = Assert.Single((await OkAsync(t["sara"].Client.GetAsync($"{Agents}/{offered}/access-requests"))).GetProperty("requests").EnumerateArray());
+        Assert.False(string.IsNullOrEmpty(waiting.GetProperty("userName").GetString()));
         await OkAsync(t["sara"].Client.PostAsJsonAsync($"{Agents}/access-requests/{requestId}/decision", new { grant = true }));
         Assert.Equal("conflict.agent.access_decided",
             await ProblemAsync(t["sara"].Client.PostAsJsonAsync($"{Agents}/access-requests/{requestId}/decision", new { grant = false }), HttpStatusCode.Conflict));
