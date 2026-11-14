@@ -1,12 +1,10 @@
 /* Spec 014 assistant. Colors and spacing come from tokens; logical properties keep the layout right in RTL. */
+
+/* The page keeps the shared frame and header (spec 036 DLS-105); only the gap between its sections is its own. */
 .assistant-page {
   display: grid;
   gap: var(--tb-space-lg);
-  max-inline-size: 72rem;
-}
-
-.assistant-page h1 {
-  margin: 0;
+  align-content: start;
 }
 
 .assistant {

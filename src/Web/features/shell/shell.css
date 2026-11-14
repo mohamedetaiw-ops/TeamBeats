@@ -4,6 +4,7 @@
    labelled sidebar (Pulse, Studio). The size is set on the root so the page body can make room for it. */
 :root {
   --xp-rail-size: 5.75rem;
+  --xp-bar-size: 4.5rem;
 }
 
 :root[data-nav="sidebar"] {
@@ -11,8 +12,6 @@
 }
 
 .shell {
-  --xp-bar-size: 4.5rem;
-
   border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   background: var(--tb-color-shell-background);
 }
@@ -382,10 +381,31 @@
   border-radius: var(--tb-radius-md);
 }
 
+/*
+ * The current page (spec 036 DLS-061, DLS-105): a soft surface in the navigation's own accent, a semibold label and
+ * the accent icon, never a solid fill. The tint is a layer of the nav accent at the pressed opacity, so it stays
+ * legible on any navigation background a tenant chooses, light or dark.
+ */
 .shell-rail .shell-menu-item > a[aria-current="page"] {
-  background: var(--tb-color-accent-base);
-  color: var(--tb-color-accent-text);
-  font-weight: var(--tb-font-weight-medium);
+  position: relative;
+  isolation: isolate;
+  color: var(--tb-color-nav-text);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.shell-rail .shell-menu-item > a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--tb-color-nav-active);
+  opacity: var(--tb-state-pressed-opacity);
+  pointer-events: none;
+}
+
+:where(.shell-rail .shell-menu-item > a[aria-current="page"]) svg {
+  color: var(--tb-color-nav-active);
 }
 
 /* Wide screens: the rail sits down the start edge, under the bar, and the page moves over to make room. */
@@ -425,7 +445,6 @@
   }
 
   :root:not([data-nav="top"]) body:has(.shell-rail) main {
-    min-block-size: calc(100vh - var(--xp-bar-size));
     border-start-start-radius: var(--tb-radius-lg);
     background: var(--tb-color-surface-base);
   }
@@ -475,8 +494,11 @@
 }
 
 :root[data-nav="top"] .shell-rail .shell-menu-item > a[aria-current="page"] {
-  background: transparent;
   border-block-end-color: var(--tb-color-nav-active);
+}
+
+:root[data-nav="top"] .shell-rail .shell-menu-item > a[aria-current="page"]::before {
+  content: none;
 }
 
 @media (width > 64rem) {
@@ -517,9 +539,6 @@
 
   :root[data-nav="sidebar"] .shell-rail .shell-menu-item > a[aria-current="page"] {
     border-inline-start-color: var(--tb-color-nav-active);
-    background: transparent;
-    font-weight: var(--tb-font-weight-bold);
-    color: var(--tb-color-nav-active);
   }
 }
 
@@ -953,8 +972,7 @@
 /*
  * The phone shell bar (spec 008 FR-063, TB-05): one row of at most 64px with the mark, the search, Ask, the page
  * actions, settings and the account. Search is a 44px button that opens across the bar while it has focus; the global
- * menu lives under More in the bottom navigation, so the separate Menu row is not drawn; a one level breadcrumb that
- * repeats the page title is left out.
+ * menu lives under More in the bottom navigation, so the separate Menu row is not drawn.
  */
 @media (width <= 40rem) {
   .shell-bar {
@@ -1023,10 +1041,6 @@
   }
 
   body:has(.mobile-nav) .shell-rail {
-    display: none;
-  }
-
-  .shell-breadcrumbs:not(:has(li + li)) {
     display: none;
   }
 }
