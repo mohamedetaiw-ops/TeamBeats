@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { AgendaRow, AvailabilityHeatmap, CalendarHeader, CalendarStats, LayerChips, RangeMonth, WeekStrip } from "@/components/ui/CalendarParts";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
+import { Widget } from "@/components/ui/Widget";
 import { Button } from "@/components/ui/Button";
 import { addDays } from "@/components/ui/dates";
 import { LAYER_LOOK, LAYERS } from "@/lib/calendar";
@@ -39,7 +40,9 @@ export function CalendarGallery() {
       <h2 id="cg-calendar">{t("calendar.title")}</h2>
       <p className="notice">{t("calendar.intro")}</p>
       <div className="gallery-columns">
-        <div className="cal-card">
+        <Widget
+          title={t("calendar.cardTitle")}
+          head={
           <CalendarHeader
             title={t("calendar.cardTitle")}
             period={t("calendar.period")}
@@ -58,6 +61,9 @@ export function CalendarGallery() {
               options={["agenda", "week", "month"].map((v) => ({ value: v, label: t(`calendar.views.${v}`) }))}
             />
           </CalendarHeader>
+          }
+        >
+          <div className="cal-card">
           <WeekStrip
             label={t("calendar.week")}
             days={week.map((date) => ({ date, markers: markers[date] ?? [], count: (markers[date] ?? []).length }))}
@@ -84,9 +90,13 @@ export function CalendarGallery() {
             <AgendaRow swatch={4} icon="star" layerLabel={t("calendar.layers.important")} time={t("calendar.drillTime")} title={t("calendar.drill")} status="cancelled" statusLabel={t("calendar.cancelled")} />
             <AgendaRow swatch={7} icon="people" layerLabel={t("calendar.layers.team_leave")} time={t("calendar.allDay")} title={t("calendar.teamAway")} />
           </ul>
-        </div>
-        <div className="cal-card">
-          <LayerChips label={t("calendar.legend")} layers={options} selected={layers} onToggle={(k) => setLayers(layers.includes(k) ? layers.filter((l) => l !== k) : [...layers, k])} />
+          </div>
+        </Widget>
+        <Widget
+          title={t("calendar.legend")}
+          head={<LayerChips label={t("calendar.legend")} layers={options} selected={layers} onToggle={(k) => setLayers(layers.includes(k) ? layers.filter((l) => l !== k) : [...layers, k])} />}
+        >
+          <div className="cal-card">
           <RangeMonth
             month={today}
             today={today}
@@ -101,7 +111,8 @@ export function CalendarGallery() {
               { id: "fair", start: "2026-11-02", end: "2026-11-04", label: t("calendar.fair"), swatch: 4, kind: "event" },
             ]}
           />
-        </div>
+          </div>
+        </Widget>
       </div>
       <div className="gallery-wide">
         <CalendarStats

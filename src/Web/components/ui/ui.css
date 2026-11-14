@@ -949,9 +949,14 @@
   gap: var(--tb-space-sm);
 }
 
-/* DLS-091: an isolated name or subject starts at the row's start edge whatever its own direction. */
+/*
+ * DLS-091: an isolated name or subject starts at the row's start edge whatever its own direction. Its own text-align
+ * would follow its own direction (Chromium resolves match-parent that way too), so the box shrinks to its text and the
+ * row places it at the row's start.
+ */
 .ui-widget :is(bdi, [dir="auto"]) {
-  text-align: match-parent;
+  justify-self: start;
+  max-inline-size: 100%;
 }
 
 /* Rows inside a widget (DLS-089, DLS-090): one line per record between hairlines, the main text at the start, meta at the end. */

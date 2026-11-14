@@ -116,7 +116,7 @@ Shell parts (header, navigation, search, settings, account menu, notifications, 
 
 - **One component per pattern.** Before building something new, check this list and the gallery. A second way to show the same thing is a defect.
 - **One frame, one row.** A widget is a `Widget`; it never brings its own surface, padding, radius, shadow or header CSS. A kind of record has one row part (calendar items use `AgendaRow` everywhere, DLS-090), so a home widget and the inner page that opens from it look the same. `npm run check:design` fails a placement that draws its own card.
-- **Mixed directions.** Names, subjects and titles go in `bdi` and align to the row's start (`text-align: match-parent`, DLS-091), so Arabic and English rows line up.
+- **Mixed directions.** Names, subjects and titles go in `bdi` and align to the row's start (the row places them, DLS-091), so Arabic and English rows line up.
 - **Tokens only.** No raw colours, sizes or fonts (stylelint, token gate, design gate).
 - **States.** Every component designs and builds default, hover, focus, active, disabled or busy, error, loading and empty states, in light and dark, LTR and RTL.
 - **No business rules.** Components render and collect input. Authorization, entitlements and validation rules come from the API (constitution XXX).
