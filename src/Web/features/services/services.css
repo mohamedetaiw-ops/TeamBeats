@@ -95,18 +95,6 @@
   border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
 
-.services-status {
-  display: inline-flex;
-  align-items: center;
-  min-block-size: 1.375rem;
-  padding-inline: var(--tb-space-sm);
-  border-radius: calc(var(--tb-radius-sm) * 0.75);
-  background: var(--tb-color-surface-sunken);
-  color: var(--tb-color-text-secondary);
-  font-size: var(--tb-font-size-xs);
-  font-weight: var(--tb-font-weight-medium);
-}
-
 /* Work items (spec 036 DLS-061): a view switch and a compact filter bar on one line, then rows with aligned columns. */
 .work-items-bar {
   display: flex;
@@ -117,31 +105,17 @@
   margin-block-end: var(--tb-space-md);
 }
 
-.ui-filter-bar.work-items-filters {
-  flex: 0 1 auto;
-  align-items: center;
-  gap: var(--tb-space-sm);
+.work-items-bar > .ui-toolbar-wrap {
+  flex: 1 1 24rem;
   margin: 0;
-  padding: 0;
-  background: none;
-  box-shadow: none;
 }
 
-.work-items-filters .field {
-  flex: 0 1 auto;
+.work-items-bar .ui-toolbar {
+  justify-content: flex-end;
 }
 
-.work-items-filters input[type="search"] {
-  inline-size: 16rem;
-  max-inline-size: 100%;
-}
-
-.work-items-filters input,
-.work-items-filters select,
-.work-items-filters .button {
-  block-size: 2.25rem;
-  min-block-size: 2.25rem;
-  font-size: var(--tb-font-size-sm);
+.work-items-bar .ui-toolbar-end {
+  margin-inline-start: 0;
 }
 
 .work-items {
@@ -603,4 +577,104 @@
 
 .services-template .services-actions {
   grid-column: 2;
+}
+
+/* Delegation (spec 016 FR-021): one compact line above the queue; the change runs in a dialog. */
+.services-delegation {
+  margin-block-end: var(--tb-space-lg);
+}
+
+.services-late {
+  color: var(--tb-color-state-danger);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+/* The person's own services (spec 016 FR-023): one compact strip of shortcuts, each service once. */
+.services-mine {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.services-mine h2 {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.services-mine ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.services-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  min-block-size: 2.5rem;
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-sm) var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-medium);
+  text-decoration: none;
+}
+
+/* 44px on a touch screen or a phone (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  .services-shortcut {
+    min-block-size: 2.75rem;
+  }
+}
+
+.services-shortcut:hover {
+  border-color: var(--tb-color-border-strong);
+  text-decoration: none;
+}
+
+.services-shortcut > svg {
+  color: var(--tb-color-highlight-base);
+}
+
+.services-shortcut-icon {
+  display: inline-grid;
+  place-items: center;
+  color: var(--tb-color-accent-base);
+}
+
+.services-count {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* What opening the card does: a quiet line at the foot of the card that turns to the link colour with the card. */
+.ui-tile > .services-next {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  margin-block-start: auto;
+  color: var(--tb-color-link);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.services-row-next {
+  flex: none;
+}
+
+.ui-row > .services-favourite {
+  flex: none;
+}
+
+@media (width <= 40rem) {
+  .services-row-next {
+    display: none;
+  }
 }

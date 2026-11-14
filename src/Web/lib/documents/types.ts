@@ -10,6 +10,8 @@ export type LibrarySummary = {
   scopeId: string | null;
   orgUnitId: string | null;
   rights: Rights;
+  /** A connected library (spec 011 US9): its content stays in SharePoint. */
+  connected?: boolean;
 };
 
 export type FieldOption = { value: string; names: Names };
@@ -49,7 +51,31 @@ export type LibraryView = {
   version: number;
   viewOnly?: boolean;
   guestSharing?: boolean;
+  connected?: ConnectedLibrary | null;
 };
+
+/** Where a connected library's content lives (spec 011 US9). */
+export type ConnectedLibrary = { connectionId: string; containerName: string | null; folder: boolean; uploadEnabled: boolean };
+
+/** A connection that serves documents, with the document libraries a manager may connect (spec 011 FR-026). */
+export type ConnectedSource = { connectionId: string; kind: string; name: string; containers: { id: string; name: string }[]; state: string };
+
+export type ConnectedItem = {
+  id: string;
+  name: string;
+  folder: boolean;
+  mediaType: string | null;
+  size: number | null;
+  modifiedAt: string | null;
+  webLink: string | null;
+};
+
+/** A page of a connected library as the person sees it in SharePoint; state says why nothing is listed. */
+export type ConnectedPage = { state: string; items: ConnectedItem[]; nextCursor: string | null; syncedAt?: string | null };
+
+export function connectedContentHref(libraryId: string, itemId: string): string {
+  return `/api/v1/documents/libraries/${encodeURIComponent(libraryId)}/connected/content?item=${encodeURIComponent(itemId)}`;
+}
 
 export type FolderView = {
   id: string;
@@ -259,7 +285,7 @@ export type ImportView = {
   folderId: string | null;
   fileName: string;
   sizeBytes: number;
-  status: "queued" | "running" | "completed";
+  status: "listing" | "queued" | "running" | "completed";
   total: number;
   pending: number;
   imported: number;
@@ -270,7 +296,13 @@ export type ImportView = {
   createdBy: string;
   createdAt: string;
   finishedAt: string | null;
+  /** zip for a ZIP with a manifest, sharepoint for an import from SharePoint. */
+  source: "zip" | "sharepoint";
 };
+
+/** A SharePoint column an import can map to a field, or a folder it can start from. */
+export type RemoteColumn = { name: string; displayName: string };
+export type RemoteFolder = { id: string; name: string };
 
 export const importRowStates = ["pending", "imported", "incomplete", "skipped", "failed", "quarantined"] as const;
 export type ImportRowState = (typeof importRowStates)[number];
@@ -283,6 +315,8 @@ export type ImportRow = {
   problemText: string | null;
   documentId: string | null;
   authorMatched: boolean | null;
+  permissionsDiffer?: boolean | null;
+  versions?: number | null;
 };
 
 export type ImportRowPage = { rows: ImportRow[]; total: number };

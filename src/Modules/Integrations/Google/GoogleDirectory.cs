@@ -35,6 +35,19 @@ public sealed class GoogleApi(IDbSession session, ITenantContext context, IEntit
             : null;
     }
 
+    /// <summary>The enabled Google Workspace connections with Drive on, while connectors are in the package.</summary>
+    public async Task<IReadOnlyList<RepositorySource>> DriveConnectionsAsync(CancellationToken ct)
+    {
+        if (!await entitlements.IsEnabledAsync(Capabilities.IntegrationConnectors, ct))
+        {
+            return [];
+        }
+        var rows = await session.QueryAsync("select id, display_name, settings::text from integrations.connection where kind = @kind and enabled order by display_name",
+            new { kind = GooglePack.KindName }, r => (Id: r.GetGuid(0), Name: r.GetString(1), Settings: r.GetString(2)), ct);
+        return rows.Where(r => GooglePack.Parse(JsonDocument.Parse(r.Settings).RootElement.Clone()) is { } s && s.Has(GoogleFeatures.Drive))
+            .Select(r => new RepositorySource(r.Id, GooglePack.KindName, r.Name)).ToList();
+    }
+
     /// <summary>GET a JSON answer of at most 1 MB. Returns the error class instead when Google refuses or fails.</summary>
     public async Task<(JsonElement Body, string? ErrorClass, int Status)> GetAsync(string token, string url, CancellationToken ct)
     {

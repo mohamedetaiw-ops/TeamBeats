@@ -405,6 +405,8 @@
 /* On a phone the options keep equal widths and their labels wrap, so four options fit a 360 px screen (spec 030 FR-003). */
 @media (width <= 40rem) {
   .ui-segment {
+    min-block-size: 2.75rem;
+    min-inline-size: 2.75rem;
     padding-inline: var(--tb-space-sm);
     text-align: center;
     white-space: normal;

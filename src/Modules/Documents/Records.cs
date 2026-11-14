@@ -241,7 +241,7 @@ public sealed partial class Records(
     public async Task<IReadOnlyList<RecordsLibraryView>> LibrariesAsync(CancellationToken ct)
     {
         await RequireAsync(Capabilities.RecordsRetention, ct);
-        var rows = await session.QueryAsync("select id, names::text, scope, retention_label_id from documents.library where status = 'active' order by created_at, id", null,
+        var rows = await session.QueryAsync("select id, names::text, scope, retention_label_id from documents.library where status = 'active' and source = 'teambeats' order by created_at, id", null,
             r => (Id: r.GetGuid(0), Names: DocJson.Read<Dictionary<string, string>>(r.GetString(1)), Scope: r.GetString(2), Label: r.Get<Guid?>("retention_label_id")), ct);
         var labels = (await session.QueryAsync("select id, retention_label_id from documents.document_type where retention_label_id is not null", null,
             r => (Id: r.GetGuid(0), Label: r.GetGuid(1)), ct)).ToDictionary(r => r.Id, r => r.Label);
@@ -261,7 +261,7 @@ public sealed partial class Records(
     {
         await RequireAsync(Capabilities.RecordsRetention, ct);
         var label = await ActiveLabelAsync(choice.LabelId, ct);
-        if (await session.ExecAsync("update documents.library set retention_label_id = @label where id = @libraryId", new { libraryId, label }, ct) == 0)
+        if (await session.ExecAsync("update documents.library set retention_label_id = @label where id = @libraryId and source = 'teambeats'", new { libraryId, label }, ct) == 0)
         {
             throw AppException.NotFound();
         }

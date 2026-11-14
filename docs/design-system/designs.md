@@ -34,14 +34,15 @@ A design is a visual personality, not only a palette. Each one declares typed va
 
 The token values are in `src/Modules/Experience/Themes/DesignPresets.cs`; Beats is the platform default in `Tokens.cs`. Dark mode values are defined for every color in all four designs.
 
-Studio recreates the look of modern product dashboards (it was modeled on the BoardUI component library): one accent, neutral surfaces and a careful finish. Its filled buttons and current sidebar page carry a soft shade and a light top edge, drawn in `components/ui/designs.css` from the design's own tokens. Its accent is dark enough for white text to pass the strict contrast check. The finish reaches every page (DLS-075): cards, tiles, stat cards, filter bars and row lists are white with a hairline and the soft shadow, section tabs are a segmented track with a raised white current page, icon boxes are white with a hairline, and the home briefing is a light card with bordered rows instead of the night surface.
+Studio recreates the look of modern product dashboards (it was modeled on the BoardUI component library): one accent, neutral surfaces and a careful finish. Its filled buttons and current sidebar page carry a soft shade and a light top edge, drawn in `components/ui/designs.css` from the design's own tokens. Its accent is dark enough for white text to pass the strict contrast check. The finish reaches every page (DLS-075): cards, tiles, stat cards and row lists are white with a hairline and the soft shadow, section tabs are a segmented track with a raised white current page, icon boxes are white with a hairline, and the home briefing is a light card with bordered rows instead of the night surface.
 
 ## How a design is applied
 
 1. The brand profile stores the token `design.preset` with `beats`, `atlas`, `pulse` or `studio`.
 2. The theme resolver (spec 033 FR-004) applies, in order: platform defaults, the design's values, then the tenant brand, then each organization from the root down, then the user's allowed choices (mode, density, text size). Locks win at every step.
 3. So a tenant can pick Atlas and still change its accent color to its own brand color; the contrast checks run on the result.
-4. The resolved `design.preset` and `layout.navigation` values reach the page as `data-design` and `data-nav` attributes on `<html>`. Everything else arrives as `--tb-*` custom properties.
+4. The resolved `design.preset` and `layout.navigation` values reach the page as `data-design` and `data-nav` attributes on `<html>`. The descriptor reaches it the same way: `imagery.style` as `data-imagery` and the `variant.*` tokens as `data-v-news`, `data-v-stats`, `data-v-rows`, `data-v-tabs`, `data-v-cards` and `data-v-briefing`. The variant styles are in `components/ui/variants.css`, keyed on those attributes and never on the design's name, so a tenant on any design can pick any listed variant in **Administration, Brand**. Everything else arrives as `--tb-*` custom properties.
+5. `density.default` applies to a person who has not chosen a density. The preference profile says which settings the person saved (`chosen`), and a saved choice always wins.
 
 ## Choosing a design (administrators)
 

@@ -96,6 +96,16 @@ public static partial class TokenSchema
         // is the structural part of it that CSS cannot express as a value.
         Choice("design.preset", DesignPresets.Beats, DesignPresets.Atlas, DesignPresets.Pulse, DesignPresets.Studio),
         Choice("layout.navigation", "rail", "top", "sidebar"),
+        // The design descriptor (spec 033 FR-032, spec 036 DLS-110): the default density, the imagery approach and the
+        // presentation variant of a fixed list of shared parts. A variant changes presentation only, never data or actions.
+        Choice(DesignPresets.DensityToken, "comfortable", "compact"),
+        Choice(DesignPresets.ImageryToken, "balanced", "image_led", "typographic"),
+        Choice("variant.news_lead", "editorial", "compact", "typographic"),
+        Choice("variant.stat_tiles", "tinted", "outlined", "plain"),
+        Choice("variant.work_rows", "comfortable", "dense"),
+        Choice("variant.section_tabs", "underline", "segmented"),
+        Choice("variant.page_cards", "raised", "outlined", "flat"),
+        Choice("variant.briefing", "night", "light"),
         C("color.surface.base", "#f7f8fb", "#0f0d24"),
         C("color.surface.raised", "#ffffff", "#1b1838"),
         C("color.surface.sunken", "#eef0f5", "#0a0918"),

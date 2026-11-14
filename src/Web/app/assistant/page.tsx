@@ -6,7 +6,7 @@ import { Header } from "@/components/shell/Header";
 import type { AssistantScope, Conversation, ConversationSummary } from "@/lib/assistant/types";
 import { nameIn, policyHref, type PolicyView } from "@/lib/policies/types";
 import { AssistantChat } from "@/features/assistant/Assistant";
-import { TextTools } from "@/features/assistant/TextActions";
+import { Icon } from "@/components/ui/Icon";
 import { PageHeader } from "@/components/ui/PageHeader";
 import "@/features/assistant/assistant.css";
 
@@ -60,14 +60,24 @@ export default async function AssistantPage({ searchParams }: { searchParams: Pr
               </p>
             ) : null}
             {scope && scoped?.ok ? (
-              <p className="notice" data-testid="assistant-scope">
-                {t.rich("scope.policy", {
-                  name: () => (
-                    <Link href={policyHref(scoped.data.id)}>
-                      <bdi>{nameIn(scoped.data.names, locale)}</bdi>
+              // The scope is a chip the person can see and, before the first question, drop (spec 014 FR-027).
+              <p className="assistant-scope" data-testid="assistant-scope">
+                <span className="ui-chip" data-tone="accent">
+                  <span>
+                    {t.rich("scope.asking", {
+                      name: () => (
+                        <Link href={policyHref(scoped.data.id)}>
+                          <bdi>{nameIn(scoped.data.names, locale)}</bdi>
+                        </Link>
+                      ),
+                    })}
+                  </span>
+                  {open?.ok ? null : (
+                    <Link className="ui-chip-remove" href="/assistant" aria-label={t("scope.remove")}>
+                      <Icon name="close" size={14} />
                     </Link>
-                  ),
-                })}
+                  )}
+                </span>
               </p>
             ) : null}
             <AssistantChat
@@ -75,8 +85,8 @@ export default async function AssistantPage({ searchParams }: { searchParams: Pr
               initial={open?.ok ? open.data : null}
               conversations={list.data.conversations}
               scope={scope}
+              uiLocale={locale}
             />
-            <TextTools uiLocale={locale} />
           </>
         )}
       </main>

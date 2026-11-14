@@ -73,9 +73,11 @@ public sealed record LibraryView(
     IReadOnlyList<DocumentTypeView> Types,
     DocRights Rights,
     bool ViewOnly = false,
-    bool GuestSharing = false);
+    bool GuestSharing = false,
+    ConnectedLibraryView? Connected = null);
 
-public sealed record LibrarySummary(Guid Id, IReadOnlyDictionary<string, string> Names, string Scope, Guid? ScopeId, Guid? OrgUnitId, DocRights Rights);
+public sealed record LibrarySummary(Guid Id, IReadOnlyDictionary<string, string> Names, string Scope, Guid? ScopeId, Guid? OrgUnitId, DocRights Rights,
+    bool Connected = false);
 
 public sealed record FolderRequest(Guid? ParentId, string? Name);
 
@@ -102,7 +104,7 @@ public sealed record BreakRequest(bool Confirm = false);
 /// managers (<c>doc.manage</c> at the scope) create and configure libraries; tenant upload rules need <c>doc.manage</c>
 /// at tenant scope. Nothing here works without <c>docs.core</c>.
 /// </summary>
-public sealed class Libraries(
+public sealed partial class Libraries(
     IDbSession session,
     ITenantContext context,
     IAuthorizationService authz,
@@ -114,7 +116,9 @@ public sealed class Libraries(
     IAuditWriter audit,
     IOutbox outbox,
     TeamBeats.Modules.Spaces.Contracts.ISpaceAccess spaces,
-    IClock clock)
+    IClock clock,
+    TeamBeats.Modules.Integrations.Contracts.IDocumentRepository repositories,
+    TeamBeats.Modules.Identity.Contracts.IUserDirectory users)
 {
     public const int MaxNameLength = 120;
     public const int MaxViews = 50;
@@ -214,7 +218,7 @@ public sealed class Libraries(
             var summary = new DocRights(rights.Values.Any(r => r.View), own.Contribute, own.Manage);
             if (summary.View)
             {
-                list.Add(new LibrarySummary(library.Id, library.Names, library.Scope, library.ScopeId, library.OrgUnitId, summary));
+                list.Add(new LibrarySummary(library.Id, library.Names, library.Scope, library.ScopeId, library.OrgUnitId, summary, library.Connected is not null));
             }
         }
         return list;
@@ -255,7 +259,8 @@ public sealed class Libraries(
         var types = await TypesAsync(library.Id, ct);
         return new LibraryView(library.Id, library.Names, library.Scope, library.ScopeId, library.OrgUnitId, library.AllowedExtensions,
             EffectiveExtensions(library, rules), library.MaxFileMb, EffectiveMaxMb(library, rules), library.ClassificationDefault, library.Status,
-            library.Version, types, rights, library.ViewOnly, library.GuestSharing);
+            library.Version, types, rights, library.ViewOnly, library.GuestSharing,
+            library.Connected is { } c ? new ConnectedLibraryView(c.ConnectionId, c.ContainerName, c.FolderId is not null, c.UploadEnabled) : null);
     }
 
     internal static IReadOnlyList<string> EffectiveExtensions(LibraryRow library, DocumentSettingsView rules) =>
@@ -264,7 +269,7 @@ public sealed class Libraries(
     internal static int EffectiveMaxMb(LibraryRow library, DocumentSettingsView rules) => Math.Min(library.MaxFileMb ?? rules.MaxFileMb, rules.MaxFileMb);
 
     /// <summary>Resolves the org unit a scope gives the library, or records why the scope is not valid.</summary>
-    private async Task<(bool Ok, Guid? Unit)> ScopeUnitAsync(string? scope, Guid? scopeId, ValidationErrors errors, CancellationToken ct)
+    internal async Task<(bool Ok, Guid? Unit)> ScopeUnitAsync(string? scope, Guid? scopeId, ValidationErrors errors, CancellationToken ct)
     {
         switch (scope)
         {
@@ -360,6 +365,11 @@ public sealed class Libraries(
         if ((viewOnly || guestSharing) && library.InSpace)
         {
             errors.Add(viewOnly ? "viewOnly" : "guestSharing", "validation.documents.space_library");
+        }
+        if ((viewOnly || guestSharing || request.AllowedExtensions is not null || request.MaxFileMb is not null) && library.Connected is not null)
+        {
+            // Spec 011 FR-030: these settings apply to TeamBeats libraries only.
+            errors.Add(viewOnly ? "viewOnly" : guestSharing ? "guestSharing" : "allowedExtensions", "validation.documents.connected_library");
         }
         if (guestSharing && classification == "restricted")
         {
@@ -480,6 +490,7 @@ public sealed class Libraries(
     public async Task<DocumentTypeView> CreateTypeAsync(Guid libraryId, DocumentTypeRequest request, CancellationToken ct)
     {
         var library = await ManagedAsync(libraryId, ct);
+        library.RequireOwn();
         var errors = new ValidationErrors();
         Names(request.Names, "names", errors);
         var fields = MetadataRules.Definitions(request.Fields, errors);
@@ -554,6 +565,7 @@ public sealed class Libraries(
     public async Task<FolderView> CreateFolderAsync(Guid libraryId, FolderRequest request, CancellationToken ct)
     {
         var (library, _) = await VisibleAsync(libraryId, ct);
+        library.RequireOwn();
         var name = request.Name?.Trim();
         if (string.IsNullOrEmpty(name) || name.Length > 200 || name.IndexOfAny(['/', '\\']) >= 0 || name.Any(char.IsControl))
         {

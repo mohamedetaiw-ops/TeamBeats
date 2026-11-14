@@ -69,6 +69,7 @@ public sealed class GuestShares(
     {
         await entitlements.DemandAsync(Capabilities.DocsGuestSharing, ct);
         var library = await libraries.ManagedAsync(libraryId, ct, forUpdate: true);
+        library.RequireOwn();
         if (library.InSpace || !library.GuestSharing || library.ClassificationDefault == "restricted")
         {
             throw AppException.Conflict("conflict.documents.guest_sharing_off");

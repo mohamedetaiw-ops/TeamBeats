@@ -4,6 +4,10 @@ import { getFormatter, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { Header } from "@/components/shell/Header";
 import { isSearchKind, searchKinds, type SearchPage, type SearchResult } from "@/lib/search/types";
+import { FederatedResults } from "@/features/search/FederatedResults";
+import { SearchSummary } from "@/features/search/SearchSummary";
+import { SaveSearch } from "@/features/search/SaveSearch";
+import { SearchClicks } from "@/features/search/SearchClicks";
 import "@/features/search/search.css";
 
 type Params = { q?: string; kind?: string; page?: string };
@@ -18,7 +22,9 @@ function href(q: string, kind?: string, page?: number): string {
 /**
  * Search results (spec 012 US1, US4, T009): one ranked list across sources with filters by source, best bets marked as
  * recommended, the degraded note when meaning based search is unavailable, and services or people to try when nothing
- * matched. Every number comes from the API, which counts only what the person may open.
+ * matched. Every number comes from the API, which counts only what the person may open. Federated sources (US5) follow
+ * on the first page of all results and the AI summary (US6) sits above them; both are loaded after the results. The
+ * search can be saved with a daily alert (US7).
  */
 export default async function SearchResultsPage({ searchParams }: { searchParams: Promise<Params> }) {
   const me = await apiGet<Me>("/api/v1/me");
@@ -39,8 +45,8 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
   const pages = page ? Math.min(Math.ceil(page.total / page.pageSize), 50) : 0;
   const all = page ? Object.values(page.facets).reduce((sum, n) => sum + (n ?? 0), 0) : 0;
 
-  const item = (r: SearchResult) => (
-    <li key={`${r.source}:${r.itemId}`} className="search-result" lang={r.locale}>
+  const item = (r: SearchResult, at: number) => (
+    <li key={`${r.source}:${r.itemId}`} className="search-result" lang={r.locale} data-position={(number - 1) * (page?.pageSize ?? 20) + at + 1}>
       <div className="search-result-meta">
         <span className="search-kind">{t(`kinds.${r.kind}`)}</span>
         {r.recommended ? <span className="search-recommended">{t("recommended")}</span> : null}
@@ -83,6 +89,8 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
               {page.more ? t("countMore", { count: page.total }) : t("count", { count: page.total })}
             </p>
             {page.degraded ? <p className="notice">{t("degraded")}</p> : null}
+            <SaveSearch q={q} />
+            {number === 1 && !kind && page.total > 0 ? <SearchSummary q={q} /> : null}
 
             {all > 0 ? (
               <nav className="search-filters" aria-label={t("filters")}>
@@ -106,6 +114,7 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
             ) : null}
 
             {page.results.length > 0 ? <ol className="search-results">{page.results.map(item)}</ol> : null}
+            {page.queryId ? <SearchClicks queryId={page.queryId} /> : null}
 
             {page.results.length === 0 ? (
               <div className="search-empty">
@@ -126,6 +135,8 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
                 {number < pages ? <Link href={href(q, kind, number + 1)}>{t("next")}</Link> : null}
               </nav>
             ) : null}
+
+            {number === 1 && !kind ? <FederatedResults q={q} /> : null}
           </>
         ) : null}
       </main>

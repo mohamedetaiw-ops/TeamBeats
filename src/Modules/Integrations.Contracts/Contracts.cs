@@ -19,6 +19,10 @@ public static class Microsoft365Features
     public const string Calendar = "calendar";
     public const string FreeBusy = "free_busy";
     public const string OfficeEditing = "office_editing";
+    public const string SharePointDocuments = "sharepoint_documents";
+
+    /// <summary>Uploads, new versions and renames in connected SharePoint libraries as the person (spec 011 FR-029).</summary>
+    public const string SharePointUpload = "sharepoint_upload";
 }
 
 /// <summary>Connection status (spec 006 FR-014).</summary>
@@ -68,6 +72,9 @@ public sealed record ConnectionFeatureChanged(Guid ConnectionId, string Feature,
 public sealed record ConnectorUnavailable(Guid ConnectionId, string Status) : IIntegrationEvent;
 public sealed record ConnectorRestored(Guid ConnectionId) : IIntegrationEvent;
 public sealed record ConnectionDeleted(Guid ConnectionId, string Kind) : IIntegrationEvent;
+
+/// <summary>A connection serves fewer document containers than before (for SharePoint, an allowed site was removed).</summary>
+public sealed record DocumentContainersRemoved(Guid ConnectionId) : IIntegrationEvent;
 
 /// <summary>
 /// A signed inbound webhook that passed its checks (spec 017 US5, FR-014), mapped to a product event or a process
@@ -192,7 +199,34 @@ public sealed record RepositoryItem(
     DateTimeOffset? ModifiedAt,
     string? Version,
     string? WebLink,
-    IReadOnlyList<RepositoryPermission>? Permissions = null);
+    IReadOnlyList<RepositoryPermission>? Permissions = null,
+    RepositoryLabel? Label = null);
+
+/// <summary>A version of a file as its repository keeps it; <paramref name="Id"/> reads its content.</summary>
+public sealed record RepositoryVersion(string Id, DateTimeOffset? ModifiedAt, string? AuthorEmail, long? Size);
+
+/// <summary>A column of a container's files (for SharePoint, a library column), by its internal name and display name.</summary>
+public sealed record RepositoryColumn(string Name, string DisplayName);
+
+/// <summary>
+/// What an import needs about one file beyond <see cref="RepositoryItem"/>: who created it and when, its column values
+/// as text, and its versions oldest first (empty unless asked for, or when the repository keeps none).
+/// </summary>
+public sealed record RepositoryItemDetails(RepositoryItem Item, DateTimeOffset? CreatedAt, string? CreatedByEmail, IReadOnlyDictionary<string, string> Columns,
+    IReadOnlyList<RepositoryVersion> Versions);
+
+/// <summary>The sensitivity label on an item in its repository (for SharePoint, a Microsoft Purview label), by ID and display name.</summary>
+public sealed record RepositoryLabel(string Id, string? Name);
+
+/// <summary>
+/// The outcome of a write made as the user. <paramref name="State"/> is <c>ok</c> with the item as it is now, or why
+/// nothing was written: <c>not_connected</c> or <c>reconnect</c> (the user must connect their account), <c>forbidden</c>
+/// (the repository refuses the user), <c>not_found</c>, <c>conflict</c> (the name is taken), <c>too_large</c> or <c>unavailable</c>.
+/// </summary>
+public sealed record RepositoryWrite(string State, RepositoryItem? Item)
+{
+    public static RepositoryWrite Not(string state) => new(state, null);
+}
 
 public sealed record RepositoryPage(IReadOnlyList<RepositoryItem> Items, string? NextCursor);
 
@@ -223,6 +257,28 @@ public sealed class RepositoryUnavailableException(string reason) : Exception(re
     public string Reason { get; } = reason;
 }
 
+/// <summary>A connection that serves documents: its ID, its kind (for example <c>microsoft365</c>) and its name.</summary>
+public sealed record RepositorySource(Guid ConnectionId, string Kind, string Name);
+
+/// <summary>
+/// A folder listed as the signed-in user sees it. <paramref name="State"/> is <c>ok</c>, or why nothing can be shown:
+/// <c>not_connected</c> or <c>reconnect</c> (the user must connect their account), <c>no_account</c> (the user has no
+/// account in the connected directory), <c>not_found</c> (not there, or not visible to the user) or <c>unavailable</c>.
+/// </summary>
+public sealed record RepositoryUserPage(string State, IReadOnlyList<RepositoryItem> Items, string? NextCursor)
+{
+    public static RepositoryUserPage Not(string state) => new(state, [], null);
+}
+
+/// <summary>A file a live search found, with the repository's own summary of where the words matched, as plain text.</summary>
+public sealed record RepositoryHit(RepositoryItem Item, string? Summary);
+
+/// <summary>What a live search as a person found; <paramref name="State"/> says why nothing was found, as in <see cref="RepositoryUserPage"/>.</summary>
+public sealed record RepositoryUserSearch(string State, IReadOnlyList<RepositoryHit> Hits)
+{
+    public static RepositoryUserSearch Not(string state) => new(state, []);
+}
+
 /// <summary>
 /// The document repository contract of ADR-0016 (spec 017 FR-019, INT-004): the extension point through which
 /// <c>Documents</c> reads document systems without their types. Listing, reading and changes run with the connection's
@@ -245,6 +301,49 @@ public interface IDocumentRepository
 
     /// <summary>The content as <paramref name="userEmail"/> may read it; null when that user may not, or the item is not in an allowed container.</summary>
     Task<RepositoryContent?> OpenAsync(Guid connectionId, string itemId, string userEmail, CancellationToken ct = default);
+
+    /// <summary>The connections of the tenant that serve documents now (enabled, in the package, feature on and consented).</summary>
+    Task<IReadOnlyList<RepositorySource>> SourcesAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// One page of a folder as <paramref name="userEmail"/> sees it in the repository, so items the user may not read
+    /// never appear (spec 011 FR-027). Never throws for the user's own access; see <see cref="RepositoryUserPage.State"/>.
+    /// </summary>
+    Task<RepositoryUserPage> ListAsUserAsync(Guid connectionId, string containerId, string? folderId, string? cursor, string userEmail, CancellationToken ct = default);
+
+    /// <summary>
+    /// Writes a file into a folder as <paramref name="userEmail"/>, the container's root when <paramref name="folderId"/>
+    /// is null. A file of the same name gets a new version. The repository's own permissions decide.
+    /// </summary>
+    Task<RepositoryWrite> UploadAsUserAsync(Guid connectionId, string containerId, string? folderId, string name, Stream content, long length, string userEmail,
+        CancellationToken ct = default);
+
+    /// <summary>Renames a file or folder as <paramref name="userEmail"/>; the repository's own permissions decide.</summary>
+    Task<RepositoryWrite> RenameAsUserAsync(Guid connectionId, string itemId, string name, string userEmail, CancellationToken ct = default);
+
+    /// <summary>The columns of a container's files that an import may map to fields; empty when the repository has none.</summary>
+    Task<IReadOnlyList<RepositoryColumn>> ColumnsAsync(Guid connectionId, string containerId, CancellationToken ct = default);
+
+    /// <summary>
+    /// One file with its permissions, creator, column values and, when <paramref name="versions"/> is set, its versions,
+    /// read with the connection's own access for an import (spec 011 FR-033); null when it is not in an allowed container.
+    /// </summary>
+    Task<RepositoryItemDetails?> DetailsAsync(Guid connectionId, string itemId, bool versions, CancellationToken ct = default);
+
+    /// <summary>
+    /// The content of a file, or of one of its versions, read with the connection's own access for an import; null when
+    /// it is not there. Never changes the source. Throws <see cref="RepositoryUnavailableException"/> when it cannot be read.
+    /// </summary>
+    Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Searches files of the given containers live as the signed-in person (spec 012 FR-016), so the repository's own
+    /// permissions decide and nothing is stored. Never throws for the person's access; see <see cref="RepositoryUserSearch.State"/>.
+    /// <paramref name="deadline"/> bounds only the call to the repository (a caller's time limit) and throws
+    /// <see cref="OperationCanceledException"/> when it passes; local reads use <paramref name="ct"/>.
+    /// </summary>
+    Task<RepositoryUserSearch> SearchAsUserAsync(Guid connectionId, IReadOnlyCollection<string> containerIds, string query, int limit, CancellationToken deadline,
+        CancellationToken ct = default);
 }
 
 /// <summary>

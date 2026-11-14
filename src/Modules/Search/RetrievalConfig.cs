@@ -58,7 +58,7 @@ public sealed record RetrievalApplyRequest(string? Reason);
 /// <summary>A configuration change with its gate. <see cref="Failures"/> are the gate's findings, "retrieval/metric:locale".</summary>
 public sealed record RetrievalChangeView(Guid Id, RetrievalSettings Settings, string Status, Guid? ProposedBy, DateTimeOffset ProposedAt, DateTimeOffset? BuiltAt,
     int? ShadowUnits, string? GateResult, IReadOnlyList<string> Failures, DateTimeOffset? DecidedAt, Guid? AppliedBy, string? OverrideReason, DateTimeOffset? AppliedAt,
-    bool CanApply, bool CanCancel);
+    bool CanApply, bool CanCancel, IReadOnlyList<RankingScore> Scores);
 
 /// <summary>The configuration in force, the open change if any, and earlier changes, newest first.</summary>
 public sealed record RetrievalConfigView(RetrievalSettings Active, RetrievalChangeView? Open, IReadOnlyList<RetrievalChangeView> History);
@@ -114,7 +114,7 @@ public sealed partial class RetrievalConfigs(IDbSession session, ITenantContext 
     private const string ChangeColumns =
         """
         id, version, passage_tokens, overlap_percent, top_k, embedding_model, status, proposed_by, proposed_at, built_at, shadow_units, gate_result,
-        gate_failures::text, decided_at, applied_by, override_reason, applied_at
+        gate_failures::text, decided_at, applied_by, override_reason, applied_at, gate_scores::text
         """;
 
     private static RetrievalChangeView MapChange(Npgsql.NpgsqlDataReader r)
@@ -126,7 +126,8 @@ public sealed partial class RetrievalConfigs(IDbSession session, ITenantContext 
             JsonSerializer.Deserialize<List<string>>(r.GetString(12)) ?? [], r.Get<DateTimeOffset?>("decided_at"), r.Get<Guid?>("applied_by"),
             r.Get<string?>("override_reason"), r.Get<DateTimeOffset?>("applied_at"),
             status == RetrievalChangeStatuses.Held && gate is RetrievalGateResults.Failed or RetrievalGateResults.Incomplete,
-            RetrievalChangeStatuses.Open.Contains(status));
+            RetrievalChangeStatuses.Open.Contains(status),
+            JsonSerializer.Deserialize<List<RankingScore>>(r.GetString(17), JsonSerializerOptions.Web) ?? []);
     }
 
     public async Task<RetrievalConfigView> GetAsync(CancellationToken ct)
@@ -237,7 +238,7 @@ public sealed partial class RetrievalConfigs(IDbSession session, ITenantContext 
     /// Takes the gate's decision (spec 034 section 13). A change no longer waiting for its gate is left as it is, so a
     /// repeated or late message changes nothing.
     /// </summary>
-    internal async Task DecideAsync(Guid id, string result, IReadOnlyList<string> failures, CancellationToken ct)
+    internal async Task DecideAsync(Guid id, string result, IReadOnlyList<string> failures, IReadOnlyList<RankingScore>? scores, CancellationToken ct)
     {
         var rows = await session.QueryAsync("select status, version from search.retrieval_config where id = @id for update", new { id },
             r => (Status: r.GetString(0), Version: r.GetInt32(1)), ct);
@@ -255,8 +256,8 @@ public sealed partial class RetrievalConfigs(IDbSession session, ITenantContext 
             RetrievalGateResults.Failed => RetrievalGateResults.Failed,
             _ => RetrievalGateResults.Incomplete,
         };
-        await session.ExecAsync("update search.retrieval_config set gate_result = @gate, gate_failures = @listed, decided_at = @now where id = @id",
-            new { id, gate, listed, now }, ct);
+        await session.ExecAsync("update search.retrieval_config set gate_result = @gate, gate_failures = @listed, gate_scores = @scored, decided_at = @now where id = @id",
+            new { id, gate, listed, scored = Jsonb.From((scores ?? []).Take(100).ToList()), now }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.SearchRetrievalChangeDecided, "search_retrieval_change", id.ToString(),
             Changes: new { version, gate, failures = failures.Take(100) }), ct);
         logger.LogInformation("search.retrieval_gate_decided tenant {Tenant} change {Change} version {Version} result {Result}", context.TenantId, id, version, gate);
@@ -336,5 +337,5 @@ public sealed class RetrievalShadowBuilder(IDbSession session, IEnumerable<ISear
 /// <summary>Takes the release gate's decision on a retrieval change (spec 034 section 13).</summary>
 public sealed class RetrievalGateDecisions(RetrievalConfigs configs) : IMessageHandler<EvaluationRetrievalGateDecided>
 {
-    public Task HandleAsync(EvaluationRetrievalGateDecided message, CancellationToken ct) => configs.DecideAsync(message.ChangeId, message.Result, message.Failures, ct);
+    public Task HandleAsync(EvaluationRetrievalGateDecided message, CancellationToken ct) => configs.DecideAsync(message.ChangeId, message.Result, message.Failures, message.Scores, ct);
 }

@@ -23,7 +23,7 @@ export type { PreviewSample };
 type Status = { kind: "idle" | "saving" | "saved" | "blocked" | "failed"; message?: string };
 
 const hex = /^#[0-9a-f]{6}$/i;
-const groups = ["layout", "color", "font", "space", "radius", "border", "shadow", "motion", "state"] as const;
+const groups = ["layout", "density", "imagery", "variant", "color", "font", "space", "radius", "border", "shadow", "motion", "state"] as const;
 const presetToken = "design.preset";
 
 /**

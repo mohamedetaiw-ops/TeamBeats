@@ -4,11 +4,15 @@
 //  2. Every <img> has an alt attribute (empty only for decorative images, see components/ui/Media).
 //  3. font-family and font-size in CSS come from the type tokens (or inherit), never a literal family or size.
 //  4. Per-design selectors ([data-design=...]) live only in components/ui/designs.css, so a design stays one file.
-//  5. Every home widget (components/placements) is built on the shared Widget frame (spec 036 DLS-089): no placement
-//     draws its own section, article or nav card. Banners and content blocks are the listed exceptions; the calendar
-//     placements render the feature's CalendarCard, which is itself on the frame.
+//  5. Features and pages draw no tab strip or filter bar of their own: tabs come from Tabs or SectionNav and list
+//     filters from FilterToolbar (spec 036 DLS-106). The strips that predate the rule are named in `ownStrips` below.
 //  6. Every page under app/ starts with the shared page header (spec 036 DLS-105, DLS-118). Pages that predate the
 //     rule are listed in scripts/page-header-baseline.json; the list may only shrink, and a new page is never added.
+//  7. Every shared component in components/ui has an entry in the gallery (spec 036 DLS-117), so its states are
+//     reviewed and covered by the design suite. The gallery is everything under app/ui-gallery.
+//  8. Every home widget (components/placements) is built on the shared Widget frame (spec 036 DLS-089): no placement
+//     draws its own section, article or nav card. Banners and content blocks are the listed exceptions; the calendar
+//     placements render the feature's CalendarCard, which is itself on the frame.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, extname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,6 +20,8 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const svgAllowed = new Set(["components/ui/Icon.tsx", "components/ui/Charts.tsx", "features/shell/Shell.tsx"]);
 const designCss = "components/ui/designs.css";
+// Strips that predate rule 5 and still wait for their move; remove a name when its strip is gone, never add one.
+const ownStrips = new Set(["admin-filters", "agents-tabs", "ai-tabs", "content-filters", "processes-filters", "search-filters", "security-tabs"]);
 const ownFrame = new Set(["content.announcement_banner", "content.call_to_action", "content.news_feed", "content.rich_text", "home.briefing"]);
 const onFrame = /from "@\/components\/ui\/Widget"|from "@\/features\/calendar\/CalendarCard"/;
 const errors = [];
@@ -52,6 +58,11 @@ for (const file of walk(root)) {
       const value = m[2].trim();
       if (value !== "inherit" && !value.startsWith(`var(--tb-font-${m[1]}`)) {
         errors.push(`${rel}: font-${m[1]}: ${value}; use a --tb-font-${m[1]}-* token`);
+      }
+    }
+    if (/^(features|app)\//.test(rel)) {
+      for (const m of source.matchAll(/^\.([a-z-]+-(?:tab|tabs|filters|filter-bar))\s*(?:\{|,)/gm)) {
+        if (!ownStrips.has(m[1])) errors.push(`${rel}: .${m[1]}; use Tabs, SectionNav or FilterToolbar from components/ui instead of a strip of its own (DLS-106)`);
       }
     }
     if (rel !== designCss && /\[data-design[=\]]/.test(source)) {
@@ -102,6 +113,18 @@ if (process.argv.includes("--write-page-header-baseline")) {
   writeFileSync(baselinePath, JSON.stringify(missing.sort(), null, 2) + "\n");
   console.log(`Wrote ${missing.length} pages to scripts/page-header-baseline.json.`);
   process.exit(0);
+}
+
+// Rule 7: a gallery entry for every shared component.
+{
+  const gallery = walk(join(root, "app", "ui-gallery")).map((file) => readFileSync(file, "utf8")).join("\n");
+  for (const name of readdirSync(join(root, "components", "ui"))) {
+    if (!name.endsWith(".tsx")) continue;
+    const component = name.slice(0, -4);
+    if (!gallery.includes(`"@/components/ui/${component}"`)) {
+      errors.push(`components/ui/${name}: no gallery entry; show the component and its states under app/ui-gallery (DLS-117)`);
+    }
+  }
 }
 
 if (errors.length > 0) {

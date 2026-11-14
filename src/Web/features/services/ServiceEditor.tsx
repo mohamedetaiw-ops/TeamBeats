@@ -417,7 +417,7 @@ export function ServiceEditor({
   return (
     <div className="services">
       <p className="services-row">
-        <span className="services-status" data-testid="service-state">
+        <span className="ui-badge" data-testid="service-state">
           {t(`state.${s.status}`)}
         </span>
         {latest ? <span className="services-meta">{t("versionState", { version: latest.version, state: t(`versionStates.${latest.state}`) })}</span> : null}

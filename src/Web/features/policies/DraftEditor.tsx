@@ -114,7 +114,7 @@ export function DraftEditor({ policyId, initial, locales }: { policyId: string; 
           {t("inReview")}
         </p>
       ) : null}
-      <div role="tablist" aria-label={t("languages")} className="policies-tabs">
+      <div role="tablist" aria-label={t("languages")} className="ui-tablist">
         {locales.map((l) => (
           <button
             key={l}
@@ -124,7 +124,7 @@ export function DraftEditor({ policyId, initial, locales }: { policyId: string; 
             aria-selected={tab === l}
             aria-controls={`${ids}-panel`}
             tabIndex={tab === l ? 0 : -1}
-            className="policies-tab"
+            className="ui-tab"
             onClick={() => setTab(l)}
             onKeyDown={(e) => {
               if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;

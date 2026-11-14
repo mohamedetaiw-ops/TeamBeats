@@ -1222,7 +1222,10 @@
       "shadow": "Shadows",
       "motion": "Motion",
       "state": "Interaction states",
-      "layout": "Layout"
+      "layout": "Layout",
+      "density": "Default density",
+      "imagery": "Imagery",
+      "variant": "Part variants"
     },
     "contrast": {
       "title": "Contrast and size checks",
@@ -1335,6 +1338,9 @@
     },
     "controls": {
       "close": "Close",
+      "filters": "Filters",
+      "appliedFilters": "Filters in use",
+      "clearAll": "Clear all",
       "remove": "Remove {name}",
       "removeItem": "Remove",
       "pagination": "Pages",
@@ -2041,7 +2047,8 @@
       "integration_alert": "Connection alerts",
       "system": "System messages",
       "space_activity": "Activity in your spaces",
-      "bookings": "Your bookings"
+      "bookings": "Your bookings",
+      "search_alerts": "Alerts for your saved searches"
     },
     "filter": {
       "label": "Show",
@@ -2399,7 +2406,16 @@
       "failed": "People could not be loaded.",
       "retry": "Try again"
     },
-    "noTitle": "Title not set"
+    "noTitle": "Title not set",
+    "layout": {
+      "label": "Layout",
+      "grid": "Cards",
+      "list": "List"
+    },
+    "quick": {
+      "email": "Email {name}",
+      "call": "Call {name}"
+    }
   },
   "security": {
     "tabsLabel": "Security pages",
@@ -2801,6 +2817,18 @@
       "overflow": "99+"
     },
     "catalogue": {
+      "mine": "Your services",
+      "allCount": "All {count}",
+      "layout": {
+        "label": "Show as",
+        "grid": "Grid",
+        "list": "List"
+      },
+      "next": {
+        "form": "Start request",
+        "linked": "Open in a new tab",
+        "module": "Open service"
+      },
       "title": "Services",
       "intro": "Request what you need, or open the systems you use.",
       "search": "Search services",
@@ -2881,6 +2909,7 @@
       "completed": "Completed"
     },
     "requests": {
+      "waitingFor": "Waiting for {name}{others, plural, =0 {} one { and 1 other} other { and # others}}",
       "title": "My requests",
       "filter": "Filter by status",
       "all": "All",
@@ -2997,6 +3026,15 @@
       "failed": "The decision could not be saved. Try again."
     },
     "inbox": {
+      "review": "Review",
+      "open": "Open",
+      "dueLate": "Due {when}, {days, plural, one {# day late} other {# days late}}",
+      "reviewFailed": "This request could not be loaded. Close the panel and try again.",
+      "decided": {
+        "approve": "Approved. The request moved to its next step.",
+        "reject": "Rejected. The requester has been told.",
+        "return": "Returned to the requester for changes."
+      },
       "pick": "Pick",
       "putBack": "Put back",
       "pickedBy": "Picked by {name}",
@@ -3036,6 +3074,19 @@
       "assetAccess": "Brand asset access"
     },
     "delegation": {
+      "none": "No delegation set. Your approvals stay with you.",
+      "manage": "Manage delegation",
+      "cancel": "Cancel",
+      "review": "Review",
+      "back": "Back",
+      "done": "Done",
+      "confirmTitle": "Check the delegation",
+      "receiptTitle": "Delegation saved",
+      "scopeLabel": "What is delegated",
+      "scope": "All approvals assigned to you during these days. Your delegate acts on your behalf and each decision is recorded with both names.",
+      "delegateRequired": "Choose the colleague who covers for you.",
+      "dayRequired": "Choose a day.",
+      "endBeforeStart": "The last day cannot be before the first day.",
       "title": "While you are away",
       "intro": "Choose a colleague to handle your approvals for a range of days. They act on your behalf, and the tasks come back to you when it ends.",
       "delegate": "Delegate",
@@ -3575,7 +3626,9 @@
       "embed": "Embedded content",
       "siteArchived": "From an archived site",
       "tags": "Topics",
-      "tag": "#{tag}"
+      "tag": "#{tag}",
+      "published": "Published {date}",
+      "readTime": "{minutes} min read"
     },
     "social": {
       "title": "Reactions and comments",
@@ -3605,13 +3658,11 @@
       "off": "Comments are turned off for this site.",
       "held": "Thanks. Your comment will appear once a moderator approves it.",
       "reportedThanks": "Thanks for reporting. A moderator will look at it.",
-      "mention": "Mention someone",
       "mentionResults": "People found",
-      "mentionChosen": "People you mention",
       "mentionAdd": "Mention {name}",
-      "mentionRemove": "Stop mentioning {name}",
       "mentioned": "Mentions:",
-      "mentionName": "@{name}"
+      "comments": "Comments",
+      "mentionHint": "Type @ to mention someone"
     },
     "component": {
       "feed": {
@@ -4119,7 +4170,17 @@
       },
       "recordsLink": "Records management",
       "assetsLink": "Brand assets",
-      "importLink": "Import files"
+      "importLink": "Import files",
+      "connectedMeta": "{scope}, SharePoint",
+      "search": "Search documents",
+      "searchHint": "Search libraries by name",
+      "apply": "Search",
+      "searchInside": "Search inside files for “{q}”",
+      "scopeFilter": "Scope",
+      "anyScope": "Any scope",
+      "noMatch": "No library name matches.",
+      "noMatchHint": "Search inside the files, or clear the search.",
+      "clear": "Clear search"
     },
     "browser": {
       "filters": "Find documents",
@@ -4279,7 +4340,16 @@
       "readTime": "{minutes} min read",
       "noBody": "This article has no text yet.",
       "noBodyEditor": "Add the steps with Edit so readers can follow them.",
-      "noBodyReader": "The owner is still writing it. Check back soon."
+      "noBodyReader": "The owner is still writing it. Check back soon.",
+      "search": "Search knowledge",
+      "searchHint": "Search articles by title",
+      "apply": "Search",
+      "searchInside": "Search inside articles for “{q}”",
+      "kind": "Kind",
+      "anyKind": "Any kind",
+      "noMatch": "No article title matches.",
+      "noMatchHint": "Search inside the articles, or clear the search.",
+      "clear": "Clear search"
     },
     "feedback": {
       "choose": "Say whether the article helped.",
@@ -4390,7 +4460,8 @@
       "status": {
         "queued": "Waiting to start",
         "running": "Importing",
-        "completed": "Finished"
+        "completed": "Finished",
+        "listing": "Listing files"
       },
       "reportTitle": "Import of {file}",
       "reportIntro": "Each row of the manifest and what happened to it.",
@@ -4416,7 +4487,96 @@
       "resultLabel": "Result",
       "details": "Details",
       "authorNotMatched": "The author's email did not match anyone, so you are shown as the author.",
-      "moreRows": "Showing {shown} of {total} rows. Download the report for all of them."
+      "moreRows": "Showing {shown} of {total} rows. Download the report for all of them.",
+      "reportIntroSharePoint": "Each file found in SharePoint and what happened to it.",
+      "versions": "Brought with {count} versions.",
+      "permissionsDiffer": "SharePoint opened this file to fewer people than this library will. Check who should see it.",
+      "sharepoint": {
+        "title": "Import from SharePoint",
+        "intro": "Copy a SharePoint document library, or one of its folders, into this library. SharePoint is only read, never changed.",
+        "none": "No SharePoint document library is available. An integration administrator adds sites to the Microsoft 365 connection first.",
+        "unavailable": "SharePoint cannot be reached right now. Try again later.",
+        "source": "Document library",
+        "remoteFolder": "Folder in SharePoint",
+        "insideFolder": "Folder inside {folder}",
+        "wholeLibrary": "The whole document library",
+        "wholeFolder": "All of this folder",
+        "allVersions": "Bring every version",
+        "allVersionsHint": "Turn this off to bring only the latest version of each file.",
+        "type": "Document type",
+        "noType": "No type",
+        "columns": "SharePoint columns",
+        "columnsHint": "Choose the field each column fills. Columns left out are not imported.",
+        "noField": "Do not import",
+        "folder": "Import into",
+        "libraryRoot": "The top of the library",
+        "rules": "Files keep their folders, original dates and authors when the author's email matches a person. Each file follows this library's file types and size limit and is scanned for malware.",
+        "start": "Start import",
+        "starting": "Starting",
+        "failed": "That did not work. Try again."
+      }
+    },
+    "connected": {
+      "badge": "SharePoint",
+      "intro": "The files of this library stay in SharePoint. You see the ones you can open there, read live with your Microsoft 365 account.",
+      "path": "Folder path",
+      "root": "Library",
+      "results": "Files",
+      "name": "Name",
+      "size": "Size",
+      "updated": "Updated",
+      "actions": "Actions",
+      "kb": "KB",
+      "openInSharePoint": "Open {name} in SharePoint",
+      "openInSharePointShort": "Open in SharePoint",
+      "more": "Show more",
+      "loading": "Loading",
+      "empty": "This folder is empty, or nothing in it is shared with you.",
+      "notFound": "This folder is not there, or you cannot open it in SharePoint.",
+      "unavailable": "SharePoint cannot be reached right now",
+      "unavailableHint": "Your TeamBeats libraries are not affected. Try again in a few minutes.",
+      "retry": "Try again",
+      "connect": "Connect your Microsoft 365 account",
+      "reconnect": "Connect your Microsoft 365 account again",
+      "connectHint": "TeamBeats shows SharePoint files with your own access, so you see exactly what SharePoint lets you open.",
+      "connectAction": "Connect Microsoft 365",
+      "notHereTitle": "Not available for connected libraries",
+      "notHere": "Controlled documents, retention and legal holds, the view-only watermark, sharing with guests and the recycle bin apply to TeamBeats libraries only. For this library, SharePoint manages them.",
+      "degraded": "SharePoint cannot be reached right now, so this is the copy synced {age}. Files open again once SharePoint answers.",
+      "write": {
+        "allow": "Allow uploads",
+        "allowHint": "People who may contribute here upload files and rename items, saved in SharePoint as themselves. SharePoint decides where each person may write.",
+        "upload": "Upload to SharePoint",
+        "uploadHint": "A file with the same name as one in this folder becomes its new version.",
+        "uploaded": "Uploaded to SharePoint.",
+        "rename": "Rename {name}",
+        "renameShort": "Rename",
+        "newName": "New name for {name}",
+        "save": "Save name",
+        "cancel": "Cancel",
+        "renamed": "Renamed in SharePoint.",
+        "forbidden": "SharePoint does not let you change this folder or file.",
+        "conflict": "Something here already has that name.",
+        "not_found": "This name cannot be used in SharePoint, or the item is gone.",
+        "too_large": "The file is larger than SharePoint takes in one upload (250 MB).",
+        "unavailable": "SharePoint cannot be reached right now. Try again in a few minutes.",
+        "not_connected": "Connect your Microsoft 365 account to change files here.",
+        "reconnect": "Connect your Microsoft 365 account again to change files here.",
+        "failed": "That did not work. Try again."
+      }
+    },
+    "connect": {
+      "title": "Connect a SharePoint library",
+      "intro": "Show a SharePoint document library inside TeamBeats. People see its files only if they are in the audience here and can open them in SharePoint.",
+      "name": "Name",
+      "library": "SharePoint document library",
+      "scope": "Audience",
+      "scopeHint": "The whole organization, or the members of one organization unit that you manage.",
+      "submit": "Connect library",
+      "working": "Connecting",
+      "failed": "The library could not be connected. Try again.",
+      "noLibraries": "No SharePoint sites are allowed yet. An integration administrator adds them in Connections.",
+      "unavailable": "SharePoint cannot be reached right now. Try again in a few minutes."
     }
   },
   "policies": {
@@ -4457,7 +4617,12 @@
       "none": "None",
       "working": "new version {state}",
       "create": "New policy",
-      "description": "Every policy in force, its owner and when it is reviewed next."
+      "description": "Every policy in force, its owner and when it is reviewed next.",
+      "overdue": "{count, plural, one {# policy is past its review date} other {# policies are past their review date}}",
+      "reviewWas": "review was due {date}",
+      "late": "Late",
+      "allStatus": "{count, plural, other {All # policies are {status}}}",
+      "allOwner": "Owner: {owner}"
     },
     "my": {
       "title": "My policies",
@@ -5032,11 +5197,165 @@
           "failed": "The gate found blocking failures.",
           "incomplete": "The gate could not complete.",
           "failed_critical": "The gate found a critical failure."
+        },
+        "scores": {
+          "caption": "Judged query set scores",
+          "metric": "Metric",
+          "live": "In force",
+          "proposed": "With the change",
+          "queries": "Queries",
+          "precision_at_5": "Precision at 5",
+          "ndcg_at_10": "NDCG at 10"
         }
+      },
+      "federated": {
+        "title": "Federated sources",
+        "intro": "Systems searched live with each person's own access and shown in their own group under the results. Nothing found is stored. A source that is off is never asked.",
+        "source": {
+          "sharepoint": "SharePoint"
+        },
+        "hint": {
+          "sharepoint": "Files of the SharePoint connected libraries each person can open."
+        },
+        "on": "{source} is now searched.",
+        "off": "{source} is no longer searched."
+      },
+      "summary": {
+        "title": "AI summary of results",
+        "intro": "Show a short AI generated answer above search results, written only from the results each person may open and the AI policy allows, with the sources cited.",
+        "switch": "Show AI summaries",
+        "on": "AI summaries are now shown above results.",
+        "off": "AI summaries are no longer shown."
+      },
+      "judged": {
+        "title": "Judged query sets",
+        "intro": "Queries with the results that should rank high. Each change to retrieval is scored on them before it applies, and a drop in ranking holds the change.",
+        "caption": "Judged query sets",
+        "name": "Name",
+        "unit": "Runs as an employee of",
+        "unitHint": "Queries run with the permissions of an employee in this unit.",
+        "unknownUnit": "Unit not found",
+        "queries": "Queries",
+        "version": "Version",
+        "emptyTitle": "No judged query sets yet",
+        "empty": "Create a set, then add queries and grade the results they should find.",
+        "create": "New judged query set",
+        "createAction": "Create set",
+        "created": "Set created. Add queries below.",
+        "noUnitsTitle": "Units are not available",
+        "noUnits": "You need to see the organization to choose the unit a set runs in.",
+        "editing": "{name}, version {version}",
+        "queriesCaption": "Queries in this set",
+        "query": "Query",
+        "locale": "Language",
+        "locales": {
+          "en": "English",
+          "ar": "Arabic"
+        },
+        "judged": "Graded results",
+        "actions": "Actions",
+        "remove": "Remove",
+        "removeQuery": "Remove the query {query}",
+        "noQueriesTitle": "No queries yet",
+        "noQueries": "Add a query and grade the results it should find.",
+        "addQuery": "Add a query",
+        "find": "Find results",
+        "results": "Results to grade",
+        "gradeFor": "Grade for {title}",
+        "grades": {
+          "0": "Not relevant",
+          "1": "Relevant",
+          "2": "Very relevant",
+          "3": "Best answer"
+        },
+        "noResultsTitle": "Nothing found",
+        "noResults": "Try other words. A query needs at least one graded result.",
+        "keepQuery": "Keep this query",
+        "save": "Save set",
+        "saved": "Saved as version {version}.",
+        "busy": "Working",
+        "failed": "That did not work. Try again."
+      },
+      "queryText": {
+        "title": "Search words in analytics",
+        "intro": "The search dashboard shows what people look for, only for words five or more people used. Searches that look like an email address or a phone or ID number never keep their words.",
+        "switch": "Keep the words people search for",
+        "hint": "Turned off, the dashboard shows counts only and the words already kept are cleared.",
+        "on": "Search words are kept for the dashboard.",
+        "off": "Search words are no longer kept, and the words kept before are cleared."
       }
+    },
+    "federated": {
+      "loading": "Searching connected systems",
+      "source": {
+        "sharepoint": "SharePoint"
+      },
+      "live": "Searched live with your own access. Results open where they are kept.",
+      "connect": "Connect Microsoft 365 to search SharePoint",
+      "reconnect": "Sign in to Microsoft 365 again",
+      "connectHint": "Results come from SharePoint with your own access, so it needs your Microsoft 365 sign-in.",
+      "connectAction": "Connect Microsoft 365",
+      "notNow": "Not available now",
+      "timeout": "SharePoint took too long to answer. Try again in a moment.",
+      "unavailable": "SharePoint cannot be reached right now.",
+      "none": "Nothing in SharePoint matches.",
+      "opensOutside": "(opens in a new tab)"
+    },
+    "summary": {
+      "title": "Summary",
+      "sources": "Sources",
+      "generated": "AI generated from results you can open. Check the sources before you rely on it.",
+      "question": "Was this summary helpful?",
+      "helpful": "Helpful",
+      "notHelpful": "Not helpful",
+      "thanks": "Thank you. Your feedback helps improve summaries.",
+      "failed": "That did not work. Try again."
+    },
+    "save": {
+      "action": "Save this search",
+      "list": "Your saved searches",
+      "saved": "Search saved. You will get a daily alert when new results match.",
+      "failed": "That did not work. Try again."
+    },
+    "saved": {
+      "title": "Saved searches",
+      "description": "Searches you saved. With alerts on, you hear once a day about new results you can open.",
+      "caption": "Your saved searches",
+      "query": "Search",
+      "alerts": "Daily alert",
+      "alertsLabel": "Daily alert for {query}",
+      "alerted": "Last alert",
+      "never": "Not yet",
+      "actions": "Actions",
+      "remove": "Remove",
+      "removeLabel": "Remove the saved search {query}",
+      "removed": "Removed {query}.",
+      "alertsOn": "Daily alerts are on for {query}.",
+      "alertsOff": "Daily alerts are off for {query}.",
+      "emptyTitle": "No saved searches yet",
+      "empty": "Search for something, then choose Save this search on the results page.",
+      "deniedTitle": "Saved searches are not available",
+      "denied": "Your organization does not include saved searches.",
+      "errorTitle": "Saved searches did not load",
+      "failed": "That did not work. Try again."
     }
   },
   "assistant": {
+    "mode": {
+      "label": "Mode",
+      "ask": "Ask a question"
+    },
+    "starters": {
+      "title": "Try one of these",
+      "leave": "How many days of annual leave do I get?",
+      "policy": "Which policies do I still need to acknowledge?",
+      "service": "How do I request a salary letter?",
+      "people": "Who do I ask about a laptop problem?"
+    },
+    "cannotVerify": {
+      "title": "I cannot verify an answer to this",
+      "search": "Search for it instead"
+    },
     "title": "Assistant",
     "intro": "Ask about policies, services, documents and news. Answers come only from content you can open, with links to the sources.",
     "newConversation": "New conversation",
@@ -5110,6 +5429,7 @@
     },
     "marker": "[{n}]",
     "tools": {
+      "draftText": "Text to start from (optional)",
       "title": "Work with text",
       "intro": "Paste your own text to rewrite, translate, summarize or explain it, or describe a draft. The result is AI generated; nothing is saved, published or sent.",
       "itemTitle": "Ask the assistant about this page",
@@ -5135,6 +5455,8 @@
       }
     },
     "scope": {
+      "asking": "Asking about: <name></name>",
+      "remove": "Ask about everything instead",
       "policy": "Answers come only from <name></name>.",
       "notFound": "This policy is not available to ask about. You can ask about anything you can open instead."
     }
@@ -5667,6 +5989,7 @@
       "recall_at_5": "Recall at 5",
       "precision_at_5": "Precision at 5",
       "reciprocal_rank": "Reciprocal rank",
+      "ndcg_at_10": "NDCG at 10",
       "forbidden_source_rate": "Forbidden sources used",
       "refusal_correctness": "Refusal correctness",
       "unauthorized_disclosures": "Unauthorized disclosures",
@@ -6545,7 +6868,9 @@
         "mail": "Mail",
         "calendar": "Calendar",
         "free_busy": "Free and busy times",
-        "office_editing": "Office editing in the browser"
+        "office_editing": "Office editing in the browser",
+        "sharepoint_documents": "SharePoint documents",
+        "sharepoint_upload": "SharePoint uploads"
       },
       "featureOn": "On",
       "featureOff": "Off",
@@ -6562,7 +6887,10 @@
         "mail_read_basic": "Read the employee's own mail headers, without message text",
         "mail_read": "Read the employee's own mail, used only for the one-line preview",
         "calendars_read_basic": "Read the employee's own calendar events, without body or attachments",
-        "files_read_write": "Read and change the employee's own OneDrive files, only for the copy they edit in the browser"
+        "files_read_write": "Read and change the employee's own OneDrive files, only for the copy they edit in the browser",
+        "sites_selected": "Read only the SharePoint sites you allow, to keep connected libraries and search in step",
+        "files_read_all": "Let each employee browse, preview and download SharePoint files they can already open in SharePoint",
+        "files_read_write_all": "Let each employee upload files and rename items in connected SharePoint libraries where SharePoint lets them"
       },
       "application": "application",
       "delegated": "on behalf of the employee",
@@ -6581,14 +6909,40 @@
         "ok_broader": "Working, but the application holds more permissions than needed",
         "consent_missing": "Admin consent is missing",
         "unreachable": "Microsoft 365 could not be reached",
-        "application_mail_permissions": "The application holds application mail or calendar permissions, which TeamBeats must not have"
+        "application_mail_permissions": "The application holds application mail or calendar permissions, which TeamBeats must not have",
+        "site_missing": "An allowed SharePoint site is no longer granted to the application"
       },
       "counts": "({users} users, {groups} groups)",
       "missing": "Missing:",
       "broader": "More than needed:",
       "deleteIntro": "Deleting stops directory sync, mail and calendar for everyone. Accounts already created stay.",
       "deleteQuestion": "Delete {name}? Its features stop for everyone.",
-      "permissionKind": "({type}):"
+      "permissionKind": "({type}):",
+      "sites": {
+        "title": "Allowed SharePoint sites",
+        "intro": "TeamBeats reads only these sites. Grant each site to the TeamBeats application in Microsoft 365 first, then add it here. Removing a site archives the connected libraries that show it and removes their files from search.",
+        "url": "Site address",
+        "urlHint": "For example https://contoso.sharepoint.com/sites/hr",
+        "add": "Add site",
+        "remove": "Remove {name}",
+        "empty": "No sites are allowed yet.",
+        "added": "Site added.",
+        "removed": "Site removed."
+      },
+      "labels": {
+        "title": "Sensitivity labels",
+        "intro": "Choose the TeamBeats classification for each Microsoft Purview label found on synced files. Files without a label use their library's default, and a label you have not mapped counts as Confidential.",
+        "empty": "No labelled files have been synced yet.",
+        "files": "{count, plural, one {# file} other {# files}}",
+        "unmapped": "Not mapped (Confidential)",
+        "saved": "Label mapping saved. Search uses it within a few minutes.",
+        "classification": {
+          "public": "Public",
+          "internal": "Internal",
+          "confidential": "Confidential",
+          "restricted": "Restricted"
+        }
+      }
     },
     "webhooks": {
       "formLabel": "Webhook settings",
@@ -7419,6 +7773,14 @@
       "nodeSecurity": "Security",
       "nodeDevices": "Devices",
       "treeChosen": "Open: {name}"
+    },
+    "filters": {
+      "title": "Filter toolbar",
+      "intro": "One row to search and filter a list. Filters in force show as chips that can be removed, with Clear all.",
+      "label": "Search requests",
+      "hint": "Search by title or requester",
+      "status": "Status",
+      "any": "Any status"
     },
     "data": {
       "title": "Data blocks",

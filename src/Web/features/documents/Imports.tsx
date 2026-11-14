@@ -22,7 +22,10 @@ import {
 } from "@/lib/documents/types";
 import "./documents.css";
 
-const tones: Record<ImportRowState, "neutral" | "success" | "warning" | "danger"> = {
+const tones: Record<
+  ImportRowState,
+  "neutral" | "success" | "warning" | "danger"
+> = {
   pending: "neutral",
   imported: "success",
   incomplete: "warning",
@@ -32,14 +35,22 @@ const tones: Record<ImportRowState, "neutral" | "success" | "warning" | "danger"
 };
 
 /** Library managers upload a ZIP with its manifest; the API checks the manifest before anything is queued. */
-export function ImportStart({ libraryId, folders }: { libraryId: string; folders: FolderView[] }) {
+export function ImportStart({
+  libraryId,
+  folders,
+}: {
+  libraryId: string;
+  folders: FolderView[];
+}) {
   const t = useTranslations("documents.imports");
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [folder, setFolder] = useState("");
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
-  const items: UploadItem[] = file ? [{ key: "zip", name: file.name, size: file.size }] : [];
+  const items: UploadItem[] = file
+    ? [{ key: "zip", name: file.name, size: file.size }]
+    : [];
 
   async function start() {
     if (!file) return;
@@ -48,11 +59,14 @@ export function ImportStart({ libraryId, folders }: { libraryId: string; folders
     try {
       const query = new URLSearchParams({ name: file.name });
       if (folder) query.set("folder", folder);
-      const response = await fetch(`/api/v1/documents/libraries/${encodeURIComponent(libraryId)}/imports?${query}`, {
-        method: "POST",
-        headers: { "content-type": "application/zip" },
-        body: file,
-      });
+      const response = await fetch(
+        `/api/v1/documents/libraries/${encodeURIComponent(libraryId)}/imports?${query}`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/zip" },
+          body: file,
+        },
+      );
       if (response.ok) {
         const view = (await response.json()) as ImportView;
         router.push(importHref(view.id));
@@ -83,15 +97,32 @@ export function ImportStart({ libraryId, folders }: { libraryId: string; folders
           ))}
         </div>
       ) : null}
-      <FileUpload label={t("zip")} hint={t("zipHint")} accept=".zip" multiple={false} items={items} onAdd={(f) => setFile(f[0] ?? null)} onRemove={() => setFile(null)} />
+      <FileUpload
+        label={t("zip")}
+        hint={t("zipHint")}
+        accept=".zip"
+        multiple={false}
+        items={items}
+        onAdd={(f) => setFile(f[0] ?? null)}
+        onRemove={() => setFile(null)}
+      />
       <SelectField
         label={t("folder")}
         name="import-folder"
         value={folder}
         onChange={(e) => setFolder(e.target.value)}
-        options={[{ value: "", label: t("libraryRoot") }, ...folders.map((f) => ({ value: f.id, label: f.name }))]}
+        options={[
+          { value: "", label: t("libraryRoot") },
+          ...folders.map((f) => ({ value: f.id, label: f.name })),
+        ]}
       />
-      <Button type="submit" variant="primary" disabled={!file} busy={busy} busyLabel={t("uploading")}>
+      <Button
+        type="submit"
+        variant="primary"
+        disabled={!file}
+        busy={busy}
+        busyLabel={t("uploading")}
+      >
         {t("start")}
       </Button>
     </form>
@@ -101,7 +132,17 @@ export function ImportStart({ libraryId, folders }: { libraryId: string; folders
 /** How to write the manifest: one row per file, the columns the API reads. */
 export function ManifestGuide() {
   const t = useTranslations("documents.imports");
-  const columns = ["path", "folder", "name", "type", "classification", "created", "modified", "author", "field"] as const;
+  const columns = [
+    "path",
+    "folder",
+    "name",
+    "type",
+    "classification",
+    "created",
+    "modified",
+    "author",
+    "field",
+  ] as const;
   return (
     <section className="documents-card" aria-labelledby="manifest-guide-title">
       <h2 id="manifest-guide-title">{t("guideTitle")}</h2>
@@ -137,11 +178,20 @@ export function ImportList({ imports }: { imports: ImportView[] }) {
               <Link href={importHref(i.id)}>
                 <bdi>{i.fileName}</bdi>
               </Link>
-              <Badge tone={i.status === "completed" ? "success" : "neutral"}>{t(`status.${i.status}`)}</Badge>
+              <Badge tone={i.status === "completed" ? "success" : "neutral"}>
+                {t(`status.${i.status}`)}
+              </Badge>
               <span className="documents-meta">
-                {t("summary", { imported: i.imported + i.incomplete, total: i.total, problems: i.failed + i.skipped + i.quarantined })}
+                {t("summary", {
+                  imported: i.imported + i.incomplete,
+                  total: i.total,
+                  problems: i.failed + i.skipped + i.quarantined,
+                })}
                 {" · "}
-                {format.dateTime(new Date(i.createdAt), { dateStyle: "medium", timeStyle: "short" })}
+                {format.dateTime(new Date(i.createdAt), {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
               </span>
             </li>
           ))}
@@ -155,7 +205,15 @@ export function ImportList({ imports }: { imports: ImportView[] }) {
  * One import's report: progress while the job runs (the page refreshes itself until it is done), totals per result, and
  * each row with what happened to it, filtered by result, with the whole report as CSV.
  */
-export function ImportReport({ view, page, status }: { view: ImportView; page: ImportRowPage; status: ImportRowState | null }) {
+export function ImportReport({
+  view,
+  page,
+  status,
+}: {
+  view: ImportView;
+  page: ImportRowPage;
+  status: ImportRowState | null;
+}) {
   const t = useTranslations("documents.imports");
   const router = useRouter();
   const running = view.status !== "completed";
@@ -172,23 +230,42 @@ export function ImportReport({ view, page, status }: { view: ImportView; page: I
     failed: view.failed,
     quarantined: view.quarantined,
   };
-  const filterHref = (s: ImportRowState | null) => (s ? `${importHref(view.id)}?status=${s}` : importHref(view.id));
+  const filterHref = (s: ImportRowState | null) =>
+    s ? `${importHref(view.id)}?status=${s}` : importHref(view.id);
   return (
     <>
-      <section className="documents-card" aria-labelledby="import-progress-title">
+      <section
+        className="documents-card"
+        aria-labelledby="import-progress-title"
+      >
         <h2 id="import-progress-title">{t(`status.${view.status}`)}</h2>
         {running ? (
-          <Progress label={t("progress")} value={view.total - view.pending} max={view.total} valueText={t("progressText", { done: view.total - view.pending, total: view.total })} />
+          <Progress
+            label={t("progress")}
+            value={view.total - view.pending}
+            max={view.total}
+            valueText={t("progressText", {
+              done: view.total - view.pending,
+              total: view.total,
+            })}
+          />
         ) : null}
         <ul className="documents-import-counts" aria-label={t("countsLabel")}>
           <li>
-            <Link href={filterHref(null)} aria-current={status === null ? "page" : undefined}>
+            <Link
+              href={filterHref(null)}
+              aria-current={status === null ? "page" : undefined}
+            >
               {t("all", { count: view.total })}
             </Link>
           </li>
           {importRowStates.map((s) => (
             <li key={s}>
-              <Link href={filterHref(s)} aria-current={status === s ? "page" : undefined} data-testid={`count-${s}`}>
+              <Link
+                href={filterHref(s)}
+                aria-current={status === s ? "page" : undefined}
+                data-testid={`count-${s}`}
+              >
                 {t("count", { result: t(`result.${s}`), count: counts[s] })}
               </Link>
             </li>
@@ -230,11 +307,30 @@ export function ImportReport({ view, page, status }: { view: ImportView; page: I
                       )}
                     </td>
                     <td>
-                      <Badge tone={tones[r.status]}>{t(`result.${r.status}`)}</Badge>
+                      <Badge tone={tones[r.status]}>
+                        {t(`result.${r.status}`)}
+                      </Badge>
                     </td>
                     <td>
                       {r.problemText ? <p>{r.problemText}</p> : null}
-                      {r.authorMatched === false ? <p className="documents-meta">{t("authorNotMatched")}</p> : null}
+                      {r.authorMatched === false ? (
+                        <p className="documents-meta">
+                          {t("authorNotMatched")}
+                        </p>
+                      ) : null}
+                      {r.versions && r.versions > 1 ? (
+                        <p className="documents-meta">
+                          {t("versions", { count: r.versions })}
+                        </p>
+                      ) : null}
+                      {r.permissionsDiffer ? (
+                        <p
+                          className="documents-meta"
+                          data-testid="permissions-differ"
+                        >
+                          {t("permissionsDiffer")}
+                        </p>
+                      ) : null}
                     </td>
                   </tr>
                 ))}
@@ -242,7 +338,11 @@ export function ImportReport({ view, page, status }: { view: ImportView; page: I
             </table>
           </div>
         )}
-        {page.total > page.rows.length ? <p className="documents-meta">{t("moreRows", { shown: page.rows.length, total: page.total })}</p> : null}
+        {page.total > page.rows.length ? (
+          <p className="documents-meta">
+            {t("moreRows", { shown: page.rows.length, total: page.total })}
+          </p>
+        ) : null}
       </section>
     </>
   );

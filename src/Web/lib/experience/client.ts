@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { apiGet, type ApiResult } from "@/lib/api";
 import type { EffectiveTheme, RenderedPage } from "./types";
 import type { Catalogue, OrgUnit, PageSummary, PageView, PickerItem, TenantTemplate } from "./builder-types";
@@ -12,6 +13,9 @@ export function renderPage(slug: string): Promise<ApiResult<RenderedPage>> {
 export function getTheme(scope: string): Promise<ApiResult<EffectiveTheme>> {
   return apiGet<EffectiveTheme>(`/api/v1/experience/theme?scope=${encodeURIComponent(scope)}`);
 }
+
+/** The tenant theme, read once per request: the document frame and the preference defaults both need it. */
+export const getTenantTheme = cache(() => getTheme("tenant"));
 
 /** The layout and template catalogue with names in the editor's language (spec 032 FR-017). */
 export function getCatalogue(): Promise<ApiResult<Catalogue>> {

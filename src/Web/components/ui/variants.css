@@ -1,0 +1,263 @@
+/*
+ * Presentation variants of the design descriptor (spec 036 DLS-110, spec 033 FR-032). Each design declares which
+ * variant it uses for the news lead, stat tiles, work rows, section tabs, page cards and the briefing, as choice
+ * tokens that reach the document element as data-v-* attributes (lib/experience/design.ts). A tenant can override a
+ * value with another from the list. A variant changes presentation only: the same data, the same actions in the same
+ * order and the same accessible names. The first value of each list is the base style and needs no rule here.
+ */
+
+/* Section tabs, underline: no track; the current page carries a rule in the accent color. */
+:root[data-v-tabs="underline"] .ui-section-nav ul {
+  gap: var(--tb-space-lg);
+  padding: 0;
+  border: 0;
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: 0;
+  background: transparent;
+}
+
+:root[data-v-tabs="underline"] .ui-section-nav a {
+  /* A short label, one word in Arabic for example, still gives a 44px target (DLS-085). */
+  justify-content: center;
+  min-inline-size: 2.75rem;
+  padding-inline: 0;
+  border-block-end: var(--tb-border-width-thick) solid transparent;
+  border-radius: 0;
+  color: var(--tb-color-text-secondary);
+}
+
+:root[data-v-tabs="underline"] .ui-section-nav a:where(:hover) {
+  background: transparent;
+  color: var(--tb-color-text-primary);
+}
+
+:root[data-v-tabs="underline"] .ui-section-nav a[aria-current="page"] {
+  border-block-end-color: var(--tb-color-accent-base);
+  background: transparent;
+  color: var(--tb-color-text-primary);
+}
+
+/* Section tabs, segmented: a sunken track with a raised thumb on the current page. */
+:root[data-v-tabs="segmented"] .ui-section-nav ul {
+  gap: 0;
+  border: 0;
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+}
+
+:root[data-v-tabs="segmented"] .ui-section-nav a {
+  min-block-size: 2.25rem;
+  border-radius: calc(var(--tb-radius-sm) * 0.75);
+  color: var(--tb-color-text-secondary);
+}
+
+/* The tabs are 44px on a touch screen or a phone in every design (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  :root[data-v-tabs="segmented"] .ui-section-nav a {
+    min-block-size: 2.75rem;
+  }
+}
+
+:root[data-v-tabs="segmented"] .ui-section-nav a:where(:hover) {
+  background: transparent;
+  color: var(--tb-color-text-primary);
+}
+
+:root[data-v-tabs="segmented"] .ui-section-nav [aria-current="page"] {
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-text-primary);
+}
+
+/* Stat tiles, plain: a raised surface in every tone; the tone moves to the icon box, which shows in the dense form too. */
+:root[data-v-stats="plain"] .ui-stats-dense .ui-stat-icon {
+  display: inline-grid;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+}
+
+:root[data-v-stats="plain"] .ui-stats-dense .ui-stat-label {
+  flex-direction: column;
+  order: 0;
+  align-items: start;
+  gap: var(--tb-space-xs);
+}
+
+:root[data-v-stats="plain"] .ui-stats-dense .ui-stat-value {
+  font-size: var(--tb-font-size-xl);
+}
+
+:root[data-v-stats="plain"] .ui-stat[data-tone] {
+  border-color: var(--tb-color-border-default);
+  background: var(--tb-color-surface-raised);
+}
+
+:root[data-v-stats="plain"] .ui-stat[data-tone] .ui-stat-label {
+  color: var(--tb-color-text-secondary);
+}
+
+:root[data-v-stats="plain"] .ui-stat[data-tone] .ui-stat-value {
+  color: var(--tb-color-text-primary);
+}
+
+:root[data-v-stats="plain"] .ui-stat[data-tone="warm"] .ui-stat-icon {
+  background: var(--tb-color-tint-warm);
+}
+
+:root[data-v-stats="plain"] .ui-stat[data-tone="cool"] .ui-stat-icon {
+  background: var(--tb-color-tint-cool);
+}
+
+:root[data-v-stats="plain"] .ui-stat[data-tone="fresh"] .ui-stat-icon {
+  background: var(--tb-color-tint-fresh);
+}
+
+/* Stat tiles, outlined: a raised surface with a strong hairline; the tone stays in the label and the icon. */
+:root[data-v-stats="outlined"] .ui-stat[data-tone] {
+  border-color: var(--tb-color-border-strong);
+  background: var(--tb-color-surface-raised);
+  box-shadow: none;
+}
+
+:root[data-v-stats="outlined"] .ui-stat[data-tone] .ui-stat-value {
+  color: var(--tb-color-text-primary);
+}
+
+/* Work rows, dense: shorter rows for people who work through long lists. Touch targets keep their size (DLS-085). */
+:root[data-v-rows="dense"] .work-item {
+  min-block-size: 3.25rem;
+  padding-block: var(--tb-space-xs);
+}
+
+:root[data-v-rows="dense"] :is(.ui-row, .ui-widget-row) {
+  padding-block: var(--tb-space-sm);
+}
+
+/* News lead, compact: the type panel becomes a thumbnail beside the text, in one raised card. */
+:root[data-v-news="compact"] .content-lead {
+  grid-template-rows: none;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  align-self: start;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+:root[data-v-news="compact"] .content-lead-type {
+  padding-block-end: 0;
+}
+
+/* News lead, typographic: no picture panel; the title carries the card. */
+:root[data-v-news="typographic"] .content-lead {
+  grid-template-rows: none;
+  align-self: start;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-inline-start: var(--tb-space-xs) solid var(--tb-color-accent-base);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+:root[data-v-news="typographic"] .content-lead-media {
+  display: none;
+}
+
+:root:is([data-v-news="compact"], [data-v-news="typographic"]) .content-lead-body {
+  margin: 0;
+  border-radius: 0;
+}
+
+/* Briefing, light: a light card with the accent mark, rows between hairlines and filled actions. */
+:root[data-v-briefing="light"] .home-briefing {
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-text-primary);
+}
+
+:root[data-v-briefing="light"] .home-briefing-date .icon {
+  color: var(--tb-color-accent-base);
+}
+
+:root[data-v-briefing="light"] .home-briefing-date,
+:root[data-v-briefing="light"] .home-briefing-foot {
+  color: var(--tb-color-text-secondary);
+  opacity: 1;
+}
+
+:root[data-v-briefing="light"] .home-briefing-title {
+  font-size: var(--tb-font-size-xl);
+  letter-spacing: -0.02em;
+}
+
+:root[data-v-briefing="light"] .home-briefing-rows {
+  gap: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+}
+
+:root[data-v-briefing="light"] .home-briefing-row {
+  border-radius: 0;
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+:root[data-v-briefing="light"] .home-briefing-row:last-child {
+  border-block-end: 0;
+}
+
+:root[data-v-briefing="light"] .home-briefing-row::before {
+  display: none;
+}
+
+:root[data-v-briefing="light"] .home-briefing-time {
+  flex: none;
+  min-inline-size: 0;
+  padding-block: 0.125rem;
+  padding-inline: var(--tb-space-sm);
+  border-radius: calc(var(--tb-radius-sm) * 0.75);
+  background: var(--tb-color-tint-warm);
+  color: var(--tb-color-tint-warm-text);
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+:root[data-v-briefing="light"] .home-briefing-text span {
+  color: var(--tb-color-text-secondary);
+  opacity: 1;
+}
+
+:root[data-v-briefing="light"] .home-briefing-action {
+  min-block-size: 2.25rem;
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-accent-base);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-accent-text);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+:root[data-v-briefing="light"] .home-briefing-action-quiet {
+  border-color: var(--tb-color-border-default);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+}
+
+:root[data-v-briefing="light"] .home-briefing-action:hover {
+  filter: none;
+  background: var(--tb-color-link);
+}
+
+:root[data-v-briefing="light"] .home-briefing-action-quiet:hover {
+  border-color: var(--tb-color-border-strong);
+  background: var(--tb-color-surface-base);
+}
+
+:root[data-v-briefing="light"] .home-briefing :focus-visible {
+  outline-color: var(--tb-color-focus-ring);
+}
+
+/* The briefing actions are 44 px on a touch screen or a phone in both variants (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  :root[data-v-briefing] .home-briefing-action {
+    min-block-size: 2.75rem;
+  }
+}

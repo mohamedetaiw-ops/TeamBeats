@@ -63,6 +63,21 @@ public sealed class FakeScenario
                     throw new InvalidOperationException($"Scenario address {upn} is not on a reserved example domain.");
                 }
             }
+            foreach (var site in d.SharePointSites)
+            {
+                if (!site.Host.EndsWith(".sharepoint.com", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException($"Scenario SharePoint host {site.Host} must be on sharepoint.com.");
+                }
+                IEnumerable<ScenarioDriveItem> All(IEnumerable<ScenarioDriveItem> items) => items.SelectMany(i => All(i.Children).Prepend(i));
+                foreach (var reader in site.Drives.SelectMany(dr => All(dr.Items)).SelectMany(i => i.Readers))
+                {
+                    if (!reader.EndsWith(".example", StringComparison.OrdinalIgnoreCase) && !reader.EndsWith("@example.com", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidOperationException($"Scenario address {reader} is not on a reserved example domain.");
+                    }
+                }
+            }
             var mails = d.Users.Select(u => u.Mail).ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var u in d.Users.Where(u => u.Manager is not null && !mails.Contains(u.Manager)))
             {
@@ -127,6 +142,24 @@ public sealed class FakeScenario
             {
                 graph.Consent(directoryId, d.GrantedRoles, d.Users.Count, d.Groups.Count);
                 graph.AddDelegatedConsent(directoryId, d.GrantedDelegated.ToArray());
+            }
+            foreach (var site in d.SharePointSites)
+            {
+                var siteId = graph.AddSharePointSite(directoryId, site.Host, site.Path, site.Name, site.Granted);
+                foreach (var drive in site.Drives)
+                {
+                    var driveId = graph.AddSharePointDrive(siteId, drive.Name);
+                    void Add(string? parent, IEnumerable<ScenarioDriveItem> items)
+                    {
+                        foreach (var item in items)
+                        {
+                            var id = graph.AddSharePointItem(driveId, parent, item.Name, item.Folder, item.Text is null ? null : System.Text.Encoding.UTF8.GetBytes(item.Text),
+                                [.. item.Readers]);
+                            Add(id, item.Children);
+                        }
+                    }
+                    Add(null, drive.Items);
+                }
             }
             foreach (var r in d.Rooms)
             {
@@ -196,6 +229,9 @@ public sealed class ScenarioDirectory
     public List<ScenarioMessage> Messages { get; set; } = [];
     public List<ScenarioEvent> Events { get; set; } = [];
 
+    /// <summary>SharePoint Online sites of the directory with their document libraries and files (spec 011 US9).</summary>
+    public List<ScenarioSharePointSite> SharePointSites { get; set; } = [];
+
     /// <summary>Generated mail and calendar for every enabled person, so no Outlook card is ever empty.</summary>
     public ScenarioFill? Fill { get; set; }
 
@@ -248,6 +284,38 @@ public sealed class ScenarioGroup
 {
     public string Id { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;
+}
+
+public sealed class ScenarioSharePointSite
+{
+    /// <summary>A fictional host on the sharepoint.com domain, such as <c>teambeatsdemo.sharepoint.com</c>.</summary>
+    public string Host { get; set; } = string.Empty;
+
+    /// <summary>The site path: <c>/</c>, or <c>/sites/name</c>.</summary>
+    public string Path { get; set; } = "/";
+
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Whether the customer granted the site to the TeamBeats application (Sites.Selected).</summary>
+    public bool Granted { get; set; } = true;
+
+    public List<ScenarioDrive> Drives { get; set; } = [];
+}
+
+public sealed class ScenarioDrive
+{
+    public string Name { get; set; } = "Documents";
+    public List<ScenarioDriveItem> Items { get; set; } = [];
+}
+
+/// <summary>A file or folder. Readers are emails of the scenario; none means everyone in the directory, through the site's Members group.</summary>
+public sealed class ScenarioDriveItem
+{
+    public string Name { get; set; } = string.Empty;
+    public bool Folder { get; set; }
+    public string? Text { get; set; }
+    public List<string> Readers { get; set; } = [];
+    public List<ScenarioDriveItem> Children { get; set; } = [];
 }
 
 public sealed class ScenarioRoom

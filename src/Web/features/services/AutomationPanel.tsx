@@ -53,7 +53,7 @@ export function AutomationPanel({ requestId, automation }: { requestId: string; 
             <strong>
               <bdi>{pick(s.names, locale, s.name)}</bdi>
             </strong>
-            <span className="services-status" data-testid="automation-status">
+            <span className="ui-badge" data-testid="automation-status">
               {known(s.status) ? t(`states.${s.status}`) : s.status}
             </span>
             <span className="services-meta">{format.dateTime(new Date(s.startedAt), { dateStyle: "medium", timeStyle: "short" })}</span>

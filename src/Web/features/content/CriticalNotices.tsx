@@ -72,7 +72,7 @@ export function CriticalNotices() {
           {pending.banners.map((notice) => (
             <section key={notice.id} className="content-banner" aria-label={notice.title} lang={notice.locale}>
               <p className="content-banner-title">
-                <span className="content-badge">{t("label")}</span>
+                <span className="ui-badge content-badge" data-tone="accent">{t("label")}</span>
                 <Link href={readHref(notice.id)}>
                   <bdi>{notice.title}</bdi>
                 </Link>
@@ -118,7 +118,7 @@ export function CriticalNotices() {
       >
         {modal ? (
           <div className="content-dialog-body">
-            <p className="content-badge">{t("label")}</p>
+            <p className="ui-badge content-badge" data-tone="accent">{t("label")}</p>
             <h2 id={`${ids}-title`}>
               <bdi>{modal.title}</bdi>
             </h2>

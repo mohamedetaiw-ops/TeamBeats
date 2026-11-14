@@ -49,7 +49,7 @@ export default async function ImportReportPage({ params, searchParams }: { param
         ]}
       />
       <main id="main" className="page">
-        <PageHeader title={t("reportTitle", { file: view.data.fileName })} description={t("reportIntro")} icon="upload" />
+        <PageHeader title={t("reportTitle", { file: view.data.fileName })} description={t(view.data.source === "sharepoint" ? "reportIntroSharePoint" : "reportIntro")} icon="upload" />
         <ImportReport view={view.data} page={page.data} status={status} />
       </main>
     </>

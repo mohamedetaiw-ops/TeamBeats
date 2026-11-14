@@ -4,10 +4,12 @@ import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { nameIn, policyHref, type PolicyListItem, type RegisterRights } from "@/lib/policies/types";
 import { Header } from "@/components/shell/Header";
+import { Alert } from "@/components/ui/Alert";
 import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { FilterToolbar, ToolbarSearch, ToolbarSelect } from "@/components/ui/FilterToolbar";
 
 const statuses = ["draft", "in_review", "approved", "published", "retired"] as const;
 const statusTone: Record<string, BadgeTone> = { draft: "neutral", in_review: "warning", approved: "info", published: "success", retired: "neutral" };
@@ -34,6 +36,21 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
   const locale = await getLocale();
   const format = await getFormatter();
   const date = (iso: string | null) => (iso ? format.dateTime(new Date(iso), { dateStyle: "medium" }) : t("none"));
+  const chosenStatus = statuses.find((s) => s === status);
+  const registerHref = (keep: { q?: string; status?: string }) => {
+    const next = new URLSearchParams();
+    if (keep.q) next.set("q", keep.q);
+    if (keep.status) next.set("status", keep.status);
+    return next.size > 0 ? `/policies?${next}` : "/policies";
+  };
+  const rows = list.ok ? list.data : [];
+  // What needs attention comes before the full list (DLS-109): policies in force whose review date has passed.
+  const today = new Date().toISOString();
+  const overdue = rows.filter((p) => p.status === "published" && p.nextReviewAt !== null && p.nextReviewAt < today);
+  // A column where every row says the same steps back: the value is said once above the table (DLS-109).
+  const first = rows.length > 1 ? rows[0] : undefined;
+  const oneStatus = first && rows.every((p) => p.status === first.status && !p.workingState) ? first.status : null;
+  const oneOwner = first && rows.every((p) => p.owner.displayName === first.owner.displayName) ? first.owner.displayName : null;
   return (
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("title"), href: "/policies" }]} />
@@ -51,31 +68,55 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
             ) : null
           }
         />
-        <form className="ui-filter-bar" method="get" role="search" aria-label={t("search")}>
-          <div className="field">
-            <label htmlFor="policy-q">{t("search")}</label>
-            <input id="policy-q" name="q" type="search" defaultValue={q ?? ""} dir="auto" />
-          </div>
-          <div className="field">
-            <label htmlFor="policy-status">{t("statusFilter")}</label>
-            <select id="policy-status" name="status" defaultValue={status ?? ""}>
-              <option value="">{t("allStatuses")}</option>
-              {statuses.map((s) => (
-                <option key={s} value={s}>
-                  {ts(s)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button type="submit" className="button button-secondary">
-            {t("apply")}
-          </button>
-        </form>
+        <FilterToolbar
+          label={t("search")}
+          method="get"
+          search={<ToolbarSearch label={t("search")} name="q" placeholder={t("search")} defaultValue={q ?? ""} />}
+          end={
+            <button type="submit" className="button button-secondary">
+              {t("apply")}
+            </button>
+          }
+          applied={[
+            ...(q?.trim() ? [{ key: "q", label: q.trim(), href: registerHref({ status: chosenStatus }) }] : []),
+            ...(chosenStatus ? [{ key: "status", label: `${t("statusFilter")}: ${ts(chosenStatus)}`, href: registerHref({ q: q?.trim() }) }] : []),
+          ]}
+          clearHref="/policies"
+        >
+          <ToolbarSelect label={t("statusFilter")} hideLabel name="status" defaultValue={chosenStatus ?? ""}>
+            <option value="">{t("allStatuses")}</option>
+            {statuses.map((s) => (
+              <option key={s} value={s}>
+                {ts(s)}
+              </option>
+            ))}
+          </ToolbarSelect>
+        </FilterToolbar>
         {!list.ok ? (
           <StateView kind="error" title={t("failed")} message="" />
         ) : list.data.length === 0 ? (
           <StateView kind="empty" title={t("empty")} message="" />
         ) : (
+          <>
+          {overdue.length > 0 ? (
+            <Alert tone="warning" title={t("overdue", { count: overdue.length })}>
+              <ul className="policies-attention" data-testid="policy-attention">
+                {overdue.slice(0, 3).map((p) => (
+                  <li key={p.id}>
+                    <Link href={policyHref(p.id)}>
+                      <bdi>{nameIn(p.names, locale)}</bdi>
+                    </Link>
+                    <span className="policies-meta"> · {t("reviewWas", { date: date(p.nextReviewAt) })}</span>
+                  </li>
+                ))}
+              </ul>
+            </Alert>
+          ) : null}
+          {oneStatus || oneOwner ? (
+            <p className="policies-meta" data-testid="policy-uniform">
+              {[oneStatus ? t("allStatus", { count: rows.length, status: ts(oneStatus) }) : null, oneOwner ? t("allOwner", { owner: oneOwner }) : null].filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
           <div className="policies-table">
             <table data-testid="policy-register" data-stack>
               <caption className="visually-hidden">{t("title")}</caption>
@@ -83,11 +124,11 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
                 <tr>
                   <th scope="col" data-priority="low">{t("code")}</th>
                   <th scope="col">{t("name")}</th>
-                  <th scope="col">{t("status")}</th>
+                  {oneStatus ? null : <th scope="col">{t("status")}</th>}
                   <th scope="col" data-priority="low">{t("version")}</th>
                   <th scope="col" data-priority="low">{t("effective")}</th>
                   <th scope="col">{t("review")}</th>
-                  <th scope="col">{t("owner")}</th>
+                  {oneOwner ? null : <th scope="col">{t("owner")}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -101,21 +142,34 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
                         <bdi>{nameIn(p.names, locale)}</bdi>
                       </Link>
                     </th>
-                    <td data-label={t("status")}>
-                      <Badge tone={statusTone[p.status] ?? "neutral"}>{ts(p.status)}</Badge>
-                      {p.workingState ? <span className="policies-meta"> · {t("working", { state: ts(p.workingState) })}</span> : null}
-                    </td>
+                    {oneStatus ? null : (
+                      <td data-label={t("status")}>
+                        <Badge tone={statusTone[p.status] ?? "neutral"}>{ts(p.status)}</Badge>
+                        {p.workingState ? <span className="policies-meta"> · {t("working", { state: ts(p.workingState) })}</span> : null}
+                      </td>
+                    )}
                     <td data-priority="low" data-label={t("version")}>{p.currentVersion ?? t("none")}</td>
                     <td data-priority="low" data-label={t("effective")}>{date(p.effectiveFrom)}</td>
-                    <td data-label={t("review")}>{date(p.nextReviewAt)}</td>
-                    <td data-label={t("owner")}>
-                      <bdi>{p.owner.displayName}</bdi>
+                    <td data-label={t("review")}>
+                      {date(p.nextReviewAt)}
+                      {overdue.includes(p) ? (
+                        <>
+                          {" "}
+                          <Badge tone="warning">{t("late")}</Badge>
+                        </>
+                      ) : null}
                     </td>
+                    {oneOwner ? null : (
+                      <td data-label={t("owner")}>
+                        <bdi>{p.owner.displayName}</bdi>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          </>
         )}
       </main>
     </>

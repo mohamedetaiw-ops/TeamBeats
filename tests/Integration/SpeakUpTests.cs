@@ -155,6 +155,9 @@ public sealed class SpeakUpTests(TenantWorld world)
         Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from engagement.post_follow where post_id = @p", ("p", postId)));
         Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from engagement.anon_post where body is not null"));
         await world.Database.AssertAuditedAsync(t.Id, AuditActions.EngagementContentApproved, id.ToString());
+        // Anonymous items are never indexed for search (spec 012 FR-021), even when an index rebuild reads every post.
+        await world.DispatchTenantAsync(t.Id);
+        Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from search.unit where item_id = @p", ("p", postId)));
 
         // The link shows the decision once, then stops working.
         var reply = await OkAsync(ReplyAsync(omar.Client, token));

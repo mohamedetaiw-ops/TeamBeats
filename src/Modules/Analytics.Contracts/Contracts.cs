@@ -242,3 +242,12 @@ public interface IAnalyticsItemSource
     /// <summary>Reminds the given people of the item, after checking again that the person asking may; returns how many were sent.</summary>
     Task<int> RemindAsync(Guid itemId, IReadOnlyCollection<Guid> people, CancellationToken ct = default);
 }
+
+/// <summary>
+/// The person's pseudonymous key in this tenant (spec 021 FR-003), for a module that keeps its own pseudonymous records,
+/// such as the search query log (spec 012 FR-013). The same key as analytics events carry.
+/// </summary>
+public interface IAnalyticsPseudonyms
+{
+    Task<string> KeyAsync(Guid userId, CancellationToken ct = default);
+}

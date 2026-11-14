@@ -69,6 +69,19 @@ public interface IMicrosoftGraph
     Task<AppToken> AcquireAppTokenAsync(string externalTenantId, CancellationToken ct);
 
     Task<long> CountAsync(AppToken token, string collection, CancellationToken ct);
+
+    /// <summary>
+    /// A Graph read with the application token (SharePoint sites and drives the connection was granted). Null when the
+    /// resource does not exist or the application may not see it (404). Throws <see cref="GraphConsentMissingException"/>
+    /// on 401 or 403 and <see cref="GraphUnavailableException"/> on anything else.
+    /// </summary>
+    Task<JsonElement?> AppGetAsync(AppToken token, string pathAndQuery, CancellationToken ct);
+
+    /// <summary>
+    /// Reads file content with the application token into a temporary stream the caller disposes; null on 404. Throws
+    /// <see cref="GraphConsentMissingException"/> on 401 or 403 and <see cref="GraphUnavailableException"/> otherwise.
+    /// </summary>
+    Task<Stream?> AppDownloadAsync(AppToken token, string pathAndQuery, CancellationToken ct);
 }
 
 /// <summary>
@@ -216,6 +229,38 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
         }
     }
 
+    public async Task<JsonElement?> AppGetAsync(AppToken token, string pathAndQuery, CancellationToken ct)
+    {
+        using var client = httpClients.CreateClient(ClientName);
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{GraphBase}/{pathAndQuery.TrimStart('/')}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.SendAsync(request, ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new GraphUnavailableException("Graph unreachable.", ex);
+        }
+        using (response)
+        {
+            if ((int)response.StatusCode == 404)
+            {
+                return null;
+            }
+            if ((int)response.StatusCode is 401 or 403)
+            {
+                throw new GraphConsentMissingException();
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new GraphUnavailableException($"Graph returned {(int)response.StatusCode}.");
+            }
+            return await response.Content.ReadFromJsonAsync<JsonElement>(ct);
+        }
+    }
+
     public static readonly TimeSpan RetryBudget = TimeSpan.FromSeconds(3);
     private const int MaxAttempts = 3;
 
@@ -291,6 +336,8 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
             401 => "unauthorized",
             _ when code is "MailboxNotEnabledForRESTAPI" or "MailboxNotSupportedForRESTAPI" or "ResourceNotFound" && status is 404 or 400 => "no_mailbox",
             403 => "forbidden",
+            409 => "conflict",
+            413 => "too_large",
             _ => "not_found",
         });
     }
@@ -319,6 +366,49 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
                 throw await FailureAsync(response, ct);
             }
             return await response.Content.ReadFromJsonAsync<JsonElement>(ct);
+        }
+    }
+
+    public async Task<Stream?> AppDownloadAsync(AppToken token, string pathAndQuery, CancellationToken ct)
+    {
+        using var client = httpClients.CreateClient(ClientName);
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{GraphBase}/{pathAndQuery.TrimStart('/')}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new GraphUnavailableException("Graph unreachable.", ex);
+        }
+        using (response)
+        {
+            if ((int)response.StatusCode == 404)
+            {
+                return null;
+            }
+            if ((int)response.StatusCode is 401 or 403)
+            {
+                throw new GraphConsentMissingException();
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new GraphUnavailableException($"Graph returned {(int)response.StatusCode}.");
+            }
+            var copy = new FileStream(Path.GetTempFileName(), FileMode.Create, FileAccess.ReadWrite, FileShare.None, 81920, FileOptions.DeleteOnClose);
+            try
+            {
+                await response.Content.CopyToAsync(copy, ct);
+                copy.Position = 0;
+                return copy;
+            }
+            catch
+            {
+                await copy.DisposeAsync();
+                throw;
+            }
         }
     }
 

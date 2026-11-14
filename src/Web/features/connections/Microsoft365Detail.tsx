@@ -1,11 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
-import { FormField } from "@/components/ui/FormField";
+import { FormField, SelectField } from "@/components/ui/FormField";
 import {
   M365_FEATURES,
   M365_PERMISSION_REASONS,
@@ -16,6 +16,7 @@ import {
   type FeatureView,
   type Microsoft365Connection,
   type Microsoft365TestResult,
+  type SharePointSite,
 } from "@/lib/integrations/types";
 import { Messages, StatusBadge, TestLine } from "./parts";
 import { send } from "./request";
@@ -54,6 +55,162 @@ function FeatureOptions({ feature, busy, onSave }: { feature: FeatureView; busy:
         </Button>
       </div>
     </form>
+  );
+}
+
+type SensitivityLabel = { labelId: string; name: string | null; files: number; classification: string | null };
+const CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
+
+/**
+ * Microsoft Purview labels and the TeamBeats classification each maps to (spec 011 FR-032). Labels appear once synced
+ * files carry them; an unmapped label counts as confidential, which the API applies, so this only lists and saves.
+ */
+function SharePointLabels({ connectionId, returnTo }: { connectionId: string; returnTo: string }) {
+  const t = useTranslations("connections");
+  const [labels, setLabels] = useState<SensitivityLabel[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [messages, setMessages] = useState<{ ok: boolean; list: string[] }>({ ok: true, list: [] });
+  const path = `/api/v1/documents/sensitivity-labels/${encodeURIComponent(connectionId)}`;
+
+  useEffect(() => {
+    let live = true;
+    void send<SensitivityLabel[]>("GET", path, undefined, returnTo, t("detail.failed")).then((result) => {
+      if (!live) return;
+      if (result.ok) setLabels(result.data);
+      else setMessages({ ok: false, list: result.messages });
+    });
+    return () => {
+      live = false;
+    };
+  }, [path, returnTo, t]);
+
+  async function save(label: SensitivityLabel, value: string) {
+    setBusy(label.labelId);
+    setMessages({ ok: true, list: [] });
+    const result = await send<SensitivityLabel>("PUT", `${path}/${encodeURIComponent(label.labelId)}`, { classification: value || null }, returnTo,
+      t("detail.failed"));
+    if (result.ok) {
+      setLabels((all) => (all ?? []).map((l) => (l.labelId === label.labelId ? result.data : l)));
+      setMessages({ ok: true, list: [t("m365.labels.saved")] });
+    } else {
+      setMessages({ ok: false, list: result.messages });
+    }
+    setBusy(null);
+  }
+
+  return (
+    <section className="connections-item" aria-labelledby="sharepoint-labels-heading">
+      <h4 id="sharepoint-labels-heading">{t("m365.labels.title")}</h4>
+      <p>{t("m365.labels.intro")}</p>
+      {labels && labels.length === 0 ? <p>{t("m365.labels.empty")}</p> : null}
+      {labels && labels.length > 0 ? (
+        <ul className="connections-list">
+          {labels.map((label) => (
+            <li key={label.labelId} className="connections-row">
+              <SelectField
+                name={`label-${label.labelId}`}
+                label={label.name ?? label.labelId}
+                hint={t("m365.labels.files", { count: label.files })}
+                value={label.classification ?? ""}
+                disabled={busy === label.labelId}
+                onChange={(e) => void save(label, e.target.value)}
+                options={[
+                  { value: "", label: t("m365.labels.unmapped") },
+                  ...CLASSIFICATIONS.map((c) => ({ value: c, label: t(`m365.labels.classification.${c}`) })),
+                ]}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <Messages ok={messages.ok} messages={messages.list} />
+    </section>
+  );
+}
+
+/**
+ * The allowed sites of SharePoint documents (spec 011 FR-025). The API resolves each address with the application's own
+ * access and refuses a site the customer has not granted, so this only lists, adds and removes.
+ */
+function SharePointSites({ base, returnTo }: { base: string; returnTo: string }) {
+  const t = useTranslations("connections");
+  const [sites, setSites] = useState<SharePointSite[] | null>(null);
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [messages, setMessages] = useState<{ ok: boolean; list: string[] }>({ ok: true, list: [] });
+  const path = `${base}/sharepoint/sites`;
+
+  async function load() {
+    const result = await send<SharePointSite[]>("GET", path, undefined, returnTo, t("detail.failed"));
+    if (result.ok) setSites(result.data);
+    else setMessages({ ok: false, list: result.messages });
+  }
+
+  useEffect(() => {
+    let live = true;
+    void send<SharePointSite[]>("GET", path, undefined, returnTo, t("detail.failed")).then((result) => {
+      if (!live) return;
+      if (result.ok) setSites(result.data);
+      else setMessages({ ok: false, list: result.messages });
+    });
+    return () => {
+      live = false;
+    };
+  }, [path, returnTo, t]);
+
+  async function act(key: string, method: string, target: string, body: unknown, note: string) {
+    setBusy(key);
+    setMessages({ ok: true, list: [] });
+    const result = await send<unknown>(method, target, body, returnTo, t("detail.failed"));
+    if (result.ok) {
+      await load();
+      setMessages({ ok: true, list: [note] });
+      if (key === "add") setUrl("");
+    } else {
+      setMessages({ ok: false, list: result.messages });
+    }
+    setBusy(null);
+  }
+
+  return (
+    <section className="connections-item" aria-labelledby="sharepoint-sites-heading">
+      <h4 id="sharepoint-sites-heading">{t("m365.sites.title")}</h4>
+      <p>{t("m365.sites.intro")}</p>
+      {sites && sites.length === 0 ? <p>{t("m365.sites.empty")}</p> : null}
+      {sites && sites.length > 0 ? (
+        <ul className="connections-list">
+          {sites.map((site) => (
+            <li key={site.siteId} className="connections-row">
+              <a href={site.webUrl} target="_blank" rel="noreferrer">
+                {site.name}
+              </a>
+              <Button
+                busy={busy === `remove:${site.siteId}`}
+                busyLabel={t("detail.working")}
+                onClick={() => void act(`remove:${site.siteId}`, "DELETE", `${path}/${encodeURIComponent(site.siteId)}`, undefined, t("m365.sites.removed"))}
+              >
+                {t("m365.sites.remove", { name: site.name })}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <form
+        className="connections-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void act("add", "POST", path, { url }, t("m365.sites.added"));
+        }}
+      >
+        <FormField label={t("m365.sites.url")} hint={t("m365.sites.urlHint")} name="siteUrl" type="url" dir="ltr" value={url} onChange={(e) => setUrl(e.target.value)} />
+        <div className="connections-row">
+          <Button type="submit" busy={busy === "add"} busyLabel={t("detail.working")}>
+            {t("m365.sites.add")}
+          </Button>
+        </div>
+      </form>
+      <Messages messages={messages.list} ok={messages.ok} />
+    </section>
   );
 }
 
@@ -189,6 +346,12 @@ export function Microsoft365Detail({ initial }: { initial: Microsoft365Connectio
                   </a>
                 ) : null}
               </div>
+              {f.key === "sharepoint_documents" && f.enabled && f.consentStatus === "granted" ? (
+                <>
+                  <SharePointSites base={base} returnTo={returnTo} />
+                  <SharePointLabels connectionId={initial.id} returnTo={returnTo} />
+                </>
+              ) : null}
               {f.enabled ? (
                 <FeatureOptions
                   key={JSON.stringify(f.options ?? null)}
