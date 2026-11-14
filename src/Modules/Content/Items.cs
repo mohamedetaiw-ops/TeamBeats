@@ -8,6 +8,7 @@ using TeamBeats.Messaging;
 using TeamBeats.Modules.Content.Contracts;
 using TeamBeats.Modules.Identity.Contracts;
 using TeamBeats.Modules.Tenancy.Contracts;
+using TeamBeats.Modules.People.Contracts;
 using TeamBeats.Persistence;
 using TeamBeats.Primitives;
 using TeamBeats.TenantContext;
@@ -84,7 +85,8 @@ public sealed record ReaderView(
     bool UnderReview = false,
     IReadOnlyList<string>? Anchors = null,
     string Classification = "internal",
-    bool SiteArchived = false);
+    bool SiteArchived = false,
+    IReadOnlyList<string>? Tags = null);
 
 public sealed record VersionSummary(int Number, ContentPerson Author, ContentPerson? Approver, string? ChangeNote, bool Material, IReadOnlyList<string> Locales,
     DateTimeOffset CreatedAt, DateTimeOffset? PublishedAt, bool Current, bool Draft, int? RestoredFrom = null);
@@ -138,7 +140,9 @@ public sealed class Items(
     Sites sites,
     ContentReviews reviews,
     IOrganizationHierarchy hierarchy,
-    TeamBeats.Modules.Security.Contracts.ISensitiveDataScanner sensitiveData)
+    TeamBeats.Modules.Security.Contracts.ISensitiveDataScanner sensitiveData,
+    IProfiles profiles,
+    IAuthorizationProvisioning provisioning)
 {
     public static readonly IReadOnlySet<string> Classifications = new HashSet<string>(StringComparer.Ordinal) { "public", "internal", "confidential", "restricted" };
 
@@ -179,12 +183,20 @@ public sealed class Items(
     /// visible to every active member of the tenant; confidential and restricted items need a covering role grant at the
     /// site's unit or an entry on the item. Targeting never enters this check.
     /// </summary>
-    internal async Task<bool> MayReadAsync(ItemRow item, SiteRow site, CancellationToken ct)
-    {
-        var visibility = item.Classification is "public" or "internal" ? ResourceVisibility.Tenant : ResourceVisibility.Restricted;
-        var descriptor = new ResourceDescriptor(ResourceType, item.Id, site.OrgUnitId, visibility, item.Classification);
-        return (await authz.CheckAsync(Permissions.ContentView, AuthzTarget.Resource(descriptor), ct)).Allowed;
-    }
+    internal async Task<bool> MayReadAsync(ItemRow item, SiteRow site, CancellationToken ct) =>
+        (await authz.CheckAsync(Permissions.ContentView, AuthzTarget.Resource(Descriptor(item, site)), ct)).Allowed;
+
+    internal static ResourceDescriptor Descriptor(ItemRow item, SiteRow site) =>
+        new(ResourceType, item.Id, site.OrgUnitId, item.Classification is "public" or "internal" ? ResourceVisibility.Tenant : ResourceVisibility.Restricted, item.Classification);
+
+    /// <summary>Whether another member may read the item, for telling them about it (a mention, US9 scenario 2).</summary>
+    internal async Task<bool> UserMayReadAsync(Guid user, ItemRow item, SiteRow site, CancellationToken ct) =>
+        (await memberships.GetAsync(user, ct))?.Status == MembershipStatus.Active
+        && await provisioning.UserHoldsAsync(user, Permissions.ContentView, AuthzTarget.Resource(Descriptor(item, site)), ct);
+
+    /// <summary>Whether the caller sees every one of these people in the directory (spec 010), so a mention never reveals someone hidden.</summary>
+    internal async Task<bool> SeesAllAsync(IReadOnlySet<Guid> people, CancellationToken ct) =>
+        people.Count == 0 || (await profiles.ViewAsync(context.RequireUser(), people, ct)).Count(p => p.Active && people.Contains(p.UserId)) == people.Count;
 
     /// <summary>Knowledge articles are written by knowledge editors (<c>kb.edit</c> at the site, spec 011 US4), on top of the authoring rights.</summary>
     private async Task DemandKnowledgeEditorAsync(string type, SiteRow site, CancellationToken ct)
@@ -250,6 +262,10 @@ public sealed class Items(
                 errors.Add($"variants.{locale}.summary", "validation.content.summary");
             }
             BodyValidator.Validate(v.Body, embeds, $"variants.{locale}.body", errors);
+            if (!await SeesAllAsync(BodyValidator.Mentions(v.Body), ct))
+            {
+                errors.Add($"variants.{locale}.body", "validation.content.mention");
+            }
             result[locale] = new ContentVariant(title, summary, v.Body ?? BodyDocument.Empty);
         }
         if (!result.ContainsKey(primary))
@@ -742,9 +758,21 @@ public sealed class Items(
               published_at = @now, expired_at = null, updated_at = @now, row_version = row_version + 1
             where id = @id
             """, new { id = item.Id, version, now }, ct);
+        await SetTagsAsync(item.Id, version, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ContentPublished, "content_item", item.Id.ToString(), TargetOrgUnitId: site.OrgUnitId,
             Changes: new { version, site = site.Id, expiresAt = item.ExpiresAt }), ct);
         await outbox.EnqueueAsync(new ContentPublished(item.Id, site.Id, item.Type, version), ct);
+    }
+
+    /// <summary>The hashtags of the live version in every locale (US9 scenario 3), for the topic pages and the following feed.</summary>
+    private async Task SetTagsAsync(Guid id, int version, CancellationToken ct)
+    {
+        var live = (await VersionAsync(id, version, ct))!;
+        var tags = live.Variants.Values.SelectMany(v => BodyValidator.Hashtags(v.Body)).Distinct(StringComparer.Ordinal).Take(BodyValidator.MaxHashtags * 2).ToArray();
+        await session.ExecAsync("delete from content.item_tag where item_id = @id", new { id }, ct);
+        await session.ExecAsync(
+            "insert into content.item_tag (tenant_id, item_id, tag) select platform.current_tenant_id(), @id, unnest(@tags::text[]) on conflict do nothing",
+            new { id, tags }, ct);
     }
 
     /// <summary>Takes a live or scheduled item down. It keeps its versions and can be published again.</summary>
@@ -891,7 +919,8 @@ public sealed class Items(
             variant.Title, variant.Summary, variant.Body, number, item.PublishedAt ?? version.PublishedAt ?? version.CreatedAt,
             version.PublishedAt ?? version.CreatedAt, item.Status == ContentStatuses.Expired, item.Pinned, item.Featured,
             (await sites.TypeAsync(item.Type, ct))!.UnderReviewLabel && item.ReviewDueAt is { } due && due <= clock.UtcNow,
-            BodyValidator.Sections(variant.Body).Select(s => s.Anchor).ToList(), item.Classification, !site.Active);
+            BodyValidator.Sections(variant.Body).Select(s => s.Anchor).ToList(), item.Classification, !site.Active,
+            await session.QueryAsync("select tag from content.item_tag where item_id = @id order by tag", new { id }, r => r.GetString(0), ct));
     }
 
     /// <summary>The reader's locale, else the tenant default, else the item's primary locale.</summary>

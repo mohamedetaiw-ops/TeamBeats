@@ -1404,6 +1404,13 @@
               "null",
               "string"
             ]
+          },
+          "mention": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },

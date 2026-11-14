@@ -2349,5 +2349,13 @@
   "validation.services.template_unavailable": "This template does not fit your plan.",
   "validation.content.site_template": "Choose one of the site templates.",
   "validation.content.site_home": "The home page must be a page owned by the site's own unit.",
-  "conflict.content.site_default": "The default site cannot be archived."
+  "conflict.content.site_default": "The default site cannot be archived.",
+  "validation.content.mention": "You can only mention people you can see in the directory.",
+  "validation.content.body_mentions": "The text mentions too many people.",
+  "validation.content.topic": "A topic is 2 to 50 letters, digits or underscores.",
+  "validation.content.follow_site": "Choose a site to follow.",
+  "validation.content.follow_kind": "You can follow a site or a topic.",
+  "conflict.content.follow_limit": "You follow as many sites and topics as you can. Stop following one first.",
+  "notifications.template.content.mention.new.title": "You were mentioned",
+  "notifications.template.content.mention.new.body": "Someone mentioned you in news or a comment. Open it to read it."
 }

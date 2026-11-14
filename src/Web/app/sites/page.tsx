@@ -2,9 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { pickName, type SiteLink } from "@/lib/content/types";
+import { pickName, type FollowView, type SiteLink } from "@/lib/content/types";
 import { Header } from "@/components/shell/Header";
 import { StateView } from "@/components/ui/StateView";
+import { FollowButton } from "@/features/content/FollowButton";
 import "@/features/content/content.css";
 
 /**
@@ -16,7 +17,8 @@ export default async function SitesPage() {
   if (!me.ok) {
     redirect("/signin");
   }
-  const sites = await apiGet<SiteLink[]>("/api/v1/content/sites/mine");
+  const [sites, follows] = await Promise.all([apiGet<SiteLink[]>("/api/v1/content/sites/mine"), apiGet<FollowView[]>("/api/v1/content/follows")]);
+  const followed = new Set(follows.ok ? follows.data.filter((f) => f.kind === "site").map((f) => f.key) : []);
   const t = await getTranslations("content.sites");
   const locale = await getLocale();
   return (
@@ -43,6 +45,7 @@ export default async function SitesPage() {
                   ) : (
                     <p className="content-meta">{t("notPublished")}</p>
                   )}
+                  <FollowButton kind="site" followKey={s.id} label={name} following={followed.has(s.id)} />
                 </li>
               );
             })}

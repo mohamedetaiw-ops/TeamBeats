@@ -1,11 +1,40 @@
-import type { Block, BodyDocument, Inline } from "@/lib/content/types";
+import { topicHref, type Block, type BodyDocument, type Inline } from "@/lib/content/types";
 
-/** Inline runs with their marks; links open only http, https and mailto, which the API already enforces. */
+const hashtag = /(^|[^\p{L}\p{N}_#&])#([\p{L}\p{N}_]{2,50})(?![\p{L}\p{N}_])/gu;
+
+const hashOf = (tag: string) => "#".concat(tag);
+
+/** Text with each hashtag as a link to its topic page (spec 009 US9 scenario 3). */
+function Tagged({ text }: { text: string }) {
+  const parts: React.ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(hashtag)) {
+    const lead = match[1] ?? "";
+    const tag = match[2] ?? "";
+    const start = (match.index ?? 0) + lead.length;
+    if (start > last) parts.push(text.slice(last, start));
+    parts.push(
+      <a key={start} href={topicHref(tag.toLowerCase())}>
+        {hashOf(tag)}
+      </a>,
+    );
+    last = start + tag.length + 1;
+  }
+  if (parts.length === 0) return <>{text}</>;
+  if (last < text.length) parts.push(text.slice(last));
+  return <>{parts}</>;
+}
+
+/**
+ * Inline runs with their marks; links open only http, https and mailto, which the API already enforces. A mention
+ * opens the person's profile, which the directory shows only to those allowed to see it.
+ */
 function Runs({ runs }: { runs: Inline[] | null | undefined }) {
   return (
     <>
       {(runs ?? []).map((r, i) => {
-        let node: React.ReactNode = r.text;
+        let node: React.ReactNode = r.mention || r.link ? r.text : <Tagged text={r.text} />;
+        if (r.mention) node = <a href={`/people/${encodeURIComponent(r.mention)}`} className="content-mention">{node}</a>;
         if (r.marks?.includes("bold")) node = <strong>{node}</strong>;
         if (r.marks?.includes("italic")) node = <em>{node}</em>;
         if (r.link) node = <a href={r.link}>{node}</a>;

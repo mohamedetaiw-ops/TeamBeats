@@ -3501,7 +3501,9 @@
       "underReview": "Under owner review",
       "fallback": "This item is not available in your language, so it is shown in another one.",
       "embed": "Embedded content",
-      "siteArchived": "From an archived site"
+      "siteArchived": "From an archived site",
+      "tags": "Topics",
+      "tag": "#{tag}"
     },
     "social": {
       "title": "Reactions and comments",
@@ -3530,7 +3532,14 @@
       "send": "Post comment",
       "off": "Comments are turned off for this site.",
       "held": "Thanks. Your comment will appear once a moderator approves it.",
-      "reportedThanks": "Thanks for reporting. A moderator will look at it."
+      "reportedThanks": "Thanks for reporting. A moderator will look at it.",
+      "mention": "Mention someone",
+      "mentionResults": "People found",
+      "mentionChosen": "People you mention",
+      "mentionAdd": "Mention {name}",
+      "mentionRemove": "Stop mentioning {name}",
+      "mentioned": "Mentions:",
+      "mentionName": "@{name}"
     },
     "component": {
       "feed": {
@@ -3873,6 +3882,22 @@
       "mineEmpty": "No sites are shared with you yet.",
       "open": "Open {name}",
       "notPublished": "Home page not published yet"
+    },
+    "topics": {
+      "follow": "Follow",
+      "following": "Following",
+      "followNamed": "Follow {name}",
+      "unfollowNamed": "Stop following {name}",
+      "working": "Saving",
+      "failed": "That did not work. Try again.",
+      "empty": "Nothing you can read has this topic yet.",
+      "followingTitle": "Following",
+      "followingIntro": "News from the sites and topics you follow. Critical announcements always show here too.",
+      "follows": "What you follow",
+      "followsEmpty": "You do not follow any sites or topics yet. Follow them from a site list or a topic page.",
+      "feed": "Latest",
+      "feedEmpty": "Nothing new from what you follow.",
+      "site": "Site"
     }
   },
   "documents": {

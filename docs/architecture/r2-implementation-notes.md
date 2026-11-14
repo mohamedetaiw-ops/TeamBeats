@@ -1633,3 +1633,11 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - A site linked to a unit now defaults its audience to that unit's subtree (US6 scenario 2). Sharing adds an audience that only widens who finds the site in their list.
 - Archiving makes the site's items read-only (409 `conflict.content.site_archived` on any change), removes them from the feed and the site from the reader's list. Items stay readable by link with an "archived site" label. Search keeps the items; an archived label in search results waits for a label field in the search contract (spec 012).
 - Restoring an archived site counts against `content.max_sites` again. The default site cannot be archived.
+
+## Spec 009 R2 slice 2: mentions, hashtags and follows (T027, T028)
+- A mention in a body is an inline run with `mention` set to a user ID. Saving a draft refuses a mention of anyone the author does not see in the directory (`validation.content.mention`), so mentions never reveal people. Mentions in comments are a list of user IDs next to the plain text, with the same check.
+- People mentioned in an item hear of it when a version goes live (a `ContentPublished` handler), once per item; people mentioned in a comment hear of it when the comment is visible (at once, or when a moderator approves it). Both only when the person may read the item; the author is never told.
+- Hashtags are found in the text of the live version in every locale: a # at the start or after a non-word character, then 2 to 50 letters, digits or underscores in any script, lower cased, at most 10 per variant. They are stored per live item (`content.item_tag`) at go-live.
+- The topic page (`GET /api/v1/content/topics/{tag}`, page `/content/topics/{tag}`) is the feed filtered by tag, so it applies the same targeting and read checks and counts only permitted items.
+- Follows are per person (`content.follow`), at most 200: a site the person works in or that reaches them, or any topic. `GET /api/v1/content/feed?following=true` lists items of followed sites and topics plus every critical item, since a preference never hides mandatory content. Page `/content/following`.
+- Mention suggestions in the comment box use the people directory search, which lists only people the writer may see.

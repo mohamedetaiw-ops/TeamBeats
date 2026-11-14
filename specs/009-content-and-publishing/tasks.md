@@ -47,8 +47,8 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T026 [US6] Site templates, home page link, status and archive, shared audience, `GET /sites/mine`; site admin pages and site home route in the web app, English and Arabic, e2e with axe
 
 ### Phase 8: User Story 9 R2 and FR-017, mentions, hashtags and follows (P2)
-- [ ] T027 [P] [US9] Tests: mention notifies only a permitted reader; suggestions follow directory permission; topic page lists only permitted items; follow and the following filter; critical items never hidden
-- [ ] T028 [US9] Mention marks and hashtags in bodies and comments, topic endpoint and page, follows and feed filter, UI
+- [x] T027 [P] [US9] Tests: mention notifies only a permitted reader; suggestions follow directory permission; topic page lists only permitted items; follow and the following filter; critical items never hidden
+- [x] T028 [US9] Mention marks and hashtags in bodies and comments, topic endpoint and page, follows and feed filter, UI
 
 ### Phase 9: User Story 5 R2, AI translation (P2)
 - [ ] T029 [P] [US5] Tests: translation draft marked machine translated; Confidential blocked by default policy; reviewer required before publish; human edit clears the mark; entitlement off refused; gateway unavailable degrades

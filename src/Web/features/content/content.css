@@ -583,3 +583,31 @@
   padding: 0;
   list-style: none;
 }
+
+/* Mentions, topics and follows (spec 009 US9, FR-017). */
+.content-mention {
+  font-weight: var(--tb-font-weight-bold);
+}
+
+.content-tags,
+.content-follow-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.content-follow-list li,
+.content-follow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+}
+
+.content-mention-picker {
+  display: grid;
+  gap: var(--tb-space-xs);
+}

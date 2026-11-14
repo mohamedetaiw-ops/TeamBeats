@@ -24,8 +24,11 @@ public sealed record Block(
     string? Url = null,
     string? Text = null);
 
-/// <summary>A run of text with marks and an optional link.</summary>
-public sealed record Inline(string Text, IReadOnlyList<string>? Marks = null, string? Link = null);
+/// <summary>
+/// A run of text with marks and an optional link. A run with <see cref="Mention"/> names a person by user ID (spec 009
+/// US9 scenario 2); its text is what the author saw, and readers see the name the directory shows them.
+/// </summary>
+public sealed record Inline(string Text, IReadOnlyList<string>? Marks = null, string? Link = null, Guid? Mention = null);
 
 public static class BlockTypes
 {
@@ -47,7 +50,7 @@ public static class Marks
 }
 
 /// <summary>Checks a body document against the allowed blocks, marks, links, embeds and size limits.</summary>
-public static class BodyValidator
+public static partial class BodyValidator
 {
     public const int MaxBlocks = 500;
     public const int MaxCharacters = 100_000;
@@ -57,6 +60,9 @@ public static class BodyValidator
     public const int MaxTableColumns = 12;
     public const int MaxUrlLength = 2000;
     public const int MaxAltLength = 300;
+    public const int MaxMentions = 50;
+    public const int MaxMentionText = 200;
+    public const int MaxHashtags = 10;
 
     /// <summary>Adds an error under <paramref name="field"/> for the first problem found; one key per kind of problem.</summary>
     public static void Validate(BodyDocument? body, IReadOnlySet<string> embedHosts, string field, ValidationErrors errors)
@@ -84,11 +90,41 @@ public static class BodyValidator
                 break;
             }
         }
+        problem ??= Mentions(body).Count > MaxMentions ? "validation.content.body_mentions" : null;
         if (problem is not null)
         {
             errors.Add(field, problem);
         }
     }
+
+    private static IEnumerable<Inline> Runs(BodyDocument? body) =>
+        (body?.Blocks ?? []).Where(b => b is not null).SelectMany(b =>
+            (b.Children ?? []).Concat((b.Items ?? []).SelectMany(i => i ?? [])).Concat((b.Rows ?? []).SelectMany(r => r ?? []).SelectMany(c => c ?? [])))
+        .Where(r => r is not null);
+
+    /// <summary>The people a body mentions, each once.</summary>
+    public static IReadOnlySet<Guid> Mentions(BodyDocument? body) => Runs(body).Where(r => r.Mention is not null).Select(r => r.Mention!.Value).ToHashSet();
+
+    /// <summary>
+    /// The hashtags of a body (US9 scenario 3), lower case, each once, in reading order, at most <see cref="MaxHashtags"/>:
+    /// a # after a space or at the start, then 2 to 50 letters, digits or underscores in any script. Mentions and links
+    /// are left out.
+    /// </summary>
+    public static IReadOnlyList<string> Hashtags(BodyDocument? body) =>
+        Runs(body).Where(r => r.Mention is null && r.Link is null).SelectMany(r => HashtagsIn(r.Text)).Distinct(StringComparer.Ordinal).Take(MaxHashtags).ToList();
+
+    public static IEnumerable<string> HashtagsIn(string? text) =>
+        text is null ? [] : HashtagPattern().Matches(text).Select(m => m.Groups[1].Value.ToLowerInvariant());
+
+    /// <summary>A tag as the topic address takes it: the same rule as in text, without the #.</summary>
+    public static string? NormalizeTag(string? tag) =>
+        tag is not null && TagPattern().IsMatch(tag) ? tag.ToLowerInvariant() : null;
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"(?<![\p{L}\p{N}_#&])#([\p{L}\p{N}_]{2,50})(?![\p{L}\p{N}_])")]
+    private static partial System.Text.RegularExpressions.Regex HashtagPattern();
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^[\p{L}\p{N}_]{2,50}$")]
+    private static partial System.Text.RegularExpressions.Regex TagPattern();
 
     private static string? CheckBlock(Block? b, IReadOnlySet<string> embedHosts, ref int characters)
     {
@@ -175,6 +211,10 @@ public static class BodyValidator
             if (run.Link is not null && !IsSafeLink(run.Link))
             {
                 return "validation.content.body_link";
+            }
+            if (run.Mention is { } mention && (mention == Guid.Empty || run.Link is not null || run.Text.Length is 0 or > MaxMentionText))
+            {
+                return "validation.content.body_block";
             }
             characters += run.Text.Length;
         }

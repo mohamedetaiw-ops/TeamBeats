@@ -1,5 +1,5 @@
 /** Spec 009 content: shapes returned by `/api/v1/content/*`. The body is a block document, never HTML. */
-export type Inline = { text: string; marks?: string[] | null; link?: string | null };
+export type Inline = { text: string; marks?: string[] | null; link?: string | null; mention?: string | null };
 
 export type Block = {
   type: "paragraph" | "heading" | "list" | "quote" | "table" | "image" | "link" | "embed";
@@ -54,6 +54,8 @@ export type ReaderView = {
   anchors?: string[] | null;
   /** The item's site is archived: still readable by link, out of feeds (spec 009 US6 scenario 5). */
   siteArchived?: boolean;
+  /** The hashtags of the live version (spec 009 US9 scenario 3), each opening its topic page. */
+  tags?: string[] | null;
 };
 
 export type CriticalNotice = {
@@ -84,6 +86,7 @@ export type CommentView = {
   createdAt: string;
   mine: boolean;
   reported: boolean;
+  mentions?: ContentPerson[] | null;
 };
 
 export type CommentPage = { items: CommentView[]; commentsOn: boolean; moderator: boolean };
@@ -197,3 +200,7 @@ export function variantFor(item: Pick<ItemView, "variants" | "primaryLocale">, l
 }
 
 export const editHref = (id: string) => `/content/items/${encodeURIComponent(id)}`;
+
+/** What a person follows (spec 009 FR-017): a site by ID or a topic by its tag. */
+export type FollowView = { kind: "site" | "topic"; key: string; at: string };
+export const topicHref = (tag: string) => `/content/topics/${encodeURIComponent(tag)}`;
