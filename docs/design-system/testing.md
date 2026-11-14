@@ -13,6 +13,18 @@ A website succeeds through how well it works for people, not only how it looks. 
 | 5. Post-development review | Design and development together | Fidelity, interaction, content in place, consistency | Designer sign-off on the pull request or staging |
 | 6. Release and after | Product, research | Analytics, feedback, accessibility audit, usability with people of determination | Release checklist |
 
+## Release gates measured with people
+
+These targets are checked in moderated tests with real employees before a release that changes a priority journey. They are owned by the product owner; automated tests cannot stand in for them.
+
+| Gate | Target |
+|---|---|
+| First attempt success on priority journeys (approve a request, start a service, find a policy, book leave) | At least 90 percent |
+| First-time users find a core service, a pending approval and a company policy unaided | At least 85 percent |
+| Unresolved high severity usability findings | None |
+| Reference home views with a repeated data source | None |
+| Core Web Vitals at the 75th percentile | LCP 2.5 s or less, INP 200 ms or less, CLS 0.1 or less |
+
 ## For UX researchers, designers and the graphics team
 
 Testing the design before it goes to development is the cheapest place to find problems.

@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (news, announcements, pages, targeting, approval, versions, review dates, critical announcements with acknowledgement), R1 also includes content components for the page builder of spec 032; R2 (sites, campaigns across channels, AI translation, content health dashboard), R3 (external sites for guests, advanced campaign automation) |
-| Last updated | 2026-11-05 |
+| Last updated | 2026-11-14 |
 | Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | EXP-002, EXP-003, EXP-004, LOC-004, UC-04, PUB-001 to PUB-020 (new) |
 | Use cases | UC-04 |
@@ -204,6 +204,8 @@ HR runs a four-week benefits enrolment campaign: an article, two announcements, 
 - **FR-020 / PUB-020**: Retention MUST be configurable per content type: keep versions for a period, then delete old versions or the whole item, with legal hold (spec 011) taking precedence. *(ADM-003)*
 - **FR-021**: Each feed item MUST carry its reading time (body words at 200 a minute, at least one minute) and its reaction count, computed by the content module with one query per page of results. The news feed component MUST offer a list layout and a featured layout (lead story large, the rest as rows).
 - **FR-022**: News that refers to a time (an event starting soon, a live session) MUST say it from the event's own start time, rendered against the viewer's clock, never as fixed text in a title; a title is a headline that stays true after the event. Seeded and demo news follow the same rule. Acceptance: no news title on staging contains a relative time such as "in 12 minutes".
+- **FR-023**: A story page MUST follow the editorial rules of spec 036 DLS-112: kind label, title, byline with author, date and reading time, an optional 16:9 hero picture with alternative text and no placeholder when there is none, and the text in the reading column. Feed and home cards for a story with no picture use the typographic card.
+- **FR-024**: Reactions MUST be one compact row of buttons with counts under the text. Comments MUST use one composer in which a person is mentioned by typing `@` and choosing from a suggestion list by keyboard or touch; there is no separate mention field. Comments show the author, a relative time with the full date on hover, sorting, paging, and edit, delete and report actions by policy. The assistant actions for a story (summarize, translate, ask) are a quiet button row in the header area. At 1440 by 900 the article text takes more of the first viewport than the social parts.
 
 ## 6. Business and validation rules
 - An item has one primary site. It can be shared into other sites as a link, never as a copy, so there is one version and one owner.

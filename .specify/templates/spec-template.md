@@ -83,6 +83,8 @@ Rules for writing this spec:
 
 ## 10. UX, localization and accessibility
 - Design system (constitution XXXI, spec 036): templates and components used from `docs/design-system`; any new component, token or icon needed
+- Page hierarchy per screen (spec 036 DLS-100): the primary action or decision, the supporting context, the optional discovery content
+- Pattern chosen for each kind of information (DLS-107), content budgets of summary components (DLS-101) and the states of each screen (DLS-103)
 - States: empty, loading, error, degraded (AI or connector unavailable), no permission
 - Locales and RTL notes
 - WCAG 2.2 AA notes

@@ -8,7 +8,11 @@ Layout gives every page the same predictable frame so people always know where t
 - **Navigation style** follows the design: Beats uses an icon rail on the start edge, Atlas a top bar of labelled links, Pulse a dark labelled sidebar, Studio a light labelled sidebar. On screens up to 1024 px wide all of them become the same menu behind one button.
 - **Main** holds one `<main id="main">` with one h1. A skip link jumps to it.
 - **Page frame**: content is at most 90rem wide, centred, with `space.lg` padding on each side (`space.md` on phones). Full-bleed sections paint their background to the edge of the content area but their content follows the frame, so nothing touches the navigation and the hero lines up with the grid below.
-- **Page header**: every module page starts with the shared page header and, when the area has several pages, section tabs under it.
+- **Page header**: every page, for employees and administrators, starts with the shared page header in one structure (icon tile, title, optional one line description, actions at the end), then section tabs when the area has several pages, then one divider. A page never sets its own inset, title size or header layout (DLS-105).
+- **Breadcrumbs** appear only on pages deeper than one level. A top-level page shows no breadcrumb.
+- **Footer**: sits at the end of the window on short pages and after the content on long ones.
+- **Current navigation item**: the soft accent surface with a semibold label and the accent icon in every design, never a large solid fill.
+- **Composition**: what goes where on the page follows [Composition](composition.md).
 
 ## Breakpoints
 
@@ -33,4 +37,4 @@ Spacing comes only from `space.xs` 4, `sm` 8, `md` 16, `lg` 24, `xl` 32 and `xxl
 
 ## Templates and regions
 
-Pages are built from the 12 layouts and templates of spec 032 and the [templates](../templates.md) here. Regions have a fixed order in the reading direction; components never set their own width outside their region.
+Pages are built from the 12 layouts and templates of spec 032 and the [templates](../templates.md) here. Regions have a fixed order in the reading direction; components never set their own width outside their region, and they lay themselves out from the width of their region, not of the window, so the same component works at quarter, half and full width.

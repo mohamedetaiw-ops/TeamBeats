@@ -1,6 +1,6 @@
 # The four designs
 
-TeamBeats ships four complete designs. A tenant administrator picks one in **Administration, Brand**. The original build and every new tenant use **Beats**. All four use the same components, templates, rules and tests; they differ in token values and in one structural choice, the navigation style. Each one passes every contrast and text size check in light and dark mode with no finding (`tests/Unit/DesignPresetTests.cs`).
+TeamBeats ships four complete designs. A tenant administrator picks one in **Administration, Brand**. The original build and every new tenant use **Beats**. All four use the same components, templates, rules and tests; they differ in token values, the navigation style, and their descriptor: a default density, an imagery approach and the presentation variant of a few shared parts (DLS-110). Each one passes every contrast and text size check in light and dark mode with no finding (`tests/Unit/DesignPresetTests.cs`).
 
 | | Beats (default) | Atlas | Pulse | Studio |
 |---|---|---|---|---|
@@ -15,6 +15,22 @@ TeamBeats ships four complete designs. A tenant administrator picks one in **Adm
 | Headings | 32 / 24 px, bold 700 | 28 / 22 px, semibold 600, gold rule under the page title | 40 / 26 px, bold 700, tight | 30 / 22 px, semibold 600, slightly tight |
 | Corners | Controlled (8, 12, 16 px) | Square (2, 4, 6 px) | Round (10, 18, 28 px), pill buttons | Even (8, 10, 20 px) |
 | Elevation | Light shadows | Borders, almost no shadow | Deep soft shadows | Hairline borders, very soft shadows, shaded filled buttons |
+
+## Design descriptors
+
+A design is a visual personality, not only a palette. Each one declares typed values that change how shared parts are presented. Every variant of a part gets the same data and offers the same actions; only the presentation differs. A tenant can override a value with another from the list, never with CSS.
+
+| | Beats | Atlas | Pulse | Studio |
+|---|---|---|---|---|
+| Character | Balanced | Formal, structured | Editorial, image led | Operational, dense |
+| Default density | Comfortable | Comfortable | Comfortable | Compact |
+| Imagery | Balanced | Typographic | Image led | Typographic |
+| News lead | Editorial (large picture) | Compact (thumbnail) | Editorial | Compact |
+| Stat tiles | Tinted | Outlined | Tinted | Plain |
+| Work rows | Comfortable | Comfortable | Comfortable | Dense |
+| Section tabs | Underline | Underline | Segmented | Segmented |
+| Page cards | Raised | Outlined | Raised | Outlined |
+| Briefing | Night surface | Light card | Night surface | Light card |
 
 The token values are in `src/Modules/Experience/Themes/DesignPresets.cs`; Beats is the platform default in `Tokens.cs`. Dark mode values are defined for every color in all four designs.
 
@@ -38,7 +54,7 @@ Studio recreates the look of modern product dashboards (it was modeled on the Bo
 ## Rules for the designs
 
 - A design is a full, accessible look. It MUST define every color in light and dark and pass every contrast pair of spec 033 FR-009 in strict mode.
-- A design MUST NOT change behavior, information architecture, permissions, content or component order. It changes how things look and where the navigation sits, nothing else.
+- A design MUST NOT change behavior, information architecture, permissions, content, available actions or component order. It changes how things look, where the navigation sits, the default density and which approved variant a shared part uses, nothing else.
 - Structural differences that a token value cannot express live only in `src/Web/components/ui/designs.css` and the navigation styles in `features/shell/shell.css`. Keep them few.
 - Fonts come only from the approved list (ADR-0019, ADR-0021), self-hosted.
 - Adding another design is a change to spec 036 and ADR-0021, a new entry in `DesignPresets.cs`, a new miniature label, screenshots in the design review and visual baselines.
