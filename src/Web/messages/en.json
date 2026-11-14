@@ -1132,7 +1132,10 @@
       "shadow": "Shadows",
       "motion": "Motion",
       "state": "Interaction states",
-      "layout": "Layout"
+      "layout": "Layout",
+      "density": "Default density",
+      "imagery": "Imagery",
+      "variant": "Part variants"
     },
     "contrast": {
       "title": "Contrast and size checks",
@@ -4967,10 +4970,10 @@
         "use_case": "Use case",
         "model": "Model",
         "provider": "Provider",
-        "classification": "Classification",
         "unit": "Org unit",
         "agent": "Agent",
-        "user": "Person"
+        "user": "Person",
+        "classification": "Classification"
       },
       "invalid": "Choose a grouping and a period of up to 400 days with the start before the end.",
       "scoped": "You see AI use in your units only. Groups of fewer than {size} people are hidden.",
@@ -7940,6 +7943,14 @@
       "nodeSecurity": "Security",
       "nodeDevices": "Devices",
       "treeChosen": "Open: {name}"
+    },
+    "filters": {
+      "title": "Filter toolbar",
+      "intro": "One row to search and filter a list. Filters in force show as chips that can be removed, with Clear all.",
+      "label": "Search requests",
+      "hint": "Search by title or requester",
+      "status": "Status",
+      "any": "Any status"
     },
     "data": {
       "title": "Data blocks",
