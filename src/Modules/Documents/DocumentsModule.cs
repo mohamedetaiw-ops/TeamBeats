@@ -27,6 +27,7 @@ public static class DocumentsModule
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, GetDocumentTool>();
         services.AddScoped<DocumentAccess>();
         services.AddScoped<DocumentVersions>();
+        services.AddScoped<Records>();
         services.AddScoped<DocumentPreviews>();
         services.AddScoped<DocumentReleases>();
         services.AddScoped<DocumentTaskSource>();
@@ -367,6 +368,79 @@ public static class DocumentsModule
         kb.MapGet("/articles/{id:guid}/feedback", async (Guid id, KnowledgeBase service, CancellationToken ct) => Results.Ok(await service.ReportAsync(id, ct)));
 
         kb.MapGet("/articles/{id:guid}/units", async (Guid id, KnowledgeBase service, CancellationToken ct) => Results.Ok(await service.ReaderUnitsAsync(id, ct)));
+
+        // Spec 011 R2 US6 and US7: records management, for records managers only.
+        var records = app.MapGroup("/api/v1/records").RequireTenantUser().WithTags("Records");
+
+        records.MapGet("/labels", async (Records service, CancellationToken ct) => Results.Ok(await service.LabelsAsync(ct)));
+
+        records.MapPost("/labels", async (LabelRequest request, Records service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.CreateLabelAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/records/labels/{view.Id}", view);
+        });
+
+        records.MapPut("/labels/{id:guid}", async (Guid id, LabelRequest request, Records service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.UpdateLabelAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        records.MapGet("/libraries", async (Records service, CancellationToken ct) => Results.Ok(await service.LibrariesAsync(ct)));
+
+        records.MapPut("/libraries/{id:guid}/label", async (Guid id, LabelChoice choice, Records service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.SetLibraryLabelAsync(id, choice, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        records.MapPut("/types/{id:guid}/label", async (Guid id, LabelChoice choice, Records service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.SetTypeLabelAsync(id, choice, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        records.MapGet("/documents/{id:guid}", async (Guid id, Records service, CancellationToken ct) => Results.Ok(await service.DocumentAsync(id, ct)));
+
+        records.MapPut("/documents/{id:guid}/label", async (Guid id, LabelChoice choice, Records service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.SetDocumentLabelAsync(id, choice, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        records.MapGet("/disposition", async (Records service, CancellationToken ct) => Results.Ok(await service.QueueAsync(ct)));
+
+        records.MapPost("/disposition/{id:guid}", async (Guid id, DispositionDecision decision, Records service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.DecideAsync(id, decision, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        records.MapGet("/dispositions", async (Records service, CancellationToken ct) => Results.Ok(await service.DispositionRecordsAsync(ct)));
+
+        records.MapGet("/holds", async (Records service, CancellationToken ct) => Results.Ok(await service.HoldsAsync(ct)));
+
+        records.MapPost("/holds", async (HoldRequest request, Records service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.CreateHoldAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/records/holds/{view.Hold.Id}", view);
+        });
+
+        records.MapGet("/holds/{id:guid}", async (Guid id, Records service, CancellationToken ct) => Results.Ok(await service.HoldAsync(id, ct)));
+
+        records.MapPost("/holds/{id:guid}/release", async (Guid id, Records service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.ReleaseHoldAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         app.MapDocumentPublicEndpoints();
         return app;

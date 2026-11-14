@@ -66,6 +66,10 @@ public sealed class DocumentVersions(
         {
             throw HeldBy(doc);
         }
+        if (doc.Archived)
+        {
+            throw AppException.Conflict("conflict.documents.archived");
+        }
         if (doc.ReleaseInstance is not null)
         {
             // The version under approval is the one approvers see; it may not change under them.
@@ -302,6 +306,7 @@ public sealed class DocumentVersions(
                   @holder, @now, @working, securable_type, securable_id, @holder, @now, @now
                 from documents.document where id = @id
                 """, new { id, draft, name, holder, working, now = clock.UtcNow }, ct);
+            await RecordsSql.InheritAsync(session, clock.UtcNow, ct, ids: [draft.Value]);
             await session.ExecAsync("update documents.document set pending_version_id = null where id = @id; update documents.document_version set document_id = @draft where id = @working",
                 new { id, draft, working }, ct);
         }
@@ -413,6 +418,22 @@ public sealed class DocumentVersions(
         {
             throw AppException.Conflict("conflict.documents.in_release");
         }
+        // Spec 011 US6 scenario 4 and US7 scenario 2: a label still in its period or a legal hold refuses the deletion.
+        // Everyone but records managers sees the same retention message, so a hold does not show.
+        await RecordsSql.InheritAsync(session, clock.UtcNow, ct, ids: [id]);
+        var (held, retained) = await session.QuerySingleOrDefaultAsync(
+            $"select {RecordsSql.Held("d")}, {RecordsSql.InPeriod("d", "@now")} from documents.document d where d.id = @id", new { id, now = clock.UtcNow },
+            r => (r.GetBoolean(0), r.GetBoolean(1)), ct);
+        if (held)
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.RecordsDeletionBlocked, Securables.Document, id.ToString(), AuditOutcome.Denied,
+                TargetOrgUnitId: library.OrgUnitId, Changes: new { library = library.Id, path = "delete" }), ct);
+            await session.CommitAsync(ct);
+        }
+        if (held || retained)
+        {
+            throw AppException.Conflict("conflict.documents.retention_rule");
+        }
         await DropWorkingCopyAsync(doc, ct);
         await session.ExecAsync(
             "update documents.document set deleted_at = @now, deleted_by = @user, checked_out_by = case when checked_in then null else checked_out_by end, checked_out_at = case when checked_in then null else checked_out_at end where id = @id",
@@ -466,42 +487,65 @@ public sealed class DocumentVersions(
 
     // Background work for one tenant
 
-    /// <summary>Purges documents that stayed in the recycle bin past the tenant's period, with their versions and files.</summary>
+    /// <summary>
+    /// Purges documents that stayed in the recycle bin past the tenant's period, with their versions and files. A document
+    /// under a legal hold stays in the bin; the first blocked attempt is audited (spec 011 US7 scenario 2).
+    /// </summary>
     public async Task<int> PurgeAsync(DateTimeOffset now, int limit, CancellationToken ct)
     {
         var days = (await libraries.TenantRulesAsync(ct)).RecycleDays;
+        var cutoff = now.AddDays(-days);
+        var blocked = await session.QueryAsync(
+            $"update documents.document d set deletion_blocked_at = @now where d.deleted_at is not null and d.deleted_at <= @cutoff and d.deletion_blocked_at is null and {RecordsSql.Held("d")} returning d.id, d.library_id",
+            new { cutoff, now }, r => (Id: r.GetGuid(0), Library: r.GetGuid(1)), ct);
+        foreach (var (id, libraryId) in blocked)
+        {
+            await audit.WriteAsync(new AuditEntry(AuditActions.RecordsDeletionBlocked, Securables.Document, id.ToString(), AuditOutcome.Denied,
+                Changes: new { library = libraryId, path = "recycle_bin_purge" }), ct);
+        }
         var due = await session.QueryAsync(
-            "select id, library_id, inherits from documents.document where deleted_at is not null and deleted_at <= @cutoff order by deleted_at limit @limit for update skip locked",
-            new { cutoff = now.AddDays(-days), limit }, r => (Id: r.GetGuid(0), Library: r.GetGuid(1), Inherits: r.GetBoolean(2)), ct);
+            $"select d.id, d.library_id, d.inherits from documents.document d where d.deleted_at is not null and d.deleted_at <= @cutoff and not {RecordsSql.Held("d")} order by d.deleted_at limit @limit for update skip locked",
+            new { cutoff, limit }, r => (Id: r.GetGuid(0), Library: r.GetGuid(1), Inherits: r.GetBoolean(2)), ct);
         foreach (var (id, libraryId, inherits) in due)
         {
-            var keys = await session.QueryAsync("""
-                select object_key from documents.document_version where document_id = @id
-                union select preview_key from documents.document_version where document_id = @id and preview_key is not null
-                union select controlled_key from documents.document_version where document_id = @id and controlled_key is not null
-                """, new { id }, r => r.GetString(0), ct);
-            await session.ExecAsync(
-                """
-                delete from documents.download_token where document_id = @id;
-                delete from documents.read_confirmation where document_id = @id;
-                update documents.document set pending_version_id = null, current_version_id = null, effective_version_id = null where id = @id;
-                delete from documents.document_version where document_id = @id;
-                delete from documents.document where id = @id;
-                """, new { id }, ct);
-            if (!inherits)
-            {
-                await acl.ClearAclAsync(Securables.Document, id, ct);
-            }
-            await audit.WriteAsync(new AuditEntry(AuditActions.DocPurged, Securables.Document, id.ToString(), Changes: new { library = libraryId, versions = keys.Count }), ct);
-            session.OnCommitted(() =>
-            {
-                foreach (var key in keys)
-                {
-                    _ = storage.DeleteAsync(key, CancellationToken.None);
-                }
-            });
+            var versions = await EraseAsync(id, inherits, ct);
+            await audit.WriteAsync(new AuditEntry(AuditActions.DocPurged, Securables.Document, id.ToString(), Changes: new { library = libraryId, versions }), ct);
         }
         return due.Count;
+    }
+
+    /// <summary>
+    /// Deletes a document with its versions, tokens, confirmations, own permissions and files (after commit). The caller
+    /// has checked holds and audits. Returns how many versions went.
+    /// </summary>
+    internal async Task<int> EraseAsync(Guid id, bool inherits, CancellationToken ct)
+    {
+        var keys = await session.QueryAsync("""
+            select object_key from documents.document_version where document_id = @id
+            union select preview_key from documents.document_version where document_id = @id and preview_key is not null
+            union select controlled_key from documents.document_version where document_id = @id and controlled_key is not null
+            """, new { id }, r => r.GetString(0), ct);
+        var versions = await session.ScalarAsync<int>("select count(*)::int from documents.document_version where document_id = @id", new { id }, ct);
+        await session.ExecAsync(
+            """
+            delete from documents.download_token where document_id = @id;
+            delete from documents.read_confirmation where document_id = @id;
+            update documents.document set pending_version_id = null, current_version_id = null, effective_version_id = null where id = @id;
+            delete from documents.document_version where document_id = @id;
+            delete from documents.document where id = @id;
+            """, new { id }, ct);
+        if (!inherits)
+        {
+            await acl.ClearAclAsync(Securables.Document, id, ct);
+        }
+        session.OnCommitted(() =>
+        {
+            foreach (var key in keys)
+            {
+                _ = storage.DeleteAsync(key, CancellationToken.None);
+            }
+        });
+        return versions;
     }
 
     /// <summary>Reminds the holder and the owner, once a day, of a check-out older than the limit (section 4 edge cases).</summary>

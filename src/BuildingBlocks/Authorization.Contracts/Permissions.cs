@@ -109,6 +109,12 @@ public static class Permissions
     public const string DocManage = "doc.manage";
     public const string KbEdit = "kb.edit";
 
+    /// <summary>
+    /// Spec 011 R2 US6 and US7: records managers define retention labels, decide disposition and place legal holds,
+    /// tenant wide. Holds and their reasons are visible to nobody else.
+    /// </summary>
+    public const string RecordsManage = "records.manage";
+
     // Spec 025 (R1): policy owners draft and revise their policies; compliance officers manage the register, campaigns
     // and the compliance view at tenant or org scope.
     public const string PolicyAuthor = "policy.author";
@@ -229,7 +235,7 @@ public static class Permissions
         ComplianceManage, ComplianceView,
         ServiceManage, ServiceRequestOnBehalf, ServiceRequestRead,
         ContentAuthor, ContentPublishCritical, ContentAdmin,
-        DocView, DocContribute, DocManage, KbEdit,
+        DocView, DocContribute, DocManage, KbEdit, RecordsManage,
         PolicyAuthor, PolicyManage,
         SearchManage,
         AgentDesign, AgentPublish, AgentView, AgentSecurityView, AgentSuspend,
@@ -263,6 +269,7 @@ public static class BuiltInRoles
     public const string HrOfficer = "hr_officer";
     public const string FinanceOfficer = "finance_officer";
     public const string ComplianceOfficer = "compliance_officer";
+    public const string RecordsManager = "records_manager";
     public const string ProcessOperator = "process_operator";
     public const string ProcessAnalyst = "process_analyst";
     public const string AgentDesigner = "agent_designer";

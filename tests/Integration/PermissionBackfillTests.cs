@@ -213,6 +213,30 @@ public sealed class PermissionBackfillTests(TenantWorld world)
     }
 
     /// <summary>Counts as the table owner with one tenant set, on one connection, as row-level security requires.</summary>
+    [Fact]
+    public async Task Records_backfill_adds_the_records_manager_role_and_records_permission_to_an_older_tenant()
+    {
+        var old = await world.CreateTenantAsync("bfrm-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
+        await world.Database.OwnerExecAsync(
+            """
+            select set_config('app.tenant_id', @t, false);
+            delete from authz.role_permission where permission_key = 'records.manage';
+            delete from authz.role_permission where role_id in (select id from authz.role where key = 'records_manager');
+            delete from authz.role where key = 'records_manager';
+            update authz.grants_version set version = version + 1;
+            """, ("t", old.Id.ToString()));
+        Assert.Equal(HttpStatusCode.Forbidden, (await old["admin"].Client.GetAsync("/api/v1/records/labels")).StatusCode);
+
+        var script = AuthorizationModule.Migrations.Scripts().Single(s => s.Name.StartsWith("0036_", StringComparison.Ordinal)).Sql;
+        await world.Database.OwnerExecAsync(script);
+        await world.Database.OwnerExecAsync(script);
+
+        Assert.Equal(HttpStatusCode.OK, (await old["admin"].Client.GetAsync("/api/v1/records/labels")).StatusCode);
+        Assert.Equal(1, await CountAsync(old.Id, "select count(*) from authz.role where key = 'records_manager'"));
+        Assert.Equal(3, await CountAsync(old.Id,
+            "select count(*) from authz.role_permission p join authz.role r on r.id = p.role_id where r.key = 'records_manager'"));
+    }
+
     private async Task<long> CountAsync(Guid tenant, string sql = "select count(*) from authz.role_permission")
     {
         await using var conn = new NpgsqlConnection(world.Database.OwnerConnectionString);

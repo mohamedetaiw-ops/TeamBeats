@@ -149,6 +149,14 @@ public static class Capabilities
     public const string DocsCore = "docs.core";
     public const string DocsControlled = "docs.controlled";
     public const string DocsStorageGb = "docs.storage_gb";
+    public const string DocsAssetPortal = "docs.asset_portal";
+    public const string DocsViewOnlyWatermark = "docs.view_only_watermark";
+    public const string DocsGuestSharing = "docs.guest_sharing";
+    public const string DocsOcr = "docs.ocr";
+
+    // Spec 011 R2: retention labels and disposition (Workplace Plus and above), legal holds (Enterprise and Government).
+    public const string RecordsRetention = "records.retention";
+    public const string RecordsLegalHold = "records.legal_hold";
     public const string PolicyCore = "policy.core";
     public const string PolicyCampaigns = "policy.campaigns";
     public const string AiPolicyQa = "ai.policy_qa";

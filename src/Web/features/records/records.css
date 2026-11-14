@@ -1,0 +1,77 @@
+/* Spec 011 R2 records management. Colors and spacing come from tokens; logical properties keep the layout right in RTL. */
+.records-page {
+  display: grid;
+  gap: var(--tb-space-xl);
+}
+
+.records-card {
+  display: grid;
+  gap: var(--tb-space-md);
+  padding: var(--tb-space-lg);
+  border-radius: var(--tb-radius-lg);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-text-primary);
+}
+
+.records-card h2,
+.records-card h3 {
+  margin: 0;
+}
+
+.records-list {
+  display: grid;
+  gap: var(--tb-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.records-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm) var(--tb-space-md);
+  padding-block-end: var(--tb-space-md);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.records-apply > li {
+  display: grid;
+  align-items: stretch;
+}
+
+.records-name {
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.records-meta {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.records-reason {
+  flex-basis: 100%;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.records-held {
+  flex-basis: 100%;
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.records-form {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 40rem;
+}
+
+.records-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--tb-space-sm);
+  margin: 0;
+}

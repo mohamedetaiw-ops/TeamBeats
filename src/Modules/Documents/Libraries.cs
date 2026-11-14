@@ -185,7 +185,7 @@ public sealed class Libraries(
 
     // Libraries
 
-    private static void Names(IReadOnlyDictionary<string, string>? names, string field, ValidationErrors errors)
+    internal static void Names(IReadOnlyDictionary<string, string>? names, string field, ValidationErrors errors)
     {
         if (names is null || names.Count == 0 || names.Values.Any(n => string.IsNullOrWhiteSpace(n) || n.Trim().Length > MaxNameLength))
         {
@@ -193,7 +193,7 @@ public sealed class Libraries(
         }
     }
 
-    private static Dictionary<string, string> Trimmed(IReadOnlyDictionary<string, string> names) => names.ToDictionary(n => n.Key, n => n.Value.Trim());
+    internal static Dictionary<string, string> Trimmed(IReadOnlyDictionary<string, string> names) => names.ToDictionary(n => n.Key, n => n.Value.Trim());
 
     public async Task<IReadOnlyList<LibrarySummary>> ListAsync(CancellationToken ct)
     {
