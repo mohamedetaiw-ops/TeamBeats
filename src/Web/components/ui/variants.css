@@ -17,6 +17,9 @@
 }
 
 :root[data-v-tabs="underline"] .ui-section-nav a {
+  /* A short label, one word in Arabic for example, still gives a 44px target (DLS-085). */
+  justify-content: center;
+  min-inline-size: 2.75rem;
   padding-inline: 0;
   border-block-end: var(--tb-border-width-thick) solid transparent;
   border-radius: 0;
