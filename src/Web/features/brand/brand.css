@@ -54,6 +54,7 @@
 }
 
 .brand-group summary {
+  padding-block: var(--tb-space-xs);
   cursor: pointer;
   font-weight: var(--tb-font-weight-bold);
 }

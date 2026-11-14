@@ -95,6 +95,14 @@
   border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
 }
 
+/* The service name is a 24px target at least (WCAG 2.5.8). */
+.services-item > a {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  min-block-size: 1.5rem;
+}
+
 .services-status {
   display: inline-flex;
   align-items: center;

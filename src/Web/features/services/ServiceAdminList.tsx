@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { StateView } from "@/components/ui/StateView";
@@ -91,8 +92,8 @@ export function ServiceAdminList({ initial, categories: initialCategories, units
                   <bdi>{pick(service.names, locale)}</bdi>
                 </Link>
                 <span className="services-row">
-                  <span className="services-status">{t(`kind.${service.kind}`)}</span>
-                  <span className="services-status">{t(`state.${service.status}`)}</span>
+                  <Badge>{t(`kind.${service.kind}`)}</Badge>
+                  <Badge tone={service.status === "published" ? "success" : "neutral"}>{t(`state.${service.status}`)}</Badge>
                   {latest?.state === "draft" && service.status === "published" ? <span className="services-meta">{t("draftPending")}</span> : null}
                 </span>
               </li>
