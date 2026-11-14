@@ -2427,5 +2427,21 @@
   "notifications.template.assets.access_declined.body": "Your request for {collection} was declined.",
   "validation.content.image": "Choose a current image from the brand asset portal that you can see.",
   "notifications.template.content.asset_image_expired.title": "An image on your page can no longer be used",
-  "notifications.template.content.asset_image_expired.body": "The usage rights of an image on \"{title}\" ended, so readers no longer see it. Replace it with a current image."
+  "notifications.template.content.asset_image_expired.body": "The usage rights of an image on \"{title}\" ended, so readers no longer see it. Replace it with a current image.",
+  "validation.documents.import_zip": "Upload the import as a ZIP file.",
+  "validation.documents.import_no_manifest": "The ZIP has no manifest.csv at its top level.",
+  "validation.documents.import_manifest": "The manifest could not be read. Save it as UTF-8 CSV with a header row and the same number of columns on every row.",
+  "validation.documents.import_columns": "The manifest needs a path column, and its other columns must be folder, name, type, classification, created, modified, author or field: followed by a field key, each once.",
+  "validation.documents.import_rows": "A manifest can have at most 10,000 rows.",
+  "validation.documents.import_paths": "Every row needs a path to a file in the ZIP, and each path can appear only once.",
+  "validation.documents.import_date": "Dates must be ISO dates in the past, and the modified date cannot be before the created date.",
+  "validation.documents.import_missing": "The ZIP has no file at this path.",
+  "validation.documents.import_status": "Choose a known row result.",
+  "notifications.template.documents.import_finished.title": "Your import has finished",
+  "notifications.template.documents.import_finished.body": "{done} files were imported and {problems} rows need a look. Open the report for each row's result.",
+  "documents.import.incomplete": "Imported as a draft only you see: fill in the type's required fields to check it in.",
+  "documents.import.quarantined": "The malware scan flagged this file. It is kept in quarantine and nobody can open it.",
+  "documents.import.not_found": "The library or folder is no longer there.",
+  "documents.import.denied": "You can no longer add files here.",
+  "documents.import.error": "Something went wrong with this row. Try it again in a new import."
 }

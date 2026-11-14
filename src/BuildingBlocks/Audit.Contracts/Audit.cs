@@ -408,6 +408,8 @@ public static class AuditActions
     public const string DocSharedWithGuest = "doc.shared_with_guest";
     public const string DocGuestShareRevoked = "doc.guest_share_revoked";
     public const string DocGuestViewed = "doc.guest_viewed";
+    public const string DocImportStarted = "doc.import_started";
+    public const string DocImportCompleted = "doc.import_completed";
     public const string AssetCollectionCreated = "assets.collection_created";
     public const string AssetCollectionChanged = "assets.collection_changed";
     public const string AssetUploaded = "assets.uploaded";
@@ -596,6 +598,7 @@ public static class AuditActions
         DocReadConfirmed,
         RecordsLabelCreated, RecordsLabelChanged, RecordsLabelApplied, RecordsDispositionApproved, RecordsDispositionKept, RecordsArchived,
         RecordsHoldApplied, RecordsHoldReleased, RecordsDeletionBlocked, DocSharedWithGuest, DocGuestShareRevoked, DocGuestViewed,
+        DocImportStarted, DocImportCompleted,
         AssetCollectionCreated, AssetCollectionChanged, AssetUploaded, AssetChanged, AssetExpired, AssetAccessRequested, AssetAccessDecided,
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested, PolicyTrainingLinked,

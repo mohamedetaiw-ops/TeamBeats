@@ -4118,7 +4118,8 @@
         "space": "Project space"
       },
       "recordsLink": "Records management",
-      "assetsLink": "Brand assets"
+      "assetsLink": "Brand assets",
+      "importLink": "Import files"
     },
     "browser": {
       "filters": "Find documents",
@@ -4345,6 +4346,67 @@
       "expiredBadge": "Expired",
       "busy": "Saving",
       "failed": "That did not work. Try again."
+    },
+    "imports": {
+      "documents": "Documents",
+      "library": "Library",
+      "title": "Import files",
+      "intro": "Bring many files into {library} at once, with their folders, metadata, dates and authors.",
+      "startTitle": "Start an import",
+      "zip": "ZIP file",
+      "zipHint": "A ZIP with manifest.csv at its top level and the files it lists. Each file follows the library's file types and size limit.",
+      "folder": "Import into",
+      "libraryRoot": "The top of the library",
+      "start": "Start import",
+      "uploading": "Uploading",
+      "failed": "That did not work. Try again.",
+      "guideTitle": "How to write the manifest",
+      "guideIntro": "manifest.csv is a UTF-8 CSV file with a header row and one row per file. Only path is required.",
+      "column": {
+        "path": "Where the file is inside the ZIP, such as hr/leave.pdf.",
+        "folder": "Folders to put it in, separated by /. Missing folders are made.",
+        "name": "The document's name, if it differs from the file name.",
+        "type": "A document type of this library, by name.",
+        "classification": "public, internal, confidential or restricted.",
+        "created": "When the file was first made, as an ISO date such as 2019-03-01.",
+        "modified": "When it last changed, as an ISO date or date and time.",
+        "author": "The author's email. The author is kept when it matches a person in your organization.",
+        "field": "A metadata field of the type, such as field:site. Use yes or no for yes or no fields."
+      },
+      "guideRules": "Up to 10,000 rows. Files already in the library are skipped, and every file is scanned for malware. You stay the owner of what you import.",
+      "listTitle": "Recent imports",
+      "none": "No imports yet.",
+      "summary": "{imported} of {total} imported, {problems} need a look",
+      "status": {
+        "queued": "Waiting to start",
+        "running": "Importing",
+        "completed": "Finished"
+      },
+      "reportTitle": "Import of {file}",
+      "reportIntro": "Each row of the manifest and what happened to it.",
+      "progress": "Import progress",
+      "progressText": "{done} of {total} rows",
+      "countsLabel": "Rows by result",
+      "all": "All rows ({count})",
+      "count": "{result} ({count})",
+      "result": {
+        "pending": "Waiting",
+        "imported": "Imported",
+        "incomplete": "Needs metadata",
+        "skipped": "Skipped",
+        "failed": "Failed",
+        "quarantined": "Quarantined"
+      },
+      "downloadReport": "Download the report as CSV",
+      "rowsTitle": "Rows",
+      "rowsCaption": "Manifest rows and their results",
+      "noRows": "No rows have this result.",
+      "row": "Row",
+      "file": "File",
+      "resultLabel": "Result",
+      "details": "Details",
+      "authorNotMatched": "The author's email did not match anyone, so you are shown as the author.",
+      "moreRows": "Showing {shown} of {total} rows. Download the report for all of them."
     }
   },
   "policies": {
