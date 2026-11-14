@@ -75,7 +75,7 @@ const emptyDraft: LabelDraft = { en: "", ar: "", months: "12", trigger: "created
  * to a shorter period or another action reaches documents labelled before only when "apply to labelled documents" is on.
  */
 export function LabelsPanel({ labels }: { labels: LabelView[] }) {
-  const t = useTranslations("records.labels");
+  const t = useTranslations("records");
   const locale = useLocale();
   const [editing, setEditing] = useState<LabelView | null>(null);
   const [draft, setDraft] = useState<LabelDraft>(emptyDraft);
@@ -122,10 +122,10 @@ export function LabelsPanel({ labels }: { labels: LabelView[] }) {
 
   return (
     <section className="records-card" aria-labelledby="records-labels">
-      <h2 id="records-labels">{t("title")}</h2>
-      <p className="field-hint">{t("intro")}</p>
+      <h2 id="records-labels">{t("labels.title")}</h2>
+      <p className="field-hint">{t("labels.intro")}</p>
       {labels.length === 0 ? (
-        <p className="field-hint">{t("empty")}</p>
+        <p className="field-hint">{t("labels.empty")}</p>
       ) : (
         <ul className="records-list">
           {labels.map((l) => (
@@ -133,28 +133,28 @@ export function LabelsPanel({ labels }: { labels: LabelView[] }) {
               <span className="records-name">
                 <bdi>{nameIn(l.names, locale)}</bdi>
               </span>
-              <span className="records-meta">{t("summary", { months: l.periodMonths, trigger: t(`trigger.${l.trigger}`), action: t(`action.${l.action}`) })}</span>
-              <span className="records-meta">{t("documents", { count: l.documents })}</span>
-              {l.status === "retired" ? <Badge tone="neutral">{t("retired")}</Badge> : null}
+              <span className="records-meta">{t("labels.summary", { months: l.periodMonths, trigger: t(`labels.trigger.${l.trigger}`), action: t(`labels.action.${l.action}`) })}</span>
+              <span className="records-meta">{t("labels.documents", { count: l.documents })}</span>
+              {l.status === "retired" ? <Badge tone="neutral">{t("labels.retired")}</Badge> : null}
               <Button variant="quiet" onClick={() => edit(l)}>
-                {t("edit", { name: nameIn(l.names, locale) })}
+                {t("labels.edit", { name: nameIn(l.names, locale) })}
               </Button>
             </li>
           ))}
         </ul>
       )}
-      <h3>{editing ? t("editTitle", { name: nameIn(editing.names, locale) }) : t("createTitle")}</h3>
+      <h3>{editing ? t("labels.editTitle", { name: nameIn(editing.names, locale) }) : t("labels.createTitle")}</h3>
       <Problems messages={messages} />
       {saved ? (
         <p className="notice notice-success" role="status">
-          {t("saved")}
+          {t("labels.saved")}
         </p>
       ) : null}
       <form className="records-form" onSubmit={(e) => void save(e)}>
-        <FormField label={t("nameEn")} name="name-en" value={draft.en} onChange={(e) => setDraft({ ...draft, en: e.target.value })} required maxLength={120} />
-        <FormField label={t("nameAr")} name="name-ar" value={draft.ar} onChange={(e) => setDraft({ ...draft, ar: e.target.value })} maxLength={120} dir="rtl" lang="ar" />
+        <FormField label={t("labels.nameEn")} name="name-en" value={draft.en} onChange={(e) => setDraft({ ...draft, en: e.target.value })} required maxLength={120} />
+        <FormField label={t("labels.nameAr")} name="name-ar" value={draft.ar} onChange={(e) => setDraft({ ...draft, ar: e.target.value })} maxLength={120} dir="rtl" lang="ar" />
         <FormField
-          label={t("months")}
+          label={t("labels.months")}
           name="months"
           type="number"
           min={1}
@@ -164,16 +164,16 @@ export function LabelsPanel({ labels }: { labels: LabelView[] }) {
           required
         />
         <SelectField
-          label={t("triggerLabel")}
+          label={t("labels.triggerLabel")}
           name="trigger"
           value={draft.trigger}
           onChange={(e) => setDraft({ ...draft, trigger: e.target.value as RetentionTrigger })}
-          options={triggers.map((v) => ({ value: v, label: t(`trigger.${v}`) }))}
+          options={triggers.map((v) => ({ value: v, label: t(`labels.trigger.${v}`) }))}
         />
         {draft.trigger === "field" ? (
           <FormField
-            label={t("field")}
-            hint={t("fieldHint")}
+            label={t("labels.field")}
+            hint={t("labels.fieldHint")}
             name="field"
             value={draft.field}
             onChange={(e) => setDraft({ ...draft, field: e.target.value })}
@@ -182,21 +182,21 @@ export function LabelsPanel({ labels }: { labels: LabelView[] }) {
           />
         ) : null}
         <SelectField
-          label={t("actionLabel")}
+          label={t("labels.actionLabel")}
           name="action"
           value={draft.action}
           onChange={(e) => setDraft({ ...draft, action: e.target.value as RetentionAction })}
-          options={actions.map((v) => ({ value: v, label: t(`action.${v}`) }))}
+          options={actions.map((v) => ({ value: v, label: t(`labels.action.${v}`) }))}
         />
         {editing ? (
           <>
-            <Checkbox label={t("retire")} checked={draft.status === "retired"} onChange={(e) => setDraft({ ...draft, status: e.target.checked ? "retired" : "active" })} />
-            <Checkbox label={t("reapply")} hint={t("reapplyHint")} checked={draft.reapply} onChange={(e) => setDraft({ ...draft, reapply: e.target.checked })} />
+            <Checkbox label={t("labels.retire")} checked={draft.status === "retired"} onChange={(e) => setDraft({ ...draft, status: e.target.checked ? "retired" : "active" })} />
+            <Checkbox label={t("labels.reapply")} hint={t("labels.reapplyHint")} checked={draft.reapply} onChange={(e) => setDraft({ ...draft, reapply: e.target.checked })} />
           </>
         ) : null}
         <p className="records-actions">
-          <Button type="submit" variant="primary" busy={busy} busyLabel={t("saving")}>
-            {editing ? t("save") : t("create")}
+          <Button type="submit" variant="primary" busy={busy} busyLabel={t("labels.saving")}>
+            {editing ? t("labels.save") : t("labels.create")}
           </Button>
           {editing ? (
             <Button
@@ -206,7 +206,7 @@ export function LabelsPanel({ labels }: { labels: LabelView[] }) {
                 setDraft(emptyDraft);
               }}
             >
-              {t("cancel")}
+              {t("labels.cancel")}
             </Button>
           ) : null}
         </p>
@@ -217,19 +217,19 @@ export function LabelsPanel({ labels }: { labels: LabelView[] }) {
 
 /** Where labels apply (FR-013): a library, a document type of it, or both, in which case the longer period wins. */
 export function ApplyPanel({ libraries, labels }: { libraries: RecordsLibraryView[]; labels: LabelView[] }) {
-  const t = useTranslations("records.apply");
+  const t = useTranslations("records");
   const locale = useLocale();
   const { messages, send } = useSend();
-  const options = [{ value: "", label: t("none") }, ...labels.filter((l) => l.status === "active").map((l) => ({ value: l.id, label: nameIn(l.names, locale) }))];
+  const options = [{ value: "", label: t("apply.none") }, ...labels.filter((l) => l.status === "active").map((l) => ({ value: l.id, label: nameIn(l.names, locale) }))];
   const choose = (url: string, value: string) => void send(url, "PUT", { labelId: value || null });
 
   return (
     <section className="records-card" aria-labelledby="records-apply">
-      <h2 id="records-apply">{t("title")}</h2>
-      <p className="field-hint">{t("intro")}</p>
+      <h2 id="records-apply">{t("apply.title")}</h2>
+      <p className="field-hint">{t("apply.intro")}</p>
       <Problems messages={messages} />
       {libraries.length === 0 ? (
-        <p className="field-hint">{t("empty")}</p>
+        <p className="field-hint">{t("apply.empty")}</p>
       ) : (
         <ul className="records-list records-apply">
           {libraries.map((library) => {
@@ -237,7 +237,7 @@ export function ApplyPanel({ libraries, labels }: { libraries: RecordsLibraryVie
             return (
               <li key={library.id} data-testid="records-library">
                 <SelectField
-                  label={t("library", { name })}
+                  label={t("apply.library", { name })}
                   name={`library-${library.id}`}
                   value={library.labelId ?? ""}
                   onChange={(e) => choose(`/api/v1/records/libraries/${encodeURIComponent(library.id)}/label`, e.target.value)}
@@ -246,7 +246,7 @@ export function ApplyPanel({ libraries, labels }: { libraries: RecordsLibraryVie
                 {library.types.map((type) => (
                   <SelectField
                     key={type.id}
-                    label={t("type", { name: nameIn(type.names, locale), library: name })}
+                    label={t("apply.type", { name: nameIn(type.names, locale), library: name })}
                     name={`type-${type.id}`}
                     value={type.labelId ?? ""}
                     onChange={(e) => choose(`/api/v1/records/types/${encodeURIComponent(type.id)}/label`, e.target.value)}
@@ -264,7 +264,7 @@ export function ApplyPanel({ libraries, labels }: { libraries: RecordsLibraryVie
 
 /** One document waiting for the records manager's decision: dispose of it, or keep it for more months. */
 function DispositionRow({ item }: { item: DispositionItem }) {
-  const t = useTranslations("records.disposition");
+  const t = useTranslations("records");
   const locale = useLocale();
   const format = useFormatter();
   const [months, setMonths] = useState("12");
@@ -278,22 +278,22 @@ function DispositionRow({ item }: { item: DispositionItem }) {
       <span className="records-meta">
         <bdi>{nameIn(item.labelNames, locale)}</bdi>
       </span>
-      {item.endedAt ? <span className="records-meta">{t("ended", { date: format.dateTime(new Date(item.endedAt), { dateStyle: "medium" }) })}</span> : null}
-      {item.held ? <Badge tone="warning">{t("held")}</Badge> : null}
+      {item.endedAt ? <span className="records-meta">{t("disposition.ended", { date: format.dateTime(new Date(item.endedAt), { dateStyle: "medium" }) })}</span> : null}
+      {item.held ? <Badge tone="warning">{t("disposition.held")}</Badge> : null}
       <Problems messages={messages} />
       <div className="records-actions">
         <ConfirmAction
-          label={t("dispose")}
-          question={t("disposeQuestion", { name: item.name })}
-          confirmLabel={t("disposeConfirm")}
-          cancelLabel={t("cancel")}
+          label={t("disposition.dispose")}
+          question={t("disposition.disposeQuestion", { name: item.name })}
+          confirmLabel={t("disposition.disposeConfirm")}
+          cancelLabel={t("disposition.cancel")}
           onConfirm={async () => {
             await send(url, "POST", { decision: "dispose" });
           }}
         />
-        <FormField label={t("keepMonths")} name={`keep-${item.documentId}`} type="number" min={1} max={1200} value={months} onChange={(e) => setMonths(e.target.value)} />
-        <Button busy={busy} busyLabel={t("saving")} onClick={() => void send(url, "POST", { decision: "keep", keepMonths: Number(months) })}>
-          {t("keep")}
+        <FormField label={t("disposition.keepMonths")} name={`keep-${item.documentId}`} type="number" min={1} max={1200} value={months} onChange={(e) => setMonths(e.target.value)} />
+        <Button busy={busy} busyLabel={t("disposition.saving")} onClick={() => void send(url, "POST", { decision: "keep", keepMonths: Number(months) })}>
+          {t("disposition.keep")}
         </Button>
       </div>
     </li>
@@ -302,15 +302,15 @@ function DispositionRow({ item }: { item: DispositionItem }) {
 
 /** The disposition review queue (US6 scenario 1) and the content-free record of what was disposed of (FR-014). */
 export function DispositionPanel({ queue, records }: { queue: DispositionItem[]; records: DispositionRecordView[] }) {
-  const t = useTranslations("records.disposition");
+  const t = useTranslations("records");
   const locale = useLocale();
   const format = useFormatter();
   return (
     <section className="records-card" aria-labelledby="records-disposition">
-      <h2 id="records-disposition">{t("title")}</h2>
-      <p className="field-hint">{t("intro")}</p>
+      <h2 id="records-disposition">{t("disposition.title")}</h2>
+      <p className="field-hint">{t("disposition.intro")}</p>
       {queue.length === 0 ? (
-        <p className="field-hint">{t("empty")}</p>
+        <p className="field-hint">{t("disposition.empty")}</p>
       ) : (
         <ul className="records-list">
           {queue.map((item) => (
@@ -318,21 +318,21 @@ export function DispositionPanel({ queue, records }: { queue: DispositionItem[];
           ))}
         </ul>
       )}
-      <h3>{t("recordsTitle")}</h3>
+      <h3>{t("disposition.recordsTitle")}</h3>
       {records.length === 0 ? (
-        <p className="field-hint">{t("noRecords")}</p>
+        <p className="field-hint">{t("disposition.noRecords")}</p>
       ) : (
         <ul className="records-list">
           {records.map((r) => (
             <li key={r.id} data-testid="disposition-record">
               <span className="records-name">
-                <bdi>{r.number ?? t("noNumber")}</bdi>
+                <bdi>{r.number ?? t("disposition.noNumber")}</bdi>
               </span>
               <span className="records-meta">
                 <bdi>{nameIn(r.labelNames, locale)}</bdi>
               </span>
-              <span className="records-meta">{t(`mode.${r.mode}`)}</span>
-              <span className="records-meta">{t("versions", { count: r.versions })}</span>
+              <span className="records-meta">{t(`disposition.mode.${r.mode}`)}</span>
+              <span className="records-meta">{t("disposition.versions", { count: r.versions })}</span>
               <span className="records-meta">{format.dateTime(new Date(r.disposedAt), { dateStyle: "medium" })}</span>
             </li>
           ))}
@@ -344,7 +344,7 @@ export function DispositionPanel({ queue, records }: { queue: DispositionItem[];
 
 /** The documents one hold covers, loaded when the records manager asks for them. */
 function HeldDocuments({ hold }: { hold: HoldView }) {
-  const t = useTranslations("records.holds");
+  const t = useTranslations("records");
   const [detail, setDetail] = useState<HoldDetail | null>(null);
   const [failed, setFailed] = useState(false);
   async function load() {
@@ -361,20 +361,20 @@ function HeldDocuments({ hold }: { hold: HoldView }) {
     return (
       <>
         <Button variant="quiet" onClick={() => void load()}>
-          {t("showDocuments", { name: hold.name })}
+          {t("holds.showDocuments", { name: hold.name })}
         </Button>
         {failed ? (
           <p className="field-error" role="alert">
-            {t("loadFailed")}
+            {t("holds.loadFailed")}
           </p>
         ) : null}
       </>
     );
   }
   return detail.documents.length === 0 ? (
-    <p className="field-hint">{t("noDocuments")}</p>
+    <p className="field-hint">{t("holds.noDocuments")}</p>
   ) : (
-    <ul className="records-held" aria-label={t("documentsOf", { name: hold.name })}>
+    <ul className="records-held" aria-label={t("holds.documentsOf", { name: hold.name })}>
       {detail.documents.map((d) => (
         <li key={d.id}>
           <Link href={documentHref(d.id)}>
@@ -393,7 +393,7 @@ type Target = "custodian" | "library";
  * cover TeamBeats libraries only. Their reasons and the documents they hold are shown to records managers only.
  */
 export function HoldsPanel({ holds, libraries }: { holds: HoldView[]; libraries: RecordsLibraryView[] }) {
-  const t = useTranslations("records.holds");
+  const t = useTranslations("records");
   const locale = useLocale();
   const format = useFormatter();
   const [name, setName] = useState("");
@@ -432,11 +432,11 @@ export function HoldsPanel({ holds, libraries }: { holds: HoldView[]; libraries:
 
   return (
     <section className="records-card" aria-labelledby="records-holds">
-      <h2 id="records-holds">{t("title")}</h2>
-      <p className="field-hint">{t("intro")}</p>
-      <p className="notice notice-info">{t("reach")}</p>
+      <h2 id="records-holds">{t("holds.title")}</h2>
+      <p className="field-hint">{t("holds.intro")}</p>
+      <p className="notice notice-info">{t("holds.reach")}</p>
       {holds.length === 0 ? (
-        <p className="field-hint">{t("empty")}</p>
+        <p className="field-hint">{t("holds.empty")}</p>
       ) : (
         <ul className="records-list">
           {holds.map((h) => (
@@ -444,22 +444,22 @@ export function HoldsPanel({ holds, libraries }: { holds: HoldView[]; libraries:
               <span className="records-name">
                 <bdi>{h.name}</bdi>
               </span>
-              <Badge tone={h.status === "active" ? "warning" : "neutral"}>{t(`status.${h.status}`)}</Badge>
+              <Badge tone={h.status === "active" ? "warning" : "neutral"}>{t(`holds.status.${h.status}`)}</Badge>
               <span className="records-meta">
-                {h.custodianId ? t("byCustodian") : h.libraryId ? t("byLibrary", { name: libraryName(h.libraryId) }) : t("byDocument")}
+                {h.custodianId ? t("holds.byCustodian") : h.libraryId ? t("holds.byLibrary", { name: libraryName(h.libraryId) }) : t("holds.byDocument")}
               </span>
-              <span className="records-meta">{t("documents", { count: h.documents })}</span>
-              <span className="records-meta">{t("placed", { date: format.dateTime(new Date(h.createdAt), { dateStyle: "medium" }) })}</span>
+              <span className="records-meta">{t("holds.documents", { count: h.documents })}</span>
+              <span className="records-meta">{t("holds.placed", { date: format.dateTime(new Date(h.createdAt), { dateStyle: "medium" }) })}</span>
               <p className="records-reason">
                 <bdi>{h.reason}</bdi>
               </p>
               <HeldDocuments hold={h} />
               {h.status === "active" ? (
                 <ConfirmAction
-                  label={t("release")}
-                  question={t("releaseQuestion", { name: h.name })}
-                  confirmLabel={t("releaseConfirm")}
-                  cancelLabel={t("cancel")}
+                  label={t("holds.release")}
+                  question={t("holds.releaseQuestion", { name: h.name })}
+                  confirmLabel={t("holds.releaseConfirm")}
+                  cancelLabel={t("holds.cancel")}
                   onConfirm={async () => {
                     await send(`/api/v1/records/holds/${encodeURIComponent(h.id)}/release`, "POST");
                   }}
@@ -469,31 +469,31 @@ export function HoldsPanel({ holds, libraries }: { holds: HoldView[]; libraries:
           ))}
         </ul>
       )}
-      <h3>{t("createTitle")}</h3>
+      <h3>{t("holds.createTitle")}</h3>
       <Problems messages={messages} />
       <form className="records-form" onSubmit={(e) => void create(e)}>
-        <FormField label={t("name")} name="hold-name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} />
-        <TextAreaField label={t("reason")} name="hold-reason" value={reason} onChange={(e) => setReason(e.target.value)} required maxLength={2000} />
+        <FormField label={t("holds.name")} name="hold-name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={200} />
+        <TextAreaField label={t("holds.reason")} name="hold-reason" value={reason} onChange={(e) => setReason(e.target.value)} required maxLength={2000} />
         <SelectField
-          label={t("target")}
+          label={t("holds.target")}
           name="hold-target"
           value={target}
           onChange={(e) => setTarget(e.target.value as Target)}
           options={[
-            { value: "custodian", label: t("targetCustodian") },
-            { value: "library", label: t("targetLibrary") },
+            { value: "custodian", label: t("holds.targetCustodian") },
+            { value: "library", label: t("holds.targetLibrary") },
           ]}
         />
         {target === "custodian" ? (
           <>
-            <PersonPicker label={t("custodian")} value={custodian} onChange={setCustodian} />
-            <FormField label={t("from")} name="hold-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-            <FormField label={t("to")} name="hold-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-            <Checkbox label={t("includeAudit")} hint={t("includeAuditHint")} checked={audit} onChange={(e) => setAudit(e.target.checked)} />
+            <PersonPicker label={t("holds.custodian")} value={custodian} onChange={setCustodian} />
+            <FormField label={t("holds.from")} name="hold-from" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <FormField label={t("holds.to")} name="hold-to" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            <Checkbox label={t("holds.includeAudit")} hint={t("holds.includeAuditHint")} checked={audit} onChange={(e) => setAudit(e.target.checked)} />
           </>
         ) : (
           <SelectField
-            label={t("library")}
+            label={t("holds.library")}
             name="hold-library"
             value={library}
             onChange={(e) => setLibrary(e.target.value)}
@@ -501,8 +501,8 @@ export function HoldsPanel({ holds, libraries }: { holds: HoldView[]; libraries:
           />
         )}
         <p className="records-actions">
-          <Button type="submit" variant="primary" busy={busy} busyLabel={t("saving")}>
-            {t("create")}
+          <Button type="submit" variant="primary" busy={busy} busyLabel={t("holds.saving")}>
+            {t("holds.create")}
           </Button>
         </p>
       </form>
