@@ -26,7 +26,6 @@
 
 .notification-panel-head,
 .notification-panel-foot,
-.notification-page-head,
 .notification-toolbar {
   display: flex;
   flex-wrap: wrap;

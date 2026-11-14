@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { Header } from "@/components/shell/Header";
 import { NotificationCentre } from "@/features/notifications/NotificationCentre";
+import { PageHeader } from "@/components/ui/PageHeader";
 
 /** The notification centre page (spec 015 US1). */
 export default async function NotificationsPage() {
@@ -16,10 +17,15 @@ export default async function NotificationsPage() {
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("title"), href: "/notifications" }]} />
       <main id="main" className="page">
-        <div className="notification-page-head">
-          <h1>{t("title")}</h1>
-          <Link href="/notifications/preferences">{t("preferences.link")}</Link>
-        </div>
+        <PageHeader
+          title={t("title")}
+          icon="bell"
+          actions={
+            <Link className="button button-secondary" href="/notifications/preferences">
+              {t("preferences.link")}
+            </Link>
+          }
+        />
         <NotificationCentre />
       </main>
     </>
