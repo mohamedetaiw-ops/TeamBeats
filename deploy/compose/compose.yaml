@@ -34,6 +34,14 @@ services:
     image: gotenberg/gotenberg:8.32.0
     ports: ["3000:3000"]
 
+  # Text of PDFs and OCR of scans and pictures for search (spec 011 FR-020). Set Ocr__Tika__Url=http://localhost:9998.
+  # Apache Tika (Apache-2.0) with Tesseract runs in its own container, so crafted files are never parsed in the product.
+  tika:
+    build:
+      context: ../docker
+      dockerfile: tika-ocr.Dockerfile
+    ports: ["9998:9998"]
+
   # Object storage: R0 uses the file-system adapter. MinIO joins with the S3 adapter in R1.
 
 volumes:

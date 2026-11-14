@@ -45,6 +45,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public FakeGotenberg Gotenberg { get; } = new();
 
+    public FakeTika Tika { get; } = new();
+
     public TestUserAttributes UserAttributes { get; } = new();
 
     public TestEmailSender Email { get; } = new();
@@ -77,6 +79,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         builder.UseSetting("Integrations:Microsoft365:ClientSecret", FakeMicrosoftGraph.ClientSecret);
         builder.UseSetting(TeamBeats.Modules.Integrations.Microsoft365.TokenProtector.KeySetting, TokenKey);
         builder.UseSetting(TeamBeats.Persistence.GotenbergConverter.UrlKey, FakeGotenberg.BaseUrl);
+        builder.UseSetting(TeamBeats.Persistence.TikaTextRecognizer.UrlKey, FakeTika.BaseUrl);
         builder.UseSetting(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.ApiKeySetting, FakeOpenRouter.ApiKey);
         builder.UseSetting(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.TimeoutSetting, "2");
         builder.UseSetting(TeamBeats.Modules.AiGateway.DebugLogProtector.KeySetting, AiLogKey);
@@ -103,6 +106,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddHttpClient(TeamBeats.Modules.Integrations.Microsoft365.HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => Graph);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => Weather);
             services.AddHttpClient(TeamBeats.Persistence.GotenbergConverter.ClientName).ConfigurePrimaryHttpMessageHandler(() => Gotenberg);
+            services.AddHttpClient(TeamBeats.Persistence.TikaTextRecognizer.ClientName).ConfigurePrimaryHttpMessageHandler(() => Tika);
             services.AddHttpClient(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => OpenRouter);
             services.AddHttpClient(TeamBeats.Modules.Integrations.Runtime.SafeHttp.ClientName).ConfigurePrimaryHttpMessageHandler(() => Rest);
             services.AddHttpClient(TeamBeats.Modules.Integrations.WebPush.WebPushClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Push);

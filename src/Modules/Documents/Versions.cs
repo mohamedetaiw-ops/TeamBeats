@@ -36,6 +36,7 @@ public sealed class DocumentVersions(
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,
+    DocumentText documentText,
     IClock clock)
 {
     public const int MaxNoteLength = 1000;
@@ -246,15 +247,18 @@ public sealed class DocumentVersions(
         return label;
     }
 
-    private Task InsertVersionAsync(LibraryRow library, Guid documentId, Guid versionId, int major, int minor, string key, string hash, long size, string contentType,
-        string fileName, string? note, string state, CancellationToken ct, string? text = null) =>
-        session.ExecAsync(
+    private async Task InsertVersionAsync(LibraryRow library, Guid documentId, Guid versionId, int major, int minor, string key, string hash, long size, string contentType,
+        string fileName, string? note, string state, CancellationToken ct, string? text = null)
+    {
+        await session.ExecAsync(
             """
             insert into documents.document_version (tenant_id, id, document_id, library_id, major, minor, object_key, content_hash, size_bytes, content_type, file_name,
               note, author_user_id, state, scan_state, created_at, text_extract)
             values (platform.current_tenant_id(), @versionId, @documentId, @lib, @major, @minor, @key, @hash, @size, @contentType, @fileName, @note, @user, @state, 'clean', @now, @text)
             """,
             new { versionId, documentId, lib = library.Id, major, minor, key, hash, size, contentType, fileName, note, user = context.RequireUser(), state, now = clock.UtcNow, text }, ct);
+        await documentText.QueueAsync(versionId, fileName, text, ct);
+    }
 
     /// <summary>Removes a working copy that was never checked in; it is not a version, so nothing is lost from history.</summary>
     private async Task DropWorkingCopyAsync(DocumentFiles.DocRow doc, CancellationToken ct)
@@ -393,9 +397,9 @@ public sealed class DocumentVersions(
         var (library, doc) = await EditableAsync(id, ct);
         var note = Note(request.Note);
         var source = await session.QuerySingleOrDefaultAsync(
-            "select major, minor, object_key, content_hash, size_bytes, content_type, file_name, scan_state from documents.document_version where id = @v and document_id = @id and state <> 'pending'",
+            "select major, minor, object_key, content_hash, size_bytes, content_type, file_name, scan_state, text_extract from documents.document_version where id = @v and document_id = @id and state <> 'pending'",
             new { v = request.VersionId, id }, r => (Major: r.GetInt32(0), Minor: r.GetInt32(1), Key: r.GetString(2), Hash: r.GetString(3), Size: r.GetInt64(4), Type: r.GetString(5),
-                Name: r.GetString(6), Scan: r.GetString(7)), ct);
+                Name: r.GetString(6), Scan: r.GetString(7), Text: r.Get<string>("text_extract")), ct);
         if (source.Key is null)
         {
             throw AppException.Validation("versionId", "validation.documents.version_unknown");
@@ -407,7 +411,7 @@ public sealed class DocumentVersions(
         var versionId = Ids.New();
         // The stored file is reused: versions never change, so two versions may share one object.
         await InsertVersionAsync(library, id, versionId, 0, 0, source.Key, source.Hash, source.Size, source.Type, source.Name,
-            note ?? $"{VersionLabels.Of(source.Major, source.Minor)}", VersionStates.Pending, ct);
+            note ?? $"{VersionLabels.Of(source.Major, source.Minor)}", VersionStates.Pending, ct, source.Text);
         var label = await NumberAsync(library, doc, versionId, publish: false, ct);
         await session.ExecAsync("update documents.document set updated_at = @now, row_version = row_version + 1 where id = @id", new { id, now = clock.UtcNow }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.DocRestored, Securables.Document, id.ToString(), TargetOrgUnitId: library.OrgUnitId,

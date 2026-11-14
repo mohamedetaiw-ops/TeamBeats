@@ -28,11 +28,13 @@ public static class DocumentsModule
         services.AddScoped<DocumentAccess>();
         services.AddScoped<DocumentVersions>();
         services.AddScoped<OfficeEditing>();
+        services.AddScoped<DocumentText>();
         services.AddScoped<Records>();
         services.AddScoped<GuestShares>();
         services.AddScoped<Assets>();
         services.AddScoped<DocumentImports>();
         services.AddMessageHandler<DocumentImportRequested, DocumentImportRunner>("documents.import");
+        services.AddMessageHandler<DocumentTextRequested, DocumentText>("documents.text");
         services.AddScoped<Contracts.IAssetImages>(sp => sp.GetRequiredService<Assets>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AssetAccessTasks>();
         services.AddScoped<IResourceDescriptorProvider, AssetCollectionDescriptorProvider>();
