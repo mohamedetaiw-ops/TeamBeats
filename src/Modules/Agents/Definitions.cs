@@ -97,7 +97,7 @@ public static class AgentDefinitions
     public static readonly IReadOnlyList<string> Languages = ["ar", "en"];
     public static readonly IReadOnlyList<string> Tones = ["neutral", "friendly", "formal"];
     public static readonly IReadOnlyList<string> OutputFormats = ["text", "bullets", "steps"];
-    public static readonly IReadOnlyList<string> Categories = ["knowledge", "hr", "it", "content", "requests", "productivity", "other"];
+    public static readonly IReadOnlyList<string> Categories = ["knowledge", "hr", "it", "content", "requests", "productivity", "people", "learning", "procurement", "finance", "communications", "other"];
     public const int MaxNameLength = 80;
     public const int MaxDescriptionLength = 300;
     public const int MaxPurposeLength = 1000;

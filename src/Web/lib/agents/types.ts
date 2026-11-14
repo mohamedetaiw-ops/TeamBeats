@@ -43,7 +43,7 @@ export type MyMemoryView = { agents: { agentId: string; name: Localized | null; 
 export type AgentMemoryView = { agentId: string; offered: boolean; accepted: boolean; retentionDays: number; items: MemoryItem[] };
 
 /** Agent categories of the definition schema (spec 020 section 12, Identity). */
-export const AGENT_CATEGORIES = ["knowledge", "hr", "it", "content", "requests", "productivity", "other"] as const;
+export const AGENT_CATEGORIES = ["knowledge", "hr", "it", "content", "requests", "productivity", "people", "learning", "procurement", "finance", "communications", "other"] as const;
 
 /** What Agent Studio offers the designer (spec 020 US4): blank agents, the custom agent count and limit, and the JSON view. */
 export type StudioOffer = { custom: boolean; customCount: number; customLimit: number | null; jsonView: boolean };

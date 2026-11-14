@@ -6235,6 +6235,11 @@
       "content": "Content",
       "requests": "Requests",
       "productivity": "Productivity",
+      "people": "People",
+      "learning": "Learning",
+      "procurement": "Procurement",
+      "finance": "Finance",
+      "communications": "Communications",
       "other": "Other"
     },
     "marketplace": {

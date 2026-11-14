@@ -1895,3 +1895,12 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - The worker (`AgentBriefingService`, every minute) claims due rows per tenant, moving each to its next time before running, so a crash never sends one twice. Each briefing runs in its own scope as the subscriber (027 AGV-003) through the normal runtime in mode `briefing`, with their permissions at that moment. It is read only: write tools are refused with `tool.not_in_briefing`, since nobody is there to confirm.
 - Nothing runs, and nothing is sent, when the person is disabled or a test identity, the agent is not published, it stopped offering briefings, the person left its audience, the policy no longer allows it, or agents are switched off. A leaver's subscriptions are deleted on `UserDeprovisioned`.
 - The answer arrives as a notification in the new category `agent_briefings` (not mandatory, no email by default), template `agents.briefing`, linking to the agent, with the answer cut at 1,500 characters.
+
+## Spec 020 R2 slice 5: department templates (T020, section 12 templates 7 to 12)
+
+- The six department templates are data in `src/Modules/Agents/Templates/department.json` behind `ai.agents.department` (Workplace Plus and above, migration 0036), each with a platform suite `template.<id>` in Arabic and English. No runtime code changed (SC-003).
+- Tools are the registered ones that fit each row: Onboarding uses knowledge search, the task inbox, request status and request preparation (L2); People Directory uses `find_person` and `get_person` (L0); Learning prepares training requests (L1); Finance and Expenses prepares claims as service requests (L2), since the expenses module has no agent tool yet.
+- Procurement is L3 as the table says, so the library shows it as not ready (autonomy above what is built) and install is refused until spec 027 builds L3. Default kept: it also lists `submit_service_request`; ERP status comes later through a connector tool.
+- Internal Communications ships at its default L1 and only drafts news (`draft_news`, confirmed by the person). Publishing at L3 with communications owner approval waits for spec 027 L3; the instructions say it never publishes.
+- New categories: people, learning, procurement, finance and communications.
+- Evaluation cases may now name tools without a module prefix (`find_person`), matching how such tools are registered.

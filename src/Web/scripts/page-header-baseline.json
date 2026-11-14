@@ -60,7 +60,6 @@
   "app/admin/templates/page.tsx",
   "app/admin/users/[id]/page.tsx",
   "app/agents/[id]/page.tsx",
-  "app/agents/page.tsx",
   "app/content/campaigns/[id]/page.tsx",
   "app/content/campaigns/page.tsx",
   "app/content/following/page.tsx",
