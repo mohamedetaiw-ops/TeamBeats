@@ -100,9 +100,9 @@ export function VersionHistory({ itemId, versions, locales, primary }: { itemId:
             <tr key={v.number}>
               <th scope="row">
                 {v.number}
-                {v.current ? <span className="content-badge">{t("current")}</span> : null}
-                {v.draft ? <span className="content-badge">{t("draft")}</span> : null}
-                {v.restoredFrom ? <span className="content-badge">{t("restoredFrom", { number: v.restoredFrom })}</span> : null}
+                {v.current ? <span className="ui-badge content-badge" data-tone="accent">{t("current")}</span> : null}
+                {v.draft ? <span className="ui-badge content-badge" data-tone="accent">{t("draft")}</span> : null}
+                {v.restoredFrom ? <span className="ui-badge content-badge" data-tone="accent">{t("restoredFrom", { number: v.restoredFrom })}</span> : null}
               </th>
               <td>
                 <bdi>{v.author.displayName}</bdi>
@@ -110,7 +110,7 @@ export function VersionHistory({ itemId, versions, locales, primary }: { itemId:
               <td>{v.approver ? <bdi>{v.approver.displayName}</bdi> : t("noApprover")}</td>
               <td>
                 {v.changeNote ? <bdi>{v.changeNote}</bdi> : null}
-                {v.material ? null : <span className="content-badge">{t("minor")}</span>}
+                {v.material ? null : <span className="ui-badge content-badge" data-tone="accent">{t("minor")}</span>}
               </td>
               <td>
                 <time dateTime={v.publishedAt ?? v.createdAt}>{format.format(new Date(v.publishedAt ?? v.createdAt))}</time>

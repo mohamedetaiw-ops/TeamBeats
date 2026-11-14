@@ -103,18 +103,6 @@
   min-block-size: 1.5rem;
 }
 
-.services-status {
-  display: inline-flex;
-  align-items: center;
-  min-block-size: 1.375rem;
-  padding-inline: var(--tb-space-sm);
-  border-radius: calc(var(--tb-radius-sm) * 0.75);
-  background: var(--tb-color-surface-sunken);
-  color: var(--tb-color-text-secondary);
-  font-size: var(--tb-font-size-xs);
-  font-weight: var(--tb-font-weight-medium);
-}
-
 /* Work items (spec 036 DLS-061): a view switch and a compact filter bar on one line, then rows with aligned columns. */
 .work-items-bar {
   display: flex;
@@ -125,31 +113,17 @@
   margin-block-end: var(--tb-space-md);
 }
 
-.ui-filter-bar.work-items-filters {
-  flex: 0 1 auto;
-  align-items: center;
-  gap: var(--tb-space-sm);
+.work-items-bar > .ui-toolbar-wrap {
+  flex: 1 1 24rem;
   margin: 0;
-  padding: 0;
-  background: none;
-  box-shadow: none;
 }
 
-.work-items-filters .field {
-  flex: 0 1 auto;
+.work-items-bar .ui-toolbar {
+  justify-content: flex-end;
 }
 
-.work-items-filters input[type="search"] {
-  inline-size: 16rem;
-  max-inline-size: 100%;
-}
-
-.work-items-filters input,
-.work-items-filters select,
-.work-items-filters .button {
-  block-size: 2.25rem;
-  min-block-size: 2.25rem;
-  font-size: var(--tb-font-size-sm);
+.work-items-bar .ui-toolbar-end {
+  margin-inline-start: 0;
 }
 
 .work-items {

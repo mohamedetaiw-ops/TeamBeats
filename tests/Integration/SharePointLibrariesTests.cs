@@ -1,0 +1,271 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
+using TeamBeats.Audit.Contracts;
+using TeamBeats.Authorization.Contracts;
+using TeamBeats.Modules.Tenancy.Contracts;
+using TeamBeats.Testing;
+using Xunit;
+
+namespace TeamBeats.Integration.Tests;
+
+/// <summary>
+/// Spec 011 R2 US9 (FR-025 to FR-027, FR-030, FR-031): SharePoint Online as connected libraries. The integration
+/// administrator allows sites the customer granted to the application; a library manager connects a document library
+/// at a scope they manage; people in its audience see only what SharePoint lets them open, listed and opened live with
+/// their own access. TeamBeats-only actions are refused, an outage changes nothing for TeamBeats libraries, and other
+/// tenants, other units and plans without Microsoft 365 are covered. All content is fictional.
+/// </summary>
+[Collection(WorldCollection.Name)]
+public sealed class SharePointLibrariesTests(TenantWorld world)
+{
+    private const string Libraries = "/api/v1/documents/libraries";
+
+    private FakeMicrosoftGraph Graph => world.Factory.Graph;
+
+    private sealed record Org(TestTenant T, Guid Dubai, Guid Connection, Guid Directory, string HrSite, string FinanceSite, string Drive, string Policies,
+        string Handbook, string Salaries);
+
+    private async Task<Org> FreshAsync(string package = "workplace_plus")
+    {
+        var t = await world.CreateTenantAsync("sp-" + Guid.NewGuid().ToString("N")[..8], package);
+        var holding = await world.CreateUnitAsync(t, "Holding", null, "organization");
+        var dubai = await world.CreateUnitAsync(t, "Dubai", holding, "department");
+        await world.CreateUnitAsync(t, "Cairo", holding, "department");
+        foreach (var (name, unit) in new[] { ("lm", "Dubai"), ("reader", "Dubai"), ("outsider", "Cairo") })
+        {
+            await world.SeedUserAsync(t, name, MembershipTypes.Employee);
+            await world.AddMembershipAsync(t, name, unit);
+        }
+        if (package == "workplace_plus")
+        {
+            await world.AssignAsync(t, "lm", BuiltInRoles.OrganizationAdministrator, "org_subtree", dubai);
+        }
+        var directory = Guid.NewGuid();
+        var connection = Guid.Empty;
+        if (package == "workplace_plus")
+        {
+            var created = await OkAsync(t["admin"].Client.PostAsJsonAsync("/api/v1/integrations/connections", new
+            {
+                kind = "microsoft365", externalTenantId = directory, displayName = "Contoso Microsoft 365", features = new[] { "sharepoint_documents" },
+            }), HttpStatusCode.Created);
+            connection = created.GetProperty("id").GetGuid();
+            await AdminConsentAsync(t, connection, directory, "sharepoint_documents");
+            Graph.Consent(directory, ["Sites.Selected"]);
+            Graph.ConsentDelegated(directory, "User.Read", "Files.Read.All");
+        }
+        var hr = Graph.AddSharePointSite(directory, "contoso.sharepoint.com", "/sites/hr", "Human Resources");
+        var finance = Graph.AddSharePointSite(directory, "contoso.sharepoint.com", "/sites/finance", "Finance", granted: false);
+        var drive = Graph.AddSharePointDrive(hr, "Documents");
+        var policies = Graph.AddSharePointItem(drive, null, "Policies", folder: true);
+        var handbook = Graph.AddSharePointItem(drive, policies, "Handbook.pdf", content: Encoding.UTF8.GetBytes("%PDF-1.7 Employee handbook"));
+        var salaries = Graph.AddSharePointItem(drive, null, "Salaries.xlsx", content: Encoding.UTF8.GetBytes("salary bands"), readers: t["lm"].Email);
+        return new Org(t, dubai, connection, directory, hr, finance, drive, policies, handbook, salaries);
+    }
+
+    private string Sites(Org o) => $"/api/v1/integrations/connections/{o.Connection}/sharepoint/sites";
+
+    private async Task<Guid> ConnectedLibraryAsync(Org o)
+    {
+        Assert.Equal(HttpStatusCode.Created, (await o.T["admin"].Client.PostAsJsonAsync(Sites(o), new { url = "https://contoso.sharepoint.com/sites/hr" })).StatusCode);
+        var library = await OkAsync(o.T["lm"].Client.PostAsJsonAsync($"{Libraries}/connected", new
+        {
+            names = new Dictionary<string, string> { ["en"] = "HR policies" }, scope = "org_unit", scopeId = o.Dubai, connectionId = o.Connection, containerId = o.Drive,
+        }), HttpStatusCode.Created);
+        return library.GetProperty("id").GetGuid();
+    }
+
+    private static async Task<JsonElement> ItemsAsync(HttpClient client, Guid library, string? folder = null) =>
+        await OkAsync(client.GetAsync($"{Libraries}/{library}/connected/items" + (folder is null ? string.Empty : $"?folder={Uri.EscapeDataString(folder)}")));
+
+    private static string[] Names(JsonElement page) => page.GetProperty("items").EnumerateArray().Select(i => i.GetProperty("name").GetString()!).ToArray();
+
+    [Fact]
+    public async Task Allowed_sites_connect_a_library_whose_files_each_person_sees_as_SharePoint_lets_them()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+
+        // Allowed sites: only SharePoint Online addresses, only sites granted to the application, and only the integration administrator.
+        foreach (var url in new[]
+                 {
+                     "https://example.com/sites/hr", "http://contoso.sharepoint.com/sites/hr", "https://user@contoso.sharepoint.com/sites/hr",
+                     "https://contoso.sharepoint.com:8443/sites/hr", "https://contoso.sharepoint.com/personal/someone", "https://contoso.sharepoint.com/sites/h%2Fr",
+                 })
+        {
+            Assert.Equal("validation.integrations.sharepoint_url", await RefusedAsync(t["admin"].Client.PostAsJsonAsync(Sites(o), new { url }), HttpStatusCode.BadRequest));
+        }
+        Assert.Equal("validation.integrations.sharepoint_site_not_granted",
+            await RefusedAsync(t["admin"].Client.PostAsJsonAsync(Sites(o), new { url = "https://contoso.sharepoint.com/sites/finance" }), HttpStatusCode.BadRequest));
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["lm"].Client.PostAsJsonAsync(Sites(o), new { url = "https://contoso.sharepoint.com/sites/hr" })).StatusCode);
+        var site = await OkAsync(t["admin"].Client.PostAsJsonAsync(Sites(o), new { url = "https://contoso.sharepoint.com/sites/hr/SitePages/Home.aspx" }),
+            HttpStatusCode.Created);
+        Assert.Equal(o.HrSite, site.GetProperty("siteId").GetString());
+        Assert.Equal("Human Resources", Assert.Single((await OkAsync(t["admin"].Client.GetAsync(Sites(o)))).EnumerateArray()).GetProperty("name").GetString());
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.ConnectionSiteAllowed, o.Connection.ToString());
+
+        // A manager sees the document libraries of allowed sites; a reader may not list them.
+        var sources = await OkAsync(t["lm"].Client.GetAsync("/api/v1/documents/connected-sources"));
+        var container = Assert.Single(Assert.Single(sources.EnumerateArray()).GetProperty("containers").EnumerateArray());
+        Assert.Equal(o.Drive, container.GetProperty("id").GetString());
+        Assert.Equal("Human Resources / Documents", container.GetProperty("name").GetString());
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["reader"].Client.GetAsync("/api/v1/documents/connected-sources")).StatusCode);
+
+        // A document library the connection does not allow is refused; a reader cannot connect one.
+        Assert.Equal("validation.documents.connected_container", await RefusedAsync(t["lm"].Client.PostAsJsonAsync($"{Libraries}/connected", new
+        {
+            names = new Dictionary<string, string> { ["en"] = "Other" }, scope = "org_unit", scopeId = o.Dubai, connectionId = o.Connection, containerId = "b!other",
+        }), HttpStatusCode.BadRequest));
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["reader"].Client.PostAsJsonAsync($"{Libraries}/connected", new
+        {
+            names = new Dictionary<string, string> { ["en"] = "Mine" }, scope = "org_unit", scopeId = o.Dubai, connectionId = o.Connection, containerId = o.Drive,
+        })).StatusCode);
+        var created = await OkAsync(t["lm"].Client.PostAsJsonAsync($"{Libraries}/connected", new
+        {
+            names = new Dictionary<string, string> { ["en"] = "HR policies" }, scope = "org_unit", scopeId = o.Dubai, connectionId = o.Connection, containerId = o.Drive,
+        }), HttpStatusCode.Created);
+        var library = created.GetProperty("id").GetGuid();
+        Assert.Equal("Human Resources / Documents", created.GetProperty("connected").GetProperty("containerName").GetString());
+        Assert.Contains((await OkAsync(t["reader"].Client.GetAsync(Libraries))).EnumerateArray(),
+            l => l.GetProperty("id").GetGuid() == library && l.GetProperty("connected").GetBoolean());
+
+        // Before connecting their own account, a person is asked to; afterwards they see only what SharePoint lets them open.
+        Assert.Equal("not_connected", (await ItemsAsync(t["reader"].Client, library)).GetProperty("state").GetString());
+        await ConnectAsync(t, "reader");
+        await ConnectAsync(t, "lm");
+        var readerRoot = await ItemsAsync(t["reader"].Client, library);
+        Assert.Equal("ok", readerRoot.GetProperty("state").GetString());
+        Assert.Equal(["Policies"], Names(readerRoot));
+        Assert.Equal(["Policies", "Salaries.xlsx"], Names(await ItemsAsync(t["lm"].Client, library)));
+        var folder = readerRoot.GetProperty("items")[0];
+        Assert.True(folder.GetProperty("folder").GetBoolean());
+        var inside = await ItemsAsync(t["reader"].Client, library, folder.GetProperty("id").GetString());
+        Assert.Equal(["Handbook.pdf"], Names(inside));
+
+        // Opening reads live as the person; a file SharePoint keeps from them is not found, and nothing is kept.
+        var handbookId = inside.GetProperty("items")[0].GetProperty("id").GetString()!;
+        var download = await t["reader"].Client.GetAsync($"{Libraries}/{library}/connected/content?item={Uri.EscapeDataString(handbookId)}");
+        Assert.Equal(HttpStatusCode.OK, download.StatusCode);
+        Assert.Equal("%PDF-1.7 Employee handbook", await download.Content.ReadAsStringAsync());
+        Assert.Equal("attachment", download.Content.Headers.ContentDisposition?.DispositionType);
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.DocConnectedOpened, library.ToString());
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await t["reader"].Client.GetAsync($"{Libraries}/{library}/connected/content?item={Uri.EscapeDataString($"{o.Drive}~{o.Salaries}")}")).StatusCode);
+        Graph.SetSharePointReaders(o.Handbook, t["lm"].Email);
+        Assert.Equal(HttpStatusCode.NotFound, (await t["reader"].Client.GetAsync($"{Libraries}/{library}/connected/content?item={Uri.EscapeDataString(handbookId)}")).StatusCode);
+        Assert.Empty(Names(await ItemsAsync(t["reader"].Client, library, folder.GetProperty("id").GetString())));
+
+        // The TeamBeats audience still applies: another unit's member and another tenant do not find the library.
+        Assert.Equal(HttpStatusCode.NotFound, (await t["outsider"].Client.GetAsync($"{Libraries}/{library}/connected/items")).StatusCode);
+        var other = await world.CreateTenantAsync("sp-other-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");
+        Assert.Equal(HttpStatusCode.NotFound, (await other["admin"].Client.GetAsync($"{Libraries}/{library}/connected/items")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other["admin"].Client.GetAsync(Sites(o))).StatusCode);
+
+        // TeamBeats-only actions are refused with the reason (FR-030).
+        Assert.Equal("conflict.documents.connected_library", await RefusedAsync(t["lm"].Client.PostAsync($"{Libraries}/{library}/files?name=a.txt",
+            new ByteArrayContent(Encoding.UTF8.GetBytes("text"))), HttpStatusCode.Conflict));
+        Assert.Equal("conflict.documents.connected_library", await RefusedAsync(t["lm"].Client.PostAsJsonAsync($"{Libraries}/{library}/folders", new { name = "New" }),
+            HttpStatusCode.Conflict));
+        Assert.Equal("validation.documents.connected_library", await RefusedAsync(t["lm"].Client.PutAsJsonAsync($"{Libraries}/{library}", new
+        {
+            names = new Dictionary<string, string> { ["en"] = "HR policies" }, viewOnly = true, version = created.GetProperty("version").GetInt32(),
+        }), HttpStatusCode.BadRequest));
+
+        // A site the customer stops granting fails the connection test; a removed site closes its libraries.
+        Graph.GrantSharePointSite(o.HrSite, false);
+        var test = await OkAsync(t["admin"].Client.PostAsync($"/api/v1/integrations/connections/{o.Connection}:test", null));
+        var sharepoint = test.GetProperty("features").EnumerateArray().Single(f => f.GetProperty("feature").GetString() == "sharepoint_documents");
+        Assert.Equal("integrations.test.site_missing", sharepoint.GetProperty("resultKey").GetString());
+        Graph.GrantSharePointSite(o.HrSite, true);
+        Assert.Equal(HttpStatusCode.NoContent, (await t["admin"].Client.DeleteAsync($"{Sites(o)}/{Uri.EscapeDataString(o.HrSite)}")).StatusCode);
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.ConnectionSiteRemoved, o.Connection.ToString());
+        Assert.Equal("not_found", (await ItemsAsync(t["reader"].Client, library)).GetProperty("state").GetString());
+    }
+
+    [Fact]
+    public async Task An_outage_a_missing_consent_and_a_plan_without_Microsoft_365_are_handled()
+    {
+        var o = await FreshAsync();
+        var library = await ConnectedLibraryAsync(o);
+        await ConnectAsync(o.T, "reader");
+
+        // SharePoint down: the library says so and TeamBeats libraries keep working.
+        Graph.DelegatedFaults.Enqueue(503);
+        Graph.DelegatedFaults.Enqueue(503);
+        Graph.DelegatedFaults.Enqueue(503);
+        Assert.Equal("unavailable", (await ItemsAsync(o.T["reader"].Client, library)).GetProperty("state").GetString());
+        Graph.DelegatedFaults.Clear();
+        var own = await OkAsync(o.T["lm"].Client.PostAsJsonAsync(Libraries, new
+        {
+            names = new Dictionary<string, string> { ["en"] = "Quality" }, scope = "org_unit", scopeId = o.Dubai,
+        }), HttpStatusCode.Created);
+        Assert.Equal(HttpStatusCode.OK, (await o.T["reader"].Client.GetAsync($"{Libraries}/{own.GetProperty("id").GetGuid()}/items")).StatusCode);
+        Assert.Equal("ok", (await ItemsAsync(o.T["reader"].Client, library)).GetProperty("state").GetString());
+
+        // Sites need the feature turned on and consented.
+        Assert.Equal(HttpStatusCode.NoContent, (await o.T["admin"].Client.PostAsync($"/api/v1/integrations/connections/{o.Connection}/features/sharepoint_documents:disable", null)).StatusCode);
+        Assert.Equal("conflict.integrations.sharepoint_consent", await RefusedAsync(o.T["admin"].Client.PostAsJsonAsync(Sites(o), new
+        {
+            url = "https://contoso.sharepoint.com/sites/hr",
+        }), HttpStatusCode.Conflict));
+        Assert.Equal("unavailable", (await ItemsAsync(o.T["reader"].Client, library)).GetProperty("state").GetString());
+        Assert.Empty((await OkAsync(o.T["lm"].Client.GetAsync("/api/v1/documents/connected-sources"))).EnumerateArray());
+
+        // A plan without Microsoft 365 offers no sources at all.
+        var plain = await FreshAsync("workplace");
+        Assert.Empty((await OkAsync(plain.T["admin"].Client.GetAsync("/api/v1/documents/connected-sources"))).EnumerateArray());
+    }
+
+    private async Task AdminConsentAsync(TestTenant t, Guid connection, Guid directory, string feature)
+    {
+        var start = await t["admin"].Client.GetAsync($"/api/v1/integrations/connections/{connection}/features/{feature}/consent");
+        var state = FakeIdentityProvider.ParseQuery(start.Headers.Location!.Query)["state"];
+        var relay = await world.Factory.PlatformClient().GetAsync(
+            $"/api/v1/integrations/consent/callback?admin_consent=True&tenant={directory:D}&state={Uri.EscapeDataString(state)}");
+        var done = await Client(t.Key, t["admin"].Token, "tb_consent", Cookie(start, "tb_consent")!).GetAsync(relay.Headers.Location!.PathAndQuery);
+        Assert.EndsWith("consent=granted", done.Headers.Location!.ToString(), StringComparison.Ordinal);
+    }
+
+    private async Task ConnectAsync(TestTenant t, string user)
+    {
+        var start = await t[user].Client.GetAsync("/api/v1/me/outlook/connect");
+        var answer = Graph.Authorize(start.Headers.Location!);
+        var relay = await world.Factory.PlatformClient().GetAsync("/api/v1/integrations/outlook/callback" + answer);
+        var done = await Client(t.Key, t[user].Token, "tb_outlook", Cookie(start, "tb_outlook")!).GetAsync(relay.Headers.Location!.PathAndQuery);
+        Assert.EndsWith("outlook=connected", done.Headers.Location!.ToString(), StringComparison.Ordinal);
+    }
+
+    private HttpClient Client(string tenantKey, string session, string cookie, string value)
+    {
+        var client = world.Factory.ClientFor($"{tenantKey}.{ApiFactory.BaseDomain}");
+        client.DefaultRequestHeaders.Add("Cookie", $"tb_session={session}; {cookie}={value}");
+        return client;
+    }
+
+    private static string? Cookie(HttpResponseMessage response, string name) =>
+        response.Headers.TryGetValues("Set-Cookie", out var values)
+            ? values.Select(v => v.Split(';')[0]).Where(v => v.StartsWith(name + "=", StringComparison.Ordinal)).Select(v => v[(name.Length + 1)..]).FirstOrDefault()
+            : null;
+
+    private static async Task<JsonElement> OkAsync(Task<HttpResponseMessage> call, HttpStatusCode expected = HttpStatusCode.OK)
+    {
+        var response = await call;
+        var text = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == expected, $"{(int)response.StatusCode}: {text}");
+        return text.Length == 0 ? default : JsonDocument.Parse(text).RootElement.Clone();
+    }
+
+    private static async Task<string> RefusedAsync(Task<HttpResponseMessage> call, HttpStatusCode expected)
+    {
+        var response = await call;
+        var text = await response.Content.ReadAsStringAsync();
+        Assert.True(response.StatusCode == expected, $"{(int)response.StatusCode}: {text}");
+        var body = JsonDocument.Parse(text).RootElement;
+        if (body.TryGetProperty("errors", out var errors))
+        {
+            return errors.EnumerateObject().First().Value[0].GetProperty("key").GetString()!;
+        }
+        return body.TryGetProperty("detailKey", out var detail) && detail.ValueKind == JsonValueKind.String ? detail.GetString()! : body.GetProperty("code").GetString()!;
+    }
+}

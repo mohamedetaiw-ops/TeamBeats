@@ -177,13 +177,13 @@ export function NotificationBell({ initialUnread = null }: { initialUnread?: num
               <div
                 role="group"
                 aria-label={t("tabs.label")}
-                className="notification-tabs"
+                className="ui-tablist" data-size="sm"
               >
                 {tabs.map((key) => (
                   <button
                     key={key}
                     type="button"
-                    className="notification-tab"
+                    className="ui-tab"
                     aria-pressed={tab === key}
                     onClick={() => setTab(key)}
                   >

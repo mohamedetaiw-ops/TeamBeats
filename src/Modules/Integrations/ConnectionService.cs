@@ -390,7 +390,7 @@ public sealed class ConnectionService(
             FeatureTestResult result;
             if (definition.UsesApplicationPermissions)
             {
-                result = await TestApplicationFeatureAsync(definition, token, tokenProblem, broader, ct);
+                result = await TestApplicationFeatureAsync(id, definition, token, tokenProblem, broader, ct);
             }
             else
             {
@@ -423,20 +423,34 @@ public sealed class ConnectionService(
         return new ConnectionTestResult(status, results);
     }
 
-    private async Task<FeatureTestResult> TestApplicationFeatureAsync(FeatureDefinition definition, AppToken? token, string? problem,
+    private async Task<FeatureTestResult> TestApplicationFeatureAsync(Guid connectionId, FeatureDefinition definition, AppToken? token, string? problem,
         IReadOnlyList<string> broader, CancellationToken ct)
     {
         if (token is null)
         {
             return new FeatureTestResult(definition.Key, false, problem!, null, null, definition.Permissions.Select(p => p.Name).ToList(), []);
         }
-        var missing = definition.Permissions.Where(p => !token.Roles.Contains(p.Name)).Select(p => p.Name).ToList();
+        var missing = definition.Permissions.Where(p => p.Type == PermissionType.Application && !token.Roles.Contains(p.Name)).Select(p => p.Name).ToList();
         if (missing.Count > 0)
         {
             return new FeatureTestResult(definition.Key, false, "integrations.test.consent_missing", null, null, missing, broader);
         }
         try
         {
+            if (definition.Key == Microsoft365Features.SharePointDocuments)
+            {
+                // Every allowed site must still be granted to the application (spec 011 US9 scenario 1).
+                var sites = await session.QueryAsync("select site_id from integrations.sharepoint_site where connection_id = @c", new { c = connectionId },
+                    r => r.GetString(0), ct);
+                foreach (var site in sites)
+                {
+                    if (await graph.AppGetAsync(token, $"sites/{Uri.EscapeDataString(site)}?$select=id", ct) is null)
+                    {
+                        return new FeatureTestResult(definition.Key, false, "integrations.test.site_missing", null, null, [], broader);
+                    }
+                }
+                return new FeatureTestResult(definition.Key, true, broader.Count > 0 ? "integrations.test.ok_broader" : "integrations.test.ok", null, null, [], broader);
+            }
             var users = await graph.CountAsync(token, "users", ct);
             var groups = await graph.CountAsync(token, "groups", ct);
             return new FeatureTestResult(definition.Key, true, broader.Count > 0 ? "integrations.test.ok_broader" : "integrations.test.ok", users, groups, [], broader);

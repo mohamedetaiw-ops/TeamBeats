@@ -69,6 +69,13 @@ public interface IMicrosoftGraph
     Task<AppToken> AcquireAppTokenAsync(string externalTenantId, CancellationToken ct);
 
     Task<long> CountAsync(AppToken token, string collection, CancellationToken ct);
+
+    /// <summary>
+    /// A Graph read with the application token (SharePoint sites and drives the connection was granted). Null when the
+    /// resource does not exist or the application may not see it (404). Throws <see cref="GraphConsentMissingException"/>
+    /// on 401 or 403 and <see cref="GraphUnavailableException"/> on anything else.
+    /// </summary>
+    Task<JsonElement?> AppGetAsync(AppToken token, string pathAndQuery, CancellationToken ct);
 }
 
 /// <summary>
@@ -213,6 +220,38 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
                 throw new GraphUnavailableException($"Graph returned {(int)response.StatusCode}.");
             }
             return long.Parse(await response.Content.ReadAsStringAsync(ct), System.Globalization.CultureInfo.InvariantCulture);
+        }
+    }
+
+    public async Task<JsonElement?> AppGetAsync(AppToken token, string pathAndQuery, CancellationToken ct)
+    {
+        using var client = httpClients.CreateClient(ClientName);
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{GraphBase}/{pathAndQuery.TrimStart('/')}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.SendAsync(request, ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new GraphUnavailableException("Graph unreachable.", ex);
+        }
+        using (response)
+        {
+            if ((int)response.StatusCode == 404)
+            {
+                return null;
+            }
+            if ((int)response.StatusCode is 401 or 403)
+            {
+                throw new GraphConsentMissingException();
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new GraphUnavailableException($"Graph returned {(int)response.StatusCode}.");
+            }
+            return await response.Content.ReadFromJsonAsync<JsonElement>(ct);
         }
     }
 

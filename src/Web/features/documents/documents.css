@@ -204,12 +204,7 @@
 }
 
 .documents-badge {
-  display: inline-block;
   margin-inline-end: var(--tb-space-sm);
-  padding-inline: var(--tb-space-xs);
-  border-radius: var(--tb-radius-sm);
-  background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-text-primary);
 }
 
 .documents-check {
@@ -646,4 +641,15 @@
 
 .documents-import-counts a[aria-current="page"] {
   font-weight: var(--tb-font-weight-semibold);
+}
+
+.documents-form {
+  display: grid;
+  gap: var(--tb-space-md);
+  max-inline-size: 36rem;
+  justify-items: start;
+}
+
+.documents-form .field {
+  inline-size: 100%;
 }

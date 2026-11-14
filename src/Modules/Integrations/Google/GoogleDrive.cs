@@ -200,6 +200,48 @@ public sealed class GoogleDrive(GoogleApi api, GoogleSignIn signIn, IHttpClientF
         }
     }
 
+    public async Task<IReadOnlyList<RepositorySource>> SourcesAsync(CancellationToken ct = default) =>
+        await api.DriveConnectionsAsync(ct);
+
+    public async Task<RepositoryUserPage> ListAsUserAsync(Guid connectionId, string containerId, string? folderId, string? cursor, string userEmail,
+        CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(userEmail) || await api.LoadAsync(connectionId, GoogleFeatures.Drive, ct) is not { } loaded)
+        {
+            return RepositoryUserPage.Not("unavailable");
+        }
+        if (!Allowed(loaded.Settings, containerId) || !IsId(folderId ?? containerId))
+        {
+            return RepositoryUserPage.Not("not_found");
+        }
+        var user = userEmail.Trim().ToLowerInvariant();
+        var token = await signIn.TokenAsync(loaded.Connection, loaded.Settings, user, GoogleHosts.DriveScope, ct);
+        if (token.ErrorClass == ConnectorErrorClasses.CredentialRefused)
+        {
+            // Google refuses to act as someone outside the customer's Workspace.
+            return RepositoryUserPage.Not("no_account");
+        }
+        if (!token.Ok)
+        {
+            return RepositoryUserPage.Not("unavailable");
+        }
+        var q = Uri.EscapeDataString($"'{folderId ?? containerId}' in parents and trashed = false");
+        var url = $"{GoogleHosts.DriveBase}/files?corpora=drive&driveId={Uri.EscapeDataString(containerId)}&includeItemsFromAllDrives=true&supportsAllDrives=true"
+            + $"&q={q}&pageSize=200&orderBy=folder,name&fields=nextPageToken,files({ItemFields})"
+            + (cursor is null ? "" : $"&pageToken={Uri.EscapeDataString(cursor)}");
+        var (body, error, status) = await api.GetAsync(token.AccessToken!, url, ct);
+        if (status is 403 or 404)
+        {
+            return RepositoryUserPage.Not("not_found");
+        }
+        if (error is not null)
+        {
+            return RepositoryUserPage.Not("unavailable");
+        }
+        var items = GoogleApi.Items(body, "files").Select(f => Map(f, containerId)).Where(i => i is not null).Select(i => i!).ToList();
+        return new RepositoryUserPage("ok", items, GoogleApi.Text(body, "nextPageToken"));
+    }
+
     private sealed class Owner(params IDisposable[] parts) : IDisposable
     {
         public void Dispose()

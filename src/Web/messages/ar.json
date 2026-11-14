@@ -1739,6 +1739,9 @@
     },
     "controls": {
       "close": "إغلاق",
+      "filters": "عوامل التصفية",
+      "appliedFilters": "عوامل التصفية المستخدمة",
+      "clearAll": "مسح الكل",
       "remove": "إزالة {name}",
       "removeItem": "إزالة",
       "pagination": "الصفحات",
@@ -4527,7 +4530,8 @@
       },
       "recordsLink": "إدارة السجلات",
       "assetsLink": "أصول العلامة التجارية",
-      "importLink": "استيراد الملفات"
+      "importLink": "استيراد الملفات",
+      "connectedMeta": "{scope}، SharePoint"
     },
     "browser": {
       "filters": "البحث عن مستندات",
@@ -4825,6 +4829,46 @@
       "details": "التفاصيل",
       "authorNotMatched": "لم يطابق البريد الإلكتروني للمؤلف أي شخص، لذا تظهر أنت مؤلفًا.",
       "moreRows": "يُعرض {shown} من {total} صفًا. نزّل التقرير لرؤيتها كلها."
+    },
+    "connected": {
+      "badge": "SharePoint",
+      "intro": "تبقى ملفات هذه المكتبة في SharePoint. ترى الملفات التي تستطيع فتحها هناك، وتُقرأ مباشرة بحساب Microsoft 365 الخاص بك.",
+      "path": "مسار المجلد",
+      "root": "المكتبة",
+      "results": "الملفات",
+      "name": "الاسم",
+      "size": "الحجم",
+      "updated": "آخر تحديث",
+      "actions": "الإجراءات",
+      "kb": "ك.ب",
+      "openInSharePoint": "فتح {name} في SharePoint",
+      "openInSharePointShort": "فتح في SharePoint",
+      "more": "عرض المزيد",
+      "loading": "جارٍ التحميل",
+      "empty": "هذا المجلد فارغ، أو لا شيء فيه مشارك معك.",
+      "notFound": "هذا المجلد غير موجود، أو لا تستطيع فتحه في SharePoint.",
+      "unavailable": "تعذّر الوصول إلى SharePoint الآن",
+      "unavailableHint": "مكتبات TeamBeats لا تتأثر. حاول مرة أخرى بعد دقائق.",
+      "retry": "حاول مرة أخرى",
+      "connect": "اربط حساب Microsoft 365 الخاص بك",
+      "reconnect": "اربط حساب Microsoft 365 الخاص بك مرة أخرى",
+      "connectHint": "يعرض TeamBeats ملفات SharePoint بصلاحياتك أنت، فترى بالضبط ما يسمح لك SharePoint بفتحه.",
+      "connectAction": "ربط Microsoft 365",
+      "notHereTitle": "غير متاح للمكتبات المتصلة",
+      "notHere": "المستندات الخاضعة للرقابة والاحتفاظ والحجز القانوني والعلامة المائية للعرض فقط والمشاركة مع الضيوف وسلة المحذوفات تنطبق على مكتبات TeamBeats فقط. في هذه المكتبة، يديرها SharePoint."
+    },
+    "connect": {
+      "title": "ربط مكتبة SharePoint",
+      "intro": "اعرض مكتبة مستندات من SharePoint داخل TeamBeats. يرى الأشخاص ملفاتها فقط إذا كانوا ضمن الجمهور هنا ويستطيعون فتحها في SharePoint.",
+      "name": "الاسم",
+      "library": "مكتبة مستندات SharePoint",
+      "scope": "الجمهور",
+      "scopeHint": "المؤسسة كلها، أو أعضاء وحدة تنظيمية تديرها.",
+      "submit": "ربط المكتبة",
+      "working": "جارٍ الربط",
+      "failed": "تعذّر ربط المكتبة. حاول مرة أخرى.",
+      "noLibraries": "لا توجد مواقع SharePoint مسموح بها بعد. يضيفها مسؤول التكامل في الاتصالات.",
+      "unavailable": "تعذّر الوصول إلى SharePoint الآن. حاول مرة أخرى بعد دقائق."
     }
   },
   "policies": {
@@ -6953,7 +6997,8 @@
         "mail": "البريد",
         "calendar": "التقويم",
         "free_busy": "أوقات التوفر والانشغال",
-        "office_editing": "التحرير في Office عبر المتصفح"
+        "office_editing": "التحرير في Office عبر المتصفح",
+        "sharepoint_documents": "مستندات SharePoint"
       },
       "featureOn": "مفعلة",
       "featureOff": "متوقفة",
@@ -6970,7 +7015,9 @@
         "mail_read_basic": "قراءة عناوين بريد الموظف دون نص الرسائل",
         "mail_read": "قراءة بريد الموظف، ويُستخدم فقط لمعاينة من سطر واحد",
         "calendars_read_basic": "قراءة أحداث تقويم الموظف دون المحتوى أو المرفقات",
-        "files_read_write": "قراءة ملفات OneDrive الخاصة بالموظف وتغييرها، فقط للنسخة التي يحررها في المتصفح"
+        "files_read_write": "قراءة ملفات OneDrive الخاصة بالموظف وتغييرها، فقط للنسخة التي يحررها في المتصفح",
+        "sites_selected": "قراءة مواقع SharePoint التي تسمح بها فقط، لإبقاء المكتبات المتصلة والبحث محدّثة",
+        "files_read_all": "السماح لكل موظف بتصفح ملفات SharePoint ومعاينتها وتنزيلها إذا كان يستطيع فتحها في SharePoint"
       },
       "application": "تطبيق",
       "delegated": "نيابة عن الموظف",
@@ -6989,14 +7036,26 @@
         "ok_broader": "يعمل، لكن التطبيق يملك أذونات أكثر من اللازم",
         "consent_missing": "موافقة المسؤول غير موجودة",
         "unreachable": "تعذر الوصول إلى مايكروسوفت 365",
-        "application_mail_permissions": "يملك التطبيق أذونات بريد أو تقويم على مستوى التطبيق، ولا يجوز أن يملكها TeamBeats"
+        "application_mail_permissions": "يملك التطبيق أذونات بريد أو تقويم على مستوى التطبيق، ولا يجوز أن يملكها TeamBeats",
+        "site_missing": "أحد مواقع SharePoint المسموح بها لم يعد ممنوحًا للتطبيق"
       },
       "counts": "({users} مستخدم، {groups} مجموعة)",
       "missing": "غير موجود:",
       "broader": "أكثر من اللازم:",
       "deleteIntro": "يؤدي الحذف إلى إيقاف مزامنة الدليل والبريد والتقويم للجميع. تبقى الحسابات التي أُنشئت.",
       "deleteQuestion": "حذف {name}؟ ستتوقف ميزاته للجميع.",
-      "permissionKind": "({type}):"
+      "permissionKind": "({type}):",
+      "sites": {
+        "title": "مواقع SharePoint المسموح بها",
+        "intro": "يقرأ TeamBeats هذه المواقع فقط. امنح كل موقع لتطبيق TeamBeats في Microsoft 365 أولًا، ثم أضفه هنا.",
+        "url": "عنوان الموقع",
+        "urlHint": "مثل https://contoso.sharepoint.com/sites/hr",
+        "add": "إضافة موقع",
+        "remove": "إزالة {name}",
+        "empty": "لا توجد مواقع مسموح بها بعد.",
+        "added": "أُضيف الموقع.",
+        "removed": "أُزيل الموقع."
+      }
     },
     "webhooks": {
       "formLabel": "إعدادات خطاف الويب",

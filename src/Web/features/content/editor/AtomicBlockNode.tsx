@@ -23,7 +23,7 @@ function AtomicCard({ nodeKey, block }: { nodeKey: NodeKey; block: Block }) {
   const kind = block.type === "embed" || block.type === "image" || block.type === "table" || block.type === "link" ? block.type : "other";
   return (
     <div className="content-atomic" data-block={block.type} contentEditable={false}>
-      <span className="content-badge">{t(kind)}</span>
+      <span className="ui-badge content-badge" data-tone="accent">{t(kind)}</span>
       <bdi className="content-atomic-text">{block.type === "link" && block.text ? `${block.text} (${describe(block)})` : describe(block)}</bdi>
       <Button variant="quiet"
         onClick={() =>

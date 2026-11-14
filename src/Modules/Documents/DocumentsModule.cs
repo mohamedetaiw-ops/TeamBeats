@@ -82,6 +82,32 @@ public static class DocumentsModule
 
         libraries.MapGet("/{id:guid}", async (Guid id, Libraries service, CancellationToken ct) => Results.Ok(await service.GetAsync(id, ct)));
 
+        // Connected libraries (spec 011 US9): SharePoint content shown in TeamBeats, read live as the person.
+        root.MapGet("/connected-sources", async (Libraries service, CancellationToken ct) => Results.Ok(await service.ConnectedSourcesAsync(ct)));
+
+        libraries.MapPost("/connected", async (ConnectedLibraryRequest request, Libraries service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.CreateConnectedAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/documents/libraries/{view.Id}", view);
+        });
+
+        libraries.MapGet("/{id:guid}/connected/items", async (Guid id, string? folder, string? cursor, Libraries service, CancellationToken ct) =>
+            Results.Ok(await service.ConnectedItemsAsync(id, folder, cursor, ct)));
+
+        libraries.MapGet("/{id:guid}/connected/content", async (Guid id, string? item, Libraries service, IDbSession session, HttpResponse response,
+            CancellationToken ct) =>
+        {
+            var content = await service.ConnectedContentAsync(id, item ?? string.Empty, ct) ?? throw AppException.NotFound();
+            response.RegisterForDisposeAsync(content);
+            await session.CommitAsync(ct);
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
+            response.Headers.CacheControl = "private, no-store";
+            return Results.File(content.Content, "application/octet-stream", content.Name);
+        });
+
+
         libraries.MapPut("/{id:guid}", async (Guid id, LibraryRequest request, Libraries service, IDbSession session, CancellationToken ct) =>
         {
             var view = await service.UpdateAsync(id, request, ct);

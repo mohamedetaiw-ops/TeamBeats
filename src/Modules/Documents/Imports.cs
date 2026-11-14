@@ -80,6 +80,7 @@ public sealed class DocumentImports(
     {
         var user = context.RequireUser();
         var library = await libraries.ManagedAsync(libraryId, ct);
+        library.RequireOwn();
         if (library.Status != "active")
         {
             throw AppException.Conflict("conflict.documents.library_archived");

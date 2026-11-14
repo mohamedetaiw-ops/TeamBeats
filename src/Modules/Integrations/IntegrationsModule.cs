@@ -108,7 +108,10 @@ public static class IntegrationsModule
         services.AddScoped<Google.GooglePack>();
         services.AddScoped<IConnectorPack>(sp => sp.GetRequiredService<Google.GooglePack>());
         services.AddScoped<IPackDirectory, Google.GoogleDirectory>();
-        services.AddScoped<IDocumentRepository, Google.GoogleDrive>();
+        services.AddScoped<Google.GoogleDrive>();
+        services.AddScoped<Microsoft365.SharePointSites>();
+        services.AddScoped<Microsoft365.SharePointLibraries>();
+        services.AddScoped<IDocumentRepository, DocumentRepositories>();
         services.AddScoped<Google.GoogleCalendar>();
         services.AddScoped<IMeetingCalendars, Google.MeetingCalendars>();
         services.AddScoped<Webhooks.WebhookPack>();
@@ -201,6 +204,32 @@ public static class IntegrationsModule
             var view = await connections.SetOptionsAsync(id, feature, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
+        });
+
+        // Allowed SharePoint sites of the SharePoint documents feature (spec 011 FR-025).
+        api.MapGet("/connections/{id:guid}/sharepoint/sites", async (Guid id, IAuthorizationService authz, Microsoft365.SharePointSites sites,
+            CancellationToken ct) =>
+        {
+            await authz.DemandAsync(Permissions.IntegrationManage, AuthzTarget.Tenant, ct);
+            return Results.Ok(await sites.ListAsync(id, ct));
+        });
+
+        api.MapPost("/connections/{id:guid}/sharepoint/sites", async (Guid id, Microsoft365.AddSharePointSiteRequest request, IAuthorizationService authz,
+            Microsoft365.SharePointSites sites, IDbSession session, CancellationToken ct) =>
+        {
+            await authz.DemandAsync(Permissions.IntegrationManage, AuthzTarget.Tenant, ct);
+            var site = await sites.AddAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/integrations/connections/{id}/sharepoint/sites/{Uri.EscapeDataString(site.SiteId)}", site);
+        });
+
+        api.MapDelete("/connections/{id:guid}/sharepoint/sites/{siteId}", async (Guid id, string siteId, IAuthorizationService authz,
+            Microsoft365.SharePointSites sites, IDbSession session, CancellationToken ct) =>
+        {
+            await authz.DemandAsync(Permissions.IntegrationManage, AuthzTarget.Tenant, ct);
+            await sites.RemoveAsync(id, siteId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
 
         api.MapGet("/connections/{id:guid}/dependents", async (Guid id, IAuthorizationService authz, ConnectionService connections, CancellationToken ct) =>

@@ -1739,6 +1739,9 @@
     },
     "controls": {
       "close": "Close",
+      "filters": "Filters",
+      "appliedFilters": "Filters in use",
+      "clearAll": "Clear all",
       "remove": "Remove {name}",
       "removeItem": "Remove",
       "pagination": "Pages",
@@ -4527,7 +4530,8 @@
       },
       "recordsLink": "Records management",
       "assetsLink": "Brand assets",
-      "importLink": "Import files"
+      "importLink": "Import files",
+      "connectedMeta": "{scope}, SharePoint"
     },
     "browser": {
       "filters": "Find documents",
@@ -4825,6 +4829,46 @@
       "details": "Details",
       "authorNotMatched": "The author's email did not match anyone, so you are shown as the author.",
       "moreRows": "Showing {shown} of {total} rows. Download the report for all of them."
+    },
+    "connected": {
+      "badge": "SharePoint",
+      "intro": "The files of this library stay in SharePoint. You see the ones you can open there, read live with your Microsoft 365 account.",
+      "path": "Folder path",
+      "root": "Library",
+      "results": "Files",
+      "name": "Name",
+      "size": "Size",
+      "updated": "Updated",
+      "actions": "Actions",
+      "kb": "KB",
+      "openInSharePoint": "Open {name} in SharePoint",
+      "openInSharePointShort": "Open in SharePoint",
+      "more": "Show more",
+      "loading": "Loading",
+      "empty": "This folder is empty, or nothing in it is shared with you.",
+      "notFound": "This folder is not there, or you cannot open it in SharePoint.",
+      "unavailable": "SharePoint cannot be reached right now",
+      "unavailableHint": "Your TeamBeats libraries are not affected. Try again in a few minutes.",
+      "retry": "Try again",
+      "connect": "Connect your Microsoft 365 account",
+      "reconnect": "Connect your Microsoft 365 account again",
+      "connectHint": "TeamBeats shows SharePoint files with your own access, so you see exactly what SharePoint lets you open.",
+      "connectAction": "Connect Microsoft 365",
+      "notHereTitle": "Not available for connected libraries",
+      "notHere": "Controlled documents, retention and legal holds, the view-only watermark, sharing with guests and the recycle bin apply to TeamBeats libraries only. For this library, SharePoint manages them."
+    },
+    "connect": {
+      "title": "Connect a SharePoint library",
+      "intro": "Show a SharePoint document library inside TeamBeats. People see its files only if they are in the audience here and can open them in SharePoint.",
+      "name": "Name",
+      "library": "SharePoint document library",
+      "scope": "Audience",
+      "scopeHint": "The whole organization, or the members of one organization unit that you manage.",
+      "submit": "Connect library",
+      "working": "Connecting",
+      "failed": "The library could not be connected. Try again.",
+      "noLibraries": "No SharePoint sites are allowed yet. An integration administrator adds them in Connections.",
+      "unavailable": "SharePoint cannot be reached right now. Try again in a few minutes."
     }
   },
   "policies": {
@@ -6953,7 +6997,8 @@
         "mail": "Mail",
         "calendar": "Calendar",
         "free_busy": "Free and busy times",
-        "office_editing": "Office editing in the browser"
+        "office_editing": "Office editing in the browser",
+        "sharepoint_documents": "SharePoint documents"
       },
       "featureOn": "On",
       "featureOff": "Off",
@@ -6970,7 +7015,9 @@
         "mail_read_basic": "Read the employee's own mail headers, without message text",
         "mail_read": "Read the employee's own mail, used only for the one-line preview",
         "calendars_read_basic": "Read the employee's own calendar events, without body or attachments",
-        "files_read_write": "Read and change the employee's own OneDrive files, only for the copy they edit in the browser"
+        "files_read_write": "Read and change the employee's own OneDrive files, only for the copy they edit in the browser",
+        "sites_selected": "Read only the SharePoint sites you allow, to keep connected libraries and search in step",
+        "files_read_all": "Let each employee browse, preview and download SharePoint files they can already open in SharePoint"
       },
       "application": "application",
       "delegated": "on behalf of the employee",
@@ -6989,14 +7036,26 @@
         "ok_broader": "Working, but the application holds more permissions than needed",
         "consent_missing": "Admin consent is missing",
         "unreachable": "Microsoft 365 could not be reached",
-        "application_mail_permissions": "The application holds application mail or calendar permissions, which TeamBeats must not have"
+        "application_mail_permissions": "The application holds application mail or calendar permissions, which TeamBeats must not have",
+        "site_missing": "An allowed SharePoint site is no longer granted to the application"
       },
       "counts": "({users} users, {groups} groups)",
       "missing": "Missing:",
       "broader": "More than needed:",
       "deleteIntro": "Deleting stops directory sync, mail and calendar for everyone. Accounts already created stay.",
       "deleteQuestion": "Delete {name}? Its features stop for everyone.",
-      "permissionKind": "({type}):"
+      "permissionKind": "({type}):",
+      "sites": {
+        "title": "Allowed SharePoint sites",
+        "intro": "TeamBeats reads only these sites. Grant each site to the TeamBeats application in Microsoft 365 first, then add it here.",
+        "url": "Site address",
+        "urlHint": "For example https://contoso.sharepoint.com/sites/hr",
+        "add": "Add site",
+        "remove": "Remove {name}",
+        "empty": "No sites are allowed yet.",
+        "added": "Site added.",
+        "removed": "Site removed."
+      }
     },
     "webhooks": {
       "formLabel": "Webhook settings",

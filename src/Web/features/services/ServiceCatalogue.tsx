@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
-import { FormField } from "@/components/ui/FormField";
+import { FilterToolbar, ToolbarSearch, ToolbarSelect } from "@/components/ui/FilterToolbar";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
 import { serviceLook } from "@/lib/services/look";
@@ -125,38 +125,39 @@ export function ServiceCatalogue({ initial, initialQuery = "", initialCategory =
     );
   };
 
+  const chosen = view.categories.find((c) => c.id === category);
+  const categoryLabel = chosen ? pick(chosen.names, locale) : undefined;
+  const pickCategory = (id: string) => {
+    setCategory(id);
+    void load(query, id);
+  };
+
   return (
     <div className="services">
-      <form
-        role="search"
-        className="ui-filter-bar"
+      <FilterToolbar
+        label={t("search")}
         onSubmit={(e) => {
           e.preventDefault();
           void load(query, category);
         }}
+        search={<ToolbarSearch label={t("search")} name="q" placeholder={t("searchHint")} value={query} onChange={(e) => setQuery(e.target.value)} />}
+        end={
+          <Button type="submit" variant="secondary" busy={state === "loading"} busyLabel={t("searching")}>
+            {t("submit")}
+          </Button>
+        }
+        applied={categoryLabel ? [{ key: "category", label: `${t("category")}: ${categoryLabel}`, onRemove: () => pickCategory("") }] : []}
+        onClear={() => pickCategory("")}
       >
-        <FormField label={t("search")} name="q" type="search" placeholder={t("searchHint")} value={query} onChange={(e) => setQuery(e.target.value)} />
-        <label className="field">
-          <span>{t("category")}</span>
-          <select
-            value={category}
-            onChange={(e) => {
-              setCategory(e.target.value);
-              void load(query, e.target.value);
-            }}
-          >
-            <option value="">{t("allCategories")}</option>
-            {view.categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {pick(c.names, locale)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Button type="submit" variant="primary" busy={state === "loading"} busyLabel={t("searching")}>
-          {t("submit")}
-        </Button>
-      </form>
+        <ToolbarSelect label={t("category")} hideLabel value={category} onChange={(e) => pickCategory(e.target.value)}>
+          <option value="">{t("allCategories")}</option>
+          {view.categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {pick(c.names, locale)}
+            </option>
+          ))}
+        </ToolbarSelect>
+      </FilterToolbar>
 
       {state === "failed" ? <StateView kind="error" title={t("failed")} message="" /> : null}
 

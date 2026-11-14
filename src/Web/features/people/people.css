@@ -39,11 +39,6 @@
   flex: 1 1 14rem;
 }
 
-.people-select {
-  display: grid;
-  gap: var(--tb-space-xs);
-}
-
 .people-list {
   display: grid;
   gap: var(--tb-space-sm);

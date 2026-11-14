@@ -126,7 +126,7 @@ export function RequestDetailView({ detail, meId, units, taskId }: { detail: Req
               <dt>{t("serviceLevel.due")}</dt>
               <dd data-testid="request-service-level">
                 {when(detail.serviceLevel.dueAt)}{" "}
-                <span className="services-status">{t(`serviceLevel.${detail.serviceLevel.state}`)}</span>
+                <span className="ui-badge">{t(`serviceLevel.${detail.serviceLevel.state}`)}</span>
               </dd>
             </>
           ) : null}
@@ -176,7 +176,7 @@ export function RequestDetailView({ detail, meId, units, taskId }: { detail: Req
                   ) : (
                     <bdi>{a.fileName}</bdi>
                   )}
-                  <span className="services-status">{t(`scan.${a.scanState}`)}</span>
+                  <span className="ui-badge">{t(`scan.${a.scanState}`)}</span>
                 </li>
               ))}
             </ul>

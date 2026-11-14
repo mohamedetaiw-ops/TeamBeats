@@ -98,6 +98,8 @@ public static class AuditActions
     public const string ConnectionConsentRevokedDetected = "integration.consent_revoked_detected";
     public const string ConnectionStatusChanged = "integration.status_changed";
     public const string ConnectionFeatureOptionsChanged = "integration.feature_options_changed";
+    public const string ConnectionSiteAllowed = "integration.sharepoint_site_allowed";
+    public const string ConnectionSiteRemoved = "integration.sharepoint_site_removed";
     public const string OutlookConnected = "integration.outlook_connected";
     public const string OutlookDisconnected = "integration.outlook_disconnected";
 
@@ -412,6 +414,7 @@ public static class AuditActions
     public const string DocImportCompleted = "doc.import_completed";
     public const string DocOfficeEditStarted = "doc.office_edit_started";
     public const string DocOfficeEditEnded = "doc.office_edit_ended";
+    public const string DocConnectedOpened = "doc.connected_opened";
     public const string AssetCollectionCreated = "assets.collection_created";
     public const string AssetCollectionChanged = "assets.collection_changed";
     public const string AssetUploaded = "assets.uploaded";
@@ -569,7 +572,7 @@ public static class AuditActions
         OrgDirectoryMappingChanged, OrgDirectoryMappingApproved, OrgDirectoryMappingApplied,
         SignInFailed, IdpConfigChanged, DirectoryConnectionChanged, UserSynced, DisabledByDirectory, ReenabledByDirectory,
         ConnectionCreated, ConnectionDeleted, ConnectionFeatureEnabled, ConnectionFeatureDisabled, ConnectionConsentGranted,
-        ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, OutlookConnected, OutlookDisconnected,
+        ConnectionConsentRevokedDetected, ConnectionStatusChanged, ConnectionFeatureOptionsChanged, ConnectionSiteAllowed, ConnectionSiteRemoved, OutlookConnected, OutlookDisconnected,
         PageCreated, PagePublished, PageRolledBack, PageTemplateChanged, ComponentEnabled, ComponentDisabled, ComponentUpgraded,
         TemplateReleased, TemplateDistributed, TemplateDeprecated, RegionLockChanged,
         ThemePublished, BrandAssigned, BrandUnassigned, ExperienceLockChanged,
@@ -600,7 +603,7 @@ public static class AuditActions
         DocReadConfirmed,
         RecordsLabelCreated, RecordsLabelChanged, RecordsLabelApplied, RecordsDispositionApproved, RecordsDispositionKept, RecordsArchived,
         RecordsHoldApplied, RecordsHoldReleased, RecordsDeletionBlocked, DocSharedWithGuest, DocGuestShareRevoked, DocGuestViewed,
-        DocImportStarted, DocImportCompleted, DocOfficeEditStarted, DocOfficeEditEnded,
+        DocImportStarted, DocImportCompleted, DocOfficeEditStarted, DocOfficeEditEnded, DocConnectedOpened,
         AssetCollectionCreated, AssetCollectionChanged, AssetUploaded, AssetChanged, AssetExpired, AssetAccessRequested, AssetAccessDecided,
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested, PolicyTrainingLinked,
