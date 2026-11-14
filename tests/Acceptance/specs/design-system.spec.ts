@@ -228,6 +228,16 @@ for (const design of designs) {
         await expect(single.locator('[data-chart="single"]')).toBeVisible();
         await expect(single.locator(".ui-chart")).toHaveCount(0);
 
+        // DLS-101: the same summary shows 3 rows in a third width region and 5 in a half width one, then View all.
+        for (const [id, rows] of [["cg-budget-third", 3], ["cg-budget-half", 5]] as const) {
+          const widget = page.getByTestId(id).locator(".ui-widget");
+          await expect(widget).toHaveAttribute("data-budget", String(rows));
+          await expect(widget.getByRole("listitem")).toHaveCount(rows);
+          await expect(widget.locator("[data-widget-more]")).toContainText(/7|٧/);
+        }
+        // DLS-103: a placement state sits inside the widget frame.
+        await expect(page.getByTestId("cg-budget-state").locator(".ui-widget .ui-state")).toBeVisible();
+
         for (const id of ["cg-actions", "cg-selection", "cg-status", "cg-structure", "cg-overlays", "cg-menus", "cg-inputs", "cg-dates", "cg-data", "cg-schedule", "cg-panels", "cg-assistant", "cg-agents", "cg-charts", "cg-charts-more", "cg-calendar"]) {
           await expect.soft(page.locator(`section:has(> h2#${id})`)).toHaveScreenshot(`${id}-${design.key}-${locale}.png`, {
             animations: "disabled",

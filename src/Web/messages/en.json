@@ -8373,6 +8373,19 @@
       "under": "Under the threshold",
       "nonWorking": "Not a working day",
       "share": "{share}%"
+    },
+    "widgetBudget": {
+      "title": "Content budgets",
+      "intro": "A summary shows at most the budget of its region and then a link to the full view with the total: 3 rows up to a third of the width, 5 up to two thirds, 8 wider. A loading, failed or unavailable part keeps the same frame.",
+      "requests": "Requests waiting",
+      "rowLeave": "Annual leave, 3 days",
+      "rowTravel": "Business travel to Riyadh",
+      "rowExpense": "Expense claim for a client lunch",
+      "rowLaptop": "Laptop replacement",
+      "rowLetter": "Salary letter",
+      "rowAccess": "Access to the finance workspace",
+      "rowTraining": "Safety training booking",
+      "failed": "This part of the page could not be shown"
     }
   },
   "patterns_gallery": {
