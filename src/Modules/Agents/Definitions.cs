@@ -40,7 +40,19 @@ public sealed record AgentDefinition(
     string? MaxClassification,
     int? MaxToolCalls,
     Dictionary<string, string>? Purpose = null,
-    AgentMemorySettings? Memory = null);
+    AgentMemorySettings? Memory = null,
+    AgentBriefingSettings? Briefing = null);
+
+/// <summary>
+/// Whether the agent offers its users a daily briefing (spec 020 US8 scenarios 2 to 4, FR-014), and what it is asked each
+/// time, per language. A briefing runs as the subscribing person, read only, and arrives as a notification.
+/// </summary>
+public sealed record AgentBriefingSettings(bool Enabled, Dictionary<string, string>? Prompt = null)
+{
+    public const int MaxPromptLength = 1000;
+
+    public static bool Offers(AgentDefinition d) => d.Briefing is { Enabled: true };
+}
 
 /// <summary>
 /// The memory area of a definition (spec 020 US9, FR-015): <c>session</c>, the default, keeps nothing after a
@@ -157,6 +169,21 @@ public static class AgentDefinitions
             else if (memory.Mode == AgentMemorySettings.Persistent && !policy.PersistentMemory)
             {
                 errors.Add("memory", "validation.agent.memory_off");
+            }
+        }
+
+        if (d.Briefing is { Enabled: true } briefing)
+        {
+            if (!policy.ScheduledAgents)
+            {
+                errors.Add("briefing", "validation.agent.briefing_off");
+            }
+            foreach (var language in languages.Where(Languages.Contains))
+            {
+                if (briefing.Prompt?.GetValueOrDefault(language) is not { } prompt || prompt.Trim().Length is 0 or > AgentBriefingSettings.MaxPromptLength)
+                {
+                    errors.Add($"briefing.prompt.{language}", "validation.agent.briefing_prompt");
+                }
             }
         }
 

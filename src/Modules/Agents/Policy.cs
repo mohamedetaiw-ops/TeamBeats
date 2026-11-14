@@ -12,7 +12,7 @@ namespace TeamBeats.Modules.Agents;
 /// <summary>
 /// The tenant agent policy (spec 027 US8 scenario 1, FR-018), R1 settings: the autonomy cap, the tools agents may hold
 /// (null means every registered tool), stricter approval rules per tool, the highest classification agents may use,
-/// scheduled agents and persistent memory (both off until R2 builds them) and run limits (tool calls, steps, duration of
+/// scheduled agents (with the risk classes allowed to run on a schedule) and persistent memory, both off by default, and run limits (tool calls, steps, duration of
 /// one run and runs per agent per day, FR-015). Who may design and publish is
 /// set with roles (spec 004). <paramref name="External"/> holds the external AI client settings of spec 035 (FR-021).
 /// </summary>
@@ -27,8 +27,13 @@ public sealed record AgentPolicy(
     int MaxSteps,
     int MaxRunSeconds = AgentPolicy.DefaultRunSeconds,
     int MaxDailyRunsPerAgent = AgentPolicy.DefaultDailyRuns,
-    ExternalAiPolicy? External = null)
+    ExternalAiPolicy? External = null,
+    List<string>? ScheduledRiskClasses = null)
 {
+    /// <summary>The risk classes whose agents may run on a schedule (spec 020 US8 scenario 4); Low only until the administrator widens it.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public IReadOnlyList<string> ScheduledClasses => ScheduledRiskClasses ?? [AgentRiskClasses.Low];
+
     /// <summary>The external AI client settings in force: the saved ones, or the default that allows no client.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
     public ExternalAiPolicy ExternalPolicy => External ?? ExternalAiPolicy.Default;
@@ -181,10 +186,10 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
                 errors.Add($"toolRules.{name}", "validation.agent_policy.rule");
             }
         }
-        if (p.ScheduledAgents)
+        if (p.ScheduledRiskClasses is { } classes &&
+            (classes.Count > 3 || classes.Any(c => c is not (AgentRiskClasses.Low or AgentRiskClasses.Medium or AgentRiskClasses.High)) || classes.Distinct().Count() != classes.Count))
         {
-            // Scheduled agents come with the briefings slice of spec 020 R2 (FR-014); they cannot be turned on yet.
-            errors.Add("scheduledAgents", "validation.agent_policy.not_built");
+            errors.Add("scheduledRiskClasses", "validation.agent_policy.risk_classes");
         }
         if (p.MaxToolCalls is < 1 or > AgentPolicy.PlatformMaxToolCalls)
         {

@@ -475,7 +475,6 @@
   "validation.agent_policy.classification": "Choose a data classification from the list.",
   "validation.agent_policy.max_steps": "Set a step limit between the tool call limit and 100.",
   "validation.agent_policy.max_tool_calls": "Set a tool call limit between 1 and 50.",
-  "validation.agent_policy.not_built": "Scheduled agents and persistent memory are not available yet.",
   "validation.agent_policy.required": "Send the agent policy.",
   "validation.agent_policy.rule": "An approval rule can only be stricter than the tool's default.",
   "validation.agent_policy.tools": "Choose tools from the tool registry.",
@@ -2536,5 +2535,14 @@
   "validation.agent.memory": "Choose session or persistent memory, and keep unused notes between 1 and 365 days.",
   "validation.agent.memory_off": "Persistent memory is off in your organization's agent policy. Ask your AI policy administrator to allow it.",
   "validation.agent.memory_text": "Write the note in 1 to 500 characters.",
-  "conflict.agent.memory_not_offered": "This agent does not keep memory for you right now."
+  "conflict.agent.memory_not_offered": "This agent does not keep memory for you right now.",
+  "notifications.template.agents.briefing.title": "Your daily briefing",
+  "notifications.template.agents.briefing.body": "{answer}",
+  "validation.agent.briefing_off": "Scheduled agents are off in your organization's agent policy. Ask your AI policy administrator to allow them.",
+  "validation.agent.briefing_prompt": "Write what the briefing asks, in 1 to 1,000 characters, in each language of the agent.",
+  "validation.agent.briefing_time": "Choose a time of day, such as 08:00.",
+  "validation.agent.briefing_days": "Choose at least one day of the week.",
+  "validation.agent.briefing_time_zone": "Choose a known time zone.",
+  "validation.agent_policy.risk_classes": "Choose risk classes from low, medium and high.",
+  "conflict.agent.briefing_not_offered": "This agent does not offer a daily briefing to you right now."
 }

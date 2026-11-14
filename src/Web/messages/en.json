@@ -2061,7 +2061,8 @@
       "space_activity": "Activity in your spaces",
       "bookings": "Your bookings",
       "search_alerts": "Alerts for your saved searches",
-      "ai_budgets": "AI budget alerts"
+      "ai_budgets": "AI budget alerts",
+      "agent_briefings": "Daily briefings from agents"
     },
     "filter": {
       "label": "Show",
@@ -5962,6 +5963,12 @@
         },
         "retentionDays": "Delete unused notes after (days)",
         "retentionHint": "A note is deleted when the agent has not used it for this many days. Restricted content is never kept."
+      },
+      "briefing": {
+        "title": "Daily briefing",
+        "intro": "Offer people a briefing they can subscribe to. It runs as each person with their permissions, reads only, and arrives as a notification. Your organization's agent policy must allow scheduled agents.",
+        "enabled": "Offer a daily briefing",
+        "prompt": "What the briefing asks"
       }
     },
     "review": {
@@ -6090,7 +6097,16 @@
       },
       "memory": "Agent memory",
       "persistentMemory": "Allow agents to keep notes for people who accept",
-      "persistentMemoryHint": "Each agent's designer chooses whether it keeps notes, and each person accepts per agent. Turning this off deletes every note in the organization."
+      "persistentMemoryHint": "Each agent's designer chooses whether it keeps notes, and each person accepts per agent. Turning this off deletes every note in the organization.",
+      "scheduled": "Scheduled agents",
+      "scheduledAgents": "Allow agents to send daily briefings people subscribe to",
+      "scheduledRisk": "Agents of {risk} risk",
+      "scheduledHint": "A briefing runs as the person who subscribed, with their permissions, and only reads. Low risk agents only, unless you add more.",
+      "risk": {
+        "low": "low",
+        "medium": "medium",
+        "high": "high"
+      }
     },
     "killSwitch": {
       "title": "Kill switch",
@@ -6282,6 +6298,18 @@
       "withdraw": "Stop remembering and delete all",
       "withdrawQuestion": "Delete every note this agent keeps about you and stop it remembering?",
       "withdrawConfirm": "Delete all",
+      "failed": "Something went wrong. Try again."
+    },
+    "briefing": {
+      "title": "Daily briefing",
+      "offer": "Get a briefing from this agent as a notification at a time you choose, built from what you can see at that moment.",
+      "subscribed": "You get this briefing. The next one is due {next}.",
+      "notOffered": "This agent no longer sends briefings. You can stop your subscription.",
+      "time": "Time",
+      "days": "Days",
+      "subscribe": "Subscribe",
+      "change": "Save changes",
+      "unsubscribe": "Stop the briefing",
       "failed": "Something went wrong. Try again."
     }
   },

@@ -29,6 +29,8 @@ public static class AgentsModule
         services.AddScoped<AgentMarketplace>();
         services.AddScoped<AgentMemory>();
         services.AddScoped<MemoryRememberTool>();
+        services.AddScoped<AgentBriefings>();
+        services.AddScoped<AgentBriefingRunner>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AgentAccessTasks>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.ISearchSummaries, SearchSummaries>();
         services.AddScoped<AssistantHistory>();
@@ -46,6 +48,7 @@ public static class AgentsModule
         services.AddScoped<AgentAnalytics>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentOwnerHandler>("agents.owner_left");
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentMemoryLeavers>("agents.memory_leaver");
+        services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentBriefingLeavers>("agents.briefing_leaver");
         services.AddScoped<Contracts.IAgentCatalog, AgentCatalog>();
         services.AddScoped<Contracts.IAgentEvaluationRuntime, AgentEvaluationRuntime>();
         services.AddScoped<Contracts.IAssistantEvaluationRuntime, AssistantEvaluationRuntime>();
@@ -258,6 +261,21 @@ public static class AgentsModule
         agents.MapDelete("/memory/{itemId:guid}", async (Guid itemId, AgentMemory memory, IDbSession session, CancellationToken ct) =>
         {
             await memory.DeleteAsync(itemId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // Daily briefings (020 US8): opt in at a time on chosen days, opt out.
+        agents.MapGet("/{id:guid}/briefing", async (Guid id, AgentBriefings briefings, CancellationToken ct) => Results.Ok(await briefings.GetAsync(id, ct)));
+        agents.MapPut("/{id:guid}/briefing", async (Guid id, BriefingRequest request, AgentBriefings briefings, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await briefings.SubscribeAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        agents.MapDelete("/{id:guid}/briefing", async (Guid id, AgentBriefings briefings, IDbSession session, CancellationToken ct) =>
+        {
+            await briefings.UnsubscribeAsync(id, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
         });

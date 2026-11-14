@@ -20,6 +20,7 @@ import {
 type Result = { ok: boolean; messages: string[] } | null;
 
 const RULES = ["execute", "draft_only", "confirm", "approval", "block"] as const;
+const RISK_CLASSES = ["low", "medium", "high"] as const;
 
 /**
  * The tenant agent policy (spec 027 US8): the autonomy cap, the highest classification agents may read, which tools
@@ -128,6 +129,29 @@ export function AgentPolicyEditor({ initial, tools, verified = [] }: { initial: 
           />
         </div>
       </div>
+      <fieldset className="agents-checks">
+        <legend>{t("scheduled")}</legend>
+        <label>
+          <input type="checkbox" checked={policy.scheduledAgents} onChange={(e) => set({ scheduledAgents: e.target.checked })} />
+          {t("scheduledAgents")}
+        </label>
+        {policy.scheduledAgents
+          ? RISK_CLASSES.map((risk) => {
+              const classes = policy.scheduledRiskClasses ?? ["low"];
+              return (
+                <label key={risk}>
+                  <input
+                    type="checkbox"
+                    checked={classes.includes(risk)}
+                    onChange={(e) => set({ scheduledRiskClasses: e.target.checked ? [...classes, risk] : classes.filter((c) => c !== risk) })}
+                  />
+                  {t("scheduledRisk", { risk: t(`risk.${risk}`) })}
+                </label>
+              );
+            })
+          : null}
+        <p className="field-hint">{t("scheduledHint")}</p>
+      </fieldset>
       <fieldset className="agents-checks">
         <legend>{t("memory")}</legend>
         <label>

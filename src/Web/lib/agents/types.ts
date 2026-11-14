@@ -22,6 +22,15 @@ export type AgentDefinition = {
   maxToolCalls: number | null;
   purpose?: Localized | null;
   memory?: { mode: string | null; retentionDays?: number | null } | null;
+  briefing?: { enabled: boolean; prompt: Localized | null } | null;
+};
+
+/** A daily briefing offer and the person's subscription (spec 020 US8). Days are ISO weekdays, 1 for Monday. */
+export type BriefingView = {
+  agentId: string;
+  offered: boolean;
+  defaultTimeZone: string;
+  subscription: { time: string; days: number[]; timeZone: string; nextRunAt: string; lastRunAt: string | null } | null;
 };
 
 export const MEMORY_MODES = ["session", "persistent"] as const;
@@ -146,6 +155,7 @@ export type AgentPolicy = {
   allowedTools: string[] | null;
   toolRules: Record<string, string> | null;
   scheduledAgents: boolean;
+  scheduledRiskClasses?: string[] | null;
   persistentMemory: boolean;
   maxToolCalls: number;
   maxSteps: number;

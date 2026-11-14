@@ -358,6 +358,26 @@ export function AgentEditor({
         )}
       </section>
 
+      <section className="agents-section" aria-labelledby={`${ids}-briefing`}>
+        <h2 id={`${ids}-briefing`}>{t("briefing.title")}</h2>
+        <p>{t("briefing.intro")}</p>
+        <Checkbox
+          label={t("briefing.enabled")}
+          checked={definition.briefing?.enabled ?? false}
+          disabled={!editable}
+          onChange={(e) => set({ briefing: { enabled: e.target.checked, prompt: definition.briefing?.prompt ?? null } })}
+        />
+        {definition.briefing?.enabled ? (
+          <Bilingual
+            label={t("briefing.prompt")}
+            value={definition.briefing.prompt ?? null}
+            onChange={(prompt) => set({ briefing: { enabled: true, prompt } })}
+            multiline
+            disabled={!editable}
+          />
+        ) : null}
+      </section>
+
       <section className="agents-section" aria-labelledby={`${ids}-memory`}>
         <h2 id={`${ids}-memory`}>{t("memory.title")}</h2>
         <p>{t("memory.intro")}</p>

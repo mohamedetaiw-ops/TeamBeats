@@ -475,7 +475,6 @@
   "validation.agent_policy.classification": "اختر تصنيف بيانات من القائمة.",
   "validation.agent_policy.max_steps": "حدد عدد الخطوات بين حد استدعاءات الأدوات و100.",
   "validation.agent_policy.max_tool_calls": "حدد عدد استدعاءات الأدوات بين 1 و50.",
-  "validation.agent_policy.not_built": "الوكلاء المجدولون والذاكرة الدائمة غير متاحين بعد.",
   "validation.agent_policy.required": "أرسل سياسة الوكلاء.",
   "validation.agent_policy.rule": "يمكن أن تكون قاعدة الاعتماد أكثر تشدداً فقط من القاعدة الافتراضية للأداة.",
   "validation.agent_policy.tools": "اختر الأدوات من سجل الأدوات.",
@@ -2536,5 +2535,14 @@
   "validation.agent.memory": "اختر ذاكرة الجلسة أو الذاكرة الدائمة، واحتفظ بالملاحظات غير المستخدمة من يوم إلى 365 يوما.",
   "validation.agent.memory_off": "الذاكرة الدائمة متوقفة في سياسة الوكلاء لدى مؤسستك. اطلب من مسؤول سياسة الذكاء الاصطناعي السماح بها.",
   "validation.agent.memory_text": "اكتب الملاحظة في 1 إلى 500 حرف.",
-  "conflict.agent.memory_not_offered": "هذا الوكيل لا يحتفظ بذاكرة لك الآن."
+  "conflict.agent.memory_not_offered": "هذا الوكيل لا يحتفظ بذاكرة لك الآن.",
+  "notifications.template.agents.briefing.title": "إحاطتك اليومية",
+  "notifications.template.agents.briefing.body": "{answer}",
+  "validation.agent.briefing_off": "الوكلاء المجدولون متوقفون في سياسة الوكلاء لدى مؤسستك. اطلب من مسؤول سياسة الذكاء الاصطناعي السماح بهم.",
+  "validation.agent.briefing_prompt": "اكتب ما تسأله الإحاطة، من حرف إلى 1000 حرف، بكل لغة من لغات الوكيل.",
+  "validation.agent.briefing_time": "اختر وقتا من اليوم، مثل 08:00.",
+  "validation.agent.briefing_days": "اختر يوما واحدا على الأقل من الأسبوع.",
+  "validation.agent.briefing_time_zone": "اختر منطقة زمنية معروفة.",
+  "validation.agent_policy.risk_classes": "اختر فئات المخاطر من منخفضة ومتوسطة وعالية.",
+  "conflict.agent.briefing_not_offered": "هذا الوكيل لا يقدم لك إحاطة يومية الآن."
 }

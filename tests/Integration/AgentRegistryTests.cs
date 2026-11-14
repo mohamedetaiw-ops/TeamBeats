@@ -266,7 +266,7 @@ public sealed class AgentRegistryTests(TenantWorld world)
 
         Assert.Equal("validation.agent_policy.autonomy", await RefusedAsync(AgentPolicy.Default with { MaxAutonomy = "L4" }));
         Assert.Equal("validation.agent_policy.tools", await RefusedAsync(AgentPolicy.Default with { AllowedTools = ["mail.send"] }));
-        Assert.Equal("validation.agent_policy.not_built", await RefusedAsync(AgentPolicy.Default with { ScheduledAgents = true }));
+        Assert.Equal("validation.agent_policy.risk_classes", await RefusedAsync(AgentPolicy.Default with { ScheduledAgents = true, ScheduledRiskClasses = ["critical"] }));
         Assert.Equal("validation.agent_policy.max_tool_calls", await RefusedAsync(AgentPolicy.Default with { MaxToolCalls = 0 }));
         Assert.Equal("validation.agent_policy.max_steps", await RefusedAsync(AgentPolicy.Default with { MaxSteps = 5 }));
 

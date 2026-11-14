@@ -22,3 +22,17 @@ public sealed class AssistantRetentionService(IServiceScopeFactory scopes, ILogg
         }
     }
 }
+
+/// <summary>Daily agent briefings (spec 020 US8, FR-014): every minute, the due briefings of each tenant run as their subscribers.</summary>
+public sealed class AgentBriefingService(IServiceScopeFactory scopes, ILogger<PerTenantRunner> logger) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var runner = new PerTenantRunner(scopes, logger);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            await runner.RunAsync((sp, ct) => sp.GetRequiredService<AgentBriefingRunner>().RunDueAsync(ct), stoppingToken);
+            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+        }
+    }
+}
