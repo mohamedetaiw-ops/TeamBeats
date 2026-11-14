@@ -49,6 +49,8 @@ export default function YourDay({ props }: PlacementProps) {
   const now = useNow();
   const title = localized(props.title, locale) || t("title");
   const agenda = useWidgetBudget(AGENDA);
+  // A view that already shows these counts (the briefing, the task summary) turns them off here (spec 036 DLS-102).
+  const counts = props.counts !== false;
   const [sources, setSources] = useState<Sources | "loading">("loading");
 
   useEffect(() => {
@@ -82,7 +84,7 @@ export default function YourDay({ props }: PlacementProps) {
 
   return shell(
     <>
-      <StatCards
+      {counts ? <StatCards
         label={t("counts")}
         dense
         stats={[
@@ -96,7 +98,7 @@ export default function YourDay({ props }: PlacementProps) {
             ? [{ key: "meetings", label: t("meetings", { count: meetings.length }), value: format.number(meetings.length), icon: "calendar" as const, tone: "fresh" as const, href: "/calendar" }]
             : []),
         ]}
-      />
+      /> : null}
       {!connected ? (
         sources.calendar?.state === "not_connected" || sources.calendar?.state === "reconnect" ? (
           <div className="home-connect">

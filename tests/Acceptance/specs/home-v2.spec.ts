@@ -27,7 +27,19 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(`${hostOrigin(tenant.key)}/`);
       const day = page.getByTestId("home-your-day");
       await expect(day.getByRole("heading", { name: msg(locale, "home.day.title") })).toBeVisible();
-      await expect(day.getByText(msg(locale, "home.day.toApprove"))).toBeVisible();
+      // The briefing beside it already says how many things wait, so Your day shows no counts here (DLS-102).
+      await expect(day.getByText(msg(locale, "home.day.toApprove"))).toHaveCount(0);
+      // DLS-100: the briefing and the top of Your day are in the first viewport on a desktop and on a phone.
+      for (const size of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+        await page.setViewportSize(size);
+        await page.evaluate(() => window.scrollTo(0, 0));
+        const briefingBox = await page.getByTestId("home-briefing").boundingBox();
+        const dayBox = await day.boundingBox();
+        expect(briefingBox!.y, `briefing top at ${size.width}px`).toBeLessThan(size.height / 2);
+        // 64 px is kept for the tab bar a phone shows at the bottom.
+        expect(dayBox!.y, `Your day top at ${size.width}px`).toBeLessThan(size.height - 64);
+      }
+      await page.setViewportSize({ width: 1280, height: 720 });
       await expect(day.getByRole("link", { name: msg(locale, "home.day.inbox") })).toHaveAttribute("href", "/tasks");
       // DLS-101: every home widget carries the content budget of its region, and no list shows more rows than it.
       await expect(day).toHaveAttribute("data-budget", /^[358]$/);

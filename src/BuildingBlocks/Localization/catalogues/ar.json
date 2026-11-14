@@ -1248,6 +1248,7 @@
   "conflict.integrations.tool_exists": "توجد بالفعل أداة بهذا الاسم أو لهذا الإجراء.",
   "experience.component.home_your_day.name": "يومك",
   "experience.component.home_your_day.description": "المهام التي تنتظر موافقتك والمهام المتأخرة واجتماعات اليوم، ثم جدول اليوم",
+  "experience.component.home_your_day.props.counts": "إظهار الأعداد",
   "experience.component.home_your_day.props.title": "العنوان",
   "validation.connector_tool.action": "اختر إجراءً من إجراءات هذا الاتصال.",
   "validation.connector_tool.no_inputs": "هذا الإجراء لا يعرّف مدخلاته، لذلك لا يمكن أن يكون أداة.",

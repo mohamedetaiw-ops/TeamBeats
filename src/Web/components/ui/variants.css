@@ -147,6 +147,16 @@
   padding-block-end: 0;
 }
 
+/* No picture: the compact lead drops the thumbnail, so no placeholder stands in for a photo (DLS-088, DLS-100). */
+:root[data-v-news="compact"] .content-lead[data-media="none"] {
+  grid-template-columns: minmax(0, 1fr);
+  border-inline-start: var(--tb-space-xs) solid var(--tb-color-accent-base);
+}
+
+:root[data-v-news="compact"] .content-lead[data-media="none"] .content-lead-media {
+  display: none;
+}
+
 /* News lead, typographic: no picture panel; the title carries the card. */
 :root[data-v-news="typographic"] .content-lead {
   grid-template-rows: none;
@@ -219,6 +229,10 @@
   color: var(--tb-color-tint-warm-text);
   font-size: var(--tb-font-size-xs);
   font-weight: var(--tb-font-weight-medium);
+}
+
+:root[data-v-briefing="light"] .home-briefing-more {
+  color: var(--tb-color-link);
 }
 
 :root[data-v-briefing="light"] .home-briefing-text span {

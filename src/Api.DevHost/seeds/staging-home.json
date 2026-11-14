@@ -454,7 +454,10 @@
       {
         "componentRef": "home.your_day@1",
         "id": "your-day",
-        "span": 4
+        "span": 4,
+        "props": {
+          "counts": false
+        }
       }
     ],
     "grid": [
@@ -571,7 +574,10 @@
           {
             "id": "your-day",
             "componentRef": "home.your_day@1",
-            "span": 4
+            "span": 4,
+            "props": {
+              "counts": false
+            }
           }
         ],
         "grid": [
