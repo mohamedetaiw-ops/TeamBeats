@@ -27,6 +27,8 @@ public static class AgentsModule
         services.AddScoped<AssistantFiles>();
         services.AddScoped<AssistantVoice>();
         services.AddScoped<AgentMarketplace>();
+        services.AddScoped<AgentMemory>();
+        services.AddScoped<MemoryRememberTool>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AgentAccessTasks>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.ISearchSummaries, SearchSummaries>();
         services.AddScoped<AssistantHistory>();
@@ -43,6 +45,7 @@ public static class AgentsModule
         services.AddScoped<AgentOwnerHandover>();
         services.AddScoped<AgentAnalytics>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentOwnerHandler>("agents.owner_left");
+        services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, AgentMemoryLeavers>("agents.memory_leaver");
         services.AddScoped<Contracts.IAgentCatalog, AgentCatalog>();
         services.AddScoped<Contracts.IAgentEvaluationRuntime, AgentEvaluationRuntime>();
         services.AddScoped<Contracts.IAssistantEvaluationRuntime, AssistantEvaluationRuntime>();
@@ -231,6 +234,34 @@ public static class AgentsModule
         });
 
         // The marketplace (020 US6): listing, favourites, ratings and access requests.
+        // Persistent memory (020 US9): the person's own notes, acceptance per agent, edit and delete.
+        agents.MapGet("/memory", async (AgentMemory memory, CancellationToken ct) => Results.Ok(await memory.MineAsync(ct)));
+        agents.MapGet("/{id:guid}/memory", async (Guid id, AgentMemory memory, CancellationToken ct) => Results.Ok(await memory.ViewAsync(id, ct)));
+        agents.MapPut("/{id:guid}/memory/consent", async (Guid id, AgentMemory memory, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await memory.AcceptAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        agents.MapDelete("/{id:guid}/memory/consent", async (Guid id, AgentMemory memory, IDbSession session, CancellationToken ct) =>
+        {
+            await memory.WithdrawAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        agents.MapPut("/memory/{itemId:guid}", async (Guid itemId, MemoryItemRequest request, AgentMemory memory, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await memory.UpdateAsync(itemId, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        agents.MapDelete("/memory/{itemId:guid}", async (Guid itemId, AgentMemory memory, IDbSession session, CancellationToken ct) =>
+        {
+            await memory.DeleteAsync(itemId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
         agents.MapGet("/marketplace", async (string? q, string? category, AgentMarketplace market, CancellationToken ct) => Results.Ok(await market.ListAsync(q, category, ct)));
         agents.MapPut("/{id:guid}/favourite", async (Guid id, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
         {

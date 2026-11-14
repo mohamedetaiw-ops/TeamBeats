@@ -54,7 +54,7 @@ public sealed record InstallRequest(string? TemplateId, Guid? OrgUnitId, Diction
 /// <summary>What Agent Studio offers the designer: blank agents and how many of the limit are used, and the JSON view.</summary>
 public sealed record StudioOffer(bool Custom, long CustomCount, long? CustomLimit, bool JsonView);
 
-public sealed record CloneRequest(Guid? OrgUnitId, Dictionary<string, string>? Name, bool CopyAudience = false, bool CopyTools = false);
+public sealed record CloneRequest(Guid? OrgUnitId, Dictionary<string, string>? Name, bool CopyAudience = false, bool CopyTools = false, bool CopyMemory = false);
 
 public sealed record DraftRequest(int? Revision, AgentDefinition? Definition);
 
@@ -284,6 +284,8 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
             Name = request.Name,
             Audience = request.CopyAudience ? original.Audience : new AgentAudience(AgentAudience.Units, [unit]),
             Tools = request.CopyTools ? original.Tools : [],
+            // The memory area comes along only when asked; notes kept for people never do (spec 020 US4 scenario 4).
+            Memory = request.CopyMemory ? original.Memory : null,
         };
         AgentDefinitions.Validate(definition, tools, policy);
         if ((await UnavailableAsync(definition.Tools, ct)).Count > 0)
@@ -296,7 +298,7 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         }
         var id = await InsertAsync(definition, source.Agent.TemplateId, source.Agent.TemplateVersion, sourceId, unit, user, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentCloned, "agent", id.ToString(), TargetOrgUnitId: unit,
-            Changes: new { from = sourceId, request.CopyAudience, request.CopyTools }), ct);
+            Changes: new { from = sourceId, request.CopyAudience, request.CopyTools, request.CopyMemory }), ct);
         return await DetailAsync(id, ct);
     }
 

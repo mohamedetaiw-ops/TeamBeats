@@ -11,6 +11,7 @@ import { problemMessages } from "@/lib/notifications/types";
 import type { OrgUnit } from "@/lib/experience/builder-types";
 import {
   AUDIENCE_OUTSIDE,
+  MEMORY_MODES,
   AUTONOMY_BUILT,
   OUTPUT_FORMATS,
   pickText,
@@ -104,6 +105,7 @@ export function AgentEditor({
   const [cloneUnit, setCloneUnit] = useState(units[0]?.id ?? "");
   const [copyAudience, setCopyAudience] = useState(false);
   const [copyTools, setCopyTools] = useState(false);
+  const [copyMemory, setCopyMemory] = useState(false);
 
   const status = detail.agent.status;
   const locked = detail.latest.state === "in_review";
@@ -166,7 +168,7 @@ export function AgentEditor({
       const response = await fetch(`/api/v1/agents/${detail.agent.id}/clone`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ orgUnitId: cloneUnit, name: cloneName, copyAudience, copyTools }),
+        body: JSON.stringify({ orgUnitId: cloneUnit, name: cloneName, copyAudience, copyTools, copyMemory }),
       });
       if (response.ok) {
         const next = (await response.json()) as AgentDetail;
@@ -356,6 +358,41 @@ export function AgentEditor({
         )}
       </section>
 
+      <section className="agents-section" aria-labelledby={`${ids}-memory`}>
+        <h2 id={`${ids}-memory`}>{t("memory.title")}</h2>
+        <p>{t("memory.intro")}</p>
+        <div className="field">
+          <label htmlFor={`${ids}-memory-mode`}>{t("memory.mode")}</label>
+          <select
+            id={`${ids}-memory-mode`}
+            disabled={!editable}
+            value={definition.memory?.mode ?? "session"}
+            onChange={(e) => set({ memory: { mode: e.target.value, retentionDays: definition.memory?.retentionDays ?? null } })}
+          >
+            {MEMORY_MODES.map((m) => (
+              <option key={m} value={m}>
+                {t(`memory.modes.${m}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+        {definition.memory?.mode === "persistent" ? (
+          <div className="field">
+            <label htmlFor={`${ids}-memory-days`}>{t("memory.retentionDays")}</label>
+            <input
+              id={`${ids}-memory-days`}
+              type="number"
+              min={1}
+              max={365}
+              disabled={!editable}
+              value={definition.memory?.retentionDays ?? 90}
+              onChange={(e) => set({ memory: { mode: "persistent", retentionDays: Number(e.target.value) } })}
+            />
+            <p className="field-hint">{t("memory.retentionHint")}</p>
+          </div>
+        ) : null}
+      </section>
+
       {result ? (
         <div role={result.ok ? "status" : "alert"} className={result.ok ? "notice" : "notice notice-error"}>
           {result.messages.map((m) => (
@@ -474,6 +511,7 @@ export function AgentEditor({
           <Bilingual label={t("clone.name")} value={cloneName} onChange={setCloneName} disabled={false} />
           <Checkbox label={t("clone.copyAudience")} checked={copyAudience} onChange={(e) => setCopyAudience(e.target.checked)} />
           <Checkbox label={t("clone.copyTools")} checked={copyTools} onChange={(e) => setCopyTools(e.target.checked)} />
+          <Checkbox label={t("clone.copyMemory")} checked={copyMemory} onChange={(e) => setCopyMemory(e.target.checked)} />
           <div className="agents-row">
             <Button disabled={cloneUnit === ""} busy={busy === "clone"} busyLabel={t("saving")} onClick={() => void clone()}>
               {t("clone.action")}

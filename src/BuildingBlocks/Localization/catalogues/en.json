@@ -2532,5 +2532,9 @@
   "notifications.template.agents.access_granted.title": "You can now use an agent you asked for",
   "notifications.template.agents.access_granted.body": "The owner of the agent granted your request. Find it in the agent marketplace.",
   "notifications.template.agents.access_denied.title": "Your request for an agent was declined",
-  "notifications.template.agents.access_denied.body": "The owner of the agent declined your request. Ask them if you need it for your work."
+  "notifications.template.agents.access_denied.body": "The owner of the agent declined your request. Ask them if you need it for your work.",
+  "validation.agent.memory": "Choose session or persistent memory, and keep unused notes between 1 and 365 days.",
+  "validation.agent.memory_off": "Persistent memory is off in your organization's agent policy. Ask your AI policy administrator to allow it.",
+  "validation.agent.memory_text": "Write the note in 1 to 500 characters.",
+  "conflict.agent.memory_not_offered": "This agent does not keep memory for you right now."
 }

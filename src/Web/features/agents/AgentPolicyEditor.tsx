@@ -129,6 +129,14 @@ export function AgentPolicyEditor({ initial, tools, verified = [] }: { initial: 
         </div>
       </div>
       <fieldset className="agents-checks">
+        <legend>{t("memory")}</legend>
+        <label>
+          <input type="checkbox" checked={policy.persistentMemory} onChange={(e) => set({ persistentMemory: e.target.checked })} />
+          {t("persistentMemory")}
+        </label>
+        <p className="field-hint">{t("persistentMemoryHint")}</p>
+      </fieldset>
+      <fieldset className="agents-checks">
         <legend>{t("tools")}</legend>
         <label>
           <input type="checkbox" checked={allowed === null} onChange={(e) => set({ allowedTools: e.target.checked ? null : tools.map((x) => x.name) })} />

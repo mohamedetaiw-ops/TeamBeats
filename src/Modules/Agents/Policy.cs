@@ -143,6 +143,16 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
             """, new { version, policy = JsonSerializer.Serialize(policy, Json), now, by }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentPolicyChanged, "agent_policy", version.ToString(System.Globalization.CultureInfo.InvariantCulture),
             Changes: new { from = current.Policy, to = policy }), ct);
+        if (current.Policy.PersistentMemory && !policy.PersistentMemory)
+        {
+            // Turning persistent memory off deletes every note and acceptance in the tenant (spec 020 FR-015).
+            await session.ExecAsync("delete from agents.agent_memory_consent", null, ct);
+            var deleted = await session.ExecAsync("delete from agents.agent_memory", null, ct);
+            if (deleted > 0)
+            {
+                await audit.WriteAsync(new AuditEntry(AuditActions.AgentMemoryDeleted, "agent", "all", Changes: new { reason = "policy_off", count = deleted }), ct);
+            }
+        }
         return new AgentPolicyView(version, policy, now);
     }
 
@@ -171,10 +181,10 @@ public sealed class AgentPolicyService(IDbSession session, ITenantContext contex
                 errors.Add($"toolRules.{name}", "validation.agent_policy.rule");
             }
         }
-        if (p.ScheduledAgents || p.PersistentMemory)
+        if (p.ScheduledAgents)
         {
-            // Scheduled agents and persistent memory come in R2 (spec 020 FR-014, FR-015); they cannot be turned on yet.
-            errors.Add(p.ScheduledAgents ? "scheduledAgents" : "persistentMemory", "validation.agent_policy.not_built");
+            // Scheduled agents come with the briefings slice of spec 020 R2 (FR-014); they cannot be turned on yet.
+            errors.Add("scheduledAgents", "validation.agent_policy.not_built");
         }
         if (p.MaxToolCalls is < 1 or > AgentPolicy.PlatformMaxToolCalls)
         {

@@ -39,7 +39,25 @@ public sealed record AgentDefinition(
     string? Autonomy,
     string? MaxClassification,
     int? MaxToolCalls,
-    Dictionary<string, string>? Purpose = null);
+    Dictionary<string, string>? Purpose = null,
+    AgentMemorySettings? Memory = null);
+
+/// <summary>
+/// The memory area of a definition (spec 020 US9, FR-015): <c>session</c>, the default, keeps nothing after a
+/// conversation; <c>persistent</c> lets the agent keep short notes for a person who accepted, each deleted after
+/// <paramref name="RetentionDays"/> without use. Persistent memory also needs the tenant policy switch.
+/// </summary>
+public sealed record AgentMemorySettings(string? Mode, int? RetentionDays = null)
+{
+    public const string Session = "session";
+    public const string Persistent = "persistent";
+    public const int DefaultRetentionDays = 90;
+    public const int MaxRetentionDays = 365;
+
+    public static bool IsPersistent(AgentDefinition d) => d.Memory?.Mode == Persistent;
+
+    public static int Retention(AgentDefinition d) => d.Memory?.RetentionDays ?? DefaultRetentionDays;
+}
 
 public static class AgentAutonomy
 {
@@ -127,6 +145,19 @@ public static class AgentDefinitions
             audience.Outside is not (null or AgentAudience.Hidden or AgentAudience.RequestAccess))
         {
             errors.Add("audience", "validation.agent.audience");
+        }
+
+        if (d.Memory is { } memory)
+        {
+            if (memory.Mode is not (AgentMemorySettings.Session or AgentMemorySettings.Persistent) ||
+                memory.RetentionDays is < 1 or > AgentMemorySettings.MaxRetentionDays)
+            {
+                errors.Add("memory", "validation.agent.memory");
+            }
+            else if (memory.Mode == AgentMemorySettings.Persistent && !policy.PersistentMemory)
+            {
+                errors.Add("memory", "validation.agent.memory_off");
+            }
         }
 
         // Autonomy: a known level, not above what R1 builds, the package and the tenant cap (spec 027 section 6).

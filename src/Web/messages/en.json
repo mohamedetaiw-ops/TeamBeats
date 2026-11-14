@@ -5942,7 +5942,8 @@
         "name": "Name of the clone",
         "copyAudience": "Copy the audience",
         "copyTools": "Copy the tools",
-        "action": "Clone"
+        "action": "Clone",
+        "copyMemory": "Copy the memory setting (notes kept for people are never copied)"
       },
       "json": "Definition as JSON (read only)",
       "outside": "Outside this audience",
@@ -5950,6 +5951,17 @@
       "outsideModes": {
         "hidden": "Hidden",
         "request_access": "Shown in the marketplace on request"
+      },
+      "memory": {
+        "title": "Memory",
+        "intro": "Session memory keeps nothing after a conversation. Persistent memory lets the agent keep short notes for people who accept, if your organization's agent policy allows it.",
+        "mode": "Memory",
+        "modes": {
+          "session": "Session only",
+          "persistent": "Persistent, for people who accept"
+        },
+        "retentionDays": "Delete unused notes after (days)",
+        "retentionHint": "A note is deleted when the agent has not used it for this many days. Restricted content is never kept."
       }
     },
     "review": {
@@ -6075,7 +6087,10 @@
         "verifiedHint": "Apps on this list were reviewed by TeamBeats. Employees can connect one as soon as you allow it.",
         "noVerified": "No verified AI app is available yet.",
         "addVerified": "Add verified app"
-      }
+      },
+      "memory": "Agent memory",
+      "persistentMemory": "Allow agents to keep notes for people who accept",
+      "persistentMemoryHint": "Each agent's designer chooses whether it keeps notes, and each person accepts per agent. Turning this off deletes every note in the organization."
     },
     "killSwitch": {
       "title": "Kill switch",
@@ -6146,7 +6161,10 @@
       "failed": "Something went wrong. Try again.",
       "ask": "Ask an agent about this",
       "chooseForItem": "Choose an agent to work with the page or document you came from.",
-      "linksAsText": "This answer mentions web addresses. They are shown as text and never opened, because they came from the AI. Check a link before you visit it."
+      "linksAsText": "This answer mentions web addresses. They are shown as text and never opened, because they came from the AI. Check a link before you visit it.",
+      "memoryTitle": "What your agents remember",
+      "memoryIntro": "Agents you allowed to keep notes about you. Open one to read, edit or delete its notes.",
+      "memoryCount": "{count, plural, =0 {No notes yet} one {# note} other {# notes}}"
     },
     "card": {
       "title": "Confirm this action",
@@ -6245,6 +6263,25 @@
       "unknown": "Unknown person",
       "grant": "Grant",
       "deny": "Deny",
+      "failed": "Something went wrong. Try again."
+    },
+    "memory": {
+      "title": "What this agent remembers about you",
+      "offer": "This agent can keep short notes about you, such as your preferences, to help in later conversations. Only you see them, and you can edit or delete each one. A note is deleted after {days} days without use.",
+      "accept": "Allow this agent to remember",
+      "notOffered": "This agent no longer keeps memory. You can still delete what it kept.",
+      "accepted": "You allowed this agent to keep notes about you. A note is deleted after {days} days without use.",
+      "none": "Nothing kept yet",
+      "noneHint": "The agent adds a note when you tell it something worth remembering.",
+      "note": "Note",
+      "lastUsed": "Last used {date}",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "withdraw": "Stop remembering and delete all",
+      "withdrawQuestion": "Delete every note this agent keeps about you and stop it remembering?",
+      "withdrawConfirm": "Delete all",
       "failed": "Something went wrong. Try again."
     }
   },

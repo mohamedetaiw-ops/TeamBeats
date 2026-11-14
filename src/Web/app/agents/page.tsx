@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { pickText, type AgentChoice } from "@/lib/agents/types";
+import { pickText, type AgentChoice, type MyMemoryView } from "@/lib/agents/types";
 import { Header } from "@/components/shell/Header";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ButtonLink } from "@/components/ui/Button";
@@ -19,7 +19,11 @@ export default async function MyAgentsPage({ searchParams }: { searchParams: Pro
   const t = await getTranslations("agents.use");
   const tm = await getTranslations("agents.marketplace");
   const locale = await getLocale();
-  const available = await apiGet<{ agents: AgentChoice[] }>("/api/v1/agents/available");
+  const [available, memory] = await Promise.all([
+    apiGet<{ agents: AgentChoice[] }>("/api/v1/agents/available"),
+    apiGet<MyMemoryView>("/api/v1/agents/memory"),
+  ]);
+  const remembered = memory.ok ? memory.data.agents : [];
   const agents = available.ok ? available.data.agents : [];
   return (
     <>
@@ -50,6 +54,22 @@ export default async function MyAgentsPage({ searchParams }: { searchParams: Pro
             ))}
           </ul>
         )}
+        {remembered.length > 0 ? (
+          <section className="agents-section" aria-labelledby="agents-memory-title" data-testid="agents-memory">
+            <h2 id="agents-memory-title">{t("memoryTitle")}</h2>
+            <p>{t("memoryIntro")}</p>
+            <ul className="agents-access-list">
+              {remembered.map((a) => (
+                <li key={a.agentId}>
+                  <Link href={`/agents/${a.agentId}`}>
+                    <bdi>{pickText(a.name, locale)}</bdi>
+                  </Link>
+                  <span>{t("memoryCount", { count: a.items.length })}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </main>
     </>
   );

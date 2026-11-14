@@ -1,10 +1,8 @@
-import type { APIRequestContext } from "@playwright/test";
-import { request } from "@playwright/test";
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { msg, type LaunchLocale } from "../support/messages";
-import { tenantApi } from "../support/pages";
+import { publishAgentThroughApi, tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
-import { hostOrigin, stack } from "../support/stack";
+import { hostOrigin } from "../support/stack";
 
 /**
  * Spec 020 R2 (T017, US6): the agent marketplace. An agent made for the Legal unit is offered on request to everyone
@@ -12,16 +10,6 @@ import { hostOrigin, stack } from "../support/stack";
  * agent's page; the colleague can then use it, favourites it, and finds it marked under Agents. In English and Arabic
  * with axe. The agent is published through the API, and the API decides every rule.
  */
-async function apiAs(tenant: TestTenant, email: string): Promise<APIRequestContext> {
-  const host = `${tenant.key}.${stack.baseDomain}`;
-  const anonymous = await request.newContext({ baseURL: stack.apiOrigin, extraHTTPHeaders: { "x-forwarded-host": host } });
-  const response = await anonymous.post("/dev/signin", { data: { email } });
-  const token = /tb_session=([^;]+)/.exec(response.headers()["set-cookie"] ?? "")?.[1];
-  await anonymous.dispose();
-  if (!response.ok() || !token) throw new Error(`Sign-in failed with ${response.status()}.`);
-  return request.newContext({ baseURL: stack.apiOrigin, extraHTTPHeaders: { "x-forwarded-host": host, cookie: `tb_session=${token}` } });
-}
-
 for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
   test.describe(`agent marketplace in ${locale}`, () => {
     test.use({ locale: locale === "ar" ? "ar-AE" : "en-US" });
@@ -38,31 +26,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       const unit = await api.post("/api/v1/org/units", { data: { parentId: null, typeKey: "department", code: "LEGAL", names: { en: "Legal", ar: "الشؤون القانونية" } } });
       expect(unit.ok(), await unit.text()).toBe(true);
       const unitId = ((await unit.json()) as { unit: { id: string } }).unit.id;
-
-      const installed = await api.post("/api/v1/agents", { data: { templateId: "enterprise_knowledge", orgUnitId: unitId } });
-      expect(installed.status(), await installed.text()).toBe(201);
-      const detail = (await installed.json()) as { agent: { id: string }; definition: Record<string, unknown> };
-      agentId = detail.agent.id;
-      const definition = { ...detail.definition, name: { en: agentName, ar: agentName }, audience: { scope: "org_units", orgUnits: [unitId], outside: "request_access" } };
-      const saved = await api.put(`/api/v1/agents/${agentId}/draft`, { data: { revision: 1, definition } });
-      expect(saved.ok(), await saved.text()).toBe(true);
-      const submitted = await api.post(`/api/v1/agents/${agentId}/submit`, { data: { revision: 2 } });
-      expect(submitted.ok(), await submitted.text()).toBe(true);
       await api.dispose();
-
-      // The gate ends incomplete for the template's few cases; another administrator overrides it and publishes.
-      const reviewer = await apiAs(tenant, rana());
-      let runId: string | null | undefined;
-      await expect(async () => {
-        const review = (await (await reviewer.get(`/api/v1/agents/${agentId}/review`)).json()) as { gate: { status: string; runId?: string | null } };
-        expect(review.gate.status).toBe("incomplete");
-        runId = review.gate.runId;
-      }).toPass({ timeout: 90_000 });
-      const overridden = await reviewer.post(`/api/v1/evaluation/gates/${runId}/override`, { data: { reason: "Checked by hand before publishing." } });
-      expect(overridden.ok(), await overridden.text()).toBe(true);
-      const published = await reviewer.post(`/api/v1/agents/${agentId}/publish`, { data: { version: 1 } });
-      expect(published.ok(), await published.text()).toBe(true);
-      await reviewer.dispose();
+      agentId = await publishAgentThroughApi(tenant, rana(), unitId, {
+        name: { en: agentName, ar: agentName },
+        audience: { scope: "org_units", orgUnits: [unitId], outside: "request_access" },
+      });
     });
 
     test("a colleague asks for an offered agent, the owner grants it, and it becomes a favourite", async ({ page }, testInfo) => {

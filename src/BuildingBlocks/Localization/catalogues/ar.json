@@ -2532,5 +2532,9 @@
   "notifications.template.agents.access_granted.title": "يمكنك الآن استخدام وكيل طلبته",
   "notifications.template.agents.access_granted.body": "وافق مالك الوكيل على طلبك. تجده في سوق الوكلاء.",
   "notifications.template.agents.access_denied.title": "رُفض طلبك لاستخدام وكيل",
-  "notifications.template.agents.access_denied.body": "رفض مالك الوكيل طلبك. تواصل معه إذا كنت تحتاجه في عملك."
+  "notifications.template.agents.access_denied.body": "رفض مالك الوكيل طلبك. تواصل معه إذا كنت تحتاجه في عملك.",
+  "validation.agent.memory": "اختر ذاكرة الجلسة أو الذاكرة الدائمة، واحتفظ بالملاحظات غير المستخدمة من يوم إلى 365 يوما.",
+  "validation.agent.memory_off": "الذاكرة الدائمة متوقفة في سياسة الوكلاء لدى مؤسستك. اطلب من مسؤول سياسة الذكاء الاصطناعي السماح بها.",
+  "validation.agent.memory_text": "اكتب الملاحظة في 1 إلى 500 حرف.",
+  "conflict.agent.memory_not_offered": "هذا الوكيل لا يحتفظ بذاكرة لك الآن."
 }

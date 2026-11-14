@@ -110,6 +110,9 @@ internal sealed class RunState
     public List<string> Executed { get; set; } = [];
     public PendingCall? Pending { get; set; }
 
+    /// <summary>Persistent memory is on for this person and agent (020 US9): the run reads their notes and is offered <c>memory.remember</c>.</summary>
+    public bool Memory { get; set; }
+
     /// <summary>Seconds the run has worked so far, carried across a confirmation wait, which does not count (027 FR-015).</summary>
     public double ActiveSeconds { get; set; }
 }
@@ -142,7 +145,7 @@ internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefin
 /// </summary>
 public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
     IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, AgentPolicyService policies,
-    ISearchRetrieval retrieval)
+    ISearchRetrieval retrieval, AgentMemory memory, MemoryRememberTool remember)
 {
     public const int MaxMessage = 2000;
     public const string PromptVersion = "agent.v1";
@@ -173,26 +176,9 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         Definition((await session.ScalarAsync<string>("select definition::text from agents.agent_version where agent_id = @id and number = @number",
             new { id, number }, ct))!);
 
-    /// <summary>Whether the person is in the agent's audience: the whole tenant, or a member of one of its org units or their subtrees.</summary>
-    private async Task<bool> InAudienceAsync(Guid agentId, AgentAudience? audience, Guid user, CancellationToken ct)
-    {
-        if (audience?.Scope == AgentAudience.Tenant)
-        {
-            return true;
-        }
-        // A person an owner granted access through the marketplace (spec 020 US6 scenario 3) may use the agent too.
-        if (await session.ScalarAsync<bool>("select exists (select 1 from agents.agent_access_grant where agent_id = @agentId and user_id = @user)",
-            new { agentId, user }, ct))
-        {
-            return true;
-        }
-        if (audience?.OrgUnits is not { Count: > 0 } units)
-        {
-            return false;
-        }
-        var members = await org.GetMemberUserIdsAsync(await org.GetSubtreesAsync(units, ct), ct);
-        return members.Contains(user);
-    }
+    /// <summary>Whether the person is in the agent's audience: the whole tenant, a member of one of its org units or their subtrees, or granted access.</summary>
+    private Task<bool> InAudienceAsync(Guid agentId, AgentAudience? audience, Guid user, CancellationToken ct) =>
+        AgentAccess.InAudienceAsync(session, org, agentId, audience, user, ct);
 
     /// <summary>A turn with a published agent the person may use (020 US7). Agents the person may not use are not found.</summary>
     public Task<RunView> RunAsync(Guid agentId, RunRequest request, CancellationToken ct) => RunAsync(agentId, request, null, ct);
@@ -310,6 +296,22 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         var now = clock.UtcNow;
         var state = new RunState { Classification = "internal" };
         state.Messages.Add(new AiMessage(AiRoles.System, SystemPrompt(agent.Definition, language)));
+        // Persistent memory (020 US9): only real runs read and keep notes, never the test panel or evaluation.
+        if (agent.Mode == "run" && await memory.RecallAsync(agent.Id, user, agent.Definition, agent.Policy, ct) is { } notes)
+        {
+            state.Memory = true;
+            if (notes.Count > 0)
+            {
+                var envelope = AgentMemory.Envelope(notes);
+                state.Messages.Add(new AiMessage(AiRoles.User, envelope));
+                state.Untrusted += envelope;
+                var highest = notes.Select(n => n.Classification).MaxBy(Classifications.Rank)!;
+                if (Classifications.Rank(highest) > Classifications.Rank(state.Classification))
+                {
+                    state.Classification = highest;
+                }
+            }
+        }
         if (request.ItemSource is { } source && request.ItemId is { } item)
         {
             await ItemContextAsync(id, agent, source, item, language, state, ct);
@@ -404,6 +406,10 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     {
         var offered = (agent.Definition.Tools ?? []).Select(tools.Find).Where(t => t is not null)
             .Select(t => new AiTool(RunAgent.ModelName(t!.Definition.Name), t.Definition.Description, t.Definition.Parameters)).ToList();
+        if (state.Memory)
+        {
+            offered.Add(new AiTool(RunAgent.ModelName(MemoryRememberTool.Name), remember.Definition.Description, remember.Definition.Parameters));
+        }
         var maxSteps = agent.Policy.MaxSteps;
         string? model = null, provider = null;
         int input = 0, output = 0;
@@ -523,29 +529,34 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             return new Gate(null, null, null, Stop: "agent.suspended");
         }
-        var granted = (agent.Definition.Tools ?? []).FirstOrDefault(t => RunAgent.ModelName(t) == modelName);
+        // The memory tool is granted by the agent's memory area and the person's acceptance, not by the tool list (020 US9).
+        var memoryCall = state.Memory && modelName == RunAgent.ModelName(MemoryRememberTool.Name);
+        var granted = memoryCall ? MemoryRememberTool.Name : (agent.Definition.Tools ?? []).FirstOrDefault(t => RunAgent.ModelName(t) == modelName);
         if (granted is null)
         {
             return new Gate(null, null, null, Refusal: "tool.not_granted");
         }
-        if (tools.Find(granted) is not { } tool)
+        if ((memoryCall ? remember : tools.Find(granted)) is not { } tool)
         {
             return new Gate(granted, null, null, Refusal: "tool.unknown");
         }
         var definition = tool.Definition;
-        var rule = agent.Policy.RuleFor(definition);
-        if (!agent.Policy.Allows(granted) || rule == ToolApprovalRules.Block)
+        var rule = memoryCall ? ToolApprovalRules.Execute : agent.Policy.RuleFor(definition);
+        if (!memoryCall)
         {
-            return new Gate(granted, null, null, Refusal: "tool.not_allowed");
-        }
-        if (definition.RequiredCapability is { } capability && !await entitlements.IsEnabledAsync(capability, ct))
-        {
-            return new Gate(granted, null, null, Refusal: "tool.not_in_package");
-        }
-        var needed = definition.SideEffect switch { ToolSideEffects.Read => 0, ToolSideEffects.Draft => 1, ToolSideEffects.WriteSelf => 2, _ => 3 };
-        if (needed > agent.Autonomy || needed > AgentAutonomy.Rank(AgentAutonomy.HighestBuilt))
-        {
-            return new Gate(granted, null, null, Refusal: "tool.above_autonomy");
+            if (!agent.Policy.Allows(granted) || rule == ToolApprovalRules.Block)
+            {
+                return new Gate(granted, null, null, Refusal: "tool.not_allowed");
+            }
+            if (definition.RequiredCapability is { } capability && !await entitlements.IsEnabledAsync(capability, ct))
+            {
+                return new Gate(granted, null, null, Refusal: "tool.not_in_package");
+            }
+            var needed = definition.SideEffect switch { ToolSideEffects.Read => 0, ToolSideEffects.Draft => 1, ToolSideEffects.WriteSelf => 2, _ => 3 };
+            if (needed > agent.Autonomy || needed > AgentAutonomy.Rank(AgentAutonomy.HighestBuilt))
+            {
+                return new Gate(granted, null, null, Refusal: "tool.above_autonomy");
+            }
         }
         JsonElement arguments;
         try
@@ -579,13 +590,14 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             return agent.Sandbox ? new Gate(granted, arguments, hash, Confirm: true, Sandbox: true) : new Gate(granted, arguments, hash, Refusal: "tool.test_mode");
         }
-        return new Gate(granted, arguments, hash, Confirm: rule == ToolApprovalRules.Confirm || ToolSideEffects.IsWrite(definition.SideEffect));
+        // A note for the person themselves, which they accepted and can delete, needs no confirmation card.
+        return new Gate(granted, arguments, hash, Confirm: !memoryCall && (rule == ToolApprovalRules.Confirm || ToolSideEffects.IsWrite(definition.SideEffect)));
     }
 
     private async Task<ToolResult> ExecuteAsync(Guid runId, RunAgent agent, Guid user, RunState state, string name, JsonElement arguments, string hash,
         Stopwatch watch, CancellationToken ct, string decision = ToolDecisions.Executed)
     {
-        var tool = tools.Find(name)!;
+        var tool = name == MemoryRememberTool.Name ? remember : tools.Find(name)!;
         state.ToolCalls++;
         ToolResult result;
         using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct))

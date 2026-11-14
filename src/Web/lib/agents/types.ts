@@ -21,7 +21,17 @@ export type AgentDefinition = {
   maxClassification: string | null;
   maxToolCalls: number | null;
   purpose?: Localized | null;
+  memory?: { mode: string | null; retentionDays?: number | null } | null;
 };
+
+export const MEMORY_MODES = ["session", "persistent"] as const;
+
+export type MemoryItem = { id: string; agentId: string; text: string; classification: string; createdAt: string; updatedAt: string; lastUsedAt: string };
+
+/** One agent's memory as the signed-in person sees it (spec 020 US9). The API decides whether it is offered. */
+export type MyMemoryView = { agents: { agentId: string; name: Localized | null; accepted: boolean; items: MemoryItem[] }[] };
+
+export type AgentMemoryView = { agentId: string; offered: boolean; accepted: boolean; retentionDays: number; items: MemoryItem[] };
 
 /** Agent categories of the definition schema (spec 020 section 12, Identity). */
 export const AGENT_CATEGORIES = ["knowledge", "hr", "it", "content", "requests", "productivity", "other"] as const;
