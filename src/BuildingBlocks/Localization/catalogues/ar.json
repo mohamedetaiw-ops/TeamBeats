@@ -2424,5 +2424,8 @@
   "notifications.template.assets.access_approved.title": "تمت الموافقة على طلب الوصول",
   "notifications.template.assets.access_approved.body": "يمكنك الآن رؤية {collection} في بوابة الأصول.",
   "notifications.template.assets.access_declined.title": "رُفض طلب الوصول",
-  "notifications.template.assets.access_declined.body": "رُفض طلبك للوصول إلى {collection}."
+  "notifications.template.assets.access_declined.body": "رُفض طلبك للوصول إلى {collection}.",
+  "validation.content.image": "اختر صورة سارية من بوابة أصول العلامة التجارية يمكنك رؤيتها.",
+  "notifications.template.content.asset_image_expired.title": "لم يعد من الممكن استخدام صورة في صفحتك",
+  "notifications.template.content.asset_image_expired.body": "انتهت حقوق استخدام صورة في \"{title}\"، فلم يعد القراء يرونها. استبدلها بصورة سارية."
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -32,6 +32,8 @@ import {
   type LexicalNode,
 } from "lexical";
 import type { BodyDocument } from "@/lib/content/types";
+import { assetThumbnailUrl, assetsApi, type AssetPick } from "@/lib/assets/types";
+import { nameIn } from "@/lib/documents/types";
 import { $createAtomicBlockNode, AtomicBlockNode } from "./AtomicBlockNode";
 import { $loadBody, $readBody } from "./convert";
 import { Button } from "@/components/ui/Button";
@@ -43,6 +45,96 @@ type BlockKind = "paragraph" | "h2" | "h3" | "quote" | "bullet" | "number";
 /** Links the body document accepts; the API checks the same list. */
 const linkable = (url: string) => /^(https?:\/\/|mailto:)/i.test(url);
 
+/**
+ * Picks a current image from the brand asset portal (spec 011 US5): the API offers only images the author reads whose
+ * usage rights have not ended, and checks the choice again when the page is saved.
+ */
+function ImagePicker({ onPick, onCancel }: { onPick: (id: string, alt: string) => void; onCancel: () => void }) {
+  const t = useTranslations("content.editor");
+  const locale = useLocale();
+  const searchId = useId();
+  const altId = useId();
+  const [query, setQuery] = useState("");
+  const [picks, setPicks] = useState<AssetPick[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [chosen, setChosen] = useState<AssetPick | null>(null);
+  const [alt, setAlt] = useState("");
+
+  useEffect(() => {
+    let live = true;
+    const timer = setTimeout(async () => {
+      try {
+        const response = await fetch(`${assetsApi}/picker${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`, { headers: { accept: "application/json" } });
+        if (!live) return;
+        if (!response.ok) {
+          setFailed(true);
+          setPicks([]);
+          return;
+        }
+        setFailed(false);
+        setPicks((await response.json()) as AssetPick[]);
+      } catch {
+        if (live) setFailed(true);
+      }
+    }, 250);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [query]);
+
+  return (
+    <div className="content-editor-ask" role="group" aria-label={t("imageTitle")}>
+      <label htmlFor={searchId}>{t("imageSearch")}</label>
+      <input id={searchId} type="search" dir="auto" value={query} autoFocus onChange={(e) => setQuery(e.target.value)} />
+      {failed ? (
+        <p className="field-error" role="alert">
+          {t("imageUnavailable")}
+        </p>
+      ) : picks && picks.length === 0 ? (
+        <p className="content-meta">{t("imageNone")}</p>
+      ) : (
+        <ul className="content-editor-picks" aria-label={t("imageChoices")}>
+          {(picks ?? []).map((p) => {
+            const name = nameIn(p.names, locale);
+            return (
+              <li key={p.id}>
+                <button
+                  type="button"
+                  className="content-editor-pick"
+                  aria-pressed={chosen?.id === p.id}
+                  onClick={() => {
+                    setChosen(p);
+                    if (!alt) setAlt(name);
+                  }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- thumbnails come from the authenticated API */}
+                  <img src={assetThumbnailUrl(p.id)} alt="" />
+                  <bdi>{name}</bdi>
+                  <span className="content-meta">
+                    <bdi>{nameIn(p.collectionNames, locale)}</bdi>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <label htmlFor={altId}>{t("imageAlt")}</label>
+      <input id={altId} type="text" dir="auto" value={alt} maxLength={300} onChange={(e) => setAlt(e.target.value)} />
+      <p className="content-meta">{t("imageAltHint")}</p>
+      <div className="content-actions">
+        <Button variant="primary" disabled={!chosen || !alt.trim()} onClick={() => chosen && onPick(chosen.id, alt.trim())}>
+          {t("insert")}
+        </Button>
+        <Button variant="quiet" onClick={onCancel}>
+          {t("cancel")}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function Toolbar({ label }: { label: string }) {
   const t = useTranslations("content.editor");
   const [editor] = useLexicalComposerContext();
@@ -52,7 +144,7 @@ function Toolbar({ label }: { label: string }) {
   const [kind, setKind] = useState<BlockKind>("paragraph");
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
-  const [asking, setAsking] = useState<"link" | "embed" | null>(null);
+  const [asking, setAsking] = useState<"link" | "embed" | "image" | null>(null);
   const [url, setUrl] = useState("");
   const [urlError, setUrlError] = useState(false);
   const urlId = useId();
@@ -165,6 +257,9 @@ function Toolbar({ label }: { label: string }) {
         <Button variant="quiet" onClick={() => setAsking("embed")}>
           {t("embed")}
         </Button>
+        <Button variant="quiet" onClick={() => setAsking("image")}>
+          {t("image")}
+        </Button>
         <Button variant="quiet" disabled={!canUndo} onClick={() => editor.dispatchCommand(UNDO_COMMAND, undefined)}>
           {t("undo")}
         </Button>
@@ -172,7 +267,17 @@ function Toolbar({ label }: { label: string }) {
           {t("redo")}
         </Button>
       </div>
-      {asking ? (
+      {asking === "image" ? (
+        <ImagePicker
+          onCancel={() => setAsking(null)}
+          onPick={(assetId, alt) => {
+            editor.update(() => {
+              $insertNodeToNearestRoot($createAtomicBlockNode({ type: "image", assetId, alt }));
+            });
+            setAsking(null);
+          }}
+        />
+      ) : asking ? (
         <div className="content-editor-ask">
           <label htmlFor={urlId}>{asking === "link" ? t("linkAddress") : t("embedAddress")}</label>
           <input

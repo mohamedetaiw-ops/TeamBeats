@@ -30,6 +30,7 @@ public static class DocumentsModule
         services.AddScoped<Records>();
         services.AddScoped<GuestShares>();
         services.AddScoped<Assets>();
+        services.AddScoped<Contracts.IAssetImages>(sp => sp.GetRequiredService<Assets>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AssetAccessTasks>();
         services.AddScoped<IResourceDescriptorProvider, AssetCollectionDescriptorProvider>();
         services.AddScoped<DocumentPreviews>();
@@ -419,6 +420,15 @@ public static class DocumentsModule
         assets.MapGet("/{id:guid}/thumbnail", async (Guid id, Assets service, HttpResponse response, CancellationToken ct) =>
         {
             var (content, type) = await service.ThumbnailAsync(id, ct);
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
+            response.Headers.CacheControl = "private, max-age=300";
+            return Results.File(content, type);
+        });
+
+        assets.MapGet("/{id:guid}/image", async (Guid id, Assets service, HttpResponse response, CancellationToken ct) =>
+        {
+            var (content, type) = await service.ImageAsync(id, ct);
             response.Headers["X-Content-Type-Options"] = "nosniff";
             response.Headers.ContentSecurityPolicy = "default-src 'none'; sandbox";
             response.Headers.CacheControl = "private, max-age=300";

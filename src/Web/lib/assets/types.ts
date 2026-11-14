@@ -57,5 +57,12 @@ export const assetsHref = "/assets";
 export const assetRequestsHref = "/assets/requests";
 export const assetsApi = "/api/v1/assets";
 
+/** A current image the caller reads, offered by the page editor's picker. */
+export type AssetPick = { id: string; names: Names; collectionNames: Names; width: number | null; height: number | null };
+
+/** Where a page shows an asset image; the API checks the reader and the usage rights each time. */
+export const assetImageUrl = (id: string) => `${assetsApi}/${encodeURIComponent(id)}/image`;
+export const assetThumbnailUrl = (id: string) => `${assetsApi}/${encodeURIComponent(id)}/thumbnail`;
+
 /** The rendition keys the API makes, in the order the portal offers them. */
 export const renditionOrder = ["original", "png_256", "png_512", "png_1024", "svg", "pdf"] as const;

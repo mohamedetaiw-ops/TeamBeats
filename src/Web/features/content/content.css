@@ -641,3 +641,15 @@
   margin: 0;
   font-size: var(--tb-font-size-xl);
 }
+
+.content-figure {
+  margin-block: 0 var(--tb-space-md);
+  margin-inline: 0;
+}
+
+.content-figure img {
+  display: block;
+  max-inline-size: 100%;
+  block-size: auto;
+  border-radius: var(--tb-radius-md);
+}

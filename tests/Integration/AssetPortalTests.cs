@@ -7,6 +7,7 @@ using TeamBeats.Audit.Contracts;
 using TeamBeats.Authorization.Contracts;
 using TeamBeats.Modules.Documents;
 using TeamBeats.Modules.Tenancy.Contracts;
+using TeamBeats.Messaging;
 using TeamBeats.Persistence;
 using TeamBeats.TenantContext;
 using TeamBeats.Testing;
@@ -259,5 +260,60 @@ public sealed class AssetPortalTests(TenantWorld world)
             names = new Dictionary<string, string> { ["en"] = "office" }, rightsExpireAt = DateTimeOffset.UtcNow.AddYears(1), version = managed.GetProperty("version").GetInt32(),
         }));
         Assert.Single((await OkAsync(maya.GetAsync($"{Api}/picker"))).EnumerateArray());
+    }
+
+    [Fact]
+    public async Task A_page_shows_a_current_asset_image_and_its_owner_hears_when_the_rights_end()
+    {
+        var t = await FreshAsync();
+        var (bm, maya, author) = (t["bm"].Client, t["maya"].Client, t["admin"].Client);
+        var photos = await CollectionAsync(bm, "Photography");
+        var expiry = DateTimeOffset.UtcNow.AddDays(10);
+        var id = Id(await OkAsync(UploadAsync(bm, photos, "office.png", Png, $"&rightsExpireAt={Uri.EscapeDataString(expiry.ToString("O"))}"), HttpStatusCode.Created));
+        static object Page(Guid asset) => new
+        {
+            type = "news",
+            variants = new Dictionary<string, object>
+            {
+                ["en"] = new { title = "New office", body = new { blocks = new object[] { new { type = "image", assetId = asset, alt = "The new office" } } } },
+            },
+        };
+
+        // Only a current asset the author reads goes on a page.
+        Assert.Equal("validation.content.image", await ProblemKeyAsync(author.PostAsJsonAsync("/api/v1/content/items", Page(Guid.NewGuid())), HttpStatusCode.BadRequest));
+        var item = Id(await OkAsync(author.PostAsJsonAsync("/api/v1/content/items", Page(id)), HttpStatusCode.Created));
+
+        // Readers get the page image without it counting as a download; another tenant never does.
+        var image = await maya.GetAsync($"{Api}/{id}/image");
+        Assert.Equal(HttpStatusCode.OK, image.StatusCode);
+        Assert.Equal("image/png", image.Content.Headers.ContentType?.MediaType);
+        Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from documents.asset_download"));
+        var other = await FreshAsync();
+        Assert.Equal(HttpStatusCode.NotFound, (await other["maya"].Client.GetAsync($"{Api}/{id}/image")).StatusCode);
+        Assert.Equal("validation.content.image",
+            await ProblemKeyAsync(other["admin"].Client.PostAsJsonAsync("/api/v1/content/items", Page(id)), HttpStatusCode.BadRequest));
+
+        // The rights end: the image leaves the page for everyone and the page's owner is told which page it was.
+        await world.Factory.InScopeAsync(t.Id, async sp =>
+        {
+            sp.GetRequiredService<TenantContextAccessor>().SetActor(ActorType.System, null);
+            await sp.GetRequiredService<Assets>().ExpireAsync(expiry.AddMinutes(1), 100, CancellationToken.None);
+            await sp.GetRequiredService<IDbSession>().CommitAsync();
+            return 0;
+        });
+        var dispatcher = world.Factory.Services.GetRequiredService<OutboxDispatcher>();
+        for (var i = 0; i < 20 && await dispatcher.DispatchBatchAsync(500, CancellationToken.None) > 0; i++)
+        {
+        }
+        Assert.Equal(HttpStatusCode.NotFound, (await maya.GetAsync($"{Api}/{id}/image")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await bm.GetAsync($"{Api}/{id}/image")).StatusCode);
+        Assert.Equal(1, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from notifications.notification where user_id = @u and template_key = 'content.asset_image_expired' and link = @link",
+            ("u", t["admin"].Id), ("link", $"/content/items/{item}")));
+
+        // A new page cannot use it; the page that has it can still be edited until its owner replaces the image.
+        Assert.Equal("validation.content.image", await ProblemKeyAsync(author.PostAsJsonAsync("/api/v1/content/items", Page(id)), HttpStatusCode.BadRequest));
+        var page = (JsonElement)JsonSerializer.SerializeToElement(Page(id));
+        await OkAsync(author.PutAsJsonAsync($"/api/v1/content/items/{item}", new { variants = page.GetProperty("variants"), changeNote = "Typo" }));
     }
 }

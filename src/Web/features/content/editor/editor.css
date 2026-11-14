@@ -110,3 +110,43 @@
 .content-atomic-text {
   overflow-wrap: anywhere;
 }
+
+.content-editor-picks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: var(--tb-space-xs);
+  max-block-size: 20rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.content-editor-pick {
+  display: grid;
+  gap: var(--tb-space-xs);
+  inline-size: 100%;
+  padding: var(--tb-space-xs);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  text-align: start;
+  cursor: pointer;
+}
+
+.content-editor-pick[aria-pressed="true"] {
+  border-color: var(--tb-color-accent-base);
+  background: var(--tb-color-accent-subtle);
+}
+
+.content-editor-pick:focus-visible {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-accent-base);
+  outline-offset: var(--tb-border-width-thin);
+}
+
+.content-editor-pick img {
+  inline-size: 100%;
+  block-size: 5rem;
+  object-fit: contain;
+}

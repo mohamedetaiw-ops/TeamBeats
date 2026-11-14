@@ -1,4 +1,5 @@
 import { topicHref, type Block, type BodyDocument, type Inline } from "@/lib/content/types";
+import { assetImageUrl } from "@/lib/assets/types";
 
 const hashtag = /(^|[^\p{L}\p{N}_#&])#([\p{L}\p{N}_]{2,50})(?![\p{L}\p{N}_])/gu;
 
@@ -88,12 +89,12 @@ function BlockView({ block, embedTitle, anchor, topics }: { block: Block; embedT
         </div>
       );
     case "image":
-      // Content media comes with the document library (spec 011); until then the description stands in.
-      return block.alt ? (
+      // A brand asset image (spec 011 US5). The API serves it only while its usage rights last and to readers of its
+      // collection; otherwise the browser shows the description in its place.
+      return block.assetId ? (
         <figure className="content-figure">
-          <figcaption>
-            <bdi>{block.alt}</bdi>
-          </figcaption>
+          {/* eslint-disable-next-line @next/next/no-img-element -- served by the authenticated API, which checks each reader */}
+          <img src={assetImageUrl(block.assetId)} alt={block.alt ?? ""} loading="lazy" />
         </figure>
       ) : null;
     case "link":

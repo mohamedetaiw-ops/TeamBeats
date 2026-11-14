@@ -87,7 +87,7 @@ public sealed class Assets(
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,
-    IClock clock)
+    IClock clock) : IAssetImages
 {
     public const string ResourceType = "asset_collection";
     public const long MaxAssetBytes = 50L * 1024 * 1024;
@@ -626,17 +626,37 @@ public sealed class Assets(
     /// Whether the asset is a current image the caller reads, for modules that show it (a page's image block): the
     /// reader then gets its rendition through the portal's own checks.
     /// </summary>
-    internal async Task<bool> UsableAsync(Guid id, CancellationToken ct)
+    public async Task<bool> UsableAsync(Guid assetId, CancellationToken ct)
     {
         try
         {
-            var (asset, _, _) = await AssetForReaderAsync(id, ct);
-            return IsImage(asset.ContentType) && asset.ExpiredAt is null && asset.Status == "active";
+            var (asset, _, _) = await AssetForReaderAsync(assetId, ct);
+            return Usable(asset);
         }
         catch (AppException)
         {
             return false;
         }
+    }
+
+    private static bool Usable(AssetRow asset) => IsImage(asset.ContentType) && asset.ExpiredAt is null && asset.Status == "active";
+
+    /// <summary>
+    /// The image a page shows: the largest PNG rendition of a current image the reader reads. Not a download, so not
+    /// recorded; an asset whose rights ended is gone from pages for everyone, brand managers included.
+    /// </summary>
+    public async Task<(Stream Content, string ContentType)> ImageAsync(Guid id, CancellationToken ct)
+    {
+        var (asset, _, _) = await AssetForReaderAsync(id, ct);
+        if (!Usable(asset))
+        {
+            throw AppException.NotFound();
+        }
+        var ready = (await session.QueryAsync("select key from documents.asset_rendition where asset_id = @id and state = 'ready'", new { id }, r => r.GetString(0), ct))
+            .ToHashSet(StringComparer.Ordinal);
+        var key = AssetRenditions.PngWidths.Reverse().Select(AssetRenditions.Png).FirstOrDefault(ready.Contains) ?? throw AppException.NotFound();
+        var (content, type, _) = await OpenAsync(asset, key, ct);
+        return (content, type);
     }
 
     // ---- Access requests (US5 scenario 3) ----

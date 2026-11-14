@@ -102,6 +102,10 @@ public static partial class BodyValidator
             (b.Children ?? []).Concat((b.Items ?? []).SelectMany(i => i ?? [])).Concat((b.Rows ?? []).SelectMany(r => r ?? []).SelectMany(c => c ?? [])))
         .Where(r => r is not null);
 
+    /// <summary>The brand asset images a body shows (spec 011 US5), each once.</summary>
+    public static IReadOnlySet<Guid> Images(BodyDocument? body) =>
+        (body?.Blocks ?? []).Where(b => b is { Type: BlockTypes.Image, AssetId: not null }).Select(b => b.AssetId!.Value).ToHashSet();
+
     /// <summary>The people a body mentions, each once.</summary>
     public static IReadOnlySet<Guid> Mentions(BodyDocument? body) => Runs(body).Where(r => r.Mention is not null).Select(r => r.Mention!.Value).ToHashSet();
 
