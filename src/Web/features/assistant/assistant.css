@@ -176,7 +176,46 @@
   resize: vertical;
 }
 
-.assistant-tools,
+.assistant-composer .field {
+  margin: 0;
+}
+
+/* Under the box: the mode of the composer, the keyboard hint, then Send at the end. */
+.assistant-composer-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.assistant-composer-bar .field-hint {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+
+.assistant-composer-bar select {
+  min-block-size: 2.5rem;
+  font-size: var(--tb-font-size-sm);
+}
+
+.assistant-start {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.assistant-starters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assistant-scope {
+  margin: 0;
+}
+
 .assistant-item-actions {
   display: grid;
   gap: var(--tb-space-md);
@@ -186,24 +225,9 @@
   background: var(--tb-color-surface-raised);
 }
 
-.assistant-tools h2,
 .assistant-item-actions h2 {
   margin: 0;
   font-size: var(--tb-font-size-lg);
-}
-
-.assistant-tools p {
-  margin: 0;
-}
-
-.assistant-tools-form {
-  display: grid;
-  gap: var(--tb-space-sm);
-}
-
-.assistant-tools-form textarea {
-  inline-size: 100%;
-  resize: vertical;
 }
 
 .assistant-result {
@@ -219,4 +243,18 @@
   margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* A result inside an answer bubble needs no second frame. */
+.assistant-answer > .assistant-result {
+  padding: 0;
+  border: 0;
+}
+
+/* Starter chips and the mode choice are 44px on a touch screen or a phone (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  .assistant-starters .ui-chip,
+  .assistant-composer-bar select {
+    min-block-size: 2.75rem;
+  }
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { AvailabilityHeatmap, CalendarHeader, CalendarStats, DayPanel, LayerChips, RangeMonth, WeekStrip, type MonthBar } from "@/components/ui/CalendarParts";
+import { AvailabilityHeatmap, CalendarHeader, CalendarStats, DayPanel, LayerChips, RangeMonth, type MonthBar } from "@/components/ui/CalendarParts";
 import { WeekView, type CalendarEvent } from "@/components/ui/CalendarViews";
 import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { StateView } from "@/components/ui/StateView";
@@ -117,9 +117,9 @@ export function CalendarWorkspace({ canManage }: { canManage: boolean }) {
     view === "month" ? monthYear.format(fromIso(date)) : t("dateRange", { start: short.format(fromIso(range.from)), end: short.format(fromIso(addDays(view === "team" ? addDays(weekOf(date, weekStart), 28) : range.to, -1))) });
 
   const items = events.state === "ok" ? events.data.items : [];
-  const dayRows = (day: string) => (
-    <ul className="ui-cal-agenda">
-      {itemsOn(items, day, zone).map((item) => (
+  const dayRows = (day: string, list: readonly CalendarItem[] = itemsOn(items, day, zone)) => (
+    <ul className="ui-cal-agenda" data-layout={view === "agenda" ? "columns" : undefined}>
+      {list.map((item) => (
         <ItemRow
           key={`${day}-${item.id}`}
           item={item}
@@ -146,7 +146,12 @@ export function CalendarWorkspace({ canManage }: { canManage: boolean }) {
   } else if (events.state === "failed") {
     body = <StateView kind="error" message={events.messages.join(" ") || t("failed")} />;
   } else if (view === "agenda") {
-    const days = daysFrom(range.from, AGENDA_DAYS).filter((d) => itemsOn(items, d, zone).length > 0);
+    // An item that spans several days is listed once, under its first shown day, with its date range (DLS-119).
+    const firstDay = (i: CalendarItem) => {
+      const starts = i.allDay ? i.startDate! : zoneDay(i.start!, zone);
+      return starts < range.from ? range.from : starts;
+    };
+    const days = daysFrom(range.from, AGENDA_DAYS).filter((d) => items.some((i) => firstDay(i) === d));
     body =
       days.length === 0 ? (
         <StateView kind="empty" title={t("nothingRange")} message="" />
@@ -157,29 +162,27 @@ export function CalendarWorkspace({ canManage }: { canManage: boolean }) {
               <h3 id={`day-${d}`} className="ui-cal-day-title">
                 {dayTitle(d)}
               </h3>
-              {dayRows(d)}
+              {dayRows(d, items.filter((i) => firstDay(i) === d))}
             </section>
           ))}
         </div>
       );
   } else if (view === "week") {
-    const strip = daysFrom(range.from, 7).map((d) => {
-      const on = itemsOn(items, d, zone);
-      return { date: d, markers: LAYERS.filter((l) => on.some((i) => i.layer === l)).map((l) => LAYER_LOOK[l].swatch), count: on.length };
-    });
     const chips: CalendarEvent[] = items.flatMap((i) =>
       daysFrom(range.from, 7)
         .filter((d) => itemsOn([i], d, zone).length > 0)
         .map((d) => toChip(i, d, zone, t)),
     );
+    const clock = new Intl.DateTimeFormat("en-GB", { timeZone: zone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(new Date(now));
+    // One view of the week: the grid. A day's full list opens in the day panel, never as a second list under the grid.
     body = (
-      <div className="cal-week">
-        <WeekStrip label={t("weekLabel")} days={strip} selected={date} today={today} onSelect={(d) => go({ date: d })} countLabel={(n) => t("itemCount", { count: n })} />
+      <div className="cal-month" data-panel={panelDay ? "open" : undefined}>
         <div className="cal-week-grid">
-          <WeekView start={range.from} events={chips} today={today} startHour={7} endHour={20} />
+          <WeekView start={range.from} events={chips} today={today} now={clock} startHour={7} endHour={20} onSelectDay={(d) => setPanelDay(d)} />
         </div>
-        <h3 className="ui-cal-day-title">{dayTitle(date)}</h3>
-        {dayRows(date)}
+        <DayPanel open={panelDay !== null} onClose={() => setPanelDay(null)} title={panelDay ? dayTitle(panelDay) : ""}>
+          {panelDay && itemsOn(items, panelDay, zone).length === 0 ? <p className="cal-empty">{t("nothing")}</p> : panelDay ? dayRows(panelDay) : null}
+        </DayPanel>
       </div>
     );
   } else {
@@ -196,14 +199,18 @@ export function CalendarWorkspace({ canManage }: { canManage: boolean }) {
       }));
     const barIds = new Set(bars.map((b) => b.id));
     const markers: Record<string, number[]> = {};
+    const named: Record<string, { id: string; label: string; swatch: number }[]> = {};
     for (const d of daysFrom(range.from, 42)) {
       markers[d] = itemsOn(items, d, zone)
         .filter((i) => !barIds.has(i.id))
         .map((i) => LAYER_LOOK[i.layer].swatch);
+      named[d] = itemsOn(items, d, zone)
+        .filter((i) => !barIds.has(i.id))
+        .map((i) => ({ id: i.id, label: toChip(i, d, zone, t).title, swatch: LAYER_LOOK[i.layer].swatch }));
     }
     body = (
       <div className="cal-month" data-panel={panelDay ? "open" : undefined}>
-        <RangeMonth month={date} today={today} selected={panelDay} weekStart={weekStart} bars={bars} markers={markers} onSelect={(d) => setPanelDay(d)} countLabel={(n) => t("itemCount", { count: n })} />
+        <RangeMonth month={date} today={today} selected={panelDay} weekStart={weekStart} bars={bars} markers={markers} items={named} onSelect={(d) => setPanelDay(d)} countLabel={(n) => t("itemCount", { count: n })} />
         <DayPanel open={panelDay !== null} onClose={() => setPanelDay(null)} title={panelDay ? dayTitle(panelDay) : ""}>
           {panelDay && itemsOn(items, panelDay, zone).length === 0 ? <p className="cal-empty">{t("nothing")}</p> : panelDay ? dayRows(panelDay) : null}
         </DayPanel>

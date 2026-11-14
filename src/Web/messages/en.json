@@ -5096,6 +5096,21 @@
     }
   },
   "assistant": {
+    "mode": {
+      "label": "Mode",
+      "ask": "Ask a question"
+    },
+    "starters": {
+      "title": "Try one of these",
+      "leave": "How many days of annual leave do I get?",
+      "policy": "Which policies do I still need to acknowledge?",
+      "service": "How do I request a salary letter?",
+      "people": "Who do I ask about a laptop problem?"
+    },
+    "cannotVerify": {
+      "title": "I cannot verify an answer to this",
+      "search": "Search for it instead"
+    },
     "title": "Assistant",
     "intro": "Ask about policies, services, documents and news. Answers come only from content you can open, with links to the sources.",
     "newConversation": "New conversation",
@@ -5169,6 +5184,7 @@
     },
     "marker": "[{n}]",
     "tools": {
+      "draftText": "Text to start from (optional)",
       "title": "Work with text",
       "intro": "Paste your own text to rewrite, translate, summarize or explain it, or describe a draft. The result is AI generated; nothing is saved, published or sent.",
       "itemTitle": "Ask the assistant about this page",
@@ -5194,6 +5210,8 @@
       }
     },
     "scope": {
+      "asking": "Asking about: <name></name>",
+      "remove": "Ask about everything instead",
       "policy": "Answers come only from <name></name>.",
       "notFound": "This policy is not available to ask about. You can ask about anything you can open instead."
     }
