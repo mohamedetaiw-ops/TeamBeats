@@ -10,8 +10,10 @@
       "grantedRoles": [
         "User.Read.All",
         "Group.Read.All",
-        "AdministrativeUnit.Read.All"
+        "AdministrativeUnit.Read.All",
+        "Sites.Selected"
       ],
+      "grantedDelegated": ["User.Read", "Mail.ReadBasic", "Mail.Read", "Calendars.ReadBasic", "Files.ReadWrite", "Files.Read.All"],
       "ssoApp": {
         "clientId": "7c1d2e3f-4a5b-4c6d-8e9f-a0b1c2d3e4f5",
         "secretName": "fake-entra-sso",
@@ -1943,6 +1945,36 @@
         {
           "id": "20000000-0000-4000-8000-000000000003",
           "displayName": "Riyadh Office"
+        }
+      ],
+      "sharePointSites": [
+        {
+          "host": "teambeatsdemo.sharepoint.com",
+          "path": "/sites/hr",
+          "name": "Human Resources",
+          "drives": [
+            {
+              "name": "Documents",
+              "items": [
+                {
+                  "name": "Policies",
+                  "folder": true,
+                  "children": [
+                    { "name": "Employee handbook.pdf", "text": "%PDF-1.7 Employee handbook (fictional)" },
+                    { "name": "Leave policy.docx", "text": "Leave policy (fictional)", "readers": ["layla.haddad@staging.example", "omar.alfarsi@staging.example"] }
+                  ]
+                },
+                { "name": "Salary bands.xlsx", "text": "Salary bands (fictional)", "readers": ["layla.haddad@staging.example"] }
+              ]
+            }
+          ]
+        },
+        {
+          "host": "teambeatsdemo.sharepoint.com",
+          "path": "/sites/finance",
+          "name": "Finance",
+          "granted": false,
+          "drives": [{ "name": "Documents", "items": [{ "name": "Budget.xlsx", "text": "Budget (fictional)" }] }]
         }
       ],
       "rooms": [

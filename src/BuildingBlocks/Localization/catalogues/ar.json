@@ -2466,5 +2466,7 @@
   "conflict.documents.connected_too_large": "هذا الملف أكبر من أن يُفتح عبر TeamBeats. افتحه في SharePoint.",
   "validation.documents.connected_container": "اختر مكتبة مستندات من موقع SharePoint مسموح به.",
   "validation.documents.connected_folder": "اختر مجلدًا في مكتبة المستندات هذه.",
-  "validation.documents.connected_library": "هذا الإعداد غير متاح لمكتبة متصلة."
+  "validation.documents.connected_library": "هذا الإعداد غير متاح لمكتبة متصلة.",
+  "notifications.template.documents.connected_degraded.title": "مكتبة SharePoint غير متاحة",
+  "notifications.template.documents.connected_degraded.body": "تعذّرت قراءة مكتبة SharePoint متصلة الآن. يرى الأشخاص آخر نسخة متزامنة. تحقق من اتصال Microsoft 365 في صفحة الاتصالات."
 }

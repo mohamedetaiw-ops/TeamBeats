@@ -11896,6 +11896,38 @@
         }
       }
     },
+    "/api/v1/documents/libraries/{id}/connected/links/{item}": {
+      "get": {
+        "tags": [
+          "Documents: libraries"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "item",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/documents/libraries/{id}/connected/content": {
       "get": {
         "tags": [

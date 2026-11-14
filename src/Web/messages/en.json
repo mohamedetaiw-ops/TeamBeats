@@ -4412,7 +4412,8 @@
       "connectHint": "TeamBeats shows SharePoint files with your own access, so you see exactly what SharePoint lets you open.",
       "connectAction": "Connect Microsoft 365",
       "notHereTitle": "Not available for connected libraries",
-      "notHere": "Controlled documents, retention and legal holds, the view-only watermark, sharing with guests and the recycle bin apply to TeamBeats libraries only. For this library, SharePoint manages them."
+      "notHere": "Controlled documents, retention and legal holds, the view-only watermark, sharing with guests and the recycle bin apply to TeamBeats libraries only. For this library, SharePoint manages them.",
+      "degraded": "SharePoint cannot be reached right now, so this is the copy synced {age}. Files open again once SharePoint answers."
     },
     "connect": {
       "title": "Connect a SharePoint library",

@@ -71,9 +71,7 @@ export type ConnectedItem = {
 };
 
 /** A page of a connected library as the person sees it in SharePoint; state says why nothing is listed. */
-export type ConnectedPage = { state: string; items: ConnectedItem[]; nextCursor: string | null };
-
-export const CONNECTED_STATES = ["ok", "not_connected", "reconnect", "not_found", "unavailable"] as const;
+export type ConnectedPage = { state: string; items: ConnectedItem[]; nextCursor: string | null; syncedAt?: string | null };
 
 export function connectedContentHref(libraryId: string, itemId: string): string {
   return `/api/v1/documents/libraries/${encodeURIComponent(libraryId)}/connected/content?item=${encodeURIComponent(itemId)}`;
