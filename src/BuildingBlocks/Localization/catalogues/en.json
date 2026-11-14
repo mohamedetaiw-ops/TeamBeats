@@ -2544,5 +2544,6 @@
   "validation.agent.briefing_days": "Choose at least one day of the week.",
   "validation.agent.briefing_time_zone": "Choose a known time zone.",
   "validation.agent_policy.risk_classes": "Choose risk classes from low, medium and high.",
-  "conflict.agent.briefing_not_offered": "This agent does not offer a daily briefing to you right now."
+  "conflict.agent.briefing_not_offered": "This agent does not offer a daily briefing to you right now.",
+  "conflict.agent_run.resumed_elsewhere": "This run was picked up again after an interruption. Open its result to see where it stands."
 }

@@ -6180,7 +6180,11 @@
       "linksAsText": "This answer mentions web addresses. They are shown as text and never opened, because they came from the AI. Check a link before you visit it.",
       "memoryTitle": "What your agents remember",
       "memoryIntro": "Agents you allowed to keep notes about you. Open one to read, edit or delete its notes.",
-      "memoryCount": "{count, plural, =0 {No notes yet} one {# note} other {# notes}}"
+      "memoryCount": "{count, plural, =0 {No notes yet} one {# note} other {# notes}}",
+      "step": "Using {tool}…",
+      "interrupted": "The connection dropped while the agent was working. It carries on and keeps the answer for you.",
+      "checkResult": "Check for the answer",
+      "stillWorking": "The agent is still working on this. Check again in a moment."
     },
     "card": {
       "title": "Confirm this action",

@@ -60,6 +60,7 @@ public sealed class WorkerProgram
         builder.Services.AddHostedService<TeamBeats.Modules.Search.SavedSearchWorker>();
         builder.Services.AddHostedService<AssistantRetentionService>();
         builder.Services.AddHostedService<AgentBriefingService>();
+        builder.Services.AddHostedService<AgentRunResumeService>();
         // Staging turns this off: its fake directory lives in the development host, which runs the sync itself.
         // "Sync now" requests are then handed to that host's scheduler instead of reaching for a directory this host lacks.
         if (builder.Configuration.GetValue("Workers:DirectorySync:Enabled", true))

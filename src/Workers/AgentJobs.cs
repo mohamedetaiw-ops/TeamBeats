@@ -36,3 +36,17 @@ public sealed class AgentBriefingService(IServiceScopeFactory scopes, ILogger<Pe
         }
     }
 }
+
+/// <summary>Agent runs a restart cut off (spec 020 T021): every minute, each tenant's stalled runs go on as their people.</summary>
+public sealed class AgentRunResumeService(IServiceScopeFactory scopes, ILogger<PerTenantRunner> logger) : BackgroundService
+{
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var runner = new PerTenantRunner(scopes, logger);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            await runner.RunAsync((sp, ct) => sp.GetRequiredService<AgentRunResumer>().ResumeStalledAsync(ct), stoppingToken);
+            await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+        }
+    }
+}
