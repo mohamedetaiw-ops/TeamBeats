@@ -396,3 +396,36 @@ ol.people-chart {
   font-size: var(--tb-font-size-sm);
   font-weight: var(--tb-font-weight-semibold);
 }
+
+/* Person part, chip form (DLS-113): avatar and name on one line. */
+.people-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  color: var(--tb-color-text-primary);
+}
+
+.people-chip .people-avatar {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  font-size: var(--tb-font-size-xs);
+}
+
+/* Quick actions sit at the end of a card, above the link that covers it. */
+.people-quick {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  gap: var(--tb-space-xs);
+  margin-inline-start: auto;
+}
+
+/* Directory as a list: one row per person, a line between rows. */
+.people-rows {
+  gap: 0;
+}
+
+.people-rows > li {
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}

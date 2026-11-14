@@ -97,7 +97,7 @@ Every TeamBeats screen is built from these components. They live in `src/Web/com
 | List rows | `.ui-rows`, `.ui-row` | Tasks and other actionable items: icon tile, title, meta, one action | Each row is a list item; the action names its item |
 | Plain table | `main table` | A short read-only table inside page text | Native table with header cells; rows highlight on hover |
 | Split view | `.ui-split` | A main column with a side column (Tasks and delegation) | The side column is an `aside` with a label; stacks below 64rem |
-| Person card | `people-cards` | People directory and team | Avatar with a steady tone, name link covers the card |
+| Person | `PersonItem` with `form` chip, row or card | People directory, team, any place a person is named | Chip: avatar and name. Row: adds title, unit and location. Card: the row in a frame with up to two quick actions (email, call) for channels the API gave. Avatar with a steady tone; the name link covers the card. The directory offers cards or a list |
 | Briefing hero | `home.briefing` | Top of the home: greeting, date, weather, next three things with actions | A section named by its heading; rows are an ordered list; where items came from is stated |
 | Your day | `home.your_day` | Tinted counts and today's agenda beside the briefing | A section named by its heading; the agenda is an ordered list; the connect line is a real link |
 | Arrange this page | `features/personalization/Personalization.tsx` | Edit icon in the shell bar next to settings that starts personalization; Done, Undo and Reset appear at the top of the page while arranging | A button named "Arrange this page" with `aria-pressed`; focus returns to it when arranging ends |
