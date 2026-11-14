@@ -178,6 +178,7 @@ public sealed class SavedSearchScheduler(IDbSession session, IOutbox outbox, ICl
     }
 }
 
+/// <summary>Search upkeep every 15 minutes per tenant: queues the saved searches due for their check, and prunes the query log past its retention.</summary>
 public sealed class SavedSearchWorker(IServiceScopeFactory scopes, ILogger<SavedSearchWorker> logger) : BackgroundService
 {
     /// <summary>The development host runs the worker in process when this is set, as staging has no separate workers.</summary>
@@ -215,6 +216,7 @@ public sealed class SavedSearchWorker(IServiceScopeFactory scopes, ILogger<Saved
                 accessor.SetTenant(tenant.Id);
                 accessor.SetActor(ActorType.System, null);
                 await scope.ServiceProvider.GetRequiredService<SavedSearchScheduler>().RunDueAsync(ct);
+                await scope.ServiceProvider.GetRequiredService<SearchQueryLog>().PruneAsync(ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)

@@ -30,6 +30,8 @@ public static class SearchModule
         services.AddScoped<FederatedSearch>();
         services.AddScoped<SearchSummariesService>();
         services.AddScoped<SavedSearches>();
+        services.AddScoped<SearchQueryLog>();
+        services.AddScoped<ISearchAnalyticsFeed>(sp => sp.GetRequiredService<SearchQueryLog>());
         services.AddScoped<SavedSearchScheduler>();
         services.AddMessageHandler<SavedSearchDue, SavedSearchChecker>("search.saved_search_check");
         services.AddScoped<SearchRetrieval>();
@@ -66,12 +68,30 @@ public static class SearchModule
     {
         var root = app.MapGroup("/api/v1/search").RequireTenantUser().WithTags("Search");
 
-        root.MapGet("", async (string? q, string? kind, DateTimeOffset? from, DateTimeOffset? to, int? page, SearchService search, IDbSession session,
-            CancellationToken ct) =>
+        root.MapGet("", async (string? q, string? kind, DateTimeOffset? from, DateTimeOffset? to, int? page, SearchService search, SearchQueryLog log,
+            IDbSession session, CancellationToken ct) =>
         {
             var results = await search.SearchAsync(q, kind, from, to, page, ct);
+            // The first page of a search is one event of the query log (FR-013), so the page can report the first click.
+            if (results.Page == 1)
+            {
+                results = results with { QueryId = await log.RecordAsync(results.Query, results.Total, ct) };
+            }
             await session.CommitAsync(ct); // The query event is queued through the outbox.
             return Results.Ok(results);
+        });
+        root.MapPost("/clicks", async (SearchClickRequest request, SearchQueryLog log, IDbSession session, CancellationToken ct) =>
+        {
+            await log.ClickAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        root.MapGet("/query-text", async (SearchQueryLog log, CancellationToken ct) => Results.Ok(await log.GetSettingAsync(ct)));
+        root.MapPut("/query-text", async (QueryTextRequest request, SearchQueryLog log, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await log.SetSettingAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         root.MapGet("/suggest", async (string? q, SearchService search, CancellationToken ct) => Results.Ok(await search.SuggestAsync(q, ct)));

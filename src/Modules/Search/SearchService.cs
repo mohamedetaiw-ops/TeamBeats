@@ -18,8 +18,9 @@ public sealed record SearchResult(Guid ItemId, string Source, string Kind, strin
 /// is true when semantic retrieval should have run and could not (FR-014). <see cref="Alternatives"/> holds services and
 /// people that match any word when nothing matched all of them (US1 scenario 5).
 /// </summary>
+/// <summary>A page of results. <paramref name="QueryId"/> names the first page in the query log, so the page can report the first click on a result.</summary>
 public sealed record SearchPage(string Query, int Total, bool More, int Page, int PageSize, IReadOnlyList<SearchResult> Results,
-    IReadOnlyDictionary<string, int> Facets, bool Degraded, IReadOnlyList<SearchResult> Alternatives);
+    IReadOnlyDictionary<string, int> Facets, bool Degraded, IReadOnlyList<SearchResult> Alternatives, Guid? QueryId = null);
 
 public sealed record Suggestion(Guid ItemId, string Source, string Kind, string Title, string Link);
 

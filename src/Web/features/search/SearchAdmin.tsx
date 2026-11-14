@@ -4,9 +4,10 @@ import { useEffect, useId, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { DataTable, type Column } from "@/components/ui/DataTable";
 import { Switch } from "@/components/ui/Switch";
 import { problemMessages } from "@/lib/notifications/types";
-import type { AiSummarySetting, BestBet, FederatedSource, Rebuild, RetrievalChange, RetrievalConfig, RetrievalSettings, Suggestion, SynonymSet } from "@/lib/search/types";
+import type { AiSummarySetting, BestBet, QueryTextSetting, FederatedSource, RankingScore, Rebuild, RetrievalChange, RetrievalConfig, RetrievalSettings, Suggestion, SynonymSet } from "@/lib/search/types";
 
 type Message = { error: boolean; text: string } | null;
 
@@ -326,6 +327,30 @@ function ChangeStatus({ change }: { change: RetrievalChange }) {
  * open change with its shadow index and release gate. A held change can be applied with a reason or cancelled; the
  * API decides what is allowed and says so in canApply and canCancel.
  */
+/** The judged query set scores the gate reported (US8): each metric per locale with the index in force and with the change. */
+function RankingScores({ scores }: { scores: RankingScore[] }) {
+  const t = useTranslations("search.admin");
+  const format = useFormatter();
+  if (scores.length === 0) return null;
+  const value = (n: number) => format.number(n, { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+  const columns: Column<RankingScore>[] = [
+    { key: "metric", header: t("retrieval.scores.metric"), rowHeader: true, cell: (s) => t(`retrieval.scores.${s.metric}`) },
+    { key: "locale", header: t("locale"), cell: (s) => t(`locales.${s.locale === "ar" ? "ar" : "en"}`) },
+    { key: "live", header: t("retrieval.scores.live"), align: "end", cell: (s) => value(s.live) },
+    { key: "proposed", header: t("retrieval.scores.proposed"), align: "end", cell: (s) => value(s.proposed) },
+    { key: "queries", header: t("retrieval.scores.queries"), align: "end", priority: "low", cell: (s) => format.number(s.queries) },
+  ];
+  return (
+    <DataTable
+      caption={t("retrieval.scores.caption")}
+      columns={columns}
+      rows={scores}
+      rowKey={(s) => `${s.metric}:${s.locale}`}
+      density="compact"
+    />
+  );
+}
+
 export function RetrievalSettingsPanel({ initial }: { initial: RetrievalConfig }) {
   const t = useTranslations("search.admin");
   const format = useFormatter();
@@ -376,6 +401,7 @@ export function RetrievalSettingsPanel({ initial }: { initial: RetrievalConfig }
           <SettingsList settings={open.settings} />
           <ChangeStatus change={open} />
           {open.shadowUnits !== null ? <p>{t("retrieval.shadowUnits", { units: open.shadowUnits })}</p> : null}
+          <RankingScores scores={open.scores} />
           {open.failures.length > 0 ? (
             <>
               <p>{t("retrieval.failures")}</p>
@@ -444,6 +470,7 @@ export function RetrievalSettingsPanel({ initial }: { initial: RetrievalConfig }
         </form>
       )}
       <Status message={message} />
+      {!open && initial.history[0]?.scores.length ? <RankingScores scores={initial.history[0].scores} /> : null}
       {initial.history.length > 0 ? (
         <>
           <h3>{t("retrieval.history")}</h3>
@@ -558,6 +585,44 @@ export function AiSummaryPanel({ initial }: { initial: AiSummarySetting }) {
         checked={enabled}
         onChange={(e) => void toggle(e.target.checked)}
       />
+      <Status message={message} />
+    </section>
+  );
+}
+
+/**
+ * Query text in the search query log (spec 012 FR-013): on by default, so the search dashboard can show what people
+ * look for. Turning it off keeps counts only and clears the words already kept.
+ */
+export function QueryTextPanel({ initial }: { initial: QueryTextSetting }) {
+  const t = useTranslations("search.admin");
+  const [enabled, setEnabled] = useState(initial.enabled);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<Message>(null);
+
+  async function change(value: boolean) {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const problem = await send("/api/v1/search/query-text", "PUT", { enabled: value });
+      if (problem) {
+        setMessage({ error: true, text: problem });
+      } else {
+        setEnabled(value);
+        setMessage({ error: false, text: t(value ? "queryText.on" : "queryText.off") });
+      }
+    } catch {
+      setMessage({ error: true, text: t("failed") });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section aria-labelledby="query-text-title">
+      <h2 id="query-text-title">{t("queryText.title")}</h2>
+      <p>{t("queryText.intro")}</p>
+      <Switch label={t("queryText.switch")} hint={t("queryText.hint")} checked={enabled} disabled={busy} onChange={(e) => void change(e.currentTarget.checked)} />
       <Status message={message} />
     </section>
   );

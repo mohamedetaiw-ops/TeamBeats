@@ -19,4 +19,4 @@ Depends on 004, 009, 010, 011, 013, 016, 025, 034. R1: US1 to US4. R2: US5 to US
 - [x] T013 [US5] Federated search contract and SharePoint source
 - [x] T014 [US6] AI summary with citations, off by default
 - [x] T015 [US7] Saved searches and daily alerts
-- [ ] T016 [US8] Judged query sets and search scorer in 034; analytics feed for 021
+- [x] T016 [US8] Judged query sets and search scorer in 034; analytics feed for 021

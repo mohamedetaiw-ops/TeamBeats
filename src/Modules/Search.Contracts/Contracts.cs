@@ -172,4 +172,32 @@ public sealed record RetrievalConfigChangeProposed(Guid ChangeId, int Version, G
 public interface IRetrievalEvaluation
 {
     Task<RetrievalResult> RetrieveProposedAsync(Guid changeId, string query, string useCase, CancellationToken ct = default);
+
+    /// <summary>
+    /// The ranking a judged query set scores (spec 012 US8, FR-020): the distinct items the person in context may read,
+    /// best first, from the same keyword and semantic fusion as retrieval, with no AI classification ceiling because
+    /// search results are not sent to a model. With <paramref name="changeId"/> it ranks over the change's shadow index
+    /// (a conflict once the change no longer waits for its gate); without it, over the index in force.
+    /// </summary>
+    Task<IReadOnlyList<RankedItem>> RankAsync(Guid? changeId, string query, int limit, CancellationToken ct = default);
 }
+
+/// <summary>One item of a ranking, best first.</summary>
+public sealed record RankedItem(string Source, Guid ItemId);
+
+/// <summary>
+/// The search query feed for the search dashboard of spec 021 (spec 012 FR-013, US8 scenario 2): searches, searches
+/// with no results and with a click in the period, and the top, zero result and no click queries. A query is listed
+/// only when at least five people searched for it, never when it looks like personal data, and not at all when the
+/// tenant turned query text off (<see cref="SearchQueryReport.QueryTextHidden"/>). The caller checks who may see it.
+/// </summary>
+public interface ISearchAnalyticsFeed
+{
+    Task<SearchQueryReport> ReportAsync(DateTimeOffset from, DateTimeOffset to, string? locale, CancellationToken ct = default);
+}
+
+public sealed record SearchQueryRow(string Query, int Searches, int People, int ZeroResults, int Clicks);
+
+public sealed record SearchQueryReport(int Searches, int ZeroResults, int Clicked, double ClickThrough, bool QueryTextHidden, IReadOnlyList<SearchQueryRow> TopQueries,
+    IReadOnlyList<SearchQueryRow> ZeroResultQueries, IReadOnlyList<SearchQueryRow> NoClickQueries);
+

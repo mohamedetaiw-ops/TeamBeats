@@ -41,6 +41,42 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
         return await RetrieveFromAsync(SearchIndexer.Shadow, open.Settings, request, ct);
     }
 
+    public const int MaxRanked = 50;
+
+    public async Task<IReadOnlyList<RankedItem>> RankAsync(Guid? changeId, string query, int limit, CancellationToken ct = default)
+    {
+        var request = new RetrievalRequest(query, AiUseCases.Assistant);
+        Validate(request);
+        var (table, settings) = (SearchIndexer.Live, await store.ActiveAsync(ct));
+        if (changeId is { } id)
+        {
+            if (await store.OpenAsync(ct) is not { Status: RetrievalChangeStatuses.Gating } open || open.Id != id)
+            {
+                throw AppException.Conflict("conflict.search.retrieval_change_not_gating");
+            }
+            (table, settings) = (SearchIndexer.Shadow, open.Settings);
+        }
+        await entitlements.DemandAsync(Capabilities.SearchCore, ct);
+        context.RequireUser();
+        var (ranked, _) = await RankedAsync(table, settings, request.Query.Trim(), null, new ItemFilter(null, null), ct);
+        var items = ranked.Select(r => (r.Passage.Source, r.Passage.ItemId)).Distinct().ToList();
+        var readable = await search.ReadableAsync(items, ct);
+        return [.. items.Where(readable.Contains).Take(Math.Clamp(limit, 1, MaxRanked)).Select(i => new RankedItem(i.Source, i.ItemId))];
+    }
+
+    /// <summary>Keyword and semantic passages fused by reciprocal rank, best first, before any permission or per item limit.</summary>
+    private async Task<(List<(Passage Passage, double Score)> Ranked, bool Degraded)> RankedAsync(string table, RetrievalSettings settings, string query,
+        IReadOnlyList<string>? kinds, ItemFilter item, CancellationToken ct)
+    {
+        var terms = SearchText.Meaningful(SearchText.Terms(query));
+        var groups = await search.GroupsAsync(terms, SearchText.QueryLanguage(query), ct);
+        var keyword = terms.Count == 0 ? [] : await KeywordAsync(table, SearchText.TsQuery(groups, all: false), kinds, item, ct);
+        var (semantic, degraded) = await SemanticAsync(table, settings.EmbeddingModel, query, kinds, item, ct);
+        var byId = keyword.Concat(semantic).GroupBy(p => p.Id).ToDictionary(g => g.Key, g => g.First());
+        var scores = SearchText.Fuse([[.. keyword.Select(p => p.Id)], [.. semantic.Select(p => p.Id)]]);
+        return (scores.OrderByDescending(s => s.Value).ThenBy(s => s.Key).Select(s => (Passage: byId[s.Key], Score: s.Value)).ToList(), degraded);
+    }
+
     private static void Validate(RetrievalRequest request)
     {
         var errors = new ValidationErrors();
@@ -76,16 +112,9 @@ public sealed class SearchRetrieval(IDbSession session, ITenantContext context, 
         var topK = request.TopK ?? settings.TopK;
         var ceiling = await classification.CeilingAsync(request.UseCase, ct);
 
-        var terms = SearchText.Meaningful(SearchText.Terms(query));
-        var groups = await search.GroupsAsync(terms, SearchText.QueryLanguage(query), ct);
         var item = new ItemFilter(request.Source, request.ItemId);
-        var keyword = terms.Count == 0 ? [] : await KeywordAsync(table, SearchText.TsQuery(groups, all: false), request.Kinds, item, ct);
-        var (semantic, degraded) = await SemanticAsync(table, settings.EmbeddingModel, query, request.Kinds, item, ct);
+        var (ranked, degraded) = await RankedAsync(table, settings, query, request.Kinds, item, ct);
         var perItemCap = request.ItemId is null ? PerItem : topK;
-
-        var byId = keyword.Concat(semantic).GroupBy(p => p.Id).ToDictionary(g => g.Key, g => g.First());
-        var scores = SearchText.Fuse([[.. keyword.Select(p => p.Id)], [.. semantic.Select(p => p.Id)]]);
-        var ranked = scores.OrderByDescending(s => s.Value).ThenBy(s => s.Key).Select(s => (Passage: byId[s.Key], Score: s.Value)).ToList();
         var readable = await search.ReadableAsync(ranked.Select(r => (r.Passage.Source, r.Passage.ItemId)), ct);
 
         var passages = new List<RetrievedPassage>();

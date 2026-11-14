@@ -83,7 +83,7 @@ public sealed class DatasetService(IDbSession session, ITenantContext context, E
 
     private async Task<(Guid Agent, Guid Unit, int Version, Dictionary<string, string> Names)> LoadAsync(Guid id, CancellationToken ct)
     {
-        var rows = await session.QueryAsync("select agent_id, org_unit_id, current_version, names::text from evaluation.dataset where id = @id", new { id },
+        var rows = await session.QueryAsync("select agent_id, org_unit_id, current_version, names::text from evaluation.dataset where id = @id and kind = 'agent'", new { id },
             r => (r.GetGuid(0), r.GetGuid(1), r.GetInt32(2), JsonSerializer.Deserialize<Dictionary<string, string>>(r.GetString(3))!), ct);
         return rows.Count == 0 ? throw AppException.NotFound() : rows[0];
     }

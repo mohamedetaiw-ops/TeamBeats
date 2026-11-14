@@ -21,6 +21,7 @@ public static class AnalyticsModule
     {
         services.AddScoped<AnalyticsPolicies>();
         services.AddScoped<Pseudonyms>();
+        services.AddScoped<IAnalyticsPseudonyms>(sp => sp.GetRequiredService<Pseudonyms>());
         services.AddScoped<AnalyticsWriter>();
         services.AddScoped<AnalyticsCollector>();
         services.AddScoped<AnalyticsAggregator>();

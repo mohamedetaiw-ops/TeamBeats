@@ -26,6 +26,7 @@ public static class MetricCatalog
         new("recall_at_5", EvalMethods.Deterministic, true, 0.85, EvalSeverities.Blocking),
         new("precision_at_5", EvalMethods.Deterministic, true, null, null),
         new("reciprocal_rank", EvalMethods.Deterministic, true, null, null),
+        new("ndcg_at_10", EvalMethods.Deterministic, true, null, null),
         new("forbidden_source_rate", EvalMethods.Deterministic, false, 0, EvalSeverities.Critical),
         new("refusal_correctness", EvalMethods.Deterministic, true, null, null),
         new("unauthorized_disclosures", EvalMethods.Deterministic, false, 0, EvalSeverities.Critical),
@@ -186,7 +187,11 @@ public static class ThresholdRules
 }
 
 /// <summary>A source a case expects to see, or must never see (US2 scenario 1).</summary>
-public sealed record ExpectedSource(string? Source, Guid? ItemId);
+/// <summary>
+/// A source a case expects or forbids. <paramref name="Grade"/> is how relevant it is for a judged search query (spec 012
+/// US8): 1 relevant, 2 very relevant, 3 the best answer; NDCG at 10 weighs by it, and an agent case leaves it empty (1).
+/// </summary>
+public sealed record ExpectedSource(string? Source, Guid? ItemId, int? Grade = null);
 
 public sealed record ExpectedTool(string? Tool, Dictionary<string, JsonElement>? Parameters);
 
@@ -315,7 +320,8 @@ public static partial class CaseRules
         {
             return;
         }
-        if (sources.Count > MaxList || sources.Any(s => s is null || string.IsNullOrWhiteSpace(s.Source) || s.Source.Length > 40 || s.ItemId is null))
+        if (sources.Count > MaxList || sources.Any(s => s is null || string.IsNullOrWhiteSpace(s.Source) || s.Source.Length > 40 || s.ItemId is null
+            || s.Grade is < 1 or > 3))
         {
             errors.Add(at, "validation.eval.case_sources");
         }

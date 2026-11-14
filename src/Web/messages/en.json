@@ -5124,6 +5124,15 @@
           "failed": "The gate found blocking failures.",
           "incomplete": "The gate could not complete.",
           "failed_critical": "The gate found a critical failure."
+        },
+        "scores": {
+          "caption": "Judged query set scores",
+          "metric": "Metric",
+          "live": "In force",
+          "proposed": "With the change",
+          "queries": "Queries",
+          "precision_at_5": "Precision at 5",
+          "ndcg_at_10": "NDCG at 10"
         }
       },
       "federated": {
@@ -5144,6 +5153,63 @@
         "switch": "Show AI summaries",
         "on": "AI summaries are now shown above results.",
         "off": "AI summaries are no longer shown."
+      },
+      "judged": {
+        "title": "Judged query sets",
+        "intro": "Queries with the results that should rank high. Each change to retrieval is scored on them before it applies, and a drop in ranking holds the change.",
+        "caption": "Judged query sets",
+        "name": "Name",
+        "unit": "Runs as an employee of",
+        "unitHint": "Queries run with the permissions of an employee in this unit.",
+        "unknownUnit": "Unit not found",
+        "queries": "Queries",
+        "version": "Version",
+        "emptyTitle": "No judged query sets yet",
+        "empty": "Create a set, then add queries and grade the results they should find.",
+        "create": "New judged query set",
+        "createAction": "Create set",
+        "created": "Set created. Add queries below.",
+        "noUnitsTitle": "Units are not available",
+        "noUnits": "You need to see the organization to choose the unit a set runs in.",
+        "editing": "{name}, version {version}",
+        "queriesCaption": "Queries in this set",
+        "query": "Query",
+        "locale": "Language",
+        "locales": {
+          "en": "English",
+          "ar": "Arabic"
+        },
+        "judged": "Graded results",
+        "actions": "Actions",
+        "remove": "Remove",
+        "removeQuery": "Remove the query {query}",
+        "noQueriesTitle": "No queries yet",
+        "noQueries": "Add a query and grade the results it should find.",
+        "addQuery": "Add a query",
+        "find": "Find results",
+        "results": "Results to grade",
+        "gradeFor": "Grade for {title}",
+        "grades": {
+          "0": "Not relevant",
+          "1": "Relevant",
+          "2": "Very relevant",
+          "3": "Best answer"
+        },
+        "noResultsTitle": "Nothing found",
+        "noResults": "Try other words. A query needs at least one graded result.",
+        "keepQuery": "Keep this query",
+        "save": "Save set",
+        "saved": "Saved as version {version}.",
+        "busy": "Working",
+        "failed": "That did not work. Try again."
+      },
+      "queryText": {
+        "title": "Search words in analytics",
+        "intro": "The search dashboard shows what people look for, only for words five or more people used. Searches that look like an email address or a phone or ID number never keep their words.",
+        "switch": "Keep the words people search for",
+        "hint": "Turned off, the dashboard shows counts only and the words already kept are cleared.",
+        "on": "Search words are kept for the dashboard.",
+        "off": "Search words are no longer kept, and the words kept before are cleared."
       }
     },
     "federated": {
@@ -5850,6 +5916,7 @@
       "recall_at_5": "Recall at 5",
       "precision_at_5": "Precision at 5",
       "reciprocal_rank": "Reciprocal rank",
+      "ndcg_at_10": "NDCG at 10",
       "forbidden_source_rate": "Forbidden sources used",
       "refusal_correctness": "Refusal correctness",
       "unauthorized_disclosures": "Unauthorized disclosures",
