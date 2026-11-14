@@ -229,6 +229,13 @@
   color: var(--tb-color-text-secondary);
 }
 
+/* The tabs are 44px on a touch screen or a phone in every design (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  :root[data-design="studio"] .ui-section-nav a {
+    min-block-size: 2.75rem;
+  }
+}
+
 :root[data-design="studio"] .ui-section-nav a:where(:hover) {
   background: transparent;
   color: var(--tb-color-text-primary);
