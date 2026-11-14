@@ -63,8 +63,9 @@ export default function YourDay({ props }: PlacementProps) {
     };
   }, []);
 
-  const shell = (body: ReactNode, busy = false) => (
-    <Widget title={title} busy={busy} testId="home-your-day" action={<Link href="/tasks">{t("inbox")}</Link>}>
+  const shell = (body: ReactNode, busy = false, meetingsToday = 0) => (
+    <Widget title={title} busy={busy} testId="home-your-day" action={<Link href="/tasks">{t("inbox")}</Link>}
+      more={{ href: "/calendar", total: meetingsToday, shown: agenda }}>
       {body}
     </Widget>
   );
@@ -152,5 +153,7 @@ export default function YourDay({ props }: PlacementProps) {
         </ul>
       )}
     </>,
+    false,
+    meetings.length,
   );
 }

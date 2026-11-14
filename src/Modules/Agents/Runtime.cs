@@ -289,6 +289,39 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         return await StartAsync(run, user, prompt, new RunRequest(prompt, language), null, ct);
     }
 
+    /// <summary>
+    /// A daily briefing (020 US8 scenario 2, 027 AGV-003): the agent's briefing question, run now as the signed-in
+    /// subscriber with their current permissions, read only. Null when it must not run: the agent is not published or
+    /// no longer offers briefings, the person left its audience, the tenant policy does not allow scheduled agents of its
+    /// risk class, or agents are switched off.
+    /// </summary>
+    internal async Task<RunView?> BriefingAsync(Guid agentId, string language, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        if (!await entitlements.IsEnabledAsync(Capabilities.AiAgentsBasic, ct))
+        {
+            return null;
+        }
+        var row = await AgentRowAsync(agentId, ct);
+        if (row is not { } agent || agent.Current is not { } version || agent.Status != AgentStatuses.Published ||
+            await session.ScalarAsync<bool?>("select active from agents.kill_switch", null, ct) == true)
+        {
+            return null;
+        }
+        var definition = await VersionAsync(agentId, version, ct);
+        var policy = (await policies.CurrentAsync(ct)).Policy;
+        var risk = await session.ScalarAsync<string>("select risk_class from agents.agent_version where agent_id = @agentId and number = @version", new { agentId, version }, ct);
+        if (!AgentBriefings.Allowed(definition, policy, risk) || !await InAudienceAsync(agentId, definition.Audience, user, ct))
+        {
+            return null;
+        }
+        var languages = definition.Languages ?? ["en"];
+        language = languages.Contains(language) ? language : languages[0];
+        var prompt = definition.Briefing!.Prompt?.GetValueOrDefault(language) ?? definition.Briefing.Prompt?.Values.FirstOrDefault() ?? string.Empty;
+        var run = new RunAgent(agentId, version, agent.Unit, definition, "briefing", policy);
+        return await StartAsync(run, user, prompt, new RunRequest(prompt, language), null, ct);
+    }
+
     /// <summary>The test panel (020 US1 scenario 4): the latest version, as the designer, with no write action executed.</summary>
     public async Task<RunView> TestAsync(Guid agentId, RunRequest request, CancellationToken ct)
     {

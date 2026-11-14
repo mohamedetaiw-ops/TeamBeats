@@ -69,6 +69,39 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expectAccessible(page, testInfo, `home-v2-${locale}`);
       await page.screenshot({ path: testInfo.outputPath(`home-v2-${locale}.png`), fullPage: true });
     });
+
+    test("with 30 tasks and 20 meetings the home stays inside its content budget", async ({ page }) => {
+      // Spec 036 DLS-101 and DLS-118: the high-volume scenario. The viewer's own sources answer with a busy day; the
+      // home must not grow with them.
+      const at = (minutes: number) => new Date(Date.now() + minutes * 60_000).toISOString();
+      const tasks = Array.from({ length: 30 }, (_, i) => ({
+        taskId: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`, source: "service_request", name: `Request ${i + 1}`, step: null,
+        requestId: null, number: null, serviceId: null, serviceNames: null, requester: null, requestedFor: null, onBehalfOf: null,
+        createdAt: at(-60 * (i + 1)), dueAt: at(i % 2 === 0 ? -30 : 600), title: { en: `Request ${i + 1}`, ar: `طلب ${i + 1}` }, link: "/tasks",
+      }));
+      const meetings = Array.from({ length: 20 }, (_, i) => ({
+        id: `m${i}`, subject: `Meeting ${i + 1}`, start: at(10 + i * 20), end: at(25 + i * 20), isAllDay: false, isPrivate: false,
+        location: null, webLink: "https://outlook.office.com/calendar/fake", source: "outlook",
+      }));
+      await page.route("**/api/v1/tasks", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(tasks) }));
+      await page.route("**/api/v1/me/calendar?*", (route) => route.fulfill({
+        status: 200, contentType: "application/json",
+        body: JSON.stringify({ state: "ok", asOf: at(0), timeZone: "Asia/Dubai", from: at(-60), to: at(1440), items: meetings }),
+      }));
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/`);
+      const day = page.getByTestId("home-your-day");
+      const budget = Number(await day.getAttribute("data-budget"));
+      // The agenda shows at most the budget of its region and ends in View all with the total.
+      await expect(day.locator(".ui-cal-agenda > li")).toHaveCount(Math.min(budget, 4));
+      await expect(day.locator("[data-widget-more]")).toContainText(/20|٢٠/);
+      await expect(page.getByTestId("home-briefing").locator(".home-briefing-row")).toHaveCount(3);
+      for (const [size, viewports] of [[{ width: 1440, height: 900 }, 2.5], [{ width: 390, height: 844 }, 6]] as const) {
+        await page.setViewportSize(size);
+        const height = await page.evaluate(() => document.documentElement.scrollHeight);
+        expect(height, `home height at ${size.width}px`).toBeLessThanOrEqual(size.height * viewports);
+      }
+    });
   });
 }
 
