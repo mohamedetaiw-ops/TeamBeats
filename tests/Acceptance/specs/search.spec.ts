@@ -10,7 +10,8 @@ import { hostOrigin } from "../support/stack";
  * source, marks a best bet as recommended and offers no result help, in English and Arabic with axe; the search
  * administrator manages best bets and synonyms from the admin area, and proposes a retrieval change that the release
  * gate holds (no agent has retrieval cases yet) and applies it with a reason (T007). A person saves a search with its
- * daily alert and turns the alert off or removes it from their saved searches (T015).
+ * daily alert and turns the alert off or removes it from their saved searches (T015). The search administrator builds a
+ * judged query set from graded results (T016).
  */
 const body = (text: string) => ({ blocks: [{ type: "paragraph", children: [{ text }] }] });
 
@@ -40,6 +41,11 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect
         .poll(async () => ((await (await api.get("/api/v1/search?q=shuttle")).json()) as { total: number }).total, { timeout: 30_000 })
         .toBe(1);
+      // A unit for judged query sets to run in (T016).
+      const unit = await api.post("/api/v1/org/units", {
+        data: { parentId: null, typeKey: "department", code: "OPS", names: { en: "Operations", ar: "العمليات" } },
+      });
+      expect(unit.ok(), await unit.text()).toBe(true);
       const bet = await api.post("/api/v1/search/best-bets", { data: { query: "bus", source: "content", itemId: shuttle } });
       expect(bet.status(), await bet.text()).toBe(201);
       await api.dispose();
@@ -196,6 +202,27 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await list.getByRole("button", { name: msg(locale, "search.saved.removeLabel", { query: "canteen" }) }).click();
       await expect(list.getByRole("status").filter({ hasText: msg(locale, "search.saved.removed", { query: "canteen" }) })).toBeVisible();
       await expect(list.getByText(msg(locale, "search.saved.emptyTitle"))).toBeVisible();
+    });
+
+    test("the search administrator builds a judged query set from graded results", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/search`);
+      const panel = page.getByRole("region", { name: msg(locale, "search.admin.judged.title") });
+      await panel.getByLabel(msg(locale, "search.admin.judged.name"), { exact: true }).fill(`Commute searches ${locale}`);
+      await panel.getByRole("button", { name: msg(locale, "search.admin.judged.createAction") }).click();
+      await expect(panel.getByRole("status").filter({ hasText: msg(locale, "search.admin.judged.created") })).toBeVisible();
+
+      const editor = page.getByTestId("judged-set-editor");
+      await editor.getByLabel(msg(locale, "search.admin.judged.query"), { exact: true }).fill("shuttle");
+      await editor.getByRole("button", { name: msg(locale, "search.admin.judged.find") }).click();
+      const results = editor.getByRole("list", { name: msg(locale, "search.admin.judged.results") });
+      const grade = results.getByRole("combobox").first();
+      await grade.selectOption("3");
+      await expectAccessible(page, testInfo, `judged-sets-${locale}`);
+      await editor.getByRole("button", { name: msg(locale, "search.admin.judged.keepQuery") }).click();
+      await expect(editor.getByRole("cell", { name: "shuttle" })).toBeVisible();
+      await editor.getByRole("button", { name: msg(locale, "search.admin.judged.save") }).click();
+      await expect(panel.getByRole("status").filter({ hasText: msg(locale, "search.admin.judged.saved", { version: 1 }) })).toBeVisible();
     });
 
     test("the search administrator adds and removes synonyms", async ({ page }, testInfo) => {

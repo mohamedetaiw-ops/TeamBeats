@@ -53,5 +53,11 @@ public sealed record CalibrationRequested(Guid CalibrationId) : TeamBeats.Primit
 /// The release gate decided a proposed retrieval configuration (spec 034 US5 scenario 5, spec 012 FR-008): the
 /// retrieval cases of the published agents ran against the shadow index. <paramref name="Result"/> is passed, failed
 /// (blocking failures only), incomplete or failed_critical; <paramref name="Failures"/> names them as "retrieval/metric:locale".
+/// <paramref name="Scores"/> holds the judged query set scores (spec 012 US8): precision at 5 and NDCG at 10 per locale,
+/// over the configuration in force and the proposed one.
 /// </summary>
-public sealed record EvaluationRetrievalGateDecided(Guid ChangeId, string Result, IReadOnlyList<string> Failures) : TeamBeats.Primitives.IIntegrationEvent;
+public sealed record EvaluationRetrievalGateDecided(Guid ChangeId, string Result, IReadOnlyList<string> Failures, IReadOnlyList<RankingScore>? Scores = null)
+    : TeamBeats.Primitives.IIntegrationEvent;
+
+/// <summary>A judged query set metric in one locale: the mean over <paramref name="Queries"/> queries, with the index in force and with the change.</summary>
+public sealed record RankingScore(string Metric, string Locale, double Live, double Proposed, int Queries);

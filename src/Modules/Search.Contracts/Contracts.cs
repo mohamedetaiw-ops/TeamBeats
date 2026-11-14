@@ -172,4 +172,15 @@ public sealed record RetrievalConfigChangeProposed(Guid ChangeId, int Version, G
 public interface IRetrievalEvaluation
 {
     Task<RetrievalResult> RetrieveProposedAsync(Guid changeId, string query, string useCase, CancellationToken ct = default);
+
+    /// <summary>
+    /// The ranking a judged query set scores (spec 012 US8, FR-020): the distinct items the person in context may read,
+    /// best first, from the same keyword and semantic fusion as retrieval, with no AI classification ceiling because
+    /// search results are not sent to a model. With <paramref name="changeId"/> it ranks over the change's shadow index
+    /// (a conflict once the change no longer waits for its gate); without it, over the index in force.
+    /// </summary>
+    Task<IReadOnlyList<RankedItem>> RankAsync(Guid? changeId, string query, int limit, CancellationToken ct = default);
 }
+
+/// <summary>One item of a ranking, best first.</summary>
+public sealed record RankedItem(string Source, Guid ItemId);

@@ -74,6 +74,19 @@ public static partial class CaseEvaluators
             || EscalationPhrases.Any(p => text.Contains(p, StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// Normalized discounted cumulative gain at <paramref name="k"/> with graded relevance (gain 2^grade - 1, a missing
+    /// grade counts as 1): the ranking's gain over the gain of the ideal ranking of the expected sources.
+    /// </summary>
+    internal static double Ndcg(IReadOnlyList<ExpectedSource> expected, IReadOnlyList<EvalRunSource> ranked, int k)
+    {
+        static double Gain(int grade) => Math.Pow(2, grade) - 1;
+        static double Discount(int i) => Math.Log2(i + 2);
+        var dcg = ranked.Take(k).Select((r, i) => expected.FirstOrDefault(e => Matches(e, r)) is { } hit ? Gain(hit.Grade ?? 1) / Discount(i) : 0).Sum();
+        var ideal = expected.Select(e => e.Grade ?? 1).OrderDescending().Take(k).Select((g, i) => Gain(g) / Discount(i)).Sum();
+        return ideal == 0 ? 0 : dcg / ideal;
+    }
+
     private static bool Matches(ExpectedSource expected, EvalRunSource actual) =>
         (expected.Source is null || string.Equals(expected.Source, actual.Source, StringComparison.Ordinal)) && (expected.ItemId is null || expected.ItemId == actual.ItemId);
 
@@ -164,6 +177,7 @@ public static partial class CaseEvaluators
                     : Score(read.Take(5).Count() is var top and > 0 ? read.Take(5).Count(r => expectedSources.Any(e => Matches(e, r))) / (double)top : 0),
                 "reciprocal_rank" => expectedSources.Count == 0 ? null
                     : Score(read.Select((r, i) => (r, i)).FirstOrDefault(x => expectedSources.Any(e => Matches(e, x.r))) is { r: not null } hit ? 1.0 / (hit.i + 1) : 0),
+                "ndcg_at_10" => expectedSources.Count == 0 ? null : Score(Ndcg(expectedSources, read, 10)),
                 "forbidden_source_rate" => Fail(read.Any(r => forbidden.Any(f => Matches(f, r)))),
                 "refusal_correctness" => refusalSet || answered ? Pass(refusalOk) : null,
                 "unauthorized_disclosures" => Fail(cited.Any(c => forbidden.Any(f => Matches(f, c)))),

@@ -28,6 +28,7 @@ public static class EvaluationModule
         services.AddScoped<EvalSettingsService>();
         services.AddScoped<SuiteService>();
         services.AddScoped<DatasetService>();
+        services.AddScoped<SearchJudgedSets>();
         services.AddScoped<PersonaService>();
         services.AddScoped<RunService>();
         services.AddScoped<RunStore>();
@@ -98,6 +99,22 @@ public static class EvaluationModule
         root.MapPost("/datasets/{id:guid}/imports/{importId:guid}/confirm", async (Guid id, Guid importId, DatasetService datasets, IDbSession session, CancellationToken ct) =>
         {
             var view = await datasets.ConfirmImportAsync(id, importId, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // Judged query sets for search ranking (spec 012 US8), managed by search administrators.
+        root.MapGet("/search-sets", async (SearchJudgedSets sets, CancellationToken ct) => Results.Ok(await sets.ListAsync(ct)));
+        root.MapPost("/search-sets", async (JudgedSetCreateRequest request, SearchJudgedSets sets, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await sets.CreateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/evaluation/search-sets/{view.Id}", view);
+        });
+        root.MapGet("/search-sets/{id:guid}", async (Guid id, SearchJudgedSets sets, CancellationToken ct) => Results.Ok(await sets.GetAsync(id, ct)));
+        root.MapPut("/search-sets/{id:guid}/queries", async (Guid id, JudgedSetQueriesRequest request, SearchJudgedSets sets, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await sets.SaveQueriesAsync(id, request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });

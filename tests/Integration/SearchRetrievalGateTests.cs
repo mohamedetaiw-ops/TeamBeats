@@ -297,4 +297,90 @@ public sealed class SearchRetrievalGateTests(TenantWorld world)
         Assert.Equal("cancelled", final.GetProperty("history")[0].GetProperty("status").GetString());
         Assert.Equal(0, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from search.shadow_unit"));
     }
+
+    /// <summary>Spec 012 T016 (US8, FR-020): a judged query set of the tenant, with one query that should find the item first.</summary>
+    private static async Task<Guid> JudgedSetAsync(TestTenant t, Guid item)
+    {
+        var set = (await OkAsync(t["admin"].Client.PostAsJsonAsync($"{Eval}/search-sets", new { names = new { en = "Safety searches" }, orgUnitId = t.Unit("Hr") }),
+            HttpStatusCode.Created)).GetProperty("id").GetGuid();
+        var saved = await OkAsync(t["admin"].Client.PutAsJsonAsync($"{Eval}/search-sets/{set}/queries", new
+        {
+            version = 0,
+            queries = new[]
+            {
+                new { query = "forklift brakes", locale = "en", judgments = new[] { new { source = "content", itemId = item, grade = 3 } } },
+                new { query = "forklift tyres", locale = "en", judgments = new[] { new { source = "content", itemId = item, grade = 2 } } },
+            },
+        }));
+        Assert.Equal(1, saved.GetProperty("version").GetInt32());
+        Assert.Equal(3, saved.GetProperty("queries")[0].GetProperty("judgments")[0].GetProperty("grade").GetInt32());
+        return set;
+    }
+
+    [Fact]
+    public async Task Judged_query_sets_are_scored_in_the_gate_and_a_ranking_regression_blocks_the_change()
+    {
+        var t = await FreshAsync();
+        var other = await FreshAsync();
+        var item = await NewsAsync(t["pia"].Client, "Forklift inspection checklist", Checklist);
+        await DispatchAsync();
+
+        // Only search administrators manage judged sets; grades run from 1 to 3; another tenant does not see them.
+        await OkAsync(t["emp"].Client.GetAsync($"{Eval}/search-sets"), HttpStatusCode.Forbidden);
+        await OkAsync(t["emp"].Client.PostAsJsonAsync($"{Eval}/search-sets", new { names = new { en = "Mine" }, orgUnitId = t.Unit("Hr") }), HttpStatusCode.Forbidden);
+        var set = await JudgedSetAsync(t, item);
+        Assert.Equal("validation.eval.judgments", await ProblemKeyAsync(t["admin"].Client.PutAsJsonAsync($"{Eval}/search-sets/{set}/queries", new
+        {
+            version = 1,
+            queries = new[] { new { query = "forklift", locale = "en", judgments = new[] { new { source = "content", itemId = item, grade = 4 } } } },
+        }), HttpStatusCode.BadRequest));
+        Assert.Equal("conflict.eval.dataset_version", await ProblemKeyAsync(t["admin"].Client.PutAsJsonAsync($"{Eval}/search-sets/{set}/queries",
+            new { version = 0, queries = Array.Empty<object>() }), HttpStatusCode.Conflict));
+        Assert.Single((await OkAsync(t["admin"].Client.GetAsync($"{Eval}/search-sets"))).EnumerateArray());
+        Assert.Empty((await OkAsync(other["admin"].Client.GetAsync($"{Eval}/search-sets"))).EnumerateArray());
+        await OkAsync(other["admin"].Client.GetAsync($"{Eval}/search-sets/{set}"), HttpStatusCode.NotFound);
+        // A judged set is not an agent dataset.
+        await OkAsync(t["admin"].Client.GetAsync($"{Eval}/datasets/{set}"), HttpStatusCode.NotFound);
+
+        // With no agent case, the judged set alone is the gate: both rankings find the checklist first, so it passes with scores.
+        await OkAsync(t["admin"].Client.PostAsJsonAsync(Config, new { passageTokens = 100 }), HttpStatusCode.Accepted);
+        await DispatchAsync();
+        var passed = (await OkAsync(t["admin"].Client.GetAsync(Config))).GetProperty("history")[0];
+        Assert.Equal("passed", passed.GetProperty("gateResult").GetString());
+        var scores = passed.GetProperty("scores").EnumerateArray().ToList();
+        Assert.Equal(2, scores.Count);
+        var ndcg = Assert.Single(scores, s => s.GetProperty("metric").GetString() == "ndcg_at_10");
+        Assert.Equal("en", ndcg.GetProperty("locale").GetString());
+        Assert.Equal(2, ndcg.GetProperty("queries").GetInt32());
+        Assert.Equal(1, ndcg.GetProperty("live").GetDouble());
+        Assert.Equal(1, ndcg.GetProperty("proposed").GetDouble());
+        // The queries ran as the default persona of the set's unit.
+        Assert.Equal(2, await world.Database.TenantScalarAsync<long>(t.Id,
+            """
+            select count(*) from evaluation.case_result c join evaluation.persona p on p.id = c.persona_id
+            where c.suite_key = 'search_ranking' and p.is_default and p.org_unit_id = @unit
+            """, ("unit", t.Unit("Hr"))));
+
+        // A change whose shadow index loses the checklist ranks it nowhere: NDCG falls from 1 to 0 and the change is held.
+        var id = (await OkAsync(t["admin"].Client.PostAsJsonAsync(Config, new { passageTokens = 200 }), HttpStatusCode.Accepted))
+            .GetProperty("open").GetProperty("id").GetGuid();
+        await world.Factory.InScopeAsync(t.Id, async sp =>
+        {
+            await sp.GetRequiredService<TeamBeats.Modules.Search.RetrievalShadowBuilder>().HandleAsync(new RetrievalShadowBuildRequested(id), CancellationToken.None);
+            await sp.GetRequiredService<TeamBeats.Persistence.IDbSession>().CommitAsync();
+            return true;
+        });
+        Assert.True(await world.Database.TenantScalarAsync<long>(t.Id,
+            "with gone as (delete from search.shadow_unit where item_id = @item returning 1) select count(*) from gone", ("item", item)) > 0);
+        await DispatchAsync();
+        var held = (await OkAsync(t["admin"].Client.GetAsync(Config))).GetProperty("open");
+        Assert.Equal("held", held.GetProperty("status").GetString());
+        Assert.Equal("failed", held.GetProperty("gateResult").GetString());
+        Assert.Contains("search_ranking/ndcg_at_10:en", held.GetProperty("failures").EnumerateArray().Select(f => f.GetString()));
+        Assert.Contains("search_ranking/precision_at_5:en", held.GetProperty("failures").EnumerateArray().Select(f => f.GetString()));
+        var fallen = Assert.Single(held.GetProperty("scores").EnumerateArray(), s => s.GetProperty("metric").GetString() == "ndcg_at_10");
+        Assert.Equal(1, fallen.GetProperty("live").GetDouble());
+        Assert.Equal(0, fallen.GetProperty("proposed").GetDouble());
+        Assert.True(held.GetProperty("canApply").GetBoolean());
+    }
 }

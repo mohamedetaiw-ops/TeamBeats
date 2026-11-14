@@ -22637,6 +22637,94 @@
         }
       }
     },
+    "/api/v1/evaluation/search-sets": {
+      "get": {
+        "tags": [
+          "Evaluation"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Evaluation"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JudgedSetCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/evaluation/search-sets/{id}": {
+      "get": {
+        "tags": [
+          "Evaluation"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/evaluation/search-sets/{id}/queries": {
+      "put": {
+        "tags": [
+          "Evaluation"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JudgedSetQueriesRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/evaluation/personas": {
       "get": {
         "tags": [
@@ -30931,6 +31019,15 @@
               "string"
             ],
             "format": "uuid"
+          },
+          "grade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -32892,6 +32989,121 @@
         }
       },
       "JsonElement": {},
+      "JudgedQueryInput": {
+        "required": [
+          "query",
+          "locale",
+          "judgments"
+        ],
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "locale": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "judgments": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Judgment"
+            }
+          }
+        }
+      },
+      "JudgedSetCreateRequest": {
+        "required": [
+          "names",
+          "orgUnitId"
+        ],
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "orgUnitId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          }
+        }
+      },
+      "JudgedSetQueriesRequest": {
+        "required": [
+          "version",
+          "queries"
+        ],
+        "type": "object",
+        "properties": {
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "queries": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/JudgedQueryInput"
+            }
+          }
+        }
+      },
+      "Judgment": {
+        "required": [
+          "source",
+          "itemId",
+          "grade"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "itemId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "grade": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "KeywordFilterRequest": {
         "required": [
           "keywords"

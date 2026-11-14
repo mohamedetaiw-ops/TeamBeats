@@ -253,3 +253,24 @@
   display: grid;
   gap: var(--tb-space-sm);
 }
+
+/* Judged query sets (US8): the results found for a query, each with its grade. */
+.search-judged {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.search-judged-results {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding-inline-start: var(--tb-space-lg);
+}
+
+.search-judged-results label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  align-items: center;
+  justify-content: space-between;
+}

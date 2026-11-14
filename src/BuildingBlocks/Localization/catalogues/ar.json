@@ -658,6 +658,8 @@
   "validation.eval.case_locale": "اختر العربية أو الإنجليزية.",
   "validation.eval.case_persona": "اختر شخصية اختبار موجودة في مؤسستك.",
   "validation.eval.case_sources": "يحتاج كل مصدر إلى نوع ومعرف عنصر، وبحد أقصى 20.",
+  "validation.eval.judged_query": "أدخل عبارة بحث لا تتجاوز 200 حرف.",
+  "validation.eval.judgments": "قيّم نتيجة واحدة على الأقل و20 نتيجة على الأكثر، كل منها مرة واحدة، من 1 إلى 3.",
   "validation.eval.case_tags": "تستخدم الوسوم أحرفا صغيرة وأرقاما وشرطات، حتى 40 حرفا، وبحد أقصى 10.",
   "validation.eval.case_tools": "سمّ الأدوات بأسمائها في السجل، وبحد أقصى 20.",
   "validation.eval.cases_too_many": "يمكن أن تضم مجموعة البيانات 2000 حالة كحد أقصى.",

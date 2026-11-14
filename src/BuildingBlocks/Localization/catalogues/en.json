@@ -658,6 +658,8 @@
   "validation.eval.case_locale": "Choose Arabic or English.",
   "validation.eval.case_persona": "Choose a persona that exists in your organization.",
   "validation.eval.case_sources": "Each source needs a source type and an item ID, at most 20.",
+  "validation.eval.judged_query": "Enter a search query of up to 200 characters.",
+  "validation.eval.judgments": "Grade at least one result and at most 20, each once, from 1 to 3.",
   "validation.eval.case_tags": "Tags use lowercase letters, digits, dashes or underscores, up to 40 characters, at most 10.",
   "validation.eval.case_tools": "Name tools by their registry name, at most 20.",
   "validation.eval.cases_too_many": "A dataset can hold at most 2,000 cases.",
