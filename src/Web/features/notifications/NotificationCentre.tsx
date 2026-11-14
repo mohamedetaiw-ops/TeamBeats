@@ -56,12 +56,12 @@ export function NotificationCentre() {
   return (
     <div className="notification-centre">
       <div className="notification-toolbar">
-        <div role="group" aria-label={t("filter.label")} className="notification-filters">
+        <div role="group" aria-label={t("filter.label")} className="ui-tablist" data-size="sm">
           {filters.map((f) => (
             <button
               key={f}
               type="button"
-              className="notification-tab"
+              className="ui-tab"
               aria-pressed={f === filter}
               onClick={() => {
                 setState("loading");

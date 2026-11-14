@@ -362,7 +362,7 @@ export function RequestForm({
             {list.map((u) => (
               <li key={u.id} className="services-row">
                 <bdi>{u.fileName}</bdi>
-                <span className="services-status">{t(`scan.${u.state}`)}</span>
+                <span className="ui-badge">{t(`scan.${u.state}`)}</span>
                 <Button variant="quiet" onClick={() => removeUpload(f, u.id)} aria-label={t("removeFile", { name: u.fileName })}>
                   {t("remove")}
                 </Button>

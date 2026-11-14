@@ -147,7 +147,7 @@
 :root[data-design="studio"] :is(.home-card, .outlook, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .home-tiles a),
 :root[data-design="studio"] :is(.services-section, .work-items, .preferences-section, .documents-card, .documents-table, .kb-article),
 :root[data-design="studio"] :is(.people-section, .people-cards .people-item, .people-identity, .content-article, .content-social),
-:root[data-design="studio"] :is(.ui-filter-bar, .ui-rows, .toolbox) {
+:root[data-design="studio"] :is(.ui-rows, .toolbox) {
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   box-shadow: var(--tb-shadow-sm);
 }
@@ -227,6 +227,13 @@
   min-block-size: 2.25rem;
   border-radius: calc(var(--tb-radius-sm) * 0.75);
   color: var(--tb-color-text-secondary);
+}
+
+/* The tabs are 44px on a touch screen or a phone in every design (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  :root[data-design="studio"] .ui-section-nav a {
+    min-block-size: 2.75rem;
+  }
 }
 
 :root[data-design="studio"] .ui-section-nav a:where(:hover) {

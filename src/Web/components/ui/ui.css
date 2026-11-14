@@ -455,10 +455,22 @@
   cursor: pointer;
 }
 
-.ui-tab[aria-selected="true"] {
+.ui-tab:hover {
+  color: var(--tb-color-text-primary);
+}
+
+/* The chosen tab: a tab of a tablist, or a pressed toggle where the strip filters one list. */
+.ui-tab:is([aria-selected="true"], [aria-pressed="true"]) {
   border-block-end-color: var(--tb-color-accent-base);
   color: var(--tb-color-text-primary);
   font-weight: var(--tb-font-weight-medium);
+}
+
+/* The small strip, for a popover or a toolbar. */
+.ui-tablist[data-size="sm"] > .ui-tab {
+  min-block-size: 2.25rem;
+  padding-inline: var(--tb-space-sm);
+  font-size: var(--tb-font-size-sm);
 }
 
 .ui-tabpanel {
@@ -712,28 +724,196 @@
 }
 
 /*
- * Filter bar: search and filters of a list on one raised strip. Fields sit side by side and wrap on narrow screens;
- * labels stay visible above each control; the submit button lines up with the controls.
+ * Filter toolbar (DLS-106): one row on the page surface, never a card. Search first, compact filters, then view and
+ * sort controls at the end. Controls are 40px high; the phone rule in globals.css grows them for touch.
  */
-.ui-filter-bar {
+.ui-toolbar-wrap {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin-block-end: var(--tb-space-md);
+}
+
+.ui-toolbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
-  gap: var(--tb-space-md);
-  margin-block-end: var(--tb-space-lg);
-  padding: var(--tb-space-md);
-  border-radius: var(--tb-radius-md);
+  align-items: center;
+  gap: var(--tb-space-sm);
+}
+
+.ui-toolbar :is(input, select, .button) {
+  min-block-size: 2.5rem;
+  font-size: var(--tb-font-size-sm);
+}
+
+.ui-toolbar .button {
+  padding-block: 0;
+}
+
+.ui-toolbar-search {
+  position: relative;
+  display: flex;
+  flex: 1 1 16rem;
+  align-items: center;
+  max-inline-size: 24rem;
+}
+
+.ui-toolbar-search > svg {
+  position: absolute;
+  inset-inline-start: var(--tb-space-md);
+  color: var(--tb-color-text-secondary);
+  pointer-events: none;
+}
+
+.ui-toolbar-search > input {
+  inline-size: 100%;
+  padding-block: 0;
+  padding-inline-start: calc(var(--tb-space-md) * 2 + 1rem);
+}
+
+.ui-toolbar-filters {
+  display: contents;
+}
+
+/* The filter's name sits inside its control, before the value. */
+.ui-toolbar-select {
+  display: inline-flex;
+  align-items: center;
+  max-inline-size: 100%;
+  padding-inline-start: var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
   background: var(--tb-color-surface-raised);
-  box-shadow: var(--tb-shadow-sm);
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+  white-space: nowrap;
+  transition: border-color var(--tb-motion-duration-fast) var(--tb-motion-easing-standard);
 }
 
-.ui-filter-bar .field {
-  flex: 1 1 12rem;
+.ui-toolbar-select:hover {
+  border-color: var(--tb-color-border-strong);
+}
+
+.ui-toolbar-select:focus-within {
+  border-color: var(--tb-color-accent-base);
+  outline: var(--tb-border-width-focus) solid var(--tb-color-accent-base);
+}
+
+.ui-toolbar-select:has(> .visually-hidden) {
+  padding-inline-start: var(--tb-space-sm);
+}
+
+.ui-toolbar-select > select {
+  min-inline-size: 0;
+  max-inline-size: 14rem;
+  padding-block: 0;
+  padding-inline-start: var(--tb-space-xs);
+  border: 0;
+  outline: 0;
+  background-color: transparent;
+  font-weight: var(--tb-font-weight-medium);
+  text-overflow: ellipsis;
+}
+
+.ui-toolbar-end {
+  display: flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  margin-inline-start: auto;
+}
+
+.ui-toolbar-toggle {
+  display: none;
+}
+
+.ui-toolbar-count {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.25rem;
+  block-size: 1.25rem;
+  padding-inline: var(--tb-space-xs);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-accent-base);
+  color: var(--tb-color-accent-text);
+  font-size: var(--tb-font-size-xs);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.ui-toolbar-applied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs) var(--tb-space-sm);
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.ui-filter-bar .field:first-child {
-  flex-grow: 2;
+.ui-toolbar-chip {
+  text-decoration: none;
+}
+
+.ui-toolbar-chip:hover {
+  border-color: var(--tb-color-border-strong);
+}
+
+.ui-toolbar-clear {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--tb-color-link);
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-medium);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.ui-toolbar-clear:hover {
+  text-decoration: underline;
+}
+
+/* Every toolbar control is 44px on a touch screen or a phone (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  .ui-toolbar :is(input, select, .button),
+  .ui-toolbar-select,
+  .ui-tablist[data-size="sm"] > .ui-tab {
+    min-block-size: 2.75rem;
+  }
+}
+
+@media (width <= 40rem) {
+  .ui-toolbar-search {
+    flex-basis: 0;
+    max-inline-size: none;
+  }
+
+  .ui-toolbar-toggle {
+    display: inline-flex;
+  }
+
+  .ui-toolbar-filters {
+    display: none;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: var(--tb-space-sm);
+    order: 1;
+  }
+
+  .ui-toolbar[data-open] .ui-toolbar-filters {
+    display: flex;
+  }
+
+  .ui-toolbar-filters > .ui-toolbar-select {
+    flex: 1 1 100%;
+  }
+
+  .ui-toolbar-filters > .ui-toolbar-select:has(> .visually-hidden) {
+  padding-inline-start: var(--tb-space-sm);
+}
+
+.ui-toolbar-select > select {
+    flex: 1;
+    max-inline-size: none;
+  }
 }
 
 /* Tile card: icon tile or avatar, a covering title link, meta line, optional footer action above the cover. */
@@ -812,7 +992,7 @@
 }
 
 .ui-tile:has(.ui-tile-link:focus-visible) {
-  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+  outline: var(--tb-border-width-focus) solid var(--tb-color-accent-base);
   outline-offset: var(--tb-border-width-focus);
 }
 

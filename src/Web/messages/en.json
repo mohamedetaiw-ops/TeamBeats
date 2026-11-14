@@ -1242,6 +1242,9 @@
     },
     "controls": {
       "close": "Close",
+      "filters": "Filters",
+      "appliedFilters": "Filters in use",
+      "clearAll": "Clear all",
       "remove": "Remove {name}",
       "removeItem": "Remove",
       "pagination": "Pages",

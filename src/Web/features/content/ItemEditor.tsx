@@ -223,8 +223,8 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
     <div className="content-editor-page">
       <p className="content-meta" data-testid="item-status">
         {t("statusLine", { status: t(`status.${item.status}`), version: item.draftVersion ?? item.publishedVersion ?? 0 })}
-        {item.inReview ? <span className="content-badge">{t("inReview")}</span> : null}
-        {item.critical ? <span className="content-badge">{t("criticalBadge")}</span> : null}
+        {item.inReview ? <span className="ui-badge content-badge" data-tone="accent">{t("inReview")}</span> : null}
+        {item.critical ? <span className="ui-badge content-badge" data-tone="accent">{t("criticalBadge")}</span> : null}
       </p>
       <nav aria-label={t("related")} className="content-actions">
         {item.publishedVersion ? <Link href={readHref(item.id)}>{t("openReader")}</Link> : null}
@@ -240,7 +240,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
 
       <section className="content-card" aria-labelledby={`${ids}-text`}>
         <h2 id={`${ids}-text`}>{t("text")}</h2>
-        <div role="tablist" aria-label={t("languages")} className="content-tabs">
+        <div role="tablist" aria-label={t("languages")} className="ui-tablist">
           {order.map((l) => (
             <button
               key={l}
@@ -250,7 +250,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
               aria-selected={tab === l}
               aria-controls={`${ids}-panel`}
               tabIndex={tab === l ? 0 : -1}
-              className="content-tab"
+              className="ui-tab"
               onClick={() => setTab(l)}
               onKeyDown={(e) => {
                 if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
