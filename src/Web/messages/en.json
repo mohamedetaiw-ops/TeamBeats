@@ -4969,7 +4969,10 @@
         "maxTokens": "Maximum answer length in tokens",
         "maxTokensHint": "Leave empty to use each model's own limit.",
         "minTemperature": "Lowest temperature",
-        "maxTemperature": "Highest temperature"
+        "maxTemperature": "Highest temperature",
+        "displayCurrency": "Show costs in",
+        "displayCurrencyHint": "A three letter code such as SAR. Leave empty for US dollars. Records and budgets stay in US dollars.",
+        "displayRate": "Rate per US dollar"
       },
       "sovereign": {
         "title": "Keep on private endpoints",
@@ -5039,7 +5042,8 @@
         "provider": "Provider",
         "unit": "Org unit",
         "agent": "Agent",
-        "user": "Person"
+        "user": "Person",
+        "classification": "Classification"
       },
       "invalid": "Choose a grouping and a period of up to 400 days with the start before the end.",
       "scoped": "You see AI use in your units only. Groups of fewer than {size} people are hidden.",
@@ -5056,7 +5060,19 @@
       "hidden": "{count, plural, one {# group} other {# groups}} with fewer than {size} people not shown.",
       "denied": "Refused requests",
       "noDenied": "No requests were refused in this period.",
-      "reason": "Reason"
+      "reason": "Reason",
+      "export": "Download CSV",
+      "displayCurrency": "Shown in {currency} at {rate} per US dollar. Exports also keep US dollars.",
+      "forecast": {
+        "title": "This month",
+        "summary": "{spent} spent in the first {days} days, about {rate} a day. At this rate the month ends near {projected}.",
+        "budgets": "Monthly budgets at the current rate",
+        "budget": "Budget",
+        "amount": "Limit",
+        "used": "Used so far",
+        "projected": "Expected by month end",
+        "over": "over the limit"
+      }
     },
     "debug": {
       "title": "Debug windows",

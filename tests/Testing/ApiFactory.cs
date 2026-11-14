@@ -86,6 +86,7 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
         builder.UseSetting(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.ApiKeySetting, FakeOpenRouter.ApiKey);
         builder.UseSetting(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.TimeoutSetting, "2");
         builder.UseSetting(TeamBeats.Modules.AiGateway.DebugLogProtector.KeySetting, AiLogKey);
+        builder.UseSetting(TeamBeats.Modules.AiGateway.EvaluatorTokens.EnabledSetting, "true");
         builder.ConfigureTestServices(services =>
         {
             services.AddSingleton(Documents);

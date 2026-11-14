@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { getFormatter, getLocale, getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
-import { DENIALS, known, USAGE_GROUPS, USE_CASES, type UsageRow, type UsageView } from "@/lib/ai/types";
-import { Button } from "@/components/ui/Button";
+import { BUDGET_SCOPES, CLASSIFICATIONS, DENIALS, known, USAGE_GROUPS, USE_CASES, type UsageForecast, type UsageRow, type UsageView } from "@/lib/ai/types";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { AiTabs } from "@/features/ai/AiTabs";
 import { aiSection } from "@/features/ai/guard";
 import "@/features/ai/ai.css";
@@ -24,13 +24,22 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Prom
   if (filters.to && DATE.test(filters.to)) query.set("to", filters.to);
   const groupBy = known(USAGE_GROUPS, filters.groupBy ?? "") ?? "day";
   query.set("groupBy", groupBy);
-  const usage = await apiGet<UsageView>(`/api/v1/ai/usage?${query.toString()}`);
+  const [usage, forecastResult] = await Promise.all([
+    apiGet<UsageView>(`/api/v1/ai/usage?${query.toString()}`),
+    apiGet<UsageForecast>("/api/v1/ai/usage/forecast"),
+  ]);
   const t = await getTranslations("ai");
   if (!usage.ok && usage.status !== 400) notFound();
   const locale = await getLocale();
   const format = await getFormatter();
   const n = (value: number) => format.number(value);
-  const cost = (value: number) => format.number(value, { style: "currency", currency: "USD", maximumFractionDigits: 4 });
+  // A display currency set on the policy changes only what is shown; the API keeps every figure in US dollars.
+  const money = (value: number, currency: string, rate: number) => format.number(value * rate, { style: "currency", currency, maximumFractionDigits: 4 });
+  const cost = (value: number) => (usage.ok ? money(value, usage.data.currency, usage.data.rate) : money(value, "USD", 1));
+  const forecast = forecastResult.ok ? forecastResult.data : null;
+  const exportQuery = new URLSearchParams();
+  if (query.get("from")) exportQuery.set("from", query.get("from") ?? "");
+  if (query.get("to")) exportQuery.set("to", query.get("to") ?? "");
 
   function label(view: UsageView, row: UsageRow): string {
     if (row.key === null) return t("usage.none");
@@ -38,6 +47,10 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Prom
       case "use_case": {
         const u = known(USE_CASES, row.key);
         return u ? t(`routing.useCases.${u}`) : row.key;
+      }
+      case "classification": {
+        const level = known(CLASSIFICATIONS, row.key);
+        return level ? t(`policy.classification.${level}`) : row.key;
       }
       case "day":
         return format.dateTime(new Date(`${row.key}T00:00:00Z`), { dateStyle: "medium", timeZone: "UTC" });
@@ -95,7 +108,57 @@ export default async function AiUsagePage({ searchParams }: { searchParams: Prom
                 cost: cost(view.totals.cost),
               })}
             </p>
+            {view.currency !== "USD" ? <p className="field-hint">{t("usage.displayCurrency", { currency: view.currency, rate: n(view.rate) })}</p> : null}
+            <div className="button-row">
+              <ButtonLink variant="secondary" icon="download" href={`/api/v1/ai/usage/export?${exportQuery.toString()}`} download>
+                {t("usage.export")}
+              </ButtonLink>
+            </div>
           </section>
+
+          {forecast ? (
+            <section className="ai-section" aria-labelledby="ai-usage-forecast" data-testid="ai-usage-forecast">
+              <h2 id="ai-usage-forecast">{t("usage.forecast.title")}</h2>
+              <p>
+                {t("usage.forecast.summary", {
+                  spent: money(forecast.monthToDate, forecast.currency, forecast.rate),
+                  days: n(forecast.daysElapsed),
+                  rate: money(forecast.dailyRate, forecast.currency, forecast.rate),
+                  projected: money(forecast.projected, forecast.currency, forecast.rate),
+                })}
+              </p>
+              {forecast.budgets.length > 0 ? (
+                <div className="ai-table">
+                  <table data-testid="ai-forecast-budgets">
+                    <caption>{t("usage.forecast.budgets")}</caption>
+                    <thead>
+                      <tr>
+                        <th scope="col">{t("usage.forecast.budget")}</th>
+                        <th scope="col">{t("usage.forecast.amount")}</th>
+                        <th scope="col">{t("usage.forecast.used")}</th>
+                        <th scope="col">{t("usage.forecast.projected")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {forecast.budgets.map((b) => (
+                        <tr key={b.id}>
+                          <th scope="row">
+                            {known(BUDGET_SCOPES, b.scope) ? t(`budgets.scopes.${known(BUDGET_SCOPES, b.scope)}`) : b.scope}
+                          </th>
+                          <td data-number="">{money(b.amount, forecast.currency, forecast.rate)}</td>
+                          <td data-number="">{money(b.used, forecast.currency, forecast.rate)}</td>
+                          <td data-number="">
+                            {money(b.projected, forecast.currency, forecast.rate)}
+                            {b.overBudget ? <span className="field-hint"> {t("usage.forecast.over")}</span> : null}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+            </section>
+          ) : null}
 
           <section className="ai-section" aria-labelledby="ai-usage-rows">
             <h2 id="ai-usage-rows">{t("usage.byGroup", { group: t(`usage.groups.${groupBy}`) })}</h2>

@@ -2505,5 +2505,6 @@
   "conflict.ai.endpoint_limit": "This organization already has the most private endpoints allowed. Remove one first.",
   "conflict.ai.endpoint_changed": "Someone else changed this endpoint. Reload it and try again.",
   "conflict.ai.endpoint_enabled": "Disable the endpoint before you remove it.",
-  "conflict.ai.endpoint_untested": "Run the connection test first. An endpoint can be enabled only after it passed a test in the last 24 hours."
+  "conflict.ai.endpoint_untested": "Run the connection test first. An endpoint can be enabled only after it passed a test in the last 24 hours.",
+  "validation.ai.display_currency": "Enter a three letter currency code, such as SAR, and its rate per US dollar, greater than 0."
 }

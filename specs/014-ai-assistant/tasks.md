@@ -8,12 +8,16 @@ Depends on 008, 012, 013, 020, 027, 034. R1: US1 to US4. R2: US5 to US8.
 - [x] T004 [US2] Routing to agents and confirmation cards in the conversation
 - [x] T005 [US3] Summarize, explain, translate, rewrite and draft on permitted items and pasted text
 - [x] T006 [US4] History, delete, retention, feedback and degraded states
-- [ ] T007 Assistant panel and page with streaming, citations and feedback, in English and Arabic, RTL; e2e with axe
+- [x] T007 Assistant panel and page with streaming, citations and feedback, in English and Arabic, RTL; e2e with axe
 - [x] T008 Platform evaluation suite for the assistant in spec 034; OpenAPI; R1 implementation notes; spec evidence
 
 ## R2
-- [ ] T013 [P] [US5] Tests: scan, classification ceiling, deletion with the conversation
-- [ ] T014 [US5] File upload in conversations
-- [ ] T015 [US6] Voice input and read aloud
-- [ ] T016 [US7] Self-scoped HR and request tools with 022 and 016
-- [ ] T017 [US8] Teams personal app
+- [ ] T009 [P] Tests: guests refused unless allowed and then only over their spaces; denied source kinds never cited; search summary and turn record evidence (AST-019, AST-021)
+- [ ] T010 Assistant setting for guests and the source kind deny list (AST-020, AST-022)
+- [ ] T011 [P] [US7] Tests: personal tools read only the caller's records, refuse others unless 004 allows, show source and time
+- [ ] T012 [US7] Self-scoped `my_leave_balance` and `my_open_requests` tools and the "My HR helper" template
+- [ ] T013 [P] [US5] Tests: scan, classification ceiling, use only in the conversation, deletion with the conversation and by retention
+- [ ] T014 [US5] File upload in conversations, panel controls, in English and Arabic, RTL; e2e with axe
+- [ ] T015 [US6] Voice input and read aloud through gateway `transcribe` and `speak`; panel controls; tests
+- [ ] T016 [US8] Teams personal app: built with spec 015 US5 (the Teams app), see plan
+- [ ] T017 OpenAPI; R2 implementation notes; spec evidence
