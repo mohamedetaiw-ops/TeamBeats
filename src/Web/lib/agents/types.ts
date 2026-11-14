@@ -341,4 +341,31 @@ export type AgentVersionStats = {
   quality: string | null;
 };
 
-export type AgentAnalyticsView = { agentId: string; days: number; from: string; to: string; total: AgentVersionStats; versions: AgentVersionStats[] };
+export type AgentQualityScore = { metric: string; locale: string; value: number | null };
+export type AgentVersionDetail = { version: number | null; conversations: number; escalations: number; resolvedRate: number | null; quality: AgentQualityScore[] };
+export type AgentToolStats = {
+  tool: string;
+  calls: number;
+  succeeded: number;
+  failed: number;
+  successRate: number | null;
+  averageMs: number;
+  failures: { reason: string; calls: number }[];
+};
+export type AgentDayStats = { day: string; runs: number; answered: number; escalations: number; ratings: number; helpful: number };
+export type AgentAnalyticsDetail = {
+  versions: AgentVersionDetail[];
+  outcomes: { outcome: string; runs: number }[];
+  tools: AgentToolStats[];
+  trend: AgentDayStats[];
+};
+
+export type AgentAnalyticsView = {
+  agentId: string;
+  days: number;
+  from: string;
+  to: string;
+  total: AgentVersionStats;
+  versions: AgentVersionStats[];
+  detail: AgentAnalyticsDetail | null;
+};
