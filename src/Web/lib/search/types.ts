@@ -1,14 +1,5 @@
 /** Search API shapes (spec 012, /api/v1/search). */
-export const searchKinds = [
-  "person",
-  "content",
-  "document",
-  "knowledge",
-  "policy",
-  "service",
-  "discussion",
-  "course",
-] as const;
+export const searchKinds = ["person", "content", "document", "knowledge", "policy", "service", "discussion", "course"] as const;
 export type SearchKind = (typeof searchKinds)[number];
 
 export type SearchResult = {
@@ -35,13 +26,7 @@ export type SearchPage = {
   alternatives: SearchResult[];
 };
 
-export type Suggestion = {
-  itemId: string;
-  source: string;
-  kind: SearchKind;
-  title: string;
-  link: string;
-};
+export type Suggestion = { itemId: string; source: string; kind: SearchKind; title: string; link: string };
 
 export type BestBet = {
   id: string;
@@ -54,42 +39,16 @@ export type BestBet = {
   createdAt: string;
 };
 
-export type SynonymSet = {
-  id: string;
-  locale: string | null;
-  terms: string[];
-  updatedAt: string;
-};
+export type SynonymSet = { id: string; locale: string | null; terms: string[]; updatedAt: string };
 
-export type Rebuild = {
-  id: string;
-  requestedAt: string;
-  startedAt: string | null;
-  completedAt: string | null;
-  items: number;
-  units: number;
-};
+export type Rebuild = { id: string; requestedAt: string; startedAt: string | null; completedAt: string | null; items: number; units: number };
 
-export const isSearchKind = (value: string | undefined): value is SearchKind =>
-  !!value && (searchKinds as readonly string[]).includes(value);
+export const isSearchKind = (value: string | undefined): value is SearchKind => !!value && (searchKinds as readonly string[]).includes(value);
 
 /** Retrieval configuration (spec 012 US3 scenario 3, FR-008); version 0 is the platform default. */
-export type RetrievalSettings = {
-  version: number;
-  passageTokens: number;
-  overlapPercent: number;
-  topK: number;
-  embeddingModel: string | null;
-};
+export type RetrievalSettings = { version: number; passageTokens: number; overlapPercent: number; topK: number; embeddingModel: string | null };
 
-export type RetrievalChangeStatus =
-  | "building"
-  | "gating"
-  | "held"
-  | "active"
-  | "rejected"
-  | "cancelled"
-  | "superseded";
+export type RetrievalChangeStatus = "building" | "gating" | "held" | "active" | "rejected" | "cancelled" | "superseded";
 
 export type RetrievalChange = {
   id: string;
@@ -107,11 +66,7 @@ export type RetrievalChange = {
   canCancel: boolean;
 };
 
-export type RetrievalConfig = {
-  active: RetrievalSettings;
-  open: RetrievalChange | null;
-  history: RetrievalChange[];
-};
+export type RetrievalConfig = { active: RetrievalSettings; open: RetrievalChange | null; history: RetrievalChange[] };
 
 /** Federated search (spec 012 US5): results asked of an external system live, as the person, never stored. */
 export type FederatedHit = {
@@ -139,3 +94,18 @@ export type FederatedSource = {
   enabled: boolean;
   updatedAt: string | null;
 };
+
+/** The AI summary above results (spec 012 US6): off, or what the assistant made of the top permitted passages. */
+export type SummaryCitation = {
+  n: number;
+  title: string;
+  link: string;
+  kind: string;
+};
+export type SearchSummaryView = {
+  state: "off" | "answered" | "none" | "withheld" | "unavailable";
+  turnId: string | null;
+  text: string | null;
+  citations: SummaryCitation[];
+};
+export type AiSummarySetting = { enabled: boolean; updatedAt: string | null };

@@ -5104,6 +5104,13 @@
         },
         "on": "{source} is now searched.",
         "off": "{source} is no longer searched."
+      },
+      "summary": {
+        "title": "AI summary of results",
+        "intro": "Show a short AI generated answer above search results, written only from the results each person may open and the AI policy allows, with the sources cited.",
+        "switch": "Show AI summaries",
+        "on": "AI summaries are now shown above results.",
+        "off": "AI summaries are no longer shown."
       }
     },
     "federated": {
@@ -5121,6 +5128,16 @@
       "unavailable": "SharePoint cannot be reached right now.",
       "none": "Nothing in SharePoint matches.",
       "opensOutside": "(opens in a new tab)"
+    },
+    "summary": {
+      "title": "Summary",
+      "sources": "Sources",
+      "generated": "AI generated from results you can open. Check the sources before you rely on it.",
+      "question": "Was this summary helpful?",
+      "helpful": "Helpful",
+      "notHelpful": "Not helpful",
+      "thanks": "Thank you. Your feedback helps improve summaries.",
+      "failed": "That did not work. Try again."
     }
   },
   "assistant": {

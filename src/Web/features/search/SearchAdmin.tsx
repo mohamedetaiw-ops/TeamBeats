@@ -6,16 +6,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Switch } from "@/components/ui/Switch";
 import { problemMessages } from "@/lib/notifications/types";
-import type {
-  BestBet,
-  FederatedSource,
-  Rebuild,
-  RetrievalChange,
-  RetrievalConfig,
-  RetrievalSettings,
-  Suggestion,
-  SynonymSet,
-} from "@/lib/search/types";
+import type { AiSummarySetting, BestBet, FederatedSource, Rebuild, RetrievalChange, RetrievalConfig, RetrievalSettings, Suggestion, SynonymSet } from "@/lib/search/types";
 
 type Message = { error: boolean; text: string } | null;
 
@@ -23,10 +14,7 @@ function Status({ message }: { message: Message }) {
   return (
     <div aria-live="polite">
       {message ? (
-        <p
-          className={message.error ? "field-error" : "notice"}
-          role={message.error ? "alert" : "status"}
-        >
+        <p className={message.error ? "field-error" : "notice"} role={message.error ? "alert" : "status"}>
           {message.text}
         </p>
       ) : null}
@@ -35,31 +23,16 @@ function Status({ message }: { message: Message }) {
 }
 
 /** Sends a change and refreshes the page data; returns the problem text when the API refuses it. */
-async function send(
-  url: string,
-  method: string,
-  body?: unknown,
-): Promise<string | null> {
+async function send(url: string, method: string, body?: unknown): Promise<string | null> {
   const response = await fetch(url, {
     method,
-    headers:
-      body === undefined ? undefined : { "content-type": "application/json" },
+    headers: body === undefined ? undefined : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  return response.ok
-    ? null
-    : (await problemMessages(response)).join(" ") || String(response.status);
+  return response.ok ? null : (await problemMessages(response)).join(" ") || String(response.status);
 }
 
-function LocaleSelect({
-  id,
-  value,
-  onChange,
-}: {
-  id: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
+function LocaleSelect({ id, value, onChange }: { id: string; value: string; onChange: (value: string) => void }) {
   const t = useTranslations("search.admin");
   return (
     <div className="field">
@@ -81,10 +54,7 @@ export function BestBets({ initial }: { initial: BestBet[] }) {
   const [query, setQuery] = useState("");
   const [locale, setLocale] = useState("");
   const [find, setFind] = useState("");
-  const [picks, setPicks] = useState<{
-    term: string;
-    items: Suggestion[];
-  } | null>(null);
+  const [picks, setPicks] = useState<{ term: string; items: Suggestion[] } | null>(null);
   const [target, setTarget] = useState<Suggestion | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message>(null);
@@ -96,9 +66,7 @@ export function BestBets({ initial }: { initial: BestBet[] }) {
     if (term.length < 2) return;
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      fetch(`/api/v1/search/suggest?q=${encodeURIComponent(term)}`, {
-        signal: controller.signal,
-      })
+      fetch(`/api/v1/search/suggest?q=${encodeURIComponent(term)}`, { signal: controller.signal })
         .then((r) => (r.ok ? (r.json() as Promise<Suggestion[]>) : []))
         .then((items) => setPicks({ term, items }))
         .catch(() => undefined);
@@ -118,12 +86,7 @@ export function BestBets({ initial }: { initial: BestBet[] }) {
     setBusy(true);
     setMessage(null);
     try {
-      const problem = await send("/api/v1/search/best-bets", "POST", {
-        query,
-        locale: locale || null,
-        source: target.source,
-        itemId: target.itemId,
-      });
+      const problem = await send("/api/v1/search/best-bets", "POST", { query, locale: locale || null, source: target.source, itemId: target.itemId });
       if (problem) {
         setMessage({ error: true, text: problem });
         return;
@@ -142,15 +105,8 @@ export function BestBets({ initial }: { initial: BestBet[] }) {
 
   async function remove(bet: BestBet) {
     setMessage(null);
-    const problem = await send(
-      `/api/v1/search/best-bets/${encodeURIComponent(bet.id)}`,
-      "DELETE",
-    ).catch(() => t("failed"));
-    setMessage(
-      problem
-        ? { error: true, text: problem }
-        : { error: false, text: t("bestBets.removed") },
-    );
+    const problem = await send(`/api/v1/search/best-bets/${encodeURIComponent(bet.id)}`, "DELETE").catch(() => t("failed"));
+    setMessage(problem ? { error: true, text: problem } : { error: false, text: t("bestBets.removed") });
     router.refresh();
   }
 
@@ -161,31 +117,14 @@ export function BestBets({ initial }: { initial: BestBet[] }) {
       <form className="search-admin-form" onSubmit={(e) => void add(e)}>
         <div className="field">
           <label htmlFor={ids.query}>{t("bestBets.query")}</label>
-          <input
-            id={ids.query}
-            value={query}
-            maxLength={200}
-            required
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          <input id={ids.query} value={query} maxLength={200} required onChange={(e) => setQuery(e.target.value)} />
         </div>
         <LocaleSelect id={ids.locale} value={locale} onChange={setLocale} />
         <div className="field">
           <label htmlFor={ids.find}>{t("bestBets.find")}</label>
-          <input
-            id={ids.find}
-            type="search"
-            value={find}
-            maxLength={200}
-            onChange={(e) => setFind(e.target.value)}
-          />
+          <input id={ids.find} type="search" value={find} maxLength={200} onChange={(e) => setFind(e.target.value)} />
         </div>
-        <Button
-          type="submit"
-          variant="primary"
-          busy={busy}
-          busyLabel={t("busy")}
-        >
+        <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>
           {t("bestBets.add")}
         </Button>
       </form>
@@ -198,11 +137,7 @@ export function BestBets({ initial }: { initial: BestBet[] }) {
         <ul className="search-picks" aria-label={t("bestBets.results")}>
           {shown.map((s) => (
             <li key={`${s.source}:${s.itemId}`}>
-              <Button
-                variant="quiet"
-                aria-pressed={target?.itemId === s.itemId}
-                onClick={() => setTarget(s)}
-              >
+              <Button variant="quiet" aria-pressed={target?.itemId === s.itemId} onClick={() => setTarget(s)}>
                 <bdi>{s.title}</bdi> ({tk(s.kind)})
               </Button>
             </li>
@@ -223,11 +158,7 @@ export function BestBets({ initial }: { initial: BestBet[] }) {
                 {" · "}
                 {bet.locale ? t(`locales.${bet.locale}`) : t("locales.any")}
               </span>
-              <Button
-                variant="destructive"
-                aria-label={t("bestBets.remove", { query: bet.query })}
-                onClick={() => void remove(bet)}
-              >
+              <Button variant="destructive" aria-label={t("bestBets.remove", { query: bet.query })} onClick={() => void remove(bet)}>
                 {t("remove")}
               </Button>
             </li>
@@ -253,14 +184,8 @@ export function Synonyms({ initial }: { initial: SynonymSet[] }) {
     setBusy(true);
     setMessage(null);
     try {
-      const terms = words
-        .split(/[,،]/)
-        .map((w) => w.trim())
-        .filter(Boolean);
-      const problem = await send("/api/v1/search/synonyms", "POST", {
-        locale: locale || null,
-        terms,
-      });
+      const terms = words.split(/[,،]/).map((w) => w.trim()).filter(Boolean);
+      const problem = await send("/api/v1/search/synonyms", "POST", { locale: locale || null, terms });
       if (problem) {
         setMessage({ error: true, text: problem });
         return;
@@ -277,15 +202,8 @@ export function Synonyms({ initial }: { initial: SynonymSet[] }) {
 
   async function remove(set: SynonymSet) {
     setMessage(null);
-    const problem = await send(
-      `/api/v1/search/synonyms/${encodeURIComponent(set.id)}`,
-      "DELETE",
-    ).catch(() => t("failed"));
-    setMessage(
-      problem
-        ? { error: true, text: problem }
-        : { error: false, text: t("synonyms.removed") },
-    );
+    const problem = await send(`/api/v1/search/synonyms/${encodeURIComponent(set.id)}`, "DELETE").catch(() => t("failed"));
+    setMessage(problem ? { error: true, text: problem } : { error: false, text: t("synonyms.removed") });
     router.refresh();
   }
 
@@ -299,21 +217,10 @@ export function Synonyms({ initial }: { initial: SynonymSet[] }) {
           <p id={`${ids.words}-hint`} className="field-hint">
             {t("synonyms.hint")}
           </p>
-          <input
-            id={ids.words}
-            value={words}
-            required
-            aria-describedby={`${ids.words}-hint`}
-            onChange={(e) => setWords(e.target.value)}
-          />
+          <input id={ids.words} value={words} required aria-describedby={`${ids.words}-hint`} onChange={(e) => setWords(e.target.value)} />
         </div>
         <LocaleSelect id={ids.locale} value={locale} onChange={setLocale} />
-        <Button
-          type="submit"
-          variant="primary"
-          busy={busy}
-          busyLabel={t("busy")}
-        >
+        <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>
           {t("synonyms.add")}
         </Button>
       </form>
@@ -329,13 +236,7 @@ export function Synonyms({ initial }: { initial: SynonymSet[] }) {
                 {" · "}
                 {set.locale ? t(`locales.${set.locale}`) : t("locales.any")}
               </span>
-              <Button
-                variant="destructive"
-                aria-label={t("synonyms.remove", {
-                  words: set.terms.join(", "),
-                })}
-                onClick={() => void remove(set)}
-              >
+              <Button variant="destructive" aria-label={t("synonyms.remove", { words: set.terms.join(", ") })} onClick={() => void remove(set)}>
                 {t("remove")}
               </Button>
             </li>
@@ -359,11 +260,7 @@ export function Rebuilds({ initial }: { initial: Rebuild[] }) {
     setMessage(null);
     try {
       const problem = await send("/api/v1/search/rebuilds", "POST");
-      setMessage(
-        problem
-          ? { error: true, text: problem }
-          : { error: false, text: t("rebuilds.started") },
-      );
+      setMessage(problem ? { error: true, text: problem } : { error: false, text: t("rebuilds.started") });
       router.refresh();
     } catch {
       setMessage({ error: true, text: t("failed") });
@@ -388,19 +285,8 @@ export function Rebuilds({ initial }: { initial: Rebuild[] }) {
         <ul className="search-admin-list">
           {initial.map((r) => (
             <li key={r.id}>
-              <span>
-                {format.dateTime(new Date(r.requestedAt), {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}
-              </span>
-              <span>
-                {r.completedAt
-                  ? t("rebuilds.done", { items: r.items, units: r.units })
-                  : r.startedAt
-                    ? t("rebuilds.running")
-                    : t("rebuilds.queued")}
-              </span>
+              <span>{format.dateTime(new Date(r.requestedAt), { dateStyle: "medium", timeStyle: "short" })}</span>
+              <span>{r.completedAt ? t("rebuilds.done", { items: r.items, units: r.units }) : r.startedAt ? t("rebuilds.running") : t("rebuilds.queued")}</span>
             </li>
           ))}
         </ul>
@@ -420,13 +306,7 @@ function SettingsList({ settings }: { settings: RetrievalSettings }) {
       <dt>{t("retrieval.topK")}</dt>
       <dd>{settings.topK}</dd>
       <dt>{t("retrieval.embeddingModel")}</dt>
-      <dd>
-        {settings.embeddingModel ? (
-          <bdi>{settings.embeddingModel}</bdi>
-        ) : (
-          t("retrieval.modelDefault")
-        )}
-      </dd>
+      <dd>{settings.embeddingModel ? <bdi>{settings.embeddingModel}</bdi> : t("retrieval.modelDefault")}</dd>
     </dl>
   );
 }
@@ -446,11 +326,7 @@ function ChangeStatus({ change }: { change: RetrievalChange }) {
  * open change with its shadow index and release gate. A held change can be applied with a reason or cancelled; the
  * API decides what is allowed and says so in canApply and canCancel.
  */
-export function RetrievalSettingsPanel({
-  initial,
-}: {
-  initial: RetrievalConfig;
-}) {
+export function RetrievalSettingsPanel({ initial }: { initial: RetrievalConfig }) {
   const t = useTranslations("search.admin");
   const format = useFormatter();
   const router = useRouter();
@@ -462,13 +338,7 @@ export function RetrievalSettingsPanel({
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<Message>(null);
-  const ids = {
-    tokens: useId(),
-    overlap: useId(),
-    topK: useId(),
-    model: useId(),
-    reason: useId(),
-  };
+  const ids = { tokens: useId(), overlap: useId(), topK: useId(), model: useId(), reason: useId() };
   const open = initial.open;
 
   async function run(url: string, body: unknown, done: string) {
@@ -476,9 +346,7 @@ export function RetrievalSettingsPanel({
     setMessage(null);
     try {
       const problem = await send(url, "POST", body);
-      setMessage(
-        problem ? { error: true, text: problem } : { error: false, text: done },
-      );
+      setMessage(problem ? { error: true, text: problem } : { error: false, text: done });
       if (!problem) router.refresh();
     } catch {
       setMessage({ error: true, text: t("failed") });
@@ -491,12 +359,7 @@ export function RetrievalSettingsPanel({
     e.preventDefault();
     void run(
       "/api/v1/search/retrieval-config",
-      {
-        passageTokens: Number(tokens),
-        overlapPercent: Number(overlap),
-        topK: Number(topK),
-        embeddingModel: model.trim(),
-      },
+      { passageTokens: Number(tokens), overlapPercent: Number(overlap), topK: Number(topK), embeddingModel: model.trim() },
       t("retrieval.proposed"),
     );
   }
@@ -512,9 +375,7 @@ export function RetrievalSettingsPanel({
           <h3>{t("retrieval.open", { version: open.settings.version })}</h3>
           <SettingsList settings={open.settings} />
           <ChangeStatus change={open} />
-          {open.shadowUnits !== null ? (
-            <p>{t("retrieval.shadowUnits", { units: open.shadowUnits })}</p>
-          ) : null}
+          {open.shadowUnits !== null ? <p>{t("retrieval.shadowUnits", { units: open.shadowUnits })}</p> : null}
           {open.failures.length > 0 ? (
             <>
               <p>{t("retrieval.failures")}</p>
@@ -531,32 +392,15 @@ export function RetrievalSettingsPanel({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                void run(
-                  `/api/v1/search/retrieval-config/${open.id}/apply`,
-                  { reason },
-                  t("retrieval.applied"),
-                );
+                void run(`/api/v1/search/retrieval-config/${open.id}/apply`, { reason }, t("retrieval.applied"));
               }}
             >
               <div className="field">
                 <label htmlFor={ids.reason}>{t("retrieval.reason")}</label>
-                <textarea
-                  id={ids.reason}
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  rows={3}
-                  minLength={10}
-                  maxLength={1000}
-                  required
-                />
+                <textarea id={ids.reason} value={reason} onChange={(e) => setReason(e.target.value)} rows={3} minLength={10} maxLength={1000} required />
               </div>
               <div className="button-row">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  busy={busy}
-                  busyLabel={t("busy")}
-                >
+                <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>
                   {t("retrieval.apply")}
                 </Button>
               </div>
@@ -564,18 +408,7 @@ export function RetrievalSettingsPanel({
           ) : null}
           {open.canCancel ? (
             <div className="button-row">
-              <Button
-                variant="secondary"
-                busy={busy}
-                busyLabel={t("busy")}
-                onClick={() =>
-                  void run(
-                    `/api/v1/search/retrieval-config/${open.id}/cancel`,
-                    {},
-                    t("retrieval.cancelled"),
-                  )
-                }
-              >
+              <Button variant="secondary" busy={busy} busyLabel={t("busy")} onClick={() => void run(`/api/v1/search/retrieval-config/${open.id}/cancel`, {}, t("retrieval.cancelled"))}>
                 {t("retrieval.cancel")}
               </Button>
             </div>
@@ -586,64 +419,25 @@ export function RetrievalSettingsPanel({
           <h3>{t("retrieval.propose")}</h3>
           <div className="field">
             <label htmlFor={ids.tokens}>{t("retrieval.passageTokens")}</label>
-            <input
-              id={ids.tokens}
-              type="number"
-              inputMode="numeric"
-              min={100}
-              max={1000}
-              value={tokens}
-              onChange={(e) => setTokens(e.target.value)}
-              required
-            />
+            <input id={ids.tokens} type="number" inputMode="numeric" min={100} max={1000} value={tokens} onChange={(e) => setTokens(e.target.value)} required />
           </div>
           <div className="field">
             <label htmlFor={ids.overlap}>{t("retrieval.overlapPercent")}</label>
-            <input
-              id={ids.overlap}
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={50}
-              value={overlap}
-              onChange={(e) => setOverlap(e.target.value)}
-              required
-            />
+            <input id={ids.overlap} type="number" inputMode="numeric" min={0} max={50} value={overlap} onChange={(e) => setOverlap(e.target.value)} required />
           </div>
           <div className="field">
             <label htmlFor={ids.topK}>{t("retrieval.topK")}</label>
-            <input
-              id={ids.topK}
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={20}
-              value={topK}
-              onChange={(e) => setTopK(e.target.value)}
-              required
-            />
+            <input id={ids.topK} type="number" inputMode="numeric" min={1} max={20} value={topK} onChange={(e) => setTopK(e.target.value)} required />
           </div>
           <div className="field">
             <label htmlFor={ids.model}>{t("retrieval.embeddingModel")}</label>
             <p id={`${ids.model}-hint`} className="field-hint">
               {t("retrieval.modelHint")}
             </p>
-            <input
-              id={ids.model}
-              dir="ltr"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              maxLength={100}
-              aria-describedby={`${ids.model}-hint`}
-            />
+            <input id={ids.model} dir="ltr" value={model} onChange={(e) => setModel(e.target.value)} maxLength={100} aria-describedby={`${ids.model}-hint`} />
           </div>
           <div className="button-row">
-            <Button
-              type="submit"
-              variant="primary"
-              busy={busy}
-              busyLabel={t("busy")}
-            >
+            <Button type="submit" variant="primary" busy={busy} busyLabel={t("busy")}>
               {t("retrieval.submit")}
             </Button>
           </div>
@@ -656,20 +450,11 @@ export function RetrievalSettingsPanel({
           <ul className="search-admin-list">
             {initial.history.map((c) => (
               <li key={c.id}>
-                <span>
-                  {t("retrieval.version", { version: c.settings.version })}
-                </span>
-                <span>
-                  {format.dateTime(new Date(c.proposedAt), {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  })}
-                </span>
+                <span>{t("retrieval.version", { version: c.settings.version })}</span>
+                <span>{format.dateTime(new Date(c.proposedAt), { dateStyle: "medium", timeStyle: "short" })}</span>
                 <span>
                   {t(`retrieval.status.${c.status}`)}
-                  {c.gateResult
-                    ? ` ${t(`retrieval.gate.${c.gateResult}`)}`
-                    : ""}
+                  {c.gateResult ? ` ${t(`retrieval.gate.${c.gateResult}`)}` : ""}
                 </span>
               </li>
             ))}
@@ -733,6 +518,46 @@ export function FederatedSources({ initial }: { initial: FederatedSource[] }) {
           onChange={(e) => void toggle(s.source, e.target.checked)}
         />
       ))}
+      <Status message={message} />
+    </section>
+  );
+}
+
+/** The AI summary above results (spec 012 US6, FR-018): off by default; summaries always cite permitted passages. */
+export function AiSummaryPanel({ initial }: { initial: AiSummarySetting }) {
+  const t = useTranslations("search.admin");
+  const [enabled, setEnabled] = useState(initial.enabled);
+  const [message, setMessage] = useState<Message>(null);
+
+  async function toggle(value: boolean) {
+    setMessage(null);
+    try {
+      const problem = await send("/api/v1/search/ai-summary", "PUT", {
+        enabled: value,
+      });
+      if (problem) {
+        setMessage({ error: true, text: problem });
+      } else {
+        setEnabled(value);
+        setMessage({
+          error: false,
+          text: t(value ? "summary.on" : "summary.off"),
+        });
+      }
+    } catch {
+      setMessage({ error: true, text: t("failed") });
+    }
+  }
+
+  return (
+    <section aria-labelledby="summary-title">
+      <h2 id="summary-title">{t("summary.title")}</h2>
+      <p>{t("summary.intro")}</p>
+      <Switch
+        label={t("summary.switch")}
+        checked={enabled}
+        onChange={(e) => void toggle(e.target.checked)}
+      />
       <Status message={message} />
     </section>
   );

@@ -1,10 +1,5 @@
 import type { APIRequestContext } from "@playwright/test";
-import {
-  expect,
-  expectAccessible,
-  signInWithDevForm,
-  test,
-} from "../support/fixtures";
+import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { msg, type LaunchLocale } from "../support/messages";
 import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
@@ -16,30 +11,15 @@ import { hostOrigin } from "../support/stack";
  * administrator manages best bets and synonyms from the admin area, and proposes a retrieval change that the release
  * gate holds (no agent has retrieval cases yet) and applies it with a reason (T007).
  */
-const body = (text: string) => ({
-  blocks: [{ type: "paragraph", children: [{ text }] }],
-});
+const body = (text: string) => ({ blocks: [{ type: "paragraph", children: [{ text }] }] });
 
-async function publishNews(
-  api: APIRequestContext,
-  en: string,
-  ar: string,
-  text: string,
-): Promise<string> {
+async function publishNews(api: APIRequestContext, en: string, ar: string, text: string): Promise<string> {
   const created = await api.post("/api/v1/content/items", {
-    data: {
-      type: "news",
-      variants: {
-        en: { title: en, body: body(text) },
-        ar: { title: ar, body: body(ar) },
-      },
-    },
+    data: { type: "news", variants: { en: { title: en, body: body(text) }, ar: { title: ar, body: body(ar) } } },
   });
   expect(created.status(), await created.text()).toBe(201);
   const id = ((await created.json()) as { id: string }).id;
-  const published = await api.post(`/api/v1/content/items/${id}/publish`, {
-    data: {},
-  });
+  const published = await api.post(`/api/v1/content/items/${id}/publish`, { data: {} });
   expect(published.ok(), await published.text()).toBe(true);
   return id;
 }
@@ -53,85 +33,39 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
     test.beforeAll(async () => {
       tenant = await createTenant(`search-${locale}`, locale, "workplace_plus");
       const api = await tenantApi(tenant);
-      shuttle = await publishNews(
-        api,
-        "Shuttle timetable changes",
-        "تغيير مواعيد الحافلة",
-        "The evening shuttle leaves Gate 1 at 18:20.",
-      );
-      await publishNews(
-        api,
-        "Canteen menu for the week",
-        "قائمة المقصف للأسبوع",
-        "Fresh salads every day this week.",
-      );
+      shuttle = await publishNews(api, "Shuttle timetable changes", "تغيير مواعيد الحافلة", "The evening shuttle leaves Gate 1 at 18:20.");
+      await publishNews(api, "Canteen menu for the week", "قائمة المقصف للأسبوع", "Fresh salads every day this week.");
       // Indexing runs from the outbox; wait until the item is searchable.
       await expect
-        .poll(
-          async () =>
-            (
-              (await (await api.get("/api/v1/search?q=shuttle")).json()) as {
-                total: number;
-              }
-            ).total,
-          { timeout: 30_000 },
-        )
+        .poll(async () => ((await (await api.get("/api/v1/search?q=shuttle")).json()) as { total: number }).total, { timeout: 30_000 })
         .toBe(1);
-      const bet = await api.post("/api/v1/search/best-bets", {
-        data: { query: "bus", source: "content", itemId: shuttle },
-      });
+      const bet = await api.post("/api/v1/search/best-bets", { data: { query: "bus", source: "content", itemId: shuttle } });
       expect(bet.status(), await bet.text()).toBe(201);
       await api.dispose();
     });
 
-    test("the search box suggests items and the results page filters and marks best bets", async ({
-      page,
-    }, testInfo) => {
+    test("the search box suggests items and the results page filters and marks best bets", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
-      const box = page.getByRole("searchbox", {
-        name: msg(locale, "shell.search.label"),
-      });
+      const box = page.getByRole("searchbox", { name: msg(locale, "shell.search.label") });
       await box.fill("shutt");
-      await expect(
-        page
-          .locator(".shell-search-results")
-          .getByRole("link", {
-            name: /Shuttle timetable changes|تغيير مواعيد الحافلة/,
-          })
-          .first(),
-      ).toBeVisible();
+      await expect(page.locator(".shell-search-results").getByRole("link", { name: /Shuttle timetable changes|تغيير مواعيد الحافلة/ }).first()).toBeVisible();
       await box.fill("shuttle");
       await box.press("Enter");
       await page.waitForURL(/\/search\?q=shuttle/);
       await expect(page.locator(".search-result")).toHaveCount(1);
-      const filters = page.getByRole("navigation", {
-        name: msg(locale, "search.filters"),
-      });
-      await expect(
-        filters.getByRole("link", {
-          name: new RegExp(msg(locale, "search.kinds.content")),
-        }),
-      ).toBeVisible();
+      const filters = page.getByRole("navigation", { name: msg(locale, "search.filters") });
+      await expect(filters.getByRole("link", { name: new RegExp(msg(locale, "search.kinds.content")) })).toBeVisible();
       await expectAccessible(page, testInfo, `search-results-${locale}`);
 
       // A best bet leads, marked as recommended, though the item never says "bus".
       await page.goto(`${hostOrigin(tenant.key)}/search?q=bus`);
       const first = page.locator(".search-result").first();
-      await expect(
-        first.getByText(msg(locale, "search.recommended"), { exact: true }),
-      ).toBeVisible();
-      await expect(first.getByRole("link")).toHaveAttribute(
-        "href",
-        `/content/read/${shuttle}`,
-      );
+      await expect(first.getByText(msg(locale, "search.recommended"), { exact: true })).toBeVisible();
+      await expect(first.getByRole("link")).toHaveAttribute("href", `/content/read/${shuttle}`);
 
       // Nothing found says so.
-      await page.goto(
-        `${hostOrigin(tenant.key)}/search?q=${encodeURIComponent("zebra quantum")}`,
-      );
-      await expect(
-        page.getByText(msg(locale, "search.none", { q: "zebra quantum" })),
-      ).toBeVisible();
+      await page.goto(`${hostOrigin(tenant.key)}/search?q=${encodeURIComponent("zebra quantum")}`);
+      await expect(page.getByText(msg(locale, "search.none", { q: "zebra quantum" }))).toBeVisible();
     });
 
     test("the search administrator turns SharePoint on and results show it in its own group", async ({
@@ -200,118 +134,85 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       ).toBeVisible();
     });
 
-    test("the search administrator adds and removes synonyms", async ({
-      page,
-    }, testInfo) => {
+    test("the search administrator turns AI summaries on and a summary cites its sources and takes feedback", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin/search`);
-      await expect(
-        page.getByRole("heading", {
-          level: 1,
-          name: msg(locale, "search.admin.title"),
-        }),
-      ).toBeVisible();
-      const words = page.getByLabel(
-        msg(locale, "search.admin.synonyms.words"),
-        { exact: true },
-      );
-      await words.fill("coach, shuttle");
-      await page
-        .getByRole("button", { name: msg(locale, "search.admin.synonyms.add") })
-        .click();
-      await expect(
-        page
-          .getByRole("status")
-          .filter({ hasText: msg(locale, "search.admin.synonyms.added") }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole("button", {
-          name: msg(locale, "search.admin.synonyms.remove", {
-            words: "coach, shuttle",
+      const panel = page.getByRole("region", { name: msg(locale, "search.admin.summary.title") });
+      const toggle = panel.getByRole("switch", { name: msg(locale, "search.admin.summary.switch") });
+      await expect(toggle).not.toBeChecked();
+      await toggle.click();
+      await expect(toggle).toBeChecked();
+
+      // The model's answer is given in the documented shape, so the page is checked without a model provider.
+      await page.route("**/api/v1/search/summary?**", (route) =>
+        route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            state: "answered",
+            turnId: "00000000-0000-0000-0000-000000000001",
+            text: "The evening shuttle leaves Gate 1 at 18:20 [1].",
+            citations: [{ n: 1, title: "Shuttle timetable changes", link: `/content/read/${shuttle}`, kind: "content" }],
           }),
         }),
-      ).toBeVisible();
+      );
+      let feedback: unknown = null;
+      await page.route("**/api/v1/assistant/turns/*/feedback", (route) => {
+        feedback = route.request().postDataJSON();
+        return route.fulfill({ status: 204 });
+      });
+      await page.goto(`${hostOrigin(tenant.key)}/search?q=shuttle`);
+      const summary = page.getByRole("region", { name: msg(locale, "search.summary.title") });
+      await expect(summary.getByText("The evening shuttle leaves Gate 1 at 18:20 [1].")).toBeVisible();
+      await expect(summary.getByRole("link", { name: "Shuttle timetable changes" })).toHaveAttribute("href", `/content/read/${shuttle}`);
+      await expect(summary.getByText(msg(locale, "search.summary.generated"))).toBeVisible();
+      await expectAccessible(page, testInfo, `search-summary-${locale}`);
+      await summary.getByRole("button", { name: msg(locale, "search.summary.notHelpful") }).click();
+      await expect(summary.getByRole("status")).toHaveText(msg(locale, "search.summary.thanks"));
+      expect(feedback).toEqual({ helpful: false, reason: null });
+    });
+
+    test("the search administrator adds and removes synonyms", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/search`);
+      await expect(page.getByRole("heading", { level: 1, name: msg(locale, "search.admin.title") })).toBeVisible();
+      const words = page.getByLabel(msg(locale, "search.admin.synonyms.words"), { exact: true });
+      await words.fill("coach, shuttle");
+      await page.getByRole("button", { name: msg(locale, "search.admin.synonyms.add") }).click();
+      await expect(page.getByRole("status").filter({ hasText: msg(locale, "search.admin.synonyms.added") })).toBeVisible();
+      await expect(page.getByRole("button", { name: msg(locale, "search.admin.synonyms.remove", { words: "coach, shuttle" }) })).toBeVisible();
       await expectAccessible(page, testInfo, `search-admin-${locale}`);
 
       await page.goto(`${hostOrigin(tenant.key)}/search?q=coach`);
-      await expect(
-        page.locator(".search-result").first().getByRole("link"),
-      ).toHaveAttribute("href", `/content/read/${shuttle}`);
+      await expect(page.locator(".search-result").first().getByRole("link")).toHaveAttribute("href", `/content/read/${shuttle}`);
 
       await page.goto(`${hostOrigin(tenant.key)}/admin/search`);
-      await page
-        .getByRole("button", {
-          name: msg(locale, "search.admin.synonyms.remove", {
-            words: "coach, shuttle",
-          }),
-        })
-        .click();
-      await expect(
-        page.getByText(msg(locale, "search.admin.synonyms.empty")),
-      ).toBeVisible();
+      await page.getByRole("button", { name: msg(locale, "search.admin.synonyms.remove", { words: "coach, shuttle" }) }).click();
+      await expect(page.getByText(msg(locale, "search.admin.synonyms.empty"))).toBeVisible();
     });
 
-    test("the search administrator proposes a retrieval change and applies it with a reason", async ({
-      page,
-    }, testInfo) => {
+    test("the search administrator proposes a retrieval change and applies it with a reason", async ({ page }, testInfo) => {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin/search`);
-      const section = page.getByRole("region", {
-        name: msg(locale, "search.admin.retrieval.title"),
-      });
+      const section = page.getByRole("region", { name: msg(locale, "search.admin.retrieval.title") });
       await expect(section).toBeVisible();
-      await section
-        .getByLabel(msg(locale, "search.admin.retrieval.topK"), { exact: true })
-        .fill("6");
-      await section
-        .getByRole("button", {
-          name: msg(locale, "search.admin.retrieval.submit"),
-        })
-        .click();
-      await expect(
-        section
-          .getByRole("status")
-          .filter({ hasText: msg(locale, "search.admin.retrieval.proposed") }),
-      ).toBeVisible();
+      await section.getByLabel(msg(locale, "search.admin.retrieval.topK"), { exact: true }).fill("6");
+      await section.getByRole("button", { name: msg(locale, "search.admin.retrieval.submit") }).click();
+      await expect(section.getByRole("status").filter({ hasText: msg(locale, "search.admin.retrieval.proposed") })).toBeVisible();
 
       // The shadow index is built and the gate has no retrieval case to run, so the change waits for a decision.
       const api = await tenantApi(tenant);
       await expect
-        .poll(
-          async () =>
-            (
-              (await (
-                await api.get("/api/v1/search/retrieval-config")
-              ).json()) as { open: { status: string } | null }
-            ).open?.status,
-          {
-            timeout: 30_000,
-          },
-        )
+        .poll(async () => ((await (await api.get("/api/v1/search/retrieval-config")).json()) as { open: { status: string } | null }).open?.status, {
+          timeout: 30_000,
+        })
         .toBe("held");
       await page.reload();
-      await expect(
-        section.getByText(msg(locale, "search.admin.retrieval.status.held"), {
-          exact: false,
-        }),
-      ).toBeVisible();
+      await expect(section.getByText(msg(locale, "search.admin.retrieval.status.held"), { exact: false })).toBeVisible();
       await expectAccessible(page, testInfo, `search-retrieval-${locale}`);
-      await section
-        .getByLabel(msg(locale, "search.admin.retrieval.reason"))
-        .fill("No retrieval cases yet; checked by hand.");
-      await section
-        .getByRole("button", {
-          name: msg(locale, "search.admin.retrieval.apply"),
-        })
-        .click();
-      await expect(
-        section
-          .getByRole("status")
-          .filter({ hasText: msg(locale, "search.admin.retrieval.applied") }),
-      ).toBeVisible();
-      const config = (await (
-        await api.get("/api/v1/search/retrieval-config")
-      ).json()) as { active: { version: number; topK: number } };
+      await section.getByLabel(msg(locale, "search.admin.retrieval.reason")).fill("No retrieval cases yet; checked by hand.");
+      await section.getByRole("button", { name: msg(locale, "search.admin.retrieval.apply") }).click();
+      await expect(section.getByRole("status").filter({ hasText: msg(locale, "search.admin.retrieval.applied") })).toBeVisible();
+      const config = (await (await api.get("/api/v1/search/retrieval-config")).json()) as { active: { version: number; topK: number } };
       expect(config.active).toMatchObject({ version: 1, topK: 6 });
       await api.dispose();
     });
