@@ -148,3 +148,52 @@
 .agents-card-row {
   display: contents;
 }
+
+/* The read-only definition of an agent (spec 020 section 10), for AI policy administrators. */
+.agents-json {
+  max-block-size: 24rem;
+  overflow: auto;
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+  font-family: var(--tb-font-family-latin);
+  font-size: var(--tb-font-size-sm);
+}
+
+/* Spec 020 US6: marketplace actions sit in the tile footer, above the card's cover link. */
+.agents-market-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  position: relative;
+}
+
+.agents-market-rate {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.agents-market-rate > summary {
+  cursor: pointer;
+  color: var(--tb-color-link);
+}
+
+.agents-access-list {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agents-access-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+  padding-block: var(--tb-space-xs);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}

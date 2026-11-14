@@ -75,7 +75,7 @@ internal static partial class AssistantPrompt
     /// <summary>What the search summary prompt answers when the passages do not answer the search.</summary>
     public const string NoAnswer = "NO_ANSWER";
 
-    private static string Escape(string text) => text.Replace("&", "&amp;", StringComparison.Ordinal).Replace("<", "&lt;", StringComparison.Ordinal)
+    internal static string Escape(string text) => text.Replace("&", "&amp;", StringComparison.Ordinal).Replace("<", "&lt;", StringComparison.Ordinal)
         .Replace(">", "&gt;", StringComparison.Ordinal).Replace("\"", "&quot;", StringComparison.Ordinal);
 
     /// <summary>The passages as one user message, numbered from <paramref name="start"/> + 1 in the order given.</summary>

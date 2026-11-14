@@ -14,6 +14,31 @@ R1 slices, in order:
 5. **Reach:** routing from the assistant (with planned spec 014) and contextual actions on policy pages and documents; prepared tasks in the inbox.
 6. **Pages:** agent registry, template library, agent editor with test panel, review page, in English and Arabic, RTL.
 
+## R2 plan
+**Date:** 2026-11-14. R2 adds US4 (Agent Studio), US6 (marketplace), US8 scenarios 2 to 4 (briefings), US9 (memory), the department templates 7 to 12, detailed agent analytics through spec 021 (FR-018), and closes the R1 runtime gaps (T004, T005). Handoffs (US10) and the advanced templates are R3.
+
+R2 slices, in order:
+1. **Studio (US4, FR-019):** `POST /api/v1/agents` with no template creates a blank draft, for holders of `agent.design` when `ai.agents.custom` is on and the tenant is under `ai.agents.max_custom` (customer-created agents are those with no template). Over the limit, `conflict.agents.custom_limit` names the limit and that the tenant administrator can raise it through the package. `POST /api/v1/agents/{id}/clone` creates a draft with a new identity and no published history; audience, tools and memory are copied only when the request names each (`copyAudience`, `copyTools`, `copyMemory`). The tool picker (`GET /api/v1/agents/tools?agentId=`) offers only registry tools allowed by tenant policy and the package, with side effects and approval rule, and refuses at save any tool the designer's scope does not reach. The Studio page groups the definition in the areas of section 12; an administrator gets a read-only JSON view.
+2. **Marketplace (US6, FR-010):** `GET /api/v1/agents/marketplace?q=&category=` lists published agents the person may use and those whose audience mode is `request_access`, grouped by category and department, in their language; `hidden` agents outside the audience never appear. `POST .../{id}/access-requests` creates an inbox task for the owner (task source `agent_access`) and the decision is shown to the requester and audited (`agent.access_requested`, `granted`, `denied`); a grant adds the person to the audience. Favourites (`PUT/DELETE .../{id}/favourite`) feed the assistant's agent list and the home shortcut strip (spec 008) through the existing contract. Ratings 1 to 5 with an optional comment (`PUT .../{id}/rating`): the average is shown to users, comments only to the owner, backup owner, AI Policy Administrator and the author (open question 3 default). Ratings are kept 2 years.
+3. **Memory (US9, FR-015):** the tenant policy switch `persistentMemory` becomes settable. A definition's memory area is `session` (default) or `persistent` with retention days (default 90 unused). The person accepts memory per agent before anything is stored. A built-in tool `memory.remember` stores a short item with its classification; Restricted is refused, Confidential needs the agent's ceiling. Items are read into the context as the person's own notes, viewable, editable and deletable on "My agents"; deleted after retention of no use, on leaver (spec 003 event), when the person withdraws acceptance, and when the tenant turns the switch off. Deletion is audited as `agent.memory_deleted`.
+4. **Briefings (US8 scenarios 2 to 4, FR-014):** the policy switch `scheduledAgents` becomes settable, with the risk classes allowed. An agent whose definition allows briefings offers "Daily briefing at a time" to its users; `PUT .../{id}/briefing {time, days}` subscribes. A worker runs due briefings as the subscribing user (spec 027 AGV-003) through the normal runtime and delivers the answer as a notification (spec 015, category `agent_briefing`). No run when the person is disabled, opted out, the agent is suspended or retired, or policy no longer allows it.
+5. **Department templates (7 to 12):** Onboarding, People Directory and Expertise, Learning and Development, Procurement, Finance and Expenses, Internal Communications, behind `ai.agents.department`, with Arabic and English instructions and platform suites. Their tools are the ones the modules already register; a template whose autonomy needs L3 (Procurement, Internal Communications publishing) is "not ready" until spec 027 R2 builds L3.
+6. **Runtime gaps (T004, T005):** answers stream over server-sent events from `POST .../runs` (as the assistant already does), and a run interrupted by a restart is resumed from its last checkpoint by a worker instead of being closed.
+7. **Analytics (FR-018 R2):** the detailed agent analytics (per version: task success, escalations, tool success and failure, ratings, quality scores and cost) are offered through spec 021 when `analytics.advanced` is on.
+
+### R2 data model (schema `agents`, forced RLS)
+- `agent`: `audience_mode` (`open`, `request_access`, `hidden`), `cloned_from`.
+- `agent_favourite (user_id, agent_id)`, `agent_rating (user_id, agent_id, score, comment, updated_at)`, `agent_access_request (id, agent_id, user_id, status, decided_by, decided_at)`.
+- `agent_memory_consent (user_id, agent_id, accepted_at)`, `agent_memory (id, agent_id, user_id, text, classification, created_at, last_used_at)`.
+- `agent_briefing (user_id, agent_id, time, days, time_zone, next_run_at, last_run_at)`.
+
+### R2 tests
+- Studio: blank create needs the capability and the limit; clone copies only what was confirmed; tool picker and save refuse tools outside policy or scope.
+- Marketplace: hidden agents never listed; request access creates the owner's task and the outcome reaches the requester; favourites and ratings per user; comments private; cross-tenant not found.
+- Memory: nothing stored without both switches and the person's acceptance; Restricted refused; view, edit, delete; retention, leaver and withdrawal delete; another user never sees an item.
+- Briefings: not offered when policy forbids; runs as the user with current permissions; stops on opt-out, suspension or a disabled user.
+- e2e: Studio, marketplace and My agents in English and Arabic with axe.
+
 ## Constitution check
 | Principle | Pass | Evidence |
 |---|---|---|

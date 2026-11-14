@@ -99,6 +99,9 @@ public static class NotificationCategories
     /// <summary>Spec 013: an AI budget reached 80% or 100% of its limit, for the AI Policy Administrators and the budget owner.</summary>
     public const string AiBudgets = "ai_budgets";
 
+    /// <summary>Spec 020: daily briefings from agents the person subscribed to.</summary>
+    public const string AgentBriefings = "agent_briefings";
+
     public static readonly IReadOnlyList<NotificationCategory> All =
     [
         new(SecurityNotice, Mandatory: true, EmailByDefault: true),
@@ -119,6 +122,7 @@ public static class NotificationCategories
         new(Bookings, Mandatory: false, EmailByDefault: true),
         new(SearchAlerts, Mandatory: false, EmailByDefault: false),
         new(AiBudgets, Mandatory: false, EmailByDefault: true),
+        new(AgentBriefings, Mandatory: false, EmailByDefault: false),
     ];
 
     public static NotificationCategory? Find(string key) => All.FirstOrDefault(c => c.Key == key);

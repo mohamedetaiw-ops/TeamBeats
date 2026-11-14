@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
-import { pickText, type AgentSummary, type TemplateView } from "@/lib/agents/types";
+import { pickText, type AgentSummary, type StudioOffer, type TemplateView } from "@/lib/agents/types";
 import { AgentTabs } from "@/features/agents/AgentTabs";
 import { TemplateLibrary } from "@/features/agents/TemplateLibrary";
+import { NewAgent } from "@/features/agents/NewAgent";
 import { agentsSection } from "@/features/agents/guard";
 import "@/features/agents/agents.css";
 
@@ -15,10 +16,11 @@ import "@/features/agents/agents.css";
  */
 export default async function AgentsPage() {
   await agentsSection();
-  const [agents, templates, units] = await Promise.all([
+  const [agents, templates, units, studio] = await Promise.all([
     apiGet<{ agents: AgentSummary[] }>("/api/v1/agents"),
     apiGet<{ templates: TemplateView[] }>("/api/v1/agents/templates"),
     listUnits(),
+    apiGet<StudioOffer>("/api/v1/agents/studio"),
   ]);
   if (!agents.ok) notFound();
   const t = await getTranslations("agents");
@@ -61,6 +63,7 @@ export default async function AgentsPage() {
             </div>
           )}
         </section>
+        {studio.ok && studio.data.custom ? <NewAgent offer={studio.data} units={units.ok ? units.data : []} /> : null}
         {templates.ok ? <TemplateLibrary templates={templates.data.templates} units={units.ok ? units.data : []} /> : null}
       </div>
     </>

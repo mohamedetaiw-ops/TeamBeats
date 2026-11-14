@@ -1,9 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import { pickText, type AgentChoice } from "@/lib/agents/types";
+import { pickText, type AgentChoice, type AgentMemoryView, type BriefingView } from "@/lib/agents/types";
 import { Header } from "@/components/shell/Header";
 import { AgentConversation } from "@/features/agents/AgentConversation";
+import { AgentMemoryPanel } from "@/features/agents/AgentMemoryPanel";
+import { AgentBriefingPanel } from "@/features/agents/AgentBriefingPanel";
 import "@/features/agents/agents.css";
 
 const SOURCES = ["content", "policies", "documents"] as const;
@@ -24,7 +26,11 @@ export default async function AgentConversationPage({
   if (!me.ok) redirect("/signin");
   const { id } = await params;
   const { itemSource, itemId } = await searchParams;
-  const available = await apiGet<{ agents: AgentChoice[] }>("/api/v1/agents/available");
+  const [available, memory, briefing] = await Promise.all([
+    apiGet<{ agents: AgentChoice[] }>("/api/v1/agents/available"),
+    apiGet<AgentMemoryView>(`/api/v1/agents/${encodeURIComponent(id)}/memory`),
+    apiGet<BriefingView>(`/api/v1/agents/${encodeURIComponent(id)}/briefing`),
+  ]);
   const agent = available.ok ? available.data.agents.find((a) => a.id === id) : undefined;
   if (!agent) notFound();
   const t = await getTranslations("agents.use");
@@ -47,6 +53,8 @@ export default async function AgentConversationPage({
         </h1>
         <p>{pickText(agent.description, locale)}</p>
         <AgentConversation agentId={id} item={item} />
+        {briefing.ok && (briefing.data.offered || briefing.data.subscription) ? <AgentBriefingPanel view={briefing.data} /> : null}
+        {memory.ok && (memory.data.offered || memory.data.accepted || memory.data.items.length > 0) ? <AgentMemoryPanel view={memory.data} /> : null}
       </main>
     </>
   );

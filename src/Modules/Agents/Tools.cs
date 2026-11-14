@@ -10,7 +10,7 @@ namespace TeamBeats.Modules.Agents;
 
 /// <summary>A tool as designers see it in the tool picker (spec 020 US3 scenario 2): its side effect and approval rule.</summary>
 public sealed record ToolView(string Name, string Module, int Version, string SideEffect, string DefaultRule, string Rule, string OutputClassification,
-    bool Allowed, JsonElement Parameters, IReadOnlyDictionary<string, string>? Title = null);
+    bool Allowed, JsonElement Parameters, IReadOnlyDictionary<string, string>? Title = null, bool InPackage = true);
 
 /// <summary>
 /// The tool registry (spec 027 T003, FR-005, FR-006): the product tools the modules declare in code, the same for every

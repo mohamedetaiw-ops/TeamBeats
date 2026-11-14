@@ -110,6 +110,9 @@ internal sealed class RunState
     public List<string> Executed { get; set; } = [];
     public PendingCall? Pending { get; set; }
 
+    /// <summary>Persistent memory is on for this person and agent (020 US9): the run reads their notes and is offered <c>memory.remember</c>.</summary>
+    public bool Memory { get; set; }
+
     /// <summary>Seconds the run has worked so far, carried across a confirmation wait, which does not count (027 FR-015).</summary>
     public double ActiveSeconds { get; set; }
 }
@@ -142,7 +145,7 @@ internal sealed record RunAgent(Guid Id, int Version, Guid OrgUnitId, AgentDefin
 /// </summary>
 public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntitlementService entitlements, IAuthorizationService authz,
     IOrganizationHierarchy org, IAuditWriter audit, IClock clock, IAiGateway gateway, ToolRegistry tools, AgentPolicyService policies,
-    ISearchRetrieval retrieval)
+    ISearchRetrieval retrieval, AgentMemory memory, MemoryRememberTool remember)
 {
     public const int MaxMessage = 2000;
     public const string PromptVersion = "agent.v1";
@@ -173,20 +176,9 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         Definition((await session.ScalarAsync<string>("select definition::text from agents.agent_version where agent_id = @id and number = @number",
             new { id, number }, ct))!);
 
-    /// <summary>Whether the person is in the agent's audience: the whole tenant, or a member of one of its org units or their subtrees.</summary>
-    private async Task<bool> InAudienceAsync(AgentAudience? audience, Guid user, CancellationToken ct)
-    {
-        if (audience?.Scope == AgentAudience.Tenant)
-        {
-            return true;
-        }
-        if (audience?.OrgUnits is not { Count: > 0 } units)
-        {
-            return false;
-        }
-        var members = await org.GetMemberUserIdsAsync(await org.GetSubtreesAsync(units, ct), ct);
-        return members.Contains(user);
-    }
+    /// <summary>Whether the person is in the agent's audience: the whole tenant, a member of one of its org units or their subtrees, or granted access.</summary>
+    private Task<bool> InAudienceAsync(Guid agentId, AgentAudience? audience, Guid user, CancellationToken ct) =>
+        AgentAccess.InAudienceAsync(session, org, agentId, audience, user, ct);
 
     /// <summary>A turn with a published agent the person may use (020 US7). Agents the person may not use are not found.</summary>
     public Task<RunView> RunAsync(Guid agentId, RunRequest request, CancellationToken ct) => RunAsync(agentId, request, null, ct);
@@ -202,7 +194,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             throw AppException.NotFound();
         }
         var definition = await VersionAsync(agentId, version, ct);
-        if (!await InAudienceAsync(definition.Audience, user, ct))
+        if (!await InAudienceAsync(agentId, definition.Audience, user, ct))
         {
             throw AppException.NotFound();
         }
@@ -213,6 +205,39 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         await DemandNoKillSwitchAsync(ct);
         var run = new RunAgent(agentId, version, agent.Unit, definition, "run", (await policies.CurrentAsync(ct)).Policy);
         return await StartAsync(run, user, message, request, routeId, ct);
+    }
+
+    /// <summary>
+    /// A daily briefing (020 US8 scenario 2, 027 AGV-003): the agent's briefing question, run now as the signed-in
+    /// subscriber with their current permissions, read only. Null when it must not run: the agent is not published or
+    /// no longer offers briefings, the person left its audience, the tenant policy does not allow scheduled agents of its
+    /// risk class, or agents are switched off.
+    /// </summary>
+    internal async Task<RunView?> BriefingAsync(Guid agentId, string language, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        if (!await entitlements.IsEnabledAsync(Capabilities.AiAgentsBasic, ct))
+        {
+            return null;
+        }
+        var row = await AgentRowAsync(agentId, ct);
+        if (row is not { } agent || agent.Current is not { } version || agent.Status != AgentStatuses.Published ||
+            await session.ScalarAsync<bool?>("select active from agents.kill_switch", null, ct) == true)
+        {
+            return null;
+        }
+        var definition = await VersionAsync(agentId, version, ct);
+        var policy = (await policies.CurrentAsync(ct)).Policy;
+        var risk = await session.ScalarAsync<string>("select risk_class from agents.agent_version where agent_id = @agentId and number = @version", new { agentId, version }, ct);
+        if (!AgentBriefings.Allowed(definition, policy, risk) || !await InAudienceAsync(agentId, definition.Audience, user, ct))
+        {
+            return null;
+        }
+        var languages = definition.Languages ?? ["en"];
+        language = languages.Contains(language) ? language : languages[0];
+        var prompt = definition.Briefing!.Prompt?.GetValueOrDefault(language) ?? definition.Briefing.Prompt?.Values.FirstOrDefault() ?? string.Empty;
+        var run = new RunAgent(agentId, version, agent.Unit, definition, "briefing", policy);
+        return await StartAsync(run, user, prompt, new RunRequest(prompt, language), null, ct);
     }
 
     /// <summary>The test panel (020 US1 scenario 4): the latest version, as the designer, with no write action executed.</summary>
@@ -304,6 +329,22 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         var now = clock.UtcNow;
         var state = new RunState { Classification = "internal" };
         state.Messages.Add(new AiMessage(AiRoles.System, SystemPrompt(agent.Definition, language)));
+        // Persistent memory (020 US9): only real runs read and keep notes, never the test panel or evaluation.
+        if (agent.Mode == "run" && await memory.RecallAsync(agent.Id, user, agent.Definition, agent.Policy, ct) is { } notes)
+        {
+            state.Memory = true;
+            if (notes.Count > 0)
+            {
+                var envelope = AgentMemory.Envelope(notes);
+                state.Messages.Add(new AiMessage(AiRoles.User, envelope));
+                state.Untrusted += envelope;
+                var highest = notes.Select(n => n.Classification).MaxBy(Classifications.Rank)!;
+                if (Classifications.Rank(highest) > Classifications.Rank(state.Classification))
+                {
+                    state.Classification = highest;
+                }
+            }
+        }
         if (request.ItemSource is { } source && request.ItemId is { } item)
         {
             await ItemContextAsync(id, agent, source, item, language, state, ct);
@@ -398,6 +439,10 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
     {
         var offered = (agent.Definition.Tools ?? []).Select(tools.Find).Where(t => t is not null)
             .Select(t => new AiTool(RunAgent.ModelName(t!.Definition.Name), t.Definition.Description, t.Definition.Parameters)).ToList();
+        if (state.Memory)
+        {
+            offered.Add(new AiTool(RunAgent.ModelName(MemoryRememberTool.Name), remember.Definition.Description, remember.Definition.Parameters));
+        }
         var maxSteps = agent.Policy.MaxSteps;
         string? model = null, provider = null;
         int input = 0, output = 0;
@@ -517,29 +562,34 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             return new Gate(null, null, null, Stop: "agent.suspended");
         }
-        var granted = (agent.Definition.Tools ?? []).FirstOrDefault(t => RunAgent.ModelName(t) == modelName);
+        // The memory tool is granted by the agent's memory area and the person's acceptance, not by the tool list (020 US9).
+        var memoryCall = state.Memory && modelName == RunAgent.ModelName(MemoryRememberTool.Name);
+        var granted = memoryCall ? MemoryRememberTool.Name : (agent.Definition.Tools ?? []).FirstOrDefault(t => RunAgent.ModelName(t) == modelName);
         if (granted is null)
         {
             return new Gate(null, null, null, Refusal: "tool.not_granted");
         }
-        if (tools.Find(granted) is not { } tool)
+        if ((memoryCall ? remember : tools.Find(granted)) is not { } tool)
         {
             return new Gate(granted, null, null, Refusal: "tool.unknown");
         }
         var definition = tool.Definition;
-        var rule = agent.Policy.RuleFor(definition);
-        if (!agent.Policy.Allows(granted) || rule == ToolApprovalRules.Block)
+        var rule = memoryCall ? ToolApprovalRules.Execute : agent.Policy.RuleFor(definition);
+        if (!memoryCall)
         {
-            return new Gate(granted, null, null, Refusal: "tool.not_allowed");
-        }
-        if (definition.RequiredCapability is { } capability && !await entitlements.IsEnabledAsync(capability, ct))
-        {
-            return new Gate(granted, null, null, Refusal: "tool.not_in_package");
-        }
-        var needed = definition.SideEffect switch { ToolSideEffects.Read => 0, ToolSideEffects.Draft => 1, ToolSideEffects.WriteSelf => 2, _ => 3 };
-        if (needed > agent.Autonomy || needed > AgentAutonomy.Rank(AgentAutonomy.HighestBuilt))
-        {
-            return new Gate(granted, null, null, Refusal: "tool.above_autonomy");
+            if (!agent.Policy.Allows(granted) || rule == ToolApprovalRules.Block)
+            {
+                return new Gate(granted, null, null, Refusal: "tool.not_allowed");
+            }
+            if (definition.RequiredCapability is { } capability && !await entitlements.IsEnabledAsync(capability, ct))
+            {
+                return new Gate(granted, null, null, Refusal: "tool.not_in_package");
+            }
+            var needed = definition.SideEffect switch { ToolSideEffects.Read => 0, ToolSideEffects.Draft => 1, ToolSideEffects.WriteSelf => 2, _ => 3 };
+            if (needed > agent.Autonomy || needed > AgentAutonomy.Rank(AgentAutonomy.HighestBuilt))
+            {
+                return new Gate(granted, null, null, Refusal: "tool.above_autonomy");
+            }
         }
         JsonElement arguments;
         try
@@ -565,6 +615,11 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             // Approver tasks come with L3 in R2 (027 US4); until then such a call is refused.
             return new Gate(granted, arguments, hash, Refusal: "tool.approval_not_available");
         }
+        if (agent.Mode == "briefing" && ToolSideEffects.IsWrite(definition.SideEffect))
+        {
+            // A briefing reads and reports; nobody is there to confirm an action (020 US8).
+            return new Gate(granted, arguments, hash, Refusal: "tool.not_in_briefing");
+        }
         if (ToolSideEffects.IsWrite(definition.SideEffect) && state.Executed.Contains(hash))
         {
             return new Gate(granted, arguments, hash, Refusal: "tool.already_done");
@@ -573,13 +628,14 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
         {
             return agent.Sandbox ? new Gate(granted, arguments, hash, Confirm: true, Sandbox: true) : new Gate(granted, arguments, hash, Refusal: "tool.test_mode");
         }
-        return new Gate(granted, arguments, hash, Confirm: rule == ToolApprovalRules.Confirm || ToolSideEffects.IsWrite(definition.SideEffect));
+        // A note for the person themselves, which they accepted and can delete, needs no confirmation card.
+        return new Gate(granted, arguments, hash, Confirm: !memoryCall && (rule == ToolApprovalRules.Confirm || ToolSideEffects.IsWrite(definition.SideEffect)));
     }
 
     private async Task<ToolResult> ExecuteAsync(Guid runId, RunAgent agent, Guid user, RunState state, string name, JsonElement arguments, string hash,
         Stopwatch watch, CancellationToken ct, string decision = ToolDecisions.Executed)
     {
-        var tool = tools.Find(name)!;
+        var tool = name == MemoryRememberTool.Name ? remember : tools.Find(name)!;
         state.ToolCalls++;
         ToolResult result;
         using (var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct))
