@@ -281,4 +281,35 @@ public sealed class SpaceGuestsTests(TenantWorld world) : IAsyncLifetime
             creationUnits = Array.Empty<Guid>(), guestsAllowed = true, guestDays = 60, version = 0,
         })).StatusCode);
     }
+    [Fact]
+    public async Task A_guest_searches_only_inside_the_spaces_they_are_invited_to()
+    {
+        var t = await SetupAsync();
+        var omar = t["omar"].Client;
+        var space = (await SpaceAsync(t, "Vendor rollout")).GetProperty("id").GetGuid();
+        var open = (await SpaceAsync(t, "Town hall", "public")).GetProperty("id").GetGuid();
+        await OkAsync(omar.PostAsJsonAsync($"{Api}/{space}/tasks", new { title = "Quarterly kickoff agenda" }), HttpStatusCode.Created);
+        await OkAsync(omar.PostAsJsonAsync($"{Api}/{open}/tasks", new { title = "Quarterly kickoff venue" }), HttpStatusCode.Created);
+        // An open community that every person of the tenant reads.
+        var community = (await OkAsync(t["admin"].Client.PostAsJsonAsync("/api/v1/engagement/communities",
+            new { names = new Dictionary<string, string> { ["en"] = "Kickoff club" }, kind = "open" }), HttpStatusCode.Created)).GetProperty("id").GetGuid();
+        await OkAsync(t["admin"].Client.PostAsJsonAsync($"/api/v1/engagement/communities/{community}/posts",
+            new { body = new { blocks = new object[] { new { type = "paragraph", children = new object[] { new { text = "Quarterly kickoff photos" } } } } } }),
+            HttpStatusCode.Created);
+
+        var address = $"rania@partner-{t.Key}.example";
+        await OkAsync(omar.PostAsJsonAsync($"{Api}/{space}/guests", new { email = address, role = "member", days = 30 }));
+        var rania = await SignInAsync(t, address);
+        await world.DispatchTenantAsync(t.Id);
+
+        static async Task<string[]> FoundAsync(HttpClient client) =>
+            (await OkAsync(client.GetAsync("/api/v1/search?q=Quarterly%20kickoff"))).GetProperty("results").EnumerateArray()
+                .Select(r => $"{r.GetProperty("kind").GetString()}: {r.GetProperty("title").GetString()}").Order(StringComparer.Ordinal).ToArray();
+
+        // People of the tenant find the tasks of both spaces and the community's post; the guest finds only what is
+        // inside her space (spec 012 FR-022).
+        Assert.Equal(["task: Quarterly kickoff agenda", "task: Quarterly kickoff venue"], (await FoundAsync(omar)).Where(r => r.StartsWith("task", StringComparison.Ordinal)));
+        Assert.Contains("discussion: Kickoff club", await FoundAsync(t["admin"].Client));
+        Assert.Equal(["task: Quarterly kickoff agenda"], await FoundAsync(rania));
+    }
 }

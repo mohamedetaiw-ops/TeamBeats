@@ -14,7 +14,7 @@ Depends on 004, 009, 010, 011, 013, 016, 025, 034. R1: US1 to US4. R2: US5 to US
 - [x] T010 SC-001 suite in CI; performance tests; OpenAPI; R1 implementation notes; spec evidence
 
 ## R2
-- [ ] T011 Indexing consumers for 023, 028 and 029 with their access rules; exclusions of SRC-021; guest scope
+- [x] T011 Indexing consumers for 023, 028 and 029 with their access rules; exclusions of SRC-021; guest scope
 - [ ] T012 [P] [US5] Tests: delegated live query, 3 second budget, source off sends nothing
 - [ ] T013 [US5] Federated search contract and SharePoint source
 - [ ] T014 [US6] AI summary with citations, off by default
