@@ -21,7 +21,19 @@ public static class ContentStatuses
 /// Built-in content types of R1 with the defaults of spec 009 section 6: pages need an owner and a review every 12
 /// months; news and announcements need neither. Tenants change the settings per type; custom types come later.
 /// </summary>
-public sealed record ContentTypeSettings(string Key, bool RequiresOwner, int? ReviewMonths, bool ShowHistoryToReaders, bool UnderReviewLabel);
+/// <summary>
+/// Settings of a content type. Retention (FR-020): after <see cref="RetentionMonths"/>, <see cref="RetentionAction"/>
+/// <c>versions</c> deletes versions older than the period except the live and draft ones, and <c>item</c> deletes archived
+/// items not changed for the period. Both null keeps everything, the default.
+/// </summary>
+public sealed record ContentTypeSettings(string Key, bool RequiresOwner, int? ReviewMonths, bool ShowHistoryToReaders, bool UnderReviewLabel,
+    int? RetentionMonths = null, string? RetentionAction = null);
+
+public static class RetentionActions
+{
+    public const string Versions = "versions";
+    public const string Item = "item";
+}
 
 public static class ContentTypes
 {

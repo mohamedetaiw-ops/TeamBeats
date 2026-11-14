@@ -189,7 +189,35 @@ export type AcknowledgementSummary = { itemId: string; countedFrom: number; audi
 export type TeamMemberStatus = { person: ContentPerson; confirmed: boolean; at: string | null; channel: string | null };
 export type AckReportView = { id: string; itemId: string; status: string; rowCount: number | null; createdAt: string; completedAt: string | null; expiresAt: string | null };
 
-export type SiteHealth = { siteId: string; names: Record<string, string>; overdueForReview: number; withoutActiveOwner: number; expired: number; notViewed: number | null };
+export type SiteHealth = {
+  siteId: string;
+  names: Record<string, string>;
+  overdueForReview: number;
+  withoutActiveOwner: number;
+  expired: number;
+  notViewed: number | null;
+  /** Nobody holds content administration at the site's unit (spec 009 section 4). */
+  ownerless?: boolean;
+  archived?: boolean;
+  /** Items of an archived site still live and readable by link. */
+  liveLinks?: number;
+};
+
+/** Content type settings with retention (spec 009 FR-020): both retention fields set, or both null to keep everything. */
+export type ContentTypeSettings = {
+  key: string;
+  requiresOwner: boolean;
+  reviewMonths: number | null;
+  showHistoryToReaders: boolean;
+  underReviewLabel: boolean;
+  retentionMonths?: number | null;
+  retentionAction?: "versions" | "item" | null;
+};
+export type ContentSettingsView = { embedHosts: string[]; types: ContentTypeSettings[] };
+
+export type ScreenView = { id: string; siteId: string; name: string; createdAt: string; rotatedAt: string | null };
+export type ScreenWithAddress = { screen: ScreenView; path: string };
+export type SignageFeed = { name: string; siteNames: Record<string, string>; items: { id: string; locale: string; title: string; summary: string | null; publishedAt: string }[] };
 export type HealthItem = { id: string; siteId: string; type: string; status: string; title: string; ownerId: string | null; reviewDueAt: string | null; expiredAt: string | null };
 
 export const contentTypes = ["news", "announcement", "page"] as const;

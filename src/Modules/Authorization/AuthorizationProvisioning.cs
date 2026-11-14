@@ -154,6 +154,17 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
         return rows.Where(r => r.Permissions.Any(Permissions.Administers)).Select(r => r.Row).ToList();
     }
 
+    public async Task<IReadOnlyList<OrgHolder>> OrgHoldersAsync(string permission, CancellationToken ct = default) =>
+        await session.QueryAsync(
+            """
+            select distinct coalesce(m.user_id, a.subject_id), a.scope_id, a.scope_type = 'org_subtree'
+            from authz.role_assignment a
+            join authz.role_permission p on p.role_id = a.role_id and p.permission_key = @p
+            left join authz.group_member m on a.subject_type = 'group' and m.group_id = a.subject_id
+            where a.scope_type in ('org_unit', 'org_subtree') and a.scope_id is not null and a.revoked_at is null
+              and (a.subject_type = 'user' or m.user_id is not null)
+            """, new { p = permission }, r => new OrgHolder(r.GetGuid(0), r.GetGuid(1), r.GetBoolean(2)), ct);
+
     public async Task<IReadOnlyList<Guid>> ResourceHoldersAsync(string permission, string resourceType, Guid resourceId, CancellationToken ct = default) =>
         await session.QueryAsync(
             """

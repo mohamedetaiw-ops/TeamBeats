@@ -624,3 +624,20 @@
   margin: 0;
   font-size: var(--tb-font-size-md);
 }
+
+.content-signage h1 {
+  font-size: var(--tb-font-size-xxl);
+}
+
+.content-signage-list {
+  display: grid;
+  gap: var(--tb-space-lg);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.content-signage-title {
+  margin: 0;
+  font-size: var(--tb-font-size-xl);
+}
