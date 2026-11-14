@@ -5092,7 +5092,35 @@
           "incomplete": "The gate could not complete.",
           "failed_critical": "The gate found a critical failure."
         }
+      },
+      "federated": {
+        "title": "Federated sources",
+        "intro": "Systems searched live with each person's own access and shown in their own group under the results. Nothing found is stored. A source that is off is never asked.",
+        "source": {
+          "sharepoint": "SharePoint"
+        },
+        "hint": {
+          "sharepoint": "Files of the SharePoint connected libraries each person can open."
+        },
+        "on": "{source} is now searched.",
+        "off": "{source} is no longer searched."
       }
+    },
+    "federated": {
+      "loading": "Searching connected systems",
+      "source": {
+        "sharepoint": "SharePoint"
+      },
+      "live": "Searched live with your own access. Results open where they are kept.",
+      "connect": "Connect Microsoft 365 to search SharePoint",
+      "reconnect": "Sign in to Microsoft 365 again",
+      "connectHint": "Results come from SharePoint with your own access, so it needs your Microsoft 365 sign-in.",
+      "connectAction": "Connect Microsoft 365",
+      "notNow": "Not available now",
+      "timeout": "SharePoint took too long to answer. Try again in a moment.",
+      "unavailable": "SharePoint cannot be reached right now.",
+      "none": "Nothing in SharePoint matches.",
+      "opensOutside": "(opens in a new tab)"
     }
   },
   "assistant": {

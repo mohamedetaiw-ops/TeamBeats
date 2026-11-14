@@ -3,7 +3,13 @@ import { redirect } from "next/navigation";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { Header } from "@/components/shell/Header";
-import { isSearchKind, searchKinds, type SearchPage, type SearchResult } from "@/lib/search/types";
+import {
+  isSearchKind,
+  searchKinds,
+  type SearchPage,
+  type SearchResult,
+} from "@/lib/search/types";
+import { FederatedResults } from "@/features/search/FederatedResults";
 import "@/features/search/search.css";
 
 type Params = { q?: string; kind?: string; page?: string };
@@ -18,9 +24,14 @@ function href(q: string, kind?: string, page?: number): string {
 /**
  * Search results (spec 012 US1, US4, T009): one ranked list across sources with filters by source, best bets marked as
  * recommended, the degraded note when meaning based search is unavailable, and services or people to try when nothing
- * matched. Every number comes from the API, which counts only what the person may open.
+ * matched. Every number comes from the API, which counts only what the person may open. Federated sources (US5) follow
+ * on the first page of all results, loaded after it.
  */
-export default async function SearchResultsPage({ searchParams }: { searchParams: Promise<Params> }) {
+export default async function SearchResultsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Params>;
+}) {
   const me = await apiGet<Me>("/api/v1/me");
   if (!me.ok) {
     redirect("/signin");
@@ -28,23 +39,40 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
   const params = await searchParams;
   const q = (params.q ?? "").trim().slice(0, 200);
   const kind = isSearchKind(params.kind) ? params.kind : undefined;
-  const number = Math.min(Math.max(Number.parseInt(params.page ?? "1", 10) || 1, 1), 50);
+  const number = Math.min(
+    Math.max(Number.parseInt(params.page ?? "1", 10) || 1, 1),
+    50,
+  );
   const t = await getTranslations("search");
   const format = await getFormatter();
 
   const result = q
-    ? await apiGet<SearchPage>(`/api/v1/search?${new URLSearchParams({ q, ...(kind ? { kind } : {}), page: String(number) }).toString()}`)
+    ? await apiGet<SearchPage>(
+        `/api/v1/search?${new URLSearchParams({ q, ...(kind ? { kind } : {}), page: String(number) }).toString()}`,
+      )
     : null;
   const page = result?.ok ? result.data : null;
   const pages = page ? Math.min(Math.ceil(page.total / page.pageSize), 50) : 0;
-  const all = page ? Object.values(page.facets).reduce((sum, n) => sum + (n ?? 0), 0) : 0;
+  const all = page
+    ? Object.values(page.facets).reduce((sum, n) => sum + (n ?? 0), 0)
+    : 0;
 
   const item = (r: SearchResult) => (
-    <li key={`${r.source}:${r.itemId}`} className="search-result" lang={r.locale}>
+    <li
+      key={`${r.source}:${r.itemId}`}
+      className="search-result"
+      lang={r.locale}
+    >
       <div className="search-result-meta">
         <span className="search-kind">{t(`kinds.${r.kind}`)}</span>
-        {r.recommended ? <span className="search-recommended">{t("recommended")}</span> : null}
-        {r.updatedAt ? <time dateTime={r.updatedAt}>{format.dateTime(new Date(r.updatedAt), { dateStyle: "medium" })}</time> : null}
+        {r.recommended ? (
+          <span className="search-recommended">{t("recommended")}</span>
+        ) : null}
+        {r.updatedAt ? (
+          <time dateTime={r.updatedAt}>
+            {format.dateTime(new Date(r.updatedAt), { dateStyle: "medium" })}
+          </time>
+        ) : null}
       </div>
       <h2 className="search-result-title">
         <Link href={r.link}>
@@ -57,13 +85,28 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
 
   return (
     <>
-      <Header me={me.data} breadcrumbs={[{ label: t("title"), href: "/search" }]} />
+      <Header
+        me={me.data}
+        breadcrumbs={[{ label: t("title"), href: "/search" }]}
+      />
       <main id="main" className="page search-page">
         <h1>{q ? t("titleFor", { q }) : t("title")}</h1>
-        <form className="search-form" role="search" action="/search" method="get">
+        <form
+          className="search-form"
+          role="search"
+          action="/search"
+          method="get"
+        >
           <label htmlFor="search-q">{t("label")}</label>
           <div className="search-form-row">
-            <input id="search-q" type="search" name="q" defaultValue={q} maxLength={200} required />
+            <input
+              id="search-q"
+              type="search"
+              name="q"
+              defaultValue={q}
+              maxLength={200}
+              required
+            />
             {kind ? <input type="hidden" name="kind" value={kind} /> : null}
             <button type="submit" className="button">
               {t("submit")}
@@ -80,7 +123,9 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
         {page ? (
           <>
             <p className="search-count" role="status">
-              {page.more ? t("countMore", { count: page.total }) : t("count", { count: page.total })}
+              {page.more
+                ? t("countMore", { count: page.total })
+                : t("count", { count: page.total })}
             </p>
             {page.degraded ? <p className="notice">{t("degraded")}</p> : null}
 
@@ -88,16 +133,26 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
               <nav className="search-filters" aria-label={t("filters")}>
                 <ul>
                   <li>
-                    <Link href={href(q)} aria-current={kind ? undefined : "page"}>
-                      {t("allKinds")} <span className="search-facet">{format.number(all)}</span>
+                    <Link
+                      href={href(q)}
+                      aria-current={kind ? undefined : "page"}
+                    >
+                      {t("allKinds")}{" "}
+                      <span className="search-facet">{format.number(all)}</span>
                     </Link>
                   </li>
                   {searchKinds
                     .filter((k) => (page.facets[k] ?? 0) > 0)
                     .map((k) => (
                       <li key={k}>
-                        <Link href={href(q, k)} aria-current={kind === k ? "page" : undefined}>
-                          {t(`kinds.${k}`)} <span className="search-facet">{format.number(page.facets[k] ?? 0)}</span>
+                        <Link
+                          href={href(q, k)}
+                          aria-current={kind === k ? "page" : undefined}
+                        >
+                          {t(`kinds.${k}`)}{" "}
+                          <span className="search-facet">
+                            {format.number(page.facets[k] ?? 0)}
+                          </span>
                         </Link>
                       </li>
                     ))}
@@ -105,7 +160,9 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
               </nav>
             ) : null}
 
-            {page.results.length > 0 ? <ol className="search-results">{page.results.map(item)}</ol> : null}
+            {page.results.length > 0 ? (
+              <ol className="search-results">{page.results.map(item)}</ol>
+            ) : null}
 
             {page.results.length === 0 ? (
               <div className="search-empty">
@@ -113,7 +170,9 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
                 {page.alternatives.length > 0 ? (
                   <>
                     <h2>{t("alternatives")}</h2>
-                    <ol className="search-results">{page.alternatives.map(item)}</ol>
+                    <ol className="search-results">
+                      {page.alternatives.map(item)}
+                    </ol>
                   </>
                 ) : null}
               </div>
@@ -121,11 +180,17 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
 
             {pages > 1 ? (
               <nav className="search-pages" aria-label={t("pages")}>
-                {number > 1 ? <Link href={href(q, kind, number - 1)}>{t("previous")}</Link> : null}
+                {number > 1 ? (
+                  <Link href={href(q, kind, number - 1)}>{t("previous")}</Link>
+                ) : null}
                 <span>{t("pageOf", { page: number, pages })}</span>
-                {number < pages ? <Link href={href(q, kind, number + 1)}>{t("next")}</Link> : null}
+                {number < pages ? (
+                  <Link href={href(q, kind, number + 1)}>{t("next")}</Link>
+                ) : null}
               </nav>
             ) : null}
+
+            {number === 1 && !kind ? <FederatedResults q={q} /> : null}
           </>
         ) : null}
       </main>

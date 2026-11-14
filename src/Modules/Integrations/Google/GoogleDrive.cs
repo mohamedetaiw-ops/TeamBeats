@@ -344,4 +344,9 @@ public sealed class GoogleDrive(GoogleApi api, GoogleSignIn signIn, IHttpClientF
 
     public Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default) =>
         Task.FromResult<RepositoryContent?>(null);
+
+    /// <summary>Federated search covers SharePoint (spec 012 US5); Google Drive files are not searched live yet.</summary>
+    public Task<RepositoryUserSearch> SearchAsUserAsync(Guid connectionId, IReadOnlyCollection<string> containerIds, string query, int limit,
+        CancellationToken deadline, CancellationToken ct = default) =>
+        Task.FromResult(RepositoryUserSearch.Not("not_found"));
 }

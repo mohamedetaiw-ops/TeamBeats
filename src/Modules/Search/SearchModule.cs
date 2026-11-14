@@ -27,6 +27,7 @@ public static class SearchModule
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, SearchTool>();
         services.AddScoped<SearchRebuilds>();
         services.AddScoped<SearchTuning>();
+        services.AddScoped<FederatedSearch>();
         services.AddScoped<SearchRetrieval>();
         services.AddScoped<ISearchRetrieval>(sp => sp.GetRequiredService<SearchRetrieval>());
         services.AddScoped<IRetrievalEvaluation>(sp => sp.GetRequiredService<SearchRetrieval>());
@@ -70,6 +71,17 @@ public static class SearchModule
         });
 
         root.MapGet("/suggest", async (string? q, SearchService search, CancellationToken ct) => Results.Ok(await search.SuggestAsync(q, ct)));
+
+        // Federated results (US5) are asked for after the TeamBeats results, so a slow source never holds them up.
+        root.MapGet("/federated", async (string? q, FederatedSearch federated, CancellationToken ct) => Results.Ok(await federated.QueryAsync(q, ct)));
+        root.MapGet("/federated-sources", async (FederatedSearch federated, CancellationToken ct) => Results.Ok(await federated.ListAsync(ct)));
+        root.MapPut("/federated-sources/{source}", async (string source, FederatedSourceRequest request, FederatedSearch federated, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await federated.SetAsync(source, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         root.MapGet("/rebuilds", async (SearchRebuilds rebuilds, CancellationToken ct) => Results.Ok(await rebuilds.ListAsync(ct)));
 

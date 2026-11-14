@@ -20841,6 +20841,71 @@
         }
       }
     },
+    "/api/v1/search/federated": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/search/federated-sources": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/search/federated-sources/{source}": {
+      "put": {
+        "tags": [
+          "Search"
+        ],
+        "parameters": [
+          {
+            "name": "source",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FederatedSourceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/search/rebuilds": {
       "get": {
         "tags": [
@@ -31198,6 +31263,20 @@
               "string"
             ],
             "format": "int32"
+          }
+        }
+      },
+      "FederatedSourceRequest": {
+        "required": [
+          "enabled"
+        ],
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

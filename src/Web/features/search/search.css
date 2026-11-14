@@ -205,3 +205,16 @@
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-md);
 }
+
+/* Federated groups (US5): each source in its own group below the TeamBeats results. */
+.search-federated {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding-block-start: var(--tb-space-md);
+  border-block-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.search-federated h2 {
+  margin: 0;
+  font-size: var(--tb-font-size-lg);
+}

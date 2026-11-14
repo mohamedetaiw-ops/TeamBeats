@@ -472,6 +472,81 @@ public sealed class SharePointLibrariesTests(TenantWorld world)
         Assert.Equal(3, source.Count);
     }
 
+    [Fact]
+    public async Task Federated_search_asks_SharePoint_live_as_the_person_within_3_seconds_and_never_when_off()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        await ConnectedLibraryAsync(o);
+        const string Federated = "/api/v1/search/federated";
+        const string SourcesApi = "/api/v1/search/federated-sources";
+        static async Task<JsonElement[]> GroupsAsync(HttpClient client, string q) =>
+            (await OkAsync(client.GetAsync($"{Federated}?q={Uri.EscapeDataString(q)}"))).GetProperty("groups").EnumerateArray().ToArray();
+
+        // Every source starts off, and a source that is off is never asked (US5 scenario 3).
+        var sent = Graph.SharePointSearches;
+        Assert.Empty(await GroupsAsync(t["reader"].Client, "handbook"));
+        Assert.Equal(sent, Graph.SharePointSearches);
+        var listed = Assert.Single((await OkAsync(t["admin"].Client.GetAsync(SourcesApi))).EnumerateArray());
+        Assert.Equal("sharepoint", listed.GetProperty("source").GetString());
+        Assert.False(listed.GetProperty("enabled").GetBoolean());
+
+        // Only search administrators turn it on.
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["reader"].Client.PutAsJsonAsync($"{SourcesApi}/sharepoint", new { enabled = true })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await t["admin"].Client.PutAsJsonAsync($"{SourcesApi}/elsewhere", new { enabled = true })).StatusCode);
+        Assert.True((await OkAsync(t["admin"].Client.PutAsJsonAsync($"{SourcesApi}/sharepoint", new { enabled = true }))).GetProperty("enabled").GetBoolean());
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.SearchFederatedChanged, "sharepoint");
+
+        // Without their own Microsoft 365 sign-in the person is asked to connect; nothing is searched for them.
+        var group = Assert.Single(await GroupsAsync(t["reader"].Client, "handbook"));
+        Assert.Equal("not_connected", group.GetProperty("state").GetString());
+
+        // Signed in, SharePoint answers as them (US5 scenario 1): the reader finds the handbook, not the salaries the
+        // manager alone may read in SharePoint; each result opens in SharePoint and names its TeamBeats library.
+        await ConnectAsync(t, "reader");
+        await ConnectAsync(t, "lm");
+        group = Assert.Single(await GroupsAsync(t["reader"].Client, "handbook"));
+        Assert.Equal("ok", group.GetProperty("state").GetString());
+        var hit = Assert.Single(group.GetProperty("results").EnumerateArray());
+        Assert.Equal("Handbook.pdf", hit.GetProperty("title").GetString());
+        Assert.Equal("HR policies", hit.GetProperty("location").GetString());
+        Assert.StartsWith("https://", hit.GetProperty("link").GetString(), StringComparison.Ordinal);
+        Assert.Equal("handbook in Handbook.pdf…", hit.GetProperty("summary").GetString());
+        Assert.Empty(Assert.Single(await GroupsAsync(t["reader"].Client, "salary")).GetProperty("results").EnumerateArray());
+        Assert.Equal("Salaries.xlsx", Assert.Single(Assert.Single(await GroupsAsync(t["lm"].Client, "salary")).GetProperty("results").EnumerateArray())
+            .GetProperty("title").GetString());
+        // Nothing found live is stored in the TeamBeats index (FR-016).
+        Assert.Equal(0, await world.Database.CountInTenantAsync(t.Id, "select count(*) from search.unit where title = 'Salaries.xlsx' and source <> 'connected_documents'"));
+
+        // Someone who may open no connected library gets no group, and nothing is sent for them.
+        sent = Graph.SharePointSearches;
+        Assert.Empty(await GroupsAsync(t["outsider"].Client, "handbook"));
+        Assert.Equal(sent, Graph.SharePointSearches);
+
+        // A slow SharePoint is cut off at 3 seconds with a note (US5 scenario 2).
+        Graph.SharePointSearchDelay = TimeSpan.FromSeconds(10);
+        try
+        {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            group = Assert.Single(await GroupsAsync(t["reader"].Client, "handbook"));
+            Assert.Equal("timeout", group.GetProperty("state").GetString());
+            Assert.InRange(watch.Elapsed, TimeSpan.FromSeconds(2.5), TimeSpan.FromSeconds(6));
+        }
+        finally
+        {
+            Graph.SharePointSearchDelay = TimeSpan.Zero;
+        }
+        // The session still works after a cut-off call.
+        Assert.Equal("ok", Assert.Single(await GroupsAsync(t["reader"].Client, "handbook")).GetProperty("state").GetString());
+
+        // Another tenant's people find nothing of this tenant, and a package without federated search refuses.
+        var other = await world.CreateTenantAsync("sp-f-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");
+        Assert.Empty(await GroupsAsync(other["admin"].Client, "handbook"));
+        var plain = await FreshAsync("workplace");
+        Assert.Equal(HttpStatusCode.Forbidden, (await plain.T["admin"].Client.GetAsync($"{Federated}?q=handbook")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await plain.T["admin"].Client.GetAsync(SourcesApi)).StatusCode);
+    }
+
     private async Task DispatchAsync()
     {
         var dispatcher = world.Factory.Services.GetRequiredService<OutboxDispatcher>();

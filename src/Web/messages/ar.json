@@ -5092,7 +5092,35 @@
           "incomplete": "تعذر على البوابة الاكتمال.",
           "failed_critical": "وجدت البوابة إخفاقًا حرجًا."
         }
+      },
+      "federated": {
+        "title": "المصادر الموحدة",
+        "intro": "أنظمة يتم البحث فيها مباشرة بصلاحيات كل شخص وتظهر في مجموعة خاصة بها أسفل النتائج. لا يُحفظ أي شيء مما يُعثر عليه. المصدر المتوقف لا يُسأل أبدا.",
+        "source": {
+          "sharepoint": "SharePoint"
+        },
+        "hint": {
+          "sharepoint": "ملفات مكتبات SharePoint المتصلة التي يستطيع كل شخص فتحها."
+        },
+        "on": "يتم الآن البحث في {source}.",
+        "off": "توقف البحث في {source}."
       }
+    },
+    "federated": {
+      "loading": "جارٍ البحث في الأنظمة المتصلة",
+      "source": {
+        "sharepoint": "SharePoint"
+      },
+      "live": "يتم البحث مباشرة بصلاحياتك. تفتح النتائج حيث تُحفظ.",
+      "connect": "اربط Microsoft 365 للبحث في SharePoint",
+      "reconnect": "سجّل الدخول إلى Microsoft 365 مرة أخرى",
+      "connectHint": "تأتي النتائج من SharePoint بصلاحياتك، لذلك يلزم تسجيل دخولك إلى Microsoft 365.",
+      "connectAction": "ربط Microsoft 365",
+      "notNow": "غير متاح الآن",
+      "timeout": "استغرق SharePoint وقتا طويلا للرد. حاول مرة أخرى بعد لحظات.",
+      "unavailable": "تعذر الوصول إلى SharePoint الآن.",
+      "none": "لا يوجد في SharePoint ما يطابق البحث.",
+      "opensOutside": "(يفتح في علامة تبويب جديدة)"
     }
   },
   "assistant": {

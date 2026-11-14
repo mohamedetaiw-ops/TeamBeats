@@ -66,6 +66,33 @@ public interface ISearchSource
 }
 
 /// <summary>
+/// A source searched live for each person instead of indexed (spec 012 US5, FR-016, FR-017), such as SharePoint
+/// connected libraries (011) or a connector implementing the 017 search contract. Its owner queries the external system
+/// with the person's delegated identity, so that system's permissions decide, and nothing found is stored.
+/// </summary>
+public interface IFederatedSource
+{
+    /// <summary>The stable key of the source, used in the tenant's settings (for example <c>sharepoint</c>).</summary>
+    string Key { get; }
+
+    /// <summary>
+    /// Up to <paramref name="limit"/> results for the signed-in person. <paramref name="deadline"/> bounds only the call to
+    /// the external system and is cancelled at the time limit; local reads use <paramref name="ct"/>. Throws
+    /// <see cref="OperationCanceledException"/> when the deadline passes.
+    /// </summary>
+    Task<FederatedAnswer> QueryAsync(string query, int limit, CancellationToken deadline, CancellationToken ct = default);
+}
+
+/// <summary>
+/// What a federated source found. <paramref name="State"/> is <c>ok</c>, <c>none</c> (nothing to search for this
+/// person), <c>not_connected</c> or <c>reconnect</c> (they must connect their account), or <c>unavailable</c>.
+/// </summary>
+public sealed record FederatedAnswer(string State, IReadOnlyList<FederatedHit> Hits);
+
+/// <summary>One result from a federated source: a link that opens it where it lives, never a copy.</summary>
+public sealed record FederatedHit(string Title, string Link, string? Summary, string? Location, string? MediaType, DateTimeOffset? ModifiedAt);
+
+/// <summary>
 /// Asks Search to read an item again from its owner (spec 012 section 12). Owners whose events do not name the item
 /// (or that have no event yet) publish this; Search also maps the owner events of section 12 to it.
 /// </summary>

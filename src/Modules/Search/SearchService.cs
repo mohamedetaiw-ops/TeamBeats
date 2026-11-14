@@ -49,7 +49,7 @@ public sealed class SearchService(IDbSession session, ITenantContext context, IE
 
     private readonly Dictionary<string, ISearchSource> bySource = sources.ToDictionary(s => s.Source, StringComparer.Ordinal);
 
-    private static string Validate(string? q, string? kind, int? page)
+    internal static string Validate(string? q, string? kind, int? page)
     {
         var errors = new ValidationErrors();
         var query = (q ?? string.Empty).Trim();

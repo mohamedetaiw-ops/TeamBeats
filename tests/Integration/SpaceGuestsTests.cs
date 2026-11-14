@@ -311,5 +311,7 @@ public sealed class SpaceGuestsTests(TenantWorld world) : IAsyncLifetime
         Assert.Equal(["task: Quarterly kickoff agenda", "task: Quarterly kickoff venue"], (await FoundAsync(omar)).Where(r => r.StartsWith("task", StringComparison.Ordinal)));
         Assert.Contains("discussion: Kickoff club", await FoundAsync(t["admin"].Client));
         Assert.Equal(["task: Quarterly kickoff agenda"], await FoundAsync(rania));
+        // Nor do federated sources answer for a guest.
+        Assert.Empty((await OkAsync(rania.GetAsync("/api/v1/search/federated?q=Quarterly"))).GetProperty("groups").EnumerateArray());
     }
 }
