@@ -18,8 +18,9 @@ namespace TeamBeats.Modules.Experience.Personalization;
 
 public sealed record PreferenceSetting(string Key, IReadOnlyList<string> Values, string Default, string Scope);
 
+/// <summary><c>Chosen</c> names the settings the person saved; the rest of <c>Values</c> are defaults, which a design may replace (spec 033 FR-032).</summary>
 public sealed record PreferenceProfileView(int SchemaVersion, IReadOnlyDictionary<string, string> Values, IReadOnlyList<PreferenceSetting> Schema,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt, IReadOnlyList<string> Chosen);
 
 public sealed record PreferenceProfileRequest(IReadOnlyDictionary<string, string>? Values);
 
@@ -92,7 +93,8 @@ public sealed partial class PersonalizationService(
         var saved = row.Json is null ? new Dictionary<string, string>() : JsonSerializer.Deserialize<Dictionary<string, string>>(row.Json, JsonDefaults.Options)!;
         // Values that left the schema are dropped on read; defaults fill the rest.
         var values = PreferenceSchema.ToDictionary(s => s.Key, s => saved.TryGetValue(s.Key, out var v) && s.Values.Contains(v) ? v : s.Default, StringComparer.Ordinal);
-        return new PreferenceProfileView(PreferenceSchemaVersion, values, PreferenceSchema, row.Json is null ? null : row.At);
+        var chosen = PreferenceSchema.Where(s => saved.TryGetValue(s.Key, out var v) && s.Values.Contains(v)).Select(s => s.Key).ToList();
+        return new PreferenceProfileView(PreferenceSchemaVersion, values, PreferenceSchema, row.Json is null ? null : row.At, chosen);
     }
 
     public async Task<PreferenceProfileView> SaveProfileAsync(PreferenceProfileRequest request, CancellationToken ct)

@@ -41,7 +41,8 @@ Studio recreates the look of modern product dashboards (it was modeled on the Bo
 1. The brand profile stores the token `design.preset` with `beats`, `atlas`, `pulse` or `studio`.
 2. The theme resolver (spec 033 FR-004) applies, in order: platform defaults, the design's values, then the tenant brand, then each organization from the root down, then the user's allowed choices (mode, density, text size). Locks win at every step.
 3. So a tenant can pick Atlas and still change its accent color to its own brand color; the contrast checks run on the result.
-4. The resolved `design.preset` and `layout.navigation` values reach the page as `data-design` and `data-nav` attributes on `<html>`. Everything else arrives as `--tb-*` custom properties.
+4. The resolved `design.preset` and `layout.navigation` values reach the page as `data-design` and `data-nav` attributes on `<html>`. The descriptor reaches it the same way: `imagery.style` as `data-imagery` and the `variant.*` tokens as `data-v-news`, `data-v-stats`, `data-v-rows`, `data-v-tabs`, `data-v-cards` and `data-v-briefing`. The variant styles are in `components/ui/variants.css`, keyed on those attributes and never on the design's name, so a tenant on any design can pick any listed variant in **Administration, Brand**. Everything else arrives as `--tb-*` custom properties.
+5. `density.default` applies to a person who has not chosen a density. The preference profile says which settings the person saved (`chosen`), and a saved choice always wins.
 
 ## Choosing a design (administrators)
 

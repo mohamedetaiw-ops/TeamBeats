@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { MonthView, WeekView, type CalendarEvent } from "@/components/ui/CalendarViews";
 import { DataGrid } from "@/components/ui/DataGrid";
 import { DataTable, type Column } from "@/components/ui/DataTable";
+import { FilterToolbar, ToolbarSearch, ToolbarSelect } from "@/components/ui/FilterToolbar";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import { SearchField } from "@/components/ui/Inputs";
 import { Pagination } from "@/components/ui/Pagination";
@@ -59,6 +60,7 @@ export function DataGallery() {
     { id: "b3", line: "lineEvents", q1: 9500, q2: 31000, q3: 12000 },
   ]);
   const [month, setMonth] = useState(today);
+  const [filter, setFilter] = useState({ q: "", status: "pending" });
   const [tasks, setTasks] = useState<Task[]>([
     { id: "t1", title: t("schedule.taskApprove"), done: false, due: { text: t("schedule.dueToday"), tone: "warning" }, priority: { text: t("schedule.high"), tone: "danger" }, assignee: "Layla Hassan" },
     { id: "t2", title: t("schedule.taskPolicy"), done: false, due: { text: t("schedule.dueThursday") }, meta: t("schedule.fromPolicies"), assignee: "Omar Farouk" },
@@ -253,6 +255,28 @@ export function DataGallery() {
             },
           ]}
         />
+      </section>
+      <section aria-labelledby="cg-filters">
+        <h2 id="cg-filters">{t("filters.title")}</h2>
+        <p className="notice">{t("filters.intro")}</p>
+        <div className="gallery-wide">
+          <FilterToolbar
+            label={t("filters.label")}
+            onSubmit={(e) => e.preventDefault()}
+            search={<ToolbarSearch label={t("filters.label")} placeholder={t("filters.hint")} value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} />}
+            applied={filter.status ? [{ key: "status", label: `${t("filters.status")}: ${t(`data.${filter.status}`)}`, onRemove: () => setFilter({ ...filter, status: "" }) }] : []}
+            onClear={() => setFilter({ q: "", status: "" })}
+          >
+            <ToolbarSelect label={t("filters.status")} value={filter.status} onChange={(e) => setFilter({ ...filter, status: e.target.value })}>
+              <option value="">{t("filters.any")}</option>
+              {(["pending", "approved", "returned"] as const).map((status) => (
+                <option key={status} value={status}>
+                  {t(`data.${status}`)}
+                </option>
+              ))}
+            </ToolbarSelect>
+          </FilterToolbar>
+        </div>
       </section>
     </>
   );

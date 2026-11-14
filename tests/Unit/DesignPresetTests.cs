@@ -54,6 +54,40 @@ public sealed class DesignPresetTests
         Assert.Equal("studio", values[3]["design.preset"]);
     }
 
+    /// <summary>Spec 036 DLS-110: each design declares its descriptor, and the four are the ones the spec lists.</summary>
+    [Theory]
+    [InlineData("beats", "comfortable", "balanced", "editorial", "tinted", "comfortable", "underline", "raised", "night")]
+    [InlineData("atlas", "comfortable", "typographic", "compact", "outlined", "comfortable", "underline", "outlined", "light")]
+    [InlineData("pulse", "comfortable", "image_led", "editorial", "tinted", "comfortable", "segmented", "raised", "night")]
+    [InlineData("studio", "compact", "typographic", "compact", "plain", "dense", "segmented", "outlined", "light")]
+    public void Every_design_declares_its_descriptor(string key, params string[] expected)
+    {
+        var theme = ThemeEngine.Resolve([Brand(0, Preset(key))], NoLocks);
+        Assert.All(theme.Variants.Values, values => Assert.Equal(expected, DesignPresets.DescriptorTokens.Select(t => values[t]).ToArray()));
+        foreach (var token in DesignPresets.DescriptorTokens)
+        {
+            Assert.Equal(TokenTypes.Choice, TokenSchema.ByName[token].Type);
+            Assert.Contains(theme.Variants["light.comfortable"][token], TokenSchema.ByName[token].Choices!);
+        }
+    }
+
+    [Fact]
+    public void A_tenant_overrides_a_variant_and_a_lock_keeps_the_parent_value()
+    {
+        var parent = Preset(DesignPresets.Studio);
+        var child = new Dictionary<string, TokenValue> { ["variant.briefing"] = new("night"), [DesignPresets.DensityToken] = new("comfortable") };
+        var layers = new List<ThemeLayer> { Brand(0, parent), Brand(1, child) };
+        var open = ThemeEngine.Resolve(layers, NoLocks).Variants["light.comfortable"];
+        Assert.Equal("night", open["variant.briefing"]);
+        Assert.Equal("comfortable", open[DesignPresets.DensityToken]);
+        Assert.Equal("dense", open["variant.work_rows"]);
+
+        var locks = new Dictionary<string, (int Depth, Guid? Scope)> { ["variant.briefing"] = (0, null) };
+        var locked = ThemeEngine.Resolve(layers, locks).Variants["light.comfortable"];
+        Assert.Equal("light", locked["variant.briefing"]);
+        Assert.Equal("comfortable", locked[DesignPresets.DensityToken]);
+    }
+
     [Fact]
     public void Beats_is_the_platform_default()
     {
@@ -94,6 +128,14 @@ public sealed class DesignPresetTests
     [InlineData("design.preset", "corporate")]
     [InlineData("design.preset", "url(x)")]
     [InlineData("layout.navigation", "floating")]
+    [InlineData("density.default", "tiny")]
+    [InlineData("imagery.style", "stock")]
+    [InlineData("variant.news_lead", "hero")]
+    [InlineData("variant.stat_tiles", "rings")]
+    [InlineData("variant.work_rows", "cards")]
+    [InlineData("variant.section_tabs", "pills")]
+    [InlineData("variant.page_cards", "glass")]
+    [InlineData("variant.briefing", "day")]
     public void Unknown_choices_are_refused(string token, string value)
     {
         var errors = new ValidationErrors();
