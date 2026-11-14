@@ -59,13 +59,13 @@ Findings TB-01 to TB-20 of the staging audit, in the audit's execution order.
 From the UX, DLS and frontend enhancement report of 14 November 2026. Foundations first, then pages.
 - [x] T038 Constitution XXXI 1.3.0, DLS-100 to DLS-119, linked requirements in specs 008, 009, 010, 011, 014, 015, 016, 025, 032, 033 and 037, guideline pages (composition, layout, typography, templates, designs, testing, consistency)
 - [x] T039 Type and frame foundation: 12 px floor in every density (`Tokens.cs`, theme check), native controls inherit the font, footer at the end of the window, one page header contract on every page, no one-level breadcrumb, soft current navigation item in every design, gate rules for the page header and literal sizes (DLS-104, DLS-105, DLS-118)
-- [ ] T040 Filter toolbar part with applied filter chips; one tab style and one tag shape; People, Policies, Documents, Requests and Services on the toolbar (DLS-106)
+- [x] T040 Filter toolbar part with applied filter chips; one tab style and one tag shape; People, Policies, Requests and Services on the toolbar, Documents with its page in T047 (DLS-106)
 - [ ] T041 Content budgets and View all in `Widget`, one instance per source in the renderer and the builder, placement states in the frame (DLS-101 to DLS-103, spec 032 FR-071 to FR-073)
-- [ ] T042 Tasks: row actions, type icons, review side panel, undo, delegation as a guided dialog (DLS-108, DLS-115, spec 016)
+- [x] T042 Tasks: row actions, type icons, review side panel, delegation as a guided dialog; the four inbox tabs and Undo wait for the API (spec 016 FR-020) (DLS-108, DLS-115, spec 016)
 - [ ] T043 Calendar: agenda grouping, week overlaps, month overflow, one agenda, home summary (DLS-119, spec 037)
 - [ ] T044 Assistant workspace on the assistant parts with tools as composer modes and the cannot verify state (DLS-114, spec 014)
 - [ ] T045 Home views: first viewport contract, Team lead and Plant floor as persona views, no repeated counts, news lead without a placeholder (DLS-100, DLS-102, spec 008)
-- [ ] T046 Services marketplace layout and My requests progress (DLS-063, DLS-107, spec 016)
+- [x] T046 Services marketplace layout and My requests progress (DLS-063, DLS-107, spec 016); the step by step progress line on My requests waits for the request summary to carry its steps
 - [ ] T047 People toolbar, person forms and quick actions; policies summary and uniform status; knowledge and documents search first; editorial article, reactions and comments (DLS-109, DLS-112, DLS-113, specs 009, 010, 011, 025)
 - [ ] T048 Design descriptors and variant tokens in the four designs, variants on the news lead, stat tiles, work rows, tabs, cards and briefing (DLS-110, spec 033 FR-032)
 - [ ] T049 Design suite on the main pages in every design, language and density with the high-volume seed; gallery state coverage; visualization rules on stat and chart parts (DLS-111, DLS-117, DLS-118)

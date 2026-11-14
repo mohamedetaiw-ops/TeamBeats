@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
+import { listUnits } from "@/lib/experience/client";
 import type { Delegation, InboxItem } from "@/lib/services/types";
 import { myTasksHref, spacesApi, type MyTask, type SpacesRights } from "@/lib/spaces";
 import { Header } from "@/components/shell/Header";
@@ -12,7 +13,7 @@ import { SectionNav } from "@/components/ui/SectionNav";
 import { StateView } from "@/components/ui/StateView";
 
 /**
- * The task inbox and delegation while away (spec 016 US3 and US4), with My tasks from project and team spaces as its
+ * The task inbox with delegation while away as one line above it (spec 016 US3, US4, FR-020, FR-021), with My tasks from project and team spaces as its
  * own tab (spec 029 FR-010) when spaces are in the organization's plan.
  */
 export default async function TasksPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
@@ -49,7 +50,11 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
     );
   }
 
-  const [inbox, delegation] = await Promise.all([apiGet<InboxItem[]>("/api/v1/tasks"), apiGet<{ delegation: Delegation | null }>("/api/v1/me/delegation")]);
+  const [inbox, delegation, units] = await Promise.all([
+    apiGet<InboxItem[]>("/api/v1/tasks"),
+    apiGet<{ delegation: Delegation | null }>("/api/v1/me/delegation"),
+    listUnits(),
+  ]);
   if (!inbox.ok) {
     notFound();
   }
@@ -58,12 +63,8 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       <Header me={me.data} breadcrumbs={[{ label: t("inbox.pageTitle"), href: "/tasks" }]} />
       <main id="main" className="page">
         <PageHeader title={t("inbox.pageTitle")} icon="tasks" nav={tabs ?? undefined} />
-        <div className="ui-split">
-          <TaskInbox items={inbox.data} />
-          <aside aria-label={t("delegation.title")}>
-            <DelegationPanel initial={delegation.ok ? delegation.data.delegation : null} />
-          </aside>
-        </div>
+        <DelegationPanel initial={delegation.ok ? delegation.data.delegation : null} />
+        <TaskInbox items={inbox.data} meId={me.data.id} units={units.ok ? units.data : []} />
       </main>
     </>
   );

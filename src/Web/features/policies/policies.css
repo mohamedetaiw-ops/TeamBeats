@@ -31,12 +31,7 @@
 }
 
 .policies-badge {
-  display: inline-block;
   margin-inline-end: var(--tb-space-sm);
-  padding-inline: var(--tb-space-xs);
-  border-radius: var(--tb-radius-sm);
-  background: var(--tb-color-accent-subtle);
-  color: var(--tb-color-text-primary);
 }
 
 .policies-banner {
@@ -132,29 +127,6 @@
   margin: 0;
   padding: 0;
   list-style: none;
-}
-
-.policies-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--tb-space-xs);
-  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-}
-
-.policies-tab {
-  min-block-size: 2.75rem;
-  padding-inline: var(--tb-space-md);
-  border: 0;
-  border-block-end: var(--tb-border-width-thick) solid transparent;
-  background: transparent;
-  color: var(--tb-color-text-primary);
-  font: inherit;
-  cursor: pointer;
-}
-
-.policies-tab[aria-selected="true"] {
-  border-block-end-color: var(--tb-color-accent-base);
-  font-weight: var(--tb-font-weight-bold);
 }
 
 .policies-clause-editor {

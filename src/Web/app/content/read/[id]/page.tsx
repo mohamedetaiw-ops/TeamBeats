@@ -41,9 +41,9 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
           </h1>
           <p className="content-meta">
             {t("updated", { date: date(v.updatedAt) })}
-            {v.expired ? <span className="content-badge">{t("expired")}</span> : null}
-            {v.underReview ? <span className="content-badge">{t("underReview")}</span> : null}
-            {v.siteArchived ? <span className="content-badge">{t("siteArchived")}</span> : null}
+            {v.expired ? <span className="ui-badge content-badge" data-tone="accent">{t("expired")}</span> : null}
+            {v.underReview ? <span className="ui-badge content-badge" data-tone="accent">{t("underReview")}</span> : null}
+            {v.siteArchived ? <span className="ui-badge content-badge" data-tone="accent">{t("siteArchived")}</span> : null}
           </p>
           {v.fallback ? (
             <p className="notice" data-testid="content-fallback">

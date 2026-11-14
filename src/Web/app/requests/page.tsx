@@ -5,7 +5,7 @@ import { apiGet, type Me } from "@/lib/api";
 import { pick, requestStatuses, type RequestSummary } from "@/lib/services/types";
 import { Header } from "@/components/shell/Header";
 import { renderTime } from "@/lib/format";
-import { Icon } from "@/components/ui/Icon";
+import { FilterToolbar, ToolbarSearch, ToolbarSelect } from "@/components/ui/FilterToolbar";
 import { StateView } from "@/components/ui/StateView";
 import { ServicesNav } from "@/features/services/ServicesNav";
 import { WorkItemList } from "@/features/services/WorkItemList";
@@ -17,7 +17,7 @@ type View = (typeof views)[number];
 
 /**
  * My requests (spec 016 FR-005; spec 036 DLS-061): requests filed by or for the signed-in person, newest first. The
- * view chips split open requests from closed ones by the closing time the API gives; the filter bar narrows by status
+ * view chips split open requests from closed ones by the closing time the API gives; the filter toolbar narrows by status
  * (sent to the API) and by words in the service name or number.
  */
 export default async function MyRequestsPage({ searchParams }: { searchParams: Promise<{ status?: string; view?: string; q?: string }> }) {
@@ -41,11 +41,13 @@ export default async function MyRequestsPage({ searchParams }: { searchParams: P
       (view === "all" || (view === "active" ? r.closedAt === null : r.closedAt !== null)) &&
       (!needle || r.number.toLocaleLowerCase(locale).includes(needle) || pick(r.serviceNames, locale).toLocaleLowerCase(locale).includes(needle)),
   );
-  const href = (next: View) => {
+  const href = (next: View, change: { q?: string; status?: null } = {}) => {
     const q = new URLSearchParams();
+    const words = change.q ?? query;
+    const status = change.status === null ? null : filter;
     if (next !== "all") q.set("view", next);
-    if (filter) q.set("status", filter);
-    if (query) q.set("q", query);
+    if (status) q.set("status", status);
+    if (words) q.set("q", words);
     const s = q.toString();
     return s ? `/requests?${s}` : "/requests";
   };
@@ -67,28 +69,32 @@ export default async function MyRequestsPage({ searchParams }: { searchParams: P
               ))}
             </ul>
           </nav>
-          <form className="ui-filter-bar work-items-filters" action="/requests" method="get" role="search">
+          <FilterToolbar
+            label={t("requests.search")}
+            action="/requests"
+            method="get"
+            search={<ToolbarSearch label={t("requests.search")} name="q" placeholder={t("requests.search")} defaultValue={query} />}
+            end={
+              <button type="submit" className="button button-secondary">
+                {t("requests.apply")}
+              </button>
+            }
+            applied={[
+              ...(query ? [{ key: "q", label: query, href: href(view, { q: "" }) }] : []),
+              ...(filter ? [{ key: "status", label: t(`status.${filter}`), href: href(view, { status: null }) }] : []),
+            ]}
+            clearHref={view === "all" ? "/requests" : `/requests?view=${view}`}
+          >
             {view !== "all" ? <input type="hidden" name="view" value={view} /> : null}
-            <label className="field">
-              <span className="visually-hidden">{t("requests.search")}</span>
-              <input type="search" name="q" defaultValue={query} placeholder={t("requests.search")} />
-            </label>
-            <label className="field">
-              <span className="visually-hidden">{t("requests.filter")}</span>
-              <select name="status" defaultValue={filter ?? ""}>
-                <option value="">{t("requests.anyStatus")}</option>
-                {requestStatuses.map((s) => (
-                  <option key={s} value={s}>
-                    {t(`status.${s}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="submit" className="button button-secondary">
-              <Icon name="filter" size={16} />
-              {t("requests.apply")}
-            </button>
-          </form>
+            <ToolbarSelect label={t("requests.filter")} hideLabel name="status" defaultValue={filter ?? ""}>
+              <option value="">{t("requests.anyStatus")}</option>
+              {requestStatuses.map((s) => (
+                <option key={s} value={s}>
+                  {t(`status.${s}`)}
+                </option>
+              ))}
+            </ToolbarSelect>
+          </FilterToolbar>
         </div>
         {shown.length === 0 ? (
           narrowed ? (

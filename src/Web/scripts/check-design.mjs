@@ -4,6 +4,8 @@
 //  2. Every <img> has an alt attribute (empty only for decorative images, see components/ui/Media).
 //  3. font-family and font-size in CSS come from the type tokens (or inherit), never a literal family or size.
 //  4. Per-design selectors ([data-design=...]) live only in components/ui/designs.css, so a design stays one file.
+//  5. Features and pages draw no tab strip or filter bar of their own: tabs come from Tabs or SectionNav and list
+//     filters from FilterToolbar (spec 036 DLS-106). The strips that predate the rule are named in `ownStrips` below.
 //  6. Every page under app/ starts with the shared page header (spec 036 DLS-105, DLS-118). Pages that predate the
 //     rule are listed in scripts/page-header-baseline.json; the list may only shrink, and a new page is never added.
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -13,6 +15,8 @@ import { fileURLToPath } from "node:url";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const svgAllowed = new Set(["components/ui/Icon.tsx", "components/ui/Charts.tsx", "features/shell/Shell.tsx"]);
 const designCss = "components/ui/designs.css";
+// Strips that predate rule 5 and still wait for their move; remove a name when its strip is gone, never add one.
+const ownStrips = new Set(["admin-filters", "agents-tabs", "ai-tabs", "content-filters", "processes-filters", "search-filters", "security-tabs"]);
 const errors = [];
 
 const walk = (dir, out = []) => {
@@ -40,6 +44,11 @@ for (const file of walk(root)) {
       const value = m[2].trim();
       if (value !== "inherit" && !value.startsWith(`var(--tb-font-${m[1]}`)) {
         errors.push(`${rel}: font-${m[1]}: ${value}; use a --tb-font-${m[1]}-* token`);
+      }
+    }
+    if (/^(features|app)\//.test(rel)) {
+      for (const m of source.matchAll(/^\.([a-z-]+-(?:tab|tabs|filters|filter-bar))\s*(?:\{|,)/gm)) {
+        if (!ownStrips.has(m[1])) errors.push(`${rel}: .${m[1]}; use Tabs, SectionNav or FilterToolbar from components/ui instead of a strip of its own (DLS-106)`);
       }
     }
     if (rel !== designCss && /\[data-design[=\]]/.test(source)) {

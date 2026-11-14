@@ -44,46 +44,9 @@
   font-weight: var(--tb-font-weight-semibold);
 }
 
-/* Tabs in the panel and filters in the centre: text with an underline on the chosen one, never a filled pill. */
-.notification-tabs,
-.notification-filters {
-  display: flex;
-  gap: var(--tb-space-md);
-}
-
-.notification-tab {
-  position: relative;
-  min-block-size: 2.25rem;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--tb-color-text-secondary);
-  font: inherit;
-  font-size: var(--tb-font-size-sm);
-  font-weight: var(--tb-font-weight-medium);
-  cursor: pointer;
-}
-
-.notification-tab:hover {
-  color: var(--tb-color-text-primary);
-}
-
-.notification-tab[aria-pressed="true"] {
-  color: var(--tb-color-text-primary);
-}
-
-.notification-tab[aria-pressed="true"]::after {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  inset-block-end: calc(var(--tb-border-width-thin) * -1);
-  block-size: var(--tb-border-width-thick);
-  border-radius: var(--tb-border-width-thick);
-  background: var(--tb-color-accent-base);
-}
-
-.notification-filters {
-  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+/* The tabs in the panel sit in its head, which draws the divider itself. */
+.notification-panel-head .ui-tablist {
+  border-block-end: 0;
 }
 
 .notification-group + .notification-group {

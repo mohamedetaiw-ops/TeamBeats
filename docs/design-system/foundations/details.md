@@ -51,7 +51,7 @@ Use `lib/format.ts` (`languageName`, `dateLong`, `relativeTime`, `timeZoneLabel`
 
 ## Controls
 
-- Hints sit under the control so a row of controls lines up. In a filter bar the hint becomes the placeholder.
+- Hints sit under the control so a row of controls lines up. In the filter toolbar the hint becomes the placeholder.
 - Fields in a row have no bottom margin, so buttons line up with the controls.
 - Radios and checkboxes use the system look. A yes or no answer is two toggle buttons. A sort direction is an icon button with `aria-pressed`.
 - Required fields carry a small "Required" tag after the label.

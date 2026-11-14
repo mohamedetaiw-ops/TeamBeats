@@ -91,8 +91,8 @@ export function ServiceAdminList({ initial, categories: initialCategories, units
                   <bdi>{pick(service.names, locale)}</bdi>
                 </Link>
                 <span className="services-row">
-                  <span className="services-status">{t(`kind.${service.kind}`)}</span>
-                  <span className="services-status">{t(`state.${service.status}`)}</span>
+                  <span className="ui-badge">{t(`kind.${service.kind}`)}</span>
+                  <span className="ui-badge">{t(`state.${service.status}`)}</span>
                   {latest?.state === "draft" && service.status === "published" ? <span className="services-meta">{t("draftPending")}</span> : null}
                 </span>
               </li>

@@ -1242,6 +1242,9 @@
     },
     "controls": {
       "close": "Close",
+      "filters": "Filters",
+      "appliedFilters": "Filters in use",
+      "clearAll": "Clear all",
       "remove": "Remove {name}",
       "removeItem": "Remove",
       "pagination": "Pages",
@@ -2731,6 +2734,18 @@
       "overflow": "99+"
     },
     "catalogue": {
+      "mine": "Your services",
+      "allCount": "All {count}",
+      "layout": {
+        "label": "Show as",
+        "grid": "Grid",
+        "list": "List"
+      },
+      "next": {
+        "form": "Start request",
+        "linked": "Open in a new tab",
+        "module": "Open service"
+      },
       "title": "Services",
       "intro": "Request what you need, or open the systems you use.",
       "search": "Search services",
@@ -2811,6 +2826,7 @@
       "completed": "Completed"
     },
     "requests": {
+      "waitingFor": "Waiting for {name}{others, plural, =0 {} one { and 1 other} other { and # others}}",
       "title": "My requests",
       "filter": "Filter by status",
       "all": "All",
@@ -2927,6 +2943,15 @@
       "failed": "The decision could not be saved. Try again."
     },
     "inbox": {
+      "review": "Review",
+      "open": "Open",
+      "dueLate": "Due {when}, {days, plural, one {# day late} other {# days late}}",
+      "reviewFailed": "This request could not be loaded. Close the panel and try again.",
+      "decided": {
+        "approve": "Approved. The request moved to its next step.",
+        "reject": "Rejected. The requester has been told.",
+        "return": "Returned to the requester for changes."
+      },
       "pick": "Pick",
       "putBack": "Put back",
       "pickedBy": "Picked by {name}",
@@ -2966,6 +2991,19 @@
       "assetAccess": "Brand asset access"
     },
     "delegation": {
+      "none": "No delegation set. Your approvals stay with you.",
+      "manage": "Manage delegation",
+      "cancel": "Cancel",
+      "review": "Review",
+      "back": "Back",
+      "done": "Done",
+      "confirmTitle": "Check the delegation",
+      "receiptTitle": "Delegation saved",
+      "scopeLabel": "What is delegated",
+      "scope": "All approvals assigned to you during these days. Your delegate acts on your behalf and each decision is recorded with both names.",
+      "delegateRequired": "Choose the colleague who covers for you.",
+      "dayRequired": "Choose a day.",
+      "endBeforeStart": "The last day cannot be before the first day.",
       "title": "While you are away",
       "intro": "Choose a colleague to handle your approvals for a range of days. They act on your behalf, and the tasks come back to you when it ends.",
       "delegate": "Delegate",

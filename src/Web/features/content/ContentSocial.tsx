@@ -135,7 +135,7 @@ export function ContentSocial({ itemId }: { itemId: string }) {
               <li key={c.id} id={`comment-${c.id}`} className="content-comment" data-status={c.status}>
                 <p className="content-meta">
                   <bdi>{c.author.displayName}</bdi> · <time dateTime={c.createdAt}>{when(c.createdAt)}</time>
-                  {c.status !== "visible" ? <span className="content-badge">{t(`status.${c.status}`)}</span> : null}
+                  {c.status !== "visible" ? <span className="ui-badge content-badge" data-tone="accent">{t(`status.${c.status}`)}</span> : null}
                 </p>
                 <p className="content-comment-body">
                   <bdi>{c.body}</bdi>
