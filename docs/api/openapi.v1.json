@@ -8881,6 +8881,76 @@
         }
       }
     },
+    "/api/v1/content/sites/mine": {
+      "get": {
+        "tags": [
+          "Content: sites"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/sites/templates": {
+      "get": {
+        "tags": [
+          "Content: sites"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/sites/{id}/archive": {
+      "post": {
+        "tags": [
+          "Content: sites"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/sites/{id}/restore": {
+      "post": {
+        "tags": [
+          "Content: sites"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/content/settings": {
       "get": {
         "tags": [
@@ -34906,6 +34976,41 @@
             "additionalProperties": {
               "$ref": "#/components/schemas/ContentRoute"
             }
+          },
+          "template": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "homeSlug": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "homePageId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "sharedAudience": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ContentAudience"
+              }
+            ]
+          },
+          "unshare": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },

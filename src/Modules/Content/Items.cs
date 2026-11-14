@@ -83,7 +83,8 @@ public sealed record ReaderView(
     bool Featured,
     bool UnderReview = false,
     IReadOnlyList<string>? Anchors = null,
-    string Classification = "internal");
+    string Classification = "internal",
+    bool SiteArchived = false);
 
 public sealed record VersionSummary(int Number, ContentPerson Author, ContentPerson? Approver, string? ChangeNote, bool Material, IReadOnlyList<string> Locales,
     DateTimeOffset CreatedAt, DateTimeOffset? PublishedAt, bool Current, bool Draft, int? RestoredFrom = null);
@@ -209,6 +210,11 @@ public sealed class Items(
             && !await HoldsAsync(Permissions.ContentPublish, site, ct))
         {
             throw AppException.NotFound();
+        }
+        if (forUpdate && !site.Active)
+        {
+            // The items of an archived site are read-only (US6 scenario 5).
+            throw AppException.Conflict("conflict.content.site_archived");
         }
         return (item, site);
     }
@@ -885,7 +891,7 @@ public sealed class Items(
             variant.Title, variant.Summary, variant.Body, number, item.PublishedAt ?? version.PublishedAt ?? version.CreatedAt,
             version.PublishedAt ?? version.CreatedAt, item.Status == ContentStatuses.Expired, item.Pinned, item.Featured,
             (await sites.TypeAsync(item.Type, ct))!.UnderReviewLabel && item.ReviewDueAt is { } due && due <= clock.UtcNow,
-            BodyValidator.Sections(variant.Body).Select(s => s.Anchor).ToList(), item.Classification);
+            BodyValidator.Sections(variant.Body).Select(s => s.Anchor).ToList(), item.Classification, !site.Active);
     }
 
     /// <summary>The reader's locale, else the tenant default, else the item's primary locale.</summary>

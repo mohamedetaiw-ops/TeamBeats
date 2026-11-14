@@ -153,3 +153,18 @@ public interface IAdministrationEntry
 {
     Task<bool> CanOpenAsync(CancellationToken ct = default);
 }
+
+/// <summary>A spec 032 page as a content site sees it: where it is owned and whether it has a release.</summary>
+public sealed record SitePageInfo(Guid Id, string Slug, Guid? OrgUnitId, bool Published);
+
+/// <summary>
+/// Pages as the home pages of content sites (spec 009 US6). Finding a page answers in the current tenant only; creating
+/// one runs the page builder's own rules and permissions for the caller, so a site never gets a page its owner could not
+/// make in the builder.
+/// </summary>
+public interface ISitePages
+{
+    Task<SitePageInfo?> FindAsync(Guid pageId, CancellationToken ct = default);
+
+    Task<SitePageInfo> CreateAsync(string templateId, string slug, Guid? orgUnitId, CancellationToken ct = default);
+}

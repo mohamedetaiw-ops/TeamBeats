@@ -3500,7 +3500,8 @@
       "expired": "Past its review date",
       "underReview": "Under owner review",
       "fallback": "This item is not available in your language, so it is shown in another one.",
-      "embed": "Embedded content"
+      "embed": "Embedded content",
+      "siteArchived": "From an archived site"
     },
     "social": {
       "title": "Reactions and comments",
@@ -3811,6 +3812,67 @@
       "working": "Sharing…",
       "shared": "Shared to Slack.",
       "failed": "Something went wrong. Please try again."
+    },
+    "sites": {
+      "title": "Sites",
+      "intro": "Each site has its own home page, navigation, theme, editors and approval routes, linked to a part of the organization.",
+      "denied": "Sites are for content editors and site owners.",
+      "list": "Your sites",
+      "default": "Default site",
+      "status": {
+        "active": "Active",
+        "archived": "Archived"
+      },
+      "manage": "Manage {name}",
+      "create": "Create a site",
+      "createIntro": "A template sets the home page layout, comments, moderation and whether news needs approval. You can change all of it later.",
+      "nameEn": "Name in English",
+      "nameAr": "Name in Arabic",
+      "unit": "Part of the organization",
+      "unitHint": "Staff of this unit and the units under it are the site's default audience.",
+      "wholeTenant": "The whole organization",
+      "template": "Template",
+      "templates": {
+        "subsidiary": "Subsidiary site",
+        "location": "Location site",
+        "brand": "Brand site"
+      },
+      "templateHints": {
+        "subsidiary": "Portal home page, news needs approval",
+        "location": "Overview home page, publish directly",
+        "brand": "Editorial home page, moderated comments, news needs approval"
+      },
+      "homeSlug": "Home page address",
+      "homeSlugHint": "Lower case letters, digits and hyphens, for example gulf or sites/gulf.",
+      "creating": "Creating",
+      "failed": "That did not work. Try again.",
+      "settings": "Site settings",
+      "save": "Save",
+      "saving": "Saving",
+      "saved": "Saved.",
+      "comments": "Allow comments",
+      "moderation": "Hold comments until a moderator approves them",
+      "shared": "Also shared with",
+      "sharedHint": "People in these units find the site in their list too. Sharing never lets them edit.",
+      "home": "Home page",
+      "editHome": "Edit the home page",
+      "noHome": "This site has no home page yet. Create a page in the page builder for the same unit and link it here.",
+      "homePageId": "Home page ID",
+      "theme": "Theme",
+      "themeHint": "The site uses the theme set for its unit, with the tenant's locked elements and contrast checks.",
+      "openBranding": "Open branding",
+      "items": "Open the site's items",
+      "archive": "Archive site",
+      "archiveQuestion": "Archive {name}? Its items become read-only and leave feeds and navigation. You can restore it later.",
+      "archiveConfirm": "Archive",
+      "cancel": "Cancel",
+      "restore": "Restore site",
+      "archivedNote": "This site is archived. Its items can still be opened by link.",
+      "mine": "Sites for you",
+      "mineIntro": "Sites of your part of the organization and sites shared with you.",
+      "mineEmpty": "No sites are shared with you yet.",
+      "open": "Open {name}",
+      "notPublished": "Home page not published yet"
     }
   },
   "documents": {

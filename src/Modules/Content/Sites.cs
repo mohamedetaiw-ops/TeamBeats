@@ -20,7 +20,13 @@ public sealed record SiteView(
     bool IsDefault,
     string Status,
     int Version,
-    IReadOnlyDictionary<string, ContentRoute> Routes);
+    IReadOnlyDictionary<string, ContentRoute> Routes,
+    Guid? HomePageId = null,
+    string? HomeSlug = null,
+    string? TemplateKey = null,
+    ContentAudience? SharedAudience = null,
+    DateTimeOffset? ArchivedAt = null,
+    bool CanManage = false);
 
 public sealed record SiteRequest(
     IReadOnlyDictionary<string, string>? Names,
@@ -30,15 +36,44 @@ public sealed record SiteRequest(
     string? CommentsMode,
     bool? Moderation,
     int? Version,
-    IReadOnlyDictionary<string, ContentRoute>? Routes = null);
+    IReadOnlyDictionary<string, ContentRoute>? Routes = null,
+    string? Template = null,
+    string? HomeSlug = null,
+    Guid? HomePageId = null,
+    ContentAudience? SharedAudience = null,
+    bool? Unshare = null);
+
+/// <summary>A site as a reader's navigation lists it (US6 scenario 2): its names and the path of its home page.</summary>
+public sealed record SiteLink(Guid Id, IReadOnlyDictionary<string, string> Names, string? HomeSlug);
+
+/// <summary>
+/// A site template (US6 scenario 1): versioned product configuration that sets the home page template of spec 032, the
+/// comment and moderation defaults, and whether news needs approval. The tenant edits the resulting site freely.
+/// </summary>
+public sealed record SiteTemplate(string Key, string PageTemplate, string CommentsMode, bool Moderation, bool NewsApproval);
+
+public static class SiteTemplates
+{
+    public static readonly IReadOnlyList<SiteTemplate> All =
+    [
+        new("subsidiary", "T05", "on", false, true),
+        new("location", "T04", "on", false, false),
+        new("brand", "T06", "on", true, true),
+    ];
+
+    public static SiteTemplate? Find(string? key) => All.FirstOrDefault(t => t.Key == key);
+}
 
 public sealed record ContentSettingsView(IReadOnlyList<string> EmbedHosts, IReadOnlyList<ContentTypeSettings> Types);
 
 public sealed record ContentSettingsRequest(IReadOnlyList<string>? EmbedHosts, IReadOnlyList<ContentTypeSettings>? Types);
 
 internal sealed record SiteRow(Guid Id, IReadOnlyDictionary<string, string> Names, Guid? OrgUnitId, string TimeZone, ContentAudience DefaultAudience,
-    string RoutesJson, string CommentsMode, bool Moderation, bool IsDefault, string Status, int Version)
+    string RoutesJson, string CommentsMode, bool Moderation, bool IsDefault, string Status, int Version, Guid? HomePageId = null, string? TemplateKey = null,
+    ContentAudience? SharedAudience = null, DateTimeOffset? ArchivedAt = null)
 {
+    public bool Active => Status == "active";
+
     public AuthzTarget Target => OrgUnitId is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant;
 
     public IReadOnlyDictionary<string, ContentRoute> Routes { get; } = ContentJson.Read<Dictionary<string, ContentRoute>>(RoutesJson);
@@ -46,7 +81,8 @@ internal sealed record SiteRow(Guid Id, IReadOnlyDictionary<string, string> Name
     /// <summary>The route of a content type; none means publishers publish directly.</summary>
     public ContentRoute RouteOf(string type) => Routes.TryGetValue(type, out var r) ? r : new ContentRoute(false);
 
-    public SiteView View() => new(Id, Names, OrgUnitId, TimeZone, DefaultAudience, CommentsMode, Moderation, IsDefault, Status, Version, Routes);
+    public SiteView View(string? homeSlug = null, bool canManage = false) => new(Id, Names, OrgUnitId, TimeZone, DefaultAudience, CommentsMode, Moderation,
+        IsDefault, Status, Version, Routes, HomePageId, homeSlug, TemplateKey, SharedAudience, ArchivedAt, canManage);
 }
 
 /// <summary>
@@ -65,14 +101,19 @@ public sealed class Sites(
     ITenantMemberships memberships,
     ILocalizer localizer,
     IAuditWriter audit,
-    IClock clock)
+    IClock clock,
+    Experience.Contracts.ISitePages pages,
+    AudienceFactsLoader facts)
 {
     public const int MaxEmbedHosts = 50;
 
-    private const string Columns = "id, names::text, org_unit_id, time_zone, default_audience::text, routes::text, comments_mode, moderation, is_default, status, row_version";
+    private const string Columns = "id, names::text, org_unit_id, time_zone, default_audience::text, routes::text, comments_mode, moderation, is_default, status, row_version, " +
+        "home_page_id, template_key, shared_audience::text, archived_at";
 
     private static SiteRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), ContentJson.Read<Dictionary<string, string>>(r.GetString(1)), r.Get<Guid?>("org_unit_id"),
-        r.GetString(3), ContentJson.Read<ContentAudience>(r.GetString(4)), r.GetString(5), r.GetString(6), r.GetBoolean(7), r.GetBoolean(8), r.GetString(9), r.GetInt32(10));
+        r.GetString(3), ContentJson.Read<ContentAudience>(r.GetString(4)), r.GetString(5), r.GetString(6), r.GetBoolean(7), r.GetBoolean(8), r.GetString(9), r.GetInt32(10),
+        r.IsDBNull(11) ? null : r.GetGuid(11), r.IsDBNull(12) ? null : r.GetString(12), r.IsDBNull(13) ? null : ContentJson.Read<ContentAudience>(r.GetString(13)),
+        r.IsDBNull(14) ? null : r.GetFieldValue<DateTimeOffset>(14));
 
     internal Task<SiteRow?> RowAsync(Guid id, bool forUpdate, CancellationToken ct) =>
         session.QuerySingleOrDefaultAsync($"select {Columns} from content.site where id = @id" + (forUpdate ? " for update" : ""), new { id }, Read, ct);
@@ -95,23 +136,54 @@ public sealed class Sites(
         return (await session.QuerySingleOrDefaultAsync($"select {Columns} from content.site where is_default", null, Read, ct))!;
     }
 
-    /// <summary>Sites where the caller writes, edits, publishes or administers content, the default site first.</summary>
+    /// <summary>Whether the caller administers the site: <c>content.admin</c> at its scope, which a site owner holds at its unit (US6 scenario 4).</summary>
+    private async Task<bool> ManagesAsync(SiteRow site, CancellationToken ct) => (await authz.CheckAsync(Permissions.ContentAdmin, site.Target, ct)).Allowed;
+
+    private async Task<SiteView> ViewAsync(SiteRow row, bool canManage, CancellationToken ct) =>
+        row.View(row.HomePageId is { } page ? (await pages.FindAsync(page, ct))?.Slug : null, canManage);
+
+    /// <summary>
+    /// Sites where the caller writes, edits, publishes or administers content, the default site first. Archived sites are
+    /// listed to those who administer them, so they can be restored.
+    /// </summary>
     public async Task<IReadOnlyList<SiteView>> ListAsync(CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.ContentCore, ct);
         context.RequireUser();
         await DefaultAsync(ct);
-        var rows = await session.QueryAsync($"select {Columns} from content.site where status = 'active' order by is_default desc, created_at", null, Read, ct);
-        var admin = (await authz.CheckAsync(Permissions.ContentAdmin, AuthzTarget.Tenant, ct)).Allowed;
+        var rows = await session.QueryAsync($"select {Columns} from content.site order by is_default desc, status, created_at", null, Read, ct);
         var mine = new List<SiteView>();
         foreach (var row in rows)
         {
-            if (admin || await WorksInAsync(row, ct))
+            var manages = await ManagesAsync(row, ct);
+            if (manages || (row.Active && await WorksInAsync(row, ct)))
             {
-                mine.Add(row.View());
+                mine.Add(await ViewAsync(row, manages, ct));
             }
         }
         return mine;
+    }
+
+    /// <summary>
+    /// The sites a reader finds in their navigation (US6 scenario 2): active sites other than the tenant's default whose
+    /// default audience, or the audience they are shared with, includes the reader. Archived sites are left out.
+    /// </summary>
+    public async Task<IReadOnlyList<SiteLink>> MineAsync(CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ContentCore, ct);
+        var user = context.RequireUser();
+        var me = await facts.ForAsync(user, ct);
+        var rows = await session.QueryAsync($"select {Columns} from content.site where status = 'active' and not is_default order by created_at", null, Read, ct);
+        var links = new List<SiteLink>();
+        foreach (var row in rows)
+        {
+            if (AudienceRules.Matches(row.DefaultAudience, me) || (row.SharedAudience is { } shared && AudienceRules.Matches(shared, me)))
+            {
+                var home = row.HomePageId is { } page ? await pages.FindAsync(page, ct) : null;
+                links.Add(new SiteLink(row.Id, row.Names, home is { Published: true } ? home.Slug : null));
+            }
+        }
+        return links;
     }
 
     private async Task<bool> WorksInAsync(SiteRow site, CancellationToken ct)
@@ -130,11 +202,12 @@ public sealed class Sites(
     {
         await entitlements.DemandAsync(Capabilities.ContentCore, ct);
         var row = await RowAsync(id, false, ct) ?? throw AppException.NotFound();
-        if (!(await authz.CheckAsync(Permissions.ContentAdmin, AuthzTarget.Tenant, ct)).Allowed && !await WorksInAsync(row, ct))
+        var manages = await ManagesAsync(row, ct);
+        if (!manages && (!row.Active || !await WorksInAsync(row, ct)))
         {
             throw AppException.NotFound();
         }
-        return row.View();
+        return await ViewAsync(row, manages, ct);
     }
 
     private async Task ValidateAsync(SiteRequest request, bool create, ValidationErrors errors, CancellationToken ct)
@@ -158,6 +231,15 @@ public sealed class Sites(
             errors.Add("commentsMode", "validation.content.comments_mode");
         }
         AudienceRules.Validate(request.DefaultAudience, "defaultAudience", errors);
+        AudienceRules.Validate(request.SharedAudience, "sharedAudience", errors);
+        if (request.Template is not null && (!create || SiteTemplates.Find(request.Template) is null))
+        {
+            errors.Add("template", "validation.content.site_template");
+        }
+        if (request.Template is not null && request.HomePageId is not null)
+        {
+            errors.Add("homePageId", "validation.content.site_home");
+        }
         foreach (var (type, route) in request.Routes ?? new Dictionary<string, ContentRoute>())
         {
             if (!ContentTypes.Defaults.ContainsKey(type) || route is null || route.Approvers is { Count: > ContentRoute.MaxApprovers }
@@ -195,6 +277,31 @@ public sealed class Sites(
 
     private static Dictionary<string, string> Clean(IReadOnlyDictionary<string, string> names) => names.ToDictionary(n => n.Key, n => n.Value.Trim());
 
+    /// <summary>A home page must be a spec 032 page owned at the site's own scope, so the site owner can edit it and it uses the site's theme.</summary>
+    private async Task ValidateHomeAsync(Guid? pageId, Guid? unit, CancellationToken ct)
+    {
+        if (pageId is { } id && (await pages.FindAsync(id, ct) is not { } page || page.OrgUnitId != unit))
+        {
+            throw AppException.Validation("homePageId", "validation.content.site_home");
+        }
+    }
+
+    private async Task DemandRoomAsync(CancellationToken ct)
+    {
+        await session.ExecAsync("select pg_advisory_xact_lock(hashtextextended(platform.current_tenant_id()::text || ':content.sites', 0))", null, ct);
+        var count = await session.ScalarAsync<long>("select count(*) from content.site where status = 'active'", null, ct);
+        if (await entitlements.GetLimitAsync(Capabilities.ContentMaxSites, ct) is { } max && count >= max)
+        {
+            throw new AppException(ProblemCodes.EntitlementQuotaExhausted, 403, "validation.content.site_limit", null,
+                new Dictionary<string, object?> { ["capability"] = Capabilities.ContentMaxSites, ["limit"] = max });
+        }
+    }
+
+    /// <summary>
+    /// Creates a site (US6 scenario 1). From a template, the site takes the template's comment, moderation and approval
+    /// defaults, and its home page is created in the page builder at the site's unit when the plan has the builder; the
+    /// page builder's own permission applies to the caller. A site linked to a unit defaults its audience to that subtree.
+    /// </summary>
     public async Task<SiteView> CreateAsync(SiteRequest request, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.ContentCore, ct);
@@ -203,38 +310,58 @@ public sealed class Sites(
         var errors = new ValidationErrors();
         await ValidateAsync(request, create: true, errors, ct);
         errors.ThrowIfAny();
+        await ValidateHomeAsync(request.HomePageId, request.OrgUnitId, ct);
         await DefaultAsync(ct);
+        await DemandRoomAsync(ct);
 
-        await session.ExecAsync("select pg_advisory_xact_lock(hashtextextended(platform.current_tenant_id()::text || ':content.sites', 0))", null, ct);
-        var count = await session.ScalarAsync<long>("select count(*) from content.site where status = 'active'", null, ct);
-        if (await entitlements.GetLimitAsync(Capabilities.ContentMaxSites, ct) is { } max && count >= max)
-        {
-            throw new AppException(ProblemCodes.EntitlementQuotaExhausted, 403, "validation.content.site_limit", null,
-                new Dictionary<string, object?> { ["capability"] = Capabilities.ContentMaxSites, ["limit"] = max });
-        }
+        var template = SiteTemplates.Find(request.Template);
         var id = Ids.New();
         var tz = request.TimeZone ?? (await tenantSettings.GetLocaleSettingsAsync(ct)).TimeZone;
+        var audience = request.DefaultAudience
+            ?? (request.OrgUnitId is { } unit ? new ContentAudience([new AudienceClause(OrgUnits: [new UnitTarget(unit)])]) : ContentAudience.Everyone);
+        var routes = request.Routes ?? (template is { NewsApproval: true }
+            ? new Dictionary<string, ContentRoute> { [ContentTypes.News] = new(true), [ContentTypes.Announcement] = new(true) }
+            : null);
+        var home = request.HomePageId;
+        if (template is not null && await entitlements.IsEnabledAsync(Capabilities.ExperiencePageBuilder, ct))
+        {
+            var slug = request.HomeSlug ?? $"sites/{id.ToString("N")[..8]}";
+            home = (await pages.CreateAsync(template.PageTemplate, slug, request.OrgUnitId, ct)).Id;
+        }
         await session.ExecAsync(
             """
-            insert into content.site (tenant_id, id, names, org_unit_id, time_zone, default_audience, routes, comments_mode, moderation, created_by, created_at, updated_at)
-            values (platform.current_tenant_id(), @id, @names, @unit, @tz, @audience, @routes, @mode, @moderation, @user, @now, @now)
+            insert into content.site (tenant_id, id, names, org_unit_id, time_zone, default_audience, routes, comments_mode, moderation, created_by, created_at, updated_at,
+              home_page_id, template_key, shared_audience)
+            values (platform.current_tenant_id(), @id, @names, @unit, @tz, @audience, @routes, @mode, @moderation, @user, @now, @now, @home, @template, @shared)
             """, new
             {
                 id, names = new Jsonb(ContentJson.Write(Clean(request.Names!))), unit = request.OrgUnitId, tz,
-                audience = new Jsonb(ContentJson.Write(request.DefaultAudience ?? ContentAudience.Everyone)), routes = new Jsonb(RoutesJson(request.Routes)),
-                mode = request.CommentsMode ?? "on",
-                moderation = request.Moderation ?? false, user, now = clock.UtcNow,
+                audience = new Jsonb(ContentJson.Write(audience)), routes = new Jsonb(RoutesJson(routes)),
+                mode = request.CommentsMode ?? template?.CommentsMode ?? "on",
+                moderation = request.Moderation ?? template?.Moderation ?? false, user, now = clock.UtcNow, home, template = template?.Key,
+                shared = request.SharedAudience is { IsEveryone: false } shared ? new Jsonb(ContentJson.Write(shared)) : (Jsonb?)null,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.SiteCreated, "content_site", id.ToString(), TargetOrgUnitId: request.OrgUnitId,
-            Changes: new { orgUnitId = request.OrgUnitId, tz }), ct);
-        return (await RowAsync(id, false, ct))!.View();
+            Changes: new { orgUnitId = request.OrgUnitId, tz, template = template?.Key, homePageId = home }), ct);
+        return await ViewAsync((await RowAsync(id, false, ct))!, true, ct);
     }
 
+    /// <summary>
+    /// Changes a site. Its owner (<c>content.admin</c> at the site's unit) may change it, but moving it to another unit
+    /// also needs that permission at the new unit, so an owner cannot move a site out of their reach or into another's.
+    /// </summary>
     public async Task<SiteView> UpdateAsync(Guid id, SiteRequest request, CancellationToken ct)
     {
         await entitlements.DemandAsync(Capabilities.ContentCore, ct);
-        await authz.DemandAsync(Permissions.ContentAdmin, AuthzTarget.Tenant, ct);
         var row = await RowAsync(id, true, ct) ?? throw AppException.NotFound();
+        if (!await ManagesAsync(row, ct))
+        {
+            throw await WorksInAsync(row, ct) ? AppException.Denied() : AppException.NotFound();
+        }
+        if (!row.Active)
+        {
+            throw AppException.Conflict("conflict.content.site_archived");
+        }
         if (request.Version is { } expected && expected != row.Version)
         {
             throw AppException.Conflict("conflict.content.changed");
@@ -247,27 +374,74 @@ public sealed class Sites(
             errors.Add("orgUnitId", "validation.content.site_unit");
         }
         errors.ThrowIfAny();
-        var names = request.Names is null ? row.Names : Clean(request.Names);
         var unit = row.IsDefault ? null : request.OrgUnitId ?? row.OrgUnitId;
+        if (unit != row.OrgUnitId)
+        {
+            await authz.DemandAsync(Permissions.ContentAdmin, unit is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant, ct);
+        }
+        var home = request.HomePageId ?? row.HomePageId;
+        if (request.HomePageId is not null || unit != row.OrgUnitId)
+        {
+            await ValidateHomeAsync(home, unit, ct);
+        }
+        var names = request.Names is null ? row.Names : Clean(request.Names);
+        var shared = request.Unshare == true ? null : request.SharedAudience ?? row.SharedAudience;
         await session.ExecAsync(
             """
             update content.site set names = @names, org_unit_id = @unit, time_zone = @tz, default_audience = @audience, routes = @routes, comments_mode = @mode,
-              moderation = @moderation, updated_at = @now, row_version = row_version + 1
+              moderation = @moderation, home_page_id = @home, shared_audience = @shared, updated_at = @now, row_version = row_version + 1
             where id = @id
             """, new
             {
                 id, names = new Jsonb(ContentJson.Write(names)), unit, tz = request.TimeZone ?? row.TimeZone,
                 audience = new Jsonb(ContentJson.Write(request.DefaultAudience ?? row.DefaultAudience)),
                 routes = new Jsonb(request.Routes is null ? row.RoutesJson : RoutesJson(request.Routes)), mode = request.CommentsMode ?? row.CommentsMode,
-                moderation = request.Moderation ?? row.Moderation, now = clock.UtcNow,
+                moderation = request.Moderation ?? row.Moderation, home,
+                shared = shared is { IsEveryone: false } a ? new Jsonb(ContentJson.Write(a)) : (Jsonb?)null, now = clock.UtcNow,
             }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.SiteChanged, "content_site", id.ToString(), TargetOrgUnitId: unit,
             Changes: new
             {
-                before = new { row.OrgUnitId, row.TimeZone, row.Routes },
-                after = new { orgUnitId = unit, timeZone = request.TimeZone ?? row.TimeZone, routes = request.Routes ?? row.Routes },
+                before = new { row.OrgUnitId, row.TimeZone, row.Routes, row.HomePageId, row.SharedAudience },
+                after = new { orgUnitId = unit, timeZone = request.TimeZone ?? row.TimeZone, routes = request.Routes ?? row.Routes, homePageId = home, sharedAudience = shared },
             }), ct);
-        return (await RowAsync(id, false, ct))!.View();
+        return await ViewAsync((await RowAsync(id, false, ct))!, true, ct);
+    }
+
+    /// <summary>
+    /// Archives a site (US6 scenario 5): its items become read-only and leave feeds, and the site leaves navigation;
+    /// readers with permission still open items by link. The tenant's default site cannot be archived.
+    /// </summary>
+    public async Task<SiteView> ArchiveAsync(Guid id, bool archive, CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.ContentCore, ct);
+        var row = await RowAsync(id, true, ct) ?? throw AppException.NotFound();
+        if (!await ManagesAsync(row, ct))
+        {
+            throw row.Active && await WorksInAsync(row, ct) ? AppException.Denied() : AppException.NotFound();
+        }
+        if (row.IsDefault)
+        {
+            throw AppException.Conflict("conflict.content.site_default");
+        }
+        if (archive == !row.Active)
+        {
+            return await ViewAsync(row, true, ct);
+        }
+        if (!archive)
+        {
+            await DemandRoomAsync(ct);
+        }
+        var user = context.RequireUser();
+        await session.ExecAsync(
+            """
+            update content.site set status = @status, archived_at = @at, archived_by = @by, updated_at = @now, row_version = row_version + 1 where id = @id
+            """, new
+            {
+                id, status = archive ? "archived" : "active", at = archive ? clock.UtcNow : (DateTimeOffset?)null, by = archive ? user : (Guid?)null, now = clock.UtcNow,
+            }, ct);
+        await audit.WriteAsync(new AuditEntry(archive ? AuditActions.SiteArchived : AuditActions.SiteRestored, "content_site", id.ToString(), TargetOrgUnitId: row.OrgUnitId), ct);
+        return await ViewAsync((await RowAsync(id, false, ct))!, true, ct);
     }
 
     // ---- Tenant content settings ----

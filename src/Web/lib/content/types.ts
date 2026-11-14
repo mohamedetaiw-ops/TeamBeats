@@ -52,6 +52,8 @@ export type ReaderView = {
   underReview: boolean;
   /** The anchor of each heading in order, for citation links. */
   anchors?: string[] | null;
+  /** The item's site is archived: still readable by link, out of feeds (spec 009 US6 scenario 5). */
+  siteArchived?: boolean;
 };
 
 export type CriticalNotice = {
@@ -133,7 +135,29 @@ export type ItemView = {
   retirePending: boolean;
 };
 
-export type SiteView = { id: string; names: Record<string, string>; orgUnitId: string | null; timeZone: string; commentsMode: string; moderation: boolean; isDefault: boolean; status: string };
+export type SiteView = {
+  id: string;
+  names: Record<string, string>;
+  orgUnitId: string | null;
+  timeZone: string;
+  commentsMode: string;
+  moderation: boolean;
+  isDefault: boolean;
+  status: string;
+  version: number;
+  defaultAudience: ContentAudience;
+  homePageId: string | null;
+  homeSlug: string | null;
+  templateKey: string | null;
+  sharedAudience: ContentAudience | null;
+  archivedAt: string | null;
+  canManage: boolean;
+};
+
+/** A site as a reader's navigation lists it (spec 009 US6 scenario 2); the home path is set once its page is published. */
+export type SiteLink = { id: string; names: Record<string, string>; homeSlug: string | null };
+export type SiteTemplate = { key: string; pageTemplate: string; commentsMode: string; moderation: boolean; newsApproval: boolean };
+export const siteTemplates = ["subsidiary", "location", "brand"] as const;
 
 export type VersionSummary = {
   number: number;

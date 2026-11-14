@@ -74,7 +74,8 @@ public sealed class ContentFeed(
             var rows = await session.QueryAsync(
                 $"""
                 select {Items.Columns} from content.content_item
-                where status = 'published' and (@site::uuid is null or site_id = @site) and (@type::text is null and type <> 'knowledge' or type = @type)
+                where status = 'published' and (@site::uuid is null or site_id = @site)
+                  and site_id in (select id from content.site where status = 'active') and (@type::text is null and type <> 'knowledge' or type = @type)
                   and (@first or (pinned::int, published_at, id) < (@pinned, @at, @id))
                 order by pinned desc, published_at desc, id desc limit @batch
                 """, new

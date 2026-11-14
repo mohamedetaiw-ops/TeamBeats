@@ -39,3 +39,32 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 
 ## Final phase
 - [x] T024 Performance tests of section 15; OpenAPI; R1 implementation notes (sites and targeting defaults); spec evidence
+
+## R2
+
+### Phase 7: User Story 6, sites (P2)
+- [x] T025 [P] [US6] Tests: create from a template links home page, navigation and theme scope; sibling site owner denied; reader site list follows default and shared audience; archived site read-only, out of feeds and navigation; site limit; cross-tenant site IDs
+- [x] T026 [US6] Site templates, home page link, status and archive, shared audience, `GET /sites/mine`; site admin pages and site home route in the web app, English and Arabic, e2e with axe
+
+### Phase 8: User Story 9 R2 and FR-017, mentions, hashtags and follows (P2)
+- [ ] T027 [P] [US9] Tests: mention notifies only a permitted reader; suggestions follow directory permission; topic page lists only permitted items; follow and the following filter; critical items never hidden
+- [ ] T028 [US9] Mention marks and hashtags in bodies and comments, topic endpoint and page, follows and feed filter, UI
+
+### Phase 9: User Story 5 R2, AI translation (P2)
+- [ ] T029 [P] [US5] Tests: translation draft marked machine translated; Confidential blocked by default policy; reviewer required before publish; human edit clears the mark; entitlement off refused; gateway unavailable degrades
+- [ ] T030 [US5] Translate endpoint through the AI Gateway, variant mark, content type `reviewed_translation`, editor actions and badges
+
+### Phase 10: multi-step approval (FR-003)
+- [ ] T031 [P] Tests: steps run in order with a task each; return at any step; author excluded at every step; more than one step refused without `content.multistep_approval`
+- [ ] T032 Route steps in site routes and the engine definition; route editor in the site settings
+
+### Phase 11: User Story 8, campaigns (P2)
+- [ ] T033 [P] [US8] Tests: due steps sent to the audience through notifications; "only those who have not acted" excludes completers; optional email respects preferences, mandatory labelled; dashboard counts with privacy threshold; entitlement and cross-tenant cases
+- [ ] T034 [US8] Campaign model, scheduler, sends through spec 015, dashboard endpoint and pages, English and Arabic, e2e with axe
+
+### Phase 12: retention, health dashboard and signage
+- [ ] T035 [P] Tests: retention deletes old versions after the period and skips legal hold; health dashboard counts ownerless sites and overdue items per site with permitted items only; signage URL shows only public items of the site and stops after rotation
+- [ ] T036 Retention settings and job, health dashboard endpoint and page, signage screens and feed
+
+### R2 final phase
+- [ ] T037 OpenAPI; R2 implementation notes; spec evidence for R2

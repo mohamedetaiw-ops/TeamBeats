@@ -1624,3 +1624,12 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - The summary is gated by `ai.assistant`, which every package has, and by being able to see the request; the panel is shown to the person deciding. It is asked for on demand, never generated ahead.
 - Agent-requested approvals marked in the inbox (spec 027 US4) depend on agent approver tasks, which the agent runtime still refuses (`tool.approval_not_available`) until spec 027 R2 builds them. The inbox marking is built with that slice, not here.
 
+
+## Spec 009 R2 slice 1: sites (T025, T026)
+- A site's home page is a spec 032 page owned at the site's org unit, reached through the Experience contract `ISitePages`; creating from a site template makes the page with the page builder's own permission for the caller, when the plan has `experience.page_builder`. Linking an existing page needs one owned by the same unit.
+- Navigation and theme are not copied into the site: the theme is the spec 033 brand assignment at the site's unit, and the reader's site list (`GET /api/v1/content/sites/mine`, page `/sites`) is the navigation entry. Tenants add `/sites` to the global menu as an IA node when they want it in the header.
+- Site templates are product configuration in code (`subsidiary`, `location`, `brand`), each setting the home page template (T05, T04, T06), comments, moderation and whether news and announcements need approval.
+- A site owner is anyone holding `content.admin` at the site's unit through a role grant; there is no built-in site owner role. Moving a site to another unit needs `content.admin` at the new unit too. Creating sites stays with tenant-wide `content.admin`.
+- A site linked to a unit now defaults its audience to that unit's subtree (US6 scenario 2). Sharing adds an audience that only widens who finds the site in their list.
+- Archiving makes the site's items read-only (409 `conflict.content.site_archived` on any change), removes them from the feed and the site from the reader's list. Items stay readable by link with an "archived site" label. Search keeps the items; an archived label in search results waits for a label field in the search contract (spec 012).
+- Restoring an archived site counts against `content.max_sites` again. The default site cannot be archived.

@@ -70,6 +70,24 @@ public static class ContentModule
 
         sites.MapGet("/{id:guid}", async (Guid id, Sites service, CancellationToken ct) => Results.Ok(await service.GetAsync(id, ct)));
 
+        sites.MapGet("/mine", async (Sites service, CancellationToken ct) => Results.Ok(await service.MineAsync(ct)));
+
+        sites.MapGet("/templates", () => Results.Ok(SiteTemplates.All));
+
+        sites.MapPost("/{id:guid}/archive", async (Guid id, Sites service, IDbSession session, CancellationToken ct) =>
+        {
+            var site = await service.ArchiveAsync(id, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(site);
+        });
+
+        sites.MapPost("/{id:guid}/restore", async (Guid id, Sites service, IDbSession session, CancellationToken ct) =>
+        {
+            var site = await service.ArchiveAsync(id, false, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(site);
+        });
+
         sites.MapPut("/{id:guid}", async (Guid id, SiteRequest request, Sites service, IDbSession session, CancellationToken ct) =>
         {
             var site = await service.UpdateAsync(id, request, ct);
