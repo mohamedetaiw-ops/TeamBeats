@@ -953,3 +953,38 @@
 .ui-widget :is(bdi, [dir="auto"]) {
   text-align: match-parent;
 }
+
+/* Rows inside a widget (DLS-089, DLS-090): one line per record between hairlines, the main text at the start, meta at the end. */
+.ui-widget-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ui-widget-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  min-block-size: 2.75rem;
+  padding-block: var(--tb-space-sm);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.ui-widget-row:last-child {
+  border-block-end: 0;
+}
+
+.ui-widget-row-main {
+  display: grid;
+  flex: 1 1 12rem;
+  gap: 0.125rem;
+  min-inline-size: 0;
+}
+
+.ui-widget-row-meta {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
