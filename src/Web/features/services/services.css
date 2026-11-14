@@ -627,6 +627,13 @@
   text-decoration: none;
 }
 
+/* 44px on a touch screen or a phone (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  .services-shortcut {
+    min-block-size: 2.75rem;
+  }
+}
+
 .services-shortcut:hover {
   border-color: var(--tb-color-border-strong);
   text-decoration: none;
