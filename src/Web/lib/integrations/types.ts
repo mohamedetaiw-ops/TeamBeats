@@ -412,7 +412,7 @@ export type FeatureTestResult = {
 
 export type Microsoft365TestResult = { status: string; features: FeatureTestResult[] };
 
-export const M365_FEATURES = ["directory_sync", "mail", "calendar", "free_busy"] as const;
+export const M365_FEATURES = ["directory_sync", "mail", "calendar", "free_busy", "office_editing"] as const;
 export const M365_TEST_RESULTS = ["ok", "ok_broader", "consent_missing", "unreachable", "application_mail_permissions"] as const;
 export const M365_PERMISSION_REASONS = [
   "user_read_all",
@@ -422,6 +422,7 @@ export const M365_PERMISSION_REASONS = [
   "mail_read_basic",
   "mail_read",
   "calendars_read_basic",
+  "files_read_write",
 ] as const;
 
 /** Webhook connections (spec 017 US5): settings, the events they may send, and inbound counts. */

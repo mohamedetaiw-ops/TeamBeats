@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (catalogue, linked apps, request forms, single-step approval, task inbox), R2 (multi-step routes, automation, triggers, service templates pack). Process engine releases are in spec 024 |
-| Last updated | 2026-11-05 |
+| Last updated | 2026-11-14 |
 | Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | WF-001, WF-002, WF-003, WF-004 to WF-016 (new) |
 | Use cases | UC-08 |
@@ -161,6 +161,10 @@ The facilities service owner creates "New joiner equipment" with no developer. (
 - **FR-017**: The services area tabs MUST be Services, My requests and Team requests (when the viewer has a team). The task inbox is its own area (spec 008 FR-064) and is not a tab of Services. Acceptance: the Services tab strip has no Tasks tab; /tasks still opens the inbox.
 - **FR-018**: Each service MUST have its own icon, chosen by the service owner from the icon set when the service is created or edited, with a default by category; the catalogue card and the service page header show it (DLS-081). Acceptance: the staging catalogue shows a different icon for Salary letter and Leave request, and for Expense claim and Finance enquiry.
 - **FR-019**: A service card SHOULD help the decision before it is opened: under the description it shows the usual time to complete (from the service definition), who approves (line manager, a named role or "No approval"), and, when the viewer has filed it before, the status of their latest request with a link to it. Values come from the API; the web app computes none of them. Acceptance: a service the viewer filed shows their latest request status on its card.
+- **FR-020**: The Tasks page MUST be an action inbox (spec 036 DLS-108): tabs Needs action, Assigned to me, Submitted by me and History with counts; rows with the request type's icon, title, requester, step, due date with its age, and the next allowed action as a button; overdue first. Review opens the request in a side panel beside the queue with its details, the consequences of the decision, the comment box (required where the step says so) and Approve, Reject or Return; after the decision the row leaves, a message offers Undo while the workflow still allows it, and focus moves to the next row. No approval is committed from the list without the details on screen.
+- **FR-021**: Delegation MUST be a compact summary on the Tasks page ("No delegation set" or the delegate, the dates and Revoke) with one "Manage delegation" button that opens a guided dialog (spec 036 DLS-115): a searchable employee picker, first and last day with the system date fields, the scope of what is delegated, validation of conflicts and of an unauthorized delegate at the field, a confirmation summary, and a receipt naming the delegate and dates. The change is audited.
+- **FR-022**: My requests MUST show each request as a work item with its progress line from the process steps, the current owner, the due or service level date and the next action (spec 036 DLS-062), allow resuming a draft and cancelling where the workflow permits, and filter with the toolbar of DLS-106.
+- **FR-023**: The services catalogue MUST lead with search and the person's own services (favourites and recent as one compact strip, with no service twice in the strip), then categories as tabs with counts so no category needs scrolling past another, with grid and list views. A service card states what happens next (opens a form, opens another system, starts an assistant journey) and offers "Start request" or "Open service" as a named button. Recommended services are labelled as recommendations and can be turned off.
 
 ## 6. Business and validation rules
 - Team requests use the reporting line (spec 010), filled from the directory `manager` attribute or HR. Org unit membership alone never makes someone an approver.

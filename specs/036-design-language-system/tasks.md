@@ -55,7 +55,22 @@ Findings TB-01 to TB-20 of the staging audit, in the audit's execution order.
 - [x] T033 Polish: one icon per service (DLS-081, spec 016 FR-018, TB-12); dates with month names and the date field readout (DLS-082, TB-17); field specific validation and error summary (DLS-083, TB-20); 44px touch targets (DLS-085, TB-18); auto fit stat grids (DLS-086, TB-14); empty state next steps (DLS-087); no spark watermark or stock illustration (DLS-088); seeded news title without a relative time (spec 009 FR-022, TB-10)
 - [x] T034 Search and filters in the address on the document library browser; the request lists already used the address (spec 008 FR-065)
 
-## Phase 9: One interface per component (DLS-089 to DLS-091)
+## Phase 9: Experience system (DLS-100 to DLS-119)
+From the UX, DLS and frontend enhancement report of 14 November 2026. Foundations first, then pages.
+- [x] T038 Constitution XXXI 1.3.0, DLS-100 to DLS-119, linked requirements in specs 008, 009, 010, 011, 014, 015, 016, 025, 032, 033 and 037, guideline pages (composition, layout, typography, templates, designs, testing, consistency)
+- [x] T039 Type and frame foundation: 12 px floor in every density (`Tokens.cs`, theme check), native controls inherit the font, footer at the end of the window, one page header contract on every page, no one-level breadcrumb, soft current navigation item in every design, gate rules for the page header and literal sizes (DLS-104, DLS-105, DLS-118)
+- [ ] T040 Filter toolbar part with applied filter chips; one tab style and one tag shape; People, Policies, Documents, Requests and Services on the toolbar (DLS-106)
+- [ ] T041 Content budgets and View all in `Widget`, one instance per source in the renderer and the builder, placement states in the frame (DLS-101 to DLS-103, spec 032 FR-071 to FR-073)
+- [ ] T042 Tasks: row actions, type icons, review side panel, undo, delegation as a guided dialog (DLS-108, DLS-115, spec 016)
+- [ ] T043 Calendar: agenda grouping, week overlaps, month overflow, one agenda, home summary (DLS-119, spec 037)
+- [ ] T044 Assistant workspace on the assistant parts with tools as composer modes and the cannot verify state (DLS-114, spec 014)
+- [ ] T045 Home views: first viewport contract, Team lead and Plant floor as persona views, no repeated counts, news lead without a placeholder (DLS-100, DLS-102, spec 008)
+- [ ] T046 Services marketplace layout and My requests progress (DLS-063, DLS-107, spec 016)
+- [ ] T047 People toolbar, person forms and quick actions; policies summary and uniform status; knowledge and documents search first; editorial article, reactions and comments (DLS-109, DLS-112, DLS-113, specs 009, 010, 011, 025)
+- [ ] T048 Design descriptors and variant tokens in the four designs, variants on the news lead, stat tiles, work rows, tabs, cards and briefing (DLS-110, spec 033 FR-032)
+- [ ] T049 Design suite on the main pages in every design, language and density with the high-volume seed; gallery state coverage; visualization rules on stat and chart parts (DLS-111, DLS-117, DLS-118)
+
+## Phase 10: One interface per component (DLS-089 to DLS-091)
 Root cause found on 14 November 2026: home widgets had no shared frame or row parts, so each feature drew its own card (`home-card`, `outlook`, `toolbox`, `content-card`, `people-section`, `documents-card`, `cal-card`) and its own calendar or mail rows, My calendar kept its R1 list after spec 037, and home suggestions were added beside a view's own placement of the same component.
 - [x] T035 `Widget` frame in `components/ui`, calendar and mail on it: My calendar renders the calendar card (spec 018 FR-017), Your day agenda on `AgendaRow`, mail rows aligned for mixed directions (DLS-091), list caps, suggestions not duplicated (spec 008 FR-051, spec 032 FR-070)
 - [x] T036 Every other home widget on the frame (engagement, learning, services, toolbox, quick links, news list, people, documents) and the `check:design` rule for the frame

@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (semantic token engine and theme resolver, tenant brand profiles, organization brand overrides, brand assets, light and dark modes, typography by script, contrast validation, scope model, locks, effective configuration trace, stable IDs), R2 (theme draft, approval, schedule and rollback, high contrast mode, impact analysis, preview as organization, starter wizard, delegated experience administration, cross-organization journeys, custom domains, token export, drift report, localized branding, reviewed token extensions) |
-| Last updated | 2026-11-05 |
+| Last updated | 2026-11-14 |
 | Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | CX-BRD-001 to CX-BRD-015, CX-ORG-001 to CX-ORG-011, CX-TMP-011, CX-LOC-006, ADM-001 (branding) |
 | Use cases | UC-01 (tenant setup, branding part) |
@@ -169,6 +169,8 @@ Acme Group's tenant admin creates two brand profiles, "Acme Gulf" (teal, Latin a
 - **FR-029**: The platform MUST ship four designs (Beats, Atlas, Pulse, Studio), each a complete token set for light and dark that passes FR-009 in strict mode, plus a navigation style (rail, top bar, labelled sidebar). Beats is the platform default. *(spec 036 DLS-006, DLS-007)*
 - **FR-030**: A brand or organization override MUST be able to choose a design with the `design.preset` choice token; the resolver MUST apply the design's values after the platform defaults and before the tenant brand, and the design choice MUST follow the same order and locks as any token. *(spec 036 DLS-003 to DLS-005)*
 - **FR-031**: The brand manager MUST offer the four designs as a picker with live miniatures from each design's resolved tokens; choosing one is an ordinary versioned brand change. *(spec 036 DLS-001, DLS-002)*
+- **FR-032**: A design MUST carry a descriptor of choice tokens beside its values (spec 036 DLS-110): `density.default`, `imagery.style` and the `variant.*` tokens for the news lead, stat tiles, work rows, section tabs, page cards and the briefing. The resolver treats them like `design.preset`: validated against their listed values, inherited, lockable, overridable by a tenant or organization brand, versioned and audited. A person's own density choice wins over `density.default` where the policy allows it.
+- **FR-033**: Brand identity, design, layout preset, appearance mode and density with accessibility options MUST be stored and resolved as separate values. Changing or rolling back one MUST NOT change another, and the effective configuration trace MUST name the origin of each (platform, design, tenant, organization, site, person). Hard constraints (visible focus, contrast, keyboard access, the text size floor of 12 px and 14 px for body text) apply after resolution and cannot be overridden at any scope.
 
 ## 6. Business and validation rules
 - Locks are always stronger than overrides and user choices. Security and accessibility requirements cannot be unlocked by any tenant setting.

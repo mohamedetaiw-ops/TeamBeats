@@ -497,6 +497,11 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         var userId = parts[1];
         var scopes = parts[2].Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal);
         var data = Data(directoryId);
+        if (path.StartsWith("/v1.0/me/drive/", StringComparison.Ordinal))
+        {
+            var owner = UpnOf(bearer) is { Length: > 0 } driveUpn ? driveUpn.ToLowerInvariant() : $"{directory}/{userId}";
+            return await DriveAsync(request, Uri.UnescapeDataString(path), owner, scopes, ct);
+        }
         var me = data.CurrentUsers().FirstOrDefault(u => u.Id == userId);
         // Tokens hold everything the fake needs, so a mailbox token still works after the host restarts (staging redeploys).
         if (me.Id is null && UpnOf(bearer) is { Length: > 0 } upn)
@@ -599,6 +604,68 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             return Json(new { value });
         }
         return new HttpResponseMessage(HttpStatusCode.NotFound);
+    }
+
+    /// <summary>A file in an employee's OneDrive. <see cref="Owner"/> is the UPN, or directory/user ID for directory users.</summary>
+    public sealed record DriveItem(string Id, string Owner, string Name, byte[] Content);
+
+    private readonly ConcurrentDictionary<string, DriveItem> _drive = new(StringComparer.Ordinal);
+
+    /// <summary>Files in one employee's OneDrive (by UPN), for tests.</summary>
+    public IReadOnlyList<DriveItem> DriveOf(string upn) => _drive.Values.Where(i => i.Owner == upn.ToLowerInvariant()).ToList();
+
+    /// <summary>Changes a file as the Office web editor would.</summary>
+    public void EditDriveItem(string id, byte[] content) => _drive[id] = _drive[id] with { Content = content };
+
+    /// <summary>Removes a file as the employee would in OneDrive.</summary>
+    public void RemoveDriveItem(string id) => _drive.TryRemove(id, out _);
+
+    /// <summary>OneDrive with Files.ReadWrite: upload by path into a folder (renaming on a clash), read content, delete.</summary>
+    private async Task<HttpResponseMessage> DriveAsync(HttpRequestMessage request, string path, string owner, IReadOnlySet<string> scopes, CancellationToken ct)
+    {
+        if (!scopes.Contains("Files.ReadWrite"))
+        {
+            return new HttpResponseMessage(HttpStatusCode.Forbidden) { Content = new StringContent("{\"error\":{\"code\":\"accessDenied\"}}") };
+        }
+        var notFound = new HttpResponseMessage(HttpStatusCode.NotFound) { Content = new StringContent("{\"error\":{\"code\":\"itemNotFound\"}}") };
+        const string root = "/v1.0/me/drive/root:/";
+        const string items = "/v1.0/me/drive/items/";
+        if (request.Method == HttpMethod.Put && path.StartsWith(root, StringComparison.Ordinal) && path.EndsWith(":/content", StringComparison.Ordinal))
+        {
+            var full = path[root.Length..^":/content".Length];
+            var folder = full.Contains('/', StringComparison.Ordinal) ? full[..full.LastIndexOf('/')] : string.Empty;
+            var name = full[(full.LastIndexOf('/') + 1)..];
+            var stem = Path.GetFileNameWithoutExtension(name);
+            var extension = Path.GetExtension(name);
+            for (var n = 1; _drive.Values.Any(i => i.Owner == owner && i.Name == $"{folder}/{name}"); n++)
+            {
+                name = $"{stem} {n}{extension}";
+            }
+            var content = await request.Content!.ReadAsByteArrayAsync(ct);
+            var id = "01FAKE" + Guid.NewGuid().ToString("N")[..20].ToUpperInvariant();
+            _drive[id] = new DriveItem(id, owner, $"{folder}/{name}", content);
+            return Json(new { id, name, size = content.Length, webUrl = $"https://fake-onedrive.example/edit/{id}" });
+        }
+        if (!path.StartsWith(items, StringComparison.Ordinal))
+        {
+            return notFound;
+        }
+        var rest = path[items.Length..];
+        var itemId = rest.EndsWith("/content", StringComparison.Ordinal) ? rest[..^"/content".Length] : rest;
+        if (!_drive.TryGetValue(itemId, out var item) || item.Owner != owner)
+        {
+            return notFound;
+        }
+        if (request.Method == HttpMethod.Get && rest.EndsWith("/content", StringComparison.Ordinal))
+        {
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(item.Content) };
+        }
+        if (request.Method == HttpMethod.Delete && rest == itemId)
+        {
+            _drive.TryRemove(itemId, out _);
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        }
+        return notFound;
     }
 
     private static string? UpnOf(string bearer)

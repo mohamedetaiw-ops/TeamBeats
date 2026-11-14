@@ -20,13 +20,34 @@
   box-sizing: border-box;
 }
 
+/*
+ * The page frame (spec 036 DLS-105): the body is a column as tall as the window and the page takes the room that is
+ * left, so the footer sits at the end of the window on a short page and after the content on a long one, in every
+ * navigation style.
+ */
 body {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100dvh;
   margin: 0;
   background: var(--tb-color-surface-base);
   color: var(--tb-color-text-primary);
   font-family: var(--tb-font-family-body);
   font-size: var(--tb-font-size-md);
   line-height: var(--tb-font-line-height-body);
+}
+
+body > main {
+  flex: 1 0 auto;
+  align-content: start; /* a grid page keeps its rows at the top instead of spreading them over the window */
+}
+
+/*
+ * Native controls take the design's font (spec 036 DLS-104). Browsers give buttons, fields and selects their own
+ * family and size, so without this an unstyled control shows the system font at its own size.
+ */
+:where(button, input, select, textarea, optgroup) {
+  font: inherit;
 }
 
 h1,

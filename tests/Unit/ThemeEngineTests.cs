@@ -99,7 +99,7 @@ public sealed class ThemeEngineTests
     [Fact]
     public void Platform_defaults_are_complete_and_pass_every_check()
     {
-        var theme = ThemeEngine.Resolve([], NoLocks);
+        var theme = ThemeEngine.Resolve([new ThemeLayer(0, null, "brand", null, null, new Dictionary<string, TokenValue>())], NoLocks);
         Assert.Equal(4, theme.Variants.Count);
         Assert.All(theme.Variants.Values, v => Assert.Equal(TokenSchema.All.Count, v.Count));
         Assert.Empty(ThemeEngine.Check(theme, strict: true));
@@ -136,6 +136,27 @@ public sealed class ThemeEngineTests
         var finding = Assert.Single(ThemeEngine.Check(ThemeEngine.Resolve([layer], NoLocks), strict: false));
         Assert.Equal("validation.theme.text_too_small", finding.Code);
         Assert.Equal("compact", finding.Against);
+    }
+
+    [Fact]
+    public void Smallest_text_below_twelve_px_blocks_in_any_density()
+    {
+        var layer = new ThemeLayer(0, null, "brand", null, null, new Dictionary<string, TokenValue>
+        {
+            ["font.size.xs"] = new("12px", new Dictionary<string, string> { ["compact"] = "11px" }),
+        });
+        var finding = Assert.Single(ThemeEngine.Check(ThemeEngine.Resolve([layer], NoLocks), strict: false));
+        Assert.Equal("validation.theme.text_too_small", finding.Code);
+        Assert.Equal("font.size.xs", finding.Token);
+        Assert.Equal("compact", finding.Against);
+    }
+
+    [Fact]
+    public void Platform_text_sizes_keep_the_floor_in_every_density()
+    {
+        var theme = ThemeEngine.Resolve([new ThemeLayer(0, null, "brand", null, null, new Dictionary<string, TokenValue>())], NoLocks);
+        Assert.DoesNotContain(ThemeEngine.Check(theme, strict: true), f => f.Code == "validation.theme.text_too_small");
+        Assert.Equal("12px", theme.Variants["light.compact"]["font.size.xs"]);
     }
 
     [Fact]
@@ -192,7 +213,7 @@ public sealed class ThemeEngineTests
     [Fact]
     public void Css_holds_only_typed_custom_properties_and_stays_under_thirty_kilobytes_compressed()
     {
-        var theme = ThemeEngine.Resolve([], NoLocks);
+        var theme = ThemeEngine.Resolve([new ThemeLayer(0, null, "brand", null, null, new Dictionary<string, TokenValue>())], NoLocks);
         foreach (var variant in theme.Variants.Values)
         {
             var css = ThemeEngine.Css(variant);

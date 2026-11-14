@@ -46,6 +46,12 @@ public static class FeatureCatalogue
         [
             new("Calendars.ReadBasic", PermissionType.Delegated, "integrations.permission.calendars_read_basic"),
         ]),
+        // Office editing (spec 011 FR-010): the employee's own OneDrive holds the copy while they edit, so only
+        // Files.ReadWrite on their own files; never Files.ReadWrite.All or Sites.
+        new(Microsoft365Features.OfficeEditing, Capabilities.IntegrationMicrosoft365,
+        [
+            new("Files.ReadWrite", PermissionType.Delegated, "integrations.permission.files_read_write"),
+        ]),
     ];
 
     public static FeatureDefinition? Find(string key) => All.FirstOrDefault(f => f.Key == key);

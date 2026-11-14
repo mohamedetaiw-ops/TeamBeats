@@ -230,6 +230,9 @@ public static class ThemeEngine
 
     public const int MinimumBodyPx = 14;
 
+    /// <summary>The smallest text on any screen, in every design, mode and density (spec 036 DLS-104).</summary>
+    public const int MinimumTextPx = 12;
+
     /// <summary>Contrast, focus and minimum text size findings for every mode, at comfortable and compact density.</summary>
     public static IReadOnlyList<ContrastFinding> Check(ResolvedTheme theme, bool strict)
     {
@@ -249,13 +252,16 @@ public static class ThemeEngine
         }
         foreach (var density in ThemeModes.Densities)
         {
-            var size = theme.Variants[$"{ThemeModes.Light}.{density}"]["font.size.md"];
-            var px = size.EndsWith("rem", StringComparison.Ordinal)
-                ? double.Parse(size[..^3], CultureInfo.InvariantCulture) * 16
-                : double.Parse(size[..^2], CultureInfo.InvariantCulture);
-            if (px < MinimumBodyPx)
+            foreach (var (token, minimum) in new[] { ("font.size.md", MinimumBodyPx), ("font.size.xs", MinimumTextPx) })
             {
-                findings.Add(new ContrastFinding("validation.theme.text_too_small", Blocking, "font.size.md", density, ThemeModes.Light, px, MinimumBodyPx));
+                var size = theme.Variants[$"{ThemeModes.Light}.{density}"][token];
+                var px = size.EndsWith("rem", StringComparison.Ordinal)
+                    ? double.Parse(size[..^3], CultureInfo.InvariantCulture) * 16
+                    : double.Parse(size[..^2], CultureInfo.InvariantCulture);
+                if (px < minimum)
+                {
+                    findings.Add(new ContrastFinding("validation.theme.text_too_small", Blocking, token, density, ThemeModes.Light, px, minimum));
+                }
             }
         }
         return findings;

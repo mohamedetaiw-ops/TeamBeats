@@ -2,7 +2,7 @@
 
 The TeamBeats Design System is the single design language for every TeamBeats screen: the employee intranet, the administration area, the page builder and the mobile web. It is modeled on the structure of national design systems such as the UAE Design System: **design guidelines** that tell designers what good looks like, and **technical guidelines** that tell developers how to build it so it stays secure, fast and consistent.
 
-It is binding. Constitution principle XXXI (One design language) and spec [036](../../specs/036-design-language-system/spec.md) make it the authority for every user interface. A screen that does not follow it is not done.
+It is binding. Constitution principle XXXI (One design language, one experience system) and spec [036](../../specs/036-design-language-system/spec.md) make it the authority for every user interface. A screen that does not follow it is not done.
 
 ## Principles
 
@@ -10,15 +10,16 @@ It is binding. Constitution principle XXXI (One design language) and spec [036](
 2. **Arabic and English are equal.** Every layout, type choice, icon and image works right to left and left to right from the first sketch. Arabic is never a translation pass at the end.
 3. **Accessible to everyone.** WCAG 2.2 AA is the floor, not the goal. People of determination use TeamBeats every day with keyboards, screen readers, zoom and switch devices.
 4. **Brand is data.** Colors, type, shape and navigation come from tokens that a tenant chooses in administration. Code never hard-codes a look.
-5. **One system, four designs.** TeamBeats ships four complete designs (Beats, Atlas, Pulse, Studio). They share every component, rule and test; only the token values and the navigation style differ.
-6. **Calm and trustworthy.** Motion, color and imagery support the content and never compete with it. The same thing always looks and behaves the same way.
+5. **One system, four designs.** TeamBeats ships four complete designs (Beats, Atlas, Pulse, Studio). They share every component, rule and test; they differ in token values, navigation style, default density and the presentation variant of a few shared parts.
+6. **Composed, not stacked.** Every page leads with what the person must do, then what helps, then what they may also want. Summaries stay inside a content budget, a data source appears once, and every state is designed. Administration and employee screens are one system.
+7. **Calm and trustworthy.** Motion, color and imagery support the content and never compete with it. The same thing always looks and behaves the same way.
 
 ## What is in it
 
 | Part | For | Pages |
 |---|---|---|
 | Designs | Everyone | [The four designs](designs.md) |
-| Design guidelines | Designers, UX writers, researchers, graphics team | [Typography](foundations/typography.md), [Colour](foundations/colour.md), [Icons](foundations/icons.md), [Imagery](foundations/imagery.md), [Content](foundations/content.md), [Layout](foundations/layout.md), [Actions](foundations/actions.md), [Accessibility](foundations/accessibility.md), [Details](foundations/details.md) |
+| Design guidelines | Designers, UX writers, researchers, graphics team | [Typography](foundations/typography.md), [Colour](foundations/colour.md), [Icons](foundations/icons.md), [Imagery](foundations/imagery.md), [Content](foundations/content.md), [Layout](foundations/layout.md), [Composition](foundations/composition.md), [Actions](foundations/actions.md), [Accessibility](foundations/accessibility.md), [Details](foundations/details.md) |
 | Components and templates | Designers and developers | [Components](components.md), [Templates](templates.md) |
 | Technical guidelines | Frontend developers | [Frontend development](technical/frontend.md), [Security](technical/security.md), [Performance](technical/performance.md), [Consistency](technical/consistency.md) |
 | Testing | Designers, developers, QA | [UI testing strategy](testing.md) |

@@ -312,6 +312,7 @@
   "integrations.outlook.turned_off": "Mail and calendar are turned off for your organization",
   "integrations.permission.administrative_unit_read_all": "Read administrative units, to map them to your organization units",
   "integrations.permission.calendars_read_basic": "Read the employee's own calendar events, without body or attachments",
+  "integrations.permission.files_read_write": "Create, read and change the employee's own OneDrive files, used only for the copy they edit in the browser",
   "integrations.permission.group_read_all": "Read groups and their members, to keep groups and roles in step",
   "integrations.permission.mail_read": "Read the employee's own mail, used only for the one-line preview",
   "integrations.permission.mail_read_basic": "Read the employee's own mail headers, without message text",
@@ -2443,5 +2444,13 @@
   "documents.import.quarantined": "The malware scan flagged this file. It is kept in quarantine and nobody can open it.",
   "documents.import.not_found": "The library or folder is no longer there.",
   "documents.import.denied": "You can no longer add files here.",
-  "documents.import.error": "Something went wrong with this row. Try it again in a new import."
+  "documents.import.error": "Something went wrong with this row. Try it again in a new import.",
+  "conflict.documents.office_editing": "This document is open in Office for the web. Check it in or discard the edit from there.",
+  "conflict.documents.office_restricted": "Restricted documents cannot be edited in the browser. Download it, edit it and check it in.",
+  "conflict.documents.office_format": "Only Word, Excel and PowerPoint files (.docx, .xlsx, .pptx) can be edited in the browser.",
+  "conflict.documents.office_reconnect": "Connect your Microsoft 365 account to edit in the browser, then try again.",
+  "conflict.documents.office_unavailable": "Microsoft 365 is not available right now. Try again in a few minutes.",
+  "conflict.documents.office_copy_gone": "The copy you were editing is no longer in your OneDrive. Discard the edit to release the document.",
+  "conflict.documents.office_not_editing": "You are not editing this document in the browser.",
+  "validation.documents.office_size": "Files larger than 250 MB cannot be edited in the browser."
 }

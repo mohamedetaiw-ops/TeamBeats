@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R2 (calendar workspace with agenda, week, month and team availability views, home calendar card, layers and preferences, company and department events with audience and RSVP, location holidays, my leave and team leave, team availability heatmap, Outlook and Google Calendar meetings through the same port, deduplication, calendar tools for the assistant), R3 (event registration with capacity and waitlist through spec 009 event items, reminders through spec 015, attachments, shift rosters and part-time patterns from spec 022 R3, provisional and observed holidays, background sync of external calendars if spec 018 section 6 changes) |
-| Last updated | 2026-11-11 |
+| Last updated | 2026-11-14 |
 | Approved | 2026-11-11 under Mohamed's standing approval of 2026-11-07 (request of 2026-11-11 in the thread "Build the unified team calendar") |
 | Requirement IDs | CAL-001 to CAL-032 (new); INT-002 (calendar part), UC-10 (calendar part), LVA-001 and LVA-009 (calendar part) |
 | Use cases | UC-10 |
@@ -199,6 +199,9 @@ Leila asks the assistant "What is on today?" and Sara asks "Which days next mont
 ### Operations
 - **FR-023 / CAL-020**: When a source fails the other layers MUST load, and the failed source MUST show its state and the time of its last good read; stale availability MUST NOT be presented as current.
 - **FR-024**: The events and summary answers for holidays and settings MAY be cached per request; leave and reporting line answers MUST NOT be cached across requests.
+- **FR-025**: Calendar views MUST follow spec 036 DLS-119: an item spanning several days appears once in the agenda with its date range; overlapping items in the week view sit side by side and beyond three share a "+N" block that opens the day panel; a month cell shows at most three items and then "+N more"; a calendar page shows one agenda for the selected range and no second list under a grid. The same item reads the same in every view, and a title in another script starts at the same edge as the others.
+- **FR-026**: The layer controls MUST read as one group: chips with one neutral outline, the layer's colour as a marker, its icon and its label, pressed when the layer is on (spec 036 DLS-070). The week view MUST show the current time line and the working hours of the person's working calendar.
+- **FR-027**: The home calendar component MUST be the summary variant: today's remaining items and the next one after them, at most five rows, with "Open the calendar". It MUST NOT embed the full view switch or the layer legend.
 
 ## 6. Business and validation rules
 - Ranges: events and summary up to 62 days, team availability up to 62 days, holidays up to 366 days.

@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (policy register, authoring, approval, publishing, attestation campaigns, reminders, compliance view, policy Q&A), R2 (scheduled review cycles, comprehension checks, exemptions, control and regulation mapping, evidence pack export, manager dashboards), R3 (policy change impact analysis with AI, regulator change feeds) |
-| Last updated | 2026-11-05 |
+| Last updated | 2026-11-14 |
 | Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | EXP-004, KNO-001, KNO-007, POL-001 to POL-018 (new) |
 | Use cases | UC-04 (distribution), UC-06 (policy questions) |
@@ -165,6 +165,8 @@ Ahmed asks the assistant "Can I accept a gift from a supplier?". The assistant a
 - **FR-017 / POL-017**: New joiners MUST get attestation tasks for policies flagged "onboarding required" through the onboarding journey of spec 022.
 - **FR-018 / POL-018**: Policy pages MUST be indexed for search with clause anchors, and superseded versions MUST be excluded from default search results.
 - **FR-019**: The policy register MUST follow DLS-079: below 640px each policy is a stacked card with its name, status, owner and next review date, and no text breaks inside a word. Acceptance: at 390px the register shows every policy as a readable card with no horizontal page scroll.
+- **FR-020**: My policies MUST open with a status summary (spec 036 DLS-103, DLS-109): "You are up to date" with the date of the last acknowledgement, or the policies waiting for the reader, each with its key changes, its version and one action to read and acknowledge; then recently updated policies with what changed. An acknowledgement gives a receipt naming the policy and version.
+- **FR-021**: The policy register MUST open with what needs attention (reviews overdue or due within 30 days) before the full list, hide the status column while every listed policy shares one status and say it once above the table, support keyboard sorting, and use the filter toolbar (spec 036 DLS-106). The policy reader uses the reading column with a sticky "On this page" list and a scoped "Ask about this policy" action (spec 014 FR-027).
 
 ## 6. Business and validation rules
 - One current version per policy at a time. An approved version with a future effective date is "approved, not yet effective".
