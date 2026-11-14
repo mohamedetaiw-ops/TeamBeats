@@ -5202,6 +5202,14 @@
         "saved": "Saved as version {version}.",
         "busy": "Working",
         "failed": "That did not work. Try again."
+      },
+      "queryText": {
+        "title": "Search words in analytics",
+        "intro": "The search dashboard shows what people look for, only for words five or more people used. Searches that look like an email address or a phone or ID number never keep their words.",
+        "switch": "Keep the words people search for",
+        "hint": "Turned off, the dashboard shows counts only and the words already kept are cleared.",
+        "on": "Search words are kept for the dashboard.",
+        "off": "Search words are no longer kept, and the words kept before are cleared."
       }
     },
     "federated": {

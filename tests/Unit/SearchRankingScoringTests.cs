@@ -51,3 +51,17 @@ public sealed class SearchRankingScoringTests
         Assert.Equal(["search_ranking/ndcg_at_10:en"], failures);
     }
 }
+
+/// <summary>Spec 012 T016 (FR-013): queries that look like personal data never keep their words in the query log.</summary>
+public sealed class SearchQueryPrivacyTests
+{
+    [Theory]
+    [InlineData("laila@example.test", true)]
+    [InlineData("call 050 123 4567", true)]
+    [InlineData("رقم ٠٥٠١٢٣٤٥٦٧", true)]
+    [InlineData("staff 784199", true)]
+    [InlineData("annual leave 2026", false)]
+    [InlineData("forklift safety", false)]
+    public void Personal_looking_queries_are_recognised(string query, bool personal) =>
+        Assert.Equal(personal, TeamBeats.Modules.Search.SearchQueryLog.LooksPersonal(query));
+}

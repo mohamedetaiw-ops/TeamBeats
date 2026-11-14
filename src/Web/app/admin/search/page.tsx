@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
-import type { AiSummarySetting, BestBet, FederatedSource, JudgedSetSummary, Rebuild, RetrievalConfig, SynonymSet } from "@/lib/search/types";
+import type { AiSummarySetting, BestBet, FederatedSource, JudgedSetSummary, QueryTextSetting, Rebuild, RetrievalConfig, SynonymSet } from "@/lib/search/types";
 import type { OrgUnitView } from "@/lib/admin/types";
-import { AiSummaryPanel, BestBets, FederatedSources, Rebuilds, RetrievalSettingsPanel, Synonyms } from "@/features/search/SearchAdmin";
+import { AiSummaryPanel, BestBets, FederatedSources, QueryTextPanel, Rebuilds, RetrievalSettingsPanel, Synonyms } from "@/features/search/SearchAdmin";
 import { JudgedSets } from "@/features/search/JudgedSets";
 import "@/features/search/search.css";
 
@@ -15,7 +15,7 @@ import "@/features/search/search.css";
 export default async function SearchAdminPage() {
   const nav = await apiGet<NavigationSection[]>("/api/v1/admin/navigation");
   if (!nav.ok || !nav.data.some((s) => s.key === "search")) notFound();
-  const [bets, synonyms, rebuilds, retrieval, federated, summary, judged, units] = await Promise.all([
+  const [bets, synonyms, rebuilds, retrieval, federated, summary, judged, units, queryText] = await Promise.all([
     apiGet<{ bestBets: BestBet[] }>("/api/v1/search/best-bets"),
     apiGet<{ synonymSets: SynonymSet[] }>("/api/v1/search/synonyms"),
     apiGet<Rebuild[]>("/api/v1/search/rebuilds"),
@@ -24,6 +24,7 @@ export default async function SearchAdminPage() {
     apiGet<AiSummarySetting>("/api/v1/search/ai-summary"),
     apiGet<JudgedSetSummary[]>("/api/v1/evaluation/search-sets"),
     apiGet<OrgUnitView[]>("/api/v1/org/units"),
+    apiGet<QueryTextSetting>("/api/v1/search/query-text"),
   ]);
   if (!bets.ok || !synonyms.ok || !rebuilds.ok || !retrieval.ok) notFound();
   const t = await getTranslations("search.admin");
@@ -38,6 +39,7 @@ export default async function SearchAdminPage() {
       {judged.ok ? <JudgedSets initial={judged.data} units={units.ok ? units.data.filter((u) => u.status === "active") : []} /> : null}
       {federated.ok ? <FederatedSources initial={federated.data} /> : null}
       {summary.ok ? <AiSummaryPanel initial={summary.data} /> : null}
+      {queryText.ok ? <QueryTextPanel initial={queryText.data} /> : null}
     </div>
   );
 }

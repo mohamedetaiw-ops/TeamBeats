@@ -7,6 +7,7 @@ import { isSearchKind, searchKinds, type SearchPage, type SearchResult } from "@
 import { FederatedResults } from "@/features/search/FederatedResults";
 import { SearchSummary } from "@/features/search/SearchSummary";
 import { SaveSearch } from "@/features/search/SaveSearch";
+import { SearchClicks } from "@/features/search/SearchClicks";
 import "@/features/search/search.css";
 
 type Params = { q?: string; kind?: string; page?: string };
@@ -44,8 +45,8 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
   const pages = page ? Math.min(Math.ceil(page.total / page.pageSize), 50) : 0;
   const all = page ? Object.values(page.facets).reduce((sum, n) => sum + (n ?? 0), 0) : 0;
 
-  const item = (r: SearchResult) => (
-    <li key={`${r.source}:${r.itemId}`} className="search-result" lang={r.locale}>
+  const item = (r: SearchResult, at: number) => (
+    <li key={`${r.source}:${r.itemId}`} className="search-result" lang={r.locale} data-position={(number - 1) * (page?.pageSize ?? 20) + at + 1}>
       <div className="search-result-meta">
         <span className="search-kind">{t(`kinds.${r.kind}`)}</span>
         {r.recommended ? <span className="search-recommended">{t("recommended")}</span> : null}
@@ -113,6 +114,7 @@ export default async function SearchResultsPage({ searchParams }: { searchParams
             ) : null}
 
             {page.results.length > 0 ? <ol className="search-results">{page.results.map(item)}</ol> : null}
+            {page.queryId ? <SearchClicks queryId={page.queryId} /> : null}
 
             {page.results.length === 0 ? (
               <div className="search-empty">

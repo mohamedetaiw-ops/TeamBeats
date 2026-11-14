@@ -1106,6 +1106,7 @@
   "notifications.template.search.saved_alert.body": "تطابق {count} عناصر جديدة بحثًا حفظته. افتح البحث لرؤيتها.",
   "conflict.search.saved_limit": "لقد حفظت الحد الأقصى من عمليات البحث. احذف واحدة قبل حفظ أخرى.",
   "conflict.search.saved_exists": "لقد حفظت هذا البحث من قبل.",
+  "validation.search.click": "أبلغ عن نقرة على نتيجة من بحثك الأخير، في موضع من 1 إلى 1000.",
   "validation.search.passage_tokens": "استخدم حجم مقطع من 100 إلى 1000 رمز.",
   "validation.search.overlap": "استخدم تداخلًا من 0 إلى 50 بالمئة.",
   "validation.search.embedding_model": "أدخل معرّف نموذج حتى 100 حرف من الأحرف والأرقام والرموز . _ : / -",

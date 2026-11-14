@@ -24,6 +24,8 @@ export type SearchPage = {
   facets: Partial<Record<SearchKind, number>>;
   degraded: boolean;
   alternatives: SearchResult[];
+  /** The first page in the query log, for reporting the first click (FR-013). */
+  queryId?: string | null;
 };
 
 export type Suggestion = { itemId: string; source: string; kind: SearchKind; title: string; link: string };
@@ -122,3 +124,6 @@ export type Judgment = { source: string; itemId: string; grade: number };
 export type JudgedQuery = { n: number; query: string; locale: string; judgments: Judgment[] };
 export type JudgedSetSummary = { id: string; names: Record<string, string>; orgUnitId: string; version: number; queries: number; locales: string[]; updatedAt: string };
 export type JudgedSetView = { id: string; names: Record<string, string>; orgUnitId: string; version: number; queries: JudgedQuery[]; updatedAt: string };
+
+/** Whether the query log keeps the words people search for (FR-013). */
+export type QueryTextSetting = { enabled: boolean; updatedAt: string | null };
