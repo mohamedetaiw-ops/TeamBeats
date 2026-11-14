@@ -19,6 +19,7 @@
     <ProjectReference Include="../Notifications.Contracts/TeamBeats.Modules.Notifications.Contracts.csproj" />
     <ProjectReference Include="../Experience.Contracts/TeamBeats.Modules.Experience.Contracts.csproj" />
     <ProjectReference Include="../Search.Contracts/TeamBeats.Modules.Search.Contracts.csproj" />
+    <ProjectReference Include="../AiGateway.Contracts/TeamBeats.Modules.AiGateway.Contracts.csproj" />
     <ProjectReference Include="../Analytics.Contracts/TeamBeats.Modules.Analytics.Contracts.csproj" />
     <ProjectReference Include="../PublicApi.Contracts/TeamBeats.Modules.PublicApi.Contracts.csproj" />
     <ProjectReference Include="../Security.Contracts/TeamBeats.Modules.Security.Contracts.csproj" />

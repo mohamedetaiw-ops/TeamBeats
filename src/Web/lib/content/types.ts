@@ -104,7 +104,7 @@ export type UnitTarget = { id: string; subtree?: boolean };
 export type AudienceClause = { orgUnits?: UnitTarget[] | null; membershipTypes?: string[] | null; locations?: string[] | null; groups?: string[] | null; roles?: string[] | null };
 export type ContentAudience = { anyOf?: AudienceClause[] | null };
 
-export type ContentVariant = { title: string; summary: string | null; body: BodyDocument; outOfDate: boolean };
+export type ContentVariant = { title: string; summary: string | null; body: BodyDocument; outOfDate: boolean; machineTranslated?: boolean };
 
 export type CriticalSettings = { presentation: "modal" | "banner"; requireAck: boolean; remindLaterMax: number; deadlineAt: string | null; dismissible: boolean };
 

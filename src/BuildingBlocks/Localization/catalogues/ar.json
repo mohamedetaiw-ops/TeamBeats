@@ -2357,5 +2357,8 @@
   "validation.content.follow_kind": "يمكنك متابعة موقع أو موضوع.",
   "conflict.content.follow_limit": "وصلت إلى الحد الأقصى للمواقع والموضوعات التي تتابعها. ألغِ متابعة أحدها أولًا.",
   "notifications.template.content.mention.new.title": "تمت الإشارة إليك",
-  "notifications.template.content.mention.new.body": "أشار إليك أحدهم في خبر أو تعليق. افتحه لقراءته."
+  "notifications.template.content.mention.new.body": "أشار إليك أحدهم في خبر أو تعليق. افتحه لقراءته.",
+  "validation.content.translate_locale": "اختر لغة أخرى من لغات المؤسسة للترجمة إليها.",
+  "conflict.content.machine_translated": "تحتاج ترجمة آلية في هذه المسودة إلى أن يحررها شخص أو يعتمدها أولًا.",
+  "conflict.content.not_machine_translated": "هذه اللغة في المسودة ليست ترجمة آلية."
 }

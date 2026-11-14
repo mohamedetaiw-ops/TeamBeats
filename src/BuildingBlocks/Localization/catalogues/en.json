@@ -2357,5 +2357,8 @@
   "validation.content.follow_kind": "You can follow a site or a topic.",
   "conflict.content.follow_limit": "You follow as many sites and topics as you can. Stop following one first.",
   "notifications.template.content.mention.new.title": "You were mentioned",
-  "notifications.template.content.mention.new.body": "Someone mentioned you in news or a comment. Open it to read it."
+  "notifications.template.content.mention.new.body": "Someone mentioned you in news or a comment. Open it to read it.",
+  "validation.content.translate_locale": "Choose another language of the organization to translate into.",
+  "conflict.content.machine_translated": "A machine translation in this draft needs a person to edit or approve it first.",
+  "conflict.content.not_machine_translated": "That language of the draft is not a machine translation."
 }

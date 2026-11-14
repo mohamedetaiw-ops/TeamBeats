@@ -346,6 +346,8 @@ public static class AuditActions
     public const string ContentApproved = "content.approved";
     public const string ContentReturned = "content.returned";
     public const string ContentWithdrawn = "content.withdrawn";
+    public const string ContentTranslated = "content.translated";
+    public const string ContentTranslationApproved = "content.translation_approved";
     public const string ContentCriticalSent = "content.critical_sent";
     public const string ContentCriticalDenied = "content.critical_denied";
     public const string ContentAcknowledged = "content.acknowledged";
@@ -553,7 +555,7 @@ public static class AuditActions
         WorkflowDefinitionPublished, WorkflowTaskCompleted, WorkflowInstanceWithdrawn,
         ServiceCreated, ServiceChanged, ServicePublished, ServiceRetired, ServiceCategoryChanged, RequestSubmitted, RequestCancelled, RequestResubmitted,
         TaskApproved, TaskRejected, TaskReturned, DelegationSet, DelegationChanged, DelegationEnded,
-        ContentCreated, ContentPublished, ContentScheduled, ContentUnpublished, ContentArchived, ContentExpired, ContentSettingsChanged, ContentShared, ContentSubmitted, ContentApproved, ContentReturned, ContentWithdrawn,
+        ContentCreated, ContentPublished, ContentScheduled, ContentUnpublished, ContentArchived, ContentExpired, ContentSettingsChanged, ContentShared, ContentSubmitted, ContentApproved, ContentReturned, ContentWithdrawn, ContentTranslated, ContentTranslationApproved,
         ContentCriticalSent, ContentCriticalDenied, ContentAcknowledged, ContentAckReportExported,
         ContentReviewed, ContentOwnerReassigned, ContentVersionRestored, ContentCommentModerated,
         SiteCreated, SiteChanged, SiteArchived, SiteRestored,

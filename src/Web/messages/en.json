@@ -3721,7 +3721,16 @@
       "previewOf": "Preview of {title}",
       "embed": "Embedded content",
       "modalHint": "A window must always be answered: people confirm it or ask to be reminded later.",
-      "analytics": "Analytics"
+      "analytics": "Analytics",
+      "translate": "Translate with AI",
+      "translating": "Translating",
+      "translated": "Translated. Check the text, then edit or approve it before publishing.",
+      "translateBlocked": "Your organization's AI policy does not allow this item's classification to be translated by AI.",
+      "translateUnavailable": "AI translation is not available right now. You can still write this language yourself.",
+      "machineTranslated": "machine translated",
+      "machineTranslatedNote": "Machine translated. A person must edit or approve this language before the item can be published.",
+      "approveTranslation": "Approve translation",
+      "translationApproved": "Translation approved."
     },
     "history": {
       "title": "History",

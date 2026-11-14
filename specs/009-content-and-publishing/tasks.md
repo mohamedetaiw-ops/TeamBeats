@@ -51,8 +51,8 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T028 [US9] Mention marks and hashtags in bodies and comments, topic endpoint and page, follows and feed filter, UI
 
 ### Phase 9: User Story 5 R2, AI translation (P2)
-- [ ] T029 [P] [US5] Tests: translation draft marked machine translated; Confidential blocked by default policy; reviewer required before publish; human edit clears the mark; entitlement off refused; gateway unavailable degrades
-- [ ] T030 [US5] Translate endpoint through the AI Gateway, variant mark, content type `reviewed_translation`, editor actions and badges
+- [x] T029 [P] [US5] Tests: translation draft marked machine translated; Confidential blocked by default policy; reviewer required before publish; human edit clears the mark; entitlement off refused; gateway unavailable degrades
+- [x] T030 [US5] Translate endpoint through the AI Gateway, variant mark, content type `reviewed_translation`, editor actions and badges
 
 ### Phase 10: multi-step approval (FR-003)
 - [ ] T031 [P] Tests: steps run in order with a task each; return at any step; author excluded at every step; more than one step refused without `content.multistep_approval`

@@ -117,7 +117,8 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
             // Receipt reading (spec 022 FR-024) answers with the JSON of [fake:receipt:{...}] found inside an attached file,
             // or with nothing read.
             // The photo safety check (spec 023 FR-017) answers safe, unless an attached file carries [fake:unsafe].
-            reply = properties?["safe"] is not null ? JsonSerializer.Serialize(new { safe = !Attached(messages).Any(t => t.Contains("[fake:unsafe]", StringComparison.Ordinal)) })
+            // Content translation (spec 009 US5) answers each text marked as translated, in the target language's script.
+            reply = properties?["texts"] is not null ? Translation(last) : properties?["safe"] is not null ? JsonSerializer.Serialize(new { safe = !Attached(messages).Any(t => t.Contains("[fake:unsafe]", StringComparison.Ordinal)) })
                 : properties?["merchant"] is not null ? Receipt(messages) : judging
                 ? JsonSerializer.Serialize(last.Contains("[fake:judge:fail]", StringComparison.Ordinal)
                     ? new { verdict = "fail", score = 0.0, reason = "Fake judge: marked to fail." }
@@ -161,6 +162,14 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
             choices = new[] { new { index = 0, message = new { role = "assistant", content = reply, tool_calls = toolCalls }, finish_reason = toolCalls is null ? finish : "tool_calls" } },
             usage,
         });
+    }
+
+    private static string Translation(string request)
+    {
+        var node = JsonNode.Parse(request);
+        var arabic = node?["targetLanguage"]?.GetValue<string>() == "Arabic";
+        var texts = (node?["texts"] as JsonArray ?? []).Select(t => (arabic ? "مترجم: " : "Translated: ") + t?.GetValue<string>()).ToList();
+        return JsonSerializer.Serialize(new { texts });
     }
 
     /// <summary>A stable, recognisable answer: tests can assert on it and testers can see it is not a real model.</summary>

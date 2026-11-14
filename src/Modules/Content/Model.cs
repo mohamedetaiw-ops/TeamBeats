@@ -72,8 +72,11 @@ public sealed record CriticalSettings(string Presentation, bool RequireAck, int 
 /// <summary>Critical settings as the editor sends them; the deadline is a local time in the site's zone. Presentation "none" clears them.</summary>
 public sealed record CriticalInput(string? Presentation, bool? RequireAck, int? RemindLaterMax, DateTime? Deadline, bool? Dismissible);
 
-/// <summary>One locale of a version. <see cref="OutOfDate"/> marks a variant that fell behind the primary locale (US5 scenario 5).</summary>
-public sealed record ContentVariant(string Title, string? Summary, BodyDocument Body, bool OutOfDate = false);
+/// <summary>
+/// One locale of a version. <see cref="OutOfDate"/> marks a variant that fell behind the primary locale (US5 scenario 5);
+/// <see cref="MachineTranslated"/> marks AI translation that no person has edited or approved yet (US5 scenario 3).
+/// </summary>
+public sealed record ContentVariant(string Title, string? Summary, BodyDocument Body, bool OutOfDate = false, bool MachineTranslated = false);
 
 /// <summary>A person as the content pages show them.</summary>
 public sealed record ContentPerson(Guid Id, string DisplayName);

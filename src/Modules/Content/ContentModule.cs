@@ -42,6 +42,7 @@ public static class ContentModule
         services.AddScoped<ContentGovernance>();
         services.AddScoped<ContentSocial>();
         services.AddScoped<ContentFollows>();
+        services.AddScoped<ContentTranslations>();
         services.AddMessageHandler<Contracts.ContentPublished, ContentMentions>("content.mentions");
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ContentComponents>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, ContentOwnerHandler>("content.owner_left");
@@ -169,6 +170,20 @@ public static class ContentModule
             var item = await service.SubmitAsync(id, request ?? new PublishRequest(null, null, null), ct);
             await session.CommitAsync(ct);
             return Results.Ok(item);
+        });
+
+        items.MapPost("/{id:guid}/translate", async (Guid id, TranslateRequest request, ContentTranslations service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.TranslateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        items.MapPost("/{id:guid}/translations/{locale}/approve", async (Guid id, string locale, ContentTranslations service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.ApproveAsync(id, locale, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         items.MapPost("/{id:guid}/withdraw", async (Guid id, Items service, IDbSession session, CancellationToken ct) =>

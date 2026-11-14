@@ -103,6 +103,7 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<Result>(null);
   const [sensitive, setSensitive] = useState<(SensitiveProblem & { action: "publish" | "submit" }) | null>(null);
+  const [loaded, setLoaded] = useState(0);
 
   const locked = item.inReview || item.status === "archived";
   const draft = drafts[tab]!;
@@ -184,6 +185,37 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
       t(action === "publish" ? "published" : "submitted"));
   };
 
+  // AI translation (spec 009 US5 scenario 3): the draft is saved first, then the API writes the translated variant, marked
+  // machine translated until a person edits or approves it.
+  const translate = async () => {
+    if (!(await call("save", base, "PUT", request()))) return;
+    setBusy("translate");
+    setResult(null);
+    try {
+      const response = await fetch(`${base}/translate`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ locale: tab }) });
+      if (!response.ok) {
+        setResult({ ok: false, messages: await problemMessages(response) });
+        return;
+      }
+      const view = (await response.json()) as { outcome: string; item: ItemView | null };
+      if (view.outcome !== "translated" || !view.item) {
+        setResult({ ok: false, messages: [t(view.outcome === "policy_blocked" ? "translateBlocked" : "translateUnavailable")] });
+        return;
+      }
+      const v = view.item.variants[tab];
+      setItem(view.item);
+      if (v) setDrafts((d) => ({ ...d, [tab]: { title: v.title, summary: v.summary ?? "", body: v.body } }));
+      setLoaded((n) => n + 1);
+      setResult({ ok: true, messages: [t("translated")] });
+      router.refresh();
+    } catch {
+      setResult({ ok: false, messages: [t("failed")] });
+    } finally {
+      setBusy(null);
+    }
+  };
+  const approveTranslation = () => call("approve", `${base}/translations/${encodeURIComponent(tab)}/approve`, "POST", undefined, t("translationApproved"));
+
   const toggle = (list: string[], value: string, on: boolean) => (on ? [...new Set([...list, value])] : list.filter((v) => v !== value));
   const preview = drafts[tab]!;
 
@@ -231,13 +263,31 @@ export function ItemEditor({ initial, site, units, locales }: { initial: ItemVie
               {t(`language.${l === "ar" ? "ar" : "en"}`)}
               {l === item.primaryLocale ? ` (${t("primary")})` : ""}
               {item.variants[l]?.outOfDate ? ` (${t("outOfDate")})` : ""}
+              {item.variants[l]?.machineTranslated ? ` (${t("machineTranslated")})` : ""}
             </button>
           ))}
         </div>
         <div role="tabpanel" id={`${ids}-panel`} aria-labelledby={`${ids}-tab-${tab}`} className="content-card-body" lang={tab} dir={tab === "ar" ? "rtl" : "ltr"}>
           <FormField label={t("title")} name="title" value={draft.title} disabled={locked} maxLength={200} onChange={(e) => setDraft({ title: e.target.value })} />
           <FormField label={t("summary")} name="summary" value={draft.summary} disabled={locked} maxLength={500} onChange={(e) => setDraft({ summary: e.target.value })} />
-          <BlockEditor key={tab} label={t("body")} locale={tab} value={draft.body} onChange={(body) => setDraft({ body })} />
+          <BlockEditor key={`${tab}-${loaded}`} label={t("body")} locale={tab} value={draft.body} onChange={(body) => setDraft({ body })} />
+          {item.variants[tab]?.machineTranslated ? (
+            <p className="notice" data-testid="machine-translated">
+              {t("machineTranslatedNote")}
+            </p>
+          ) : null}
+          {tab !== item.primaryLocale && !locked ? (
+            <p className="content-actions">
+              <Button busy={busy === "translate"} busyLabel={t("translating")} onClick={() => void translate()}>
+                {t("translate")}
+              </Button>
+              {item.variants[tab]?.machineTranslated ? (
+                <Button busy={busy === "approve"} busyLabel={t("saving")} onClick={() => void approveTranslation()}>
+                  {t("approveTranslation")}
+                </Button>
+              ) : null}
+            </p>
+          ) : null}
         </div>
       </section>
 
