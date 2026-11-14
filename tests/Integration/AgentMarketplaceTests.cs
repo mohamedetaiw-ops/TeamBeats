@@ -170,5 +170,17 @@ public sealed class AgentMarketplaceTests(TenantWorld world)
         Assert.Single((await OkAsync(t["sara"].Client.GetAsync($"{Agents}/{second}/ratings"))).GetProperty("comments").EnumerateArray());
         Assert.Single((await OkAsync(t["aip"].Client.GetAsync($"{Agents}/{second}/ratings"))).GetProperty("comments").EnumerateArray());
         Assert.Equal(HttpStatusCode.NotFound, (await t["out"].Client.GetAsync($"{Agents}/{first}/ratings")).StatusCode);
+
+        // A denied request leaves the person outside, tells them, and they may ask again later.
+        var asked = (await OkAsync(t["out"].Client.PostAsync($"{Agents}/{second}/access-requests", null))).GetProperty("id").GetGuid();
+        var denied = await OkAsync(t["sara"].Client.PostAsJsonAsync($"{Agents}/access-requests/{asked}/decision", new { grant = false }));
+        Assert.Equal(AccessRequestStatuses.Denied, denied.GetProperty("status").GetString());
+        var seen = (await ListAsync(t["out"].Client)).Single(a => a.GetProperty("id").GetGuid() == second);
+        Assert.False(seen.GetProperty("canUse").GetBoolean());
+        Assert.Equal(AccessRequestStatuses.Denied, seen.GetProperty("request").GetString());
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.AgentAccessDenied, second.ToString());
+        Assert.Equal(1L, await world.Database.CountInTenantAsync(t.Id,
+            "select count(*) from notifications.notification where user_id = @user and template_key = 'agents.access_denied'", ("user", t["out"].Id)));
+        Assert.NotEqual(asked, (await OkAsync(t["out"].Client.PostAsync($"{Agents}/{second}/access-requests", null))).GetProperty("id").GetGuid());
     }
 }

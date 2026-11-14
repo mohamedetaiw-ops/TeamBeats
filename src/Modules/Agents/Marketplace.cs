@@ -154,7 +154,11 @@ public sealed class AgentMarketplace(IDbSession session, ITenantContext context,
         var user = await UserAsync(ct);
         if (!favourite)
         {
-            await session.ExecAsync("delete from agents.agent_favourite where user_id = @user and agent_id = @id", new { user, id }, ct);
+            // Only the person's own favourite can be removed; anything else is not found.
+            if (await session.ExecAsync("delete from agents.agent_favourite where user_id = @user and agent_id = @id", new { user, id }, ct) == 0)
+            {
+                throw AppException.NotFound();
+            }
             return;
         }
         if (!(await VisibleAsync(id, user, ct)).CanUse)
@@ -223,6 +227,11 @@ public sealed class AgentMarketplace(IDbSession session, ITenantContext context,
         if (!all)
         {
             await VisibleAsync(id, user, ct);
+        }
+        else if ((await PublishedAsync(id, ct)).Count == 0)
+        {
+            // Ratings belong to published agents; an unknown agent, or one of another tenant, is not found.
+            throw AppException.NotFound();
         }
         var rows = await session.QueryAsync("select user_id, score, comment, updated_at from agents.agent_rating where agent_id = @id order by updated_at desc",
             new { id }, r => new RatingView(r.GetGuid(0), r.GetInt32(1), r.Get<string?>("comment"), r.GetFieldValue<DateTimeOffset>(3)), ct);

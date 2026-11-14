@@ -73,7 +73,6 @@ export default async function AgentMarketplacePage({
           icon="spark"
           actions={<ButtonLink href="/agents">{t("mine")}</ButtonLink>}
         />
-        {view.data.paused ? <p className="notice">{t("paused")}</p> : null}
         <FilterToolbar
           label={t("search")}
           method="get"
@@ -113,7 +112,9 @@ export default async function AgentMarketplacePage({
           </ToolbarSelect>
         </FilterToolbar>
         {agents.length === 0 ? (
-          filtered ? (
+          view.data.paused ? (
+            <StateView kind="unsupported" icon="stop" title={t("pausedTitle")} message={t("paused")} />
+          ) : filtered ? (
             <StateView
               kind="empty"
               icon="search"

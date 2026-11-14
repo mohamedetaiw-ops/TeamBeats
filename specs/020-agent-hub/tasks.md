@@ -31,7 +31,7 @@ Depends on 004, 005, 006, 013, 016, 027 (same module), 034; 012 (search source),
 
 ## R2
 - [x] T016 [US4] Studio: blank agents within `ai.agents.custom` and `ai.agents.max_custom`, clone with confirmed copies, tool picker by policy and scope, Studio sections and read-only JSON view; tests
-- [ ] T017 [US6] Marketplace: listing by audience mode, request access through the inbox, favourites, ratings with private comments; tests
+- [x] T017 [US6] Marketplace: listing by audience mode, request access through the inbox, favourites, ratings with private comments; tests
 - [ ] T018 [US9] Persistent memory: policy switch, consent, `memory.remember`, My agents page, retention, leaver and withdrawal deletion; tests
 - [ ] T019 [US8] Briefings: policy switch with risk classes, subscription, worker running as the user, notification delivery; tests
 - [ ] T020 Department templates 7 to 12 with suites, L3 ones "not ready" until spec 027 L3

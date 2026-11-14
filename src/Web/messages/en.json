@@ -6207,7 +6207,7 @@
       "title": "Agent marketplace",
       "intro": "Find agents for your work, keep your favourites close and ask for the ones made for other teams.",
       "mine": "My agents",
-      "paused": "Agents are paused in your organization for now. You can still browse and ask for access.",
+      "paused": "Agents are paused in your organization for now. They will be listed here again when they are back.",
       "search": "Search agents",
       "searchHint": "Search by name or description",
       "apply": "Apply",
@@ -6235,7 +6235,8 @@
       "commentHint": "Only the agent's owners and AI policy administrators read comments.",
       "saveRating": "Save rating",
       "failed": "Something went wrong. Try again.",
-      "browse": "Browse the marketplace"
+      "browse": "Browse the marketplace",
+      "pausedTitle": "Agents are paused"
     },
     "access": {
       "title": "Access requests",
