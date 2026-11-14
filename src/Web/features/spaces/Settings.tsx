@@ -11,6 +11,7 @@ import { FormField, TextAreaField } from "@/components/ui/FormField";
 import { RadioGroup } from "@/components/ui/RadioGroup";
 import { call, send, spacesApi, visibilities, type SpaceView } from "@/lib/spaces";
 import "./spaces.css";
+import { Widget } from "@/components/ui/Widget";
 
 /**
  * A space's settings (spec 029 FR-001, FR-013): name, description, visibility, joining, classification and dates for
@@ -101,8 +102,7 @@ export function Settings({ initial }: { initial: SpaceView }) {
           </div>
         </form>
       ) : null}
-      <section className="spaces-section" aria-labelledby="space-archive">
-        <h2 id="space-archive">{active ? t("archiveTitle") : t("restoreTitle")}</h2>
+      <Widget title={active ? t("archiveTitle") : t("restoreTitle")}>
         <p className="spaces-meta">{active ? t("archiveHint") : t("restoreHint")}</p>
         <div className="spaces-row">
           {active ? (
@@ -111,7 +111,7 @@ export function Settings({ initial }: { initial: SpaceView }) {
             <Button onClick={() => void archive(false)}>{t("restore")}</Button>
           )}
         </div>
-      </section>
+      </Widget>
     </div>
   );
 }

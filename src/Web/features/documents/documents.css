@@ -521,18 +521,6 @@
   color: var(--tb-color-text-primary);
 }
 
-.kb-side-card {
-  gap: var(--tb-space-sm);
-  padding: var(--tb-space-md);
-  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
-  border-radius: var(--tb-radius-md);
-}
-
-.kb-aside .kb-side-card h2 {
-  font-size: var(--tb-font-size-sm);
-  font-weight: var(--tb-font-weight-semibold);
-}
-
 .kb-related {
   display: grid;
   gap: var(--tb-space-xs);
@@ -573,11 +561,6 @@
   .kb-article {
     padding: var(--tb-space-lg);
   }
-}
-
-.documents-sharing {
-  display: grid;
-  gap: var(--tb-space-md);
 }
 
 .documents-sharing-form {

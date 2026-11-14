@@ -8,6 +8,7 @@ import { FormField, SelectField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import type { ContentSettingsView, ContentTypeSettings } from "@/lib/content/types";
 import "./content.css";
+import { Widget } from "@/components/ui/Widget";
 
 type Draft = { months: string; action: "" | "versions" | "item" };
 
@@ -52,8 +53,7 @@ export function RetentionSettings({ settings }: { settings: ContentSettingsView 
   }
 
   return (
-    <section className="content-card" aria-labelledby="content-retention">
-      <h2 id="content-retention">{t("title")}</h2>
+    <Widget title={t("title")}>
       <p className="field-hint">{t("intro")}</p>
       {messages.length > 0 ? (
         <div className="notice notice-error" role="alert">
@@ -106,6 +106,6 @@ export function RetentionSettings({ settings }: { settings: ContentSettingsView 
           </Button>
         </p>
       </form>
-    </section>
+    </Widget>
   );
 }

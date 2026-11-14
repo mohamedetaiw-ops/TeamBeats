@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { problemMessages } from "@/lib/notifications/types";
 import { editHref, type DiffSegment, type VersionCompare, type VersionSummary } from "@/lib/content/types";
 import "./content.css";
+import { Widget } from "@/components/ui/Widget";
 
 function Diff({ label, segments }: { label: string; segments: DiffSegment[] }) {
   return (
@@ -128,8 +129,7 @@ export function VersionHistory({ itemId, versions, locales, primary }: { itemId:
       </table>
 
       {versions.length > 1 ? (
-        <section className="content-card" aria-labelledby={`${ids}-compare`}>
-          <h2 id={`${ids}-compare`}>{t("compare")}</h2>
+        <Widget title={t("compare")}>
           <div className="content-filters">
             <label>
               {t("from")}
@@ -173,7 +173,7 @@ export function VersionHistory({ itemId, versions, locales, primary }: { itemId:
               <Diff label={t("bodyField")} segments={diff.body} />
             </div>
           ) : null}
-        </section>
+        </Widget>
       ) : null}
     </div>
   );

@@ -18,6 +18,7 @@ import {
   type RemoteFolder,
 } from "@/lib/documents/types";
 import "./documents.css";
+import { Widget } from "@/components/ui/Widget";
 
 const sourceApi = (connectionId: string, endpoint: string) =>
   `/api/v1/documents/connected-sources/${encodeURIComponent(connectionId)}/${endpoint}`;
@@ -110,11 +111,7 @@ export function SharePointImportStart({
 
   if (choices.length === 0) {
     return (
-      <section
-        className="documents-card"
-        aria-labelledby="sharepoint-import-title"
-      >
-        <h2 id="sharepoint-import-title">{t("title")}</h2>
+      <Widget title={t("title")}>
         <p className="documents-meta">
           {t(
             sources.some((s) => s.kind === "microsoft365" && s.state !== "ok")
@@ -122,7 +119,7 @@ export function SharePointImportStart({
               : "none",
           )}
         </p>
-      </section>
+      </Widget>
     );
   }
 

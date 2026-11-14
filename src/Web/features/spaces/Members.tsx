@@ -10,6 +10,7 @@ import { personName, type PersonCard } from "@/lib/people/types";
 import { call, roles, send, spacesApi, spacesHref, type SpaceMember, type SpaceView } from "@/lib/spaces";
 import { RoleBadge } from "./parts";
 import "./spaces.css";
+import { Widget } from "@/components/ui/Widget";
 
 /**
  * Members of a space (spec 029 FR-002, US1 scenario 3). Owners add people from the directory, change roles and remove
@@ -78,8 +79,7 @@ export function Members({ space, initial }: { space: SpaceView; initial: SpaceMe
         {space.rights.canLeave ? <Button onClick={() => void leave()}>{t("leave")}</Button> : null}
       </div>
 
-      <section className="spaces-section" aria-labelledby="members-list">
-        <h2 id="members-list">{t("title", { count: members.length })}</h2>
+      <Widget title={t("title", { count: members.length })}>
         <ul className="spaces-list" aria-label={t("listLabel")}>
           {members.map((m) => (
             <li key={m.userId} className="spaces-member">
@@ -100,11 +100,10 @@ export function Members({ space, initial }: { space: SpaceView; initial: SpaceMe
             </li>
           ))}
         </ul>
-      </section>
+      </Widget>
 
       {manage ? (
-        <section className="spaces-section" aria-labelledby="members-add">
-          <h2 id="members-add">{t("addTitle")}</h2>
+        <Widget title={t("addTitle")}>
           <form
             className="spaces-toolbar"
             role="search"
@@ -137,7 +136,7 @@ export function Members({ space, initial }: { space: SpaceView; initial: SpaceMe
               </ul>
             )
           ) : null}
-        </section>
+        </Widget>
       ) : null}
     </div>
   );

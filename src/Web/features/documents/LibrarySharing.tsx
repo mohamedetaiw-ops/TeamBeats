@@ -13,6 +13,7 @@ import type {
   GuestShare,
   LibraryView,
 } from "@/lib/documents/types";
+import { Widget } from "@/components/ui/Widget";
 
 export type SpaceChoice = { id: string; name: string };
 
@@ -92,8 +93,7 @@ export function LibrarySharing({
     format.dateTime(new Date(value), { dateStyle: "medium" });
 
   return (
-    <section className="documents-card documents-sharing" aria-labelledby="library-sharing-title">
-      <h2 id="library-sharing-title">{t("title")}</h2>
+    <Widget title={t("title")}>
       {messages.length > 0 ? (
         <div className="notice notice-error" role="alert">
           {messages.map((m) => (
@@ -217,6 +217,6 @@ export function LibrarySharing({
           ))}
         </ul>
       ) : null}
-    </section>
+    </Widget>
   );
 }
