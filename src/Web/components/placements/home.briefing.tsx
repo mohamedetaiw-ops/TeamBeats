@@ -120,7 +120,6 @@ export default function Briefing({ props }: PlacementProps) {
         </>
       ),
       primary: { label: t("review"), href },
-      secondary: { label: t("allTasks"), href: "/tasks" },
     });
   }
   for (const p of sources.policies ?? []) {
@@ -173,7 +172,15 @@ export default function Briefing({ props }: PlacementProps) {
           ))}
         </ol>
       ) : null}
-      <p className="home-briefing-foot">{t("sources")}</p>
+      <div className="home-briefing-foot">
+        <p>{t("sources")}</p>
+        {/* One path to every task for the whole briefing, not one beside each row (spec 036 DLS-100). */}
+        {rows.some((r) => r.key.startsWith("t-")) ? (
+          <Link className="home-briefing-more" href="/tasks">
+            {t("allTasks")}
+          </Link>
+        ) : null}
+      </div>
     </>,
   );
 }

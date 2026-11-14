@@ -34,6 +34,8 @@ export type RenderedPage = {
   fallback: "stack" | "two_then_stack" | "tabs";
   regions: RenderedRegion[];
   themeScope: string;
+  /** Placements the server left out because an earlier one already shows their data source and view (spec 032 FR-072). */
+  dropped?: { id: string; componentRef: string; region: string; keptPlacement: string; reasonKey: string }[] | null;
 };
 
 export type ThemeVariant = {

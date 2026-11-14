@@ -68,8 +68,13 @@ public sealed record RenderedRegion(string Id, int Span, string Section, IReadOn
 public sealed record Provenance(string Template, string Layout, int Release, Guid PublishedBy, DateTimeOffset PublishedAt);
 
 /// <param name="ThemeScope">The scope whose effective theme the page uses (spec 033): <c>tenant</c> or the owning org unit.</param>
+/// <param name="Dropped">Placements left out because an earlier one already shows their data source and view (FR-072).</param>
 public sealed record RenderedPage(Guid PageId, int Release, string Template, string Layout, string Variant, string Fallback,
-    IReadOnlyList<RenderedRegion> Regions, Provenance? Provenance, string ThemeScope, IReadOnlyList<Personalization.SkippedOperation>? Skipped = null);
+    IReadOnlyList<RenderedRegion> Regions, Provenance? Provenance, string ThemeScope, IReadOnlyList<Personalization.SkippedOperation>? Skipped = null,
+    IReadOnlyList<DroppedPlacement>? Dropped = null);
+
+/// <summary>A placement the renderer left out, with the placement that already shows the same data (spec 032 FR-072).</summary>
+public sealed record DroppedPlacement(string Id, string ComponentRef, string Region, string KeptPlacement, string ReasonKey);
 
 /// <summary>An upgrade of every page draft that uses <c>id@FromMajor</c> to the next major (spec 032 US7 scenario 2).</summary>
 public sealed record ComponentUpgradeRequest(int? FromMajor);
@@ -556,9 +561,12 @@ public sealed partial class PageService(
         {
             known["orgUnitId"] = unit.ToString();
         }
+        var shownSources = new Dictionary<string, string>(StringComparer.Ordinal);
+        var dropped = new List<DroppedPlacement>();
         var regions = layout.Regions.Select(lr =>
         {
-            var placements = draft.Regions.FirstOrDefault(r => r.Id == lr.Id)?.Placements ?? [];
+            var placements = (draft.Regions.FirstOrDefault(r => r.Id == lr.Id)?.Placements ?? [])
+                .Where(p => FirstOfSource(p.Id, p.ComponentRef, lr.Id, availability, shownSources, dropped)).ToList();
             return new RenderedRegion(lr.Id, lr.Span, lr.Section, placements.Select(p =>
             {
                 var manifest = registry.Find(p.ComponentRef);
@@ -574,7 +582,28 @@ public sealed partial class PageService(
             }).ToList());
         }).ToList();
         return new RenderedPage(page.Id, page.CurrentRelease ?? 0, template.Id, layout.Id, draft.Variant, layout.Fallback, regions, null,
-            page.OrgUnitId?.ToString() ?? "tenant");
+            page.OrgUnitId?.ToString() ?? "tenant", Dropped: dropped);
+    }
+
+    /// <summary>
+    /// One instance per data source (FR-072): true for the first available placement of a source and view, false for a later
+    /// one, which is recorded and not rendered. A component that declares no source, or that the viewer cannot use, claims nothing.
+    /// </summary>
+    private bool FirstOfSource(string placementId, string componentRef, string region, Func<ComponentManifest, Availability> availability,
+        Dictionary<string, string> shown, List<DroppedPlacement> dropped)
+    {
+        if (registry.Find(componentRef) is not { } manifest || manifest.State == ComponentStates.Retired
+            || availability(manifest) != Availability.Available || manifest.Placement.SourceView is not { } source)
+        {
+            return true;
+        }
+        if (shown.TryGetValue(source, out var kept))
+        {
+            dropped.Add(new DroppedPlacement(placementId, componentRef, region, kept, "validation.page.source_duplicate"));
+            return false;
+        }
+        shown[source] = placementId;
+        return true;
     }
 
     /// <summary>The latest release of a page for the current viewer, with the effective structure (FR-002, FR-028, FR-066).</summary>
@@ -613,6 +642,8 @@ public sealed partial class PageService(
         var personal = Personalization.LayoutEngine.Apply(layout.Regions.Select(lr => targeted.FirstOrDefault(r => r.Id == lr.Id) ?? new PageRegion(lr.Id, [])).ToList(),
             operations, rights, defaults: defaults);
 
+        var shownSources = new Dictionary<string, string>(StringComparer.Ordinal);
+        var dropped = new List<DroppedPlacement>();
         var regions = layout.Regions.Select(lr =>
         {
             var placements = personal.Regions.TryGetValue(lr.Id, out var list) ? list : [];
@@ -622,6 +653,7 @@ public sealed partial class PageService(
                 placements = placements.Where(item => registry.Find(item.Placement.ComponentRef) is not { } m
                     || m.Data.All(d => SharedDeviceRules.AllowsDataPath(d, device.Features))).ToList();
             }
+            placements = placements.Where(item => FirstOfSource(item.Placement.Id, item.Placement.ComponentRef, lr.Id, availability, shownSources, dropped)).ToList();
             return new RenderedRegion(lr.Id, lr.Span, lr.Section, placements.Select(item =>
             {
                 var p = item.Placement;
@@ -643,7 +675,7 @@ public sealed partial class PageService(
             ? new Provenance($"{template.Id}@{template.Version}", $"{layout.Id}@{layout.Version}", current, snapshot.PublishedBy, snapshot.PublishedAt)
             : null;
         return new RenderedPage(page.Id, current, template.Id, layout.Id, snapshot.Definition.Variant, layout.Fallback, regions, provenance,
-            page.OrgUnitId?.ToString() ?? "tenant", personal.Skipped);
+            page.OrgUnitId?.ToString() ?? "tenant", personal.Skipped, dropped);
     }
 
     /// <summary>The latest release of a page the caller may view; anything else is not found (spec 008 personal layouts).</summary>

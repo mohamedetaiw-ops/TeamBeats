@@ -171,6 +171,36 @@ public sealed class PageCompositionTests(TenantWorld world)
     }
 
     [Fact]
+    public async Task The_same_data_source_twice_is_a_warning_on_both_placements_and_only_the_first_is_rendered()
+    {
+        var t = world.A;
+        var page = await CreateAsync(t, "T01");
+        var saved = await SavedAsync(t, page, WithPlacements(page, "main",
+            P("first", "reference.beta.old@1"), P("text", "reference.alpha.text@1", Text), P("second", "reference.beta.old@1")));
+        // Spec 032 FR-072: the save is not blocked, and the warning points to both placements.
+        var warned = saved["findings"]!.AsArray().Where(f => f!["code"]!.GetValue<string>() == "validation.page.source_duplicate").ToList();
+        Assert.Equal(["first", "second"], warned.Select(f => f!["placement"]!.GetValue<string>()).Order(StringComparer.Ordinal));
+        Assert.All(warned, f => Assert.Equal("warning", f!["severity"]!.GetValue<string>()));
+
+        // The renderer shows the first and records the one it left out, in the preview and for viewers.
+        var preview = await t["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/pages/{page["id"]}/preview");
+        AssertOnlyFirst(preview);
+        Assert.True((await PublishAsync(t, saved)).IsSuccessStatusCode);
+        AssertOnlyFirst(await t["admin"].Client.GetFromJsonAsync<JsonElement>($"/api/v1/experience/render?slug={page["slug"]}"));
+
+        static void AssertOnlyFirst(JsonElement view)
+        {
+            var shown = view.GetProperty("regions").EnumerateArray().Single(r => r.GetProperty("id").GetString() == "main")
+                .GetProperty("placements").EnumerateArray().Select(p => p.GetProperty("id").GetString()).ToList();
+            Assert.Equal(["first", "text"], shown);
+            var dropped = view.GetProperty("dropped").EnumerateArray().Single();
+            Assert.Equal("second", dropped.GetProperty("id").GetString());
+            Assert.Equal("first", dropped.GetProperty("keptPlacement").GetString());
+            Assert.Equal("validation.page.source_duplicate", dropped.GetProperty("reasonKey").GetString());
+        }
+    }
+
+    [Fact]
     public async Task Text_missing_in_one_enabled_language_is_a_translation_warning_that_does_not_block()
     {
         var t = world.A;

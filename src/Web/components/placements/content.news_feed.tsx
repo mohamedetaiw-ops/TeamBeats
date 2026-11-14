@@ -104,7 +104,7 @@ function Featured({ items, title }: { items: FeedItem[]; title: string }) {
   return (
     <section className="content-featured" aria-label={title}>
       <h2 className="visually-hidden">{title}</h2>
-      <article className="content-lead" lang={lead.locale}>
+      <article className="content-lead" data-media="none" lang={lead.locale}>
         {/* Stories carry no photo yet (spec 009), so the lead is a typographic card in its type's tone (DLS-088). */}
         <div className="content-lead-media content-lead-type" data-tone={lead.type === "announcement" ? "highlight" : "accent"} aria-hidden="true">
           <Icon name={lead.type === "announcement" ? "megaphone" : "news"} size={40} />
