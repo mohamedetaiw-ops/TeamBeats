@@ -26,6 +26,8 @@ public static class AgentsModule
         services.AddScoped<AssistantGuests>();
         services.AddScoped<AssistantFiles>();
         services.AddScoped<AssistantVoice>();
+        services.AddScoped<AgentMarketplace>();
+        services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AgentAccessTasks>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.ISearchSummaries, SearchSummaries>();
         services.AddScoped<AssistantHistory>();
         services.AddScoped<AssistantTextActions>();
@@ -226,6 +228,42 @@ public static class AgentsModule
             var detail = await registry.InstallAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/agents/{detail.Agent.Id}", detail);
+        });
+
+        // The marketplace (020 US6): listing, favourites, ratings and access requests.
+        agents.MapGet("/marketplace", async (string? q, string? category, AgentMarketplace market, CancellationToken ct) => Results.Ok(await market.ListAsync(q, category, ct)));
+        agents.MapPut("/{id:guid}/favourite", async (Guid id, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
+        {
+            await market.SetFavouriteAsync(id, true, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        agents.MapDelete("/{id:guid}/favourite", async (Guid id, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
+        {
+            await market.SetFavouriteAsync(id, false, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        agents.MapPut("/{id:guid}/rating", async (Guid id, RatingRequest request, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
+        {
+            await market.RateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        agents.MapGet("/{id:guid}/ratings", async (Guid id, AgentMarketplace market, CancellationToken ct) => Results.Ok(await market.RatingsAsync(id, ct)));
+        agents.MapPost("/{id:guid}/access-requests", async (Guid id, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await market.RequestAccessAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        agents.MapGet("/{id:guid}/access-requests", async (Guid id, AgentMarketplace market, CancellationToken ct) =>
+            Results.Ok(new { requests = await market.PendingAsync(id, ct) }));
+        agents.MapPost("/access-requests/{id:guid}/decision", async (Guid id, AccessDecision decision, AgentMarketplace market, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await market.DecideAsync(id, decision, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
         });
 
         agents.MapGet("/studio", async (AgentRegistry registry, CancellationToken ct) => Results.Ok(await registry.StudioAsync(ct)));

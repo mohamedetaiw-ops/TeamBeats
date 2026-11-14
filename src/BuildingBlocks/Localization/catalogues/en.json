@@ -2522,5 +2522,13 @@
   "conflict.assistant.voice_blocked": "Your AI policy does not allow this content to be sent to a speech model.",
   "conflict.assistant.voice_quota": "The AI allowance for this period is used up. Try again after it resets.",
   "conflict.assistant.voice_unavailable": "Voice is not available right now. Type your question instead.",
-  "conflict.agent.custom_limit": "Your plan's limit on custom agents is reached. Retire one, or ask your tenant administrator to raise the limit with your plan."
+  "conflict.agent.custom_limit": "Your plan's limit on custom agents is reached. Retire one, or ask your tenant administrator to raise the limit with your plan.",
+  "validation.agent.rating_score": "Choose a rating from 1 to 5.",
+  "validation.agent.rating_comment": "Keep the comment to 1,000 characters.",
+  "conflict.agent.already_in_audience": "You can already use this agent.",
+  "conflict.agent.access_decided": "This request was already decided.",
+  "notifications.template.agents.access_granted.title": "You can now use an agent you asked for",
+  "notifications.template.agents.access_granted.body": "The owner of the agent granted your request. Find it in the agent marketplace.",
+  "notifications.template.agents.access_denied.title": "Your request for an agent was declined",
+  "notifications.template.agents.access_denied.body": "The owner of the agent declined your request. Ask them if you need it for your work."
 }

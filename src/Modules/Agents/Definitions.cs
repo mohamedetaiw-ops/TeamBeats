@@ -4,11 +4,18 @@ using TeamBeats.Primitives;
 
 namespace TeamBeats.Modules.Agents;
 
-/// <summary>Who may use an agent (spec 020 section 12, Access): the whole tenant, or people in the listed org units.</summary>
-public sealed record AgentAudience(string? Scope, List<Guid>? OrgUnits)
+/// <summary>
+/// Who may use an agent (spec 020 section 12, Access): the whole tenant, or people in the listed org units. Outside the
+/// audience an agent is <c>hidden</c> (the default) or offered in the marketplace as <c>request_access</c> (US6).
+/// </summary>
+public sealed record AgentAudience(string? Scope, List<Guid>? OrgUnits, string? Outside = null)
 {
     public const string Tenant = "tenant";
     public const string Units = "org_units";
+    public const string Hidden = "hidden";
+    public const string RequestAccess = "request_access";
+
+    public bool Requestable => Scope == Units && Outside == RequestAccess;
 }
 
 /// <summary>
@@ -116,7 +123,8 @@ public static class AgentDefinitions
             errors.Add("knowledge", "validation.agent.knowledge");
         }
         if (d.Audience is not { } audience || audience.Scope is not (AgentAudience.Tenant or AgentAudience.Units) ||
-            (audience.Scope == AgentAudience.Units && (audience.OrgUnits is null || audience.OrgUnits.Count == 0 || audience.OrgUnits.Count > 50)))
+            (audience.Scope == AgentAudience.Units && (audience.OrgUnits is null || audience.OrgUnits.Count == 0 || audience.OrgUnits.Count > 50)) ||
+            audience.Outside is not (null or AgentAudience.Hidden or AgentAudience.RequestAccess))
         {
             errors.Add("audience", "validation.agent.audience");
         }

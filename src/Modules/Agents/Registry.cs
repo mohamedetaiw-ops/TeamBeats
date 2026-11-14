@@ -524,7 +524,8 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
     }
 
     private static bool SameAudience(AgentAudience? a, AgentAudience? b) =>
-        a?.Scope == b?.Scope && (a?.OrgUnits ?? []).Order().SequenceEqual((b?.OrgUnits ?? []).Order());
+        a?.Scope == b?.Scope && (a?.Outside ?? AgentAudience.Hidden) == (b?.Outside ?? AgentAudience.Hidden) &&
+        (a?.OrgUnits ?? []).Order().SequenceEqual((b?.OrgUnits ?? []).Order());
 
     /// <summary>Spec 020 section 9: an audience no wider than the designer's org scope, and tenant-wide only with <c>ai.policy_manage</c>.</summary>
     private async Task CheckAudienceAsync(AgentAudience audience, CancellationToken ct)

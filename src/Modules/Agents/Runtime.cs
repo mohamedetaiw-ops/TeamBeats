@@ -174,9 +174,15 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             new { id, number }, ct))!);
 
     /// <summary>Whether the person is in the agent's audience: the whole tenant, or a member of one of its org units or their subtrees.</summary>
-    private async Task<bool> InAudienceAsync(AgentAudience? audience, Guid user, CancellationToken ct)
+    private async Task<bool> InAudienceAsync(Guid agentId, AgentAudience? audience, Guid user, CancellationToken ct)
     {
         if (audience?.Scope == AgentAudience.Tenant)
+        {
+            return true;
+        }
+        // A person an owner granted access through the marketplace (spec 020 US6 scenario 3) may use the agent too.
+        if (await session.ScalarAsync<bool>("select exists (select 1 from agents.agent_access_grant where agent_id = @agentId and user_id = @user)",
+            new { agentId, user }, ct))
         {
             return true;
         }
@@ -202,7 +208,7 @@ public sealed class AgentRuns(IDbSession session, ITenantContext context, IEntit
             throw AppException.NotFound();
         }
         var definition = await VersionAsync(agentId, version, ct);
-        if (!await InAudienceAsync(definition.Audience, user, ct))
+        if (!await InAudienceAsync(agentId, definition.Audience, user, ct))
         {
             throw AppException.NotFound();
         }
