@@ -134,11 +134,11 @@ function TypeForm({ type, run, onSaved }: { type: LeaveType; run: Run; onSaved: 
         ).then((ok) => ok && onSaved());
       }}
     >
-      <div className="leave-row">
+      <div className="ui-control-row">
         <FormField label={t("types.nameEn")} name="nameEn" value={value.names.en ?? ""} onChange={(e) => set("names", { ...value.names, en: e.target.value })} required />
         <FormField label={t("types.nameAr")} name="nameAr" dir="rtl" value={value.names.ar ?? ""} onChange={(e) => set("names", { ...value.names, ar: e.target.value })} />
       </div>
-      <div className="leave-row">
+      <div className="ui-control-row">
         <SelectField
           label={t("types.unit")}
           name="unit"
@@ -169,7 +169,7 @@ function TypeForm({ type, run, onSaved }: { type: LeaveType; run: Run; onSaved: 
           onChange={(e) => set("documentAfterDays", num(e.target.value))}
         />
       </div>
-      <div className="leave-row">
+      <div className="ui-control-row">
         <FormField label={t("types.carryOver")} name="carryOver" type="number" min={0} step="0.5" value={value.carryOverMax} onChange={(e) => set("carryOverMax", Number(e.target.value))} />
         <FormField label={t("types.negativeMax")} name="negativeMax" type="number" min={0} step="0.5" value={value.negativeMax} onChange={(e) => set("negativeMax", Number(e.target.value))} />
         <FormField label={t("types.yearStart")} name="yearStart" type="number" min={1} max={12} value={value.yearStartMonth} onChange={(e) => set("yearStartMonth", Number(e.target.value))} />
@@ -189,7 +189,7 @@ function TypeForm({ type, run, onSaved }: { type: LeaveType; run: Run; onSaved: 
           }
         />
       </div>
-      <div className="leave-row">
+      <div className="ui-control-row">
         <Checkbox label={t("types.halfDays")} name="halfDays" checked={value.halfDays} onChange={(e) => set("halfDays", e.target.checked)} />
         <Checkbox label={t("types.paid")} name="paid" checked={value.paid} onChange={(e) => set("paid", e.target.checked)} />
         <Checkbox label={t("types.sensitive")} hint={t("types.sensitiveHint")} name="sensitive" checked={value.sensitive} onChange={(e) => set("sensitive", e.target.checked)} />
@@ -234,7 +234,7 @@ function NewType({ run }: { run: Run }) {
       }}
     >
       <h3>{t("types.new")}</h3>
-      <div className="leave-row">
+      <div className="ui-control-row">
         <FormField label={t("types.key")} name="key" hint={t("types.keyHint")} value={key} onChange={(e) => setKey(e.target.value)} required />
         <FormField label={t("types.nameEn")} name="newNameEn" value={nameEn} onChange={(e) => setNameEn(e.target.value)} required />
         <FormField label={t("types.nameAr")} name="newNameAr" dir="rtl" value={nameAr} onChange={(e) => setNameAr(e.target.value)} />
@@ -290,7 +290,7 @@ function PolicyForm({ policy, types, units, run }: { policy: LeavePolicy | null;
       }}
     >
       {policy ? null : (
-        <div className="leave-row">
+        <div className="ui-control-row">
           <SelectField label={t("policies.type")} name="typeKey" value={typeKey} onChange={(e) => setTypeKey(e.target.value)} options={types.map((x) => ({ value: x.key, label: pick(x.names, locale, x.key) }))} />
           <SelectField
             label={t("policies.unit")}
@@ -315,7 +315,7 @@ function PolicyForm({ policy, types, units, run }: { policy: LeavePolicy | null;
         <legend>{t("policies.bands")}</legend>
         <p className="field-hint">{t("policies.bandsHint")}</p>
         {bands.map((b, i) => (
-          <div key={i} className="leave-row">
+          <div key={i} className="ui-control-row">
             <FormField label={t("policies.days")} name={`days-${i}`} type="number" min={0} step="0.5" value={b.days} onChange={(e) => setBand(i, "days", e.target.value)} required />
             <FormField label={t("policies.years")} name={`years-${i}`} type="number" min={0} value={b.years} onChange={(e) => setBand(i, "years", e.target.value)} />
             <FormField label={t("policies.grades")} name={`grades-${i}`} value={b.grades} onChange={(e) => setBand(i, "grades", e.target.value)} />

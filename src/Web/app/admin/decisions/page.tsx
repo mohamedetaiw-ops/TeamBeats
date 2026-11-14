@@ -7,6 +7,8 @@ import { pick } from "@/lib/services/types";
 import type { DecisionSummary } from "@/lib/processes";
 import { DecisionEditor } from "@/features/processes/DecisionEditor";
 import "@/features/processes/processes.css";
+import { StateView } from "@/components/ui/StateView";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Decisions (spec 024 FR-007): the decision tables the person may design or read, and a new table. The section
@@ -22,8 +24,7 @@ export default async function DecisionsPage() {
   const locale = await getLocale();
   return (
     <>
-      <h1>{t("pageTitle")}</h1>
-      <p className="notice">{t("pageIntro")}</p>
+      <AdminHeader section="decisions" description={t("pageIntro")} />
       <section className="processes-section" aria-labelledby="decision-list">
         <h2 id="decision-list">{t("listTitle")}</h2>
         {decisions.ok && decisions.data.length > 0 ? (
@@ -41,10 +42,9 @@ export default async function DecisionsPage() {
             ))}
           </ul>
         ) : (
-          <p className="field-hint">{t("empty")}</p>
+          <StateView kind="empty" title={t("empty")} />
         )}
       </section>
-      <h2>{t("newTitle")}</h2>
       <DecisionEditor decisionKey={null} initial={null} units={units.ok ? units.data : []} />
     </>
   );

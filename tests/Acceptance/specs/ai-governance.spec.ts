@@ -23,7 +23,7 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
       await page.goto(`${hostOrigin(tenant.key)}/admin`);
       await page.getByRole("navigation", { name: m("admin.navLabel") }).getByRole("link", { name: m("admin.nav.ai") }).click();
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("ai.policy.title"));
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("admin.nav.ai"));
       await expect(page.getByTestId("ai-catalogue").locator("tbody tr")).toHaveCount(3);
       await expect(page.getByTestId("ai-read-only")).toHaveCount(0);
       await expectAccessible(page, testInfo, `ai-policy-${locale}`);

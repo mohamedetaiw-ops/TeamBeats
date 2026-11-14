@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { AuditPage, AuditRetention } from "@/lib/admin/types";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 import { AuditAdmin } from "@/features/admin/AuditAdmin";
 
 /**
@@ -24,7 +24,7 @@ export default async function AuditLogPage({ searchParams }: { searchParams: Pro
   const t = await getTranslations("admin");
   return (
     <>
-      <PageHeader title={t("nav.audit")} description={t(section.wholeTenant ? "audit.description" : "audit.descriptionScoped")} icon="book" />
+      <AdminHeader section="audit" description={t(section.wholeTenant ? "audit.description" : "audit.descriptionScoped")} />
       <AuditAdmin initial={events.data} retention={retention.ok ? retention.data : null} initialAction={initialAction} />
     </>
   );

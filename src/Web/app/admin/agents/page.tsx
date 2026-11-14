@@ -8,6 +8,8 @@ import { AgentTabs } from "@/features/agents/AgentTabs";
 import { TemplateLibrary } from "@/features/agents/TemplateLibrary";
 import { agentsSection } from "@/features/agents/guard";
 import "@/features/agents/agents.css";
+import { StateView } from "@/components/ui/StateView";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * The agent registry and template library (spec 020 US1, T014): the agents the person may see with status, risk class
@@ -25,13 +27,12 @@ export default async function AgentsPage() {
   const locale = await getLocale();
   return (
     <>
-      <h1>{t("registry.title")}</h1>
-      <AgentTabs current="agents" />
+      <AdminHeader section="agents" nav={<AgentTabs current="agents" />} />
       <div className="agents">
         <section className="agents-section" aria-labelledby="agents-registry">
           <h2 id="agents-registry">{t("registry.heading")}</h2>
           {agents.data.agents.length === 0 ? (
-            <p>{t("registry.empty")}</p>
+            <StateView kind="empty" title={t("registry.empty")} />
           ) : (
             <div className="agents-table">
               <table data-testid="agents-registry">

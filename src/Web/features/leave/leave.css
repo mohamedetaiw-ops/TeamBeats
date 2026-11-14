@@ -24,7 +24,6 @@
   gap: var(--tb-space-sm);
 }
 
-.leave-row,
 .leave-actions {
   display: flex;
   flex-wrap: wrap;

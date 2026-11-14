@@ -178,7 +178,7 @@ export function ExpenseDetail({ initial, taskId, names }: { initial: ExpenseClai
           ]}
         />
         {claim.rights.withdraw ? (
-          <div className="expenses-row">
+          <div className="ui-control-row">
             <Button busy={busy} busyLabel={t("sending")} onClick={() => void withdraw()}>
               {t("detail.withdraw")}
             </Button>

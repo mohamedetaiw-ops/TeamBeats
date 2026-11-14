@@ -150,7 +150,7 @@ function NewCalendar({ units, onCreated, run }: { units: OrgUnit[]; onCreated: (
       }}
     >
       <h3 id="calendar-new-title">{t("new.title")}</h3>
-      <div className="calendars-row">
+      <div className="ui-control-row">
         <FormField label={t("nameEn")} name="nameEn" lang="en" dir="ltr" value={en} onChange={(e) => setEn(e.target.value)} />
         <FormField label={t("nameAr")} name="nameAr" lang="ar" dir="rtl" value={ar} onChange={(e) => setAr(e.target.value)} />
         <FormField label={t("country")} hint={t("countryHint")} name="country" dir="ltr" maxLength={2} value={country} onChange={(e) => setCountry(e.target.value)} />
@@ -206,7 +206,7 @@ function CalendarEditor({ calendar, title, run, onSaved, onDeleted }: { calendar
         }}
       >
         <fieldset disabled={!editable} className="calendars-plain">
-          <div className="calendars-row">
+          <div className="ui-control-row">
             <FormField label={t("nameEn")} name="editNameEn" lang="en" dir="ltr" value={en} onChange={(e) => setEn(e.target.value)} />
             <FormField label={t("nameAr")} name="editNameAr" lang="ar" dir="rtl" value={ar} onChange={(e) => setAr(e.target.value)} />
             <FormField label={t("country")} name="editCountry" dir="ltr" maxLength={2} value={country} onChange={(e) => setCountry(e.target.value)} />
@@ -497,7 +497,7 @@ function Preview({ units }: { units: OrgUnit[] }) {
     <section className="calendars-section" aria-labelledby="calendar-preview-title">
       <h2 id="calendar-preview-title">{t("preview.title")}</h2>
       <form
-        className="calendars-row"
+        className="ui-control-row"
         onSubmit={async (e) => {
           e.preventDefault();
           const query = new URLSearchParams({ from, to, ...(unit ? { orgUnitId: unit } : {}) });

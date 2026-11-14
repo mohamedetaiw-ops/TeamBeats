@@ -260,7 +260,7 @@ function EditApp({ detail, scopes, action, onSaved }: { detail: ApiAppDetail; sc
           value={limit}
           onValueChange={setLimit}
         />
-        <div className="admin-row">
+        <div className="ui-control-row">
           <Button type="submit" variant="primary" busy={action.busy === "edit"} busyLabel={t("saving")}>
             {t("save")}
           </Button>
@@ -396,7 +396,7 @@ function Credentials({
           />
         ) : null}
         <NumberField label={t("months")} hint={t("monthsHint")} name="months" min={1} max={12} value={months} onValueChange={setMonths} />
-        <div className="admin-row">
+        <div className="ui-control-row">
           <Button type="submit" variant="primary" busy={action.busy === "credential"} busyLabel={t("saving")}>
             {t("addCredential")}
           </Button>
@@ -425,7 +425,7 @@ function AdminConsent({ detail, action, onSaved }: { detail: ApiAppDetail; actio
         }}
       >
         <ScopeChoices offered={offered} chosen={chosen} onChange={setChosen} prefix="consent" />
-        <div className="admin-row">
+        <div className="ui-control-row">
           <Button type="submit" variant="primary" busy={action.busy === "consent"} busyLabel={t("saving")}>
             {t("saveAdminConsent")}
           </Button>
@@ -532,7 +532,7 @@ function AppRoles({
               <SelectField label={t("unit")} name="unit" value={unit} onChange={(e) => setUnit(e.target.value)} options={active.map((u) => ({ value: u.id, label: unitName(u, locale) }))} />
             ) : null}
           </div>
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button type="submit" variant="primary" busy={action.busy === "assign"} busyLabel={t("saving")}>
               {t("giveRole")}
             </Button>
@@ -604,7 +604,7 @@ function Subscriptions({
             header: t("actions"),
             align: "end",
             cell: (s) => (
-              <div className="admin-row">
+              <div className="ui-control-row">
                 {s.status === "paused" ? (
                   <Button
                     size="sm"
@@ -658,7 +658,7 @@ function Subscriptions({
             <FormField label={t("receiverUrl")} hint={t("receiverUrlHint")} name="url" type="url" dir="ltr" required maxLength={2000} value={url} onChange={(e) => setUrl(e.target.value)} />
             <FormField label={t("secretRef")} hint={t("secretRefHint")} name="secretRef" dir="ltr" required maxLength={200} value={secretRef} onChange={(e) => setSecretRef(e.target.value)} />
           </div>
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button type="submit" variant="primary" busy={action.busy === "subscribe"} busyLabel={t("saving")}>
               {t("subscribe")}
             </Button>

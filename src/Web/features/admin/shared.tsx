@@ -6,6 +6,7 @@ import { Alert } from "@/components/ui/Alert";
 import { send, type Outcome } from "@/features/connections/request";
 import type { PersonCard } from "@/lib/people/types";
 import { personName } from "@/lib/people/types";
+import { keyName } from "@/lib/admin/keys";
 import "./admin.css";
 
 export type ActionResult = { ok: boolean; messages: string[] } | null;
@@ -117,6 +118,12 @@ export function useWhen() {
 }
 
 /** A label from the catalogue when there is one, else the key itself as code. */
+/** A permission key by its name (spec 006 FR-021, DLS-093); a key without a name reads as words, never as the key. */
+export function usePermissionName() {
+  const t = useTranslations("admin");
+  return (key: string) => keyName(t, "permissions", key);
+}
+
 export function useKeyLabel(namespace: string) {
   const t = useTranslations(namespace as "admin");
   return (key: string) => (t.has(key as never) ? t(key as never) : key);

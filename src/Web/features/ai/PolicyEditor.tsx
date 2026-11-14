@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { FormField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import type { CatalogueEntry, ModelPolicyView, PolicySaveResult } from "@/lib/ai/types";
+import { Badge } from "@/components/ui/Badge";
 
 type Result = { ok: boolean; messages: string[] } | null;
 
@@ -122,9 +123,11 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
                     <td>
                       <bdi dir="ltr">{m.regions.join(", ")}</bdi>
                     </td>
-                    <td>{t(m.zeroRetention && m.noTraining ? "catalogue.zeroRetention" : "catalogue.keepsData")}</td>
+                    <td>
+                      <Badge tone={m.zeroRetention && m.noTraining ? "success" : "warning"}>{t(m.zeroRetention && m.noTraining ? "catalogue.zeroRetention" : "catalogue.keepsData")}</Badge>
+                    </td>
                     <td>{t(`classification.${m.maxClassification}`)}</td>
-                    <td>{t("catalogue.priceValue", { input: price(m.inputPrice), output: price(m.outputPrice) })}</td>
+                    <td className="ui-nowrap">{t("catalogue.priceValue", { input: price(m.inputPrice), output: price(m.outputPrice) })}</td>
                     <td>
                       <input
                         type="checkbox"
@@ -144,7 +147,7 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
                           onChange={(e) => toggle(confidential, setConfidential, m.model, e.target.checked)}
                         />
                       ) : (
-                        t("catalogue.notEligible")
+                        <Badge>{t("catalogue.notEligible")}</Badge>
                       )}
                     </td>
                   </tr>
@@ -167,7 +170,7 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
           disabled={!editable}
           onChange={(e) => setMaxTokens(e.target.value)}
         />
-        <div className="ai-row">
+        <div className="ui-control-row">
           <FormField
             label={t("limits.minTemperature")}
             name="minTemperature"
@@ -202,7 +205,7 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
       ) : null}
 
       {editable ? (
-        <div className="ai-row">
+        <div className="ui-control-row">
           <Button type="submit" variant="primary" busy={busy} busyLabel={t("saving")}>
             {t("save")}
           </Button>

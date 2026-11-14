@@ -53,12 +53,6 @@
   gap: var(--tb-space-sm);
 }
 
-.calendars-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: var(--tb-space-sm);
-}
 
 .calendars-plain {
   display: grid;
@@ -72,8 +66,9 @@
 .calendars-week {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--tb-space-sm);
+  gap: var(--tb-space-xs) var(--tb-space-lg);
   margin: 0;
+  padding: var(--tb-space-sm) var(--tb-space-md);
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-md);
 }

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { NavigationSection } from "@/lib/api";
 import { Icon } from "@/components/ui/Icon";
+import { AdminNavLink } from "./AdminNavLink";
 
 /** The admin navigation groups in the order they show (spec 006 FR-017). The API names each section's group. */
 export const adminGroups = ["workspace", "people", "hr", "content", "security", "ai"] as const;
@@ -23,6 +23,7 @@ export async function groupSections(sections: readonly NavigationSection[]) {
 export async function AdminNav({ label, sections }: { label: string; sections: NavigationSection[] }) {
   const t = await getTranslations("admin");
   const groups = await groupSections(sections);
+  const paths = sections.map((s) => s.path);
   return (
     <nav aria-label={label} className="admin-nav">
       {groups.map(({ group, sections: items }) => (
@@ -33,7 +34,7 @@ export async function AdminNav({ label, sections }: { label: string; sections: N
           <ul>
             {items.map((s) => (
               <li key={s.key}>
-                <Link href={s.path}>
+                <AdminNavLink href={s.path} paths={paths}>
                   <span>{s.label}</span>
                   {s.badge ? (
                     <span className="admin-nav-badge" aria-label={t("navBadge", { count: s.badge })}>
@@ -41,7 +42,7 @@ export async function AdminNav({ label, sections }: { label: string; sections: N
                     </span>
                   ) : null}
                   <Icon name="chevron-forward" mirrorInRtl />
-                </Link>
+                </AdminNavLink>
               </li>
             ))}
           </ul>

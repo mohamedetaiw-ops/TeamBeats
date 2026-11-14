@@ -63,13 +63,13 @@ export function ProjectSettings({ project, version }: { project: ProjectSummary;
     <section className="compliance-section" aria-labelledby="compliance-settings">
       <h2 id="compliance-settings">{t("title")}</h2>
       <ResultAlert result={action.result} />
-      <form className="admin-row" onSubmit={(e) => void rename(e)}>
+      <form className="ui-control-row" onSubmit={(e) => void rename(e)}>
         <FormField label={t("name")} name="name" required maxLength={120} value={name} onChange={(e) => setName(e.target.value)} />
         <Button type="submit" busy={action.busy === "rename"} busyLabel={t("working")}>
           {t("rename")}
         </Button>
       </form>
-      <form className="admin-row" onSubmit={(e) => void share(e)}>
+      <form className="ui-control-row" onSubmit={(e) => void share(e)}>
         <SelectField
           label={t("space")}
           hint={t("spaceHint")}
@@ -83,7 +83,7 @@ export function ProjectSettings({ project, version }: { project: ProjectSummary;
           {t("share")}
         </Button>
       </form>
-      <div className="admin-row">
+      <div className="ui-control-row">
         <Button busy={action.busy === "archive"} busyLabel={t("working")} icon={project.status === "active" ? "lock" : "check"} onClick={() => void archive()}>
           {t(project.status === "active" ? "archive" : "restore")}
         </Button>

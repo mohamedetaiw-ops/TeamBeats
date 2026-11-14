@@ -272,7 +272,12 @@
   padding: var(--tb-space-xs) var(--tb-space-sm);
   border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   text-align: start;
-  vertical-align: top;
+  vertical-align: middle;
+}
+
+/* Source and visibility choices share the column width, so each row reads as one line (DLS-094). */
+.people-table select {
+  inline-size: 100%;
 }
 
 .people-check {

@@ -523,3 +523,27 @@
   min-inline-size: 0.25rem;
   background-color: var(--xp-series);
 }
+
+/* A one point series reads as a stat with its date (DLS-098). */
+.ui-chart-single {
+  display: grid;
+  gap: var(--tb-space-sm);
+  padding-block: var(--tb-space-md);
+}
+
+.ui-chart-single p {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+}
+
+.ui-chart-single strong {
+  font-size: var(--tb-font-size-xxl);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--tb-font-line-height-heading);
+}
+
+.ui-chart-single span {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+}

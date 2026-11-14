@@ -80,7 +80,8 @@ function Row({ row }: { row: OverviewRow }) {
         <StatusBadge status={row.status} />
       </div>
       <div className="connections-entry-actions">
-        <Button size="sm" busy={busy === "test"} busyLabel={t("detail.working")} aria-label={t("overview.testOf", { name: row.name })} onClick={() => void test()}>
+        {/* Row actions share one quiet style (DLS-096); the name link also opens the connection. */}
+        <Button size="sm" variant="quiet" busy={busy === "test"} busyLabel={t("detail.working")} aria-label={t("overview.testOf", { name: row.name })} onClick={() => void test()}>
           {t("overview.test")}
         </Button>
         <Button

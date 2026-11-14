@@ -6,6 +6,7 @@ import type { Posture } from "@/lib/security/types";
 import { SecurityTabs } from "@/features/security/SecurityTabs";
 import { securitySection } from "@/features/security/guard";
 import "@/features/security/security.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 const CHECKS = ["sso_configured", "mfa_required", "ip_rules", "admin_area_rule", "step_up_window", "idle_timeout", "absolute_timeout", "dev_sign_in_absent", "no_platform_access"];
 
@@ -18,8 +19,7 @@ export default async function SecurityPosturePage() {
   const checks = posture.data.checks.filter((c) => CHECKS.includes(c.key));
   return (
     <>
-      <h1>{t("title")}</h1>
-      <SecurityTabs current="posture" openAlerts={section.badge} />
+      <AdminHeader section="security" title={t("title")} nav={<SecurityTabs current="posture" openAlerts={section.badge} />} />
       <p className="notice">{t("summary", { passed: posture.data.passed, total: posture.data.total })}</p>
       {posture.data.region ? (
         <p>
@@ -29,7 +29,7 @@ export default async function SecurityPosturePage() {
       <ul className="security-list">
         {checks.map((check) => (
           <li key={check.key} className="security-item">
-            <div className="security-row">
+            <div className="ui-control-row">
               <h2>{t(`checks.${check.key}.title`)}</h2>
               <span className="security-state" data-state={check.state}>
                 {t(`states.${check.state}`)}

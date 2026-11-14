@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getMessages, getTranslations } from "next-intl/server";
 import { apiGet, type Me, type NavigationSection } from "@/lib/api";
 import type { DirectoryView, IdentityProvider, OrgUnitView, RoleView } from "@/lib/admin/types";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 import { IdentityAdmin } from "@/features/admin/IdentityAdmin";
 
 /**
@@ -31,7 +31,7 @@ export default async function IdentityPage() {
   const t = await getTranslations("admin");
   return (
     <>
-      <PageHeader title={t("nav.identity")} description={t("identity.description")} icon="lock" />
+      <AdminHeader section="identity" description={t("identity.description")} />
       <IdentityAdmin
         tenantId={me.data.tenant.id}
         initialProvider={provider.ok ? provider.data : null}

@@ -13,6 +13,7 @@ import { PersonPicker } from "@/features/services/PersonPicker";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { kioskCall, kioskFeatures, type Badge as KioskBadge, type BadgeIssued, type KioskDevice, type KioskEnrolment, type KioskFeature } from "@/lib/kiosk";
 import "./kiosk.css";
+import { StateView } from "@/components/ui/StateView";
 
 const tones = { waiting: "warning", enrolled: "success", revoked: "neutral" } as const;
 
@@ -33,7 +34,7 @@ export function KioskAdmin({ initial, units }: { initial: KioskDevice[]; units: 
       <section aria-labelledby="kiosk-list-title">
         <h2 id="kiosk-list-title">{t("listTitle")}</h2>
         {devices.length === 0 ? (
-          <p className="field-hint">{t("empty")}</p>
+          <StateView kind="empty" title={t("empty")} />
         ) : (
           <ul className="kiosk-list">
             {devices.map((device) => (

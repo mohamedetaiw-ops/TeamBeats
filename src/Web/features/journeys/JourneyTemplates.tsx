@@ -226,7 +226,7 @@ function TemplateForm({
         void save(template, body()).finally(() => setBusy(false));
       }}
     >
-      <div className="journeys-row">
+      <div className="ui-control-row">
         <FormField label={t("key")} hint={t("keyHint")} name={`${prefix}-key`} required readOnly={template !== null} value={key} onChange={(e) => setKey(e.target.value)} />
         <SelectField label={t("kind")} name={`${prefix}-kind`} value={kind} onChange={(e) => setKind(e.target.value as JourneyKind)} options={JOURNEY_KINDS.map((k) => ({ value: k, label: t(`kinds.${k}`) }))} />
         <SelectField
@@ -246,12 +246,12 @@ function TemplateForm({
           />
         )}
       </div>
-      <div className="journeys-row">
+      <div className="ui-control-row">
         <FormField label={t("nameEn")} name={`${prefix}-en`} maxLength={120} value={en} onChange={(e) => setEn(e.target.value)} />
         <FormField label={t("nameAr")} name={`${prefix}-ar`} dir="rtl" maxLength={120} value={ar} onChange={(e) => setAr(e.target.value)} />
       </div>
       {startOn === "service" ? (
-        <div className="journeys-row">
+        <div className="ui-control-row">
           <SelectField
             label={t("service")}
             name={`${prefix}-service`}
@@ -267,12 +267,12 @@ function TemplateForm({
       {steps.map((s, i) => (
         <fieldset key={i} className="journeys-step">
           <legend>{t("stepNumber", { number: i + 1 })}</legend>
-          <div className="journeys-row">
+          <div className="ui-control-row">
             <FormField label={t("stepKey")} name={`${prefix}-s${i}-key`} required value={s.key} onChange={(e) => setStep(i, { key: e.target.value })} />
             <FormField label={t("nameEn")} name={`${prefix}-s${i}-en`} maxLength={120} value={s.en} onChange={(e) => setStep(i, { en: e.target.value })} />
             <FormField label={t("nameAr")} name={`${prefix}-s${i}-ar`} dir="rtl" maxLength={120} value={s.ar} onChange={(e) => setStep(i, { ar: e.target.value })} />
           </div>
-          <div className="journeys-row">
+          <div className="ui-control-row">
             <FormField
               label={t("offset")}
               hint={t("offsetHint")}
@@ -332,7 +332,7 @@ function TemplateForm({
             />
           ) : null}
           {s.type === "preboarding" ? (
-            <div className="journeys-row">
+            <div className="ui-control-row">
               <TextAreaField
                 label={t("contentEn")}
                 hint={t("contentHint")}
@@ -363,14 +363,14 @@ function TemplateForm({
                 />
               ))
             : null}
-          <div className="journeys-row">
+          <div className="ui-control-row">
             <Button size="sm" variant="quiet" disabled={steps.length === 1} onClick={() => setSteps((list) => list.filter((_, j) => j !== i))}>
               {t("removeStep")}
             </Button>
           </div>
         </fieldset>
       ))}
-      <div className="journeys-row">
+      <div className="ui-control-row">
         <Button size="sm" onClick={() => setSteps((list) => [...list, blankStep()])} disabled={steps.length >= 50}>
           {t("addStep")}
         </Button>

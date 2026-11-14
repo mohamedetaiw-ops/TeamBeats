@@ -13,6 +13,8 @@ import { FactList } from "@/components/ui/Patterns";
 import { RadioGroup } from "@/components/ui/RadioGroup";
 import { PersonPicker } from "@/features/services/PersonPicker";
 import type { AuditEvent, AuditExport, AuditIntegrity, AuditPage, AuditRetention } from "@/lib/admin/types";
+import { KeyName } from "@/components/ui/KeyName";
+import { auditActionName, keyName } from "@/lib/admin/keys";
 import { ResultAlert, shortId, useAdminAction, usePeopleNames, useWhen } from "./shared";
 
 const RETURN = "/admin/audit";
@@ -46,6 +48,8 @@ export function AuditAdmin({
   initialAction?: string;
 }) {
   const t = useTranslations("admin.audit");
+  const ta = useTranslations("admin");
+  const actionName = (action: string) => auditActionName(ta, action);
   const when = useWhen();
   const { busy, result, run } = useAdminAction(RETURN);
   const [page, setPage] = useState(initial);
@@ -116,7 +120,7 @@ export function AuditAdmin({
           <FormField label={t("targetType")} hint={t("targetTypeHint")} name="targetType" dir="ltr" value={filters.targetType} onChange={(e) => setFilters({ ...filters, targetType: e.target.value })} />
           <FormField label={t("from")} name="from" type="date" value={filters.from} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
           <FormField label={t("to")} name="to" type="date" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button type="submit" variant="primary" icon="filter" busy={loading} busyLabel={t("loading")}>
               {t("apply")}
             </Button>
@@ -136,21 +140,27 @@ export function AuditAdmin({
         {failed ? <Alert tone="danger" title={t("loadFailed")} live /> : null}
         <DataTable
           caption={t("events")}
+          captionHidden
           rows={page.items}
           rowKey={(e) => e.id}
           emptyTitle={t("empty")}
           emptyMessage={filtered ? t("emptyFiltered") : t("emptyHint")}
           density="compact"
           columns={[
-            { key: "when", header: t("when"), rowHeader: true, cell: (e) => <time dateTime={e.occurredAt}>{when(e.occurredAt, "short")}</time> },
-            { key: "actor", header: t("who"), cell: (e) => <bdi>{actor(e)}</bdi> },
-            { key: "action", header: t("action"), cell: (e) => <code dir="ltr">{e.action}</code> },
+            { key: "when", header: t("when"), rowHeader: true, nowrap: true, cell: (e) => <time dateTime={e.occurredAt}>{when(e.occurredAt, "short")}</time> },
+            { key: "actor", header: t("who"), nowrap: true, cell: (e) => <bdi>{actor(e)}</bdi> },
+            { key: "action", header: t("action"), cell: (e) => <KeyName name={actionName(e.action)} code={e.action} /> },
             {
               key: "target",
               header: t("target"),
               cell: (e) => (
-                <span dir="ltr">
-                  <code>{e.targetType}</code> {e.targetId ? <span className="admin-meta">{shortId(e.targetId)}</span> : null}
+                <span className="ui-key-name">
+                  <span>{keyName(t, "targetTypes", e.targetType)}</span>
+                  {e.targetId ? (
+                    <code className="ui-key" dir="ltr">
+                      {shortId(e.targetId)}
+                    </code>
+                  ) : null}
                 </span>
               ),
               hideable: true,
@@ -212,7 +222,7 @@ export function AuditAdmin({
               }}
             >
               <NumberField label={t("retention.days")} name="days" min={retention.minimumDays} max={3650} unit={t("retention.unit")} value={days} onValueChange={setDays} />
-              <div className="admin-row">
+              <div className="ui-control-row">
                 <Button type="submit" busy={busy === "retention"} busyLabel={t("loading")} disabled={days === retention.days || days === null}>
                   {t("retention.save")}
                 </Button>
@@ -234,7 +244,7 @@ export function AuditAdmin({
               { value: "json", label: t("export.json") },
             ]}
           />
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button
               icon="download"
               busy={busy === "export"}
@@ -281,7 +291,7 @@ export function AuditAdmin({
               facts={[
                 { key: "when", label: t("when"), value: when(open.occurredAt) },
                 { key: "who", label: t("who"), value: <bdi>{actor(open)}</bdi> },
-                { key: "action", label: t("action"), value: <code dir="ltr">{open.action}</code> },
+                { key: "action", label: t("action"), value: <KeyName name={actionName(open.action)} code={open.action} /> },
                 {
                   key: "target",
                   label: t("target"),

@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { ExpenseClaim, ExpensePolicyView, ExpenseRate } from "@/lib/expenses";
 import { ExpenseAdmin } from "@/features/expenses/ExpenseAdmin";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * The expense policy, exchange rates and the claims finance covers (spec 022 FR-023). The section appears only when
@@ -21,8 +22,7 @@ export default async function ExpensesAdminPage() {
   const t = await getTranslations("expenses.admin");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="expenses" description={t("intro")} />
       {policy.ok ? (
         <ExpenseAdmin policy={policy.data} rates={rates.ok ? rates.data : []} claims={claims.ok ? claims.data : []} />
       ) : (

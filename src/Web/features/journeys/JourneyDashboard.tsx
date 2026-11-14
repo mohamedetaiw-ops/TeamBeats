@@ -94,7 +94,7 @@ export function JourneyDashboard({ initial, templates }: { initial: JourneySumma
           {messages.join(" ")}
         </Alert>
       ) : null}
-      <div className="journeys-row">
+      <div className="ui-control-row">
         <SelectField
           label={t("status")}
           name="journeyStatus"
@@ -160,7 +160,7 @@ export function JourneyDashboard({ initial, templates }: { initial: JourneySumma
             void start();
           }}
         >
-          <div className="journeys-row">
+          <div className="ui-control-row">
             <SelectField label={t("template")} name="startTemplate" value={templateKey} onChange={(e) => setTemplateKey(e.target.value)} options={active.map((x) => ({ value: x.key, label: pick(x.names, locale, x.key) }))} />
             <FormField label={t("anchor")} hint={t("anchorHint")} name="startAnchor" type="date" required value={anchor} onChange={(e) => setAnchor(e.target.value)} />
           </div>

@@ -5,6 +5,7 @@ import { listUnits } from "@/lib/experience/client";
 import type { AttendanceSettings, WorkRule } from "@/lib/attendance";
 import type { LeaveType } from "@/lib/leave";
 import { AttendanceAdmin } from "@/features/attendance/AttendanceAdmin";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Attendance settings, working hours rules and the payroll export (spec 022 FR-010, FR-012). The section appears only
@@ -24,8 +25,7 @@ export default async function AttendanceAdminPage() {
   const t = await getTranslations("attendance.admin");
   return (
     <>
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="attendance" description={t("intro")} />
       {settings.ok && rules.ok ? (
         <AttendanceAdmin settings={settings.data} rules={rules.data} units={units.ok ? units.data : []} leaveTypes={leaveTypes.ok ? leaveTypes.data : []} />
       ) : (

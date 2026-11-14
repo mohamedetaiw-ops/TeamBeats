@@ -141,7 +141,7 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
         ) : (
           <p className="notice">{t("network.adminUnavailable")}</p>
         )}
-        <div className="security-row">
+        <div className="ui-control-row">
           <Button onClick={() => void runPreview()}>{t("network.preview")}</Button>
         </div>
         {preview ? (
@@ -215,7 +215,7 @@ export function PolicyEditor({ initial, etag }: { initial: SecurityPolicy; etag:
         </div>
       ) : null}
 
-      <div className="security-row">
+      <div className="ui-control-row">
         <Button type="submit" variant="primary" busy={busy} busyLabel={t("saving")}>
           {t("save")}
         </Button>

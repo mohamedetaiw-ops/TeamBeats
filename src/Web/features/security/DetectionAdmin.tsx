@@ -98,7 +98,7 @@ export function DetectionAdmin({ initial }: { initial: DetectionSettings }) {
           ))}
         </div>
         {view.canManage ? (
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button type="submit" variant="primary" busy={action.busy === "save"} busyLabel={t("working")}>
               {t("save")}
             </Button>
@@ -111,7 +111,7 @@ export function DetectionAdmin({ initial }: { initial: DetectionSettings }) {
       <section aria-labelledby="detection-builtin">
         <h2 id="detection-builtin">{t("builtInTitle")}</h2>
         <p>{t("builtInIntro")}</p>
-        <ul className="security-row">
+        <ul className="ui-control-row">
           {view.builtIn.map((b) => (
             <li key={b}>
               <Badge>{t(`types.${b}`)}</Badge>
@@ -138,7 +138,7 @@ export function DetectionAdmin({ initial }: { initial: DetectionSettings }) {
               align: "end",
               cell: (p) =>
                 view.canEditPatterns ? (
-                  <div className="admin-row">
+                  <div className="ui-control-row">
                     <Button busy={action.busy === "toggle:" + p.id} busyLabel={t("working")} onClick={() => void toggle(p)}>
                       {t(p.enabled ? "turnOff" : "turnOn")}
                     </Button>
@@ -168,7 +168,7 @@ export function DetectionAdmin({ initial }: { initial: DetectionSettings }) {
               </p>
             ) : null}
             <Checkbox label={t("turnOnNow")} checked={turnOn} onChange={(e) => setTurnOn(e.target.checked)} />
-            <div className="admin-row">
+            <div className="ui-control-row">
               <Button busy={action.busy === "test"} busyLabel={t("working")} onClick={() => void test()}>
                 {t("test")}
               </Button>

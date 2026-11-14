@@ -195,7 +195,7 @@ export function LetterAdmin({
       <section className="letters-section" aria-labelledby="letters-editor">
         <h2 id="letters-editor">{draft.eTag ? t("editor.editTitle", { key: draft.key }) : t("editor.newTitle")}</h2>
         <p className="field-hint">{t("editor.placeholders", { list: LETTER_PLACEHOLDERS.map((p) => `{${p}}`).join(" ") })}</p>
-        <div className="letters-row">
+        <div className="ui-control-row">
           <FormField label={t("editor.key")} name="type-key" value={draft.key} readOnly={draft.eTag !== null} maxLength={40} onChange={(e) => patch({ key: e.target.value })} />
           <FormField label={t("editor.nameEn")} name="type-name-en" value={draft.nameEn} maxLength={120} onChange={(e) => patch({ nameEn: e.target.value })} />
           <FormField label={t("editor.nameAr")} name="type-name-ar" dir="rtl" value={draft.nameAr} maxLength={120} onChange={(e) => patch({ nameAr: e.target.value })} />
@@ -220,7 +220,7 @@ export function LetterAdmin({
         <h3>{t("editor.fields")}</h3>
         <p className="field-hint">{t("editor.fieldsHint")}</p>
         {draft.fields.map((f, i) => (
-          <div className="letters-row" key={i} role="group" aria-label={t("editor.field", { n: i + 1 })}>
+          <div className="ui-control-row" key={i} role="group" aria-label={t("editor.field", { n: i + 1 })}>
             <FormField label={t("editor.fieldKey")} name={`field-key-${i}`} value={f.key} maxLength={40} onChange={(e) => patchField(i, { key: e.target.value })} />
             <FormField label={t("editor.nameEn")} name={`field-en-${i}`} value={f.en} maxLength={120} onChange={(e) => patchField(i, { en: e.target.value })} />
             <FormField label={t("editor.nameAr")} name={`field-ar-${i}`} dir="rtl" value={f.ar} maxLength={120} onChange={(e) => patchField(i, { ar: e.target.value })} />
@@ -230,7 +230,7 @@ export function LetterAdmin({
           </div>
         ))}
         {draft.fields.length < 10 ? (
-          <div className="letters-row">
+          <div className="ui-control-row">
             <Button size="sm" icon="plus" onClick={() => patch({ fields: [...draft.fields, { key: "", en: "", ar: "" }], needsApproval: true })}>
               {t("editor.addField")}
             </Button>
@@ -244,7 +244,7 @@ export function LetterAdmin({
           onChange={(e) => patch({ needsApproval: e.target.checked })}
         />
         <Checkbox label={t("editor.active")} name="type-active" checked={draft.active} onChange={(e) => patch({ active: e.target.checked })} />
-        <div className="letters-row">
+        <div className="ui-control-row">
           <Button variant="primary" busy={busy === "type"} busyLabel={t("saving")} disabled={busy !== null || !draft.key} onClick={saveType}>
             {t("editor.save")}
           </Button>

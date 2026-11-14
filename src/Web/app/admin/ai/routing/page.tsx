@@ -6,6 +6,7 @@ import { AiTabs } from "@/features/ai/AiTabs";
 import { RoutingEditor } from "@/features/ai/RoutingEditor";
 import { aiSection } from "@/features/ai/guard";
 import "@/features/ai/ai.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /** Routing rules (spec 013 US1, FR-019, T016). */
 export default async function AiRoutingPage() {
@@ -18,8 +19,7 @@ export default async function AiRoutingPage() {
   const canOverride = policy.data.readOnlyReason !== "ai.policy.read_only_permission";
   return (
     <>
-      <h1>{t("routing.title")}</h1>
-      <AiTabs current="routing" />
+      <AdminHeader section="ai" title={t("routing.title")} nav={<AiTabs current="routing" />} />
       <RoutingEditor catalogue={catalogue.data} initial={policy.data} canOverride={canOverride} />
     </>
   );

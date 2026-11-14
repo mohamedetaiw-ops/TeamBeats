@@ -232,7 +232,7 @@ function RegisterApp({ scopes, action, onCreated }: { scopes: ApiScope[]; action
             onChange={(e) => setRedirects(e.target.value)}
           />
         ) : null}
-        <div className="admin-row">
+        <div className="ui-control-row">
           <Button type="submit" variant="primary" busy={action.busy === "register"} busyLabel={t("saving")}>
             {t("register")}
           </Button>
@@ -367,7 +367,7 @@ function SettingsPanel({ settings, scopes, action, onSaved }: { settings: ApiSet
             ))}
           </div>
         </fieldset>
-        <div className="admin-row">
+        <div className="ui-control-row">
           <Button type="submit" variant="primary" busy={action.busy === "settings"} busyLabel={t("saving")}>
             {t("saveSettings")}
           </Button>

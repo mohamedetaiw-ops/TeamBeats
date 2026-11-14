@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import type { Me } from "@/lib/api";
+import { apiGet, type Me } from "@/lib/api";
 import { getPreferences, getShell } from "@/lib/shell/client";
 import type { Crumb, NavLink, ShellLayout, ShellRegion } from "@/lib/shell/types";
 import { NotificationBell } from "@/features/notifications/NotificationBell";
@@ -40,6 +40,12 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
   const orgMenus = shell.ok ? shell.data.organizationMenus.filter((m) => m.items.length > 0) : [];
   const tenantName = me.tenant.displayName || me.tenant.key;
   const regions = [...layout.start, ...layout.center, ...layout.end, ...layout.below];
+  // The counts are read with the page, so the bell and task badge show them on first paint on every page and the bar
+  // never shifts when they arrive (spec 036 DLS-092). The client components then keep them fresh.
+  const [unread, tasks] = await Promise.all([
+    regions.includes("notifications") ? apiGet<{ unread: number }>("/api/v1/me/notifications/count") : null,
+    regions.includes("task_badge") ? apiGet<{ open: number }>("/api/v1/tasks/count") : null,
+  ]);
   const rail = shell.ok && regions.includes("global_navigation") && shell.data.globalMenu.length > 0;
 
   const render = (region: ShellRegion) => {
@@ -60,9 +66,9 @@ export async function Shell({ me, breadcrumbs = [] }: { me: Me; breadcrumbs?: Cr
       case "search":
         return <QuickNav key={region} />;
       case "notifications":
-        return <NotificationBell key={region} />;
+        return <NotificationBell key={region} initialUnread={unread?.ok ? unread.data.unread : null} />;
       case "task_badge":
-        return <TaskBadge key={region} />;
+        return <TaskBadge key={region} initialOpen={tasks?.ok ? tasks.data.open : null} />;
       case "settings":
         return (
           <div key={region} className="shell-settings-group">

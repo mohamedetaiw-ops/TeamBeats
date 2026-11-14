@@ -114,14 +114,14 @@
       "pages": "Pages",
       "templates": "Templates",
       "notifications": "Notifications",
-      "calendars": "Calendars",
-      "people": "People directory",
-      "security": "Security",
+      "calendars": "Working calendars",
+      "people": "Directory settings",
+      "security": "Security policy",
       "services": "Services",
       "ai": "AI governance",
       "search": "Search",
       "agents": "Agents",
-      "evaluation": "Evaluation",
+      "evaluation": "AI evaluation",
       "analytics": "Analytics",
       "hr_integration": "HR integration",
       "leave": "Leave",
@@ -1005,6 +1005,40 @@
           "completed": "Ready",
           "failed": "Failed"
         }
+      },
+      "targetTypes": {
+        "user": "Person",
+        "connection": "Connection",
+        "content_item": "Content",
+        "api_app": "App",
+        "agent": "Agent",
+        "request": "Request",
+        "community": "Community",
+        "process_instance": "Process instance",
+        "org_unit": "Unit",
+        "leave_request": "Leave request",
+        "journey": "Journey",
+        "tenant": "Workspace",
+        "role_assignment": "Role assignment",
+        "role": "Role",
+        "agent_run": "Agent run",
+        "siem_destination": "SIEM destination",
+        "service": "Service",
+        "page": "Page",
+        "kiosk_device": "Kiosk",
+        "data_change_request": "Data change",
+        "template": "Template",
+        "security_policy": "Security policy",
+        "profile_field": "Profile field",
+        "org_membership": "Unit membership",
+        "letter": "Letter",
+        "group": "Group",
+        "expense_claim": "Expense claim",
+        "course": "Course",
+        "calendar_event": "Calendar event",
+        "document": "Document",
+        "policy": "Policy",
+        "theme": "Brand"
       }
     },
     "navGroups": {
@@ -1090,7 +1124,9 @@
       "guest": "Guests",
       "experience": "Experience",
       "analytics": "Analytics",
-      "other": "Workspace"
+      "other": "Workspace",
+      "finance": "Finance",
+      "kiosk": "Kiosks"
     },
     "auditActions": {
       "tenant_created": "Workspace created",
@@ -1125,6 +1161,206 @@
       "doc_permissions_changed": "Document permissions changed",
       "doc_version_created": "New document version",
       "doc_shared_with_guest": "Document shared with a guest"
+    },
+    "permissions": {
+      "tenant": {
+        "settings_view": "View workspace settings",
+        "settings_manage": "Change workspace settings",
+        "admins_manage": "Manage workspace administrators"
+      },
+      "org": {
+        "view": "View the organization",
+        "manage": "Change the organization",
+        "membership_manage": "Manage unit members"
+      },
+      "authz": {
+        "roles_view": "View roles",
+        "roles_manage": "Create and change roles",
+        "roles_assign": "Give and remove roles",
+        "explain": "Check someone's access",
+        "rules_manage": "Manage access rules"
+      },
+      "identity": {
+        "users_view": "View people",
+        "users_manage": "Manage people",
+        "config_manage": "Change sign-in settings"
+      },
+      "entitlements": {
+        "view": "View the plan"
+      },
+      "audit": {
+        "read": "Read the audit log",
+        "export": "Export the audit log",
+        "retention_manage": "Set audit retention"
+      },
+      "content": {
+        "view": "Read content",
+        "edit": "Edit content",
+        "publish": "Publish content",
+        "author": "Write content",
+        "publish_critical": "Publish critical notices",
+        "admin": "Administer content"
+      },
+      "process": {
+        "design": "Design processes",
+        "operate": "Run process operations",
+        "analyze": "Analyse processes"
+      },
+      "workflow": {
+        "approve": "Approve requests"
+      },
+      "decision": {
+        "design": "Design decision tables"
+      },
+      "integration": {
+        "manage": "Manage connections",
+        "operate": "Operate connections"
+      },
+      "ai": {
+        "policy_manage": "Change AI policy",
+        "policy_view": "View AI policy"
+      },
+      "page": {
+        "view": "View pages",
+        "edit": "Edit pages",
+        "publish": "Publish pages"
+      },
+      "template": {
+        "edit": "Edit templates",
+        "distribute": "Share templates"
+      },
+      "component": {
+        "enable": "Turn components on"
+      },
+      "config_history": {
+        "view": "View change history"
+      },
+      "theme": {
+        "edit": "Edit the brand",
+        "publish": "Publish the brand"
+      },
+      "config_lock": {
+        "manage": "Lock settings"
+      },
+      "shell": {
+        "edit": "Edit the shell and footer"
+      },
+      "navigation": {
+        "edit": "Edit navigation"
+      },
+      "help": {
+        "edit": "Edit help"
+      },
+      "personalization": {
+        "policy": "Set personal home rules"
+      },
+      "personal_layout": {
+        "edit": "Arrange own home"
+      },
+      "notifications": {
+        "manage": "Manage notifications"
+      },
+      "hr": {
+        "calendar_manage": "Manage working calendars",
+        "integration_manage": "Manage HR integration",
+        "manage": "Manage HR"
+      },
+      "finance": {
+        "process": "Process finance claims"
+      },
+      "people": {
+        "view": "View the directory",
+        "hr_view": "View HR details",
+        "manage": "Manage the directory"
+      },
+      "security": {
+        "manage": "Change security policy",
+        "view": "View security",
+        "respond": "Respond to security alerts"
+      },
+      "compliance": {
+        "manage": "Manage compliance",
+        "view": "View compliance"
+      },
+      "service": {
+        "manage": "Manage services",
+        "request_on_behalf": "Request for others",
+        "request_read": "Read all requests"
+      },
+      "doc": {
+        "view": "View documents",
+        "contribute": "Add documents",
+        "manage": "Manage documents"
+      },
+      "kb": {
+        "edit": "Edit knowledge"
+      },
+      "records": {
+        "manage": "Manage records"
+      },
+      "assets": {
+        "manage": "Manage brand assets",
+        "view": "View brand assets"
+      },
+      "policy": {
+        "author": "Write policies",
+        "manage": "Manage policies"
+      },
+      "search": {
+        "manage": "Manage search"
+      },
+      "agent": {
+        "design": "Design agents",
+        "publish": "Publish agents",
+        "view": "View agents",
+        "security_view": "View agent security",
+        "suspend": "Suspend agents"
+      },
+      "eval": {
+        "design": "Design evaluations",
+        "review": "Review evaluations",
+        "policy_manage": "Set evaluation policy",
+        "view": "View evaluations"
+      },
+      "engagement": {
+        "participate": "Take part in communities",
+        "moderate": "Moderate communities",
+        "manage": "Manage engagement",
+        "survey_publish": "Publish surveys",
+        "recognition_approve": "Approve recognition"
+      },
+      "analytics": {
+        "view": "View analytics"
+      },
+      "learning": {
+        "take": "Take courses",
+        "manage": "Manage learning",
+        "team_view": "View team learning",
+        "report": "Learning reports",
+        "assign_linked": "Assign linked courses"
+      },
+      "spaces": {
+        "create": "Create spaces",
+        "manage": "Manage spaces",
+        "view": "View spaces",
+        "contribute": "Contribute to spaces",
+        "own": "Own spaces"
+      },
+      "booking": {
+        "book": "Book desks and rooms",
+        "manage": "Manage booking",
+        "report": "Booking reports"
+      },
+      "kiosk": {
+        "signin": "Sign in at kiosks"
+      },
+      "device": {
+        "manage": "Manage devices"
+      },
+      "api": {
+        "manage": "Manage API access",
+        "view": "View API access"
+      }
     }
   },
   "header": {
@@ -1296,6 +1532,156 @@
         "top": "Navigation: top bar",
         "sidebar": "Navigation: labelled sidebar"
       }
+    },
+    "tokenNames": {
+      "border": {
+        "width": {
+          "focus": "Focus outline width",
+          "thick": "Thick border width",
+          "thin": "Thin border width"
+        }
+      },
+      "color": {
+        "accent": {
+          "base": "Accent",
+          "subtle": "Soft accent",
+          "text": "Text on accent"
+        },
+        "border": {
+          "default": "Border",
+          "strong": "Strong border"
+        },
+        "chart": {
+          "1": "Chart colour 1",
+          "2": "Chart colour 2",
+          "3": "Chart colour 3",
+          "4": "Chart colour 4",
+          "5": "Chart colour 5",
+          "6": "Chart colour 6",
+          "7": "Chart colour 7",
+          "8": "Chart colour 8",
+          "track": "Chart track"
+        },
+        "focus": {
+          "ring": "Focus ring",
+          "ring_inverse": "Focus ring on dark"
+        },
+        "highlight": {
+          "base": "Highlight",
+          "bright": "Bright highlight"
+        },
+        "link": "Links",
+        "nav": {
+          "active": "Menu, current item",
+          "background": "Menu background",
+          "text": "Menu text"
+        },
+        "shell": {
+          "background": "Top bar background",
+          "text": "Top bar text"
+        },
+        "state": {
+          "danger": "Danger",
+          "info": "Information",
+          "success": "Success",
+          "warning": "Warning"
+        },
+        "surface": {
+          "base": "Page background",
+          "campaign": "Campaign band",
+          "night": "Dark surface",
+          "raised": "Cards and panels",
+          "sunken": "Sunken areas"
+        },
+        "text": {
+          "inverse": "Text on dark",
+          "on_night": "Text on dark surface",
+          "primary": "Main text",
+          "secondary": "Secondary text"
+        },
+        "tint": {
+          "cool": "Cool tint",
+          "cool_text": "Text on cool tint",
+          "fresh": "Fresh tint",
+          "fresh_text": "Text on fresh tint",
+          "warm": "Warm tint",
+          "warm_text": "Text on warm tint"
+        }
+      },
+      "design": {
+        "preset": "Design"
+      },
+      "font": {
+        "family": {
+          "arabic": "Arabic font",
+          "devanagari": "Devanagari font",
+          "heading_arabic": "Arabic heading font",
+          "heading_latin": "Latin heading font",
+          "latin": "Latin font",
+          "urdu": "Urdu font"
+        },
+        "line_height": {
+          "body": "Body line height",
+          "heading": "Heading line height"
+        },
+        "size": {
+          "lg": "Large text size",
+          "md": "Body text size",
+          "sm": "Small text size",
+          "xl": "Heading size",
+          "xs": "Smallest text size",
+          "xxl": "Page title size"
+        },
+        "weight": {
+          "bold": "Bold weight",
+          "medium": "Medium weight",
+          "regular": "Regular weight",
+          "semibold": "Semibold weight"
+        }
+      },
+      "layout": {
+        "navigation": "Navigation layout"
+      },
+      "motion": {
+        "duration": {
+          "fast": "Fast motion",
+          "normal": "Normal motion",
+          "slow": "Slow motion"
+        },
+        "easing": {
+          "emphasized": "Emphasized easing",
+          "standard": "Standard easing"
+        }
+      },
+      "radius": {
+        "full": "Round corners",
+        "lg": "Large corners",
+        "md": "Medium corners",
+        "sm": "Small corners"
+      },
+      "shadow": {
+        "md": "Raised shadow",
+        "sm": "Soft shadow"
+      },
+      "space": {
+        "lg": "Large spacing",
+        "md": "Medium spacing",
+        "sm": "Small spacing",
+        "xl": "Extra large spacing",
+        "xs": "Extra small spacing",
+        "xxl": "Section spacing"
+      },
+      "state": {
+        "disabled": {
+          "opacity": "Disabled opacity"
+        },
+        "hover": {
+          "opacity": "Hover opacity"
+        },
+        "pressed": {
+          "opacity": "Pressed opacity"
+        }
+      }
     }
   },
   "ui": {
@@ -1374,7 +1760,9 @@
       "more": "{count} more",
       "allDay": "All day",
       "timeRange": "{start} to {end}",
-      "dayCount": "{date}, {count}"
+      "dayCount": "{date}, {count}",
+      "none": "None",
+      "dash": "–"
     },
     "assistant": {
       "thinking": "Thinking",
@@ -1409,7 +1797,8 @@
       "point": "{series}, {category}: {value}",
       "flow": "{from} to {to}: {value}",
       "node": "{label} {value}",
-      "xy": "{name}: {x}, {y}"
+      "xy": "{name}: {x}, {y}",
+      "single": "{series}, {category}"
     },
     "patterns": {
       "newChat": "New chat",
@@ -1524,11 +1913,11 @@
         "reduced": "Reduced"
       },
       "text_scale": {
-        "label": "Text size",
         "100": "100%",
         "125": "125%",
         "150": "150%",
-        "200": "200%"
+        "200": "200%",
+        "label": "Text size"
       },
       "resetLayouts": "Reset all my pages",
       "resetLayoutsQuestion": "Return every page you personalized to your organization's layout? Your language and other settings stay.",
@@ -2356,7 +2745,7 @@
       "hr": "HR system"
     },
     "admin": {
-      "title": "People directory",
+      "title": "Directory settings",
       "intro": "Choose where each profile field comes from and who can see it.",
       "fields": "Fields",
       "field": "Field",
@@ -2388,7 +2777,8 @@
       "locationLabel": "From the directory: {label}",
       "rename": "Save names",
       "renamed": "Location names saved.",
-      "noLocations": "No locations yet."
+      "noLocations": "No locations yet.",
+      "actions": "Actions"
     },
     "component": {
       "newcomers": "New joiners",
@@ -4772,11 +5162,11 @@
         "regions": "Regions",
         "retention": "Data terms",
         "ceiling": "Highest classification",
-        "price": "Price per million tokens",
+        "price": "Price per 1M tokens",
         "allowed": "Allowed",
         "confidential": "Confidential",
-        "zeroRetention": "Zero retention, no training",
-        "keepsData": "Provider may keep data",
+        "zeroRetention": "Zero retention",
+        "keepsData": "May keep data",
         "priceValue": "{input} in, {output} out",
         "allowModel": "Allow {name}",
         "confidentialModel": "Use {name} for Confidential data",
@@ -8040,7 +8430,7 @@
     },
     "states": {
       "unmatched": "Not matched",
-      "stale": "Not matched for over 30 days",
+      "stale": "Over 30 days",
       "conflict": "Conflicts",
       "matched": "Matched"
     },
@@ -11368,7 +11758,7 @@
     "admin": {
       "title": "Kiosks",
       "intro": "Shared tablets where people sign in with a badge and a PIN, and the features each one offers.",
-      "listTitle": "Kiosks",
+      "listTitle": "Your kiosks",
       "empty": "There are no kiosks yet.",
       "codeTitle": "Code for {name}",
       "codeDone": "Done",

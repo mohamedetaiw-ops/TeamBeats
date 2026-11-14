@@ -51,7 +51,7 @@ export function MembershipPoliciesAdmin({ initial }: { initial: MembershipPolicy
           ))}
         </div>
       </fieldset>
-      <div className="admin-row">
+      <div className="ui-control-row">
         <Button variant="primary" disabled={changed.length === 0} busy={busy === "save"} busyLabel={t("saving")} onClick={() => void save()}>
           {t("save")}
         </Button>

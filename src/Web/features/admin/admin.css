@@ -37,17 +37,7 @@
   font-size: var(--tb-font-size-sm);
 }
 
-.admin-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: end;
-  gap: var(--tb-space-sm);
-}
 
-.admin-row > .field {
-  flex: 1 1 14rem;
-  min-inline-size: 0;
-}
 
 .admin-fields {
   display: grid;
@@ -218,11 +208,16 @@
   min-inline-size: 0;
 }
 
+/* A group ID is a 36 character GUID: its field takes the room it needs to be read in full (DLS-097). */
+.admin-mapping > .field:first-child {
+  flex: 2 1 22rem;
+}
+
 .admin-filters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
-  gap: var(--tb-space-sm);
-  align-items: end;
+  gap: var(--tb-space-md);
+  align-items: start;
 }
 
 .admin-filters-wide {

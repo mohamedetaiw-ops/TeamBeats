@@ -202,7 +202,7 @@ export function JourneyDetail({ initial }: { initial: Journey }) {
                     ) : null}
                   </span>
                   {s.myTaskId && s.status === "open" && item.status === "pending" ? (
-                    <span className="journeys-row">
+                    <span className="ui-control-row">
                       <Button
                         size="sm"
                         variant="primary"
@@ -254,7 +254,7 @@ export function JourneyDetail({ initial }: { initial: Journey }) {
               void act("anchor", () => fetch(`/api/v1/hr/journeys/${j.id}/anchor`, json("PUT", { anchorDate: anchor })), t("anchorMoved"));
             }}
           >
-            <div className="journeys-row">
+            <div className="ui-control-row">
               <FormField label={t("anchor")} hint={t("anchorHint")} name="journeyAnchor" type="date" required value={anchor} onChange={(e) => setAnchor(e.target.value)} />
               <Button type="submit" busy={busy === "anchor"} busyLabel={t("working")}>
                 {t("moveAnchor")}
@@ -269,7 +269,7 @@ export function JourneyDetail({ initial }: { initial: Journey }) {
             }}
           >
             <PersonPicker label={t("buddy")} value={buddy} onChange={setBuddy} />
-            <div className="journeys-row">
+            <div className="ui-control-row">
               <Button type="submit" busy={busy === "buddy"} busyLabel={t("working")}>
                 {t("saveBuddy")}
               </Button>
@@ -284,7 +284,7 @@ export function JourneyDetail({ initial }: { initial: Journey }) {
           >
             <TextAreaField label={t("reason")} name="journeyReason" required maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
             {j.kind === "onboarding" ? <Checkbox label={t("noShow")} hint={t("noShowHint")} name="journeyNoShow" checked={noShow} onChange={(e) => setNoShow(e.target.checked)} /> : null}
-            <div className="journeys-row">
+            <div className="ui-control-row">
               <Button type="submit" variant="destructive" busy={busy === "cancel"} busyLabel={t("working")}>
                 {t("cancel")}
               </Button>
@@ -333,7 +333,7 @@ function ExitInterviewForm({ busy, submit }: { busy: boolean; submit: (body: unk
                 ))}
               </div>
             </fieldset>
-            <div className="journeys-row">
+            <div className="ui-control-row">
               <SelectField
                 label={t("exitPrimary")}
                 name="exitPrimary"
@@ -353,7 +353,7 @@ function ExitInterviewForm({ busy, submit }: { busy: boolean; submit: (body: unk
             <TextAreaField label={t("exitComment")} hint={t("exitCommentHint")} name="exitComment" maxLength={2000} rows={4} value={comment} onChange={(e) => setComment(e.target.value)} />
           </>
         )}
-        <div className="journeys-row">
+        <div className="ui-control-row">
           <Button type="submit" variant="primary" busy={busy} busyLabel={t("working")} disabled={!declined && reasons.length === 0}>
             {t("exitSubmit")}
           </Button>

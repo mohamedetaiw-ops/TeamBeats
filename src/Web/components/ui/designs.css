@@ -123,8 +123,6 @@
 }
 
 :root[data-design="studio"] .button-destructive {
-  background: var(--tb-color-state-danger);
-  color: var(--tb-color-text-inverse);
   font-weight: var(--tb-font-weight-medium);
 }
 

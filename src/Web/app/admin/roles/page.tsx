@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { apiGet, type NavigationSection } from "@/lib/api";
 import type { AssignmentView, OrgUnitView, RoleView } from "@/lib/admin/types";
-import { PageHeader } from "@/components/ui/PageHeader";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 import { RolesAdmin } from "@/features/admin/RolesAdmin";
 import { roleNames } from "@/features/admin/roleNames";
 
@@ -28,7 +28,7 @@ export default async function RolesPage({ searchParams }: { searchParams: Promis
   const t = await getTranslations("admin");
   return (
     <>
-      <PageHeader title={t("nav.roles")} description={t("roles.description")} icon="lock" />
+      <AdminHeader section="roles" description={t("roles.description")} />
       <RolesAdmin
         initialRoles={roles.data}
         initialAssignments={assignments.ok ? assignments.data : null}

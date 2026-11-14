@@ -29,7 +29,7 @@ export function AccessReviewAdmin({ initial }: { initial: AccessReviewsPage }) {
       <p className="notice">{page.nextAt ? t("next", { date: when(page.nextAt) }) : t("noneScheduled")}</p>
       <ResultAlert result={action.result} />
       {page.canStart ? (
-        <div className="admin-row">
+        <div className="ui-control-row">
           <Button
             variant="primary"
             busy={action.busy === "start"}

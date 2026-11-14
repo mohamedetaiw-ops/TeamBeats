@@ -123,7 +123,7 @@ export function ExpenseAdmin({ policy: initial, rates: initialRates, claims }: {
         {view.canChange ? (
           <>
             <TextAreaField label={ta("policyJson")} name="expense-policy" dir="ltr" rows={14} value={text} hint={ta("policyHint")} onChange={(e) => setText(e.target.value)} />
-            <div className="expenses-row">
+            <div className="ui-control-row">
               <Button variant="primary" busy={busy === "policy"} busyLabel={ta("saving")} onClick={savePolicy}>
                 {ta("save")}
               </Button>
@@ -136,7 +136,7 @@ export function ExpenseAdmin({ policy: initial, rates: initialRates, claims }: {
         <h2 id="expenses-rates">{ta("rates")}</h2>
         <p className="field-hint">{ta("ratesIntro", { currency: view.policy.currency ?? "" })}</p>
         {view.canChange ? (
-          <div className="expenses-row">
+          <div className="ui-control-row">
             <FormField label={t("currency")} name="rate-currency" dir="ltr" maxLength={3} value={rate.currency} onChange={(e) => setRate((r) => ({ ...r, currency: e.target.value.toUpperCase() }))} />
             <FormField label={ta("from")} name="rate-date" type="date" value={rate.date} onChange={(e) => setRate((r) => ({ ...r, date: e.target.value }))} />
             <FormField label={ta("rate")} name="rate-value" inputMode="decimal" dir="ltr" value={rate.rate} onChange={(e) => setRate((r) => ({ ...r, rate: e.target.value }))} />

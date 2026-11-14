@@ -202,7 +202,7 @@ export function LeaveRequestDetail({ initial, taskId }: { initial: LeaveRequest;
         <section className="leave-section" aria-labelledby="leave-shorten">
           <h2 id="leave-shorten">{t("detail.shorten")}</h2>
           <p className="field-hint">{t("detail.shortenHint")}</p>
-          <div className="leave-row">
+          <div className="ui-control-row">
             <FormField label={t("detail.newEnd")} name="shortenEnd" type="date" min={request.start} max={request.end} value={shortenEnd} onChange={(e) => setShortenEnd(e.target.value)} />
             <Checkbox label={t("form.endHalf")} name="shortenHalf" checked={shortenHalf} onChange={(e) => setShortenHalf(e.target.checked)} />
           </div>

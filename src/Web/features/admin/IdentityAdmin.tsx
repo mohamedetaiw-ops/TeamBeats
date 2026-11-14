@@ -132,18 +132,17 @@ export function IdentityAdmin({
         >
           <FormField label={t("sso.displayName")} hint={t("sso.displayNameHint")} name="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
           <FormField label={t("sso.issuer")} hint={t("sso.issuerHint")} name="issuer" dir="ltr" required value={issuer} onChange={(e) => setIssuer(e.target.value)} />
-          <div className="admin-fields">
-            <FormField label={t("sso.clientId")} hint={t("sso.clientIdHint")} name="clientId" dir="ltr" required value={clientId} onChange={(e) => setClientId(e.target.value)} />
-            <FormField
-              label={t("sso.secretRef")}
-              hint={t("sso.secretRefHint", { prefix: `secret://tenants/${tenantId}/` })}
-              name="secretRef"
-              dir="ltr"
-              required
-              value={secretRef}
-              onChange={(e) => setSecretRef(e.target.value)}
-            />
-          </div>
+          {/* Long identifiers get the full row so they read in full (DLS-097). */}
+          <FormField label={t("sso.clientId")} hint={t("sso.clientIdHint")} name="clientId" dir="ltr" required value={clientId} onChange={(e) => setClientId(e.target.value)} />
+          <FormField
+            label={t("sso.secretRef")}
+            hint={t("sso.secretRefHint", { prefix: `secret://tenants/${tenantId}/` })}
+            name="secretRef"
+            dir="ltr"
+            required
+            value={secretRef}
+            onChange={(e) => setSecretRef(e.target.value)}
+          />
           <Checkbox name="enabled" label={t("sso.enabled")} hint={t("sso.enabledHint")} checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
 
           <fieldset className="admin-fieldset">
@@ -172,13 +171,13 @@ export function IdentityAdmin({
                 <IconButton icon="trash" label={t("sso.removeMapping")} onClick={() => setMappings(mappings.filter((_, j) => j !== i))} />
               </div>
             ))}
-            <div className="admin-row">
+            <div className="ui-control-row">
               <Button size="sm" icon="plus" onClick={() => setMappings([...mappings, { groupId: "", roleKey: roles[0]?.key ?? "employee", scopeType: "tenant", scopeId: null }])}>
                 {t("sso.addMapping")}
               </Button>
             </div>
           </fieldset>
-          <div className="admin-row">
+          <div className="ui-control-row">
             <Button type="submit" variant="primary" busy={busy === "provider"} busyLabel={t("saving")}>
               {t("sso.save")}
             </Button>
@@ -239,7 +238,7 @@ export function IdentityAdmin({
                 <NumberField label={t("directory.schedule")} hint={t("directory.scheduleHint")} name="schedule" min={5} max={1440} value={schedule} onValueChange={(v) => setSchedule(v ?? 30)} />
                 <NumberField label={t("directory.threshold")} hint={t("directory.thresholdHint")} name="threshold" min={1} max={100} value={threshold} onValueChange={(v) => setThreshold(v ?? 10)} />
               </div>
-              <div className="admin-row">
+              <div className="ui-control-row">
                 <Button type="submit" variant="primary" busy={busy === "directory"} busyLabel={t("saving")}>
                   {t("directory.save")}
                 </Button>

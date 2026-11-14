@@ -4,6 +4,7 @@ import { apiGet, type NavigationSection } from "@/lib/api";
 import type { BestBet, Rebuild, RetrievalConfig, SynonymSet } from "@/lib/search/types";
 import { BestBets, Rebuilds, RetrievalSettingsPanel, Synonyms } from "@/features/search/SearchAdmin";
 import "@/features/search/search.css";
+import { AdminHeader } from "@/components/shell/AdminHeader";
 
 /**
  * Search tuning (spec 012 US4, FR-010, FR-012, T009): best bets, synonyms, index rebuilds and the retrieval configuration with
@@ -23,8 +24,7 @@ export default async function SearchAdminPage() {
   const t = await getTranslations("search.admin");
   return (
     <div className="search-admin">
-      <h1>{t("title")}</h1>
-      <p className="notice">{t("intro")}</p>
+      <AdminHeader section="search" description={t("intro")} />
       <BestBets initial={bets.data.bestBets} />
       <Synonyms initial={synonyms.data.synonymSets} />
       <Rebuilds initial={rebuilds.data} />
