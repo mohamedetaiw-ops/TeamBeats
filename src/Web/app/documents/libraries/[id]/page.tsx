@@ -5,11 +5,13 @@ import {
   libraryHref,
   nameIn,
   type FolderView,
+  type GuestShare,
   type LibraryView,
   type SavedView,
 } from "@/lib/documents/types";
 import { Header } from "@/components/shell/Header";
 import { LibraryBrowser } from "@/features/documents/LibraryBrowser";
+import { LibrarySharing } from "@/features/documents/LibrarySharing";
 
 /** One library (spec 011 US1): folders, filters on the type's fields, sorting, saved views and upload. */
 export default async function LibraryPage({
@@ -31,6 +33,16 @@ export default async function LibraryPage({
   if (!library.ok || !folders.ok || !views.ok) {
     notFound();
   }
+  // Download and sharing controls (spec 011 US8) are for the managers of TeamBeats libraries outside spaces.
+  const sharing =
+    library.data.rights.manage && library.data.scope !== "space"
+      ? await Promise.all([
+          apiGet<GuestShare[]>(`${base}/guest-shares`),
+          apiGet<{ id: string; name: string; status: string }[]>(
+            "/api/v1/spaces?scope=mine",
+          ),
+        ])
+      : null;
   const t = await getTranslations("documents.libraries");
   const locale = await getLocale();
   const name = nameIn(library.data.names, locale);
@@ -52,6 +64,20 @@ export default async function LibraryPage({
           folders={folders.data}
           views={views.data}
         />
+        {sharing ? (
+          <LibrarySharing
+            library={library.data}
+            folders={folders.data}
+            shares={sharing[0].ok ? sharing[0].data : []}
+            spaces={
+              sharing[1].ok
+                ? sharing[1].data
+                    .filter((s) => s.status === "active")
+                    .map((s) => ({ id: s.id, name: s.name }))
+                : []
+            }
+          />
+        ) : null}
       </main>
     </>
   );

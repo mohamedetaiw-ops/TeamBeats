@@ -32,6 +32,12 @@ public sealed record LegalHoldApplied(Guid HoldId) : IIntegrationEvent;
 /// <summary>A records manager released a legal hold; normal retention resumes through disposition review.</summary>
 public sealed record LegalHoldReleased(Guid HoldId) : IIntegrationEvent;
 
+/// <summary>
+/// The usage rights of a brand asset ended (spec 011 US5 scenario 2): it left the portal and the page builder picker, and
+/// modules that show it list what uses it to the owners.
+/// </summary>
+public sealed record AssetRightsExpired(Guid AssetId) : IIntegrationEvent;
+
 /// <summary>A controlled document's owner withdrew it on review (spec 011 US3 scenario 5); readers no longer get it.</summary>
 public sealed record DocumentWithdrawn(Guid DocumentId, Guid LibraryId) : IIntegrationEvent;
 

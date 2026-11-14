@@ -44,6 +44,11 @@ export type LibraryView = {
   status: string;
   types: DocumentType[];
   rights: Rights;
+  allowedExtensions?: string[] | null;
+  maxFileMb?: number | null;
+  version: number;
+  viewOnly?: boolean;
+  guestSharing?: boolean;
 };
 
 export type FolderView = {
@@ -128,6 +133,7 @@ export type DocumentView = {
   rights: Rights;
   version: number;
   controlled?: ControlledView | null;
+  downloadable?: boolean;
 };
 
 export type PreviewView = {
@@ -136,6 +142,30 @@ export type PreviewView = {
   contentType: string | null;
   expiresAt: string | null;
   reason: string | null;
+  watermark?: string | null;
+};
+
+export type GuestShare = {
+  id: string;
+  libraryId: string;
+  folderId: string;
+  folderName: string;
+  spaceId: string;
+  spaceName: string;
+  expiresAt: string;
+  createdAt: string;
+  createdBy: string;
+  revokedAt: string | null;
+  live: boolean;
+};
+
+export type SharedFolder = {
+  shareId: string;
+  libraryId: string;
+  libraryNames: Names;
+  folderId: string;
+  folderName: string;
+  expiresAt: string;
 };
 
 export type TokenView = { token: string; url: string; expiresAt: string };

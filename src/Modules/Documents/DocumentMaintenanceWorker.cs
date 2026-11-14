@@ -53,6 +53,7 @@ public sealed class DocumentMaintenanceWorker(IServiceScopeFactory scopes, ICloc
                 var versions = scope.ServiceProvider.GetRequiredService<DocumentVersions>();
                 await versions.PurgeAsync(now, 100, ct);
                 await scope.ServiceProvider.GetRequiredService<Records>().RunAsync(now, 100, ct);
+                await scope.ServiceProvider.GetRequiredService<Assets>().ExpireAsync(now, 100, ct);
                 await versions.RemindCheckOutsAsync(now, 200, ct);
                 await scope.ServiceProvider.GetRequiredService<DocumentReleases>().RunDueAsync(now, 200, ct);
                 await scope.ServiceProvider.GetRequiredService<IDbSession>().CommitAsync(ct);

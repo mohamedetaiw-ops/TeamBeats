@@ -55,6 +55,14 @@ public sealed class FakeOfficeConverter : HttpMessageHandler
             var code = System.Text.RegularExpressions.Regex.Match(html, "[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}").Value;
             return Pdf(OnePage(["TeamBeats test environment", "Fictional letter printed by the fake converter", $"Page {hash}", $"Code {code}"]));
         }
+        if (path.EndsWith("/forms/chromium/screenshot/html", StringComparison.Ordinal))
+        {
+            // Asset renditions (spec 011 FR-012): a transparent one-pixel PNG stands in for the rendered image.
+            var png = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(Convert.FromBase64String(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==")) };
+            png.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+            return png;
+        }
         if (path.EndsWith("/forms/pdfengines/stamp", StringComparison.Ordinal))
         {
             return Pdf(await file.ReadAsByteArrayAsync(cancellationToken));

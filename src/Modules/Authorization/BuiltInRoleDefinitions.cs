@@ -34,7 +34,8 @@ public static class BuiltInRoleDefinitions
         new(BuiltInRoles.Employee, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PersonalLayoutEdit, P.PeopleView, P.EngagementParticipate, P.LearningTake, P.SpacesCreate, P.BookingBook]),
         new(BuiltInRoles.PageEditor, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit]),
         new(BuiltInRoles.PagePublisher, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PageView, P.PageEdit, P.PagePublish]),
-        new(BuiltInRoles.BrandManager, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ThemeEdit]),
+        // Themes (spec 033) and, from spec 011 R2 US5, the brand asset portal.
+        new(BuiltInRoles.BrandManager, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.ThemeEdit, P.PeopleView, P.AssetsManage, P.AssetsView]),
         new(BuiltInRoles.HrOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.HrCalendarManage, P.HrIntegrationManage, P.HrManage, P.PeopleView, P.PeopleHrView]),
         new(BuiltInRoles.FinanceOfficer, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.PeopleView, P.FinanceProcess]),
         new(BuiltInRoles.AgentDesigner, Delegable: true, DelegatedAdmin: false, [P.OrgUnitView, P.AgentDesign, P.AgentView, P.EvalDesign]),

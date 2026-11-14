@@ -19,10 +19,21 @@ internal sealed record LibraryRow(
     int Version,
     bool GuestConfidential = false)
 {
-    public const string Columns = "id, names::text, scope, scope_id, org_unit_id, allowed_extensions, max_file_mb, classification_default, status, row_version, guest_confidential";
+    public const string Columns = "id, names::text, scope, scope_id, org_unit_id, allowed_extensions, max_file_mb, classification_default, status, row_version, guest_confidential, " +
+        "view_only, guest_sharing";
 
     public static LibraryRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), DocJson.Read<Dictionary<string, string>>(r.GetString(1)), r.GetString(2),
-        r.Get<Guid?>("scope_id"), r.Get<Guid?>("org_unit_id"), r.Get<string[]>("allowed_extensions"), r.Get<int?>("max_file_mb"), r.GetString(7), r.GetString(8), r.GetInt32(9), r.GetBoolean(10));
+        r.Get<Guid?>("scope_id"), r.Get<Guid?>("org_unit_id"), r.Get<string[]>("allowed_extensions"), r.Get<int?>("max_file_mb"), r.GetString(7), r.GetString(8), r.GetInt32(9), r.GetBoolean(10))
+    {
+        ViewOnly = r.GetBoolean(11),
+        GuestSharing = r.GetBoolean(12),
+    };
+
+    /// <summary>Spec 011 FR-016: readers preview with a watermark and never download.</summary>
+    public bool ViewOnly { get; init; }
+
+    /// <summary>Spec 011 FR-017: managers may share folders read-only with guest spaces.</summary>
+    public bool GuestSharing { get; init; }
 
     /// <summary>Where library-wide decisions (create, manage) are taken: the owning unit, or the tenant.</summary>
     public AuthzTarget ScopeTarget => OrgUnitId is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant;
@@ -50,7 +61,8 @@ public sealed record DocRights(bool View, bool Contribute, bool Manage)
 /// open to every member for reading; unit and site libraries are restricted and start with an ACL entry for the unit's
 /// members. Contributors and managers come from role assignments at the owning unit or from ACL entries.
 /// </summary>
-internal sealed class DocumentAccess(IDbSession session, IAuthorizationService authz, ITenantContext context, ITenantMemberships memberships)
+internal sealed class DocumentAccess(IDbSession session, IAuthorizationService authz, ITenantContext context, ITenantMemberships memberships,
+    TeamBeats.Modules.Spaces.Contracts.ISpaceAccess spaces)
 {
     private static readonly string[] Open = [];
     private static readonly string[] GuestClosed = ["confidential", "restricted"];
@@ -107,6 +119,7 @@ internal sealed class DocumentAccess(IDbSession session, IAuthorizationService a
         var manage = await Allowed(Permissions.DocManage);
         var contribute = await Allowed(Permissions.DocContribute);
         var view = await Allowed(Permissions.DocView);
+        view.UnionWith(await SharedWithGuestAsync(library, securables, ct));
         // An archived library (the library of an archived space) is read-only (spec 029 FR-013).
         return securables.ToDictionary(s => s.Id, s =>
         {
@@ -114,6 +127,58 @@ internal sealed class DocumentAccess(IDbSession session, IAuthorizationService a
             var c = m || (library.Active && contribute.Contains(s.Id));
             return new DocRights(c || view.Contains(s.Id), c, m);
         });
+    }
+
+    /// <summary>
+    /// Spec 011 FR-017: a guest reads a shared folder, and folders and documents with their own permissions under it,
+    /// while a live share names a space the guest reads. Shares grant reading only, and only to guests.
+    /// </summary>
+    private async Task<IReadOnlySet<Guid>> SharedWithGuestAsync(LibraryRow library, IReadOnlyList<Securable> securables, CancellationToken ct)
+    {
+        if (library.InSpace || !library.GuestSharing || !await IsGuestAsync(ct))
+        {
+            return new HashSet<Guid>();
+        }
+        var spaces = await LiveShareSpacesAsync(library.Id, ct);
+        if (spaces.Count == 0)
+        {
+            return new HashSet<Guid>();
+        }
+        var ids = securables.Where(s => s.Type != Securables.Library).Select(s => s.Id).ToArray();
+        return (await session.QueryAsync(
+            """
+            select f.id from documents.folder f
+            where f.id = any(@ids) and exists (select 1 from documents.guest_share s
+              where s.library_id = @lib and s.space_id = any(@spaces) and s.revoked_at is null and s.expires_at > now() and s.folder_id = any(f.path))
+            union
+            select d.id from documents.document d join documents.folder f on f.id = d.folder_id
+            where d.id = any(@ids) and exists (select 1 from documents.guest_share s
+              where s.library_id = @lib and s.space_id = any(@spaces) and s.revoked_at is null and s.expires_at > now() and s.folder_id = any(f.path))
+            """, new { ids, lib = library.Id, spaces = spaces.ToArray() }, r => r.GetGuid(0), ct)).ToHashSet();
+    }
+
+    private readonly Dictionary<Guid, IReadOnlyList<Guid>> _shareSpaces = [];
+
+    /// <summary>The spaces with a live share in the library that the caller reads now, asked once per library and request.</summary>
+    public async Task<IReadOnlyList<Guid>> LiveShareSpacesAsync(Guid libraryId, CancellationToken ct)
+    {
+        if (_shareSpaces.TryGetValue(libraryId, out var known))
+        {
+            return known;
+        }
+        var candidates = await session.QueryAsync(
+            "select distinct space_id from documents.guest_share where library_id = @libraryId and revoked_at is null and expires_at > now()",
+            new { libraryId }, r => r.GetGuid(0), ct);
+        var reads = new List<Guid>();
+        foreach (var space in candidates)
+        {
+            if (await spaces.ForViewerAsync(space, ct) is { Reads: true, Active: true })
+            {
+                reads.Add(space);
+            }
+        }
+        _shareSpaces[libraryId] = reads;
+        return reads;
     }
 
     public async Task<DocRights> RightsAsync(LibraryRow library, Securable securable, CancellationToken ct) =>

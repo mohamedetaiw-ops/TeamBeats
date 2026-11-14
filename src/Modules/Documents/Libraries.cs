@@ -23,7 +23,9 @@ public sealed record LibraryRequest(
     IReadOnlyList<string>? AllowedExtensions,
     int? MaxFileMb,
     string? ClassificationDefault,
-    int? Version);
+    int? Version,
+    bool? ViewOnly = null,
+    bool? GuestSharing = null);
 
 public sealed record DocumentTypeView(Guid Id, IReadOnlyDictionary<string, string> Names, IReadOnlyList<FieldDefinition> Fields, string Status, int Version,
     ControlledSettings? Controlled = null);
@@ -69,7 +71,9 @@ public sealed record LibraryView(
     string Status,
     int Version,
     IReadOnlyList<DocumentTypeView> Types,
-    DocRights Rights);
+    DocRights Rights,
+    bool ViewOnly = false,
+    bool GuestSharing = false);
 
 public sealed record LibrarySummary(Guid Id, IReadOnlyDictionary<string, string> Names, string Scope, Guid? ScopeId, Guid? OrgUnitId, DocRights Rights);
 
@@ -109,6 +113,7 @@ public sealed class Libraries(
     ISiteDirectory sites,
     IAuditWriter audit,
     IOutbox outbox,
+    TeamBeats.Modules.Spaces.Contracts.ISpaceAccess spaces,
     IClock clock)
 {
     public const int MaxNameLength = 120;
@@ -118,7 +123,7 @@ public sealed class Libraries(
     /// <summary>A permission change reaching more documents than this asks for confirmation first (section 14).</summary>
     public const int ConfirmAbove = 500;
 
-    internal DocumentAccess Access { get; } = new(session, authz, context, memberships);
+    internal DocumentAccess Access { get; } = new(session, authz, context, memberships, spaces);
 
     // Settings
 
@@ -250,7 +255,7 @@ public sealed class Libraries(
         var types = await TypesAsync(library.Id, ct);
         return new LibraryView(library.Id, library.Names, library.Scope, library.ScopeId, library.OrgUnitId, library.AllowedExtensions,
             EffectiveExtensions(library, rules), library.MaxFileMb, EffectiveMaxMb(library, rules), library.ClassificationDefault, library.Status,
-            library.Version, types, rights);
+            library.Version, types, rights, library.ViewOnly, library.GuestSharing);
     }
 
     internal static IReadOnlyList<string> EffectiveExtensions(LibraryRow library, DocumentSettingsView rules) =>
@@ -348,19 +353,49 @@ public sealed class Libraries(
         {
             errors.Add("classificationDefault", "validation.documents.classification");
         }
+        // Spec 011 US8: view-only and guest sharing are package features, for TeamBeats libraries outside spaces; a
+        // Restricted library is never shared with guests.
+        var viewOnly = request.ViewOnly ?? library.ViewOnly;
+        var guestSharing = request.GuestSharing ?? library.GuestSharing;
+        if ((viewOnly || guestSharing) && library.InSpace)
+        {
+            errors.Add(viewOnly ? "viewOnly" : "guestSharing", "validation.documents.space_library");
+        }
+        if (guestSharing && classification == "restricted")
+        {
+            errors.Add("guestSharing", "validation.documents.guest_sharing_restricted");
+        }
         errors.ThrowIfAny();
+        if (viewOnly && !library.ViewOnly)
+        {
+            await entitlements.DemandAsync(Capabilities.DocsViewOnlyWatermark, ct);
+        }
+        if (guestSharing && !library.GuestSharing)
+        {
+            await entitlements.DemandAsync(Capabilities.DocsGuestSharing, ct);
+        }
         await session.ExecAsync(
             """
             update documents.library set names = @names, allowed_extensions = @extensions, max_file_mb = @max, classification_default = @classification,
-              updated_at = @now, row_version = row_version + 1
+              view_only = @viewOnly, guest_sharing = @guestSharing, updated_at = @now, row_version = row_version + 1
             where id = @id
             """,
-            new { id, names = new Jsonb(DocJson.Write(Trimmed(request.Names!))), extensions = extensions?.ToArray(), max = request.MaxFileMb, classification, now = clock.UtcNow }, ct);
+            new
+            {
+                id, names = new Jsonb(DocJson.Write(Trimmed(request.Names!))), extensions = extensions?.ToArray(), max = request.MaxFileMb, classification, viewOnly,
+                guestSharing, now = clock.UtcNow,
+            }, ct);
+        if (!guestSharing && library.GuestSharing)
+        {
+            // Turning sharing off ends every share of the library at once.
+            await session.ExecAsync("update documents.guest_share set revoked_at = @now, revoked_by = @by where library_id = @id and revoked_at is null",
+                new { id, now = clock.UtcNow, by = context.ActorId }, ct);
+        }
         await audit.WriteAsync(new AuditEntry(AuditActions.DocLibraryChanged, Securables.Library, id.ToString(), TargetOrgUnitId: library.OrgUnitId,
             Changes: new
             {
-                before = new { library.Names, library.AllowedExtensions, library.MaxFileMb, library.ClassificationDefault },
-                after = new { names = request.Names, allowedExtensions = extensions, maxFileMb = request.MaxFileMb, classificationDefault = classification },
+                before = new { library.Names, library.AllowedExtensions, library.MaxFileMb, library.ClassificationDefault, library.ViewOnly, library.GuestSharing },
+                after = new { names = request.Names, allowedExtensions = extensions, maxFileMb = request.MaxFileMb, classificationDefault = classification, viewOnly, guestSharing },
             }), ct);
         return await GetAsync(id, ct);
     }

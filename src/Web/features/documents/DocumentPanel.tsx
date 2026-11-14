@@ -246,8 +246,14 @@ export function DocumentPanel({
         </p>
       ) : null}
 
+      {doc.downloadable === false ? (
+        <p className="notice" data-testid="view-only-notice">
+          {t("viewOnlyNotice")}
+        </p>
+      ) : null}
+
       <div className="documents-actions">
-        {doc.effective || doc.current ? (
+        {(doc.effective || doc.current) && doc.downloadable !== false ? (
           <Button
             variant="primary"
             busy={busy === "download"}
@@ -258,7 +264,7 @@ export function DocumentPanel({
           </Button>
         ) : null}
         <Button onClick={() => void showPreview()}>{t("preview")}</Button>
-        {controlled && doc.effective ? (
+        {controlled && doc.effective && doc.downloadable !== false ? (
           <Button
             busy={busy === "copy"}
             busyLabel={t("busy")}
@@ -329,17 +335,43 @@ export function DocumentPanel({
             <p>{t("previewLoading")}</p>
           ) : preview === "failed" ? (
             <p>{t("previewFailed")}</p>
-          ) : preview.view.kind === "pdf" && preview.view.url ? (
-            <iframe src={preview.view.url} title={t("preview")} />
-          ) : preview.view.kind === "image" && preview.view.url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- previews are short-lived tokens the image optimizer cannot fetch
-            <img src={preview.view.url} alt={doc.name} />
-          ) : preview.view.kind === "video" && preview.view.url ? (
-            <video src={preview.view.url} controls />
-          ) : preview.view.kind === "text" ? (
-            <pre dir="auto">{preview.text}</pre>
           ) : (
-            <p data-testid="preview-unavailable">{t("previewUnavailable")}</p>
+            <div
+              className={
+                preview.view.watermark
+                  ? "documents-preview-frame documents-watermarked"
+                  : "documents-preview-frame"
+              }
+              onContextMenu={
+                preview.view.watermark ? (e) => e.preventDefault() : undefined
+              }
+            >
+              {preview.view.kind === "pdf" && preview.view.url ? (
+                <iframe src={preview.view.url} title={t("preview")} />
+              ) : preview.view.kind === "image" && preview.view.url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- previews are short-lived tokens the image optimizer cannot fetch
+                <img src={preview.view.url} alt={doc.name} draggable={false} />
+              ) : preview.view.kind === "video" && preview.view.url ? (
+                <video
+                  src={preview.view.url}
+                  controls
+                  controlsList={
+                    preview.view.watermark ? "nodownload" : undefined
+                  }
+                />
+              ) : preview.view.kind === "text" ? (
+                <pre dir="auto">{preview.text}</pre>
+              ) : (
+                <p data-testid="preview-unavailable">
+                  {t("previewUnavailable")}
+                </p>
+              )}
+              {preview.view.watermark ? (
+                <p className="documents-watermark" data-testid="watermark">
+                  <bdi>{preview.view.watermark}</bdi>
+                </p>
+              ) : null}
+            </div>
           )}
         </section>
       ) : null}
@@ -465,12 +497,14 @@ export function DocumentPanel({
                       <bdi>{v.note ?? ""}</bdi>
                     </td>
                     <td className="documents-row-actions">
-                      <Button
-                        variant="quiet"
-                        onClick={() => void download(v.id)}
-                      >
-                        {t("downloadVersion", { version: v.label })}
-                      </Button>
+                      {doc.downloadable !== false ? (
+                        <Button
+                          variant="quiet"
+                          onClick={() => void download(v.id)}
+                        >
+                          {t("downloadVersion", { version: v.label })}
+                        </Button>
+                      ) : null}
                       {doc.rights.contribute &&
                       doc.checkedIn &&
                       !doc.checkedOutBy &&

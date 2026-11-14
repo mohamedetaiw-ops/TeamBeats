@@ -59,7 +59,8 @@ public sealed record DocumentView(
     bool Inherits,
     DocRights Rights,
     int Version,
-    ControlledView? Controlled = null);
+    ControlledView? Controlled = null,
+    bool Downloadable = true);
 
 /// <summary>
 /// The controlled document state (spec 011 US3): its number, whether a release is in approval or approved and waiting
@@ -354,7 +355,9 @@ public sealed class DocumentFiles(
         {
             return;
         }
-        var used = await session.ScalarAsync<long>("select coalesce(sum(size_bytes), 0)::bigint from documents.document_version", null, ct);
+        // Brand assets count too (spec 011 US5): they are files the tenant keeps.
+        var used = await session.ScalarAsync<long>(
+            "select ((select coalesce(sum(size_bytes), 0) from documents.document_version) + (select coalesce(sum(size_bytes), 0) from documents.asset))::bigint", null, ct);
         if (used + incoming > gb * 1024L * 1024L * 1024L)
         {
             throw new AppException(ProblemCodes.EntitlementQuotaExhausted, 403, "validation.documents.storage_full", null,
@@ -467,7 +470,22 @@ public sealed class DocumentFiles(
     public async Task<DocumentView> GetAsync(Guid id, CancellationToken ct)
     {
         var (library, doc, rights) = await VisibleAsync(id, ct);
+        await NoteGuestViewAsync(library, id, ct);
         return await ViewAsync(library, doc, rights, ct);
+    }
+
+    /// <summary>
+    /// Spec 011 US8 scenario 2: every view by a guest of a document in a library outside spaces (which a guest reaches
+    /// only through a folder shared with their space) is audited.
+    /// </summary>
+    internal async Task NoteGuestViewAsync(LibraryRow library, Guid documentId, CancellationToken ct)
+    {
+        if (library.InSpace || !await Access.IsGuestAsync(ct))
+        {
+            return;
+        }
+        await audit.WriteAsync(new AuditEntry(AuditActions.DocGuestViewed, Securables.Document, documentId.ToString(), TargetOrgUnitId: library.OrgUnitId,
+            Changes: new { library = library.Id }), ct);
     }
 
     private async Task<DocumentView> ViewAsync(LibraryRow library, DocRow doc, DocRights rights, CancellationToken ct)
@@ -480,7 +498,8 @@ public sealed class DocumentFiles(
         var current = rights.Contribute ? await VersionAsync(doc.Current, ct) : null;
         return new DocumentView(doc.Id, doc.LibraryId, doc.FolderId, doc.TypeId, doc.Name, doc.Number, metadata, doc.Classification, doc.Owner, doc.CheckedIn,
             doc.CheckedOutBy, doc.CheckedOutAt, MetadataRules.Complete(fields, metadata), current, await VersionAsync(doc.Effective, ct),
-            holder ? await VersionAsync(doc.Pending, ct) : null, doc.Inherits, rights, doc.Version, await ControlledViewAsync(doc, ct));
+            holder ? await VersionAsync(doc.Pending, ct) : null, doc.Inherits, rights, doc.Version, await ControlledViewAsync(doc, ct),
+            !ReaderOfViewOnly(library, rights));
     }
 
     private async Task<ControlledView?> ControlledViewAsync(DocRow doc, CancellationToken ct)
@@ -712,7 +731,7 @@ public sealed class DocumentFiles(
     /// </summary>
     public async Task<DownloadTokenView> DownloadTokenAsync(Guid documentId, Guid? versionId, CancellationToken ct)
     {
-        var target = await OpenableAsync(documentId, versionId, ct);
+        var target = await DownloadableAsync(documentId, versionId, ct);
         var (token, expires) = await IssueTokenAsync(documentId, target, TokenPurposes.Download, ct);
         return new DownloadTokenView(token, $"/api/v1/documents/files/{token}", expires);
     }
@@ -721,10 +740,41 @@ public sealed class DocumentFiles(
     /// The version the caller may open: the one asked for, or by default the current one for contributors and the
     /// effective one for readers. Not found when it is not theirs to see; a conflict while it is not clean.
     /// </summary>
-    internal async Task<Guid> OpenableAsync(Guid documentId, Guid? versionId, CancellationToken ct)
+    internal async Task<Guid> OpenableAsync(Guid documentId, Guid? versionId, CancellationToken ct) =>
+        (await OpenCheckAsync(documentId, versionId, ct)).Target;
+
+    /// <summary>
+    /// The version the caller may take away as a file. In a view-only library (spec 011 FR-016) only contributors and
+    /// managers download; readers preview with a watermark, and the API refuses them a file.
+    /// </summary>
+    internal async Task<Guid> DownloadableAsync(Guid documentId, Guid? versionId, CancellationToken ct)
+    {
+        var (target, viewOnly) = await OpenCheckAsync(documentId, versionId, ct);
+        return viewOnly ? throw AppException.Denied("authz.denied.documents_view_only") : target;
+    }
+
+    /// <summary>The version to preview and, for a reader of a view-only library, the watermark its preview carries.</summary>
+    internal async Task<(Guid Target, string? Watermark)> PreviewableAsync(Guid documentId, Guid? versionId, CancellationToken ct)
+    {
+        var (target, viewOnly) = await OpenCheckAsync(documentId, versionId, ct);
+        return (target, viewOnly ? await WatermarkAsync(ct) : null);
+    }
+
+    /// <summary>The viewer's name, email and the time, as a view-only preview shows them (spec 011 US8 scenario 1).</summary>
+    internal async Task<string> WatermarkAsync(CancellationToken ct)
+    {
+        var principal = context.RequirePrincipal();
+        var who = await users.GetAsync(principal, ct);
+        string?[] parts = [who?.DisplayName ?? principal.ToString(), who?.Email, $"{clock.UtcNow:yyyy-MM-dd HH:mm} UTC"];
+        return string.Join("  ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
+    }
+
+    private static bool ReaderOfViewOnly(LibraryRow library, DocRights rights) => library.ViewOnly && !library.InSpace && !rights.Contribute;
+
+    private async Task<(Guid Target, bool ViewOnly)> OpenCheckAsync(Guid documentId, Guid? versionId, CancellationToken ct)
     {
         var user = context.RequirePrincipal();
-        var (_, doc, rights) = await VisibleAsync(documentId, ct);
+        var (library, doc, rights) = await VisibleAsync(documentId, ct);
         var target = versionId ?? (rights.Contribute ? doc.Current : doc.Effective) ?? doc.Pending;
         var allowed = target is { } t && (t == doc.Effective || (rights.Contribute && doc.CheckedIn) || (t == doc.Pending && doc.CheckedOutBy == user));
         var version = allowed
@@ -739,20 +789,21 @@ public sealed class DocumentFiles(
         {
             throw AppException.Conflict("conflict.documents.not_clean");
         }
-        return target!.Value;
+        return (target!.Value, ReaderOfViewOnly(library, rights));
     }
 
     /// <summary>A random token for one person, one version and one purpose; only its hash is kept.</summary>
-    internal async Task<(string Token, DateTimeOffset ExpiresAt)> IssueTokenAsync(Guid documentId, Guid versionId, string purpose, CancellationToken ct)
+    internal async Task<(string Token, DateTimeOffset ExpiresAt)> IssueTokenAsync(Guid documentId, Guid versionId, string purpose, CancellationToken ct,
+        string? watermark = null)
     {
         var token = Base64Url(RandomNumberGenerator.GetBytes(32));
         var expires = clock.UtcNow.Add(TokenLifetime);
         await session.ExecAsync(
             """
             delete from documents.download_token where expires_at < @now;
-            insert into documents.download_token (tenant_id, token_hash, user_id, document_id, version_id, expires_at, purpose)
-            values (platform.current_tenant_id(), @hash, @user, @documentId, @versionId, @expires, @purpose)
-            """, new { now = clock.UtcNow, hash = TokenHash(token), user = context.RequireUser(), documentId, versionId, expires, purpose }, ct);
+            insert into documents.download_token (tenant_id, token_hash, user_id, document_id, version_id, expires_at, purpose, watermark)
+            values (platform.current_tenant_id(), @hash, @user, @documentId, @versionId, @expires, @purpose, @watermark)
+            """, new { now = clock.UtcNow, hash = TokenHash(token), user = context.RequireUser(), documentId, versionId, expires, purpose, watermark }, ct);
         return (token, expires);
     }
 
@@ -793,7 +844,7 @@ public sealed class DocumentFiles(
     public async Task<(Stream Content, string ContentType, string FileName)> ReadFileAsync(Guid documentId, Guid? versionId, CancellationToken ct)
     {
         var principal = context.RequirePrincipal();
-        var target = await OpenableAsync(documentId, versionId, ct);
+        var target = await DownloadableAsync(documentId, versionId, ct);
         var row = await session.QuerySingleOrDefaultAsync(
             """
             select v.object_key, v.content_type, v.file_name, v.size_bytes, d.classification, d.library_id
@@ -849,6 +900,13 @@ public sealed class DocumentFiles(
     /// </summary>
     private async Task<Stream> StampAsync(Stream content, long size, Guid principal, CancellationToken ct)
     {
+        var who = (await users.GetAsync(principal, ct))?.Email ?? principal.ToString();
+        return await StampTextAsync(content, size, $"{who}  {clock.UtcNow:yyyy-MM-dd HH:mm} UTC", ct);
+    }
+
+    /// <summary>Draws the text on every page of a PDF; a PDF too large or unable to carry it is not handed out.</summary>
+    internal async Task<Stream> StampTextAsync(Stream content, long size, string text, CancellationToken ct)
+    {
         await using (content)
         {
             if (size > MaxStampedBytes)
@@ -857,8 +915,7 @@ public sealed class DocumentFiles(
             }
             using var buffer = new MemoryStream((int)Math.Max(size, 0));
             await content.CopyToAsync(buffer, ct);
-            var who = (await users.GetAsync(principal, ct))?.Email ?? principal.ToString();
-            var marked = stamp.Apply(buffer.ToArray(), $"{who}  {clock.UtcNow:yyyy-MM-dd HH:mm} UTC");
+            var marked = stamp.Apply(buffer.ToArray(), text);
             return marked is null ? throw AppException.Conflict("conflict.documents.guest_pdf_unmarkable") : new MemoryStream(marked, writable: false);
         }
     }
