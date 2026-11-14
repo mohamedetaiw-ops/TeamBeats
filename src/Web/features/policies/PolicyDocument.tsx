@@ -23,7 +23,7 @@ export function PolicyDocument({ reading, locale }: { reading: PolicyReading; lo
         <bdi>{title}</bdi>
       </h1>
       <p className="policies-meta">
-        <span className="policies-badge">
+        <span className="ui-badge policies-badge" data-tone="accent">
           <bdi dir="ltr">{policy.code}</bdi>
         </span>
         {t("version", { number: version.number ?? 0 })}

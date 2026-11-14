@@ -1242,6 +1242,9 @@
     },
     "controls": {
       "close": "إغلاق",
+      "filters": "عوامل التصفية",
+      "appliedFilters": "عوامل التصفية المستخدمة",
+      "clearAll": "مسح الكل",
       "remove": "إزالة {name}",
       "removeItem": "إزالة",
       "pagination": "الصفحات",

@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
-import { FormField } from "@/components/ui/FormField";
+import { FilterToolbar, ToolbarSearch, ToolbarSelect } from "@/components/ui/FilterToolbar";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { locationName, type Location, type PersonCard, type SearchPage } from "@/lib/people/types";
 import { PersonItem } from "./PersonItem";
@@ -118,56 +118,52 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
     void load(next, 0);
   }
 
+  const unitLabel = options.find((u) => u.id === query.unitId)?.label;
+  const chosenLocation = locations.find((l) => l.key === query.location);
+  const locationLabel = chosenLocation ? locationName(chosenLocation, locale) : undefined;
+
   return (
     <div className="people">
       <section aria-labelledby="people-search-title" className="people-block">
         <h2 id="people-search-title" className="visually-hidden">
           {t("search.label")}
         </h2>
-        <form
-          role="search"
-          aria-labelledby="people-search-title"
-          className="ui-filter-bar"
+        <FilterToolbar
+          label={t("search.label")}
           onSubmit={(e) => {
             e.preventDefault();
             void load(query, 0);
           }}
+          search={<ToolbarSearch label={t("search.label")} name="q" placeholder={t("search.hint")} value={query.q} onChange={(e) => setQuery({ ...query, q: e.target.value })} />}
+          end={
+            <Button type="submit" variant="secondary" busy={busy} busyLabel={t("loading")}>
+              {t("search.submit")}
+            </Button>
+          }
+          applied={[
+            ...(unitLabel ? [{ key: "unit", label: `${t("search.unit")}: ${unitLabel}`, onRemove: () => filter({ unitId: "" }) }] : []),
+            ...(locationLabel ? [{ key: "location", label: `${t("search.location")}: ${locationLabel}`, onRemove: () => filter({ location: "" }) }] : []),
+          ]}
+          onClear={clear}
         >
-          <FormField
-            label={t("search.label")}
-            name="q"
-            type="search"
-            hint={t("search.hint")}
-            value={query.q}
-            onChange={(e) => setQuery({ ...query, q: e.target.value })}
-          />
-          <label className="field people-select">
-            <span>{t("search.unit")}</span>
-            <select value={query.unitId} onChange={(e) => filter({ unitId: e.target.value })}>
-              <option value="">{t("search.any")}</option>
-              {options.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {"\u00a0\u00a0".repeat(u.depth)}
-                  {u.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field people-select">
-            <span>{t("search.location")}</span>
-            <select value={query.location} onChange={(e) => filter({ location: e.target.value })}>
-              <option value="">{t("search.any")}</option>
-              {locations.map((l) => (
-                <option key={l.key} value={l.key}>
-                  {locationName(l, locale)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <Button type="submit" variant="primary" busy={busy} busyLabel={t("loading")}>
-            {t("search.submit")}
-          </Button>
-        </form>
+          <ToolbarSelect label={t("search.unit")} value={query.unitId} onChange={(e) => filter({ unitId: e.target.value })}>
+            <option value="">{t("search.any")}</option>
+            {options.map((u) => (
+              <option key={u.id} value={u.id}>
+                {"\u00a0\u00a0".repeat(u.depth)}
+                {u.label}
+              </option>
+            ))}
+          </ToolbarSelect>
+          <ToolbarSelect label={t("search.location")} value={query.location} onChange={(e) => filter({ location: e.target.value })}>
+            <option value="">{t("search.any")}</option>
+            {locations.map((l) => (
+              <option key={l.key} value={l.key}>
+                {locationName(l, locale)}
+              </option>
+            ))}
+          </ToolbarSelect>
+        </FilterToolbar>
         <div aria-live="polite">
           {error ? <p className="notice notice-error">{t("failed")}</p> : null}
           {items && items.length === 0 && !error ? (

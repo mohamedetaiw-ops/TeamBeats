@@ -147,7 +147,7 @@
 :root[data-design="studio"] :is(.home-card, .outlook, .content-card, .content-side-item, .ui-card, .ui-tile, .ui-stat, .home-tiles a),
 :root[data-design="studio"] :is(.services-section, .work-items, .preferences-section, .documents-card, .documents-table, .kb-article),
 :root[data-design="studio"] :is(.people-section, .people-cards .people-item, .people-identity, .content-article, .content-social),
-:root[data-design="studio"] :is(.ui-filter-bar, .ui-rows, .toolbox) {
+:root[data-design="studio"] :is(.ui-rows, .toolbox) {
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   box-shadow: var(--tb-shadow-sm);
 }

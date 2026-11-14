@@ -8,6 +8,7 @@ import { StateView } from "@/components/ui/StateView";
 import { PoliciesNav } from "@/features/policies/PoliciesNav";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { FilterToolbar, ToolbarSearch, ToolbarSelect } from "@/components/ui/FilterToolbar";
 
 const statuses = ["draft", "in_review", "approved", "published", "retired"] as const;
 const statusTone: Record<string, BadgeTone> = { draft: "neutral", in_review: "warning", approved: "info", published: "success", retired: "neutral" };
@@ -34,6 +35,13 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
   const locale = await getLocale();
   const format = await getFormatter();
   const date = (iso: string | null) => (iso ? format.dateTime(new Date(iso), { dateStyle: "medium" }) : t("none"));
+  const chosenStatus = statuses.find((s) => s === status);
+  const registerHref = (keep: { q?: string; status?: string }) => {
+    const next = new URLSearchParams();
+    if (keep.q) next.set("q", keep.q);
+    if (keep.status) next.set("status", keep.status);
+    return next.size > 0 ? `/policies?${next}` : "/policies";
+  };
   return (
     <>
       <Header me={me.data} breadcrumbs={[{ label: t("title"), href: "/policies" }]} />
@@ -51,26 +59,30 @@ export default async function PolicyRegisterPage({ searchParams }: { searchParam
             ) : null
           }
         />
-        <form className="ui-filter-bar" method="get" role="search" aria-label={t("search")}>
-          <div className="field">
-            <label htmlFor="policy-q">{t("search")}</label>
-            <input id="policy-q" name="q" type="search" defaultValue={q ?? ""} dir="auto" />
-          </div>
-          <div className="field">
-            <label htmlFor="policy-status">{t("statusFilter")}</label>
-            <select id="policy-status" name="status" defaultValue={status ?? ""}>
-              <option value="">{t("allStatuses")}</option>
-              {statuses.map((s) => (
-                <option key={s} value={s}>
-                  {ts(s)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button type="submit" className="button button-secondary">
-            {t("apply")}
-          </button>
-        </form>
+        <FilterToolbar
+          label={t("search")}
+          method="get"
+          search={<ToolbarSearch label={t("search")} name="q" placeholder={t("search")} defaultValue={q ?? ""} />}
+          end={
+            <button type="submit" className="button button-secondary">
+              {t("apply")}
+            </button>
+          }
+          applied={[
+            ...(q?.trim() ? [{ key: "q", label: q.trim(), href: registerHref({ status: chosenStatus }) }] : []),
+            ...(chosenStatus ? [{ key: "status", label: `${t("statusFilter")}: ${ts(chosenStatus)}`, href: registerHref({ q: q?.trim() }) }] : []),
+          ]}
+          clearHref="/policies"
+        >
+          <ToolbarSelect label={t("statusFilter")} hideLabel name="status" defaultValue={chosenStatus ?? ""}>
+            <option value="">{t("allStatuses")}</option>
+            {statuses.map((s) => (
+              <option key={s} value={s}>
+                {ts(s)}
+              </option>
+            ))}
+          </ToolbarSelect>
+        </FilterToolbar>
         {!list.ok ? (
           <StateView kind="error" title={t("failed")} message="" />
         ) : list.data.length === 0 ? (

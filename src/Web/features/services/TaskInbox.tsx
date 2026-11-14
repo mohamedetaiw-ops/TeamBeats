@@ -163,11 +163,11 @@ export function TaskInbox({ items }: { items: InboxItem[] }) {
                   </span>
                 )}
                 </div>
-                {i.onBehalfOf ? <span className="services-status">{t("onBehalfOf", { name: isolate(i.onBehalfOf.displayName) })}</span> : null}
+                {i.onBehalfOf ? <span className="ui-badge">{t("onBehalfOf", { name: isolate(i.onBehalfOf.displayName) })}</span> : null}
                 {i.pickable ? (
                   i.pickedBy ? (
                     <>
-                      <span className="services-status">{t("pickedBy", { name: isolate(i.pickedBy.displayName) })}</span>
+                      <span className="ui-badge">{t("pickedBy", { name: isolate(i.pickedBy.displayName) })}</span>
                       <Button variant="secondary" disabled={busy === i.taskId} onClick={() => pickTask(i.taskId, false)}>
                         {t("putBack")}
                       </Button>

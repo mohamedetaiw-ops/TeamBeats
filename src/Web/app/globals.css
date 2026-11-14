@@ -458,8 +458,7 @@ legend {
 }
 
 /* Fields in a row of controls carry no bottom margin, so a button lines up with the controls (DLS-051). */
-:where(.ui-filter-bar, .ui-toolbar, .button-row, .inline-field) > .field,
-:where(.ui-filter-bar, .ui-toolbar) form > .field {
+:where(.button-row, .inline-field) > .field {
   margin-block-end: 0;
 }
 
