@@ -83,7 +83,7 @@ public sealed class AiPrivateEndpointTests(TenantWorld world)
     private static object SovereignPolicy(string chat, string embed, string[]? sovereign) => new
     {
         allowlist = new[] { Small, Large, Embedding, chat, embed },
-        routes = AiUseCases.All.ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding, embed }
+        routes = AiUseCases.All.Where(u => u is not (AiUseCases.Transcribe or AiUseCases.Speak)).ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding, embed }
             : AiUseCases.Gated.Contains(u) ? new[] { Small, Large } : new[] { Small, chat, Large }),
         confidential = new[] { chat, embed },
         sovereign,

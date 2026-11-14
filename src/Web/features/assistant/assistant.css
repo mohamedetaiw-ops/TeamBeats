@@ -276,3 +276,19 @@
     min-block-size: 2.75rem;
   }
 }
+
+/* Voice (spec 014 US6): the microphone in the composer bar and Read aloud beside the generated label. */
+.assistant-voice {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs);
+}
+
+.assistant-answer-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm);
+}

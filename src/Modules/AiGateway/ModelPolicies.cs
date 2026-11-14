@@ -46,7 +46,7 @@ public sealed record PolicyDocument(
         {
             return [];
         }
-        var capability = useCase == AiUseCases.Embed ? ModelCapabilities.Embeddings : ModelCapabilities.Chat;
+        var capability = ModelCapabilities.For(useCase);
         return [.. route.Where(m => Allowlist.Contains(m) && catalogue.Models.TryGetValue(m, out var e) && e.Active && e.Can(capability))];
     }
 
@@ -428,7 +428,7 @@ public sealed class ModelPolicies(
                 errors.Add($"routes.{useCase}", "validation.ai.use_case");
                 continue;
             }
-            var capability = useCase == AiUseCases.Embed ? ModelCapabilities.Embeddings : ModelCapabilities.Chat;
+            var capability = ModelCapabilities.For(useCase);
             var route = models.Distinct(StringComparer.Ordinal).ToList();
             if (route.Count > ModelCatalogue.MaxRouteLength ||
                 route.Any(m => !allowlist.Contains(m) || !catalogue.Models.TryGetValue(m, out var e) || !e.Can(capability)))

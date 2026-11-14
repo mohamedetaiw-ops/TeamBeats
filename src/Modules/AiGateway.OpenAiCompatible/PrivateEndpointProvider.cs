@@ -67,6 +67,27 @@ public sealed class PrivateEndpointProvider(IHttpClientFactory http, IConfigurat
         return await OpenAiWire.ReadEmbeddingsAsync(response, inputs.Count, timeout.Token, Label);
     }
 
+    public async Task<ProviderTranscription> TranscribeAsync(string model, byte[] audio, string mediaType, string? language, CancellationToken ct, ProviderTarget? target = null)
+    {
+        var t = Require(target);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(Timeout);
+        using var response = await OpenAiWire.SendAsync(Client, OpenAiWire.TranscriptionRequest(t.BaseUrl, t.Model, audio, mediaType, language, t.ApiKey),
+            stream: false, timeout, Label);
+        var text = await OpenAiWire.ReadTranscriptionAsync(response, timeout.Token, Label);
+        return new ProviderTranscription(text, new AiUsage(0, Math.Max(1, text.Length / 4)));
+    }
+
+    public async Task<ProviderSpeech> SpeakAsync(string model, string text, string voice, CancellationToken ct, ProviderTarget? target = null)
+    {
+        var t = Require(target);
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(Timeout);
+        using var response = await OpenAiWire.SendAsync(Client, OpenAiWire.Request(t.BaseUrl, "audio/speech", OpenAiWire.SpeechBody(t.Model, text, voice), t.ApiKey),
+            stream: false, timeout, Label);
+        return new ProviderSpeech(await OpenAiWire.ReadSpeechAsync(response, timeout.Token, Label), "audio/mpeg", new AiUsage(Math.Max(1, text.Length / 4), 0));
+    }
+
     /// <summary>
     /// The connection and capability test (US6 scenario 1): the models list answers with the key, every registered model is
     /// listed, and each model answers one small call for what it was registered for (a chat, or an embedding). Details are
@@ -115,22 +136,34 @@ public sealed class PrivateEndpointProvider(IHttpClientFactory http, IConfigurat
             }
             checks.Add(new EndpointCheck("model", model.Name, true, null));
             var target = new ProviderTarget(baseUrl, apiKey, model.Name);
-            var embeddings = model.Capabilities.Contains(ModelCapabilities.Embeddings);
+            // One call per model in the capability it serves. A speech to text model needs real audio, so its listing is its check.
+            var kind = model.Capabilities.Contains(ModelCapabilities.Embeddings) ? "embeddings"
+                : model.Capabilities.Contains(ModelCapabilities.Chat) ? "chat"
+                : model.Capabilities.Contains(ModelCapabilities.Speech) ? "speech"
+                : null;
+            if (kind is null)
+            {
+                continue;
+            }
             try
             {
-                if (embeddings)
+                switch (kind)
                 {
-                    await EmbedAsync(model.Name, ["ping"], ct, target);
+                    case "embeddings":
+                        await EmbedAsync(model.Name, ["ping"], ct, target);
+                        break;
+                    case "speech":
+                        await SpeakAsync(model.Name, "ping", "alloy", ct, target);
+                        break;
+                    default:
+                        await ChatAsync(new ProviderChat(model.Name, [new AiMessage(AiRoles.User, "ping")], null, null, 8, null, target), ct);
+                        break;
                 }
-                else
-                {
-                    await ChatAsync(new ProviderChat(model.Name, [new AiMessage(AiRoles.User, "ping")], null, null, 8, null, target), ct);
-                }
-                checks.Add(new EndpointCheck(embeddings ? "embeddings" : "chat", model.Name, true, null));
+                checks.Add(new EndpointCheck(kind, model.Name, true, null));
             }
             catch (ProviderException)
             {
-                checks.Add(new EndpointCheck(embeddings ? "embeddings" : "chat", model.Name, false, "ai.endpoints.checks.call_failed"));
+                checks.Add(new EndpointCheck(kind, model.Name, false, "ai.endpoints.checks.call_failed"));
             }
         }
         return checks;

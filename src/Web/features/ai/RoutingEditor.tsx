@@ -115,6 +115,7 @@ export function RoutingEditor({ catalogue, initial, canOverride }: { catalogue: 
   const name = (model: string) => modelName(byModel.get(model), model, locale);
   const embeds = (m: string) => byModel.get(m)?.capabilities.includes("embeddings") ?? false;
   const chats = (m: string) => byModel.get(m)?.capabilities.includes("chat") ?? false;
+  const serves = (capability: string) => (m: string) => byModel.get(m)?.capabilities.includes(capability) ?? false;
 
   async function send(url: string, method: string, body: unknown, ok: (r: PolicySaveResult) => string) {
     setBusy(true);
@@ -203,7 +204,9 @@ export function RoutingEditor({ catalogue, initial, canOverride }: { catalogue: 
           key={u}
           useCase={u}
           route={routes[u] ?? []}
-          allowed={view.policy.allowlist.filter(u === "embed" ? embeds : chats)}
+          allowed={view.policy.allowlist.filter(
+            u === "embed" ? embeds : u === "transcribe" ? serves("transcription") : u === "speak" ? serves("speech") : chats,
+          )}
           editable={view.editable}
           name={name}
           onChange={(route) => setRoutes({ ...routes, [u]: route })}

@@ -1,6 +1,6 @@
 /** Shapes of the AI gateway admin API (spec 013). The API authorizes and validates everything; pages only show it. */
 
-export const USE_CASES = ["assistant", "summarize", "translate", "draft", "embed", "agent", "evaluation"] as const;
+export const USE_CASES = ["assistant", "summarize", "translate", "draft", "embed", "agent", "evaluation", "transcribe", "speak"] as const;
 
 export type CatalogueEntry = {
   model: string;
@@ -191,7 +191,7 @@ export type OrgPolicyView = {
 
 export type OrgPolicySummary = { unitId: string; version: number; policy: OrgPolicyDocument; updatedAt: string };
 
-export const MODEL_CAPABILITIES = ["chat", "tools", "structured_output", "vision", "embeddings"] as const;
+export const MODEL_CAPABILITIES = ["chat", "tools", "structured_output", "vision", "embeddings", "transcription", "speech"] as const;
 
 export type PrivateModel = { name: string; capabilities: string[]; contextTokens: number };
 

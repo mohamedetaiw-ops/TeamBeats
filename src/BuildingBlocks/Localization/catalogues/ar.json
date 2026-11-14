@@ -2514,5 +2514,12 @@
   "conflict.assistant.file_above_policy": "لا تسمح سياسة الذكاء الاصطناعي للمساعد بقراءة ملفات بهذا التصنيف.",
   "conflict.assistant.file_infected": "رُفض الملف لأن فحص البرامج الضارة وجد تهديدًا.",
   "conflict.assistant.file_scan_failed": "تعذر فحص الملف. حاول مرة أخرى بعد قليل.",
-  "conflict.assistant.file_limit": "يمكن أن تحتوي المحادثة على 5 ملفات على الأكثر. احذف ملفًا أولًا."
+  "conflict.assistant.file_limit": "يمكن أن تحتوي المحادثة على 5 ملفات على الأكثر. احذف ملفًا أولًا.",
+  "validation.assistant.audio_type": "سجّل بصيغة يدعمها المتصفح، مثل WebM أو MP4 الصوتية.",
+  "validation.assistant.audio_size": "اجعل سؤالك المنطوق في حدود دقيقة.",
+  "conflict.assistant.voice_no_speech": "لم يُسمع أي كلام. حاول مرة أخرى بالقرب من الميكروفون.",
+  "conflict.assistant.voice_no_answer": "لا توجد إجابة في هذه المحادثة لقراءتها.",
+  "conflict.assistant.voice_blocked": "لا تسمح سياسة الذكاء الاصطناعي لديك بإرسال هذا المحتوى إلى نموذج الكلام.",
+  "conflict.assistant.voice_quota": "نفد رصيد الذكاء الاصطناعي لهذه الفترة. حاول مرة أخرى بعد تجديده.",
+  "conflict.assistant.voice_unavailable": "الصوت غير متاح الآن. اكتب سؤالك بدلًا من ذلك."
 }

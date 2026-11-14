@@ -25,6 +25,7 @@ public static class AgentsModule
         services.AddScoped<AssistantService>();
         services.AddScoped<AssistantGuests>();
         services.AddScoped<AssistantFiles>();
+        services.AddScoped<AssistantVoice>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.ISearchSummaries, SearchSummaries>();
         services.AddScoped<AssistantHistory>();
         services.AddScoped<AssistantTextActions>();
@@ -175,6 +176,22 @@ public static class AgentsModule
             await files.DeleteAsync(id, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
+        });
+
+        // Voice (spec 014 US6): the audio of a request is read into memory, sent through the gateway and dropped.
+        root.MapGet("/voice", async (AssistantVoice voice, CancellationToken ct) => Results.Ok(await voice.OfferAsync(ct)));
+
+        root.MapPost("/transcribe", async (HttpRequest http, string? language, AssistantVoice voice, CancellationToken ct) =>
+        {
+            var audio = await ReadCappedAsync(http.Body, AssistantVoice.MaxAudioBytes, ct);
+            return Results.Ok(await voice.TranscribeAsync(audio, http.ContentType, language, ct));
+        }).DisableAntiforgery();
+
+        root.MapPost("/speak", async (SpeakRequest request, AssistantVoice voice, HttpContext http, CancellationToken ct) =>
+        {
+            var spoken = await voice.SpeakAsync(request, ct);
+            http.Response.Headers.CacheControl = "no-store";
+            return Results.File(spoken.Audio, spoken.MediaType);
         });
 
         root.MapGet("/settings", async (AssistantHistory history, CancellationToken ct) => Results.Ok(await history.SettingsAsync(ct)));

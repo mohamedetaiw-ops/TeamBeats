@@ -13,8 +13,19 @@ public static class ModelCapabilities
     public const string StructuredOutput = "structured_output";
     public const string Vision = "vision";
     public const string Embeddings = "embeddings";
+    public const string Transcription = "transcription";
+    public const string Speech = "speech";
 
-    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Chat, Tools, StructuredOutput, Vision, Embeddings };
+    public static readonly IReadOnlySet<string> All = new HashSet<string>(StringComparer.Ordinal) { Chat, Tools, StructuredOutput, Vision, Embeddings, Transcription, Speech };
+
+    /// <summary>The capability a model needs to serve a use case.</summary>
+    public static string For(string useCase) => useCase switch
+    {
+        AiUseCases.Embed => Embeddings,
+        AiUseCases.Transcribe => Transcription,
+        AiUseCases.Speak => Speech,
+        _ => Chat,
+    };
 }
 
 /// <summary>A model of the platform catalogue (spec 013 FR-005). Prices are USD per million tokens.</summary>
@@ -233,7 +244,7 @@ public sealed class ModelCatalogue(IDbSession session, IAuditWriter audit, ICloc
         }
         var snapshot = await SnapshotAsync(ct);
         var models = (request.Models ?? []).Distinct(StringComparer.Ordinal).ToList();
-        var capability = useCase == AiUseCases.Embed ? ModelCapabilities.Embeddings : ModelCapabilities.Chat;
+        var capability = ModelCapabilities.For(useCase);
         if (models.Count > MaxRouteLength || models.Any(m => !snapshot.Models.TryGetValue(m, out var e) || !e.Can(capability)))
         {
             throw AppException.Validation("models", "validation.ai.route_model");

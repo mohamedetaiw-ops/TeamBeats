@@ -130,5 +130,60 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(turn.locator(".assistant-sources").getByRole("link", { name: "falcon-notes.txt" })).toBeVisible();
       await expect(page.locator(".assistant-files").getByText("falcon-notes.txt")).toBeVisible();
     });
+
+    // Spec 014 US6: a spoken question lands in the question box to edit before it is sent, and an answer is read aloud.
+    test("a spoken question is put in the box to edit and an answer is read aloud", async ({ page }, testInfo) => {
+      // The browser's microphone and player are stood in for: the recording carries the words the fake model hears.
+      await page.addInitScript(() => {
+        const spoken = "speech:Where does the Falcon pilot start?";
+        Object.defineProperty(navigator, "mediaDevices", {
+          configurable: true,
+          value: { getUserMedia: async () => ({ getTracks: () => [{ stop() {} }] }) },
+        });
+        class FakeRecorder {
+          static isTypeSupported(type: string) {
+            return type.startsWith("audio/webm");
+          }
+          state = "inactive";
+          ondataavailable: ((e: { data: Blob }) => void) | null = null;
+          onstop: (() => void) | null = null;
+          constructor(public stream: unknown) {}
+          start() {
+            this.state = "recording";
+          }
+          stop() {
+            this.state = "inactive";
+            this.ondataavailable?.({ data: new Blob([spoken], { type: "audio/webm" }) });
+            this.onstop?.();
+          }
+        }
+        Object.defineProperty(window, "MediaRecorder", { configurable: true, value: FakeRecorder });
+        (window as unknown as { __played: number }).__played = 0;
+        HTMLMediaElement.prototype.play = function () {
+          (window as unknown as { __played: number }).__played += 1;
+          return Promise.resolve();
+        };
+      });
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/assistant`);
+      const mic = page.getByRole("button", { name: msg(locale, "assistant.voice.start"), exact: true });
+      await mic.click();
+      await page.getByRole("button", { name: msg(locale, "assistant.voice.stop"), exact: true }).click();
+      const box = page.getByLabel(msg(locale, "assistant.label"), { exact: true });
+      await expect(box).toHaveValue("Where does the Falcon pilot start?");
+      await expectAccessible(page, testInfo, `assistant-voice-${locale}`);
+
+      // Nothing is asked until the person sends it.
+      await expect(page.locator(".assistant-turn")).toHaveCount(0);
+      await box.fill(questions[locale]);
+      await page.getByRole("button", { name: msg(locale, "assistant.ask"), exact: true }).click();
+      await page.waitForURL(/\/assistant\?c=/);
+      const turn = page.locator(".assistant-turn").first();
+      await turn.getByRole("button", { name: msg(locale, "assistant.voice.read"), exact: true }).click();
+      await expect(turn.getByRole("button", { name: msg(locale, "assistant.voice.stopReading"), exact: true })).toBeVisible();
+      expect(await page.evaluate(() => (window as unknown as { __played: number }).__played)).toBe(1);
+      // The citations stay on screen while it reads.
+      await expect(turn.locator(".assistant-sources")).toBeVisible();
+    });
   });
 }

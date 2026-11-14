@@ -24,6 +24,7 @@ import {
   type Turn,
 } from "@/lib/assistant/types";
 import { ConversationFiles } from "./ConversationFiles";
+import { ReadAloud, VoiceInput } from "./Voice";
 import { Result, runAction } from "./TextActions";
 
 const textActions = ["rewrite", "draft", "summarize", "explain", "translate"] as const;
@@ -102,7 +103,7 @@ function Feedback({ turn }: { turn: Turn }) {
 }
 
 /** One turn: the question, then the answer with its citations, or the message for why there is none (FR-011). */
-function TurnItem({ turn }: { turn: Turn }) {
+function TurnItem({ turn, voice }: { turn: Turn; voice: boolean }) {
   const t = useTranslations("assistant");
   const tk = useTranslations("search.kinds");
   const format = useFormatter();
@@ -118,7 +119,10 @@ function TurnItem({ turn }: { turn: Turn }) {
       <div className="assistant-answer" lang={turn.language} dir={turn.language === "ar" ? "rtl" : "ltr"}>
         {turn.outcome === "answered" && turn.answer ? (
           <>
-            <p className="assistant-label">{t("generated")}</p>
+            <div className="assistant-answer-head">
+              <p className="assistant-label">{t("generated")}</p>
+              {voice ? <ReadAloud turnId={turn.id} /> : null}
+            </div>
             <p className="assistant-text">
               {answerParts(turn.answer, turn.citations).map((part, i) =>
                 "text" in part ? (
@@ -193,12 +197,15 @@ export function AssistantChat({
   scope = null,
   uiLocale,
   files: initialFiles = null,
+  voice = null,
 }: {
   initial: Conversation | null;
   conversations: ConversationSummary[];
   uiLocale: string;
   /** The conversation's files, or null when the API does not offer files to this person. */
   files?: ConversationFile[] | null;
+  /** Voice input and read aloud, or null when the API does not offer voice to this person. */
+  voice?: { maxSeconds: number } | null;
   /** Keeps a new conversation to one item; the API keeps it for every later turn. */
   scope?: AssistantScope | null;
 }) {
@@ -419,7 +426,7 @@ export function AssistantChat({
         ) : null}
         <ol className="assistant-turns" aria-busy={pending ? true : undefined}>
           {turns.map((turn) => (
-            <TurnItem key={turn.id} turn={turn} />
+            <TurnItem key={turn.id} turn={turn} voice={voice !== null} />
           ))}
           {runs.map((run) => (
             <li key={run.id} className="assistant-turn">
@@ -517,6 +524,17 @@ export function AssistantChat({
                   <option value="en">{t("tools.languages.en")}</option>
                 </select>
               </label>
+            ) : null}
+            {mode === "ask" && voice ? (
+              <VoiceInput
+                maxSeconds={voice.maxSeconds}
+                disabled={pending !== null}
+                onTranscript={(text) => {
+                  // The transcript joins what is typed and waits for the person to edit and send it.
+                  setQuestion((current) => (current.trim() ? `${current.trim()} ${text}` : text).slice(0, MAX_QUESTION));
+                  input.current?.focus();
+                }}
+              />
             ) : null}
             <p id={hintId} className="field-hint">
               {mode === "ask" ? t("hint") : t("tools.intro")}

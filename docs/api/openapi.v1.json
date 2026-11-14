@@ -21965,6 +21965,61 @@
         }
       }
     },
+    "/api/v1/assistant/voice": {
+      "get": {
+        "tags": [
+          "Assistant"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/transcribe": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "parameters": [
+          {
+            "name": "language",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/speak": {
+      "post": {
+        "tags": [
+          "Assistant"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SpeakRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/assistant/settings": {
       "get": {
         "tags": [
@@ -39273,6 +39328,21 @@
               "null",
               "boolean"
             ]
+          }
+        }
+      },
+      "SpeakRequest": {
+        "required": [
+          "turnId"
+        ],
+        "type": "object",
+        "properties": {
+          "turnId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },

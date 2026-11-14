@@ -5000,7 +5000,9 @@
         "draft": "Drafting",
         "embed": "Search embeddings",
         "agent": "Agents",
-        "evaluation": "Evaluation"
+        "evaluation": "Evaluation",
+        "transcribe": "Voice input",
+        "speak": "Read aloud"
       },
       "empty": "No model. Requests for this use case are refused.",
       "default": "Default",
@@ -5277,7 +5279,8 @@
         "connection": "Connection",
         "model": "Model listed",
         "chat": "Chat answer",
-        "embeddings": "Embeddings answer"
+        "embeddings": "Embeddings answer",
+        "speech": "Speech answer"
       },
       "checks": {
         "secret_missing": "The secret manager has no key under this reference.",
@@ -5299,7 +5302,9 @@
         "tools": "Tool calls",
         "structured_output": "Structured output",
         "vision": "Images",
-        "embeddings": "Embeddings"
+        "embeddings": "Embeddings",
+        "transcription": "Speech to text",
+        "speech": "Text to speech"
       },
       "addModel": "Add a model",
       "removeModel": "Remove model {number}",
@@ -5718,6 +5723,21 @@
         "confidential": "Confidential",
         "restricted": "Restricted"
       }
+    },
+    "voice": {
+      "start": "Ask by voice",
+      "stop": "Stop recording",
+      "recording": "Recording. Press stop when you are done, or it stops after {seconds} seconds.",
+      "transcribing": "Turning your speech into text",
+      "ready": "Your words are in the question box. Edit them, then send.",
+      "failed": "Voice did not work. Try again or type your question.",
+      "unsupported": "This browser cannot record audio. Type your question instead.",
+      "permission": "Allow the microphone in your browser to ask by voice.",
+      "empty": "Nothing was recorded. Try again.",
+      "read": "Read aloud",
+      "stopReading": "Stop reading",
+      "preparing": "Preparing the audio",
+      "playFailed": "The audio could not play in this browser."
     }
   },
   "agents": {
