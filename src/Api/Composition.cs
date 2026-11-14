@@ -115,6 +115,18 @@ public static class TeamBeatsModules
         {
             services.AddSingleton<IDocumentConverter, UnavailableConverter>();
         }
+        // Text of PDFs and OCR of scans and pictures come from Apache Tika when it is configured (spec 011 FR-020).
+        if (configuration[TikaTextRecognizer.UrlKey] is { Length: > 0 } tika)
+        {
+            services.AddHttpClient(TikaTextRecognizer.ClientName, c => c.Timeout = TikaTextRecognizer.Timeout);
+            var tikaUrl = new Uri(tika.EndsWith('/') ? tika : tika + "/");
+            var languages = configuration[TikaTextRecognizer.LanguagesKey] is { Length: > 0 } l ? l : TikaTextRecognizer.DefaultLanguages;
+            services.AddSingleton<ITextRecognizer>(sp => new TikaTextRecognizer(sp.GetRequiredService<IHttpClientFactory>(), tikaUrl, languages));
+        }
+        else
+        {
+            services.AddSingleton<ITextRecognizer, UnavailableTextRecognizer>();
+        }
 
         services.AddTeamBeatsMessaging();
         services.AddMessageTransport(configuration);

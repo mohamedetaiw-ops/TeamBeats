@@ -27,7 +27,24 @@ Type carries most of the intranet: news, policies, forms, names. It must be legi
 | `font.size.sm` | 14 | 14 | 14 | 14 | Secondary text, hints, table cells |
 | `font.size.xs` | 12 | 12 | 12 | 12 | Labels under rail icons, metadata. Never for sentences |
 
-Compact density reduces each step by one or two pixels; body text never goes below 14 px (enforced by the theme check `validation.theme.text_too_small`).
+Compact density reduces the larger steps by one or two pixels. In every design, mode and density `font.size.xs` is at least 12 px and body text at least 14 px (enforced by the theme check `validation.theme.text_too_small`). Nothing on screen is smaller than 12 px.
+
+## Type roles
+
+Text uses these roles and nothing else (DLS-104). A screen shows at most five sizes and one page title size.
+
+| Role | Token | Weight |
+|---|---|---|
+| Page title | `font.size.xxl` | Semibold |
+| Section title | `font.size.xl` | Semibold |
+| Card and widget title | `font.size.lg` or `font.size.md` | Semibold |
+| Row title | `font.size.md` or `font.size.sm` | Semibold |
+| Body | `font.size.md` | Regular |
+| Secondary line, table cell | `font.size.sm` | Regular |
+| Meta, label | `font.size.xs` | Regular or medium |
+| Data number of a stat | `font.size.xl` | Bold |
+
+Native controls (buttons, selects, text boxes, date controls) inherit the design's font family and take their size from a token. A browser default font or size on screen is a defect.
 
 ## Rules
 

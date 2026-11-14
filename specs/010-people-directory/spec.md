@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (profiles from the directory with source ownership and visibility policy, reporting line, location attribute, people search, profile page, org chart, My team, newcomers, people component, contact actions), R2 (skills and expertise with endorsements, find an expert, out of office from leave, HR system fields through spec 019, badges from recognition in spec 023, profile completeness prompts, delegate and assistant relationships), R3 (Teams presence through spec 018, expertise suggested from authored content with consent) |
-| Last updated | 2026-11-07 |
+| Last updated | 2026-11-14 |
 | Approved | 2026-11-07 by Mohamed (standing approval to proceed) |
 | Requirement IDs | EXP-005, EXP-006, PPL-001 to PPL-022 (new) |
 | Use cases | UC-05 |
@@ -157,6 +157,9 @@ Layla needs someone who knows Arabic legal translation. She searches "legal tran
 - **PPL-022 / FR-022**: Profiles MUST keep their last synced values when the directory is unavailable, with the sync time shown to administrators.
 - **FR-023**: The unit filter MUST make every unit distinguishable: units are listed as a tree with indentation, or with the parent's name when two units share a name ("Operations, Demo Services"). Acceptance: no two entries of the unit filter read the same.
 - **FR-024**: While a search or filter is active, the People page MUST show only the results; the New joiners section shows only without a search. A person card with no title or unit shows "Title not set" in the secondary text style instead of an empty line. Acceptance: searching People hides New joiners; a person with no title shows the fallback.
+- **FR-025**: The directory MUST use the filter toolbar of spec 036 DLS-106 (search first, then unit and location, with facet counts), offer list and grid results with sorting, and show results before discovery content. A person card or row offers up to two quick actions (email, chat, call) for channels the person has and the viewer may use (spec 036 DLS-113).
+- **FR-026**: My team MUST offer cards, a list and an organization tree, with a filter for direct and indirect reports; manager actions appear only where the viewer is authorized.
+- **FR-027**: The profile MUST open with the identity header and group fields under Work, Contact, About and Preferences (spec 036 DLS-064). Read-only fields MUST NOT look like inputs; each group says once whether it is managed by the directory or editable here; Save applies only to changed fields and the page shows when there are unsaved changes. Names in two scripts and long titles wrap without breaking the layout.
 
 ## 6. Business and validation rules
 - Default visibility: name, photo, title, unit, email, work phone, office location and preferred language to everyone in the tenant; mobile phone and hire date to managers and HR; employee number to HR and administrators.

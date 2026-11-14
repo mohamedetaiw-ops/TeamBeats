@@ -9,7 +9,7 @@
 | Owner | Mohamed |
 | Approver | Mohamed |
 | Target release | R1 (built-in document management: libraries, metadata, versions, check-out and check-in, preview, permissions, knowledge base, controlled documents with approval), R2 (retention and disposition, legal hold, brand asset portal, watermarking and download controls, external sharing to guests, bulk import, SharePoint Online connected libraries and import from SharePoint), R3 (records declaration with disposition certificates, customer-managed keys per library) |
-| Last updated | 2026-11-05 |
+| Last updated | 2026-11-14 |
 | Approved | 2026-11-05 by Mohamed |
 | Requirement IDs | KNO-001, KNO-003, KNO-006, ADM-003, INT-002 (SharePoint document part), DOC-001 to DOC-033 (new) |
 | Use cases | UC-04, UC-06 (as a source for the assistant), UC-10 (SharePoint content), UC-14 (deletion and legal hold) |
@@ -236,6 +236,8 @@ Acme already keeps its finance and project files in SharePoint Online. The integ
 - **FR-032 / DOC-032**: Tenants MUST be able to map Microsoft Purview sensitivity labels to the four TeamBeats classifications (FR-019). Unlabelled items take the connected library's default classification (Internal unless set); labels without a mapping MUST be treated as Confidential.
 - **FR-033 / DOC-033**: Library managers MUST be able to import a SharePoint library or folder into a TeamBeats library through bulk import (FR-022), with column to field mapping, latest or all versions, author matching, and a report of permission differences. The source MUST NOT be changed.
 - **FR-034**: A library card MUST name its scope for every scope the API returns (whole organization, organization unit, site, space), and any scope without a name shows a generic "Limited access" label, never a raw key (spec 007 FR-030). Acceptance: the Finance system rollout library on staging shows "Project space".
+- **FR-035**: The Documents page MUST read as a place to find files, not a list of libraries only: search across the libraries the person can open, recently opened and pinned files, then the libraries as rows with their scope, owner, file count and last change. A library and a file MUST be told apart by icon and label. An empty or restricted view MUST NOT reveal names the person cannot open.
+- **FR-036**: The Knowledge page MUST be search first: a search box, categories with counts, featured and recently updated articles, each as a row with its category icon, owner, reading time and last reviewed date; articles past their review date show the review state to their owners. An article page lists prerequisites, steps, related services and ends with "Was this helpful?" (spec 036 DLS-065, DLS-107).
 
 ## 6. Business and validation rules
 - Minor versions are kept up to 50 per major version by default; older minor versions are pruned when a major version is approved, unless the library keeps all.

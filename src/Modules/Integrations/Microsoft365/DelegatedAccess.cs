@@ -27,7 +27,8 @@ public sealed record OutlookConnectStart(string? Url, string? Binding, string? O
 internal sealed record DelegatedSetup(Guid ConnectionId, string ExternalTenantId, IReadOnlyList<string> Enabled, IReadOnlyList<string> Granted,
     IReadOnlyList<string> Scopes)
 {
-    public static readonly string[] DelegatedFeatures = [Microsoft365Features.Mail, Microsoft365Features.Calendar, Microsoft365Features.FreeBusy];
+    public static readonly string[] DelegatedFeatures = [Microsoft365Features.Mail, Microsoft365Features.Calendar, Microsoft365Features.FreeBusy,
+        Microsoft365Features.OfficeEditing];
 
     public static async Task<DelegatedSetup?> LoadAsync(IDbSession session, CancellationToken ct, Guid? connectionId = null)
     {

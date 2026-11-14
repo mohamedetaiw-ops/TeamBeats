@@ -1,13 +1,14 @@
 <!--
 Sync Impact Report
-Version: 1.2.1
+Version: 1.3.0
 Source: AI Intranet Product Foundation v0.1, section 17, plus review findings (docs/review/foundation-v0.1-review.md)
 Source rules C-01..C-20 are all carried over and grouped into Parts A to E.
 Added beyond the source: V development authentication isolation, XI untrusted content, XII AI-native not AI-dependent, XIII AI in every package, XXI backend entitlements, XXII dependency licensing, XXV data classification and privacy
 Templates to keep aligned: .specify/templates/spec-template.md, plan-template.md, tasks-template.md
 Added in 1.2.0: XXXI one design language (spec 036, docs/design-system).
 Changed in 1.2.1: XXXI names four platform designs (Studio added, spec 036).
-Status: RATIFIED by Mohamed (1.0.0 on 2026-11-04, 1.1.0 and 1.1.1 on 2026-11-05, 1.2.0 on 2026-11-09 and 1.2.1 on 2026-11-10 under standing approval). Binding.
+Changed in 1.3.0: XXXI expanded from a visual language to an experience system: page hierarchy, content budgets, one instance per data source, complete states, five separate experience settings, presentation variants per design, one system for admin and employee screens, gates on real pages (spec 036 DLS-100 to DLS-119).
+Status: RATIFIED by Mohamed (1.0.0 on 2026-11-04, 1.1.0 and 1.1.1 on 2026-11-05, 1.2.0 on 2026-11-09, 1.2.1 on 2026-11-10 and 1.3.0 on 2026-11-14 under standing approval). Binding.
 -->
 
 # TeamBeats Constitution
@@ -301,17 +302,21 @@ Verified by: schema validation tests per record type including rejected executab
 Why: the experience layer must accept components from many teams and survive any one of them failing, without moving product rules into the browser where they cannot be trusted.
 Verified by: frontend lint rules for import boundaries between feature folders and against direct fetches outside the API client; architecture test that templates and the builder name no component ID; the two-pack component swap test of spec 032; failure injection tests per placement.
 
-### XXXI. One design language
+### XXXI. One design language, one experience system
 
-- Every user interface MUST follow the TeamBeats Design System (`docs/design-system`, spec 036): its design guidelines (typography, colour, icons, imagery, content, layout, actions, accessibility) and its technical guidelines (frontend practice, security, performance, consistency).
-- Screens MUST be built from the shared components and templates. A new pattern is added to the system (guidelines, gallery, tests) in the same change, never built as a one-off.
-- Styles MUST read only the generated `--tb-*` tokens. Colours, sizes, fonts and icons MUST NOT be hard-coded. Images MUST carry alternative text or be marked decorative.
-- The look of a tenant comes only from one of the platform designs (Beats, Atlas, Pulse, Studio) plus validated tokens. A design changes appearance and navigation placement only, never behavior, content, permissions or information architecture.
-- Every spec with a user interface MUST reference the design system in its UX section and name any new component or token it needs.
-- UI changes MUST pass the design tests: designers test concept, usability, content, accessibility and responsive layout before handover, and review the build with the developer after it; CI runs the consistency gate and the design suite in every design and launch language.
+- Every user interface MUST follow the TeamBeats Design System (`docs/design-system`, spec 036): its design guidelines (typography, colour, icons, imagery, content, layout, composition, actions, accessibility) and its technical guidelines (frontend practice, security, performance, consistency). Employee screens and administration screens are one system: the same page frame, page header, tabs, toolbar, tables, tags, forms and states. There is no separate administration style.
+- Screens MUST be built from the shared components and templates. A new pattern is added to the system (guidelines, gallery, tests) in the same change, never built as a one-off. A feature MUST NOT draw its own card, row, tab, tag, filter bar, page header or empty state where a shared part exists.
+- Styles MUST read only the generated `--tb-*` tokens. Colours, sizes, fonts and icons MUST NOT be hard-coded. Images MUST carry alternative text or be marked decorative. Text MUST NOT render under 12 px in any design, mode or density.
+- Every page MUST be composed, not stacked: it names its primary action or decision, its supporting context and its optional discovery content, and shows them in that order of visual weight. The pattern for each kind of information comes from the pattern choice rules of the design system; a card is not the default.
+- Summary components MUST respect a content budget (a maximum number of items and a maximum height, then a path to the full view), and a page MUST NOT show the same data source twice unless the two placements are declared as different views. The platform enforces both; pages do not rely on manual care.
+- Every shared component MUST ship all its states: loading, empty, partial data, error with retry, denied, success, disabled, long text, narrow container, keyboard focus, dark mode and right to left. A missing state is unfinished work, not polish.
+- Five experience settings MUST stay separate and MUST NOT reset each other: brand identity (logo, colours, fonts, imagery), design (visual personality), layout preset (which components sit where), appearance mode (light, dark, system) and density with accessibility options. Their resolution order is the documented order of spec 033, never the load order of style sheets. Hard constraints (security, keyboard access, visible focus, contrast, the text size floor) cannot be overridden at any level.
+- The look of a tenant comes only from one of the platform designs (Beats, Atlas, Pulse, Studio) plus validated tokens. A design changes appearance, navigation placement, its default density and the approved presentation variant of shared parts. A design MUST NOT change behavior, content, permissions, available actions or information architecture, and every variant of a part shares one data and action contract. Tenants choose typed values; they never enter CSS, markup or scripts (XXIX).
+- Every spec with a user interface MUST reference the design system in its UX section, name any new component or token it needs, and state the page hierarchy and the states of each screen.
+- UI changes MUST pass the design tests: designers test concept, usability, content, accessibility and responsive layout before handover, and review the build with the developer after it; CI runs the consistency gate and the design suite in every design and launch language, on the component gallery and on the product's main pages.
 
-Why: one language makes the product clear, accessible and trustworthy, lets one code line serve every customer's look, and stops drift that no review can catch by eye.
-Verified by: `npm run verify` (stylelint, token gate, design gate, literal-string lint, message check); `tests/Unit/DesignPresetTests.cs`; `tests/Acceptance/specs/design-system.spec.ts` (axe, reflow, target size, visual baselines); designer sign-off on pull requests that change UI.
+Why: one language makes the product clear, accessible and trustworthy, lets one code line serve every customer's look, and stops drift that no review can catch by eye. A system that governs only single parts still produces pages that are long, repetitive and unclear, so the rules reach the page.
+Verified by: `npm run verify` (stylelint, token gate, design gate including shared part usage and the text size floor, literal-string lint, message check); `tests/Unit/DesignPresetTests.cs`; `tests/Acceptance/specs/design-system.spec.ts` (axe, reflow, target size, visual baselines on the gallery and the main pages); the content budget and single instance tests of spec 032; designer sign-off on pull requests that change UI.
 
 ---
 
@@ -322,4 +327,4 @@ Verified by: `npm run verify` (stylelint, token gate, design gate, literal-strin
 - **Compliance.** Every plan has a Constitution Check gate. Every pull request review confirms compliance. Deviations must be listed in the plan's Complexity Tracking table with a justification, or the plan is not approved.
 - **Owners.** Product owner and architecture owner: Mohamed (until named otherwise).
 
-**Version**: 1.2.1 | **Ratified**: 2026-11-04 by Mohamed | **Last amended**: 2026-11-10 by Mohamed (standing approval)
+**Version**: 1.3.0 | **Ratified**: 2026-11-04 by Mohamed | **Last amended**: 2026-11-14 by Mohamed (standing approval)

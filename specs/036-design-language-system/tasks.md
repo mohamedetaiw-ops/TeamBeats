@@ -61,11 +61,26 @@ Root cause found on 14 November 2026: home widgets had no shared frame or row pa
 - [x] T036 Every other home widget on the frame (engagement, learning, services, toolbox, quick links, news list, people, documents) and the `check:design` rule for the frame
 - [ ] T037 Inner pages: the list cards of content, documents, people and spaces on the frame (`content-card`, `documents-card`, `people-section`, `spaces-section`), the space calendar on `RangeMonth` with the day panel and its event list on `AgendaRow`, and the Studio surface list in designs.css reduced to `.ui-widget`
 
-## Phase 10: Admin pages review of 14 November 2026 (DLS-092 to DLS-099, spec 006 FR-020 to FR-022)
+## Phase 10: Experience system (DLS-100 to DLS-119)
+From the UX, DLS and frontend enhancement report of 14 November 2026. Foundations first, then pages.
+- [x] T038 Constitution XXXI 1.3.0, DLS-100 to DLS-119, linked requirements in specs 008, 009, 010, 011, 014, 015, 016, 025, 032, 033 and 037, guideline pages (composition, layout, typography, templates, designs, testing, consistency)
+- [ ] T039 Type and frame foundation: 12 px floor in every density (`Tokens.cs`, theme check), native controls inherit the font, footer at the end of the window, one page header contract on every page, no one-level breadcrumb, soft current navigation item in every design, gate rules for the page header and literal sizes (DLS-104, DLS-105, DLS-118)
+- [ ] T040 Filter toolbar part with applied filter chips; one tab style and one tag shape; People, Policies, Documents, Requests and Services on the toolbar (DLS-106)
+- [ ] T041 Content budgets and View all in `Widget`, one instance per source in the renderer and the builder, placement states in the frame (DLS-101 to DLS-103, spec 032 FR-071 to FR-073)
+- [ ] T042 Tasks: row actions, type icons, review side panel, undo, delegation as a guided dialog (DLS-108, DLS-115, spec 016)
+- [ ] T043 Calendar: agenda grouping, week overlaps, month overflow, one agenda, home summary (DLS-119, spec 037)
+- [ ] T044 Assistant workspace on the assistant parts with tools as composer modes and the cannot verify state (DLS-114, spec 014)
+- [ ] T045 Home views: first viewport contract, Team lead and Plant floor as persona views, no repeated counts, news lead without a placeholder (DLS-100, DLS-102, spec 008)
+- [ ] T046 Services marketplace layout and My requests progress (DLS-063, DLS-107, spec 016)
+- [ ] T047 People toolbar, person forms and quick actions; policies summary and uniform status; knowledge and documents search first; editorial article, reactions and comments (DLS-109, DLS-112, DLS-113, specs 009, 010, 011, 025)
+- [ ] T048 Design descriptors and variant tokens in the four designs, variants on the news lead, stat tiles, work rows, tabs, cards and briefing (DLS-110, spec 033 FR-032)
+- [ ] T049 Design suite on the main pages in every design, language and density with the high-volume seed; gallery state coverage; visualization rules on stat and chart parts (DLS-111, DLS-117, DLS-118)
+
+## Phase 11: Admin pages review of 14 November 2026 (DLS-092 to DLS-099, spec 006 FR-020 to FR-022)
 A review of the 35 admin pages on staging found 23 issues: no current item in the admin menu, stored keys shown as text, 11px text, small targets, header counts missing on some pages, different headers, menu names unlike page titles, repeated headings, uneven form fields, cramped sections, a red Remove on every Roles row, wrapping dates, empty cells, clipped issuer URLs, a fractional head count axis, two tab styles, chips in many shapes and mixed fonts. Global parts (12px minimum, control fonts, one tab style, one tag shape, page header contract, empty state, filter bar) come from the design foundation thread (DLS-100 onward); these tasks are the admin side.
-- [x] T038 Admin menu current item and selected state, menu names equal page titles, one page header and one h1 on every admin page, header counts stable, phone menu folded behind one button (DLS-092, spec 006 FR-020)
-- [x] T039 Readable names for audit actions, permissions, capabilities and tokens, `code.ui-key` for secondary keys, check:messages coverage (DLS-093, spec 006 FR-021)
-- [x] T040 Admin forms on `ui-field-grid`, section rhythm on Attendance, Calendars, Brand, Process operations and HR integration (DLS-094, DLS-099)
-- [x] T041 Admin tables: dash for empty cells, no-wrap dates and statuses, quiet row actions with confirmation on Roles, long values on Sign-in, Model policy columns, Audit filters (DLS-095 to DLS-097)
-- [x] T042 Count chart ticks and single point stat (DLS-098); Plan page sentence and layout; Connections demo label and row actions
-- [x] T043 `admin-layout.spec.ts` page check across every admin section, English and Arabic, desktop and phone
+- [x] T050 Admin menu current item and selected state, menu names equal page titles, one page header and one h1 on every admin page, header counts stable, phone menu folded behind one button (DLS-092, spec 006 FR-020)
+- [x] T051 Readable names for audit actions, permissions, capabilities and tokens, `code.ui-key` for secondary keys, check:messages coverage (DLS-093, spec 006 FR-021)
+- [x] T052 Admin forms on `ui-field-grid`, section rhythm on Attendance, Calendars, Brand, Process operations and HR integration (DLS-094, DLS-099)
+- [x] T053 Admin tables: dash for empty cells, no-wrap dates and statuses, quiet row actions with confirmation on Roles, long values on Sign-in, Model policy columns, Audit filters (DLS-095 to DLS-097)
+- [x] T054 Count chart ticks and single point stat (DLS-098); Plan page sentence and layout; Connections demo label and row actions
+- [x] T055 `admin-layout.spec.ts` page check across every admin section, English and Arabic, desktop and phone

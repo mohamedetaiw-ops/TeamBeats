@@ -1,11 +1,14 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { problemMessages } from "@/lib/notifications/types";
+import { connectHref } from "@/components/experience/outlook";
 import {
+  documentHref,
   nameIn,
   type DocumentType,
+  type OfficeEditView,
   type DocumentView,
   type PreviewView,
   type TokenView,
@@ -63,6 +66,9 @@ export function DocumentPanel({
   const [note, setNote] = useState("");
   const [major, setMajor] = useState(false);
   const [effectiveOn, setEffectiveOn] = useState("");
+  const [office, setOffice] = useState<OfficeEditView | null>(null);
+  const [officeNote, setOfficeNote] = useState("");
+  const [officeMajor, setOfficeMajor] = useState(false);
 
   const type = types.find((x) => x.id === doc.typeId) ?? null;
   const controlled = doc.controlled ?? null;
@@ -107,6 +113,69 @@ export function DocumentPanel({
         body === undefined ? undefined : { "content-type": "application/json" },
       body: body === undefined ? undefined : JSON.stringify(body),
     });
+
+  async function reloadOffice() {
+    try {
+      const response = await fetch(`${base(doc.id)}/office`);
+      if (response.ok) setOffice((await response.json()) as OfficeEditView);
+    } catch {
+      // Without an answer the browser edit is simply not offered.
+    }
+  }
+
+  // Whether "Edit in browser" is offered is asked once the page is shown; only contributors can edit.
+  const contributes = doc.rights.contribute;
+  useEffect(() => {
+    if (!contributes) return;
+    let live = true;
+    fetch(`${base(initial.id)}/office`)
+      .then(async (r) => {
+        if (live && r.ok) setOffice((await r.json()) as OfficeEditView);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [contributes, initial.id]);
+
+  async function startOffice() {
+    const response = await run("office", () => post("/office/start"));
+    if (!response) return;
+    setOffice((await response.json()) as OfficeEditView);
+    const fresh = await fetch(base(doc.id));
+    if (fresh.ok) setDoc((await fresh.json()) as DocumentView);
+    setStatus(t("officeStarted"));
+  }
+
+  function officeCheckIn(e: React.FormEvent) {
+    e.preventDefault();
+    void run(
+      "officeCheckin",
+      () =>
+        post("/office/checkin", {
+          note: officeNote.trim() || null,
+          publish: officeMajor && !controlled,
+        }),
+      t("officeCheckedIn"),
+    ).then((r) => {
+      if (r) {
+        setOfficeNote("");
+        void reloadOffice();
+      }
+    });
+  }
+
+  function officeDiscard() {
+    void run(
+      "officeDiscard",
+      () => post("/office/discard"),
+      t("officeDiscarded"),
+    ).then((r) => {
+      if (r) void reloadOffice();
+    });
+  }
+
+  const editing = office?.state === "editing";
 
   async function download(version?: string) {
     const response = await run("download", () =>
@@ -308,6 +377,25 @@ export function DocumentPanel({
             {t("checkOut")}
           </Button>
         ) : null}
+        {office?.state === "ready" &&
+        doc.checkedIn &&
+        (!doc.checkedOutBy || mine) &&
+        controlled?.release !== "in_approval" ? (
+          <Button
+            busy={busy === "office"}
+            busyLabel={t("busy")}
+            onClick={() => void startOffice()}
+          >
+            {t("officeEdit")}
+          </Button>
+        ) : null}
+        {(office?.state === "not_connected" || office?.state === "reconnect") &&
+        doc.checkedIn &&
+        !doc.checkedOutBy ? (
+          <a className="button" href={connectHref(documentHref(doc.id))}>
+            {t("officeConnect")}
+          </a>
+        ) : null}
         {controlled?.release === "in_approval" && doc.rights.contribute ? (
           <Button
             busy={busy === "withdraw"}
@@ -376,7 +464,67 @@ export function DocumentPanel({
         </section>
       ) : null}
 
-      {mine ? (
+      {editing && office?.editUrl ? (
+        <form
+          className="documents-card"
+          onSubmit={officeCheckIn}
+          noValidate
+          aria-labelledby={`${ids}-office-title`}
+        >
+          <h2 id={`${ids}-office-title`}>{t("officeTitle")}</h2>
+          <p>{t("officeIntro")}</p>
+          <p>
+            <a
+              className="button button-primary"
+              href={office.editUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="office-open"
+            >
+              {t("officeOpen")}
+            </a>
+          </p>
+          <div className="field">
+            <label htmlFor={`${ids}-office-note`}>{t("note")}</label>
+            <input
+              id={`${ids}-office-note`}
+              value={officeNote}
+              onChange={(e) => setOfficeNote(e.target.value)}
+              maxLength={500}
+            />
+          </div>
+          {controlled ? null : (
+            <label className="documents-check">
+              <input
+                type="checkbox"
+                checked={officeMajor}
+                onChange={(e) => setOfficeMajor(e.target.checked)}
+              />
+              {t("major")}
+            </label>
+          )}
+          <div className="documents-actions">
+            <Button
+              type="submit"
+              variant="primary"
+              busy={busy === "officeCheckin"}
+              busyLabel={t("busy")}
+            >
+              {t("officeCheckIn")}
+            </Button>
+            <Button
+              variant="destructive"
+              busy={busy === "officeDiscard"}
+              busyLabel={t("busy")}
+              onClick={officeDiscard}
+            >
+              {t("officeDiscard")}
+            </Button>
+          </div>
+        </form>
+      ) : null}
+
+      {mine && !editing ? (
         <form className="documents-card" onSubmit={checkIn} noValidate>
           <h2>{t("checkInTitle")}</h2>
           <div className="field">

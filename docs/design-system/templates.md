@@ -4,8 +4,8 @@ Templates are ready page patterns built only from the shared components. Adminis
 
 | Template | Spec 032 layout | Contents | Use for |
 |---|---|---|---|
-| Home | Home layout with hero and grid regions | Briefing hero at the top start with Your day beside it, featured news with your services, calendar and mail, then the campaign band at the bottom. Cards for features not built yet stay hidden | Employee home, organization homes |
-| List | Contained page | Page header, section tabs, filter bar or chips, data table or list rows, empty state | Policy register, requests, my policies |
+| Home | Home layout with hero and grid regions | A compact greeting, then the attention queue (wide) beside the next up panel (narrow), then your services beside the lead story, then calendar and mail summaries and role components, the campaign band last. Each home view (My day, Team lead, Plant floor) is its own preset for its kind of work (spec 008 FR-067 to FR-069). Cards for features not built yet stay hidden | Employee home, organization homes |
+| List | Contained page | Page header, section tabs, what needs attention, the filter toolbar, data table or list rows, empty state | Policy register, requests, my policies |
 | Catalogue | Contained page | Page header, filter bar, tile cards grouped by category, favourites | Services, knowledge spaces, document libraries |
 | Directory | Contained page | Page header, section tabs, search, person cards | People, my team |
 | Detail | Split view | Page header with actions, main content, side column for related actions | A policy, a request, tasks with delegation |
@@ -45,6 +45,9 @@ Every admin section (spec 006 FR-020 to FR-022) uses the same frame so an admini
 
 ## Rules
 
+- Every page states its three levels (primary action, supporting context, discovery) and its states; see [Composition](foundations/composition.md).
+- Summary components keep to their content budget and a page shows a data source once.
+- Administration pages use the same templates and parts as employee pages.
 - One h1 per page, set by the template.
 - Regions keep their order in the reading direction; components never break out of their region.
 - Every template is checked at 375, 768 and 1440 px, in Arabic and English, light and dark, before release.

@@ -45,6 +45,7 @@ public static class IntegrationsModule
         services.AddScoped<ICalendar, GraphCalendar>();
         services.AddScoped<Agents.Contracts.IAgentTool, CalendarEventsTool>();
         services.AddScoped<IAvailability, GraphAvailability>();
+        services.AddScoped<IOfficeEditor, GraphOfficeEditor>();
         services.AddScoped<IRoomMailboxes, RoomMailboxes>();
         services.AddSingleton<TeamBeats.Modules.Experience.Contracts.IComponentRegistration, OutlookComponents>();
         services.AddHttpClient(OpenMeteoWeather.ClientName, c => c.Timeout = TimeSpan.FromSeconds(10));
