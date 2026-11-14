@@ -18,6 +18,8 @@ import { Divider, Kbd, Meter, Progress, Spinner, StatusDot } from "@/components/
 import { Switch } from "@/components/ui/Switch";
 import { AssistantGallery } from "./AssistantGallery";
 import { ChartsGallery } from "./ChartsGallery";
+import { ChartRulesGallery } from "./ChartRulesGallery";
+import { WidgetBudgetGallery } from "./WidgetBudgetGallery";
 import { DataGallery } from "./DataGallery";
 import { CalendarGallery } from "./CalendarGallery";
 import { InputsGallery } from "./InputsGallery";
@@ -254,6 +256,8 @@ export function ComponentsGallery() {
       <AssistantGallery />
       <ChartsGallery />
       <CalendarGallery />
+      <ChartRulesGallery />
+      <WidgetBudgetGallery />
     </div>
   );
 }

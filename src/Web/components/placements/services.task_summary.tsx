@@ -8,7 +8,7 @@ import { pick, type InboxItem } from "@/lib/services/types";
 import { useNow } from "@/lib/clock";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import { StatCards } from "@/components/ui/Blocks";
 import { isolate } from "@/lib/bidi";
 import "@/features/services/home.css";
@@ -26,7 +26,7 @@ export default function TaskSummary({ props }: PlacementProps) {
   const locale = useLocale();
   const format = useFormatter();
   const now = useNow();
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 3;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 3);
   const title = localized(props.title, locale) || t("title");
   const [answer, setAnswer] = useState<Answer>("loading");
   const [attempt, setAttempt] = useState(0);
@@ -45,8 +45,8 @@ export default function TaskSummary({ props }: PlacementProps) {
     };
   }, [attempt]);
 
-  const shell = (body: React.ReactNode, busy = false) => (
-    <Widget title={title} busy={busy} testId="home-task-summary" action={<Link href="/tasks">{t("inbox")}</Link>}>
+  const shell = (body: React.ReactNode, busy = false, total = 0) => (
+    <Widget title={title} busy={busy} testId="home-task-summary" action={<Link href="/tasks">{t("inbox")}</Link>} more={{ href: "/tasks", total, shown: top }}>
       {body}
     </Widget>
   );
@@ -100,5 +100,7 @@ export default function TaskSummary({ props }: PlacementProps) {
         </ul>
       )}
     </>,
+    false,
+    answer.length,
   );
 }

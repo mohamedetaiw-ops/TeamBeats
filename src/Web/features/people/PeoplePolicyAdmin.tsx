@@ -7,6 +7,7 @@ import { FormField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import { localName, visibilities, type Location, type Policy, type PolicyField } from "@/lib/people/types";
 import "./people.css";
+import { Widget } from "@/components/ui/Widget";
 
 type Result = { ok: boolean; messages: string[] } | null;
 
@@ -119,8 +120,7 @@ export function PeoplePolicyAdmin({ initialPolicy, initialLocations }: { initial
           void save();
         }}
       >
-        <section aria-labelledby="people-admin-fields" className="people-section">
-          <h2 id="people-admin-fields">{t("admin.fields")}</h2>
+        <Widget title={t("admin.fields")}>
           <div className="people-table-wrap">
             <table className="people-table" data-testid="people-policy">
               <thead>
@@ -137,10 +137,9 @@ export function PeoplePolicyAdmin({ initialPolicy, initialLocations }: { initial
               </tbody>
             </table>
           </div>
-        </section>
+        </Widget>
 
-        <section aria-labelledby="people-admin-custom" className="people-section">
-          <h2 id="people-admin-custom">{t("admin.custom")}</h2>
+        <Widget title={t("admin.custom")}>
           {policy.customFieldsAvailable ? (
             <>
               <p>{t("admin.customHint")}</p>
@@ -155,10 +154,9 @@ export function PeoplePolicyAdmin({ initialPolicy, initialLocations }: { initial
           ) : (
             <p>{t("admin.customUnavailable")}</p>
           )}
-        </section>
+        </Widget>
 
-        <section aria-labelledby="people-admin-settings" className="people-section">
-          <h2 id="people-admin-settings">{t("admin.settings")}</h2>
+        <Widget title={t("admin.settings")}>
           <FormField label={t("admin.newcomerDays")} name="newcomerDays" type="number" min={7} max={90} hint={t("admin.newcomerHint")} value={days} onChange={(e) => setDays(e.target.value)} />
           <label className="people-check">
             <input type="checkbox" checked={optOut} onChange={(e) => setOptOut(e.target.checked)} />
@@ -174,7 +172,7 @@ export function PeoplePolicyAdmin({ initialPolicy, initialLocations }: { initial
               ))}
             </select>
           </label>
-        </section>
+        </Widget>
 
         <div aria-live="polite">
           {result ? (
@@ -224,8 +222,7 @@ function Locations({ initial }: { initial: Location[] }) {
   }
 
   return (
-    <section aria-labelledby="people-admin-locations" className="people-section">
-      <h2 id="people-admin-locations">{t("admin.locations")}</h2>
+    <Widget title={t("admin.locations")}>
       {locations.length === 0 ? <p>{t("admin.noLocations")}</p> : null}
       <ul className="people-list" data-testid="people-locations">
         {locations.map((l) => (
@@ -265,6 +262,6 @@ function Locations({ initial }: { initial: Location[] }) {
           </li>
         ))}
       </ul>
-    </section>
+    </Widget>
   );
 }

@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/Badge";
 import { StatCards } from "@/components/ui/Blocks";
 import { ButtonLink } from "@/components/ui/Button";
 import { AgendaRow } from "@/components/ui/CalendarParts";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import { LAYER_LOOK } from "@/lib/calendar";
 import "@/features/services/home.css";
 
@@ -48,6 +48,7 @@ export default function YourDay({ props }: PlacementProps) {
   const format = useFormatter();
   const now = useNow();
   const title = localized(props.title, locale) || t("title");
+  const agenda = useWidgetBudget(AGENDA);
   const [sources, setSources] = useState<Sources | "loading">("loading");
 
   useEffect(() => {
@@ -114,7 +115,7 @@ export default function YourDay({ props }: PlacementProps) {
         <p className="home-meta">{t("noMeetings")}</p>
       ) : (
         <ul className="ui-cal-agenda" aria-label={t("agenda")}>
-          {meetings.slice(0, AGENDA).map((m) => {
+          {meetings.slice(0, agenda).map((m) => {
             const starts = Date.parse(m.start);
             const soon = starts > now && starts - now <= SOON;
             const subject = m.isPrivate || !m.subject ? t("privateMeeting") : m.subject;

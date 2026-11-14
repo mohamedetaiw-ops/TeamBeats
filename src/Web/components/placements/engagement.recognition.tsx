@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 import "@/features/engagement/engagement.css";
 
@@ -21,7 +21,7 @@ export default function RecognitionCard({ props }: PlacementProps) {
   const t = useTranslations("engagement.home");
   const locale = useLocale();
   const format = useFormatter();
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 3;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 3);
   const title = localized(props.title, locale) || t("recognitionTitle");
   const { answer, retry } = useHomeAnswer<RecognitionPage>(`${engagementApi}/recognitions`);
 

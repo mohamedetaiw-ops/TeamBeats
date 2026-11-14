@@ -10,6 +10,7 @@ import { FormField, SelectField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
 import { campaignHref, pickName, variantFor, type CampaignView, type ItemView, type SiteView } from "@/lib/content/types";
 import "./content.css";
+import { Widget } from "@/components/ui/Widget";
 
 function Problems({ messages }: { messages: string[] }) {
   return messages.length > 0 ? (
@@ -64,8 +65,7 @@ export function CampaignCreateForm({ sites }: { sites: SiteView[] }) {
   }
 
   return (
-    <section className="content-card" aria-labelledby="campaign-create">
-      <h2 id="campaign-create">{t("create")}</h2>
+    <Widget title={t("create")}>
       <p className="field-hint">{t("createIntro")}</p>
       <Problems messages={messages} />
       <form className="content-site-form" onSubmit={(e) => void create(e)}>
@@ -83,7 +83,7 @@ export function CampaignCreateForm({ sites }: { sites: SiteView[] }) {
           </Button>
         </p>
       </form>
-    </section>
+    </Widget>
   );
 }
 
@@ -141,8 +141,7 @@ export function CampaignPlan({ campaign, items }: { campaign: CampaignView; item
   }
 
   return (
-    <section className="content-card" aria-labelledby="campaign-plan">
-      <h2 id="campaign-plan">{t("plan")}</h2>
+    <Widget title={t("plan")}>
       <Problems messages={messages} />
       {saved ? (
         <p className="notice notice-success" role="status">
@@ -206,6 +205,6 @@ export function CampaignPlan({ campaign, items }: { campaign: CampaignView; item
           />
         ) : null}
       </p>
-    </section>
+    </Widget>
   );
 }

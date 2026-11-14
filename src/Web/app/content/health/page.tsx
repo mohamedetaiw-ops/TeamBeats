@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { StateView } from "@/components/ui/StateView";
 import { RetentionSettings } from "@/features/content/RetentionSettings";
 import "@/features/content/content.css";
+import { Widget } from "@/components/ui/Widget";
 
 const kinds = ["overdue", "ownerless", "expired"] as const;
 
@@ -77,8 +78,7 @@ export default async function ContentHealthPage({ searchParams }: { searchParams
               </tbody>
             </table>
             {list && kind ? (
-              <section className="content-card" aria-labelledby="health-items">
-                <h2 id="health-items">{t(`kind.${kind}`)}</h2>
+              <Widget title={t(`kind.${kind}`)}>
                 {!list.ok || list.data.length === 0 ? (
                   <StateView kind="empty" title={t("none")} message="" />
                 ) : (
@@ -92,7 +92,7 @@ export default async function ContentHealthPage({ searchParams }: { searchParams
                     ))}
                   </ul>
                 )}
-              </section>
+              </Widget>
             ) : null}
             {settings.ok ? <RetentionSettings settings={settings.data} /> : null}
           </>

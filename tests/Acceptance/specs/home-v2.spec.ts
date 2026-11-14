@@ -29,6 +29,16 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(day.getByRole("heading", { name: msg(locale, "home.day.title") })).toBeVisible();
       await expect(day.getByText(msg(locale, "home.day.toApprove"))).toBeVisible();
       await expect(day.getByRole("link", { name: msg(locale, "home.day.inbox") })).toHaveAttribute("href", "/tasks");
+      // DLS-101: every home widget carries the content budget of its region, and no list shows more rows than it.
+      await expect(day).toHaveAttribute("data-budget", /^[358]$/);
+      const over = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLElement>(".ui-widget[data-budget]")].filter((w) =>
+          [...w.querySelectorAll(":is(.ui-widget-list, .home-list, .outlook-list, .people-list, .documents-list, .content-list, .ui-cal-agenda)")].some(
+            (list) => [...list.children].filter((li) => getComputedStyle(li).display !== "none").length > Number(w.dataset.budget),
+          ),
+        ).length,
+      );
+      expect(over, "widgets showing more rows than their budget").toBe(0);
       // This tenant has no Microsoft 365, so the agenda says so in one line instead of guessing meetings.
       await expect(day.getByText(msg(locale, "home.day.calendarUnavailable"))).toBeVisible();
       await expect(page.getByRole("link", { name: msg(locale, "shell.ask") })).toHaveAttribute("href", "/assistant");

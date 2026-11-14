@@ -20,6 +20,7 @@ import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
 import { Switch } from "@/components/ui/Switch";
 import "./documents.css";
+import { Widget } from "@/components/ui/Widget";
 
 type Answer = "loading" | "failed" | ConnectedPage;
 
@@ -333,10 +334,9 @@ export function ConnectedLibraryBrowser({ library, path, trail }: { library: Lib
       <section aria-label={t("results")} aria-busy={answer === "loading" || undefined}>
         {body}
       </section>
-      <section className="documents-card" aria-labelledby="connected-not-here">
-        <h2 id="connected-not-here">{t("notHereTitle")}</h2>
+      <Widget title={t("notHereTitle")}>
         <p>{t("notHere")}</p>
-      </section>
+      </Widget>
     </div>
   );
 }

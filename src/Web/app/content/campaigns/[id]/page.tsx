@@ -6,6 +6,7 @@ import { Header } from "@/components/shell/Header";
 import { Badge } from "@/components/ui/Badge";
 import { CampaignPlan } from "@/features/content/Campaigns";
 import "@/features/content/content.css";
+import { Widget } from "@/components/ui/Widget";
 
 /**
  * One campaign (spec 009 US8): its plan, and its dashboard per step and in total with the breakdown by unit and location.
@@ -67,8 +68,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
         </p>
         <CampaignPlan campaign={c} items={items.ok ? items.data : []} />
         {d ? (
-          <section className="content-card" aria-labelledby="campaign-dashboard">
-            <h2 id="campaign-dashboard">{t("dashboard")}</h2>
+          <Widget title={t("dashboard")}>
             <p className="field-hint">{t("privacy", { size: d.minimumGroupSize })}</p>
             <table className="content-table">
               <caption>{t("reach")}</caption>
@@ -117,7 +117,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
                 </table>
               ),
             )}
-          </section>
+          </Widget>
         ) : null}
       </main>
     </>

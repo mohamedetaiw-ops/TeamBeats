@@ -21,6 +21,7 @@ import {
   type ImportView,
 } from "@/lib/documents/types";
 import "./documents.css";
+import { Widget } from "@/components/ui/Widget";
 
 const tones: Record<
   ImportRowState,
@@ -144,8 +145,7 @@ export function ManifestGuide() {
     "field",
   ] as const;
   return (
-    <section className="documents-card" aria-labelledby="manifest-guide-title">
-      <h2 id="manifest-guide-title">{t("guideTitle")}</h2>
+    <Widget title={t("guideTitle")}>
       <p>{t("guideIntro")}</p>
       <dl className="documents-guide">
         {columns.map((c) => (
@@ -158,7 +158,7 @@ export function ManifestGuide() {
         ))}
       </dl>
       <p className="documents-meta">{t("guideRules")}</p>
-    </section>
+    </Widget>
   );
 }
 
@@ -167,8 +167,7 @@ export function ImportList({ imports }: { imports: ImportView[] }) {
   const t = useTranslations("documents.imports");
   const format = useFormatter();
   return (
-    <section className="documents-card" aria-labelledby="import-list-title">
-      <h2 id="import-list-title">{t("listTitle")}</h2>
+    <Widget title={t("listTitle")}>
       {imports.length === 0 ? (
         <p className="documents-meta">{t("none")}</p>
       ) : (
@@ -197,7 +196,7 @@ export function ImportList({ imports }: { imports: ImportView[] }) {
           ))}
         </ul>
       )}
-    </section>
+    </Widget>
   );
 }
 
@@ -234,11 +233,7 @@ export function ImportReport({
     s ? `${importHref(view.id)}?status=${s}` : importHref(view.id);
   return (
     <>
-      <section
-        className="documents-card"
-        aria-labelledby="import-progress-title"
-      >
-        <h2 id="import-progress-title">{t(`status.${view.status}`)}</h2>
+      <Widget title={t(`status.${view.status}`)}>
         {running ? (
           <Progress
             label={t("progress")}
@@ -276,9 +271,8 @@ export function ImportReport({
             {t("downloadReport")}
           </a>
         </p>
-      </section>
-      <section className="documents-card" aria-labelledby="import-rows-title">
-        <h2 id="import-rows-title">{t("rowsTitle")}</h2>
+      </Widget>
+      <Widget title={t("rowsTitle")}>
         {page.rows.length === 0 ? (
           <p className="documents-meta">{t("noRows")}</p>
         ) : (
@@ -343,7 +337,7 @@ export function ImportReport({
             {t("moreRows", { shown: page.rows.length, total: page.total })}
           </p>
         ) : null}
-      </section>
+      </Widget>
     </>
   );
 }

@@ -9,6 +9,7 @@ import { PersonPicker } from "@/features/services/PersonPicker";
 import { problemMessages } from "@/lib/notifications/types";
 import { contentTypes, maxRouteSteps, type ContentRoute, type SiteView } from "@/lib/content/types";
 import "./content.css";
+import { Widget } from "@/components/ui/Widget";
 
 type Draft = { approval: boolean; steps: string[][] };
 
@@ -70,8 +71,7 @@ export function RouteSettings({ site }: { site: SiteView }) {
   }
 
   return (
-    <section className="content-card" aria-labelledby="site-routes">
-      <h2 id="site-routes">{t("title")}</h2>
+    <Widget title={t("title")}>
       <p className="field-hint">{t("intro")}</p>
       {messages.length > 0 ? (
         <div className="notice notice-error" role="alert">
@@ -143,6 +143,6 @@ export function RouteSettings({ site }: { site: SiteView }) {
           </p>
         )}
       </form>
-    </section>
+    </Widget>
   );
 }

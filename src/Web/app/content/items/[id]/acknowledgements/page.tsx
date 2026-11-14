@@ -5,6 +5,7 @@ import { editHref, variantFor, type AcknowledgementSummary, type ItemView } from
 import { Header } from "@/components/shell/Header";
 import { AckReport } from "@/features/content/AckReport";
 import "@/features/content/content.css";
+import { Widget } from "@/components/ui/Widget";
 
 /** Who has confirmed a critical announcement (spec 009 US2): counts, channels, the deadline and the completion report. */
 export default async function AcknowledgementsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -65,10 +66,9 @@ export default async function AcknowledgementsPage({ params }: { params: Promise
           {t("acks.countedFrom", { version: s.countedFrom })}
           {s.deadlineAt ? ` ${t("acks.deadline", { date: new Intl.DateTimeFormat(locale, { dateStyle: "long", timeStyle: "short" }).format(new Date(s.deadlineAt)) })}` : ""}
         </p>
-        <section className="content-card" aria-labelledby="ack-report">
-          <h2 id="ack-report">{t("acks.report")}</h2>
+        <Widget title={t("acks.report")}>
           <AckReport itemId={id} />
-        </section>
+        </Widget>
       </main>
     </>
   );

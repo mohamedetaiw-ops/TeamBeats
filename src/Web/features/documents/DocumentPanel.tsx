@@ -16,6 +16,7 @@ import {
 } from "@/lib/documents/types";
 import { Button } from "@/components/ui/Button";
 import "./documents.css";
+import { Widget } from "@/components/ui/Widget";
 
 const base = (id: string) => `/api/v1/documents/${encodeURIComponent(id)}`;
 
@@ -615,8 +616,7 @@ export function DocumentPanel({
         </form>
       ) : null}
 
-      <section className="documents-card" aria-labelledby={`${ids}-versions`}>
-        <h2 id={`${ids}-versions`}>{t("versions")}</h2>
+      <Widget title={t("versions")}>
         {versions.length === 0 ? (
           <p>{t("noVersions")}</p>
         ) : (
@@ -683,7 +683,7 @@ export function DocumentPanel({
             </table>
           </div>
         )}
-      </section>
+      </Widget>
     </article>
   );
 }
