@@ -2508,5 +2508,20 @@
   "conflict.ai.endpoint_changed": "Someone else changed this endpoint. Reload it and try again.",
   "conflict.ai.endpoint_enabled": "Disable the endpoint before you remove it.",
   "conflict.ai.endpoint_untested": "Run the connection test first. An endpoint can be enabled only after it passed a test in the last 24 hours.",
-  "validation.ai.display_currency": "Enter a three letter currency code, such as SAR, and its rate per US dollar, greater than 0."
+  "validation.ai.display_currency": "Enter a three letter currency code, such as SAR, and its rate per US dollar, greater than 0.",
+  "validation.assistant.file_type": "Choose a PDF, Word, Excel, PowerPoint, OpenDocument text, plain text, CSV, Markdown, PNG or JPEG file.",
+  "validation.assistant.file_size": "The file must be smaller than 20 MB.",
+  "validation.assistant.file_classification": "Choose a classification: public, internal, confidential or restricted.",
+  "validation.assistant.file_no_text": "No text could be read from this file.",
+  "conflict.assistant.file_above_policy": "The AI policy does not allow the assistant to read files with this classification.",
+  "conflict.assistant.file_infected": "The file was refused because the malware scan found a threat.",
+  "conflict.assistant.file_scan_failed": "The file could not be scanned. Try again in a moment.",
+  "conflict.assistant.file_limit": "A conversation can hold at most 5 files. Remove one first.",
+  "validation.assistant.audio_type": "Record in a format the browser supports, such as WebM or MP4 audio.",
+  "validation.assistant.audio_size": "Keep a spoken question to about a minute.",
+  "conflict.assistant.voice_no_speech": "No speech was heard. Try again closer to the microphone.",
+  "conflict.assistant.voice_no_answer": "This turn has no answer to read aloud.",
+  "conflict.assistant.voice_blocked": "Your AI policy does not allow this content to be sent to a speech model.",
+  "conflict.assistant.voice_quota": "The AI allowance for this period is used up. Try again after it resets.",
+  "conflict.assistant.voice_unavailable": "Voice is not available right now. Type your question instead."
 }

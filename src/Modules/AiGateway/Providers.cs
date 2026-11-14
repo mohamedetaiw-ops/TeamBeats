@@ -32,6 +32,12 @@ public sealed record ProviderStreamPart(string? Delta, ProviderReply? Final);
 
 public sealed record ProviderEmbedding(IReadOnlyList<float[]> Vectors, AiUsage Usage);
 
+/// <summary>The text a transcription model heard (spec 014 US6).</summary>
+public sealed record ProviderTranscription(string Text, AiUsage Usage);
+
+/// <summary>Audio a speech model made, in <paramref name="MediaType"/> (spec 014 US6).</summary>
+public sealed record ProviderSpeech(byte[] Audio, string MediaType, AiUsage Usage);
+
 /// <summary>A provider call failed. Retryable failures (timeouts, 429, 5xx) are tried once more before the next model.</summary>
 public sealed class ProviderException(string message, bool retryable, Exception? inner = null) : Exception(message, inner)
 {
@@ -55,6 +61,12 @@ public interface IModelProvider
     IAsyncEnumerable<ProviderStreamPart> StreamAsync(ProviderChat request, CancellationToken ct);
 
     Task<ProviderEmbedding> EmbedAsync(string model, IReadOnlyList<string> inputs, CancellationToken ct, ProviderTarget? target = null);
+
+    /// <summary>Speech to text through the OpenAI-compatible <c>audio/transcriptions</c> endpoint.</summary>
+    Task<ProviderTranscription> TranscribeAsync(string model, byte[] audio, string mediaType, string? language, CancellationToken ct, ProviderTarget? target = null);
+
+    /// <summary>Text to speech through the OpenAI-compatible <c>audio/speech</c> endpoint.</summary>
+    Task<ProviderSpeech> SpeakAsync(string model, string text, string voice, CancellationToken ct, ProviderTarget? target = null);
 }
 
 /// <summary>What a connection and capability test of a private endpoint found (US6 scenario 1), one check per item.</summary>

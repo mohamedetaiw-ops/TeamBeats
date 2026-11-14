@@ -204,6 +204,56 @@ public static class OpenAiWire
         return new ProviderEmbedding(vectors, Usage(json["usage"]));
     }
 
+    /// <summary>The audio formats a transcription accepts, by media type, and the file extension the endpoint expects.</summary>
+    public static readonly IReadOnlyDictionary<string, string> AudioFormats = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["audio/webm"] = "webm",
+        ["audio/ogg"] = "ogg",
+        ["audio/mpeg"] = "mp3",
+        ["audio/mp4"] = "m4a",
+        ["audio/wav"] = "wav",
+        ["audio/x-wav"] = "wav",
+    };
+
+    /// <summary>An OpenAI-compatible transcription request: the audio as a multipart file, which OpenRouter and self-hosted servers both take.</summary>
+    public static HttpRequestMessage TranscriptionRequest(string baseUrl, string model, byte[] audio, string mediaType, string? language, string apiKey)
+    {
+        var form = new MultipartFormDataContent();
+        var file = new ByteArrayContent(audio);
+        file.Headers.ContentType = new MediaTypeHeaderValue(mediaType);
+        form.Add(file, "file", $"speech.{AudioFormats.GetValueOrDefault(mediaType, "webm")}");
+        form.Add(new StringContent(model), "model");
+        if (language is not null)
+        {
+            form.Add(new StringContent(language), "language");
+        }
+        var message = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl.TrimEnd('/')}/audio/transcriptions") { Content = form };
+        message.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        return message;
+    }
+
+    public static async Task<string> ReadTranscriptionAsync(HttpResponseMessage response, CancellationToken ct, string label)
+    {
+        try
+        {
+            return JsonNode.Parse(await response.Content.ReadAsStringAsync(ct))?["text"]?.GetValue<string>()
+                ?? throw new ProviderException($"{label} returned no transcription", retryable: true);
+        }
+        catch (System.Text.Json.JsonException ex)
+        {
+            throw new ProviderException($"{label} returned a body that is not JSON", retryable: true, ex);
+        }
+    }
+
+    public static JsonObject SpeechBody(string model, string text, string voice) =>
+        new() { ["model"] = model, ["input"] = text, ["voice"] = voice, ["response_format"] = "mp3" };
+
+    public static async Task<byte[]> ReadSpeechAsync(HttpResponseMessage response, CancellationToken ct, string label)
+    {
+        var audio = await response.Content.ReadAsByteArrayAsync(ct);
+        return audio.Length > 0 ? audio : throw new ProviderException($"{label} returned no audio", retryable: true);
+    }
+
     public static AiUsage Usage(JsonNode? usage) => usage is null
         ? AiUsage.None
         : new AiUsage(usage["prompt_tokens"]?.GetValue<int>() ?? 0, usage["completion_tokens"]?.GetValue<int>() ?? 0);

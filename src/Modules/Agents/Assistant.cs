@@ -22,8 +22,9 @@ namespace TeamBeats.Modules.Agents;
 /// <paramref name="MaxClassification"/> caps what the answer may draw on, for an external AI client (spec 035 US3
 /// scenario 4): passages above it are left out as withheld, and a conversation that already holds more is refused.
 /// </remarks>
+/// <summary>A question. <paramref name="FileIds"/> names files the person uploaded for this conversation (spec 014 US5).</summary>
 public sealed record TurnRequest(Guid? ConversationId, string? Question, Guid? AgentId = null, bool? Knowledge = null, AssistantScope? Scope = null,
-    string? MaxClassification = null);
+    string? MaxClassification = null, IReadOnlyList<Guid>? FileIds = null);
 
 /// <summary>
 /// The item a conversation is kept to: <paramref name="Source"/> is its search source and <paramref name="ItemId"/> the
@@ -62,7 +63,8 @@ internal sealed record PreparedTurn(
     AiRequest? Request,
     string? Outcome,
     RouteView? Route = null,
-    AssistantScope? Scope = null);
+    AssistantScope? Scope = null,
+    IReadOnlyList<FileText>? Files = null);
 
 /// <summary>
 /// The knowledge agent's turn pipeline (spec 014 T003, US1, FR-002 to FR-004, FR-010 to FR-012, FR-021). Retrieval runs
@@ -72,7 +74,8 @@ internal sealed record PreparedTurn(
 /// holds no tools (FR-005).
 /// </summary>
 public sealed class AssistantService(IDbSession session, ITenantContext context, IEntitlementService entitlements, ISearchRetrieval retrieval,
-    IAiGateway gateway, IOutbox outbox, IClock clock, AgentRouter router, AgentRuns runs, IAuditWriter audit, AssistantGuests guests)
+    IAiGateway gateway, IOutbox outbox, IClock clock, AgentRouter router, AgentRuns runs, IAuditWriter audit, AssistantGuests guests,
+    AssistantFiles files)
 {
     public const int MaxQuestionLength = 2000;
     public const int HistoryTurns = 3;
@@ -131,17 +134,25 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
             await ScopeAsync(scope, ct);
         }
 
+        var attached = await files.ForTurnAsync(request.ConversationId, request.FileIds, ct);
         var language = AssistantPrompt.Language(question);
         // Routing (spec 014 US2, spec 020 US7): when an agent the person may use answers, the assistant hands the turn to it
         // and gains none of its tools; otherwise the knowledge agent answers below.
         // A scoped conversation is answered by the knowledge agent from its item only, so it is never routed.
-        var route = scope is null ? await router.DecideAsync(question, request.AgentId, request.Knowledge == true, ct) : null;
+        // A conversation with files is answered by the knowledge agent too, so the files never reach an agent's tools.
+        var route = scope is null && attached.Count == 0 ? await router.DecideAsync(question, request.AgentId, request.Knowledge == true, ct) : null;
         if (route?.Agent is not null)
         {
             return new PreparedTurn(Ids.New(), conversationId, request.ConversationId is null, position, question, language, new RetrievalResult([], 0, false),
                 floor, null, null, route);
         }
         var evidence = await retrieval.RetrieveAsync(new RetrievalRequest(question, AiUseCases.Assistant, Source: scope?.Source, ItemId: scope?.ItemId), ct);
+        if (attached.Count > 0)
+        {
+            // The person's files come first, as untrusted passages of this conversation only (US5).
+            var (filePassages, fileWithheld) = await files.PassagesAsync(conversationId, attached, question, language, ct);
+            evidence = evidence with { Passages = [.. filePassages, .. evidence.Passages], Withheld = evidence.Withheld + fileWithheld };
+        }
         if (request.MaxClassification is { } cap)
         {
             var kept = evidence.Passages.Where(p => Classifications.Rank(p.Classification) is var rank && rank >= 0 && rank <= Classifications.Rank(cap)).ToList();
@@ -160,7 +171,7 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
         if (evidence.Passages.Count == 0)
         {
             var outcome = evidence.Withheld > 0 ? AssistantOutcomes.PolicyBlocked : AssistantOutcomes.NoEvidence;
-            return new PreparedTurn(turnId, conversationId, request.ConversationId is null, position, question, language, evidence, floor, null, outcome, route, scope);
+            return new PreparedTurn(turnId, conversationId, request.ConversationId is null, position, question, language, evidence, floor, null, outcome, route, scope, attached);
         }
 
         var classification = AssistantPrompt.Highest(evidence.Passages.Select(p => p.Classification), floor);
@@ -172,7 +183,7 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
             new(AiRoles.User, question),
         ];
         var ai = new AiRequest(AiUseCases.Assistant, messages, classification, MaxTokens: MaxAnswerTokens, Temperature: 0.2);
-        return new PreparedTurn(turnId, conversationId, request.ConversationId is null, position, question, language, evidence, classification, ai, null, route, scope);
+        return new PreparedTurn(turnId, conversationId, request.ConversationId is null, position, question, language, evidence, classification, ai, null, route, scope, attached);
     }
 
     /// <summary>
@@ -285,6 +296,10 @@ public sealed class AssistantService(IDbSession session, ITenantContext context,
             await session.ExecAsync(
                 "update agents.conversation set turns = @position, last_turn_at = @now, classification = @classification where id = @id and user_id = @user",
                 new { id = prepared.ConversationId, user, position = prepared.Position, now, classification }, ct);
+        }
+        if (prepared.Files is { Count: > 0 } used)
+        {
+            await files.BindAsync(prepared.ConversationId, used, ct);
         }
     }
 

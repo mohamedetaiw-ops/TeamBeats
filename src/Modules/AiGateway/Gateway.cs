@@ -101,7 +101,7 @@ public sealed class AiGatewayService(
             }
         }
         var outcome = await RouteAsync(useCase, model, classification, inputTokens, maxTokens, temperature, needs, modelUnderTest, routeChangeId,
-            useCase == AiUseCases.Embed ? null : budget?.Downgrade, subject?.Unit, resourceUnits, ct);
+            AiUseCases.NotChat.Contains(useCase) ? null : budget?.Downgrade, subject?.Unit, resourceUnits, ct);
         if (outcome.Plan is null)
         {
             await budgets.ReleaseAsync(budget?.Reserved ?? []);
@@ -165,7 +165,7 @@ public sealed class AiGatewayService(
         if (model is not null)
         {
             if (!policy.Allowlist.Contains(model) || !snapshot.Models.TryGetValue(model, out var named) || !named.Active ||
-                !named.Can(useCase == AiUseCases.Embed ? ModelCapabilities.Embeddings : ModelCapabilities.Chat))
+                !named.Can(ModelCapabilities.For(useCase)))
             {
                 return (null, AiDenials.ModelNotAllowed);
             }
@@ -241,7 +241,7 @@ public sealed class AiGatewayService(
     /// </summary>
     public async Task<DataClassification?> CeilingAsync(string useCase, CancellationToken ct = default)
     {
-        string[] needs = [useCase == AiUseCases.Embed ? ModelCapabilities.Embeddings : ModelCapabilities.Chat];
+        string[] needs = [ModelCapabilities.For(useCase)];
         foreach (var level in new[] { DataClassification.Restricted, DataClassification.Confidential, DataClassification.Internal, DataClassification.Public })
         {
             var (_, denial) = await PlanAsync(useCase, null, level, 0, null, null, needs, null, platformCharged: false, ct);
@@ -280,7 +280,7 @@ public sealed class AiGatewayService(
 
     private async Task<PlanOutcome> PlanChatAsync(AiRequest request, Guid? unit, CancellationToken ct)
     {
-        if (request.Messages.Count == 0 || (request.UseCase == AiUseCases.Evaluation && request.Tools is { Count: > 0 }) || request.UseCase == AiUseCases.Embed)
+        if (request.Messages.Count == 0 || (request.UseCase == AiUseCases.Evaluation && request.Tools is { Count: > 0 }) || AiUseCases.NotChat.Contains(request.UseCase))
         {
             return (null, AiDenials.InvalidRequest);
         }
@@ -445,19 +445,79 @@ public sealed class AiGatewayService(
 
     public async Task<EmbeddingResult> EmbedAsync(EmbeddingRequest request, CancellationToken ct = default)
     {
-        var watch = Stopwatch.StartNew();
-        var meta = new CallMeta(AiUseCases.Embed, request.Model, request.Classification, null, null, request.ActingUnitId, false);
         if (request.Inputs.Count == 0)
         {
             return EmbeddingResult.Denied(AiDenials.InvalidRequest);
         }
+        var served = await ServeAsync(AiUseCases.Embed, request.Model, request.Classification, request.ActingUnitId, Estimate(request.Inputs),
+            async (provider, model, target) =>
+            {
+                var result = await provider.EmbedAsync(model, request.Inputs, ct, target);
+                return (result, result.Usage);
+            }, ct);
+        return served.Result is { } r
+            ? new EmbeddingResult(r.Vectors, r.Usage, served.Model, served.Provider, null)
+            : EmbeddingResult.Denied(served.Denial!, served.ResetsAt);
+    }
+
+    /// <summary>Speech to text (spec 014 FR-026). The audio goes to the provider for this call and is never stored or logged.</summary>
+    public async Task<TranscriptionResult> TranscribeAsync(TranscriptionRequest request, CancellationToken ct = default)
+    {
+        if (request.Audio.Length == 0)
+        {
+            return TranscriptionResult.Denied(AiDenials.InvalidRequest);
+        }
+        // About a token per 40 bytes of compressed speech is enough for budgets; the provider reports the real use.
+        var served = await ServeAsync(AiUseCases.Transcribe, null, request.Classification, request.ActingUnitId, request.Audio.Length / 40,
+            async (provider, model, target) =>
+            {
+                var result = await provider.TranscribeAsync(model, request.Audio, request.MediaType, request.Language, ct, target);
+                return (result, result.Usage);
+            }, ct);
+        return served.Result is { } r
+            ? new TranscriptionResult(r.Text, r.Usage, served.Model, served.Provider, null)
+            : TranscriptionResult.Denied(served.Denial!, served.ResetsAt);
+    }
+
+    /// <summary>Text to speech (spec 014 FR-026).</summary>
+    public async Task<SpeechResult> SpeakAsync(SpeechRequest request, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Text))
+        {
+            return SpeechResult.Denied(AiDenials.InvalidRequest);
+        }
+        var served = await ServeAsync(AiUseCases.Speak, null, request.Classification, request.ActingUnitId, Estimate([request.Text]),
+            async (provider, model, target) =>
+            {
+                var result = await provider.SpeakAsync(model, request.Text, SpeechVoice, ct, target);
+                return (result, result.Usage);
+            }, ct);
+        return served.Result is { } r
+            ? new SpeechResult(r.Audio, r.MediaType, r.Usage, served.Model, served.Provider, null)
+            : SpeechResult.Denied(served.Denial!, served.ResetsAt);
+    }
+
+    /// <summary>The voice answers are read in. One neutral voice for every tenant until a tenant setting is specified.</summary>
+    public const string SpeechVoice = "alloy";
+
+    private sealed record Served<T>(T? Result, string? Model, string? Provider, string? Denial, DateTimeOffset? ResetsAt) where T : class;
+
+    /// <summary>
+    /// The pipeline for a call that is not chat (embeddings, speech): the same policy, budget and routing steps, then the
+    /// route's models in order with one retry for a retryable failure, as for chat.
+    /// </summary>
+    private async Task<Served<T>> ServeAsync<T>(string useCase, string? model, DataClassification? classification, Guid? actingUnit, int inputTokens,
+        Func<IModelProvider, string, ProviderTarget?, Task<(T Result, AiUsage Usage)>> call, CancellationToken ct) where T : class
+    {
+        var watch = Stopwatch.StartNew();
+        var meta = new CallMeta(useCase, model, classification, null, null, actingUnit, false);
         meta = meta with { UnitId = await UnitAsync(meta, ct) };
-        var outcome = await PlanAsync(AiUseCases.Embed, request.Model, request.Classification, Estimate(request.Inputs), null, null, [ModelCapabilities.Embeddings], null,
+        var outcome = await PlanAsync(useCase, model, classification, inputTokens, null, null, [ModelCapabilities.For(useCase)], null,
             false, ct, subject: Subject(meta.UnitId, null));
         if (outcome.Plan is not { } plan)
         {
             await DeniedAsync(meta, outcome.Denial!, watch, ct);
-            return EmbeddingResult.Denied(outcome.Denial!, outcome.ResetsAt);
+            return new Served<T>(null, null, null, outcome.Denial, outcome.ResetsAt);
         }
         foreach (var entry in plan.Candidates)
         {
@@ -476,11 +536,11 @@ public sealed class AiGatewayService(
             {
                 try
                 {
-                    var result = await provider.EmbedAsync(entry.Model, request.Inputs, ct, target);
+                    var (result, usage) = await call(provider, entry.Model, target);
                     circuits.Record(circuit, failed: false);
-                    var completion = new AiCompletion(string.Empty, [], result.Usage, entry.Model, provider.Key, entry != plan.Candidates[0], false, "stop");
+                    var completion = new AiCompletion(string.Empty, [], usage, entry.Model, provider.Key, entry != plan.Candidates[0], false, "stop");
                     await ServedAsync(meta, plan, completion, watch, ct);
-                    return new EmbeddingResult(result.Vectors, result.Usage, entry.Model, provider.Key, null);
+                    return new Served<T>(result, entry.Model, provider.Key, null, null);
                 }
                 catch (ProviderException ex)
                 {
@@ -495,7 +555,7 @@ public sealed class AiGatewayService(
         }
         await budgets.ReleaseAsync(plan.Budget?.Reserved ?? []);
         await DeniedAsync(meta, AiDenials.ProviderUnavailable, watch, ct);
-        return EmbeddingResult.Denied(AiDenials.ProviderUnavailable);
+        return new Served<T>(null, null, null, AiDenials.ProviderUnavailable, null);
     }
 
     /// <summary>One circuit per shared provider, and one per private endpoint, so one tenant's server being down never closes another's.</summary>

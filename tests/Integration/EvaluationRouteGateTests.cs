@@ -73,7 +73,7 @@ public sealed class EvaluationRouteGateTests(TenantWorld world)
     {
         var client = t["aip"].Client;
         var current = await client.GetAsync("/api/v1/ai/policy");
-        var routes = AiUseCases.All.ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding } : u == AiUseCases.Agent ? new[] { Large } : new[] { Small, Large });
+        var routes = AiUseCases.All.Where(u => u is not (AiUseCases.Transcribe or AiUseCases.Speak)).ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding } : u == AiUseCases.Agent ? new[] { Large } : new[] { Small, Large });
         using var request = new HttpRequestMessage(HttpMethod.Put, "/api/v1/ai/policy")
         {
             Content = JsonContent.Create(new { allowlist = new[] { Small, Large, Embedding }, routes, confidential = Array.Empty<string>() }),
@@ -89,7 +89,7 @@ public sealed class EvaluationRouteGateTests(TenantWorld world)
     {
         var client = t["aip"].Client;
         var current = await client.GetAsync("/api/v1/ai/policy");
-        var routes = AiUseCases.All.ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding } : u == AiUseCases.Assistant ? new[] { Large } : new[] { Small, Large });
+        var routes = AiUseCases.All.Where(u => u is not (AiUseCases.Transcribe or AiUseCases.Speak)).ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding } : u == AiUseCases.Assistant ? new[] { Large } : new[] { Small, Large });
         using var request = new HttpRequestMessage(HttpMethod.Put, "/api/v1/ai/policy")
         {
             Content = JsonContent.Create(new { allowlist = new[] { Small, Large, Embedding }, routes, confidential = Array.Empty<string>() }),

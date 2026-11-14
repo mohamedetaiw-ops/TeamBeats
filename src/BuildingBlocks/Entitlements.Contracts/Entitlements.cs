@@ -5,6 +5,8 @@ public static class Capabilities
 {
     public const string AiAssistant = "ai.assistant";
     public const string AiAssistantMonthlyRequests = "ai.assistant.monthly_requests";
+    public const string AiAssistantFileUpload = "ai.assistant.file_upload";
+    public const string AiAssistantVoice = "ai.assistant.voice";
     public const string AiAgentsBasic = "ai.agents.basic";
     public const string AiAgentsWriteTools = "ai.agents.write_tools";
     public const string AiAgentsMaxPublished = "ai.agents.max_published";

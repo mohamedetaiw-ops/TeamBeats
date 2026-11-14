@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Modules.AiGateway.OpenAiCompatible;
+using TeamBeats.Modules.AiGateway.Contracts;
 
 namespace TeamBeats.Modules.AiGateway.OpenRouter;
 
@@ -68,6 +69,26 @@ public sealed class OpenRouterProvider(IHttpClientFactory http, IConfiguration c
         timeout.CancelAfter(Timeout);
         using var response = await OpenAiWire.SendAsync(Client, Request("embeddings", OpenAiWire.EmbedBody(model, inputs)), stream: false, timeout, Label);
         return await OpenAiWire.ReadEmbeddingsAsync(response, inputs.Count, timeout.Token, Label);
+    }
+
+    public async Task<ProviderTranscription> TranscribeAsync(string model, byte[] audio, string mediaType, string? language, CancellationToken ct, ProviderTarget? target = null)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(Timeout);
+        var message = OpenAiWire.TranscriptionRequest(BaseUrl, model, audio, mediaType, language,
+            ApiKey ?? throw new ProviderException("OpenRouter is not configured", retryable: false));
+        message.Headers.Add("X-Title", "TeamBeats");
+        using var response = await OpenAiWire.SendAsync(Client, message, stream: false, timeout, Label);
+        var text = await OpenAiWire.ReadTranscriptionAsync(response, timeout.Token, Label);
+        return new ProviderTranscription(text, new AiUsage(0, Math.Max(1, text.Length / 4)));
+    }
+
+    public async Task<ProviderSpeech> SpeakAsync(string model, string text, string voice, CancellationToken ct, ProviderTarget? target = null)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        timeout.CancelAfter(Timeout);
+        using var response = await OpenAiWire.SendAsync(Client, Request("audio/speech", OpenAiWire.SpeechBody(model, text, voice)), stream: false, timeout, Label);
+        return new ProviderSpeech(await OpenAiWire.ReadSpeechAsync(response, timeout.Token, Label), "audio/mpeg", new AiUsage(Math.Max(1, text.Length / 4), 0));
     }
 }
 

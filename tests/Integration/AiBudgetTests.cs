@@ -105,7 +105,7 @@ public sealed class AiBudgetTests(TenantWorld world)
     {
         var t = await FreshAsync();
         // Summaries normally use the larger model.
-        var routes = AiUseCases.All.ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding } : u == AiUseCases.Summarize ? new[] { Large, Small } : new[] { Small, Large });
+        var routes = AiUseCases.All.Where(u => u is not (AiUseCases.Transcribe or AiUseCases.Speak)).ToDictionary(u => u, u => u == AiUseCases.Embed ? new[] { Embedding } : u == AiUseCases.Summarize ? new[] { Large, Small } : new[] { Small, Large });
         var current = await t["layla"].Client.GetAsync("/api/v1/ai/policy");
         using (var put = new HttpRequestMessage(HttpMethod.Put, "/api/v1/ai/policy") { Content = JsonContent.Create(new { allowlist = new[] { Small, Large, Embedding }, routes, confidential = Array.Empty<string>() }) })
         {

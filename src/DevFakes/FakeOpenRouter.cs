@@ -48,7 +48,12 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
 
     /// <summary>Fake models plus the models the platform catalogue starts with, so the default policy works against the fake.</summary>
     public static readonly IReadOnlyList<string> Models =
-        ["fake/teambeats-small", "fake/teambeats-large", "fake/teambeats-embed", "openai/gpt-4o-mini", "openai/gpt-4o", "openai/text-embedding-3-small"];
+        ["fake/teambeats-small", "fake/teambeats-large", "fake/teambeats-embed", "openai/gpt-4o-mini", "openai/gpt-4o", "openai/text-embedding-3-small",
+            "openai/whisper-1", "openai/gpt-4o-mini-tts"];
+
+    /// <summary>Audio the fake transcribes: the bytes after this prefix are the words spoken. Any other audio is heard as <see cref="UnclearSpeech"/>.</summary>
+    public const string SpeechPrefix = "speech:";
+    public const string UnclearSpeech = "Fictional spoken question";
 
     /// <summary>The model of the last chat or embedding request, for tests that check routing.</summary>
     public string? LastModel { get; private set; }
@@ -84,6 +89,41 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
                 data = texts.Select((t, i) => new { index = i, embedding = Embed(t) }),
                 usage = new { prompt_tokens = texts.Sum(Tokens), total_tokens = texts.Sum(Tokens) },
             });
+        }
+        if (path == $"{basePath}/audio/transcriptions" && request.Method == HttpMethod.Post && request.Content is MultipartFormDataContent form)
+        {
+            byte[] audio = [];
+            foreach (var part in form)
+            {
+                var name = part.Headers.ContentDisposition?.Name?.Trim('"');
+                if (name == "model")
+                {
+                    LastModel = await part.ReadAsStringAsync(cancellationToken);
+                }
+                else if (name == "file")
+                {
+                    audio = await part.ReadAsByteArrayAsync(cancellationToken);
+                }
+            }
+            if (LastModel is null || !models.Contains(LastModel))
+            {
+                return Error(HttpStatusCode.BadRequest, $"{LastModel} is not a valid model ID");
+            }
+            var heard = Encoding.UTF8.GetString(audio);
+            return Json(new { text = heard.StartsWith(SpeechPrefix, StringComparison.Ordinal) ? heard[SpeechPrefix.Length..].Trim() : UnclearSpeech });
+        }
+        if (path == $"{basePath}/audio/speech" && request.Method == HttpMethod.Post)
+        {
+            var speechBody = JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellationToken));
+            LastModel = speechBody?["model"]?.GetValue<string>();
+            if (LastModel is null || !models.Contains(LastModel))
+            {
+                return Error(HttpStatusCode.BadRequest, $"{LastModel} is not a valid model ID");
+            }
+            // Not real MP3: an ID3 header and the words, enough for a test to see what would be read.
+            var spoken = new ByteArrayContent([.. "ID3"u8.ToArray(), .. Encoding.UTF8.GetBytes(speechBody?["input"]?.GetValue<string>() ?? string.Empty)]);
+            spoken.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("audio/mpeg");
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = spoken };
         }
         if (path != $"{basePath}/chat/completions" || request.Method != HttpMethod.Post)
         {
