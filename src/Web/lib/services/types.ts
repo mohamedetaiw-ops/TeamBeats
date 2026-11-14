@@ -1,3 +1,4 @@
+import type { RouteGraph, ServiceTrigger } from "./route-graph";
 /** Shapes of the spec 016 services, requests and task inbox API, as the browser reads them. */
 export type Names = Record<string, string>;
 
@@ -242,7 +243,15 @@ export type ActionStep = {
   inputs: Record<string, string>;
   onBusinessError?: Record<string, "continue" | "reject"> | null;
 };
-export type ServiceRoute = { approval: ApprovalStep | null; actions?: ActionStep[] | null };
+export type ServiceRoute = {
+  approval: ApprovalStep | null;
+  actions?: ActionStep[] | null;
+  /** The step graph built in the route designer (spec 016 R2); when set, approval and actions are not used. */
+  graph?: RouteGraph | null;
+  triggers?: ServiceTrigger[] | null;
+  continueAfterExit?: boolean;
+  serviceLevelDays?: number | null;
+};
 
 export const MAX_ACTION_STEPS = 5;
 export const REQUEST_VALUES = ["request.number", "requester.name", "requester.email"] as const;

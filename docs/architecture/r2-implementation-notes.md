@@ -1586,3 +1586,18 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 ### Smallest safe defaults
 - Picking is offered on steps assigned to groups. Any other step can be picked through the API by a candidate, which only matters when several people may act on it.
 - An R1 route with a fulfilment queue still ends after its approval and connector steps; the designer (T024) opens it as a step graph where the queue becomes a task step.
+
+## Service catalogue and workflows (spec 016 R2, slice 5: T024 route designer)
+
+### Built
+- Test mode (US8 scenario 6): `POST /api/v1/services/admin/{id}/test` compiles the latest draft's step graph and walks it in the spec 024 sandbox through the Workflow contract `IModelTester`, as a sample employee (the owner when none is named), with sample form values and the outcome picked per person step. Nothing is created or sent. The result lists each step reached with the resolved assignees, the paths taken (by link) and auto-approvals, or the problems on their steps. Owners only (`service.manage` at the owning unit).
+- `GET /api/v1/services/admin/groups` lists the tenant's groups with member counts for service owners, through the new Authorization contract `IAuthorizationProvisioning.GroupsAsync`. The designer uses it for group assignees, escalation and notify targets, and the builder for the fulfilment queue, which the draft form now saves.
+- The route designer in the service builder, on React Flow like the process modeler (ADR-0017): a palette of the twelve step types, the canvas, a settings panel per step (assignee with due time and escalation, auto-approve conditions, connector action with input mapping, webhook, set a value, notify, wait, start another service, end result), paths with conditions added from the panel, and a text outline in reading order. Problems the server returns on `route.graph.steps[i]` and `route.graph.links[i]` are shown on their steps. Route settings cover the service level target, continuing after the requester leaves, and the start triggers. The test panel saves the draft first and marks the steps a run reached.
+- Tests: `ServiceRouteTestModeTests` (2), e2e `route-designer.spec.ts` in English and Arabic with axe.
+
+### Smallest safe defaults
+- Canvas positions are not stored: the designer lays steps out in columns by distance from the first step, and dragging only moves them for the session.
+- With no step selected, a new step goes at the start of the route; with a step selected, it goes after it (between the step and its next step when it has one path).
+- Opening an R1 route in the designer turns it into approval, connector steps, a task for the fulfilment queue when there is one, then an end as completed. Going back to the simple route drops the graph on the next save, after a confirmation.
+- A webhook step takes the outbound webhook's ID as text, as there is no listing of webhooks for routes yet.
+

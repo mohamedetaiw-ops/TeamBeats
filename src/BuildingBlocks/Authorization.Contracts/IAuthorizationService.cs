@@ -156,6 +156,9 @@ public interface IAuthorizationProvisioning
     /// <summary>Which of the given group IDs exist in the current tenant.</summary>
     Task<IReadOnlySet<Guid>> ExistingGroupsAsync(IReadOnlyCollection<Guid> groupIds, CancellationToken ct = default);
 
+    /// <summary>The groups of the current tenant with their member counts, by name, for choosing a queue or an escalation target (spec 016).</summary>
+    Task<IReadOnlyList<GroupSummary>> GroupsAsync(CancellationToken ct = default);
+
     /// <summary>
     /// Whether another user of the tenant holds the permission at the target, for work done in their name (a delegate
     /// acting on behalf of an approver, spec 016 US4). Request attributes such as the network are not evaluated.
@@ -187,6 +190,8 @@ public interface IAuthorizationProvisioning
     /// </summary>
     Task<IReadOnlyList<AdminAssignment>> AdminAssignmentsAsync(CancellationToken ct = default);
 }
+
+public sealed record GroupSummary(Guid Id, string Key, string Name, string Source, int Members);
 
 public sealed record AdminAssignment(Guid AssignmentId, Guid UserId, string RoleKey, ScopeType ScopeType, Guid? ScopeId);
 

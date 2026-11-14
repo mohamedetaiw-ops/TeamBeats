@@ -405,3 +405,174 @@
   align-items: center;
   gap: var(--tb-space-sm);
 }
+
+/* The route designer (spec 016 US8): palette, canvas and step settings side by side on wide screens, stacked on narrow ones. */
+.route-section {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.route-designer,
+.route-designer-grid {
+  display: grid;
+  gap: var(--tb-space-md);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@media (width >= 64rem) {
+  .route-designer-grid {
+    grid-template-columns: 12rem minmax(0, 1fr) 20rem;
+    align-items: start;
+  }
+}
+
+.route-palette-list {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-palette-list .button {
+  inline-size: 100%;
+  justify-content: start;
+  text-align: start;
+}
+
+.route-canvas {
+  block-size: 28rem;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+}
+
+.route-properties {
+  display: grid;
+  gap: var(--tb-space-sm);
+  max-block-size: 48rem;
+  overflow-y: auto;
+}
+
+.route-conditions {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  min-inline-size: 0;
+}
+
+.route-path p {
+  margin: 0;
+}
+
+.route-node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  block-size: 100%;
+  color: var(--tb-color-text-primary);
+}
+
+.route-node::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-strong);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+}
+
+.route-node[data-shape="gateway"]::before {
+  border-style: dashed;
+}
+
+.route-node[data-shape="event"]::before {
+  border-width: var(--tb-border-width-thick);
+  border-radius: var(--tb-radius-full);
+}
+
+.route-node[data-visited]::before {
+  background: var(--tb-color-accent-subtle);
+}
+
+.route-node[data-selected]::before {
+  border-color: var(--tb-color-accent-base);
+  box-shadow: 0 0 0 var(--tb-border-width-thick) var(--tb-color-accent-subtle);
+}
+
+.route-node[data-invalid]::before {
+  border-color: var(--tb-color-state-danger);
+}
+
+.route-node-mark {
+  position: absolute;
+  inset-block-start: var(--tb-space-xs);
+  inset-inline-start: var(--tb-space-xs);
+  display: inline-flex;
+}
+
+.route-node-label {
+  position: relative;
+  padding-inline: var(--tb-space-md);
+  font-size: var(--tb-font-size-sm);
+  line-height: 1.2;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.route-node-problem {
+  position: absolute;
+  inset-block-start: calc(-1 * var(--tb-space-xs));
+  inset-inline-end: calc(-1 * var(--tb-space-xs));
+  display: inline-flex;
+  color: var(--tb-color-state-danger);
+}
+
+.route-canvas .react-flow__handle {
+  inline-size: var(--tb-space-sm);
+  block-size: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-surface-raised);
+  border-radius: var(--tb-radius-full);
+  background: var(--tb-color-border-strong);
+}
+
+.route-canvas .react-flow__node:focus-visible,
+.route-canvas .react-flow__edge:focus-visible {
+  outline: var(--tb-border-width-focus) solid var(--tb-color-focus-ring);
+}
+
+.route-canvas .react-flow__edge-path {
+  stroke: var(--tb-color-text-secondary);
+  stroke-width: 1.5;
+}
+
+.route-canvas .react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--tb-color-accent-base);
+  stroke-width: 2.5;
+}
+
+.route-canvas .react-flow__edge-textbg {
+  fill: var(--tb-color-surface-raised);
+}
+
+.route-canvas .react-flow__edge-text {
+  fill: var(--tb-color-text-primary);
+  font-size: var(--tb-font-size-sm);
+}
+
+.route-canvas .react-flow__controls {
+  display: grid;
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-raised);
+}
+
+.route-canvas .react-flow__controls-button {
+  display: grid;
+  place-items: center;
+  inline-size: 2rem;
+}

@@ -8449,6 +8449,18 @@
         }
       }
     },
+    "/api/v1/services/admin/groups": {
+      "get": {
+        "tags": [
+          "Services: builder"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/services/admin/connector-actions": {
       "get": {
         "tags": [
@@ -8559,6 +8571,39 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ServiceDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/services/admin/{id}/test": {
+      "post": {
+        "tags": [
+          "Services: builder"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RouteTestRequest"
               }
             }
           },
@@ -33722,6 +33767,38 @@
               "null",
               "string"
             ]
+          }
+        }
+      },
+      "RouteTestRequest": {
+        "required": [
+          "requesterId",
+          "data",
+          "outcomes"
+        ],
+        "type": "object",
+        "properties": {
+          "requesterId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
+          },
+          "data": {
+            "type": [
+              "null",
+              "object"
+            ]
+          },
+          "outcomes": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         }
       },

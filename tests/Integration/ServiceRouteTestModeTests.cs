@@ -90,4 +90,27 @@ public sealed class ServiceRouteTestModeTests(TenantWorld world)
         var other = await world.CreateTenantAsync("rtm-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
         Assert.Equal(HttpStatusCode.NotFound, (await other["admin"].Client.PostAsJsonAsync($"{Admin}/{id}/test", new { })).StatusCode);
     }
+
+    [Fact]
+    public async Task Owners_list_the_tenant_groups_for_queues_and_others_cannot()
+    {
+        var t = await world.CreateTenantAsync("rtg-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
+        await world.SeedUserAsync(t, "sara", MembershipTypes.Employee);
+        var group = await world.Factory.InScopeAsync(t.Id, async sp =>
+        {
+            var id = await sp.GetRequiredService<IAuthorizationProvisioning>().SyncDirectoryGroupAsync("logistics", "Logistics", [t["sara"].Id]);
+            await sp.GetRequiredService<IDbSession>().CommitAsync();
+            return id;
+        });
+        var list = (await (await t["admin"].Client.GetAsync($"{Admin}/groups")).ReadAsync<JsonElement>()).EnumerateArray().ToList();
+        var logistics = Assert.Single(list, g => g.GetProperty("id").GetGuid() == group);
+        Assert.Equal("Logistics", logistics.GetProperty("name").GetString());
+        Assert.Equal(1, logistics.GetProperty("members").GetInt32());
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["sara"].Client.GetAsync($"{Admin}/groups")).StatusCode);
+
+        // Another tenant never sees this tenant's groups.
+        var other = await world.CreateTenantAsync("rtg-" + Guid.NewGuid().ToString("N")[..8], "workplace_plus");
+        var theirs = (await (await other["admin"].Client.GetAsync($"{Admin}/groups")).ReadAsync<JsonElement>()).EnumerateArray();
+        Assert.DoesNotContain(theirs, g => g.GetProperty("id").GetGuid() == group);
+    }
 }

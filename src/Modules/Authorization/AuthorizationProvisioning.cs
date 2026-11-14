@@ -182,6 +182,13 @@ public sealed class AuthorizationProvisioning(IDbSession session, ITenantContext
         groupIds.Count == 0 ? new HashSet<Guid>()
             : (await session.QueryAsync("select id from authz.user_group where id = any(@ids)", new { ids = groupIds.ToArray() }, r => r.GetGuid(0), ct)).ToHashSet();
 
+    public async Task<IReadOnlyList<GroupSummary>> GroupsAsync(CancellationToken ct = default) =>
+        await session.QueryAsync(
+            """
+            select g.id, g.key, g.name, g.source, (select count(*) from authz.group_member m where m.group_id = g.id)::int
+            from authz.user_group g order by g.name, g.key limit 500
+            """, null, r => new GroupSummary(r.GetGuid(0), r.GetString(1), r.GetString(2), r.GetString(3), r.GetInt32(4)), ct);
+
     public Task<bool> IsBuiltInRoleKeyAsync(string roleKey, CancellationToken ct = default) =>
         session.ScalarAsync<bool>("select exists (select 1 from authz.role where key = @k and is_builtin)", new { k = roleKey }, ct);
 

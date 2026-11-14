@@ -245,6 +245,8 @@ public static class ServicesModule
             return Results.Created($"/api/v1/services/admin/{view.Service.Id}", view);
         });
 
+        admin.MapGet("/groups", async (RouteActions actions, CancellationToken ct) => Results.Ok(await actions.GroupsAsync(ct)));
+
         admin.MapGet("/connector-actions", async (RouteActions actions, CancellationToken ct) => Results.Ok(await actions.ListAsync(ct)));
 
         admin.MapGet("/{id:guid}", async (Guid id, ServiceAdmin services, CancellationToken ct) => Results.Ok(await services.GetAsync(id, ct)));
