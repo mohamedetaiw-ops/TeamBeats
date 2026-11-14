@@ -43,6 +43,8 @@ public sealed partial class ArchitectureTests
         {
             "TeamBeats.Modules.Identity.DevAuth->TeamBeats.Modules.Identity",
             "TeamBeats.Modules.AiGateway.OpenRouter->TeamBeats.Modules.AiGateway",
+            "TeamBeats.Modules.AiGateway.OpenAiCompatible->TeamBeats.Modules.AiGateway",
+            "TeamBeats.Modules.AiGateway.OpenRouter->TeamBeats.Modules.AiGateway.OpenAiCompatible",
         };
         var violations = new List<string>();
         foreach (var csproj in SourceFiles("src/Modules", "*.csproj"))
@@ -85,7 +87,7 @@ public sealed partial class ArchitectureTests
     {
         // Spec 013 FR-001 and constitution VIII: provider URLs and SDKs stay inside the adapter projects; every other
         // module calls IAiGateway from AiGateway.Contracts. The fake provider in DevFakes stands in for the real one.
-        string[] adapters = ["src/Modules/AiGateway.OpenRouter/", "src/DevFakes/"];
+        string[] adapters = ["src/Modules/AiGateway.OpenRouter/", "src/Modules/AiGateway.OpenAiCompatible/", "src/DevFakes/"];
         var markers = new[] { "openrouter.ai", "api.openai.com", "api.anthropic.com", "generativelanguage.googleapis.com", "using OpenAI", "using Anthropic", "Azure.AI.OpenAI" };
         var violations = SourceFiles("src")
             .Where(f => !adapters.Any(a => Rel(f).StartsWith(a, StringComparison.Ordinal)))
@@ -101,7 +103,7 @@ public sealed partial class ArchitectureTests
 
         var callers = SourceFiles("src/Modules", "*.csproj")
             .Where(f => !Rel(f).StartsWith("src/Modules/AiGateway", StringComparison.Ordinal))
-            .Where(f => ProjectReferences(f).Any(r => r is "TeamBeats.Modules.AiGateway" or "TeamBeats.Modules.AiGateway.OpenRouter"))
+            .Where(f => ProjectReferences(f).Any(r => r is "TeamBeats.Modules.AiGateway" or "TeamBeats.Modules.AiGateway.OpenRouter" or "TeamBeats.Modules.AiGateway.OpenAiCompatible"))
             .Select(Rel).ToList();
         Assert.True(callers.Count == 0, "Modules must call the gateway through AiGateway.Contracts only: " + string.Join(", ", callers));
     }

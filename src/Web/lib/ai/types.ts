@@ -28,6 +28,7 @@ export type PolicyDocument = {
   maxTemperature: number | null;
   regions: string[] | null;
   logging: string;
+  sovereign?: string[] | null;
 };
 
 export type RouteChange = {
@@ -106,3 +107,90 @@ export const DENIALS = [
 export function known<T extends string>(list: readonly T[], value: string): T | null {
   return (list as readonly string[]).includes(value) ? (value as T) : null;
 }
+
+/** Spec 013 US5: an AI budget and what was used in the current period (null for a per person budget). */
+export const BUDGET_SCOPES = ["tenant", "org_unit", "agent", "user", "each_user"] as const;
+export const BUDGET_ACTIONS = ["block", "downgrade", "alert"] as const;
+
+export type Budget = {
+  id: string;
+  scope: (typeof BUDGET_SCOPES)[number];
+  scopeId: string | null;
+  period: "month" | "day";
+  amount: number | null;
+  requests: number | null;
+  action: (typeof BUDGET_ACTIONS)[number];
+  downgradeModel: string | null;
+  ownerId: string | null;
+  version: number;
+  used: number | null;
+  periodStart: string;
+  resetsAt: string;
+  updatedAt: string;
+};
+
+export type BudgetsView = {
+  editable: boolean;
+  scopedAllowed: boolean;
+  readOnlyReason: string | null;
+  budgets: Budget[];
+  labels: Record<string, Record<string, string>>;
+};
+
+/** Spec 013 US7: what an org unit narrows, and what it inherits from the tenant policy and the units above it. */
+export const CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
+
+export type OrgPolicyDocument = {
+  allowlist: string[] | null;
+  confidential: string[] | null;
+  maxClassification: string | null;
+  maxOutputTokens: number | null;
+  minTemperature: number | null;
+  maxTemperature: number | null;
+};
+
+export type UnitLimits = {
+  allowlist: string[];
+  confidential: string[];
+  maxClassification: string;
+  maxOutputTokens: number | null;
+  minTemperature: number | null;
+  maxTemperature: number | null;
+};
+
+export type OrgPolicyView = {
+  unitId: string;
+  version: number;
+  policy: OrgPolicyDocument | null;
+  parent: UnitLimits;
+  source: Record<string, string>;
+  editable: boolean;
+};
+
+export type OrgPolicySummary = { unitId: string; version: number; policy: OrgPolicyDocument; updatedAt: string };
+
+export const MODEL_CAPABILITIES = ["chat", "tools", "structured_output", "vision", "embeddings"] as const;
+
+export type PrivateModel = { name: string; capabilities: string[]; contextTokens: number };
+
+export type EndpointCheck = { check: string; model: string | null; passed: boolean; detail: string | null };
+
+export type PrivateEndpoint = {
+  id: string;
+  name: string;
+  baseUrl: string;
+  secretRef: string;
+  models: PrivateModel[];
+  region: string;
+  maxClassification: string;
+  status: "enabled" | "disabled";
+  version: number;
+  lastTestAt: string | null;
+  lastTestPassed: boolean | null;
+  checks: EndpointCheck[];
+  testCurrent: boolean;
+  catalogueModels: string[];
+  updatedAt: string;
+};
+
+export type PrivateEndpointsView = { editable: boolean; readOnlyReason: string | null; endpoints: PrivateEndpoint[] };

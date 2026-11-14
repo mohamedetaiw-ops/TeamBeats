@@ -57,7 +57,12 @@ public static class Classifications
     public static string Key(DataClassification value) => value.ToString().ToLowerInvariant();
 }
 
-public sealed record CatalogueSnapshot(IReadOnlyDictionary<string, CatalogueEntry> Models, IReadOnlyDictionary<string, IReadOnlyList<string>> PlatformRoutes);
+public sealed record CatalogueSnapshot(IReadOnlyDictionary<string, CatalogueEntry> Models, IReadOnlyDictionary<string, IReadOnlyList<string>> PlatformRoutes)
+{
+    /// <summary>For a tenant snapshot, the platform snapshot it was built on, so a platform change rebuilds it.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public CatalogueSnapshot? Platform { get; init; }
+}
 
 public sealed record CatalogueEntryRequest(
     string? Model,
@@ -80,7 +85,7 @@ public sealed record PlatformRouteRequest(List<string>? Models);
 /// The platform model catalogue and default model set. Read by every tenant's gateway calls through a short cache so a
 /// change by the platform operator applies within the 60 seconds of US1 scenario 5; written only on the platform host.
 /// </summary>
-public sealed class ModelCatalogue(IDbSession session, IAuditWriter audit, IClock clock)
+public sealed class ModelCatalogue(IDbSession session, IAuditWriter audit, IClock clock, TeamBeats.TenantContext.ITenantContext context)
 {
     public static readonly TimeSpan CacheFor = TimeSpan.FromSeconds(30);
     public static readonly IReadOnlySet<string> Providers = new HashSet<string>(StringComparer.Ordinal) { "openrouter" };
@@ -95,6 +100,31 @@ public sealed class ModelCatalogue(IDbSession session, IAuditWriter audit, ICloc
         {
             cached = null;
         }
+        TenantCache.Clear();
+    }
+
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<Guid, (CatalogueSnapshot Snapshot, DateTimeOffset At)> TenantCache = new();
+
+    internal static void InvalidateTenant(Guid tenant) => TenantCache.TryRemove(tenant, out _);
+
+    /// <summary>
+    /// The platform catalogue plus the models of the tenant's enabled private endpoints (spec 013 US6), so a tenant's
+    /// private models are known to its own policy and gateway only.
+    /// </summary>
+    public async Task<CatalogueSnapshot> ForTenantAsync(CancellationToken ct)
+    {
+        var platform = await SnapshotAsync(ct);
+        var tenant = context.RequireTenant();
+        if (TenantCache.TryGetValue(tenant, out var hit) && clock.UtcNow - hit.At < CacheFor && ReferenceEquals(hit.Snapshot.Platform ?? hit.Snapshot, platform))
+        {
+            return hit.Snapshot;
+        }
+        var own = await PrivateEndpoints.EntriesAsync(session, ct);
+        var snapshot = own.Count == 0
+            ? platform
+            : new CatalogueSnapshot(platform.Models.Values.Concat(own).ToDictionary(m => m.Model, StringComparer.Ordinal), platform.PlatformRoutes) { Platform = platform };
+        TenantCache[tenant] = (snapshot, clock.UtcNow);
+        return snapshot;
     }
 
     public async Task<CatalogueSnapshot> SnapshotAsync(CancellationToken ct)

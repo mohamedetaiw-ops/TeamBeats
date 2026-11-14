@@ -3,5 +3,6 @@
   <PropertyGroup><RootNamespace>TeamBeats.Modules.AiGateway.OpenRouter</RootNamespace><AssemblyName>TeamBeats.Modules.AiGateway.OpenRouter</AssemblyName></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../AiGateway/TeamBeats.Modules.AiGateway.csproj" />
+    <ProjectReference Include="../AiGateway.OpenAiCompatible/TeamBeats.Modules.AiGateway.OpenAiCompatible.csproj" />
   </ItemGroup>
 </Project>

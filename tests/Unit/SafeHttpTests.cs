@@ -1,3 +1,4 @@
+using TeamBeats.Primitives;
 using System.Net;
 using TeamBeats.Modules.Integrations.Runtime;
 using Xunit;

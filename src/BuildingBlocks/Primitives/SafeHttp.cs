@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace TeamBeats.Modules.Integrations.Runtime;
+namespace TeamBeats.Primitives;
 
 /// <summary>Thrown when an outbound connection would reach an address shared SaaS must never reach (spec 017 FR-012).</summary>
 public sealed class BlockedAddressException(string host) : Exception($"Outbound connection to '{host}' was refused: it resolves to a private, loopback or link-local address.");

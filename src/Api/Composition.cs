@@ -17,6 +17,7 @@ using TeamBeats.Modules.Security;
 using TeamBeats.Modules.Content;
 using TeamBeats.Modules.Documents;
 using TeamBeats.Modules.AiGateway;
+using TeamBeats.Modules.AiGateway.OpenAiCompatible;
 using TeamBeats.Modules.AiGateway.OpenRouter;
 using TeamBeats.Modules.Calendar;
 using TeamBeats.Modules.Policies;
@@ -157,6 +158,7 @@ public static class TeamBeatsModules
         services.AddComplianceModule();
         services.AddAiGatewayModule();
         services.AddOpenRouterAdapter();
+        services.AddOpenAiCompatibleAdapter(configuration);
         services.AddSearchModule();
         services.AddAgentsModule();
         services.AddEvaluationModule();

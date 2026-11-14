@@ -43,6 +43,9 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
 
     public FakeOpenRouter OpenRouter { get; } = new();
 
+    /// <summary>A tenant's private OpenAI-compatible endpoint (spec 013 US6).</summary>
+    public FakeOpenRouter PrivateModels { get; } = FakeOpenRouter.Private();
+
     public FakeGotenberg Gotenberg { get; } = new();
 
     public FakeTika Tika { get; } = new();
@@ -108,7 +111,8 @@ public sealed class ApiFactory(TestDatabase database) : WebApplicationFactory<Ap
             services.AddHttpClient(TeamBeats.Persistence.GotenbergConverter.ClientName).ConfigurePrimaryHttpMessageHandler(() => Gotenberg);
             services.AddHttpClient(TeamBeats.Persistence.TikaTextRecognizer.ClientName).ConfigurePrimaryHttpMessageHandler(() => Tika);
             services.AddHttpClient(TeamBeats.Modules.AiGateway.OpenRouter.OpenRouterProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => OpenRouter);
-            services.AddHttpClient(TeamBeats.Modules.Integrations.Runtime.SafeHttp.ClientName).ConfigurePrimaryHttpMessageHandler(() => Rest);
+            services.AddHttpClient(TeamBeats.Modules.AiGateway.OpenAiCompatible.PrivateEndpointProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => PrivateModels);
+            services.AddHttpClient(TeamBeats.Primitives.SafeHttp.ClientName).ConfigurePrimaryHttpMessageHandler(() => Rest);
             services.AddHttpClient(TeamBeats.Modules.Integrations.WebPush.WebPushClient.ClientName).ConfigurePrimaryHttpMessageHandler(() => Push);
         });
     }

@@ -11,6 +11,12 @@ public static class Capabilities
     public const string AiAgentsMaxCustom = "ai.agents.max_custom";
     public const string AiModelChoice = "ai.model_choice";
 
+    // Spec 013 section 9 (R2): the tenant budget is in every package; org unit, agent and user budgets, and private
+    // model endpoints with sovereign routing, are Workplace Plus and above.
+    public const string AiBudgets = "ai.budgets";
+    public const string AiBudgetsScoped = "ai.budgets.scoped";
+    public const string AiModelsPrivateEndpoint = "ai.models.private_endpoint";
+
     // Spec 034 section 9: the evaluation baseline has no key; these add depth (production, experiments, business
     // outcomes and trace export are R2 and refuse until built).
     public const string AiEvalsAdvanced = "ai.evals.advanced";

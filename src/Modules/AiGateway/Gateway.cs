@@ -13,7 +13,23 @@ using TeamBeats.TenantContext;
 namespace TeamBeats.Modules.AiGateway;
 
 /// <summary>The models a call may use, in order, with the parameters after the tenant's limits.</summary>
-internal sealed record RoutePlan(string UseCase, DataClassification Classification, IReadOnlyList<CatalogueEntry> Candidates, int? MaxTokens, double? Temperature);
+internal sealed record RoutePlan(string UseCase, DataClassification Classification, IReadOnlyList<CatalogueEntry> Candidates, int? MaxTokens, double? Temperature)
+{
+    /// <summary>What the budget step decided, so the call can give back its requests or send threshold alerts when it ends.</summary>
+    public BudgetDecision? Budget { get; init; }
+}
+
+/// <summary>A plan, or the reason there is none and, for a budget, when it resets.</summary>
+internal sealed record PlanOutcome(RoutePlan? Plan, string? Denial, DateTimeOffset? ResetsAt = null)
+{
+    public void Deconstruct(out RoutePlan? plan, out string? denial)
+    {
+        plan = Plan;
+        denial = Denial;
+    }
+
+    public static implicit operator PlanOutcome((RoutePlan? Plan, string? Denial) value) => new(value.Plan, value.Denial);
+}
 
 /// <summary>
 /// The gateway pipeline (spec 013 FR-002), in this order: entitlement and quota, budget, classification policy,
@@ -30,6 +46,9 @@ public sealed class AiGatewayService(
     IEnumerable<IModelProvider> providers,
     ProviderCircuits circuits,
     UsageRecorder usage,
+    BudgetGuard budgets,
+    OrgPolicies orgPolicies,
+    PrivateEndpoints endpoints,
     IDbSession session,
     IOrganizationHierarchy hierarchy,
     IClock clock,
@@ -47,8 +66,9 @@ public sealed class AiGatewayService(
         + request.Messages.Sum(m => m.Attachments?.Count ?? 0) * AiAttachment.EstimatedTokens;
 
     /// <summary>Steps 1 to 6: who may call, where the content may go, which models are left, and the parameters after limits.</summary>
-    internal async Task<(RoutePlan? Plan, string? Denial)> PlanAsync(string useCase, string? model, DataClassification? classification, int inputTokens, int? maxTokens,
-        double? temperature, IReadOnlyCollection<string> needs, string? modelUnderTest, bool platformCharged, CancellationToken ct, Guid? routeChangeId = null)
+    internal async Task<PlanOutcome> PlanAsync(string useCase, string? model, DataClassification? classification, int inputTokens, int? maxTokens,
+        double? temperature, IReadOnlyCollection<string> needs, string? modelUnderTest, bool platformCharged, CancellationToken ct, Guid? routeChangeId = null,
+        BudgetSubject? subject = null, IReadOnlyCollection<Guid>? resourceUnits = null)
     {
         context.RequireTenant();
         if (!AiUseCases.All.Contains(useCase))
@@ -68,18 +88,41 @@ public sealed class AiGatewayService(
             return (null, AiDenials.QuotaExhausted);
         }
 
-        // 2. Budget: budgets are R2; the step stays here so the order does not change.
+        // 2. Budget (US5): the strictest action of every budget that matches the tenant, the acting unit and its parents, the
+        // agent and the person. Judge calls of platform suites are not the tenant's spend. A request it counted is given
+        // back when a later step refuses the call.
+        BudgetDecision? budget = null;
+        if (subject is not null && !platformCharged)
+        {
+            budget = await budgets.CheckAsync(subject, ct);
+            if (budget.Denial is { } exhausted)
+            {
+                return new PlanOutcome(null, exhausted, budget.ResetsAt);
+            }
+        }
+        var outcome = await RouteAsync(useCase, model, classification, inputTokens, maxTokens, temperature, needs, modelUnderTest, routeChangeId,
+            useCase == AiUseCases.Embed ? null : budget?.Downgrade, subject?.Unit, resourceUnits, ct);
+        if (outcome.Plan is null)
+        {
+            await budgets.ReleaseAsync(budget?.Reserved ?? []);
+            return outcome;
+        }
+        return outcome with { Plan = outcome.Plan with { Budget = budget } };
+    }
 
+    /// <summary>
+    /// Steps 3 to 6. <paramref name="downgrade"/> is the cheaper model a budget switched to (US5 scenario 1): it replaces
+    /// the route and goes through the same policy steps. Embeddings are never downgraded.
+    /// </summary>
+    private async Task<PlanOutcome> RouteAsync(string useCase, string? model, DataClassification? classification, int inputTokens, int? maxTokens,
+        double? temperature, IReadOnlyCollection<string> needs, string? modelUnderTest, Guid? routeChangeId, string? downgrade, Guid? unit,
+        IReadOnlyCollection<Guid>? resourceUnits, CancellationToken ct)
+    {
         // 3. Classification policy. A missing classification is a programming error, never defaulted to Public.
         if (classification is not { } level)
         {
             logger.LogError("AI call without a classification for use case {UseCase}; the calling module must classify its content", useCase);
             return (null, AiDenials.ClassificationMissing);
-        }
-        if (level == DataClassification.Restricted)
-        {
-            // Restricted content only goes to approved private endpoints (R2); OpenRouter is never eligible.
-            return (null, AiDenials.ClassificationBlocked);
         }
         var policy = (await policies.EffectiveAsync(ct)).Document;
         if (routeChangeId is { } change)
@@ -91,9 +134,27 @@ public sealed class AiGatewayService(
             }
             policy = proposed;
         }
-        var snapshot = await catalogue.SnapshotAsync(ct);
-        bool Classified(CatalogueEntry e) => e.Ceiling >= level && (level < DataClassification.Confidential || (e.ConfidentialEligible && policy.Confidential.Contains(e.Model)));
-        if (level == DataClassification.Confidential && !policy.Confidential.Any(m => snapshot.Models.TryGetValue(m, out var e) && e.ConfidentialEligible))
+
+        // US7: the acting unit's policies, and those of every unit the request is about, only narrow the tenant policy.
+        if (await orgPolicies.LimitsAsync(policy, unit, resourceUnits, ct) is { } limits)
+        {
+            if (level > OrgPolicies.Ceiling(limits))
+            {
+                return (null, AiDenials.ClassificationBlocked);
+            }
+            policy = OrgPolicies.Apply(policy, limits);
+        }
+        var snapshot = await catalogue.ForTenantAsync(ct);
+        // Restricted content goes only to a tenant's own private endpoint whose ceiling is Restricted, never to a shared
+        // provider under any setting (FR-007); Confidential needs a model the tenant allowed for it. A classification the
+        // tenant keeps on private endpoints (sovereign routing, US6 scenario 2) has no shared provider among its candidates,
+        // so a failure ends the call instead of falling back.
+        var sovereign = policy.Sovereign?.Contains(Classifications.Key(level)) == true;
+        bool Classified(CatalogueEntry e) => e.Ceiling >= level
+            && (level < DataClassification.Confidential || (e.ConfidentialEligible && policy.Confidential.Contains(e.Model)))
+            && (level < DataClassification.Restricted || e.Provider == PrivateEndpoints.ProviderKey)
+            && (!sovereign || e.Provider == PrivateEndpoints.ProviderKey);
+        if (level >= DataClassification.Confidential && !policy.Confidential.Any(m => snapshot.Models.TryGetValue(m, out var e) && Classified(e)))
         {
             return (null, AiDenials.ClassificationBlocked);
         }
@@ -113,6 +174,14 @@ public sealed class AiGatewayService(
         else
         {
             chain = [.. route];
+        }
+        if (downgrade is not null)
+        {
+            if (!policy.Allowlist.Contains(downgrade) || !snapshot.Models.TryGetValue(downgrade, out var cheaper) || !cheaper.Active)
+            {
+                return (null, AiDenials.BudgetExhausted);
+            }
+            chain = [downgrade];
         }
         if (useCase == AiUseCases.Evaluation && modelUnderTest is not null)
         {
@@ -207,32 +276,42 @@ public sealed class AiGatewayService(
         return [.. needs];
     }
 
-    private async Task<(RoutePlan? Plan, string? Denial)> PlanChatAsync(AiRequest request, CancellationToken ct)
+    private BudgetSubject Subject(Guid? unit, Guid? agent) => new(unit, agent, context.ActorType == ActorType.User ? context.ActorId : null);
+
+    private async Task<PlanOutcome> PlanChatAsync(AiRequest request, Guid? unit, CancellationToken ct)
     {
         if (request.Messages.Count == 0 || (request.UseCase == AiUseCases.Evaluation && request.Tools is { Count: > 0 }) || request.UseCase == AiUseCases.Embed)
         {
             return (null, AiDenials.InvalidRequest);
         }
         return await PlanAsync(request.UseCase, request.Model, request.Classification, Estimate(request), request.MaxTokens, request.Temperature, Needs(request),
-            request.ModelUnderTest, request.UseCase == AiUseCases.Evaluation && request.PlatformCharged, ct, request.RouteChangeId);
+            request.ModelUnderTest, request.UseCase == AiUseCases.Evaluation && request.PlatformCharged, ct, request.RouteChangeId, Subject(unit, request.AgentId),
+            request.ResourceUnitIds);
     }
 
     public async Task<AiResult> ChatAsync(AiRequest request, CancellationToken ct = default)
     {
         var watch = Stopwatch.StartNew();
         var meta = Meta(request);
-        var (plan, denial) = await PlanChatAsync(request, ct);
-        if (plan is null)
+        meta = meta with { UnitId = await UnitAsync(meta, ct) };
+        var outcome = await PlanChatAsync(request, meta.UnitId, ct);
+        if (outcome.Plan is not { } plan)
         {
-            await DeniedAsync(meta, denial!, watch, ct);
-            return AiResult.Denied(denial!);
+            await DeniedAsync(meta, outcome.Denial!, watch, ct);
+            return AiResult.Denied(outcome.Denial!, outcome.ResetsAt);
         }
 
         // 7 and 8. Routing and fallback: one retry on a retryable error, then the next model that passed the same policy.
         foreach (var entry in plan.Candidates)
         {
             var provider = byKey[entry.Provider];
-            if (!circuits.Allow(provider.Key))
+            var circuit = CircuitOf(entry);
+            if (!circuits.Allow(circuit))
+            {
+                continue;
+            }
+            var (reachable, target) = await TargetAsync(entry, ct);
+            if (!reachable)
             {
                 continue;
             }
@@ -241,11 +320,11 @@ public sealed class AiGatewayService(
                 ProviderReply reply;
                 try
                 {
-                    reply = await provider.ChatAsync(new ProviderChat(entry.Model, request.Messages, request.Tools, request.ResponseSchema, plan.MaxTokens, plan.Temperature), ct);
+                    reply = await provider.ChatAsync(new ProviderChat(entry.Model, request.Messages, request.Tools, request.ResponseSchema, plan.MaxTokens, plan.Temperature, target), ct);
                 }
                 catch (ProviderException ex)
                 {
-                    circuits.Record(provider.Key, failed: true);
+                    circuits.Record(circuit, failed: true);
                     logger.LogWarning("AI provider {Provider} failed for {Model} (retryable {Retryable}): {Message}", provider.Key, entry.Model, ex.Retryable, ex.Message);
                     if (ex.Retryable && attempt == 0)
                     {
@@ -253,7 +332,7 @@ public sealed class AiGatewayService(
                     }
                     break;
                 }
-                circuits.Record(provider.Key, failed: false);
+                circuits.Record(circuit, failed: false);
 
                 // 9. Output checks: tool calls for tools not offered are dropped; structured output must match the schema.
                 var calls = OfferedOnly(reply.ToolCalls, request.Tools, entry.Model);
@@ -267,6 +346,7 @@ public sealed class AiGatewayService(
                 return AiResult.Ok(completion);
             }
         }
+        await budgets.ReleaseAsync(plan.Budget?.Reserved ?? []);
         await DeniedAsync(meta, AiDenials.ProviderUnavailable, watch, ct);
         return AiResult.Denied(AiDenials.ProviderUnavailable);
     }
@@ -275,18 +355,25 @@ public sealed class AiGatewayService(
     {
         var watch = Stopwatch.StartNew();
         var meta = Meta(request);
-        var (plan, denial) = await PlanChatAsync(request, ct);
-        if (plan is null)
+        meta = meta with { UnitId = await UnitAsync(meta, ct) };
+        var outcome = await PlanChatAsync(request, meta.UnitId, ct);
+        if (outcome.Plan is not { } plan)
         {
-            await DeniedAsync(meta, denial!, watch, ct);
-            yield return new AiStreamChunk(null, AiResult.Denied(denial!));
+            await DeniedAsync(meta, outcome.Denial!, watch, ct);
+            yield return new AiStreamChunk(null, AiResult.Denied(outcome.Denial!, outcome.ResetsAt));
             yield break;
         }
         var input = Estimate(request);
         foreach (var entry in plan.Candidates)
         {
             var provider = byKey[entry.Provider];
-            if (!circuits.Allow(provider.Key))
+            var circuit = CircuitOf(entry);
+            if (!circuits.Allow(circuit))
+            {
+                continue;
+            }
+            var (reachable, target) = await TargetAsync(entry, ct);
+            if (!reachable)
             {
                 continue;
             }
@@ -295,7 +382,7 @@ public sealed class AiGatewayService(
                 var text = new StringBuilder();
                 ProviderReply? final = null;
                 ProviderException? failure = null;
-                await using (var parts = provider.StreamAsync(new ProviderChat(entry.Model, request.Messages, request.Tools, request.ResponseSchema, plan.MaxTokens, plan.Temperature), ct)
+                await using (var parts = provider.StreamAsync(new ProviderChat(entry.Model, request.Messages, request.Tools, request.ResponseSchema, plan.MaxTokens, plan.Temperature, target), ct)
                     .GetAsyncEnumerator(ct))
                 {
                     while (true)
@@ -326,7 +413,7 @@ public sealed class AiGatewayService(
                         }
                     }
                 }
-                circuits.Record(provider.Key, failed: failure is not null);
+                circuits.Record(circuit, failed: failure is not null);
                 var fallback = entry != plan.Candidates[0];
                 if (final is not null)
                 {
@@ -351,6 +438,7 @@ public sealed class AiGatewayService(
                 break;
             }
         }
+        await budgets.ReleaseAsync(plan.Budget?.Reserved ?? []);
         await DeniedAsync(meta, AiDenials.ProviderUnavailable, watch, ct);
         yield return new AiStreamChunk(null, AiResult.Denied(AiDenials.ProviderUnavailable));
     }
@@ -363,16 +451,24 @@ public sealed class AiGatewayService(
         {
             return EmbeddingResult.Denied(AiDenials.InvalidRequest);
         }
-        var (plan, denial) = await PlanAsync(AiUseCases.Embed, request.Model, request.Classification, Estimate(request.Inputs), null, null, [ModelCapabilities.Embeddings], null, false, ct);
-        if (plan is null)
+        meta = meta with { UnitId = await UnitAsync(meta, ct) };
+        var outcome = await PlanAsync(AiUseCases.Embed, request.Model, request.Classification, Estimate(request.Inputs), null, null, [ModelCapabilities.Embeddings], null,
+            false, ct, subject: Subject(meta.UnitId, null));
+        if (outcome.Plan is not { } plan)
         {
-            await DeniedAsync(meta, denial!, watch, ct);
-            return EmbeddingResult.Denied(denial!);
+            await DeniedAsync(meta, outcome.Denial!, watch, ct);
+            return EmbeddingResult.Denied(outcome.Denial!, outcome.ResetsAt);
         }
         foreach (var entry in plan.Candidates)
         {
             var provider = byKey[entry.Provider];
-            if (!circuits.Allow(provider.Key))
+            var circuit = CircuitOf(entry);
+            if (!circuits.Allow(circuit))
+            {
+                continue;
+            }
+            var (reachable, target) = await TargetAsync(entry, ct);
+            if (!reachable)
             {
                 continue;
             }
@@ -380,15 +476,15 @@ public sealed class AiGatewayService(
             {
                 try
                 {
-                    var result = await provider.EmbedAsync(entry.Model, request.Inputs, ct);
-                    circuits.Record(provider.Key, failed: false);
+                    var result = await provider.EmbedAsync(entry.Model, request.Inputs, ct, target);
+                    circuits.Record(circuit, failed: false);
                     var completion = new AiCompletion(string.Empty, [], result.Usage, entry.Model, provider.Key, entry != plan.Candidates[0], false, "stop");
                     await ServedAsync(meta, plan, completion, watch, ct);
                     return new EmbeddingResult(result.Vectors, result.Usage, entry.Model, provider.Key, null);
                 }
                 catch (ProviderException ex)
                 {
-                    circuits.Record(provider.Key, failed: true);
+                    circuits.Record(circuit, failed: true);
                     if (ex.Retryable && attempt == 0)
                     {
                         continue;
@@ -397,8 +493,27 @@ public sealed class AiGatewayService(
                 }
             }
         }
+        await budgets.ReleaseAsync(plan.Budget?.Reserved ?? []);
         await DeniedAsync(meta, AiDenials.ProviderUnavailable, watch, ct);
         return EmbeddingResult.Denied(AiDenials.ProviderUnavailable);
+    }
+
+    /// <summary>One circuit per shared provider, and one per private endpoint, so one tenant's server being down never closes another's.</summary>
+    private static string CircuitOf(CatalogueEntry e) => PrivateEndpoints.Parse(e.Model) is { } p ? $"{PrivateEndpoints.ProviderKey}/{p.Endpoint:N}" : e.Provider;
+
+    /// <summary>For a private model, where its endpoint is and its key; a model whose endpoint cannot be reached now is skipped like a failed one.</summary>
+    private async Task<(bool Reachable, ProviderTarget? Target)> TargetAsync(CatalogueEntry e, CancellationToken ct)
+    {
+        if (e.Provider != PrivateEndpoints.ProviderKey)
+        {
+            return (true, null);
+        }
+        var target = await endpoints.TargetAsync(e.Model, ct);
+        if (target is null)
+        {
+            logger.LogWarning("AI private endpoint for {Model} is disabled or its key is missing; the model was skipped", e.Model);
+        }
+        return (target is not null, target);
     }
 
     /// <summary>Drops tool calls for tools that were not offered and records it as a policy event (edge cases).</summary>
@@ -446,6 +561,10 @@ public sealed class AiGatewayService(
         await usage.RecordAsync(new CallRecord(meta.UseCase, await UnitAsync(meta, ct), meta.AgentId, meta.AgentVersion, completion.Model, meta.ModelRequested,
             completion.Provider, completion.Usage, latency, UsageRecorder.Cost(model, completion.Usage), null, meta.Classification, completion.FallbackUsed,
             completion.Partial, meta.PlatformCharged, meta.Messages, completion.Content), ct);
+        if (plan.Budget is { } budget)
+        {
+            await budgets.AlertAsync(budget);
+        }
     }
 
     private async Task DeniedAsync(CallMeta meta, string reason, Stopwatch watch, CancellationToken ct)

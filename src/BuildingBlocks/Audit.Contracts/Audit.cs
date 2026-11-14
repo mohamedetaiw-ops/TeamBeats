@@ -452,6 +452,13 @@ public static class AuditActions
     public const string AiCatalogueChanged = "ai.catalogue_changed";
     public const string AiLoggingWindowOpened = "ai.logging_window_opened";
     public const string AiLoggingWindowClosed = "ai.logging_window_closed";
+    public const string AiBudgetChanged = "ai.budget_changed";
+    public const string AiBudgetReached = "ai.budget_reached";
+    public const string AiOrgPolicyChanged = "ai.org_policy_changed";
+    public const string AiEndpointRegistered = "ai.endpoint_registered";
+    public const string AiEndpointTested = "ai.endpoint_tested";
+    public const string AiEndpointEnabled = "ai.endpoint_enabled";
+    public const string AiEndpointDisabled = "ai.endpoint_disabled";
 
     // 012
     public const string SearchBestBetChanged = "search.best_bet_changed";

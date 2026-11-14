@@ -13,7 +13,17 @@ public sealed record ProviderChat(
     IReadOnlyList<AiTool>? Tools,
     JsonElement? ResponseSchema,
     int? MaxTokens,
-    double? Temperature);
+    double? Temperature,
+    ProviderTarget? Target = null);
+
+/// <summary>
+/// Where a tenant's private endpoint is (spec 013 US6): its base address, the key read from the secret manager at the
+/// moment of the call, and the model name the server knows. Only the gateway fills it, never a caller.
+/// </summary>
+public sealed record ProviderTarget(string BaseUrl, string ApiKey, string Model)
+{
+    public override string ToString() => $"ProviderTarget {{ BaseUrl = {BaseUrl}, Model = {Model} }}";
+}
 
 public sealed record ProviderReply(string Content, IReadOnlyList<AiToolCall> ToolCalls, AiUsage Usage, string FinishReason, bool Partial = false);
 
@@ -44,7 +54,16 @@ public interface IModelProvider
 
     IAsyncEnumerable<ProviderStreamPart> StreamAsync(ProviderChat request, CancellationToken ct);
 
-    Task<ProviderEmbedding> EmbedAsync(string model, IReadOnlyList<string> inputs, CancellationToken ct);
+    Task<ProviderEmbedding> EmbedAsync(string model, IReadOnlyList<string> inputs, CancellationToken ct, ProviderTarget? target = null);
+}
+
+/// <summary>What a connection and capability test of a private endpoint found (US6 scenario 1), one check per item.</summary>
+public sealed record EndpointCheck(string Check, string? Model, bool Passed, string? Detail);
+
+/// <summary>Runs the connection and capability test of a private endpoint. Implemented by the OpenAI-compatible adapter.</summary>
+public interface IPrivateEndpointProbe
+{
+    Task<IReadOnlyList<EndpointCheck>> TestAsync(string baseUrl, string apiKey, IReadOnlyList<PrivateModel> models, CancellationToken ct);
 }
 
 /// <summary>
