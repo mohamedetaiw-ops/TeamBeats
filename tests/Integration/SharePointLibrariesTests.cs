@@ -3,7 +3,11 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using TeamBeats.Audit.Contracts;
+using Microsoft.Extensions.DependencyInjection;
 using TeamBeats.Authorization.Contracts;
+using TeamBeats.Messaging;
+using TeamBeats.Modules.Documents;
+using TeamBeats.Persistence;
 using TeamBeats.Modules.Tenancy.Contracts;
 using TeamBeats.Testing;
 using Xunit;
@@ -215,6 +219,86 @@ public sealed class SharePointLibrariesTests(TenantWorld world)
         // A plan without Microsoft 365 offers no sources at all.
         var plain = await FreshAsync("workplace");
         Assert.Empty((await OkAsync(plain.T["admin"].Client.GetAsync("/api/v1/documents/connected-sources"))).EnumerateArray());
+    }
+
+    private async Task SyncAsync(Org o, Guid library, bool full = false)
+    {
+        await world.Factory.InScopeAsync(o.T.Id, async sp =>
+        {
+            await sp.GetRequiredService<ConnectedSync>().HandleAsync(new ConnectedLibrarySyncRequested(library, full), CancellationToken.None);
+            await sp.GetRequiredService<IDbSession>().CommitAsync(CancellationToken.None);
+            return 0;
+        });
+        var dispatcher = world.Factory.Services.GetRequiredService<OutboxDispatcher>();
+        for (var i = 0; i < 20 && await dispatcher.DispatchBatchAsync(500, CancellationToken.None) > 0; i++)
+        {
+        }
+    }
+
+    private static async Task<string[]> FoundAsync(HttpClient client, string q) =>
+        (await OkAsync(client.GetAsync($"/api/v1/search?q={Uri.EscapeDataString(q)}"))).GetProperty("results").EnumerateArray()
+            .Select(r => r.GetProperty("title").GetString()!).ToArray();
+
+    private static async Task<Guid> ResultAsync(HttpClient client, string q) =>
+        (await OkAsync(client.GetAsync($"/api/v1/search?q={Uri.EscapeDataString(q)}"))).GetProperty("results").EnumerateArray()
+            .Select(r => r.GetProperty("itemId").GetGuid()).First();
+
+    [Fact]
+    public async Task Sync_mirrors_readers_for_search_and_keeps_a_last_synced_listing_for_outages()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        var library = await ConnectedLibraryAsync(o);
+        await ConnectAsync(t, "reader");
+        await SyncAsync(o, library);
+
+        // Search filters by the mirrored readers and the library's audience; inherited site group access is not mirrored, so it only narrows.
+        Assert.Contains("Salaries.xlsx", await FoundAsync(t["lm"].Client, "salaries"));
+        Assert.DoesNotContain("Salaries.xlsx", await FoundAsync(t["reader"].Client, "salaries"));
+        Assert.DoesNotContain("Handbook.pdf", await FoundAsync(t["reader"].Client, "handbook"));
+
+        // A permission change in SharePoint reaches search with the next sync, and the result leads to SharePoint.
+        Graph.SetSharePointReaders(o.Handbook, t["reader"].Email);
+        await SyncAsync(o, library);
+        Assert.Contains("Handbook.pdf", await FoundAsync(t["reader"].Client, "handbook"));
+        var handbook = await ResultAsync(t["reader"].Client, "handbook");
+        var link = await OkAsync(t["reader"].Client.GetAsync($"{Libraries}/{library}/connected/links/{handbook}"));
+        Assert.StartsWith("https://fake-sharepoint.example/", link.GetProperty("webLink").GetString());
+        Assert.Equal(HttpStatusCode.NotFound, (await t["outsider"].Client.GetAsync($"{Libraries}/{library}/connected/links/{handbook}")).StatusCode);
+        Assert.DoesNotContain("Handbook.pdf", await FoundAsync(t["outsider"].Client, "handbook"));
+        var other = await world.CreateTenantAsync("sp-x-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");
+        Assert.Empty(await FoundAsync(other["admin"].Client, "handbook"));
+
+        // SharePoint down: the library lists the last synced copy, filtered by the mirrored readers, and refuses to open files.
+        for (var i = 0; i < 3; i++)
+        {
+            Graph.DelegatedFaults.Enqueue(503);
+        }
+        var degraded = await ItemsAsync(t["reader"].Client, library);
+        Assert.Equal("degraded", degraded.GetProperty("state").GetString());
+        Assert.Equal(["Policies"], Names(degraded));
+        Assert.NotEqual(JsonValueKind.Null, degraded.GetProperty("syncedAt").ValueKind);
+        Graph.DelegatedFaults.Clear();
+
+        // A failing sync marks the library degraded and tells the integration administrators once.
+        for (var i = 0; i < 3; i++)
+        {
+            Graph.DelegatedFaults.Enqueue(503);
+        }
+        await SyncAsync(o, library);
+        Graph.DelegatedFaults.Clear();
+        var since = await world.Factory.InScopeAsync(t.Id, sp => sp.GetRequiredService<IDbSession>().ScalarAsync<bool>(
+            "select degraded_since is not null from documents.connected_sync where library_id = @library", new { library }, CancellationToken.None));
+        Assert.True(since);
+        var inbox = await OkAsync(t["admin"].Client.GetAsync("/api/v1/me/notifications"));
+        Assert.Contains(inbox.GetProperty("items").EnumerateArray(), n => n.GetProperty("link").GetString() == $"/documents/libraries/{library}");
+
+        // Deleted in SharePoint: gone from search after the next sync, which also clears the degraded mark.
+        Graph.DeleteSharePointItem(o.Handbook);
+        await SyncAsync(o, library);
+        Assert.DoesNotContain("Handbook.pdf", await FoundAsync(t["reader"].Client, "handbook"));
+        Assert.False(await world.Factory.InScopeAsync(t.Id, sp => sp.GetRequiredService<IDbSession>().ScalarAsync<bool>(
+            "select degraded_since is not null from documents.connected_sync where library_id = @library", new { library }, CancellationToken.None)));
     }
 
     private async Task AdminConsentAsync(TestTenant t, Guid connection, Guid directory, string feature)

@@ -792,10 +792,11 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             }
             if (segments is [_, _, _, "permissions"])
             {
-                return Json(new
-                {
-                    value = item.Readers.Select(r => new { id = r, roles = new[] { "read" }, grantedToV2 = new { user = new { email = r } } }),
-                });
+                // Items open to everyone inherit the site's Members group, which SharePoint reports as a site group.
+                object[] value = item.Readers.Count == 0
+                    ? [new { id = "members", roles = new[] { "write" }, grantedToV2 = new { siteGroup = new { displayName = "Members", id = "5" } } }]
+                    : [.. item.Readers.Select(r => (object)new { id = r, roles = new[] { "read" }, grantedToV2 = new { user = new { email = r } } })];
+                return Json(new { value });
             }
         }
         return SpMissing();

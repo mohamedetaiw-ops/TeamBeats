@@ -21,6 +21,7 @@ public static class DocumentsModule
     {
         services.AddScoped<TeamBeats.Modules.PublicApi.Contracts.IPublicResourceVisibility, DocumentVisibility>();
         services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, DocumentSearchSource>();
+        services.AddScoped<TeamBeats.Modules.Search.Contracts.ISearchSource, ConnectedSearchSource>();
         services.AddScoped<Libraries>();
         services.AddScoped<Contracts.ILegalHolds, LegalHolds>();
         services.AddScoped<DocumentFiles>();
@@ -35,6 +36,7 @@ public static class DocumentsModule
         services.AddScoped<DocumentImports>();
         services.AddMessageHandler<DocumentImportRequested, DocumentImportRunner>("documents.import");
         services.AddMessageHandler<DocumentTextRequested, DocumentText>("documents.text");
+        services.AddMessageHandler<ConnectedLibrarySyncRequested, ConnectedSync>("documents.connected_sync");
         services.AddScoped<Contracts.IAssetImages>(sp => sp.GetRequiredService<Assets>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AssetAccessTasks>();
         services.AddScoped<IResourceDescriptorProvider, AssetCollectionDescriptorProvider>();
@@ -94,6 +96,9 @@ public static class DocumentsModule
 
         libraries.MapGet("/{id:guid}/connected/items", async (Guid id, string? folder, string? cursor, Libraries service, CancellationToken ct) =>
             Results.Ok(await service.ConnectedItemsAsync(id, folder, cursor, ct)));
+
+        libraries.MapGet("/{id:guid}/connected/links/{item:guid}", async (Guid id, Guid item, Libraries service, CancellationToken ct) =>
+            Results.Ok(await service.ConnectedLinkAsync(id, item, ct)));
 
         libraries.MapGet("/{id:guid}/connected/content", async (Guid id, string? item, Libraries service, IDbSession session, HttpResponse response,
             CancellationToken ct) =>

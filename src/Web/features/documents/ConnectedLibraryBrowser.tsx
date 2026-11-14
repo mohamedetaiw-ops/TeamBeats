@@ -101,13 +101,18 @@ export function ConnectedLibraryBrowser({ library, path, trail }: { library: Lib
         }
       />
     );
-  } else if (answer.state !== "ok") {
+  } else if (answer.state !== "ok" && answer.state !== "degraded") {
     body = <StateView kind="empty" icon="folder" title={t("notFound")} message="" />;
   } else if (answer.items.length === 0) {
     body = <StateView kind="empty" icon="folder" title={t("empty")} message="" />;
   } else {
     body = (
       <>
+        {answer.state === "degraded" ? (
+          <p className="notice" role="status">
+            {t("degraded", { age: answer.syncedAt && now !== null ? relativeTime(answer.syncedAt, locale, now) : "" })}
+          </p>
+        ) : null}
         <div className="documents-table">
           <table>
             <thead>
@@ -129,6 +134,11 @@ export function ConnectedLibraryBrowser({ library, path, trail }: { library: Lib
                         <Icon name="folder" size={18} />
                         <bdi>{item.name}</bdi>
                       </Link>
+                    ) : answer.state === "degraded" ? (
+                      <span className="documents-name">
+                        <Icon name="files" size={18} />
+                        <bdi>{item.name}</bdi>
+                      </span>
                     ) : (
                       <a className="documents-name" href={connectedContentHref(library.id, item.id)} download>
                         <Icon name="files" size={18} />

@@ -2466,5 +2466,7 @@
   "conflict.documents.connected_too_large": "This file is too large to open through TeamBeats. Open it in SharePoint.",
   "validation.documents.connected_container": "Choose a document library from an allowed SharePoint site.",
   "validation.documents.connected_folder": "Choose a folder in that document library.",
-  "validation.documents.connected_library": "This setting is not available for a connected library."
+  "validation.documents.connected_library": "This setting is not available for a connected library.",
+  "notifications.template.documents.connected_degraded.title": "SharePoint library unavailable",
+  "notifications.template.documents.connected_degraded.body": "A connected SharePoint library cannot be read right now. People see the last synced copy. Check the Microsoft 365 connection on the Connections page."
 }
