@@ -54,4 +54,13 @@ public sealed class DocumentRepositories(IDbSession session, Microsoft365.ShareP
 
     public async Task<RepositoryWrite> RenameAsUserAsync(Guid connectionId, string itemId, string name, string userEmail, CancellationToken ct = default) =>
         await ForAsync(connectionId, ct) is { } r ? await r.RenameAsUserAsync(connectionId, itemId, name, userEmail, ct) : RepositoryWrite.Not("unavailable");
+
+    public async Task<IReadOnlyList<RepositoryColumn>> ColumnsAsync(Guid connectionId, string containerId, CancellationToken ct = default) =>
+        await ForAsync(connectionId, ct) is { } r ? await r.ColumnsAsync(connectionId, containerId, ct) : [];
+
+    public async Task<RepositoryItemDetails?> DetailsAsync(Guid connectionId, string itemId, bool versions, CancellationToken ct = default) =>
+        await ForAsync(connectionId, ct) is { } r ? await r.DetailsAsync(connectionId, itemId, versions, ct) : null;
+
+    public async Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default) =>
+        await ForAsync(connectionId, ct) is { } r ? await r.ReadAsync(connectionId, itemId, versionId, ct) : throw new RepositoryUnavailableException("connection_unusable");
 }

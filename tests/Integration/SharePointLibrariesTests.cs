@@ -389,6 +389,89 @@ public sealed class SharePointLibrariesTests(TenantWorld world)
         await world.Database.AssertAuditedAsync(t.Id, AuditActions.DocConnectedRemoved, library.ToString());
     }
 
+    [Fact]
+    public async Task Import_from_SharePoint_brings_versions_columns_and_authors_and_reports_narrower_permissions()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        var admin = t["admin"].Client;
+        Assert.Equal(HttpStatusCode.Created, (await admin.PostAsJsonAsync(Sites(o), new { url = "https://contoso.sharepoint.com/sites/hr" })).StatusCode);
+        var library = (await OkAsync(admin.PostAsJsonAsync(Libraries, new { names = new Dictionary<string, string> { ["en"] = "HR archive" }, scope = "tenant" }),
+            HttpStatusCode.Created)).GetProperty("id").GetGuid();
+        var type = (await OkAsync(admin.PostAsJsonAsync($"{Libraries}/{library}/types", new
+        {
+            names = new Dictionary<string, string> { ["en"] = "Policy" },
+            fields = new object[]
+            {
+                new { key = "department", names = new Dictionary<string, string> { ["en"] = "Department" }, kind = "text", required = true },
+                new { key = "reviewed", names = new Dictionary<string, string> { ["en"] = "Reviewed" }, kind = "boolean" },
+            },
+        }), HttpStatusCode.Created)).GetProperty("id").GetGuid();
+
+        // The source: library columns, a handbook with two versions by two people, and salaries SharePoint opens only to the manager.
+        Graph.SetSharePointColumns(o.Drive, ("Department", "Department"), ("Reviewed", "Reviewed"));
+        var created = new DateTimeOffset(2024, 3, 1, 8, 0, 0, TimeSpan.Zero);
+        Graph.SetSharePointDetails(o.Handbook, t["lm"].Email, created, new Dictionary<string, object> { ["Department"] = "HR", ["Reviewed"] = true });
+        Graph.EditSharePointItem(o.Handbook, content: Encoding.UTF8.GetBytes("%PDF-1.7 Employee handbook 2025"), editor: t["reader"].Email);
+        Graph.SetSharePointDetails(o.Salaries, "nobody@elsewhere.example", created, new Dictionary<string, object> { ["Department"] = "Finance" });
+
+        // Managers see the columns to map; others do not.
+        var columns = $"/api/v1/documents/connected-sources/{o.Connection}/columns?container={Uri.EscapeDataString(o.Drive)}";
+        var names = (await OkAsync(admin.GetAsync(columns))).EnumerateArray().Select(c => c.GetProperty("name").GetString()!).ToArray();
+        Assert.Equal(["Department", "Reviewed"], names);
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["reader"].Client.GetAsync(columns)).StatusCode);
+        var folders = $"/api/v1/documents/connected-sources/{o.Connection}/folders?container={Uri.EscapeDataString(o.Drive)}";
+        Assert.Equal(["Policies"], (await OkAsync(admin.GetAsync(folders))).EnumerateArray().Select(f => f.GetProperty("name").GetString()!).ToArray());
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["reader"].Client.GetAsync(folders)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await admin.GetAsync($"/api/v1/documents/connected-sources/{o.Connection}/folders?container=not-a-drive")).StatusCode);
+
+        var start = $"{Libraries}/{library}/imports/sharepoint";
+        object Request(object? map = null) => new
+        {
+            connectionId = o.Connection, containerId = o.Drive, allVersions = true, typeId = type,
+            columns = map ?? new Dictionary<string, string> { ["Department"] = "department", ["Reviewed"] = "reviewed" },
+        };
+        Assert.Equal("validation.documents.import_columns_map",
+            await RefusedAsync(admin.PostAsJsonAsync(start, Request(new Dictionary<string, string> { ["Department"] = "nothing" })), HttpStatusCode.BadRequest));
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["reader"].Client.PostAsJsonAsync(start, Request())).StatusCode);
+        var other = await world.CreateTenantAsync("sp-i-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");
+        Assert.Equal(HttpStatusCode.NotFound, (await other["admin"].Client.PostAsJsonAsync(start, Request())).StatusCode);
+
+        var import = (await OkAsync(admin.PostAsJsonAsync(start, Request()), HttpStatusCode.Created)).GetProperty("id").GetGuid();
+        await DispatchAsync();
+        var view = await OkAsync(admin.GetAsync($"/api/v1/documents/imports/{import}"));
+        Assert.Equal("completed", view.GetProperty("status").GetString());
+        Assert.Equal("sharepoint", view.GetProperty("source").GetString());
+        Assert.Equal(2, view.GetProperty("total").GetInt32());
+        Assert.Equal(2, view.GetProperty("imported").GetInt32());
+        var rows = (await OkAsync(admin.GetAsync($"/api/v1/documents/imports/{import}/rows"))).GetProperty("rows").EnumerateArray()
+            .ToDictionary(r => r.GetProperty("path").GetString()!);
+        var handbook = rows["Policies/Handbook.pdf"];
+        Assert.Equal(2, handbook.GetProperty("versions").GetInt32());
+        Assert.True(handbook.GetProperty("authorMatched").GetBoolean());
+        Assert.False(handbook.GetProperty("permissionsDiffer").GetBoolean());
+        var salaries = rows["Salaries.xlsx"];
+        Assert.False(salaries.GetProperty("authorMatched").GetBoolean());
+        Assert.True(salaries.GetProperty("permissionsDiffer").GetBoolean());
+        Assert.Contains("permissions_differ", await admin.GetStringAsync($"/api/v1/documents/imports/{import}/report"));
+
+        // The handbook arrives with both versions, the newest content, its columns as fields and its original dates.
+        var doc = handbook.GetProperty("documentId").GetGuid();
+        Assert.Equal(2, (await OkAsync(admin.GetAsync($"/api/v1/documents/{doc}/versions"))).GetArrayLength());
+        var document = await OkAsync(admin.GetAsync($"/api/v1/documents/{doc}"));
+        Assert.Equal("HR", document.GetProperty("metadata").GetProperty("department").GetString());
+        Assert.True(document.GetProperty("metadata").GetProperty("reviewed").GetBoolean());
+        Assert.Equal(2024, await world.Database.TenantScalarAsync<int>(t.Id, "select extract(year from created_at)::int from documents.document where id = @d", ("d", doc)));
+        Assert.True(await world.Database.TenantScalarAsync<bool>(t.Id,
+            "select exists (select 1 from documents.folder where library_id = @l and name = 'Policies')", ("l", library)));
+
+        // The source is only read.
+        var source = Graph.SharePointItems(o.Drive);
+        Assert.Equal("%PDF-1.7 Employee handbook 2025", Encoding.UTF8.GetString(source.Single(i => i.Name == "Handbook.pdf").Content));
+        Assert.Equal(3, source.Count);
+    }
+
     private async Task DispatchAsync()
     {
         var dispatcher = world.Factory.Services.GetRequiredService<OutboxDispatcher>();

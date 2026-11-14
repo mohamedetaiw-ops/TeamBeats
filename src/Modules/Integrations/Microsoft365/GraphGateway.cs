@@ -76,6 +76,12 @@ public interface IMicrosoftGraph
     /// on 401 or 403 and <see cref="GraphUnavailableException"/> on anything else.
     /// </summary>
     Task<JsonElement?> AppGetAsync(AppToken token, string pathAndQuery, CancellationToken ct);
+
+    /// <summary>
+    /// Reads file content with the application token into a temporary stream the caller disposes; null on 404. Throws
+    /// <see cref="GraphConsentMissingException"/> on 401 or 403 and <see cref="GraphUnavailableException"/> otherwise.
+    /// </summary>
+    Task<Stream?> AppDownloadAsync(AppToken token, string pathAndQuery, CancellationToken ct);
 }
 
 /// <summary>
@@ -360,6 +366,49 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
                 throw await FailureAsync(response, ct);
             }
             return await response.Content.ReadFromJsonAsync<JsonElement>(ct);
+        }
+    }
+
+    public async Task<Stream?> AppDownloadAsync(AppToken token, string pathAndQuery, CancellationToken ct)
+    {
+        using var client = httpClients.CreateClient(ClientName);
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{GraphBase}/{pathAndQuery.TrimStart('/')}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.AccessToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new GraphUnavailableException("Graph unreachable.", ex);
+        }
+        using (response)
+        {
+            if ((int)response.StatusCode == 404)
+            {
+                return null;
+            }
+            if ((int)response.StatusCode is 401 or 403)
+            {
+                throw new GraphConsentMissingException();
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                throw new GraphUnavailableException($"Graph returned {(int)response.StatusCode}.");
+            }
+            var copy = new FileStream(Path.GetTempFileName(), FileMode.Create, FileAccess.ReadWrite, FileShare.None, 81920, FileOptions.DeleteOnClose);
+            try
+            {
+                await response.Content.CopyToAsync(copy, ct);
+                copy.Position = 0;
+                return copy;
+            }
+            catch
+            {
+                await copy.DisposeAsync();
+                throw;
+            }
         }
     }
 

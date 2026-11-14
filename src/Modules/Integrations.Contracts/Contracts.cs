@@ -202,6 +202,19 @@ public sealed record RepositoryItem(
     IReadOnlyList<RepositoryPermission>? Permissions = null,
     RepositoryLabel? Label = null);
 
+/// <summary>A version of a file as its repository keeps it; <paramref name="Id"/> reads its content.</summary>
+public sealed record RepositoryVersion(string Id, DateTimeOffset? ModifiedAt, string? AuthorEmail, long? Size);
+
+/// <summary>A column of a container's files (for SharePoint, a library column), by its internal name and display name.</summary>
+public sealed record RepositoryColumn(string Name, string DisplayName);
+
+/// <summary>
+/// What an import needs about one file beyond <see cref="RepositoryItem"/>: who created it and when, its column values
+/// as text, and its versions oldest first (empty unless asked for, or when the repository keeps none).
+/// </summary>
+public sealed record RepositoryItemDetails(RepositoryItem Item, DateTimeOffset? CreatedAt, string? CreatedByEmail, IReadOnlyDictionary<string, string> Columns,
+    IReadOnlyList<RepositoryVersion> Versions);
+
 /// <summary>The sensitivity label on an item in its repository (for SharePoint, a Microsoft Purview label), by ID and display name.</summary>
 public sealed record RepositoryLabel(string Id, string? Name);
 
@@ -298,6 +311,21 @@ public interface IDocumentRepository
 
     /// <summary>Renames a file or folder as <paramref name="userEmail"/>; the repository's own permissions decide.</summary>
     Task<RepositoryWrite> RenameAsUserAsync(Guid connectionId, string itemId, string name, string userEmail, CancellationToken ct = default);
+
+    /// <summary>The columns of a container's files that an import may map to fields; empty when the repository has none.</summary>
+    Task<IReadOnlyList<RepositoryColumn>> ColumnsAsync(Guid connectionId, string containerId, CancellationToken ct = default);
+
+    /// <summary>
+    /// One file with its permissions, creator, column values and, when <paramref name="versions"/> is set, its versions,
+    /// read with the connection's own access for an import (spec 011 FR-033); null when it is not in an allowed container.
+    /// </summary>
+    Task<RepositoryItemDetails?> DetailsAsync(Guid connectionId, string itemId, bool versions, CancellationToken ct = default);
+
+    /// <summary>
+    /// The content of a file, or of one of its versions, read with the connection's own access for an import; null when
+    /// it is not there. Never changes the source. Throws <see cref="RepositoryUnavailableException"/> when it cannot be read.
+    /// </summary>
+    Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default);
 }
 
 /// <summary>

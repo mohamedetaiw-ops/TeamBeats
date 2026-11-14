@@ -396,6 +396,112 @@ public sealed class SharePointLibraries(
             token => graph.DelegatedSendAsync(token, HttpMethod.Patch, $"drives/{drive}/items/{item}?@microsoft.graph.conflictBehavior=fail", new { name }, ct), ct);
     }
 
+    public async Task<IReadOnlyList<RepositoryColumn>> ColumnsAsync(Guid connectionId, string containerId, CancellationToken ct = default)
+    {
+        var (_, token) = await RequireAsync(connectionId, containerId, ct);
+        var body = await AppGetAsync(token, $"drives/{containerId}/list/columns?$select=name,displayName,readOnly,hidden", ct, allowMissing: true);
+        return Items(body)
+            .Where(c => !(c.TryGetProperty("hidden", out var h) && h.ValueKind == JsonValueKind.True) && !(c.TryGetProperty("readOnly", out var r) && r.ValueKind == JsonValueKind.True))
+            .Select(c => (Name: SharePointSites.Text(c, "name"), Display: SharePointSites.Text(c, "displayName")))
+            .Where(c => c.Name is { } n && IsColumn(n) && !SystemColumns.Contains(n))
+            .Select(c => new RepositoryColumn(c.Name!, c.Display is { Length: > 0 and <= 200 } d ? d : c.Name!))
+            .OrderBy(c => c.DisplayName, StringComparer.Ordinal).ToList();
+    }
+
+    public async Task<RepositoryItemDetails?> DetailsAsync(Guid connectionId, string itemId, bool versions, CancellationToken ct = default)
+    {
+        if (await GetAsync(connectionId, itemId, ct) is not { } item || Split(itemId) is not (var drive, var id))
+        {
+            return null;
+        }
+        var connection = (await LoadAsync(connectionId, ct))!;
+        var token = await AppTokenAsync(connection, ct);
+        var listItem = await AppGetAsync(token, $"drives/{drive}/items/{id}/listItem?$select=createdDateTime,createdBy&$expand=fields", ct, allowMissing: true);
+        DateTimeOffset? created = DateTimeOffset.TryParse(SharePointSites.Text(listItem, "createdDateTime"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal,
+            out var c) ? c : null;
+        var columns = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (listItem.ValueKind == JsonValueKind.Object && listItem.TryGetProperty("fields", out var fields) && fields.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var field in fields.EnumerateObject().Where(f => IsColumn(f.Name) && !SystemColumns.Contains(f.Name)))
+            {
+                var text = field.Value.ValueKind switch
+                {
+                    JsonValueKind.String => field.Value.GetString(),
+                    JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False => field.Value.GetRawText(),
+                    _ => null,
+                };
+                if (text is { Length: <= 4000 })
+                {
+                    columns[field.Name] = text;
+                }
+            }
+        }
+        var history = new List<RepositoryVersion>();
+        if (versions && !item.Folder)
+        {
+            foreach (var v in Items(await AppGetAsync(token, $"drives/{drive}/items/{id}/versions?$top=200", ct, allowMissing: true)))
+            {
+                if (SharePointSites.Text(v, "id") is { } versionId && IsVersion(versionId))
+                {
+                    history.Add(new RepositoryVersion(versionId,
+                        DateTimeOffset.TryParse(SharePointSites.Text(v, "lastModifiedDateTime"), CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var m) ? m : null,
+                        Email(v, "lastModifiedBy"), v.TryGetProperty("size", out var s) && s.TryGetInt64(out var n) ? n : null));
+                }
+            }
+            // Microsoft lists the newest first; an import adds them oldest first.
+            history.Reverse();
+        }
+        return new RepositoryItemDetails(item, created, Email(listItem, "createdBy"), columns, history);
+    }
+
+    public async Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default)
+    {
+        if (Split(itemId) is not (var drive, var id) || (versionId is not null && !IsVersion(versionId)))
+        {
+            return null;
+        }
+        var (_, token) = await RequireAsync(connectionId, drive, ct);
+        var meta = await AppGetAsync(token, $"drives/{drive}/items/{id}?$select=name,file,size", ct, allowMissing: true);
+        if (meta.ValueKind != JsonValueKind.Object || !meta.TryGetProperty("file", out var file))
+        {
+            return null;
+        }
+        if (meta.TryGetProperty("size", out var size) && size.TryGetInt64(out var bytes) && bytes > MaxContentBytes)
+        {
+            throw new RepositoryUnavailableException("too_large");
+        }
+        Stream? stream;
+        try
+        {
+            stream = await graph.AppDownloadAsync(token, versionId is null ? $"drives/{drive}/items/{id}/content" : $"drives/{drive}/items/{id}/versions/{versionId}/content", ct);
+        }
+        catch (GraphConsentMissingException)
+        {
+            throw new RepositoryUnavailableException("consent_missing");
+        }
+        catch (GraphUnavailableException)
+        {
+            throw new RepositoryUnavailableException("unreachable");
+        }
+        return stream is null ? null
+            : new RepositoryContent(stream, SharePointSites.Text(file, "mimeType") ?? "application/octet-stream", SharePointSites.Text(meta, "name") ?? id, stream.Length, NoOwner.Instance);
+    }
+
+    /// <summary>Columns SharePoint keeps for every file, which an import takes from the item itself or does not need.</summary>
+    private static readonly HashSet<string> SystemColumns = new(StringComparer.Ordinal)
+    {
+        "ContentType", "FileLeafRef", "LinkFilename", "LinkFilenameNoMenu", "DocIcon", "FileSizeDisplay", "ItemChildCount", "FolderChildCount", "Edit",
+        "Created", "Modified", "Author", "Editor", "AppAuthor", "AppEditor", "ComplianceAssetId", "id", "ID",
+    };
+
+    private static bool IsColumn(string name) => name.Length is > 0 and <= 100 && name.All(c => char.IsAsciiLetterOrDigit(c) || c == '_') && !name.StartsWith('_');
+
+    private static bool IsVersion(string id) => id.Length is > 0 and <= 40 && id.All(c => char.IsAsciiLetterOrDigit(c) || c == '.');
+
+    private static string? Email(JsonElement e, string identity) =>
+        e.ValueKind == JsonValueKind.Object && e.TryGetProperty(identity, out var set) && set.TryGetProperty("user", out var user)
+            && SharePointSites.Text(user, "email") is { Length: > 3 and <= 320 } email && email.Contains('@', StringComparison.Ordinal) ? email.ToLowerInvariant() : null;
+
     /// <summary>A write as the signed-in person with the SharePoint uploads feature, inside an allowed document library.</summary>
     private async Task<RepositoryWrite> WriteAsync(Guid connectionId, string drive, Func<string, Task<JsonElement>> write, CancellationToken ct)
     {

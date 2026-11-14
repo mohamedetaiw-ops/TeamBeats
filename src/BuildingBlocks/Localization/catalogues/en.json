@@ -2436,6 +2436,8 @@
   "validation.documents.import_rows": "A manifest can have at most 10,000 rows.",
   "validation.documents.import_paths": "Every row needs a path to a file in the ZIP, and each path can appear only once.",
   "validation.documents.import_date": "Dates must be ISO dates in the past, and the modified date cannot be before the created date.",
+  "validation.documents.import_columns_map": "Map each SharePoint column to a field of the chosen document type, at most 50.",
+  "validation.documents.import_source_missing": "This file is no longer in SharePoint, or the connection can no longer read it.",
   "validation.documents.import_missing": "The ZIP has no file at this path.",
   "validation.documents.import_status": "Choose a known row result.",
   "notifications.template.documents.import_finished.title": "Your import has finished",

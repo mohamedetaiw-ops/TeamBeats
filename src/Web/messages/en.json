@@ -4359,7 +4359,8 @@
       "status": {
         "queued": "Waiting to start",
         "running": "Importing",
-        "completed": "Finished"
+        "completed": "Finished",
+        "listing": "Listing files"
       },
       "reportTitle": "Import of {file}",
       "reportIntro": "Each row of the manifest and what happened to it.",
@@ -4385,7 +4386,34 @@
       "resultLabel": "Result",
       "details": "Details",
       "authorNotMatched": "The author's email did not match anyone, so you are shown as the author.",
-      "moreRows": "Showing {shown} of {total} rows. Download the report for all of them."
+      "moreRows": "Showing {shown} of {total} rows. Download the report for all of them.",
+      "reportIntroSharePoint": "Each file found in SharePoint and what happened to it.",
+      "versions": "Brought with {count} versions.",
+      "permissionsDiffer": "SharePoint opened this file to fewer people than this library will. Check who should see it.",
+      "sharepoint": {
+        "title": "Import from SharePoint",
+        "intro": "Copy a SharePoint document library, or one of its folders, into this library. SharePoint is only read, never changed.",
+        "none": "No SharePoint document library is available. An integration administrator adds sites to the Microsoft 365 connection first.",
+        "unavailable": "SharePoint cannot be reached right now. Try again later.",
+        "source": "Document library",
+        "remoteFolder": "Folder in SharePoint",
+        "insideFolder": "Folder inside {folder}",
+        "wholeLibrary": "The whole document library",
+        "wholeFolder": "All of this folder",
+        "allVersions": "Bring every version",
+        "allVersionsHint": "Turn this off to bring only the latest version of each file.",
+        "type": "Document type",
+        "noType": "No type",
+        "columns": "SharePoint columns",
+        "columnsHint": "Choose the field each column fills. Columns left out are not imported.",
+        "noField": "Do not import",
+        "folder": "Import into",
+        "libraryRoot": "The top of the library",
+        "rules": "Files keep their folders, original dates and authors when the author's email matches a person. Each file follows this library's file types and size limit and is scanned for malware.",
+        "start": "Start import",
+        "starting": "Starting",
+        "failed": "That did not work. Try again."
+      }
     },
     "connected": {
       "badge": "SharePoint",

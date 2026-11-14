@@ -52,4 +52,4 @@ Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body docu
 
 ## R2 Phase 12: User Stories 9 and 10, SharePoint Online
 - [x] T024 Connected libraries through the Microsoft 365 connection with live permission checks, sync, degraded mode and label mapping
-- [ ] T025 Import from SharePoint into TeamBeats libraries through bulk import
+- [x] T025 Import from SharePoint into TeamBeats libraries through bulk import
