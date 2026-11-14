@@ -50,11 +50,11 @@ Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot)
 - [x] T023 [US6] Queue tasks (pick, complete, reject with reason), hand-off failure alert to the queue and owners; tests
 
 ### Slice 5: designer and test mode
-- [ ] T024 [US7] [US8] Route designer on the React Flow canvas, test mode as a sample employee, problems on steps, triggers, service level and auto-approve settings, in English and Arabic; e2e with axe
+- [x] T024 [US7] [US8] Route designer on the React Flow canvas, test mode as a sample employee, problems on steps, triggers, service level and auto-approve settings, in English and Arabic; e2e with axe
 
 ### Slice 6: templates and AI
-- [ ] T025 Starter template pack (section 12), switched on per template as drafts
-- [ ] T026 Request summary for approvers through the AI gateway; agent-requested tasks marked in the inbox (spec 027 US4)
+- [x] T025 Starter template pack (section 12), switched on per template as drafts
+- [x] T026 Request summary for approvers through the AI gateway; agent-requested tasks marked in the inbox (spec 027 US4, built with the agent approver tasks of spec 027 R2)
 
 ### R2 final
-- [ ] T027 OpenAPI; R2 implementation notes; spec evidence
+- [x] T027 OpenAPI; R2 implementation notes; spec evidence

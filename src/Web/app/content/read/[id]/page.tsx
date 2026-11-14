@@ -1,7 +1,8 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
-import type { ReaderView } from "@/lib/content/types";
+import { topicHref, type ReaderView } from "@/lib/content/types";
 import { Header } from "@/components/shell/Header";
 import { BodyView } from "@/features/content/BodyView";
 import { ContentSocial } from "@/features/content/ContentSocial";
@@ -42,6 +43,7 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
             {t("updated", { date: date(v.updatedAt) })}
             {v.expired ? <span className="content-badge">{t("expired")}</span> : null}
             {v.underReview ? <span className="content-badge">{t("underReview")}</span> : null}
+            {v.siteArchived ? <span className="content-badge">{t("siteArchived")}</span> : null}
           </p>
           {v.fallback ? (
             <p className="notice" data-testid="content-fallback">
@@ -53,7 +55,18 @@ export default async function ReadPage({ params }: { params: Promise<{ id: strin
               <bdi>{v.summary}</bdi>
             </p>
           ) : null}
-          <BodyView body={v.body} embedTitle={t("embed")} anchors={v.anchors} />
+          <BodyView body={v.body} embedTitle={t("embed")} anchors={v.anchors} topics />
+          {v.tags && v.tags.length > 0 ? (
+            <ul className="content-tags" aria-label={t("tags")}>
+              {v.tags.map((tag) => (
+                <li key={tag}>
+                  <Link href={topicHref(tag)}>
+                    <bdi>{t("tag", { tag })}</bdi>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </article>
         <ViewBeacon source="content" itemId={v.id} />
         <ItemActions source="content" itemId={v.id} itemLocale={v.locale} uiLocale={locale} />

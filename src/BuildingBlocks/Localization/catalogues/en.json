@@ -2345,5 +2345,17 @@
   "validation.services.triggers": "A service has at most 10 triggers.",
   "validation.services.trigger": "Check this trigger: a schedule needs a frequency, a day (1 to 7 weekly, 1 to 28 monthly or quarterly) and an active requester; an event trigger needs a known event, and request completed needs another service.",
   "validation.services.route_cycle": "A service cannot start itself.",
-  "validation.services.route_service": "Choose a form service."
+  "validation.services.route_service": "Choose a form service.",
+  "validation.services.template_unavailable": "This template does not fit your plan.",
+  "validation.content.site_template": "Choose one of the site templates.",
+  "validation.content.site_home": "The home page must be a page owned by the site's own unit.",
+  "conflict.content.site_default": "The default site cannot be archived.",
+  "validation.content.mention": "You can only mention people you can see in the directory.",
+  "validation.content.body_mentions": "The text mentions too many people.",
+  "validation.content.topic": "A topic is 2 to 50 letters, digits or underscores.",
+  "validation.content.follow_site": "Choose a site to follow.",
+  "validation.content.follow_kind": "You can follow a site or a topic.",
+  "conflict.content.follow_limit": "You follow as many sites and topics as you can. Stop following one first.",
+  "notifications.template.content.mention.new.title": "You were mentioned",
+  "notifications.template.content.mention.new.body": "Someone mentioned you in news or a comment. Open it to read it."
 }

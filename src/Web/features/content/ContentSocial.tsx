@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { reactionKinds, type CommentPage, type CommentView, type ReactionKind, type ReactionSummary } from "@/lib/content/types";
+import { reactionKinds, type CommentPage, type CommentView, type ContentPerson, type ReactionKind, type ReactionSummary } from "@/lib/content/types";
 import { problemMessages } from "@/lib/notifications/types";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
@@ -30,7 +30,30 @@ export function ContentSocial({ itemId }: { itemId: string }) {
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
 
+  const [mentions, setMentions] = useState<ContentPerson[]>([]);
+  const [who, setWho] = useState("");
+  const [found, setFound] = useState<ContentPerson[]>([]);
+
   const [attempt, setAttempt] = useState(0);
+
+  // People to mention come from the directory search, which lists only people the writer may see (spec 009 section 14).
+  useEffect(() => {
+    const q = who.trim();
+    if (q.length < 2) {
+      return;
+    }
+    let live = true;
+    const timer = setTimeout(() => {
+      fetch(`/api/v1/people?q=${encodeURIComponent(q)}&limit=5`)
+        .then(async (r) => (r.ok ? ((await r.json()) as { items: ContentPerson[] }).items : []))
+        .then((items) => live && setFound(items.map((p) => ({ id: p.id, displayName: p.displayName }))))
+        .catch(() => live && setFound([]));
+    }, 250);
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [who]);
   const load = () => setAttempt((a) => a + 1);
 
   useEffect(() => {
@@ -61,10 +84,12 @@ export function ContentSocial({ itemId }: { itemId: string }) {
     setBusy(true);
     setMessages([]);
     try {
-      const response = await post(`${base(itemId)}/comments`, { body: draft });
+      const response = await post(`${base(itemId)}/comments`, { body: draft, mentions: mentions.map((m) => m.id) });
       if (response.ok) {
         const created = (await response.json()) as CommentView;
         setDraft("");
+        setMentions([]);
+        setWho("");
         setMessages(created.status === "held" ? [t("held")] : []);
         load();
       } else {
@@ -115,6 +140,19 @@ export function ContentSocial({ itemId }: { itemId: string }) {
                 <p className="content-comment-body">
                   <bdi>{c.body}</bdi>
                 </p>
+                {c.mentions && c.mentions.length > 0 ? (
+                  <p className="content-meta">
+                    {t("mentioned")}{" "}
+                    {c.mentions.map((m, i) => (
+                      <span key={m.id}>
+                        {i > 0 ? ", " : null}
+                        <a href={`/people/${encodeURIComponent(m.id)}`} className="content-mention">
+                          <bdi>{m.displayName}</bdi>
+                        </a>
+                      </span>
+                    ))}
+                  </p>
+                ) : null}
                 <div className="content-actions">
                   {page.moderator && c.status === "held" ? <Button onClick={() => void act(c, "approve")}>{t("approve")}</Button> : null}
                   {page.moderator && c.status === "hidden" ? <Button onClick={() => void act(c, "approve")}>{t("restore")}</Button> : null}
@@ -131,6 +169,36 @@ export function ContentSocial({ itemId }: { itemId: string }) {
                 <span>{t("write")}</span>
                 <textarea value={draft} maxLength={2000} rows={3} onChange={(e) => setDraft(e.target.value)} required />
               </label>
+              <div className="content-mention-picker">
+                <label className="field">
+                  <span>{t("mention")}</span>
+                  <input type="search" value={who} onChange={(e) => setWho(e.target.value)} autoComplete="off" />
+                </label>
+                {who.trim().length >= 2 && found.length > 0 ? (
+                  <ul className="content-tags" aria-label={t("mentionResults")}>
+                    {found
+                      .filter((p) => !mentions.some((m) => m.id === p.id))
+                      .map((p) => (
+                        <li key={p.id}>
+                          <Button variant="quiet" onClick={() => setMentions([...mentions, p])} aria-label={t("mentionAdd", { name: p.displayName })}>
+                            <bdi>{p.displayName}</bdi>
+                          </Button>
+                        </li>
+                      ))}
+                  </ul>
+                ) : null}
+                {mentions.length > 0 ? (
+                  <ul className="content-tags" aria-label={t("mentionChosen")}>
+                    {mentions.map((m) => (
+                      <li key={m.id}>
+                        <Button variant="secondary" onClick={() => setMentions(mentions.filter((x) => x.id !== m.id))} aria-label={t("mentionRemove", { name: m.displayName })}>
+                          <bdi>{t("mentionName", { name: m.displayName })}</bdi>
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
               <Button type="submit" variant="primary" busy={busy} busyLabel={t("sending")}>
                 {t("send")}
               </Button>

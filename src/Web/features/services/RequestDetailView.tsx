@@ -10,6 +10,7 @@ import { problemMessages } from "@/lib/notifications/types";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import { pick, type FieldValue, type FormField, type RequestDetail } from "@/lib/services/types";
 import { AutomationPanel } from "./AutomationPanel";
+import { RequestSummaryPanel } from "./RequestSummaryPanel";
 import { TaskDecisionPanel } from "./TaskDecisionPanel";
 import { isolate } from "@/lib/bidi";
 import "./services.css";
@@ -145,6 +146,7 @@ export function RequestDetailView({ detail, meId, units, taskId }: { detail: Req
         ) : null}
       </section>
 
+      {taskId && r.status === "in_approval" ? <RequestSummaryPanel requestId={r.id} /> : null}
       {taskId && r.status === "in_approval" ? <TaskDecisionPanel taskId={taskId} onDone={() => router.push("/tasks")} /> : null}
 
       <section className="services-section" aria-labelledby="request-values">

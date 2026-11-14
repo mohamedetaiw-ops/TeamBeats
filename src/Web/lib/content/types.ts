@@ -1,5 +1,5 @@
 /** Spec 009 content: shapes returned by `/api/v1/content/*`. The body is a block document, never HTML. */
-export type Inline = { text: string; marks?: string[] | null; link?: string | null };
+export type Inline = { text: string; marks?: string[] | null; link?: string | null; mention?: string | null };
 
 export type Block = {
   type: "paragraph" | "heading" | "list" | "quote" | "table" | "image" | "link" | "embed";
@@ -52,6 +52,10 @@ export type ReaderView = {
   underReview: boolean;
   /** The anchor of each heading in order, for citation links. */
   anchors?: string[] | null;
+  /** The item's site is archived: still readable by link, out of feeds (spec 009 US6 scenario 5). */
+  siteArchived?: boolean;
+  /** The hashtags of the live version (spec 009 US9 scenario 3), each opening its topic page. */
+  tags?: string[] | null;
 };
 
 export type CriticalNotice = {
@@ -82,6 +86,7 @@ export type CommentView = {
   createdAt: string;
   mine: boolean;
   reported: boolean;
+  mentions?: ContentPerson[] | null;
 };
 
 export type CommentPage = { items: CommentView[]; commentsOn: boolean; moderator: boolean };
@@ -133,7 +138,29 @@ export type ItemView = {
   retirePending: boolean;
 };
 
-export type SiteView = { id: string; names: Record<string, string>; orgUnitId: string | null; timeZone: string; commentsMode: string; moderation: boolean; isDefault: boolean; status: string };
+export type SiteView = {
+  id: string;
+  names: Record<string, string>;
+  orgUnitId: string | null;
+  timeZone: string;
+  commentsMode: string;
+  moderation: boolean;
+  isDefault: boolean;
+  status: string;
+  version: number;
+  defaultAudience: ContentAudience;
+  homePageId: string | null;
+  homeSlug: string | null;
+  templateKey: string | null;
+  sharedAudience: ContentAudience | null;
+  archivedAt: string | null;
+  canManage: boolean;
+};
+
+/** A site as a reader's navigation lists it (spec 009 US6 scenario 2); the home path is set once its page is published. */
+export type SiteLink = { id: string; names: Record<string, string>; homeSlug: string | null };
+export type SiteTemplate = { key: string; pageTemplate: string; commentsMode: string; moderation: boolean; newsApproval: boolean };
+export const siteTemplates = ["subsidiary", "location", "brand"] as const;
 
 export type VersionSummary = {
   number: number;
@@ -173,3 +200,7 @@ export function variantFor(item: Pick<ItemView, "variants" | "primaryLocale">, l
 }
 
 export const editHref = (id: string) => `/content/items/${encodeURIComponent(id)}`;
+
+/** What a person follows (spec 009 FR-017): a site by ID or a topic by its tag. */
+export type FollowView = { kind: "site" | "topic"; key: string; at: string };
+export const topicHref = (tag: string) => `/content/topics/${encodeURIComponent(tag)}`;

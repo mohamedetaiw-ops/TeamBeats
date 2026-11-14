@@ -41,6 +41,8 @@ public static class ContentModule
         services.AddScoped<Contracts.IOfflineSource, ContentOfflineSource>();
         services.AddScoped<ContentGovernance>();
         services.AddScoped<ContentSocial>();
+        services.AddScoped<ContentFollows>();
+        services.AddMessageHandler<Contracts.ContentPublished, ContentMentions>("content.mentions");
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ContentComponents>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, ContentOwnerHandler>("content.owner_left");
         services.AddMessageHandler<Contracts.ContentPublished, CriticalAudience>("content.critical_audience");
@@ -70,6 +72,24 @@ public static class ContentModule
 
         sites.MapGet("/{id:guid}", async (Guid id, Sites service, CancellationToken ct) => Results.Ok(await service.GetAsync(id, ct)));
 
+        sites.MapGet("/mine", async (Sites service, CancellationToken ct) => Results.Ok(await service.MineAsync(ct)));
+
+        sites.MapGet("/templates", () => Results.Ok(SiteTemplates.All));
+
+        sites.MapPost("/{id:guid}/archive", async (Guid id, Sites service, IDbSession session, CancellationToken ct) =>
+        {
+            var site = await service.ArchiveAsync(id, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(site);
+        });
+
+        sites.MapPost("/{id:guid}/restore", async (Guid id, Sites service, IDbSession session, CancellationToken ct) =>
+        {
+            var site = await service.ArchiveAsync(id, false, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(site);
+        });
+
         sites.MapPut("/{id:guid}", async (Guid id, SiteRequest request, Sites service, IDbSession session, CancellationToken ct) =>
         {
             var site = await service.UpdateAsync(id, request, ct);
@@ -88,9 +108,29 @@ public static class ContentModule
             return Results.Ok(view);
         });
 
-        app.MapGroup("/api/v1/content").RequireTenantUser().WithTags("Content: feed").MapGet("/feed",
-            async (Guid? site, string? type, string? cursor, int? limit, ContentFeed feed, CancellationToken ct) =>
-                Results.Ok(await feed.PageAsync(site, type, cursor, limit ?? 20, ct)));
+        var reading = app.MapGroup("/api/v1/content").RequireTenantUser().WithTags("Content: feed");
+
+        reading.MapGet("/feed", async (Guid? site, string? type, string? cursor, int? limit, string? tag, bool? following, ContentFeed feed, CancellationToken ct) =>
+            Results.Ok(await feed.PageAsync(site, type, cursor, limit ?? 20, ct, tag: tag, following: following == true)));
+
+        reading.MapGet("/topics/{tag}", async (string tag, string? cursor, int? limit, ContentFeed feed, CancellationToken ct) =>
+            Results.Ok(await feed.PageAsync(null, null, cursor, limit ?? 20, ct, tag: tag)));
+
+        reading.MapGet("/follows", async (ContentFollows follows, CancellationToken ct) => Results.Ok(await follows.ListAsync(ct)));
+
+        reading.MapPost("/follows", async (FollowRequest request, ContentFollows follows, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await follows.FollowAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        reading.MapDelete("/follows/{kind}/{key}", async (string kind, string key, ContentFollows follows, IDbSession session, CancellationToken ct) =>
+        {
+            await follows.UnfollowAsync(kind, key, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
 
         var items = app.MapGroup("/api/v1/content/items").RequireTenantUser().WithTags("Content: items");
 

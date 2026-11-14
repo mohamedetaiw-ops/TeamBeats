@@ -127,11 +127,25 @@ public sealed record RouteActionView(Guid ConnectionId, string ConnectionName, s
     IReadOnlyList<string> BusinessErrors, IReadOnlyList<TeamBeats.Modules.Integrations.Contracts.ConnectorInput> Inputs, bool Enabled);
 
 /// <summary>The automatic steps a service owner can use; empty with <paramref name="Available"/> false without the package capability.</summary>
+public sealed record RouteGroupView(Guid Id, string Name, int Members);
+
 public sealed record RouteActionsView(bool Available, IReadOnlyList<RouteActionView> Actions);
 
 /// <summary>The connector actions for the route designer (spec 016 US8 scenario 1, FR-016). Names and fields only; never settings or secrets.</summary>
-public sealed class RouteActions(IAuthorizationService authz, TeamBeats.Entitlements.Contracts.IEntitlementService entitlements, TeamBeats.Modules.Integrations.Contracts.IConnectorActions actions)
+public sealed class RouteActions(IAuthorizationService authz, TeamBeats.Entitlements.Contracts.IEntitlementService entitlements, TeamBeats.Modules.Integrations.Contracts.IConnectorActions actions,
+    IAuthorizationProvisioning groups)
 {
+    /// <summary>The tenant's groups a route can send work to (a queue, an escalation target, a notify step), for service owners.</summary>
+    public async Task<IReadOnlyList<RouteGroupView>> GroupsAsync(CancellationToken ct)
+    {
+        await entitlements.DemandAsync(TeamBeats.Entitlements.Contracts.Capabilities.WorkflowCatalogue, ct);
+        if (!await authz.HoldsAnywhereAsync(Permissions.ServiceManage, ct))
+        {
+            throw AppException.Denied();
+        }
+        return (await groups.GroupsAsync(ct)).Select(g => new RouteGroupView(g.Id, g.Name, g.Members)).ToList();
+    }
+
     public async Task<RouteActionsView> ListAsync(CancellationToken ct)
     {
         await entitlements.DemandAsync(TeamBeats.Entitlements.Contracts.Capabilities.WorkflowCatalogue, ct);

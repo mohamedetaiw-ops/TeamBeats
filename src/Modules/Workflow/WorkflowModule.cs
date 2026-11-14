@@ -25,6 +25,7 @@ public static class WorkflowModule
         services.AddScoped<IProcessEngine>(sp => sp.GetRequiredService<ProcessEngine>());
         services.AddScoped<ProcessModels>();
         services.AddScoped<ProcessSandbox>();
+        services.AddScoped<IModelTester, ModelTester>();
         services.AddScoped<ProcessOperations>();
         services.AddScoped<Decisions.DecisionModels>();
         services.AddScoped<ProcessModelTasks>();

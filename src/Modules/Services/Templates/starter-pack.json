@@ -1,0 +1,1632 @@
+[
+  {
+    "key": "business_cards",
+    "version": 1,
+    "icon": "user",
+    "names": {
+      "en": "Business cards",
+      "ar": "بطاقات العمل"
+    },
+    "descriptions": {
+      "en": "Order printed business cards with your details from the directory.",
+      "ar": "اطلب بطاقات عمل مطبوعة ببياناتك من الدليل."
+    },
+    "classification": "internal",
+    "form": {
+      "fields": [
+        {
+          "key": "full_name",
+          "type": "text",
+          "labels": {
+            "en": "Name on the card",
+            "ar": "الاسم على البطاقة"
+          },
+          "required": true,
+          "prefill": "profile.display_name"
+        },
+        {
+          "key": "job_title",
+          "type": "text",
+          "labels": {
+            "en": "Job title",
+            "ar": "المسمى الوظيفي"
+          },
+          "required": true,
+          "prefill": "profile.job_title"
+        },
+        {
+          "key": "email",
+          "type": "text",
+          "labels": {
+            "en": "Email",
+            "ar": "البريد الإلكتروني"
+          },
+          "required": true,
+          "prefill": "profile.email"
+        },
+        {
+          "key": "extension",
+          "type": "text",
+          "labels": {
+            "en": "Extension",
+            "ar": "التحويلة"
+          },
+          "prefill": "profile.work_phone"
+        },
+        {
+          "key": "include_mobile",
+          "type": "choice",
+          "labels": {
+            "en": "Include my mobile number",
+            "ar": "إضافة رقم الجوال"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "yes",
+              "labels": {
+                "en": "Yes",
+                "ar": "نعم"
+              }
+            },
+            {
+              "value": "no",
+              "labels": {
+                "en": "No",
+                "ar": "لا"
+              }
+            }
+          ]
+        },
+        {
+          "key": "mobile",
+          "type": "text",
+          "labels": {
+            "en": "Mobile number",
+            "ar": "رقم الجوال"
+          },
+          "prefill": "profile.mobile_phone",
+          "showWhen": {
+            "field": "include_mobile",
+            "values": [
+              "yes"
+            ]
+          }
+        },
+        {
+          "key": "boxes",
+          "type": "number",
+          "labels": {
+            "en": "Number of boxes",
+            "ar": "عدد العلب"
+          },
+          "required": true,
+          "rules": [
+            {
+              "kind": "min",
+              "value": 1
+            },
+            {
+              "kind": "max",
+              "value": 10
+            }
+          ]
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "manager",
+            "type": "approval",
+            "names": {
+              "en": "Line manager approval",
+              "ar": "موافقة المدير المباشر"
+            },
+            "assignee": {
+              "kind": "line_manager"
+            },
+            "dueWorkingDays": 3
+          },
+          {
+            "id": "print",
+            "type": "task",
+            "names": {
+              "en": "Print the cards",
+              "ar": "طباعة البطاقات"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 5
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "manager",
+            "to": "print"
+          },
+          {
+            "from": "print",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": 10
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 0
+  },
+  {
+    "key": "company_transportation",
+    "version": 1,
+    "icon": "pin",
+    "names": {
+      "en": "Company transportation",
+      "ar": "مواصلات الشركة"
+    },
+    "descriptions": {
+      "en": "Book company transport between two areas.",
+      "ar": "احجز مواصلات الشركة بين منطقتين."
+    },
+    "classification": "internal",
+    "form": {
+      "fields": [
+        {
+          "key": "pickup",
+          "type": "lookup",
+          "labels": {
+            "en": "Pickup area",
+            "ar": "منطقة الانطلاق"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "area_1",
+              "labels": {
+                "en": "Area 1",
+                "ar": "المنطقة 1"
+              }
+            },
+            {
+              "value": "area_2",
+              "labels": {
+                "en": "Area 2",
+                "ar": "المنطقة 2"
+              }
+            },
+            {
+              "value": "area_3",
+              "labels": {
+                "en": "Area 3",
+                "ar": "المنطقة 3"
+              }
+            }
+          ],
+          "help": {
+            "en": "The owner keeps the list of areas.",
+            "ar": "يحدد مالك الخدمة قائمة المناطق."
+          }
+        },
+        {
+          "key": "dropoff",
+          "type": "lookup",
+          "labels": {
+            "en": "Drop-off area",
+            "ar": "منطقة الوصول"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "area_1",
+              "labels": {
+                "en": "Area 1",
+                "ar": "المنطقة 1"
+              }
+            },
+            {
+              "value": "area_2",
+              "labels": {
+                "en": "Area 2",
+                "ar": "المنطقة 2"
+              }
+            },
+            {
+              "value": "area_3",
+              "labels": {
+                "en": "Area 3",
+                "ar": "المنطقة 3"
+              }
+            }
+          ]
+        },
+        {
+          "key": "travel_date",
+          "type": "date",
+          "labels": {
+            "en": "Date",
+            "ar": "التاريخ"
+          },
+          "required": true,
+          "rules": [
+            {
+              "kind": "min_days_from_today",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "key": "pickup_time",
+          "type": "text",
+          "labels": {
+            "en": "Pickup time",
+            "ar": "وقت الانطلاق"
+          },
+          "required": true
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "arrange",
+            "type": "task",
+            "names": {
+              "en": "Arrange the transport",
+              "ar": "ترتيب المواصلات"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 2
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "arrange",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": null
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 0
+  },
+  {
+    "key": "device_maintenance",
+    "version": 1,
+    "icon": "settings",
+    "names": {
+      "en": "Device maintenance",
+      "ar": "صيانة الأجهزة"
+    },
+    "descriptions": {
+      "en": "Report a device that needs repair.",
+      "ar": "أبلغ عن جهاز يحتاج إلى صيانة."
+    },
+    "classification": "internal",
+    "form": {
+      "fields": [
+        {
+          "key": "brand",
+          "type": "text",
+          "labels": {
+            "en": "Brand",
+            "ar": "العلامة التجارية"
+          },
+          "required": true
+        },
+        {
+          "key": "part_number",
+          "type": "text",
+          "labels": {
+            "en": "Part number",
+            "ar": "رقم القطعة"
+          }
+        },
+        {
+          "key": "serial_number",
+          "type": "text",
+          "labels": {
+            "en": "Serial number",
+            "ar": "الرقم التسلسلي"
+          },
+          "required": true
+        },
+        {
+          "key": "problem",
+          "type": "text",
+          "labels": {
+            "en": "Problem",
+            "ar": "المشكلة"
+          },
+          "required": true,
+          "rules": [
+            {
+              "kind": "max_length",
+              "value": 1000
+            }
+          ]
+        },
+        {
+          "key": "accessories",
+          "type": "multi_choice",
+          "labels": {
+            "en": "Accessories handed in",
+            "ar": "الملحقات المسلمة"
+          },
+          "options": [
+            {
+              "value": "charger",
+              "labels": {
+                "en": "Charger",
+                "ar": "الشاحن"
+              }
+            },
+            {
+              "value": "bag",
+              "labels": {
+                "en": "Bag",
+                "ar": "الحقيبة"
+              }
+            },
+            {
+              "value": "mouse",
+              "labels": {
+                "en": "Mouse",
+                "ar": "الفأرة"
+              }
+            },
+            {
+              "value": "other",
+              "labels": {
+                "en": "Other",
+                "ar": "أخرى"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "repair",
+            "type": "task",
+            "names": {
+              "en": "Repair the device",
+              "ar": "صيانة الجهاز"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 5
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "repair",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": null
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 3
+  },
+  {
+    "key": "purchase_request",
+    "version": 1,
+    "icon": "services",
+    "names": {
+      "en": "Purchase request",
+      "ar": "طلب شراء"
+    },
+    "descriptions": {
+      "en": "Ask to buy goods or services. The owner can add a hand-off to the ERP through a connector step.",
+      "ar": "اطلب شراء سلع أو خدمات. يمكن لمالك الخدمة إضافة إرسال إلى نظام تخطيط الموارد عبر خطوة موصل."
+    },
+    "classification": "internal",
+    "form": {
+      "fields": [
+        {
+          "key": "item",
+          "type": "text",
+          "labels": {
+            "en": "What to buy",
+            "ar": "ما المطلوب شراؤه"
+          },
+          "required": true
+        },
+        {
+          "key": "quantity",
+          "type": "number",
+          "labels": {
+            "en": "Quantity",
+            "ar": "الكمية"
+          },
+          "required": true,
+          "rules": [
+            {
+              "kind": "min",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "key": "estimated_cost",
+          "type": "money",
+          "labels": {
+            "en": "Estimated cost",
+            "ar": "التكلفة التقديرية"
+          },
+          "currencies": [
+            "AED",
+            "SAR",
+            "USD",
+            "EUR"
+          ],
+          "required": true
+        },
+        {
+          "key": "justification",
+          "type": "text",
+          "labels": {
+            "en": "Why it is needed",
+            "ar": "سبب الحاجة"
+          },
+          "required": true
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "manager",
+            "type": "approval",
+            "names": {
+              "en": "Line manager approval",
+              "ar": "موافقة المدير المباشر"
+            },
+            "assignee": {
+              "kind": "line_manager"
+            },
+            "dueWorkingDays": 3
+          },
+          {
+            "id": "budget",
+            "type": "approval",
+            "names": {
+              "en": "Budget approval",
+              "ar": "موافقة الميزانية"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "workflow.approve"
+            },
+            "dueWorkingDays": 3
+          },
+          {
+            "id": "order",
+            "type": "task",
+            "names": {
+              "en": "Place the order",
+              "ar": "تقديم أمر الشراء"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 5
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "manager",
+            "to": "budget"
+          },
+          {
+            "from": "budget",
+            "to": "order"
+          },
+          {
+            "from": "order",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": null
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 3
+  },
+  {
+    "key": "expense_claim",
+    "version": 1,
+    "icon": "files",
+    "names": {
+      "en": "Expense claim",
+      "ar": "مطالبة مصروفات"
+    },
+    "descriptions": {
+      "en": "Claim back money you spent for work.",
+      "ar": "استرد مبالغ أنفقتها للعمل."
+    },
+    "classification": "internal",
+    "form": {
+      "fields": [
+        {
+          "key": "expense_type",
+          "type": "choice",
+          "labels": {
+            "en": "Expense type",
+            "ar": "نوع المصروف"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "travel",
+              "labels": {
+                "en": "Travel",
+                "ar": "سفر"
+              }
+            },
+            {
+              "value": "meals",
+              "labels": {
+                "en": "Meals",
+                "ar": "وجبات"
+              }
+            },
+            {
+              "value": "supplies",
+              "labels": {
+                "en": "Supplies",
+                "ar": "مستلزمات"
+              }
+            },
+            {
+              "value": "other",
+              "labels": {
+                "en": "Other",
+                "ar": "أخرى"
+              }
+            }
+          ]
+        },
+        {
+          "key": "provider",
+          "type": "text",
+          "labels": {
+            "en": "Provider",
+            "ar": "مقدم الخدمة"
+          },
+          "required": true
+        },
+        {
+          "key": "period",
+          "type": "date_range",
+          "labels": {
+            "en": "Period",
+            "ar": "الفترة"
+          },
+          "required": true
+        },
+        {
+          "key": "subsidiary",
+          "type": "org_unit",
+          "labels": {
+            "en": "Subsidiary",
+            "ar": "الشركة التابعة"
+          },
+          "prefill": "org.company"
+        },
+        {
+          "key": "department",
+          "type": "org_unit",
+          "labels": {
+            "en": "Department",
+            "ar": "الإدارة"
+          },
+          "prefill": "org.primary_unit"
+        },
+        {
+          "key": "country",
+          "type": "text",
+          "labels": {
+            "en": "Country",
+            "ar": "الدولة"
+          },
+          "required": true
+        },
+        {
+          "key": "unit_price",
+          "type": "money",
+          "labels": {
+            "en": "Unit price",
+            "ar": "سعر الوحدة"
+          },
+          "currencies": [
+            "AED",
+            "SAR",
+            "USD",
+            "EUR"
+          ],
+          "required": true
+        },
+        {
+          "key": "quantity",
+          "type": "number",
+          "labels": {
+            "en": "Quantity",
+            "ar": "الكمية"
+          },
+          "required": true,
+          "rules": [
+            {
+              "kind": "min",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "key": "payment_method",
+          "type": "choice",
+          "labels": {
+            "en": "Payment method",
+            "ar": "طريقة الدفع"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "cash",
+              "labels": {
+                "en": "Cash",
+                "ar": "نقدا"
+              }
+            },
+            {
+              "value": "personal_card",
+              "labels": {
+                "en": "Personal card",
+                "ar": "بطاقة شخصية"
+              }
+            },
+            {
+              "value": "company_card",
+              "labels": {
+                "en": "Company card",
+                "ar": "بطاقة الشركة"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "manager",
+            "type": "approval",
+            "names": {
+              "en": "Line manager approval",
+              "ar": "موافقة المدير المباشر"
+            },
+            "assignee": {
+              "kind": "line_manager"
+            },
+            "dueWorkingDays": 3
+          },
+          {
+            "id": "pay",
+            "type": "task",
+            "names": {
+              "en": "Check and pay",
+              "ar": "التدقيق والصرف"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 5
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "manager",
+            "to": "pay"
+          },
+          {
+            "from": "pay",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": null
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 5,
+    "without": [
+      "hr.expenses"
+    ]
+  },
+  {
+    "key": "travel_request",
+    "version": 1,
+    "icon": "globe",
+    "names": {
+      "en": "Travel request",
+      "ar": "طلب سفر"
+    },
+    "descriptions": {
+      "en": "Ask for a business trip, with an advance if you need one.",
+      "ar": "اطلب رحلة عمل، مع سلفة إن احتجت."
+    },
+    "classification": "internal",
+    "form": {
+      "fields": [
+        {
+          "key": "destination",
+          "type": "text",
+          "labels": {
+            "en": "Destination",
+            "ar": "الوجهة"
+          },
+          "required": true
+        },
+        {
+          "key": "dates",
+          "type": "date_range",
+          "labels": {
+            "en": "Travel dates",
+            "ar": "تواريخ السفر"
+          },
+          "required": true,
+          "rules": [
+            {
+              "kind": "min_days_from_today",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "key": "purpose",
+          "type": "text",
+          "labels": {
+            "en": "Purpose",
+            "ar": "الغرض"
+          },
+          "required": true
+        },
+        {
+          "key": "advance",
+          "type": "money",
+          "labels": {
+            "en": "Advance needed",
+            "ar": "السلفة المطلوبة"
+          },
+          "currencies": [
+            "AED",
+            "SAR",
+            "USD",
+            "EUR"
+          ]
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "manager",
+            "type": "approval",
+            "names": {
+              "en": "Line manager approval",
+              "ar": "موافقة المدير المباشر"
+            },
+            "assignee": {
+              "kind": "line_manager"
+            },
+            "dueWorkingDays": 3
+          },
+          {
+            "id": "book",
+            "type": "task",
+            "names": {
+              "en": "Book the trip",
+              "ar": "حجز الرحلة"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 5
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "manager",
+            "to": "book"
+          },
+          {
+            "from": "book",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": null
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 0
+  },
+  {
+    "key": "training_request",
+    "version": 1,
+    "icon": "book",
+    "names": {
+      "en": "Training request",
+      "ar": "طلب تدريب"
+    },
+    "descriptions": {
+      "en": "Register for a course outside the learning catalogue.",
+      "ar": "سجل في دورة خارج كتالوج التعلم."
+    },
+    "classification": "internal",
+    "form": {
+      "fields": [
+        {
+          "key": "course",
+          "type": "text",
+          "labels": {
+            "en": "Course",
+            "ar": "الدورة"
+          },
+          "required": true
+        },
+        {
+          "key": "provider",
+          "type": "text",
+          "labels": {
+            "en": "Training provider",
+            "ar": "جهة التدريب"
+          },
+          "required": true
+        },
+        {
+          "key": "dates",
+          "type": "date_range",
+          "labels": {
+            "en": "Dates",
+            "ar": "التواريخ"
+          },
+          "required": true
+        },
+        {
+          "key": "cost",
+          "type": "money",
+          "labels": {
+            "en": "Cost",
+            "ar": "التكلفة"
+          },
+          "currencies": [
+            "AED",
+            "SAR",
+            "USD",
+            "EUR"
+          ]
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "manager",
+            "type": "approval",
+            "names": {
+              "en": "Line manager approval",
+              "ar": "موافقة المدير المباشر"
+            },
+            "assignee": {
+              "kind": "line_manager"
+            },
+            "dueWorkingDays": 3
+          },
+          {
+            "id": "register",
+            "type": "task",
+            "names": {
+              "en": "Register with the provider",
+              "ar": "التسجيل لدى جهة التدريب"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 5
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "manager",
+            "to": "register"
+          },
+          {
+            "from": "register",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": null
+    },
+    "allowOnBehalf": true,
+    "maxAttachments": 0
+  },
+  {
+    "key": "system_access",
+    "version": 1,
+    "icon": "link",
+    "names": {
+      "en": "VPN or system access",
+      "ar": "الوصول إلى الشبكة الخاصة أو الأنظمة"
+    },
+    "descriptions": {
+      "en": "Ask for VPN or access to a business system.",
+      "ar": "اطلب الوصول إلى الشبكة الخاصة الافتراضية أو إلى نظام عمل."
+    },
+    "classification": "internal",
+    "form": {
+      "fields": [
+        {
+          "key": "system",
+          "type": "choice",
+          "labels": {
+            "en": "System",
+            "ar": "النظام"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "vpn",
+              "labels": {
+                "en": "VPN",
+                "ar": "الشبكة الخاصة الافتراضية"
+              }
+            },
+            {
+              "value": "erp",
+              "labels": {
+                "en": "ERP",
+                "ar": "نظام تخطيط الموارد"
+              }
+            },
+            {
+              "value": "crm",
+              "labels": {
+                "en": "CRM",
+                "ar": "نظام إدارة العملاء"
+              }
+            },
+            {
+              "value": "other",
+              "labels": {
+                "en": "Other",
+                "ar": "أخرى"
+              }
+            }
+          ]
+        },
+        {
+          "key": "access_level",
+          "type": "choice",
+          "labels": {
+            "en": "Access needed",
+            "ar": "الوصول المطلوب"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "read",
+              "labels": {
+                "en": "Read only",
+                "ar": "قراءة فقط"
+              }
+            },
+            {
+              "value": "write",
+              "labels": {
+                "en": "Read and change",
+                "ar": "قراءة وتعديل"
+              }
+            }
+          ]
+        },
+        {
+          "key": "justification",
+          "type": "text",
+          "labels": {
+            "en": "Why it is needed",
+            "ar": "سبب الحاجة"
+          },
+          "required": true
+        },
+        {
+          "key": "until",
+          "type": "date",
+          "labels": {
+            "en": "Needed until",
+            "ar": "مطلوب حتى"
+          },
+          "rules": [
+            {
+              "kind": "min_days_from_today",
+              "value": 1
+            }
+          ]
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "manager",
+            "type": "approval",
+            "names": {
+              "en": "Line manager approval",
+              "ar": "موافقة المدير المباشر"
+            },
+            "assignee": {
+              "kind": "line_manager"
+            },
+            "dueWorkingDays": 3
+          },
+          {
+            "id": "grant",
+            "type": "task",
+            "names": {
+              "en": "Grant the access",
+              "ar": "منح الوصول"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 2
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "manager",
+            "to": "grant"
+          },
+          {
+            "from": "grant",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": 5
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 0
+  },
+  {
+    "key": "resignation",
+    "version": 1,
+    "icon": "leave",
+    "names": {
+      "en": "Resignation",
+      "ar": "الاستقالة"
+    },
+    "descriptions": {
+      "en": "Tell the company you are resigning. Your notice starts when the request is approved.",
+      "ar": "أبلغ الشركة باستقالتك. تبدأ فترة الإشعار عند الموافقة على الطلب."
+    },
+    "classification": "confidential",
+    "form": {
+      "fields": [
+        {
+          "key": "last_day",
+          "type": "date",
+          "labels": {
+            "en": "Last working day",
+            "ar": "آخر يوم عمل"
+          },
+          "required": true,
+          "rules": [
+            {
+              "kind": "min_days_from_today",
+              "value": 60,
+              "message": {
+                "en": "The notice period is 60 days.",
+                "ar": "فترة الإشعار 60 يوما."
+              }
+            }
+          ]
+        },
+        {
+          "key": "reason",
+          "type": "choice",
+          "labels": {
+            "en": "Main reason",
+            "ar": "السبب الرئيسي"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "career",
+              "labels": {
+                "en": "Career move",
+                "ar": "تطور مهني"
+              }
+            },
+            {
+              "value": "compensation",
+              "labels": {
+                "en": "Pay and benefits",
+                "ar": "الراتب والمزايا"
+              }
+            },
+            {
+              "value": "relocation",
+              "labels": {
+                "en": "Moving away",
+                "ar": "الانتقال"
+              }
+            },
+            {
+              "value": "personal",
+              "labels": {
+                "en": "Personal reasons",
+                "ar": "أسباب شخصية"
+              }
+            },
+            {
+              "value": "studies",
+              "labels": {
+                "en": "Studies",
+                "ar": "الدراسة"
+              }
+            },
+            {
+              "value": "other",
+              "labels": {
+                "en": "Other",
+                "ar": "أخرى"
+              }
+            }
+          ]
+        },
+        {
+          "key": "comments",
+          "type": "text",
+          "labels": {
+            "en": "Anything you want to add",
+            "ar": "ما تود إضافته"
+          }
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "manager",
+            "type": "approval",
+            "names": {
+              "en": "Line manager approval",
+              "ar": "موافقة المدير المباشر"
+            },
+            "assignee": {
+              "kind": "line_manager"
+            },
+            "dueWorkingDays": 3
+          },
+          {
+            "id": "hr",
+            "type": "approval",
+            "names": {
+              "en": "HR approval",
+              "ar": "موافقة الموارد البشرية"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "hr.manage"
+            },
+            "dueWorkingDays": 3
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "approved"
+          }
+        ],
+        "links": [
+          {
+            "from": "manager",
+            "to": "hr"
+          },
+          {
+            "from": "hr",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": true,
+      "serviceLevelDays": null
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 0
+  },
+  {
+    "key": "hr_appointment",
+    "version": 1,
+    "icon": "calendar",
+    "names": {
+      "en": "HR appointment",
+      "ar": "موعد مع الموارد البشرية"
+    },
+    "descriptions": {
+      "en": "Ask for a meeting with HR.",
+      "ar": "اطلب اجتماعا مع الموارد البشرية."
+    },
+    "classification": "confidential",
+    "form": {
+      "fields": [
+        {
+          "key": "topic",
+          "type": "choice",
+          "labels": {
+            "en": "Topic",
+            "ar": "الموضوع"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "pay",
+              "labels": {
+                "en": "Pay",
+                "ar": "الراتب"
+              }
+            },
+            {
+              "value": "benefits",
+              "labels": {
+                "en": "Benefits",
+                "ar": "المزايا"
+              }
+            },
+            {
+              "value": "career",
+              "labels": {
+                "en": "Career",
+                "ar": "المسار المهني"
+              }
+            },
+            {
+              "value": "other",
+              "labels": {
+                "en": "Other",
+                "ar": "أخرى"
+              }
+            }
+          ]
+        },
+        {
+          "key": "preferred_date",
+          "type": "date",
+          "labels": {
+            "en": "Preferred date",
+            "ar": "التاريخ المفضل"
+          },
+          "required": true,
+          "rules": [
+            {
+              "kind": "min_days_from_today",
+              "value": 1
+            }
+          ]
+        },
+        {
+          "key": "preferred_time",
+          "type": "choice",
+          "labels": {
+            "en": "Preferred time",
+            "ar": "الوقت المفضل"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "morning",
+              "labels": {
+                "en": "Morning",
+                "ar": "صباحا"
+              }
+            },
+            {
+              "value": "midday",
+              "labels": {
+                "en": "Midday",
+                "ar": "ظهرا"
+              }
+            },
+            {
+              "value": "afternoon",
+              "labels": {
+                "en": "Afternoon",
+                "ar": "بعد الظهر"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "schedule",
+            "type": "task",
+            "names": {
+              "en": "Set the appointment",
+              "ar": "تحديد الموعد"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 2
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "schedule",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": null
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 0
+  },
+  {
+    "key": "parking_waiting_list",
+    "version": 1,
+    "icon": "building",
+    "names": {
+      "en": "Parking waiting list",
+      "ar": "قائمة انتظار المواقف"
+    },
+    "descriptions": {
+      "en": "Join the waiting list for a parking space.",
+      "ar": "انضم إلى قائمة الانتظار للحصول على موقف سيارة."
+    },
+    "classification": "internal",
+    "form": {
+      "fields": [
+        {
+          "key": "plate",
+          "type": "text",
+          "labels": {
+            "en": "Plate number",
+            "ar": "رقم اللوحة"
+          },
+          "required": true
+        },
+        {
+          "key": "site",
+          "type": "text",
+          "labels": {
+            "en": "Site",
+            "ar": "الموقع"
+          },
+          "required": true
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "allocate",
+            "type": "task",
+            "names": {
+              "en": "Allocate a space",
+              "ar": "تخصيص موقف"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 30
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "allocate",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": null
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 0
+  },
+  {
+    "key": "referral",
+    "version": 1,
+    "icon": "people",
+    "names": {
+      "en": "Referral",
+      "ar": "الترشيح"
+    },
+    "descriptions": {
+      "en": "Refer a candidate or a business contact.",
+      "ar": "رشح مرشحا للعمل أو جهة أعمال."
+    },
+    "classification": "internal",
+    "form": {
+      "fields": [
+        {
+          "key": "referral_kind",
+          "type": "choice",
+          "labels": {
+            "en": "Referral",
+            "ar": "نوع الترشيح"
+          },
+          "required": true,
+          "options": [
+            {
+              "value": "candidate",
+              "labels": {
+                "en": "Candidate",
+                "ar": "مرشح للعمل"
+              }
+            },
+            {
+              "value": "business",
+              "labels": {
+                "en": "Business",
+                "ar": "جهة أعمال"
+              }
+            }
+          ]
+        },
+        {
+          "key": "name",
+          "type": "text",
+          "labels": {
+            "en": "Name",
+            "ar": "الاسم"
+          },
+          "required": true
+        },
+        {
+          "key": "email",
+          "type": "text",
+          "labels": {
+            "en": "Email",
+            "ar": "البريد الإلكتروني"
+          },
+          "required": true
+        },
+        {
+          "key": "details",
+          "type": "text",
+          "labels": {
+            "en": "Details",
+            "ar": "التفاصيل"
+          },
+          "required": true
+        }
+      ]
+    },
+    "route": {
+      "graph": {
+        "steps": [
+          {
+            "id": "review",
+            "type": "task",
+            "names": {
+              "en": "Review the referral",
+              "ar": "مراجعة الترشيح"
+            },
+            "assignee": {
+              "kind": "permission_at_unit",
+              "permission": "service.manage"
+            },
+            "dueWorkingDays": 5
+          },
+          {
+            "id": "done",
+            "type": "end",
+            "result": "completed"
+          }
+        ],
+        "links": [
+          {
+            "from": "review",
+            "to": "done"
+          }
+        ]
+      },
+      "continueAfterExit": false,
+      "serviceLevelDays": null
+    },
+    "allowOnBehalf": false,
+    "maxAttachments": 1
+  }
+]

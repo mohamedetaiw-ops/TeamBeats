@@ -21,6 +21,9 @@ public static class ServicesModule
         services.AddScoped<Catalogue>();
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ServicesComponents>();
         services.AddScoped<ServiceAdmin>();
+        services.AddScoped<RouteTests>();
+        services.AddScoped<ServiceTemplates>();
+        services.AddScoped<RequestSummaries>();
         services.AddScoped<Requests>();
         services.AddScoped<Attachments>();
         services.AddScoped<IRequestFacts, RequestFactsReader>();
@@ -133,6 +136,9 @@ public static class ServicesModule
 
         requests.MapGet("/{id:guid}", async (Guid id, Requests service, CancellationToken ct) => Results.Ok(await service.DetailAsync(id, ct)));
 
+        // A summary for the person deciding (R2): through the AI gateway, nothing stored.
+        requests.MapPost("/{id:guid}/summary", async (Guid id, RequestSummaries summaries, CancellationToken ct) => Results.Ok(await summaries.SummarizeAsync(id, ct)));
+
         requests.MapPost("/{id:guid}/cancel", async (Guid id, Requests service, IDbSession session, CancellationToken ct) =>
         {
             var detail = await service.CancelAsync(id, ct);
@@ -244,6 +250,18 @@ public static class ServicesModule
             return Results.Created($"/api/v1/services/admin/{view.Service.Id}", view);
         });
 
+        // Starter templates (section 12): switching one on creates its draft service, once per tenant.
+        admin.MapGet("/templates", async (ServiceTemplates templates, CancellationToken ct) => Results.Ok(await templates.ListAsync(ct)));
+
+        admin.MapPost("/templates/{key}", async (string key, ServiceTemplates templates, IDbSession session, CancellationToken ct) =>
+        {
+            var (view, created) = await templates.SwitchOnAsync(key, ct);
+            await session.CommitAsync(ct);
+            return created ? Results.Created($"/api/v1/services/admin/{view.Service.Id}", view) : Results.Ok(view);
+        });
+
+        admin.MapGet("/groups", async (RouteActions actions, CancellationToken ct) => Results.Ok(await actions.GroupsAsync(ct)));
+
         admin.MapGet("/connector-actions", async (RouteActions actions, CancellationToken ct) => Results.Ok(await actions.ListAsync(ct)));
 
         admin.MapGet("/{id:guid}", async (Guid id, ServiceAdmin services, CancellationToken ct) => Results.Ok(await services.GetAsync(id, ct)));
@@ -263,6 +281,10 @@ public static class ServicesModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        // Test mode of the route designer: runs the latest draft in the sandbox and writes nothing.
+        admin.MapPost("/{id:guid}/test", async (Guid id, RouteTestRequest request, RouteTests tests, CancellationToken ct) =>
+            Results.Ok(await tests.RunAsync(id, request, ct)));
 
         admin.MapPost("/{id:guid}/publish", async (Guid id, ServiceAdmin services, IDbSession session, CancellationToken ct) =>
         {

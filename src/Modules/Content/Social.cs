@@ -9,11 +9,12 @@ using TeamBeats.TenantContext;
 
 namespace TeamBeats.Modules.Content;
 
-public sealed record CommentRequest(string? Body);
+public sealed record CommentRequest(string? Body, IReadOnlyList<Guid>? Mentions = null);
 
 public sealed record ReactionRequest(string? Kind);
 
-public sealed record CommentView(Guid Id, Guid ItemId, ContentPerson Author, string Body, string Status, DateTimeOffset CreatedAt, bool Mine, bool Reported);
+public sealed record CommentView(Guid Id, Guid ItemId, ContentPerson Author, string Body, string Status, DateTimeOffset CreatedAt, bool Mine, bool Reported,
+    IReadOnlyList<ContentPerson>? Mentions = null);
 
 public sealed record CommentPage(IReadOnlyList<CommentView> Items, bool CommentsOn, bool Moderator);
 
@@ -31,7 +32,7 @@ public static class CommentStatuses
 /// Reactions and comments of spec 009 US9 (R1 part): anyone who may read a live item reacts and, where the site has
 /// comments on, comments; the item's owner (or its creator) hears of each new comment (scenario 1). With moderation on,
 /// comments from people without <c>content.edit</c> at the site wait for a moderator, and a comment reported by
-/// <see cref="ReportsToHide"/> people is hidden until a moderator looks at it (scenario 4). Mentions and hashtags are R2.
+/// <see cref="ReportsToHide"/> people is hidden until a moderator looks at it (scenario 4). People mentioned in a comment hear of it once it is visible, and only when they may read the item (R2, US9 scenario 2).
 /// </summary>
 public sealed class ContentSocial(
     IDbSession session,
@@ -47,6 +48,7 @@ public sealed class ContentSocial(
 {
     public const int BodyMax = 2000;
     public const int ReportsToHide = 3;
+    public const int MaxMentions = 20;
     public const int PageSize = 200;
     public const string NewComment = "content.comment.new";
 
@@ -106,11 +108,12 @@ public sealed class ContentSocial(
 
     // ---- Comments ----
 
-    private const string Columns = "id, item_id, author_user_id, body, status, created_at";
+    private const string Columns = "id, item_id, author_user_id, body, status, created_at, mentions";
 
-    private sealed record CommentRow(Guid Id, Guid ItemId, Guid Author, string Body, string Status, DateTimeOffset CreatedAt);
+    private sealed record CommentRow(Guid Id, Guid ItemId, Guid Author, string Body, string Status, DateTimeOffset CreatedAt, Guid[]? Mentions);
 
-    private static CommentRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.GetGuid(2), r.GetString(3), r.GetString(4), r.GetFieldValue<DateTimeOffset>(5));
+    private static CommentRow Read(Npgsql.NpgsqlDataReader r) => new(r.GetGuid(0), r.GetGuid(1), r.GetGuid(2), r.GetString(3), r.GetString(4), r.GetFieldValue<DateTimeOffset>(5),
+        r.IsDBNull(6) ? null : r.GetFieldValue<Guid[]>(6));
 
     private readonly Dictionary<Guid, ContentPerson> people = [];
 
@@ -135,11 +138,12 @@ public sealed class ContentSocial(
             from content.comment c
             where item_id = @id and (status = 'visible' or (status = 'held' and author_user_id = @user) or (@moderator and status in ('held', 'hidden')))
             order by created_at, id limit @limit
-            """, new { id, user, moderator, limit = PageSize }, r => (Row: Read(r), Reported: r.GetBoolean(6)), ct);
+            """, new { id, user, moderator, limit = PageSize }, r => (Row: Read(r), Reported: r.GetBoolean(7)), ct);
         var list = new List<CommentView>();
         foreach (var (row, reported) in rows)
         {
-            list.Add(new CommentView(row.Id, row.ItemId, await PersonAsync(row.Author, ct), row.Body, row.Status, row.CreatedAt, row.Author == user, reported));
+            list.Add(new CommentView(row.Id, row.ItemId, await PersonAsync(row.Author, ct), row.Body, row.Status, row.CreatedAt, row.Author == user, reported,
+                await PeopleAsync(row.Mentions, ct)));
         }
         return new CommentPage(list, site.CommentsMode == "on", moderator);
     }
@@ -157,19 +161,25 @@ public sealed class ContentSocial(
         {
             throw AppException.Validation("body", "validation.content.comment");
         }
+        var mentions = (request.Mentions ?? []).Where(m => m != Guid.Empty).Distinct().ToArray();
+        if (mentions.Length > MaxMentions || !await items.SeesAllAsync(mentions.ToHashSet(), ct))
+        {
+            throw AppException.Validation("mentions", "validation.content.mention");
+        }
         var status = site.Moderation && !await ModeratesAsync(site, ct) ? CommentStatuses.Held : CommentStatuses.Visible;
         var comment = Ids.New();
         var now = clock.UtcNow;
         await session.ExecAsync(
             """
-            insert into content.comment (tenant_id, id, item_id, author_user_id, body, status, created_at, updated_at)
-            values (platform.current_tenant_id(), @comment, @id, @user, @body, @status, @now, @now)
-            """, new { comment, id, user, body, status, now }, ct);
+            insert into content.comment (tenant_id, id, item_id, author_user_id, body, status, created_at, updated_at, mentions)
+            values (platform.current_tenant_id(), @comment, @id, @user, @body, @status, @now, @now, @mentions)
+            """, new { comment, id, user, body, status, now, mentions = mentions.Length == 0 ? null : mentions }, ct);
         if (status == CommentStatuses.Visible)
         {
             await TellOwnerAsync(item, user, comment, ct);
+            await TellMentionedAsync(item, site, user, comment, mentions, ct);
         }
-        return new CommentView(comment, id, await PersonAsync(user, ct), body, status, now, true, false);
+        return new CommentView(comment, id, await PersonAsync(user, ct), body, status, now, true, false, await PeopleAsync(mentions, ct));
     }
 
     /// <summary>The owner, or the creator when there is none, hears of a new comment; no one is told of their own.</summary>
@@ -181,6 +191,33 @@ public sealed class ContentSocial(
             await notifications.SendAsync(new NotificationRequest([recipient], NotificationCategories.RequestUpdate, NewComment,
                 $"{CriticalAnnouncements.ReadLink(item.Id)}#comment-{comment}", DedupeKey: $"content:comment:{comment:N}"), ct);
         }
+    }
+
+    /// <summary>People mentioned in a visible comment hear of it when they may read the item; the author is never told of their own.</summary>
+    private async Task TellMentionedAsync(ItemRow item, SiteRow site, Guid author, Guid comment, IReadOnlyCollection<Guid>? mentions, CancellationToken ct)
+    {
+        foreach (var person in (mentions ?? []).Where(m => m != author))
+        {
+            if (await items.UserMayReadAsync(person, item, site, ct))
+            {
+                await notifications.SendAsync(new NotificationRequest([person], NotificationCategories.Mention, ContentMentions.Mentioned,
+                    $"{CriticalAnnouncements.ReadLink(item.Id)}#comment-{comment}", DedupeKey: $"content:comment-mention:{comment:N}:{person:N}"), ct);
+            }
+        }
+    }
+
+    private async Task<IReadOnlyList<ContentPerson>?> PeopleAsync(IReadOnlyCollection<Guid>? ids, CancellationToken ct)
+    {
+        if (ids is not { Count: > 0 })
+        {
+            return null;
+        }
+        var list = new List<ContentPerson>();
+        foreach (var id in ids)
+        {
+            list.Add(await PersonAsync(id, ct));
+        }
+        return list;
     }
 
     private async Task<(CommentRow Comment, ItemRow Item, SiteRow Site)> CommentRowAsync(Guid comment, CancellationToken ct)
@@ -214,8 +251,10 @@ public sealed class ContentSocial(
         if (approve && row.Status == CommentStatuses.Held)
         {
             await TellOwnerAsync(item, row.Author, comment, ct);
+            await TellMentionedAsync(item, site, row.Author, comment, row.Mentions, ct);
         }
-        return new CommentView(comment, item.Id, await PersonAsync(row.Author, ct), row.Body, status, row.CreatedAt, row.Author == user, false);
+        return new CommentView(comment, item.Id, await PersonAsync(row.Author, ct), row.Body, status, row.CreatedAt, row.Author == user, false,
+            await PeopleAsync(row.Mentions, ct));
     }
 
     /// <summary>Reports a comment once per person; at <see cref="ReportsToHide"/> reports a visible comment is hidden until a moderator looks at it.</summary>

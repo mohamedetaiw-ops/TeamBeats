@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { serviceIcons } from "@/lib/services/look";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
-import { FormField } from "@/components/ui/FormField";
-import { problemMessages } from "@/lib/notifications/types";
+import { FormField, SelectField } from "@/components/ui/FormField";
+import { problemMessages, type Problem } from "@/lib/notifications/types";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
 import {
   fieldTypes,
@@ -25,7 +25,10 @@ import {
   type ServiceAdminView,
   type ServicePreview,
 } from "@/lib/services/types";
+import { cleanGraph, graphFromR1, problemsByStep, type RouteGraph, type RouteGroup, type RouteTestResult, type ServiceTrigger } from "@/lib/services/route-graph";
 import { ActionStepsEditor } from "./ActionStepsEditor";
+import { RouteDesigner, type DesignerService } from "./RouteDesigner";
+import { RouteSettings, RouteTestPanel } from "./RouteTools";
 import { PersonPicker } from "./PersonPicker";
 import { RequestForm } from "./RequestForm";
 import "./services.css";
@@ -76,11 +79,15 @@ export function ServiceEditor({
   categories,
   units,
   routeActions,
+  groups = [],
+  services = [],
 }: {
   initial: ServiceAdminView;
   categories: Category[];
   units: OrgUnit[];
   routeActions: RouteActionsView;
+  groups?: RouteGroup[];
+  services?: DesignerService[];
 }) {
   const t = useTranslations("services.admin");
   const locale = useLocale();
@@ -103,11 +110,23 @@ export function ServiceEditor({
   const [fields, setFields] = useState<Field[]>(latest?.form.fields ?? []);
   const [approval, setApproval] = useState<ApprovalStep | null>(latest?.route.approval ?? null);
   const [actionSteps, setActionSteps] = useState<ActionStep[]>(latest?.route.actions ?? []);
+  const [graph, setGraph] = useState<RouteGraph | null>(latest?.route.graph ?? null);
+  const [triggers, setTriggers] = useState<ServiceTrigger[]>(latest?.route.triggers ?? []);
+  const [serviceLevelDays, setServiceLevelDays] = useState<number | null>(latest?.route.serviceLevelDays ?? null);
+  const [continueAfterExit, setContinueAfterExit] = useState(latest?.route.continueAfterExit ?? false);
+  const [queueGroup, setQueueGroup] = useState(latest?.fulfilmentQueueGroupId ?? "");
+  const [routeProblems, setRouteProblems] = useState<Map<string, string[]>>(new Map());
+  const [testRun, setTestRun] = useState<RouteTestResult | null>(null);
   const [allowOnBehalf, setAllowOnBehalf] = useState(latest?.allowOnBehalf ?? false);
   const [maxAttachments, setMaxAttachments] = useState(latest?.maxAttachments ?? 0);
   const [draftResult, setDraftResult] = useState<Result>(null);
   const [preview, setPreview] = useState<ServicePreview | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+
+  const designerFields = fields
+    .filter((f) => f.type !== "policy_note")
+    .map((f) => ({ key: f.key, label: pick(f.labels, locale, f.key), numeric: f.type === "number" || f.type === "money" }));
+  const visited = new Set((testRun?.steps ?? []).map((x) => x.stepId));
 
   async function call(path: string, method: string, body?: unknown): Promise<Response> {
     return fetch(`/api/v1/services/admin/${s.id}${path}`, {
@@ -163,16 +182,30 @@ export function ServiceEditor({
           })),
         },
         route: {
-          approval: approval ? { ...approval, names: clean(approval.names) } : null,
-          actions: actionSteps.length > 0 ? actionSteps.map((a) => ({ ...a, names: clean(a.names) })) : null,
+          approval: !graph && approval ? { ...approval, names: clean(approval.names) } : null,
+          actions: !graph && actionSteps.length > 0 ? actionSteps.map((a) => ({ ...a, names: clean(a.names) })) : null,
+          graph: graph ? cleanGraph(graph, clean) : null,
+          triggers: triggers.length > 0 ? triggers : null,
+          continueAfterExit,
+          serviceLevelDays,
         },
+        fulfilmentQueueGroupId: queueGroup || null,
         allowOnBehalf,
         maxAttachments,
       });
       if (response.ok) {
         setView((await response.json()) as ServiceAdminView);
         setDraftResult({ ok: true, messages: [t("draftSaved")] });
+        setRouteProblems(new Map());
         return true;
+      }
+      if (graph) {
+        try {
+          const problem = (await response.clone().json()) as Problem;
+          setRouteProblems(problemsByStep(graph, problem.errors ?? {}));
+        } catch {
+          setRouteProblems(new Map());
+        }
       }
       setDraftResult({ ok: false, messages: await problemMessages(response) });
       return false;
@@ -510,87 +543,143 @@ export function ServiceEditor({
           </label>
           <FormField label={t("maxAttachments")} name="maxAttachments" type="number" min={0} max={10} value={maxAttachments} onChange={(e) => setMaxAttachments(Number(e.target.value || 0))} />
 
-          <fieldset>
-            <legend>{t("approval")}</legend>
-            <label className="services-select">
-              {t("approvalKind")}
-              <select
-                value={approval ? approval.approvers.kind : ""}
-                onChange={(e) =>
-                  setApproval(
-                    e.target.value === ""
-                      ? null
-                      : {
-                          names: approval?.names ?? null,
-                          dueWorkingDays: approval?.dueWorkingDays ?? null,
-                          approvers:
-                            e.target.value === "users"
-                              ? { kind: "users", users: [] }
-                              : e.target.value === "line_manager"
-                                ? { kind: "line_manager", permission: null }
-                                : { kind: "permission_at_unit", permission: "workflow.approve" },
-                        },
-                  )
-                }
-              >
-                <option value="">{t("noApproval")}</option>
-                <option value="users">{t("approvers.users")}</option>
-                <option value="permission_at_unit">{t("approvers.permission_at_unit")}</option>
-                <option value="line_manager">{t("approvers.line_manager")}</option>
-              </select>
-            </label>
-            {approval ? (
-              <>
-                <BilingualFields label={t("stepName")} name="step" value={approval.names} onChange={(n) => setApproval({ ...approval, names: n })} />
-                {approval.approvers.kind === "users" ? (
+          <SelectField
+            label={t("queueGroup")}
+            hint={t("queueGroupHint")}
+            name="queueGroup"
+            value={queueGroup}
+            onChange={(e) => setQueueGroup(e.target.value)}
+            options={[{ value: "", label: t("noQueueGroup") }, ...groups.map((g) => ({ value: g.id, label: g.name }))]}
+          />
+          {graph ? (
+            <section className="route-section" aria-labelledby="route-designer-title">
+              <h3 id="route-designer-title">{t("designerTitle")}</h3>
+              <p className="field-hint">{t("designerIntro")}</p>
+              <RouteDesigner
+                graph={graph}
+                onChange={setGraph}
+                fields={designerFields}
+                groups={groups}
+                services={services.filter((x) => x.id !== s.id)}
+                actions={routeActions.available ? routeActions.actions : []}
+                problems={routeProblems}
+                visited={visited}
+              />
+              <div className="services-actions">
+                <ConfirmAction
+                  label={t("useSimpleRoute")}
+                  question={t("useSimpleRouteQuestion")}
+                  confirmLabel={t("useSimpleRouteConfirm")}
+                  cancelLabel={t("keep")}
+                  onConfirm={async () => {
+                    setGraph(null);
+                    setTestRun(null);
+                    setRouteProblems(new Map());
+                  }}
+                />
+              </div>
+            </section>
+          ) : (
+            <>
+              <fieldset>
+                <legend>{t("approval")}</legend>
+                <label className="services-select">
+                  {t("approvalKind")}
+                  <select
+                    value={approval ? approval.approvers.kind : ""}
+                    onChange={(e) =>
+                      setApproval(
+                        e.target.value === ""
+                          ? null
+                          : {
+                              names: approval?.names ?? null,
+                              dueWorkingDays: approval?.dueWorkingDays ?? null,
+                              approvers:
+                                e.target.value === "users"
+                                  ? { kind: "users", users: [] }
+                                  : e.target.value === "line_manager"
+                                    ? { kind: "line_manager", permission: null }
+                                    : { kind: "permission_at_unit", permission: "workflow.approve" },
+                            },
+                      )
+                    }
+                  >
+                    <option value="">{t("noApproval")}</option>
+                    <option value="users">{t("approvers.users")}</option>
+                    <option value="permission_at_unit">{t("approvers.permission_at_unit")}</option>
+                    <option value="line_manager">{t("approvers.line_manager")}</option>
+                  </select>
+                </label>
+                {approval ? (
                   <>
-                    <ul className="services-list" aria-label={t("approverList")}>
-                      {(approval.approvers.users ?? []).map((u) => (
-                        <li key={u} className="services-row">
-                          <PersonPicker label={t("approver")} value={u} readOnly onChange={() => undefined} />
-                          <Button
-                            variant="quiet"
-                            onClick={() => setApproval({ ...approval, approvers: { kind: "users", users: (approval.approvers.users ?? []).filter((x) => x !== u) } })}
-                          >
-                            {t("removeApprover")}
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                    <PersonPicker
-                      label={t("addApprover")}
-                      value={null}
-                      onChange={(id) =>
-                        id && setApproval({ ...approval, approvers: { kind: "users", users: [...new Set([...(approval.approvers.users ?? []), id])] } })
-                      }
+                    <BilingualFields label={t("stepName")} name="step" value={approval.names} onChange={(n) => setApproval({ ...approval, names: n })} />
+                    {approval.approvers.kind === "users" ? (
+                      <>
+                        <ul className="services-list" aria-label={t("approverList")}>
+                          {(approval.approvers.users ?? []).map((u) => (
+                            <li key={u} className="services-row">
+                              <PersonPicker label={t("approver")} value={u} readOnly onChange={() => undefined} />
+                              <Button
+                                variant="quiet"
+                                onClick={() => setApproval({ ...approval, approvers: { kind: "users", users: (approval.approvers.users ?? []).filter((x) => x !== u) } })}
+                              >
+                                {t("removeApprover")}
+                              </Button>
+                            </li>
+                          ))}
+                        </ul>
+                        <PersonPicker
+                          label={t("addApprover")}
+                          value={null}
+                          onChange={(id) =>
+                            id && setApproval({ ...approval, approvers: { kind: "users", users: [...new Set([...(approval.approvers.users ?? []), id])] } })
+                          }
+                        />
+                      </>
+                    ) : approval.approvers.kind === "line_manager" ? (
+                      <p className="field-hint">{t("lineManagerHint")}</p>
+                    ) : (
+                      <p className="field-hint">{t("permissionHint")}</p>
+                    )}
+                    <FormField
+                      label={t("dueDays")}
+                      name="dueDays"
+                      type="number"
+                      min={1}
+                      max={90}
+                      hint={t("dueDaysHint")}
+                      value={approval.dueWorkingDays ?? ""}
+                      onChange={(e) => setApproval({ ...approval, dueWorkingDays: e.target.value === "" ? null : Number(e.target.value) })}
                     />
                   </>
-                ) : approval.approvers.kind === "line_manager" ? (
-                  <p className="field-hint">{t("lineManagerHint")}</p>
-                ) : (
-                  <p className="field-hint">{t("permissionHint")}</p>
-                )}
-                <FormField
-                  label={t("dueDays")}
-                  name="dueDays"
-                  type="number"
-                  min={1}
-                  max={90}
-                  hint={t("dueDaysHint")}
-                  value={approval.dueWorkingDays ?? ""}
-                  onChange={(e) => setApproval({ ...approval, dueWorkingDays: e.target.value === "" ? null : Number(e.target.value) })}
+                ) : null}
+              </fieldset>
+              {routeActions.available ? (
+                <ActionStepsEditor
+                  steps={actionSteps}
+                  actions={routeActions.actions}
+                  fields={fields.filter((f) => f.type !== "policy_note").map((f) => ({ key: f.key, label: pick(f.labels, locale, f.key) }))}
+                  onChange={setActionSteps}
                 />
-              </>
-            ) : null}
-          </fieldset>
-          {routeActions.available ? (
-            <ActionStepsEditor
-              steps={actionSteps}
-              actions={routeActions.actions}
-              fields={fields.filter((f) => f.type !== "policy_note").map((f) => ({ key: f.key, label: pick(f.labels, locale, f.key) }))}
-              onChange={setActionSteps}
-            />
-          ) : null}
+              ) : null}
+              <div className="services-actions">
+                <Button onClick={() => setGraph(graphFromR1(approval, actionSteps, queueGroup || null))}>{t("openDesigner")}</Button>
+              </div>
+              <p className="field-hint">{t("openDesignerHint")}</p>
+            </>
+          )}
+          <RouteSettings
+            serviceLevelDays={serviceLevelDays}
+            continueAfterExit={continueAfterExit}
+            triggers={triggers}
+            services={services.filter((x) => x.id !== s.id)}
+            units={units}
+            onChange={(patch) => {
+              if (patch.serviceLevelDays !== undefined) setServiceLevelDays(patch.serviceLevelDays);
+              if (patch.continueAfterExit !== undefined) setContinueAfterExit(patch.continueAfterExit);
+              if (patch.triggers !== undefined) setTriggers(patch.triggers);
+            }}
+          />
           <Notice result={draftResult} />
           <div className="services-actions">
             <Button type="submit" busy={busy === "draft"} busyLabel={t("saving")}>
@@ -619,6 +708,23 @@ export function ServiceEditor({
           </div>
         </section>
       )}
+
+      {s.kind === "form" && graph ? (
+        <RouteTestPanel
+          serviceId={s.id}
+          graph={graph}
+          fields={designerFields}
+          save={saveDraft}
+          onResult={(r) => {
+            setTestRun(r);
+            if (r && r.problems.length > 0) {
+              const map = new Map<string, string[]>();
+              for (const p of r.problems) map.set(p.stepId, [...(map.get(p.stepId) ?? []), p.message || p.key]);
+              setRouteProblems(map);
+            }
+          }}
+        />
+      ) : null}
 
       {preview ? (
         <section className="services-section" aria-labelledby="service-preview" data-testid="service-preview">
