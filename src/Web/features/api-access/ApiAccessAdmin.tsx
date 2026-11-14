@@ -112,6 +112,7 @@ function AppsPanel({ apps, scopes, action, onCreated }: { apps: ApiApp[]; scopes
         <p className="admin-meta">{t("appsIntro")}</p>
         <DataTable
           caption={t("appsTitle")}
+          captionHidden
           rows={apps}
           rowKey={(a) => a.id}
           emptyTitle={t("noApps")}
@@ -252,6 +253,7 @@ function ConsentsPanel({ consents, action, onRevoked }: { consents: AdminConsent
       <p className="admin-meta">{t("consentsIntro")}</p>
       <DataTable
         caption={t("consentsTitle")}
+        captionHidden
         rows={consents}
         rowKey={(c) => c.consentId}
         emptyTitle={t("noConsents")}
@@ -399,6 +401,7 @@ function UsagePanel({ usage }: { usage: ApiUsage | null }) {
       </p>
       <DataTable
         caption={t("usageTitle")}
+        captionHidden
         rows={usage.apps}
         rowKey={(a) => a.appId}
         emptyTitle={t("noApps")}
@@ -475,6 +478,7 @@ function DeveloperPanel({ page }: { page: DeveloperPage | null }) {
         <h2 id="api-developer-deprecations">{t("deprecationsTitle")}</h2>
         <DataTable
           caption={t("deprecationsTitle")}
+          captionHidden
           rows={page.deprecations}
           rowKey={(o) => `${o.method} ${o.path}`}
           emptyTitle={t("noDeprecations")}
@@ -490,6 +494,7 @@ function DeveloperPanel({ page }: { page: DeveloperPage | null }) {
         <h2 id="api-developer-operations">{t("operationsTitle")}</h2>
         <DataTable
           caption={t("operationsTitle")}
+          captionHidden
           rows={page.operations}
           rowKey={(o) => `${o.method} ${o.path}`}
           emptyTitle={t("noOperations")}
@@ -508,6 +513,7 @@ function DeveloperPanel({ page }: { page: DeveloperPage | null }) {
         <h2 id="api-developer-scopes">{t("scopesTitle")}</h2>
         <DataTable
           caption={t("scopesTitle")}
+          captionHidden
           rows={page.scopes}
           rowKey={(s) => s.key}
           emptyTitle={t("noOperations")}
@@ -523,6 +529,7 @@ function DeveloperPanel({ page }: { page: DeveloperPage | null }) {
         <p className="admin-meta">{t("eventsIntro")}</p>
         <DataTable
           caption={t("eventsTitle")}
+          captionHidden
           rows={page.events}
           rowKey={(e) => e.type}
           emptyTitle={t("noEvents")}
@@ -537,6 +544,7 @@ function DeveloperPanel({ page }: { page: DeveloperPage | null }) {
         <h2 id="api-developer-mcp">{t("mcpTitle")}</h2>
         <DataTable
           caption={t("mcpTitle")}
+          captionHidden
           rows={page.mcp}
           rowKey={(m) => `${m.kind} ${m.name}`}
           emptyTitle={t("noMcp")}

@@ -195,6 +195,7 @@ export function AttendanceAdmin({
         <p className="field-hint">{t("rules.intro")}</p>
         <DataTable<WorkRule>
           caption={t("rules.caption")}
+          captionHidden
           rows={rules}
           rowKey={(r) => r.id}
           density="compact"

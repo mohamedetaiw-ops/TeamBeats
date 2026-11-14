@@ -169,6 +169,7 @@ export function LetterAdmin({
         <h2 id="letters-types">{t("types.title")}</h2>
         <DataTable<LetterType>
           caption={t("types.caption")}
+          captionHidden
           rows={types}
           rowKey={(r) => r.key}
           density="compact"
@@ -256,6 +257,7 @@ export function LetterAdmin({
         <h2 id="letters-issued">{t("letters.title")}</h2>
         <DataTable<Letter>
           caption={t("letters.caption")}
+          captionHidden
           rows={letters}
           rowKey={(r) => r.id}
           density="compact"

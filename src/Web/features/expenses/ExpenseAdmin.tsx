@@ -147,6 +147,7 @@ export function ExpenseAdmin({ policy: initial, rates: initialRates, claims }: {
         ) : null}
         <DataTable<ExpenseRate>
           caption={ta("rates")}
+          captionHidden
           rows={rates}
           rowKey={(r) => `${r.currency}-${r.date}`}
           density="compact"
@@ -163,6 +164,7 @@ export function ExpenseAdmin({ policy: initial, rates: initialRates, claims }: {
         <h2 id="expenses-claims">{ta("claims")}</h2>
         <DataTable<ExpenseClaim>
           caption={ta("caption")}
+          captionHidden
           rows={claims}
           rowKey={(c) => c.id}
           density="compact"

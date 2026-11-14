@@ -117,7 +117,15 @@
 }
 
 :root[data-design="studio"] .button-destructive {
+  background: var(--tb-color-state-danger);
+  color: var(--tb-color-text-inverse);
   font-weight: var(--tb-font-weight-medium);
+}
+
+/* In a table row the destructive action stays quiet danger text in Studio too (DLS-096); the solid button is the confirmation. */
+:root[data-design="studio"] :is(td, th, .ui-widget-row, .ui-row-actions) .button-destructive {
+  background: transparent;
+  color: var(--tb-color-state-danger);
 }
 
 :root[data-design="studio"] main h1,

@@ -184,6 +184,7 @@ export function TenantSettingsAdmin({ initial, initialAdmins }: { initial: Tenan
           <p className="admin-meta">{t("admins.intro")}</p>
           <DataTable
             caption={t("admins.title")}
+            captionHidden
             rows={admins}
             rowKey={(a) => a.id}
             emptyTitle={t("admins.empty")}
