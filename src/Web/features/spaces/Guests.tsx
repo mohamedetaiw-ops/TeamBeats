@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import { call, send, spacesApi, type SpaceGuests } from "@/lib/spaces";
 import "./spaces.css";
+import { Widget } from "@/components/ui/Widget";
 
 /**
  * Guests of a space for its owners (spec 029 US4, FR-007, FR-008). Owners invite partners by email as viewers or
@@ -46,16 +47,14 @@ export function Guests({ spaceId, initial }: { spaceId: string; initial: SpaceGu
 
   if (!view.allowed) {
     return (
-      <section className="spaces-section" aria-labelledby="guests-title">
-        <h2 id="guests-title">{t("title")}</h2>
+      <Widget title={t("title")}>
         <p className="spaces-meta">{t("off")}</p>
-      </section>
+      </Widget>
     );
   }
 
   return (
-    <section className="spaces-section" aria-labelledby="guests-title">
-      <h2 id="guests-title">{t("title")}</h2>
+    <Widget title={t("title")}>
       <p className="spaces-meta">{t("intro", { days: view.maxDays, limit: view.limit })}</p>
       {messages.length > 0 ? (
         <Alert tone="danger" title={t("failed")} live>
@@ -126,6 +125,6 @@ export function Guests({ spaceId, initial }: { spaceId: string; initial: SpaceGu
       <Checkbox label={t("confidential")} hint={view.confidentialAllowed ? t("confidentialHint") : t("confidentialOff")} checked={view.confidential}
         disabled={!view.confidentialAllowed}
         onChange={(e) => void apply(() => send(`${url}/files`, "PUT", { confidential: e.target.checked }), t("saved"))} />
-    </section>
+    </Widget>
   );
 }

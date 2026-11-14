@@ -10,6 +10,7 @@ import { FormField, SelectField, TextAreaField } from "@/components/ui/FormField
 import { StateView } from "@/components/ui/StateView";
 import { call, send, spacesApi } from "@/lib/spaces";
 import "./spaces.css";
+import { Widget } from "@/components/ui/Widget";
 
 export type SpaceRules = { creationUnits: string[]; guestsAllowed: boolean; guestDays: number; version: number; guestConfidential: boolean };
 type TemplateDefinition = {
@@ -123,8 +124,7 @@ export function ManageSpaces({ initialRules, initialTemplates, guestsInPlan }: {
         </Alert>
       ) : null}
       {saved ? <Alert tone="success" title={t("saved")} live /> : null}
-      <section className="spaces-section" aria-labelledby="spaces-rules">
-        <h2 id="spaces-rules">{t("rulesTitle")}</h2>
+      <Widget title={t("rulesTitle")}>
         <p className="spaces-meta">{rules.creationUnits.length === 0 ? t("everyoneCreates") : t("unitsCreate", { count: rules.creationUnits.length })}</p>
         <form
           className="spaces-form"
@@ -144,9 +144,8 @@ export function ManageSpaces({ initialRules, initialTemplates, guestsInPlan }: {
             </Button>
           </div>
         </form>
-      </section>
-      <section className="spaces-section" aria-labelledby="spaces-templates">
-        <h2 id="spaces-templates">{t("templatesTitle")}</h2>
+      </Widget>
+      <Widget title={t("templatesTitle")}>
         <p className="spaces-meta">{t("templatesHint")}</p>
         {templates.length === 0 ? (
           <StateView kind="empty" title={t("noTemplatesTitle")} message={t("noTemplates")} icon="folder" />
@@ -221,7 +220,7 @@ export function ManageSpaces({ initialRules, initialTemplates, guestsInPlan }: {
             </Button>
           </div>
         )}
-      </section>
+      </Widget>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { libraryHref, type ConnectedSource } from "@/lib/documents/types";
 import { Button } from "@/components/ui/Button";
 import { FormField, SelectField } from "@/components/ui/FormField";
 import "./documents.css";
+import { Widget } from "@/components/ui/Widget";
 
 export type ScopeChoice = { value: string; label: string };
 
@@ -29,10 +30,9 @@ export function ConnectLibraryForm({ sources, scopes }: { sources: ConnectedSour
 
   if (choices.length === 0) {
     return (
-      <section className="documents-card" aria-labelledby="connect-library-title">
-        <h2 id="connect-library-title">{t("title")}</h2>
+      <Widget title={t("title")}>
         <p>{t(sources.some((s) => s.state !== "ok") ? "unavailable" : "noLibraries")}</p>
-      </section>
+      </Widget>
     );
   }
 
@@ -61,8 +61,7 @@ export function ConnectLibraryForm({ sources, scopes }: { sources: ConnectedSour
   }
 
   return (
-    <section className="documents-card" aria-labelledby="connect-library-title">
-      <h2 id="connect-library-title">{t("title")}</h2>
+    <Widget title={t("title")}>
       <p>{t("intro")}</p>
       {messages.length > 0 ? (
         <div className="notice notice-error" role="alert">
@@ -85,6 +84,6 @@ export function ConnectLibraryForm({ sources, scopes }: { sources: ConnectedSour
           {t("submit")}
         </Button>
       </form>
-    </section>
+    </Widget>
   );
 }

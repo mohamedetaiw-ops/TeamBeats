@@ -10,6 +10,7 @@ import { StateView } from "@/components/ui/StateView";
 import { LibraryBrowser } from "@/features/documents/LibraryBrowser";
 import { SpaceNav } from "@/features/spaces/parts";
 import "@/features/documents/documents.css";
+import { Widget } from "@/components/ui/Widget";
 
 /** A space's files (spec 029 FR-006): its spec 011 library, with the space's members as the audience. */
 export default async function SpaceFilesPage({ params }: { params: Promise<{ id: string }> }) {
@@ -57,8 +58,7 @@ export default async function SpaceFilesPage({ params }: { params: Promise<{ id:
           sharedFolders.length === 0 ? <StateView kind="empty" title={t("filesUnavailableTitle")} message={t("filesUnavailable")} /> : null
         )}
         {sharedFolders.length > 0 ? (
-          <section className="documents-card" aria-labelledby="shared-folders-title">
-            <h2 id="shared-folders-title">{t("sharedFolders")}</h2>
+          <Widget title={t("sharedFolders")}>
             <ul className="documents-sharing-list">
               {sharedFolders.map((f) => (
                 <li key={f.shareId} data-testid="shared-folder">
@@ -73,7 +73,7 @@ export default async function SpaceFilesPage({ params }: { params: Promise<{ id:
                 </li>
               ))}
             </ul>
-          </section>
+          </Widget>
         ) : null}
       </main>
     </>
