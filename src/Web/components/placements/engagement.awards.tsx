@@ -8,6 +8,7 @@ import { useHomeAnswer } from "@/lib/engagementHome";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 
 /**
@@ -23,13 +24,9 @@ export default function AwardsCard({ props }: PlacementProps) {
   const { answer, retry } = useHomeAnswer<AwardList>(`${engagementApi}/awards`);
 
   const shell = (body: React.ReactNode, busy = false) => (
-    <section className="home-card" aria-labelledby="home-awards-title" aria-busy={busy || undefined}>
-      <div className="home-card-head">
-        <h2 id="home-awards-title">{title}</h2>
-        <Link href={awardsHref}>{t("awardsAll")}</Link>
-      </div>
+    <Widget title={title} busy={busy} action={<Link href={awardsHref}>{t("awardsAll")}</Link>}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (answer === "loading") return shell(<StateView kind="loading" minBlockSize="8rem" />, true);

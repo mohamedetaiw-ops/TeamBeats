@@ -7,6 +7,7 @@ import { communityHref, engagementApi, isGuid, postHref, type FeedPage } from "@
 import { snippet, useHomeAnswer } from "@/lib/engagementHome";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 
 /**
@@ -23,13 +24,9 @@ export default function DiscussionsCard({ props }: PlacementProps) {
   const { answer, retry } = useHomeAnswer<FeedPage>(community ? `${engagementApi}/communities/${community}/posts?limit=${top}` : "");
 
   const shell = (body: React.ReactNode, busy = false) => (
-    <section className="home-card" aria-labelledby={`home-discussions-${community}`} aria-busy={busy || undefined}>
-      <div className="home-card-head">
-        <h2 id={`home-discussions-${community}`}>{title}</h2>
-        {community ? <Link href={communityHref(community)}>{t("discussionsAll")}</Link> : null}
-      </div>
+    <Widget title={title} busy={busy} action={community ? <Link href={communityHref(community)}>{t("discussionsAll")}</Link> : null}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (!community) return shell(<StateView kind="empty" title={t("discussionsEmpty")} message="" icon="chat" />);

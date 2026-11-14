@@ -44,4 +44,7 @@ public sealed class OutlookComponents : IComponentRegistration
     /// spec 037 (<c>calendar.overview</c>) replaced My calendar there; existing My calendar placements render that card.
     /// </summary>
     public IEnumerable<string> PersonalHomeDefaults() => ["outlook.my_mail@1"];
+
+    /// <summary>Spec 018 FR-017: a My calendar placement renders the spec 037 calendar card, so it covers that suggestion.</summary>
+    public IEnumerable<(string Component, string Covered)> CoveredSuggestions() => [("outlook.my_calendar", "calendar.overview")];
 }

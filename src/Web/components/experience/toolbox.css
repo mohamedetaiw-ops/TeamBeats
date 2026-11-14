@@ -1,20 +1,4 @@
 /* Tool box utilities (spec 008 FR-050). Tokens only, logical properties only, so RTL and themes need nothing extra. */
-.toolbox {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  min-inline-size: 0;
-  gap: var(--tb-space-sm);
-  padding: var(--tb-space-lg);
-  border-radius: var(--tb-radius-lg);
-  background: var(--tb-color-surface-raised);
-  box-shadow: var(--tb-shadow-sm);
-}
-
-.toolbox-title {
-  margin: 0;
-  font-size: var(--tb-font-size-lg);
-}
-
 .toolbox-clocks {
   display: grid;
   gap: var(--tb-space-sm);

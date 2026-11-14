@@ -34,9 +34,14 @@ public sealed class HomeDefaults(IEnumerable<IComponentRegistration> registratio
         return off;
     }
 
-    /// <summary>Suggested placements per region: only the first personal region of the template, and only where the viewer may add.</summary>
+    /// <summary>
+    /// Suggested placements per region: only the first personal region of the template, and only where the viewer may add.
+    /// A suggestion is left out when <paramref name="regions"/> (the page's own placements after audience rules) already
+    /// hold its component, or a component that covers it (spec 008 FR-051, spec 032 FR-070).
+    /// </summary>
     public async Task<IReadOnlyDictionary<string, IReadOnlyList<Placement>>> ForAsync(TemplateDefinition template,
-        IReadOnlyDictionary<string, RegionRights> rights, Func<ComponentManifest, Availability> availability, CancellationToken ct)
+        IReadOnlyDictionary<string, RegionRights> rights, Func<ComponentManifest, Availability> availability, CancellationToken ct,
+        IReadOnlyList<PageRegion>? regions = null)
     {
         var region = template.Regions.FirstOrDefault(r => r.Policy.Personal);
         if (region is null || !rights.TryGetValue(region.Id, out var r) || !r.Rights.Contains(LayoutEngine.RightAdd))
@@ -44,6 +49,12 @@ public sealed class HomeDefaults(IEnumerable<IComponentRegistration> registratio
             return new Dictionary<string, IReadOnlyList<Placement>>();
         }
         var references = registrations.SelectMany(x => x.PersonalHomeDefaults()).Distinct(StringComparer.Ordinal).ToList();
+        if (references.Count == 0)
+        {
+            return new Dictionary<string, IReadOnlyList<Placement>>();
+        }
+        var shown = Shown(regions);
+        references = references.Where(reference => !shown.Contains(ComponentId(reference))).ToList();
         if (references.Count == 0)
         {
             return new Dictionary<string, IReadOnlyList<Placement>>();
@@ -59,5 +70,24 @@ public sealed class HomeDefaults(IEnumerable<IComponentRegistration> registratio
             .Take(r.MaxPersonalPlacements)
             .ToList();
         return new Dictionary<string, IReadOnlyList<Placement>>(StringComparer.Ordinal) { [region.Id] = placements };
+    }
+
+    private static string ComponentId(string reference) => reference.Split('@')[0];
+
+    /// <summary>Component IDs the page already shows anywhere, with the suggestions those components cover.</summary>
+    private HashSet<string> Shown(IReadOnlyList<PageRegion>? regions)
+    {
+        var shown = new HashSet<string>(StringComparer.Ordinal);
+        if (regions is null)
+        {
+            return shown;
+        }
+        var covers = registrations.SelectMany(x => x.CoveredSuggestions()).ToLookup(x => x.Component, x => x.Covered, StringComparer.Ordinal);
+        foreach (var id in regions.SelectMany(r => r.Placements).Select(p => ComponentId(p.ComponentRef)))
+        {
+            shown.Add(id);
+            shown.UnionWith(covers[id]);
+        }
+        return shown;
     }
 }

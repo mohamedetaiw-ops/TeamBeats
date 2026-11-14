@@ -9,6 +9,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 import "@/features/engagement/engagement.css";
 
@@ -27,13 +28,9 @@ export default function CelebrationsCard({ props }: PlacementProps) {
   const { answer, retry } = useHomeAnswer<CelebrationsView>(`${engagementApi}/celebrations`);
 
   const shell = (body: React.ReactNode, busy = false) => (
-    <section className="home-card" aria-labelledby="home-celebrations-title" aria-busy={busy || undefined}>
-      <div className="home-card-head">
-        <h2 id="home-celebrations-title">{title}</h2>
-        <Link href={celebrationsHref}>{t("celebrationsAll")}</Link>
-      </div>
+    <Widget title={title} busy={busy} action={<Link href={celebrationsHref}>{t("celebrationsAll")}</Link>}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (answer === "loading") return shell(<StateView kind="loading" minBlockSize="8rem" />, true);

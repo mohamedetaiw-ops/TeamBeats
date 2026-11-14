@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { CalendarHeader, LayerChips, WeekStrip } from "@/components/ui/CalendarParts";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import { addDays, firstWeekday, fromIso } from "@/components/ui/dates";
 import { useHydrated, useNow } from "@/lib/clock";
 import { LAYER_LOOK, LAYERS, daysFrom, weekOf, type EventsAnswer, type SummaryAnswer } from "@/lib/calendar";
@@ -36,10 +37,11 @@ export function CalendarCard({ limit = 3 }: { limit?: number }) {
   const day = picked ?? today;
   const events = useCalendar<EventsAnswer>(day ? `/api/v1/calendar/events?from=${day}&to=${addDays(day, 1)}` : null, attempt);
 
-  const shell = (body: React.ReactNode, busy = false) => (
-    <section className="cal-card" aria-label={t("title")} aria-busy={busy || undefined}>
-      {body}
-    </section>
+  // The shared widget frame (spec 036 DLS-089); before the data arrives the standard header names the card.
+  const shell = (body: React.ReactNode, busy = false, head?: React.ReactNode, footer?: React.ReactNode) => (
+    <Widget title={t("title")} busy={busy} head={head} footer={footer}>
+      <div className="cal-card">{body}</div>
+    </Widget>
   );
 
   if (!start || summary.state === "loading" || now === null) return shell(<StateView kind="loading" minBlockSize="12rem" />, true);
@@ -70,26 +72,35 @@ export function CalendarCard({ limit = 3 }: { limit?: number }) {
   const shown = upcoming.slice(0, limit);
   const more = upcoming.length - shown.length;
 
+  const head = (
+    <CalendarHeader
+      title={t("title")}
+      period={period}
+      previousLabel={t("previousWeek")}
+      nextLabel={t("nextWeek")}
+      todayLabel={t("todayButton")}
+      onPrevious={() => setPicked(addDays(selected, -7))}
+      onNext={() => setPicked(addDays(selected, 7))}
+      onToday={() => setPicked(null)}
+    >
+      <nav className="cal-card-views" aria-label={t("views.label")}>
+        {VIEW_LINKS.map((v) => (
+          <WorkspaceLink key={v} view={v} date={selected} className="cal-card-view">
+            {t(`views.${v}`)}
+          </WorkspaceLink>
+        ))}
+      </nav>
+    </CalendarHeader>
+  );
+  const footer = (
+    <WorkspaceLink view="agenda" date={selected}>
+      {more > 0 ? t("seeMore", { count: more }) : t("openCalendar")}
+      <Icon name="chevron-forward" size={14} />
+    </WorkspaceLink>
+  );
+
   return shell(
     <>
-      <CalendarHeader
-        title={t("title")}
-        period={period}
-        previousLabel={t("previousWeek")}
-        nextLabel={t("nextWeek")}
-        todayLabel={t("todayButton")}
-        onPrevious={() => setPicked(addDays(selected, -7))}
-        onNext={() => setPicked(addDays(selected, 7))}
-        onToday={() => setPicked(null)}
-      >
-        <nav className="cal-card-views" aria-label={t("views.label")}>
-          {VIEW_LINKS.map((v) => (
-            <WorkspaceLink key={v} view={v} date={selected} className="cal-card-view">
-              {t(`views.${v}`)}
-            </WorkspaceLink>
-          ))}
-        </nav>
-      </CalendarHeader>
       <WeekStrip label={t("weekLabel")} days={strip} selected={selected} today={data.today} onSelect={setPicked} countLabel={(n) => t("itemCount", { count: n })} />
       {legend.length > 0 ? <LayerChips label={t("legend")} layers={legend} selected={enabled} /> : null}
       <Freshness sources={events.state === "ok" ? events.data.sources : data.sources} onRetry={() => setAttempt((n) => n + 1)} />
@@ -137,10 +148,9 @@ export function CalendarCard({ limit = 3 }: { limit?: number }) {
           ) : null}
         </ul>
       ) : null}
-      <WorkspaceLink view="agenda" date={selected} className="cal-card-all">
-        {more > 0 ? t("seeMore", { count: more }) : t("openCalendar")}
-        <Icon name="chevron-forward" size={14} />
-      </WorkspaceLink>
     </>,
+    false,
+    head,
+    footer,
   );
 }

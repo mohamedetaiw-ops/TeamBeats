@@ -69,3 +69,9 @@ From the UX, DLS and frontend enhancement report of 14 November 2026. Foundation
 - [ ] T047 People toolbar, person forms and quick actions; policies summary and uniform status; knowledge and documents search first; editorial article, reactions and comments (DLS-109, DLS-112, DLS-113, specs 009, 010, 011, 025)
 - [ ] T048 Design descriptors and variant tokens in the four designs, variants on the news lead, stat tiles, work rows, tabs, cards and briefing (DLS-110, spec 033 FR-032)
 - [ ] T049 Design suite on the main pages in every design, language and density with the high-volume seed; gallery state coverage; visualization rules on stat and chart parts (DLS-111, DLS-117, DLS-118)
+
+## Phase 10: One interface per component (DLS-089 to DLS-091)
+Root cause found on 14 November 2026: home widgets had no shared frame or row parts, so each feature drew its own card (`home-card`, `outlook`, `toolbox`, `content-card`, `people-section`, `documents-card`, `cal-card`) and its own calendar or mail rows, My calendar kept its R1 list after spec 037, and home suggestions were added beside a view's own placement of the same component.
+- [x] T035 `Widget` frame in `components/ui`, calendar and mail on it: My calendar renders the calendar card (spec 018 FR-017), Your day agenda on `AgendaRow`, mail rows aligned for mixed directions (DLS-091), list caps, suggestions not duplicated (spec 008 FR-051, spec 032 FR-070)
+- [x] T036 Every other home widget on the frame (engagement, learning, services, toolbox, quick links, news list, people, documents) and the `check:design` rule for the frame
+- [ ] T037 Inner pages: the list cards of content, documents, people and spaces on the frame (`content-card`, `documents-card`, `people-section`, `spaces-section`), the space calendar on `RangeMonth` with the day panel and its event list on `AgendaRow`, and the Studio surface list in designs.css reduced to `.ui-widget`

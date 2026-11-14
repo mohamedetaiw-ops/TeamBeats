@@ -417,7 +417,7 @@ public sealed partial class PersonalizationService(
         var targeted = LayoutEngine.ForAudience(page.Definition.Regions, rules, viewer);
         var regions = layout.Regions.Select(lr => targeted.FirstOrDefault(r => r.Id == lr.Id) ?? new PageRegion(lr.Id, [])).ToList();
         var rights = await layouts.RightsAsync(page.Id, template, viewer, rules, canPersonalize, ct);
-        var defaults = await homeDefaults.ForAsync(template, rights, await availability.ForScopeAsync(page.OrgUnitId, ct, viewer: true), ct);
+        var defaults = await homeDefaults.ForAsync(template, rights, await availability.ForScopeAsync(page.OrgUnitId, ct, viewer: true), ct, regions);
         return (regions, rights, defaults);
     }
 
