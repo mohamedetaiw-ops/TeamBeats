@@ -605,3 +605,45 @@
   gap: var(--tb-space-sm) var(--tb-space-md);
   align-items: center;
 }
+
+/* Spec 011 FR-022 bulk import. */
+.documents-guide {
+  display: grid;
+  gap: var(--tb-space-xs);
+  margin: 0;
+}
+
+.documents-guide div {
+  display: grid;
+  grid-template-columns: minmax(8rem, max-content) minmax(0, 1fr);
+  gap: var(--tb-space-sm);
+}
+
+.documents-guide dd {
+  margin: 0;
+}
+
+.documents-imports,
+.documents-import-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.documents-imports {
+  flex-direction: column;
+}
+
+.documents-imports li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-xs);
+  align-items: center;
+}
+
+.documents-import-counts a[aria-current="page"] {
+  font-weight: var(--tb-font-weight-semibold);
+}

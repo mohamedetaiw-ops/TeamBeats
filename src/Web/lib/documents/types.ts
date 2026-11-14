@@ -244,3 +244,42 @@ export type FeedbackReport = {
     at: string;
   }[];
 };
+
+/** A bulk import of a ZIP with a manifest into a library (spec 011 FR-022). */
+export type ImportView = {
+  id: string;
+  libraryId: string;
+  folderId: string | null;
+  fileName: string;
+  sizeBytes: number;
+  status: "queued" | "running" | "completed";
+  total: number;
+  pending: number;
+  imported: number;
+  incomplete: number;
+  skipped: number;
+  failed: number;
+  quarantined: number;
+  createdBy: string;
+  createdAt: string;
+  finishedAt: string | null;
+};
+
+export const importRowStates = ["pending", "imported", "incomplete", "skipped", "failed", "quarantined"] as const;
+export type ImportRowState = (typeof importRowStates)[number];
+
+export type ImportRow = {
+  row: number;
+  path: string;
+  status: ImportRowState;
+  problem: string | null;
+  problemText: string | null;
+  documentId: string | null;
+  authorMatched: boolean | null;
+};
+
+export type ImportRowPage = { rows: ImportRow[]; total: number };
+
+export const libraryImportHref = (id: string) => `/documents/libraries/${encodeURIComponent(id)}/import`;
+export const importHref = (id: string) => `/documents/imports/${encodeURIComponent(id)}`;
+export const importApi = (id: string) => `/api/v1/documents/imports/${encodeURIComponent(id)}`;

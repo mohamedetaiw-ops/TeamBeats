@@ -30,6 +30,8 @@ public static class DocumentsModule
         services.AddScoped<Records>();
         services.AddScoped<GuestShares>();
         services.AddScoped<Assets>();
+        services.AddScoped<DocumentImports>();
+        services.AddMessageHandler<DocumentImportRequested, DocumentImportRunner>("documents.import");
         services.AddScoped<Contracts.IAssetImages>(sp => sp.GetRequiredService<Assets>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AssetAccessTasks>();
         services.AddScoped<IResourceDescriptorProvider, AssetCollectionDescriptorProvider>();
@@ -119,6 +121,21 @@ public static class DocumentsModule
             return Results.Ok(await files.ItemsAsync(id, query, view, limit ?? 50, offset ?? 0, ct));
         });
 
+        // Bulk import (FR-022): the ZIP is the request body; the manifest inside it says what each file becomes.
+        libraries.MapPost("/{id:guid}/imports", async (Guid id, HttpRequest http, string? name, Guid? folder, DocumentImports imports, IDbSession session,
+            CancellationToken ct) =>
+        {
+            if (http.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } size)
+            {
+                size.MaxRequestBodySize = DocumentImports.MaxZipBytes + 1;
+            }
+            var view = await imports.StartAsync(id, name, folder, http.Body, http.ContentLength, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/documents/imports/{view.Id}", view);
+        }).DisableAntiforgery();
+
+        libraries.MapGet("/{id:guid}/imports", async (Guid id, DocumentImports imports, CancellationToken ct) => Results.Ok(await imports.ListAsync(id, ct)));
+
         // The file is the request body; what it is comes in the query, metadata as a JSON object.
         // sensitiveReason confirms a sensitive data warning (spec 026 US6).
         libraries.MapPost("/{id:guid}/files", async (Guid id, HttpRequest http, string? name, Guid? folder, Guid? type, string? metadata, string? classification, bool? publish,
@@ -130,6 +147,17 @@ public static class DocumentsModule
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/documents/{view.Id}", view);
         }).DisableAntiforgery();
+
+        root.MapGet("/imports/{id:guid}", async (Guid id, DocumentImports imports, CancellationToken ct) => Results.Ok(await imports.GetAsync(id, ct)));
+        root.MapGet("/imports/{id:guid}/rows", async (Guid id, string? status, int? limit, int? offset, DocumentImports imports, CancellationToken ct) =>
+            Results.Ok(await imports.RowsAsync(id, status, limit ?? 100, offset ?? 0, ct)));
+        root.MapGet("/imports/{id:guid}/report", async (Guid id, DocumentImports imports, HttpResponse response, CancellationToken ct) =>
+        {
+            response.Headers["X-Content-Type-Options"] = "nosniff";
+            response.Headers.CacheControl = "private, no-store";
+            return Results.File(System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(await imports.ReportCsvAsync(id, ct))).ToArray(),
+                "text/csv; charset=utf-8", $"import-{id:N}.csv");
+        });
 
         root.MapPut("/types/{id:guid}", async (Guid id, DocumentTypeRequest request, Libraries service, IDbSession session, CancellationToken ct) =>
         {
