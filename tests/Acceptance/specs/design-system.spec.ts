@@ -185,6 +185,30 @@ for (const design of designs) {
             expect.soft(facts.font, `font family on ${where}`).toContain(locale === "ar" ? design.arabicFont : design.font);
           }
         }
+
+        // The other density (DLS-117): the person chooses it, and every main page still fits and keeps the type floor.
+        // The choice is cleared afterwards, because the tests that follow expect the design's own density.
+        const other = design.density === "compact" ? "comfortable" : "compact";
+        const api = await tenantApi(tenant);
+        try {
+          expect((await api.put("/api/v1/me/preference-profile", { data: { values: { density: other } } })).ok()).toBe(true);
+          for (const path of mainPages) {
+            await page.setViewportSize({ width: 1440, height: 900 });
+            await page.goto(`${hostOrigin(tenant.key)}${path}`);
+            await expect(page.locator("main h1").first()).toBeVisible();
+            await expect(page.locator("html")).toHaveAttribute("data-density", other);
+            for (const viewport of [viewports[2], { name: "phone", width: 390, height: 844 }]) {
+              await page.setViewportSize({ width: viewport.width, height: viewport.height });
+              const facts = await frameFacts(page);
+              const where = `${path} at ${viewport.name} width in the ${other} density`;
+              expect.soft(facts.overflow, `horizontal scrolling on ${where}`).toBeLessThanOrEqual(1);
+              expect.soft(facts.small, `text under 12 px on ${where}`).toEqual([]);
+            }
+          }
+        } finally {
+          await api.put("/api/v1/me/preference-profile", { data: { values: {} } });
+          await api.dispose();
+        }
       });
 
       test("the component gallery is accessible, has large enough targets and matches its baseline", async ({ page }, testInfo) => {
