@@ -857,6 +857,10 @@
 }
 
 .ui-toolbar-clear {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+  min-inline-size: 1.5rem;
   padding: 0;
   border: 0;
   background: none;

@@ -548,6 +548,8 @@ legend {
 .inline-field {
   display: flex;
   align-items: center;
+  /* Stacked checkboxes stay 24px apart in the compact density too (DLS-085). */
+  min-block-size: 1.5rem;
   gap: var(--tb-space-sm);
 }
 
