@@ -23,6 +23,7 @@ public static class AgentsModule
     public static IServiceCollection AddAgentsModule(this IServiceCollection services)
     {
         services.AddScoped<AssistantService>();
+        services.AddScoped<TeamBeats.Modules.Agents.Contracts.ISearchSummaries, SearchSummaries>();
         services.AddScoped<AssistantHistory>();
         services.AddScoped<AssistantTextActions>();
         services.AddScoped<Contracts.IAgentTool, KnowledgeSearchTool>();

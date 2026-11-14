@@ -10,3 +10,14 @@ create table search.federated_source (
 );
 select platform.enable_tenant_rls('search.federated_source');
 grant select, insert, update on search.federated_source to tb_app;
+
+-- Spec 012 US6 (R2, FR-018): whether the tenant shows an AI summary above search results. Off until a search
+-- administrator turns it on; no row means off.
+create table search.setting (
+  tenant_id uuid not null primary key,
+  ai_summary boolean not null,
+  updated_by uuid not null,
+  updated_at timestamptz not null
+);
+select platform.enable_tenant_rls('search.setting');
+grant select, insert, update on search.setting to tb_app;

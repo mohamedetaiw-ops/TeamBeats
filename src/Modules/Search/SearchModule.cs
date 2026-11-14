@@ -28,6 +28,7 @@ public static class SearchModule
         services.AddScoped<SearchRebuilds>();
         services.AddScoped<SearchTuning>();
         services.AddScoped<FederatedSearch>();
+        services.AddScoped<SearchSummariesService>();
         services.AddScoped<SearchRetrieval>();
         services.AddScoped<ISearchRetrieval>(sp => sp.GetRequiredService<SearchRetrieval>());
         services.AddScoped<IRetrievalEvaluation>(sp => sp.GetRequiredService<SearchRetrieval>());
@@ -74,6 +75,20 @@ public static class SearchModule
 
         // Federated results (US5) are asked for after the TeamBeats results, so a slow source never holds them up.
         root.MapGet("/federated", async (string? q, FederatedSearch federated, CancellationToken ct) => Results.Ok(await federated.QueryAsync(q, ct)));
+        // The AI summary (US6) is asked for after the results too, so they never wait for a model.
+        root.MapGet("/summary", async (string? q, SearchSummariesService summaries, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await summaries.SummaryAsync(q, ct);
+            await session.CommitAsync(ct); // The summary is kept as an assistant turn for feedback.
+            return Results.Ok(view);
+        });
+        root.MapGet("/ai-summary", async (SearchSummariesService summaries, CancellationToken ct) => Results.Ok(await summaries.GetAsync(ct)));
+        root.MapPut("/ai-summary", async (AiSummaryRequest request, SearchSummariesService summaries, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await summaries.SetAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
         root.MapGet("/federated-sources", async (FederatedSearch federated, CancellationToken ct) => Results.Ok(await federated.ListAsync(ct)));
         root.MapPut("/federated-sources/{source}", async (string source, FederatedSourceRequest request, FederatedSearch federated, IDbSession session,
             CancellationToken ct) =>

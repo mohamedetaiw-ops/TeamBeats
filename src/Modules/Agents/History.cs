@@ -45,7 +45,7 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
     {
         var user = await UserAsync(ct);
         return await session.QueryAsync(
-            "select id, title, turns, created_at, last_turn_at from agents.conversation where user_id = @user order by last_turn_at desc, id limit @n",
+            "select id, title, turns, created_at, last_turn_at from agents.conversation where user_id = @user and kind = 'chat' order by last_turn_at desc, id limit @n",
             new { user, n = MaxConversations },
             r => new ConversationSummary(r.GetGuid(0), r.GetString(1), r.GetInt32(2), r.GetFieldValue<DateTimeOffset>(3), r.GetFieldValue<DateTimeOffset>(4)), ct);
     }
@@ -54,7 +54,7 @@ public sealed class AssistantHistory(IDbSession session, ITenantContext context,
     {
         var user = await UserAsync(ct);
         var head = await session.QueryAsync(
-            "select title, created_at, last_turn_at, scope_source, scope_item_id from agents.conversation where id = @id and user_id = @user",
+            "select title, created_at, last_turn_at, scope_source, scope_item_id from agents.conversation where id = @id and user_id = @user and kind = 'chat'",
             new { id, user }, r => (Title: r.GetString(0), Created: r.GetFieldValue<DateTimeOffset>(1), Last: r.GetFieldValue<DateTimeOffset>(2),
                 Scope: r.Get<string?>("scope_source") is { } source ? new AssistantScope(source, r.GetGuid(4)) : null), ct);
         if (head.Count == 0)
