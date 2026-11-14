@@ -2345,5 +2345,6 @@
   "validation.services.triggers": "للخدمة 10 مشغّلات على الأكثر.",
   "validation.services.trigger": "راجع هذا المشغّل: يحتاج الجدول الزمني إلى تكرار ويوم (1 إلى 7 أسبوعيًا، و1 إلى 28 شهريًا أو ربع سنويًا) ومقدم طلب نشط، ويحتاج مشغّل الحدث إلى حدث معروف، ويحتاج اكتمال الطلب إلى خدمة أخرى.",
   "validation.services.route_cycle": "لا يمكن للخدمة أن تبدأ نفسها.",
-  "validation.services.route_service": "اختر خدمة نموذج."
+  "validation.services.route_service": "اختر خدمة نموذج.",
+  "validation.services.template_unavailable": "هذا القالب غير متاح في باقتك."
 }

@@ -283,6 +283,18 @@ export type VersionRow = {
 
 export type ServiceAdminView = { service: ServiceRow; latest: VersionRow | null };
 
+/** A starter template (spec 016 section 12): whether it fits the plan and the service made from it, if any. */
+export type ServiceTemplateView = {
+  key: string;
+  version: number;
+  icon: string | null;
+  names: Names;
+  descriptions: Names;
+  available: boolean;
+  serviceId: string | null;
+  serviceStatus: "draft" | "published" | "retired" | null;
+};
+
 export type ServicePreview = {
   version: number;
   state: string;

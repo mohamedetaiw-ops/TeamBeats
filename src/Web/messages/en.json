@@ -3471,6 +3471,26 @@
         "reached": "reached"
       },
       "problemOn": "{name}: {problem}"
+    },
+    "templates": {
+      "title": "Starter templates",
+      "intro": "Switch on a template to get a draft service you can change before publishing it. Set the people who handle each step and the fulfilment queue first.",
+      "switchOn": "Switch on",
+      "switchOnNamed": "Switch on {name}",
+      "switchingOn": "Switching on",
+      "open": "Open {name}",
+      "notInPlan": "Not in your plan"
+    },
+    "summary": {
+      "title": "Summary",
+      "intro": "Ask for a short summary of this request, written by AI from what you can see here. Check the details before you decide.",
+      "summarize": "Summarize",
+      "again": "Summarize again",
+      "working": "Summarizing",
+      "aiWritten": "Written by AI. It can be wrong.",
+      "policy_blocked": "Your organization's AI policy does not allow requests of this kind to be summarized.",
+      "unavailable": "A summary is not available right now.",
+      "failed": "The summary could not be loaded. Try again."
     }
   },
   "content": {

@@ -22,6 +22,8 @@ public static class ServicesModule
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ServicesComponents>();
         services.AddScoped<ServiceAdmin>();
         services.AddScoped<RouteTests>();
+        services.AddScoped<ServiceTemplates>();
+        services.AddScoped<RequestSummaries>();
         services.AddScoped<Requests>();
         services.AddScoped<Attachments>();
         services.AddScoped<IRequestFacts, RequestFactsReader>();
@@ -134,6 +136,9 @@ public static class ServicesModule
 
         requests.MapGet("/{id:guid}", async (Guid id, Requests service, CancellationToken ct) => Results.Ok(await service.DetailAsync(id, ct)));
 
+        // A summary for the person deciding (R2): through the AI gateway, nothing stored.
+        requests.MapPost("/{id:guid}/summary", async (Guid id, RequestSummaries summaries, CancellationToken ct) => Results.Ok(await summaries.SummarizeAsync(id, ct)));
+
         requests.MapPost("/{id:guid}/cancel", async (Guid id, Requests service, IDbSession session, CancellationToken ct) =>
         {
             var detail = await service.CancelAsync(id, ct);
@@ -243,6 +248,16 @@ public static class ServicesModule
             var view = await services.CreateAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Created($"/api/v1/services/admin/{view.Service.Id}", view);
+        });
+
+        // Starter templates (section 12): switching one on creates its draft service, once per tenant.
+        admin.MapGet("/templates", async (ServiceTemplates templates, CancellationToken ct) => Results.Ok(await templates.ListAsync(ct)));
+
+        admin.MapPost("/templates/{key}", async (string key, ServiceTemplates templates, IDbSession session, CancellationToken ct) =>
+        {
+            var (view, created) = await templates.SwitchOnAsync(key, ct);
+            await session.CommitAsync(ct);
+            return created ? Results.Created($"/api/v1/services/admin/{view.Service.Id}", view) : Results.Ok(view);
         });
 
         admin.MapGet("/groups", async (RouteActions actions, CancellationToken ct) => Results.Ok(await actions.GroupsAsync(ct)));

@@ -1601,3 +1601,26 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Opening an R1 route in the designer turns it into approval, connector steps, a task for the fulfilment queue when there is one, then an end as completed. Going back to the simple route drops the graph on the next save, after a confirmation.
 - A webhook step takes the outbound webhook's ID as text, as there is no listing of webhooks for routes yet.
 
+## Service catalogue and workflows (spec 016 R2, slice 6: T025 starter templates)
+
+### Built
+- The starter template pack of section 12 as versioned product configuration (`src/Modules/Services/Templates/starter-pack.json`, embedded). Each template carries its settings, form and step graph. Twelve templates: business cards, company transportation, device maintenance, purchase request, expense claim, travel request, training request, VPN or system access, resignation, HR appointment, parking waiting list and referral.
+- `GET /api/v1/services/admin/templates` and `POST /api/v1/services/admin/templates/{key}` for catalogue owners of the whole tenant (`service.manage` at tenant scope). Switching a template on creates a tenant-owned draft service through the ordinary create and draft-save paths, so it passes every check a hand-built draft does; `services.service.template_key` (migration `services/0006`) records the template, and switching on again returns the same service. The admin services page lists the templates with Switch on, the state of the service made from each, or "not in your plan".
+- Tests: `ServiceTemplateTests` (3).
+
+### Smallest safe defaults
+- Fulfilment steps in templates go to people holding `service.manage` at the requester's unit, so a draft works before a queue exists; the owner sets a queue group or another assignee before publishing.
+- The simple expense claim is not offered when `hr.expenses` is on (section 12). A template whose steps need a capability outside the plan is shown but cannot be switched on.
+- The resignation template keeps the 60 day notice as a rule on the last working day, keeps requests going after the requester leaves, and is confidential. The offboarding journey of spec 022 starts from it when an HR journey template names the service, which the HR administrator sets.
+- Speak Up is not in the pack: spec 023 builds it as its own channel with the anonymous option. The parking waiting list does not show a queue position yet, and the HR appointment asks for a preferred date and time of day instead of a slot; both are gaps to close with booking (spec 031) if the tenant needs them. Referrals are followed in My requests.
+
+## Service catalogue and workflows (spec 016 R2, slice 6: T026 request summary)
+
+### Built
+- `POST /api/v1/requests/{id}/summary` (section 11, R2): someone who may see the request gets a short summary in their language, written through the AI gateway with use case `summarize` and the service's classification. Only what the reader already sees on the request goes in (service, number, status, people, form values with their labels, attachment count and Tracking), passed as data inside the user message after the instructions. Nothing is stored. The request page shows a Summary panel beside the decision, marked as written by AI.
+- Tests: `RequestSummaryTests` (2), including the default AI policy refusing a confidential request (outcome `policy_blocked`).
+
+### Smallest safe defaults
+- The summary is gated by `ai.assistant`, which every package has, and by being able to see the request; the panel is shown to the person deciding. It is asked for on demand, never generated ahead.
+- Agent-requested approvals marked in the inbox (spec 027 US4) depend on agent approver tasks, which the agent runtime still refuses (`tool.approval_not_available`) until spec 027 R2 builds them. The inbox marking is built with that slice, not here.
+

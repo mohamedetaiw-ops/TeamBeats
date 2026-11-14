@@ -2345,5 +2345,6 @@
   "validation.services.triggers": "A service has at most 10 triggers.",
   "validation.services.trigger": "Check this trigger: a schedule needs a frequency, a day (1 to 7 weekly, 1 to 28 monthly or quarterly) and an active requester; an event trigger needs a known event, and request completed needs another service.",
   "validation.services.route_cycle": "A service cannot start itself.",
-  "validation.services.route_service": "Choose a form service."
+  "validation.services.route_service": "Choose a form service.",
+  "validation.services.template_unavailable": "This template does not fit your plan."
 }

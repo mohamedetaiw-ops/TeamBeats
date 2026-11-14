@@ -8113,6 +8113,29 @@
         }
       }
     },
+    "/api/v1/requests/{id}/summary": {
+      "post": {
+        "tags": [
+          "Services: requests"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/requests/{id}/cancel": {
       "post": {
         "tags": [
@@ -8442,6 +8465,40 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/services/admin/templates": {
+      "get": {
+        "tags": [
+          "Services: builder"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/services/admin/templates/{key}": {
+      "post": {
+        "tags": [
+          "Services: builder"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK"

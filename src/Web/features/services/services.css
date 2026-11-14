@@ -576,3 +576,31 @@
   place-items: center;
   inline-size: 2rem;
 }
+
+/* Starter templates: icon, name and description, then the switch or the state of the service made from it. */
+.services-template-list {
+  display: grid;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.services-template {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--tb-space-sm);
+  align-items: start;
+  padding: var(--tb-space-sm);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-sm);
+}
+
+.services-template h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
+}
+
+.services-template .services-actions {
+  grid-column: 2;
+}
