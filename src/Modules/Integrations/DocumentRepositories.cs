@@ -45,4 +45,13 @@ public sealed class DocumentRepositories(IDbSession session, Microsoft365.ShareP
         await ForAsync(connectionId, ct) is { } r
             ? await r.ListAsUserAsync(connectionId, containerId, folderId, cursor, userEmail, ct)
             : RepositoryUserPage.Not("unavailable");
+
+    public async Task<RepositoryWrite> UploadAsUserAsync(Guid connectionId, string containerId, string? folderId, string name, Stream content, long length,
+        string userEmail, CancellationToken ct = default) =>
+        await ForAsync(connectionId, ct) is { } r
+            ? await r.UploadAsUserAsync(connectionId, containerId, folderId, name, content, length, userEmail, ct)
+            : RepositoryWrite.Not("unavailable");
+
+    public async Task<RepositoryWrite> RenameAsUserAsync(Guid connectionId, string itemId, string name, string userEmail, CancellationToken ct = default) =>
+        await ForAsync(connectionId, ct) is { } r ? await r.RenameAsUserAsync(connectionId, itemId, name, userEmail, ct) : RepositoryWrite.Not("unavailable");
 }

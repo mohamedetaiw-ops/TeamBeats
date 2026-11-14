@@ -330,6 +330,8 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
             401 => "unauthorized",
             _ when code is "MailboxNotEnabledForRESTAPI" or "MailboxNotSupportedForRESTAPI" or "ResourceNotFound" && status is 404 or 400 => "no_mailbox",
             403 => "forbidden",
+            409 => "conflict",
+            413 => "too_large",
             _ => "not_found",
         });
     }

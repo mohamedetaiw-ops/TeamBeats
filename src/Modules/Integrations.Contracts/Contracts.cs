@@ -20,6 +20,9 @@ public static class Microsoft365Features
     public const string FreeBusy = "free_busy";
     public const string OfficeEditing = "office_editing";
     public const string SharePointDocuments = "sharepoint_documents";
+
+    /// <summary>Uploads, new versions and renames in connected SharePoint libraries as the person (spec 011 FR-029).</summary>
+    public const string SharePointUpload = "sharepoint_upload";
 }
 
 /// <summary>Connection status (spec 006 FR-014).</summary>
@@ -69,6 +72,9 @@ public sealed record ConnectionFeatureChanged(Guid ConnectionId, string Feature,
 public sealed record ConnectorUnavailable(Guid ConnectionId, string Status) : IIntegrationEvent;
 public sealed record ConnectorRestored(Guid ConnectionId) : IIntegrationEvent;
 public sealed record ConnectionDeleted(Guid ConnectionId, string Kind) : IIntegrationEvent;
+
+/// <summary>A connection serves fewer document containers than before (for SharePoint, an allowed site was removed).</summary>
+public sealed record DocumentContainersRemoved(Guid ConnectionId) : IIntegrationEvent;
 
 /// <summary>
 /// A signed inbound webhook that passed its checks (spec 017 US5, FR-014), mapped to a product event or a process
@@ -193,7 +199,21 @@ public sealed record RepositoryItem(
     DateTimeOffset? ModifiedAt,
     string? Version,
     string? WebLink,
-    IReadOnlyList<RepositoryPermission>? Permissions = null);
+    IReadOnlyList<RepositoryPermission>? Permissions = null,
+    RepositoryLabel? Label = null);
+
+/// <summary>The sensitivity label on an item in its repository (for SharePoint, a Microsoft Purview label), by ID and display name.</summary>
+public sealed record RepositoryLabel(string Id, string? Name);
+
+/// <summary>
+/// The outcome of a write made as the user. <paramref name="State"/> is <c>ok</c> with the item as it is now, or why
+/// nothing was written: <c>not_connected</c> or <c>reconnect</c> (the user must connect their account), <c>forbidden</c>
+/// (the repository refuses the user), <c>not_found</c>, <c>conflict</c> (the name is taken), <c>too_large</c> or <c>unavailable</c>.
+/// </summary>
+public sealed record RepositoryWrite(string State, RepositoryItem? Item)
+{
+    public static RepositoryWrite Not(string state) => new(state, null);
+}
 
 public sealed record RepositoryPage(IReadOnlyList<RepositoryItem> Items, string? NextCursor);
 
@@ -268,6 +288,16 @@ public interface IDocumentRepository
     /// never appear (spec 011 FR-027). Never throws for the user's own access; see <see cref="RepositoryUserPage.State"/>.
     /// </summary>
     Task<RepositoryUserPage> ListAsUserAsync(Guid connectionId, string containerId, string? folderId, string? cursor, string userEmail, CancellationToken ct = default);
+
+    /// <summary>
+    /// Writes a file into a folder as <paramref name="userEmail"/>, the container's root when <paramref name="folderId"/>
+    /// is null. A file of the same name gets a new version. The repository's own permissions decide.
+    /// </summary>
+    Task<RepositoryWrite> UploadAsUserAsync(Guid connectionId, string containerId, string? folderId, string name, Stream content, long length, string userEmail,
+        CancellationToken ct = default);
+
+    /// <summary>Renames a file or folder as <paramref name="userEmail"/>; the repository's own permissions decide.</summary>
+    Task<RepositoryWrite> RenameAsUserAsync(Guid connectionId, string itemId, string name, string userEmail, CancellationToken ct = default);
 }
 
 /// <summary>

@@ -301,6 +301,110 @@ public sealed class SharePointLibrariesTests(TenantWorld world)
             "select degraded_since is not null from documents.connected_sync where library_id = @library", new { library }, CancellationToken.None)));
     }
 
+    [Fact]
+    public async Task Uploads_run_as_the_person_labels_map_to_classifications_and_removing_the_site_retires_the_library()
+    {
+        var o = await FreshAsync();
+        var t = o.T;
+        // Uploads are their own feature, so a tenant that only reads never grants write access.
+        Assert.True((await t["admin"].Client.PostAsync($"/api/v1/integrations/connections/{o.Connection}/features/sharepoint_upload:enable", null)).IsSuccessStatusCode);
+        await AdminConsentAsync(t, o.Connection, o.Directory, "sharepoint_upload");
+        Graph.ConsentDelegated(o.Directory, "User.Read", "Files.Read.All", "Files.ReadWrite.All");
+        var library = await ConnectedLibraryAsync(o);
+        await ConnectAsync(t, "lm");
+        await ConnectAsync(t, "reader");
+        var files = $"{Libraries}/{library}/connected/files";
+        static ByteArrayContent Body(string text) => new(Encoding.UTF8.GetBytes(text));
+
+        // Off until a manager turns uploads on; only managers may.
+        Assert.Equal("conflict.documents.connected_read_only", await RefusedAsync(t["lm"].Client.PostAsync($"{files}?name=Plan.txt", Body("plan")), HttpStatusCode.Conflict));
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await t["reader"].Client.PutAsJsonAsync($"{Libraries}/{library}/connected/settings", new { uploadEnabled = true })).StatusCode);
+        var settings = await OkAsync(t["lm"].Client.PutAsJsonAsync($"{Libraries}/{library}/connected/settings", new { uploadEnabled = true }));
+        Assert.True(settings.GetProperty("connected").GetProperty("uploadEnabled").GetBoolean());
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.DocConnectedSettings, library.ToString());
+
+        // A contributor uploads as themselves; the same name again is a new version of the same file.
+        var uploaded = await OkAsync(t["lm"].Client.PostAsync($"{files}?name=Plan.txt", Body("plan v1")));
+        Assert.Equal("ok", uploaded.GetProperty("state").GetString());
+        var plan = uploaded.GetProperty("item").GetProperty("id").GetString()!;
+        Assert.StartsWith(o.Drive + "~", plan);
+        var again = await OkAsync(t["lm"].Client.PostAsync($"{files}?name=Plan.txt", Body("plan v2")));
+        Assert.Equal(plan, again.GetProperty("item").GetProperty("id").GetString());
+        Assert.Equal("plan v2", Encoding.UTF8.GetString(Assert.Single(Graph.SharePointItems(o.Drive), i => i.Name == "Plan.txt").Content));
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.DocConnectedUploaded, library.ToString());
+
+        // SharePoint decides too: a folder only some may read is not theirs to write in.
+        var board = Graph.AddSharePointItem(o.Drive, null, "Board", folder: true, readers: t["lm"].Email);
+        Assert.Equal("forbidden", (await OkAsync(t["lm"].Client.PostAsync($"{files}?name=Minutes.txt&folder={Uri.EscapeDataString($"{o.Drive}~{board}")}",
+            Body("minutes")))).GetProperty("state").GetString());
+        // A reader without contribute rights in TeamBeats, and anyone outside the audience, are refused before SharePoint is asked.
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["reader"].Client.PostAsync($"{files}?name=Mine.txt", Body("mine"))).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await t["outsider"].Client.PostAsync($"{files}?name=Mine.txt", Body("mine"))).StatusCode);
+        Assert.Equal("validation.documents.file_empty", await RefusedAsync(t["lm"].Client.PostAsync($"{files}?name=Empty.txt", Body(string.Empty)),
+            HttpStatusCode.BadRequest));
+
+        // Renames run as the person too; a taken name is a conflict.
+        var rename = $"{Libraries}/{library}/connected/rename";
+        var renamed = await OkAsync(t["lm"].Client.PostAsJsonAsync(rename, new { item = plan, name = "Plan 2026.txt" }));
+        Assert.Equal("Plan 2026.txt", renamed.GetProperty("item").GetProperty("name").GetString());
+        Assert.Equal("conflict", (await OkAsync(t["lm"].Client.PostAsJsonAsync(rename, new { item = plan, name = "Policies" }))).GetProperty("state").GetString());
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["reader"].Client.PostAsJsonAsync(rename, new { item = plan, name = "Mine.txt" })).StatusCode);
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.DocConnectedRenamed, library.ToString());
+
+        // Purview labels: unlabelled files take the library default, an unmapped label counts as confidential, and a mapping applies on the next index.
+        var label = Guid.NewGuid().ToString("D");
+        Graph.SetSharePointLabel(o.Salaries, label, "Highly Confidential");
+        Graph.SetSharePointReaders(plan.Split('~')[1], t["lm"].Email);
+        await SyncAsync(o, library, full: true);
+        Assert.Equal("internal", (await SearchAsync(t["lm"].Client, "plan")).GetProperty("classification").GetString());
+        Assert.Equal("confidential", await IndexedAsync(t, "Salaries.xlsx"));
+        var labels = $"/api/v1/documents/sensitivity-labels/{o.Connection}";
+        var seen = Assert.Single((await OkAsync(t["admin"].Client.GetAsync(labels))).EnumerateArray());
+        Assert.Equal("Highly Confidential", seen.GetProperty("name").GetString());
+        Assert.Equal(JsonValueKind.Null, seen.GetProperty("classification").ValueKind);
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["lm"].Client.GetAsync(labels)).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["lm"].Client.PutAsJsonAsync($"{labels}/{label}", new { classification = "public" })).StatusCode);
+        Assert.Equal("validation.documents.classification",
+            await RefusedAsync(t["admin"].Client.PutAsJsonAsync($"{labels}/{label}", new { classification = "secret" }), HttpStatusCode.BadRequest));
+        Assert.Equal("validation.documents.sensitivity_label",
+            await RefusedAsync(t["admin"].Client.PutAsJsonAsync($"{labels}/not-a-label", new { classification = "public" }), HttpStatusCode.BadRequest));
+        var mapped = await OkAsync(t["admin"].Client.PutAsJsonAsync($"{labels}/{label}", new { classification = "restricted" }));
+        Assert.Equal("restricted", mapped.GetProperty("classification").GetString());
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.DocLabelMapped, o.Connection.ToString());
+        await DispatchAsync();
+        Assert.Equal("restricted", await IndexedAsync(t, "Salaries.xlsx"));
+        // Another tenant sees none of this tenant's labels.
+        var other = await world.CreateTenantAsync("sp-l-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");
+        Assert.Equal(HttpStatusCode.NotFound, (await other["admin"].Client.GetAsync(labels)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other["admin"].Client.PutAsJsonAsync($"{labels}/{label}", new { classification = "public" })).StatusCode);
+
+        // Removing the site retires the library: archived, its synced copy deleted and its files gone from search.
+        Assert.Equal(HttpStatusCode.NoContent, (await t["admin"].Client.DeleteAsync($"{Sites(o)}/{Uri.EscapeDataString(o.HrSite)}")).StatusCode);
+        await DispatchAsync();
+        Assert.Empty(await FoundAsync(t["lm"].Client, "plan"));
+        Assert.Null(await IndexedAsync(t, "Salaries.xlsx"));
+        Assert.Equal(0L, await world.Database.TenantScalarAsync<long>(t.Id, "select count(*) from documents.connected_item where library_id = @l", ("l", library)));
+        Assert.Equal("archived", await world.Database.TenantScalarAsync<string>(t.Id, "select status from documents.library where id = @l", ("l", library)));
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.DocConnectedRemoved, library.ToString());
+    }
+
+    private async Task DispatchAsync()
+    {
+        var dispatcher = world.Factory.Services.GetRequiredService<OutboxDispatcher>();
+        for (var i = 0; i < 20 && await dispatcher.DispatchBatchAsync(500, CancellationToken.None) > 0; i++)
+        {
+        }
+    }
+
+    /// <summary>The classification a connected file is indexed with, or null when search no longer holds it.</summary>
+    private async Task<string?> IndexedAsync(TestTenant t, string title) =>
+        await world.Database.TenantScalarAsync<string?>(t.Id, "select min(classification) from search.unit where source = 'connected_documents' and title = @title",
+            ("title", title));
+
+    private static async Task<JsonElement> SearchAsync(HttpClient client, string q) =>
+        (await OkAsync(client.GetAsync($"/api/v1/search?q={Uri.EscapeDataString(q)}"))).GetProperty("results").EnumerateArray().First();
+
     private async Task AdminConsentAsync(TestTenant t, Guid connection, Guid directory, string feature)
     {
         var start = await t["admin"].Client.GetAsync($"/api/v1/integrations/connections/{connection}/features/{feature}/consent");

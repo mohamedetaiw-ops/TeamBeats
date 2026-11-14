@@ -28,7 +28,7 @@ internal sealed record DelegatedSetup(Guid ConnectionId, string ExternalTenantId
     IReadOnlyList<string> Scopes)
 {
     public static readonly string[] DelegatedFeatures = [Microsoft365Features.Mail, Microsoft365Features.Calendar, Microsoft365Features.FreeBusy,
-        Microsoft365Features.OfficeEditing, Microsoft365Features.SharePointDocuments];
+        Microsoft365Features.OfficeEditing, Microsoft365Features.SharePointDocuments, Microsoft365Features.SharePointUpload];
 
     public static async Task<DelegatedSetup?> LoadAsync(IDbSession session, CancellationToken ct, Guid? connectionId = null)
     {

@@ -66,6 +66,9 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await sites.getByLabel(m("connections.m365.sites.url")).fill("https://teambeatsdemo.sharepoint.com/sites/hr");
       await sites.getByRole("button", { name: m("connections.m365.sites.add") }).click();
       await expect(sites.getByRole("link", { name: "Human Resources" })).toBeVisible();
+      // Purview labels show once synced files carry them; none yet.
+      const labels = page.getByRole("region", { name: m("connections.m365.labels.title") });
+      await expect(labels.getByText(m("connections.m365.labels.empty"))).toBeVisible();
       await expectAccessible(page, testInfo, `sharepoint-sites-${locale}`);
 
       // The manager connects the document library for the whole organization.
@@ -103,6 +106,28 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(browser.getByRole("link", { name: "Employee handbook.pdf", exact: true })).toHaveAttribute("href", /\/connected\/content\?item=b!d~02$/);
       await expect(page.getByRole("navigation", { name: m("documents.connected.path") }).getByRole("link", { name: "Policies" })).toBeVisible();
       await expectAccessible(page, testInfo, `connected-library-${locale}`);
+
+      // A manager allows uploads; writes run as the person in SharePoint, whose answers the page shows in words.
+      await expect(browser.getByText(m("documents.connected.write.upload"))).toHaveCount(0);
+      const allow = browser.getByRole("switch", { name: m("documents.connected.write.allow") });
+      await allow.click();
+      await expect(allow).toBeChecked();
+      await page.route("**/api/v1/documents/libraries/*/connected/files**", (route) =>
+        route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({ state: "ok", item: { id: "b!d~03", name: "Leave policy.pdf", folder: false, mediaType: "application/pdf", size: 10, modifiedAt: null, webLink: null } }),
+        }),
+      );
+      await browser.locator('input[type="file"]').setInputFiles({ name: "Leave policy.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7 leave") });
+      await expect(browser.getByRole("status").filter({ hasText: m("documents.connected.write.uploaded") })).toBeVisible();
+      await page.route("**/api/v1/documents/libraries/*/connected/rename", (route) =>
+        route.fulfill({ contentType: "application/json", body: JSON.stringify({ state: "conflict", item: null }) }),
+      );
+      await browser.getByRole("button", { name: msg(locale, "documents.connected.write.rename", { name: "Employee handbook.pdf" }) }).click();
+      await browser.getByLabel(msg(locale, "documents.connected.write.newName", { name: "Employee handbook.pdf" })).fill("Policies");
+      await browser.getByRole("button", { name: m("documents.connected.write.save") }).click();
+      await expect(browser.getByRole("alert")).toHaveText(m("documents.connected.write.conflict"));
+      await expectAccessible(page, testInfo, `connected-library-write-${locale}`);
     });
   });
 }

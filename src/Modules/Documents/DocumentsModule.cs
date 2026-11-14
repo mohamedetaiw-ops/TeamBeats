@@ -37,6 +37,10 @@ public static class DocumentsModule
         services.AddMessageHandler<DocumentImportRequested, DocumentImportRunner>("documents.import");
         services.AddMessageHandler<DocumentTextRequested, DocumentText>("documents.text");
         services.AddMessageHandler<ConnectedLibrarySyncRequested, ConnectedSync>("documents.connected_sync");
+        services.AddScoped<SensitivityLabels>();
+        services.AddMessageHandler<SensitivityLabelRemapped, SensitivityLabels>("documents.label_remapped");
+        services.AddMessageHandler<Integrations.Contracts.DocumentContainersRemoved, ConnectedCleanup>("documents.connected_containers_removed");
+        services.AddMessageHandler<Integrations.Contracts.ConnectionDeleted, ConnectedCleanup>("documents.connected_connection_deleted");
         services.AddScoped<Contracts.IAssetImages>(sp => sp.GetRequiredService<Assets>());
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AssetAccessTasks>();
         services.AddScoped<IResourceDescriptorProvider, AssetCollectionDescriptorProvider>();
@@ -96,6 +100,47 @@ public static class DocumentsModule
 
         libraries.MapGet("/{id:guid}/connected/items", async (Guid id, string? folder, string? cursor, Libraries service, CancellationToken ct) =>
             Results.Ok(await service.ConnectedItemsAsync(id, folder, cursor, ct)));
+
+        // Writes as the person when the library's managers turned uploads on (FR-029); the file is the request body.
+        libraries.MapPut("/{id:guid}/connected/settings", async (Guid id, ConnectedSettingsRequest request, Libraries service, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await service.ConnectedSettingsAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        libraries.MapPost("/{id:guid}/connected/files", async (Guid id, HttpRequest http, string? name, string? folder, Libraries service, IDbSession session,
+            CancellationToken ct) =>
+        {
+            if (http.HttpContext.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } size)
+            {
+                size.MaxRequestBodySize = Libraries.MaxConnectedUploadBytes + 1;
+            }
+            var view = await service.UploadConnectedAsync(id, folder, name, http.Body, http.ContentLength, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        }).DisableAntiforgery();
+
+        libraries.MapPost("/{id:guid}/connected/rename", async (Guid id, ConnectedRenameRequest request, Libraries service, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await service.RenameConnectedAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        // Purview label mapping (FR-032), per Microsoft 365 connection.
+        root.MapGet("/sensitivity-labels/{connection:guid}", async (Guid connection, SensitivityLabels labels, CancellationToken ct) =>
+            Results.Ok(await labels.ListAsync(connection, ct)));
+
+        root.MapPut("/sensitivity-labels/{connection:guid}/{label}", async (Guid connection, string label, SensitivityLabelMapRequest request,
+            SensitivityLabels labels, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await labels.MapAsync(connection, label, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         libraries.MapGet("/{id:guid}/connected/links/{item:guid}", async (Guid id, Guid item, Libraries service, CancellationToken ct) =>
             Results.Ok(await service.ConnectedLinkAsync(id, item, ct)));

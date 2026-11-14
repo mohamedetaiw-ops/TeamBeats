@@ -415,6 +415,11 @@ public static class AuditActions
     public const string DocOfficeEditStarted = "doc.office_edit_started";
     public const string DocOfficeEditEnded = "doc.office_edit_ended";
     public const string DocConnectedOpened = "doc.connected_opened";
+    public const string DocConnectedUploaded = "doc.connected_uploaded";
+    public const string DocConnectedRenamed = "doc.connected_renamed";
+    public const string DocConnectedSettings = "doc.connected_settings";
+    public const string DocConnectedRemoved = "doc.connected_removed";
+    public const string DocLabelMapped = "doc.label_mapped";
     public const string AssetCollectionCreated = "assets.collection_created";
     public const string AssetCollectionChanged = "assets.collection_changed";
     public const string AssetUploaded = "assets.uploaded";
@@ -604,6 +609,7 @@ public static class AuditActions
         RecordsLabelCreated, RecordsLabelChanged, RecordsLabelApplied, RecordsDispositionApproved, RecordsDispositionKept, RecordsArchived,
         RecordsHoldApplied, RecordsHoldReleased, RecordsDeletionBlocked, DocSharedWithGuest, DocGuestShareRevoked, DocGuestViewed,
         DocImportStarted, DocImportCompleted, DocOfficeEditStarted, DocOfficeEditEnded, DocConnectedOpened,
+        DocConnectedUploaded, DocConnectedRenamed, DocConnectedSettings, DocConnectedRemoved, DocLabelMapped,
         AssetCollectionCreated, AssetCollectionChanged, AssetUploaded, AssetChanged, AssetExpired, AssetAccessRequested, AssetAccessDecided,
         PolicyCreated, PolicyChanged, PolicyDraftSaved, PolicySubmitted, PolicyWithdrawn, PolicyApproved, PolicyReturned, PolicyPublished, PolicySuperseded,
         PolicyRetired, PolicyCampaignLaunched, PolicyCampaignReminded, PolicyCampaignClosed, PolicyAttested, PolicyTrainingLinked,
