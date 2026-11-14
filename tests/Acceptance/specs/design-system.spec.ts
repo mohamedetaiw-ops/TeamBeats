@@ -187,7 +187,8 @@ for (const design of designs) {
         }
 
         // The other density (DLS-117): the person chooses it, and every main page still fits and keeps the type floor.
-        // The choice is cleared afterwards, because the tests that follow expect the design's own density.
+        // The design's own density is set back afterwards (a save merges, so an empty one would keep the choice), because
+        // the tests that follow expect it.
         const other = design.density === "compact" ? "comfortable" : "compact";
         const api = await tenantApi(tenant);
         try {
@@ -206,7 +207,7 @@ for (const design of designs) {
             }
           }
         } finally {
-          await api.put("/api/v1/me/preference-profile", { data: { values: {} } });
+          await api.put("/api/v1/me/preference-profile", { data: { values: { density: design.density } } });
           await api.dispose();
         }
       });
