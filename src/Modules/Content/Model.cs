@@ -43,13 +43,27 @@ public static class ContentTypes
 
 /// <summary>
 /// The approval route of a content type in a site (FR-003). Without approval, publishers publish directly. With it,
-/// items go through one review step on the process engine (more steps with <c>content.multistep_approval</c> in R2): the
-/// named approvers decide, or the site's publishers when no one is named or every named approver wrote the item.
+/// items go through one review step on the process engine, or with <c>content.multistep_approval</c> up to
+/// <see cref="MaxSteps"/> steps in order (<see cref="Steps"/>), each with an inbox task: the named approvers of a step
+/// decide, or the site's publishers when no one is named or every named approver wrote the item.
 /// </summary>
-public sealed record ContentRoute(bool Approval, IReadOnlyList<Guid>? Approvers = null)
+public sealed record ContentRoute(bool Approval, IReadOnlyList<Guid>? Approvers = null, IReadOnlyList<ContentRouteStep>? Steps = null)
 {
     public const int MaxApprovers = 20;
+    public const int MaxSteps = 5;
+
+    /// <summary>The approvers of each step in order: the steps when set, else one step with <see cref="Approvers"/>.</summary>
+    public IReadOnlyList<IReadOnlyList<Guid>?> StepApprovers() => Steps is { Count: > 0 } steps ? steps.Select(s => s?.Approvers).ToList() : [Approvers];
+
+    /// <summary>The engine element of a step: <c>review</c> for the first, <c>review2</c> and on for the next.</summary>
+    public static string StepId(int index) => index == 0 ? "review" : $"review{index + 1}";
+
+    public static int? StepIndex(string elementId) =>
+        elementId == "review" ? 0 : elementId.StartsWith("review", StringComparison.Ordinal) && int.TryParse(elementId[6..], out var n) && n >= 2 ? n - 1 : null;
 }
+
+/// <summary>One step of a multi-step route: who decides it.</summary>
+public sealed record ContentRouteStep(IReadOnlyList<Guid>? Approvers = null);
 
 /// <summary>
 /// How a critical announcement interrupts (FR-006): a modal on the next page, closed only by confirming or by "remind
@@ -72,8 +86,11 @@ public sealed record CriticalSettings(string Presentation, bool RequireAck, int 
 /// <summary>Critical settings as the editor sends them; the deadline is a local time in the site's zone. Presentation "none" clears them.</summary>
 public sealed record CriticalInput(string? Presentation, bool? RequireAck, int? RemindLaterMax, DateTime? Deadline, bool? Dismissible);
 
-/// <summary>One locale of a version. <see cref="OutOfDate"/> marks a variant that fell behind the primary locale (US5 scenario 5).</summary>
-public sealed record ContentVariant(string Title, string? Summary, BodyDocument Body, bool OutOfDate = false);
+/// <summary>
+/// One locale of a version. <see cref="OutOfDate"/> marks a variant that fell behind the primary locale (US5 scenario 5);
+/// <see cref="MachineTranslated"/> marks AI translation that no person has edited or approved yet (US5 scenario 3).
+/// </summary>
+public sealed record ContentVariant(string Title, string? Summary, BodyDocument Body, bool OutOfDate = false, bool MachineTranslated = false);
 
 /// <summary>A person as the content pages show them.</summary>
 public sealed record ContentPerson(Guid Id, string DisplayName);

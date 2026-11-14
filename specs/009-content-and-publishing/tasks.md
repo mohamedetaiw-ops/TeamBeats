@@ -51,16 +51,16 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T028 [US9] Mention marks and hashtags in bodies and comments, topic endpoint and page, follows and feed filter, UI
 
 ### Phase 9: User Story 5 R2, AI translation (P2)
-- [ ] T029 [P] [US5] Tests: translation draft marked machine translated; Confidential blocked by default policy; reviewer required before publish; human edit clears the mark; entitlement off refused; gateway unavailable degrades
-- [ ] T030 [US5] Translate endpoint through the AI Gateway, variant mark, content type `reviewed_translation`, editor actions and badges
+- [x] T029 [P] [US5] Tests: translation draft marked machine translated; Confidential blocked by default policy; reviewer required before publish; human edit clears the mark; entitlement off refused; gateway unavailable degrades
+- [x] T030 [US5] Translate endpoint through the AI Gateway, variant mark, content type `reviewed_translation`, editor actions and badges
 
 ### Phase 10: multi-step approval (FR-003)
-- [ ] T031 [P] Tests: steps run in order with a task each; return at any step; author excluded at every step; more than one step refused without `content.multistep_approval`
-- [ ] T032 Route steps in site routes and the engine definition; route editor in the site settings
+- [x] T031 [P] Tests: steps run in order with a task each; return at any step; author excluded at every step; more than one step refused without `content.multistep_approval`
+- [x] T032 Route steps in site routes and the engine definition; route editor in the site settings
 
 ### Phase 11: User Story 8, campaigns (P2)
-- [ ] T033 [P] [US8] Tests: due steps sent to the audience through notifications; "only those who have not acted" excludes completers; optional email respects preferences, mandatory labelled; dashboard counts with privacy threshold; entitlement and cross-tenant cases
-- [ ] T034 [US8] Campaign model, scheduler, sends through spec 015, dashboard endpoint and pages, English and Arabic, e2e with axe
+- [x] T033 [P] [US8] Tests: due steps sent to the audience through notifications; "only those who have not acted" excludes completers; optional email respects preferences, mandatory labelled; dashboard counts with privacy threshold; entitlement and cross-tenant cases
+- [x] T034 [US8] Campaign model, scheduler, sends through spec 015, dashboard endpoint and pages, English and Arabic, e2e with axe
 
 ### Phase 12: retention, health dashboard and signage
 - [ ] T035 [P] Tests: retention deletes old versions after the period and skips legal hold; health dashboard counts ownerless sites and overdue items per site with permitted items only; signage URL shows only public items of the site and stops after rotation

@@ -566,7 +566,8 @@
   max-inline-size: 40rem;
 }
 
-.content-site-shared {
+.content-site-shared,
+.content-route {
   display: grid;
   gap: var(--tb-space-xs);
   margin: 0;
@@ -610,4 +611,16 @@
 .content-mention-picker {
   display: grid;
   gap: var(--tb-space-xs);
+}
+
+.content-route-step {
+  display: grid;
+  gap: var(--tb-space-xs);
+  padding-inline-start: var(--tb-space-md);
+  border-inline-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.content-route-step h3 {
+  margin: 0;
+  font-size: var(--tb-font-size-md);
 }

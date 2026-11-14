@@ -40,6 +40,7 @@ export default async function ContentItemsPage({ searchParams }: { searchParams:
                 {t("new")}
               </Link>
               <Link href="/content/health">{t("healthLink")}</Link>
+              <Link href="/content/campaigns">{t("campaignsLink")}</Link>
             </p>
             <form className="content-filters" method="get" aria-label={t("filters")}>
               <label>

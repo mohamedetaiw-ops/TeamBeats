@@ -243,12 +243,19 @@ public sealed class Sites(
         foreach (var (type, route) in request.Routes ?? new Dictionary<string, ContentRoute>())
         {
             if (!ContentTypes.Defaults.ContainsKey(type) || route is null || route.Approvers is { Count: > ContentRoute.MaxApprovers }
-                || (route.Approvers is { Count: > 0 } && !route.Approval))
+                || (route.Approvers is { Count: > 0 } && !route.Approval)
+                || (route.Steps is { Count: > 0 } steps && (!route.Approval || route.Approvers is { Count: > 0 } || steps.Count > ContentRoute.MaxSteps
+                    || steps.Any(s => s is null || s.Approvers is { Count: > ContentRoute.MaxApprovers }))))
             {
                 errors.Add("routes", "validation.content.route");
                 continue;
             }
-            foreach (var approver in route.Approvers ?? [])
+            if (route.Steps is { Count: > 1 })
+            {
+                // More than one step is a plan feature (FR-003); without it a route keeps one step.
+                await entitlements.DemandAsync(Capabilities.ContentMultistepApproval, ct);
+            }
+            foreach (var approver in route.StepApprovers().SelectMany(a => a ?? []).Distinct())
             {
                 if ((await memberships.GetAsync(approver, ct))?.Status != MembershipStatus.Active)
                 {
@@ -260,7 +267,11 @@ public sealed class Sites(
     }
 
     private static string RoutesJson(IReadOnlyDictionary<string, ContentRoute>? routes) =>
-        ContentJson.Write((routes ?? new Dictionary<string, ContentRoute>()).ToDictionary(r => r.Key, r => r.Value with { Approvers = r.Value.Approvers?.Distinct().ToList() }));
+        ContentJson.Write((routes ?? new Dictionary<string, ContentRoute>()).ToDictionary(r => r.Key, r => r.Value with
+        {
+            Approvers = r.Value.Approvers?.Distinct().ToList(),
+            Steps = r.Value.Steps is { Count: > 0 } steps ? steps.Select(s => new ContentRouteStep(s.Approvers?.Distinct().ToList())).ToList() : null,
+        }));
 
     internal static bool IsTimeZone(string id)
     {

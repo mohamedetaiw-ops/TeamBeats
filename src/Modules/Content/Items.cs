@@ -207,7 +207,7 @@ public sealed class Items(
         }
     }
 
-    private async Task<bool> MayWriteAsync(SiteRow site, ItemRow? item, Guid user, CancellationToken ct) =>
+    internal async Task<bool> MayWriteAsync(SiteRow site, ItemRow? item, Guid user, CancellationToken ct) =>
         await HoldsAsync(Permissions.ContentEdit, site, ct)
         || (await HoldsAsync(Permissions.ContentAuthor, site, ct) && (item is null || item.CreatedBy == user));
 
@@ -292,9 +292,10 @@ public sealed class Items(
             var variant = next[locale];
             var old = previous.GetValueOrDefault(locale);
             var changed = old is null || !SameText(old, variant);
-            next[locale] = variant with { OutOfDate = !changed && (primaryChanged || old!.OutOfDate) };
+            // A machine translation stays marked until a person changes it or approves it.
+            next[locale] = variant with { OutOfDate = !changed && (primaryChanged || old!.OutOfDate), MachineTranslated = !changed && old!.MachineTranslated };
         }
-        next[primary] = source with { OutOfDate = false };
+        next[primary] = source with { OutOfDate = false, MachineTranslated = false };
         return next;
     }
 
@@ -527,19 +528,7 @@ public sealed class Items(
         errors.ThrowIfAny();
 
         var now = clock.UtcNow;
-        int draft;
-        if (item.DraftVersion is { } current)
-        {
-            draft = current;
-            await session.ExecAsync(
-                "update content.content_version set variants = @variants, change_note = @note, updated_at = @now where item_id = @id and number = @draft",
-                new { id, draft, variants = new Jsonb(ContentJson.Write(variants)), note = string.IsNullOrWhiteSpace(request.ChangeNote) ? null : request.ChangeNote.Trim(), now }, ct);
-        }
-        else
-        {
-            draft = await session.ScalarAsync<int>("select coalesce(max(number), 0) + 1 from content.content_version where item_id = @id", new { id }, ct);
-            await InsertVersionAsync(id, draft, variants, request.ChangeNote, user, now, ct);
-        }
+        var draft = await SaveDraftAsync(item, variants, request.ChangeNote, user, now, ct);
         await session.ExecAsync(
             """
             update content.content_item set classification = @classification, owner_user_id = @owner, backup_owner_user_id = @backup,
@@ -554,6 +543,25 @@ public sealed class Items(
                 featured = request.Featured ?? item.Featured, critical = critical is null ? null : new Jsonb(ContentJson.Write(critical)), draft, now,
             }, ct);
         return await ViewAsync((await RowAsync(id, false, ct))!, ct);
+    }
+
+    /// <summary>Writes the variants to the open draft, or starts the next version as the draft. Returns the draft number.</summary>
+    internal async Task<int> SaveDraftAsync(ItemRow item, IReadOnlyDictionary<string, ContentVariant> variants, string? note, Guid user, DateTimeOffset now,
+        CancellationToken ct)
+    {
+        var id = item.Id;
+        if (item.DraftVersion is { } current)
+        {
+            await session.ExecAsync(
+                "update content.content_version set variants = @variants, change_note = @note, updated_at = @now where item_id = @id and number = @current",
+                new { id, current, variants = new Jsonb(ContentJson.Write(variants)), note = string.IsNullOrWhiteSpace(note) ? null : note.Trim(), now }, ct);
+            return current;
+        }
+        var draft = await session.ScalarAsync<int>("select coalesce(max(number), 0) + 1 from content.content_version where item_id = @id", new { id }, ct);
+        await InsertVersionAsync(id, draft, variants, note, user, now, ct);
+        await session.ExecAsync("update content.content_item set draft_version = @draft, updated_at = @now, row_version = row_version + 1 where id = @id",
+            new { id, draft, now }, ct);
+        return draft;
     }
 
     // ---- Publishing ----
@@ -620,6 +628,11 @@ public sealed class Items(
         if (item.DraftVersion is null && item.Status is ContentStatuses.Published or ContentStatuses.Scheduled)
         {
             throw AppException.Conflict("conflict.content.nothing_to_publish");
+        }
+        if ((await VersionAsync(item.Id, version, ct))!.Variants.Values.Any(v => v.MachineTranslated))
+        {
+            // Nothing machine translated goes out until a person has edited or approved it (FR-011, section 6).
+            throw AppException.Conflict("conflict.content.machine_translated");
         }
         var settings = (await sites.TypeAsync(item.Type, ct))!;
         var errors = new ValidationErrors();
@@ -844,7 +857,7 @@ public sealed class Items(
 
     private readonly Dictionary<Guid, ContentPerson> people = [];
 
-    private async Task<ContentPerson> PersonAsync(Guid id, CancellationToken ct)
+    internal async Task<ContentPerson> PersonAsync(Guid id, CancellationToken ct)
     {
         if (!people.TryGetValue(id, out var person))
         {
@@ -853,7 +866,7 @@ public sealed class Items(
         return person;
     }
 
-    private async Task<ItemView> ViewAsync(ItemRow item, CancellationToken ct)
+    internal async Task<ItemView> ViewAsync(ItemRow item, CancellationToken ct)
     {
         var number = item.DraftVersion ?? item.PublishedVersion;
         var version = number is { } n ? await VersionAsync(item.Id, n, ct) : null;

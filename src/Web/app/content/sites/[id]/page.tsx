@@ -5,6 +5,7 @@ import { listUnits } from "@/lib/experience/client";
 import { pickName, type SiteView } from "@/lib/content/types";
 import { Header } from "@/components/shell/Header";
 import { SiteSettings } from "@/features/content/SiteForms";
+import { RouteSettings } from "@/features/content/RouteSettings";
 import "@/features/content/content.css";
 
 /** One site's settings for its owner (spec 009 US6). Someone who may not manage the site gets not found from the API. */
@@ -35,6 +36,7 @@ export default async function ContentSitePage({ params }: { params: Promise<{ id
           <bdi>{name}</bdi>
         </h1>
         <SiteSettings site={site.data} units={units.ok ? units.data : []} locales={me.data.tenant.enabledLocales} />
+        <RouteSettings site={site.data} />
       </main>
     </>
   );
