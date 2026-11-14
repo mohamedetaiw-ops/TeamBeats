@@ -2734,6 +2734,18 @@
       "overflow": "99+"
     },
     "catalogue": {
+      "mine": "Your services",
+      "allCount": "All {count}",
+      "layout": {
+        "label": "Show as",
+        "grid": "Grid",
+        "list": "List"
+      },
+      "next": {
+        "form": "Start request",
+        "linked": "Open in a new tab",
+        "module": "Open service"
+      },
       "title": "Services",
       "intro": "Request what you need, or open the systems you use.",
       "search": "Search services",
@@ -2814,6 +2826,7 @@
       "completed": "Completed"
     },
     "requests": {
+      "waitingFor": "Waiting for {name}{others, plural, =0 {} one { and 1 other} other { and # others}}",
       "title": "My requests",
       "filter": "Filter by status",
       "all": "All",

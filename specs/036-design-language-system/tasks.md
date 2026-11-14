@@ -65,7 +65,7 @@ From the UX, DLS and frontend enhancement report of 14 November 2026. Foundation
 - [ ] T043 Calendar: agenda grouping, week overlaps, month overflow, one agenda, home summary (DLS-119, spec 037)
 - [ ] T044 Assistant workspace on the assistant parts with tools as composer modes and the cannot verify state (DLS-114, spec 014)
 - [ ] T045 Home views: first viewport contract, Team lead and Plant floor as persona views, no repeated counts, news lead without a placeholder (DLS-100, DLS-102, spec 008)
-- [ ] T046 Services marketplace layout and My requests progress (DLS-063, DLS-107, spec 016)
+- [x] T046 Services marketplace layout and My requests progress (DLS-063, DLS-107, spec 016); the step by step progress line on My requests waits for the request summary to carry its steps
 - [ ] T047 People toolbar, person forms and quick actions; policies summary and uniform status; knowledge and documents search first; editorial article, reactions and comments (DLS-109, DLS-112, DLS-113, specs 009, 010, 011, 025)
 - [ ] T048 Design descriptors and variant tokens in the four designs, variants on the news lead, stat tiles, work rows, tabs, cards and briefing (DLS-110, spec 033 FR-032)
 - [ ] T049 Design suite on the main pages in every design, language and density with the high-volume seed; gallery state coverage; visualization rules on stat and chart parts (DLS-111, DLS-117, DLS-118)

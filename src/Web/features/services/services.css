@@ -588,3 +588,86 @@
   color: var(--tb-color-state-danger);
   font-weight: var(--tb-font-weight-medium);
 }
+
+/* The person's own services (spec 016 FR-023): one compact strip of shortcuts, each service once. */
+.services-mine {
+  display: grid;
+  gap: var(--tb-space-sm);
+}
+
+.services-mine h2 {
+  margin: 0;
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-semibold);
+}
+
+.services-mine ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tb-space-sm);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.services-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-sm);
+  min-block-size: 2.5rem;
+  padding-block: var(--tb-space-xs);
+  padding-inline: var(--tb-space-sm) var(--tb-space-md);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-primary);
+  font-size: var(--tb-font-size-sm);
+  font-weight: var(--tb-font-weight-medium);
+  text-decoration: none;
+}
+
+.services-shortcut:hover {
+  border-color: var(--tb-color-border-strong);
+  text-decoration: none;
+}
+
+.services-shortcut > svg {
+  color: var(--tb-color-highlight-base);
+}
+
+.services-shortcut-icon {
+  display: inline-grid;
+  place-items: center;
+  color: var(--tb-color-accent-base);
+}
+
+.services-count {
+  color: var(--tb-color-text-secondary);
+  font-size: var(--tb-font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+/* What opening the card does: a quiet line at the foot of the card that turns to the link colour with the card. */
+.ui-tile > .services-next {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tb-space-xs);
+  margin-block-start: auto;
+  color: var(--tb-color-link);
+  font-weight: var(--tb-font-weight-medium);
+}
+
+.services-row-next {
+  flex: none;
+}
+
+.ui-row > .services-favourite {
+  flex: none;
+}
+
+@media (width <= 40rem) {
+  .services-row-next {
+    display: none;
+  }
+}
