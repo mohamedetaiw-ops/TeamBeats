@@ -12202,6 +12202,29 @@
         }
       }
     },
+    "/api/v1/assets/{id}/image": {
+      "get": {
+        "tags": [
+          "Assets"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/assets/{id}/renditions/{key}": {
       "get": {
         "tags": [

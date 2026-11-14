@@ -55,6 +55,31 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByText(m("assets.noRequests"))).toBeVisible();
       await expect(page.getByTestId("download-total").filter({ hasText: assetName })).toBeVisible();
       await expectAccessible(page, testInfo, `asset-requests-${locale}`);
+
+      // The image goes on a page through the editor's picker, and readers see it.
+      const title = locale === "ar" ? "مكتبنا الجديد" : "Our new office";
+      const alt = locale === "ar" ? "شعار الشركة على خلفية فاتحة" : "The company logo on a light background";
+      await page.goto(`${hostOrigin(tenant.key)}/content/items/new`);
+      await page.getByLabel(m("content.items.title")).fill(title);
+      await page.getByRole("button", { name: m("content.items.create") }).click();
+      await page.waitForURL(/\/content\/items\/[0-9a-f-]{36}$/);
+      const toolbar = page.getByRole("toolbar", { name: m("content.editor.toolbar", { label: m("content.items.body") }) });
+      await toolbar.getByRole("button", { name: m("content.editor.image") }).click();
+      const picker = page.getByRole("group", { name: m("content.editor.imageTitle") });
+      await picker.getByRole("button", { name: new RegExp(assetName) }).click();
+      await picker.getByLabel(m("content.editor.imageAlt")).fill(alt);
+      await expectAccessible(page, testInfo, `asset-picker-${locale}`);
+      await picker.getByRole("button", { name: m("content.editor.insert") }).click();
+      await expect(page.locator(".content-atomic[data-block=image]")).toContainText(alt);
+      await page.getByRole("button", { name: m("content.items.save") }).click();
+      await expect(page.getByRole("main").getByRole("status")).toContainText(m("content.items.saved"));
+      await page.getByRole("button", { name: m("content.items.publish") }).click();
+      await expect(page.getByRole("main").getByRole("status")).toContainText(m("content.items.published"));
+      await page.getByRole("link", { name: m("content.items.openReader") }).click();
+      await page.waitForURL(/\/content\/read\//);
+      const image = page.getByRole("article").getByRole("img", { name: alt });
+      await expect(image).toBeVisible();
+      await expect.poll(() => image.evaluate((e) => (e as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
     });
   });
 }

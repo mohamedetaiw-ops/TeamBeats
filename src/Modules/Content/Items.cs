@@ -142,7 +142,8 @@ public sealed class Items(
     IOrganizationHierarchy hierarchy,
     TeamBeats.Modules.Security.Contracts.ISensitiveDataScanner sensitiveData,
     IProfiles profiles,
-    IAuthorizationProvisioning provisioning)
+    IAuthorizationProvisioning provisioning,
+    TeamBeats.Modules.Documents.Contracts.IAssetImages images)
 {
     public static readonly IReadOnlySet<string> Classifications = new HashSet<string>(StringComparer.Ordinal) { "public", "internal", "confidential", "restricted" };
 
@@ -265,6 +266,17 @@ public sealed class Items(
             if (!await SeesAllAsync(BodyValidator.Mentions(v.Body), ct))
             {
                 errors.Add($"variants.{locale}.body", "validation.content.mention");
+            }
+            // An image added in this edit must be a current asset the author reads (spec 011 US5); one already on the page stays
+            // until the author removes it, and readers stop seeing it when its rights end.
+            var kept = previous?.Values.SelectMany(p => BodyValidator.Images(p.Body)).ToHashSet() ?? [];
+            foreach (var image in BodyValidator.Images(v.Body).Where(i => !kept.Contains(i)))
+            {
+                if (!await images.UsableAsync(image, ct))
+                {
+                    errors.Add($"variants.{locale}.body", "validation.content.image");
+                    break;
+                }
             }
             result[locale] = new ContentVariant(title, summary, v.Body ?? BodyDocument.Empty);
         }

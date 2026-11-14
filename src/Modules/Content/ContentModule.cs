@@ -49,6 +49,7 @@ public static class ContentModule
         services.AddMessageHandler<Contracts.ContentPublished, ContentMentions>("content.mentions");
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ContentComponents>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, ContentOwnerHandler>("content.owner_left");
+        services.AddMessageHandler<Documents.Contracts.AssetRightsExpired, AssetImageNotices>("content.asset_image_expired");
         services.AddMessageHandler<Contracts.ContentPublished, CriticalAudience>("content.critical_audience");
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, CriticalAudience>("content.critical_membership");
         services.AddMessageHandler<CriticalNoticeBatch, CriticalAudience>("content.critical_notice");

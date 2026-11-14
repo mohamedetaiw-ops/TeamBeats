@@ -2424,5 +2424,8 @@
   "notifications.template.assets.access_approved.title": "Your access request was approved",
   "notifications.template.assets.access_approved.body": "You can now see {collection} in the asset portal.",
   "notifications.template.assets.access_declined.title": "Your access request was declined",
-  "notifications.template.assets.access_declined.body": "Your request for {collection} was declined."
+  "notifications.template.assets.access_declined.body": "Your request for {collection} was declined.",
+  "validation.content.image": "Choose a current image from the brand asset portal that you can see.",
+  "notifications.template.content.asset_image_expired.title": "An image on your page can no longer be used",
+  "notifications.template.content.asset_image_expired.body": "The usage rights of an image on \"{title}\" ended, so readers no longer see it. Replace it with a current image."
 }

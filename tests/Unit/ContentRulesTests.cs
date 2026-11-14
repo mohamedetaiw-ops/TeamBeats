@@ -81,6 +81,18 @@ public sealed class ContentRulesTests
     }
 
     [Fact]
+    public void The_images_of_a_body_are_its_image_blocks_assets_each_once()
+    {
+        var (logo, office) = (Guid.NewGuid(), Guid.NewGuid());
+        var body = new BodyDocument([
+            new Block(BlockTypes.Image, AssetId: logo, Alt: "Logo"), Para("Text"), new Block(BlockTypes.Image, AssetId: office, Alt: "Office"),
+            new Block(BlockTypes.Image, AssetId: logo, Alt: "Logo again"),
+        ]);
+        Assert.Equal(new HashSet<Guid> { logo, office }, BodyValidator.Images(body));
+        Assert.Empty(BodyValidator.Images(null));
+    }
+
+    [Fact]
     public void Bodies_over_the_size_limits_are_refused()
     {
         Assert.Equal(["validation.content.body_too_large"], Errors(new BodyDocument(Enumerable.Range(0, BodyValidator.MaxBlocks + 1).Select(_ => Para("x")).ToList())));
