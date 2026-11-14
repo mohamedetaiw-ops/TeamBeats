@@ -7,6 +7,7 @@ import type { PlacementProps } from "@/lib/experience/contract";
 import { initials, localName, personName, type PersonCard, type SearchPage } from "@/lib/people/types";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/people/people.css";
 
 type Answer = "loading" | "failed" | PersonCard[];
@@ -52,10 +53,9 @@ export default function PeopleList({ props }: PlacementProps) {
   }, [url, attempt]);
 
   const shell = (body: React.ReactNode, busy = false) => (
-    <section className="people-section" aria-label={title} aria-busy={busy || undefined}>
-      <h2>{title}</h2>
+    <Widget title={title} busy={busy}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (!url) return shell(<StateView kind="empty" title={t("notSet")} message="" />);

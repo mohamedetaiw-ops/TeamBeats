@@ -8,6 +8,7 @@ import { useHomeAnswer } from "@/lib/engagementHome";
 import { Badge } from "@/components/ui/Badge";
 import { Button, ButtonLink } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 
 /**
@@ -25,13 +26,9 @@ export default function PollCard({ props }: PlacementProps) {
   const pollsHref = `${communityHref(community)}/polls`;
 
   const shell = (body: React.ReactNode, busy = false) => (
-    <section className="home-card" aria-labelledby={`home-poll-${community}`} aria-busy={busy || undefined}>
-      <div className="home-card-head">
-        <h2 id={`home-poll-${community}`}>{title}</h2>
-        {community ? <Link href={pollsHref}>{t("pollAll")}</Link> : null}
-      </div>
+    <Widget title={title} busy={busy} action={community ? <Link href={pollsHref}>{t("pollAll")}</Link> : null}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (!community) return shell(<StateView kind="empty" title={t("pollEmpty")} message="" icon="trend-up" />);

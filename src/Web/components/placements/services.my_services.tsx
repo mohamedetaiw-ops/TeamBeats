@@ -9,6 +9,7 @@ import { serviceLook } from "@/lib/services/look";
 import { Button } from "@/components/ui/Button";
 import { Icon } from "@/components/ui/Icon";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 
 type Answer = "loading" | "failed" | { shown: ServiceCard[]; total: number; categories: Category[] };
@@ -53,13 +54,9 @@ export default function MyServices({ props }: PlacementProps) {
   }, [top, attempt]);
 
   const shell = (body: React.ReactNode, total: number | null, busy = false) => (
-    <section className="home-card" aria-labelledby="home-services-title" aria-busy={busy || undefined} data-testid="home-my-services">
-      <div className="home-card-head">
-        <h2 id="home-services-title">{title}</h2>
-        <Link href="/services">{total ? t("all", { count: total }) : t("allPlain")}</Link>
-      </div>
+    <Widget title={title} busy={busy} testId="home-my-services" action={<Link href="/services">{total ? t("all", { count: total }) : t("allPlain")}</Link>}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (answer === "loading") return shell(<StateView kind="loading" minBlockSize="6rem" />, null, true);

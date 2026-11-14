@@ -8,6 +8,7 @@ import { pick, type InboxItem } from "@/lib/services/types";
 import { useNow } from "@/lib/clock";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import { StatCards } from "@/components/ui/Blocks";
 import { isolate } from "@/lib/bidi";
 import "@/features/services/home.css";
@@ -45,13 +46,9 @@ export default function TaskSummary({ props }: PlacementProps) {
   }, [attempt]);
 
   const shell = (body: React.ReactNode, busy = false) => (
-    <section className="home-card" aria-labelledby="home-tasks-title" aria-busy={busy || undefined} data-testid="home-task-summary">
-      <div className="home-card-head">
-        <h2 id="home-tasks-title">{title}</h2>
-        <Link href="/tasks">{t("inbox")}</Link>
-      </div>
+    <Widget title={title} busy={busy} testId="home-task-summary" action={<Link href="/tasks">{t("inbox")}</Link>}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (answer === "loading" || now === null) return shell(<StateView kind="loading" minBlockSize="8rem" />, true);

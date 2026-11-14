@@ -97,6 +97,13 @@ public interface IComponentRegistration
     /// </summary>
     IEnumerable<string> PersonalHomeDefaults() => [];
 
+    /// <summary>
+    /// Pairs of component IDs (<c>component</c>, <c>covered</c>): a placement of <c>component</c> already shows what the
+    /// suggestion <c>covered</c> shows, so the home does not add that suggestion beside it (spec 008 FR-051, spec 032 FR-070).
+    /// A component always covers its own suggestion.
+    /// </summary>
+    IEnumerable<(string Component, string Covered)> CoveredSuggestions() => [];
+
     /// <summary>Migration hooks from one major version of this module's components to the next (spec 032 FR-030).</summary>
     IEnumerable<ComponentMigration> Migrations() => [];
 }

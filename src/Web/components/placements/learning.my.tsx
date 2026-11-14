@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Progress } from "@/components/ui/Status";
 import { StateView } from "@/components/ui/StateView";
+import { Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 
 /**
@@ -24,13 +25,9 @@ export default function MyLearningCard({ props }: PlacementProps) {
   const { answer, retry } = useHomeAnswer<MyLearning>(`${learningApi}/me`);
 
   const shell = (body: React.ReactNode, busy = false) => (
-    <section className="home-card" aria-labelledby="home-learning-title" aria-busy={busy || undefined}>
-      <div className="home-card-head">
-        <h2 id="home-learning-title">{title}</h2>
-        <Link href={learningHref}>{t("all")}</Link>
-      </div>
+    <Widget title={title} busy={busy} action={<Link href={learningHref}>{t("all")}</Link>}>
       {body}
-    </section>
+    </Widget>
   );
 
   if (answer === "loading") return shell(<StateView kind="loading" minBlockSize="8rem" />, true);

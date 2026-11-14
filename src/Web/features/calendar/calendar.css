@@ -26,15 +26,6 @@
   text-decoration: underline;
 }
 
-.cal-card-all {
-  display: inline-flex;
-  gap: var(--tb-space-xs);
-  align-items: center;
-  justify-self: start;
-  color: var(--tb-color-link);
-  font-size: var(--tb-font-size-sm);
-}
-
 .cal-alerts {
   display: grid;
   gap: var(--tb-space-xs);
