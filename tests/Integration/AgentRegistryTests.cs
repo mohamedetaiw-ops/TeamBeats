@@ -83,7 +83,7 @@ public sealed class AgentRegistryTests(TenantWorld world)
         var t = await FreshAsync();
         var library = await OkAsync(t["sara"].Client.GetAsync($"{Agents}/templates"));
         var templates = library.GetProperty("templates").EnumerateArray().ToList();
-        Assert.Equal(6, templates.Count);
+        Assert.Equal(7, templates.Count);
         Assert.All(templates, x => Assert.True(x.GetProperty("ready").GetBoolean(), x.GetProperty("id").GetString()));
         var hr = templates.Single(x => x.GetProperty("id").GetString() == "hr_assistant");
         Assert.Equal("مساعد الموارد البشرية", hr.GetProperty("name").GetProperty("ar").GetString());

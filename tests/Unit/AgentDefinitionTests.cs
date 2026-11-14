@@ -25,6 +25,8 @@ public sealed class AgentDefinitionTests
         new FakeTool("knowledge.search", ToolSideEffects.Read),
         new FakeTool("requests.status", ToolSideEffects.Read),
         new FakeTool("tasks.inbox", ToolSideEffects.Read),
+        new FakeTool("leave.balance", ToolSideEffects.Read),
+        new FakeTool("leave.my_requests", ToolSideEffects.Read),
         new FakeTool("requests.prepare", ToolSideEffects.Draft, ToolApprovalRules.DraftOnly),
         new FakeTool("requests.submit", ToolSideEffects.WriteSelf, ToolApprovalRules.Confirm),
         new FakeTool("erp.order", ToolSideEffects.WriteExternal, ToolApprovalRules.Approval),
@@ -129,9 +131,9 @@ public sealed class AgentDefinitionTests
     }
 
     [Fact]
-    public void The_six_launch_templates_are_valid_in_arabic_and_english_under_the_default_policy()
+    public void The_platform_templates_are_valid_in_arabic_and_english_under_the_default_policy()
     {
-        Assert.Equal(["content_writing", "enterprise_knowledge", "hr_assistant", "it_service_desk", "personal_productivity", "workflow_requests"],
+        Assert.Equal(["content_writing", "enterprise_knowledge", "hr_assistant", "it_service_desk", "my_hr_helper", "personal_productivity", "workflow_requests"],
             AgentTemplates.All.Select(t => t.Id).Order());
         foreach (var template in AgentTemplates.All)
         {

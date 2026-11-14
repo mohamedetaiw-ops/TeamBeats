@@ -16,7 +16,8 @@ namespace TeamBeats.Modules.Agents;
 /// <c>search</c>, which the assistant history never lists, so it keeps its execution record and can be marked unhelpful
 /// with the assistant's feedback (US6 scenario 3), which production evaluation (spec 034) reads.
 /// </summary>
-internal sealed class SearchSummaries(IDbSession session, ITenantContext context, ISearchRetrieval retrieval, IAiGateway gateway, IClock clock) : ISearchSummaries
+internal sealed class SearchSummaries(IDbSession session, ITenantContext context, ISearchRetrieval retrieval, IAiGateway gateway, IClock clock,
+    AssistantGuests guests) : ISearchSummaries
 {
     /// <summary>Few passages keep the summary short and quick.</summary>
     public const int Passages = 5;
@@ -25,6 +26,10 @@ internal sealed class SearchSummaries(IDbSession session, ITenantContext context
     public async Task<SearchSummary> SummarizeAsync(string query, CancellationToken ct = default)
     {
         var user = context.RequireUser();
+        if (!await guests.AllowedAsync(ct))
+        {
+            return SearchSummary.Not("unavailable");
+        }
         var evidence = await retrieval.RetrieveAsync(new RetrievalRequest(query, AiUseCases.Assistant, TopK: Passages), ct);
         if (evidence.Passages.Count == 0)
         {

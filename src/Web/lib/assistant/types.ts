@@ -44,7 +44,7 @@ export type AssistantScope = { source: "policies"; itemId: string };
 
 export type Conversation = { id: string; title: string; createdAt: string; lastTurnAt: string; turns: Turn[]; scope: AssistantScope | null };
 
-export type AssistantSettings = { retentionDays: number; updatedAt: string | null };
+export type AssistantSettings = { retentionDays: number; updatedAt: string | null; guestsAllowed: boolean };
 
 /** Splits an answer into text and citation markers, keeping only markers that have a citation. */
 export function answerParts(answer: string, citations: Citation[]): ({ text: string } | { citation: Citation })[] {

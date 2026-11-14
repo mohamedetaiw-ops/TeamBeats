@@ -1824,3 +1824,18 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Tokens come from `IAiEvaluatorTokens.Mint(runId, classification, modelUnderTest)` in `AiGateway.Contracts`, for the Evaluation module to hand to a worker. A token names the current tenant, the run, the `evaluation` use case, the run's classification and the model under test, and expires after 15 minutes. It is signed with HMAC-SHA256 under a key derived with HKDF from the AI debug log key already in the secret store, so no new secret is needed and every API instance agrees. Nothing about tokens is stored. `Mint` returns null when the facade is off.
 - The facade sets the tenant from the token and runs the call through `IAiGateway` as an `evaluation` call with the token's classification and model under test, so classification rules, allowlist, routing, budgets and metering apply as for any judge call. Tools and streaming are refused (400). A denial answers 403 with the reason as an OpenAI error, `provider_unavailable` answers 503, and a missing, tampered, expired or foreign token, or a tenant that is not active, answers 401.
 - The worker image itself is not built yet: ADR-0015 says it is built only if the native evaluators prove insufficient. The facade and tokens are the gateway side of that contract.
+
+## Spec 014 R2 slice 1: guests and context exclusions (T009, T010, AST-020, AST-022)
+
+- `guestsAllowed` sits on the existing assistant settings (`agents.assistant_settings.guests_allowed`), off by default, changed by the AI Policy Administrator and audited as `assistant.guests_changed`. A settings change may carry either field; the other keeps its value.
+- A guest is refused (403) on turns, text actions, history and feedback while it is off, and the AI summary of search returns `unavailable` for them. Deleting their own conversations stays open to a guest, so turning the setting off never traps their data.
+- When it is on nothing else changes: retrieval already runs as the guest, so owners show only the spaces they were invited to.
+- The deny list is `AiExcludedSources` in the search contracts (`payslip`, `engagement_anonymous`). The indexer never registers a source with one of those names, and retrieval drops such passages for every AI use case without counting them as withheld, so their existence is not hinted. Payslips (019) and anonymous engagement (023) are not search sources today; the list guards against a future one.
+
+## Spec 014 R2 slice 2: personal context answers (T011, T012, US7)
+
+- The Hr module registers `leave.balance` and `leave.my_requests` as read tools (capability `hr.leave`). They run as the person through the leave use cases, so they return what the leave page shows.
+- `leave.balance` takes an optional `person`. Anyone other than the caller is refused with `tool.other_person` unless the caller is an HR officer covering that person (the same rule as the leave ledger). The refusal is the same whether or not the person exists.
+- Each result carries `readAt` and, per balance, its source (`teambeats` or `hr`) and as-of time; the tool source goes into the run's sources, which the answer cites.
+- Open service requests use the existing `requests.status` tool, so no new Services tool was needed.
+- The platform template `my_hr_helper` ("My HR helper") holds the three tools at L2 with an evaluation suite `template.my_hr_helper` in Arabic and English. Routing picks it for such questions with no assistant code.
