@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { SegmentedControl } from "@/components/ui/SegmentedControl";
 import { StateView } from "@/components/ui/StateView";
 import { FilterToolbar, ToolbarSearch, ToolbarSelect } from "@/components/ui/FilterToolbar";
 import { unitName, type OrgUnit } from "@/lib/experience/builder-types";
@@ -61,6 +62,7 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
   const [next, setNext] = useState<number | null>(null);
   const [error, setError] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [layout, setLayout] = useState("grid");
 
   async function load(current: Query, offset: number) {
     if (offset === 0) {
@@ -136,9 +138,21 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
           }}
           search={<ToolbarSearch label={t("search.label")} name="q" placeholder={t("search.hint")} value={query.q} onChange={(e) => setQuery({ ...query, q: e.target.value })} />}
           end={
-            <Button type="submit" variant="secondary" busy={busy} busyLabel={t("loading")}>
-              {t("search.submit")}
-            </Button>
+            <>
+              <Button type="submit" variant="secondary" busy={busy} busyLabel={t("loading")}>
+                {t("search.submit")}
+              </Button>
+              <SegmentedControl
+                label={t("layout.label")}
+                name="people-layout"
+                value={layout}
+                onChange={setLayout}
+                options={[
+                  { value: "grid", label: t("layout.grid") },
+                  { value: "list", label: t("layout.list") },
+                ]}
+              />
+            </>
           }
           applied={[
             ...(unitLabel ? [{ key: "unit", label: `${t("search.unit")}: ${unitLabel}`, onRemove: () => filter({ unitId: "" }) }] : []),
@@ -183,10 +197,10 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
         {items && items.length > 0 ? (
           <>
             <h3>{t("search.results")}</h3>
-            <ul className="people-list people-cards" data-testid="people-results">
+            <ul className={layout === "grid" ? "people-list people-cards" : "people-list people-rows"} data-testid="people-results">
               {items.map((p) => (
                 <li key={p.id}>
-                  <PersonItem person={p} locale={locale} />
+                  <PersonItem person={p} locale={locale} form={layout === "grid" ? "card" : "row"} />
                 </li>
               ))}
             </ul>
@@ -206,10 +220,10 @@ export function PeopleDirectory({ units, locations, newcomers }: { units: OrgUni
         {newcomers.length === 0 ? (
           <p>{t("newcomers.none")}</p>
         ) : (
-          <ul className="people-list people-cards" data-testid="people-newcomers">
+          <ul className={layout === "grid" ? "people-list people-cards" : "people-list people-rows"} data-testid="people-newcomers">
             {newcomers.map((p) => (
               <li key={p.id}>
-                <PersonItem person={p} locale={locale} />
+                <PersonItem person={p} locale={locale} form={layout === "grid" ? "card" : "row"} />
               </li>
             ))}
           </ul>

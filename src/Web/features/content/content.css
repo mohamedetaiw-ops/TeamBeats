@@ -109,7 +109,70 @@
 
 .content-comment-form {
   display: grid;
+  gap: var(--tb-space-xs);
+}
+
+/* One composer (DLS-112): it starts at one line and grows; mentions are typed inline with "@". */
+.content-composer textarea {
+  inline-size: 100%;
+  min-block-size: 0;
+  max-block-size: 12rem;
+  resize: none;
+}
+
+.content-composer-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--tb-space-sm);
+}
+
+.content-suggest {
+  margin: 0;
+  padding: var(--tb-space-xs);
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  border-radius: var(--tb-radius-md);
+  background: var(--tb-color-surface-raised);
+  box-shadow: var(--tb-shadow-md);
+  list-style: none;
+}
+
+.content-suggest .ui-menu-item {
+  inline-size: 100%;
+}
+
+/* Editorial header (DLS-112): kind, title, byline, then the quiet AI row. */
+.content-head {
+  display: grid;
+  justify-items: start;
+  gap: var(--tb-space-sm);
+  padding-block-end: var(--tb-space-md);
+  border-block-end: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+.content-byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+}
+
+.content-ai {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--tb-space-xs) var(--tb-space-md);
+  inline-size: 100%;
+}
+
+.content-ai > p {
+  margin: 0;
+  font-size: var(--tb-font-size-sm);
+}
+
+.content-social h2 {
+  font-size: var(--tb-font-size-lg);
 }
 
 .content-list-item {
@@ -574,11 +637,6 @@
   flex-wrap: wrap;
   gap: var(--tb-space-sm);
   align-items: center;
-}
-
-.content-mention-picker {
-  display: grid;
-  gap: var(--tb-space-xs);
 }
 
 .content-route-step {

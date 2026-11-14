@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { reactionKinds, type CommentPage, type CommentView, type ContentPerson, type ReactionKind, type ReactionSummary } from "@/lib/content/types";
 import { problemMessages } from "@/lib/notifications/types";
@@ -30,9 +30,37 @@ export function ContentSocial({ itemId }: { itemId: string }) {
   const [busy, setBusy] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
 
+  // Mentions are typed inline (spec 036 DLS-112): "@" and a few letters open a suggestion list under the composer, and
+  // choosing a person writes "@Name" into the text. A mention counts while its "@Name" is still in the text.
   const [mentions, setMentions] = useState<ContentPerson[]>([]);
   const [who, setWho] = useState("");
   const [found, setFound] = useState<ContentPerson[]>([]);
+  const box = useRef<HTMLTextAreaElement>(null);
+
+  function write(text: string, caret: number) {
+    setDraft(text);
+    const typed = /(?:^|\s)@([^\s@]{0,40})$/u.exec(text.slice(0, caret));
+    setWho(typed ? (typed[1] ?? "") : "");
+    // The composer starts at one line and grows with the text.
+    const el = box.current;
+    if (el) {
+      el.style.blockSize = "auto";
+      el.style.blockSize = `${el.scrollHeight}px`;
+    }
+  }
+
+  function choose(person: ContentPerson) {
+    const el = box.current;
+    const caret = el?.selectionStart ?? draft.length;
+    const start = draft.slice(0, caret).lastIndexOf("@");
+    if (start < 0) return;
+    const next = `${draft.slice(0, start)}@${person.displayName} ${draft.slice(caret)}`;
+    setDraft(next);
+    setMentions((before) => (before.some((m) => m.id === person.id) ? before : [...before, person]));
+    setWho("");
+    setFound([]);
+    el?.focus();
+  }
 
   const [attempt, setAttempt] = useState(0);
 
@@ -84,12 +112,13 @@ export function ContentSocial({ itemId }: { itemId: string }) {
     setBusy(true);
     setMessages([]);
     try {
-      const response = await post(`${base(itemId)}/comments`, { body: draft, mentions: mentions.map((m) => m.id) });
+      const response = await post(`${base(itemId)}/comments`, { body: draft, mentions: mentions.filter((m) => draft.includes(`@${m.displayName}`)).map((m) => m.id) });
       if (response.ok) {
         const created = (await response.json()) as CommentView;
         setDraft("");
         setMentions([]);
         setWho("");
+        if (box.current) box.current.style.blockSize = "auto";
         setMessages(created.status === "held" ? [t("held")] : []);
         load();
       } else {
@@ -115,16 +144,16 @@ export function ContentSocial({ itemId }: { itemId: string }) {
 
   return (
     <section className="content-social" aria-labelledby="content-social-title">
-      <h2 id="content-social-title">{t("title")}</h2>
       {reactions ? (
         <div className="content-reactions" role="group" aria-label={t("reactions")}>
           {reactionKinds.map((k) => (
-            <Button key={k} variant={reactions.mine === k ? "primary" : "secondary"} aria-pressed={reactions.mine === k} onClick={() => void react(k)}>
+            <Button key={k} size="sm" variant={reactions.mine === k ? "primary" : "secondary"} aria-pressed={reactions.mine === k} onClick={() => void react(k)}>
               {t(`kind.${k}`)} <span className="content-count">{reactions.counts[k] ?? 0}</span>
             </Button>
           ))}
         </div>
       ) : null}
+      <h2 id="content-social-title">{typeof page === "object" && page.items.length > 0 ? `${t("comments")} (${page.items.length})` : t("comments")}</h2>
       {page === "loading" ? <StateView kind="loading" minBlockSize="6rem" /> : null}
       {page === "failed" ? <StateView kind="error" title={t("failed")} message="" action={<Button onClick={load}>{t("retry")}</Button>} /> : null}
       {typeof page === "object" ? (
@@ -165,43 +194,38 @@ export function ContentSocial({ itemId }: { itemId: string }) {
           </ol>
           {page.commentsOn ? (
             <form className="content-comment-form" onSubmit={(e) => void submit(e)}>
-              <label className="field">
-                <span>{t("write")}</span>
-                <textarea value={draft} maxLength={2000} rows={3} onChange={(e) => setDraft(e.target.value)} required />
+              <label className="content-composer">
+                <span className="visually-hidden">{t("write")}</span>
+                <textarea
+                  ref={box}
+                  value={draft}
+                  maxLength={2000}
+                  rows={1}
+                  placeholder={t("write")}
+                  aria-describedby="content-mention-hint"
+                  onChange={(e) => write(e.target.value, e.target.selectionStart)}
+                  required
+                />
               </label>
-              <div className="content-mention-picker">
-                <label className="field">
-                  <span>{t("mention")}</span>
-                  <input type="search" value={who} onChange={(e) => setWho(e.target.value)} autoComplete="off" />
-                </label>
-                {who.trim().length >= 2 && found.length > 0 ? (
-                  <ul className="content-tags" aria-label={t("mentionResults")}>
-                    {found
-                      .filter((p) => !mentions.some((m) => m.id === p.id))
-                      .map((p) => (
-                        <li key={p.id}>
-                          <Button variant="quiet" onClick={() => setMentions([...mentions, p])} aria-label={t("mentionAdd", { name: p.displayName })}>
-                            <bdi>{p.displayName}</bdi>
-                          </Button>
-                        </li>
-                      ))}
-                  </ul>
-                ) : null}
-                {mentions.length > 0 ? (
-                  <ul className="content-tags" aria-label={t("mentionChosen")}>
-                    {mentions.map((m) => (
-                      <li key={m.id}>
-                        <Button variant="secondary" onClick={() => setMentions(mentions.filter((x) => x.id !== m.id))} aria-label={t("mentionRemove", { name: m.displayName })}>
-                          <bdi>{t("mentionName", { name: m.displayName })}</bdi>
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
+              {who.trim().length >= 2 && found.length > 0 ? (
+                <ul className="ui-menu content-suggest" aria-label={t("mentionResults")}>
+                  {found.map((p) => (
+                    <li key={p.id}>
+                      <button type="button" className="ui-menu-item" onClick={() => choose(p)} aria-label={t("mentionAdd", { name: p.displayName })}>
+                        <bdi>{p.displayName}</bdi>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="content-composer-end">
+                <span id="content-mention-hint" className="content-meta">
+                  {t("mentionHint")}
+                </span>
+                <Button type="submit" variant="primary" size="sm" busy={busy} busyLabel={t("sending")}>
+                  {t("send")}
+                </Button>
               </div>
-              <Button type="submit" variant="primary" busy={busy} busyLabel={t("sending")}>
-                {t("send")}
-              </Button>
             </form>
           ) : (
             <p className="content-meta">{t("off")}</p>
