@@ -220,6 +220,14 @@ for (const design of designs) {
         await expectNoSeriousViolations(page, testInfo, `components-${design.key}-${locale}`);
         expect(await smallTargets(gallery), "controls smaller than 24 by 24 pixels").toEqual([]);
 
+        // DLS-111: counts keep whole number ticks, and one data point is a number, not a chart.
+        const ticks = await page.getByTestId("cg-chart-counts").locator(".ui-chart-axes g text").allTextContents();
+        expect(ticks.length, "value ticks on the counts chart").toBeGreaterThan(1);
+        expect(ticks.filter((tick) => /[.,٫]/.test(tick)), "fractional ticks on a chart of counts").toEqual([]);
+        const single = page.getByTestId("cg-chart-single");
+        await expect(single.locator('[data-chart="single"]')).toBeVisible();
+        await expect(single.locator(".ui-chart")).toHaveCount(0);
+
         for (const id of ["cg-actions", "cg-selection", "cg-status", "cg-structure", "cg-overlays", "cg-menus", "cg-inputs", "cg-dates", "cg-data", "cg-schedule", "cg-panels", "cg-assistant", "cg-agents", "cg-charts", "cg-charts-more", "cg-calendar"]) {
           await expect.soft(page.locator(`section:has(> h2#${id})`)).toHaveScreenshot(`${id}-${design.key}-${locale}.png`, {
             animations: "disabled",
