@@ -148,3 +148,15 @@
 .agents-card-row {
   display: contents;
 }
+
+/* The read-only definition of an agent (spec 020 section 10), for AI policy administrators. */
+.agents-json {
+  max-block-size: 24rem;
+  overflow: auto;
+  margin: 0;
+  padding: var(--tb-space-sm);
+  border-radius: var(--tb-radius-sm);
+  background: var(--tb-color-surface-sunken);
+  font-family: var(--tb-font-family-latin);
+  font-size: var(--tb-font-size-sm);
+}

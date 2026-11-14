@@ -5,6 +5,7 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { PersonPicker } from "@/features/services/PersonPicker";
 import { problemMessages } from "@/lib/notifications/types";
 import type { OrgUnit } from "@/lib/experience/builder-types";
@@ -17,6 +18,7 @@ import {
   type AgentDetail,
   type Localized,
   type RunView,
+  type StudioOffer,
   type ToolView,
   tenantToolTitle,
 } from "@/lib/agents/types";
@@ -70,7 +72,18 @@ function Bilingual({
  * suspend, resume, retire and rollback. The API checks every change against the schema, the tool registry, the
  * policy and the person's permissions; the page shows what it answers.
  */
-export function AgentEditor({ initial, tools, units }: { initial: AgentDetail; tools: ToolView[]; units: OrgUnit[] }) {
+export function AgentEditor({
+  initial,
+  tools,
+  units,
+  studio = null,
+}: {
+  initial: AgentDetail;
+  tools: ToolView[];
+  units: OrgUnit[];
+  /** The Studio offer, or null when the API does not offer Studio to this person. */
+  studio?: StudioOffer | null;
+}) {
   const t = useTranslations("agents.editor");
   const ts = useTranslations("agents");
   const locale = useLocale();
@@ -86,6 +99,10 @@ export function AgentEditor({ initial, tools, units }: { initial: AgentDetail; t
   const [testRun, setTestRun] = useState<RunView | null>(null);
   const [reason, setReason] = useState("");
   const [rollbackTo, setRollbackTo] = useState("");
+  const [cloneName, setCloneName] = useState<Localized>({});
+  const [cloneUnit, setCloneUnit] = useState(units[0]?.id ?? "");
+  const [copyAudience, setCopyAudience] = useState(false);
+  const [copyTools, setCopyTools] = useState(false);
 
   const status = detail.agent.status;
   const locked = detail.latest.state === "in_review";
@@ -138,6 +155,28 @@ export function AgentEditor({ initial, tools, units }: { initial: AgentDetail; t
     } finally {
       setBusy(null);
     }
+  }
+
+  // A clone (spec 020 US4 scenario 4) is a new draft; audience and tools come along only when the designer ticks them.
+  async function clone() {
+    setBusy("clone");
+    setResult(null);
+    try {
+      const response = await fetch(`/api/v1/agents/${detail.agent.id}/clone`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ orgUnitId: cloneUnit, name: cloneName, copyAudience, copyTools }),
+      });
+      if (response.ok) {
+        const next = (await response.json()) as AgentDetail;
+        router.push(`/admin/agents/${next.agent.id}`);
+        return;
+      }
+      setResult({ ok: false, messages: await problemMessages(response) });
+    } catch {
+      setResult({ ok: false, messages: [t("failed")] });
+    }
+    setBusy(null);
   }
 
   const base = `/api/v1/agents/${detail.agent.id}`;
@@ -396,6 +435,41 @@ export function AgentEditor({ initial, tools, units }: { initial: AgentDetail; t
             </div>
           ) : null}
         </section>
+      ) : null}
+
+      {studio && (detail.agent.templateId !== null || studio.custom) ? (
+        <section className="agents-section" aria-labelledby={`${ids}-clone`} data-testid="agent-clone">
+          <h2 id={`${ids}-clone`}>{t("clone.title")}</h2>
+          <p>{t("clone.intro")}</p>
+          <div className="field">
+            <label htmlFor={`${ids}-clone-unit`}>{t("clone.unit")}</label>
+            <select id={`${ids}-clone-unit`} value={cloneUnit} onChange={(e) => setCloneUnit(e.target.value)}>
+              {units.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {pickText(u.names, locale)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Bilingual label={t("clone.name")} value={cloneName} onChange={setCloneName} disabled={false} />
+          <Checkbox label={t("clone.copyAudience")} checked={copyAudience} onChange={(e) => setCopyAudience(e.target.checked)} />
+          <Checkbox label={t("clone.copyTools")} checked={copyTools} onChange={(e) => setCopyTools(e.target.checked)} />
+          <div className="agents-row">
+            <Button disabled={cloneUnit === ""} busy={busy === "clone"} busyLabel={t("saving")} onClick={() => void clone()}>
+              {t("clone.action")}
+            </Button>
+          </div>
+        </section>
+      ) : null}
+
+      {studio?.jsonView ? (
+        // Section 10: an advanced JSON view, read only, for AI policy administrators.
+        <details className="agents-section" data-testid="agent-json">
+          <summary>{t("json")}</summary>
+          <pre className="agents-json" dir="ltr" tabIndex={0}>
+            {JSON.stringify(detail.definition, null, 2)}
+          </pre>
+        </details>
       ) : null}
     </div>
   );

@@ -228,6 +228,15 @@ public static class AgentsModule
             return Results.Created($"/api/v1/agents/{detail.Agent.Id}", detail);
         });
 
+        agents.MapGet("/studio", async (AgentRegistry registry, CancellationToken ct) => Results.Ok(await registry.StudioAsync(ct)));
+
+        agents.MapPost("/{id:guid}/clone", async (Guid id, CloneRequest request, AgentRegistry registry, IDbSession session, CancellationToken ct) =>
+        {
+            var detail = await registry.CloneAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/agents/{detail.Agent.Id}", detail);
+        });
+
         // Routing (020 T012, 014 T004): the agents the person may use, and a routing decision for a message.
         agents.MapGet("/available", async (AgentRouter router, CancellationToken ct) => Results.Ok(new { agents = await router.AvailableAsync(ct) }));
 

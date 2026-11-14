@@ -829,7 +829,11 @@
         "ai_budgets_scoped": "AI budgets for units, agents and people",
         "ai_models_private_endpoint": "Private model endpoints",
         "ai_assistant_file_upload": "Files in assistant conversations",
-        "ai_assistant_voice": "Assistant voice input and read aloud"
+        "ai_assistant_voice": "Assistant voice input and read aloud",
+        "ai_agents_custom": "Custom agents in Agent Studio",
+        "ai_agents_department": "Department agent templates",
+        "ai_agents_marketplace": "Agent marketplace",
+        "ai_agents_advanced": "Advanced agent templates"
       },
       "searchLabel": "Search capabilities",
       "searchPlaceholder": "Search by name",
@@ -5929,7 +5933,17 @@
         "afterReview": "Version {version} of this agent's template is available. You can apply it once the version in review is decided.",
         "apply": "Apply template update",
         "applied": "The template update is in a new draft. Check it, then send it for review."
-      }
+      },
+      "clone": {
+        "title": "Clone this agent",
+        "intro": "A clone is a new draft with its own identity and no published history. Its audience and tools are copied only if you tick them.",
+        "unit": "Org unit that owns the clone",
+        "name": "Name of the clone",
+        "copyAudience": "Copy the audience",
+        "copyTools": "Copy the tools",
+        "action": "Clone"
+      },
+      "json": "Definition as JSON (read only)"
     },
     "review": {
       "title": "Review {name}",
@@ -6153,6 +6167,34 @@
       "cost": "Estimated cost",
       "quality": "Release gate",
       "none": "None"
+    },
+    "studio": {
+      "title": "Build a new agent",
+      "intro": "Start from a blank agent. Give it a name and instructions here, then set its knowledge, tools, audience and autonomy in the editor.",
+      "used": "{count} of {limit} custom agents in use.",
+      "usedNoLimit": "{count} custom agents in use.",
+      "full": "The custom agent limit of your plan is reached. Your tenant administrator can raise it with your plan.",
+      "unit": "Org unit that owns it",
+      "languages": "Languages it answers in",
+      "languageNames": {
+        "en": "English",
+        "ar": "Arabic"
+      },
+      "name": "Name in {language}",
+      "instructions": "Instructions in {language}",
+      "category": "Category",
+      "create": "Create the agent",
+      "creating": "Creating",
+      "failed": "The agent could not be created. Try again."
+    },
+    "categories": {
+      "knowledge": "Knowledge",
+      "hr": "HR",
+      "it": "IT",
+      "content": "Content",
+      "requests": "Requests",
+      "productivity": "Productivity",
+      "other": "Other"
     }
   },
   "evaluation": {

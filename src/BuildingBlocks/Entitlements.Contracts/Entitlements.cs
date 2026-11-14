@@ -11,6 +11,10 @@ public static class Capabilities
     public const string AiAgentsWriteTools = "ai.agents.write_tools";
     public const string AiAgentsMaxPublished = "ai.agents.max_published";
     public const string AiAgentsMaxCustom = "ai.agents.max_custom";
+    public const string AiAgentsCustom = "ai.agents.custom";
+    public const string AiAgentsDepartment = "ai.agents.department";
+    public const string AiAgentsMarketplace = "ai.agents.marketplace";
+    public const string AiAgentsAdvanced = "ai.agents.advanced";
     public const string AiModelChoice = "ai.model_choice";
 
     // Spec 013 section 9 (R2): the tenant budget is in every package; org unit, agent and user budgets, and private

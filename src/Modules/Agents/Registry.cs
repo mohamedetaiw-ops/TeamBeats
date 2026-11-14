@@ -43,7 +43,18 @@ public sealed record TemplateView(
     IReadOnlyList<string> BlockedTools,
     bool AutonomyAbovePolicy);
 
-public sealed record InstallRequest(string? TemplateId, Guid? OrgUnitId);
+/// <summary>
+/// Installs a template, or with no template creates a blank agent in Agent Studio (spec 020 US4): then the name,
+/// instructions, category and languages of the first step are given and everything else starts at its safest value.
+/// </summary>
+public sealed record InstallRequest(string? TemplateId, Guid? OrgUnitId, Dictionary<string, string>? Name = null,
+    Dictionary<string, string>? Instructions = null, string? Category = null, List<string>? Languages = null);
+
+/// <summary>A clone (US4 scenario 4): a new draft with a new identity. Audience and tools are copied only when asked.</summary>
+/// <summary>What Agent Studio offers the designer: blank agents and how many of the limit are used, and the JSON view.</summary>
+public sealed record StudioOffer(bool Custom, long CustomCount, long? CustomLimit, bool JsonView);
+
+public sealed record CloneRequest(Guid? OrgUnitId, Dictionary<string, string>? Name, bool CopyAudience = false, bool CopyTools = false);
 
 public sealed record DraftRequest(int? Revision, AgentDefinition? Definition);
 
@@ -151,9 +162,12 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
             throw AppException.Denied();
         }
         var policy = (await policies.CurrentAsync(ct)).Policy;
+        // The Studio tool picker (US4 scenario 2) offers a tool only when policy allows it and the package includes it.
+        var unavailable = await UnavailableAsync(tools.All.Select(t => t.Definition.Name), ct);
         return tools.All.Select(t => t.Definition).OrderBy(d => d.Name, StringComparer.Ordinal)
             .Select(d => new ToolView(d.Name, d.Module, d.Version, d.SideEffect, d.ApprovalRule, policy.RuleFor(d), d.OutputClassification,
-                policy.Allows(d.Name) && policy.RuleFor(d) != ToolApprovalRules.Block, d.Parameters, d.Title))
+                policy.Allows(d.Name) && policy.RuleFor(d) != ToolApprovalRules.Block && !unavailable.Contains(d.Name), d.Parameters, d.Title,
+                !unavailable.Contains(d.Name)))
             .ToList();
     }
 
@@ -166,6 +180,10 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
             throw AppException.Validation("orgUnitId", "validation.agent.org_unit");
         }
         await authz.DemandAsync(Permissions.AgentDesign, AuthzTarget.OrgUnit(unit), ct);
+        if (request.TemplateId is null)
+        {
+            return await CreateBlankAsync(request, unit, user, ct);
+        }
         if (request.TemplateId is not { } templateId || AgentTemplates.Find(templateId) is not { } template ||
             !await entitlements.IsEnabledAsync(template.Capability, ct))
         {
@@ -191,6 +209,110 @@ public sealed class AgentRegistry(IDbSession session, ITenantContext context, IE
         await audit.WriteAsync(new AuditEntry(AuditActions.AgentInstalledFromTemplate, "agent", id.ToString(), TargetOrgUnitId: unit,
             Changes: new { template = template.Id, templateVersion = template.Version, riskClass = risk }), ct);
         return await DetailAsync(id, ct);
+    }
+
+    /// <summary>
+    /// The Studio offer for the page (US4): whether blank agents are in the package, the custom agent count against the
+    /// limit, and whether the caller gets the read-only JSON view, which is for AI policy administrators (section 10).
+    /// </summary>
+    public async Task<StudioOffer> StudioAsync(CancellationToken ct)
+    {
+        await DesignerAsync(ct);
+        if (!await authz.HoldsAnywhereAsync(Permissions.AgentDesign, ct) && !await authz.HoldsAnywhereAsync(Permissions.AiPolicyManage, ct))
+        {
+            throw AppException.Denied();
+        }
+        var custom = await entitlements.IsEnabledAsync(Capabilities.AiAgentsCustom, ct);
+        var count = await session.ScalarAsync<long>("select count(*) from agents.agent where template_id is null and status <> 'retired'", null, ct);
+        return new StudioOffer(custom, count, custom ? await entitlements.GetLimitAsync(Capabilities.AiAgentsMaxCustom, ct) : 0,
+            await authz.HoldsAnywhereAsync(Permissions.AiPolicyManage, ct));
+    }
+
+    /// <summary>
+    /// Customer-created agents (FR-019): agents with no template. They need <c>ai.agents.custom</c>, and the tenant stays
+    /// within <c>ai.agents.max_custom</c>; retired agents do not count.
+    /// </summary>
+    private async Task DemandCustomAsync(CancellationToken ct)
+    {
+        await entitlements.DemandAsync(Capabilities.AiAgentsCustom, ct);
+        if (await entitlements.GetLimitAsync(Capabilities.AiAgentsMaxCustom, ct) is { } limit &&
+            await session.ScalarAsync<long>("select count(*) from agents.agent where template_id is null and status <> 'retired'", null, ct) >= limit)
+        {
+            throw AppException.Conflict("conflict.agent.custom_limit");
+        }
+    }
+
+    /// <summary>
+    /// A blank agent (US4 scenario 1): the designer's name, instructions, category and languages, and otherwise the safest
+    /// start: no tools, no knowledge, L0, Internal, the designer's unit as the audience.
+    /// </summary>
+    private async Task<AgentDetail> CreateBlankAsync(InstallRequest request, Guid unit, Guid user, CancellationToken ct)
+    {
+        await DemandCustomAsync(ct);
+        var policy = (await policies.CurrentAsync(ct)).Policy;
+        var definition = new AgentDefinition(request.Name, null, "spark", request.Category, request.Instructions, "neutral", "text", [], [],
+            new AgentAudience(AgentAudience.Units, [unit]), request.Languages, null, "L0", "internal", Math.Min(5, policy.MaxToolCalls));
+        AgentDefinitions.Validate(definition, tools, policy);
+        var id = await InsertAsync(definition, null, null, null, unit, user, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.AgentCreated, "agent", id.ToString(), TargetOrgUnitId: unit,
+            Changes: new { riskClass = AgentDefinitions.RiskClass(definition, tools) }), ct);
+        return await DetailAsync(id, ct);
+    }
+
+    /// <summary>
+    /// Clones an agent the designer can open into a new draft (US4 scenario 4, business rule on retired agents): a new
+    /// identity, no published history, and audience and tools only when asked. A clone keeps its source's template, so
+    /// only a clone of a customer-created agent counts against the custom agent limit.
+    /// </summary>
+    public async Task<AgentDetail> CloneAsync(Guid sourceId, CloneRequest request, CancellationToken ct)
+    {
+        var user = await DesignerAsync(ct);
+        var source = await DetailAsync(sourceId, ct);
+        if (request.OrgUnitId is not { } unit || !await org.UnitExistsAsync(unit, ct))
+        {
+            throw AppException.Validation("orgUnitId", "validation.agent.org_unit");
+        }
+        await authz.DemandAsync(Permissions.AgentDesign, AuthzTarget.OrgUnit(unit), ct);
+        if (source.Agent.TemplateId is null)
+        {
+            await DemandCustomAsync(ct);
+        }
+        var policy = (await policies.CurrentAsync(ct)).Policy;
+        var original = source.Definition;
+        var definition = original with
+        {
+            Name = request.Name,
+            Audience = request.CopyAudience ? original.Audience : new AgentAudience(AgentAudience.Units, [unit]),
+            Tools = request.CopyTools ? original.Tools : [],
+        };
+        AgentDefinitions.Validate(definition, tools, policy);
+        if ((await UnavailableAsync(definition.Tools, ct)).Count > 0)
+        {
+            throw AppException.Validation("tools", "validation.agent.tool_not_in_package");
+        }
+        if (request.CopyAudience)
+        {
+            await CheckAudienceAsync(definition.Audience!, ct);
+        }
+        var id = await InsertAsync(definition, source.Agent.TemplateId, source.Agent.TemplateVersion, sourceId, unit, user, ct);
+        await audit.WriteAsync(new AuditEntry(AuditActions.AgentCloned, "agent", id.ToString(), TargetOrgUnitId: unit,
+            Changes: new { from = sourceId, request.CopyAudience, request.CopyTools }), ct);
+        return await DetailAsync(id, ct);
+    }
+
+    private async Task<Guid> InsertAsync(AgentDefinition definition, string? template, int? version, Guid? clonedFrom, Guid unit, Guid user, CancellationToken ct)
+    {
+        var risk = AgentDefinitions.RiskClass(definition, tools);
+        var id = Guid.NewGuid();
+        var now = clock.UtcNow;
+        await session.ExecAsync(
+            """
+            insert into agents.agent (tenant_id, id, template_id, template_version, cloned_from, owner_user_id, org_unit_id, status, current_version, risk_class, created_at, created_by, updated_at)
+            values (platform.current_tenant_id(), @id, @template, @version, @clonedFrom, @user, @unit, 'draft', null, @risk, @now, @user, @now);
+            insert into agents.agent_version (tenant_id, agent_id, number, state, definition, risk_class, revision, last_editor, created_at, updated_at)
+            values (platform.current_tenant_id(), @id, 1, 'draft', @definition::jsonb, @risk, 1, @user, @now, @now);
+            """, new { id, template, version, clonedFrom, user, unit, risk, now, definition = Json(definition) }, ct);
+        return id;
     }
 
     private const string SummarySql =

@@ -2521,5 +2521,6 @@
   "conflict.assistant.voice_no_answer": "لا توجد إجابة في هذه المحادثة لقراءتها.",
   "conflict.assistant.voice_blocked": "لا تسمح سياسة الذكاء الاصطناعي لديك بإرسال هذا المحتوى إلى نموذج الكلام.",
   "conflict.assistant.voice_quota": "نفد رصيد الذكاء الاصطناعي لهذه الفترة. حاول مرة أخرى بعد تجديده.",
-  "conflict.assistant.voice_unavailable": "الصوت غير متاح الآن. اكتب سؤالك بدلًا من ذلك."
+  "conflict.assistant.voice_unavailable": "الصوت غير متاح الآن. اكتب سؤالك بدلًا من ذلك.",
+  "conflict.agent.custom_limit": "بلغت الحد المسموح به من الوكلاء المخصصين في خطتك. أوقف أحدهم نهائيًا، أو اطلب من مسؤول الجهة رفع الحد في خطتك."
 }

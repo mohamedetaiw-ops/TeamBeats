@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
-import { pickText, type AgentAnalyticsView, type AgentDetail, type ToolView } from "@/lib/agents/types";
+import { pickText, type AgentAnalyticsView, type AgentDetail, type StudioOffer, type ToolView } from "@/lib/agents/types";
 import { AgentTabs } from "@/features/agents/AgentTabs";
 import { AgentEditor } from "@/features/agents/AgentEditor";
 import { AgentAnalytics } from "@/features/agents/AgentAnalytics";
@@ -13,11 +13,12 @@ import "@/features/agents/agents.css";
 export default async function AgentPage({ params }: { params: Promise<{ id: string }> }) {
   await agentsSection();
   const { id } = await params;
-  const [detail, tools, units, analytics] = await Promise.all([
+  const [detail, tools, units, analytics, studio] = await Promise.all([
     apiGet<AgentDetail>(`/api/v1/agents/${encodeURIComponent(id)}`),
     apiGet<{ tools: ToolView[] }>("/api/v1/agents/tools"),
     listUnits(),
     apiGet<AgentAnalyticsView>(`/api/v1/agents/${encodeURIComponent(id)}/analytics`),
+    apiGet<StudioOffer>("/api/v1/agents/studio"),
   ]);
   if (!detail.ok) notFound();
   const t = await getTranslations("agents");
@@ -28,7 +29,9 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
         <bdi>{pickText(detail.data.definition.name, locale) || t("editor.untitled")}</bdi>
       </h1>
       <AgentTabs current="agents" />
-      <AgentEditor initial={detail.data} tools={tools.ok ? tools.data.tools : []} units={units.ok ? units.data : []} />
+      <AgentEditor initial={detail.data} tools={tools.ok ? tools.data.tools : []} units={units.ok ? units.data : []}
+        studio={studio.ok ? studio.data : null}
+      />
       {analytics.ok ? <AgentAnalytics view={analytics.data} /> : null}
     </>
   );

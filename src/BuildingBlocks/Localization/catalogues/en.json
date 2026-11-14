@@ -2521,5 +2521,6 @@
   "conflict.assistant.voice_no_answer": "This turn has no answer to read aloud.",
   "conflict.assistant.voice_blocked": "Your AI policy does not allow this content to be sent to a speech model.",
   "conflict.assistant.voice_quota": "The AI allowance for this period is used up. Try again after it resets.",
-  "conflict.assistant.voice_unavailable": "Voice is not available right now. Type your question instead."
+  "conflict.assistant.voice_unavailable": "Voice is not available right now. Type your question instead.",
+  "conflict.agent.custom_limit": "Your plan's limit on custom agents is reached. Retire one, or ask your tenant administrator to raise the limit with your plan."
 }
