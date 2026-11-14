@@ -54,6 +54,15 @@ public interface IMicrosoftGraph
     /// </summary>
     Task<JsonElement> DelegatedSendAsync(string accessToken, HttpMethod method, string pathAndQuery, object? body, CancellationToken ct);
 
+    /// <summary>
+    /// Puts file content as the signed-in employee (a drive item's <c>content</c>) and returns the item. Not retried,
+    /// because the content stream is read once; throws <see cref="GraphCallException"/>.
+    /// </summary>
+    Task<JsonElement> DelegatedUploadAsync(string accessToken, string pathAndQuery, Stream content, long length, CancellationToken ct);
+
+    /// <summary>Reads file content as the signed-in employee into a temporary stream the caller disposes; throws <see cref="GraphCallException"/>.</summary>
+    Task<Stream> DelegatedDownloadAsync(string accessToken, string pathAndQuery, CancellationToken ct);
+
     /// <summary>Microsoft's admin consent page for a directory.</summary>
     string AdminConsentUrl(string externalTenantId, IEnumerable<string> scopes, string redirectUri, string state);
 
@@ -236,7 +245,8 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
             {
                 if (response is { IsSuccessStatusCode: true })
                 {
-                    return await response.Content.ReadFromJsonAsync<JsonElement>(ct);
+                    // A delete answers 204 without a body.
+                    return response.StatusCode == System.Net.HttpStatusCode.NoContent ? default : await response.Content.ReadFromJsonAsync<JsonElement>(ct);
                 }
                 var status = response is null ? 503 : (int)response.StatusCode;
                 if (status is 429 or >= 500)
@@ -254,23 +264,96 @@ public sealed class HttpMicrosoftGraph(IHttpClientFactory httpClients, IConfigur
                     await Task.Delay(delay, ct);
                     continue;
                 }
-                var code = string.Empty;
-                try
-                {
-                    var error = await response!.Content.ReadFromJsonAsync<JsonElement>(ct);
-                    code = error.TryGetProperty("error", out var e) && e.TryGetProperty("code", out var c) ? c.GetString() ?? string.Empty : string.Empty;
-                }
-                catch (JsonException)
-                {
-                    // No error body.
-                }
-                throw new GraphCallException(status switch
-                {
-                    401 => "unauthorized",
-                    _ when code is "MailboxNotEnabledForRESTAPI" or "MailboxNotSupportedForRESTAPI" or "ResourceNotFound" && status is 404 or 400 => "no_mailbox",
-                    403 => "forbidden",
-                    _ => "not_found",
-                });
+                throw await FailureAsync(response!, ct);
+            }
+        }
+    }
+
+    private static async Task<GraphCallException> FailureAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        var status = (int)response.StatusCode;
+        if (status is 429 or >= 500)
+        {
+            return new GraphCallException("unavailable");
+        }
+        var code = string.Empty;
+        try
+        {
+            var error = await response.Content.ReadFromJsonAsync<JsonElement>(ct);
+            code = error.TryGetProperty("error", out var e) && e.TryGetProperty("code", out var c) ? c.GetString() ?? string.Empty : string.Empty;
+        }
+        catch (Exception ex) when (ex is JsonException or NotSupportedException)
+        {
+            // No error body.
+        }
+        return new GraphCallException(status switch
+        {
+            401 => "unauthorized",
+            _ when code is "MailboxNotEnabledForRESTAPI" or "MailboxNotSupportedForRESTAPI" or "ResourceNotFound" && status is 404 or 400 => "no_mailbox",
+            403 => "forbidden",
+            _ => "not_found",
+        });
+    }
+
+    public async Task<JsonElement> DelegatedUploadAsync(string accessToken, string pathAndQuery, Stream content, long length, CancellationToken ct)
+    {
+        using var client = httpClients.CreateClient(ClientName);
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"{GraphBase}/{pathAndQuery.TrimStart('/')}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        request.Content = new StreamContent(content);
+        request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        request.Content.Headers.ContentLength = length;
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.SendAsync(request, ct);
+        }
+        catch (HttpRequestException)
+        {
+            throw new GraphCallException("unavailable");
+        }
+        using (response)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                throw await FailureAsync(response, ct);
+            }
+            return await response.Content.ReadFromJsonAsync<JsonElement>(ct);
+        }
+    }
+
+    public async Task<Stream> DelegatedDownloadAsync(string accessToken, string pathAndQuery, CancellationToken ct)
+    {
+        using var client = httpClients.CreateClient(ClientName);
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{GraphBase}/{pathAndQuery.TrimStart('/')}");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        HttpResponseMessage response;
+        try
+        {
+            // Graph answers with a redirect to a short-lived download address; the client follows it without the token.
+            response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
+        }
+        catch (HttpRequestException)
+        {
+            throw new GraphCallException("unavailable");
+        }
+        using (response)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                throw await FailureAsync(response, ct);
+            }
+            var copy = new FileStream(Path.GetTempFileName(), FileMode.Create, FileAccess.ReadWrite, FileShare.None, 81920, FileOptions.DeleteOnClose);
+            try
+            {
+                await response.Content.CopyToAsync(copy, ct);
+                copy.Position = 0;
+                return copy;
+            }
+            catch
+            {
+                await copy.DisposeAsync();
+                throw;
             }
         }
     }

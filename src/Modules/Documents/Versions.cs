@@ -36,6 +36,7 @@ public sealed class DocumentVersions(
     INotificationSender notifications,
     IAuditWriter audit,
     IOutbox outbox,
+    DocumentText documentText,
     IClock clock)
 {
     public const int MaxNoteLength = 1000;
@@ -150,11 +151,24 @@ public sealed class DocumentVersions(
         return (versionId, key, hash, size, contentType, name, text);
     }
 
+    /// <summary>
+    /// While the document is open in Office for the web (FR-010), check-in and discard go through the Office edit, so
+    /// the copy in the editor is read back or removed and never left behind silently.
+    /// </summary>
+    private async Task NotInOfficeEditAsync(Guid id, CancellationToken ct)
+    {
+        if (await session.ScalarAsync<bool>("select exists (select 1 from documents.office_edit where document_id = @id)", new { id }, ct))
+        {
+            throw AppException.Conflict("conflict.documents.office_editing");
+        }
+    }
+
     /// <summary>Saves what the holder is working on without checking in. It replaces any earlier working copy.</summary>
     public async Task<DocumentView> SaveWorkingCopyAsync(Guid id, string? fileName, Stream body, long? declared, CancellationToken ct, string? sensitiveReason = null)
     {
         var user = context.RequireUser();
         var (library, doc) = await EditableAsync(id, ct);
+        await NotInOfficeEditAsync(id, ct);
         if (doc.CheckedOutBy != user)
         {
             throw AppException.Conflict("conflict.documents.check_out_first");
@@ -175,6 +189,7 @@ public sealed class DocumentVersions(
     public async Task<DocumentView> CheckInAsync(Guid id, CheckInRequest request, string? fileName, Stream? body, long? declared, CancellationToken ct)
     {
         var (library, doc) = await EditableAsync(id, ct);
+        await NotInOfficeEditAsync(id, ct);
         var note = Note(request.Note);
         if (request.Publish && await libraries.ControlledOfAsync(doc.TypeId, ct) is not null)
         {
@@ -232,15 +247,18 @@ public sealed class DocumentVersions(
         return label;
     }
 
-    private Task InsertVersionAsync(LibraryRow library, Guid documentId, Guid versionId, int major, int minor, string key, string hash, long size, string contentType,
-        string fileName, string? note, string state, CancellationToken ct, string? text = null) =>
-        session.ExecAsync(
+    private async Task InsertVersionAsync(LibraryRow library, Guid documentId, Guid versionId, int major, int minor, string key, string hash, long size, string contentType,
+        string fileName, string? note, string state, CancellationToken ct, string? text = null)
+    {
+        await session.ExecAsync(
             """
             insert into documents.document_version (tenant_id, id, document_id, library_id, major, minor, object_key, content_hash, size_bytes, content_type, file_name,
               note, author_user_id, state, scan_state, created_at, text_extract)
             values (platform.current_tenant_id(), @versionId, @documentId, @lib, @major, @minor, @key, @hash, @size, @contentType, @fileName, @note, @user, @state, 'clean', @now, @text)
             """,
             new { versionId, documentId, lib = library.Id, major, minor, key, hash, size, contentType, fileName, note, user = context.RequireUser(), state, now = clock.UtcNow, text }, ct);
+        await documentText.QueueAsync(versionId, fileName, text, ct);
+    }
 
     /// <summary>Removes a working copy that was never checked in; it is not a version, so nothing is lost from history.</summary>
     private async Task DropWorkingCopyAsync(DocumentFiles.DocRow doc, CancellationToken ct)
@@ -268,6 +286,7 @@ public sealed class DocumentVersions(
         {
             throw AppException.Conflict("conflict.documents.check_out_first");
         }
+        await NotInOfficeEditAsync(id, ct);
         await DropWorkingCopyAsync(doc, ct);
         await session.ExecAsync("update documents.document set checked_out_by = null, checked_out_at = null where id = @id", new { id }, ct);
         return await files.GetAsync(id, ct);
@@ -310,6 +329,8 @@ public sealed class DocumentVersions(
             await session.ExecAsync("update documents.document set pending_version_id = null where id = @id; update documents.document_version set document_id = @draft where id = @working",
                 new { id, draft, working }, ct);
         }
+        // An Office edit in progress ends here; the holder's copy stays in their own OneDrive, so their changes are not lost.
+        await session.ExecAsync("delete from documents.office_edit where document_id = @id", new { id }, ct);
         await session.ExecAsync("update documents.document set checked_out_by = null, checked_out_at = null, row_version = row_version + 1 where id = @id", new { id }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.DocForcedCheckIn, Securables.Document, id.ToString(), TargetOrgUnitId: library.OrgUnitId,
             Changes: new { holder, reason, keptDraft = draft }), ct);
@@ -376,9 +397,9 @@ public sealed class DocumentVersions(
         var (library, doc) = await EditableAsync(id, ct);
         var note = Note(request.Note);
         var source = await session.QuerySingleOrDefaultAsync(
-            "select major, minor, object_key, content_hash, size_bytes, content_type, file_name, scan_state from documents.document_version where id = @v and document_id = @id and state <> 'pending'",
+            "select major, minor, object_key, content_hash, size_bytes, content_type, file_name, scan_state, text_extract from documents.document_version where id = @v and document_id = @id and state <> 'pending'",
             new { v = request.VersionId, id }, r => (Major: r.GetInt32(0), Minor: r.GetInt32(1), Key: r.GetString(2), Hash: r.GetString(3), Size: r.GetInt64(4), Type: r.GetString(5),
-                Name: r.GetString(6), Scan: r.GetString(7)), ct);
+                Name: r.GetString(6), Scan: r.GetString(7), Text: r.Get<string>("text_extract")), ct);
         if (source.Key is null)
         {
             throw AppException.Validation("versionId", "validation.documents.version_unknown");
@@ -390,7 +411,7 @@ public sealed class DocumentVersions(
         var versionId = Ids.New();
         // The stored file is reused: versions never change, so two versions may share one object.
         await InsertVersionAsync(library, id, versionId, 0, 0, source.Key, source.Hash, source.Size, source.Type, source.Name,
-            note ?? $"{VersionLabels.Of(source.Major, source.Minor)}", VersionStates.Pending, ct);
+            note ?? $"{VersionLabels.Of(source.Major, source.Minor)}", VersionStates.Pending, ct, source.Text);
         var label = await NumberAsync(library, doc, versionId, publish: false, ct);
         await session.ExecAsync("update documents.document set updated_at = @now, row_version = row_version + 1 where id = @id", new { id, now = clock.UtcNow }, ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.DocRestored, Securables.Document, id.ToString(), TargetOrgUnitId: library.OrgUnitId,
@@ -414,6 +435,7 @@ public sealed class DocumentVersions(
         {
             throw HeldBy(doc);
         }
+        await NotInOfficeEditAsync(id, ct);
         if (doc.ReleaseInstance is not null)
         {
             throw AppException.Conflict("conflict.documents.in_release");
@@ -530,6 +552,7 @@ public sealed class DocumentVersions(
             """
             delete from documents.download_token where document_id = @id;
             delete from documents.read_confirmation where document_id = @id;
+            delete from documents.office_edit where document_id = @id;
             update documents.document set pending_version_id = null, current_version_id = null, effective_version_id = null where id = @id;
             delete from documents.document_version where document_id = @id;
             delete from documents.document where id = @id;

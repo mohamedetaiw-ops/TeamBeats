@@ -117,6 +117,7 @@ public sealed class DocumentFiles(
     IPdfStamp stamp,
     TeamBeats.Modules.Security.Contracts.ISensitiveDataScanner sensitiveData,
     TeamBeats.Modules.Spaces.Contracts.ISpaceGuestReview spaceGuests,
+    DocumentText documentText,
     IClock clock)
 {
     public const int MaxNameLength = 200;
@@ -254,6 +255,10 @@ public sealed class DocumentFiles(
                 versionId, documentId, lib = library.Id, major, minor, key, hash, size, contentType, name, user,
                 effective = state == VersionStates.Effective ? now : (DateTimeOffset?)null, state, scan, now, text,
             }, ct);
+        if (scan == ScanStates.Clean)
+        {
+            await documentText.QueueAsync(versionId, name, text, ct);
+        }
         await session.ExecAsync(
             """
             update documents.document set pending_version_id = case when @checkIn then null else @versionId end,

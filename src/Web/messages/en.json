@@ -4173,7 +4173,17 @@
       "downloadVersion": "Download {version}",
       "restored": "The version was restored as a new version.",
       "restore": "Restore {version}",
-      "viewOnlyNotice": "This library is view only. You can preview this file, and the preview carries your name and the time, but it cannot be downloaded."
+      "viewOnlyNotice": "This library is view only. You can preview this file, and the preview carries your name and the time, but it cannot be downloaded.",
+      "officeEdit": "Edit in browser",
+      "officeConnect": "Connect Microsoft 365 to edit in the browser",
+      "officeTitle": "Editing in Office for the web",
+      "officeIntro": "The document is checked out to you and a copy is in your OneDrive. Edit it in Office for the web, close the editor, then check it in here to save it as a new version.",
+      "officeOpen": "Open in Office for the web",
+      "officeCheckIn": "Check in from Office",
+      "officeDiscard": "Discard browser edit",
+      "officeStarted": "The document is checked out to you. Open it in Office for the web to edit.",
+      "officeCheckedIn": "Your changes from Office are saved as a new version.",
+      "officeDiscarded": "The browser edit was discarded and the document is checked in again."
     },
     "kb": {
       "title": "Knowledge",
@@ -6464,7 +6474,8 @@
         "directory_sync": "Directory sync",
         "mail": "Mail",
         "calendar": "Calendar",
-        "free_busy": "Free and busy times"
+        "free_busy": "Free and busy times",
+        "office_editing": "Office editing in the browser"
       },
       "featureOn": "On",
       "featureOff": "Off",
@@ -6480,7 +6491,8 @@
         "user_read": "Sign in as the employee and read their own profile",
         "mail_read_basic": "Read the employee's own mail headers, without message text",
         "mail_read": "Read the employee's own mail, used only for the one-line preview",
-        "calendars_read_basic": "Read the employee's own calendar events, without body or attachments"
+        "calendars_read_basic": "Read the employee's own calendar events, without body or attachments",
+        "files_read_write": "Read and change the employee's own OneDrive files, only for the copy they edit in the browser"
       },
       "application": "application",
       "delegated": "on behalf of the employee",
