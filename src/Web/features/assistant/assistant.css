@@ -250,3 +250,11 @@
   padding: 0;
   border: 0;
 }
+
+/* Starter chips and the mode choice are 44px on a touch screen or a phone (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  .assistant-starters .ui-chip,
+  .assistant-composer-bar select {
+    min-block-size: 2.75rem;
+  }
+}

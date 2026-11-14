@@ -591,3 +591,10 @@ button.ui-cal-row-toggle {
 .ui-cal-month td[data-outside] .ui-cal-month-day {
   color: var(--tb-color-text-secondary);
 }
+
+/* Layer chips are 44px on a touch screen or a phone (DLS-085). */
+@media (pointer: coarse), (width <= 40rem) {
+  .ui-cal-layer {
+    min-block-size: 2.75rem;
+  }
+}
