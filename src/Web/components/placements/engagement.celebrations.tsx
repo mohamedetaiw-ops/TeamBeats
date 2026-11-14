@@ -9,7 +9,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 import "@/features/engagement/engagement.css";
 
@@ -23,19 +23,20 @@ export default function CelebrationsCard({ props }: PlacementProps) {
   const k = useTranslations("engagement.celebrations");
   const locale = useLocale();
   const format = useFormatter();
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 4;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 4);
   const title = localized(props.title, locale) || t("celebrationsTitle");
   const { answer, retry } = useHomeAnswer<CelebrationsView>(`${engagementApi}/celebrations`);
 
-  const shell = (body: React.ReactNode, busy = false) => (
-    <Widget title={title} busy={busy} action={<Link href={celebrationsHref}>{t("celebrationsAll")}</Link>}>
+  const shell = (body: React.ReactNode, busy = false, total = 0) => (
+    <Widget title={title} busy={busy} action={<Link href={celebrationsHref}>{t("celebrationsAll")}</Link>} more={{ href: celebrationsHref, total, shown: top }}>
       {body}
     </Widget>
   );
 
   if (answer === "loading") return shell(<StateView kind="loading" minBlockSize="8rem" />, true);
   if (answer === "failed") return shell(<StateView kind="error" title={t("failed")} message="" action={<Button onClick={retry}>{t("retry")}</Button>} />);
-  const entries = answer === "off" ? [] : [...answer.today, ...answer.upcoming, ...answer.joiners].slice(0, top);
+  const all = answer === "off" ? [] : [...answer.today, ...answer.upcoming, ...answer.joiners];
+  const entries = all.slice(0, top);
   if (entries.length === 0) return shell(<StateView kind="empty" title={t("celebrationsEmpty")} message="" icon="calendar" />);
   const when = (e: CelebrationEntry) => {
     if (e.today) return t("today");
@@ -55,5 +56,7 @@ export default function CelebrationsCard({ props }: PlacementProps) {
         </li>
       ))}
     </ul>,
+    false,
+    all.length,
   );
 }

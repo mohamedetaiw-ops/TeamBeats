@@ -12,7 +12,7 @@ import {
 } from "@/lib/documents/types";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/documents/documents.css";
 
 type Answer = "loading" | "failed" | "missing" | ItemSummary[];
@@ -26,10 +26,7 @@ export default function RecentDocuments({ props }: PlacementProps) {
   const locale = useLocale();
   const format = useFormatter();
   const library = typeof props.library === "string" ? props.library : "";
-  const top =
-    typeof props.top === "number" && props.top >= 1 && props.top <= 20
-      ? Math.floor(props.top)
-      : 5;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 20 ? Math.floor(props.top) : 5);
   const title = localized(props.title, locale) || t("title");
   const url = `/api/v1/documents/libraries/${encodeURIComponent(library)}/items?recursive=true&sort=modified&desc=true&limit=${top}`;
   const [answer, setAnswer] = useState<Answer>("loading");

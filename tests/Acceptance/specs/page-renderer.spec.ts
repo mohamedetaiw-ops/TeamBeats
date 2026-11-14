@@ -96,6 +96,9 @@ test.describe("page renderer faults and events", () => {
     await expect(placement("after").locator("data")).toBeVisible();
     await expect(placement("throws").getByText(msg("en", "experience.placement.failed"))).toBeVisible();
     await expect(placement("missing").getByText(msg("en", "experience.placement.unavailable"))).toBeVisible();
+    // FR-073: a state is framed in the shared widget frame, so the placement keeps its place beside its neighbours.
+    await expect(placement("throws").locator('.ui-widget [data-placement-state="failed"]')).toBeVisible();
+    await expect(placement("missing").locator('.ui-widget [data-placement-state="unavailable"]')).toBeVisible();
     await expect(placement("slow").locator('[data-fault="slow-done"]')).toBeAttached({ timeout: 15_000 });
   });
 

@@ -7,7 +7,7 @@ import { communityHref, engagementApi, isGuid, postHref, type FeedPage } from "@
 import { snippet, useHomeAnswer } from "@/lib/engagementHome";
 import { Button } from "@/components/ui/Button";
 import { StateView } from "@/components/ui/StateView";
-import { Widget } from "@/components/ui/Widget";
+import { useWidgetBudget, Widget } from "@/components/ui/Widget";
 import "@/features/services/home.css";
 
 /**
@@ -19,7 +19,7 @@ export default function DiscussionsCard({ props }: PlacementProps) {
   const locale = useLocale();
   const format = useFormatter();
   const community = typeof props.community === "string" && isGuid(props.community) ? props.community : "";
-  const top = typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 3;
+  const top = useWidgetBudget(typeof props.top === "number" && props.top >= 1 && props.top <= 10 ? Math.floor(props.top) : 3);
   const title = localized(props.title, locale) || t("discussionsTitle");
   const { answer, retry } = useHomeAnswer<FeedPage>(community ? `${engagementApi}/communities/${community}/posts?limit=${top}` : "");
 
