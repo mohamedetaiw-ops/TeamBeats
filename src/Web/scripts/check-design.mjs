@@ -8,6 +8,8 @@
 //     filters from FilterToolbar (spec 036 DLS-106). The strips that predate the rule are named in `ownStrips` below.
 //  6. Every page under app/ starts with the shared page header (spec 036 DLS-105, DLS-118). Pages that predate the
 //     rule are listed in scripts/page-header-baseline.json; the list may only shrink, and a new page is never added.
+//  7. Every shared component in components/ui has an entry in the gallery (spec 036 DLS-117), so its states are
+//     reviewed and covered by the design suite. The gallery is everything under app/ui-gallery.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, extname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -99,6 +101,18 @@ if (process.argv.includes("--write-page-header-baseline")) {
   writeFileSync(baselinePath, JSON.stringify(missing.sort(), null, 2) + "\n");
   console.log(`Wrote ${missing.length} pages to scripts/page-header-baseline.json.`);
   process.exit(0);
+}
+
+// Rule 7: a gallery entry for every shared component.
+{
+  const gallery = walk(join(root, "app", "ui-gallery")).map((file) => readFileSync(file, "utf8")).join("\n");
+  for (const name of readdirSync(join(root, "components", "ui"))) {
+    if (!name.endsWith(".tsx")) continue;
+    const component = name.slice(0, -4);
+    if (!gallery.includes(`"@/components/ui/${component}"`)) {
+      errors.push(`components/ui/${name}: no gallery entry; show the component and its states under app/ui-gallery (DLS-117)`);
+    }
+  }
 }
 
 if (errors.length > 0) {

@@ -7563,6 +7563,14 @@
       "nodeDevices": "Devices",
       "treeChosen": "Open: {name}"
     },
+    "filters": {
+      "title": "Filter toolbar",
+      "intro": "One row to search and filter a list. Filters in force show as chips that can be removed, with Clear all.",
+      "label": "Search requests",
+      "hint": "Search by title or requester",
+      "status": "Status",
+      "any": "Any status"
+    },
     "data": {
       "title": "Data blocks",
       "intro": "Tables, grids and headline numbers. Rows, filters and actions come from the feature; the blocks only show them.",
