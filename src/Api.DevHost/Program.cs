@@ -108,6 +108,10 @@ public sealed class DevHostProgram
         {
             builder.Services.AddHostedService<TeamBeats.Modules.Search.SearchBootstrapWorker>();
         }
+        if (builder.Configuration.GetValue<bool>(TeamBeats.Modules.Search.SavedSearchWorker.InProcessKey))
+        {
+            builder.Services.AddHostedService<TeamBeats.Modules.Search.SavedSearchWorker>();
+        }
         var app = builder.Build();
         app.UseTeamBeatsApi(endpoints =>
         {

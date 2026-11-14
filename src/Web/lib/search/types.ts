@@ -109,3 +109,6 @@ export type SearchSummaryView = {
   citations: SummaryCitation[];
 };
 export type AiSummarySetting = { enabled: boolean; updatedAt: string | null };
+
+/** A search the person saved (US7); alerts bring at most one notification a day about new items that match. */
+export type SavedSearchView = { id: string; query: string; alerts: boolean; createdAt: string; alertedAt: string | null };

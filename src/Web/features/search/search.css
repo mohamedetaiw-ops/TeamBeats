@@ -242,3 +242,14 @@
 .search-summary-sources {
   padding-inline-start: var(--tb-space-lg);
 }
+
+/* Saving a search (US7) and the list of saved searches. */
+.search-save {
+  display: grid;
+  gap: var(--tb-space-xs);
+}
+
+.search-saved {
+  display: grid;
+  gap: var(--tb-space-sm);
+}

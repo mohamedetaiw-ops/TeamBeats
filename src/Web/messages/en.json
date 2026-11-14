@@ -1974,7 +1974,8 @@
       "integration_alert": "Connection alerts",
       "system": "System messages",
       "space_activity": "Activity in your spaces",
-      "bookings": "Your bookings"
+      "bookings": "Your bookings",
+      "search_alerts": "Alerts for your saved searches"
     },
     "filter": {
       "label": "Show",
@@ -5137,6 +5138,34 @@
       "helpful": "Helpful",
       "notHelpful": "Not helpful",
       "thanks": "Thank you. Your feedback helps improve summaries.",
+      "failed": "That did not work. Try again."
+    },
+    "save": {
+      "action": "Save this search",
+      "list": "Your saved searches",
+      "saved": "Search saved. You will get a daily alert when new results match.",
+      "failed": "That did not work. Try again."
+    },
+    "saved": {
+      "title": "Saved searches",
+      "description": "Searches you saved. With alerts on, you hear once a day about new results you can open.",
+      "caption": "Your saved searches",
+      "query": "Search",
+      "alerts": "Daily alert",
+      "alertsLabel": "Daily alert for {query}",
+      "alerted": "Last alert",
+      "never": "Not yet",
+      "actions": "Actions",
+      "remove": "Remove",
+      "removeLabel": "Remove the saved search {query}",
+      "removed": "Removed {query}.",
+      "alertsOn": "Daily alerts are on for {query}.",
+      "alertsOff": "Daily alerts are off for {query}.",
+      "emptyTitle": "No saved searches yet",
+      "empty": "Search for something, then choose Save this search on the results page.",
+      "deniedTitle": "Saved searches are not available",
+      "denied": "Your organization does not include saved searches.",
+      "errorTitle": "Saved searches did not load",
       "failed": "That did not work. Try again."
     }
   },

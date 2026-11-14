@@ -9,7 +9,8 @@ import { hostOrigin } from "../support/stack";
  * Search (spec 012 T009): the shell search box suggests permitted items and opens the results page, which filters by
  * source, marks a best bet as recommended and offers no result help, in English and Arabic with axe; the search
  * administrator manages best bets and synonyms from the admin area, and proposes a retrieval change that the release
- * gate holds (no agent has retrieval cases yet) and applies it with a reason (T007).
+ * gate holds (no agent has retrieval cases yet) and applies it with a reason (T007). A person saves a search with its
+ * daily alert and turns the alert off or removes it from their saved searches (T015).
  */
 const body = (text: string) => ({ blocks: [{ type: "paragraph", children: [{ text }] }] });
 
@@ -169,6 +170,32 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await summary.getByRole("button", { name: msg(locale, "search.summary.notHelpful") }).click();
       await expect(summary.getByRole("status")).toHaveText(msg(locale, "search.summary.thanks"));
       expect(feedback).toEqual({ helpful: false, reason: null });
+    });
+
+    test("a person saves a search with a daily alert and manages it from saved searches", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/search?q=canteen`);
+      const save = page.getByTestId("search-save");
+      await save.getByRole("button", { name: msg(locale, "search.save.action") }).click();
+      await expect(save.getByRole("status")).toHaveText(msg(locale, "search.save.saved"));
+      // Saving the same search again is refused with the API's message.
+      await save.getByRole("button", { name: msg(locale, "search.save.action") }).click();
+      await expect(save.getByRole("alert")).toBeVisible();
+
+      await save.getByRole("link", { name: msg(locale, "search.save.list") }).click();
+      await page.waitForURL(/\/search\/saved$/);
+      await expect(page.getByRole("heading", { level: 1, name: msg(locale, "search.saved.title") })).toBeVisible();
+      const list = page.getByTestId("saved-searches");
+      await expect(list.getByRole("link", { name: "canteen" })).toHaveAttribute("href", "/search?q=canteen");
+      const alerts = list.getByRole("switch", { name: msg(locale, "search.saved.alertsLabel", { query: "canteen" }) });
+      await expect(alerts).toBeChecked();
+      await expectAccessible(page, testInfo, `saved-searches-${locale}`);
+      await alerts.click();
+      await expect(list.getByRole("status")).toHaveText(msg(locale, "search.saved.alertsOff", { query: "canteen" }));
+      await expect(alerts).not.toBeChecked();
+      await list.getByRole("button", { name: msg(locale, "search.saved.removeLabel", { query: "canteen" }) }).click();
+      await expect(list.getByRole("status").filter({ hasText: msg(locale, "search.saved.removed", { query: "canteen" }) })).toBeVisible();
+      await expect(list.getByText(msg(locale, "search.saved.emptyTitle"))).toBeVisible();
     });
 
     test("the search administrator adds and removes synonyms", async ({ page }, testInfo) => {

@@ -20915,6 +20915,94 @@
         }
       }
     },
+    "/api/v1/search/saved": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Search"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/search/saved/{id}/alerts": {
+      "put": {
+        "tags": [
+          "Search"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SavedSearchAlertsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/search/saved/{id}": {
+      "delete": {
+        "tags": [
+          "Search"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/search/federated-sources": {
       "get": {
         "tags": [
@@ -36872,6 +36960,41 @@
               {
                 "$ref": "#/components/schemas/PageDefinition"
               }
+            ]
+          }
+        }
+      },
+      "SavedSearchAlertsRequest": {
+        "required": [
+          "alerts"
+        ],
+        "type": "object",
+        "properties": {
+          "alerts": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          }
+        }
+      },
+      "SavedSearchRequest": {
+        "required": [
+          "query",
+          "alerts"
+        ],
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "alerts": {
+            "type": [
+              "null",
+              "boolean"
             ]
           }
         }

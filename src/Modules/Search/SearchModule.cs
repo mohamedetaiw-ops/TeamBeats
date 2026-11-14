@@ -29,6 +29,9 @@ public static class SearchModule
         services.AddScoped<SearchTuning>();
         services.AddScoped<FederatedSearch>();
         services.AddScoped<SearchSummariesService>();
+        services.AddScoped<SavedSearches>();
+        services.AddScoped<SavedSearchScheduler>();
+        services.AddMessageHandler<SavedSearchDue, SavedSearchChecker>("search.saved_search_check");
         services.AddScoped<SearchRetrieval>();
         services.AddScoped<ISearchRetrieval>(sp => sp.GetRequiredService<SearchRetrieval>());
         services.AddScoped<IRetrievalEvaluation>(sp => sp.GetRequiredService<SearchRetrieval>());
@@ -88,6 +91,26 @@ public static class SearchModule
             var view = await summaries.SetAsync(request, ct);
             await session.CommitAsync(ct);
             return Results.Ok(view);
+        });
+        // Saved searches with daily alerts (US7, FR-019): each person sees and changes only their own.
+        root.MapGet("/saved", async (SavedSearches saved, CancellationToken ct) => Results.Ok(await saved.ListAsync(ct)));
+        root.MapPost("/saved", async (SavedSearchRequest request, SavedSearches saved, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await saved.SaveAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/search/saved/{view.Id}", view);
+        });
+        root.MapPut("/saved/{id:guid}/alerts", async (Guid id, SavedSearchAlertsRequest request, SavedSearches saved, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await saved.SetAlertsAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        root.MapDelete("/saved/{id:guid}", async (Guid id, SavedSearches saved, IDbSession session, CancellationToken ct) =>
+        {
+            await saved.RemoveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
         });
         root.MapGet("/federated-sources", async (FederatedSearch federated, CancellationToken ct) => Results.Ok(await federated.ListAsync(ct)));
         root.MapPut("/federated-sources/{source}", async (string source, FederatedSourceRequest request, FederatedSearch federated, IDbSession session,
