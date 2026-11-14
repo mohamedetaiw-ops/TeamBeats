@@ -327,4 +327,11 @@ public sealed class GoogleDrive(GoogleApi api, GoogleSignIn signIn, IHttpClientF
         }
         return new RepositoryPermission(new RepositoryPrincipal(type, GoogleApi.Text(p, "emailAddress")?.ToLowerInvariant(), GoogleApi.Text(p, "domain")?.ToLowerInvariant()), role);
     }
+
+    /// <summary>Google Drive libraries are read only in TeamBeats; writes happen in Drive itself.</summary>
+    public Task<RepositoryWrite> UploadAsUserAsync(Guid connectionId, string containerId, string? folderId, string name, Stream content, long length,
+        string userEmail, CancellationToken ct = default) => Task.FromResult(RepositoryWrite.Not("forbidden"));
+
+    public Task<RepositoryWrite> RenameAsUserAsync(Guid connectionId, string itemId, string name, string userEmail, CancellationToken ct = default) =>
+        Task.FromResult(RepositoryWrite.Not("forbidden"));
 }

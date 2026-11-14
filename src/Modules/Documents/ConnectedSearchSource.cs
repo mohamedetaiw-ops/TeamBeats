@@ -8,7 +8,7 @@ namespace TeamBeats.Modules.Documents;
 
 /// <summary>
 /// Files of connected libraries for search (spec 011 FR-027, spec 012): the name, the folder path and the type from the
-/// derived copy that <see cref="ConnectedSync"/> keeps. At query time a person reads an item only when the library's
+/// derived copy that <see cref="ConnectedSync"/> keeps, classified by the mapping of its Purview label (FR-032). At query time a person reads an item only when the library's
 /// audience includes them, they are not a guest, and the mirrored SharePoint readers list them by email; mirrored
 /// readers only ever narrow access (ADR-0016). Results link to a TeamBeats page that sends the person on to SharePoint,
 /// where SharePoint checks access again.
@@ -22,7 +22,8 @@ internal sealed class ConnectedSearchSource(IDbSession session, IEntitlementServ
     {
         var row = await session.QuerySingleOrDefaultAsync(
             """
-            select i.name, i.media_type, i.modified_at, i.library_id, l.org_unit_id, l.classification_default,
+            select i.name, i.media_type, i.modified_at, i.library_id, l.org_unit_id,
+              case when i.label_id is null then l.classification_default else coalesce(m.classification, 'confidential') end,
               (with recursive up as (
                  select p.parent_remote_id, p.name, 1 as depth from documents.connected_item p where p.library_id = i.library_id and p.remote_id = i.parent_remote_id
                  union all
@@ -30,6 +31,7 @@ internal sealed class ConnectedSearchSource(IDbSession session, IEntitlementServ
                  where u.depth < 20)
                select string_agg(name, ' / ' order by depth desc) from up) as path
             from documents.connected_item i join documents.library l on l.id = i.library_id
+            left join documents.sensitivity_label_map m on m.connection_id = l.connection_id and m.label_id = i.label_id
             where i.id = @itemId and not i.folder and l.status = 'active' and l.source = 'connected'
             """, new { itemId },
             r => new

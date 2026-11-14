@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
@@ -510,7 +511,8 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         {
             var reader = UpnOf(bearer) is { Length: > 0 } readerUpn ? readerUpn
                 : data.CurrentUsers().FirstOrDefault(u => u.Id == userId).Properties?.GetValueOrDefault("mail") as string;
-            return SharePointUser(directory, Uri.UnescapeDataString(path), FakeIdentityProvider.ParseQuery(uri.Query), reader?.ToLowerInvariant(), scopes);
+            return await SharePointUserAsync(request, directory, Uri.UnescapeDataString(path), FakeIdentityProvider.ParseQuery(uri.Query), reader?.ToLowerInvariant(),
+                scopes, ct);
         }
         var me = data.CurrentUsers().FirstOrDefault(u => u.Id == userId);
         // Tokens hold everything the fake needs, so a mailbox token still works after the host restarts (staging redeploys).
@@ -619,14 +621,16 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
     // SharePoint Online (spec 011 US9): sites granted to the application with Sites.Selected, their document libraries
     // and items. Readers are the emails that may read an item; an item without readers is read by everyone in the
     // directory. Application tokens list, read items with permissions and read changes; delegated tokens with
-    // Files.Read.All list and read content as the person, so items they may not read are never returned.
+    // Files.Read.All list and read content as the person, so items they may not read are never returned. With
+    // Files.ReadWrite.All they upload and rename where they may write: into or on items without readers, which the site's
+    // members may change; items with readers are read only to those readers. A Purview label is an ID and a name.
 
     public sealed record SpSite(string Id, string Directory, string Host, string Path, string Name, bool Granted);
 
     public sealed record SpDrive(string Id, string SiteId, string Name);
 
     public sealed record SpItem(string Id, string DriveId, string? ParentId, string Name, bool Folder, byte[] Content, IReadOnlyList<string> Readers,
-        DateTimeOffset Modified, long Version, bool Deleted = false);
+        DateTimeOffset Modified, long Version, bool Deleted = false, string? LabelId = null, string? LabelName = null);
 
     private readonly ConcurrentDictionary<string, SpSite> _spSites = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, SpDrive> _spDrives = new(StringComparer.Ordinal);
@@ -671,6 +675,13 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             Version = Interlocked.Increment(ref _spVersion),
         };
 
+    /// <summary>Puts a Microsoft Purview sensitivity label on a file, or takes it off with null.</summary>
+    public void SetSharePointLabel(string itemId, string? labelId, string? labelName = null) =>
+        _spItems[itemId] = _spItems[itemId] with { LabelId = labelId, LabelName = labelName, Version = Interlocked.Increment(ref _spVersion) };
+
+    /// <summary>The current files and folders of a drive, for tests that check what a person wrote.</summary>
+    public IReadOnlyList<SpItem> SharePointItems(string driveId) => _spItems.Values.Where(i => i.DriveId == driveId && !i.Deleted).ToList();
+
     public void DeleteSharePointItem(string itemId) =>
         _spItems[itemId] = _spItems[itemId] with { Deleted = true, Version = Interlocked.Increment(ref _spVersion) };
 
@@ -703,6 +714,10 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         {
             body["file"] = new { mimeType = FileMime(i.Name) };
             body["size"] = i.Content.Length;
+            if (i.LabelId is not null)
+            {
+                body["sensitivityLabel"] = new { labelId = i.LabelId, displayName = i.LabelName };
+            }
         }
         if (withDeleted && i.Deleted)
         {
@@ -802,8 +817,12 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
         return SpMissing();
     }
 
-    /// <summary>Delegated calls with Files.Read.All: children, item and content, limited to what the person may read.</summary>
-    private HttpResponseMessage SharePointUser(string directory, string path, IReadOnlyDictionary<string, string> query, string? reader, IReadOnlySet<string> scopes)
+    /// <summary>
+    /// Delegated calls with Files.Read.All: children, item and content, limited to what the person may read. With
+    /// Files.ReadWrite.All also upload by path (replacing a file of the same name as a new version) and rename.
+    /// </summary>
+    private async Task<HttpResponseMessage> SharePointUserAsync(HttpRequestMessage request, string directory, string path, IReadOnlyDictionary<string, string> query,
+        string? reader, IReadOnlySet<string> scopes, CancellationToken ct)
     {
         if (!scopes.Overlaps(["Files.Read.All", "Files.ReadWrite.All"]))
         {
@@ -816,6 +835,10 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             return SpMissing();
         }
         bool Visible(SpItem i) => i.Readers.Count == 0 || (reader is not null && i.Readers.Contains(reader));
+        if (request.Method != HttpMethod.Get)
+        {
+            return await SharePointWriteAsync(request, driveId, path, scopes, Visible, ct);
+        }
         if (segments is [_, "items", var folder, "children"])
         {
             return SpChildren(driveId, folder, query, Visible);
@@ -834,6 +857,71 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             {
                 return new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(item.Content) };
             }
+        }
+        return SpMissing();
+    }
+
+    private async Task<HttpResponseMessage> SharePointWriteAsync(HttpRequestMessage request, string driveId, string path, IReadOnlySet<string> scopes,
+        Func<SpItem, bool> visible, CancellationToken ct)
+    {
+        if (!scopes.Contains("Files.ReadWrite.All"))
+        {
+            return SpDenied();
+        }
+        var rest = path[$"/v1.0/drives/{driveId}/items/".Length..];
+        if (request.Method == HttpMethod.Put && rest.EndsWith(":/content", StringComparison.Ordinal) && rest.IndexOf(":/", StringComparison.Ordinal) is var colon and > 0)
+        {
+            var folder = rest[..colon];
+            var name = rest[(colon + 2)..^":/content".Length];
+            SpItem? parent = null;
+            if (folder != "root" && (!_spItems.TryGetValue(folder, out parent) || parent.DriveId != driveId || parent.Deleted || !parent.Folder || !visible(parent)))
+            {
+                return SpMissing();
+            }
+            if (parent is { Readers.Count: > 0 })
+            {
+                return SpDenied();
+            }
+            var content = request.Content is null ? [] : await request.Content.ReadAsByteArrayAsync(ct);
+            var parentId = parent?.Id;
+            var existing = _spItems.Values.FirstOrDefault(i => i.DriveId == driveId && i.ParentId == parentId && !i.Deleted
+                && string.Equals(i.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (existing is { Folder: true })
+            {
+                return new HttpResponseMessage(HttpStatusCode.Conflict) { Content = new StringContent("{\"error\":{\"code\":\"nameAlreadyExists\"}}") };
+            }
+            if (existing is not null)
+            {
+                EditSharePointItem(existing.Id, content: content);
+                return Json(SpItemJson(_spItems[existing.Id]));
+            }
+            var id = AddSharePointItem(driveId, parentId, name, content: content);
+            return new HttpResponseMessage(HttpStatusCode.Created) { Content = JsonContent.Create(SpItemJson(_spItems[id])) };
+        }
+        if (request.Method == HttpMethod.Patch && !rest.Contains('/', StringComparison.Ordinal) && _spItems.TryGetValue(rest, out var item) && item.DriveId == driveId
+            && !item.Deleted)
+        {
+            if (!visible(item))
+            {
+                return SpMissing();
+            }
+            if (item.Readers.Count > 0)
+            {
+                return SpDenied();
+            }
+            var body = request.Content is null ? default : await request.Content.ReadFromJsonAsync<JsonElement>(ct);
+            var name = body.ValueKind == JsonValueKind.Object && body.TryGetProperty("name", out var n) ? n.GetString() : null;
+            if (string.IsNullOrEmpty(name))
+            {
+                return new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("{\"error\":{\"code\":\"invalidRequest\"}}") };
+            }
+            if (_spItems.Values.Any(i => i.DriveId == driveId && i.ParentId == item.ParentId && i.Id != item.Id && !i.Deleted
+                && string.Equals(i.Name, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                return new HttpResponseMessage(HttpStatusCode.Conflict) { Content = new StringContent("{\"error\":{\"code\":\"nameAlreadyExists\"}}") };
+            }
+            EditSharePointItem(item.Id, name: name);
+            return Json(SpItemJson(_spItems[item.Id]));
         }
         return SpMissing();
     }

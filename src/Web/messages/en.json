@@ -6518,7 +6518,8 @@
         "calendar": "Calendar",
         "free_busy": "Free and busy times",
         "office_editing": "Office editing in the browser",
-        "sharepoint_documents": "SharePoint documents"
+        "sharepoint_documents": "SharePoint documents",
+        "sharepoint_upload": "SharePoint uploads"
       },
       "featureOn": "On",
       "featureOff": "Off",
@@ -6537,7 +6538,8 @@
         "calendars_read_basic": "Read the employee's own calendar events, without body or attachments",
         "files_read_write": "Read and change the employee's own OneDrive files, only for the copy they edit in the browser",
         "sites_selected": "Read only the SharePoint sites you allow, to keep connected libraries and search in step",
-        "files_read_all": "Let each employee browse, preview and download SharePoint files they can already open in SharePoint"
+        "files_read_all": "Let each employee browse, preview and download SharePoint files they can already open in SharePoint",
+        "files_read_write_all": "Let each employee upload files and rename items in connected SharePoint libraries where SharePoint lets them"
       },
       "application": "application",
       "delegated": "on behalf of the employee",

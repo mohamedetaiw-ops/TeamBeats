@@ -6518,7 +6518,8 @@
         "calendar": "التقويم",
         "free_busy": "أوقات التوفر والانشغال",
         "office_editing": "التحرير في Office عبر المتصفح",
-        "sharepoint_documents": "مستندات SharePoint"
+        "sharepoint_documents": "مستندات SharePoint",
+        "sharepoint_upload": "الرفع إلى SharePoint"
       },
       "featureOn": "مفعلة",
       "featureOff": "متوقفة",
@@ -6537,7 +6538,8 @@
         "calendars_read_basic": "قراءة أحداث تقويم الموظف دون المحتوى أو المرفقات",
         "files_read_write": "قراءة ملفات OneDrive الخاصة بالموظف وتغييرها، فقط للنسخة التي يحررها في المتصفح",
         "sites_selected": "قراءة مواقع SharePoint التي تسمح بها فقط، لإبقاء المكتبات المتصلة والبحث محدّثة",
-        "files_read_all": "السماح لكل موظف بتصفح ملفات SharePoint ومعاينتها وتنزيلها إذا كان يستطيع فتحها في SharePoint"
+        "files_read_all": "السماح لكل موظف بتصفح ملفات SharePoint ومعاينتها وتنزيلها إذا كان يستطيع فتحها في SharePoint",
+        "files_read_write_all": "السماح لكل موظف برفع الملفات وإعادة تسمية العناصر في مكتبات SharePoint المتصلة حيث يسمح له SharePoint بذلك"
       },
       "application": "تطبيق",
       "delegated": "نيابة عن الموظف",

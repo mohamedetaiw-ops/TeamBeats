@@ -190,16 +190,19 @@ public sealed class ConnectedSync(
         var id = await session.ScalarAsync<Guid>(
             """
             insert into documents.connected_item (tenant_id, id, library_id, remote_id, parent_remote_id, name, folder, media_type, size, modified_at,
-              remote_version, web_link, readers, anyone, synced_at)
-            values (platform.current_tenant_id(), @newId, @libraryId, @remote, @parent, @name, @folder, @type, @size, @modified, @version, @link, @readers, @anyone, @now)
+              remote_version, web_link, readers, anyone, label_id, label_name, synced_at)
+            values (platform.current_tenant_id(), @newId, @libraryId, @remote, @parent, @name, @folder, @type, @size, @modified, @version, @link, @readers, @anyone,
+              @labelId, @labelName, @now)
             on conflict (tenant_id, library_id, remote_id) do update set parent_remote_id = @parent, name = @name, folder = @folder, media_type = @type,
-              size = @size, modified_at = @modified, remote_version = @version, web_link = @link, readers = @readers, anyone = @anyone, synced_at = @now
+              size = @size, modified_at = @modified, remote_version = @version, web_link = @link, readers = @readers, anyone = @anyone,
+              label_id = @labelId, label_name = @labelName, synced_at = @now
             returning id
             """,
             new
             {
                 newId = Ids.New(), libraryId, remote = item.Id, parent, name = item.Name, folder = item.Folder, type = item.MediaType, size = item.Size,
-                modified = item.ModifiedAt, version = item.Version, link = item.WebLink, readers, anyone, now = clock.UtcNow,
+                modified = item.ModifiedAt, version = item.Version, link = item.WebLink, readers, anyone, labelId = item.Label?.Id, labelName = item.Label?.Name,
+                now = clock.UtcNow,
             }, ct);
         if (!item.Folder)
         {
