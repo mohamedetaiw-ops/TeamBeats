@@ -1895,3 +1895,22 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - The worker (`AgentBriefingService`, every minute) claims due rows per tenant, moving each to its next time before running, so a crash never sends one twice. Each briefing runs in its own scope as the subscriber (027 AGV-003) through the normal runtime in mode `briefing`, with their permissions at that moment. It is read only: write tools are refused with `tool.not_in_briefing`, since nobody is there to confirm.
 - Nothing runs, and nothing is sent, when the person is disabled or a test identity, the agent is not published, it stopped offering briefings, the person left its audience, the policy no longer allows it, or agents are switched off. A leaver's subscriptions are deleted on `UserDeprovisioned`.
 - The answer arrives as a notification in the new category `agent_briefings` (not mandatory, no email by default), template `agents.briefing`, linking to the agent, with the answer cut at 1,500 characters.
+
+## Spec 020 R2 slice 5: department templates (T020, section 12 templates 7 to 12)
+
+- The six department templates are data in `src/Modules/Agents/Templates/department.json` behind `ai.agents.department` (Workplace Plus and above, migration 0036), each with a platform suite `template.<id>` in Arabic and English. No runtime code changed (SC-003).
+- Tools are the registered ones that fit each row: Onboarding uses knowledge search, the task inbox, request status and request preparation (L2); People Directory uses `find_person` and `get_person` (L0); Learning prepares training requests (L1); Finance and Expenses prepares claims as service requests (L2), since the expenses module has no agent tool yet.
+- Procurement is L3 as the table says, so the library shows it as not ready (autonomy above what is built) and install is refused until spec 027 builds L3. Default kept: it also lists `submit_service_request`; ERP status comes later through a connector tool.
+- Internal Communications ships at its default L1 and only drafts news (`draft_news`, confirmed by the person). Publishing at L3 with communications owner approval waits for spec 027 L3; the instructions say it never publishes.
+- New categories: people, learning, procurement, finance and communications.
+- Evaluation cases may now name tools without a module prefix (`find_person`), matching how such tools are registered.
+
+## Spec 020 R2 slice 6: streamed answers and resume after restart (T021, plan item 6, closes T004 and T005)
+
+- `POST /agents/{id}/runs` with `Accept: text/event-stream` streams `run` (its ID), `step` (each tool decision, never parameters), `delta` (answer text) and `done` (the checked answer, as the plain call returns). Every check runs before the stream starts, so a refusal is still a problem response. The run goes on if the person leaves the page; `GET /agents/runs/{id}/result` returns it to its person only (404 for anyone else and other tenants).
+- The gateway now reads tool calls from streamed provider replies (OpenAI format, pieces keyed by index), and the fake router streams them the same way.
+- A person's own run (mode run, not routed by the assistant) is durable: after every model turn and its tool calls the run row, its checkpoint and the work so far are committed (`IDbSession.CheckpointAsync`). Test panel, evaluation, briefing and assistant-routed runs stay in their caller's transaction, unchanged.
+- A worker (`AgentRunResumeService`, every minute) claims durable runs idle for 3 minutes with a checkpoint, raises `attempt`, and continues each as its person from the last checkpoint. Kill switch on, package without agents or the person out of the audience stop the run instead. Each run is resumed at most twice; after that the purge closes it as interrupted (10 minutes, as before). The purge now keeps checkpoints of running runs.
+- Every run update checks `attempt`: a request that lost its run to the worker fails with `conflict.agent_run.resumed_elsewhere` and rolls back its work since the last checkpoint, so a tool call is not kept twice. Default kept: a tool with effects outside TeamBeats (L3, not built) would need its own idempotency key before it can be made durable.
+- Runs now keep their answer and cited sources (`agents.run.answer`, `cited`) for the result endpoint; they are deleted with the run after the record retention.
+- Web: the agent conversation streams the answer and shows the tool in use; when the connection drops after the run started, the turn offers "Check for the answer".

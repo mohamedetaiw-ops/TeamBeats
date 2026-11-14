@@ -2544,5 +2544,6 @@
   "validation.agent.briefing_days": "اختر يوما واحدا على الأقل من الأسبوع.",
   "validation.agent.briefing_time_zone": "اختر منطقة زمنية معروفة.",
   "validation.agent_policy.risk_classes": "اختر فئات المخاطر من منخفضة ومتوسطة وعالية.",
-  "conflict.agent.briefing_not_offered": "هذا الوكيل لا يقدم لك إحاطة يومية الآن."
+  "conflict.agent.briefing_not_offered": "هذا الوكيل لا يقدم لك إحاطة يومية الآن.",
+  "conflict.agent_run.resumed_elsewhere": "استؤنف هذا التشغيل بعد انقطاع. افتح نتيجته لمعرفة حالته."
 }

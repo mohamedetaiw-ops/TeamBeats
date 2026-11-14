@@ -142,6 +142,8 @@ public static class OpenAiWire
     {
         await using var stream = await response.Content.ReadAsStreamAsync(token);
         using var reader = new StreamReader(stream, Encoding.UTF8);
+        // Tool calls arrive in pieces keyed by index: the id and name first, then the arguments a few characters at a time.
+        var calls = new SortedDictionary<int, (string Id, string Name, StringBuilder Arguments)>();
         while (true)
         {
             string? line;
@@ -181,9 +183,24 @@ public static class OpenAiWire
             {
                 yield return new ProviderStreamPart(delta, null);
             }
+            if (choice?["delta"]?["tool_calls"] is JsonArray pieces)
+            {
+                foreach (var piece in pieces)
+                {
+                    var index = piece?["index"]?.GetValue<int>() ?? 0;
+                    var call = calls.TryGetValue(index, out var known) ? known : (string.Empty, string.Empty, new StringBuilder());
+                    var id = piece?["id"]?.GetValue<string>();
+                    var name = piece?["function"]?["name"]?.GetValue<string>();
+                    call = (string.IsNullOrEmpty(id) ? call.Item1 : id, string.IsNullOrEmpty(name) ? call.Item2 : name, call.Item3);
+                    call.Item3.Append(piece?["function"]?["arguments"]?.GetValue<string>());
+                    calls[index] = call;
+                }
+            }
             if (choice?["finish_reason"]?.GetValue<string>() is { } finish)
             {
-                yield return new ProviderStreamPart(null, new ProviderReply(string.Empty, [], Usage(chunk?["usage"]), finish));
+                var toolCalls = calls.Values.Where(c => c.Name.Length > 0)
+                    .Select(c => new AiToolCall(c.Id, c.Name, c.Arguments.Length == 0 ? "{}" : c.Arguments.ToString())).ToList();
+                yield return new ProviderStreamPart(null, new ProviderReply(string.Empty, toolCalls, Usage(chunk?["usage"]), finish));
                 yield break;
             }
         }

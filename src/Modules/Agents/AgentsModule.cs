@@ -31,6 +31,7 @@ public static class AgentsModule
         services.AddScoped<MemoryRememberTool>();
         services.AddScoped<AgentBriefings>();
         services.AddScoped<AgentBriefingRunner>();
+        services.AddScoped<AgentRunResumer>();
         services.AddScoped<Workflow.Contracts.IPersonalTaskSource, AgentAccessTasks>();
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.ISearchSummaries, SearchSummaries>();
         services.AddScoped<AssistantHistory>();
@@ -364,12 +365,57 @@ public static class AgentsModule
 
         // Runs (020 T005, 027 T005, T006, T010): a turn with a published agent, the designer's test panel, confirmation
         // cards, stopping a run, and the execution records.
-        agents.MapPost("/{id:guid}/runs", async (Guid id, RunRequest request, AgentRuns runs, IDbSession session, CancellationToken ct) =>
+        // With Accept: text/event-stream the turn streams (020 T021): "run" with its ID, "step" for each tool decision,
+        // "delta" with answer text as it arrives, then "done" with the checked answer. The run goes on when the person
+        // leaves the page; they read it later from its result.
+        agents.MapPost("/{id:guid}/runs", async (Guid id, RunRequest request, HttpContext http, AgentRuns runs, IDbSession session, ILoggerFactory logs,
+            CancellationToken ct) =>
         {
-            var view = await runs.RunAsync(id, request, ct);
-            await session.CommitAsync(ct);
-            return Results.Ok(view);
+            if (!WantsStream(http.Request))
+            {
+                var view = await runs.RunAsync(id, request, ct);
+                await session.CommitAsync(ct);
+                return Results.Ok(view);
+            }
+
+            var turn = await runs.StreamAsync(id, request, ct);
+            var response = http.Response;
+            response.ContentType = "text/event-stream";
+            response.Headers.CacheControl = "no-cache, no-transform";
+            response.Headers["X-Accel-Buffering"] = "no";
+            http.Features.Get<IHttpResponseBodyFeature>()?.DisableBuffering();
+            var connected = true;
+            async Task SendAsync(string name, object data)
+            {
+                if (!connected)
+                {
+                    return;
+                }
+                try
+                {
+                    await WriteEventAsync(response, name, data, ct);
+                }
+                catch (Exception ex) when (ex is OperationCanceledException or IOException or InvalidOperationException)
+                {
+                    connected = false;
+                }
+            }
+            try
+            {
+                var done = await turn(SendAsync, CancellationToken.None);
+                await session.CommitAsync(CancellationToken.None);
+                await SendAsync("done", done);
+            }
+            catch (Exception ex)
+            {
+                // Headers are sent, so a problem response is no longer possible; what was checkpointed stays and resumes.
+                logs.CreateLogger("TeamBeats.Agents").LogError(ex, "Agent run failed while streaming");
+                await SendAsync("error", new { code = ex is TeamBeats.Primitives.AppException app ? app.DetailKey ?? app.Code : "failed" });
+            }
+            return Results.Empty;
         });
+
+        agents.MapGet("/runs/{id:guid}/result", async (Guid id, AgentRuns runs, CancellationToken ct) => Results.Ok(await runs.ResultAsync(id, ct)));
 
         agents.MapPost("/{id:guid}/test", async (Guid id, RunRequest request, AgentRuns runs, IDbSession session, CancellationToken ct) =>
         {

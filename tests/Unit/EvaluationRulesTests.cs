@@ -65,6 +65,8 @@ public sealed class EvaluationRulesTests
         var bad = new ValidationErrors();
         CaseRules.Check(new CaseInput("x", "ar", null, new CaseExpectations(Tools: [new ExpectedTool("Not A Tool", null)], Sources: [new ExpectedSource("content", null)]), null, null, null), "c", bad);
         Assert.Equal(["validation.eval.case_sources", "validation.eval.case_tools"], Keys(bad));
+        Assert.NotNull(CaseRules.Check(new CaseInput("x", "en", null, new CaseExpectations(Tools: [new ExpectedTool("find_person", null)], ForbiddenTools: ["requests.prepare"]), null, null, null), "c", new ValidationErrors()));
+        Assert.Null(CaseRules.Check(new CaseInput("x", "en", null, new CaseExpectations(Tools: [new ExpectedTool("a.b.c", null)]), null, null, null), "c", new ValidationErrors()));
     }
 
     [Fact]

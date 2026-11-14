@@ -9,7 +9,7 @@ import type { OrgUnit } from "@/lib/experience/builder-types";
 import { pickText, type AgentDetail, type TemplateView } from "@/lib/agents/types";
 
 /**
- * The launch template library (spec 020 US1 scenario 1): each template with what it does, its autonomy level and
+ * The template library (spec 020 US1 scenario 1, launch and department templates): each template with what it does, its autonomy level and
  * whether it is ready. Installing creates a draft agent in the chosen org unit; the API checks the unit is one the
  * designer designs agents for.
  */

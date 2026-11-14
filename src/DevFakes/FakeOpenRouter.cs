@@ -202,9 +202,25 @@ public sealed partial class FakeOpenRouter(string apiKey, string basePath, IRead
                 var chunk = new { id, model, @object = "chat.completion.chunk", choices = new[] { new { index = 0, delta = new { content = word + " " }, finish_reason = (string?)null } } };
                 sse.Append("data: ").Append(JsonSerializer.Serialize(chunk)).Append("\n\n");
             }
+            if (toolCalls is not null)
+            {
+                // Like a real provider, the call comes in pieces: id and name first, then the arguments in two halves.
+                var call = toolCalls[0];
+                var half = call.function.arguments.Length / 2;
+                foreach (var piece in new object[]
+                {
+                    new { index = 0, id = call.id, type = "function", function = new { name = call.function.name, arguments = string.Empty } },
+                    new { index = 0, function = new { arguments = call.function.arguments[..half] } },
+                    new { index = 0, function = new { arguments = call.function.arguments[half..] } },
+                })
+                {
+                    var chunk = new { id, model, @object = "chat.completion.chunk", choices = new[] { new { index = 0, delta = new { tool_calls = new[] { piece } }, finish_reason = (string?)null } } };
+                    sse.Append("data: ").Append(JsonSerializer.Serialize(chunk)).Append("\n\n");
+                }
+            }
             if (!last.Contains("[fake:cut]", StringComparison.Ordinal))
             {
-                var final = new { id, model, @object = "chat.completion.chunk", choices = new[] { new { index = 0, delta = new { content = string.Empty }, finish_reason = (string?)finish } }, usage };
+                var final = new { id, model, @object = "chat.completion.chunk", choices = new[] { new { index = 0, delta = new { content = string.Empty }, finish_reason = (string?)(toolCalls is null ? finish : "tool_calls") } }, usage };
                 sse.Append("data: ").Append(JsonSerializer.Serialize(final)).Append("\n\ndata: [DONE]\n\n");
             }
             return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(sse.ToString(), Encoding.UTF8, "text/event-stream") };

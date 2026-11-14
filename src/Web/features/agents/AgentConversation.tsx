@@ -5,9 +5,13 @@ import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { problemMessages } from "@/lib/notifications/types";
-import type { ConfirmationCard, RunView } from "@/lib/agents/types";
+import { readRunStream, type ConfirmationCard, type RunView } from "@/lib/agents/types";
 
-type Turn = { message: string; run: RunView };
+/** A turn: the finished run, or only its ID when the connection dropped while the run went on (spec 020 T021). */
+type Turn = { key: string; message: string; run: RunView | null; runId: string | null };
+
+/** The turn being streamed: the answer text so far and the tool the agent is using. */
+type Live = { message: string; text: string; tool: string | null };
 
 /** Shows a parameter value as plain text: text as it is, anything else as compact JSON. */
 function show(value: unknown): string {
@@ -64,9 +68,36 @@ export function AgentConversation({ agentId, item }: { agentId: string; item: { 
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string[]>([]);
+  const [live, setLive] = useState<Live | null>(null);
+  const [checking, setChecking] = useState<string | null>(null);
 
   function replace(run: RunView) {
-    setTurns((all) => all.map((turn) => (turn.run.id === run.id ? { ...turn, run } : turn)));
+    setTurns((all) => all.map((turn) => (turn.runId === run.id ? { ...turn, run } : turn)));
+  }
+
+  function toolName(tool: string | null) {
+    if (!tool) return "";
+    return ts.has(`toolNames.${tool}`) ? ts(`toolNames.${tool}`) : tool;
+  }
+
+  // The answer of a run whose stream broke: the run went on without the page, and keeps its result.
+  async function check(runId: string) {
+    setChecking(runId);
+    setError([]);
+    try {
+      const response = await fetch(`/api/v1/agents/runs/${runId}/result`);
+      if (!response.ok) {
+        setError(await problemMessages(response));
+        return;
+      }
+      const run = (await response.json()) as RunView;
+      if (run.status === "running") setError([ts("use.stillWorking")]);
+      else replace(run);
+    } catch {
+      setError([ts("use.failed")]);
+    } finally {
+      setChecking(null);
+    }
   }
 
   async function ask() {
@@ -74,22 +105,39 @@ export function AgentConversation({ agentId, item }: { agentId: string; item: { 
     if (text === "") return;
     setBusy(true);
     setError([]);
+    let runId: string | null = null;
     try {
       const response = await fetch(`/api/v1/agents/${agentId}/runs`, {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: { "content-type": "application/json", accept: "text/event-stream" },
         body: JSON.stringify({ message: text, itemSource: turns.length === 0 ? item?.source : undefined, itemId: turns.length === 0 ? item?.id : undefined }),
       });
-      if (response.ok) {
-        const run = (await response.json()) as RunView;
-        setTurns((all) => [...all, { message: text, run }]);
-        setMessage("");
-      } else {
+      if (!response.ok) {
         setError(await problemMessages(response));
+        return;
       }
+      setLive({ message: text, text: "", tool: null });
+      const run = await readRunStream(response, {
+        onRun: (id) => {
+          runId = id;
+        },
+        // A tool step ends the text of that model turn; the answer comes in a later one.
+        onStep: (step) => setLive((l) => (l ? { ...l, text: "", tool: step.tool } : l)),
+        onDelta: (delta) => setLive((l) => (l ? { ...l, text: l.text + delta } : l)),
+      });
+      setMessage("");
+      setTurns((all) => [...all, { key: run?.id ?? runId ?? String(all.length), message: text, run, runId: run?.id ?? runId }]);
+      if (!run && !runId) setError([ts("use.failed")]);
     } catch {
-      setError([ts("use.failed")]);
+      if (runId) {
+        const id: string = runId;
+        setMessage("");
+        setTurns((all) => [...all, { key: id, message: text, run: null, runId: id }]);
+      } else {
+        setError([ts("use.failed")]);
+      }
     } finally {
+      setLive(null);
       setBusy(false);
     }
   }
@@ -116,37 +164,62 @@ export function AgentConversation({ agentId, item }: { agentId: string; item: { 
     <div className="agents">
       {item ? <p className="notice">{ts("use.withItem")}</p> : null}
       <ol className="agents-timeline" aria-label={ts("use.conversation")} data-testid="agent-conversation">
-        {turns.map((turn) => (
-          <li key={turn.run.id} className="agents-section">
+        {turns.map((turn) =>
+          turn.run === null ? (
+            <li key={turn.key} className="agents-section">
+              <p>
+                <strong>{ts("use.you")}</strong> <bdi>{turn.message}</bdi>
+              </p>
+              <p role="status">{ts("use.interrupted")}</p>
+              {turn.runId ? (
+                <div className="agents-row">
+                  <Button busy={checking === turn.runId} busyLabel={ts("use.working")} onClick={() => void check(turn.runId!)}>
+                    {ts("use.checkResult")}
+                  </Button>
+                </div>
+              ) : null}
+            </li>
+          ) : (
+            <li key={turn.key} className="agents-section">
+              <p>
+                <strong>{ts("use.you")}</strong> <bdi>{turn.message}</bdi>
+              </p>
+              {turn.run.answer ? (
+                <div>
+                  <p className="agents-answer" data-testid="agent-answer">
+                    {turn.run.answer}
+                  </p>
+                  {turn.run.generated ? <p className="field-hint">{ts("generated")}</p> : null}
+                  {turn.run.linksAsText ? <p className="field-hint">{ts("use.linksAsText")}</p> : null}
+                </div>
+              ) : null}
+              {turn.run.status === "waiting" && turn.run.confirmation ? (
+                <Card card={turn.run.confirmation} busy={busy} onDecide={(confirm) => void decide(turn.run!, turn.run!.confirmation!, confirm)} />
+              ) : null}
+              {!turn.run.answer && turn.run.status !== "waiting" ? <p role="status">{ts(`outcomes.${turn.run.outcome ?? "none"}`)}</p> : null}
+              {turn.run.citations.length > 0 ? (
+                <ol aria-label={ts("use.sources")}>
+                  {turn.run.citations.map((c) => (
+                    <li key={c.n}>
+                      <Link href={c.link}>
+                        <bdi>{c.title}</bdi>
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+            </li>
+          ),
+        )}
+        {live ? (
+          <li className="agents-section" data-testid="agent-live">
             <p>
-              <strong>{ts("use.you")}</strong> <bdi>{turn.message}</bdi>
+              <strong>{ts("use.you")}</strong> <bdi>{live.message}</bdi>
             </p>
-            {turn.run.answer ? (
-              <div>
-                <p className="agents-answer" data-testid="agent-answer">
-                  {turn.run.answer}
-                </p>
-                {turn.run.generated ? <p className="field-hint">{ts("generated")}</p> : null}
-                {turn.run.linksAsText ? <p className="field-hint">{ts("use.linksAsText")}</p> : null}
-              </div>
-            ) : null}
-            {turn.run.status === "waiting" && turn.run.confirmation ? (
-              <Card card={turn.run.confirmation} busy={busy} onDecide={(confirm) => void decide(turn.run, turn.run.confirmation!, confirm)} />
-            ) : null}
-            {!turn.run.answer && turn.run.status !== "waiting" ? <p role="status">{ts(`outcomes.${turn.run.outcome ?? "none"}`)}</p> : null}
-            {turn.run.citations.length > 0 ? (
-              <ol aria-label={ts("use.sources")}>
-                {turn.run.citations.map((c) => (
-                  <li key={c.n}>
-                    <Link href={c.link}>
-                      <bdi>{c.title}</bdi>
-                    </Link>
-                  </li>
-                ))}
-              </ol>
-            ) : null}
+            {live.tool ? <p role="status">{ts("use.step", { tool: toolName(live.tool) })}</p> : null}
+            {live.text ? <p className="agents-answer">{live.text}</p> : null}
           </li>
-        ))}
+        ) : null}
       </ol>
       {error.length > 0 ? (
         <div role="alert" className="notice notice-error">

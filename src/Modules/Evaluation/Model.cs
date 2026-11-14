@@ -240,7 +240,8 @@ public static partial class CaseRules
     [GeneratedRegex("^[a-z0-9_-]{1,40}$")]
     private static partial Regex TagPattern();
 
-    [GeneratedRegex("^[a-z][a-z_]*\\.[a-z][a-z_]*$")]
+    // Tool names as registered: "module.tool" or a single name such as "find_person".
+    [GeneratedRegex("^[a-z][a-z_]*(\\.[a-z][a-z_]*)?$")]
     private static partial Regex ToolPattern();
 
     /// <summary>Checks one case and returns it normalized, or null with errors added under <paramref name="at"/>.</summary>
