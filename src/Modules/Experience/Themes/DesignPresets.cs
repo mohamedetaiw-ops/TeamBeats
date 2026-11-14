@@ -14,6 +14,15 @@ public static class DesignPresets
     public const string Studio = "studio";
 
     public const string PresetToken = "design.preset";
+    public const string DensityToken = "density.default";
+    public const string ImageryToken = "imagery.style";
+
+    /// <summary>The descriptor tokens of a design (spec 036 DLS-110), in the order the schema lists them.</summary>
+    public static readonly IReadOnlyList<string> DescriptorTokens =
+    [
+        DensityToken, ImageryToken, "variant.news_lead", "variant.stat_tiles", "variant.work_rows", "variant.section_tabs",
+        "variant.page_cards", "variant.briefing",
+    ];
 
     public static readonly IReadOnlyList<string> Keys = [Beats, Atlas, Pulse, Studio];
 
@@ -27,6 +36,12 @@ public static class DesignPresets
     private static readonly Dictionary<string, TokenValue> AtlasTokens = new()
     {
         ["layout.navigation"] = V("top"),
+        // Formal and structured: no lead picture, outlined tiles and cards, a light briefing.
+        [ImageryToken] = V("typographic"),
+        ["variant.news_lead"] = V("compact"),
+        ["variant.stat_tiles"] = V("outlined"),
+        ["variant.page_cards"] = V("outlined"),
+        ["variant.briefing"] = V("light"),
         ["color.surface.base"] = V("#f6f7f5", "#0e1513"),
         ["color.surface.raised"] = V("#ffffff", "#16201d"),
         ["color.surface.sunken"] = V("#eceeea", "#0a0f0d"),
@@ -89,6 +104,9 @@ public static class DesignPresets
     private static readonly Dictionary<string, TokenValue> PulseTokens = new()
     {
         ["layout.navigation"] = V("sidebar"),
+        // Editorial and image led: the platform variants with segmented section tabs.
+        [ImageryToken] = V("image_led"),
+        ["variant.section_tabs"] = V("segmented"),
         ["color.surface.base"] = V("#fff8f3", "#140f12"),
         ["color.surface.raised"] = V("#ffffff", "#1f181c"),
         ["color.surface.sunken"] = V("#fbeee5", "#0c090b"),
@@ -155,6 +173,15 @@ public static class DesignPresets
     private static readonly Dictionary<string, TokenValue> StudioTokens = new()
     {
         ["layout.navigation"] = V("sidebar"),
+        // Operational and dense: compact by default, plain tiles, dense rows, segmented tabs, outlined cards, a light briefing.
+        [DensityToken] = V("compact"),
+        [ImageryToken] = V("typographic"),
+        ["variant.news_lead"] = V("compact"),
+        ["variant.stat_tiles"] = V("plain"),
+        ["variant.work_rows"] = V("dense"),
+        ["variant.section_tabs"] = V("segmented"),
+        ["variant.page_cards"] = V("outlined"),
+        ["variant.briefing"] = V("light"),
         ["color.surface.base"] = V("#f7f7f7", "#121212"),
         ["color.surface.raised"] = V("#ffffff", "#1c1c1c"),
         ["color.surface.sunken"] = V("#ebebeb", "#0a0a0a"),
