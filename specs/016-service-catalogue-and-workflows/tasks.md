@@ -57,4 +57,4 @@ Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot)
 - [x] T026 Request summary for approvers through the AI gateway; agent-requested tasks marked in the inbox (spec 027 US4, built with the agent approver tasks of spec 027 R2)
 
 ### R2 final
-- [ ] T027 OpenAPI; R2 implementation notes; spec evidence
+- [x] T027 OpenAPI; R2 implementation notes; spec evidence

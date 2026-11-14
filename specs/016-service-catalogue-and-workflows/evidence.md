@@ -1,6 +1,6 @@
-# Spec 016 evidence (R1)
+# Spec 016 evidence (R1 and R2)
 
-R1 covers User Stories 1 to 4, User Story 7 (basic) and approval-only routes of User Story 8. The spec stays Approved, not Implemented, because multi-step routes, fulfilment queues, connectors, triggers, service levels, templates and the route designer are R2.
+R1 covers User Stories 1 to 4, User Story 7 (basic) and approval-only routes of User Story 8. Multi-step routes, fulfilment queues, connectors, triggers, service levels, templates and the route designer followed in R2 (below).
 
 | Requirement | Status | Evidence |
 |---|---|---|
@@ -35,3 +35,33 @@ R1 covers User Stories 1 to 4, User Story 7 (basic) and approval-only routes of 
 | Entitlements: catalogue and quota | Met | `Services_stop_at_the_plan_quota` |
 | Tenant isolation | Met | `Services_categories_and_favourites_of_another_tenant_are_not_found`, `Requests_of_another_tenant_are_not_found_and_a_service_of_another_tenant_cannot_be_requested`, `Tasks_and_delegations_of_another_tenant_are_not_found`, `Team_requests_show_direct_and_indirect_reports_only`, `CrossTenantSuite` |
 | Arabic and English, RTL, accessibility | Met | `services.spec.ts` in en and ar with axe on every page |
+
+## R2
+
+R2 adds User Stories 5, 6 and 8, the full User Story 7 and FR-012 to FR-016. With R2 every user story of the spec is built; the agent-requested approvals of section 11 arrive with spec 027 R2.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| US5.1 sequential and parallel steps with conditions, skipped steps in Tracking | Met | `ServiceRouteGraphTests.Each_step_goes_to_its_assignee_the_condition_picks_the_path_and_steps_not_taken_show_as_skipped`, `Parallel_steps_join_and_a_rejection_or_return_ends_the_whole_route` |
+| US5.2 due time reminder and escalation | Met | Steps compile to the spec 024 due and escalation timers (`ProcessModelTests`, `ProcessEnginePerformanceTests`); route checks in `A_route_that_cannot_run_is_not_published_and_shapes_are_checked_when_saved` |
+| US5.3 open requests finish on their route version | Met | `Open_requests_finish_on_the_route_version_they_started_with` |
+| US6.1 queue members pick, complete, or reject with a reason | Met | `ServiceQueueTests.One_member_picks_a_queue_task_the_rest_stop_seeing_it_and_only_the_picker_completes_it`, `A_pick_lapses_when_the_picker_leaves_the_queue` |
+| US6.2 connector fulfilment with retry, idempotency and external reference | Met | `ServiceAutomationTests.After_approval_the_step_sends_only_the_mapped_fields_and_the_request_completes_with_the_ticket_number`, `A_timeout_on_an_idempotent_action_is_retried_with_the_same_key_and_acts_once` |
+| US6.3 fulfilment failed, queue alerted, retry | Met | `A_failed_automatic_step_alerts_the_fulfilment_queue_and_the_owners_once`, `An_unknown_outcome_pauses_the_request_until_the_owner_retries_skips_or_cancels` |
+| US7 full: templates, queue, designer | Met | `ServiceTemplateTests` (3), `ServiceRouteTestModeTests.Owners_list_the_tenant_groups_for_queues_and_others_cannot`, `route-designer.spec.ts`, `service-templates.spec.ts` |
+| US8.1 and FR-013 designer with the step types, no custom code | Met | `RouteGraphCheck` and `RouteGraphCompiler`; `route-designer.spec.ts` in en and ar with axe |
+| US8.2 and FR-014 triggers, idempotent per event | Met | `ServiceTriggerTests.A_product_event_starts_one_request_for_the_person_in_their_and_their_managers_lists`, `A_schedule_starts_one_request_per_period_for_its_requester_and_never_for_the_past` |
+| US8.3 and FR-015 service level at risk and breach, counted for spec 021 | Met | `ServiceLevelTests.A_service_level_target_goes_at_risk_then_breached_once_each_and_a_request_closed_in_time_has_met_it` |
+| US8.4 auto-approve rule, "auto-approved by rule" in Tracking | Met | `An_auto_approve_rule_completes_the_step_as_the_system_and_others_wait_for_the_manager`, `An_auto_approved_step_in_a_parallel_path_lets_the_join_go_on_when_the_other_path_is_done` |
+| US8.5 failed automatic step pauses, owner alerted, retry, skip or cancel | Met | `An_unknown_outcome_pauses_the_request_until_the_owner_retries_skips_or_cancels`, `A_failed_automatic_step_alerts_the_fulfilment_queue_and_the_owners_once` |
+| US8.6 test mode as a sample employee, nothing created | Met | `ServiceRouteTestModeTests.A_test_run_shows_assignees_and_the_branch_taken_and_creates_nothing`, `route-designer.spec.ts` |
+| US8.7 unreachable steps or unmatched joins block publishing, shown on the diagram | Met | `A_route_that_cannot_run_is_not_published_and_shapes_are_checked_when_saved`; problems on steps in the designer |
+| FR-012 reporting | With spec 021 | `request.sla_breached` analytics event without the person; resignation reasons are a structured choice |
+| FR-016 automatic steps only through connectors or registered webhooks, owner-selected fields | Met | `Publishing_checks_each_step_against_the_actions_declared_fields_and_errors`, `After_approval_the_step_sends_only_the_mapped_fields_and_the_request_completes_with_the_ticket_number` |
+| Edge case: requester leaves, continue after exit | Met | `A_requester_who_leaves_has_open_requests_cancelled_unless_the_service_continues_after_exit` |
+| Edge case: trigger loops stop past depth 5 | Met | `A_start_service_step_starts_the_other_service_and_a_loop_stops_past_depth_five` |
+| Section 11 request summary for approvers | Met | `RequestSummaryTests` (2), including the AI policy refusing confidential content |
+| Section 12 starter templates | Met | `Every_available_template_switches_on_as_a_valid_draft_once`, `A_switched_on_template_publishes_and_a_colleague_files_it_with_prefill` |
+| Entitlements | Met | `Workplace_runs_approval_and_task_steps_in_sequence_but_not_conditions_or_automatic_steps`, `Triggers_need_workflow_automation_valid_settings_and_a_requester_of_the_same_tenant`, `Rules_need_workflow_automation_an_approval_step_and_a_tenant_administrator_on_confidential_services`, `Automatic_steps_need_the_package_and_another_tenants_connection_or_request_is_not_found` |
+| Tenant isolation | Met | Cross-tenant checks in `ServiceQueueTests`, `ServiceRouteTestModeTests`, `ServiceTemplateTests`, `RequestSummaryTests`, `ServiceAutomationTests` and `CrossTenantSuite` |
+
