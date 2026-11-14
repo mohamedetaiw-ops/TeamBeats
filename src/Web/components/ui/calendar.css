@@ -62,14 +62,14 @@
 
 .ui-cal-layer {
   display: inline-flex;
-  gap: var(--tb-space-xs);
+  gap: var(--tb-space-sm);
   align-items: center;
   min-block-size: 2rem;
   padding-block: 0;
-  padding-inline: var(--tb-space-sm);
+  padding-inline: var(--tb-space-md);
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
   border-radius: var(--tb-radius-full);
-  background: var(--tb-color-surface-raised);
+  background: none;
   color: var(--tb-color-text-secondary);
   font: inherit;
   font-size: var(--tb-font-size-sm);
@@ -83,9 +83,10 @@
   cursor: default;
 }
 
+/* One neutral outline for the whole group; the layer's colour stays in its marker (spec 037 FR-026). */
 .ui-cal-layer[aria-pressed="true"] {
-  border-color: var(--xp-swatch);
-  background: var(--tb-color-surface-sunken);
+  border-color: var(--tb-color-border-strong);
+  background: var(--tb-color-surface-raised);
   color: var(--tb-color-text-primary);
   font-weight: var(--tb-font-weight-medium);
 }
@@ -200,13 +201,31 @@
   flex: 1;
   gap: 0.125rem;
   min-inline-size: 0;
-  padding-block: var(--tb-space-xs);
-  padding-inline: var(--tb-space-sm);
+  padding-block: var(--tb-space-sm);
+  padding-inline: var(--tb-space-md);
   border: 0;
   background: none;
   color: inherit;
   font: inherit;
   text-align: start;
+}
+
+/* On a page the time has its own column, so titles line up down the list; a summary keeps the stacked row. */
+@media (width > 40rem) {
+  .ui-cal-agenda[data-layout="columns"] .ui-cal-row-toggle {
+    grid-template-columns: 11rem minmax(0, 1fr);
+    column-gap: var(--tb-space-md);
+    align-items: baseline;
+  }
+
+  .ui-cal-agenda[data-layout="columns"] .ui-cal-row-line {
+    grid-row: span 2;
+    font-size: var(--tb-font-size-sm);
+  }
+
+  .ui-cal-agenda[data-layout="columns"] :is(.ui-cal-row-title, .ui-cal-row-meta) {
+    grid-column: 2;
+  }
 }
 
 button.ui-cal-row-toggle {
@@ -263,6 +282,54 @@ button.ui-cal-row-toggle {
 
 .ui-cal-row-details[hidden] {
   display: none;
+}
+
+/* Month cells that name their items (DLS-119): up to three titles and a count, where the cell has room. */
+.ui-cal-month-items {
+  display: none;
+}
+
+@media (width > 56.25rem) {
+  .ui-cal-month[data-items] .ui-cal-month-day {
+    align-content: start;
+    justify-items: stretch;
+    min-block-size: 6.5rem;
+    padding-inline: var(--tb-space-xs);
+    text-align: start;
+  }
+
+  .ui-cal-month[data-items] .ui-cal-month-day > span:first-child {
+    padding-inline: var(--tb-space-xs);
+  }
+
+  .ui-cal-month[data-items] .ui-cal-month-items {
+    display: grid;
+    gap: 0.125rem;
+    min-inline-size: 0;
+  }
+
+  .ui-cal-month[data-items] .ui-cal-markers {
+    display: none;
+  }
+
+  .ui-cal-month[data-items] td + td {
+    border-inline-start: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+  }
+}
+
+.ui-cal-month-item {
+  display: flex;
+  gap: var(--tb-space-xs);
+  align-items: center;
+  min-inline-size: 0;
+  padding-inline: var(--tb-space-xs);
+  font-size: var(--tb-font-size-xs);
+}
+
+.ui-cal-month-item > bdi {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Month with ranges (DLS-072). */

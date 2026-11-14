@@ -123,13 +123,8 @@
 
 .cal-agenda {
   display: grid;
-  gap: var(--tb-space-xs);
-  max-inline-size: 48rem;
-}
-
-.cal-week {
-  display: grid;
   gap: var(--tb-space-sm);
+  max-inline-size: 60rem;
 }
 
 .cal-week-grid {
