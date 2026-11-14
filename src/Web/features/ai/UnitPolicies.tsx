@@ -129,9 +129,10 @@ export function UnitPolicies({ initial, units }: { initial: OrgPolicySummary[]; 
     try {
       const response = await fetch(`/api/v1/ai/org-policies/${encodeURIComponent(view.unitId)}`, { method: "DELETE" });
       if (response.ok) {
-        setResult({ ok: true, messages: [t("removed", { unit: unitName(view.unitId) })] });
+        // Reloading clears the message area, so the confirmation is shown after the reload.
         await refreshList();
         await load(view.unitId);
+        setResult({ ok: true, messages: [t("removed", { unit: unitName(view.unitId) })] });
       } else {
         setResult({ ok: false, messages: await problemMessages(response) });
       }

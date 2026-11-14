@@ -135,5 +135,35 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("status").filter({ hasText: m("ai.units.removed", { unit: unitName }) })).toBeVisible();
       await expect(page.getByText(m("ai.units.emptyTitle"))).toBeVisible();
     });
+
+    test("private endpoints", async ({ page }, testInfo) => {
+      const name = locale === "ar" ? "مجموعة الرياض" : "Riyadh cluster";
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/ai/endpoints`);
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(m("ai.endpoints.title"));
+      await expect(page.getByText(m("ai.endpoints.emptyTitle"))).toBeVisible();
+      const form = page.getByTestId("ai-endpoint-form");
+      await form.getByLabel(m("ai.endpoints.name"), { exact: true }).fill(name);
+      await form.getByLabel(m("ai.endpoints.baseUrl"), { exact: true }).fill("https://llm.private.example/v1");
+      await form.getByLabel(m("ai.endpoints.secretRef"), { exact: true }).fill(`secret://tenants/${tenant.id}/llm-key`);
+      await form.getByLabel(m("ai.endpoints.region"), { exact: true }).fill("sa");
+      await form.getByLabel(m("ai.endpoints.modelName"), { exact: true }).fill("llama-3.1-70b");
+      await form.getByLabel(m("ai.endpoints.contextTokens"), { exact: true }).fill("128000");
+      await expectAccessible(page, testInfo, `ai-endpoints-${locale}`);
+      await form.getByRole("button", { name: m("ai.endpoints.add") }).click();
+      await expect(page.getByRole("status").filter({ hasText: m("ai.endpoints.created", { name }) })).toBeVisible();
+
+      // The key is not in this stack's secret manager, so the test fails and names why; the endpoint stays off.
+      await page.getByRole("button", { name: m("ai.endpoints.testFor", { name }) }).click();
+      await expect(page.getByRole("status").filter({ hasText: m("ai.endpoints.testFailed", { name }) })).toBeVisible();
+      await expect(page.getByTestId("ai-endpoint-checks")).toContainText(m("ai.endpoints.checks.secret_missing"));
+      await page.getByRole("button", { name: m("ai.endpoints.enableFor", { name }) }).click();
+      await expect(page.locator(".notice-error[role=alert]")).toBeVisible();
+      await expectAccessible(page, testInfo, `ai-endpoints-tested-${locale}`);
+
+      await page.getByRole("button", { name: m("ai.endpoints.removeFor", { name }) }).click();
+      await expect(page.getByRole("status").filter({ hasText: m("ai.endpoints.removed", { name }) })).toBeVisible();
+      await expect(page.getByText(m("ai.endpoints.emptyTitle"))).toBeVisible();
+    });
   });
 }

@@ -221,7 +221,7 @@ public sealed class AiBudgets(
         {
             // The cheaper model must be one the tenant allows, in the catalogue, and able to chat.
             var policy = (await policies.EffectiveAsync(ct)).Document;
-            var snapshot = await catalogue.SnapshotAsync(ct);
+            var snapshot = await catalogue.ForTenantAsync(ct);
             if (request.DowngradeModel is not { } model || !policy.Allowlist.Contains(model) || !snapshot.Models.TryGetValue(model, out var entry) || !entry.Active ||
                 !entry.Can(ModelCapabilities.Chat))
             {

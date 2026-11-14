@@ -4833,6 +4833,7 @@
     "tabs": {
       "policy": "Model policy",
       "routing": "Routing rules",
+      "endpoints": "Private endpoints",
       "units": "Unit policies",
       "usage": "AI usage",
       "budgets": "Budgets",
@@ -4896,6 +4897,10 @@
         "maxTokensHint": "Leave empty to use each model's own limit.",
         "minTemperature": "Lowest temperature",
         "maxTemperature": "Highest temperature"
+      },
+      "sovereign": {
+        "title": "Keep on private endpoints",
+        "intro": "Content of these classifications goes only to your enabled private endpoints. If none can take it, the call fails instead of using a shared provider. A classification can be added only when an endpoint that may take it passed its test in the last 24 hours."
       }
     },
     "routing": {
@@ -5126,6 +5131,105 @@
       "notYours": "This unit is not in your scope.",
       "unknownUnit": "Unknown unit",
       "failed": "That did not work. Try again."
+    },
+    "endpoints": {
+      "title": "Private model endpoints",
+      "intro": "Connect your own OpenAI-compatible inference servers. Content you keep on private endpoints never leaves your network, and a call fails instead of falling back to a shared provider when the endpoint is down.",
+      "caption": "Private endpoints of this organization",
+      "emptyTitle": "No private endpoints yet",
+      "empty": "Add an endpoint below, test it, then enable it.",
+      "readOnly": {
+        "package": "Private endpoints are not part of your plan. You can see them but not change them.",
+        "permission": "Only an AI Policy Administrator can change private endpoints."
+      },
+      "name": "Name",
+      "baseUrl": "Address",
+      "baseUrlHint": "The HTTPS address of the OpenAI-compatible API, for example https://llm.example.org/v1.",
+      "secretRef": "Key in the secret manager",
+      "secretRefHint": "The secret manager reference of the endpoint's key. The key itself is never shown or stored here.",
+      "region": "Region",
+      "regionHint": "Where the servers run, for example sa or ae.",
+      "maxClassification": "Highest classification",
+      "models": "Models",
+      "modelCount": "{count, plural, one {# model} other {# models}}",
+      "status": "Status",
+      "statuses": {
+        "enabled": "Enabled",
+        "disabled": "Off"
+      },
+      "lastTest": "Last test",
+      "passedAt": "Passed {when}",
+      "expiredAt": "Passed {when}, run it again",
+      "failedAt": "Failed {when}",
+      "neverTested": "Not tested yet",
+      "manage": "Manage",
+      "details": "Details",
+      "detailsFor": "Details of {name}",
+      "test": "Test",
+      "testFor": "Test {name}",
+      "enable": "Enable",
+      "enableFor": "Enable {name}",
+      "disable": "Turn off",
+      "disableFor": "Turn off {name}",
+      "change": "Change",
+      "changeFor": "Change {name}",
+      "remove": "Remove",
+      "removeFor": "Remove {name}",
+      "detailTitle": "{name}",
+      "catalogueNames": "Names of its models in the model policy and routing rules:",
+      "checksTitle": "Last test",
+      "checkPassed": "Passed",
+      "checkFailed": "Failed",
+      "checkOnModel": "{check}: {model}",
+      "checkNames": {
+        "secret": "Key found in the secret manager",
+        "connection": "Connection",
+        "model": "Model listed",
+        "chat": "Chat answer",
+        "embeddings": "Embeddings answer"
+      },
+      "checks": {
+        "secret_missing": "The secret manager has no key under this reference.",
+        "no_adapter": "This installation has no adapter for private endpoints.",
+        "rejected": "The endpoint refused the key.",
+        "unreachable": "The endpoint did not answer.",
+        "blocked_address": "The address points to an internal network, which this installation does not allow.",
+        "model_missing": "The endpoint does not list this model.",
+        "call_failed": "The model did not answer a test call."
+      },
+      "addTitle": "Add a private endpoint",
+      "editTitle": "Change {name}",
+      "changeDisables": "Saving a change turns the endpoint off until it passes a new test.",
+      "modelLegend": "Model {number}",
+      "modelName": "Model name on the server",
+      "contextTokens": "Context size in tokens",
+      "capabilities": {
+        "chat": "Chat",
+        "tools": "Tool calls",
+        "structured_output": "Structured output",
+        "vision": "Images",
+        "embeddings": "Embeddings"
+      },
+      "addModel": "Add a model",
+      "removeModel": "Remove model {number}",
+      "add": "Add endpoint",
+      "save": "Save changes",
+      "cancel": "Cancel",
+      "working": "Working…",
+      "created": "{name} was added. Test it, then enable it.",
+      "saved": "{name} was saved and turned off until it passes a new test.",
+      "testPassed": "{name} passed the test. You can enable it now.",
+      "testFailed": "{name} did not pass the test. See what failed in its details.",
+      "enabled": "{name} is enabled. Its models are now in the model policy.",
+      "disabled": "{name} is turned off.",
+      "removed": "{name} was removed.",
+      "failed": "Something went wrong. Try again.",
+      "levels": {
+        "public": "Public",
+        "internal": "Internal",
+        "confidential": "Confidential",
+        "restricted": "Restricted"
+      }
     }
   },
   "search": {

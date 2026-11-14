@@ -48,6 +48,7 @@ public sealed class AiGatewayService(
     UsageRecorder usage,
     BudgetGuard budgets,
     OrgPolicies orgPolicies,
+    PrivateEndpoints endpoints,
     IDbSession session,
     IOrganizationHierarchy hierarchy,
     IClock clock,
@@ -123,11 +124,6 @@ public sealed class AiGatewayService(
             logger.LogError("AI call without a classification for use case {UseCase}; the calling module must classify its content", useCase);
             return (null, AiDenials.ClassificationMissing);
         }
-        if (level == DataClassification.Restricted)
-        {
-            // Restricted content only goes to approved private endpoints (R2); OpenRouter is never eligible.
-            return (null, AiDenials.ClassificationBlocked);
-        }
         var policy = (await policies.EffectiveAsync(ct)).Document;
         if (routeChangeId is { } change)
         {
@@ -148,9 +144,17 @@ public sealed class AiGatewayService(
             }
             policy = OrgPolicies.Apply(policy, limits);
         }
-        var snapshot = await catalogue.SnapshotAsync(ct);
-        bool Classified(CatalogueEntry e) => e.Ceiling >= level && (level < DataClassification.Confidential || (e.ConfidentialEligible && policy.Confidential.Contains(e.Model)));
-        if (level == DataClassification.Confidential && !policy.Confidential.Any(m => snapshot.Models.TryGetValue(m, out var e) && e.ConfidentialEligible))
+        var snapshot = await catalogue.ForTenantAsync(ct);
+        // Restricted content goes only to a tenant's own private endpoint whose ceiling is Restricted, never to a shared
+        // provider under any setting (FR-007); Confidential needs a model the tenant allowed for it. A classification the
+        // tenant keeps on private endpoints (sovereign routing, US6 scenario 2) has no shared provider among its candidates,
+        // so a failure ends the call instead of falling back.
+        var sovereign = policy.Sovereign?.Contains(Classifications.Key(level)) == true;
+        bool Classified(CatalogueEntry e) => e.Ceiling >= level
+            && (level < DataClassification.Confidential || (e.ConfidentialEligible && policy.Confidential.Contains(e.Model)))
+            && (level < DataClassification.Restricted || e.Provider == PrivateEndpoints.ProviderKey)
+            && (!sovereign || e.Provider == PrivateEndpoints.ProviderKey);
+        if (level >= DataClassification.Confidential && !policy.Confidential.Any(m => snapshot.Models.TryGetValue(m, out var e) && Classified(e)))
         {
             return (null, AiDenials.ClassificationBlocked);
         }
@@ -301,7 +305,13 @@ public sealed class AiGatewayService(
         foreach (var entry in plan.Candidates)
         {
             var provider = byKey[entry.Provider];
-            if (!circuits.Allow(provider.Key))
+            var circuit = CircuitOf(entry);
+            if (!circuits.Allow(circuit))
+            {
+                continue;
+            }
+            var (reachable, target) = await TargetAsync(entry, ct);
+            if (!reachable)
             {
                 continue;
             }
@@ -310,11 +320,11 @@ public sealed class AiGatewayService(
                 ProviderReply reply;
                 try
                 {
-                    reply = await provider.ChatAsync(new ProviderChat(entry.Model, request.Messages, request.Tools, request.ResponseSchema, plan.MaxTokens, plan.Temperature), ct);
+                    reply = await provider.ChatAsync(new ProviderChat(entry.Model, request.Messages, request.Tools, request.ResponseSchema, plan.MaxTokens, plan.Temperature, target), ct);
                 }
                 catch (ProviderException ex)
                 {
-                    circuits.Record(provider.Key, failed: true);
+                    circuits.Record(circuit, failed: true);
                     logger.LogWarning("AI provider {Provider} failed for {Model} (retryable {Retryable}): {Message}", provider.Key, entry.Model, ex.Retryable, ex.Message);
                     if (ex.Retryable && attempt == 0)
                     {
@@ -322,7 +332,7 @@ public sealed class AiGatewayService(
                     }
                     break;
                 }
-                circuits.Record(provider.Key, failed: false);
+                circuits.Record(circuit, failed: false);
 
                 // 9. Output checks: tool calls for tools not offered are dropped; structured output must match the schema.
                 var calls = OfferedOnly(reply.ToolCalls, request.Tools, entry.Model);
@@ -357,7 +367,13 @@ public sealed class AiGatewayService(
         foreach (var entry in plan.Candidates)
         {
             var provider = byKey[entry.Provider];
-            if (!circuits.Allow(provider.Key))
+            var circuit = CircuitOf(entry);
+            if (!circuits.Allow(circuit))
+            {
+                continue;
+            }
+            var (reachable, target) = await TargetAsync(entry, ct);
+            if (!reachable)
             {
                 continue;
             }
@@ -366,7 +382,7 @@ public sealed class AiGatewayService(
                 var text = new StringBuilder();
                 ProviderReply? final = null;
                 ProviderException? failure = null;
-                await using (var parts = provider.StreamAsync(new ProviderChat(entry.Model, request.Messages, request.Tools, request.ResponseSchema, plan.MaxTokens, plan.Temperature), ct)
+                await using (var parts = provider.StreamAsync(new ProviderChat(entry.Model, request.Messages, request.Tools, request.ResponseSchema, plan.MaxTokens, plan.Temperature, target), ct)
                     .GetAsyncEnumerator(ct))
                 {
                     while (true)
@@ -397,7 +413,7 @@ public sealed class AiGatewayService(
                         }
                     }
                 }
-                circuits.Record(provider.Key, failed: failure is not null);
+                circuits.Record(circuit, failed: failure is not null);
                 var fallback = entry != plan.Candidates[0];
                 if (final is not null)
                 {
@@ -446,7 +462,13 @@ public sealed class AiGatewayService(
         foreach (var entry in plan.Candidates)
         {
             var provider = byKey[entry.Provider];
-            if (!circuits.Allow(provider.Key))
+            var circuit = CircuitOf(entry);
+            if (!circuits.Allow(circuit))
+            {
+                continue;
+            }
+            var (reachable, target) = await TargetAsync(entry, ct);
+            if (!reachable)
             {
                 continue;
             }
@@ -454,15 +476,15 @@ public sealed class AiGatewayService(
             {
                 try
                 {
-                    var result = await provider.EmbedAsync(entry.Model, request.Inputs, ct);
-                    circuits.Record(provider.Key, failed: false);
+                    var result = await provider.EmbedAsync(entry.Model, request.Inputs, ct, target);
+                    circuits.Record(circuit, failed: false);
                     var completion = new AiCompletion(string.Empty, [], result.Usage, entry.Model, provider.Key, entry != plan.Candidates[0], false, "stop");
                     await ServedAsync(meta, plan, completion, watch, ct);
                     return new EmbeddingResult(result.Vectors, result.Usage, entry.Model, provider.Key, null);
                 }
                 catch (ProviderException ex)
                 {
-                    circuits.Record(provider.Key, failed: true);
+                    circuits.Record(circuit, failed: true);
                     if (ex.Retryable && attempt == 0)
                     {
                         continue;
@@ -474,6 +496,24 @@ public sealed class AiGatewayService(
         await budgets.ReleaseAsync(plan.Budget?.Reserved ?? []);
         await DeniedAsync(meta, AiDenials.ProviderUnavailable, watch, ct);
         return EmbeddingResult.Denied(AiDenials.ProviderUnavailable);
+    }
+
+    /// <summary>One circuit per shared provider, and one per private endpoint, so one tenant's server being down never closes another's.</summary>
+    private static string CircuitOf(CatalogueEntry e) => PrivateEndpoints.Parse(e.Model) is { } p ? $"{PrivateEndpoints.ProviderKey}/{p.Endpoint:N}" : e.Provider;
+
+    /// <summary>For a private model, where its endpoint is and its key; a model whose endpoint cannot be reached now is skipped like a failed one.</summary>
+    private async Task<(bool Reachable, ProviderTarget? Target)> TargetAsync(CatalogueEntry e, CancellationToken ct)
+    {
+        if (e.Provider != PrivateEndpoints.ProviderKey)
+        {
+            return (true, null);
+        }
+        var target = await endpoints.TargetAsync(e.Model, ct);
+        if (target is null)
+        {
+            logger.LogWarning("AI private endpoint for {Model} is disabled or its key is missing; the model was skipped", e.Model);
+        }
+        return (target is not null, target);
     }
 
     /// <summary>Drops tool calls for tools that were not offered and records it as a policy event (edge cases).</summary>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 
-export type AiTab = "policy" | "routing" | "units" | "usage" | "budgets" | "debug" | "assistant";
+export type AiTab = "policy" | "routing" | "endpoints" | "units" | "usage" | "budgets" | "debug" | "assistant";
 
 /** The AI governance pages (spec 013 section 10, T016). Each page's data is authorized by the API on its own. */
 export async function AiTabs({ current }: { current: AiTab }) {
@@ -9,6 +9,7 @@ export async function AiTabs({ current }: { current: AiTab }) {
   const tabs = [
     { key: "policy", href: "/admin/ai" },
     { key: "routing", href: "/admin/ai/routing" },
+    { key: "endpoints", href: "/admin/ai/endpoints" },
     { key: "units", href: "/admin/ai/units" },
     { key: "usage", href: "/admin/ai/usage" },
     { key: "budgets", href: "/admin/ai/budgets" },

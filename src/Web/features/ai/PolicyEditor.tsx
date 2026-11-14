@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { Checkbox } from "@/components/ui/Checkbox";
 import { FormField } from "@/components/ui/FormField";
 import { problemMessages } from "@/lib/notifications/types";
-import type { CatalogueEntry, ModelPolicyView, PolicySaveResult } from "@/lib/ai/types";
+import { CLASSIFICATIONS, type CatalogueEntry, type ModelPolicyView, type PolicySaveResult } from "@/lib/ai/types";
 
 type Result = { ok: boolean; messages: string[] } | null;
 
@@ -28,6 +29,7 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
   const [maxTokens, setMaxTokens] = useState(initial.policy.maxOutputTokens === null ? "" : String(initial.policy.maxOutputTokens));
   const [minTemp, setMinTemp] = useState(initial.policy.minTemperature === null ? "" : String(initial.policy.minTemperature));
   const [maxTemp, setMaxTemp] = useState(initial.policy.maxTemperature === null ? "" : String(initial.policy.maxTemperature));
+  const [sovereign, setSovereign] = useState(new Set(initial.policy.sovereign ?? []));
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result>(null);
   const editable = view.editable;
@@ -56,6 +58,7 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
           maxOutputTokens: number(maxTokens),
           minTemperature: number(minTemp),
           maxTemperature: number(maxTemp),
+          sovereign: [...sovereign],
         }),
       });
       if (response.ok) {
@@ -192,6 +195,19 @@ export function PolicyEditor({ catalogue, initial }: { catalogue: CatalogueEntry
           />
         </div>
       </section>
+
+      <fieldset className="ai-section" disabled={!editable} data-testid="ai-sovereign">
+        <legend>{t("sovereign.title")}</legend>
+        <p className="field-hint">{t("sovereign.intro")}</p>
+        {CLASSIFICATIONS.map((level) => (
+          <Checkbox
+            key={level}
+            label={t(`classification.${level}`)}
+            checked={sovereign.has(level)}
+            onChange={(e) => toggle(sovereign, setSovereign, level, e.target.checked)}
+          />
+        ))}
+      </fieldset>
 
       {result ? (
         <div role={result.ok ? "status" : "alert"} className={result.ok ? "notice" : "notice notice-error"}>

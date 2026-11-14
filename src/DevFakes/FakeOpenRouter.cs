@@ -18,8 +18,25 @@ namespace TeamBeats.DevFakes;
 /// the question holds <c>[fake:nocite]</c>. With a <c>response_format</c> the reply is the JSON object <c>{"answer": ...}</c>. Streaming
 /// (<c>stream: true</c>) returns server-sent events. Embeddings are a bag of words (see <see cref="Embed"/>).
 /// </summary>
-public sealed partial class FakeOpenRouter : HttpMessageHandler
+/// <remarks>
+/// The same fake also stands in for a tenant's private OpenAI-compatible endpoint (spec 013 US6): construct it with that
+/// endpoint's key, base path and model names, and register it on the <c>ai-private</c> client.
+/// </remarks>
+public sealed partial class FakeOpenRouter(string apiKey, string basePath, IReadOnlyList<string> models) : HttpMessageHandler
 {
+    public FakeOpenRouter()
+        : this(ApiKey, "/api/v1", Models)
+    {
+    }
+
+    /// <summary>The fictional private endpoint of a tenant (spec 013 US6): its address, key and the two models it serves.</summary>
+    public const string PrivateBaseUrl = "https://llm.private.example/v1";
+    public const string PrivateKey = "fictional-private-endpoint-key";
+    public const string PrivateChatModel = "llama-3.1-70b";
+    public const string PrivateEmbedModel = "bge-m3";
+
+    public static FakeOpenRouter Private() => new(PrivateKey, "/v1", [PrivateChatModel, PrivateEmbedModel]);
+
     [System.Text.RegularExpressions.GeneratedRegex(@"\[fake:tool:([a-z_]+)\]")]
     private static partial System.Text.RegularExpressions.Regex ToolMarker();
 
@@ -47,16 +64,16 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
         {
             return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
         }
-        if (request.Headers.Authorization?.Parameter != ApiKey)
+        if (request.Headers.Authorization?.Parameter != apiKey)
         {
             return Error(HttpStatusCode.Unauthorized, "No auth credentials found");
         }
         var path = request.RequestUri!.AbsolutePath;
-        if (path == "/api/v1/models" && request.Method == HttpMethod.Get)
+        if (path == $"{basePath}/models" && request.Method == HttpMethod.Get)
         {
-            return Json(new { data = Models.Select(m => new { id = m, name = m, context_length = 32_000 }) });
+            return Json(new { data = models.Select(m => new { id = m, name = m, context_length = 32_000 }) });
         }
-        if (path == "/api/v1/embeddings" && request.Method == HttpMethod.Post)
+        if (path == $"{basePath}/embeddings" && request.Method == HttpMethod.Post)
         {
             var embedBody = JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellationToken));
             LastModel = embedBody?["model"]?.GetValue<string>();
@@ -68,15 +85,15 @@ public sealed partial class FakeOpenRouter : HttpMessageHandler
                 usage = new { prompt_tokens = texts.Sum(Tokens), total_tokens = texts.Sum(Tokens) },
             });
         }
-        if (path != "/api/v1/chat/completions" || request.Method != HttpMethod.Post)
+        if (path != $"{basePath}/chat/completions" || request.Method != HttpMethod.Post)
         {
             return new HttpResponseMessage(HttpStatusCode.NotFound);
         }
 
         var body = JsonNode.Parse(await request.Content!.ReadAsStringAsync(cancellationToken))!;
-        var model = body["model"]?.GetValue<string>() ?? Models[0];
+        var model = body["model"]?.GetValue<string>() ?? models[0];
         LastModel = model;
-        if (!Models.Contains(model))
+        if (!models.Contains(model))
         {
             return Error(HttpStatusCode.BadRequest, $"{model} is not a valid model ID");
         }

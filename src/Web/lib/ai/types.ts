@@ -28,6 +28,7 @@ export type PolicyDocument = {
   maxTemperature: number | null;
   regions: string[] | null;
   logging: string;
+  sovereign?: string[] | null;
 };
 
 export type RouteChange = {
@@ -167,3 +168,29 @@ export type OrgPolicyView = {
 };
 
 export type OrgPolicySummary = { unitId: string; version: number; policy: OrgPolicyDocument; updatedAt: string };
+
+export const MODEL_CAPABILITIES = ["chat", "tools", "structured_output", "vision", "embeddings"] as const;
+
+export type PrivateModel = { name: string; capabilities: string[]; contextTokens: number };
+
+export type EndpointCheck = { check: string; model: string | null; passed: boolean; detail: string | null };
+
+export type PrivateEndpoint = {
+  id: string;
+  name: string;
+  baseUrl: string;
+  secretRef: string;
+  models: PrivateModel[];
+  region: string;
+  maxClassification: string;
+  status: "enabled" | "disabled";
+  version: number;
+  lastTestAt: string | null;
+  lastTestPassed: boolean | null;
+  checks: EndpointCheck[];
+  testCurrent: boolean;
+  catalogueModels: string[];
+  updatedAt: string;
+};
+
+export type PrivateEndpointsView = { editable: boolean; readOnlyReason: string | null; endpoints: PrivateEndpoint[] };

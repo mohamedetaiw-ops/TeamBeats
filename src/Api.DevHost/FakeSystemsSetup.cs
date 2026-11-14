@@ -50,6 +50,9 @@ public static class FakeSystemsSetup
     /// <summary>Named HTTP client the AI gateway (spec 013) uses for OpenRouter; the fake is registered on it ahead of time.</summary>
     public const string OpenRouterClient = "openrouter";
 
+    /// <summary>Named HTTP client of private model endpoints (spec 013 US6); the fictional private endpoint answers on it.</summary>
+    public const string PrivateModelsClient = "ai-private";
+
     public static bool Enabled(IConfiguration configuration) => configuration.GetValue<bool>(EnabledKey);
 
     /// <summary>
@@ -123,6 +126,7 @@ public static class FakeSystemsSetup
         services.AddHttpClient(HttpOidcProvider.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Entra);
         services.AddHttpClient(HttpMicrosoftGraph.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Graph);
         services.AddHttpClient(OpenRouterClient).ConfigurePrimaryHttpMessageHandler(() => systems.OpenRouter);
+        services.AddHttpClient(PrivateModelsClient).ConfigurePrimaryHttpMessageHandler(FakeOpenRouter.Private);
         services.AddHttpClient(TeamBeats.Modules.Integrations.Weather.OpenMeteoWeather.ClientName).ConfigurePrimaryHttpMessageHandler(() => systems.Weather);
 
         // Office previews (spec 011 FR-009): without a real Gotenberg, the real converter talks to the fake one.

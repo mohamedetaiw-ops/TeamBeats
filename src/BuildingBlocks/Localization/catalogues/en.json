@@ -2496,5 +2496,14 @@
   "notifications.template.ai.budget_reached_100.title": "An AI budget is used up",
   "notifications.template.ai.budget_reached_100.body": "An AI budget has reached its limit for this period, and its action now applies. Open Budgets to see it.",
   "validation.ai.org_policy_loosens": "A unit policy can only narrow the policy above it. This setting allows more than the rule it inherits.",
-  "conflict.ai.org_policy_changed": "Someone else changed this unit's policy. Reload it and try again."
+  "conflict.ai.org_policy_changed": "Someone else changed this unit's policy. Reload it and try again.",
+  "validation.ai.endpoint_name": "Give the endpoint a name of up to 80 characters.",
+  "validation.ai.endpoint_url": "Enter the endpoint's HTTPS address, without a user name, query or fragment.",
+  "validation.ai.endpoint_secret": "Choose a secret of this organization from the secret manager.",
+  "validation.ai.endpoint_models": "List between 1 and 20 models, each with a unique name, at least one capability and a context size.",
+  "validation.ai.sovereign_untested": "Keeping this classification on private endpoints needs an enabled endpoint that may take it and passed its test in the last 24 hours.",
+  "conflict.ai.endpoint_limit": "This organization already has the most private endpoints allowed. Remove one first.",
+  "conflict.ai.endpoint_changed": "Someone else changed this endpoint. Reload it and try again.",
+  "conflict.ai.endpoint_enabled": "Disable the endpoint before you remove it.",
+  "conflict.ai.endpoint_untested": "Run the connection test first. An endpoint can be enabled only after it passed a test in the last 24 hours."
 }

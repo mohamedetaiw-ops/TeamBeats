@@ -26,6 +26,7 @@ public static class AiGatewayModule
         services.AddScoped<BudgetGuard>();
         services.AddScoped<AiBudgets>();
         services.AddScoped<OrgPolicies>();
+        services.AddScoped<PrivateEndpoints>();
         services.AddScoped<UsageReports>();
         services.AddScoped<IAiAgentUsage, AiAgentUsage>();
         services.AddScoped<AiGatewayService>();
@@ -121,6 +122,53 @@ public static class AiGatewayModule
         ai.MapDelete("/org-policies/{unitId:guid}", async (Guid unitId, OrgPolicies policies, IDbSession session, CancellationToken ct) =>
         {
             await policies.RemoveAsync(unitId, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // Private model endpoints (US6): register, test, enable, disable and remove a tenant's own OpenAI-compatible endpoint.
+        ai.MapGet("/private-endpoints", async (PrivateEndpoints endpoints, CancellationToken ct) => Results.Ok(await endpoints.ListAsync(ct)));
+
+        ai.MapGet("/private-endpoints/{id:guid}", async (Guid id, PrivateEndpoints endpoints, CancellationToken ct) => Results.Ok(await endpoints.GetAsync(id, ct)));
+
+        ai.MapPost("/private-endpoints", async (PrivateEndpointRequest request, PrivateEndpoints endpoints, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await endpoints.CreateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/ai/private-endpoints/{view.Id}", view);
+        });
+
+        ai.MapPut("/private-endpoints/{id:guid}", async (Guid id, PrivateEndpointRequest request, PrivateEndpoints endpoints, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await endpoints.UpdateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        ai.MapPost("/private-endpoints/{id:guid}/test", async (Guid id, PrivateEndpoints endpoints, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await endpoints.TestAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        ai.MapPost("/private-endpoints/{id:guid}/enable", async (Guid id, PrivateEndpoints endpoints, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await endpoints.EnableAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        ai.MapPost("/private-endpoints/{id:guid}/disable", async (Guid id, PrivateEndpoints endpoints, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await endpoints.DisableAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        ai.MapDelete("/private-endpoints/{id:guid}", async (Guid id, PrivateEndpoints endpoints, IDbSession session, CancellationToken ct) =>
+        {
+            await endpoints.DeleteAsync(id, ct);
             await session.CommitAsync(ct);
             return Results.NoContent();
         });

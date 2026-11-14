@@ -110,6 +110,9 @@
   <Folder Name="/src/Modules/AiGateway.Contracts/">
     <Project Path="src/Modules/AiGateway.Contracts/TeamBeats.Modules.AiGateway.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Modules/AiGateway.OpenAiCompatible/">
+    <Project Path="src/Modules/AiGateway.OpenAiCompatible/TeamBeats.Modules.AiGateway.OpenAiCompatible.csproj" />
+  </Folder>
   <Folder Name="/src/Modules/AiGateway.OpenRouter/">
     <Project Path="src/Modules/AiGateway.OpenRouter/TeamBeats.Modules.AiGateway.OpenRouter.csproj" />
   </Folder>

@@ -45,9 +45,9 @@ Depends on 005 (quota tolerance), 015 (budget notifications), 017 (address check
 - [x] T022 [US7] `ai.org_policy`, intersection in steps 3 to 6, endpoints, Unit policies page (a unit administrator cannot open the tenant Model policy page)
 
 ### Phase 8: User Story 6, private endpoints (P1)
-- [ ] T023 [P] [US6] Tests: test before enable and within 24 hours; sovereign classifications never fall back to a shared provider; Restricted only on a Restricted private endpoint; Confidential embeddings only on the private endpoint; unreachable provider hidden; secret never returned; cross-tenant
-- [ ] T024 [US6] `AiGateway.OpenAiCompatible` adapter, shared address checks, `ai.private_endpoint`, sovereign rule, fake server in `DevFakes`
-- [ ] T025 [US6] Private endpoints page, in English and Arabic, RTL; e2e with axe
+- [x] T023 [P] [US6] Tests: test before enable and within 24 hours; sovereign classifications never fall back to a shared provider; Restricted only on a Restricted private endpoint; Confidential embeddings only on the private endpoint; unreachable provider hidden; secret never returned; cross-tenant
+- [x] T024 [US6] `AiGateway.OpenAiCompatible` adapter, shared address checks, `ai.private_endpoint`, sovereign rule, fake server in `DevFakes`
+- [x] T025 [US6] Private endpoints page, in English and Arabic, RTL; e2e with axe
 
 ### Phase 9: User Story 4 R2, cost analytics and export
 - [ ] T026 [P] [US4] Tests: CSV export audited and scoped; forecast; display currency; 25 month aggregation
