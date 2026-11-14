@@ -21,7 +21,13 @@ public sealed record OwnerReviewRequest(string? Action, DateOnly? NextReviewOn);
 public sealed record OwnerReviewResult(Guid ItemId, string Action, string Status, DateTimeOffset? ReviewDueAt, int? DraftVersion, bool RetirePending);
 
 /// <summary>Counts per site for the content health dashboard (US3 scenario 5). Views come with spec 021, so <see cref="NotViewed"/> is null until then.</summary>
-public sealed record SiteHealth(Guid SiteId, IReadOnlyDictionary<string, string> Names, int OverdueForReview, int WithoutActiveOwner, int Expired, int? NotViewed);
+/// <summary>
+/// Health of one site (US3 scenario 5, R2 additions): items overdue for review, without an active owner, expired; whether
+/// the site itself has no active owner (nobody holds <c>content.admin</c> at its unit, section 4 edge case); and for an
+/// archived site, how many of its items are still live and readable by link.
+/// </summary>
+public sealed record SiteHealth(Guid SiteId, IReadOnlyDictionary<string, string> Names, int OverdueForReview, int WithoutActiveOwner, int Expired, int? NotViewed,
+    bool Ownerless = false, bool Archived = false, int LiveLinks = 0);
 
 public sealed record HealthItem(Guid Id, Guid SiteId, string Type, string Status, string Title, Guid? OwnerId, DateTimeOffset? ReviewDueAt, DateTimeOffset? ExpiredAt);
 
@@ -58,6 +64,7 @@ public sealed class ContentGovernance(
     IEntitlementService entitlements,
     ITenantMemberships memberships,
     IReportingLine reportingLine,
+    IOrganizationHierarchy hierarchy,
     IProcessEngine engine,
     Items items,
     Sites sites,
@@ -362,14 +369,22 @@ public sealed class ContentGovernance(
             "select site_id, status, owner_user_id, review_due_at from content.content_item where status in ('published', 'expired', 'scheduled', 'draft', 'in_review')",
             null, r => (Site: r.GetGuid(0), Status: r.GetString(1), Owner: r.Get<Guid?>("owner_user_id"), Due: r.Get<DateTimeOffset?>("review_due_at")), ct);
         var list = new List<SiteHealth>();
+        var owners = (await provisioning.OrgHoldersAsync(Permissions.ContentAdmin, ct)).Where(h => active.Contains(h.UserId)).ToList();
         foreach (var site in (await sites.ListAsync(ct)).OrderBy(s => s.Id))
         {
             var mine = rows.Where(r => r.Site == site.Id).ToList();
+            var ownerless = false;
+            if (site.OrgUnitId is { } unit)
+            {
+                var above = (await hierarchy.GetAncestorsAndSelfAsync(unit, ct)).ToHashSet();
+                ownerless = !owners.Any(h => h.UnitId == unit || (h.Subtree && above.Contains(h.UnitId)));
+            }
+            var archived = site.Status == "archived";
             list.Add(new SiteHealth(site.Id, site.Names,
                 mine.Count(r => r.Status == ContentStatuses.Published && r.Due is { } d && d <= now),
                 mine.Count(r => r.Owner is not { } o || !active.Contains(o)),
                 mine.Count(r => r.Status == ContentStatuses.Expired),
-                null));
+                null, ownerless, archived, archived ? mine.Count(r => r.Status is ContentStatuses.Published or ContentStatuses.Expired) : 0));
         }
         return list;
     }

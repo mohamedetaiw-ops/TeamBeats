@@ -44,6 +44,8 @@ public static class ContentModule
         services.AddScoped<ContentFollows>();
         services.AddScoped<ContentTranslations>();
         services.AddScoped<ContentCampaigns>();
+        services.AddScoped<ContentRetention>();
+        services.AddScoped<ContentSignage>();
         services.AddMessageHandler<Contracts.ContentPublished, ContentMentions>("content.mentions");
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ContentComponents>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, ContentOwnerHandler>("content.owner_left");
@@ -53,6 +55,8 @@ public static class ContentModule
         services.AddMessageHandler<Contracts.AckReportRequested, AckReportHandler>("content.ack_report");
         return services;
     }
+
+    public const string SignageRateLimit = "content.signage";
 
     public static IEndpointRouteBuilder MapContentEndpoints(this IEndpointRouteBuilder app)
     {
@@ -231,6 +235,43 @@ public static class ContentModule
             await session.CommitAsync(ct);
             return Results.Ok(view);
         });
+
+        sites.MapGet("/{id:guid}/screens", async (Guid id, ContentSignage service, CancellationToken ct) => Results.Ok(await service.ListAsync(id, ct)));
+        sites.MapPost("/{id:guid}/screens", async (Guid id, ScreenRequest request, ContentSignage service, IDbSession session, CancellationToken ct) =>
+        {
+            var created = await service.CreateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/content/screens/{created.Screen.Id}", created);
+        });
+        var screens = app.MapGroup("/api/v1/content/screens").RequireTenantUser().WithTags("Content: sites");
+        screens.MapPost("/{id:guid}/rotate", async (Guid id, ContentSignage service, IDbSession session, CancellationToken ct) =>
+        {
+            var rotated = await service.RotateAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(rotated);
+        });
+        screens.MapDelete("/{id:guid}", async (Guid id, ContentSignage service, IDbSession session, CancellationToken ct) =>
+        {
+            await service.RemoveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+
+        // A signage screen reads its feed without a session (section 4 default). The tenant comes from the host and the
+        // token is the only thing that opens it; guessing is limited per client address.
+        app.MapGet("/api/v1/signage/{token}", async (string token, ITenantContext context, TenantContextAccessor accessor, ContentSignage service,
+            HttpResponse response, CancellationToken ct) =>
+        {
+            if (context.Host.Kind != HostScopeKind.Tenant || context.Host.Tenant is not { Status: TenantLifecycleStatus.Active } tenant)
+            {
+                throw TeamBeats.Primitives.AppException.NotFound();
+            }
+            accessor.SetTenant(tenant.Id);
+            accessor.SetActor(ActorType.Anonymous, null);
+            var feed = await service.FeedAsync(token, ct);
+            response.Headers.CacheControl = "no-store";
+            return Results.Ok(feed);
+        }).RequireRateLimiting(SignageRateLimit).WithTags("Content: sites");
 
         var campaignGroup = app.MapGroup("/api/v1/content/campaigns").RequireTenantUser().WithTags("Content: campaigns");
         campaignGroup.MapGet("", async (ContentCampaigns service, CancellationToken ct) => Results.Ok(await service.ListAsync(ct)));

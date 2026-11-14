@@ -199,6 +199,10 @@ public static class ApiComposition
                 http.Request.Cookies[KioskRules.DeviceCookie] is { Length: > 0 } device ? "kiosk:" + SessionTokens.Hash(device)
                     : "kiosk-ip:" + (http.Connection.RemoteIpAddress?.ToString() ?? "anonymous"),
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1) }));
+            // A signage feed is opened by a token in its address (spec 009 section 4): limit guessing per client address.
+            o.AddPolicy(TeamBeats.Modules.Content.ContentModule.SignageRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
+                "signage:" + (http.Connection.RemoteIpAddress?.ToString() ?? "anonymous"),
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
             // People search is a scraping path (spec 010 FR-017): limit per user.
             o.AddPolicy(PeopleModule.SearchRateLimit, http => RateLimitPartition.GetFixedWindowLimiter(
                 http.RequestServices.GetRequiredService<ITenantContext>().ActorId?.ToString() ?? http.Connection.RemoteIpAddress?.ToString() ?? "anonymous",

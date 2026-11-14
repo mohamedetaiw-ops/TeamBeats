@@ -63,8 +63,8 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T034 [US8] Campaign model, scheduler, sends through spec 015, dashboard endpoint and pages, English and Arabic, e2e with axe
 
 ### Phase 12: retention, health dashboard and signage
-- [ ] T035 [P] Tests: retention deletes old versions after the period and skips legal hold; health dashboard counts ownerless sites and overdue items per site with permitted items only; signage URL shows only public items of the site and stops after rotation
-- [ ] T036 Retention settings and job, health dashboard endpoint and page, signage screens and feed
+- [x] T035 [P] Tests: retention deletes old versions after the period and skips legal hold; health dashboard counts ownerless sites and overdue items per site with permitted items only; signage URL shows only public items of the site and stops after rotation
+- [x] T036 Retention settings and job, health dashboard endpoint and page, signage screens and feed
 
 ### R2 final phase
-- [ ] T037 OpenAPI; R2 implementation notes; spec evidence for R2
+- [x] T037 OpenAPI; R2 implementation notes; spec evidence for R2

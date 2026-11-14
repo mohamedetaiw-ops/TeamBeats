@@ -24,3 +24,19 @@ The spec stays Approved, not Implemented, until its R2 and R3 parts are built: s
 | Critical check adds under 20 ms p95 | Met | `ContentPerformanceTests.Feed_p95_..._and_the_critical_check_under_20_ms_...` (local run: pending check p95 13 ms for the whole request) |
 | Critical announcement to 100,000 people tracked within 2 minutes | Met | `ContentPerformanceTests.A_critical_announcement_to_100000_people_is_tracked_within_two_minutes` (local run: 3 s). Notices to the audience follow in batches of 500 |
 | Scheduled publishing within 60 seconds | Met | `ContentScheduleWorker` runs every 30 seconds; `ContentLifecycleTests.Scheduled_items_go_live_in_the_site_time_zone_...` |
+
+## R2 evidence
+
+Spec 009 R2 is built: sites, mentions and hashtags, follows, AI translation, multi-step approval, campaigns, retention, the content health additions and the signage feed. The spec stays Approved until its R3 parts (external sites for guests, advanced campaign automation, event items) are built. Defaults of each R2 slice are in `docs/architecture/r2-implementation-notes.md`.
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| US6, FR-012, FR-014 sites with home page, theme, navigation, templates, sharing, owners, archive | Met | `ContentSitesTests` (3), `content-sites.spec.ts` (en and ar, axe) |
+| US9 scenarios 2 and 3, FR-016 mentions and hashtags; FR-017 follows | Met | `ContentTopicsTests` (2), `content-topics.spec.ts` |
+| US5 scenarios 3 and 4, FR-010, FR-011 AI translation marked machine translated | Met | `ContentTranslationTests` (2), `content-translation.spec.ts` |
+| FR-003 multi-step approval | Met | `ContentRouteStepsTests` (3), `content-sites.spec.ts` (route editor) |
+| US8, FR-015 campaigns with follow ups and one dashboard | Met | `ContentCampaignTests` (3), `content-campaigns.spec.ts`; channels follow spec 015 categories and preferences (notes) |
+| FR-020 retention per content type, legal hold first | Met | `ContentRetentionSignageTests.Retention_deletes_old_versions_or_archived_items_...`, `content-governance.spec.ts` (retention settings) |
+| US3 scenario 5 health: ownerless sites, archived sites with live items | Met | `ContentRetentionSignageTests.Health_flags_ownerless_sites_...` |
+| Digital signage read-only feed (section 4 default) | Met | `ContentRetentionSignageTests.A_signage_address_shows_only_public_items_...`, `content-sites.spec.ts` (screen opens without signing in) |
+| Tenant boundaries and entitlements of R2 | Met | cross-tenant and plan cases in each class above (`content.ai_translation`, `content.multistep_approval`, `content.campaigns`) |

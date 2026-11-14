@@ -2369,5 +2369,7 @@
   "validation.content.campaign_item": "تحتاج كل خطوة إلى عنصر من موقع الحملة غير مؤرشف.",
   "conflict.content.campaign_started": "بدأت هذه الحملة، لذا لا يمكن تغيير خطتها.",
   "conflict.content.campaign_empty": "أضف خطوة واحدة على الأقل قبل بدء الحملة.",
-  "conflict.content.campaign_ended": "انتهت هذه الحملة بالفعل."
+  "conflict.content.campaign_ended": "انتهت هذه الحملة بالفعل.",
+  "validation.content.screen_name": "أعطِ الشاشة اسمًا لا يزيد على 100 حرف.",
+  "conflict.content.screen_limit": "بلغ هذا الموقع الحد الأقصى من الشاشات. أزل واحدة أولًا."
 }

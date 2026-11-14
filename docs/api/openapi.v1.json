@@ -239,6 +239,28 @@
         }
       }
     },
+    "/api/v1/signage/{token}": {
+      "get": {
+        "tags": [
+          "Content: sites"
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/me/policies": {
       "get": {
         "tags": [
@@ -8951,6 +8973,60 @@
         }
       }
     },
+    "/api/v1/content/sites/{id}/screens": {
+      "get": {
+        "tags": [
+          "Content: sites"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content: sites"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScreenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/content/settings": {
       "get": {
         "tags": [
@@ -10016,6 +10092,52 @@
       "post": {
         "tags": [
           "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/screens/{id}/rotate": {
+      "post": {
+        "tags": [
+          "Content: sites"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/screens/{id}": {
+      "delete": {
+        "tags": [
+          "Content: sites"
         ],
         "parameters": [
           {
@@ -27233,6 +27355,21 @@
           },
           "underReviewLabel": {
             "type": "boolean"
+          },
+          "retentionMonths": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "retentionAction": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -34518,6 +34655,20 @@
           }
         }
       },
+      "ScreenRequest": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "SecurityPolicyRequest": {
         "required": [
           "ipAllow",
@@ -37360,6 +37511,9 @@
       "name": "Letters"
     },
     {
+      "name": "Content: sites"
+    },
+    {
       "name": "Policies"
     },
     {
@@ -37448,9 +37602,6 @@
     },
     {
       "name": "Services: builder"
-    },
-    {
-      "name": "Content: sites"
     },
     {
       "name": "Content: settings"

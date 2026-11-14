@@ -2369,5 +2369,7 @@
   "validation.content.campaign_item": "Each step needs an item of the campaign's site that is not archived.",
   "conflict.content.campaign_started": "This campaign has started, so its plan can no longer change.",
   "conflict.content.campaign_empty": "Add at least one step before starting the campaign.",
-  "conflict.content.campaign_ended": "This campaign has already ended."
+  "conflict.content.campaign_ended": "This campaign has already ended.",
+  "validation.content.screen_name": "Give the screen a name of up to 100 characters.",
+  "conflict.content.screen_limit": "This site has the most screens it can have. Remove one first."
 }

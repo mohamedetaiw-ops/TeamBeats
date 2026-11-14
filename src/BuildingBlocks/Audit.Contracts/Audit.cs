@@ -352,6 +352,10 @@ public static class AuditActions
     public const string ContentCampaignStarted = "content.campaign_started";
     public const string ContentCampaignCancelled = "content.campaign_cancelled";
     public const string ContentCampaignStepSent = "content.campaign_step_sent";
+    public const string ContentRetentionApplied = "content.retention_applied";
+    public const string ContentScreenCreated = "content.screen_created";
+    public const string ContentScreenRotated = "content.screen_rotated";
+    public const string ContentScreenRemoved = "content.screen_removed";
     public const string ContentCriticalSent = "content.critical_sent";
     public const string ContentCriticalDenied = "content.critical_denied";
     public const string ContentAcknowledged = "content.acknowledged";
@@ -561,6 +565,7 @@ public static class AuditActions
         TaskApproved, TaskRejected, TaskReturned, DelegationSet, DelegationChanged, DelegationEnded,
         ContentCreated, ContentPublished, ContentScheduled, ContentUnpublished, ContentArchived, ContentExpired, ContentSettingsChanged, ContentShared, ContentSubmitted, ContentApproved, ContentReturned, ContentWithdrawn, ContentTranslated, ContentTranslationApproved,
         ContentCampaignCreated, ContentCampaignStarted, ContentCampaignCancelled, ContentCampaignStepSent,
+        ContentRetentionApplied, ContentScreenCreated, ContentScreenRotated, ContentScreenRemoved,
         ContentCriticalSent, ContentCriticalDenied, ContentAcknowledged, ContentAckReportExported,
         ContentReviewed, ContentOwnerReassigned, ContentVersionRestored, ContentCommentModerated,
         SiteCreated, SiteChanged, SiteArchived, SiteRestored,

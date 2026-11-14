@@ -137,7 +137,7 @@ public sealed class Sites(
     }
 
     /// <summary>Whether the caller administers the site: <c>content.admin</c> at its scope, which a site owner holds at its unit (US6 scenario 4).</summary>
-    private async Task<bool> ManagesAsync(SiteRow site, CancellationToken ct) => (await authz.CheckAsync(Permissions.ContentAdmin, site.Target, ct)).Allowed;
+    internal async Task<bool> ManagesAsync(SiteRow site, CancellationToken ct) => (await authz.CheckAsync(Permissions.ContentAdmin, site.Target, ct)).Allowed;
 
     private async Task<SiteView> ViewAsync(SiteRow row, bool canManage, CancellationToken ct) =>
         row.View(row.HomePageId is { } page ? (await pages.FindAsync(page, ct))?.Slug : null, canManage);
@@ -467,8 +467,10 @@ public sealed class Sites(
             return null;
         }
         return await session.QuerySingleOrDefaultAsync(
-            "select requires_owner, review_months, show_history_to_readers, under_review_label from content.content_type where key = @key", new { key },
-            r => new ContentTypeSettings(key, r.GetBoolean(0), r.Get<int?>("review_months"), r.GetBoolean(2), r.GetBoolean(3)), ct) ?? defaults;
+            "select requires_owner, review_months, show_history_to_readers, under_review_label, retention_months, retention_action from content.content_type where key = @key",
+            new { key },
+            r => new ContentTypeSettings(key, r.GetBoolean(0), r.Get<int?>("review_months"), r.GetBoolean(2), r.GetBoolean(3), r.Get<int?>("retention_months"),
+                r.Get<string?>("retention_action")), ct) ?? defaults;
     }
 
     public async Task<ContentSettingsView> SettingsAsync(CancellationToken ct)
@@ -494,7 +496,9 @@ public sealed class Sites(
         {
             errors.Add("embedHosts", "validation.content.embed_host");
         }
-        if (request.Types?.Any(t => t is null || !ContentTypes.Defaults.ContainsKey(t.Key ?? string.Empty) || t.ReviewMonths is < 1 or > 60) == true)
+        if (request.Types?.Any(t => t is null || !ContentTypes.Defaults.ContainsKey(t.Key ?? string.Empty) || t.ReviewMonths is < 1 or > 60
+            || t.RetentionMonths is < 1 or > 120 || (t.RetentionMonths is null) != (t.RetentionAction is null)
+            || (t.RetentionAction is not null and not (RetentionActions.Versions or RetentionActions.Item))) == true)
         {
             errors.Add("types", "validation.content.type_settings");
         }
@@ -513,11 +517,14 @@ public sealed class Sites(
         {
             await session.ExecAsync(
                 """
-                insert into content.content_type (tenant_id, key, requires_owner, review_months, show_history_to_readers, under_review_label, updated_at)
-                values (platform.current_tenant_id(), @key, @owner, @months, @history, @label, @now)
+                insert into content.content_type (tenant_id, key, requires_owner, review_months, show_history_to_readers, under_review_label, retention_months,
+                  retention_action, updated_at)
+                values (platform.current_tenant_id(), @key, @owner, @months, @history, @label, @keep, @action, @now)
                 on conflict (tenant_id, key) do update set requires_owner = excluded.requires_owner, review_months = excluded.review_months,
-                  show_history_to_readers = excluded.show_history_to_readers, under_review_label = excluded.under_review_label, updated_at = excluded.updated_at
-                """, new { key = t.Key, owner = t.RequiresOwner, months = t.ReviewMonths, history = t.ShowHistoryToReaders, label = t.UnderReviewLabel, now }, ct);
+                  show_history_to_readers = excluded.show_history_to_readers, under_review_label = excluded.under_review_label,
+                  retention_months = excluded.retention_months, retention_action = excluded.retention_action, updated_at = excluded.updated_at
+                """, new { key = t.Key, owner = t.RequiresOwner, months = t.ReviewMonths, history = t.ShowHistoryToReaders, label = t.UnderReviewLabel,
+                    keep = t.RetentionMonths, action = t.RetentionAction, now }, ct);
         }
         var after = await SettingsAsync(ct);
         await audit.WriteAsync(new AuditEntry(AuditActions.ContentSettingsChanged, "content_settings", null, Changes: new { before, after }), ct);

@@ -110,6 +110,13 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(msg(locale, "content.health.title"));
       await expect(page.getByRole("table").getByRole("rowheader").first()).toBeVisible();
       await expectAccessible(page, testInfo, `content-health-${locale}`);
+
+      // Retention per content type (FR-020): news keeps old versions for two years.
+      const news = page.getByRole("group", { name: msg(locale, "content.health.types.news"), exact: true });
+      await news.getByLabel(msg(locale, "content.health.retention.action")).selectOption("versions");
+      await news.getByLabel(msg(locale, "content.health.retention.months")).fill("24");
+      await page.getByRole("button", { name: msg(locale, "content.health.retention.save") }).click();
+      await expect(page.getByText(msg(locale, "content.health.retention.saved"))).toBeVisible();
       await api.dispose();
     });
   });

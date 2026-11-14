@@ -39,6 +39,9 @@ public sealed class CrossTenantSuite(TenantWorld world, ITestOutputHelper output
         // covers unknown, expired and other tenants' links.
         "GET /api/v1/preboarding/{token}",
         "GET /api/v1/letters/verify/{code}",
+        // Spec 009 section 4: a signage screen reads its feed with the screen's signed token, not a session;
+        // ContentRetentionSignageTests covers unknown, rotated and removed tokens and the tenant boundary.
+        "GET /api/v1/signage/{token}",
         // Spec 028 US7: package content is opened with its launch token, not a session; a CORS preflight carries neither.
         // Every other content route refuses an unknown token, which this suite checks.
         "OPTIONS /api/v1/learning/content/{token}/{**path}",

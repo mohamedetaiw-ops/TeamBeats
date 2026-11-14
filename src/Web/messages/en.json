@@ -3819,7 +3819,29 @@
         "expired": "Expired"
       },
       "show": "Show {kind} in {site}",
-      "none": "Nothing to show."
+      "none": "Nothing to show.",
+      "siteState": "Site",
+      "ownerlessSite": "No site owner",
+      "archivedLive": "{count, plural, =0 {Archived} one {Archived, # item still live} other {Archived, # items still live}}",
+      "types": {
+        "news": "News",
+        "announcement": "Announcements",
+        "page": "Pages",
+        "knowledge": "Knowledge articles"
+      },
+      "retention": {
+        "title": "Retention",
+        "intro": "Choose how long each content type keeps its history. Nothing is deleted while a type keeps everything, and nothing under a legal hold is ever deleted.",
+        "action": "After the period",
+        "keep": "Keep everything",
+        "versions": "Delete old versions, keep the live and draft ones",
+        "item": "Delete archived items",
+        "months": "Period in months",
+        "save": "Save retention",
+        "saving": "Saving",
+        "saved": "Retention saved.",
+        "failed": "That did not work. Try again."
+      }
     },
     "slack": {
       "title": "Share to Slack",
@@ -3906,6 +3928,21 @@
         "saving": "Saving",
         "saved": "Routes saved.",
         "failed": "That did not work. Try again."
+      },
+      "screens": {
+        "title": "Signage screens",
+        "intro": "A screen shows this site's Public items meant for everyone, read only, without signing in. Keep each address private: anyone with it can open the screen.",
+        "none": "No screens yet.",
+        "name": "Screen name",
+        "add": "Add screen",
+        "working": "Working",
+        "failed": "That did not work. Try again.",
+        "address": "Address for {name}. Copy it now: it is shown only once.",
+        "rotate": "Replace the address of {name}",
+        "remove": "Remove {name}",
+        "removeQuestion": "Remove {name}? Its address stops working.",
+        "removeConfirm": "Remove",
+        "cancel": "Cancel"
       }
     },
     "topics": {
@@ -3983,6 +4020,10 @@
       "byLocation": "By location",
       "group": "Group",
       "other": "Other"
+    },
+    "signage": {
+      "items": "News",
+      "empty": "Nothing to show right now."
     }
   },
   "documents": {

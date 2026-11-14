@@ -2,10 +2,11 @@ import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
 import { listUnits } from "@/lib/experience/client";
-import { pickName, type SiteView } from "@/lib/content/types";
+import { pickName, type ScreenView, type SiteView } from "@/lib/content/types";
 import { Header } from "@/components/shell/Header";
 import { SiteSettings } from "@/features/content/SiteForms";
 import { RouteSettings } from "@/features/content/RouteSettings";
+import { ScreenSettings } from "@/features/content/ScreenSettings";
 import "@/features/content/content.css";
 
 /** One site's settings for its owner (spec 009 US6). Someone who may not manage the site gets not found from the API. */
@@ -15,7 +16,11 @@ export default async function ContentSitePage({ params }: { params: Promise<{ id
     redirect("/signin");
   }
   const { id } = await params;
-  const [site, units] = await Promise.all([apiGet<SiteView>(`/api/v1/content/sites/${encodeURIComponent(id)}`), listUnits()]);
+  const [site, units, screens] = await Promise.all([
+    apiGet<SiteView>(`/api/v1/content/sites/${encodeURIComponent(id)}`),
+    listUnits(),
+    apiGet<ScreenView[]>(`/api/v1/content/sites/${encodeURIComponent(id)}/screens`),
+  ]);
   if (!site.ok) {
     notFound();
   }
@@ -37,6 +42,7 @@ export default async function ContentSitePage({ params }: { params: Promise<{ id
         </h1>
         <SiteSettings site={site.data} units={units.ok ? units.data : []} locales={me.data.tenant.enabledLocales} />
         <RouteSettings site={site.data} />
+        {screens.ok ? <ScreenSettings site={site.data} screens={screens.data} /> : null}
       </main>
     </>
   );

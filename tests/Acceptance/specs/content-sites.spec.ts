@@ -1,5 +1,6 @@
 import { expect, expectAccessible, signInWithDevForm, test } from "../support/fixtures";
 import { msg, type LaunchLocale } from "../support/messages";
+import { tenantApi } from "../support/pages";
 import { createTenant, type TestTenant } from "../support/platform";
 import { hostOrigin } from "../support/stack";
 
@@ -50,6 +51,34 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.goto(settings);
       await page.getByRole("button", { name: m("content.sites.restore") }).click();
       await expect(page.getByText(m("content.sites.archivedNote"))).toHaveCount(0);
+    });
+
+    test("a site owner adds a signage screen that shows public items", async ({ page, browser }, testInfo) => {
+      const api = await tenantApi(tenant);
+      const sites = (await (await api.get("/api/v1/content/sites")).json()) as { id: string; isDefault: boolean }[];
+      const site = sites.find((s) => s.isDefault)!.id;
+      const title = locale === "ar" ? "مرحبًا بالزوار" : "Welcome visitors";
+      const body = { blocks: [{ type: "paragraph", children: [{ text: title }] }] };
+      const created = await api.post("/api/v1/content/items", { data: { type: "news", classification: "public", variants: { [locale]: { title, body } } } });
+      const id = ((await created.json()) as { id: string }).id;
+      expect((await api.post(`/api/v1/content/items/${id}/publish`, { data: {} })).status()).toBe(200);
+
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/content/sites/${site}`);
+      await page.getByLabel(m("content.sites.screens.name")).fill("Lobby");
+      await page.getByRole("button", { name: m("content.sites.screens.add") }).click();
+      const address = page.getByTestId("screen-address").locator("bdi");
+      await expect(address).toBeVisible();
+      await expectAccessible(page, testInfo, `content-site-screens-${locale}`);
+      const url = (await address.textContent())!.trim();
+
+      // The screen opens without signing in.
+      const screen = await browser.newContext({ locale: locale === "ar" ? "ar-AE" : "en-US" });
+      const lobby = await screen.newPage();
+      await lobby.goto(url);
+      await expect(lobby.getByRole("heading", { level: 2, name: title })).toBeVisible();
+      await expectAccessible(lobby, testInfo, `signage-${locale}`);
+      await screen.close();
     });
 
     test("a site owner sets a two step approval route for news", async ({ page }, testInfo) => {

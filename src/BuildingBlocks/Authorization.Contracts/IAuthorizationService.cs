@@ -147,6 +147,13 @@ public interface IAuthorizationProvisioning
     /// </summary>
     Task<IReadOnlyList<Guid>> ResourceHoldersAsync(string permission, string resourceType, Guid resourceId, CancellationToken ct = default);
 
+    /// <summary>
+    /// Live role assignments holding the permission at organization scope (a unit, or a unit and its subtree), to users
+    /// directly or through a group, with the user for each. Tenant scope is left out: it finds who looks after a part of
+    /// the organization, such as the owners of a site (spec 009 section 4).
+    /// </summary>
+    Task<IReadOnlyList<OrgHolder>> OrgHoldersAsync(string permission, CancellationToken ct = default);
+
     /// <summary>The groups the user is a member of, product and directory groups alike (audiences such as spec 016).</summary>
     Task<IReadOnlySet<Guid>> GroupIdsOfAsync(Guid userId, CancellationToken ct = default);
 
@@ -192,6 +199,8 @@ public interface IAuthorizationProvisioning
 }
 
 public sealed record GroupSummary(Guid Id, string Key, string Name, string Source, int Members);
+
+public sealed record OrgHolder(Guid UserId, Guid UnitId, bool Subtree);
 
 public sealed record AdminAssignment(Guid AssignmentId, Guid UserId, string RoleKey, ScopeType ScopeType, Guid? ScopeId);
 
