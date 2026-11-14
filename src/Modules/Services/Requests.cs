@@ -72,7 +72,22 @@ public sealed record TrackingEntry(string Event, string? Step, PersonRef? Actor,
 public sealed record AttachmentView(Guid Id, string FileName, long SizeBytes, string ContentType, string ScanState);
 
 public sealed record RequestDetail(RequestSummary Request, int ServiceVersion, FormDefinition Form, IReadOnlyDictionary<string, JsonElement> Data,
-    string Classification, IReadOnlyList<AttachmentView> Attachments, IReadOnlyList<TrackingEntry> Tracking, RequestAutomation? Automation = null);
+    string Classification, IReadOnlyList<AttachmentView> Attachments, IReadOnlyList<TrackingEntry> Tracking, RequestAutomation? Automation = null,
+    ServiceLevelView? ServiceLevel = null);
+
+/// <summary>
+/// Where a request stands against its service level target (FR-015): <c>on_track</c>, <c>at_risk</c> (past 75% of the
+/// target), <c>breached</c>, or <c>met</c> once it closed in time.
+/// </summary>
+public sealed record ServiceLevelView(DateTimeOffset DueAt, string State);
+
+public static class ServiceLevelStates
+{
+    public const string OnTrack = "on_track";
+    public const string AtRisk = "at_risk";
+    public const string Breached = "breached";
+    public const string Met = "met";
+}
 
 /// <summary>A row of <c>services.request</c>.</summary>
 internal sealed record RequestRow(
@@ -359,18 +374,20 @@ public sealed class Requests(
         var id = Ids.New();
         var number = await NextNumberAsync(ct);
         var unit = await PrimaryUnitAsync(subject, ct);
+        var level = await ServiceLevelAsync(published.Route, unit, subject, now, ct);
         var inserted = await session.ScalarAsync<Guid?>(
             """
             insert into services.request (tenant_id, id, number, service_id, service_version, requester_user_id, on_behalf_of_user_id, requester_org_unit_id,
-              status, data, classification, idempotency_key, created_at, submitted_at, requester_app_id)
-            values (platform.current_tenant_id(), @id, @number, @service, @version, @user, @onBehalf, @unit, @status, @data, @classification, @key, @now, @now, @app)
+              status, data, classification, idempotency_key, created_at, submitted_at, requester_app_id, due_at, at_risk_at)
+            values (platform.current_tenant_id(), @id, @number, @service, @version, @user, @onBehalf, @unit, @status, @data, @classification, @key, @now, @now, @app,
+              @dueAt, @atRiskAt)
             on conflict (tenant_id, requester_user_id, idempotency_key) where idempotency_key is not null do nothing
             returning id
             """, new
             {
                 id, number, service = row.Id, version, user, onBehalf = subject == user ? (Guid?)null : subject, unit,
                 status = published.Route.Approval is null && published.Route.Graph is null ? RequestStatuses.Submitted : RequestStatuses.InApproval,
-                data = Jsonb.From(data), classification = row.Classification, key, now, app,
+                data = Jsonb.From(data), classification = row.Classification, key, now, app, dueAt = level.Due, atRiskAt = level.AtRisk,
             }, ct);
         if (inserted is null)
         {
@@ -758,7 +775,8 @@ public sealed class Requests(
         }
         return new RequestDetail(await SummaryAsync(row, ct), row.ServiceVersion, version?.Form ?? FormDefinition.Empty,
             Catalogue.Json<Dictionary<string, JsonElement>>(row.Data), row.Classification, await attachments.ForRequestAsync(id, ct), tracking,
-            version?.Route.Actions is { Count: > 0 } actions && row.InstanceId is { } instance ? await AutomationAsync(row, instance, actions, ct) : null);
+            version?.Route.Actions is { Count: > 0 } actions && row.InstanceId is { } instance ? await AutomationAsync(row, instance, actions, ct) : null,
+            await ServiceLevelOfAsync(row, ct));
     }
 
     /// <summary>The connector steps of the request's current route, with the open incident of each; owners may act on them.</summary>
@@ -776,6 +794,42 @@ public sealed class Requests(
         var owner = await session.ScalarAsync<Guid?>("select owner_org_unit_id from services.service where id = @id", new { id = row.ServiceId }, ct);
         var canOperate = (await authz.CheckAsync(Permissions.ServiceManage, owner is { } u ? AuthzTarget.OrgUnit(u) : AuthzTarget.Tenant, ct)).Allowed;
         return new RequestAutomation(steps, canOperate);
+    }
+
+    // ---- Service levels (FR-015) ----
+
+    /// <summary>
+    /// When a request submitted now is due under the version's service level target: that many working days later on the
+    /// calendar of the requester's unit, at the same time of day; it is at risk after 75% of that time.
+    /// </summary>
+    private async Task<(DateTimeOffset? Due, DateTimeOffset? AtRisk)> ServiceLevelAsync(ServiceRoute route, Guid? unit, Guid subject, DateTimeOffset now,
+        CancellationToken ct)
+    {
+        if (route.ServiceLevelDays is not { } days)
+        {
+            return (null, null);
+        }
+        var calendar = unit is { } u ? await calendars.ForUnitAsync(u, ct) : await calendars.ForUserAsync(subject, ct);
+        var today = calendar.Today(now);
+        var due = now + (calendar.AddWorkingDays(today, days).ToDateTime(TimeOnly.MinValue) - today.ToDateTime(TimeOnly.MinValue));
+        return (due, now + TimeSpan.FromTicks((due - now).Ticks / 4 * 3));
+    }
+
+    private async Task<ServiceLevelView?> ServiceLevelOfAsync(RequestRow row, CancellationToken ct)
+    {
+        var level = await session.QuerySingleOrDefaultAsync("select due_at, at_risk_at, service_level from services.request where id = @id", new { id = row.Id },
+            r => (Due: r.Get<DateTimeOffset?>("due_at"), AtRisk: r.Get<DateTimeOffset?>("at_risk_at"), State: r.Get<string?>("service_level")), ct);
+        if (level.Due is not { } due)
+        {
+            return null;
+        }
+        var now = clock.UtcNow;
+        var state = level.State == ServiceLevelStates.Breached ? ServiceLevelStates.Breached
+            : row.ClosedAt is { } closed ? (closed <= due ? ServiceLevelStates.Met : ServiceLevelStates.Breached)
+            : now >= due ? ServiceLevelStates.Breached
+            : level.State == ServiceLevelStates.AtRisk || now >= level.AtRisk ? ServiceLevelStates.AtRisk
+            : ServiceLevelStates.OnTrack;
+        return new ServiceLevelView(due, state);
     }
 
     // ---- Triggers (FR-014) ----
@@ -809,16 +863,19 @@ public sealed class Requests(
         var now = clock.UtcNow;
         var number = await NextNumberAsync(ct);
         var unit = await PrimaryUnitAsync(subject, ct);
+        var level = await ServiceLevelAsync(published.Route, unit, subject, now, ct);
         var inserted = await session.ScalarAsync<Guid?>(
             """
             insert into services.request (tenant_id, id, number, service_id, service_version, requester_user_id, on_behalf_of_user_id, requester_org_unit_id,
-              status, data, classification, created_at, submitted_at, trigger_event, chain_depth)
-            values (platform.current_tenant_id(), @id, @number, @serviceId, @version, @filer, @onBehalf, @unit, @status, '{}'::jsonb, @classification, @now, @now, @eventKey, @depth)
+              status, data, classification, created_at, submitted_at, trigger_event, chain_depth, due_at, at_risk_at)
+            values (platform.current_tenant_id(), @id, @number, @serviceId, @version, @filer, @onBehalf, @unit, @status, '{}'::jsonb, @classification, @now, @now,
+              @eventKey, @depth, @dueAt, @atRiskAt)
             on conflict (tenant_id, service_id, trigger_event) where trigger_event is not null do nothing
             returning id
             """, new
             {
                 id, number, serviceId, version, filer, onBehalf = filer == subject ? (Guid?)null : subject, unit, classification = service.Classification, now, eventKey, depth,
+                dueAt = level.Due, atRiskAt = level.AtRisk,
                 status = published.Route.Approval is null && published.Route.Graph is null ? RequestStatuses.Submitted : RequestStatuses.InApproval,
             }, ct);
         if (inserted is null)

@@ -50,7 +50,9 @@ public static class ServicesModule
         services.AddMessageHandler<Tenancy.Contracts.OrganizationMembershipChanged, ServiceTriggers>("services.trigger_membership_changed");
         services.AddMessageHandler<RequestCompleted, ServiceTriggers>("services.trigger_request_completed");
         services.AddMessageHandler<Workflow.Contracts.ProcessActionRequested, ServiceTriggers>("services.start_service");
+        services.AddScoped<ServiceLevels>();
         services.AddScoped<Automation>();
+        services.AddMessageHandler<Workflow.Contracts.ProcessActionRequested, Automation>("services.auto_approved");
         services.AddScoped<RouteActions>();
         services.AddMessageHandler<Workflow.Contracts.ProcessInstanceCompleted, Automation>("services.route_completed");
         services.AddMessageHandler<Workflow.Contracts.ServiceTaskCompleted, Automation>("services.automation_done");
@@ -159,6 +161,20 @@ public static class ServicesModule
         tasks.MapGet("", async (Guid? service, Tasks inbox, CancellationToken ct) => Results.Ok(await inbox.InboxAsync(service, ct)));
 
         tasks.MapGet("/count", async (Tasks inbox, CancellationToken ct) => Results.Ok(await inbox.CountAsync(ct)));
+
+        tasks.MapPost("/{id:guid}/pick", async (Guid id, Tasks inbox, IDbSession session, CancellationToken ct) =>
+        {
+            var task = await inbox.PickAsync(id, true, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(task);
+        });
+
+        tasks.MapDelete("/{id:guid}/pick", async (Guid id, Tasks inbox, IDbSession session, CancellationToken ct) =>
+        {
+            var task = await inbox.PickAsync(id, false, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(task);
+        });
 
         tasks.MapPost("/{id:guid}/decision", async (Guid id, TaskDecision decision, Tasks inbox, IDbSession session, CancellationToken ct) =>
         {

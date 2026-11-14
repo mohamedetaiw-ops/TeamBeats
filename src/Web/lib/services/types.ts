@@ -159,7 +159,11 @@ export type RequestDetail = {
   attachments: AttachmentView[];
   tracking: TrackingEntry[];
   automation: RequestAutomation | null;
+  serviceLevel?: ServiceLevel | null;
 };
+
+/** Where a request stands against its service level target (spec 016 FR-015). */
+export type ServiceLevel = { dueAt: string; state: "on_track" | "at_risk" | "breached" | "met" };
 
 /** States of a connector step of a request (spec 016 US8, spec 017 T009). */
 export const AUTOMATION_STATES = ["running", "succeeded", "business_error", "incident", "skipped", "cancelled"] as const;
@@ -197,6 +201,9 @@ export type InboxItem = {
   /** Set for tasks of other modules, such as content reviews (spec 009). */
   title?: Names | null;
   link?: string | null;
+  /** A queue step: one member picks it, and may put it back (spec 016 US6). */
+  pickable?: boolean;
+  pickedBy?: PersonRef | null;
 };
 
 export type Delegation = { delegate: PersonRef; startsOn: string; endsOn: string; active: boolean };

@@ -44,10 +44,10 @@ Depends on 003 (user lookup, groups), 004, 005, 006, 007, 008 (shell badge slot)
 - [x] T021 [US8] Schedule and product event triggers, system requester, idempotent per event; start service steps start the other service's request (chain depth at most 5); requester leaves cancels open requests unless "continue after exit"; tests
 
 ### Slice 3: service levels and auto-approve
-- [ ] T022 [US5] [US8] Service level targets, at-risk and breach alerts and analytics, auto-approve rules; tests
+- [x] T022 [US5] [US8] Service level targets, at-risk and breach alerts and analytics, auto-approve rules; tests
 
 ### Slice 4: fulfilment
-- [ ] T023 [US6] Queue tasks (pick, complete, reject with reason), hand-off failure alert to the queue and owners; tests
+- [x] T023 [US6] Queue tasks (pick, complete, reject with reason), hand-off failure alert to the queue and owners; tests
 
 ### Slice 5: designer and test mode
 - [ ] T024 [US7] [US8] Route designer on the React Flow canvas, test mode as a sample employee, problems on steps, triggers, service level and auto-approve settings, in English and Arabic; e2e with axe

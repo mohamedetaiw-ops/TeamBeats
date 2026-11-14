@@ -304,6 +304,10 @@ public sealed partial class ServiceAdmin(
 
     private static void ValidateRoute(ServiceRoute route, FormDefinition form, ValidationErrors errors)
     {
+        if (route.ServiceLevelDays is < 1 or > ServiceRoute.MaxServiceLevelDays)
+        {
+            errors.Add("route.serviceLevelDays", "validation.services.service_level");
+        }
         if (route.Graph is { } graph)
         {
             // A step graph replaces the R1 shape; the two are never mixed.
@@ -357,6 +361,18 @@ public sealed partial class ServiceAdmin(
         if (step.DueWorkingDays is { } due && (due < 1 || due > 90))
         {
             errors.Add("route.approval.dueWorkingDays", "validation.services.due");
+        }
+    }
+
+    /// <summary>
+    /// Auto-approve rules on a Confidential or Restricted service skip a control, so they need a tenant administrator's
+    /// sign-off (section 15): only someone who manages the tenant's settings may save or publish them there.
+    /// </summary>
+    private async Task DemandAutoApproveSignOffAsync(string? classification, ServiceRoute route, CancellationToken ct)
+    {
+        if (classification is "confidential" or "restricted" && route.Graph?.Steps?.Any(s => s?.AutoApprove is { Count: > 0 }) == true)
+        {
+            await authz.DemandAsync(Permissions.TenantSettingsManage, AuthzTarget.Tenant, ct);
         }
     }
 
@@ -452,6 +468,7 @@ public sealed partial class ServiceAdmin(
         {
             await entitlements.DemandAsync(Capabilities.WorkflowAutomation, ct); // Automatic steps and triggers (section 9).
         }
+        await DemandAutoApproveSignOffAsync(row.Classification, route, ct);
         if (route.Graph is { } designed && !errors.Any)
         {
             // Each step type needs its package capability (section 9); approval and task steps in sequence need none more.
@@ -526,6 +543,7 @@ public sealed partial class ServiceAdmin(
         {
             await entitlements.DemandAsync(Capabilities.WorkflowAutomation, ct);
         }
+        await DemandAutoApproveSignOffAsync(row.Classification, latest.Route, ct);
         if (latest.Route.Graph is { } graph)
         {
             foreach (var capability in graph.Capabilities())

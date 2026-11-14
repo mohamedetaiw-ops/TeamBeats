@@ -2861,6 +2861,13 @@
         "infected": "Blocked: malware found",
         "failed": "Could not be checked"
       },
+      "serviceLevel": {
+        "due": "Due by",
+        "on_track": "On track",
+        "at_risk": "At risk",
+        "breached": "Overdue",
+        "met": "Met"
+      },
       "event": {
         "submitted": "Submitted",
         "resubmitted": "Submitted again",
@@ -2880,7 +2887,12 @@
         "triggered": "Started automatically by a trigger",
         "service_started": "Started another service request",
         "chain_stopped": "Stopped: too many requests started one after another",
-        "requester_left": "Cancelled: the requester left"
+        "requester_left": "Cancelled: the requester left",
+        "auto_approved": "Auto-approved by rule",
+        "sla_at_risk": "At risk of missing its service level",
+        "sla_breached": "Missed its service level",
+        "picked": "Picked",
+        "put_back": "Put back for the queue"
       },
       "automation": {
         "title": "Automatic steps",
@@ -2914,6 +2926,10 @@
       "failed": "The decision could not be saved. Try again."
     },
     "inbox": {
+      "pick": "Pick",
+      "putBack": "Put back",
+      "pickedBy": "Picked by {name}",
+      "pickFailed": "The task could not be picked or put back. Refresh the page and try again.",
       "pageTitle": "Tasks",
       "title": "{count, plural, =0 {Nothing waiting for you} one {# task waiting for you} other {# tasks waiting for you}}",
       "type": "Type",

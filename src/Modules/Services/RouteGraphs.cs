@@ -96,7 +96,8 @@ public sealed record RouteNode(
     NotifyTarget? Notify = null,
     int? WaitWorkingDays = null,
     Guid? ServiceId = null,
-    string? Result = null);
+    string? Result = null,
+    IReadOnlyList<StepCondition>? AutoApprove = null);
 
 /// <summary>A path between two steps; from a condition or split, it is taken when all its conditions hold (none: the other paths' default).</summary>
 public sealed record RouteLink(string From, string To, IReadOnlyList<StepCondition>? When = null);
@@ -132,6 +133,10 @@ public sealed record RouteGraph(IReadOnlyList<RouteNode> Steps, IReadOnlyList<Ro
             if (step.Escalation is not null)
             {
                 needs.Add(Entitlements.Contracts.Capabilities.WorkflowAdvanced);
+            }
+            if (step.AutoApprove is { Count: > 0 })
+            {
+                needs.Add(Entitlements.Contracts.Capabilities.WorkflowAutomation); // Auto-approve rules (section 9).
             }
         }
         return needs;
@@ -182,6 +187,10 @@ public static partial class RouteGraphCheck
             {
                 errors.Add(path, "validation.services.route_step");
             }
+            if (step.AutoApprove is { Count: > 0 } rule && (step.Type != StepTypes.Approval || !ConditionsValid(rule, fields)))
+            {
+                errors.Add($"{path}.autoApprove", "validation.services.route_condition");
+            }
         }
         var links = graph.Links;
         for (var i = 0; i < links.Count; i++)
@@ -194,9 +203,7 @@ public static partial class RouteGraphCheck
                 continue;
             }
             var from = graph.Step(link.From!)!;
-            if (link.When is { Count: > 0 } when && (from.Type is not (StepTypes.Condition or StepTypes.Split) || when.Count > 10
-                || when.Any(c => c is null || !fields.TryGetValue(c.Field ?? "", out _) || !ConditionOperators.Feel.ContainsKey(c.Operator ?? "")
-                    || c.Value.ValueKind is not (JsonValueKind.String or JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False))))
+            if (link.When is { Count: > 0 } when && (from.Type is not (StepTypes.Condition or StepTypes.Split) || !ConditionsValid(when, fields)))
             {
                 errors.Add($"{at}.links[{i}].when", "validation.services.route_condition");
             }
@@ -227,6 +234,11 @@ public static partial class RouteGraphCheck
             }
         }
     }
+
+    /// <summary>At most 10 comparisons, each of a form field with a constant.</summary>
+    private static bool ConditionsValid(IReadOnlyList<StepCondition> when, IReadOnlyDictionary<string, FormField> fields) =>
+        when.Count <= 10 && when.All(c => c is not null && fields.ContainsKey(c.Field ?? "") && ConditionOperators.Feel.ContainsKey(c.Operator ?? "")
+            && c.Value.ValueKind is JsonValueKind.String or JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False);
 
     private static bool Ids(IReadOnlyList<Guid>? ids, int max) => ids is null || (ids.Count <= max && ids.All(g => g != Guid.Empty));
 
@@ -299,9 +311,11 @@ public static class RouteGraphCompiler
             flows.Add(flow);
         }
 
+        // An approval with an auto-approve rule is entered through its check, so every path into the step meets the rule first.
+        string Entry(string stepId) => graph.Step(stepId) is { Type: StepTypes.Approval, AutoApprove.Count: > 0 } ? stepId + "__auto" : stepId;
         var first = graph.Steps.First(s => !graph.Links.Any(l => l.To == s.Id));
         process.Add(new XElement(Bpmn + "startEvent", new XAttribute("id", "start__")));
-        Flow("start__", first.Id);
+        Flow("start__", Entry(first.Id));
         var linkIds = graph.Links.Select((l, i) => (l, id: $"link_{i}")).ToDictionary(x => x.l, x => x.id);
 
         foreach (var step in graph.Steps)
@@ -312,12 +326,31 @@ public static class RouteGraphCompiler
                 case StepTypes.Approval:
                 case StepTypes.Task:
                 {
+                    // With a rule, both ways out (decided and auto-approved) meet in a merge first, so a join after the step counts one path.
+                    var next = Entry(outgoing[0].To);
+                    if (step.AutoApprove is { Count: > 0 } rule)
+                    {
+                        var merge = step.Id + "__next";
+                        process.Add(new XElement(Bpmn + "exclusiveGateway", new XAttribute("id", merge)));
+                        Flow(merge, next);
+                        next = merge;
+                        // The rule holds: the system completes the step ("auto-approved by rule") and the route goes on past it.
+                        var check = step.Id + "__auto";
+                        var approved = step.Id + "__auto_approved";
+                        var manual = $"{check}_manual";
+                        process.Add(new XElement(Bpmn + "exclusiveGateway", new XAttribute("id", check), new XAttribute("default", manual)));
+                        Flow(check, step.Id, id: manual);
+                        Flow(check, approved, Condition(rule));
+                        process.Add(new XElement(Bpmn + "serviceTask", new XAttribute("id", approved), new XAttribute("name", Name(step)), Extensions(step,
+                            new XElement(Tb + "product", new XAttribute("action", "auto_approve")))));
+                        Flow(approved, merge);
+                    }
                     process.Add(new XElement(Bpmn + "userTask", Attrs(step), Extensions(step, Assignment(step.Assignee!), Due(step), Escalation(step.Escalation))));
                     var decision = step.Id + "__decision";
                     process.Add(new XElement(Bpmn + "exclusiveGateway", new XAttribute("id", decision), new XAttribute("default", linkIds[outgoing[0]])));
                     Flow(step.Id, decision);
                     flows.Add(new XElement(Bpmn + "sequenceFlow", new XAttribute("id", linkIds[outgoing[0]]), new XAttribute("sourceRef", decision),
-                        new XAttribute("targetRef", outgoing[0].To)));
+                        new XAttribute("targetRef", next)));
                     Stop(step.Id + "__rejected", RouteResults.Rejected);
                     Flow(decision, step.Id + "__rejected", "outcome = \"reject\"");
                     if (step.Type == StepTypes.Approval)
@@ -375,7 +408,7 @@ public static class RouteGraphCompiler
             }
             foreach (var link in outgoing)
             {
-                Flow(step.Id, link.To, link.When is { Count: > 0 } when ? Condition(when) : null, linkIds[link]);
+                Flow(step.Id, Entry(link.To), link.When is { Count: > 0 } when ? Condition(when) : null, linkIds[link]);
             }
         }
         process.Add(flows);

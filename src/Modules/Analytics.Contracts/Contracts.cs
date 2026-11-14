@@ -48,6 +48,9 @@ public static class AnalyticsEvents
     public const string EngagementAnonymousAction = "engagement.anonymous_action";
     public const string LearningProgress = "learning.progress";
     public const string BookingActivity = "booking.activity";
+
+    /// <summary>Spec 016 FR-015: a request missed its service level target, counted per service without the person.</summary>
+    public const string RequestServiceLevelBreached = "request.sla_breached";
     public const string MobileInstall = "mobile.install";
     public const string MobilePushOptIn = "mobile.push_optin";
     public const string ProcessInstanceEnded = "process.instance_ended";
@@ -97,7 +100,7 @@ public static class AnalyticsEvents
     /// <summary>Events only modules emit; the web collection endpoint drops them, so nobody can add to these counts by hand.</summary>
     public static readonly IReadOnlySet<string> ServerOnly = new HashSet<string>(StringComparer.Ordinal)
     {
-        EngagementAction, EngagementAnonymousAction, LearningProgress, BookingActivity, MobilePushOptIn, ProcessInstanceEnded,
+        EngagementAction, EngagementAnonymousAction, LearningProgress, BookingActivity, MobilePushOptIn, ProcessInstanceEnded, RequestServiceLevelBreached,
     };
 
     public static readonly IReadOnlySet<string> ErrorKinds = new HashSet<string>(StringComparer.Ordinal) { "render", "boundary", "network", "chunk" };
@@ -166,6 +169,10 @@ public static class AnalyticsEvents
             ["version"] = new(AnalyticsFieldType.Count, true),
             ["state"] = new(AnalyticsFieldType.Key, true, ProcessEndStates),
             ["seconds"] = new(AnalyticsFieldType.Number, true),
+        }, Unkeyed: true),
+        [RequestServiceLevelBreached] = new(RequestServiceLevelBreached, false, new Dictionary<string, AnalyticsField>
+        {
+            ["serviceId"] = new(AnalyticsFieldType.Id, true),
         }, Unkeyed: true),
         [UiError] = new(UiError, true, new Dictionary<string, AnalyticsField>
         {

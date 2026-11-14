@@ -256,7 +256,7 @@ public sealed partial class ProcessEngine(IDbSession session, ITenantContext con
         """
         t.id, t.instance_id, i.definition_key, i.business_key, t.element_id, t.step_index, t.status, t.outcome, t.comment, t.completed_by,
         t.on_behalf_of, t.due_at, t.created_at, t.completed_at, t.candidates::text, t.excluded_user_ids, i.org_unit_id, i.definition_version,
-        coalesce(i.requested_for, i.started_by) as subject_id, t.token_id
+        coalesce(i.requested_for, i.started_by) as subject_id, t.token_id, t.claimed_by
         """;
 
     private sealed record TaskRow(UserTaskInfo Info, CandidateSet Candidates, Guid[] Excluded, Guid? OrgUnitId, int DefinitionVersion, Guid? Subject, Guid? TokenId);
@@ -273,7 +273,7 @@ public sealed partial class ProcessEngine(IDbSession session, ITenantContext con
         var candidates = System.Text.Json.JsonSerializer.Deserialize<CandidateSet>(r.GetString(14), CompiledRoute.Json)!;
         var info = new UserTaskInfo(r.GetGuid(0), r.GetGuid(1), r.GetString(2), r.GetString(3), r.GetString(4), candidates.Name, r.GetInt32(5), r.GetString(6),
             r.Get<string?>("outcome"), r.Get<string?>("comment"), r.Get<Guid?>("completed_by"), r.Get<Guid?>("on_behalf_of"), r.Get<DateTimeOffset?>("due_at"),
-            r.GetFieldValue<DateTimeOffset>(12), r.Get<DateTimeOffset?>("completed_at"));
+            r.GetFieldValue<DateTimeOffset>(12), r.Get<DateTimeOffset?>("completed_at"), r.Get<Guid?>("claimed_by"));
         return new TaskRow(info, candidates, r.GetFieldValue<Guid[]>(15), r.Get<Guid?>("org_unit_id"), r.GetInt32(17), r.Get<Guid?>("subject_id"), r.Get<Guid?>("token_id"));
     }
 
@@ -397,6 +397,12 @@ public sealed partial class ProcessEngine(IDbSession session, ITenantContext con
             {
                 return (false, null);
             }
+            // A picked task is the picker's alone (spec 016 US6), directly or through their delegate, while they are a candidate.
+            if (task.Info.Status == "open" && task.Info.ClaimedBy is { } claimer && claimer != user && await IsCandidateAsync(task, claimer, ct))
+            {
+                delegators ??= await delegations.DelegatorsOfAsync(user, now, ct);
+                return delegators.Contains(claimer) ? (true, claimer) : (false, null);
+            }
             if (await IsCandidateAsync(task, user, ct))
             {
                 return (true, null);
@@ -425,6 +431,38 @@ public sealed partial class ProcessEngine(IDbSession session, ITenantContext con
         }
         var (allowed, onBehalfOf) = await Check(user).CheckAsync(task, ct);
         return !allowed ? null : task.Info.Status == "open" ? task.Info with { OnBehalfOf = onBehalfOf } : task.Info;
+    }
+
+    public async Task<UserTaskInfo> ClaimTaskAsync(Guid taskId, CancellationToken ct = default) => await ClaimAsync(taskId, true, ct);
+
+    public async Task<UserTaskInfo> ReleaseTaskAsync(Guid taskId, CancellationToken ct = default) => await ClaimAsync(taskId, false, ct);
+
+    private async Task<UserTaskInfo> ClaimAsync(Guid taskId, bool claim, CancellationToken ct)
+    {
+        var user = context.RequireUser();
+        var task = await session.QuerySingleOrDefaultAsync(
+            $"select {TaskColumns} from workflow.user_task t join workflow.process_instance i on i.id = t.instance_id where t.id = @taskId for update of t",
+            new { taskId }, ReadTask, ct) ?? throw AppException.NotFound();
+        var (allowed, onBehalfOf) = await Check(user).CheckAsync(task, ct);
+        if (!allowed)
+        {
+            throw AppException.Denied();
+        }
+        if (task.Info.Status != "open")
+        {
+            throw AppException.Conflict("conflict.workflow.task_closed");
+        }
+        // The picker is the person whose turn it is: a delegate picks for the person who handed the work over.
+        var picker = onBehalfOf ?? user;
+        if (claim ? task.Info.ClaimedBy == picker : task.Info.ClaimedBy != picker)
+        {
+            return task.Info;
+        }
+        var now = clock.UtcNow;
+        await session.ExecAsync("update workflow.user_task set claimed_by = @by, claimed_at = @at where id = @taskId",
+            new { taskId, by = claim ? picker : (Guid?)null, at = claim ? now : (DateTimeOffset?)null }, ct);
+        await HistoryAsync(task.Info.InstanceId, task.Info.ElementId, claim ? "task_claimed" : "task_released", user, onBehalfOf, ct);
+        return task.Info with { ClaimedBy = claim ? picker : null };
     }
 
     public async Task<IReadOnlyList<UserTaskInfo>> MyOpenTasksAsync(int limit = 100, CancellationToken ct = default)

@@ -21,6 +21,9 @@ public sealed class RequestNotifier(IDbSession session, Requests requests, IRepo
     public const string Reminder = "services.task.reminder";
     public const string Escalated = "services.task.escalated";
     public const string Update = "services.request.update";
+    public const string AtRisk = "services.request.at_risk";
+    public const string Breached = "services.request.breached";
+    public const string FulfilmentFailed = "services.request.fulfilment_failed";
 
     public const string Approved = "services.request.approved";
     public const string Rejected = "services.request.rejected";
@@ -171,9 +174,24 @@ public sealed class RequestNotifier(IDbSession session, Requests requests, IRepo
     private async Task TellCandidatesAsync(RequestRow row, RouteGraph graph, string? elementId, Guid taskId, string template, string dedupe, CancellationToken ct)
     {
         elementId ??= (await engine.GetTaskAsync(taskId, ct))?.ElementId;
-        if (elementId is null || graph.Step(RouteGraph.StepIdOf(elementId)) is not { Assignee: { } assignee } step)
+        if (elementId is null)
         {
             return;
+        }
+        var list = await CandidatesAsync(row, graph, elementId, ct);
+        if (list.Length > 0)
+        {
+            await notifications.SendAsync(new NotificationRequest(list, NotificationCategories.ApprovalWaiting, template, TaskLink(row.Id, taskId),
+                new Dictionary<string, string> { ["number"] = row.Number }, DedupeKey: dedupe), ct);
+        }
+    }
+
+    /// <summary>The people a person step names, never the requester or the person the request is for.</summary>
+    private async Task<Guid[]> CandidatesAsync(RequestRow row, RouteGraph graph, string elementId, CancellationToken ct)
+    {
+        if (graph.Step(RouteGraph.StepIdOf(elementId)) is not { Assignee: { } assignee })
+        {
+            return [];
         }
         var recipients = new List<Guid>(assignee.Users ?? []);
         if (assignee.Kind == AssigneeKinds.LineManager && await reportingLine.ManagerOfAsync(row.SubjectId, ct) is { } manager)
@@ -189,10 +207,77 @@ public sealed class RequestNotifier(IDbSession session, Requests requests, IRepo
         {
             recipients.AddRange(await grants.GroupMembersAsync(groups, ct));
         }
+        return recipients.Where(p => p != row.RequesterId && p != row.OnBehalfOfId).Distinct().ToArray();
+    }
+
+    /// <summary>
+    /// A request went at risk or breached its service level target (US5 scenario 3): the people its open steps wait for
+    /// (the queue) and the service's owners (tenant-wide holders of <c>service.manage</c> who hold it at the owning unit)
+    /// are told once.
+    /// </summary>
+    internal async Task AlertServiceLevelAsync(RequestRow row, string template, CancellationToken ct)
+    {
+        var recipients = new List<Guid>();
+        var route = (await Versions.GetAsync(session, row.ServiceId, row.ServiceVersion, ct))?.Route;
+        if (row.InstanceId is { } instance)
+        {
+            foreach (var task in (await engine.InstanceTasksAsync(instance, ct)).Where(t => t.Status == "open"))
+            {
+                if (route?.Graph is { } graph)
+                {
+                    recipients.AddRange(await CandidatesAsync(row, graph, task.ElementId, ct));
+                }
+                else if (route?.Approval?.Approvers is { } rule)
+                {
+                    recipients.AddRange(rule.Users ?? []);
+                    if (rule.Kind == ApproverKinds.LineManager && await reportingLine.ManagerOfAsync(row.SubjectId, ct) is { } manager)
+                    {
+                        recipients.Add(manager);
+                    }
+                }
+            }
+        }
+        recipients.AddRange(await OwnersAsync(row.ServiceId, ct));
+        await AlertAsync(row, recipients, template, $"request:{row.Id:N}:{template}", ct);
+    }
+
+    /// <summary>
+    /// An automatic step of a request failed and waits for retry, skip or cancel (US6 scenario 3): the service's
+    /// fulfilment queue and its owners are told, once per failure.
+    /// </summary>
+    internal async Task AlertFulfilmentFailedAsync(RequestRow row, Guid incidentId, CancellationToken ct)
+    {
+        var recipients = new List<Guid>();
+        if ((await Versions.GetAsync(session, row.ServiceId, row.ServiceVersion, ct))?.FulfilmentQueueGroupId is { } queue)
+        {
+            recipients.AddRange(await grants.GroupMembersAsync([queue], ct));
+        }
+        recipients.AddRange(await OwnersAsync(row.ServiceId, ct));
+        await AlertAsync(row, recipients, FulfilmentFailed, $"request:{row.Id:N}:incident:{incidentId:N}", ct);
+    }
+
+    /// <summary>The service's owners: tenant-wide holders of <c>service.manage</c> who hold it at the owning unit.</summary>
+    private async Task<List<Guid>> OwnersAsync(Guid serviceId, CancellationToken ct)
+    {
+        var owners = new List<Guid>();
+        var owner = await session.ScalarAsync<Guid?>("select owner_org_unit_id from services.service where id = @id", new { id = serviceId }, ct);
+        var target = owner is { } unit ? TeamBeats.Authorization.Contracts.AuthzTarget.OrgUnit(unit) : TeamBeats.Authorization.Contracts.AuthzTarget.Tenant;
+        foreach (var holder in await grants.TenantHoldersAsync(TeamBeats.Authorization.Contracts.Permissions.ServiceManage, ct))
+        {
+            if (await grants.UserHoldsAsync(holder, TeamBeats.Authorization.Contracts.Permissions.ServiceManage, target, ct))
+            {
+                owners.Add(holder);
+            }
+        }
+        return owners;
+    }
+
+    private async Task AlertAsync(RequestRow row, List<Guid> recipients, string template, string dedupe, CancellationToken ct)
+    {
         var list = recipients.Where(p => p != row.RequesterId && p != row.OnBehalfOfId).Distinct().ToArray();
         if (list.Length > 0)
         {
-            await notifications.SendAsync(new NotificationRequest(list, NotificationCategories.ApprovalWaiting, template, TaskLink(row.Id, taskId),
+            await notifications.SendAsync(new NotificationRequest(list, NotificationCategories.ApprovalEscalation, template, Link(row.Id),
                 new Dictionary<string, string> { ["number"] = row.Number }, DedupeKey: dedupe), ct);
         }
     }

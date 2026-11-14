@@ -150,7 +150,8 @@ public sealed record UserTaskInfo(
     Guid? OnBehalfOf,
     DateTimeOffset? DueAt,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? CompletedAt);
+    DateTimeOffset? CompletedAt,
+    Guid? ClaimedBy = null);
 
 public sealed record HistoryEntry(string ElementId, string Event, Guid? ActorId, Guid? OnBehalfOf, DateTimeOffset At);
 
@@ -197,6 +198,15 @@ public interface IProcessEngine
 
     /// <summary>Completes an open task as the current user, who must be a candidate. Refused with 409 once completed.</summary>
     Task<UserTaskInfo> CompleteTaskAsync(Guid taskId, string outcome, string? comment, CancellationToken ct = default);
+
+    /// <summary>
+    /// Picks an open task for the current user, a candidate (spec 016 US6): the other candidates stop seeing it until it is
+    /// put back. A task picked by someone else is a conflict, unless they are no longer a candidate.
+    /// </summary>
+    Task<UserTaskInfo> ClaimTaskAsync(Guid taskId, CancellationToken ct = default);
+
+    /// <summary>Puts a task the current user picked back for every candidate.</summary>
+    Task<UserTaskInfo> ReleaseTaskAsync(Guid taskId, CancellationToken ct = default);
 
     /// <summary>
     /// Ends an active instance and cancels its open task (the requester withdrew). As a user, only the starter may; an
@@ -280,7 +290,7 @@ public sealed record UserTaskEscalated(Guid TaskId, Guid InstanceId, string Defi
     : IIntegrationEvent;
 
 /// <summary>
-/// A service task of a process asks for a product action (spec 016 R2: <c>notify</c> or <c>start_service</c>) that the
+/// A service task of a process asks for a product action (spec 016 R2: <c>notify</c>, <c>start_service</c> or <c>auto_approve</c>) that the
 /// module owning the process carries out. The engine moves on at once; <paramref name="ActionId"/> is unique per step
 /// run, so a handler that sees it twice acts once.
 /// </summary>

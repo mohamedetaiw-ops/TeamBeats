@@ -8298,6 +8298,50 @@
         }
       }
     },
+    "/api/v1/tasks/{id}/pick": {
+      "post": {
+        "tags": [
+          "Services: task inbox"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Services: task inbox"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/tasks/{id}/decision": {
       "post": {
         "tags": [
@@ -33641,6 +33685,15 @@
               "null",
               "string"
             ]
+          },
+          "autoApprove": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/StepCondition"
+            }
           }
         }
       },
@@ -34147,6 +34200,15 @@
           "continueAfterExit": {
             "type": "boolean",
             "default": false
+          },
+          "serviceLevelDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           },
           "hasSteps": {
             "type": "boolean"
