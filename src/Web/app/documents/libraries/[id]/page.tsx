@@ -1,8 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { apiGet, type Me } from "@/lib/api";
+import Link from "next/link";
 import {
   libraryHref,
+  libraryImportHref,
   nameIn,
   type FolderView,
   type GuestShare,
@@ -59,6 +61,11 @@ export default async function LibraryPage({
         <h1>
           <bdi>{name}</bdi>
         </h1>
+        {library.data.rights.manage ? (
+          <p>
+            <Link href={libraryImportHref(id)}>{t("importLink")}</Link>
+          </p>
+        ) : null}
         <LibraryBrowser
           library={library.data}
           folders={folders.data}

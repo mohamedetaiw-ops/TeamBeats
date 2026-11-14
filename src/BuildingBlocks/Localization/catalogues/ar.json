@@ -2427,5 +2427,21 @@
   "notifications.template.assets.access_declined.body": "رُفض طلبك للوصول إلى {collection}.",
   "validation.content.image": "اختر صورة سارية من بوابة أصول العلامة التجارية يمكنك رؤيتها.",
   "notifications.template.content.asset_image_expired.title": "لم يعد من الممكن استخدام صورة في صفحتك",
-  "notifications.template.content.asset_image_expired.body": "انتهت حقوق استخدام صورة في \"{title}\"، فلم يعد القراء يرونها. استبدلها بصورة سارية."
+  "notifications.template.content.asset_image_expired.body": "انتهت حقوق استخدام صورة في \"{title}\"، فلم يعد القراء يرونها. استبدلها بصورة سارية.",
+  "validation.documents.import_zip": "ارفع ملف الاستيراد بصيغة ZIP.",
+  "validation.documents.import_no_manifest": "لا يحتوي ملف ZIP على manifest.csv في مستواه الأعلى.",
+  "validation.documents.import_manifest": "تعذرت قراءة ملف البيان. احفظه بصيغة CSV بترميز UTF-8 مع صف عناوين وبعدد الأعمدة نفسه في كل صف.",
+  "validation.documents.import_columns": "يحتاج ملف البيان إلى عمود path، ويجب أن تكون أعمدته الأخرى folder أو name أو type أو classification أو created أو modified أو author أو field: متبوعًا بمفتاح حقل، كل منها مرة واحدة.",
+  "validation.documents.import_rows": "يمكن أن يحتوي ملف البيان على 10,000 صف كحد أقصى.",
+  "validation.documents.import_paths": "يحتاج كل صف إلى مسار ملف داخل ملف ZIP، ولا يتكرر المسار.",
+  "validation.documents.import_date": "يجب أن تكون التواريخ بصيغة ISO وفي الماضي، ولا يسبق تاريخ التعديل تاريخ الإنشاء.",
+  "validation.documents.import_missing": "لا يوجد ملف بهذا المسار داخل ملف ZIP.",
+  "validation.documents.import_status": "اختر نتيجة صف معروفة.",
+  "notifications.template.documents.import_finished.title": "اكتمل الاستيراد",
+  "notifications.template.documents.import_finished.body": "تم استيراد {done} ملفًا ويحتاج {problems} صفًا إلى مراجعة. افتح التقرير لمعرفة نتيجة كل صف.",
+  "documents.import.incomplete": "تم استيراده كمسودة تراها أنت فقط: أكمل الحقول المطلوبة للنوع لإيداعه.",
+  "documents.import.quarantined": "اكتشف فحص البرمجيات الضارة مشكلة في هذا الملف. وُضع في العزل ولا يمكن لأحد فتحه.",
+  "documents.import.not_found": "لم تعد المكتبة أو المجلد موجودين.",
+  "documents.import.denied": "لم يعد بإمكانك إضافة ملفات هنا.",
+  "documents.import.error": "حدث خطأ في هذا الصف. أعد المحاولة في استيراد جديد."
 }

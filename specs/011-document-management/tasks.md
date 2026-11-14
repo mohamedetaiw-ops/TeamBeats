@@ -46,7 +46,7 @@ Depends on 004 (resource grants), 005, 006, 007, 009 (acknowledgement, body docu
 - [x] T021 Collections, usage rights with expiry, renditions, access requests to the brand manager's inbox, download tracking
 
 ## R2 Phase 11: bulk import, OCR and Office editing
-- [ ] T022 Bulk import with a metadata manifest, original dates and authors, per-row report (FR-022)
+- [x] T022 Bulk import with a metadata manifest, original dates and authors, per-row report (FR-022)
 - [ ] T023 Office web editing through the Microsoft 365 connection (FR-010)
 - [ ] T026 Text from scanned PDFs and images by OCR for search where the tenant enables it (`docs.ocr`, FR-020)
 
