@@ -28,7 +28,7 @@ internal sealed record DelegatedSetup(Guid ConnectionId, string ExternalTenantId
     IReadOnlyList<string> Scopes)
 {
     public static readonly string[] DelegatedFeatures = [Microsoft365Features.Mail, Microsoft365Features.Calendar, Microsoft365Features.FreeBusy,
-        Microsoft365Features.OfficeEditing];
+        Microsoft365Features.OfficeEditing, Microsoft365Features.SharePointDocuments];
 
     public static async Task<DelegatedSetup?> LoadAsync(IDbSession session, CancellationToken ct, Guid? connectionId = null)
     {
@@ -49,7 +49,7 @@ internal sealed record DelegatedSetup(Guid ConnectionId, string ExternalTenantId
         var first = rows[0];
         var mine = rows.Where(r => r.Id == first.Id).ToList();
         var scopes = mine.Where(r => r.Granted)
-            .SelectMany(r => FeatureCatalogue.PermissionsFor(FeatureCatalogue.Find(r.Feature)!, FeatureOptions.FromStored(r.Options)).Select(p => p.Name))
+            .SelectMany(r => FeatureCatalogue.DelegatedFor(FeatureCatalogue.Find(r.Feature)!, FeatureOptions.FromStored(r.Options)).Select(p => p.Name))
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
         return new DelegatedSetup(first.Id, first.External, mine.Select(r => r.Feature).ToList(), mine.Where(r => r.Granted).Select(r => r.Feature).ToList(), scopes);
     }
@@ -59,7 +59,7 @@ internal sealed record DelegatedSetup(Guid ConnectionId, string ExternalTenantId
     {
         var options = (await session.QueryAsync("select feature, options::text from integrations.connection_feature where connection_id = @c",
             new { c = ConnectionId }, r => (Feature: r.GetString(0), Options: r.GetString(1)), ct)).ToDictionary(r => r.Feature, r => r.Options);
-        return Granted.Where(f => FeatureCatalogue.PermissionsFor(FeatureCatalogue.Find(f)!, FeatureOptions.FromStored(options.GetValueOrDefault(f)))
+        return Granted.Where(f => FeatureCatalogue.DelegatedFor(FeatureCatalogue.Find(f)!, FeatureOptions.FromStored(options.GetValueOrDefault(f)))
             .All(p => tokenScopes.Contains(p.Name))).ToList();
     }
 }
@@ -189,7 +189,7 @@ public sealed class DelegatedAccessService(
             var status = await StatusAsync(ct);
             return DelegatedAccess.Not(status.State);
         }
-        var needed = FeatureCatalogue.PermissionsFor(FeatureCatalogue.Find(feature)!, options).Select(p => p.Name);
+        var needed = FeatureCatalogue.DelegatedFor(FeatureCatalogue.Find(feature)!, options).Select(p => p.Name);
         if (token.Expires <= clock.UtcNow || !needed.All(token.Scopes.Contains))
         {
             return DelegatedAccess.Not(M365States.Reconnect);

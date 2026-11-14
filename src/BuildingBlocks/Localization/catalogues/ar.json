@@ -2452,5 +2452,19 @@
   "conflict.documents.office_unavailable": "خدمة Microsoft 365 غير متاحة الآن. حاول مرة أخرى بعد بضع دقائق.",
   "conflict.documents.office_copy_gone": "النسخة التي كنت تحررها لم تعد في OneDrive. تراجع عن التحرير لإتاحة المستند للآخرين.",
   "conflict.documents.office_not_editing": "أنت لا تحرر هذا المستند في المتصفح.",
-  "validation.documents.office_size": "لا يمكن تحرير الملفات الأكبر من 250 ميغابايت في المتصفح."
+  "validation.documents.office_size": "لا يمكن تحرير الملفات الأكبر من 250 ميغابايت في المتصفح.",
+  "validation.integrations.sharepoint_url": "أدخل عنوان موقع SharePoint Online، مثل https://contoso.sharepoint.com/sites/hr.",
+  "validation.integrations.sharepoint_sites_max": "يسمح الاتصال بخمسين موقع SharePoint على الأكثر.",
+  "validation.integrations.sharepoint_site_not_granted": "لم يُعثر على هذا الموقع، أو لم يُمنح لتطبيق TeamBeats.",
+  "conflict.integrations.sharepoint_consent": "شغّل مستندات SharePoint وامنح موافقة المسؤول قبل إضافة المواقع.",
+  "conflict.integrations.sharepoint_unreachable": "تعذّر الوصول إلى SharePoint. حاول مرة أخرى بعد دقائق.",
+  "integrations.permission.sites_selected": "قراءة مواقع SharePoint التي تسمح بها فقط، لإبقاء المكتبات المتصلة والبحث محدّثة",
+  "integrations.permission.files_read_all": "السماح لكل موظف بتصفح ملفات SharePoint ومعاينتها وتنزيلها إذا كان يستطيع فتحها في SharePoint",
+  "integrations.test.site_missing": "أحد مواقع SharePoint المسموح بها لم يعد ممنوحًا للتطبيق",
+  "conflict.documents.connected_library": "هذا غير متاح لمكتبة متصلة. يبقى المحتوى وإعداداته في SharePoint.",
+  "conflict.documents.connected_unavailable": "تعذّر الوصول إلى SharePoint. حاول مرة أخرى بعد دقائق.",
+  "conflict.documents.connected_too_large": "هذا الملف أكبر من أن يُفتح عبر TeamBeats. افتحه في SharePoint.",
+  "validation.documents.connected_container": "اختر مكتبة مستندات من موقع SharePoint مسموح به.",
+  "validation.documents.connected_folder": "اختر مجلدًا في مكتبة المستندات هذه.",
+  "validation.documents.connected_library": "هذا الإعداد غير متاح لمكتبة متصلة."
 }

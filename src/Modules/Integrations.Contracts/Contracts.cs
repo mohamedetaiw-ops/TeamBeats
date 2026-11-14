@@ -19,6 +19,7 @@ public static class Microsoft365Features
     public const string Calendar = "calendar";
     public const string FreeBusy = "free_busy";
     public const string OfficeEditing = "office_editing";
+    public const string SharePointDocuments = "sharepoint_documents";
 }
 
 /// <summary>Connection status (spec 006 FR-014).</summary>
@@ -223,6 +224,19 @@ public sealed class RepositoryUnavailableException(string reason) : Exception(re
     public string Reason { get; } = reason;
 }
 
+/// <summary>A connection that serves documents: its ID, its kind (for example <c>microsoft365</c>) and its name.</summary>
+public sealed record RepositorySource(Guid ConnectionId, string Kind, string Name);
+
+/// <summary>
+/// A folder listed as the signed-in user sees it. <paramref name="State"/> is <c>ok</c>, or why nothing can be shown:
+/// <c>not_connected</c> or <c>reconnect</c> (the user must connect their account), <c>no_account</c> (the user has no
+/// account in the connected directory), <c>not_found</c> (not there, or not visible to the user) or <c>unavailable</c>.
+/// </summary>
+public sealed record RepositoryUserPage(string State, IReadOnlyList<RepositoryItem> Items, string? NextCursor)
+{
+    public static RepositoryUserPage Not(string state) => new(state, [], null);
+}
+
 /// <summary>
 /// The document repository contract of ADR-0016 (spec 017 FR-019, INT-004): the extension point through which
 /// <c>Documents</c> reads document systems without their types. Listing, reading and changes run with the connection's
@@ -245,6 +259,15 @@ public interface IDocumentRepository
 
     /// <summary>The content as <paramref name="userEmail"/> may read it; null when that user may not, or the item is not in an allowed container.</summary>
     Task<RepositoryContent?> OpenAsync(Guid connectionId, string itemId, string userEmail, CancellationToken ct = default);
+
+    /// <summary>The connections of the tenant that serve documents now (enabled, in the package, feature on and consented).</summary>
+    Task<IReadOnlyList<RepositorySource>> SourcesAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// One page of a folder as <paramref name="userEmail"/> sees it in the repository, so items the user may not read
+    /// never appear (spec 011 FR-027). Never throws for the user's own access; see <see cref="RepositoryUserPage.State"/>.
+    /// </summary>
+    Task<RepositoryUserPage> ListAsUserAsync(Guid connectionId, string containerId, string? folderId, string? cursor, string userEmail, CancellationToken ct = default);
 }
 
 /// <summary>

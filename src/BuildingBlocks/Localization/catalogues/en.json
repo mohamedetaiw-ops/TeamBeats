@@ -2452,5 +2452,19 @@
   "conflict.documents.office_unavailable": "Microsoft 365 is not available right now. Try again in a few minutes.",
   "conflict.documents.office_copy_gone": "The copy you were editing is no longer in your OneDrive. Discard the edit to release the document.",
   "conflict.documents.office_not_editing": "You are not editing this document in the browser.",
-  "validation.documents.office_size": "Files larger than 250 MB cannot be edited in the browser."
+  "validation.documents.office_size": "Files larger than 250 MB cannot be edited in the browser.",
+  "validation.integrations.sharepoint_url": "Enter the address of a SharePoint Online site, such as https://contoso.sharepoint.com/sites/hr.",
+  "validation.integrations.sharepoint_sites_max": "A connection allows at most 50 SharePoint sites.",
+  "validation.integrations.sharepoint_site_not_granted": "This site was not found, or it has not been granted to the TeamBeats application.",
+  "conflict.integrations.sharepoint_consent": "Turn on SharePoint documents and grant admin consent before you add sites.",
+  "conflict.integrations.sharepoint_unreachable": "SharePoint could not be reached. Try again in a few minutes.",
+  "integrations.permission.sites_selected": "Read the SharePoint sites you allow, and only those, to keep connected libraries and search in step",
+  "integrations.permission.files_read_all": "Let each employee browse, preview and download SharePoint files they can already open in SharePoint",
+  "integrations.test.site_missing": "An allowed SharePoint site is no longer granted to the application",
+  "conflict.documents.connected_library": "This is not available for a connected library. The content and its settings stay in SharePoint.",
+  "conflict.documents.connected_unavailable": "SharePoint could not be reached. Try again in a few minutes.",
+  "conflict.documents.connected_too_large": "This file is too large to open through TeamBeats. Open it in SharePoint.",
+  "validation.documents.connected_container": "Choose a document library from an allowed SharePoint site.",
+  "validation.documents.connected_folder": "Choose a folder in that document library.",
+  "validation.documents.connected_library": "This setting is not available for a connected library."
 }
