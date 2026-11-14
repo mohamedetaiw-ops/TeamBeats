@@ -637,7 +637,7 @@
   list-style: none;
 }
 
-.content-signage-list h2 {
+.content-signage-title {
   margin: 0;
   font-size: var(--tb-font-size-xl);
 }

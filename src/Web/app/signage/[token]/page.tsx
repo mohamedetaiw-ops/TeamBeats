@@ -38,7 +38,7 @@ export default async function SignagePage({ params }: { params: Promise<{ token:
         <ul className="content-signage-list" aria-label={t("items")}>
           {feed.data.items.map((i) => (
             <li key={i.id} lang={i.locale} className="content-card">
-              <h2>
+              <h2 className="content-signage-title">
                 <bdi>{i.title}</bdi>
               </h2>
               {i.summary ? <p>{i.summary}</p> : null}
