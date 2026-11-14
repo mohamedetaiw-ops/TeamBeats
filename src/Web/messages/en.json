@@ -4375,7 +4375,28 @@
       "connectAction": "Connect Microsoft 365",
       "notHereTitle": "Not available for connected libraries",
       "notHere": "Controlled documents, retention and legal holds, the view-only watermark, sharing with guests and the recycle bin apply to TeamBeats libraries only. For this library, SharePoint manages them.",
-      "degraded": "SharePoint cannot be reached right now, so this is the copy synced {age}. Files open again once SharePoint answers."
+      "degraded": "SharePoint cannot be reached right now, so this is the copy synced {age}. Files open again once SharePoint answers.",
+      "write": {
+        "allow": "Allow uploads",
+        "allowHint": "People who may contribute here upload files and rename items, saved in SharePoint as themselves. SharePoint decides where each person may write.",
+        "upload": "Upload to SharePoint",
+        "uploadHint": "A file with the same name as one in this folder becomes its new version.",
+        "uploaded": "Uploaded to SharePoint.",
+        "rename": "Rename {name}",
+        "renameShort": "Rename",
+        "newName": "New name for {name}",
+        "save": "Save name",
+        "cancel": "Cancel",
+        "renamed": "Renamed in SharePoint.",
+        "forbidden": "SharePoint does not let you change this folder or file.",
+        "conflict": "Something here already has that name.",
+        "not_found": "This name cannot be used in SharePoint, or the item is gone.",
+        "too_large": "The file is larger than SharePoint takes in one upload (250 MB).",
+        "unavailable": "SharePoint cannot be reached right now. Try again in a few minutes.",
+        "not_connected": "Connect your Microsoft 365 account to change files here.",
+        "reconnect": "Connect your Microsoft 365 account again to change files here.",
+        "failed": "That did not work. Try again."
+      }
     },
     "connect": {
       "title": "Connect a SharePoint library",
@@ -6569,7 +6590,7 @@
       "permissionKind": "({type}):",
       "sites": {
         "title": "Allowed SharePoint sites",
-        "intro": "TeamBeats reads only these sites. Grant each site to the TeamBeats application in Microsoft 365 first, then add it here.",
+        "intro": "TeamBeats reads only these sites. Grant each site to the TeamBeats application in Microsoft 365 first, then add it here. Removing a site archives the connected libraries that show it and removes their files from search.",
         "url": "Site address",
         "urlHint": "For example https://contoso.sharepoint.com/sites/hr",
         "add": "Add site",
@@ -6577,6 +6598,20 @@
         "empty": "No sites are allowed yet.",
         "added": "Site added.",
         "removed": "Site removed."
+      },
+      "labels": {
+        "title": "Sensitivity labels",
+        "intro": "Choose the TeamBeats classification for each Microsoft Purview label found on synced files. Files without a label use their library's default, and a label you have not mapped counts as Confidential.",
+        "empty": "No labelled files have been synced yet.",
+        "files": "{count, plural, one {# file} other {# files}}",
+        "unmapped": "Not mapped (Confidential)",
+        "saved": "Label mapping saved. Search uses it within a few minutes.",
+        "classification": {
+          "public": "Public",
+          "internal": "Internal",
+          "confidential": "Confidential",
+          "restricted": "Restricted"
+        }
       }
     },
     "webhooks": {

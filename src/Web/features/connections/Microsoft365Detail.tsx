@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { ConfirmAction } from "@/components/ui/ConfirmAction";
-import { FormField } from "@/components/ui/FormField";
+import { FormField, SelectField } from "@/components/ui/FormField";
 import {
   M365_FEATURES,
   M365_PERMISSION_REASONS,
@@ -55,6 +55,76 @@ function FeatureOptions({ feature, busy, onSave }: { feature: FeatureView; busy:
         </Button>
       </div>
     </form>
+  );
+}
+
+type SensitivityLabel = { labelId: string; name: string | null; files: number; classification: string | null };
+const CLASSIFICATIONS = ["public", "internal", "confidential", "restricted"] as const;
+
+/**
+ * Microsoft Purview labels and the TeamBeats classification each maps to (spec 011 FR-032). Labels appear once synced
+ * files carry them; an unmapped label counts as confidential, which the API applies, so this only lists and saves.
+ */
+function SharePointLabels({ connectionId, returnTo }: { connectionId: string; returnTo: string }) {
+  const t = useTranslations("connections");
+  const [labels, setLabels] = useState<SensitivityLabel[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [messages, setMessages] = useState<{ ok: boolean; list: string[] }>({ ok: true, list: [] });
+  const path = `/api/v1/documents/sensitivity-labels/${encodeURIComponent(connectionId)}`;
+
+  useEffect(() => {
+    let live = true;
+    void send<SensitivityLabel[]>("GET", path, undefined, returnTo, t("detail.failed")).then((result) => {
+      if (!live) return;
+      if (result.ok) setLabels(result.data);
+      else setMessages({ ok: false, list: result.messages });
+    });
+    return () => {
+      live = false;
+    };
+  }, [path, returnTo, t]);
+
+  async function save(label: SensitivityLabel, value: string) {
+    setBusy(label.labelId);
+    setMessages({ ok: true, list: [] });
+    const result = await send<SensitivityLabel>("PUT", `${path}/${encodeURIComponent(label.labelId)}`, { classification: value || null }, returnTo,
+      t("detail.failed"));
+    if (result.ok) {
+      setLabels((all) => (all ?? []).map((l) => (l.labelId === label.labelId ? result.data : l)));
+      setMessages({ ok: true, list: [t("m365.labels.saved")] });
+    } else {
+      setMessages({ ok: false, list: result.messages });
+    }
+    setBusy(null);
+  }
+
+  return (
+    <section className="connections-item" aria-labelledby="sharepoint-labels-heading">
+      <h4 id="sharepoint-labels-heading">{t("m365.labels.title")}</h4>
+      <p>{t("m365.labels.intro")}</p>
+      {labels && labels.length === 0 ? <p>{t("m365.labels.empty")}</p> : null}
+      {labels && labels.length > 0 ? (
+        <ul className="connections-list">
+          {labels.map((label) => (
+            <li key={label.labelId} className="connections-row">
+              <SelectField
+                name={`label-${label.labelId}`}
+                label={label.name ?? label.labelId}
+                hint={t("m365.labels.files", { count: label.files })}
+                value={label.classification ?? ""}
+                disabled={busy === label.labelId}
+                onChange={(e) => void save(label, e.target.value)}
+                options={[
+                  { value: "", label: t("m365.labels.unmapped") },
+                  ...CLASSIFICATIONS.map((c) => ({ value: c, label: t(`m365.labels.classification.${c}`) })),
+                ]}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <Messages ok={messages.ok} messages={messages.list} />
+    </section>
   );
 }
 
@@ -276,7 +346,12 @@ export function Microsoft365Detail({ initial }: { initial: Microsoft365Connectio
                   </a>
                 ) : null}
               </div>
-              {f.key === "sharepoint_documents" && f.enabled && f.consentStatus === "granted" ? <SharePointSites base={base} returnTo={returnTo} /> : null}
+              {f.key === "sharepoint_documents" && f.enabled && f.consentStatus === "granted" ? (
+                <>
+                  <SharePointSites base={base} returnTo={returnTo} />
+                  <SharePointLabels connectionId={initial.id} returnTo={returnTo} />
+                </>
+              ) : null}
               {f.enabled ? (
                 <FeatureOptions
                   key={JSON.stringify(f.options ?? null)}
