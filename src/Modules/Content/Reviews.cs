@@ -31,22 +31,22 @@ public sealed class ContentReviews(IDbSession session, IProcessEngine engine, IC
     /// The named approvers other than the writers, or the site's publishers (<c>content.publish</c> at the site's unit)
     /// when that leaves nobody (US1 scenario 6).
     /// </summary>
-    internal static CandidateRule Candidates(ContentRoute route, IReadOnlyCollection<Guid> writers)
+    internal static CandidateRule Candidates(IReadOnlyList<Guid>? approvers, IReadOnlyCollection<Guid> writers)
     {
-        var named = (route.Approvers ?? []).Where(a => !writers.Contains(a)).Distinct().Order().ToList();
+        var named = (approvers ?? []).Where(a => !writers.Contains(a)).Distinct().Order().ToList();
         return named.Count > 0 ? new CandidateRule(Users: named) : new CandidateRule(Permission: Permissions.ContentPublish);
     }
 
     internal async Task<string> RouteKeyAsync(SiteRow site, string type, ContentRoute route, IReadOnlyCollection<Guid> writers, CancellationToken ct)
     {
-        var candidates = Candidates(route, writers);
-        var shape = candidates.Users is { } users ? "u:" + string.Join(",", users) : "p:" + candidates.Permission;
+        // One step keeps the shape of R1 routes, so their definitions are reused; each further step adds its own part.
+        var steps = route.StepApprovers().Select((approvers, i) => new RouteStep(ContentRoute.StepId(i), ContentRoute.StepId(i), Candidates(approvers, writers))).ToList();
+        var shape = string.Join("|", steps.Select(s => s.Candidates.Users is { } users ? "u:" + string.Join(",", users) : "p:" + s.Candidates.Permission));
         var hash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(shape)))[..12];
         var key = $"{KeyPrefix}{site.Id:N}.{type}.{hash}";
         if (await engine.GetDefinitionAsync(key, null, ct) is null)
         {
-            await engine.PublishRouteAsync(key, RouteSources.ContentRoute,
-                new RouteSpec($"{type} {site.Id:N}", [new RouteStep("review", "review", candidates)]), ct);
+            await engine.PublishRouteAsync(key, RouteSources.ContentRoute, new RouteSpec($"{type} {site.Id:N}", steps), ct);
         }
         return key;
     }
@@ -151,11 +151,13 @@ public sealed class ContentTaskSource(
             return;
         }
         var instance = await engine.GetInstanceAsync(task.InstanceId, ct);
+        var decider = done.CompletedBy ?? context.RequireUser();
         if (instance is not { Status: "completed" })
         {
-            return; // A later step is open (R2 multi-step routes).
+            // A step of a multi-step route was approved and the next one is open: the history keeps who passed it on.
+            await reviews.EventAsync(item.Id, version, "step_approved", decider, done.OnBehalfOf, done.Comment, ct);
+            return;
         }
-        var decider = done.CompletedBy ?? context.RequireUser();
         if (instance.Outcome == InstanceOutcomes.Approved)
         {
             await reviews.EventAsync(item.Id, version, "approved", decider, done.OnBehalfOf, done.Comment, ct);
@@ -209,7 +211,9 @@ public sealed class ContentTaskSource(
         var site = (await sites.RowAsync(item.SiteId, false, ct))!;
         var author = item.DraftVersion is { } n ? (await items.VersionAsync(id, n, ct))?.Author : null;
         var writers = new[] { item.SubmittedBy, author, item.CreatedBy }.OfType<Guid>().ToArray();
-        if (ContentReviews.Candidates(site.RouteOf(item.Type), writers).Users is not { Count: > 0 } named)
+        var steps = site.RouteOf(item.Type).StepApprovers();
+        if (ContentRoute.StepIndex(message.ElementId) is not { } step || step >= steps.Count
+            || ContentReviews.Candidates(steps[step], writers).Users is not { Count: > 0 } named)
         {
             return;
         }

@@ -51,5 +51,33 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       await page.getByRole("button", { name: m("content.sites.restore") }).click();
       await expect(page.getByText(m("content.sites.archivedNote"))).toHaveCount(0);
     });
+
+    test("a site owner sets a two step approval route for news", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/content/sites`);
+      await page.getByLabel(locale === "ar" ? m("content.sites.nameAr") : m("content.sites.nameEn")).fill(`${name} 2`);
+      await page.getByLabel(m("content.sites.homeSlug")).fill(`routes-${locale}`);
+      await page.getByRole("button", { name: m("content.sites.create"), exact: true }).click();
+      await page.waitForURL(/\/content\/sites\/[0-9a-f-]{36}$/);
+
+      const news = m("content.items.typeValue.news");
+      const route = page.getByRole("group", { name: news, exact: true });
+      await route.getByLabel(m("content.sites.routes.approval")).check();
+      const pick = async (step: string) => {
+        const add = route.getByRole("group", { name: m("content.sites.routes.step", { step, type: news }) }).getByRole("group", { name: m("content.sites.routes.addApprover") });
+        await add.getByLabel(m("services.person.search")).fill("admin");
+        await add.getByRole("button", { name: m("services.person.find") }).click();
+        await add.getByRole("list", { name: m("services.person.results") }).getByRole("button").first().click();
+      };
+      await pick("1");
+      await route.getByRole("button", { name: m("content.sites.routes.addStep") }).click();
+      await pick("2");
+      await page.getByRole("button", { name: m("content.sites.routes.save") }).click();
+      await expect(page.getByText(m("content.sites.routes.saved"))).toBeVisible();
+
+      await page.reload();
+      await expect(route.getByRole("group", { name: m("content.sites.routes.step", { step: "2", type: news }) })).toBeVisible();
+      await expectAccessible(page, testInfo, `content-site-routes-${locale}`);
+    });
   });
 }

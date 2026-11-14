@@ -55,8 +55,8 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T030 [US5] Translate endpoint through the AI Gateway, variant mark, content type `reviewed_translation`, editor actions and badges
 
 ### Phase 10: multi-step approval (FR-003)
-- [ ] T031 [P] Tests: steps run in order with a task each; return at any step; author excluded at every step; more than one step refused without `content.multistep_approval`
-- [ ] T032 Route steps in site routes and the engine definition; route editor in the site settings
+- [x] T031 [P] Tests: steps run in order with a task each; return at any step; author excluded at every step; more than one step refused without `content.multistep_approval`
+- [x] T032 Route steps in site routes and the engine definition; route editor in the site settings
 
 ### Phase 11: User Story 8, campaigns (P2)
 - [ ] T033 [P] [US8] Tests: due steps sent to the audience through notifications; "only those who have not acted" excludes completers; optional email respects preferences, mandatory labelled; dashboard counts with privacy threshold; entitlement and cross-tenant cases

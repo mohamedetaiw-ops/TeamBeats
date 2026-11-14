@@ -3890,7 +3890,22 @@
       "mineIntro": "Sites of your part of the organization and sites shared with you.",
       "mineEmpty": "No sites are shared with you yet.",
       "open": "Open {name}",
-      "notPublished": "Home page not published yet"
+      "notPublished": "Home page not published yet",
+      "routes": {
+        "title": "Approval routes",
+        "intro": "Choose which content types need approval before they go live, and who decides. Steps run in order, each with its own task. Nobody approves their own item.",
+        "approval": "Needs approval before publishing",
+        "step": "Step {step} for {type}",
+        "publishers": "Nobody named: the site's publishers decide this step.",
+        "approver": "Approver",
+        "addApprover": "Add an approver",
+        "addStep": "Add a step",
+        "removeStep": "Remove step {step}",
+        "save": "Save routes",
+        "saving": "Saving",
+        "saved": "Routes saved.",
+        "failed": "That did not work. Try again."
+      }
     },
     "topics": {
       "follow": "Follow",

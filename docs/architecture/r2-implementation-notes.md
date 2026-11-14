@@ -1648,3 +1648,10 @@ The plan (`specs/022-hr-workflows/plan.md`, sections "R2 slices" to "Slice 6") h
 - Nothing marked machine translated can be published or submitted (409 `conflict.content.machine_translated`). The mark goes when a person edits that variant, or when an editor or publisher approves it as it is (`POST .../translations/{locale}/approve`). Both are audited (`content.translated`, `content.translation_approved`).
 - Smallest safe default for the "reviewed translation" content type setting of the plan: it is not a setting. Every machine translation needs a person before publishing, whatever the type, which is the stricter reading of section 6.
 - The translate button shows for every non-primary language; a plan without the capability answers 403 and the editor shows the message.
+
+## Spec 009 R2 slice 4: multi-step approval (T031, T032)
+- A site route for a content type takes `steps`, a list of up to five steps, each with its own `approvers`; the R1 shape (`approvers` for one step) still works and both may not be set together. More than one step needs `content.multistep_approval` (403 without it); one step written as a list is still one step.
+- The route compiles to one engine definition with a user task per step (`review`, `review2` and on), run in order. A one step route keeps the R1 shape and hash, so existing definitions are reused. A change of steps takes effect on the next submission.
+- Every step drops the item's writers (author, submitter, creator) from its named approvers; a step left with nobody goes to the site's publishers by permission, with the writers still excluded by the engine.
+- Each passed step adds `step_approved` to the review history (with the decider and comment); the last approval adds `approved` and releases the version as before. A return or reject at any step ends the review and sends the draft back.
+- Named approvers of each step are told when their step opens. The route editor sits on the site settings page (`/content/sites/{id}`), with a person picker per approver and add or remove step.

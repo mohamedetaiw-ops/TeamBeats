@@ -138,6 +138,11 @@ export type ItemView = {
   retirePending: boolean;
 };
 
+/** An approval route of one content type (spec 009 FR-003): one step with approvers, or up to five steps in order. */
+export type ContentRouteStep = { approvers?: string[] | null };
+export type ContentRoute = { approval: boolean; approvers?: string[] | null; steps?: ContentRouteStep[] | null };
+export const maxRouteSteps = 5;
+
 export type SiteView = {
   id: string;
   names: Record<string, string>;
@@ -149,6 +154,7 @@ export type SiteView = {
   status: string;
   version: number;
   defaultAudience: ContentAudience;
+  routes?: Record<string, ContentRoute>;
   homePageId: string | null;
   homeSlug: string | null;
   templateKey: string | null;
