@@ -9,7 +9,8 @@ import { hostOrigin } from "../support/stack";
  * Search (spec 012 T009): the shell search box suggests permitted items and opens the results page, which filters by
  * source, marks a best bet as recommended and offers no result help, in English and Arabic with axe; the search
  * administrator manages best bets and synonyms from the admin area, and proposes a retrieval change that the release
- * gate holds (no agent has retrieval cases yet) and applies it with a reason (T007).
+ * gate holds (no agent has retrieval cases yet) and applies it with a reason (T007). A person saves a search with its
+ * daily alert and turns the alert off or removes it from their saved searches (T015).
  */
 const body = (text: string) => ({ blocks: [{ type: "paragraph", children: [{ text }] }] });
 
@@ -66,6 +67,135 @@ for (const locale of ["en", "ar"] as const satisfies readonly LaunchLocale[]) {
       // Nothing found says so.
       await page.goto(`${hostOrigin(tenant.key)}/search?q=${encodeURIComponent("zebra quantum")}`);
       await expect(page.getByText(msg(locale, "search.none", { q: "zebra quantum" }))).toBeVisible();
+    });
+
+    test("the search administrator turns SharePoint on and results show it in its own group", async ({
+      page,
+    }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/search`);
+      const sources = page.getByRole("region", {
+        name: msg(locale, "search.admin.federated.title"),
+      });
+      const sharepoint = sources.getByRole("switch", {
+        name: msg(locale, "search.admin.federated.source.sharepoint"),
+      });
+      await expect(sharepoint).not.toBeChecked();
+      await sharepoint.click();
+      await expect(sharepoint).toBeChecked();
+      await expect(sources.getByRole("status")).toHaveText(
+        msg(locale, "search.admin.federated.on", {
+          source: msg(locale, "search.admin.federated.source.sharepoint"),
+        }),
+      );
+
+      // The tenant has no Microsoft 365 connection here, so the live answer is given in its documented shape: one group
+      // that answered, then one that SharePoint cut off at the time limit.
+      let state = "ok";
+      await page.route("**/api/v1/search/federated?**", (route) =>
+        route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            query: "shuttle",
+            groups: [
+              {
+                source: "sharepoint",
+                state,
+                results:
+                  state === "ok"
+                    ? [
+                        {
+                          title: "Shuttle routes.pdf",
+                          link: "https://fake-sharepoint.example/b!d/01",
+                          summary: "shuttle in Shuttle routes.pdf…",
+                          location: "HR policies",
+                          mediaType: "application/pdf",
+                          modifiedAt: new Date().toISOString(),
+                        },
+                      ]
+                    : [],
+              },
+            ],
+          }),
+        }),
+      );
+      await page.goto(`${hostOrigin(tenant.key)}/search?q=shuttle`);
+      const group = page.getByRole("region", {
+        name: msg(locale, "search.federated.source.sharepoint"),
+      });
+      await expect(
+        group.getByRole("link", { name: /Shuttle routes\.pdf/ }),
+      ).toHaveAttribute("href", "https://fake-sharepoint.example/b!d/01");
+      await expect(group.getByText("HR policies")).toBeVisible();
+      await expectAccessible(page, testInfo, `search-federated-${locale}`);
+      state = "timeout";
+      await page.reload();
+      await expect(
+        group.getByText(msg(locale, "search.federated.timeout")),
+      ).toBeVisible();
+    });
+
+    test("the search administrator turns AI summaries on and a summary cites its sources and takes feedback", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/admin/search`);
+      const panel = page.getByRole("region", { name: msg(locale, "search.admin.summary.title") });
+      const toggle = panel.getByRole("switch", { name: msg(locale, "search.admin.summary.switch") });
+      await expect(toggle).not.toBeChecked();
+      await toggle.click();
+      await expect(toggle).toBeChecked();
+
+      // The model's answer is given in the documented shape, so the page is checked without a model provider.
+      await page.route("**/api/v1/search/summary?**", (route) =>
+        route.fulfill({
+          contentType: "application/json",
+          body: JSON.stringify({
+            state: "answered",
+            turnId: "00000000-0000-0000-0000-000000000001",
+            text: "The evening shuttle leaves Gate 1 at 18:20 [1].",
+            citations: [{ n: 1, title: "Shuttle timetable changes", link: `/content/read/${shuttle}`, kind: "content" }],
+          }),
+        }),
+      );
+      let feedback: unknown = null;
+      await page.route("**/api/v1/assistant/turns/*/feedback", (route) => {
+        feedback = route.request().postDataJSON();
+        return route.fulfill({ status: 204 });
+      });
+      await page.goto(`${hostOrigin(tenant.key)}/search?q=shuttle`);
+      const summary = page.getByRole("region", { name: msg(locale, "search.summary.title") });
+      await expect(summary.getByText("The evening shuttle leaves Gate 1 at 18:20 [1].")).toBeVisible();
+      await expect(summary.getByRole("link", { name: "Shuttle timetable changes" })).toHaveAttribute("href", `/content/read/${shuttle}`);
+      await expect(summary.getByText(msg(locale, "search.summary.generated"))).toBeVisible();
+      await expectAccessible(page, testInfo, `search-summary-${locale}`);
+      await summary.getByRole("button", { name: msg(locale, "search.summary.notHelpful") }).click();
+      await expect(summary.getByRole("status")).toHaveText(msg(locale, "search.summary.thanks"));
+      expect(feedback).toEqual({ helpful: false, reason: null });
+    });
+
+    test("a person saves a search with a daily alert and manages it from saved searches", async ({ page }, testInfo) => {
+      await signInWithDevForm(page, tenant.key, tenant.adminEmail, locale);
+      await page.goto(`${hostOrigin(tenant.key)}/search?q=canteen`);
+      const save = page.getByTestId("search-save");
+      await save.getByRole("button", { name: msg(locale, "search.save.action") }).click();
+      await expect(save.getByRole("status")).toHaveText(msg(locale, "search.save.saved"));
+      // Saving the same search again is refused with the API's message.
+      await save.getByRole("button", { name: msg(locale, "search.save.action") }).click();
+      await expect(save.getByRole("alert")).toBeVisible();
+
+      await save.getByRole("link", { name: msg(locale, "search.save.list") }).click();
+      await page.waitForURL(/\/search\/saved$/);
+      await expect(page.getByRole("heading", { level: 1, name: msg(locale, "search.saved.title") })).toBeVisible();
+      const list = page.getByTestId("saved-searches");
+      await expect(list.getByRole("link", { name: "canteen" })).toHaveAttribute("href", "/search?q=canteen");
+      const alerts = list.getByRole("switch", { name: msg(locale, "search.saved.alertsLabel", { query: "canteen" }) });
+      await expect(alerts).toBeChecked();
+      await expectAccessible(page, testInfo, `saved-searches-${locale}`);
+      await alerts.click();
+      await expect(list.getByRole("status")).toHaveText(msg(locale, "search.saved.alertsOff", { query: "canteen" }));
+      await expect(alerts).not.toBeChecked();
+      await list.getByRole("button", { name: msg(locale, "search.saved.removeLabel", { query: "canteen" }) }).click();
+      await expect(list.getByRole("status").filter({ hasText: msg(locale, "search.saved.removed", { query: "canteen" }) })).toBeVisible();
+      await expect(list.getByText(msg(locale, "search.saved.emptyTitle"))).toBeVisible();
     });
 
     test("the search administrator adds and removes synonyms", async ({ page }, testInfo) => {

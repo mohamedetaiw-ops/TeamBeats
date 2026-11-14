@@ -63,4 +63,8 @@ public sealed class DocumentRepositories(IDbSession session, Microsoft365.ShareP
 
     public async Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default) =>
         await ForAsync(connectionId, ct) is { } r ? await r.ReadAsync(connectionId, itemId, versionId, ct) : throw new RepositoryUnavailableException("connection_unusable");
+
+    public async Task<RepositoryUserSearch> SearchAsUserAsync(Guid connectionId, IReadOnlyCollection<string> containerIds, string query, int limit,
+        CancellationToken deadline, CancellationToken ct = default) =>
+        await ForAsync(connectionId, ct) is { } r ? await r.SearchAsUserAsync(connectionId, containerIds, query, limit, deadline, ct) : RepositoryUserSearch.Not("unavailable");
 }

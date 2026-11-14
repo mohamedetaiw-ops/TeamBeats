@@ -507,6 +507,12 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
             var owner = UpnOf(bearer) is { Length: > 0 } driveUpn ? driveUpn.ToLowerInvariant() : $"{directory}/{userId}";
             return await DriveAsync(request, Uri.UnescapeDataString(path), owner, scopes, ct);
         }
+        if (path == "/v1.0/search/query" && request.Method == HttpMethod.Post)
+        {
+            var searcher = UpnOf(bearer) is { Length: > 0 } searcherUpn ? searcherUpn
+                : data.CurrentUsers().FirstOrDefault(u => u.Id == userId).Properties?.GetValueOrDefault("mail") as string;
+            return await SharePointSearchAsync(request, directory, searcher?.ToLowerInvariant(), scopes, ct);
+        }
         if (path.StartsWith("/v1.0/drives/", StringComparison.Ordinal))
         {
             var reader = UpnOf(bearer) is { Length: > 0 } readerUpn ? readerUpn
@@ -900,6 +906,53 @@ public sealed class FakeMicrosoftGraph : HttpMessageHandler
     /// Delegated calls with Files.Read.All: children, item and content, limited to what the person may read. With
     /// Files.ReadWrite.All also upload by path (replacing a file of the same name as a new version) and rename.
     /// </summary>
+    /// <summary>How long Microsoft Search takes to answer, so tests can prove the federated time limit (spec 012 US5 scenario 2).</summary>
+    public TimeSpan SharePointSearchDelay { get; set; } = TimeSpan.Zero;
+
+    /// <summary>The number of Microsoft Search queries answered, so tests can prove a source that is off is never queried.</summary>
+    public int SharePointSearches => _spSearches;
+
+    private int _spSearches;
+
+    /// <summary>
+    /// Microsoft Search over drive items as the signed-in person: files of this directory's sites whose name or text has
+    /// every word of the query, that the person may read. The summary marks the first match as Microsoft does.
+    /// </summary>
+    private async Task<HttpResponseMessage> SharePointSearchAsync(HttpRequestMessage request, string directory, string? reader, IReadOnlySet<string> scopes,
+        CancellationToken ct)
+    {
+        if (!scopes.Overlaps(["Files.Read.All", "Files.ReadWrite.All", "Sites.Read.All"]))
+        {
+            return SpDenied();
+        }
+        Interlocked.Increment(ref _spSearches);
+        if (SharePointSearchDelay > TimeSpan.Zero)
+        {
+            await Task.Delay(SharePointSearchDelay, ct);
+        }
+        var body = await request.Content!.ReadFromJsonAsync<JsonElement>(ct);
+        var first = body.GetProperty("requests")[0];
+        var words = (first.GetProperty("query").GetProperty("queryString").GetString() ?? string.Empty)
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var size = first.TryGetProperty("size", out var sz) ? sz.GetInt32() : 25;
+        bool Visible(SpItem i) => i.Readers.Count == 0 || (reader is not null && i.Readers.Contains(reader));
+        var found = _spItems.Values
+            .Where(i => !i.Folder && !i.Deleted && Visible(i) && _spDrives.TryGetValue(i.DriveId, out var d) && _spSites.TryGetValue(d.SiteId, out var site)
+                && site.Directory == directory)
+            .Select(i => (Item: i, Text: i.Name + " " + Encoding.UTF8.GetString(i.Content)))
+            .Where(x => words.Length > 0 && words.All(w => x.Text.Contains(w, StringComparison.OrdinalIgnoreCase)))
+            .OrderBy(x => x.Item.Name, StringComparer.Ordinal)
+            .Take(size)
+            .Select(x => new
+            {
+                hitId = x.Item.Id,
+                summary = $"<c0>{System.Net.WebUtility.HtmlEncode(words[0])}</c0> in {System.Net.WebUtility.HtmlEncode(x.Item.Name)}<ddd/>",
+                resource = SpItemJson(x.Item),
+            })
+            .ToList();
+        return Json(new { value = new[] { new { hitsContainers = new[] { new { hits = found, total = found.Count, moreResultsAvailable = false } } } } });
+    }
+
     private async Task<HttpResponseMessage> SharePointUserAsync(HttpRequestMessage request, string directory, string path, IReadOnlyDictionary<string, string> query,
         string? reader, IReadOnlySet<string> scopes, CancellationToken ct)
     {

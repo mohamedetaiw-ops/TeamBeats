@@ -67,3 +67,48 @@ export type RetrievalChange = {
 };
 
 export type RetrievalConfig = { active: RetrievalSettings; open: RetrievalChange | null; history: RetrievalChange[] };
+
+/** Federated search (spec 012 US5): results asked of an external system live, as the person, never stored. */
+export type FederatedHit = {
+  title: string;
+  link: string;
+  summary: string | null;
+  location: string | null;
+  mediaType: string | null;
+  modifiedAt: string | null;
+};
+export type FederatedState =
+  | "ok"
+  | "not_connected"
+  | "reconnect"
+  | "unavailable"
+  | "timeout";
+export type FederatedGroup = {
+  source: string;
+  state: FederatedState;
+  results: FederatedHit[];
+};
+export type FederatedPage = { query: string; groups: FederatedGroup[] };
+export type FederatedSource = {
+  source: string;
+  enabled: boolean;
+  updatedAt: string | null;
+};
+
+/** The AI summary above results (spec 012 US6): off, or what the assistant made of the top permitted passages. */
+export type SummaryCitation = {
+  n: number;
+  title: string;
+  link: string;
+  kind: string;
+};
+export type SearchSummaryView = {
+  state: "off" | "answered" | "none" | "withheld" | "unavailable";
+  turnId: string | null;
+  text: string | null;
+  citations: SummaryCitation[];
+};
+export type AiSummarySetting = { enabled: boolean; updatedAt: string | null };
+
+/** A search the person saved (US7); alerts bring at most one notification a day about new items that match. */
+export type SavedSearchView = { id: string; query: string; alerts: boolean; createdAt: string; alertedAt: string | null };

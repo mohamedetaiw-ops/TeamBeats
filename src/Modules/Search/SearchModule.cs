@@ -27,6 +27,11 @@ public static class SearchModule
         services.AddScoped<TeamBeats.Modules.Agents.Contracts.IAgentTool, SearchTool>();
         services.AddScoped<SearchRebuilds>();
         services.AddScoped<SearchTuning>();
+        services.AddScoped<FederatedSearch>();
+        services.AddScoped<SearchSummariesService>();
+        services.AddScoped<SavedSearches>();
+        services.AddScoped<SavedSearchScheduler>();
+        services.AddMessageHandler<SavedSearchDue, SavedSearchChecker>("search.saved_search_check");
         services.AddScoped<SearchRetrieval>();
         services.AddScoped<ISearchRetrieval>(sp => sp.GetRequiredService<SearchRetrieval>());
         services.AddScoped<IRetrievalEvaluation>(sp => sp.GetRequiredService<SearchRetrieval>());
@@ -70,6 +75,51 @@ public static class SearchModule
         });
 
         root.MapGet("/suggest", async (string? q, SearchService search, CancellationToken ct) => Results.Ok(await search.SuggestAsync(q, ct)));
+
+        // Federated results (US5) are asked for after the TeamBeats results, so a slow source never holds them up.
+        root.MapGet("/federated", async (string? q, FederatedSearch federated, CancellationToken ct) => Results.Ok(await federated.QueryAsync(q, ct)));
+        // The AI summary (US6) is asked for after the results too, so they never wait for a model.
+        root.MapGet("/summary", async (string? q, SearchSummariesService summaries, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await summaries.SummaryAsync(q, ct);
+            await session.CommitAsync(ct); // The summary is kept as an assistant turn for feedback.
+            return Results.Ok(view);
+        });
+        root.MapGet("/ai-summary", async (SearchSummariesService summaries, CancellationToken ct) => Results.Ok(await summaries.GetAsync(ct)));
+        root.MapPut("/ai-summary", async (AiSummaryRequest request, SearchSummariesService summaries, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await summaries.SetAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        // Saved searches with daily alerts (US7, FR-019): each person sees and changes only their own.
+        root.MapGet("/saved", async (SavedSearches saved, CancellationToken ct) => Results.Ok(await saved.ListAsync(ct)));
+        root.MapPost("/saved", async (SavedSearchRequest request, SavedSearches saved, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await saved.SaveAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/search/saved/{view.Id}", view);
+        });
+        root.MapPut("/saved/{id:guid}/alerts", async (Guid id, SavedSearchAlertsRequest request, SavedSearches saved, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await saved.SetAlertsAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        root.MapDelete("/saved/{id:guid}", async (Guid id, SavedSearches saved, IDbSession session, CancellationToken ct) =>
+        {
+            await saved.RemoveAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.NoContent();
+        });
+        root.MapGet("/federated-sources", async (FederatedSearch federated, CancellationToken ct) => Results.Ok(await federated.ListAsync(ct)));
+        root.MapPut("/federated-sources/{source}", async (string source, FederatedSourceRequest request, FederatedSearch federated, IDbSession session,
+            CancellationToken ct) =>
+        {
+            var view = await federated.SetAsync(source, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
 
         root.MapGet("/rebuilds", async (SearchRebuilds rebuilds, CancellationToken ct) => Results.Ok(await rebuilds.ListAsync(ct)));
 

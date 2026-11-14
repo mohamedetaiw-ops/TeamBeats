@@ -454,6 +454,128 @@ public sealed class SharePointLibraries(
         return new RepositoryItemDetails(item, created, Email(listItem, "createdBy"), columns, history);
     }
 
+    /// <summary>
+    /// Microsoft Search over drive items as the person (spec 012 FR-016), so SharePoint decides what they find. Only hits
+    /// in the given document libraries that the connection still allows are kept; nothing is stored.
+    /// </summary>
+    public async Task<RepositoryUserSearch> SearchAsUserAsync(Guid connectionId, IReadOnlyCollection<string> containerIds, string query, int limit,
+        CancellationToken deadline, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(query) || query.Length > 200 || containerIds.Count == 0 || !containerIds.All(IsPart))
+        {
+            return RepositoryUserSearch.Not("not_found");
+        }
+        HashSet<string> drives;
+        try
+        {
+            var connection = await LoadAsync(connectionId, ct);
+            if (connection is null)
+            {
+                return RepositoryUserSearch.Not("unavailable");
+            }
+            drives = (await DrivesAsync(connection, ct)).Keys.Where(containerIds.Contains).ToHashSet(StringComparer.Ordinal);
+        }
+        catch (RepositoryUnavailableException)
+        {
+            return RepositoryUserSearch.Not("unavailable");
+        }
+        if (drives.Count == 0)
+        {
+            return RepositoryUserSearch.Not("not_found");
+        }
+        var grant = await access.AcquireAsync(Microsoft365Features.SharePointDocuments, ct);
+        if (grant.State is M365States.NotConnected or M365States.Reconnect)
+        {
+            return RepositoryUserSearch.Not(grant.State);
+        }
+        if (grant.State != M365States.Ok)
+        {
+            return RepositoryUserSearch.Not("unavailable");
+        }
+        try
+        {
+            // Asks for more than shown, because hits outside the connected libraries are dropped.
+            var body = await graph.DelegatedSendAsync(grant.AccessToken!, HttpMethod.Post, "search/query", new
+            {
+                requests = new[]
+                {
+                    new { entityTypes = new[] { "driveItem" }, query = new { queryString = query.Trim() }, from = 0, size = Math.Clamp(limit * 4, 10, 50) },
+                },
+            }, deadline);
+            var hits = new List<RepositoryHit>();
+            foreach (var hit in SearchHits(body))
+            {
+                if (hit.TryGetProperty("resource", out var resource) && resource.TryGetProperty("parentReference", out var parent)
+                    && SharePointSites.Text(parent, "driveId") is { } drive && drives.Contains(drive) && Map(resource, drive) is { Folder: false } item)
+                {
+                    hits.Add(new RepositoryHit(item, PlainSummary(SharePointSites.Text(hit, "summary"))));
+                    if (hits.Count == limit)
+                    {
+                        break;
+                    }
+                }
+            }
+            return new RepositoryUserSearch("ok", hits);
+        }
+        catch (GraphCallException ex)
+        {
+            return RepositoryUserSearch.Not(ex.Kind == "unauthorized" ? M365States.Reconnect : "unavailable");
+        }
+    }
+
+    private static IEnumerable<JsonElement> SearchHits(JsonElement body)
+    {
+        if (body.ValueKind != JsonValueKind.Object || !body.TryGetProperty("value", out var value) || value.ValueKind != JsonValueKind.Array)
+        {
+            yield break;
+        }
+        foreach (var response in value.EnumerateArray())
+        {
+            if (!response.TryGetProperty("hitsContainers", out var containers) || containers.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+            foreach (var container in containers.EnumerateArray())
+            {
+                if (container.TryGetProperty("hits", out var hits) && hits.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var hit in hits.EnumerateArray())
+                    {
+                        yield return hit;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>Microsoft's summary marks matches with tags such as &lt;c0&gt; and ends cut text with &lt;ddd/&gt;; only the words are kept.</summary>
+    internal static string? PlainSummary(string? summary)
+    {
+        if (string.IsNullOrWhiteSpace(summary))
+        {
+            return null;
+        }
+        var plain = new System.Text.StringBuilder(summary.Length);
+        var inTag = false;
+        foreach (var c in summary.Replace("<ddd/>", "…", StringComparison.Ordinal))
+        {
+            if (c == '<')
+            {
+                inTag = true;
+            }
+            else if (c == '>' && inTag)
+            {
+                inTag = false;
+            }
+            else if (!inTag)
+            {
+                plain.Append(c);
+            }
+        }
+        var text = System.Net.WebUtility.HtmlDecode(plain.ToString()).Trim();
+        return text.Length == 0 ? null : text.Length > 300 ? text[..300] : text;
+    }
+
     public async Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default)
     {
         if (Split(itemId) is not (var drive, var id) || (versionId is not null && !IsVersion(versionId)))

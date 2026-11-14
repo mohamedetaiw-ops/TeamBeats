@@ -329,4 +329,50 @@ public sealed class AssistantTests(TenantWorld world)
             await sp.GetRequiredService<IDbSession>().CommitAsync();
             return done;
         });
+    [Fact]
+    public async Task Search_summaries_are_off_by_default_cite_permitted_passages_and_take_feedback()
+    {
+        var t = await FreshAsync();
+        var open = await NewsAsync(t["pia"].Client, "Forklift inspection checklist", "Check the forklift brakes, horn and mast chains before every shift.");
+        await NewsAsync(t["pia"].Client, "Quarterly bonus pool", "Confidential quarterly bonus pool for the sales directors.", "confidential");
+        await DispatchAsync();
+        static string Summary(string q) => $"/api/v1/search/summary?q={Uri.EscapeDataString(q)}";
+
+        // Off by default (FR-018): nothing is asked of a model.
+        Assert.Equal("off", (await OkAsync(t["emp"].Client.GetAsync(Summary("forklift brakes")))).GetProperty("state").GetString());
+        Assert.False((await OkAsync(t["admin"].Client.GetAsync("/api/v1/search/ai-summary"))).GetProperty("enabled").GetBoolean());
+        Assert.Equal(HttpStatusCode.Forbidden, (await t["emp"].Client.PutAsJsonAsync("/api/v1/search/ai-summary", new { enabled = true })).StatusCode);
+        await OkAsync(t["admin"].Client.PutAsJsonAsync("/api/v1/search/ai-summary", new { enabled = true }));
+        await world.Database.AssertAuditedAsync(t.Id, AuditActions.SearchAiSummaryChanged, "ai_summary");
+
+        // On, the summary cites the passages it came from (US6 scenario 1) and is never in the assistant history.
+        var summary = await OkAsync(t["emp"].Client.GetAsync(Summary("forklift brakes")));
+        Assert.Equal("answered", summary.GetProperty("state").GetString());
+        Assert.Contains("[1]", summary.GetProperty("text").GetString()!);
+        var citation = Assert.Single(summary.GetProperty("citations").EnumerateArray());
+        Assert.Equal("Forklift inspection checklist", citation.GetProperty("title").GetString());
+        Assert.Equal($"/content/read/{open}", citation.GetProperty("link").GetString());
+        var turnId = summary.GetProperty("turnId").GetGuid();
+        Assert.Equal("search_summary.v1", await world.Database.TenantScalarAsync<string>(t.Id, "select prompt_version from agents.turn where id = @id", ("id", turnId)));
+        Assert.Empty((await OkAsync(t["emp"].Client.GetAsync($"{Assistant}/conversations"))).GetProperty("conversations").EnumerateArray());
+
+        // Marked unhelpful (US6 scenario 3), the feedback is kept with the turn's execution record; nobody else can mark it.
+        Assert.Equal(HttpStatusCode.NotFound, (await t["emp2"].Client.PostAsJsonAsync($"{Assistant}/turns/{turnId}/feedback", new { helpful = false })).StatusCode);
+        await OkAsync(t["emp"].Client.PostAsJsonAsync($"{Assistant}/turns/{turnId}/feedback", new { helpful = false, reason = "incorrect" }), HttpStatusCode.NoContent);
+        Assert.Equal("search_summary.v1", await world.Database.TenantScalarAsync<string>(t.Id,
+            "select prompt_version from agents.feedback where turn_id = @id and not helpful", ("id", turnId)));
+
+        // Passages kept from AI by classification give no summary and call no model (US6 scenario 2); nothing permitted, none.
+        var turns = await world.Database.CountInTenantAsync(t.Id, "select count(*) from agents.turn");
+        Assert.Equal("withheld", (await OkAsync(t["ed"].Client.GetAsync(Summary("quarterly bonus pool sales directors")))).GetProperty("state").GetString());
+        Assert.Equal("none", (await OkAsync(t["emp"].Client.GetAsync(Summary("quarterly bonus pool sales directors")))).GetProperty("state").GetString());
+        Assert.Equal(turns, await world.Database.CountInTenantAsync(t.Id, "select count(*) from agents.turn"));
+
+        // Another tenant's setting is its own, and a package without summaries has none.
+        var other = await world.CreateTenantAsync("as-o-" + Guid.NewGuid().ToString("N")[..6], "workplace_plus");
+        Assert.Equal("off", (await OkAsync(other["admin"].Client.GetAsync(Summary("forklift brakes")))).GetProperty("state").GetString());
+        var plain = await world.CreateTenantAsync("as-p-" + Guid.NewGuid().ToString("N")[..6], "workplace");
+        Assert.Equal("off", (await OkAsync(plain["admin"].Client.GetAsync(Summary("forklift brakes")))).GetProperty("state").GetString());
+        Assert.Equal(HttpStatusCode.Forbidden, (await plain["admin"].Client.PutAsJsonAsync("/api/v1/search/ai-summary", new { enabled = true })).StatusCode);
+    }
 }

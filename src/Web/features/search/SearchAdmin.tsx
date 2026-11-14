@@ -4,8 +4,9 @@ import { useEffect, useId, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
+import { Switch } from "@/components/ui/Switch";
 import { problemMessages } from "@/lib/notifications/types";
-import type { BestBet, Rebuild, RetrievalChange, RetrievalConfig, RetrievalSettings, Suggestion, SynonymSet } from "@/lib/search/types";
+import type { AiSummarySetting, BestBet, FederatedSource, Rebuild, RetrievalChange, RetrievalConfig, RetrievalSettings, Suggestion, SynonymSet } from "@/lib/search/types";
 
 type Message = { error: boolean; text: string } | null;
 
@@ -460,6 +461,104 @@ export function RetrievalSettingsPanel({ initial }: { initial: RetrievalConfig }
           </ul>
         </>
       ) : null}
+    </section>
+  );
+}
+
+/**
+ * Federated sources (spec 012 US5, FR-017): each source searched live as the person, off until a search administrator
+ * turns it on. A source that is off is never queried.
+ */
+export function FederatedSources({ initial }: { initial: FederatedSource[] }) {
+  const t = useTranslations("search.admin");
+  const [sources, setSources] = useState(initial);
+  const [message, setMessage] = useState<Message>(null);
+
+  async function toggle(source: string, enabled: boolean) {
+    setMessage(null);
+    try {
+      const response = await fetch(
+        `/api/v1/search/federated-sources/${encodeURIComponent(source)}`,
+        {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ enabled }),
+        },
+      );
+      if (response.ok) {
+        const view = (await response.json()) as FederatedSource;
+        setSources((all) => all.map((s) => (s.source === source ? view : s)));
+        setMessage({
+          error: false,
+          text: t(enabled ? "federated.on" : "federated.off", {
+            source: t(`federated.source.${source}`),
+          }),
+        });
+      } else {
+        setMessage({
+          error: true,
+          text: (await problemMessages(response)).join(" ") || t("failed"),
+        });
+      }
+    } catch {
+      setMessage({ error: true, text: t("failed") });
+    }
+  }
+
+  return (
+    <section aria-labelledby="federated-title">
+      <h2 id="federated-title">{t("federated.title")}</h2>
+      <p>{t("federated.intro")}</p>
+      {sources.map((s) => (
+        <Switch
+          key={s.source}
+          label={t(`federated.source.${s.source}`)}
+          hint={t(`federated.hint.${s.source}`)}
+          checked={s.enabled}
+          onChange={(e) => void toggle(s.source, e.target.checked)}
+        />
+      ))}
+      <Status message={message} />
+    </section>
+  );
+}
+
+/** The AI summary above results (spec 012 US6, FR-018): off by default; summaries always cite permitted passages. */
+export function AiSummaryPanel({ initial }: { initial: AiSummarySetting }) {
+  const t = useTranslations("search.admin");
+  const [enabled, setEnabled] = useState(initial.enabled);
+  const [message, setMessage] = useState<Message>(null);
+
+  async function toggle(value: boolean) {
+    setMessage(null);
+    try {
+      const problem = await send("/api/v1/search/ai-summary", "PUT", {
+        enabled: value,
+      });
+      if (problem) {
+        setMessage({ error: true, text: problem });
+      } else {
+        setEnabled(value);
+        setMessage({
+          error: false,
+          text: t(value ? "summary.on" : "summary.off"),
+        });
+      }
+    } catch {
+      setMessage({ error: true, text: t("failed") });
+    }
+  }
+
+  return (
+    <section aria-labelledby="summary-title">
+      <h2 id="summary-title">{t("summary.title")}</h2>
+      <p>{t("summary.intro")}</p>
+      <Switch
+        label={t("summary.switch")}
+        checked={enabled}
+        onChange={(e) => void toggle(e.target.checked)}
+      />
+      <Status message={message} />
     </section>
   );
 }

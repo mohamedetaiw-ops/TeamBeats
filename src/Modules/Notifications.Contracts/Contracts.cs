@@ -93,6 +93,9 @@ public static class NotificationCategories
     /// <summary>Spec 031: confirmations, reminders, releases and cancellations of the person's bookings.</summary>
     public const string Bookings = "bookings";
 
+    /// <summary>Spec 012: new items that match a search the person saved with alerts on.</summary>
+    public const string SearchAlerts = "search_alerts";
+
     public static readonly IReadOnlyList<NotificationCategory> All =
     [
         new(SecurityNotice, Mandatory: true, EmailByDefault: true),
@@ -111,6 +114,7 @@ public static class NotificationCategories
         new(System, Mandatory: false, EmailByDefault: false),
         new(SpaceActivity, Mandatory: false, EmailByDefault: true),
         new(Bookings, Mandatory: false, EmailByDefault: true),
+        new(SearchAlerts, Mandatory: false, EmailByDefault: false),
     ];
 
     public static NotificationCategory? Find(string key) => All.FirstOrDefault(c => c.Key == key);

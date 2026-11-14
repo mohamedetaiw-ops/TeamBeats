@@ -270,6 +270,15 @@ public sealed record RepositoryUserPage(string State, IReadOnlyList<RepositoryIt
     public static RepositoryUserPage Not(string state) => new(state, [], null);
 }
 
+/// <summary>A file a live search found, with the repository's own summary of where the words matched, as plain text.</summary>
+public sealed record RepositoryHit(RepositoryItem Item, string? Summary);
+
+/// <summary>What a live search as a person found; <paramref name="State"/> says why nothing was found, as in <see cref="RepositoryUserPage"/>.</summary>
+public sealed record RepositoryUserSearch(string State, IReadOnlyList<RepositoryHit> Hits)
+{
+    public static RepositoryUserSearch Not(string state) => new(state, []);
+}
+
 /// <summary>
 /// The document repository contract of ADR-0016 (spec 017 FR-019, INT-004): the extension point through which
 /// <c>Documents</c> reads document systems without their types. Listing, reading and changes run with the connection's
@@ -326,6 +335,15 @@ public interface IDocumentRepository
     /// it is not there. Never changes the source. Throws <see cref="RepositoryUnavailableException"/> when it cannot be read.
     /// </summary>
     Task<RepositoryContent?> ReadAsync(Guid connectionId, string itemId, string? versionId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Searches files of the given containers live as the signed-in person (spec 012 FR-016), so the repository's own
+    /// permissions decide and nothing is stored. Never throws for the person's access; see <see cref="RepositoryUserSearch.State"/>.
+    /// <paramref name="deadline"/> bounds only the call to the repository (a caller's time limit) and throws
+    /// <see cref="OperationCanceledException"/> when it passes; local reads use <paramref name="ct"/>.
+    /// </summary>
+    Task<RepositoryUserSearch> SearchAsUserAsync(Guid connectionId, IReadOnlyCollection<string> containerIds, string query, int limit, CancellationToken deadline,
+        CancellationToken ct = default);
 }
 
 /// <summary>
