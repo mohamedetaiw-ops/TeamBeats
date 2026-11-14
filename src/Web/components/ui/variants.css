@@ -176,6 +176,21 @@
   border-radius: 0;
 }
 
+/*
+ * Page cards (DLS-110): how the widget frame and cards stand off the page. Raised is the base look, the design's own
+ * shadow. Outlined adds the hairline to the frame. Flat has neither line nor shadow, for a design that separates
+ * sections by space alone.
+ */
+:root[data-v-cards="outlined"] .ui-widget {
+  border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
+}
+
+/* The root is named twice so this wins over a design's own surface finish, whatever the design (designs.css). */
+:root:root[data-v-cards="flat"] :is(.ui-widget, .ui-card) {
+  border-color: transparent;
+  box-shadow: none;
+}
+
 /* Briefing, light: a light card with the accent mark, rows between hairlines and filled actions. */
 :root[data-v-briefing="light"] .home-briefing {
   border: var(--tb-border-width-thin) solid var(--tb-color-border-default);
