@@ -47,6 +47,8 @@ public sealed class PlatformComponents : IComponentRegistration
         Manifest("home.your_day", "calendar", new()
         {
             ["title"] = new PropertySchema("text", MaxLength: 80),
+            // Off where the view already shows these counts (the briefing, the task summary), so a number appears once (DLS-102).
+            ["counts"] = new PropertySchema("boolean", Default: JsonSerializer.SerializeToElement(true)),
         }, new PlacementRules(MinSpan: 3, Singleton: true), ["/api/v1/tasks", "/api/v1/me/calendar"], "personal"),
     ];
 }

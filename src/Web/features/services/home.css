@@ -179,19 +179,50 @@
 }
 
 .home-briefing-foot {
-  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tb-space-sm) var(--tb-space-md);
   margin-block-start: auto;
-  opacity: 0.85;
   font-size: var(--tb-font-size-sm);
+}
+
+.home-briefing-foot p {
+  flex: 1 1 12rem;
+  margin: 0;
+  opacity: 0.85;
+}
+
+.home-briefing-more {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.5rem;
+  color: var(--tb-color-highlight-bright);
+  font-weight: var(--tb-font-weight-medium);
 }
 
 @media (width <= 40rem) {
   .home-briefing {
+    gap: var(--tb-space-md);
     padding: var(--tb-space-lg);
   }
 
   .home-briefing-title {
     font-size: var(--tb-font-size-xl);
+  }
+
+  /* Phone: the tag above, then the text with its one action beside it, so three rows and the next card fit the first screen (DLS-100). */
+  .home-briefing-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--tb-space-xs) var(--tb-space-sm);
+    padding: var(--tb-space-sm) var(--tb-space-md);
+  }
+
+  .home-briefing-time {
+    grid-column: 1 / -1;
+    justify-self: start;
   }
 }
 
