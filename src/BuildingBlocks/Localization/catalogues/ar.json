@@ -2360,5 +2360,14 @@
   "notifications.template.content.mention.new.body": "أشار إليك أحدهم في خبر أو تعليق. افتحه لقراءته.",
   "validation.content.translate_locale": "اختر لغة أخرى من لغات المؤسسة للترجمة إليها.",
   "conflict.content.machine_translated": "تحتاج ترجمة آلية في هذه المسودة إلى أن يحررها شخص أو يعتمدها أولًا.",
-  "conflict.content.not_machine_translated": "هذه اللغة في المسودة ليست ترجمة آلية."
+  "conflict.content.not_machine_translated": "هذه اللغة في المسودة ليست ترجمة آلية.",
+  "notifications.template.content.campaign.step.title": "أخبار لك",
+  "notifications.template.content.campaign.step.body": "هناك عنصر جديد لتقرأه. افتحه لقراءته.",
+  "validation.content.campaign_name": "أعطِ الحملة اسمًا لا يزيد على 200 حرف.",
+  "validation.content.campaign_audience": "اختر وحدات ومجموعات من هذه المؤسسة لجمهور الحملة.",
+  "validation.content.campaign_steps": "للحملة 20 خطوة على الأكثر.",
+  "validation.content.campaign_item": "تحتاج كل خطوة إلى عنصر من موقع الحملة غير مؤرشف.",
+  "conflict.content.campaign_started": "بدأت هذه الحملة، لذا لا يمكن تغيير خطتها.",
+  "conflict.content.campaign_empty": "أضف خطوة واحدة على الأقل قبل بدء الحملة.",
+  "conflict.content.campaign_ended": "انتهت هذه الحملة بالفعل."
 }

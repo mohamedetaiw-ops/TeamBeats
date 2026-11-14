@@ -43,6 +43,7 @@ public static class ContentModule
         services.AddScoped<ContentSocial>();
         services.AddScoped<ContentFollows>();
         services.AddScoped<ContentTranslations>();
+        services.AddScoped<ContentCampaigns>();
         services.AddMessageHandler<Contracts.ContentPublished, ContentMentions>("content.mentions");
         services.AddSingleton<Experience.Contracts.IComponentRegistration, ContentComponents>();
         services.AddMessageHandler<Identity.Contracts.UserDeprovisioned, ContentOwnerHandler>("content.owner_left");
@@ -223,7 +224,42 @@ public static class ContentModule
             return Results.Ok(view);
         });
 
-        items.MapGet("/{id:guid}/view", async (Guid id, Items service, CancellationToken ct) => Results.Ok(await service.ReadAsync(id, ct)));
+        items.MapGet("/{id:guid}/view", async (Guid id, string? campaign, Items service, ContentCampaigns campaigns, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.ReadAsync(id, ct);
+            await campaigns.SeenAsync(id, campaign, ct); // Counts the open for a campaign that reached the reader (US8 scenario 2).
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+
+        var campaignGroup = app.MapGroup("/api/v1/content/campaigns").RequireTenantUser().WithTags("Content: campaigns");
+        campaignGroup.MapGet("", async (ContentCampaigns service, CancellationToken ct) => Results.Ok(await service.ListAsync(ct)));
+        campaignGroup.MapPost("", async (CampaignRequest request, ContentCampaigns service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.CreateAsync(request, ct);
+            await session.CommitAsync(ct);
+            return Results.Created($"/api/v1/content/campaigns/{view.Id}", view);
+        });
+        campaignGroup.MapGet("/{id:guid}", async (Guid id, ContentCampaigns service, CancellationToken ct) => Results.Ok(await service.GetAsync(id, ct)));
+        campaignGroup.MapPut("/{id:guid}", async (Guid id, CampaignRequest request, ContentCampaigns service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.UpdateAsync(id, request, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        campaignGroup.MapPost("/{id:guid}/start", async (Guid id, ContentCampaigns service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.StartAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        campaignGroup.MapPost("/{id:guid}/cancel", async (Guid id, ContentCampaigns service, IDbSession session, CancellationToken ct) =>
+        {
+            var view = await service.CancelAsync(id, ct);
+            await session.CommitAsync(ct);
+            return Results.Ok(view);
+        });
+        campaignGroup.MapGet("/{id:guid}/dashboard", async (Guid id, ContentCampaigns service, CancellationToken ct) => Results.Ok(await service.DashboardAsync(id, ct)));
 
         items.MapGet("/{id:guid}/versions", async (Guid id, Items service, CancellationToken ct) => Results.Ok(await service.VersionsAsync(id, ct)));
 

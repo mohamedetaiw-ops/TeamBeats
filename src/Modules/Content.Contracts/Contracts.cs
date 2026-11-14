@@ -5,6 +5,9 @@ namespace TeamBeats.Modules.Content.Contracts;
 /// <summary>A version of a content item went live (spec 009 section 12). IDs and facts only; search reads the item.</summary>
 public sealed record ContentPublished(Guid ItemId, Guid SiteId, string Type, int Version) : IIntegrationEvent;
 
+/// <summary>A campaign step went out (spec 009 US8): the item and how many people it was sent to.</summary>
+public sealed record CampaignStepSent(Guid CampaignId, Guid StepId, Guid ItemId, int Recipients) : IIntegrationEvent;
+
 /// <summary>A published item was taken down by a publisher.</summary>
 public sealed record ContentUnpublished(Guid ItemId, Guid SiteId) : IIntegrationEvent;
 

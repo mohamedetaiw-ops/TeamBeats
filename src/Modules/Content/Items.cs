@@ -857,7 +857,7 @@ public sealed class Items(
 
     private readonly Dictionary<Guid, ContentPerson> people = [];
 
-    private async Task<ContentPerson> PersonAsync(Guid id, CancellationToken ct)
+    internal async Task<ContentPerson> PersonAsync(Guid id, CancellationToken ct)
     {
         if (!people.TryGetValue(id, out var person))
         {

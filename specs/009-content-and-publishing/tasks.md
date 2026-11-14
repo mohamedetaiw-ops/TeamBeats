@@ -59,8 +59,8 @@ Depends on 003 (groups, `UserDeprovisioned`), 004, 005, 006, 007, 008 (shell slo
 - [x] T032 Route steps in site routes and the engine definition; route editor in the site settings
 
 ### Phase 11: User Story 8, campaigns (P2)
-- [ ] T033 [P] [US8] Tests: due steps sent to the audience through notifications; "only those who have not acted" excludes completers; optional email respects preferences, mandatory labelled; dashboard counts with privacy threshold; entitlement and cross-tenant cases
-- [ ] T034 [US8] Campaign model, scheduler, sends through spec 015, dashboard endpoint and pages, English and Arabic, e2e with axe
+- [x] T033 [P] [US8] Tests: due steps sent to the audience through notifications; "only those who have not acted" excludes completers; optional email respects preferences, mandatory labelled; dashboard counts with privacy threshold; entitlement and cross-tenant cases
+- [x] T034 [US8] Campaign model, scheduler, sends through spec 015, dashboard endpoint and pages, English and Arabic, e2e with axe
 
 ### Phase 12: retention, health dashboard and signage
 - [ ] T035 [P] Tests: retention deletes old versions after the period and skips legal hold; health dashboard counts ownerless sites and overdue items per site with permitted items only; signage URL shows only public items of the site and stops after rotation

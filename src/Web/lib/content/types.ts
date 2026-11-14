@@ -210,3 +210,44 @@ export const editHref = (id: string) => `/content/items/${encodeURIComponent(id)
 /** What a person follows (spec 009 FR-017): a site by ID or a topic by its tag. */
 export type FollowView = { kind: "site" | "topic"; key: string; at: string };
 export const topicHref = (tag: string) => `/content/topics/${encodeURIComponent(tag)}`;
+
+/** Campaigns across channels (spec 009 US8): steps of one site's items sent on a schedule to one audience. */
+export type CampaignStepView = {
+  id: string;
+  position: number;
+  itemId: string;
+  itemTitle: Record<string, string>;
+  at: string;
+  mandatory: boolean;
+  onlyNotActed: boolean;
+  status: "pending" | "sent" | "skipped" | "cancelled";
+  sentAt: string | null;
+  recipients: number | null;
+};
+
+export type CampaignView = {
+  id: string;
+  siteId: string;
+  name: string;
+  audience: ContentAudience;
+  status: "draft" | "scheduled" | "completed" | "cancelled";
+  steps: CampaignStepView[];
+  createdBy: ContentPerson;
+  createdAt: string;
+  updatedAt: string;
+  version: number;
+};
+
+/** What people did is null below the minimum group size. */
+export type CampaignCounts = { audience: number; delivered: number; viewed: number | null; clicked: number | null; acknowledged: number | null };
+export type CampaignBreakdownRow = { key: string | null; names: Record<string, string> | null; audience: number; viewed: number; acknowledged: number };
+export type CampaignDashboard = {
+  campaignId: string;
+  minimumGroupSize: number;
+  total: CampaignCounts;
+  steps: { stepId: string; position: number; status: string; counts: CampaignCounts }[];
+  byUnit: CampaignBreakdownRow[];
+  byLocation: CampaignBreakdownRow[];
+};
+
+export const campaignHref = (id: string) => `/content/campaigns/${encodeURIComponent(id)}`;

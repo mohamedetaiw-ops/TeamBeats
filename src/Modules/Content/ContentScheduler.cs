@@ -14,7 +14,7 @@ namespace TeamBeats.Modules.Content;
 /// passed send their reminders (US2 scenario 4). Runs as the system actor.
 /// </summary>
 public sealed class ContentScheduler(IDbSession session, Items items, Sites sites, CriticalAnnouncements critical, INotificationSender notifications,
-    ContentGovernance governance)
+    ContentGovernance governance, ContentCampaigns campaigns)
 {
     public async Task<int> RunDueAsync(DateTimeOffset now, int limit, CancellationToken ct)
     {
@@ -55,7 +55,7 @@ public sealed class ContentScheduler(IDbSession session, Items items, Sites site
                 moved++;
             }
         }
-        return moved + await governance.RunAsync(now, limit, ct);
+        return moved + await governance.RunAsync(now, limit, ct) + await campaigns.RunDueAsync(now, limit, ct);
     }
 
     private async Task<List<Guid>> DueAsync(string where, DateTimeOffset now, int limit, CancellationToken ct) =>

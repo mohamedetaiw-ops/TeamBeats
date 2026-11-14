@@ -2360,5 +2360,14 @@
   "notifications.template.content.mention.new.body": "Someone mentioned you in news or a comment. Open it to read it.",
   "validation.content.translate_locale": "Choose another language of the organization to translate into.",
   "conflict.content.machine_translated": "A machine translation in this draft needs a person to edit or approve it first.",
-  "conflict.content.not_machine_translated": "That language of the draft is not a machine translation."
+  "conflict.content.not_machine_translated": "That language of the draft is not a machine translation.",
+  "notifications.template.content.campaign.step.title": "News for you",
+  "notifications.template.content.campaign.step.body": "There is a new item for you to read. Open it to read it.",
+  "validation.content.campaign_name": "Give the campaign a name of up to 200 characters.",
+  "validation.content.campaign_audience": "Choose units and groups of this organization for the campaign audience.",
+  "validation.content.campaign_steps": "A campaign has at most 20 steps.",
+  "validation.content.campaign_item": "Each step needs an item of the campaign's site that is not archived.",
+  "conflict.content.campaign_started": "This campaign has started, so its plan can no longer change.",
+  "conflict.content.campaign_empty": "Add at least one step before starting the campaign.",
+  "conflict.content.campaign_ended": "This campaign has already ended."
 }

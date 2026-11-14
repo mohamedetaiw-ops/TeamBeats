@@ -9348,6 +9348,70 @@
         }
       }
     },
+    "/api/v1/content/items/{id}/translate": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TranslateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/items/{id}/translations/{locale}/approve": {
+      "post": {
+        "tags": [
+          "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "locale",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/content/items/{id}/withdraw": {
       "post": {
         "tags": [
@@ -9498,6 +9562,13 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "campaign",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -9945,6 +10016,161 @@
       "post": {
         "tags": [
           "Content: items"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/campaigns": {
+      "get": {
+        "tags": [
+          "Content: campaigns"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Content: campaigns"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/campaigns/{id}": {
+      "get": {
+        "tags": [
+          "Content: campaigns"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Content: campaigns"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CampaignRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/campaigns/{id}/start": {
+      "post": {
+        "tags": [
+          "Content: campaigns"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/campaigns/{id}/cancel": {
+      "post": {
+        "tags": [
+          "Content: campaigns"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/content/campaigns/{id}/dashboard": {
+      "get": {
+        "tags": [
+          "Content: campaigns"
         ],
         "parameters": [
           {
@@ -26041,62 +26267,25 @@
       },
       "CampaignRequest": {
         "required": [
-          "deadline",
-          "attestationText",
-          "reminderDays",
-          "lateJoinerDays",
-          "excludedMembershipTypes",
-          "audience"
+          "name",
+          "siteId",
+          "audience",
+          "steps"
         ],
         "type": "object",
         "properties": {
-          "deadline": {
+          "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "siteId": {
             "type": [
               "null",
               "string"
             ],
-            "format": "date"
-          },
-          "attestationText": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "reminderDays": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "int32"
-            }
-          },
-          "lateJoinerDays": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "excludedMembershipTypes": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string"
-            }
+            "format": "uuid"
           },
           "audience": {
             "oneOf": [
@@ -26107,6 +26296,49 @@
                 "$ref": "#/components/schemas/ContentAudience"
               }
             ]
+          },
+          "steps": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/CampaignStepRequest"
+            }
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
+      "CampaignStepRequest": {
+        "required": [
+          "itemId",
+          "at"
+        ],
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "default": false
+          },
+          "onlyNotActed": {
+            "type": "boolean",
+            "default": false
           }
         }
       },
@@ -26908,6 +27140,30 @@
           "approval": {
             "type": "boolean"
           },
+          "approvers": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "steps": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/ContentRouteStep"
+            }
+          }
+        }
+      },
+      "ContentRouteStep": {
+        "type": "object",
+        "properties": {
           "approvers": {
             "type": [
               "null",
@@ -36564,6 +36820,20 @@
           }
         }
       },
+      "TranslateRequest": {
+        "required": [
+          "locale"
+        ],
+        "type": "object",
+        "properties": {
+          "locale": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "TurnRequest": {
         "required": [
           "conversationId",
@@ -37190,6 +37460,9 @@
     },
     {
       "name": "Content: items"
+    },
+    {
+      "name": "Content: campaigns"
     },
     {
       "name": "Content: health"

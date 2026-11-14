@@ -36,7 +36,7 @@ export default async function ContentSitePage({ params }: { params: Promise<{ id
           <bdi>{name}</bdi>
         </h1>
         <SiteSettings site={site.data} units={units.ok ? units.data : []} locales={me.data.tenant.enabledLocales} />
-        <RouteSettings key={site.data.version} site={site.data} />
+        <RouteSettings site={site.data} />
       </main>
     </>
   );
