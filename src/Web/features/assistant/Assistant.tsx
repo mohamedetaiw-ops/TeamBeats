@@ -4,7 +4,8 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useFormatter, useTranslations } from "next-intl";
-import { Button } from "@/components/ui/Button";
+import { Alert } from "@/components/ui/Alert";
+import { Button, ButtonLink } from "@/components/ui/Button";
 import { Dialog } from "@/components/ui/Dialog";
 import { Menu } from "@/components/ui/Menu";
 import { problemMessages } from "@/lib/notifications/types";
@@ -17,8 +18,17 @@ import {
   type ConversationSummary,
   type FeedbackReason,
   type AssistantScope,
+  type TextAction,
+  type TextActionResult,
   type Turn,
 } from "@/lib/assistant/types";
+import { Result, runAction } from "./TextActions";
+
+const textActions = ["rewrite", "draft", "summarize", "explain", "translate"] as const;
+const starters = ["leave", "policy", "service", "people"] as const;
+type Mode = "ask" | TextAction;
+/** A text tool's run: it lives in the transcript of this visit only, since nothing about it is stored (FR-007). */
+type ToolRun = { id: number; action: TextAction; text: string; result: TextActionResult | null; error: string | null };
 
 const MAX_QUESTION = 2000;
 
@@ -141,7 +151,18 @@ function TurnItem({ turn }: { turn: Turn }) {
             )}
           </>
         ) : turn.outcome === "no_evidence" ? (
-          <p className="notice">{t("outcomes.no_evidence")}</p>
+          // Nothing the person can open supports an answer: said plainly, with its own look and a next step (FR-026).
+          <Alert
+            tone="warning"
+            title={t("cannotVerify.title")}
+            action={
+              <ButtonLink size="sm" variant="secondary" icon="search" href={`/search?q=${encodeURIComponent(turn.question)}`}>
+                {t("cannotVerify.search")}
+              </ButtonLink>
+            }
+          >
+            <p>{t("outcomes.no_evidence")}</p>
+          </Alert>
         ) : turn.outcome === "policy_blocked" ? (
           <p className="notice">{t("outcomes.policy_blocked")}</p>
         ) : (
@@ -158,17 +179,21 @@ function TurnItem({ turn }: { turn: Turn }) {
 }
 
 /**
- * The assistant (spec 014 US1 and US4, FR-001, FR-003, FR-011, FR-014). The question streams its answer; citations
- * are text links into the product, and answers are plain text, so no image or outside link is ever loaded. Every rule
- * (what may be retrieved, cited or sent to a model) is the API's.
+ * The assistant (spec 014 US1, US3 and US4, FR-001, FR-003, FR-011, FR-014, FR-024, FR-025): one conversation
+ * workspace. The question streams its answer; citations are text links into the product, and answers are plain text,
+ * so no image or outside link is ever loaded. The text tools (rewrite, draft, summarize, explain, translate) are modes
+ * of the same composer and their results join the transcript; there is no second form. Every rule (what may be
+ * retrieved, cited or sent to a model) is the API's.
  */
 export function AssistantChat({
   initial,
   conversations,
   scope = null,
+  uiLocale,
 }: {
   initial: Conversation | null;
   conversations: ConversationSummary[];
+  uiLocale: string;
   /** Keeps a new conversation to one item; the API keeps it for every later turn. */
   scope?: AssistantScope | null;
 }) {
@@ -180,18 +205,60 @@ export function AssistantChat({
   const [pending, setPending] = useState<{ question: string; text: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+  const [mode, setMode] = useState<Mode>("ask");
+  const [instructions, setInstructions] = useState("");
+  const [language, setLanguage] = useState(uiLocale === "ar" ? "en" : "ar");
+  const [runs, setRuns] = useState<ToolRun[]>([]);
+  const [working, setWorking] = useState(false);
   const inputId = useId();
   const hintId = useId();
+  const modeId = useId();
+  const instructionsId = useId();
+  const languageId = useId();
   const input = useRef<HTMLTextAreaElement>(null);
   const end = useRef<HTMLDivElement>(null);
   const conversationId = initial?.id ?? null;
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
-  }, [turns.length, pending?.text]);
+  }, [turns.length, pending?.text, runs.length]);
+
+  // A text tool works on the text in the composer; its result joins the transcript, labelled as generated.
+  async function runTool(action: TextAction) {
+    const text = question.trim();
+    if (working || (!text && !(action === "draft" && instructions.trim()))) return;
+    setError(null);
+    setWorking(true);
+    setStatus(t("thinking"));
+    const run: ToolRun = { id: Date.now(), action, text: text || instructions.trim(), result: null, error: null };
+    try {
+      const { result, error: problem, status: code } = await runAction({
+        action,
+        text: text || null,
+        instructions: instructions.trim() || null,
+        language: action === "translate" ? language : null,
+      });
+      setRuns((list) => [...list, { ...run, result, error: result ? null : code === 403 ? t("notAvailable") : (problem ?? t("failed")) }]);
+      if (result) {
+        setQuestion("");
+        setInstructions("");
+      }
+      setStatus(result ? t("answerReady") : "");
+    } catch {
+      setRuns((list) => [...list, { ...run, error: t("failed") }]);
+      setStatus("");
+    } finally {
+      setWorking(false);
+      input.current?.focus();
+    }
+  }
 
   async function ask(e: FormEvent) {
     e.preventDefault();
+    if (mode !== "ask") {
+      await runTool(mode);
+      return;
+    }
     const q = question.trim();
     if (!q || pending) return;
     setError(null);
@@ -315,10 +382,48 @@ export function AssistantChat({
           ) : null}
         </div>
 
-        {turns.length === 0 && !pending && !scope ? <p className="assistant-intro">{t("intro")}</p> : null}
+        {turns.length === 0 && runs.length === 0 && !pending && !scope ? (
+          <div className="assistant-start">
+            <p className="assistant-intro">{t("starters.title")}</p>
+            <ul className="assistant-starters">
+              {starters.map((key) => (
+                <li key={key}>
+                  <button
+                    type="button"
+                    className="ui-chip"
+                    data-selectable
+                    onClick={() => {
+                      setMode("ask");
+                      setQuestion(t(`starters.${key}`));
+                      input.current?.focus();
+                    }}
+                  >
+                    {t(`starters.${key}`)}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         <ol className="assistant-turns" aria-busy={pending ? true : undefined}>
           {turns.map((turn) => (
             <TurnItem key={turn.id} turn={turn} />
+          ))}
+          {runs.map((run) => (
+            <li key={run.id} className="assistant-turn">
+              <div className="assistant-question" dir="auto">
+                <span className="assistant-label">{t(`tools.actions.${run.action}`)}</span>
+                <p>{run.text}</p>
+              </div>
+              <div className="assistant-answer">
+                {run.result ? <Result result={run.result} /> : null}
+                {run.error ? (
+                  <p className="field-error" role="alert">
+                    {run.error}
+                  </p>
+                ) : null}
+              </div>
+            </li>
           ))}
           {pending ? (
             <li className="assistant-turn">
@@ -345,30 +450,64 @@ export function AssistantChat({
         ) : null}
 
         <form className="assistant-composer" onSubmit={(e) => void ask(e)}>
-          <label htmlFor={inputId}>{t("label")}</label>
-          <p id={hintId} className="field-hint">
-            {t("hint")}
-          </p>
+          <label htmlFor={inputId}>{mode === "ask" ? t("label") : mode === "draft" ? t("tools.draftText") : t("tools.text")}</label>
           <textarea
             id={inputId}
             ref={input}
             value={question}
-            rows={3}
-            maxLength={MAX_QUESTION}
-            required
+            rows={mode === "ask" ? 2 : 5}
+            maxLength={mode === "ask" ? MAX_QUESTION : 20000}
+            required={mode !== "draft"}
             dir="auto"
             aria-describedby={hintId}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+              // In a text tool Enter starts a new line, since pasted text is edited there.
+              if (mode === "ask" && e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 e.currentTarget.form?.requestSubmit();
               }
             }}
           />
-          <div className="button-row">
-            <Button type="submit" variant="primary" busy={pending !== null} busyLabel={t("thinking")}>
-              {t("ask")}
+          {mode !== "ask" ? (
+            <div className="field">
+              <label htmlFor={instructionsId}>{mode === "draft" ? t("tools.brief") : t("tools.instructions")}</label>
+              <input
+                id={instructionsId}
+                value={instructions}
+                maxLength={500}
+                dir="auto"
+                required={mode === "draft" && question.trim().length === 0}
+                onChange={(e) => setInstructions(e.target.value)}
+              />
+            </div>
+          ) : null}
+          <div className="assistant-composer-bar">
+            <label className="ui-toolbar-select" htmlFor={modeId}>
+              <span>{t("mode.label")}</span>
+              <select id={modeId} aria-label={t("mode.label")} value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
+                <option value="ask">{t("mode.ask")}</option>
+                {textActions.map((a) => (
+                  <option key={a} value={a}>
+                    {t(`tools.actions.${a}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {mode === "translate" ? (
+              <label className="ui-toolbar-select" htmlFor={languageId}>
+                <span>{t("tools.language")}</span>
+                <select id={languageId} aria-label={t("tools.language")} value={language} onChange={(e) => setLanguage(e.target.value)}>
+                  <option value="ar">{t("tools.languages.ar")}</option>
+                  <option value="en">{t("tools.languages.en")}</option>
+                </select>
+              </label>
+            ) : null}
+            <p id={hintId} className="field-hint">
+              {mode === "ask" ? t("hint") : t("tools.intro")}
+            </p>
+            <Button type="submit" variant="primary" busy={pending !== null || working} busyLabel={t("thinking")}>
+              {mode === "ask" ? t("ask") : t("tools.run")}
             </Button>
           </div>
         </form>

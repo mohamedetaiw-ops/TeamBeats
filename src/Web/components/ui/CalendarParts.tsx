@@ -204,7 +204,10 @@ export function AgendaRow({
         <span className="ui-cal-row-time">{time}</span>
         {statusLabel ? <span className="ui-cal-row-status">{statusLabel}</span> : null}
       </span>
-      <bdi className="ui-cal-row-title">{title}</bdi>
+      {/* The title's box follows the page direction, so a title in another script starts at the same edge (DLS-029). */}
+      <span className="ui-cal-row-title">
+        <bdi>{title}</bdi>
+      </span>
       <span className="ui-cal-row-meta">
         <Icon name={icon} size={12} />
         <span className="visually-hidden">{layerLabel}</span>
@@ -275,6 +278,7 @@ export function RangeMonth({
   weekStart,
   bars,
   markers,
+  items,
   onSelect,
   countLabel,
   maxLanes = 3,
@@ -285,6 +289,8 @@ export function RangeMonth({
   weekStart?: number;
   bars: readonly MonthBar[];
   markers: Readonly<Record<string, readonly Swatch[]>>;
+  /** The single-day items of each day, in order. Where there is room a cell names up to three and counts the rest (DLS-119). */
+  items?: Readonly<Record<string, readonly { id: string; label: string; swatch: Swatch }[]>>;
   onSelect: (date: string) => void;
   countLabel: (count: number) => string;
   maxLanes?: number;
@@ -308,7 +314,7 @@ export function RangeMonth({
   const inMonth = (d: string) => d.slice(0, 7) === start.slice(0, 7);
 
   return (
-    <div className="ui-cal-month">
+    <div className="ui-cal-month" data-items={items ? true : undefined}>
       <table aria-label={title}>
         <thead>
           <tr>
@@ -337,6 +343,17 @@ export function RangeMonth({
                         onClick={() => onSelect(d)}
                       >
                         <span aria-hidden="true">{number.format(fromIso(d))}</span>
+                        {items ? (
+                          <span className="ui-cal-month-items" aria-hidden="true">
+                            {(items[d] ?? []).slice(0, 3).map((item) => (
+                              <span key={item.id} className="ui-cal-month-item" data-swatch={item.swatch}>
+                                <LayerDot swatch={item.swatch} />
+                                <bdi>{item.label}</bdi>
+                              </span>
+                            ))}
+                            {more > 0 ? <span className="ui-cal-more">{t("data.more", { count: more })}</span> : null}
+                          </span>
+                        ) : null}
                         <span className="ui-cal-markers" aria-hidden="true">
                           {dots.slice(0, 3).map((m, i) => (
                             <LayerDot key={i} swatch={m} />

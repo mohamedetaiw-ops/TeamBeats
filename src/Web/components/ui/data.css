@@ -607,6 +607,43 @@ a.ui-event:hover {
   padding-block: 0.0625rem;
 }
 
+.ui-week-open {
+  inline-size: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ui-week-open:hover {
+  color: var(--tb-color-link);
+}
+
+.ui-week-more {
+  justify-content: center;
+  border: var(--tb-border-width-thin) dashed var(--tb-color-border-strong);
+  background: var(--tb-color-surface-raised);
+  color: var(--tb-color-text-secondary);
+  font: inherit;
+  font-size: var(--tb-font-size-xs);
+  cursor: pointer;
+}
+
+/* The current time: a line across today's column at the minute it is. */
+.ui-week-events > .ui-week-now {
+  z-index: 1;
+  align-self: start;
+  inline-size: 100%;
+  block-size: var(--tb-border-width-thick);
+  margin: 0;
+  padding: 0;
+  background: var(--tb-color-state-danger);
+  translate: 0 calc(var(--xp-offset) * var(--xp-slot));
+  pointer-events: none;
+}
+
 .ui-week-events .ui-event {
   flex-flow: row wrap;
   align-content: flex-start;
